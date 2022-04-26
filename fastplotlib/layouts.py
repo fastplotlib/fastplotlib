@@ -109,8 +109,8 @@ class GridPlot:
         self.renderer.flush()
         self.canvas.request_draw()
 
-    def add_animation(self, func: callable):
-        self._animate_funcs.append(func)
+    def add_animations(self, funcs: List[callable]):
+        self._animate_funcs += funcs
 
     def _get_iterator(self):
         return product(range(self.grid_shape[0]), range(self.grid_shape[1]))
