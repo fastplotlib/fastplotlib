@@ -1,4 +1,5 @@
-import pygfx
+from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport
+from pygfx.linalg import Vector3
 from .graphics import *
 from typing import *
 
@@ -18,6 +19,9 @@ class Subplot:
 
         if isinstance(graphic, Image):
             dims = graphic.data.shape
-            self.camera.set_view_size(*dims)
-            self.camera.position.set(dims[0] / 2, dims[1] / 2, 0)
-            self.controller.update_camera(self.camera)
+            zero_pos = Vector3(dims[0] / 2, dims[1] / 2, self.camera.position.z)
+            delta = zero_pos.clone().sub(self.camera.position)
+            zoom_level = 1 / np.mean(dims)
+            if self.controller.zoom_value != zoom_level:
+                self.controller.zoom(zoom_level)
+            self.controller.pan(delta)
