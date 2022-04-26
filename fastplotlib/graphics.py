@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pygfx
 from typing import *
+from .utils import get_cmap
 
 
 class Graphic(ABC):
@@ -18,7 +19,7 @@ class Image(Graphic):
 
         self.world_object: pygfx.Image = pygfx.Image(
             pygfx.Geometry(grid=pygfx.Texture(data, dim=2)),
-            pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=getattr(pygfx.cm, cmap))
+            pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=get_cmap(cmap))
         )
 
     @property
