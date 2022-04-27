@@ -21,6 +21,12 @@ camera_types = {
 }
 
 
+controller_types = {
+    'o': pygfx.PanZoomController,
+    'p': pygfx.OrbitOrthoController,
+}
+
+
 class GridPlot:
     def __init__(
             self,
@@ -71,12 +77,21 @@ class GridPlot:
             pygfx.PanZoomController() for i in range(np.unique(controllers).size)
         ]
 
+        self._controllers = np.empty(shape=cameras.shape, dtype=object)
+
+        for controller in np.unique(controllers):
+            cam = np.unique(cameras[controllers == controller])
+            if cam.size > 1:
+                raise ValueError(f"Controller id: {controller} has been assigned to multiple different camera types")
+
+            self._controllers[controllers == controller] = controller_types[cam[0]]()
+
         for i, j in self._get_iterator():
             self.subplots[i, j] = Subplot()
             self.subplots[i, j].position = (i, j)
 
             self.subplots[i, j].scene = pygfx.Scene()
-            self.subplots[i, j].controller = self._controllers[controllers[i, j]]
+            self.subplots[i, j].controller = self._controllers[i, j]
             self.subplots[i, j].camera = camera_types.get(cameras[i, j])()
 
             self.subplots[i, j].viewport = pygfx.Viewport(renderer)
