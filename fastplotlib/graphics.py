@@ -9,19 +9,24 @@ class Graphic(ABC):
     def __init__(self, data, colors: np.ndarray = None, cmap: str = None, alpha: float = 1.0):
         self.data = data.astype(np.float32)
 
-        if cmap is not None:
+        if colors is None and cmap is None:  # just white
+            self.colors = np.vstack([[1., 1., 1., 1.]] * data.shape[0])
+
+        elif (colors is None) and (cmap is not None):
             self.colors = get_colors(n_colors=data.shape[0], cmap=cmap, alpha=alpha)
 
-        if colors is None and cmap is None:
-            self.colors = ['w'] * data.shape[0]
+        elif (colors is not None) and (cmap is None):
+            # assume it's already an RGBA array
+            if colors.ndim == 2 and colors.shape[1] == 4 and colors.shape[0] == data.shape[0]:
+                self.colors = colors
+
+            else:
+                raise ValueError(f"Colors array must have ndim == 2 and shape of [<n_datapoints>, 4]")
 
         elif (colors is not None) and (cmap is not None):
             if colors.ndim == 1 and np.issubdtype(colors.dtype, np.integer):
                 # assume it's a mapping of colors
                 self.colors = np.array(map_labels_to_colors(colors, cmap, alpha=alpha))
-
-        elif colors.ndim == 2 and colors.shape[1] == 4:  # assume it's already an RGBA array
-            self.colors = colors
 
         else:
             raise ValueError("Unknown color format")
