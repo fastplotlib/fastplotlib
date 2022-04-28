@@ -76,12 +76,15 @@ class Line(Graphic):
     def __init__(self, data: np.ndarray, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(Line, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
+        if size < 1.1:
+            material = pygfx.LineThinMaterial
+        else:
+            material = pygfx.LineMaterial
 
-
-        # self.world_object: pygfx.Line = pygfx.Line(
-        #     geometry=pygfx.Geometry(positions=self.data, colors=self.colors),
-        #     material=pygfx.LineThinMaterial(thickness=size, vertex_colors=True)
-        # )
+        self.world_object: pygfx.Line = pygfx.Line(
+            geometry=pygfx.Geometry(positions=self.data, colors=self.colors),
+            material=material(thickness=size, vertex_colors=True)
+        )
 
     def update_data(self, data: Any):
         pass
