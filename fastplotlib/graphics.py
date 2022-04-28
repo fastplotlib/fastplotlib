@@ -81,6 +81,8 @@ class Line(Graphic):
         else:
             material = pygfx.LineMaterial
 
+        self.data = np.ascontiguousarray(self.data)
+
         self.world_object: pygfx.Line = pygfx.Line(
             geometry=pygfx.Geometry(positions=self.data, colors=self.colors),
             material=material(thickness=size, vertex_colors=True)
