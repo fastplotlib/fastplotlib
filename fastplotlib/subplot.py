@@ -52,3 +52,6 @@ class Subplot:
             self.scene.add(self._grid)
         else:
             self.scene.remove(self._grid)
+
+    def remove_graphic(self, graphic):
+        self.scene.remove(graphic.world_object)
