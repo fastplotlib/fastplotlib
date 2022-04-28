@@ -68,17 +68,30 @@ class Scatter(Graphic):
         self.points_objects: List[pygfx.Points] = list()
 
         for color in np.unique(self.colors, axis=0):
+            positions = self._process_positions(
+                self.data[np.all(self.colors == color, axis=1)]
+            )
+
             points = pygfx.Points(
-                pygfx.Geometry(positions=self.data[np.all(self.colors == color, axis=1)]),
+                pygfx.Geometry(positions=positions),
                 pygfx.PointsMaterial(size=10, color=color)
             )
 
             self.world_object.add(points)
             self.points_objects.append(points)
 
+    def _process_positions(self, positions: np.ndarray):
+        if positions.ndim == 1:
+            positions = np.array([positions])
+
+        return positions
+
     def update_data(self, data: np.ndarray):
-        self.world_object.geometry.positions.self.data[:] = data
-        self.world_object.geometry.positions.update_range(data.shape[0])
+        positions = self._process_positions(data).astype(np.float32)
+
+        self.points_objects[0].geometry.positions.data[:] = positions
+        self.points_objects[0].geometry.positions.update_range(positions.shape[0])
+
 
 
 class Line(Graphic):
