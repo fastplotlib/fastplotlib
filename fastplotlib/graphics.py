@@ -2,23 +2,23 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pygfx
 from typing import *
-from .utils import get_cmap, get_colors, map_labels_to_colors
+from .utils import get_cmap_texture, get_colors, map_labels_to_colors
 
 
 class Graphic(ABC):
-    def __init__(self, data, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
+    def __init__(self, data, colors: np.ndarray = None, cmap: str = None, alpha: float = 1.0):
         self.data = data.astype(np.float32)
 
         if cmap is not None:
-            self.colors = get_colors(n_colors=data.shape[0], cmap=cmap)
+            self.colors = get_colors(n_colors=data.shape[0], cmap=cmap, alpha=alpha)
 
         if colors is None and cmap is None:
             self.colors = ['w'] * data.shape[0]
 
-        elif colors is not None:
+        elif (colors is not None) and (cmap is not None):
             if colors.ndim == 1 and np.issubdtype(colors.dtype, np.integer):
                 # assume it's a mapping of colors
-                self.colors = np.array(map_labels_to_colors(colors, 'jet'))
+                self.colors = np.array(map_labels_to_colors(colors, cmap, alpha=alpha))
             else:
                 self.colors = colors
 
@@ -32,7 +32,7 @@ class Image(Graphic):
 
         self.world_object: pygfx.Image = pygfx.Image(
             pygfx.Geometry(grid=pygfx.Texture(self.data, dim=2)),
-            pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=get_cmap(cmap))
+            pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=get_cmap_texture(cmap))
         )
 
     @property
@@ -46,6 +46,9 @@ class Image(Graphic):
     def update_data(self, data: np.ndarray):
         self.world_object.geometry.grid.data[:] = data
         self.world_object.geometry.grid.update_range((0, 0, 0), self.world_object.geometry.grid.size)
+
+    def update_cmap(self, cmap: str, alpha: float = 1.0):
+        self.world_object.material.map = get_cmap_texture(name=cmap)
 
 
 class Scatter(Graphic):
@@ -73,10 +76,12 @@ class Line(Graphic):
     def __init__(self, data: np.ndarray, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(Line, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
-        self.world_object: pygfx.Line = pygfx.Line(
-            geometry=pygfx.Geometry(positions=self.data, colors=self.colors),
-            material=pygfx.LineThinMaterial(thickness=size, vertex_colors=True)
-        )
+
+
+        # self.world_object: pygfx.Line = pygfx.Line(
+        #     geometry=pygfx.Geometry(positions=self.data, colors=self.colors),
+        #     material=pygfx.LineThinMaterial(thickness=size, vertex_colors=True)
+        # )
 
     def update_data(self, data: Any):
         pass
