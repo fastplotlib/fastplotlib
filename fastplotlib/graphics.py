@@ -19,8 +19,12 @@ class Graphic(ABC):
             if colors.ndim == 1 and np.issubdtype(colors.dtype, np.integer):
                 # assume it's a mapping of colors
                 self.colors = np.array(map_labels_to_colors(colors, cmap, alpha=alpha))
-            else:
-                self.colors = colors
+
+        elif colors.ndim == 2 and colors.shape[1] == 4:  # assume it's already an RGBA array
+            self.colors = colors
+
+        else:
+            raise ValueError("Unknown color format")
 
     def update_data(self, data: Any):
         pass
