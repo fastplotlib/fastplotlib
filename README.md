@@ -1,10 +1,10 @@
 # fastplotlib
-A fast plotting library built using the pygfx render engine which uses Vulkan instead of OpenGL, so it is very fast!
+A fast plotting library built using the `pygfx` render engine that can use [Vulkan](https://en.wikipedia.org/wiki/Vulkan), so it is very fast!
 
 Checkout pygfx!
 https://github.com/pygfx/pygfx
 
-fastplotlib is very experimental, you're welcome to try it out or contribute!
+`fastplotlib` is very experimental but you're welcome to try it out or contribute!
 
 # Installation
 
