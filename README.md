@@ -8,10 +8,14 @@ https://github.com/pygfx/pygfx
 
 # Installation
 
+```bash
+pip install fastplotlib
+```
+
 You will need a GPU that supports Vulkan (iGPUs in CPUs should be fine). 
 Generally if your GPU is from 2017 or later it should support Vulkan.
 
-## Install Vulkan drivers
+## Install Vulkan drivers and other stuff
 
 For more information see: https://github.com/pygfx/wgpu-py#platform-requirements
 
@@ -23,12 +27,14 @@ Debian based distros:
 
 ```bash
 sudo apt install mesa-vulkan-drivers
+# for better performance with the remote frame buffer install libjpeg-turbo
+sudo apt install libjpeg-turbo
 ```
 
 For other distros use Google to find the appropriate vulkan driver package
 
 ### Mac OSX:
-You will need at least MacOSX v10.13
+You will need at least MacOSX v10.13, not sure how to install Vulkan drivers on Mac but Google probably has the answer.
  
 
 ```commandline
