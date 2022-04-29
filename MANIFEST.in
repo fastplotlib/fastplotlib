@@ -1,2 +1,1 @@
-recursive-include fastplotlib/colormaps/*
-
+recursive-include fastplotlib/colormaps/ *
