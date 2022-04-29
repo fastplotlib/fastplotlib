@@ -15,6 +15,9 @@ class Subplot:
         self.get_rect: callable = None
 
         self._axes: AxesHelper = AxesHelper(size=100)
+        for arrow in self._axes.children:
+            self._axes.remove(arrow)
+
         self._axes.set_colors('r', 'g', 'b')
 
         self._grid: GridHelper = GridHelper(size=100, thickness=1)
