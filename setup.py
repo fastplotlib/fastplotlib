@@ -9,7 +9,7 @@ setup(
     author='Kushal Kolar',
     author_email='',
     python_requires='>=3.8',
-    install_requires=['numpy', 'pygfx', 'jupyterlab', 'jupyter-rfb'],
+    install_requires=['numpy', 'pygfx', 'jupyterlab', 'jupyter-rfb', 'simplejpeg'],
     include_package_data=True,
     description='A fast plotting library built using the pygfx render engine'
 )
