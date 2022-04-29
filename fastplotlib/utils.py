@@ -3,6 +3,7 @@ from matplotlib import cm
 from pygfx import Texture
 from collections import OrderedDict
 from typing import *
+from pathlib import Path
 # some funcs adapted from mesmerize
 
 
@@ -10,11 +11,11 @@ qual_cmaps = ['Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1',
               'Set2', 'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c']
 
 
-def _make_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
-    cmap = np.vstack([getattr(cm, name)(i) for i in range(256)]).astype(np.float32)
+def _get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
+    cmap = np.loadtxt(str(Path(__file__).absolute().parent.joinpath('colormaps', name)))
     cmap[:, -1] = alpha
 
-    return cmap
+    return cmap.astype(np.float32)
 
 
 def get_colors(
@@ -24,13 +25,13 @@ def get_colors(
         alpha: float = 1.0
     ) \
         -> List[Union[np.ndarray, str]]:
-    cmap = _make_cmap(cmap, alpha)
+    cmap = _get_cmap(cmap, alpha)
     cm_ixs = np.linspace(0, 255, n_colors, dtype=int)
     return np.take(cmap, cm_ixs, axis=0)
 
 
 def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
-    cmap = _make_cmap(name)
+    cmap = _get_cmap(name)
     return Texture(cmap, dim=1).get_view()
 
 
