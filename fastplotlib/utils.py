@@ -1,5 +1,4 @@
 import numpy as np
-from matplotlib import cm
 from pygfx import Texture
 from collections import OrderedDict
 from typing import *
