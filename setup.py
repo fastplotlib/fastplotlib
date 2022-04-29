@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='fastplotlib',
-    version='0.1.0.a2',
+    version='0.1.0.a3',
     packages=find_packages(),
     url='https://github.com/kushalkolar/fastplotlib',
     license='Apache 2.0',
