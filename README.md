@@ -1,10 +1,39 @@
 # fastplotlib
-A fast plotting library building usig pygfx which uses Vulkan instead of OpenGL, so it is very fast!
+A fast plotting library built using the pygfx render engine which uses Vulkan instead of OpenGL, so it is very fast!
 
 Checkout pygfx!
 https://github.com/pygfx/pygfx
 
 fastplotlib is very experimental, you're welcome to try it out or contribute!
+
+# Installation
+
+You will need a GPU that supports Vulkan (iGPUs in CPUs should be fine). 
+Generally if your GPU is from 2017 or later it should support Vulkan.
+
+## Install Vulkan drivers
+
+For more information see: https://github.com/pygfx/wgpu-py#platform-requirements
+
+### Windows:
+Apparently Vulkan should be installed by default on Windows 11.
+
+### Linux:
+Debian based distros:
+
+```bash
+sudo apt install mesa-vulkan-drivers
+```
+
+For other distros use Google to find the appropriate vulkan driver package
+
+### Mac OSX:
+You will need at least MacOSX v10.13
+ 
+
+```commandline
+pip install https://github.com/kushalkolar/fastplotlib.git
+```
 
 ### Very fast image updates
 
