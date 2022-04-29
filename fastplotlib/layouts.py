@@ -16,14 +16,14 @@ def _produce_rect(j, i, ncols, nrows, w, h):
 
 
 camera_types = {
-    'o': pygfx.OrthographicCamera,
-    'p': pygfx.PerspectiveCamera
+    '2d': pygfx.OrthographicCamera,
+    '3d': pygfx.PerspectiveCamera
 }
 
 
 controller_types = {
-    'o': pygfx.PanZoomController,
-    'p': pygfx.OrbitOrthoController,
+    '2d': pygfx.PanZoomController,
+    '3d': pygfx.OrbitOrthoController,
 }
 
 
@@ -33,7 +33,7 @@ class GridPlot:
             canvas,
             renderer: pygfx.Renderer,
             grid_shape: Tuple[int, int],
-            cameras: np.ndarray,
+            views: np.ndarray,
             controllers: np.ndarray
     ):
         """
@@ -43,10 +43,10 @@ class GridPlot:
         grid_shape:
             nrows, ncols
 
-        cameras: np.ndarray
-            Array of ``o`` and/or ``p`` that specifies camera type for each subplot:
-            ``o``: ``pygfx.OrthographicCamera``
-            ``p``: ``pygfx.PerspectiveCamera``
+        views: np.ndarray
+            Array of ``2d`` and/or ``3d`` that specifies camera type for each subplot:
+            ``2d``: ``pygfx.OrthographicCamera``
+            ``3d``: ``pygfx.PerspectiveCamera``
 
         controllers:
             numpy array of same shape as ``grid_shape`` that defines the controllers
@@ -58,7 +58,7 @@ class GridPlot:
         if controllers.shape != grid_shape:
             raise ValueError
 
-        if cameras.shape != grid_shape:
+        if views.shape != grid_shape:
             raise ValueError
 
         if not np.all(np.sort(np.unique(controllers)) == np.arange(np.unique(controllers).size)):
@@ -77,10 +77,10 @@ class GridPlot:
             pygfx.PanZoomController() for i in range(np.unique(controllers).size)
         ]
 
-        self._controllers = np.empty(shape=cameras.shape, dtype=object)
+        self._controllers = np.empty(shape=views.shape, dtype=object)
 
         for controller in np.unique(controllers):
-            cam = np.unique(cameras[controllers == controller])
+            cam = np.unique(views[controllers == controller])
             if cam.size > 1:
                 raise ValueError(f"Controller id: {controller} has been assigned to multiple different camera types")
 
@@ -92,7 +92,7 @@ class GridPlot:
 
             self.subplots[i, j].scene = pygfx.Scene()
             self.subplots[i, j].controller = self._controllers[i, j]
-            self.subplots[i, j].camera = camera_types.get(cameras[i, j])()
+            self.subplots[i, j].camera = camera_types.get(views[i, j])()
 
             self.subplots[i, j].viewport = pygfx.Viewport(renderer)
 
