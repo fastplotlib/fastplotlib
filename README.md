@@ -8,9 +8,13 @@ https://github.com/pygfx/pygfx
 
 # Installation
 
+Install directly from GitHub until I stabilize things.
+
 ```bash
-pip install fastplotlib
+pip install https://github.com/kushalkolar/fastplotlib.git
 ```
+
+Don't install from PYPI (I had to take the name `fastplotlib` before someone else did).
 
 You will need a GPU that supports Vulkan (iGPUs in CPUs should be fine). 
 Generally if your GPU is from 2017 or later it should support Vulkan.
@@ -35,11 +39,7 @@ For other distros use Google to find the appropriate vulkan driver package
 
 ### Mac OSX:
 You will need at least MacOSX v10.13, not sure how to install Vulkan drivers on Mac but Google probably has the answer.
- 
 
-```commandline
-pip install https://github.com/kushalkolar/fastplotlib.git
-```
 
 ### Very fast image updates
 
