@@ -1,18 +1,50 @@
+import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
 from pygfx.linalg import Vector3
 from .graphics import *
+from .defaults import camera_types, controller_types
 from typing import *
+from wgpu.gui.auto import WgpuCanvas
 
 
 class Subplot:
-    def __init__(self):
-        self.scene: pygfx.Scene = None
-        self.camera: Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera] = None
-        self.controller: pygfx.PanZoomController = None
-        self.viewport: pygfx.Viewport  # might be better as an attribute of GridPlot
+    def __init__(
+            self,
+            position: Tuple[int, int] = None,
+            parent_dims: Tuple[int, int] = None,
+            camera: str = '2d',
+            controller: pygfx.PanZoomController = None,
+            viewport: pygfx.Viewport = None,
+            canvas: WgpuCanvas = None,
+            renderer: pygfx.Renderer = None
+    ):
+        self.scene: pygfx.Scene = pygfx.Scene()
+        self.canvas = canvas
+        self.renderer = renderer
+
+        if position is None:
+            position = (0, 0)
+        self.position: Tuple[int, int] = position
+
+        if parent_dims is None:
+            parent_dims = (1, 1)
+
+        self.nrows, self.ncols = parent_dims
+
+        self.camera: Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera] = camera_types[camera]()
+
+        if controller is None:
+            controller = controller_types[camera]()
+        self.controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = controller
+
+        # might be better as an attribute of GridPlot
         # but easier to iterate when in same object as camera and scene
-        self.position: Tuple[int, int] = None
-        self.get_rect: callable = None
+        self.viewport: pygfx.Viewport = viewport
+
+        self.controller.add_default_event_handlers(
+            self.viewport,
+            self.camera
+        )
 
         self._axes: AxesHelper = AxesHelper(size=100)
         for arrow in self._axes.children:
@@ -21,6 +53,24 @@ class Subplot:
         self._axes.set_colors('r', 'g', 'b')
 
         self._grid: GridHelper = GridHelper(size=100, thickness=1)
+
+    def _produce_rect(self, i, j, w, h):
+        # print(locals())
+        return [
+            ((w / self.ncols) + ((j - 1) * (w / self.ncols))),
+            ((h / self.nrows) + ((i - 1) * (h / self.nrows))),
+            (w / self.ncols),
+            (h / self.nrows)
+        ]
+
+    def _resize(self, canvas_dims: Tuple[int, int]):
+        # w, h = self.canvas.get_logical_size()
+        self.viewport.rect = self._produce_rect(*self.position, *canvas_dims)
+
+    def animate(self, canvas_dims: Tuple[int, int]):
+        self.controller.update_camera(self.camera)
+        self._resize(canvas_dims)
+        self.viewport.render(self.scene, self.camera)
 
     def add_graphic(self, graphic):
         self.scene.add(graphic.world_object)
