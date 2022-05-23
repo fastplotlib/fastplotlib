@@ -2,6 +2,7 @@ from itertools import product
 from functools import partial
 import numpy as np
 import pygfx
+from .defaults import camera_types, controller_types
 from .subplot import Subplot
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
@@ -16,23 +17,11 @@ def _produce_rect(j, i, ncols, nrows, w, h):
     ]
 
 
-camera_types = {
-    '2d': pygfx.OrthographicCamera,
-    '3d': pygfx.PerspectiveCamera
-}
-
-
-controller_types = {
-    '2d': pygfx.PanZoomController,
-    '3d': pygfx.OrbitOrthoController,
-}
-
-
 class GridPlot:
     def __init__(
             self,
             shape: Tuple[int, int],
-            views: Union[np.ndarray, str] = '2d',
+            cameras: Union[np.ndarray, str] = '2d',
             controllers: np.ndarray = None,
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
@@ -43,7 +32,7 @@ class GridPlot:
         shape:
             nrows, ncols
 
-        views: Union[np.ndarray, str]
+        cameras: Union[np.ndarray, str]
             One of ``"2d"`` or ``"3d"`` indicating 2D or 3D plots
 
             OR
@@ -65,19 +54,19 @@ class GridPlot:
             pygfx renderer instance
         """
 
-        if type(views) is str:
-            if views not in ["2d", "3d"]:
+        if type(cameras) is str:
+            if cameras not in ["2d", "3d"]:
                 raise ValueError("If passing a str, `views` must be one of `2d` or `3d`")
             # create the array representing the views for each subplot in the grid
-            views = np.array([views] * shape[0] * shape[1]).reshape(shape)
+            cameras = np.array([cameras] * shape[0] * shape[1]).reshape(shape)
 
         if controllers is None:
-            controllers = np.arange(shape[0], shape[1])
+            controllers = np.arange(shape[0] * shape[1]).reshape(shape)
 
         if controllers.shape != shape:
             raise ValueError
 
-        if views.shape != shape:
+        if cameras.shape != shape:
             raise ValueError
 
         if not np.all(np.sort(np.unique(controllers)) == np.arange(np.unique(controllers).size)):
@@ -102,46 +91,44 @@ class GridPlot:
             pygfx.PanZoomController() for i in range(np.unique(controllers).size)
         ]
 
-        self._controllers = np.empty(shape=views.shape, dtype=object)
+        self._controllers = np.empty(shape=cameras.shape, dtype=object)
 
         for controller in np.unique(controllers):
-            cam = np.unique(views[controllers == controller])
+            cam = np.unique(cameras[controllers == controller])
             if cam.size > 1:
                 raise ValueError(f"Controller id: {controller} has been assigned to multiple different camera types")
 
             self._controllers[controllers == controller] = controller_types[cam[0]]()
 
         for i, j in self._get_iterator():
-            self.subplots[i, j] = Subplot()
-            self.subplots[i, j].position = (i, j)
+            position = (i, j)
+            camera = cameras[i, j]
+            controller = self._controllers[i, j]
+            viewport = pygfx.Viewport(renderer)
 
-            self.subplots[i, j].scene = pygfx.Scene()
-            self.subplots[i, j].controller = self._controllers[i, j]
-            self.subplots[i, j].camera = camera_types.get(views[i, j])()
-
-            self.subplots[i, j].viewport = pygfx.Viewport(renderer)
-
-            # self.viewports[i, j] = pygfx.Viewport(renderer)
-
-            self.subplots[i, j].controller.add_default_event_handlers(
-                self.subplots[i, j].viewport,
-                self.subplots[i, j].camera
+            self.subplots[i, j] = Subplot(
+                position=position,
+                parent_dims=(nrows, ncols),
+                camera=camera,
+                controller=controller,
+                viewport=viewport,
+                canvas=canvas,
+                renderer=renderer
             )
-
-            self.subplots[i, j].get_rect = partial(_produce_rect, i, j, ncols, nrows)
 
         self._animate_funcs: List[callable] = list()
         self._current_iter = None
 
     def animate(self):
         for subplot in self:
-            subplot.controller.update_camera(subplot.camera)
+            subplot.animate(self.canvas.get_logical_size())
+            # subplot.controller.update_camera(subplot.camera)
 
-        w, h = self.canvas.get_logical_size()
-
-        for subplot in self:
-            subplot.viewport.rect = subplot.get_rect(w, h)
-            subplot.viewport.render(subplot.scene, subplot.camera)
+        # w, h = self.canvas.get_logical_size()
+        #
+        # for subplot in self:
+        #     subplot.viewport.rect = subplot.get_rect(w, h)
+        #     subplot.viewport.render(subplot.scene, subplot.camera)
 
         for f in self._animate_funcs:
             f()
@@ -151,6 +138,10 @@ class GridPlot:
 
     def add_animations(self, funcs: List[callable]):
         self._animate_funcs += funcs
+
+    def show(self):
+        self.canvas.request_draw(self.animate)
+        return self.canvas
 
     def _get_iterator(self):
         return product(range(self.shape[0]), range(self.shape[1]))
