@@ -48,7 +48,7 @@ plot.show()
 Install directly from GitHub until I stabilize things.
 
 ```bash
-pip install https://github.com/kushalkolar/fastplotlib.git
+pip install git+https://github.com/kushalkolar/fastplotlib.git
 ```
 
 Don't install from PYPI (I had to take the name `fastplotlib` before someone else did).
