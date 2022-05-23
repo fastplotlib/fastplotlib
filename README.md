@@ -6,6 +6,43 @@ https://github.com/pygfx/pygfx
 
 `fastplotlib` is very experimental but you're welcome to try it out or contribute!
 
+# Examples
+
+See the examples dir. Start out with `simple.ipynb` which uses the high level API.
+
+### Simple image plot
+```python
+from fastplotlib import Plot
+import numpy as np
+
+plot = Plot()
+
+data = (np.random.rand(512, 512) * 255).astype(np.float32)
+plot.image(data=data,  vmin=0, vmax=255, cmap='viridis')
+
+plot.show()
+```
+
+### Fast image updates (video)
+```python
+from fastplotlib import Plot
+import numpy as np
+
+plot = Plot()
+
+data = (np.random.rand(512, 512) * 255).astype(np.float32)
+image = plot.image(data=data,  vmin=0, vmax=255, cmap='viridis')
+
+def update_data():
+    new_data = (np.random.rand(512, 512) * 255).astype(np.float32)
+    image.update_data(new_data)
+
+plot.add_animations([update_data])
+
+plot.show()
+```
+
+
 # Installation
 
 Install directly from GitHub until I stabilize things.
@@ -38,10 +75,13 @@ sudo apt install libjpeg-turbo
 For other distros use Google to find the appropriate vulkan driver package
 
 ### Mac OSX:
-You will need at least MacOSX v10.13, not sure how to install Vulkan drivers on Mac but Google probably has the answer.
+You will need at least MacOSX v10.13, not sure how to install Vulkan drivers on Mac but you can probably find instructions on the internet.
 
+### Extremely fast image updates, 5 x 5 gridplot
 
-### Very fast image updates
+https://www.youtube.com/embed/-_0Gp_EqepI
+
+### Very fast image updates with some synced controllers
 
 https://user-images.githubusercontent.com/9403332/165678225-dcf3b401-86a5-4df5-a9e5-dc65bdb0443a.mp4
 
