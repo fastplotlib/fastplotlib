@@ -4,6 +4,7 @@ import numpy as np
 import pygfx
 from .subplot import Subplot
 from typing import *
+from wgpu.gui.auto import WgpuCanvas
 
 
 def _produce_rect(j, i, ncols, nrows, w, h):
@@ -30,45 +31,69 @@ controller_types = {
 class GridPlot:
     def __init__(
             self,
-            canvas,
-            renderer: pygfx.Renderer,
-            grid_shape: Tuple[int, int],
-            views: np.ndarray,
-            controllers: np.ndarray
+            shape: Tuple[int, int],
+            views: Union[np.ndarray, str] = '2d',
+            controllers: np.ndarray = None,
+            canvas: WgpuCanvas = None,
+            renderer: pygfx.Renderer = None,
     ):
         """
-
         Parameters
         ----------
-        grid_shape:
+        shape:
             nrows, ncols
 
-        views: np.ndarray
+        views: Union[np.ndarray, str]
+            One of ``"2d"`` or ``"3d"`` indicating 2D or 3D plots
+
+            OR
+
             Array of ``2d`` and/or ``3d`` that specifies camera type for each subplot:
             ``2d``: ``pygfx.OrthographicCamera``
             ``3d``: ``pygfx.PerspectiveCamera``
 
-        controllers:
+        controllers: np.ndarray
             numpy array of same shape as ``grid_shape`` that defines the controllers
             Example:
             unique controllers for a 2x2 gridplot: np.array([[0, 1], [2, 3]])
             same controllers for first 2 plots: np.array([[0, 0, 1], [2, 3, 4]])
+
+        canvas: WgpuCanvas
+            Canvas for drawing
+
+        renderer: pygfx.Renderer
+            pygfx renderer instance
         """
 
-        if controllers.shape != grid_shape:
+        if type(views) is str:
+            if views not in ["2d", "3d"]:
+                raise ValueError("If passing a str, `views` must be one of `2d` or `3d`")
+            # create the array representing the views for each subplot in the grid
+            views = np.array([views] * shape[0] * shape[1]).reshape(shape)
+
+        if controllers is None:
+            controllers = np.arange(shape[0], shape[1])
+
+        if controllers.shape != shape:
             raise ValueError
 
-        if views.shape != grid_shape:
+        if views.shape != shape:
             raise ValueError
 
         if not np.all(np.sort(np.unique(controllers)) == np.arange(np.unique(controllers).size)):
             raise ValueError("controllers must be consecutive integers")
 
+        if canvas is None:
+            canvas = WgpuCanvas()
+
+        if renderer is None:
+            renderer = pygfx.renderers.WgpuRenderer(canvas)
+
         self.canvas = canvas
         self.renderer = renderer
 
-        self.grid_shape = grid_shape
-        nrows, ncols = self.grid_shape
+        self.shape = shape
+        nrows, ncols = self.shape
 
         self.subplots: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
         # self.viewports: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
@@ -128,7 +153,7 @@ class GridPlot:
         self._animate_funcs += funcs
 
     def _get_iterator(self):
-        return product(range(self.grid_shape[0]), range(self.grid_shape[1]))
+        return product(range(self.shape[0]), range(self.shape[1]))
 
     def __iter__(self):
         self._current_iter = self._get_iterator()
