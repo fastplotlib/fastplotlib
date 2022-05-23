@@ -13,12 +13,18 @@ class Subplot:
             position: Tuple[int, int] = None,
             parent_dims: Tuple[int, int] = None,
             camera: str = '2d',
-            controller: pygfx.PanZoomController = None,
-            viewport: pygfx.Viewport = None,
+            controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None,
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None
     ):
         self.scene: pygfx.Scene = pygfx.Scene()
+
+        if canvas is None:
+            canvas = WgpuCanvas()
+
+        if renderer is None:
+            renderer = pygfx.renderers.WgpuRenderer(canvas)
+
         self.canvas = canvas
         self.renderer = renderer
 
@@ -39,7 +45,7 @@ class Subplot:
 
         # might be better as an attribute of GridPlot
         # but easier to iterate when in same object as camera and scene
-        self.viewport: pygfx.Viewport = viewport
+        self.viewport: pygfx.Viewport = pygfx.Viewport(renderer)
 
         self.controller.add_default_event_handlers(
             self.viewport,
@@ -54,6 +60,8 @@ class Subplot:
 
         self._grid: GridHelper = GridHelper(size=100, thickness=1)
 
+        self._animate_funcs = list()
+
     def _produce_rect(self, i, j, w, h):
         # print(locals())
         return [
@@ -67,10 +75,19 @@ class Subplot:
         # w, h = self.canvas.get_logical_size()
         self.viewport.rect = self._produce_rect(*self.position, *canvas_dims)
 
-    def animate(self, canvas_dims: Tuple[int, int]):
+    def animate(self, canvas_dims: Tuple[int, int] = None):
+        if canvas_dims is None:
+            canvas_dims = self.canvas.get_logical_size()
+
         self.controller.update_camera(self.camera)
         self._resize(canvas_dims)
         self.viewport.render(self.scene, self.camera)
+
+        for f in self._animate_funcs:
+            f()
+
+    def add_animations(self, funcs: List[callable]):
+        self._animate_funcs += funcs
 
     def add_graphic(self, graphic):
         self.scene.add(graphic.world_object)

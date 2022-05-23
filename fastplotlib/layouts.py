@@ -76,7 +76,7 @@ class GridPlot:
             canvas = WgpuCanvas()
 
         if renderer is None:
-            renderer = pygfx.renderers.WgpuRenderer(canvas)
+            renderer = pygfx.renderers.WgpuRenderer(canvas, show_fps=True)
 
         self.canvas = canvas
         self.renderer = renderer
@@ -104,14 +104,12 @@ class GridPlot:
             position = (i, j)
             camera = cameras[i, j]
             controller = self._controllers[i, j]
-            viewport = pygfx.Viewport(renderer)
 
             self.subplots[i, j] = Subplot(
                 position=position,
                 parent_dims=(nrows, ncols),
                 camera=camera,
                 controller=controller,
-                viewport=viewport,
                 canvas=canvas,
                 renderer=renderer
             )
@@ -122,13 +120,6 @@ class GridPlot:
     def animate(self):
         for subplot in self:
             subplot.animate(self.canvas.get_logical_size())
-            # subplot.controller.update_camera(subplot.camera)
-
-        # w, h = self.canvas.get_logical_size()
-        #
-        # for subplot in self:
-        #     subplot.viewport.rect = subplot.get_rect(w, h)
-        #     subplot.viewport.render(subplot.scene, subplot.camera)
 
         for f in self._animate_funcs:
             f()
