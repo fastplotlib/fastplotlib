@@ -56,6 +56,18 @@ Don't install from PYPI (I had to take the name `fastplotlib` before someone els
 You will need a GPU that supports Vulkan (iGPUs in CPUs should be fine). 
 Generally if your GPU is from 2017 or later it should support Vulkan.
 
+## For development
+
+```bash
+git clone https://github.com/kushalkolar/fastplotlib.git
+cd fastplotlib
+pip install -e .
+
+# try the examples
+cd examples
+jupyter lab
+```
+
 ## Install Vulkan drivers and other stuff
 
 For more information see: https://github.com/pygfx/wgpu-py#platform-requirements
