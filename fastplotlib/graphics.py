@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 import pygfx
 from typing import *
-from .utils import get_cmap_texture, get_colors, map_labels_to_colors
+from .utils import get_cmap_texture, get_colors, map_labels_to_colors, quick_min_max
 
 
 class Graphic(ABC):
@@ -36,8 +36,19 @@ class Graphic(ABC):
 
 
 class Image(Graphic):
-    def __init__(self, data: np.ndarray, vmin: int, vmax: int, cmap: str = 'plasma', *args, **kwargs):
+    def __init__(
+            self,
+            data: np.ndarray,
+            vmin: int = None,
+            vmax: int = None,
+            cmap: str = 'plasma',
+            *args,
+            **kwargs
+    ):
         super().__init__(data, cmap=cmap, *args, **kwargs)
+
+        if (vmin is None) or (vmax is None):
+            vmin, vmax = quick_min_max(data)
 
         self.world_object: pygfx.Image = pygfx.Image(
             pygfx.Geometry(grid=pygfx.Texture(self.data, dim=2)),
@@ -91,7 +102,6 @@ class Scatter(Graphic):
 
         self.points_objects[0].geometry.positions.data[:] = positions
         self.points_objects[0].geometry.positions.update_range(positions.shape[0])
-
 
 
 class Line(Graphic):
