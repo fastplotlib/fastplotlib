@@ -76,7 +76,7 @@ class GridPlot:
             canvas = WgpuCanvas()
 
         if renderer is None:
-            renderer = pygfx.renderers.WgpuRenderer(canvas, show_fps=True)
+            renderer = pygfx.renderers.WgpuRenderer(canvas)
 
         self.canvas = canvas
         self.renderer = renderer
