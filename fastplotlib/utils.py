@@ -62,3 +62,16 @@ def map_labels_to_colors(labels: iter, cmap: str, **kwargs) -> list:
     """
     mapper = get_cmap_labels(labels, cmap, **kwargs)
     return list(map(mapper.get, labels))
+
+
+def quick_min_max(data: np.ndarray) -> Tuple[float, float]:
+    # from pyqtgraph.ImageView
+    # Estimate the min/max values of *data* by subsampling.
+    # Returns [(min, max), ...] with one item per channel
+    while data.size > 1e6:
+        ax = np.argmax(data.shape)
+        sl = [slice(None)] * data.ndim
+        sl[ax] = slice(None, None, 2)
+        data = data[tuple(sl)]
+
+    return float(np.nanmin(data)), float(np.nanmax(data))
