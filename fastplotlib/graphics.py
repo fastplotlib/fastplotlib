@@ -85,7 +85,7 @@ class Scatter(Graphic):
 
             points = pygfx.Points(
                 pygfx.Geometry(positions=positions),
-                pygfx.PointsMaterial(size=10, color=color)
+                pygfx.PointsMaterial(size=size, color=color)
             )
 
             self.world_object.add(points)
