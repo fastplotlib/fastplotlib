@@ -62,25 +62,25 @@ class Subplot:
 
         self._animate_funcs = list()
 
-    def _produce_rect(self, i, j, w, h):
-        # print(locals())
-        return [
+        self.renderer.add_event_handler(self._produce_rect, "resize")
+
+    def _produce_rect(self, *args):#, w, h):
+        i, j = self.position
+
+        w, h = self.renderer.logical_size
+
+        self.viewport.rect = [
             ((w / self.ncols) + ((j - 1) * (w / self.ncols))),
             ((h / self.nrows) + ((i - 1) * (h / self.nrows))),
             (w / self.ncols),
             (h / self.nrows)
         ]
 
-    def _resize(self, canvas_dims: Tuple[int, int]):
-        # w, h = self.canvas.get_logical_size()
-        self.viewport.rect = self._produce_rect(*self.position, *canvas_dims)
-
     def animate(self, canvas_dims: Tuple[int, int] = None):
         if canvas_dims is None:
             canvas_dims = self.canvas.get_logical_size()
 
         self.controller.update_camera(self.camera)
-        self._resize(canvas_dims)
         self.viewport.render(self.scene, self.camera)
 
         for f in self._animate_funcs:
