@@ -69,11 +69,13 @@ class Subplot:
 
         w, h = self.renderer.logical_size
 
+        spacing = 5  # spacing in pixels
+
         self.viewport.rect = [
-            ((w / self.ncols) + ((j - 1) * (w / self.ncols))),
-            ((h / self.nrows) + ((i - 1) * (h / self.nrows))),
-            (w / self.ncols),
-            (h / self.nrows)
+            ((w / self.ncols) + ((j - 1) * (w / self.ncols))) + spacing,
+            ((h / self.nrows) + ((i - 1) * (h / self.nrows))) + spacing,
+            (w / self.ncols) - spacing,
+            (h / self.nrows) - spacing
         ]
 
     def animate(self, canvas_dims: Tuple[int, int] = None):
