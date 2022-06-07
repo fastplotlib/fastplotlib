@@ -77,9 +77,6 @@ class Subplot:
         ]
 
     def animate(self, canvas_dims: Tuple[int, int] = None):
-        if canvas_dims is None:
-            canvas_dims = self.canvas.get_logical_size()
-
         self.controller.update_camera(self.camera)
         self.viewport.render(self.scene, self.camera)
 
