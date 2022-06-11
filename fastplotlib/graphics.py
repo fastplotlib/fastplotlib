@@ -1,24 +1,38 @@
-from abc import ABC, abstractmethod
 import numpy as np
 import pygfx
 from typing import *
 from .utils import get_cmap_texture, get_colors, map_labels_to_colors, quick_min_max
 
 
-class Graphic(ABC):
-    def __init__(self, data, colors: np.ndarray = None, cmap: str = None, alpha: float = 1.0):
+class _Graphic:
+    def __init__(
+            self,
+            data,
+            colors: np.ndarray = None,
+            colors_length: int = None,
+            cmap: str = None,
+            alpha: float = 1.0
+    ):
         self.data = data.astype(np.float32)
+        self.colors = None
 
+        if colors_length is None:
+            colors_length = self.data.shape[0]
+
+        if colors is not False:
+            self._set_colors(colors, colors_length, cmap, alpha, )
+
+    def _set_colors(self, colors, colors_length, cmap, alpha):
         if colors is None and cmap is None:  # just white
-            self.colors = np.vstack([[1., 1., 1., 1.]] * data.shape[0])
+            self.colors = np.vstack([[1., 1., 1., 1.]] * colors_length).astype(np.float32)
 
         elif (colors is None) and (cmap is not None):
-            self.colors = get_colors(n_colors=data.shape[0], cmap=cmap, alpha=alpha)
+            self.colors = get_colors(n_colors=colors_length, cmap=cmap, alpha=alpha)
 
         elif (colors is not None) and (cmap is None):
             # assume it's already an RGBA array
-            if colors.ndim == 2 and colors.shape[1] == 4 and colors.shape[0] == data.shape[0]:
-                self.colors = colors
+            if colors.ndim == 2 and colors.shape[1] == 4 and colors.shape[0] == colors_length:
+                self.colors = colors.astype(np.float32)
 
             else:
                 raise ValueError(f"Colors array must have ndim == 2 and shape of [<n_datapoints>, 4]")
@@ -26,7 +40,7 @@ class Graphic(ABC):
         elif (colors is not None) and (cmap is not None):
             if colors.ndim == 1 and np.issubdtype(colors.dtype, np.integer):
                 # assume it's a mapping of colors
-                self.colors = np.array(map_labels_to_colors(colors, cmap, alpha=alpha))
+                self.colors = np.array(map_labels_to_colors(colors, cmap, alpha=alpha)).astype(np.float32)
 
         else:
             raise ValueError("Unknown color format")
@@ -35,7 +49,7 @@ class Graphic(ABC):
         pass
 
 
-class Image(Graphic):
+class Image(_Graphic):
     def __init__(
             self,
             data: np.ndarray,
@@ -71,7 +85,7 @@ class Image(Graphic):
         self.world_object.material.map = get_cmap_texture(name=cmap)
 
 
-class Scatter(Graphic):
+class Scatter(_Graphic):
     def __init__(self, data: np.ndarray, size: int = 1, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(Scatter, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
@@ -104,7 +118,7 @@ class Scatter(Graphic):
         self.points_objects[0].geometry.positions.update_range(positions.shape[0])
 
 
-class Line(Graphic):
+class Line(_Graphic):
     def __init__(self, data: np.ndarray, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(Line, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
@@ -124,3 +138,42 @@ class Line(Graphic):
         self.data = data.astype(np.float32)
         self.world_object.geometry.positions.data[:] = self.data
         self.world_object.geometry.positions.update_range()
+
+
+class Histogram(_Graphic):
+    def __init__(
+            self,
+            data: np.ndarray,
+            bins: Union[int, str] = 'auto',
+            colors: np.ndarray = None,
+            draw_scale_factor: float = 100.0,
+            draw_bin_width_scale: float = 1.0
+    ):
+
+        self.hist, self.bin_edges = np.histogram(data, bins)
+
+        # scale between 0 - draw_scale_factor
+        scaled_bin_edges = ((self.bin_edges - self.bin_edges.min()) / (np.ptp(self.bin_edges))) * draw_scale_factor
+
+        bin_interval = scaled_bin_edges[1] / 2
+        # get the centers of the bins from the edges
+        x_positions_bins = (scaled_bin_edges + bin_interval)[:-1]
+
+        n_bins = x_positions_bins.shape[0]
+        bin_width = (draw_scale_factor / n_bins) * draw_bin_width_scale
+
+        super(Histogram, self).__init__(data=data, colors=colors, colors_length=n_bins)
+
+        self.world_object: pygfx.Group = pygfx.Group()
+
+        for x_val, y_val in zip(x_positions_bins, self.hist):
+            geometry = pygfx.plane_geometry(
+                width=bin_width,
+                height=y_val,
+            )
+
+            material = pygfx.MeshBasicMaterial()
+            hist_bin_graphic = pygfx.Mesh(geometry, material)
+            hist_bin_graphic.position.set(x_val, (y_val) / 2, 0)
+
+            self.world_object.add(hist_bin_graphic)
