@@ -1,7 +1,7 @@
 import numpy as np
 import pygfx
 from typing import *
-from .utils import get_cmap_texture, get_colors, map_labels_to_colors, quick_min_max
+from ..utils import get_cmap_texture, get_colors, map_labels_to_colors, quick_min_max
 
 
 class _Graphic:

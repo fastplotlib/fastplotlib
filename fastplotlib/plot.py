@@ -2,7 +2,10 @@ import pygfx
 from pygfx.linalg import Vector3
 from wgpu.gui.auto import WgpuCanvas
 from .subplot import Subplot
-from .graphics import *
+from . import graphics
+from functools import partial
+from inspect import signature
+from typing import *
 
 
 class Plot(Subplot):
@@ -22,30 +25,16 @@ class Plot(Subplot):
             controller=controller
         )
 
-    def image(self, *args, **kwargs):
-        graphic = Image(*args, **kwargs)
-        self.scene.add(graphic.world_object)
+        for graphic_cls_name in graphics.__all__:
+            cls = getattr(graphics, graphic_cls_name)
+            pfunc = partial(self._create_graphic, cls)
+            pfunc.__signature__ = signature(cls)
+            pfunc.__doc__ = cls.__doc__
+            setattr(self, graphic_cls_name.lower(), pfunc)
 
-        dims = graphic.data.shape
-        zero_pos = Vector3(dims[0] / 2, dims[1] / 2, self.camera.position.z)
-        delta = zero_pos.clone().sub(self.camera.position)
-        zoom_level = 1 / np.mean(dims)
-        if self.controller.zoom_value != zoom_level:
-            self.controller.zoom(zoom_level)
-        self.controller.pan(delta)
-
-        return graphic
-
-    def line(self, *args, **kwargs):
-        graphic = Line(*args, **kwargs)
-        self.scene.add(graphic.world_object)
-
-        return graphic
-
-    def scatter(self, *args, **kwargs):
-        graphic = Scatter(*args, **kwargs)
-        self.scene.add(graphic.world_object)
-        self.camera.show_object(graphic.world_object)
+    def _create_graphic(self, graphic_class, *args, **kwargs):
+        graphic = graphic_class(*args, **kwargs)
+        super(Plot, self).add_graphic(graphic)
 
         return graphic
 
