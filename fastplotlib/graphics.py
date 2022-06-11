@@ -121,4 +121,6 @@ class Line(Graphic):
         )
 
     def update_data(self, data: Any):
-        pass
+        self.data = data.astype(np.float32)
+        self.world_object.geometry.positions.data[:] = self.data
+        self.world_object.geometry.positions.update_range()
