@@ -1,3 +1,4 @@
+import numpy as np
 import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
 from pygfx.linalg import Vector3
