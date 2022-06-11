@@ -26,7 +26,7 @@ def get_colors(
         -> List[Union[np.ndarray, str]]:
     cmap = _get_cmap(cmap, alpha)
     cm_ixs = np.linspace(0, 255, n_colors, dtype=int)
-    return np.take(cmap, cm_ixs, axis=0)
+    return np.take(cmap, cm_ixs, axis=0).astype(np.float32)
 
 
 def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
