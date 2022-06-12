@@ -45,6 +45,10 @@ class _Graphic:
         else:
             raise ValueError("Unknown color format")
 
+    @property
+    def children(self) -> pygfx.WorldObject:
+        return self.world_object.children
+
     def update_data(self, data: Any):
         pass
 
@@ -140,6 +144,13 @@ class Line(_Graphic):
         self.world_object.geometry.positions.update_range()
 
 
+class _HistogramBin(pygfx.Mesh):
+    def __int__(self, *args, **kwargs):
+        super(_HistogramBin, self).__init__(*args, **kwargs)
+        self.bin_center: float = None
+        self.frequency: Union[int, float] = None
+
+
 class Histogram(_Graphic):
     def __init__(
             self,
@@ -160,12 +171,15 @@ class Histogram(_Graphic):
                 raise ValueError("argument to `pre_computed` must be a `dict` where the values are numpy.ndarray")
             self.hist, self.bin_edges = pre_computed["hist"], pre_computed["bin_edges"]
 
+        self.bin_interval = (self.bin_edges[1] - self.bin_edges[0]) / 2
+        self.bin_centers = (self.bin_edges + self.bin_interval)[:-1]
+
         # scale between 0 - draw_scale_factor
         scaled_bin_edges = ((self.bin_edges - self.bin_edges.min()) / (np.ptp(self.bin_edges))) * draw_scale_factor
 
-        bin_interval = scaled_bin_edges[1] / 2
+        bin_interval_scaled = scaled_bin_edges[1] / 2
         # get the centers of the bins from the edges
-        x_positions_bins = (scaled_bin_edges + bin_interval)[:-1].astype(np.float32)
+        x_positions_bins = (scaled_bin_edges + bin_interval_scaled)[:-1].astype(np.float32)
 
         n_bins = x_positions_bins.shape[0]
         bin_width = (draw_scale_factor / n_bins) * draw_bin_width_scale
@@ -177,14 +191,16 @@ class Histogram(_Graphic):
 
         self.world_object: pygfx.Group = pygfx.Group()
 
-        for x_val, y_val in zip(x_positions_bins, self.hist):
+        for x_val, y_val, bin_center in zip(x_positions_bins, self.hist, self.bin_centers):
             geometry = pygfx.plane_geometry(
                 width=bin_width,
                 height=y_val,
             )
 
             material = pygfx.MeshBasicMaterial()
-            hist_bin_graphic = pygfx.Mesh(geometry, material)
+            hist_bin_graphic = _HistogramBin(geometry, material)
             hist_bin_graphic.position.set(x_val, (y_val) / 2, 0)
+            hist_bin_graphic.bin_center = bin_center
+            hist_bin_graphic.frequency = y_val
 
             self.world_object.add(hist_bin_graphic)
