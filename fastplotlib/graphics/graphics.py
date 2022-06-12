@@ -143,24 +143,35 @@ class Line(_Graphic):
 class Histogram(_Graphic):
     def __init__(
             self,
-            data: np.ndarray,
+            data: np.ndarray = None,
             bins: Union[int, str] = 'auto',
+            pre_computed: Dict[str, np.ndarray] = None,
             colors: np.ndarray = None,
             draw_scale_factor: float = 100.0,
             draw_bin_width_scale: float = 1.0
     ):
 
-        self.hist, self.bin_edges = np.histogram(data, bins)
+        if pre_computed is None:
+            self.hist, self.bin_edges = np.histogram(data, bins)
+        else:
+            if not set(pre_computed.keys()) == {'hist', 'bin_edges'}:
+                raise ValueError("argument to `pre_computed` must be a `dict` with keys 'hist' and 'bin_edges'")
+            if not all(type(v) is np.ndarray for v in pre_computed.values()):
+                raise ValueError("argument to `pre_computed` must be a `dict` where the values are numpy.ndarray")
+            self.hist, self.bin_edges = pre_computed["hist"], pre_computed["bin_edges"]
 
         # scale between 0 - draw_scale_factor
         scaled_bin_edges = ((self.bin_edges - self.bin_edges.min()) / (np.ptp(self.bin_edges))) * draw_scale_factor
 
         bin_interval = scaled_bin_edges[1] / 2
         # get the centers of the bins from the edges
-        x_positions_bins = (scaled_bin_edges + bin_interval)[:-1]
+        x_positions_bins = (scaled_bin_edges + bin_interval)[:-1].astype(np.float32)
 
         n_bins = x_positions_bins.shape[0]
         bin_width = (draw_scale_factor / n_bins) * draw_bin_width_scale
+
+        self.hist = self.hist.astype(np.float32)
+        data = np.vstack([x_positions_bins, self.hist])
 
         super(Histogram, self).__init__(data=data, colors=colors, colors_length=n_bins)
 
