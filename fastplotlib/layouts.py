@@ -8,15 +8,6 @@ from typing import *
 from wgpu.gui.auto import WgpuCanvas
 
 
-def _produce_rect(j, i, ncols, nrows, w, h):
-    return [
-        ((w / ncols) + ((i - 1) * (w / ncols))),
-        ((h / nrows) + ((j - 1) * (h / nrows))),
-        (w / ncols),
-        (h / nrows)
-    ]
-
-
 class GridPlot:
     def __init__(
             self,
