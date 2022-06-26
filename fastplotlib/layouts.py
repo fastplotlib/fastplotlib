@@ -22,7 +22,7 @@ class GridPlot:
             self,
             shape: Tuple[int, int],
             cameras: Union[np.ndarray, str] = '2d',
-            controllers: np.ndarray = None,
+            controllers: Union[np.ndarray, str] = None,
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
     ):
@@ -47,26 +47,34 @@ class GridPlot:
             unique controllers for a 2x2 gridplot: np.array([[0, 1], [2, 3]])
             same controllers for first 2 plots: np.array([[0, 0, 1], [2, 3, 4]])
 
+            If `None` a unique controller is created for each subplot
+
+            If "sync" all the subplots use the same controller
+
         canvas: WgpuCanvas
             Canvas for drawing
 
         renderer: pygfx.Renderer
             pygfx renderer instance
         """
+        self.shape = shape
 
         if type(cameras) is str:
             if cameras not in ["2d", "3d"]:
                 raise ValueError("If passing a str, `views` must be one of `2d` or `3d`")
             # create the array representing the views for each subplot in the grid
-            cameras = np.array([cameras] * shape[0] * shape[1]).reshape(shape)
+            cameras = np.array([cameras] * self.shape[0] * self.shape[1]).reshape(self.shape)
 
         if controllers is None:
-            controllers = np.arange(shape[0] * shape[1]).reshape(shape)
+            controllers = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
 
-        if controllers.shape != shape:
+        if controllers == "sync":
+            controllers = np.zeros(self.shape[0] * self.shape[1], dtype=int).reshape(self.shape)
+
+        if controllers.shape != self.shape:
             raise ValueError
 
-        if cameras.shape != shape:
+        if cameras.shape != self.shape:
             raise ValueError
 
         if not np.all(np.sort(np.unique(controllers)) == np.arange(np.unique(controllers).size)):
@@ -81,7 +89,6 @@ class GridPlot:
         self.canvas = canvas
         self.renderer = renderer
 
-        self.shape = shape
         nrows, ncols = self.shape
 
         self.subplots: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
