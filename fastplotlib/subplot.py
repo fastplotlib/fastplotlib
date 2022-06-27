@@ -111,6 +111,22 @@ class Subplot:
             #     self.controller.zoom(zoom_level)
             # self.controller.pan(delta)
 
+    def center_scene(self):
+        bsphere = self.scene.get_world_bounding_sphere()
+        target, distance = Vector3(*bsphere[:-1]), bsphere[-1]
+
+        # this seems to work, not entirely sure why
+        txy = max(target.x, target.y)
+        txy = txy - (txy * 0.1)
+        target_zoom = (txy / distance) / distance
+
+        zoom_factor = target_zoom / self.controller.zoom_value
+
+        curr = self.camera.position
+        delta = target.clone().sub(curr)
+        self.controller.pan(delta)
+        self.controller.zoom(zoom_factor)
+
     def set_axes_visibility(self, visible: bool):
         if visible:
             self.scene.add(self._axes)
