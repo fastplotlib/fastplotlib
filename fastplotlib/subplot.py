@@ -111,13 +111,13 @@ class Subplot:
             #     self.controller.zoom(zoom_level)
             # self.controller.pan(delta)
 
-    def center_scene(self):
+    def center_scene(self, zoom_padding: float = 0.0):
         bsphere = self.scene.get_world_bounding_sphere()
         target, distance = Vector3(*bsphere[:-1]), bsphere[-1]
 
         # this seems to work, not entirely sure why
         txy = max(target.x, target.y)
-        txy = txy - (txy * 0.1)
+        txy = txy - (txy * zoom_padding)
         target_zoom = (txy / distance) / distance
 
         zoom_factor = target_zoom / self.controller.zoom_value
