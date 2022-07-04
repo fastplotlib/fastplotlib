@@ -1,10 +1,14 @@
 # fastplotlib
+[![Gitter](https://badges.gitter.im/fastplotlib/community.svg)](https://gitter.im/fastplotlib/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
+
 A fast plotting library built using the `pygfx` render engine that can use [Vulkan](https://en.wikipedia.org/wiki/Vulkan), so it is very fast!
 
 Checkout pygfx!
 https://github.com/pygfx/pygfx
 
 `fastplotlib` is very experimental but you're welcome to try it out or contribute!
+
+Questions, ideas? Chat on gitter: https://gitter.im/fastplotlib/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link 
 
 # Examples
 
