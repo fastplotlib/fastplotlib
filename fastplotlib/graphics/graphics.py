@@ -63,6 +63,9 @@ class Image(_Graphic):
             *args,
             **kwargs
     ):
+        if data.ndim != 2:
+            raise ValueError("`data.ndim !=2`, you must pass only a 2D array to `data`")
+            
         super().__init__(data, cmap=cmap, *args, **kwargs)
 
         if (vmin is None) or (vmax is None):
