@@ -65,11 +65,11 @@ class Image(_Graphic):
     ):
         if data.ndim != 2:
             raise ValueError("`data.ndim !=2`, you must pass only a 2D array to `data`")
-            
+
         super().__init__(data, cmap=cmap, *args, **kwargs)
 
         if (vmin is None) or (vmax is None):
-            vmin, vmax = quick_min_max(data)
+            self.vmin, self.vmax = quick_min_max(data)
 
         self.world_object: pygfx.Image = pygfx.Image(
             pygfx.Geometry(grid=pygfx.Texture(self.data, dim=2)),
@@ -91,6 +91,13 @@ class Image(_Graphic):
     def update_cmap(self, cmap: str, alpha: float = 1.0):
         self.world_object.material.map = get_cmap_texture(name=cmap)
 
+    def get_vmin_vmax(self) -> Tuple[float, float]:
+        return Tuple(self.vmin, self.vmax)
+
+    def set_vmin_vmax(self, values: Tuple[float, float]):
+        self.vmin = values[0]
+        self.vmax = values[1]
+        
 
 class Scatter(_Graphic):
     def __init__(self, data: np.ndarray, size: int = 1, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
