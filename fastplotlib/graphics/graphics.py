@@ -63,6 +63,9 @@ class Image(_Graphic):
             *args,
             **kwargs
     ):
+        if data.ndim != 2:
+            raise ValueError("`data.ndim !=2`, you must pass only a 2D array to `data`")
+            
         super().__init__(data, cmap=cmap, *args, **kwargs)
 
         if (vmin is None) or (vmax is None):
@@ -90,8 +93,20 @@ class Image(_Graphic):
 
 
 class Scatter(_Graphic):
-    def __init__(self, data: np.ndarray, size: int = 1, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
+    def __init__(self, data: np.ndarray, zlevel: float = None, size: int = 1, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(Scatter, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
+
+        if self.data.ndim != 3:
+            if self.data.ndim != 2:
+                raise ValueError("Must pass 2D or 3D data")
+            # make it 2D with zlevel
+            if zlevel == None:
+                zlevel = 0
+
+            # zeros
+            zs = np.full(self.data.shape[0], fill_value=zlevel, dtype=np.float32)
+
+            self.data = np.dstack([self.data[:, 0], self.data[:, 1], zs])[0]
 
         self.world_object: pygfx.Group = pygfx.Group()
         self.points_objects: List[pygfx.Points] = list()
@@ -123,8 +138,20 @@ class Scatter(_Graphic):
 
 
 class Line(_Graphic):
-    def __init__(self, data: np.ndarray, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
+    def __init__(self, data: np.ndarray, zlevel: float = None, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(Line, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
+
+        if self.data.ndim != 3:
+            if self.data.ndim != 2:
+                raise ValueError("Must pass 2D or 3D data")
+            # make it 2D with zlevel
+            if zlevel == None:
+                zlevel = 0
+
+            # zeros
+            zs = np.full(self.data.shape[0], fill_value=zlevel, dtype=np.float32)
+
+            self.data = np.dstack([self.data[:, 0], self.data[:, 1], zs])[0]
 
         if size < 1.1:
             material = pygfx.LineThinMaterial

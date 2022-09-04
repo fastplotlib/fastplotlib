@@ -57,8 +57,6 @@ class Subplot:
         for arrow in self._axes.children:
             self._axes.remove(arrow)
 
-        self._axes.set_colors('r', 'g', 'b')
-
         self._grid: GridHelper = GridHelper(size=100, thickness=1)
 
         self._animate_funcs = list()
