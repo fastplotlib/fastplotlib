@@ -95,7 +95,11 @@ class Image(_Graphic):
 class Scatter(_Graphic):
     def __init__(self, data: np.ndarray, zlevel: float = None, size: int = 1, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(Scatter, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
-
+        
+        if self.data.ndim == 1:
+            # assume single 3D point
+            if not self.data.size == 3:
+                raise ValueError("If passing single you must specify all coordinates, i.e. x, y and z.")
         if self.data.shape[1] != 3:
             if self.data.shape[1] == 2:
                 # make it 2D with zlevel
