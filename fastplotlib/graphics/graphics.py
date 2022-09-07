@@ -96,17 +96,18 @@ class Scatter(_Graphic):
     def __init__(self, data: np.ndarray, zlevel: float = None, size: int = 1, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(Scatter, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
-        if self.data.ndim != 3:
-            if self.data.ndim != 2:
-                raise ValueError("Must pass 2D or 3D data")
-            # make it 2D with zlevel
-            if zlevel == None:
-                zlevel = 0
+        if self.data.shape[1] != 3:
+            if self.data.shape[1] == 2:
+                # make it 2D with zlevel
+                if zlevel == None:
+                    zlevel = 0
 
-            # zeros
-            zs = np.full(self.data.shape[0], fill_value=zlevel, dtype=np.float32)
+                # zeros
+                zs = np.full(self.data.shape[0], fill_value=zlevel, dtype=np.float32)
 
-            self.data = np.dstack([self.data[:, 0], self.data[:, 1], zs])[0]
+                self.data = np.dstack([self.data[:, 0], self.data[:, 1], zs])[0]
+            if self.data.shape[1] > 3 or self.data.shape[1] < 1:
+                raise ValueError("Must pass 2D or 3D data or a single point")
 
         self.world_object: pygfx.Group = pygfx.Group()
         self.points_objects: List[pygfx.Points] = list()
@@ -141,8 +142,8 @@ class Line(_Graphic):
     def __init__(self, data: np.ndarray, zlevel: float = None, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(Line, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
-        if self.data.ndim != 3:
-            if self.data.ndim != 2:
+        if self.data.shape[1] != 3:
+            if self.data.shape[1] != 2:
                 raise ValueError("Must pass 2D or 3D data")
             # make it 2D with zlevel
             if zlevel == None:
