@@ -100,7 +100,7 @@ class Scatter(_Graphic):
             # assume single 3D point
             if not self.data.size == 3:
                 raise ValueError("If passing single you must specify all coordinates, i.e. x, y and z.")
-        if self.data.shape[1] != 3:
+        elif self.data.shape[1] != 3:
             if self.data.shape[1] == 2:
                 # make it 2D with zlevel
                 if zlevel == None:
