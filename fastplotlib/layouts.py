@@ -1,5 +1,4 @@
 from itertools import product
-from functools import partial
 import numpy as np
 import pygfx
 from .defaults import camera_types, controller_types
@@ -139,6 +138,10 @@ class GridPlot:
 
     def show(self):
         self.canvas.request_draw(self.animate)
+
+        for subplot in self:
+            subplot.center_scene()
+
         return self.canvas
 
     def _get_iterator(self):
