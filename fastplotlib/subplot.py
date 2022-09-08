@@ -66,7 +66,7 @@ class Subplot:
 
         w, h = self.renderer.logical_size
 
-        spacing = 0  # spacing in pixels
+        spacing = 2  # spacing in pixels
 
         self.viewport.rect = [
             ((w / self.ncols) + ((j - 1) * (w / self.ncols))) + spacing,
@@ -89,19 +89,38 @@ class Subplot:
         self.scene.add(graphic.world_object)
 
         if center:
-            self.center_scene()
+            self.center_graphic(graphic)
 
-    def center_graphic(self):
-        pass
+    def _refresh_camera(self):
+        self.controller.update_camera(self.camera)
+        if sum(self.renderer.logical_size) > 0:
+            scene_lsize = self.viewport.rect[2], self.viewport.rect[3]
+        else:
+            scene_lsize = (1, 1)
+
+        self.camera.set_view_size(*scene_lsize)
+        self.camera.update_projection_matrix()
+
+    def center_graphic(self, graphic, zoom: float = 1.3):
+        if not isinstance(self.camera, pygfx.OrthographicCamera):
+            warn("`center_graphic()` not yet implemented for `PerspectiveCamera`")
+            return
+
+        self._refresh_camera()
+
+        self.controller.show_object(self.camera, graphic.world_object)
+
+        self.controller.zoom(zoom)
 
     def center_scene(self, zoom: float = 1.3):
+        if not len(self.scene.children) > 0:
+            return
+
         if not isinstance(self.camera, pygfx.OrthographicCamera):
             warn("`center_scene()` not yet implemented for `PerspectiveCamera`")
             return
 
-        self.controller.update_camera(self.camera)
-        self.camera.set_view_size(1, 1)
-        self.camera.update_projection_matrix()
+        self._refresh_camera()
 
         self.controller.show_object(self.camera, self.scene)
 

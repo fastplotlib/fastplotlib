@@ -1,5 +1,4 @@
 import pygfx
-from pygfx.linalg import Vector3
 from wgpu.gui.auto import WgpuCanvas
 from .subplot import Subplot
 from . import graphics
@@ -46,4 +45,6 @@ class Plot(Subplot):
 
     def show(self):
         self.canvas.request_draw(self.animate)
+        self.center_scene()
+
         return self.canvas
