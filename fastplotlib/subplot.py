@@ -1,11 +1,9 @@
-import numpy as np
 import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
-from pygfx.linalg import Vector3
-from .graphics import *
 from .defaults import camera_types, controller_types
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
+from warnings import warn
 
 
 class Subplot:
@@ -68,7 +66,7 @@ class Subplot:
 
         w, h = self.renderer.logical_size
 
-        spacing = 5  # spacing in pixels
+        spacing = 2  # spacing in pixels
 
         self.viewport.rect = [
             ((w / self.ncols) + ((j - 1) * (w / self.ncols))) + spacing,
@@ -87,43 +85,46 @@ class Subplot:
     def add_animations(self, funcs: List[callable]):
         self._animate_funcs += funcs
 
-    def add_graphic(self, graphic):
+    def add_graphic(self, graphic, center: bool = True):
         self.scene.add(graphic.world_object)
 
-        if isinstance(graphic, Image):
-            dims = graphic.data.shape
-            zero_pos = Vector3(dims[0] / 2, dims[1] / 2, self.camera.position.z)
-            delta = zero_pos.clone().sub(self.camera.position)
-            zoom_level = 1 / np.mean(dims)
-            if self.controller.zoom_value != zoom_level:
-                self.controller.zoom(zoom_level)
-            self.controller.pan(delta)
+        if center:
+            self.center_graphic(graphic)
 
-        elif isinstance(graphic, Scatter):
-            self.camera.show_object(graphic.world_object)
-            # centroid = np.mean(graphic.data, axis=0).tolist()
-            # zero_pos = Vector3(*centroid)
-            # delta = zero_pos.clone().sub(self.camera.position)
-            # zoom_level = 1 / np.mean(graphic.data)
-            # if self.controller.zoom_value != zoom_level:
-            #     self.controller.zoom(zoom_level)
-            # self.controller.pan(delta)
+    def _refresh_camera(self):
+        self.controller.update_camera(self.camera)
+        if sum(self.renderer.logical_size) > 0:
+            scene_lsize = self.viewport.rect[2], self.viewport.rect[3]
+        else:
+            scene_lsize = (1, 1)
 
-    def center_scene(self, zoom_padding: float = 0.0):
-        bsphere = self.scene.get_world_bounding_sphere()
-        target, distance = Vector3(*bsphere[:-1]), bsphere[-1]
+        self.camera.set_view_size(*scene_lsize)
+        self.camera.update_projection_matrix()
 
-        # this seems to work, not entirely sure why
-        txy = max(target.x, target.y)
-        txy = txy - (txy * zoom_padding)
-        target_zoom = (txy / distance) / distance
+    def center_graphic(self, graphic, zoom: float = 1.3):
+        if not isinstance(self.camera, pygfx.OrthographicCamera):
+            warn("`center_graphic()` not yet implemented for `PerspectiveCamera`")
+            return
 
-        zoom_factor = target_zoom / self.controller.zoom_value
+        self._refresh_camera()
 
-        curr = self.camera.position
-        delta = target.clone().sub(curr)
-        self.controller.pan(delta)
-        self.controller.zoom(zoom_factor)
+        self.controller.show_object(self.camera, graphic.world_object)
+
+        self.controller.zoom(zoom)
+
+    def center_scene(self, zoom: float = 1.3):
+        if not len(self.scene.children) > 0:
+            return
+
+        if not isinstance(self.camera, pygfx.OrthographicCamera):
+            warn("`center_scene()` not yet implemented for `PerspectiveCamera`")
+            return
+
+        self._refresh_camera()
+
+        self.controller.show_object(self.camera, self.scene)
+
+        self.controller.zoom(zoom)
 
     def set_axes_visibility(self, visible: bool):
         if visible:
