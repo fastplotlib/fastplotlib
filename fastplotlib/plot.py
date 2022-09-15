@@ -33,7 +33,7 @@ class Plot(Subplot):
 
     def _create_graphic(self, graphic_class, *args, **kwargs):
         graphic = graphic_class(*args, **kwargs)
-        super(Plot, self).add_graphic(graphic)
+        super(Plot, self).add_graphic(graphic, center=False)
 
         return graphic
 
