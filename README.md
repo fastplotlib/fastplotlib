@@ -6,7 +6,7 @@ A fast plotting library built using the `pygfx` render engine that can use [Vulk
 Checkout pygfx!
 https://github.com/pygfx/pygfx
 
-`fastplotlib` is very experimental but you're welcome to try it out or contribute!
+`fastplotlib` is in the alpha stage and experimental but you're welcome to try it out or contribute!
 
 Questions, ideas? Chat on gitter: https://gitter.im/fastplotlib/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link 
 
@@ -49,28 +49,23 @@ plot.show()
 
 # Installation
 
-Install directly from GitHub until I stabilize things.
-
-```bash
-pip install git+https://github.com/kushalkolar/fastplotlib.git
-```
-
-Don't install from PYPI (I had to take the name `fastplotlib` before someone else did).
-
-You will need a GPU that supports Vulkan (iGPUs in CPUs should be fine). 
-Generally if your GPU is from 2017 or later it should support Vulkan.
-
-## For development
+Install directly from GitHub.
 
 ```bash
 git clone https://github.com/kushalkolar/fastplotlib.git
 cd fastplotlib
+pip install -r requirements.txt
 pip install -e .
 
 # try the examples
 cd examples
 jupyter lab
 ```
+
+Don't install from PYPI, `fastplotlib` is in the alpha stage, the pip package is not regularly updated yet.
+
+You will need a GPU that supports Vulkan (iGPUs in CPUs should be fine). 
+Generally if your GPU is from 2017 or later it should support Vulkan.
 
 ## Install Vulkan drivers and other stuff
 
