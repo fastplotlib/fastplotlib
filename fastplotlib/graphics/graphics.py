@@ -16,13 +16,16 @@ class _Graphic:
         self.data = data.astype(np.float32)
         self.colors = None
 
-        if colors_length is None:
-            colors_length = self.data.shape[0]
+        # if colors_length is None:
+        #     colors_length = self.data.shape[0]
 
         if colors is not False:
             self._set_colors(colors, colors_length, cmap, alpha, )
 
     def _set_colors(self, colors, colors_length, cmap, alpha):
+        if colors_length is None:
+            colors_length = self.data.shape[0]
+
         if colors is None and cmap is None:  # just white
             self.colors = np.vstack([[1., 1., 1., 1.]] * colors_length).astype(np.float32)
 
@@ -31,9 +34,11 @@ class _Graphic:
 
         elif (colors is not None) and (cmap is None):
             # assume it's already an RGBA array
-            if colors.ndim == 2 and colors.shape[1] == 4 and colors.shape[0] == colors_length:
+            colors = np.array(colors)
+            if colors.shape == (1, 4) or colors.shape == (4,):
+                self.colors = np.vstack([colors] * colors_length).astype(np.float32)
+            elif colors.ndim == 2 and colors.shape[1] == 4 and colors.shape[0] == colors_length:
                 self.colors = colors.astype(np.float32)
-
             else:
                 raise ValueError(f"Colors array must have ndim == 2 and shape of [<n_datapoints>, 4]")
 
@@ -170,10 +175,16 @@ class Line(_Graphic):
             material=material(thickness=size, vertex_colors=True)
         )
 
-    def update_data(self, data: Any):
+    def update_data(self, data: np.ndarray):
         self.data = data.astype(np.float32)
         self.world_object.geometry.positions.data[:] = self.data
         self.world_object.geometry.positions.update_range()
+
+    def update_colors(self, colors: np.ndarray):
+        super(Line, self)._set_colors(colors=colors, colors_length=self.data.shape[0], cmap=None, alpha=None)
+
+        self.world_object.geometry.colors.data[:] = self.colors
+        self.world_object.geometry.colors.update_range()
 
 
 class _HistogramBin(pygfx.Mesh):
