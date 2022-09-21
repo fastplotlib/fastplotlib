@@ -12,7 +12,7 @@ Questions, ideas? Chat on gitter: https://gitter.im/fastplotlib/community?utm_so
 
 # Examples
 
-See the examples dir. Start out with `simple.ipynb` which uses the high level API.
+**See the examples directory. Start out with `simple.ipynb` which uses the high level API.**
 
 ### Simple image plot
 ```python
@@ -21,7 +21,7 @@ import numpy as np
 
 plot = Plot()
 
-data = (np.random.rand(512, 512) * 255).astype(np.float32)
+data = np.random.rand(512, 512) * 255
 plot.image(data=data,  vmin=0, vmax=255, cmap='viridis')
 
 plot.show()
@@ -34,11 +34,11 @@ import numpy as np
 
 plot = Plot()
 
-data = (np.random.rand(512, 512) * 255).astype(np.float32)
+data = np.random.rand(512, 512) * 255
 image = plot.image(data=data,  vmin=0, vmax=255, cmap='viridis')
 
 def update_data():
-    new_data = (np.random.rand(512, 512) * 255).astype(np.float32)
+    new_data = np.random.rand(512, 512) * 255
     image.update_data(new_data)
 
 plot.add_animations([update_data])
