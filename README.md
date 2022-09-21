@@ -46,10 +46,28 @@ plot.add_animations([update_data])
 plot.show()
 ```
 
-
 # Installation
 
-Install directly from GitHub.
+`fastplotlib` is available as a `pip` package
+
+```bash
+pip install fastplotlib
+```
+
+Clone or download the repo to try the examples
+
+```bash
+# clone the repo
+git clone https://github.com/kushalkolar/fastplotlib.git
+
+# cd into examples and launch jupyter lab
+cd fastplotlib/examples
+jupyter lab
+```
+
+You will need a GPU that supports Vulkan (iGPUs in CPUs should be fine). Generally if your GPU is from 2017 or later it should support Vulkan. See the section on "Install Vulkan drivers" below for more information.
+
+### For Development
 
 ```bash
 git clone https://github.com/kushalkolar/fastplotlib.git
@@ -62,12 +80,7 @@ cd examples
 jupyter lab
 ```
 
-Don't install from PYPI, `fastplotlib` is in the alpha stage, the pip package is not regularly updated yet.
-
-You will need a GPU that supports Vulkan (iGPUs in CPUs should be fine). 
-Generally if your GPU is from 2017 or later it should support Vulkan.
-
-## Install Vulkan drivers and other stuff
+## Install Vulkan drivers
 
 For more information see: https://github.com/pygfx/wgpu-py#platform-requirements
 
@@ -87,6 +100,8 @@ For other distros install the appropriate vulkan driver package.
 
 ### Mac OSX:
 You will need at least MacOSX v10.13, not sure how to install Vulkan drivers on Mac. If anyone knows you can add instructions here!
+
+# Gallery
 
 ### Extremely fast image updates, 5 x 5 gridplot
 
