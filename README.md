@@ -48,11 +48,13 @@ plot.show()
 
 # Installation
 
-`fastplotlib` is available as a `pip` package
+Install directly from GitHub using `pip`.
 
 ```bash
-pip install fastplotlib
+pip install git+https://github.com/kushalkolar/fastplotlib.git
 ```
+
+Note: do not download the version that is currently on PYPI (i.e. don't just do `pip install fastplotlib`, it is outdated (we're waiting for the next release of `pygfx`)
 
 Clone or download the repo to try the examples
 
