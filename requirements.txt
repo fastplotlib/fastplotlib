@@ -1,5 +1,4 @@
 numpy
-pygfx
 jupyterlab
 jupyter_rfb
 jupyterlab-widgets==1.1.1
