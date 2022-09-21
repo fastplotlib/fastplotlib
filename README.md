@@ -83,10 +83,10 @@ sudo apt install mesa-vulkan-drivers
 sudo apt install libjpeg-turbo
 ```
 
-For other distros use Google to find the appropriate vulkan driver package
+For other distros install the appropriate vulkan driver package.
 
 ### Mac OSX:
-You will need at least MacOSX v10.13, not sure how to install Vulkan drivers on Mac but you can probably find instructions on the internet.
+You will need at least MacOSX v10.13, not sure how to install Vulkan drivers on Mac. If anyone knows you can add instructions here!
 
 ### Extremely fast image updates, 5 x 5 gridplot
 
