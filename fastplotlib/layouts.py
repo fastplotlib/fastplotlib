@@ -7,6 +7,12 @@ from typing import *
 from wgpu.gui.auto import WgpuCanvas
 
 
+class GridPlotIndexer():
+    def __init__(self):
+        self.name: str = None
+        self.index: tuple = None
+
+
 class GridPlot:
     def __init__(
             self,
@@ -48,6 +54,16 @@ class GridPlot:
             pygfx renderer instance
         """
         self.shape = shape
+
+        positions = list()
+        for x in range(self.shape[0]):
+            for y in range(self.shape[1]):
+                positions.append((x, y))
+
+        self.indexers = list()
+        for i in range(self.shape[0] * self.shape[1]):
+            self.indexers.append(GridPlotIndexer())
+            self.indexers[i].index = positions[i]
 
         if type(cameras) is str:
             if cameras not in ["2d", "3d"]:
