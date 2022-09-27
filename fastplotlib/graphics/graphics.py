@@ -2,6 +2,7 @@ import numpy as np
 import pygfx
 from typing import *
 from ..utils import get_cmap_texture, get_colors, map_labels_to_colors, quick_min_max
+from warnings import warn
 
 
 class _Graphic:
@@ -228,6 +229,12 @@ class Histogram(_Graphic):
         bin_width = (draw_scale_factor / n_bins) * draw_bin_width_scale
 
         self.hist = self.hist.astype(np.float32)
+
+        for bad_val in [np.nan, np.inf, -np.inf]:
+            if bad_val in self.hist:
+                warn(f"Problematic value <{bad_val}> found in histogram, replacing with zero")
+                self.hist[self.hist == bad_val] = 0
+
         data = np.vstack([x_positions_bins, self.hist])
 
         super(Histogram, self).__init__(data=data, colors=colors, colors_length=n_bins)
