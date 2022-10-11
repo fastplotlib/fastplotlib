@@ -152,6 +152,7 @@ class Line(_Graphic):
     def __init__(self, data: np.ndarray, zlevel: float = None, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(Line, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
+        # TODO: perform data dim verfication in `_Graphic` or a decorator
         if self.data.shape[1] != 3:
             if self.data.shape[1] != 2:
                 raise ValueError("Must pass 2D or 3D data")
@@ -183,6 +184,61 @@ class Line(_Graphic):
 
     def update_colors(self, colors: np.ndarray):
         super(Line, self)._set_colors(colors=colors, colors_length=self.data.shape[0], cmap=None, alpha=None)
+
+        self.world_object.geometry.colors.data[:] = self.colors
+        self.world_object.geometry.colors.update_range()
+
+
+class Polyhedron(_Graphic):
+    def __init__(
+            self, data: np.ndarray,
+            zlevel: float = None,
+            edge_thickness: int = 1.0,
+            colors: np.ndarray = None,
+            cmap: str = None,
+            *args, **kwargs
+    ):
+        super(Polyhedron, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
+
+        if self.data.shape[1] != 3:
+            if self.data.shape[1] != 2:
+                raise ValueError("Must pass 2D or 3D data")
+            # make it 2D with zlevel
+            if zlevel == None:
+                zlevel = 0
+
+            # zeros
+            zs = np.full(self.data.shape[0], fill_value=zlevel, dtype=np.float32)
+
+            self.data = np.dstack([self.data[:, 0], self.data[:, 1], zs])[0]
+
+        # use wireframe
+        if (self.colors[:, -1] == 0).all():
+            wireframe = True
+            self.colors[:, -1] = 1.0
+        else:
+            wireframe = False
+
+        material = pygfx.MeshBasicMaterial(
+            wireframe=wireframe,
+            wireframe_thickness=edge_thickness,
+            side="FRONT",
+            vertex_colors=True
+        )
+
+        self.indices = np.arange(self.data.size, dtype=np.int32).reshape(-1, 3)
+
+        geometry = pygfx.Geometry(indices=self.indices, positions=self.data, colors=self.colors)
+
+        self.world_object = pygfx.Mesh(geometry=geometry, material=material)
+
+    def update_data(self, data: np.ndarray):
+        self.data = data.astype(np.float32)
+        self.world_object.geometry.positions.data[:] = self.data
+        self.world_object.geometry.positions.update_range()
+
+    def update_colors(self, colors: np.ndarray, cmap: str = None, alpha: float = None):
+        super(Polyhedron, self)._set_colors(colors=colors, colors_length=self.data.shape[0], cmap=cmap, alpha=alpha)
 
         self.world_object.geometry.colors.data[:] = self.colors
         self.world_object.geometry.colors.update_range()

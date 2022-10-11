@@ -1,2 +1,2 @@
-from .graphics import Image, Scatter, Line, Histogram
-__all__ = ["Image", "Scatter", "Line", "Histogram"]
+from .graphics import Image, Scatter, Line, Polyhedron, Histogram
+__all__ = ["Image", "Scatter", "Line", "Polyhedron", "Histogram"]
