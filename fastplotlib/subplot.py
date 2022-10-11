@@ -61,6 +61,26 @@ class Subplot:
 
         self.renderer.add_event_handler(self._produce_rect, "resize")
 
+        self.sub_viewports: Dict[str, Dict[str, Union[pygfx.Viewport, int]]] = dict()
+
+        # self.add_sub_viewport("right", size=60)
+
+    def add_sub_viewport(self, position: str, size: int):
+        # TODO: Generalize to all directions
+        valid_positions = ["right"]  # only support right for now
+        if position not in valid_positions:
+            raise ValueError(f"`position` argument must be one of {valid_positions}")
+
+        if position in self.sub_viewports.keys():
+            raise KeyError(f"sub_viewport already exists at position: {position}")
+
+        self.sub_viewports[position] = {"viewport": pygfx.Viewport(self.renderer)}
+        self.sub_viewports[position]["size"] = size
+
+        # TODO: add camera and controller to sub_viewports
+        # self.sub_viewports[position]['camera']
+        # self.sub_viewports[position]['controller']
+
     def _produce_rect(self, *args):#, w, h):
         i, j = self.position
 
@@ -71,13 +91,24 @@ class Subplot:
         self.viewport.rect = [
             ((w / self.ncols) + ((j - 1) * (w / self.ncols))) + spacing,
             ((h / self.nrows) + ((i - 1) * (h / self.nrows))) + spacing,
-            (w / self.ncols) - spacing,
+            (w / self.ncols) - spacing - self.sub_viewports["right"]["size"],
             (h / self.nrows) - spacing
         ]
+
+        # TODO: Generalize to all directions
+        for svp in self.sub_viewports.keys():
+            self.sub_viewports["right"]["viewport"].rect = [
+                (w / self.ncols) - self.sub_viewports["right"]["size"],
+                ((h / self.nrows) + ((i - 1) * (h / self.nrows))) + spacing,
+                (w / self.ncols) - spacing,
+                (h / self.nrows) - spacing
+            ]
 
     def animate(self, canvas_dims: Tuple[int, int] = None):
         self.controller.update_camera(self.camera)
         self.viewport.render(self.scene, self.camera)
+
+        # self.sub_viewports["right"]["viewport"].render()
 
         for f in self._animate_funcs:
             f()
