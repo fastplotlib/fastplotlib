@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 import pygfx
 
-from fastplotlib.graphics._base import Graphic
+from ._base import Graphic
 
 
 class Scatter(Graphic):

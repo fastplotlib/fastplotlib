@@ -1,7 +1,7 @@
 import numpy as np
 import pygfx
 
-from fastplotlib.graphics._base import Graphic
+from ._base import Graphic
 
 
 class Line(Graphic):

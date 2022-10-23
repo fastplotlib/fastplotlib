@@ -3,8 +3,8 @@ from typing import Tuple
 import numpy as np
 import pygfx
 
-from fastplotlib.graphics._base import Graphic
-from fastplotlib.utils import quick_min_max, get_cmap_texture
+from ._base import Graphic
+from ..utils import quick_min_max, get_cmap_texture
 
 
 class Image(Graphic):

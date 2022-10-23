@@ -4,7 +4,7 @@ from typing import Union, Dict
 import numpy as np
 import pygfx
 
-from fastplotlib.graphics._base import Graphic
+from ._base import Graphic
 
 
 class _HistogramBin(pygfx.Mesh):
