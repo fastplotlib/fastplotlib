@@ -124,11 +124,13 @@ class GridPlot:
         self._animate_funcs: List[callable] = list()
         self._current_iter = None
 
-    def __getitem__(self, index: tuple):
-        return self.indexers[index[0], index[1]].name
-
-    def __setitem__(self, index: tuple, name: str):
-        self.indexers[index[0], index[1]].name = name
+    def __getitem__(self, index: Union[tuple[int, int], str]):
+        if type(index) == str:
+            for indexer in self.indexers:
+                if indexer.name == index:
+                    return indexer
+        else:
+            return self.indexers[index[0], index[1]]
 
     def animate(self):
         for subplot in self:
