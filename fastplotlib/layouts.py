@@ -79,8 +79,8 @@ class GridPlot:
 
         if "names" in kwargs.keys():
             self.names = kwargs["names"]
-            if type(self.names) != list:
-                raise ValueError("names must be passed in as a list of lists")
+            if self.names.shape != self.shape:
+                raise ValueError
         else:
             self.names = None
 
@@ -130,7 +130,7 @@ class GridPlot:
 
     def __getitem__(self, index: Union[Tuple[int, int], str]):
         if type(index) == str:
-            for subplot in np.concatenate(self._subplots):
+            for subplot in self._subplots.ravel():
                 if subplot.name == index:
                     return subplot
         else:
