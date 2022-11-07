@@ -23,9 +23,9 @@ def create_camera(camera_type: str, big_camera: bool = False) -> Union[pygfx.Ort
 
     if cls is pygfx.OrthographicCamera:
         if big_camera:
-            return cls(1024, 1024)
-        else:
             return cls(1024, 1024, -8192, 8192)
+        else:
+            return cls(1024, 1024)
 
     else:
         return cls()
