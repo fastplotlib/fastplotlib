@@ -1,6 +1,6 @@
 import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
-from .defaults import create_camera, controller_types
+from .defaults import create_camera, create_controller
 from .graphics import Heatmap
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
@@ -41,7 +41,7 @@ class Subplot:
         self.camera: Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera] = create_camera(camera)
 
         if controller is None:
-            controller = controller_types[camera]()
+            controller = create_controller(camera)
         self.controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = controller
 
         # might be better as an attribute of GridPlot
