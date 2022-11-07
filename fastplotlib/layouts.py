@@ -89,7 +89,7 @@ class GridPlot:
 
         nrows, ncols = self.shape
 
-        self.subplots: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
+        self._subplots: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
         # self.viewports: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
 
         self._controllers: List[pygfx.PanZoomController] = [
@@ -115,7 +115,7 @@ class GridPlot:
             else:
                 name = None
 
-            self.subplots[i, j] = Subplot(
+            self._subplots[i, j] = Subplot(
                 position=position,
                 parent_dims=(nrows, ncols),
                 camera=camera,
@@ -130,11 +130,11 @@ class GridPlot:
 
     def __getitem__(self, index: Union[Tuple[int, int], str]):
         if type(index) == str:
-            for subplot in np.concatenate(self.subplots):
+            for subplot in np.concatenate(self._subplots):
                 if subplot.name == index:
                     return subplot
         else:
-            return self.subplots[index[0], index[1]]
+            return self._subplots[index[0], index[1]]
 
     def animate(self):
         for subplot in self:
@@ -166,4 +166,4 @@ class GridPlot:
 
     def __next__(self) -> Subplot:
         pos = self._current_iter.__next__()
-        return self.subplots[pos]
+        return self._subplots[pos]
