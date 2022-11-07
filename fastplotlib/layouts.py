@@ -79,6 +79,8 @@ class GridPlot:
 
         if "names" in kwargs.keys():
             self.names = kwargs["names"]
+            if type(self.names) != list:
+                raise ValueError("names must be passed in as a list of lists")
         else:
             self.names = None
 
@@ -103,15 +105,13 @@ class GridPlot:
 
             self._controllers[controllers == controller] = controller_types[cam[0]]()
 
-        h = 0
         for i, j in self._get_iterator():
             position = (i, j)
             camera = cameras[i, j]
             controller = self._controllers[i, j]
 
             if self.names is not None:
-                name = self.names[h]
-                h += 1
+                name = self.names[i][j]
             else:
                 name = None
 
