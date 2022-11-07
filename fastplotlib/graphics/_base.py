@@ -13,10 +13,13 @@ class Graphic:
             colors: np.ndarray = None,
             colors_length: int = None,
             cmap: str = None,
-            alpha: float = 1.0
+            alpha: float = 1.0,
+            name: str = None
     ):
         self.data = data.astype(np.float32)
         self.colors = None
+
+        self.name = name
 
         # if colors_length is None:
         #     colors_length = self.data.shape[0]

@@ -1,7 +1,6 @@
 import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
 from .defaults import camera_types, controller_types
-from .graphics import Heatmap
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
@@ -20,6 +19,8 @@ class Subplot:
             **kwargs
     ):
         self.scene: pygfx.Scene = pygfx.Scene()
+
+        self._graphics = list()
 
         if canvas is None:
             canvas = WgpuCanvas()
@@ -94,11 +95,12 @@ class Subplot:
         self._animate_funcs += funcs
 
     def add_graphic(self, graphic, center: bool = True):
-        self.scene.add(graphic.world_object)
+        for _graphic in self._graphics:
+            if _graphic.name == graphic.name:
+                raise ValueError("graphics must have unique names")
+        self._graphics.append(graphic)
 
-        if isinstance(graphic, Heatmap):
-            # so that the data coordinates in the numpy array match the scene coordinates
-            self.controller.scale.y = copysign(self.controller.scale.y, -1)
+        self.scene.add(graphic.world_object)
 
         if center:
             self.center_graphic(graphic)
@@ -152,3 +154,12 @@ class Subplot:
 
     def remove_graphic(self, graphic):
         self.scene.remove(graphic.world_object)
+
+    def get_graphics(self):
+        return self._graphics
+
+    def __getitem__(self, name: str):
+        for graphic in self._graphics:
+            if graphic.name == name:
+                return graphic
+        raise ValueError("no graphic of given name")
