@@ -1,9 +1,11 @@
 import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
 from .defaults import camera_types, controller_types
+from .graphics import Heatmap
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
+from math import copysign
 
 
 class Subplot:
@@ -87,6 +89,10 @@ class Subplot:
 
     def add_graphic(self, graphic, center: bool = True):
         self.scene.add(graphic.world_object)
+
+        if isinstance(graphic, Heatmap):
+            # so that the data coordinates in the numpy array match the scene coordinates
+            self.controller.scale.y = copysign(self.controller.scale.y, -1)
 
         if center:
             self.center_graphic(graphic)
