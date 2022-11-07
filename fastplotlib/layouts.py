@@ -7,12 +7,6 @@ from typing import *
 from wgpu.gui.auto import WgpuCanvas
 
 
-class GridPlotIndexer:
-    def __init__(self, position):
-        self.name: str = None
-        self.index = position
-
-
 class GridPlot:
     def __init__(
             self,
@@ -21,6 +15,7 @@ class GridPlot:
             controllers: Union[np.ndarray, str] = None,
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
+            **kwargs
     ):
         """
         Parameters
@@ -82,6 +77,11 @@ class GridPlot:
         if renderer is None:
             renderer = pygfx.renderers.WgpuRenderer(canvas)
 
+        if "names" in kwargs.keys():
+            self.names = kwargs["names"]
+        else:
+            self.names = None
+
         self.canvas = canvas
         self.renderer = renderer
 
@@ -89,8 +89,6 @@ class GridPlot:
 
         self.subplots: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
         # self.viewports: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
-
-        self.indexers = np.ndarray(shape=(nrows, ncols), dtype=object)
 
         self._controllers: List[pygfx.PanZoomController] = [
             pygfx.PanZoomController() for i in range(np.unique(controllers).size)
@@ -105,10 +103,17 @@ class GridPlot:
 
             self._controllers[controllers == controller] = controller_types[cam[0]]()
 
+        h = 0
         for i, j in self._get_iterator():
             position = (i, j)
             camera = cameras[i, j]
             controller = self._controllers[i, j]
+
+            if self.names is not None:
+                name = self.names[h]
+                h += 1
+            else:
+                name = None
 
             self.subplots[i, j] = Subplot(
                 position=position,
@@ -116,21 +121,20 @@ class GridPlot:
                 camera=camera,
                 controller=controller,
                 canvas=canvas,
-                renderer=renderer
+                renderer=renderer,
+                name=name
             )
-
-            self.indexers[i, j] = GridPlotIndexer((i,j))
 
         self._animate_funcs: List[callable] = list()
         self._current_iter = None
 
-    def __getitem__(self, index: Union[tuple[int, int], str]):
+    def __getitem__(self, index: Union[Tuple[int, int], str]):
         if type(index) == str:
-            for indexer in self.indexers:
-                if indexer.name == index:
-                    return indexer
+            for subplot in np.concatenate(self.subplots):
+                if subplot.name == index:
+                    return subplot
         else:
-            return self.indexers[index[0], index[1]]
+            return self.subplots[index[0], index[1]]
 
     def animate(self):
         for subplot in self:

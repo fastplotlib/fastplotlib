@@ -16,7 +16,8 @@ class Subplot:
             camera: str = '2d',
             controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None,
             canvas: WgpuCanvas = None,
-            renderer: pygfx.Renderer = None
+            renderer: pygfx.Renderer = None,
+            **kwargs
     ):
         self.scene: pygfx.Scene = pygfx.Scene()
 
@@ -28,6 +29,11 @@ class Subplot:
 
         self.canvas = canvas
         self.renderer = renderer
+
+        if "name" in kwargs.keys():
+            self.name = kwargs["name"]
+        else:
+            self.name = None
 
         if position is None:
             position = (0, 0)
