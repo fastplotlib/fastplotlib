@@ -111,7 +111,7 @@ class GridPlot:
             controller = self._controllers[i, j]
 
             if self.names is not None:
-                name = self.names[i][j]
+                name = self.names[i, j]
             else:
                 name = None
 

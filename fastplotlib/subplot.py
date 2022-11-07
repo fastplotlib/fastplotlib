@@ -100,8 +100,7 @@ class Subplot:
             graphic_names.append(g.name)
 
         if graphic.name in graphic_names:
-            print(graphic_names)
-            raise ValueError("graphics must have unique names")
+            raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
 
         self._graphics.append(graphic)
         self.scene.add(graphic.world_object)
@@ -166,10 +165,8 @@ class Subplot:
         for graphic in self._graphics:
             if graphic.name == name:
                 return graphic
+        
         graphic_names = list()
-
         for g in self._graphics:
             graphic_names.append(g.name)
-        print("the graphics that currently exist are: ")
-        print(graphic_names)
-        raise ValueError("no graphic of given name")
+        raise ValueError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
