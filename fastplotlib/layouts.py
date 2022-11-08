@@ -8,6 +8,16 @@ from wgpu.gui.auto import WgpuCanvas
 from ipywidgets import GridspecLayout, Textarea
 
 
+def to_array(a) -> np.ndarray:
+    if isinstance(a, np.ndarray):
+        return a
+
+    if not isinstance(a, list):
+        raise TypeError("must pass list or numpy array")
+
+    return np.array(a)
+
+
 class GridPlot:
     def __init__(
             self,
