@@ -165,8 +165,8 @@ class Subplot:
         for graphic in self._graphics:
             if graphic.name == name:
                 return graphic
-        
+
         graphic_names = list()
         for g in self._graphics:
             graphic_names.append(g.name)
-        raise ValueError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
+        raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
