@@ -133,8 +133,7 @@ class GridPlot:
             for subplot in self._subplots.ravel():
                 if subplot.name == index:
                     return subplot
-                else:
-                    raise IndexError("no subplot with given name")
+            raise IndexError("no subplot with given name")
         else:
             return self._subplots[index[0], index[1]]
 
