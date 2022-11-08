@@ -15,6 +15,7 @@ class GridPlot:
             controllers: Union[np.ndarray, str] = None,
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
+            **kwargs
     ):
         """
         Parameters
@@ -76,12 +77,19 @@ class GridPlot:
         if renderer is None:
             renderer = pygfx.renderers.WgpuRenderer(canvas)
 
+        if "names" in kwargs.keys():
+            self.names = kwargs["names"]
+            if self.names.shape != self.shape:
+                raise ValueError
+        else:
+            self.names = None
+
         self.canvas = canvas
         self.renderer = renderer
 
         nrows, ncols = self.shape
 
-        self.subplots: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
+        self._subplots: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
         # self.viewports: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
 
         self._controllers: List[pygfx.PanZoomController] = [
@@ -102,17 +110,32 @@ class GridPlot:
             camera = cameras[i, j]
             controller = self._controllers[i, j]
 
-            self.subplots[i, j] = Subplot(
+            if self.names is not None:
+                name = self.names[i, j]
+            else:
+                name = None
+
+            self._subplots[i, j] = Subplot(
                 position=position,
                 parent_dims=(nrows, ncols),
                 camera=camera,
                 controller=controller,
                 canvas=canvas,
-                renderer=renderer
+                renderer=renderer,
+                name=name
             )
 
         self._animate_funcs: List[callable] = list()
         self._current_iter = None
+
+    def __getitem__(self, index: Union[Tuple[int, int], str]):
+        if type(index) == str:
+            for subplot in self._subplots.ravel():
+                if subplot.name == index:
+                    return subplot
+            raise IndexError("no subplot with given name")
+        else:
+            return self._subplots[index[0], index[1]]
 
     def animate(self):
         for subplot in self:
@@ -144,4 +167,4 @@ class GridPlot:
 
     def __next__(self) -> Subplot:
         pos = self._current_iter.__next__()
-        return self.subplots[pos]
+        return self._subplots[pos]

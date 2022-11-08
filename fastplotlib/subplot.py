@@ -4,6 +4,7 @@ from .defaults import camera_types, controller_types
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
+from math import copysign
 
 
 class Subplot:
@@ -14,9 +15,12 @@ class Subplot:
             camera: str = '2d',
             controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None,
             canvas: WgpuCanvas = None,
-            renderer: pygfx.Renderer = None
+            renderer: pygfx.Renderer = None,
+            **kwargs
     ):
         self.scene: pygfx.Scene = pygfx.Scene()
+
+        self._graphics = list()
 
         if canvas is None:
             canvas = WgpuCanvas()
@@ -26,6 +30,11 @@ class Subplot:
 
         self.canvas = canvas
         self.renderer = renderer
+
+        if "name" in kwargs.keys():
+            self.name = kwargs["name"]
+        else:
+            self.name = None
 
         if position is None:
             position = (0, 0)
@@ -86,6 +95,14 @@ class Subplot:
         self._animate_funcs += funcs
 
     def add_graphic(self, graphic, center: bool = True):
+        graphic_names = list()
+        for g in self._graphics:
+            graphic_names.append(g.name)
+
+        if graphic.name in graphic_names:
+            raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
+
+        self._graphics.append(graphic)
         self.scene.add(graphic.world_object)
 
         if center:
@@ -140,3 +157,16 @@ class Subplot:
 
     def remove_graphic(self, graphic):
         self.scene.remove(graphic.world_object)
+
+    def get_graphics(self):
+        return self._graphics
+
+    def __getitem__(self, name: str):
+        for graphic in self._graphics:
+            if graphic.name == name:
+                return graphic
+
+        graphic_names = list()
+        for g in self._graphics:
+            graphic_names.append(g.name)
+        raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
