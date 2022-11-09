@@ -170,3 +170,13 @@ class Subplot:
         for g in self._graphics:
             graphic_names.append(g.name)
         raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
+
+    def __repr__(self):
+        print("Fastplotlib Subplot\n")
+        if self.name is not None:
+            print("Subplot Name: " + self.name + "\n")
+        print("Graphics:\n------------------------------------------------------------------------")
+        for graphic in self.get_graphics():
+            print(graphic)
+            print("------------------------------------------------------------------------")
+        return ""

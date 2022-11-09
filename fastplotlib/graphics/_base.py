@@ -68,6 +68,7 @@ class Graphic:
             print("Graphic Location: " + hex(id(self)) + "\n")
         else:
             print("Graphic Location: " + hex(id(self)) + "\n")
+        print("Data:\n")
         print(self.data)
         return ""
 
