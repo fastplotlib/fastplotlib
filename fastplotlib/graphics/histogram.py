@@ -22,7 +22,8 @@ class Histogram(Graphic):
             pre_computed: Dict[str, np.ndarray] = None,
             colors: np.ndarray = None,
             draw_scale_factor: float = 100.0,
-            draw_bin_width_scale: float = 1.0
+            draw_bin_width_scale: float = 1.0,
+            **kwargs
     ):
 
         if pre_computed is None:
@@ -56,7 +57,7 @@ class Histogram(Graphic):
 
         data = np.vstack([x_positions_bins, self.hist])
 
-        super(Histogram, self).__init__(data=data, colors=colors, colors_length=n_bins)
+        super(Histogram, self).__init__(data=data, colors=colors, colors_length=n_bins, **kwargs)
 
         self.world_object: pygfx.Group = pygfx.Group()
 
@@ -73,3 +74,14 @@ class Histogram(Graphic):
             hist_bin_graphic.frequency = y_val
 
             self.world_object.add(hist_bin_graphic)
+
+    def __repr__(self):
+        print("Fastplotlib Graphic: Histogram\n")
+        if self.name is not None:
+            print("Name: " + self.name + "\n")
+            print("Location: " + hex(id(self)) + "\n")
+        else:
+            print("Location: " + hex(id(self)) + "\n")
+        print(self.data)
+        return ""
+

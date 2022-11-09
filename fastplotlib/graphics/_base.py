@@ -61,3 +61,4 @@ class Graphic:
 
     def update_data(self, data: Any):
         pass
+

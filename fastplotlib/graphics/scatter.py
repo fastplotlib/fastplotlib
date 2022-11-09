@@ -54,3 +54,13 @@ class Scatter(Graphic):
 
         self.points_objects[0].geometry.positions.data[:] = positions
         self.points_objects[0].geometry.positions.update_range(positions.shape[0])
+
+    def __repr__(self):
+        print("Fastplotlib Graphic: Scatter\n")
+        if self.name is not None:
+            print("Graphic Name: " + self.name + "\n")
+            print("Graphic Location: " + hex(id(self)) + "\n")
+        else:
+            print("Graphic Location: " + hex(id(self)) + "\n")
+        print(self.data)
+        return ""
