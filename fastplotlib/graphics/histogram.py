@@ -77,11 +77,6 @@ class Histogram(Graphic):
 
     def __repr__(self):
         print("Fastplotlib Graphic: Histogram\n")
-        if self.name is not None:
-            print("Name: " + self.name + "\n")
-            print("Location: " + hex(id(self)) + "\n")
-        else:
-            print("Location: " + hex(id(self)) + "\n")
-        print(self.data)
+        Graphic.__repr__(self)
         return ""
 

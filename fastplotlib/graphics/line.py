@@ -56,10 +56,5 @@ class Line(Graphic):
 
     def __repr__(self):
         print("Fastplotlib Graphic: Line\n")
-        if self.name is not None:
-            print("Graphic Name: " + self.name + "\n")
-            print("Graphic Location: " + hex(id(self)) + "\n")
-        else:
-            print("Graphic Location: " + hex(id(self)) + "\n")
-        print(self.data)
+        Graphic.__repr__(self)
         return ""

@@ -62,3 +62,12 @@ class Graphic:
     def update_data(self, data: Any):
         pass
 
+    def __repr__(self):
+        if self.name is not None:
+            print("Graphic Name: " + self.name + "\n")
+            print("Graphic Location: " + hex(id(self)) + "\n")
+        else:
+            print("Graphic Location: " + hex(id(self)) + "\n")
+        print(self.data)
+        return ""
+
