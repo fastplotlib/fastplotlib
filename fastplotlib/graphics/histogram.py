@@ -75,8 +75,3 @@ class Histogram(Graphic):
 
             self.world_object.add(hist_bin_graphic)
 
-    def __repr__(self):
-        print("Fastplotlib Graphic: Histogram\n")
-        Graphic.__repr__(self)
-        return ""
-

@@ -53,8 +53,3 @@ class Line(Graphic):
 
         self.world_object.geometry.colors.data[:] = self.colors
         self.world_object.geometry.colors.update_range()
-
-    def __repr__(self):
-        print("Fastplotlib Graphic: Line\n")
-        Graphic.__repr__(self)
-        return ""

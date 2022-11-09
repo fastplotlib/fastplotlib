@@ -45,7 +45,3 @@ class Image(Graphic):
     def update_cmap(self, cmap: str, alpha: float = 1.0):
         self.world_object.material.map = get_cmap_texture(name=cmap)
 
-    def __repr__(self):
-        print("Fastplotlib Graphic: Image\n")
-        Graphic.__repr__(self)
-        return ""

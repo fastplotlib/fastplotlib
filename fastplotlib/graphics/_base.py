@@ -63,6 +63,7 @@ class Graphic:
         pass
 
     def __repr__(self):
+        print("Fastplotlib " + self.__class__.__name__ + "\n")
         if self.name is not None:
             print("Graphic Name: " + self.name + "\n")
             print("Graphic Location: " + hex(id(self)) + "\n")
