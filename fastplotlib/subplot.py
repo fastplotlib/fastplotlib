@@ -177,8 +177,8 @@ class Subplot:
             name = "Name: " + self.name + "\n"
         else:
             name = "Name: None\n"
-        graphics = "Graphics:\n------------------------------------------------------------------------\n"
+        graphics = "Graphics:\n------------------------\n"
         for graphic in self.get_graphics():
             graphics += graphic.__repr__()
-            graphics += "\n------------------------------------------------------------------------\n"
+            graphics += "------------------------\n"
         return title + name + graphics

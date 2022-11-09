@@ -5,6 +5,8 @@ from .defaults import camera_types, controller_types
 from .subplot import Subplot
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
+from ipywidgets import GridspecLayout, Textarea
+from tabulate import tabulate
 
 
 class GridPlot:
@@ -168,3 +170,8 @@ class GridPlot:
     def __next__(self) -> Subplot:
         pos = self._current_iter.__next__()
         return self._subplots[pos]
+
+    def __repr__(self):
+        title = "Fastplotlib GridPlot\n"
+        return title
+
