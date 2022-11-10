@@ -95,12 +95,14 @@ class Subplot:
         self._animate_funcs += funcs
 
     def add_graphic(self, graphic, center: bool = True):
-        graphic_names = list()
-        for g in self._graphics:
-            graphic_names.append(g.name)
+        if graphic.name is not None:  # skip for those that have no name
+            graphic_names = list()
 
-        if graphic.name in graphic_names:
-            raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
+            for g in self._graphics:
+                graphic_names.append(g.name)
+
+            if graphic.name in graphic_names:
+                raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
 
         self._graphics.append(graphic)
         self.scene.add(graphic.world_object)
