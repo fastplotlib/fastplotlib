@@ -5,6 +5,7 @@ from typing import *
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
 from math import copysign
+from textwrap import indent
 
 
 class Subplot:
@@ -172,13 +173,13 @@ class Subplot:
         raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
 
     def __repr__(self):
-        title = "Fastplotlib " + self.__class__.__name__ + "\n"
+        newline = "\n  "
         if self.name is not None:
-            name = "Name: " + self.name + "\n"
+            return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n" \
+                   f"Graphics: \n  " \
+                   f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
         else:
-            name = "Name: None\n"
-        graphics = "Graphics:\n------------------------\n"
-        for graphic in self.get_graphics():
-            graphics += graphic.__repr__()
-            graphics += "------------------------\n"
-        return title + name + graphics
+            return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))} \n" \
+                   f"Graphics: \n  " \
+                   f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
+

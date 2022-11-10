@@ -63,11 +63,8 @@ class Graphic:
         pass
 
     def __repr__(self):
-        title = "Fastplotlib " + self.__class__.__name__ + "\n"
         if self.name is not None:
-            graph_name = "Name: " + self.name + "\n"
+            return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
         else:
-            graph_name = "Name: None\n"
-        location = "Location: " + hex(id(self)) + "\n"
-        return title + graph_name + location
+            return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
 
