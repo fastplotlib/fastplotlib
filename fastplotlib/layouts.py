@@ -172,6 +172,7 @@ class GridPlot:
         return self._subplots[pos]
 
     def __repr__(self):
-        title = "Fastplotlib GridPlot\n"
-        return title
+        return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n"
+
+
 
