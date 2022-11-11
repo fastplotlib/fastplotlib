@@ -13,7 +13,8 @@ class Plot(Subplot):
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
             camera: str = '2d',
-            controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None
+            controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None,
+            **kwargs
     ):
         super(Plot, self).__init__(
             position=(0, 0),
@@ -21,7 +22,8 @@ class Plot(Subplot):
             canvas=canvas,
             renderer=renderer,
             camera=camera,
-            controller=controller
+            controller=controller,
+            **kwargs
         )
 
         for graphic_cls_name in graphics.__all__:

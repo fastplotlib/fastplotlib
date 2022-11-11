@@ -44,3 +44,4 @@ class Image(Graphic):
 
     def update_cmap(self, cmap: str, alpha: float = 1.0):
         self.world_object.material.map = get_cmap_texture(name=cmap)
+

@@ -1,11 +1,12 @@
 import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
-from .defaults import camera_types, controller_types
 from .graphics import Heatmap
+from .defaults import create_camera, create_controller
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
 from math import copysign
+from textwrap import indent
 
 
 class Subplot:
@@ -46,10 +47,10 @@ class Subplot:
 
         self.nrows, self.ncols = parent_dims
 
-        self.camera: Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera] = camera_types[camera]()
+        self.camera: Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera] = create_camera(camera)
 
         if controller is None:
-            controller = controller_types[camera]()
+            controller = create_controller(camera)
         self.controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = controller
 
         # might be better as an attribute of GridPlot
@@ -96,13 +97,14 @@ class Subplot:
         self._animate_funcs += funcs
 
     def add_graphic(self, graphic, center: bool = True):
-        graphic_names = list()
+        if graphic.name is not None:  # skip for those that have no name
+            graphic_names = list()
 
-        for g in self._graphics:
-            graphic_names.append(g.name)
+            for g in self._graphics:
+                graphic_names.append(g.name)
 
-        if graphic.name in graphic_names:
-            raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
+            if graphic.name in graphic_names:
+                raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
 
         self._graphics.append(graphic)
         self.scene.add(graphic.world_object)
@@ -175,3 +177,15 @@ class Subplot:
         for g in self._graphics:
             graphic_names.append(g.name)
         raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
+
+    def __repr__(self):
+        newline = "\n  "
+        if self.name is not None:
+            return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n" \
+                   f"Graphics: \n  " \
+                   f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
+        else:
+            return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))} \n" \
+                   f"Graphics: \n  " \
+                   f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
+
