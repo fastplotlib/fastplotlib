@@ -61,3 +61,10 @@ class Graphic:
 
     def update_data(self, data: Any):
         pass
+
+    def __repr__(self):
+        if self.name is not None:
+            return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
+        else:
+            return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
+

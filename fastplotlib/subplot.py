@@ -5,6 +5,7 @@ from typing import *
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
 from math import copysign
+from textwrap import indent
 
 
 class Subplot:
@@ -172,3 +173,15 @@ class Subplot:
         for g in self._graphics:
             graphic_names.append(g.name)
         raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
+
+    def __repr__(self):
+        newline = "\n  "
+        if self.name is not None:
+            return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n" \
+                   f"Graphics: \n  " \
+                   f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
+        else:
+            return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))} \n" \
+                   f"Graphics: \n  " \
+                   f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
+
