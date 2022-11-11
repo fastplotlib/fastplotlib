@@ -1,11 +1,11 @@
 import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
 from .defaults import create_camera, create_controller
-from .graphics import Heatmap
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
 from math import copysign
+from textwrap import indent
 
 
 class Subplot:
@@ -16,9 +16,12 @@ class Subplot:
             camera: str = '2d',
             controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None,
             canvas: WgpuCanvas = None,
-            renderer: pygfx.Renderer = None
+            renderer: pygfx.Renderer = None,
+            **kwargs
     ):
         self.scene: pygfx.Scene = pygfx.Scene()
+
+        self._graphics = list()
 
         if canvas is None:
             canvas = WgpuCanvas()
@@ -28,6 +31,11 @@ class Subplot:
 
         self.canvas = canvas
         self.renderer = renderer
+
+        if "name" in kwargs.keys():
+            self.name = kwargs["name"]
+        else:
+            self.name = None
 
         if position is None:
             position = (0, 0)
@@ -88,11 +96,17 @@ class Subplot:
         self._animate_funcs += funcs
 
     def add_graphic(self, graphic, center: bool = True):
-        self.scene.add(graphic.world_object)
+        if graphic.name is not None:  # skip for those that have no name
+            graphic_names = list()
 
-        if isinstance(graphic, Heatmap):
-            # so that the data coordinates in the numpy array match the scene coordinates
-            self.controller.scale.y = copysign(self.controller.scale.y, -1)
+            for g in self._graphics:
+                graphic_names.append(g.name)
+
+            if graphic.name in graphic_names:
+                raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
+
+        self._graphics.append(graphic)
+        self.scene.add(graphic.world_object)
 
         if center:
             self.center_graphic(graphic)
@@ -146,3 +160,28 @@ class Subplot:
 
     def remove_graphic(self, graphic):
         self.scene.remove(graphic.world_object)
+
+    def get_graphics(self):
+        return self._graphics
+
+    def __getitem__(self, name: str):
+        for graphic in self._graphics:
+            if graphic.name == name:
+                return graphic
+
+        graphic_names = list()
+        for g in self._graphics:
+            graphic_names.append(g.name)
+        raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
+
+    def __repr__(self):
+        newline = "\n  "
+        if self.name is not None:
+            return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n" \
+                   f"Graphics: \n  " \
+                   f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
+        else:
+            return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))} \n" \
+                   f"Graphics: \n  " \
+                   f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
+
