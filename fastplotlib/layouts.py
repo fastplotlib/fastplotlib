@@ -6,7 +6,6 @@ from .subplot import Subplot
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
 from ipywidgets import GridspecLayout, Textarea
-from tabulate import tabulate
 
 
 class GridPlot:
