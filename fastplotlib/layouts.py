@@ -18,6 +18,9 @@ def to_array(a) -> np.ndarray:
     return np.array(a)
 
 
+valid_cameras = ["2d", "2d-big", "3d", "3d-big"]
+
+
 class GridPlot:
     def __init__(
             self,
@@ -62,19 +65,23 @@ class GridPlot:
         self.shape = shape
 
         if type(cameras) is str:
-            if cameras not in ["2d", "2d-big", "3d", "3d-big"]:
-                raise ValueError("If passing a str, `views` must be one of `2d` or `3d`")
+            if cameras not in valid_cameras:
+                raise ValueError(f"If passing a str, `cameras` must be one of: {valid_cameras}")
             # create the array representing the views for each subplot in the grid
             cameras = np.array([cameras] * self.shape[0] * self.shape[1]).reshape(self.shape)
-
-        if controllers is None:
-            controllers = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
 
         if controllers == "sync":
             controllers = np.zeros(self.shape[0] * self.shape[1], dtype=int).reshape(self.shape)
 
+        if controllers is None:
+            controllers = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
+
+        controllers = to_array(controllers)
+
         if controllers.shape != self.shape:
             raise ValueError
+
+        cameras = to_array(cameras)
 
         if cameras.shape != self.shape:
             raise ValueError
@@ -89,7 +96,7 @@ class GridPlot:
             renderer = pygfx.renderers.WgpuRenderer(canvas)
 
         if "names" in kwargs.keys():
-            self.names = kwargs["names"]
+            self.names = to_array(kwargs["names"])
             if self.names.shape != self.shape:
                 raise ValueError
         else:
