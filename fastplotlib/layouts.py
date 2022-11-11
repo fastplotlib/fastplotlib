@@ -1,7 +1,7 @@
 from itertools import product
 import numpy as np
 import pygfx
-from .defaults import camera_types, controller_types
+from .defaults import create_controller
 from .subplot import Subplot
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
@@ -53,7 +53,7 @@ class GridPlot:
         self.shape = shape
 
         if type(cameras) is str:
-            if cameras not in ["2d", "3d"]:
+            if cameras not in ["2d", "2d-big", "3d", "3d-big"]:
                 raise ValueError("If passing a str, `views` must be one of `2d` or `3d`")
             # create the array representing the views for each subplot in the grid
             cameras = np.array([cameras] * self.shape[0] * self.shape[1]).reshape(self.shape)
@@ -105,7 +105,7 @@ class GridPlot:
             if cam.size > 1:
                 raise ValueError(f"Controller id: {controller} has been assigned to multiple different camera types")
 
-            self._controllers[controllers == controller] = controller_types[cam[0]]()
+            self._controllers[controllers == controller] = create_controller(cam[0])
 
         for i, j in self._get_iterator():
             position = (i, j)
