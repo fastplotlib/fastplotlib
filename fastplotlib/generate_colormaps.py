@@ -30,7 +30,7 @@ class ColormapNames:
           diverging + cyclic + qualitative + miscellaneous
 
 
-def _make_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
+def make_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
     cmap = np.vstack([getattr(cm, name)(i) for i in range(256)])
     cmap[:, -1] = alpha
 
@@ -39,4 +39,4 @@ def _make_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
 
 if __name__ == '__main__':
     for name in ColormapNames().all:
-        np.savetxt(f'./colormaps/{name}', _make_cmap(name))
+        np.savetxt(f'./colormaps/{name}', make_cmap(name))
