@@ -60,37 +60,15 @@ class Subplot:
 
         self._animate_funcs = list()
 
-        self.renderer.add_event_handler(self._produce_rect, "resize")
-
-        self.sub_viewports: Dict[str, Dict[str, Union[pygfx.Viewport, int]]] = dict()
+        self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
         self.docked_viewports = dict()
         for pos in ["left", "top", "right", "bottom"]:
-            self.docked_viewports[pos] = _AnchoredViewport(self, pos, size=0)
+            self.docked_viewports[pos] = _DockedViewport(self, pos, size=0)
 
-        self.docked_viewports["right"].size = 60
+        self.set_viewport_rect()
 
-        # self.add_sub_viewport("right", size=60)
-
-        self._produce_rect()
-
-    def add_sub_viewport(self, position: str, size: int):
-        # TODO: Generalize to all directions
-        valid_positions = ["right"]  # only support right for now
-        if position not in valid_positions:
-            raise ValueError(f"`position` argument must be one of {valid_positions}")
-
-        if position in self.sub_viewports.keys():
-            raise KeyError(f"sub_viewport already exists at position: {position}")
-
-        self.sub_viewports[position] = {"viewport": pygfx.Viewport(self.renderer)}
-        self.sub_viewports[position]["size"] = size
-
-        # TODO: add camera and controller to sub_viewports
-        # self.sub_viewports[position]['camera']
-        # self.sub_viewports[position]['controller']
-
-    def get_rect_vector(self):
+    def get_rect(self):
         i, j = self.position
         w, h = self.renderer.logical_size
 
@@ -103,42 +81,17 @@ class Subplot:
             (h / self.nrows) - spacing
         ])
 
-    def _produce_rect(self, *args):#, w, h):
-        i, j = self.position
-
-        w, h = self.renderer.logical_size
-
-        spacing = 2  # spacing in pixels
-
-        rect = self.get_rect_vector()
+    def set_viewport_rect(self, *args):
+        rect = self.get_rect()
 
         for dv in self.docked_viewports.values():
-            rect = rect - dv.get_parent_rect_removal()
-            # print(dv.get_parent_rect_removal())
+            rect = rect + dv.get_parent_rect_adjust()
 
         self.viewport.rect = rect
-
-        # self.viewport.rect = np.array([
-        #     ((w / self.ncols) + ((j - 1) * (w / self.ncols))) + spacing,
-        #     ((h / self.nrows) + ((i - 1) * (h / self.nrows))) + spacing,
-        #     (w / self.ncols) - spacing - self.sub_viewports["right"]["size"],
-        #     (h / self.nrows) - spacing
-        # ])
-
-        # # # TODO: Generalize to all directions
-        # for svp in self.sub_viewports.keys():
-        #     self.sub_viewports["right"]["viewport"].rect = [
-        #         (w / self.ncols) - self.sub_viewports["right"]["size"],
-        #         ((h / self.nrows) + ((i - 1) * (h / self.nrows))) + spacing,
-        #         (w / self.ncols) - spacing,
-        #         (h / self.nrows) - spacing
-        #     ]
 
     def animate(self, canvas_dims: Tuple[int, int] = None):
         self.controller.update_camera(self.camera)
         self.viewport.render(self.scene, self.camera)
-
-        # self.sub_viewports["right"]["viewport"].render()
 
         for f in self._animate_funcs:
             f()
@@ -206,37 +159,13 @@ class Subplot:
         self.scene.remove(graphic.world_object)
 
 
-class _AnchoredViewport:
+class _DockedViewport:
     _valid_positions = [
         "right",
         "left",
         "top",
         "bottom"
     ]
-    # define the index of the parent.viewport.rect vector
-    # where this viewport's size should be subtracted
-    # from the parent.viewport.rect
-    _remove_from_parent = {
-        "left": 0,
-        "bottom": 1,
-        "right": 2,
-        "top": 3
-    }
-
-    _add_to_parent = {
-        "left": 2,
-        "bottom": 3,
-        "right": 0,
-        "top": 0
-    }
-
-    # the vector to encode this viewport's position
-    _viewport_rect_pos = {
-        "left": 0,
-        "bottom": 0,
-        "right": 1,
-        "top": 0
-    }
 
     def __init__(
             self,
@@ -267,8 +196,8 @@ class _AnchoredViewport:
             self.camera
         )
 
-        self._produce_rect()
-        self.parent.renderer.add_event_handler(self._produce_rect, "resize")
+        self.parent.renderer.add_event_handler(self.set_viewport_rect, "resize")
+        self.set_viewport_rect()
 
     @property
     def size(self) -> int:
@@ -277,9 +206,10 @@ class _AnchoredViewport:
     @size.setter
     def size(self, s: int):
         self._size = s
-        self._produce_rect()
+        self.parent.set_viewport_rect()
+        self.set_viewport_rect()
 
-    def _produce_rect(self, *args):
+    def _get_rect(self, *args):
         if self.size == 0:
             self.viewport.rect = None
             return
@@ -289,38 +219,84 @@ class _AnchoredViewport:
 
         spacing = 2  # spacing in pixels
 
-        parent_rect = self.parent.get_rect_vector()
+        if self.position == "right":
+            r = [
+                (w / self.parent.ncols) + ((j - 1) * (w / self.parent.ncols)) + (w / self.parent.ncols) - self.size,
+                ((h / self.parent.nrows) + ((i - 1) * (h / self.parent.nrows))) + spacing,
+                self.size,
+                (h / self.parent.nrows) - spacing
+            ]
 
-        v = np.zeros(4)
-        v[self._viewport_rect_pos[self.position]] = 1
+        elif self.position == "left":
+            r = [
+                (w / self.parent.ncols) + ((j - 1) * (w / self.parent.ncols)),
+                ((h / self.parent.nrows) + ((i - 1) * (h / self.parent.nrows))) + spacing,
+                self.size,
+                (h / self.parent.nrows) - spacing
+            ]
 
-        # self.viewport.rect = parent_rect - (v * self.size)
+        elif self.position == "top":
+            r = [
+                (w / self.parent.ncols) + ((j - 1) * (w / self.parent.ncols)) + spacing,
+                ((h / self.parent.nrows) + ((i - 1) * (h / self.parent.nrows))) + spacing,
+                (w / self.parent.ncols) - spacing,
+                self.size
+            ]
 
-        self.viewport.rect = [
-            (w / self.parent.ncols) + ((j - 1) * (w / self.parent.ncols)) + (w / self.parent.ncols) - self.size,
-            ((h / self.parent.nrows) + ((i - 1) * (h / self.parent.nrows))) + spacing,
-            self.size,
-            (h / self.parent.nrows) - spacing
-        ]
+        elif self.position == "bottom":
+            r = [
+                (w / self.parent.ncols) + ((j - 1) * (w / self.parent.ncols)) + spacing,
+                ((h / self.parent.nrows) + ((i - 1) * (h / self.parent.nrows))) + (h / self.parent.nrows) - self.size,
+                (w / self.parent.ncols) - spacing,
+                self.size
+            ]
+        else:
+            raise ValueError("invalid position")
 
-        print(self.viewport.rect)
+        return r
 
-    def get_parent_rect_removal(self):
-        ix = self._remove_from_parent[self.position]
-        ix2 = self._add_to_parent[self.position]
+    def set_viewport_rect(self, *args):
+        rect = self._get_rect()
 
-        v = np.zeros(4)
-        v[ix] = 1
+        self.viewport.rect = rect
 
-        # v[ix2] = - 1
+    def get_parent_rect_adjust(self):
+        if self.position == "right":
+            return np.array([
+                0,  # parent subplot x-position is same
+                0,
+                -self.size,  # width of parent subplot is `self.size` smaller
+                0
+            ])
 
-        return v * self.size
+        elif self.position == "left":
+            return np.array([
+                self.size,  # `self.size` added to parent subplot x-position
+                0,
+                -self.size,  # width of parent subplot is `self.size` smaller
+                0
+            ])
+
+        elif self.position == "top":
+            return np.array([
+                0,
+                self.size,  # `self.size` added to parent subplot y-position
+                0,
+                -self.size,  # height of parent subplot is `self.size` smaller
+            ])
+
+        elif self.position == "bottom":
+            return np.array([
+                0,
+                0,  # parent subplot y-position is same,
+                0,
+                -self.size,  # height of parent subplot is `self.size` smaller
+            ])
 
     def render(self):
         if self.size == 0:
             return
 
-        # self._produce_rect()
         self.controller.update_camera(self.camera)
         self.viewport.render(self.scene, self.camera)
 

@@ -3,6 +3,7 @@ from wgpu.gui.auto import WgpuCanvas
 import pygfx as gfx
 from fastplotlib import GridPlot, Line, Scatter, Histogram
 from fastplotlib import Image, GridPlot, run
+from math import sin, cos, radians
 
 # GridPlot of shape 2 x 3
 grid_plot = GridPlot(shape=(2, 3))
@@ -22,9 +23,18 @@ for i, subplot in enumerate(grid_plot):
     subplot.add_graphic(ig)
 
     histogram = Histogram(data=hist_data1, bins=100)
-    subplot.docked_viewports["right"].add_graphic(histogram)
-    # subplot.docked_viewports["right"]._refresh_camera()
+    histogram.world_object.rotation.w = cos(radians(45))
+    histogram.world_object.rotation.z = sin(radians(45))
 
+    histogram.world_object.scale.y = 1
+    histogram.world_object.scale.x = 8
+
+    for dv_position in ["right", "top", "bottom", "left"]:
+        h2 = Histogram(data=hist_data1, bins=100)
+
+        subplot.docked_viewports[dv_position].size = 60
+        subplot.docked_viewports[dv_position].add_graphic(h2)
+#
 
 # Define a function to update the image graphics
 # with new randomly generated data
