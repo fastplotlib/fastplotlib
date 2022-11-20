@@ -69,16 +69,21 @@ class Subplot:
         self.set_viewport_rect()
 
     def get_rect(self):
-        i, j = self.position
-        w, h = self.renderer.logical_size
+        row_ix, col_ix = self.position
+        width_canvas, height_canvas = self.renderer.logical_size
 
         spacing = 2  # spacing in pixels
 
+        x_pos = ((width_canvas / self.ncols) + ((col_ix - 1) * (width_canvas / self.ncols))) + spacing
+        y_pos = ((height_canvas / self.nrows) + ((row_ix - 1) * (height_canvas / self.nrows))) + spacing
+        width_subplot = (width_canvas / self.ncols) - spacing
+        height_suplot = (height_canvas / self.nrows) - spacing
+
         return np.array([
-            ((w / self.ncols) + ((j - 1) * (w / self.ncols))) + spacing,
-            ((h / self.nrows) + ((i - 1) * (h / self.nrows))) + spacing,
-            (w / self.ncols) - spacing,
-            (h / self.nrows) - spacing
+            x_pos,
+            y_pos,
+            width_subplot,
+            height_suplot
         ])
 
     def set_viewport_rect(self, *args):
@@ -214,46 +219,38 @@ class _DockedViewport:
             self.viewport.rect = None
             return
 
-        i, j = self.parent.position
-        w, h = self.parent.renderer.logical_size
+        row_ix_parent, col_ix_parent = self.parent.position
+        width_canvas, height_canvas = self.parent.renderer.logical_size
 
         spacing = 2  # spacing in pixels
 
         if self.position == "right":
-            r = [
-                (w / self.parent.ncols) + ((j - 1) * (w / self.parent.ncols)) + (w / self.parent.ncols) - self.size,
-                ((h / self.parent.nrows) + ((i - 1) * (h / self.parent.nrows))) + spacing,
-                self.size,
-                (h / self.parent.nrows) - spacing
-            ]
+                x_pos = (width_canvas / self.parent.ncols) + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols)) + (width_canvas / self.parent.ncols) - self.size
+                y_pos = ((height_canvas / self.parent.nrows) + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))) + spacing
+                width_viewport = self.size
+                height_viewport = (height_canvas / self.parent.nrows) - spacing
 
         elif self.position == "left":
-            r = [
-                (w / self.parent.ncols) + ((j - 1) * (w / self.parent.ncols)),
-                ((h / self.parent.nrows) + ((i - 1) * (h / self.parent.nrows))) + spacing,
-                self.size,
-                (h / self.parent.nrows) - spacing
-            ]
+                x_pos = (width_canvas / self.parent.ncols) + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
+                y_pos = ((height_canvas / self.parent.nrows) + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))) + spacing
+                width_viewport = self.size
+                height_viewport = (height_canvas / self.parent.nrows) - spacing
 
         elif self.position == "top":
-            r = [
-                (w / self.parent.ncols) + ((j - 1) * (w / self.parent.ncols)) + spacing,
-                ((h / self.parent.nrows) + ((i - 1) * (h / self.parent.nrows))) + spacing,
-                (w / self.parent.ncols) - spacing,
-                self.size
-            ]
+                x_pos = (width_canvas / self.parent.ncols) + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols)) + spacing
+                y_pos = ((height_canvas / self.parent.nrows) + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))) + spacing
+                width_viewport = (width_canvas / self.parent.ncols) - spacing
+                height_viewport = self.size
 
         elif self.position == "bottom":
-            r = [
-                (w / self.parent.ncols) + ((j - 1) * (w / self.parent.ncols)) + spacing,
-                ((h / self.parent.nrows) + ((i - 1) * (h / self.parent.nrows))) + (h / self.parent.nrows) - self.size,
-                (w / self.parent.ncols) - spacing,
-                self.size
-            ]
+                x_pos = (width_canvas / self.parent.ncols) + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols)) + spacing
+                y_pos = ((height_canvas / self.parent.nrows) + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))) + (height_canvas / self.parent.nrows) - self.size
+                width_viewport = (width_canvas / self.parent.ncols) - spacing
+                height_viewport = self.size
         else:
             raise ValueError("invalid position")
 
-        return r
+        return [x_pos, y_pos, width_viewport, height_viewport]
 
     def set_viewport_rect(self, *args):
         rect = self._get_rect()
