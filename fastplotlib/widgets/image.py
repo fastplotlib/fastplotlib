@@ -25,9 +25,9 @@ def calc_gridshape(n):
 
 
 def get_indexer(ndim: int, dim_index: int, slice_index: int) -> slice:
-    dim_index = [slice(None)] * ndim
-    dim_index[dim_index] = slice_index
-    return tuple(dim_index)
+    indexer = [slice(None)] * ndim
+    indexer[dim_index] = slice_index
+    return tuple(indexer)
 
 
 class ImageWidget:
@@ -43,9 +43,9 @@ class ImageWidget:
     ):
         # single image
         if isinstance(data, np.ndarray):
-                self.plot_type = Plot
-                self.data: List[np.ndarray] = [data]
-                ndim = data[0].ndim
+            self.plot_type = Plot
+            self.data: List[np.ndarray] = [data]
+            ndim = self.data[0].ndim
 
         # list of lists
         elif isinstance(data, list):
@@ -67,7 +67,7 @@ class ImageWidget:
                     )
 
                 self.data: List[np.ndarray] = data
-                ndim = data[0].ndim
+                ndim = self.data[0].ndim
 
         else:
             raise TypeError(
@@ -77,6 +77,13 @@ class ImageWidget:
 
         if axes_order is None:
             self.axes_order: List[str] = [DEFAULT_AXES_ORDER[ndim] for i in range(len(data))]
+
+        else:
+            self.axes_order = axes_order
+
+        # assume 0 if slider axes is None
+        if slider_axes is None:
+            slider_axes = self.axes_order.index("t")
 
         # if a single one is provided
         if isinstance(slider_axes, (int, str)):
@@ -114,10 +121,10 @@ class ImageWidget:
             # matchup to the given axes_order dict
             _axes = [
                 self.axes_order[array].index(slider_axes[array])
-                    if isinstance(dim_index, str)
-                    else dim_index
-                        for
-                            array, dim_index in slider_axes.items()
+                if isinstance(dim_index, str)
+                else dim_index
+                for
+                array, dim_index in slider_axes.items()
             ]
 
             self.sliders: Dict[IntSlider] = {
@@ -136,25 +143,27 @@ class ImageWidget:
             slice_index = get_indexer(ndim, self._slider_axes, slice_index=0)
 
             self.image_graphics: List[Image] = [self.plot.image(
-                data=data[0][slice_index],
+                data=self.data[0][slice_index],
                 **kwargs
             )]
 
             self.slider.observe(
                 lambda x: self.image_graphics[0].update_data(
-                    data[0][
+                    self.data[0][
                         get_indexer(ndim, self._slider_axes, slice_index=x["new"])
                     ]
                 ),
                 names="value"
             )
 
-            self.widget = VBox([self.plot, self.slider])
+            self.plot.renderer.add_event_handler(self._set_frame_slider_width, "resize")
+
+            self.widget = VBox([self.plot.canvas, self.slider])
 
         elif self.plot_type == GridPlot:
             pass
 
-    def set_frame_slider_width(self):
+    def _set_frame_slider_width(self, *args):
         w, h = self.plot.renderer.logical_size
         self.slider.layout = Layout(width=f"{w}px")
 
@@ -162,4 +171,5 @@ class ImageWidget:
         pass
 
     def show(self):
-        pass
+        self.plot.show()
+        return self.widget
