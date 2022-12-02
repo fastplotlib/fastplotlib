@@ -31,6 +31,12 @@ def get_indexer(ndim: int, dim_index: int, slice_index: int) -> slice:
 
 
 class ImageWidget:
+    """
+    A high level for displaying n-dimensional image data in conjunction with automatically generated sliders for
+    navigating through 1-2 selected dimensions within the image data.
+
+    Can display a single n-dimensional image array or a grid of n-dimensional images.
+    """
     def __init__(
             self,
             data: Union[np.ndarray, List[np.ndarray]],
@@ -41,26 +47,30 @@ class ImageWidget:
             grid_shape: Tuple[int, int] = None,
             **kwargs
     ):
-        # single image
+        # if single image array
         if isinstance(data, np.ndarray):
             self.plot_type = Plot
             self.data: List[np.ndarray] = [data]
             ndim = self.data[0].ndim
 
-        # list of lists
+        # if list of image arrays, list of lists
         elif isinstance(data, list):
+            # verify that it's a list of np.ndarray
             if all([isinstance(d, np.ndarray) for d in data]):
                 self.plot_type = GridPlot
 
                 if grid_shape is None:
                     grid_shape = calc_gridshape(len(data))
 
+                # verify that user-specified grid shape is large enough for the number of image arrays passed
                 elif grid_shape[0] * grid_shape[1] < len(data):
                     grid_shape = calc_gridshape(len(data))
                     warn(f"Invalid `grid_shape` passed, setting grid shape to: {grid_shape}")
 
                 _ndim = [d.ndim for d in data]
 
+                # verify that all image arrays have same number of dimensions
+                # sliders get messy otherwise
                 if not len(set(_ndim)) == 1:
                     raise ValueError(
                         f"Number of dimensions of all data arrays must match, your ndims are: {_ndim}"
@@ -75,25 +85,27 @@ class ImageWidget:
                 f"or a  list of `numpy.ndarray` representing a grid of images/image sequences"
             )
 
+        # default axes order if not passed
         if axes_order is None:
             self.axes_order: List[str] = [DEFAULT_AXES_ORDER[ndim] for i in range(len(data))]
 
         else:
             self.axes_order = axes_order
 
-        # assume 0 if slider axes is None
+        # make a slider for "t", the time dimension, if slider_axes is not provided
         if slider_axes is None:
             slider_axes = self.axes_order.index("t")
 
-        # if a single one is provided
+        # if a single axes is provided for the slider
         if isinstance(slider_axes, (int, str)):
             if isinstance(slider_axes, (int)):
                 self._slider_axes = slider_axes
 
-            # also if a single one is provided, get the integer dimension index from the axes_oder string
+            # if a single one is provided but it is a string, get the integer dimension index from the axes_order
             elif isinstance(slider_axes, str):
                 self._slider_axes = self.axes_order.index(slider_axes)
 
+            # a single slider for the desired axis/dimension
             self.slider: IntSlider = IntSlider(
                 min=0,
                 max=data.shape[self._slider_axes] - 1,
@@ -103,6 +115,7 @@ class ImageWidget:
             )
 
         # individual slider for each data array
+        # TODO: not tested and fully implemented yet
         elif isinstance(slider_axes, dict):
             if not len(slider_axes.keys()) == len(self.data):
                 raise ValueError(
@@ -118,7 +131,7 @@ class ImageWidget:
                 )
 
             # convert str type desired slider axes to dimension index integers
-            # matchup to the given axes_order dict
+            # match to the given axes_order dict
             _axes = [
                 self.axes_order[array].index(slider_axes[array])
                 if isinstance(dim_index, str)
@@ -137,16 +150,20 @@ class ImageWidget:
                 for array, dim in self.axes_order.items()
             }
 
+        # finally create the plot and slider for a single image array
         if self.plot_type == Plot:
             self.plot = Plot()
 
+            # get slice object for dynamically indexing chosen dimension from `self._slider_axes`
             slice_index = get_indexer(ndim, self._slider_axes, slice_index=0)
 
+            # create image graphic
             self.image_graphics: List[Image] = [self.plot.image(
                 data=self.data[0][slice_index],
                 **kwargs
             )]
 
+            # update frame w.r.t. slider index
             self.slider.observe(
                 lambda x: self.image_graphics[0].update_data(
                     self.data[0][
