@@ -33,22 +33,60 @@ def is_arraylike(obj) -> bool:
 
 
 class ImageWidget:
-    """
-    A high level for displaying n-dimensional image data in conjunction with automatically generated sliders for
-    navigating through 1-2 selected dimensions within the image data.
-
-    Can display a single n-dimensional image array or a grid of n-dimensional images.
-    """
     def __init__(
             self,
-            data: np.ndarray,
+            data: Union[np.ndarray, List[np.ndarray]],
             axes_order: Union[str, Dict[np.ndarray, str]] = None,
             slider_axes: Union[str, int, List[Union[str, int]]] = None,
-            slice_avg: Dict[Union[int, str], int] = None,
+            slice_avg: Union[int, Dict[Union[int, str], int]] = None,
             frame_apply: Union[callable, Dict[Union[int, str], callable]] = None,
             grid_shape: Tuple[int, int] = None,
             **kwargs
     ):
+        """
+        A high level for displaying n-dimensional image data in conjunction with automatically generated sliders for
+        navigating through 1-2 selected dimensions within the image data.
+
+        Can display a single n-dimensional image array or a grid of n-dimensional images.
+
+        Default axes orders:
+
+        ======= ==========
+        n_dims  axes order
+        ======= ==========
+        2       "xy"
+        3       "txy"
+        4       "tzxy"
+        ======= ==========
+
+        Parameters
+        ----------
+        data: Union[np.ndarray, List[np.ndarray]
+            array-like or a list of array-like
+
+        axes_order: Optional[Union[str, Dict[np.ndarray, str]]]
+            | a single ``str`` if ``data`` is a single array or if List[data] all have the same axes order
+            | dict mapping of ``{array: axis_order}`` if specific arrays have a non-default axes order.
+
+        slider_axes: Optional[Union[str, int, List[Union[str, int]]]]
+            | The axes/dimensions for which to create a slider
+            | can be a single ``str`` such as "t", "z" etc. or a numerical ``int`` that indexes the desired dimension
+            | can also be a list of ``str`` or ``int`` if multiple sliders are desired for multiple dimensions
+
+        slice_avg: Dict[Union[int, str], int]
+            | average one or more dimensions using a given window
+            | dict mapping of ``{dimension: window_size}``
+            | dimension/axes can be specified using ``str`` such as "t", "z" etc. or ``int`` that indexes the dimension
+            | if window_size is not an odd number, adds 1
+            | use ``window_size = 0`` to disable averaging for a dimension, example: ``{"t": 5, "z": 0}``
+
+        frame_apply
+        grid_shape: Optional[Tuple[int, int]]
+            manually provide the shape for a gridplot, otherwise a square gridplot is approximated.
+
+        kwargs: Any
+            passed to fastplotlib.graphics.Image
+        """
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
             if all([is_arraylike(d) for d in data]):
@@ -172,6 +210,18 @@ class ImageWidget:
         elif isinstance(slider_axes, list):
             self.slider_axes: List[str] = list()
 
+            if slice_avg is not None:
+                if not isinstance(slice_avg, dict):
+                    raise TypeError(
+                        f"`slice_avg` must be a <dict> if multiple `slider_axes` are provided. You must specify the "
+                        f"window for each dimension."
+                    )
+                if not isinstance(frame_apply, dict):
+                    raise TypeError(
+                        f"`frame_apply` must be a <dict> if multiple `slider_axes` are provided. You must specify a "
+                        f"function for each dimension."
+                    )
+
             for sax in slider_axes:
                 if isinstance(sax, int):
                     ao = np.array([v for v in self.axes_order])
@@ -208,6 +258,10 @@ class ImageWidget:
 
         if self.plot_type == "single":
             self.plot: Plot = Plot()
+
+            if slice_avg is not None:
+                pass
+
             frame = self.get_2d_slice(self.data[0], slice_indices=self.current_index)
 
             self.image_graphics: List[Image] = [self.plot.image(data=frame, **kwargs)]
