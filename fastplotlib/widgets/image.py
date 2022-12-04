@@ -12,7 +12,7 @@ DEFAULT_AXES_ORDER = \
         2: "xy",
         3: "txy",
         4: "tzxy",
-        5: "tczxy",
+        # 5: "tczxy",  # no 5 dim stuff for now
     }
 
 
@@ -30,6 +30,14 @@ def get_indexer(ndim: int, dim_index: int, slice_index: int) -> slice:
     return tuple(indexer)
 
 
+def is_arraylike(obj) -> bool:
+    """
+    Checks if the object is array-like.
+    For now just checks if obj has `__getitem__()`
+    """
+    return hasattr(obj, "__getitem__")
+
+
 class ImageWidget:
     """
     A high level for displaying n-dimensional image data in conjunction with automatically generated sliders for
@@ -40,9 +48,10 @@ class ImageWidget:
     def __init__(
             self,
             data: Union[np.ndarray, List[np.ndarray]],
-            axes_order: str = None,
+            axes_order: [str, dict] = None,
             slider_sync: bool = True,
             slider_axes: Union[int, str, dict] = None,
+            slice_avg: Union[int, dict] = None,
             frame_apply: Union[callable, dict] = None,
             grid_shape: Tuple[int, int] = None,
             **kwargs
@@ -87,14 +96,14 @@ class ImageWidget:
 
         # default axes order if not passed
         if axes_order is None:
-            self.axes_order: List[str] = [DEFAULT_AXES_ORDER[ndim] for i in range(len(data))]
+            self.axes_order: str = [DEFAULT_AXES_ORDER[ndim] for i in range(len(data))]
 
         else:
             self.axes_order = axes_order
 
         # make a slider for "t", the time dimension, if slider_axes is not provided
         if slider_axes is None:
-            slider_axes = self.axes_order.index("t")
+            self._slider_axes = self.axes_order.index("t")
 
         # if a single axes is provided for the slider
         if isinstance(slider_axes, (int, str)):
@@ -190,3 +199,31 @@ class ImageWidget:
     def show(self):
         self.plot.show()
         return self.widget
+
+
+class _ImageWidget:
+    """Single n-dimension image with slider(s)"""
+    def __init__(
+            self,
+            data: np.ndarray,
+            axes_order: str = None,
+            slider_axes: Union[str, int, List[Union[str, int]]] = None,
+            slice_average: Dict[Union[int, str], int] = None,
+            frame_apply: Union[callable, Dict[Union[int, str], callable]] = None,
+            **kwargs
+    ):
+        if not is_arraylike(data):
+            raise TypeError(
+                f"`data` must be an array-like object"
+            )
+
+        self.data = data
+        self.ndim = self.data.ndim
+
+        if axes_order is None:
+            self.axes_order: str = DEFAULT_AXES_ORDER[self.ndim]
+        else:
+            if not type(axes_order) is str:
+                raise TypeError(f"`axes_order` must be a <str>, you have passed a: <{type(axes_order)}>")
+            self.axes_order = axes_order
+
