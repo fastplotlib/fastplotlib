@@ -5,7 +5,7 @@ from ipywidgets.widgets import IntSlider, VBox, HBox, Layout
 import numpy as np
 from typing import *
 from warnings import warn
-
+from functools import partial
 
 DEFAULT_AXES_ORDER = \
     {
@@ -39,6 +39,40 @@ def is_arraylike(obj) -> bool:
 
 
 class ImageWidget:
+    """
+    A high level for displaying n-dimensional image data in conjunction with automatically generated sliders for
+    navigating through 1-2 selected dimensions within the image data.
+
+    Can display a single n-dimensional image array or a grid of n-dimensional images.
+    """
+    def __new__(
+            cls,
+            data: Union[np.ndarray, List[np.ndarray]],
+            axes_order: [str, dict] = None,
+            slider_sync: bool = True,
+            slider_axes: Union[int, str, dict] = None,
+            slice_avg: Union[int, dict] = None,
+            frame_apply: Union[callable, dict] = None,
+            grid_shape: Tuple[int, int] = None,
+            **kwargs
+    ):
+        # if single image array
+        if isinstance(data, np.ndarray):
+            return ImageWidgetSingle(
+                data,
+                axes_order,
+                slider_axes,
+                slice_avg,
+                frame_apply,
+                **kwargs
+            )
+
+        # if list of image arrays, list of lists
+        elif isinstance(data, list):
+            pass
+
+
+class __ImageWidget:
     """
     A high level for displaying n-dimensional image data in conjunction with automatically generated sliders for
     navigating through 1-2 selected dimensions within the image data.
@@ -201,7 +235,7 @@ class ImageWidget:
         return self.widget
 
 
-class _ImageWidget:
+class ImageWidgetSingle:
     """Single n-dimension image with slider(s)"""
     def __init__(
             self,
@@ -227,3 +261,156 @@ class _ImageWidget:
                 raise TypeError(f"`axes_order` must be a <str>, you have passed a: <{type(axes_order)}>")
             self.axes_order = axes_order
 
+        if slider_axes is None:
+            slider_axes = self.axes_order.index("t")
+
+        if isinstance(slider_axes, (int, str)):
+            if isinstance(slider_axes, int):
+                self.slider_axes = [slider_axes]
+            elif isinstance(slider_axes, str):
+                if slider_axes not in self.axes_order:
+                    raise ValueError(
+                        f"if `slider_axes` is a <str>, it must be a character found in `axes_order`. "
+                        f"Your `axes_order` is currently: {self.axes_order}."
+                    )
+                self.slider_axes = [self.axes_order.index(slider_axes)]
+
+        elif isinstance(slider_axes, list):
+            self.slider_axes: List[int] = list()
+            for sax in slider_axes:
+                if isinstance(sax, int):
+                    self.slider_axes.append(sax)
+
+                # parse the str into a int
+                elif isinstance(sax, str):
+                    if sax not in self.axes_order:
+                        raise ValueError(
+                            f"if `slider_axes` is a <str>, it must be a character found in `axes_order`. "
+                            f"Your `axes_order` is currently: {self.axes_order}."
+                        )
+                    self.slider_axes.append(
+                        self.axes_order.index(sax)
+                    )
+
+                else:
+                    raise TypeError(
+                        "If passing a list for `slider_axes` each element must be either an <int> or <str>"
+                    )
+
+        else:
+            raise TypeError(f"`slider_axes` must a <int>, <str> or <list>, you have passed a: {type(slider_axes)}")
+
+        self.plot = Plot()
+        self.sliders = list()
+        self.vertical_sliders = list()
+        self.horizontal_sliders = list()
+
+        # current_index stores {dimension_index: slice_index} for every dimension
+        self.current_index: Dict[int, int] = {sax: 0 for sax in self.slider_axes}
+        self.current_indexer = self.get_indexer(self.current_index)
+
+        for sax in self.slider_axes:
+            if self.axes_order[sax] == "z":
+                # TODO: once ipywidgets plays nicely with HBox and jupyter-rfb can use vertical
+                orientation = "horizontal"
+            else:
+                orientation = "horizontal"
+
+            slider = IntSlider(
+                min=0,
+                max=self.data.shape[sax] - 1,
+                step=1,
+                value=0,
+                description=f"Axis: {self.axes_order[sax]}",
+                orientation=orientation
+            )
+
+            slider.observe(
+                partial(self.slider_value_changed, sax),
+                names="value"
+            )
+
+            self.sliders.append(slider)
+            if orientation == "horizontal":
+                self.horizontal_sliders.append(slider)
+            elif orientation == "vertical":
+                self.vertical_sliders.append(slider)
+
+        self.image_graphic: Image = self.plot.image(data=self.data[self.current_indexer])
+
+        self.plot.renderer.add_event_handler(self.set_slider_layout, "resize")
+
+        # TODO: there is currently an issue with ipywidgets or jupyter-rfb and HBox doesn't work with RFB canvas
+        # self.widget = None
+        # hbox = None
+        # if len(self.vertical_sliders) > 0:
+        #     hbox = HBox(self.vertical_sliders)
+        #
+        # if len(self.horizontal_sliders) > 0:
+        #     if hbox is not None:
+        #         self.widget = VBox([
+        #             HBox([self.plot.canvas, hbox]),
+        #             *self.horizontal_sliders,
+        #         ])
+        #
+        #     else:
+        #         self.widget = VBox([self.plot.canvas, *self.horizontal_sliders])
+
+        # TODO: So just stack everything vertically for now
+        self.widget = VBox([
+            self.plot.canvas,
+            *self.sliders
+        ])
+
+    def get_indexer(self, slice_indices: dict[Union[int, str], int]) -> Tuple[slice]:
+        """
+        Get the slice object to use for dynamically indexing arrays.
+
+        Parameters
+        ----------
+        slice_indices: dict[int, int]
+            dict in form of {dimension_index: slice_index}
+            For example if an array has shape [1000, 30, 512, 512] corresponding to [t, z, x, y]:
+                To get the 100th timepoint and 3rd z-plane pass:
+                    {"t": 100, "z": 3}, or {0: 100, 1: 3}
+
+        Returns
+        -------
+        Tuple[slice]
+            Tuple of slice objects that can be used to fancy index the array
+
+        """
+        indexer = [slice(None)] * self.ndim
+
+        for dim in list(slice_indices.keys()):
+            if isinstance(dim, str):
+                dim = self.axes_order.index(dim)
+            indexer[dim] = slice_indices[dim]
+
+        return tuple(indexer)
+
+    def slider_value_changed(
+            self,
+            dimension: int,
+            change: dict
+    ):
+        self.current_index[dimension] = change["new"]
+        self.current_indexer = self.get_indexer(self.current_index)
+
+        self.image_graphic.update_data(
+            self.data[self.current_indexer]
+        )
+
+    def set_slider_layout(self, *args):
+        w, h = self.plot.renderer.logical_size
+        for hs in self.horizontal_sliders:
+            hs.layout = Layout(width=f"{w}px")
+
+        for vs in self.vertical_sliders:
+            vs.layout = Layout(height=f"{h}px")
+
+    def show(self):
+        # start render loop
+        self.plot.show()
+
+        return self.widget
