@@ -42,7 +42,7 @@ class ImageWidget:
     def __init__(
             self,
             data: np.ndarray,
-            axes_order: str = None,
+            axes_order: Union[str, Dict[np.ndarray, str]] = None,
             slider_axes: Union[str, int, List[Union[str, int]]] = None,
             slice_avg: Dict[Union[int, str], int] = None,
             frame_apply: Union[callable, Dict[Union[int, str], callable]] = None,
