@@ -129,6 +129,12 @@ class ImageWidget:
         else:
             raise TypeError(f"`axes_order` must be a <str> or <Dict[array: str]>, you have passed a: <{type(axes_order)}>")
 
+        if not len(self.axes_order[0]) == self.ndim:
+            raise ValueError(
+                f"Number of axes specified by `axes_order`: {len(self.axes_order[0])} does not"
+                f" match number of dimensions in the `data`: {self.ndim}"
+            )
+
         ao = np.array([sorted(v) for v in self.axes_order])
 
         if not np.all(ao == ao[0]):
