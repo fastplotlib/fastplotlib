@@ -38,7 +38,7 @@ class ImageWidget:
             data: Union[np.ndarray, List[np.ndarray]],
             axes_order: Union[str, Dict[np.ndarray, str]] = None,
             slider_axes: Union[str, int, List[Union[str, int]]] = None,
-            slice_avg: Union[int, Dict[Union[int, str], int]] = None,
+            slice_avg: Union[int, Dict[str, int]] = None,
             frame_apply: Union[callable, Dict[Union[int, str], callable]] = None,
             grid_shape: Tuple[int, int] = None,
             **kwargs
@@ -75,10 +75,11 @@ class ImageWidget:
 
         slice_avg: Dict[Union[int, str], int]
             | average one or more dimensions using a given window
-            | dict mapping of ``{dimension: window_size}``
+            | if a slider exists for only one dimension this can be an ``int``.
+            | if multiple sliders exist, then it must be a `dict`` mapping in the form of: ``{dimension: window_size}``
             | dimension/axes can be specified using ``str`` such as "t", "z" etc. or ``int`` that indexes the dimension
             | if window_size is not an odd number, adds 1
-            | use ``window_size = 0`` to disable averaging for a dimension, example: ``{"t": 5, "z": 0}``
+            | use ``None`` to disable averaging for a dimension, example: ``{"t": 5, "z": None}``
 
         frame_apply
         grid_shape: Optional[Tuple[int, int]]
@@ -210,17 +211,17 @@ class ImageWidget:
         elif isinstance(slider_axes, list):
             self.slider_axes: List[str] = list()
 
-            if slice_avg is not None:
-                if not isinstance(slice_avg, dict):
-                    raise TypeError(
-                        f"`slice_avg` must be a <dict> if multiple `slider_axes` are provided. You must specify the "
-                        f"window for each dimension."
-                    )
-                if not isinstance(frame_apply, dict):
-                    raise TypeError(
-                        f"`frame_apply` must be a <dict> if multiple `slider_axes` are provided. You must specify a "
-                        f"function for each dimension."
-                    )
+            # make sure slice_avg and frame_apply are dicts if multiple sliders are desired
+            if (not isinstance(slice_avg, dict)) and (slice_avg is not None):
+                raise TypeError(
+                    f"`slice_avg` must be a <dict> if multiple `slider_axes` are provided. You must specify the "
+                    f"window for each dimension."
+                )
+            if (not isinstance(frame_apply, dict)) and (frame_apply is not None):
+                raise TypeError(
+                    f"`frame_apply` must be a <dict> if multiple `slider_axes` are provided. You must specify a "
+                    f"function for each dimension."
+                )
 
             for sax in slider_axes:
                 if isinstance(sax, int):
@@ -249,12 +250,21 @@ class ImageWidget:
         else:
             raise TypeError(f"`slider_axes` must a <int>, <str> or <list>, you have passed a: {type(slider_axes)}")
 
+        self._slice_avg = None
+        self.slice_avg = slice_avg
+
         self.sliders = list()
         self.vertical_sliders = list()
         self.horizontal_sliders = list()
 
         # current_index stores {dimension_index: slice_index} for every dimension
         self.current_index: Dict[str, int] = {sax: 0 for sax in self.slider_axes}
+
+        # get max bound for all data arrays for all dimensions
+        self.axes_max_bounds: Dict[str, int] = {k: np.inf for k in self.slider_axes}
+        for axis in list(self.axes_max_bounds.keys()):
+            for array, order in zip(self.data, self.axes_order):
+                self.axes_max_bounds[axis] = min(self.axes_max_bounds[axis], array.shape[order.index(axis)])
 
         if self.plot_type == "single":
             self.plot: Plot = Plot()
@@ -278,12 +288,6 @@ class ImageWidget:
 
         self.plot.renderer.add_event_handler(self.set_slider_layout, "resize")
 
-        # get max bound for all sliders using the max index for that dim from all arrays
-        slider_axes_max = {k: np.inf for k in self.slider_axes}
-        for axis in list(slider_axes_max.keys()):
-            for array, order in zip(self.data, self.axes_order):
-                slider_axes_max[axis] = min(slider_axes_max[axis], array.shape[order.index(axis)])
-
         for sax in self.slider_axes:
             if sax == "z":
                 # TODO: once ipywidgets plays nicely with HBox and jupyter-rfb can use vertical
@@ -294,7 +298,7 @@ class ImageWidget:
 
             slider = IntSlider(
                 min=0,
-                max=slider_axes_max[sax] - 1,
+                max=self.axes_max_bounds[sax] - 1,
                 step=1,
                 value=0,
                 description=f"Axis: {sax}",
@@ -334,6 +338,47 @@ class ImageWidget:
         #     else:
         #         self.widget = VBox([self.plot.canvas, *self.horizontal_sliders])
 
+    @property
+    def slice_avg(self) -> Union[int, Dict[str, int]]:
+        return self._slice_avg
+
+    @slice_avg.setter
+    def slice_avg(self, sa: Union[int, Dict[str, int]]):
+        if sa is None:
+            self._slice_avg = None
+            return
+
+        # for a single dim
+        elif isinstance(sa, int):
+            if sa < 3:
+                self._slice_avg = None
+                warn(f"Invalid ``slice_avg`` value, setting ``slice_avg = None``. Valid values are integers >= 3.")
+                return
+            if sa % 2 == 0:
+                self._slice_avg = sa + 1
+            else:
+                self._slice_avg = sa
+        # for multiple dims
+        elif isinstance(sa, dict):
+            self._slice_avg = dict()
+            for k in list(sa.keys()):
+                if sa[k] is None:
+                    self._slice_avg[k] = None
+                elif (sa[k] < 3):
+                    warn(
+                        f"Invalid ``slice_avg`` value, setting ``slice_avg = None``. Valid values are integers >= 3."
+                    )
+                    self._slice_avg[k] = None
+                elif sa[k] % 2 == 0:
+                    self._slice_avg[k] = sa[k] + 1
+                else:
+                    self._slice_avg[k] = sa[k]
+        else:
+            raise TypeError(
+                f"`slice_avg` must be of type `int` if using a single slider or a dict if using multiple sliders. "
+                f"You have passed a {type(sa)}. See the docstring."
+            )
+
     def get_2d_slice(
             self,
             array: np.ndarray,
@@ -366,6 +411,7 @@ class ImageWidget:
         """
         indexer = [slice(None)] * self.ndim
 
+        numerical_dims = list()
         for dim in list(slice_indices.keys()):
             if isinstance(dim, str):
                 data_ix = None
@@ -382,9 +428,54 @@ class ImageWidget:
             else:
                 numerical_dim = dim
 
-            indexer[numerical_dim] = slice_indices[dim]
+            indices_dim = slice_indices[dim]
 
-        return array[tuple(indexer)]
+            # takes care of averaging if it was specified
+            indices_dim = self._process_dim_index(data_ix, numerical_dim, indices_dim)
+
+            # set the indices for this dimension
+            indexer[numerical_dim] = indices_dim
+
+            numerical_dims.append(numerical_dim)
+
+        if self.slice_avg is not None:
+            a = array
+            for i, dim in enumerate(sorted(numerical_dims)):
+                dim = dim - i  # since we loose a dimension every iteration
+                _indexer = [slice(None)] * (self.ndim - i)
+                _indexer[dim] = indexer[dim + i]
+                if isinstance(_indexer[dim], int):
+                    a = a[tuple(_indexer)]
+                else:
+                    a = np.mean(a[tuple(_indexer)], axis=dim)
+            return a
+        else:
+            return array[tuple(indexer)]
+
+    def _process_dim_index(self, data_ix, dim, indices_dim):
+        if self.slice_avg is None:
+            return indices_dim
+
+        else:
+            ix = indices_dim
+
+            # if there is only a single dimension for averaging
+            if isinstance(self.slice_avg, int):
+                sa = self.slice_avg
+                dim_str = self.axes_order[0][dim]
+
+            # if there are multiple dims to average, get the avg for the current dim in the loop
+            elif isinstance(self.slice_avg, dict):
+                dim_str = self.axes_order[data_ix][dim]
+                sa = self.slice_avg[dim_str]
+                if (sa == 0) or (sa is None):
+                    return indices_dim
+
+            hw = int((sa - 1) / 2)  # half-window size
+            # get the max bound for that dimension
+            max_bound = self.axes_max_bounds[dim_str]
+            indices_dim = range(max(0, ix - hw), min(max_bound, ix + hw))
+            return indices_dim
 
     def slider_value_changed(
             self,
