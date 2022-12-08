@@ -29,7 +29,15 @@ def is_arraylike(obj) -> bool:
     Checks if the object is array-like.
     For now just checks if obj has `__getitem__()`
     """
-    return hasattr(obj, "__getitem__")
+    for attr in [
+        "__getitem__",
+        "shape",
+        "ndim"
+    ]:
+        if not hasattr(obj, attr):
+            return False
+
+    return True
 
 
 class ImageWidget:
@@ -115,7 +123,8 @@ class ImageWidget:
 
             else:
                 raise TypeError(
-                    f"`data` must be a  list of `numpy.ndarray` representing a grid of images/image sequences"
+                    f"If passing a list to `data` all elements must be an "
+                    f"array-like type representing an n-dimensional image"
                 )
 
         elif is_arraylike(data):
@@ -125,8 +134,8 @@ class ImageWidget:
             self.plot_type = "single"
         else:
             raise TypeError(
-                f"`data` must be of type `numpy.ndarray` representing a single image/image sequence "
-                f"or a  list of `numpy.ndarray` representing a grid of images/image sequences"
+                f"`data` must be an array-like type representing an n-dimensional image "
+                f"or a list of array-like representing a grid of n-dimensional images"
             )
 
         # default axes order if not passed
