@@ -16,7 +16,7 @@ DEFAULT_DIMS_ORDER = \
     }
 
 
-def calc_gridshape(n):
+def _calc_gridshape(n):
     sr = np.sqrt(n)
     return (
         int(np.ceil(sr)),
@@ -24,7 +24,7 @@ def calc_gridshape(n):
     )
 
 
-def is_arraylike(obj) -> bool:
+def _is_arraylike(obj) -> bool:
     """
     Checks if the object is array-like.
     For now just checks if obj has `__getitem__()`
@@ -41,6 +41,66 @@ def is_arraylike(obj) -> bool:
 
 
 class ImageWidget:
+    @property
+    def plot(self) -> Union[Plot, GridPlot]:
+        """
+        The plotter used by the ImageWidget. Either a simple ``Plot`` or ``GridPlot``.
+        """
+        return self._plot
+
+    @property
+    def data(self) -> List[np.ndarray]:
+        """data currently displayed in the widget"""
+        return self._data
+
+    @property
+    def ndim(self) -> int:
+        """number of dimensions in the image data displayed in the widget"""
+        return self._ndim
+
+    @property
+    def dims_order(self) -> List[str]:
+        """dimension order of the data displayed in the widget"""
+        return self._dims_order
+
+    @property
+    def sliders(self) -> List[IntSlider]:
+        """the slider instances used by the widget for indexing the desired dimensions"""
+        return self._sliders
+
+    @property
+    def slider_dims(self) -> List[str]:
+        """the dimensions that the sliders index"""
+        return self._slider_dims
+
+    @property
+    def current_index(self) -> Dict[str, int]:
+        return self._current_index
+
+    @current_index.setter
+    def current_index(self, index: Dict[str, int]):
+        """
+        Set the current index
+
+        Parameters
+        ----------
+        index: Dict[str, int]
+            | ``dict`` for indexing each dimension, provide a ``dict`` with indices for all dimensions used by sliders
+            or only a subset of dimensions used by the sliders.
+            | example: if you have sliders for dims "t" and "z", you can pass either ``{"t": 10}`` to index to position
+            10 on dimension "t" or ``{"t": 5, "z": 20}`` to index to position 5 on dimension "t" and position 20 on
+            dimension "z" simultaneously.
+        """
+        if not set(index.keys()).issubset(set(self._current_index.keys())):
+            raise KeyError(
+                f"All dimension keys for setting `current_index` must be present in the widget sliders. "
+                f"The dimensions currently used for sliders are: {list(self.current_index.keys())}"
+            )
+        self._current_index.update(index)
+        for ig, data in zip(self.image_graphics, self.data):
+            frame = self._get_2d_slice(data, self._current_index)
+            ig.update_data(frame)
+
     def __init__(
             self,
             data: Union[np.ndarray, List[np.ndarray]],
@@ -75,14 +135,15 @@ class ImageWidget:
         dims_order: Optional[Union[str, Dict[np.ndarray, str]]]
             | ``str`` or a dict mapping to indicate dimension order
             | a single ``str`` if ``data`` is a single array, or a list of arrays with the same dimension order
+            | examples: ``"xyt"``, ``"tzxy"``
             | ``dict`` mapping of ``{array: axis_order}`` if specific arrays have a non-default axes order.
-            | examples: "xyt", "tzxy"
+            | examples: ``{some_array: "tzxy", another_array: "xytz"}``
 
         slider_dims: Optional[Union[str, int, List[Union[str, int]]]]
             | The dimensions for which to create a slider
             | can be a single ``str`` such as **"t"**, **"z"** or a numerical ``int`` that indexes the desired dimension
             | can also be a list of ``str`` or ``int`` if multiple sliders are desired for multiple dimensions
-            | examples: "t", ["t", "z"]
+            | examples: ``"t"``, ``["t", "z"]``
 
         slice_avg: Dict[Union[int, str], int]
             | average one or more dimensions using a given window
@@ -101,13 +162,13 @@ class ImageWidget:
         """
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
-            if all([is_arraylike(d) for d in data]):
+            if all([_is_arraylike(d) for d in data]):
                 if grid_shape is None:
-                    grid_shape = calc_gridshape(len(data))
+                    grid_shape = _calc_gridshape(len(data))
 
                 # verify that user-specified grid shape is large enough for the number of image arrays passed
                 elif grid_shape[0] * grid_shape[1] < len(data):
-                    grid_shape = calc_gridshape(len(data))
+                    grid_shape = _calc_gridshape(len(data))
                     warn(f"Invalid `grid_shape` passed, setting grid shape to: {grid_shape}")
 
                 _ndim = [d.ndim for d in data]
@@ -119,10 +180,10 @@ class ImageWidget:
                         f"Number of dimensions of all data arrays must match, your ndims are: {_ndim}"
                     )
 
-                self.data: List[np.ndarray] = data
-                self.ndim = self.data[0].ndim  # all ndim must be same
+                self._data: List[np.ndarray] = data
+                self._ndim = self.data[0].ndim  # all ndim must be same
 
-                self.plot_type = "grid"
+                self._plot_type = "grid"
 
             else:
                 raise TypeError(
@@ -130,11 +191,11 @@ class ImageWidget:
                     f"array-like type representing an n-dimensional image"
                 )
 
-        elif is_arraylike(data):
-            self.data = [data]
-            self.ndim = self.data[0].ndim
+        elif _is_arraylike(data):
+            self._data = [data]
+            self._ndim = self.data[0].ndim
 
-            self.plot_type = "single"
+            self._plot_type = "single"
         else:
             raise TypeError(
                 f"`data` must be an array-like type representing an n-dimensional image "
@@ -143,12 +204,12 @@ class ImageWidget:
 
         # default dims order if not passed
         if dims_order is None:
-            self.dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
+            self._dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
 
         elif isinstance(dims_order, str):
-            self.dims_order: List[str] = [dims_order] * len(self.data)
+            self._dims_order: List[str] = [dims_order] * len(self.data)
         elif isinstance(dims_order, dict):
-            self.dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
+            self._dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
 
             # dict of {array: dims_order_str}
             for array in list(dims_order.keys()):
@@ -208,7 +269,7 @@ class ImageWidget:
                         f"`dims_order` for all arrays must be identical if passing in a <int> `slider_dims` argument. "
                         f"Pass in a <str> argument if the `dims_order` are different for each array."
                     )
-                self.slider_dims: List[str] = [self.dims_order[0][slider_dims]]
+                self._slider_dims: List[str] = [self.dims_order[0][slider_dims]]
 
             # if dimension specified by str
             elif isinstance(slider_dims, str):
@@ -217,11 +278,11 @@ class ImageWidget:
                         f"if `slider_dims` is a <str>, it must be a character found in `dims_order`. "
                         f"Your `dims_order` characters are: {set(self.dims_order[0])}."
                     )
-                self.slider_dims: List[str] = [slider_dims]
+                self._slider_dims: List[str] = [slider_dims]
 
         # multiple sliders, one for each dimension
         elif isinstance(slider_dims, list):
-            self.slider_dims: List[str] = list()
+            self._slider_dims: List[str] = list()
 
             # make sure slice_avg and frame_apply are dicts if multiple sliders are desired
             if (not isinstance(slice_avg, dict)) and (slice_avg is not None):
@@ -265,44 +326,44 @@ class ImageWidget:
         self._slice_avg = None
         self.slice_avg = slice_avg
 
-        self.sliders = list()
-        self.vertical_sliders = list()
-        self.horizontal_sliders = list()
+        self._sliders: List[IntSlider] = list()
+        self._vertical_sliders = list()
+        self._horizontal_sliders = list()
 
         # current_index stores {dimension_index: slice_index} for every dimension
-        self.current_index: Dict[str, int] = {sax: 0 for sax in self.slider_dims}
+        self._current_index: Dict[str, int] = {sax: 0 for sax in self.slider_dims}
 
         # get max bound for all data arrays for all dimensions
-        self.dims_max_bounds: Dict[str, int] = {k: np.inf for k in self.slider_dims}
-        for _dim in list(self.dims_max_bounds.keys()):
+        self._dims_max_bounds: Dict[str, int] = {k: np.inf for k in self.slider_dims}
+        for _dim in list(self._dims_max_bounds.keys()):
             for array, order in zip(self.data, self.dims_order):
-                self.dims_max_bounds[_dim] = min(self.dims_max_bounds[_dim], array.shape[order.index(_dim)])
+                self._dims_max_bounds[_dim] = min(self._dims_max_bounds[_dim], array.shape[order.index(_dim)])
 
-        if self.plot_type == "single":
-            self.plot: Plot = Plot()
+        if self._plot_type == "single":
+            self._plot: Plot = Plot()
 
             if slice_avg is not None:
                 pass
 
-            frame = self.get_2d_slice(self.data[0], slice_indices=self.current_index)
+            frame = self._get_2d_slice(self.data[0], slice_indices=self._current_index)
 
             self.image_graphics: List[Image] = [self.plot.image(data=frame, **kwargs)]
 
-        elif self.plot_type == "grid":
-            self.plot: GridPlot = GridPlot(shape=grid_shape, controllers="sync")
+        elif self._plot_type == "grid":
+            self._plot: GridPlot = GridPlot(shape=grid_shape, controllers="sync")
 
             self.image_graphics = list()
             for d, subplot in zip(self.data, self.plot):
-                frame = self.get_2d_slice(d, slice_indices=self.current_index)
+                frame = self._get_2d_slice(d, slice_indices=self._current_index)
                 ig = Image(frame, **kwargs)
                 subplot.add_graphic(ig)
                 self.image_graphics.append(ig)
 
-        self.plot.renderer.add_event_handler(self.set_slider_layout, "resize")
+        self.plot.renderer.add_event_handler(self._set_slider_layout, "resize")
 
         for sdm in self.slider_dims:
             if sdm == "z":
-                # TODO: once ipywidgets plays nicely with HBox and jupyter-rfb can use vertical
+                # TODO: once ipywidgets plays nicely with HBox and jupyter-rfb, use vertical
                 # orientation = "vertical"
                 orientation = "horizontal"
             else:
@@ -310,7 +371,7 @@ class ImageWidget:
 
             slider = IntSlider(
                 min=0,
-                max=self.dims_max_bounds[sdm] - 1,
+                max=self._dims_max_bounds[sdm] - 1,
                 step=1,
                 value=0,
                 description=f"dimension: {sdm}",
@@ -318,20 +379,20 @@ class ImageWidget:
             )
 
             slider.observe(
-                partial(self.slider_value_changed, sdm),
+                partial(self._slider_value_changed, sdm),
                 names="value"
             )
 
-            self.sliders.append(slider)
+            self._sliders.append(slider)
             if orientation == "horizontal":
-                self.horizontal_sliders.append(slider)
+                self._horizontal_sliders.append(slider)
             elif orientation == "vertical":
-                self.vertical_sliders.append(slider)
+                self._vertical_sliders.append(slider)
 
         # TODO: So just stack everything vertically for now
         self.widget = VBox([
             self.plot.canvas,
-            *self.sliders
+            *self._sliders
         ])
 
         # TODO: there is currently an issue with ipywidgets or jupyter-rfb and HBox doesn't work with RFB canvas
@@ -391,7 +452,7 @@ class ImageWidget:
                 f"You have passed a {type(sa)}. See the docstring."
             )
 
-    def get_2d_slice(
+    def _get_2d_slice(
             self,
             array: np.ndarray,
             slice_indices: dict[Union[int, str], int]
@@ -485,30 +546,34 @@ class ImageWidget:
 
             hw = int((sa - 1) / 2)  # half-window size
             # get the max bound for that dimension
-            max_bound = self.dims_max_bounds[dim_str]
+            max_bound = self._dims_max_bounds[dim_str]
             indices_dim = range(max(0, ix - hw), min(max_bound, ix + hw))
             return indices_dim
 
-    def slider_value_changed(
+    def _slider_value_changed(
             self,
-            dimension: int,
+            dimension: str,
             change: dict
     ):
-        self.current_index[dimension] = change["new"]
+        self.current_index = {dimension: change["new"]}
 
-        for ig, data in zip(self.image_graphics, self.data):
-            frame = self.get_2d_slice(data, self.current_index)
-            ig.update_data(frame)
-
-    def set_slider_layout(self, *args):
+    def _set_slider_layout(self, *args):
         w, h = self.plot.renderer.logical_size
-        for hs in self.horizontal_sliders:
+        for hs in self._horizontal_sliders:
             hs.layout = Layout(width=f"{w}px")
 
-        for vs in self.vertical_sliders:
+        for vs in self._vertical_sliders:
             vs.layout = Layout(height=f"{h}px")
 
     def show(self):
+        """
+        Show the widget
+
+        Returns
+        -------
+        VBox
+            ``ipywidgets.VBox`` stacking the plotter and sliders in a vertical layout
+        """
         # start render loop
         self.plot.show()
 
