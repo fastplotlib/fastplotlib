@@ -1,11 +1,13 @@
 from ..plot import Plot
 from ..layouts import GridPlot
 from ..graphics import Image
+from ..utils import quick_min_max
 from ipywidgets.widgets import IntSlider, VBox, HBox, Layout
 import numpy as np
 from typing import *
 from warnings import warn
 from functools import partial
+
 
 DEFAULT_DIMS_ORDER = \
     {
@@ -344,6 +346,9 @@ class ImageWidget:
 
             if slice_avg is not None:
                 pass
+
+            if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
+                kwargs["vmin"], kwargs["vmax"] = quick_min_max(self.data[0])
 
             frame = self._get_2d_slice(self.data[0], slice_indices=self._current_index)
 
