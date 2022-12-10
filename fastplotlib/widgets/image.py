@@ -7,7 +7,7 @@ from typing import *
 from warnings import warn
 from functools import partial
 
-DEFAULT_AXES_ORDER = \
+DEFAULT_DIMS_ORDER = \
     {
         2: "xy",
         3: "txy",
@@ -44,8 +44,8 @@ class ImageWidget:
     def __init__(
             self,
             data: Union[np.ndarray, List[np.ndarray]],
-            axes_order: Union[str, Dict[np.ndarray, str]] = None,
-            slider_axes: Union[str, int, List[Union[str, int]]] = None,
+            dims_order: Union[str, Dict[np.ndarray, str]] = None,
+            slider_dims: Union[str, int, List[Union[str, int]]] = None,
             slice_avg: Union[int, Dict[str, int]] = None,
             frame_apply: Union[callable, Dict[Union[int, str], callable]] = None,
             grid_shape: Tuple[int, int] = None,
@@ -57,10 +57,10 @@ class ImageWidget:
 
         Can display a single n-dimensional image array or a grid of n-dimensional images.
 
-        Default axes orders:
+        Default dimension orders:
 
         ======= ==========
-        n_dims  axes order
+        n_dims  dims order
         ======= ==========
         2       "xy"
         3       "txy"
@@ -72,14 +72,17 @@ class ImageWidget:
         data: Union[np.ndarray, List[np.ndarray]
             array-like or a list of array-like
 
-        axes_order: Optional[Union[str, Dict[np.ndarray, str]]]
-            | a single ``str`` if ``data`` is a single array or if List[data] all have the same axes order
-            | dict mapping of ``{array: axis_order}`` if specific arrays have a non-default axes order.
+        dims_order: Optional[Union[str, Dict[np.ndarray, str]]]
+            | ``str`` or a dict mapping to indicate dimension order
+            | a single ``str`` if ``data`` is a single array, or a list of arrays with the same dimension order
+            | ``dict`` mapping of ``{array: axis_order}`` if specific arrays have a non-default axes order.
+            | examples: "xyt", "tzxy"
 
-        slider_axes: Optional[Union[str, int, List[Union[str, int]]]]
-            | The axes/dimensions for which to create a slider
-            | can be a single ``str`` such as "t", "z" etc. or a numerical ``int`` that indexes the desired dimension
+        slider_dims: Optional[Union[str, int, List[Union[str, int]]]]
+            | The dimensions for which to create a slider
+            | can be a single ``str`` such as **"t"**, **"z"** or a numerical ``int`` that indexes the desired dimension
             | can also be a list of ``str`` or ``int`` if multiple sliders are desired for multiple dimensions
+            | examples: "t", ["t", "z"]
 
         slice_avg: Dict[Union[int, str], int]
             | average one or more dimensions using a given window
@@ -138,17 +141,17 @@ class ImageWidget:
                 f"or a list of array-like representing a grid of n-dimensional images"
             )
 
-        # default axes order if not passed
-        if axes_order is None:
-            self.axes_order: List[str] = [DEFAULT_AXES_ORDER[self.ndim]] * len(self.data)
+        # default dims order if not passed
+        if dims_order is None:
+            self.dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
 
-        elif isinstance(axes_order, str):
-            self.axes_order: List[str] = [axes_order] * len(self.data)
-        elif isinstance(axes_order, dict):
-            self.axes_order: List[str] = [DEFAULT_AXES_ORDER[self.ndim]] * len(self.data)
+        elif isinstance(dims_order, str):
+            self.dims_order: List[str] = [dims_order] * len(self.data)
+        elif isinstance(dims_order, dict):
+            self.dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
 
-            # dict of {array: axis_order_str}
-            for array in list(axes_order.keys()):
+            # dict of {array: dims_order_str}
+            for array in list(dims_order.keys()):
                 # get index of corresponding array in data list
                 try:
                     data_ix = None
@@ -162,102 +165,102 @@ class ImageWidget:
                         )
                 except Exception:
                     raise TypeError(
-                        f"`axes_order` must be a <str> or <Dict[array: str]>, "
+                        f"`dims_order` must be a <str> or <Dict[array: str]>, "
                         f"with the same array object(s) passed to `data`"
                     )
-                # set corresponding axes order from passed `axes_order` dict
-                if not set(axes_order[array]) == set(DEFAULT_AXES_ORDER[self.ndim]):
+                # set corresponding dims order from passed `dims_order` dict
+                if not set(dims_order[array]) == set(DEFAULT_DIMS_ORDER[self.ndim]):
                     raise ValueError(
-                        f"Invalid axis order passed for one of your arrays, "
-                        f"valid axis order for given number of dimensions "
+                        f"Invalid `dims_order` passed for one of your arrays, "
+                        f"valid `dims_order` for given number of dimensions "
                         f"can only contain the following characters: "
-                        f"{DEFAULT_AXES_ORDER[self.ndim]}"
+                        f"{DEFAULT_DIMS_ORDER[self.ndim]}"
                     )
-                self.axes_order[data_ix] = axes_order[array]
+                self.dims_order[data_ix] = dims_order[array]
         else:
-            raise TypeError(f"`axes_order` must be a <str> or <Dict[array: str]>, you have passed a: <{type(axes_order)}>")
+            raise TypeError(f"`dims_order` must be a <str> or <Dict[array: str]>, you have passed a: <{type(dims_order)}>")
 
-        if not len(self.axes_order[0]) == self.ndim:
+        if not len(self.dims_order[0]) == self.ndim:
             raise ValueError(
-                f"Number of axes specified by `axes_order`: {len(self.axes_order[0])} does not"
+                f"Number of dims specified by `dims_order`: {len(self.dims_order[0])} does not"
                 f" match number of dimensions in the `data`: {self.ndim}"
             )
 
-        ao = np.array([sorted(v) for v in self.axes_order])
+        ao = np.array([sorted(v) for v in self.dims_order])
 
         if not np.all(ao == ao[0]):
             raise ValueError(
-                f"`axes_order` for all arrays must contain the same combination of dimensions, your `axes_order` are: "
-                f"{self.axes_order}"
+                f"`dims_order` for all arrays must contain the same combination of dimensions, your `dims_order` are: "
+                f"{self.dims_order}"
             )
 
         # by default slider is only made for "t" - time dimension
-        if slider_axes is None:
-            slider_axes = "t"
+        if slider_dims is None:
+            slider_dims = "t"
 
         # slider for only one of the dimensions
-        if isinstance(slider_axes, (int, str)):
+        if isinstance(slider_dims, (int, str)):
             # if numerical dimension is specified
-            if isinstance(slider_axes, int):
-                ao = np.array([v for v in self.axes_order])
+            if isinstance(slider_dims, int):
+                ao = np.array([v for v in self.dims_order])
                 if not np.all(ao == ao[0]):
                     raise ValueError(
-                        f"`axes_order` for all arrays must be identical if passing in a <int> `slider_axes` argument. "
-                        f"Pass in a <str> argument if the `axes_order` are different for each array."
+                        f"`dims_order` for all arrays must be identical if passing in a <int> `slider_dims` argument. "
+                        f"Pass in a <str> argument if the `dims_order` are different for each array."
                     )
-                self.slider_axes: List[str] = [self.axes_order[0][slider_axes]]
+                self.slider_dims: List[str] = [self.dims_order[0][slider_dims]]
 
             # if dimension specified by str
-            elif isinstance(slider_axes, str):
-                if slider_axes not in self.axes_order[0]:
+            elif isinstance(slider_dims, str):
+                if slider_dims not in self.dims_order[0]:
                     raise ValueError(
-                        f"if `slider_axes` is a <str>, it must be a character found in `axes_order`. "
-                        f"Your `axes_order` characters are: {set(self.axes_order[0])}."
+                        f"if `slider_dims` is a <str>, it must be a character found in `dims_order`. "
+                        f"Your `dims_order` characters are: {set(self.dims_order[0])}."
                     )
-                self.slider_axes: List[str] = [slider_axes]
+                self.slider_dims: List[str] = [slider_dims]
 
         # multiple sliders, one for each dimension
-        elif isinstance(slider_axes, list):
-            self.slider_axes: List[str] = list()
+        elif isinstance(slider_dims, list):
+            self.slider_dims: List[str] = list()
 
             # make sure slice_avg and frame_apply are dicts if multiple sliders are desired
             if (not isinstance(slice_avg, dict)) and (slice_avg is not None):
                 raise TypeError(
-                    f"`slice_avg` must be a <dict> if multiple `slider_axes` are provided. You must specify the "
+                    f"`slice_avg` must be a <dict> if multiple `slider_dims` are provided. You must specify the "
                     f"window for each dimension."
                 )
             if (not isinstance(frame_apply, dict)) and (frame_apply is not None):
                 raise TypeError(
-                    f"`frame_apply` must be a <dict> if multiple `slider_axes` are provided. You must specify a "
+                    f"`frame_apply` must be a <dict> if multiple `slider_dims` are provided. You must specify a "
                     f"function for each dimension."
                 )
 
-            for sax in slider_axes:
-                if isinstance(sax, int):
-                    ao = np.array([v for v in self.axes_order])
+            for sdm in slider_dims:
+                if isinstance(sdm, int):
+                    ao = np.array([v for v in self.dims_order])
                     if not np.all(ao == ao[0]):
                         raise ValueError(
-                            f"`axes_order` for all arrays must be identical if passing in a <int> `slider_axes` argument. "
-                            f"Pass in a <str> argument if the `axes_order` are different for each array."
+                            f"`dims_order` for all arrays must be identical if passing in a <int> `slider_dims` argument. "
+                            f"Pass in a <str> argument if the `dims_order` are different for each array."
                         )
                     # parse int to a str
-                    self.slider_axes.append(self.axes_order[0][sax])
+                    self.slider_dims.append(self.dims_order[0][sdm])
 
-                elif isinstance(sax, str):
-                    if sax not in self.axes_order[0]:
+                elif isinstance(sdm, str):
+                    if sdm not in self.dims_order[0]:
                         raise ValueError(
-                            f"if `slider_axes` is a <str>, it must be a character found in `axes_order`. "
-                            f"Your `axes_order` characters are: {set(self.axes_order[0])}."
+                            f"if `slider_dims` is a <str>, it must be a character found in `dims_order`. "
+                            f"Your `dims_order` characters are: {set(self.dims_order[0])}."
                         )
-                    self.slider_axes.append(sax)
+                    self.slider_dims.append(sdm)
 
                 else:
                     raise TypeError(
-                        "If passing a list for `slider_axes` each element must be either an <int> or <str>"
+                        "If passing a list for `slider_dims` each element must be either an <int> or <str>"
                     )
 
         else:
-            raise TypeError(f"`slider_axes` must a <int>, <str> or <list>, you have passed a: {type(slider_axes)}")
+            raise TypeError(f"`slider_dims` must a <int>, <str> or <list>, you have passed a: {type(slider_dims)}")
 
         self._slice_avg = None
         self.slice_avg = slice_avg
@@ -267,13 +270,13 @@ class ImageWidget:
         self.horizontal_sliders = list()
 
         # current_index stores {dimension_index: slice_index} for every dimension
-        self.current_index: Dict[str, int] = {sax: 0 for sax in self.slider_axes}
+        self.current_index: Dict[str, int] = {sax: 0 for sax in self.slider_dims}
 
         # get max bound for all data arrays for all dimensions
-        self.axes_max_bounds: Dict[str, int] = {k: np.inf for k in self.slider_axes}
-        for axis in list(self.axes_max_bounds.keys()):
-            for array, order in zip(self.data, self.axes_order):
-                self.axes_max_bounds[axis] = min(self.axes_max_bounds[axis], array.shape[order.index(axis)])
+        self.dims_max_bounds: Dict[str, int] = {k: np.inf for k in self.slider_dims}
+        for _dim in list(self.dims_max_bounds.keys()):
+            for array, order in zip(self.data, self.dims_order):
+                self.dims_max_bounds[_dim] = min(self.dims_max_bounds[_dim], array.shape[order.index(_dim)])
 
         if self.plot_type == "single":
             self.plot: Plot = Plot()
@@ -297,8 +300,8 @@ class ImageWidget:
 
         self.plot.renderer.add_event_handler(self.set_slider_layout, "resize")
 
-        for sax in self.slider_axes:
-            if sax == "z":
+        for sdm in self.slider_dims:
+            if sdm == "z":
                 # TODO: once ipywidgets plays nicely with HBox and jupyter-rfb can use vertical
                 # orientation = "vertical"
                 orientation = "horizontal"
@@ -307,15 +310,15 @@ class ImageWidget:
 
             slider = IntSlider(
                 min=0,
-                max=self.axes_max_bounds[sax] - 1,
+                max=self.dims_max_bounds[sdm] - 1,
                 step=1,
                 value=0,
-                description=f"Axis: {sax}",
+                description=f"dimension: {sdm}",
                 orientation=orientation
             )
 
             slider.observe(
-                partial(self.slider_value_changed, sax),
+                partial(self.slider_value_changed, sdm),
                 names="value"
             )
 
@@ -433,7 +436,7 @@ class ImageWidget:
                         f"Given `array` not found in `self.data`"
                     )
                 # get axes order for that specific array
-                numerical_dim = self.axes_order[data_ix].index(dim)
+                numerical_dim = self.dims_order[data_ix].index(dim)
             else:
                 numerical_dim = dim
 
@@ -471,18 +474,18 @@ class ImageWidget:
             # if there is only a single dimension for averaging
             if isinstance(self.slice_avg, int):
                 sa = self.slice_avg
-                dim_str = self.axes_order[0][dim]
+                dim_str = self.dims_order[0][dim]
 
             # if there are multiple dims to average, get the avg for the current dim in the loop
             elif isinstance(self.slice_avg, dict):
-                dim_str = self.axes_order[data_ix][dim]
+                dim_str = self.dims_order[data_ix][dim]
                 sa = self.slice_avg[dim_str]
                 if (sa == 0) or (sa is None):
                     return indices_dim
 
             hw = int((sa - 1) / 2)  # half-window size
             # get the max bound for that dimension
-            max_bound = self.axes_max_bounds[dim_str]
+            max_bound = self.dims_max_bounds[dim_str]
             indices_dim = range(max(0, ix - hw), min(max_bound, ix + hw))
             return indices_dim
 
