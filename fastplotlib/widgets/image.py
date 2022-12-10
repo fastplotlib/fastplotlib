@@ -344,9 +344,6 @@ class ImageWidget:
         if self._plot_type == "single":
             self._plot: Plot = Plot()
 
-            if slice_avg is not None:
-                pass
-
             if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
                 kwargs["vmin"], kwargs["vmax"] = quick_min_max(self.data[0])
 
@@ -359,6 +356,9 @@ class ImageWidget:
 
             self.image_graphics = list()
             for d, subplot in zip(self.data, self.plot):
+                if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
+                    kwargs["vmin"], kwargs["vmax"] = quick_min_max(self.data[0])
+
                 frame = self._get_2d_slice(d, slice_indices=self._current_index)
                 ig = Image(frame, **kwargs)
                 subplot.add_graphic(ig)
