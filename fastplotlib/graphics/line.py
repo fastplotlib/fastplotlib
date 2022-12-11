@@ -4,9 +4,9 @@ import pygfx
 from ._base import Graphic
 
 
-class Line(Graphic):
+class LineGraphic(Graphic):
     def __init__(self, data: np.ndarray, zlevel: float = None, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
-        super(Line, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
+        super(LineGraphic, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
         self.zlevel = zlevel
 
@@ -49,7 +49,7 @@ class Line(Graphic):
         self.world_object.geometry.positions.update_range()
 
     def update_colors(self, colors: np.ndarray):
-        super(Line, self)._set_colors(colors=colors, colors_length=self.data.shape[0], cmap=None, alpha=None)
+        super(LineGraphic, self)._set_colors(colors=colors, colors_length=self.data.shape[0], cmap=None, alpha=None)
 
         self.world_object.geometry.colors.data[:] = self.colors
         self.world_object.geometry.colors.update_range()

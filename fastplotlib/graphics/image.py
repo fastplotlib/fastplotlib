@@ -7,7 +7,7 @@ from ._base import Graphic
 from ..utils import quick_min_max, get_cmap_texture
 
 
-class Image(Graphic):
+class ImageGraphic(Graphic):
     def __init__(
             self,
             data: np.ndarray,
@@ -44,4 +44,5 @@ class Image(Graphic):
 
     def update_cmap(self, cmap: str, alpha: float = 1.0):
         self.world_object.material.map = get_cmap_texture(name=cmap)
+        self.world_object.geometry.grid.update_range((0, 0, 0), self.world_object.geometry.grid.size)
 

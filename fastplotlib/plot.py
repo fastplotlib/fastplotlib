@@ -1,6 +1,6 @@
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
-from .subplot import Subplot
+from .layouts._subplot import Subplot
 from . import graphics
 from functools import partial
 from inspect import signature
@@ -31,7 +31,7 @@ class Plot(Subplot):
             pfunc = partial(self._create_graphic, cls)
             pfunc.__signature__ = signature(cls)
             pfunc.__doc__ = cls.__doc__
-            setattr(self, graphic_cls_name.lower(), pfunc)
+            setattr(self, graphic_cls_name.rstrip("Graphic").lower(), pfunc)
 
     def _create_graphic(self, graphic_class, *args, **kwargs):
         graphic = graphic_class(*args, **kwargs)
@@ -39,14 +39,14 @@ class Plot(Subplot):
 
         return graphic
 
-    def animate(self):
-        super(Plot, self).animate(canvas_dims=None)
+    def render(self):
+        super(Plot, self).render()
 
         self.renderer.flush()
         self.canvas.request_draw()
 
     def show(self):
-        self.canvas.request_draw(self.animate)
+        self.canvas.request_draw(self.render)
         self.center_scene()
 
         return self.canvas

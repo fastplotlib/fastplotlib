@@ -6,9 +6,9 @@ import pygfx
 from ._base import Graphic
 
 
-class Scatter(Graphic):
+class ScatterGraphic(Graphic):
     def __init__(self, data: np.ndarray, zlevel: float = None, size: int = 1, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
-        super(Scatter, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
+        super(ScatterGraphic, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
         if self.data.ndim == 1:
             # assume single 3D point
