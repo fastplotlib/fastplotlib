@@ -1,6 +1,6 @@
 from ..plot import Plot
 from ..layouts import GridPlot
-from ..graphics import Image
+from ..graphics import ImageGraphic
 from ..utils import quick_min_max
 from ipywidgets.widgets import IntSlider, VBox, HBox, Layout
 import numpy as np
@@ -349,7 +349,7 @@ class ImageWidget:
 
             frame = self._get_2d_slice(self.data[0], slice_indices=self._current_index)
 
-            self.image_graphics: List[Image] = [self.plot.image(data=frame, **kwargs)]
+            self.image_graphics: List[ImageGraphic] = [self.plot.image(data=frame, **kwargs)]
 
         elif self._plot_type == "grid":
             self._plot: GridPlot = GridPlot(shape=grid_shape, controllers="sync")
@@ -360,7 +360,7 @@ class ImageWidget:
                     kwargs["vmin"], kwargs["vmax"] = quick_min_max(self.data[0])
 
                 frame = self._get_2d_slice(d, slice_indices=self._current_index)
-                ig = Image(frame, **kwargs)
+                ig = ImageGraphic(frame, **kwargs)
                 subplot.add_graphic(ig)
                 self.image_graphics.append(ig)
 
