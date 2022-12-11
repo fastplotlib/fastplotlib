@@ -39,14 +39,14 @@ class Plot(Subplot):
 
         return graphic
 
-    def animate(self):
-        super(Plot, self).animate(canvas_dims=None)
+    def render(self):
+        super(Plot, self).render(canvas_dims=None)
 
         self.renderer.flush()
         self.canvas.request_draw()
 
     def show(self):
-        self.canvas.request_draw(self.animate)
+        self.canvas.request_draw(self.render)
         self.center_scene()
 
         return self.canvas
