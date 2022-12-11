@@ -1,11 +1,10 @@
 from itertools import product
 import numpy as np
 import pygfx
-from .defaults import create_controller
-from .subplot import Subplot
+from ._defaults import create_controller
+from ._subplot import Subplot
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
-from ipywidgets import GridspecLayout, Textarea
 
 
 def to_array(a) -> np.ndarray:
@@ -165,8 +164,13 @@ class GridPlot:
         self.renderer.flush()
         self.canvas.request_draw()
 
-    def add_animations(self, funcs: List[callable]):
-        self._animate_funcs += funcs
+    def add_animations(self, *funcs: callable):
+        for f in funcs:
+            if not callable(f):
+                raise TypeError(
+                    f"all positional arguments to add_animations() must be callable types, you have passed a: {type(f)}"
+                )
+            self._animate_funcs += funcs
 
     def show(self):
         self.canvas.request_draw(self.animate)
