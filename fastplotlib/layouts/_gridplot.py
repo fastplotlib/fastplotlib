@@ -154,9 +154,9 @@ class GridPlot:
         else:
             return self._subplots[index[0], index[1]]
 
-    def animate(self):
+    def render(self):
         for subplot in self:
-            subplot.animate(self.canvas.get_logical_size())
+            subplot.render()
 
         for f in self._animate_funcs:
             f()
@@ -173,7 +173,7 @@ class GridPlot:
             self._animate_funcs += funcs
 
     def show(self):
-        self.canvas.request_draw(self.animate)
+        self.canvas.request_draw(self.render)
 
         for subplot in self:
             subplot.center_scene()
@@ -193,6 +193,3 @@ class GridPlot:
 
     def __repr__(self):
         return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n"
-
-
-
