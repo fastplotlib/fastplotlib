@@ -1,7 +1,7 @@
 import numpy as np
 import pygfx
 from typing import *
-from .image import Image
+from .image import ImageGraphic
 
 from ..utils import quick_min_max, get_cmap_texture
 
@@ -40,7 +40,7 @@ class SelectionOptions:
             self.callbacks = callbacks
 
 
-class Heatmap(Image):
+class HeatmapGraphic(ImageGraphic):
     def __init__(
             self,
             data: np.ndarray,

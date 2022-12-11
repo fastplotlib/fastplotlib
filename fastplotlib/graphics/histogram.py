@@ -14,7 +14,7 @@ class _HistogramBin(pygfx.Mesh):
         self.frequency: Union[int, float] = None
 
 
-class Histogram(Graphic):
+class HistogramGraphic(Graphic):
     def __init__(
             self,
             data: np.ndarray = None,
@@ -57,7 +57,7 @@ class Histogram(Graphic):
 
         data = np.vstack([x_positions_bins, self.hist])
 
-        super(Histogram, self).__init__(data=data, colors=colors, colors_length=n_bins, **kwargs)
+        super(HistogramGraphic, self).__init__(data=data, colors=colors, colors_length=n_bins, **kwargs)
 
         self.world_object: pygfx.Group = pygfx.Group()
 

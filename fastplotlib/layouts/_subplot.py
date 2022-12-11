@@ -1,12 +1,11 @@
 import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
-from .graphics import Heatmap
-from .defaults import create_camera, create_controller
+from ..graphics import HeatmapGraphic
+from ._defaults import create_camera, create_controller
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
 from math import copysign
-from textwrap import indent
 
 
 class Subplot:
@@ -93,8 +92,13 @@ class Subplot:
         for f in self._animate_funcs:
             f()
 
-    def add_animations(self, funcs: List[callable]):
-        self._animate_funcs += funcs
+    def add_animations(self, *funcs: callable):
+        for f in funcs:
+            if not callable(f):
+                raise TypeError(
+                    f"all positional arguments to add_animations() must be callable types, you have passed a: {type(f)}"
+                )
+            self._animate_funcs += funcs
 
     def add_graphic(self, graphic, center: bool = True):
         if graphic.name is not None:  # skip for those that have no name
@@ -109,7 +113,7 @@ class Subplot:
         self._graphics.append(graphic)
         self.scene.add(graphic.world_object)
 
-        if isinstance(graphic, Heatmap):
+        if isinstance(graphic, HeatmapGraphic):
             self.controller.scale.y = copysign(self.controller.scale.y, -1)
 
         if center:
