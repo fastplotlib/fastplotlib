@@ -2,7 +2,7 @@ from ..plot import Plot
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
 from ..utils import quick_min_max
-from ipywidgets.widgets import IntSlider, VBox, HBox, Layout
+from ipywidgets.widgets import IntSlider, VBox, HBox, Layout, FloatRangeSlider
 import numpy as np
 from typing import *
 from warnings import warn
@@ -166,7 +166,9 @@ class ImageWidget:
             slider_dims: Union[str, int, List[Union[str, int]]] = None,
             window_funcs: Union[int, Dict[str, int]] = None,
             frame_apply: Union[callable, Dict[int, callable]] = None,
+            vmin_vmax_sliders: bool = False,
             grid_shape: Tuple[int, int] = None,
+            names: List[str] = None,
             **kwargs
     ):
         """
@@ -224,9 +226,14 @@ class ImageWidget:
         grid_shape: Optional[Tuple[int, int]]
             manually provide the shape for a gridplot, otherwise a square gridplot is approximated.
 
+        names: Optional[str]
+            gives names to the subplots
+
         kwargs: Any
             passed to fastplotlib.graphics.Image
         """
+        self._names = None
+
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
             if all([_is_arraylike(d) for d in data]):
@@ -249,6 +256,16 @@ class ImageWidget:
 
                 self._data: List[np.ndarray] = data
                 self._ndim = self.data[0].ndim  # all ndim must be same
+
+                if names is not None:
+                    if not all([isinstance(n, str) for n in names]):
+                        raise TypeError("optinal argument `names` must be a list of str")
+
+                    if len(names) != len(self.data):
+                        raise ValueError(
+                            "number of `names` for subplots must be same as the number of data arrays"
+                        )
+                    self._names = names
 
                 self._plot_type = "grid"
 
@@ -428,6 +445,8 @@ class ImageWidget:
         # current_index stores {dimension_index: slice_index} for every dimension
         self._current_index: Dict[str, int] = {sax: 0 for sax in self.slider_dims}
 
+        self.vmin_vmax_sliders: List[FloatRangeSlider] = list()
+
         # get max bound for all data arrays for all dimensions
         self._dims_max_bounds: Dict[str, int] = {k: np.inf for k in self.slider_dims}
         for _dim in list(self._dims_max_bounds.keys()):
@@ -437,8 +456,31 @@ class ImageWidget:
         if self._plot_type == "single":
             self._plot: Plot = Plot()
 
+            minmax = quick_min_max(self.data[0])
+
+            if vmin_vmax_sliders:
+                data_range = np.ptp(minmax)
+                data_range_30p = np.ptp(minmax) * 0.3
+
+                minmax_slider = FloatRangeSlider(
+                    value=minmax,
+                    min=minmax[0] - data_range_30p,
+                    max=minmax[1] + data_range_30p,
+                    step=data_range / 150,
+                    description=f"min-max",
+                    readout = True,
+                    readout_format = '.3f',
+                )
+
+                minmax_slider.observe(
+                    partial(self._vmin_vmax_slider_changed, 0),
+                    names="value"
+                )
+
+                self.vmin_vmax_sliders.append(minmax_slider)
+
             if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
-                kwargs["vmin"], kwargs["vmax"] = quick_min_max(self.data[0])
+                kwargs["vmin"], kwargs["vmax"] = minmax
 
             frame = self._process_indices(self.data[0], slice_indices=self._current_index)
 
@@ -448,13 +490,44 @@ class ImageWidget:
             self._plot: GridPlot = GridPlot(shape=grid_shape, controllers="sync")
 
             self.image_graphics = list()
-            for d, subplot in zip(self.data, self.plot):
+            for i, (d, subplot) in enumerate(zip(self.data, self.plot)):
+                minmax = quick_min_max(self.data[0])
+
+                if self._names is not None:
+                    name = self._names[i]
+                    name_slider = name
+                else:
+                    name = None
+                    name_slider = ""
+
+                if vmin_vmax_sliders:
+                    data_range = np.ptp(minmax)
+                    data_range_30p = np.ptp(minmax) * 0.4
+
+                    minmax_slider = FloatRangeSlider(
+                        value=minmax,
+                        min=minmax[0] - data_range_30p,
+                        max=minmax[1] + data_range_30p,
+                        step=data_range / 150,
+                        description=f"mm ['{name_slider}']",
+                        readout=True,
+                        readout_format='.3f',
+                    )
+
+                    minmax_slider.observe(
+                        partial(self._vmin_vmax_slider_changed, i),
+                        names="value"
+                    )
+
+                    self.vmin_vmax_sliders.append(minmax_slider)
+
                 if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
-                    kwargs["vmin"], kwargs["vmax"] = quick_min_max(self.data[0])
+                    kwargs["vmin"], kwargs["vmax"] = minmax
 
                 frame = self._process_indices(d, slice_indices=self._current_index)
                 ig = ImageGraphic(frame, **kwargs)
                 subplot.add_graphic(ig)
+                subplot.name = name
                 self.image_graphics.append(ig)
 
         self.plot.renderer.add_event_handler(self._set_slider_layout, "resize")
@@ -494,7 +567,8 @@ class ImageWidget:
         # TODO: So just stack everything vertically for now
         self.widget = VBox([
             self.plot.canvas,
-            *list(self._sliders.values())
+            *list(self._sliders.values()),
+            *self.vmin_vmax_sliders
         ])
 
         # TODO: there is currently an issue with ipywidgets or jupyter-rfb and HBox doesn't work with RFB canvas
@@ -692,6 +766,13 @@ class ImageWidget:
             return
         self.current_index = {dimension: change["new"]}
 
+    def _vmin_vmax_slider_changed(
+            self,
+            data_ix: int,
+            change: dict
+    ):
+        self.image_graphics[data_ix].clim = change["new"]
+
     def _set_slider_layout(self, *args):
         w, h = self.plot.renderer.logical_size
         for hs in self._horizontal_sliders:
@@ -699,6 +780,9 @@ class ImageWidget:
 
         for vs in self._vertical_sliders:
             vs.layout = Layout(height=f"{h}px")
+
+        for mm in self.vmin_vmax_sliders:
+            mm.layout = Layout(width=f"{w}px")
 
     def show(self):
         """
