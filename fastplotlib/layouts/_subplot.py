@@ -1,10 +1,9 @@
-import pygfx
-from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
+from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitOrthoController, \
+    AxesHelper, GridHelper, WgpuRenderer, Background, BackgroundMaterial
 from ..graphics import HeatmapGraphic
 from ._defaults import create_camera, create_controller
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
-from warnings import warn
 import numpy as np
 from math import copysign
 from ._base import PlotArea
@@ -16,9 +15,9 @@ class Subplot(PlotArea):
             position: Tuple[int, int] = None,
             parent_dims: Tuple[int, int] = None,
             camera: str = '2d',
-            controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None,
+            controller: Union[PanZoomController, OrbitOrthoController] = None,
             canvas: WgpuCanvas = None,
-            renderer: pygfx.Renderer = None,
+            renderer: WgpuRenderer = None,
             name: str = None,
             **kwargs
     ):
@@ -26,7 +25,7 @@ class Subplot(PlotArea):
             canvas = WgpuCanvas()
 
         if renderer is None:
-            renderer = pygfx.renderers.WgpuRenderer(canvas)
+            renderer = WgpuRenderer(canvas)
 
         if position is None:
             position = (0, 0)
@@ -64,6 +63,7 @@ class Subplot(PlotArea):
 
         for pos in ["left", "top", "right", "bottom"]:
             dv = _DockedViewport(self, pos, size=0)
+            dv.name = pos
             self.docked_viewports[pos] = dv
             self.children.append(dv)
 
@@ -95,12 +95,12 @@ class Subplot(PlotArea):
             f()
 
     def add_animations(self, *funcs: callable):
-        for f in funcs:
-            if not callable(f):
-                raise TypeError(
-                    f"all positional arguments to add_animations() must be callable types, you have passed a: {type(f)}"
-                )
-            self._animate_funcs += funcs
+        if not all([callable(f) for f in funcs]):
+            raise TypeError(
+                f"all positional arguments to add_animations() must be callable types"
+            )
+
+        self._animate_funcs += funcs
 
     def add_graphic(self, graphic, center: bool = True):
         super(Subplot, self).add_graphic(graphic, center)
@@ -134,7 +134,6 @@ class _DockedViewport(PlotArea):
             parent: Subplot,
             position: str,
             size: int,
-            camera: str = "2d",
     ):
         if position not in self._valid_positions:
             raise ValueError(f"the `position` of an AnchoredViewport must be one of: {self._valid_positions}")
@@ -144,7 +143,7 @@ class _DockedViewport(PlotArea):
         super(_DockedViewport, self).__init__(
             parent=parent,
             position=position,
-            camera= OrthographicCamera(),
+            camera=OrthographicCamera(),
             controller=PanZoomController(),
             scene=Scene(),
             canvas=parent.canvas,
@@ -152,7 +151,7 @@ class _DockedViewport(PlotArea):
         )
 
         self.scene.add(
-            pygfx.Background(None, pygfx.BackgroundMaterial((0.2, 0.0, 0, 1), (0, 0.0, 0.2, 1)))
+            Background(None, BackgroundMaterial((0.2, 0.0, 0, 1), (0, 0.0, 0.2, 1)))
         )
 
     @property

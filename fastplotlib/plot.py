@@ -40,7 +40,7 @@ class Plot(Subplot):
         return graphic
 
     def render(self):
-        super(Plot, self).render(canvas_dims=None)
+        super(Plot, self).render()
 
         self.renderer.flush()
         self.canvas.request_draw()

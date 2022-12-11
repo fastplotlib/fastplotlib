@@ -78,6 +78,7 @@ class PlotArea:
     def camera(self) -> Union[OrthographicCamera, PerspectiveCamera]:
         return self._camera
 
+    # in the future we can think about how to allow changing the controller
     @property
     def controller(self) -> Union[PanZoomController, OrbitController]:
         return self._controller
@@ -163,15 +164,19 @@ class PlotArea:
             graphic_names.append(g.name)
         raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
 
-    def __repr__(self):
-        newline = "\n\t"
+    def __str__(self):
         if self.name is None:
-            name = ""
+            name = "unnamed"
         else:
             name = self.name
 
-        return f"{name}: {self.__class__.__name__} @ {hex(id(self))} \n" \
-               f"parent: {self.parent}\n" \
-               f"children: {self.children}\n" \
-               f"Graphics: \n\t" \
-               f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
+        return f"{name}: {self.__class__.__name__} @ {hex(id(self))}"
+
+    def __repr__(self):
+        newline = "\n\t"
+
+        return f"{self}\n" \
+               f"  parent: {self.parent}\n" \
+               f"  Graphics:\n" \
+               f"\t{newline.join(graphic.__repr__() for graphic in self.get_graphics())}" \
+               f"\n"
