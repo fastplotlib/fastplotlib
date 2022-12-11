@@ -11,7 +11,20 @@ qual_cmaps = ['Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1',
 
 
 def _get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
-    cmap = np.loadtxt(str(Path(__file__).absolute().parent.joinpath('colormaps', name)))
+    cmap_path = Path(__file__).absolute().parent.joinpath('colormaps', name)
+    if cmap_path.is_file():
+        cmap = np.loadtxt(cmap_path)
+
+    else:
+        try:
+            from .generate_colormaps import make_cmap
+            cmap = make_cmap(name, alpha)
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError(
+                "Couldn't find colormap files, matplotlib is required to generate them "
+                "if they aren't found. Please install `matplotlib`."
+            )
+
     cmap[:, -1] = alpha
 
     return cmap.astype(np.float32)

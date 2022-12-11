@@ -1,6 +1,6 @@
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
-from .subplot import Subplot
+from .layouts._subplot import Subplot
 from . import graphics
 from functools import partial
 from inspect import signature
@@ -13,7 +13,8 @@ class Plot(Subplot):
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
             camera: str = '2d',
-            controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None
+            controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None,
+            **kwargs
     ):
         super(Plot, self).__init__(
             position=(0, 0),
@@ -21,7 +22,8 @@ class Plot(Subplot):
             canvas=canvas,
             renderer=renderer,
             camera=camera,
-            controller=controller
+            controller=controller,
+            **kwargs
         )
 
         for graphic_cls_name in graphics.__all__:
@@ -29,7 +31,7 @@ class Plot(Subplot):
             pfunc = partial(self._create_graphic, cls)
             pfunc.__signature__ = signature(cls)
             pfunc.__doc__ = cls.__doc__
-            setattr(self, graphic_cls_name.lower(), pfunc)
+            setattr(self, graphic_cls_name.rstrip("Graphic").lower(), pfunc)
 
     def _create_graphic(self, graphic_class, *args, **kwargs):
         graphic = graphic_class(*args, **kwargs)

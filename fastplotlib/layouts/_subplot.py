@@ -1,10 +1,12 @@
 import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, Viewport, AxesHelper, GridHelper
-from .defaults import camera_types, controller_types
+from ..graphics import HeatmapGraphic
+from ._defaults import create_camera, create_controller
 from typing import *
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
 import numpy as np
+from math import copysign
 
 
 class Subplot:
@@ -15,9 +17,12 @@ class Subplot:
             camera: str = '2d',
             controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None,
             canvas: WgpuCanvas = None,
-            renderer: pygfx.Renderer = None
+            renderer: pygfx.Renderer = None,
+            **kwargs
     ):
         self.scene: pygfx.Scene = pygfx.Scene()
+
+        self._graphics = list()
 
         if canvas is None:
             canvas = WgpuCanvas()
@@ -28,6 +33,11 @@ class Subplot:
         self.canvas = canvas
         self.renderer = renderer
 
+        if "name" in kwargs.keys():
+            self.name = kwargs["name"]
+        else:
+            self.name = None
+
         if position is None:
             position = (0, 0)
         self.position: Tuple[int, int] = position
@@ -37,10 +47,10 @@ class Subplot:
 
         self.nrows, self.ncols = parent_dims
 
-        self.camera: Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera] = camera_types[camera]()
+        self.camera: Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera] = create_camera(camera)
 
         if controller is None:
-            controller = controller_types[camera]()
+            controller = create_controller(camera)
         self.controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = controller
 
         # might be better as an attribute of GridPlot
@@ -104,11 +114,29 @@ class Subplot:
         for dv in self.docked_viewports.values():
             dv.render()
 
-    def add_animations(self, funcs: List[callable]):
-        self._animate_funcs += funcs
+    def add_animations(self, *funcs: callable):
+        for f in funcs:
+            if not callable(f):
+                raise TypeError(
+                    f"all positional arguments to add_animations() must be callable types, you have passed a: {type(f)}"
+                )
+            self._animate_funcs += funcs
 
     def add_graphic(self, graphic, center: bool = True):
+        if graphic.name is not None:  # skip for those that have no name
+            graphic_names = list()
+
+            for g in self._graphics:
+                graphic_names.append(g.name)
+
+            if graphic.name in graphic_names:
+                raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
+
+        self._graphics.append(graphic)
         self.scene.add(graphic.world_object)
+
+        if isinstance(graphic, HeatmapGraphic):
+            self.controller.scale.y = copysign(self.controller.scale.y, -1)
 
         if center:
             self.center_graphic(graphic)
@@ -160,8 +188,32 @@ class Subplot:
         else:
             self.scene.remove(self._grid)
 
+    def get_graphics(self):
+        return self._graphics
+
     def remove_graphic(self, graphic):
         self.scene.remove(graphic.world_object)
+
+    def __getitem__(self, name: str):
+        for graphic in self._graphics:
+            if graphic.name == name:
+                return graphic
+
+        graphic_names = list()
+        for g in self._graphics:
+            graphic_names.append(g.name)
+        raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
+
+    def __repr__(self):
+        newline = "\n  "
+        if self.name is not None:
+            return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n" \
+                   f"Graphics: \n  " \
+                   f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
+        else:
+            return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))} \n" \
+                   f"Graphics: \n  " \
+                   f"{newline.join(graphic.__repr__() for graphic in self.get_graphics())}"
 
 
 class _DockedViewport:
