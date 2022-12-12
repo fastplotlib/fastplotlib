@@ -79,3 +79,33 @@ class Graphic(BaseGraphic):
             return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
         else:
             return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
+<<<<<<< HEAD
+=======
+
+class Interaction:
+    # make them abstract properties
+    @property
+    def indices(self) -> Any:
+        pass
+
+    @indices.setter
+    def indices(self, indices: Any):
+        pass
+
+    @property
+    def features(self) -> List[str]:
+        pass
+
+    def _set_feature(self, name: str, new_data: Any, indices: Any):
+        pass
+
+    def link(self, event: str, feature: Any, feature_data: Any, target: Graphic, target_feature: Any, target_data: Any, indices_mapper: Any):
+        # event occurs, causes change in feature of current graphic to data indices from pick_info,
+        # also causes change in target graphic to target feature at target data with corresponding or mapped
+        # indices based on the indice_mapper function
+
+        # indice mapper takes in source features and maps to target features
+        pass
+
+
+>>>>>>> 2c00596 (beginning base logic for interactivity impl)
