@@ -1,9 +1,14 @@
 import numpy as np
 import pygfx
 from typing import *
+
+from fastplotlib.graphics._base import Graphic
+
 from .image import ImageGraphic
 
 from ..utils import quick_min_max, get_cmap_texture
+
+from ._base import Interaction
 
 
 default_selection_options = {
@@ -40,7 +45,22 @@ class SelectionOptions:
             self.callbacks = callbacks
 
 
-class HeatmapGraphic(ImageGraphic):
+class HeatmapGraphic(ImageGraphic, Interaction):
+    @property
+    def indices(self) -> Any:
+        pass
+
+    @property
+    def features(self) -> List[str]:
+        pass
+
+    def _set_feature(self, name: str, new_data: Any, indices: Any):
+        pass
+
+    def link(self, event: str, feature: Any, feature_data: Any, target: Graphic, target_feature: Any, target_data: Any,
+             indices_mapper: Any):
+        pass
+
     def __init__(
             self,
             data: np.ndarray,
