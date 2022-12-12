@@ -5,6 +5,7 @@ import pygfx
 from ..utils import get_colors
 from .features import GraphicFeature, DataFeature, ColorFeature, PresentFeature
 
+from abc import ABC, abstractmethod
 
 class Graphic:
     def __init__(
@@ -107,27 +108,34 @@ class Graphic:
 <<<<<<< HEAD
 =======
 
-class Interaction:
+class Interaction(ABC):
     # make them abstract properties
     @property
+    @abstractmethod
     def indices(self) -> Any:
         pass
 
     @indices.setter
+    @abstractmethod
     def indices(self, indices: Any):
         pass
 
     @property
+    @abstractmethod
     def features(self) -> List[str]:
         pass
 
+    @abstractmethod
     def _set_feature(self, name: str, new_data: Any, indices: Any):
         pass
 
+    @abstractmethod
     def link(self, event: str, feature: Any, feature_data: Any, target: Graphic, target_feature: Any, target_data: Any, indices_mapper: Any):
         # event occurs, causes change in feature of current graphic to data indices from pick_info,
         # also causes change in target graphic to target feature at target data with corresponding or mapped
         # indices based on the indice_mapper function
+
+        # events can be feature changes, when feature changes want to trigger an event
 
         # indice mapper takes in source features and maps to target features
         pass
