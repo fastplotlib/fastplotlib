@@ -272,7 +272,9 @@ class ImageWidget:
             else:
                 raise TypeError(
                     f"If passing a list to `data` all elements must be an "
-                    f"array-like type representing an n-dimensional image"
+                    f"array-like type representing an n-dimensional image. "
+                    f"You have passed the following types:\n"
+                    f"{[type(a) for a in data]}"
                 )
 
         elif _is_arraylike(data):
@@ -283,7 +285,8 @@ class ImageWidget:
         else:
             raise TypeError(
                 f"`data` must be an array-like type representing an n-dimensional image "
-                f"or a list of array-like representing a grid of n-dimensional images"
+                f"or a list of array-like representing a grid of n-dimensional images. "
+                f"You have passed the following type {type(data)}"
             )
 
         # default dims order if not passed
