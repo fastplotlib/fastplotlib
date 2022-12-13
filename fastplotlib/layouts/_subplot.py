@@ -108,6 +108,11 @@ class Subplot(PlotArea):
         if isinstance(graphic, HeatmapGraphic):
             self.controller.scale.y = copysign(self.controller.scale.y, -1)
 
+    def remove_graphic(self, graphic):
+        super(Subplot, self).remove_graphic(graphic)
+
+        self.get_graphics()[graphic.__class__.__name__].remove(graphic)
+
     def set_axes_visibility(self, visible: bool):
         if visible:
             self.scene.add(self._axes)

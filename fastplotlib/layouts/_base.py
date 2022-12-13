@@ -39,7 +39,9 @@ class PlotArea:
 
         self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
-        self._graphics: List[Graphic] = list()
+        self._graphics = {}
+        # \
+        #     List[Graphic] = list()
 
         self.name = name
 
@@ -101,13 +103,19 @@ class PlotArea:
         if graphic.name is not None:  # skip for those that have no name
             graphic_names = list()
 
-            for g in self._graphics:
-                graphic_names.append(g.name)
+            for key in self._graphics.keys():
+                for g in self._graphics[key]:
+                    graphic_names.append(g.name)
 
             if graphic.name in graphic_names:
                 raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
 
-        self._graphics.append(graphic)
+        if graphic.__class__.__name__ in self._graphics.keys():
+            self._graphics[graphic.__class__.__name__].append(graphic)
+        else:
+            self._graphics[graphic.__class__.__name__] = list()
+            self._graphics[graphic.__class__.__name__].append(graphic)
+
         self.scene.add(graphic.world_object)
 
         if center:
@@ -155,14 +163,16 @@ class PlotArea:
         self.scene.remove(graphic.world_object)
 
     def __getitem__(self, name: str):
-        for graphic in self._graphics:
-            if graphic.name == name:
-                return graphic
+        for key in self._graphics.keys():
+            for graphic in self._graphics[key]:
+                if graphic.name == name:
+                    return graphic
 
         graphic_names = list()
-        for g in self._graphics:
-            graphic_names.append(g.name)
-        raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
+        for key in self._graphics.keys():
+            for g in self._graphics[key]:
+                graphic_names.append(g.name)
+            raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
 
     def __str__(self):
         if self.name is None:
@@ -178,5 +188,5 @@ class PlotArea:
         return f"{self}\n" \
                f"  parent: {self.parent}\n" \
                f"  Graphics:\n" \
-               f"\t{newline.join(graphic.__repr__() for graphic in self.get_graphics())}" \
+               f"\t{newline.join(graphic.__repr__() for key in self.get_graphics().keys() for graphic in self.get_graphics()[key])}" \
                f"\n"
