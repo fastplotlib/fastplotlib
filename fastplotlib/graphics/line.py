@@ -1,5 +1,6 @@
 import numpy as np
 import pygfx
+from typing import *
 
 from ._base import Graphic
 
@@ -23,6 +24,8 @@ class LineGraphic(Graphic):
             geometry=pygfx.Geometry(positions=self.data, colors=self.colors),
             material=material(thickness=size, vertex_colors=True)
         )
+
+        self.events = {}
 
     def fix_data(self):
         # TODO: data should probably be a property of any Graphic?? Or use set_data() and get_data()
@@ -53,3 +56,32 @@ class LineGraphic(Graphic):
 
         self.world_object.geometry.colors.data[:] = self.colors
         self.world_object.geometry.colors.update_range()
+
+    @property
+    def indices(self) -> Any:
+        return self.indices
+
+    @property
+    def features(self) -> List[str]:
+        return self.features
+
+    def _set_feature(self, name: str, new_data: Any, indices: Any):
+        if name == "color":
+            self.update_colors(new_data)
+        elif name == "data":
+            self.update_data(new_data)
+        else:
+            raise ValueError("name arg is not a valid feature")
+
+    def link(self, event: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
+        valid_events = ["click"]
+        if event in valid_events:
+            self.world_object.add_event_handler(self.event_handler, event)
+            self.events[event] = list()
+            self.events[event].append((target, feature, new_data))
+        else:
+            raise ValueError("event not possible")
+
+    def event_handler(self, event):
+        for event in self.events[event]:
+            event[0]._set_feature(name=event[1], new_data=event[2], indices=None)
