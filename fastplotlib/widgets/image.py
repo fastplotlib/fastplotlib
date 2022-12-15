@@ -21,8 +21,8 @@ DEFAULT_DIMS_ORDER = \
 def _calc_gridshape(n):
     sr = np.sqrt(n)
     return (
-        int(np.ceil(sr)),
-        int(np.round(sr))
+        int(np.round(sr)),
+        int(np.ceil(sr))
     )
 
 
