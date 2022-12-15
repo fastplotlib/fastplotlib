@@ -9,7 +9,6 @@ install_requires = [
     'jupyterlab-widgets==1.1.1',
     'ipywidgets<8.0.0',
     'jupyter-rfb',
-    'simplejpeg'
 ]
 
 
