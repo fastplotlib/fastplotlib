@@ -5,7 +5,6 @@ from typing import *
 
 from ._base import Graphic
 
-
 class LineGraphic(Graphic):
     def __init__(
             self,
@@ -114,12 +113,22 @@ class LineGraphic(Graphic):
         valid_events = ["click"]
         if event in valid_events:
             self.world_object.add_event_handler(self.event_handler, event)
-            self.events[event] = list()
-            self.events[event].append((target, feature, new_data))
         else:
             raise ValueError("event not possible")
 
+        if event in self.events.keys():
+            self.events[event].append((target, feature, new_data))
+        else:
+            self.events[event] = list()
+            self.events[event].append((target, feature, new_data))
+
     def event_handler(self, event):
+<<<<<<< HEAD
         for event in self.events[event]:
             event[0]._set_feature(name=event[1], new_data=event[2], indices=None)
 >>>>>>> f19c9c1 (wip)
+=======
+        if event.type in self.events.keys():
+            for target_info in self.events[event.type]:
+                target_info[0]._set_feature(name=target_info[1], new_data=target_info[2], indices=None)
+>>>>>>> ac6c67a (grrrrr)
