@@ -1,8 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 from typing import *
 =======
 from typing import Any, List
 >>>>>>> 95e77a1 (reorg)
+=======
+from typing import *
+>>>>>>> 71eb48f (small changes and reorg)
 
 import pygfx
 
@@ -52,6 +56,7 @@ class Graphic:
         self.colors = None
 
         self.name = name
+        self.registered_callbacks = dict()
 
         if n_colors is None:
             n_colors = self.data.feature_data.shape[0]
@@ -113,6 +118,12 @@ class Graphic:
 <<<<<<< HEAD
 =======
 
+    def event_handler(self, event):
+        if event.type in self.registered_callbacks.keys():
+            for target_info in self.registered_callbacks[event.type]:
+                target_info.target._set_feature(name=target_info.feature, new_data=target_info.new_data,
+                                                indices=target_info.indices)
+
 class Interaction(ABC):
     # make them abstract properties
     @property
@@ -145,6 +156,7 @@ class Interaction(ABC):
         # indice mapper takes in source features and maps to target features
         pass
 
+<<<<<<< HEAD
     @abstractmethod
     def event_handler(self, event):
         pass
@@ -152,11 +164,17 @@ class Interaction(ABC):
 <<<<<<< HEAD
 >>>>>>> 2c00596 (beginning base logic for interactivity impl)
 =======
+=======
+>>>>>>> 71eb48f (small changes and reorg)
 @dataclass
 class EventData:
     """Class for keeping track of the info necessary for interactivity after event occurs."""
-    def __init__(self, target: Graphic, feature: str, new_data: Any):
+    def __init__(self, target: Graphic, feature: str, new_data: Any, indices: Any):
         self.target = target
         self.feature = feature
         self.new_data = new_data
+<<<<<<< HEAD
 >>>>>>> 95e77a1 (reorg)
+=======
+        self.indices = indices
+>>>>>>> 71eb48f (small changes and reorg)
