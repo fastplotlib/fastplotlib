@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from typing import *
+=======
+from typing import Any, List
+>>>>>>> 95e77a1 (reorg)
 
 import pygfx
 
@@ -6,6 +10,7 @@ from ..utils import get_colors
 from .features import GraphicFeature, DataFeature, ColorFeature, PresentFeature
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 class Graphic:
     def __init__(
@@ -130,7 +135,7 @@ class Interaction(ABC):
         pass
 
     @abstractmethod
-    def link(self, event: str, feature: Any, feature_data: Any, target: Graphic, target_feature: Any, target_data: Any, indices_mapper: Any):
+    def link(self, event: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
         # event occurs, causes change in feature of current graphic to data indices from pick_info,
         # also causes change in target graphic to target feature at target data with corresponding or mapped
         # indices based on the indice_mapper function
@@ -140,5 +145,18 @@ class Interaction(ABC):
         # indice mapper takes in source features and maps to target features
         pass
 
+    @abstractmethod
+    def event_handler(self, event):
+        pass
 
+<<<<<<< HEAD
 >>>>>>> 2c00596 (beginning base logic for interactivity impl)
+=======
+@dataclass
+class EventData:
+    """Class for keeping track of the info necessary for interactivity after event occurs."""
+    def __init__(self, target: Graphic, feature: str, new_data: Any):
+        self.target = target
+        self.feature = feature
+        self.new_data = new_data
+>>>>>>> 95e77a1 (reorg)
