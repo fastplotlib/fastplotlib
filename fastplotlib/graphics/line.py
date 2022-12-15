@@ -3,6 +3,7 @@ import pygfx
 from typing import *
 
 from ._base import Graphic
+from ._base import EventData
 
 class LineGraphic(Graphic):
     def __init__(self, data: np.ndarray, zlevel: float = None, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
@@ -24,7 +25,7 @@ class LineGraphic(Graphic):
             material=material(thickness=size, vertex_colors=True)
         )
 
-        self.events = {}
+        self.registered_callbacks = {}
 
     def fix_data(self):
         # TODO: data should probably be a property of any Graphic?? Or use set_data() and get_data()
@@ -79,13 +80,13 @@ class LineGraphic(Graphic):
         else:
             raise ValueError("event not possible")
 
-        if event in self.events.keys():
-            self.events[event].append((target, feature, new_data))
+        if event in self.registered_callbacks.keys():
+            self.registered_callbacks[event].append(EventData(target=target, feature=feature, new_data=new_data))
         else:
-            self.events[event] = list()
-            self.events[event].append((target, feature, new_data))
+            self.registered_callbacks[event] = list()
+            self.registered_callbacks[event].append(EventData(target=target, feature=feature, new_data=new_data))
 
     def event_handler(self, event):
-        if event.type in self.events.keys():
-            for target_info in self.events[event.type]:
-                target_info[0]._set_feature(name=target_info[1], new_data=target_info[2], indices=None)
+        if event.type in self.registered_callbacks.keys():
+            for target_info in self.registered_callbacks[event.type]:
+                target_info.target._set_feature(name=target_info.feature, new_data=target_info.new_data, indices=None)
