@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import *
 
 import numpy as np
 import pygfx
@@ -22,6 +22,7 @@ class Graphic:
         self.colors = None
 
         self.name = name
+        self.registered_callbacks = dict()
 
         # if colors_length is None:
         #     colors_length = self.data.shape[0]
@@ -70,6 +71,12 @@ class Graphic:
         else:
             return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
 
+    def event_handler(self, event):
+        if event.type in self.registered_callbacks.keys():
+            for target_info in self.registered_callbacks[event.type]:
+                target_info.target._set_feature(name=target_info.feature, new_data=target_info.new_data,
+                                                indices=target_info.indices)
+
 class Interaction(ABC):
     # make them abstract properties
     @property
@@ -102,14 +109,11 @@ class Interaction(ABC):
         # indice mapper takes in source features and maps to target features
         pass
 
-    @abstractmethod
-    def event_handler(self, event):
-        pass
-
 @dataclass
 class EventData:
     """Class for keeping track of the info necessary for interactivity after event occurs."""
-    def __init__(self, target: Graphic, feature: str, new_data: Any):
+    def __init__(self, target: Graphic, feature: str, new_data: Any, indices: Any):
         self.target = target
         self.feature = feature
         self.new_data = new_data
+        self.indices = indices

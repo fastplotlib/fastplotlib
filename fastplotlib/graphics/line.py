@@ -25,8 +25,6 @@ class LineGraphic(Graphic):
             material=material(thickness=size, vertex_colors=True)
         )
 
-        self.registered_callbacks = {}
-
     def fix_data(self):
         # TODO: data should probably be a property of any Graphic?? Or use set_data() and get_data()
         if self.data.ndim == 1:
@@ -81,12 +79,7 @@ class LineGraphic(Graphic):
             raise ValueError("event not possible")
 
         if event in self.registered_callbacks.keys():
-            self.registered_callbacks[event].append(EventData(target=target, feature=feature, new_data=new_data))
+            self.registered_callbacks[event].append(EventData(target=target, feature=feature, new_data=new_data, indices=None))
         else:
             self.registered_callbacks[event] = list()
-            self.registered_callbacks[event].append(EventData(target=target, feature=feature, new_data=new_data))
-
-    def event_handler(self, event):
-        if event.type in self.registered_callbacks.keys():
-            for target_info in self.registered_callbacks[event.type]:
-                target_info.target._set_feature(name=target_info.feature, new_data=target_info.new_data, indices=None)
+            self.registered_callbacks[event].append(EventData(target=target, feature=feature, new_data=new_data, indices=None))
