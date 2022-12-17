@@ -1,10 +1,7 @@
+from typing import *
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
 from .layouts._subplot import Subplot
-from . import graphics
-from functools import partial
-from inspect import signature
-from typing import *
 
 
 class Plot(Subplot):
@@ -25,19 +22,6 @@ class Plot(Subplot):
             controller=controller,
             **kwargs
         )
-
-        for graphic_cls_name in graphics.__all__:
-            cls = getattr(graphics, graphic_cls_name)
-            pfunc = partial(self._create_graphic, cls)
-            pfunc.__signature__ = signature(cls)
-            pfunc.__doc__ = cls.__doc__
-            setattr(self, graphic_cls_name.rstrip("Graphic").lower(), pfunc)
-
-    def _create_graphic(self, graphic_class, *args, **kwargs):
-        graphic = graphic_class(*args, **kwargs)
-        super(Plot, self).add_graphic(graphic, center=False)
-
-        return graphic
 
     def render(self):
         super(Plot, self).render()

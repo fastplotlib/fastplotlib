@@ -487,7 +487,7 @@ class ImageWidget:
 
             frame = self._process_indices(self.data[0], slice_indices=self._current_index)
 
-            self.image_graphics: List[ImageGraphic] = [self.plot.image(data=frame, **kwargs)]
+            self.image_graphics: List[ImageGraphic] = [self.plot.add_image(data=frame, **kwargs)]
 
         elif self._plot_type == "grid":
             self._plot: GridPlot = GridPlot(shape=grid_shape, controllers="sync")
