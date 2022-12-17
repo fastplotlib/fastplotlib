@@ -1,10 +1,10 @@
 from itertools import product
 import numpy as np
+from typing import *
 import pygfx
+from wgpu.gui.auto import WgpuCanvas
 from ._defaults import create_controller
 from ._subplot import Subplot
-from typing import *
-from wgpu.gui.auto import WgpuCanvas
 
 
 def to_array(a) -> np.ndarray:

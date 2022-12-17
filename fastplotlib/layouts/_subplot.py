@@ -1,12 +1,16 @@
-from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitOrthoController, \
-    AxesHelper, GridHelper, WgpuRenderer, Background, BackgroundMaterial
-from ..graphics import HeatmapGraphic
-from ._defaults import create_camera, create_controller
 from typing import *
-from wgpu.gui.auto import WgpuCanvas
 import numpy as np
 from math import copysign
+from functools import partial
+from inspect import signature
+
+from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitOrthoController, \
+    AxesHelper, GridHelper, WgpuRenderer, Background, BackgroundMaterial
+from wgpu.gui.auto import WgpuCanvas
+
 from ._base import PlotArea
+from .. import graphics
+from ._defaults import create_camera, create_controller
 
 
 class Subplot(PlotArea):
@@ -67,6 +71,23 @@ class Subplot(PlotArea):
             self.docked_viewports[pos] = dv
             self.children.append(dv)
 
+        # attach all the add_<graphic_name> methods
+        for graphic_cls_name in graphics.__all__:
+            cls = getattr(graphics, graphic_cls_name)
+
+            pfunc = partial(self._create_graphic, cls)
+            pfunc.__signature__ = signature(cls)
+            pfunc.__doc__ = cls.__init__.__doc__
+
+            graphic_cls_name = graphic_cls_name.lower().replace("graphic", "").replace("collection", "_collection")
+            setattr(self, f"add_{graphic_cls_name}", pfunc)
+
+    def _create_graphic(self, graphic_class, *args, **kwargs):
+        graphic = graphic_class(*args, **kwargs)
+        self.add_graphic(graphic, center=False)
+
+        return graphic
+
     def get_rect(self):
         row_ix, col_ix = self.position
         width_canvas, height_canvas = self.renderer.logical_size
@@ -105,7 +126,7 @@ class Subplot(PlotArea):
     def add_graphic(self, graphic, center: bool = True):
         super(Subplot, self).add_graphic(graphic, center)
 
-        if isinstance(graphic, HeatmapGraphic):
+        if isinstance(graphic, graphics.HeatmapGraphic):
             self.controller.scale.y = copysign(self.controller.scale.y, -1)
 
     def set_axes_visibility(self, visible: bool):
