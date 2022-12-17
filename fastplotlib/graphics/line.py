@@ -5,10 +5,8 @@ from ._base import Graphic
 
 
 class LineGraphic(Graphic):
-    def __init__(self, data: np.ndarray, zlevel: float = None, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
+    def __init__(self, data: np.ndarray, z_position: float = 0.0, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
         super(LineGraphic, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
-
-        self.zlevel = zlevel
 
         self.fix_data()
 
@@ -24,6 +22,8 @@ class LineGraphic(Graphic):
             material=material(thickness=size, vertex_colors=True)
         )
 
+        self.world_object.position.z = z_position
+
     def fix_data(self):
         # TODO: data should probably be a property of any Graphic?? Or use set_data() and get_data()
         if self.data.ndim == 1:
@@ -32,12 +32,9 @@ class LineGraphic(Graphic):
         if self.data.shape[1] != 3:
             if self.data.shape[1] != 2:
                 raise ValueError("Must pass 1D, 2D or 3D data")
-            # make it 2D with zlevel
-            if self.zlevel is None:
-                self.zlevel = 0
 
-            # zeros
-            zs = np.full(self.data.shape[0], fill_value=self.zlevel, dtype=np.float32)
+            # zeros for z
+            zs = np.zeros(self.data.shape[0], dtype=np.float32)
 
             self.data = np.dstack([self.data[:, 0], self.data[:, 1], zs])[0]
 
