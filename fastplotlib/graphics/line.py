@@ -3,9 +3,9 @@ import numpy as np
 import pygfx
 from typing import *
 
-from ._base import Graphic
-from ._base import EventData
+from ._base import Graphic, EventData, Interaction
 
+<<<<<<< HEAD
 class LineGraphic(Graphic):
     def __init__(
             self,
@@ -43,6 +43,13 @@ class LineGraphic(Graphic):
         kwargs
             passed to Graphic
         """
+=======
+class LineGraphic(Graphic, Interaction):
+    def __init__(self, data: np.ndarray, zlevel: float = None, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
+        super(LineGraphic, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
+
+        self.zlevel = zlevel
+>>>>>>> e203cff (updates to line, works w previous example)
 
         super(LineGraphic, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
@@ -103,30 +110,30 @@ class LineGraphic(Graphic):
 
     @property
     def indices(self) -> Any:
-        return self.indices
+        return None
 
     @property
     def features(self) -> List[str]:
-        return self.features
+        return None
 
-    def _set_feature(self, name: str, new_data: Any, indices: Any):
-        if name == "color":
-            self.update_colors(new_data)
-        elif name == "data":
-            self.update_data(new_data)
+    def _set_feature(self, feature: str, new_data: Any, indices: Any = None):
+        if feature in ["colors", "data"]:
+            update_func = getattr(self, f"update_{feature}")
+            update_func(new_data)
         else:
             raise ValueError("name arg is not a valid feature")
 
-    def link(self, event: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
+    def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
         valid_events = ["click"]
-        if event in valid_events:
-            self.world_object.add_event_handler(self.event_handler, event)
+        if event_type in valid_events:
+            self.world_object.add_event_handler(self.event_handler, event_type)
         else:
             raise ValueError("event not possible")
 
-        if event in self.registered_callbacks.keys():
-            self.registered_callbacks[event].append(EventData(target=target, feature=feature, new_data=new_data, indices=None))
+        if event_type in self.registered_callbacks.keys():
+            self.registered_callbacks[event_type].append(EventData(target=target, feature=feature, new_data=new_data))
         else:
+<<<<<<< HEAD
             self.registered_callbacks[event] = list()
 <<<<<<< HEAD
             self.registered_callbacks[event].append(EventData(target=target, feature=feature, new_data=new_data))
@@ -150,3 +157,7 @@ class LineGraphic(Graphic):
 =======
             self.registered_callbacks[event].append(EventData(target=target, feature=feature, new_data=new_data, indices=None))
 >>>>>>> 71eb48f (small changes and reorg)
+=======
+            self.registered_callbacks[event_type] = list()
+            self.registered_callbacks[event_type].append(EventData(target=target, feature=feature, new_data=new_data))
+>>>>>>> e203cff (updates to line, works w previous example)

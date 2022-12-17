@@ -118,14 +118,7 @@ class Graphic:
 <<<<<<< HEAD
 =======
 
-    def event_handler(self, event):
-        if event.type in self.registered_callbacks.keys():
-            for target_info in self.registered_callbacks[event.type]:
-                target_info.target._set_feature(name=target_info.feature, new_data=target_info.new_data,
-                                                indices=target_info.indices)
-
 class Interaction(ABC):
-    # make them abstract properties
     @property
     @abstractmethod
     def indices(self) -> Any:
@@ -147,15 +140,9 @@ class Interaction(ABC):
 
     @abstractmethod
     def link(self, event: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
-        # event occurs, causes change in feature of current graphic to data indices from pick_info,
-        # also causes change in target graphic to target feature at target data with corresponding or mapped
-        # indices based on the indice_mapper function
-
-        # events can be feature changes, when feature changes want to trigger an event
-
-        # indice mapper takes in source features and maps to target features
         pass
 
+<<<<<<< HEAD
 <<<<<<< HEAD
     @abstractmethod
     def event_handler(self, event):
@@ -166,15 +153,25 @@ class Interaction(ABC):
 =======
 =======
 >>>>>>> 71eb48f (small changes and reorg)
+=======
+    def event_handler(self, event):
+        if event.type in self.registered_callbacks.keys():
+            for target_info in self.registered_callbacks[event.type]:
+                target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data)
+
+>>>>>>> e203cff (updates to line, works w previous example)
 @dataclass
 class EventData:
     """Class for keeping track of the info necessary for interactivity after event occurs."""
-    def __init__(self, target: Graphic, feature: str, new_data: Any, indices: Any):
+    def __init__(self, target: Graphic, feature: str, new_data: Any):
         self.target = target
         self.feature = feature
         self.new_data = new_data
+<<<<<<< HEAD
 <<<<<<< HEAD
 >>>>>>> 95e77a1 (reorg)
 =======
         self.indices = indices
 >>>>>>> 71eb48f (small changes and reorg)
+=======
+>>>>>>> e203cff (updates to line, works w previous example)
