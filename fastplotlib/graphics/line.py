@@ -1,3 +1,4 @@
+from typing import *
 import numpy as np
 import pygfx
 
@@ -5,7 +6,36 @@ from ._base import Graphic
 
 
 class LineGraphic(Graphic):
-    def __init__(self, data: np.ndarray, z_position: float = 0.0, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
+    def __init__(
+            self,
+            data: Any,
+            z_position: float = 0.0,
+            size: float = 2.0,
+            colors: np.ndarray = None,
+            cmap: str = None,
+            *args,
+            **kwargs
+    ):
+        """
+        Plot line data, 2d or 3d
+
+        Parameters
+        ----------
+        data: array-like
+            Line data to plot, 2D must be of shape [(]n_points, 2], 3D must be of shape [n_points, 3]
+
+        z_position: float, optional
+            z-axis position for placing the graphic
+
+        size: float, optional
+            thickness of the line
+
+        colors:
+        cmap: str, optional
+            apply a colormap to the line instead of assigning colors manually
+        args
+        kwargs
+        """
         super(LineGraphic, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
         self.fix_data()
