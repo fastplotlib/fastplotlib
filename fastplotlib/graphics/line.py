@@ -17,12 +17,12 @@ class LineGraphic(Graphic):
             **kwargs
     ):
         """
-        Plot line data, 2d or 3d
+        Create a line Graphic, 2d or 3d
 
         Parameters
         ----------
         data: array-like
-            Line data to plot, 2D must be of shape [(]n_points, 2], 3D must be of shape [n_points, 3]
+            Line data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
 
         z_position: float, optional
             z-axis position for placing the graphic
@@ -31,10 +31,14 @@ class LineGraphic(Graphic):
             thickness of the line
 
         colors:
+
         cmap: str, optional
             apply a colormap to the line instead of assigning colors manually
+
         args
+            passed to Graphic
         kwargs
+            passed to Graphic
         """
         super(LineGraphic, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 

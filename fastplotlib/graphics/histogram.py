@@ -25,6 +25,31 @@ class HistogramGraphic(Graphic):
             draw_bin_width_scale: float = 1.0,
             **kwargs
     ):
+        """
+        Create a Histogram Graphic
+
+        Parameters
+        ----------
+        data: np.ndarray or None, optional
+            data to create a histogram from, can be ``None`` if pre-computed values are provided to ``pre_computed``
+
+        bins: int or str, default is "auto", optional
+            this is directly just passed to ``numpy.histogram``
+
+        pre_computed: dict in the form {"hist": vals, "bin_edges" : vals}, optional
+            pre-computed histogram values
+
+        colors: np.ndarray, optional
+
+        draw_scale_factor: float, default ``100.0``, optional
+            scale the drawing of the entire Graphic
+
+        draw_bin_width_scale: float, default ``1.0``
+            scale the drawing of the bin widths
+
+        kwargs
+            passed to Graphic
+        """
 
         if pre_computed is None:
             self.hist, self.bin_edges = np.histogram(data, bins)

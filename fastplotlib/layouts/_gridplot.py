@@ -31,31 +31,28 @@ class GridPlot:
             **kwargs
     ):
         """
-        A grid of subplots
+        A grid of subplots.
 
         Parameters
         ----------
-        shape:
-            nrows, ncols
+        shape: tuple of int
+            (n_rows, n_cols)
 
         cameras: np.ndarray or str, optional
-            | One of ``"2d"`` or ``"3d"`` indicating 2D or 3D plots
+            | One of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
 
             | OR
 
-            | Array of ``2d`` and/or ``3d`` that specifies camera type for each subplot:
-            | ``2d``: ``pygfx.OrthographicCamera``
-            | ``3d``: ``pygfx.PerspectiveCamera``
+            | Array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot:
 
         controllers: np.ndarray or str, optional
-            | numpy array of same shape as ``grid_shape`` that defines the controllers
+            | If `None` a unique controller is created for each subplot
+            | If "sync" all the subplots use the same controller
+            | If ``numpy.array``, its shape must be the same as ``grid_shape``.
+            This allows custom assignment of controllers
             | Example:
             | unique controllers for a 2x2 gridplot: np.array([[0, 1], [2, 3]])
-            | same controllers for first 2 plots: np.array([[0, 0, 1], [2, 3, 4]])
-
-            | If `None` a unique controller is created for each subplot
-
-            | If "sync" all the subplots use the same controller
+            | same controllers for first 2 plots and last 2 plots: np.array([[0, 0, 1], [2, 3, 3]])
 
         canvas: WgpuCanvas, optional
             Canvas for drawing
