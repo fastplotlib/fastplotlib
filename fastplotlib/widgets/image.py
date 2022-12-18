@@ -7,6 +7,7 @@ import numpy as np
 from typing import *
 from warnings import warn
 from functools import partial
+from copy import deepcopy
 
 
 DEFAULT_DIMS_ORDER = \
@@ -493,11 +494,11 @@ class ImageWidget:
             self._plot: GridPlot = GridPlot(shape=grid_shape, controllers="sync")
 
             self.image_graphics = list()
-            for i, (d, subplot) in enumerate(zip(self.data, self.plot)):
-                minmax = quick_min_max(self.data[0])
+            for data_ix, (d, subplot) in enumerate(zip(self.data, self.plot)):
+                minmax = quick_min_max(self.data[data_ix])
 
                 if self._names is not None:
-                    name = self._names[i]
+                    name = self._names[data_ix]
                     name_slider = name
                 else:
                     name = None
@@ -518,17 +519,20 @@ class ImageWidget:
                     )
 
                     minmax_slider.observe(
-                        partial(self._vmin_vmax_slider_changed, i),
+                        partial(self._vmin_vmax_slider_changed, data_ix),
                         names="value"
                     )
 
                     self.vmin_vmax_sliders.append(minmax_slider)
 
                 if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
-                    kwargs["vmin"], kwargs["vmax"] = minmax
+                    _kwargs = deepcopy(kwargs)
+                    _kwargs["vmin"], _kwargs["vmax"] = minmax
+                else:
+                    _kwargs = kwargs
 
                 frame = self._process_indices(d, slice_indices=self._current_index)
-                ig = ImageGraphic(frame, **kwargs)
+                ig = ImageGraphic(frame, **_kwargs)
                 subplot.add_graphic(ig)
                 subplot.name = name
                 self.image_graphics.append(ig)
