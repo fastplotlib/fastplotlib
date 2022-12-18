@@ -104,18 +104,18 @@ class Subplot(PlotArea):
             tg = TextGraphic(text)
             self._title_graphic = tg
 
-            self.docked_viewports["top"].size = 25
+            self.docked_viewports["top"].size = 35
             self.docked_viewports["top"].add_graphic(tg)
 
-            self._title_graphic.world_object.position.set(0, -2, 0)
+            self.center_title()
 
     def center_title(self):
         if self._title_graphic is None:
             raise AttributeError("No title graphic is set")
 
         self._title_graphic.world_object.position.set(0, 0, 0)
-        self.docked_viewports["top"].center_graphic(self._title_graphic)
-        self._title_graphic.world_object.position.y = -2
+        self.docked_viewports["top"].center_graphic(self._title_graphic, zoom=1.5)
+        self._title_graphic.world_object.position.y = -3.5
 
     def get_rect(self):
         row_ix, col_ix = self.position
