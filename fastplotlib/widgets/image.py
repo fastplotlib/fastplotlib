@@ -513,7 +513,7 @@ class ImageWidget:
                         min=minmax[0] - data_range_30p,
                         max=minmax[1] + data_range_30p,
                         step=data_range / 150,
-                        description=f"mm ['{name_slider}']",
+                        description=f"mm: {name_slider}",
                         readout=True,
                         readout_format='.3f',
                     )
@@ -535,6 +535,7 @@ class ImageWidget:
                 ig = ImageGraphic(frame, **_kwargs)
                 subplot.add_graphic(ig)
                 subplot.name = name
+                subplot.set_title(name)
                 self.image_graphics.append(ig)
 
         self.plot.renderer.add_event_handler(self._set_slider_layout, "resize")
