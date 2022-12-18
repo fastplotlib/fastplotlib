@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import *
 
 import numpy as np
 import pygfx
@@ -10,13 +10,55 @@ from ..utils import quick_min_max, get_cmap_texture
 class ImageGraphic(Graphic):
     def __init__(
             self,
-            data: np.ndarray,
+            data: Any,
             vmin: int = None,
             vmax: int = None,
             cmap: str = 'plasma',
             *args,
             **kwargs
     ):
+        """
+        Create an Image Graphic
+
+        Parameters
+        ----------
+        data: array-like, must be 2-dimensional
+            | array-like, usually numpy.ndarray, must support ``memoryview()``
+            | Tensorflow Tensors also work _I think_, but not thoroughly tested
+
+        vmin: int, optional
+            minimum value for color scaling, calculated from data if not provided
+
+        vmax: int, optional
+            maximum value for color scaling, calculated from data if not provided
+
+        cmap: str, optional
+            colormap to use to display the image data, default is ``"plasma"``
+        args:
+            additional arguments passed to Graphic
+        kwargs:
+            additional keyword arguments passed to Graphic
+
+        Examples
+        --------
+
+        .. code-block:: python
+
+            from fastplotlib import Plot
+
+            # create a `Plot` instance
+            plot = Plot()
+
+            # make some random 2D image data
+            data = np.random.rand(512, 512)
+
+            # plot the image data
+            plot.add_image(data=data)
+
+            # show the plot
+            plot.show()
+
+        """
         if data.ndim != 2:
             raise ValueError("`data.ndim !=2`, you must pass only a 2D array to `data`")
 
@@ -45,4 +87,3 @@ class ImageGraphic(Graphic):
     def update_cmap(self, cmap: str, alpha: float = 1.0):
         self.world_object.material.map = get_cmap_texture(name=cmap)
         self.world_object.geometry.grid.update_range((0, 0, 0), self.world_object.geometry.grid.size)
-

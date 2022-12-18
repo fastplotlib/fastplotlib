@@ -31,34 +31,33 @@ class GridPlot:
             **kwargs
     ):
         """
+        A grid of subplots.
+
         Parameters
         ----------
-        shape:
-            nrows, ncols
+        shape: tuple of int
+            (n_rows, n_cols)
 
-        cameras: Union[np.ndarray, str]
-            One of ``"2d"`` or ``"3d"`` indicating 2D or 3D plots
+        cameras: np.ndarray or str, optional
+            | One of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
 
-            OR
+            | OR
 
-            Array of ``2d`` and/or ``3d`` that specifies camera type for each subplot:
-            ``2d``: ``pygfx.OrthographicCamera``
-            ``3d``: ``pygfx.PerspectiveCamera``
+            | Array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot:
 
-        controllers: np.ndarray
-            numpy array of same shape as ``grid_shape`` that defines the controllers
-            Example:
-            unique controllers for a 2x2 gridplot: np.array([[0, 1], [2, 3]])
-            same controllers for first 2 plots: np.array([[0, 0, 1], [2, 3, 4]])
+        controllers: np.ndarray or str, optional
+            | If `None` a unique controller is created for each subplot
+            | If "sync" all the subplots use the same controller
+            | If ``numpy.array``, its shape must be the same as ``grid_shape``.
+            This allows custom assignment of controllers
+            | Example:
+            | unique controllers for a 2x2 gridplot: np.array([[0, 1], [2, 3]])
+            | same controllers for first 2 plots and last 2 plots: np.array([[0, 0, 1], [2, 3, 3]])
 
-            If `None` a unique controller is created for each subplot
-
-            If "sync" all the subplots use the same controller
-
-        canvas: WgpuCanvas
+        canvas: WgpuCanvas, optional
             Canvas for drawing
 
-        renderer: pygfx.Renderer
+        renderer: pygfx.Renderer, optional
             pygfx renderer instance
         """
         self.shape = shape
