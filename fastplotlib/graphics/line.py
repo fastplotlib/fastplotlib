@@ -2,7 +2,7 @@ import numpy as np
 import pygfx
 from typing import *
 
-from ._base import Graphic, EventData, Interaction
+from ._base import Graphic, CallbackData, Interaction
 
 class LineGraphic(Graphic, Interaction):
     def __init__(self, data: np.ndarray, zlevel: float = None, size: float = 2.0, colors: np.ndarray = None, cmap: str = None, *args, **kwargs):
@@ -69,15 +69,5 @@ class LineGraphic(Graphic, Interaction):
         else:
             raise ValueError("name arg is not a valid feature")
 
-    def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
-        valid_events = ["click"]
-        if event_type in valid_events:
-            self.world_object.add_event_handler(self.event_handler, event_type)
-        else:
-            raise ValueError("event not possible")
-
-        if event_type in self.registered_callbacks.keys():
-            self.registered_callbacks[event_type].append(EventData(target=target, feature=feature, new_data=new_data))
-        else:
-            self.registered_callbacks[event_type] = list()
-            self.registered_callbacks[event_type].append(EventData(target=target, feature=feature, new_data=new_data))
+    def _reset_feature():
+        pass
