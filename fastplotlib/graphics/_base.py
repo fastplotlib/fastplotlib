@@ -135,13 +135,14 @@ class Interaction(ABC):
         pass
 
     @abstractmethod
-    def _set_feature(self, name: str, new_data: Any, indices: Any):
+    def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
 
     @abstractmethod
-    def link(self, event: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
+    def _reset_feature(self):
         pass
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     @abstractmethod
@@ -154,6 +155,23 @@ class Interaction(ABC):
 =======
 >>>>>>> 71eb48f (small changes and reorg)
 =======
+=======
+    def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
+        valid_events = ["click"]
+        if event_type in valid_events:
+            self.world_object.add_event_handler(self.event_handler, event_type)
+        else:
+            raise ValueError("event not possible")
+
+        if event_type in self.registered_callbacks.keys():
+            self.registered_callbacks[event_type].append(
+                CallbackData(target=target, feature=feature, new_data=new_data))
+        else:
+            self.registered_callbacks[event_type] = list()
+            self.registered_callbacks[event_type].append(
+                CallbackData(target=target, feature=feature, new_data=new_data))
+
+>>>>>>> 0f22531 (small changes)
     def event_handler(self, event):
         if event.type in self.registered_callbacks.keys():
             for target_info in self.registered_callbacks[event.type]:
@@ -161,8 +179,9 @@ class Interaction(ABC):
 
 >>>>>>> e203cff (updates to line, works w previous example)
 @dataclass
-class EventData:
+class CallbackData:
     """Class for keeping track of the info necessary for interactivity after event occurs."""
+<<<<<<< HEAD
     def __init__(self, target: Graphic, feature: str, new_data: Any):
         self.target = target
         self.feature = feature
@@ -175,3 +194,8 @@ class EventData:
 >>>>>>> 71eb48f (small changes and reorg)
 =======
 >>>>>>> e203cff (updates to line, works w previous example)
+=======
+    target: Graphic
+    feature: str
+    new_data: Any
+>>>>>>> 0f22531 (small changes)

@@ -3,7 +3,7 @@ import numpy as np
 import pygfx
 from typing import *
 
-from ._base import Graphic, EventData, Interaction
+from ._base import Graphic, CallbackData, Interaction
 
 <<<<<<< HEAD
 class LineGraphic(Graphic):
@@ -123,6 +123,7 @@ class LineGraphic(Graphic, Interaction):
         else:
             raise ValueError("name arg is not a valid feature")
 
+<<<<<<< HEAD
     def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
         valid_events = ["click"]
         if event_type in valid_events:
@@ -161,3 +162,7 @@ class LineGraphic(Graphic, Interaction):
             self.registered_callbacks[event_type] = list()
             self.registered_callbacks[event_type].append(EventData(target=target, feature=feature, new_data=new_data))
 >>>>>>> e203cff (updates to line, works w previous example)
+=======
+    def _reset_feature():
+        pass
+>>>>>>> 0f22531 (small changes)
