@@ -10,6 +10,7 @@ from wgpu.gui.auto import WgpuCanvas
 
 from ._base import PlotArea
 from .. import graphics
+from ..graphics import TextGraphic
 from ._defaults import create_camera, create_controller
 
 
@@ -82,11 +83,39 @@ class Subplot(PlotArea):
             graphic_cls_name = graphic_cls_name.lower().replace("graphic", "").replace("collection", "_collection")
             setattr(self, f"add_{graphic_cls_name}", pfunc)
 
+        self._title_graphic: TextGraphic = None
+        if self.name is not None:
+            self.set_title(self.name)
+
     def _create_graphic(self, graphic_class, *args, **kwargs):
         graphic = graphic_class(*args, **kwargs)
         self.add_graphic(graphic, center=False)
 
         return graphic
+
+    def set_title(self, text: Any):
+        if text is None:
+            return
+
+        text = str(text)
+        if self._title_graphic is not None:
+            self._title_graphic.update_text(text)
+        else:
+            tg = TextGraphic(text)
+            self._title_graphic = tg
+
+            self.docked_viewports["top"].size = 25
+            self.docked_viewports["top"].add_graphic(tg)
+
+            self._title_graphic.world_object.position.set(0, -2, 0)
+
+    def center_title(self):
+        if self._title_graphic is None:
+            raise AttributeError("No title graphic is set")
+
+        self._title_graphic.world_object.position.set(0, 0, 0)
+        self.docked_viewports["top"].center_graphic(self._title_graphic)
+        self._title_graphic.world_object.position.y = -2
 
     def get_rect(self):
         row_ix, col_ix = self.position
@@ -171,9 +200,9 @@ class _DockedViewport(PlotArea):
             renderer=parent.renderer
         )
 
-        self.scene.add(
-            Background(None, BackgroundMaterial((0.2, 0.0, 0, 1), (0, 0.0, 0.2, 1)))
-        )
+        # self.scene.add(
+        #     Background(None, BackgroundMaterial((0.2, 0.0, 0, 1), (0, 0.0, 0.2, 1)))
+        # )
 
     @property
     def size(self) -> int:
