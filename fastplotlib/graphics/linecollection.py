@@ -1,11 +1,15 @@
 import numpy as np
 import pygfx
-from typing import Union
+from typing import Union, List
+
+from fastplotlib.graphics._base import Graphic
+
 from .line import LineGraphic
 from typing import *
+from ._base import Interaction
 
 
-class LineCollection():
+class LineCollection(Interaction):
     def __init__(self, data: List[np.ndarray], zlevel: Union[List[float], float] = None, size: Union[float, List[float]] = 2.0, colors: Union[List[np.ndarray], np.ndarray] = None,
                  cmap: Union[List[str], str] = None, *args, **kwargs):
 
@@ -46,6 +50,20 @@ class LineCollection():
                 _cmap = cmap
 
             self.collection.append(LineGraphic(d, _zlevel, _size, _colors, _cmap))
+
+    @property
+    def indices(self) -> Any:
+        pass
+
+    @property
+    def features(self) -> List[str]:
+        pass
+
+    def _set_feature(self, feature: str, new_data: Any, indices: Any):
+        pass
+
+    def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
+        pass
 
     def __getitem__(self, item):
         return self.collection[item]
