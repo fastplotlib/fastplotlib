@@ -9,12 +9,12 @@ from typing import *
 from ._base import Interaction
 
 
-class LineCollection(Interaction):
-    def __init__(self, data: List[np.ndarray], zlevel: Union[List[float], float] = None, size: Union[float, List[float]] = 2.0, colors: Union[List[np.ndarray], np.ndarray] = None,
+class LineCollection():
+    def __init__(self, data: List[np.ndarray], z_position: Union[List[float], float] = None, size: Union[float, List[float]] = 2.0, colors: Union[List[np.ndarray], np.ndarray] = None,
                  cmap: Union[List[str], str] = None, *args, **kwargs):
 
-        if not isinstance(zlevel, float) and zlevel is not None:
-            if not len(data) == len(zlevel):
+        if not isinstance(z_position, float) and z_position is not None:
+            if not len(data) == len(z_position):
                 raise ValueError("args must be the same length")
         if not isinstance(size, float):
             if not len(size) == len(data):
@@ -29,10 +29,10 @@ class LineCollection(Interaction):
         self.collection = list()
 
         for i, d in enumerate(data):
-            if isinstance(zlevel, list):
-                _zlevel = zlevel[i]
+            if isinstance(z_position, list):
+                _z = z_position[i]
             else:
-                _zlevel = zlevel
+                _z = z_position
 
             if isinstance(size, list):
                 _size = size[i]
@@ -49,7 +49,7 @@ class LineCollection(Interaction):
             else:
                 _cmap = cmap
 
-            self.collection.append(LineGraphic(d, _zlevel, _size, _colors, _cmap))
+            self.collection.append(LineGraphic(d, _z, _size, _colors, _cmap))
 
     @property
     def indices(self) -> Any:

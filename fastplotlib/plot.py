@@ -1,10 +1,7 @@
+from typing import *
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
 from .layouts._subplot import Subplot
-from . import graphics
-from functools import partial
-from inspect import signature
-from typing import *
 
 
 class Plot(Subplot):
@@ -16,6 +13,66 @@ class Plot(Subplot):
             controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None,
             **kwargs
     ):
+        """
+        Simple Plot object.
+
+        Parameters
+        ----------
+        canvas: WgpuCanvas, optional
+            Canvas for drawing
+
+        renderer: pygfx.Renderer, optional
+            pygfx renderer instance
+
+        camera:str, optional
+            | One of ``"2d"`` or ``"3d"`` indicating 2D or 3D camera
+
+        controller: None, PanZoomController or OrbitOrthoController, optional
+            Usually ``None``, you can pass an existing controller from another
+            ``Plot`` or ``Subplot`` within a ``GridPlot`` to synchronize them.
+
+        kwargs
+            passed to Subplot, for example ``name``
+
+        Examples
+        --------
+
+        Simple example
+
+        .. code-block:: python
+
+            from fastplotlib import Plot
+
+            # create a `Plot` instance
+            plot1 = Plot()
+
+            # make some random 2D image data
+            data = np.random.rand(512, 512)
+
+            # plot the image data
+            plot1.add_image(data=data)
+
+            # show the plot
+            plot1.show()
+
+        Sharing controllers, start from the previous example and create a new jupyter cell
+
+        .. code-block:: python
+
+            # use the controller from the previous plot
+            # this will sync the pan & zoom controller
+            plot2 = Plot(controller=plot1.controller)
+
+            # make some random 2D image data
+            data = np.random.rand(512, 512)
+
+            # plot the image data
+            plot2.add_image(data=data)
+
+            # show the plot
+            plot2.show()
+
+        """
         super(Plot, self).__init__(
             position=(0, 0),
             parent_dims=(1, 1),
@@ -25,19 +82,6 @@ class Plot(Subplot):
             controller=controller,
             **kwargs
         )
-
-        for graphic_cls_name in graphics.__all__:
-            cls = getattr(graphics, graphic_cls_name)
-            pfunc = partial(self._create_graphic, cls)
-            pfunc.__signature__ = signature(cls)
-            pfunc.__doc__ = cls.__doc__
-            setattr(self, graphic_cls_name.rstrip("Graphic").lower(), pfunc)
-
-    def _create_graphic(self, graphic_class, *args, **kwargs):
-        graphic = graphic_class(*args, **kwargs)
-        super(Plot, self).add_graphic(graphic, center=False)
-
-        return graphic
 
     def render(self):
         super(Plot, self).render()
