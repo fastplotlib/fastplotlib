@@ -6,13 +6,13 @@ A fast plotting library built using the `pygfx` render engine that can use [Vulk
 Checkout pygfx!
 https://github.com/pygfx/pygfx
 
-`fastplotlib` is in the alpha stage and experimental but you're welcome to try it out or contribute!
+`fastplotlib` is in the alpha stage and experimental, but you're welcome to try it out or contribute!
 
 Questions, ideas? Chat on gitter: https://gitter.im/fastplotlib/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link 
 
 # Examples
 
-**See the examples directory. Start out with `simple.ipynb` which uses the high level API.**
+**See the examples directory. Start out with `simple.ipynb`.**
 
 ### Simple image plot
 ```python
@@ -21,8 +21,8 @@ import numpy as np
 
 plot = Plot()
 
-data = np.random.rand(512, 512) * 255
-plot.image(data=data,  vmin=0, vmax=255, cmap='viridis')
+data = np.random.rand(512, 512)
+plot.image(data=data)
 
 plot.show()
 ```
@@ -34,14 +34,14 @@ import numpy as np
 
 plot = Plot()
 
-data = np.random.rand(512, 512) * 255
-image = plot.image(data=data,  vmin=0, vmax=255, cmap='viridis')
+data = np.random.rand(512, 512)
+image = plot.image(data=data)
 
 def update_data():
-    new_data = np.random.rand(512, 512) * 255
+    new_data = np.random.rand(512, 512)
     image.update_data(new_data)
 
-plot.add_animations([update_data])
+plot.add_animations(update_data)
 
 plot.show()
 ```
@@ -55,6 +55,12 @@ pip install git+https://github.com/kushalkolar/fastplotlib.git
 ```
 
 Note: do not download the version that is currently on PYPI (i.e. don't just do `pip install fastplotlib`, it is outdated (we're waiting for the next release of `pygfx`)
+
+**Installing `simplejpeg` is recommended for faster plotting in notebooks using rfb. You will need C compilers setup on your computer to install it:**
+
+```bash
+pip install simplejpeg
+```
 
 Clone or download the repo to try the examples
 
@@ -87,7 +93,7 @@ jupyter lab
 For more information see: https://github.com/pygfx/wgpu-py#platform-requirements
 
 ### Windows:
-Apparently Vulkan should be installed by default on Windows 11.
+Vulkan should be installed by default on Windows 11.
 
 ### Linux:
 Debian based distros:

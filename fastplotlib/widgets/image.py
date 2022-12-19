@@ -7,6 +7,7 @@ import numpy as np
 from typing import *
 from warnings import warn
 from functools import partial
+from copy import deepcopy
 
 
 DEFAULT_DIMS_ORDER = \
@@ -21,8 +22,8 @@ DEFAULT_DIMS_ORDER = \
 def _calc_gridshape(n):
     sr = np.sqrt(n)
     return (
-        int(np.ceil(sr)),
-        int(np.round(sr))
+        int(np.round(sr)),
+        int(np.ceil(sr))
     )
 
 
@@ -272,7 +273,9 @@ class ImageWidget:
             else:
                 raise TypeError(
                     f"If passing a list to `data` all elements must be an "
-                    f"array-like type representing an n-dimensional image"
+                    f"array-like type representing an n-dimensional image. "
+                    f"You have passed the following types:\n"
+                    f"{[type(a) for a in data]}"
                 )
 
         elif _is_arraylike(data):
@@ -283,7 +286,8 @@ class ImageWidget:
         else:
             raise TypeError(
                 f"`data` must be an array-like type representing an n-dimensional image "
-                f"or a list of array-like representing a grid of n-dimensional images"
+                f"or a list of array-like representing a grid of n-dimensional images. "
+                f"You have passed the following type {type(data)}"
             )
 
         # default dims order if not passed
@@ -484,17 +488,17 @@ class ImageWidget:
 
             frame = self._process_indices(self.data[0], slice_indices=self._current_index)
 
-            self.image_graphics: List[ImageGraphic] = [self.plot.image(data=frame, **kwargs)]
+            self.image_graphics: List[ImageGraphic] = [self.plot.add_image(data=frame, **kwargs)]
 
         elif self._plot_type == "grid":
             self._plot: GridPlot = GridPlot(shape=grid_shape, controllers="sync")
 
             self.image_graphics = list()
-            for i, (d, subplot) in enumerate(zip(self.data, self.plot)):
-                minmax = quick_min_max(self.data[0])
+            for data_ix, (d, subplot) in enumerate(zip(self.data, self.plot)):
+                minmax = quick_min_max(self.data[data_ix])
 
                 if self._names is not None:
-                    name = self._names[i]
+                    name = self._names[data_ix]
                     name_slider = name
                 else:
                     name = None
@@ -509,25 +513,29 @@ class ImageWidget:
                         min=minmax[0] - data_range_30p,
                         max=minmax[1] + data_range_30p,
                         step=data_range / 150,
-                        description=f"mm ['{name_slider}']",
+                        description=f"mm: {name_slider}",
                         readout=True,
                         readout_format='.3f',
                     )
 
                     minmax_slider.observe(
-                        partial(self._vmin_vmax_slider_changed, i),
+                        partial(self._vmin_vmax_slider_changed, data_ix),
                         names="value"
                     )
 
                     self.vmin_vmax_sliders.append(minmax_slider)
 
                 if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
-                    kwargs["vmin"], kwargs["vmax"] = minmax
+                    _kwargs = deepcopy(kwargs)
+                    _kwargs["vmin"], _kwargs["vmax"] = minmax
+                else:
+                    _kwargs = kwargs
 
                 frame = self._process_indices(d, slice_indices=self._current_index)
-                ig = ImageGraphic(frame, **kwargs)
+                ig = ImageGraphic(frame, **_kwargs)
                 subplot.add_graphic(ig)
                 subplot.name = name
+                subplot.set_title(name)
                 self.image_graphics.append(ig)
 
         self.plot.renderer.add_event_handler(self._set_slider_layout, "resize")

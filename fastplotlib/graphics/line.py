@@ -1,3 +1,4 @@
+from typing import *
 import numpy as np
 import pygfx
 from typing import *
@@ -32,6 +33,7 @@ class LineGraphic(Graphic, Interaction):
         if self.data.shape[1] != 3:
             if self.data.shape[1] != 2:
                 raise ValueError("Must pass 1D, 2D or 3D data")
+
             # make it 2D with zlevel
             if self.z_position is None:
                 self.z_position = 0
