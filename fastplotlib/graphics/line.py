@@ -128,6 +128,7 @@ class LineGraphic(Graphic, Interaction):
             raise ValueError("name arg is not a valid feature")
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
         valid_events = ["click"]
         if event_type in valid_events:
@@ -170,3 +171,12 @@ class LineGraphic(Graphic, Interaction):
     def _reset_feature():
         pass
 >>>>>>> 0f22531 (small changes)
+=======
+    def _reset_feature(self, feature: str, old_data: Any, indices: Any = None):
+        if feature in ["colors", "data"]:
+            update_func = getattr(self, f"update_{feature}")
+            update_func(old_data)
+        else:
+            raise ValueError("name arg is not a valid feature")
+
+>>>>>>> bc688fc (implementing reset_feature)
