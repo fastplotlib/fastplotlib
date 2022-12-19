@@ -1,13 +1,17 @@
+<<<<<<< HEAD
 from typing import *
+=======
+from typing import Tuple, Any, List
+>>>>>>> 24fb5a5 (blah)
 
 import numpy as np
 import pygfx
 
-from ._base import Graphic
+from ._base import Graphic, Interaction
 from ..utils import quick_min_max, get_cmap_texture
 
 
-class ImageGraphic(Graphic):
+class ImageGraphic(Graphic, Interaction):
     def __init__(
             self,
             data: Any,
@@ -71,6 +75,20 @@ class ImageGraphic(Graphic):
             pygfx.Geometry(grid=pygfx.Texture(self.data.feature_data, dim=2)),
             pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=get_cmap_texture(cmap))
         )
+
+    @property
+    def indices(self) -> Any:
+        pass
+
+    @property
+    def features(self) -> List[str]:
+        pass
+
+    def _set_feature(self, feature: str, new_data: Any, indices: Any):
+        pass
+
+    def _reset_feature(self):
+        pass
 
     @property
     def clim(self) -> Tuple[float, float]:

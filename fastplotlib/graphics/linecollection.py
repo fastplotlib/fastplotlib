@@ -2,11 +2,11 @@ import numpy as np
 import pygfx
 from typing import Union, List
 
-from fastplotlib.graphics._base import Graphic
-
 from .line import LineGraphic
 from typing import *
 from ._base import Interaction
+
+from abc import ABC, abstractmethod
 
 
 <<<<<<< HEAD
@@ -56,8 +56,16 @@ class LineCollection(Interaction):
 
             self.collection.append(LineGraphic(d, _z, _size, _colors, _cmap))
 
+    def _reset_feature(self):
+        pass
+
     @property
     def indices(self) -> Any:
+        pass
+
+    @indices.setter
+    @abstractmethod
+    def indices(self, indices: Any):
         pass
 
     @property
@@ -65,10 +73,11 @@ class LineCollection(Interaction):
         pass
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
-        pass
-
-    def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
-        pass
+        if feature in ["colors", "data"]:
+            update_func = getattr(self, f"update_{feature}")
+            self.collection[indices].update_func(new_data)
+        else:
+            raise ValueError("name arg is not a valid feature")
 
     def __getitem__(self, item):
         return self.collection[item]
