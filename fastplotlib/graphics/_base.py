@@ -7,6 +7,7 @@ from fastplotlib.utils import get_colors, map_labels_to_colors
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+# from .linecollection import LineCollection
 
 class Graphic:
     def __init__(
@@ -92,7 +93,7 @@ class Interaction(ABC):
         pass
 
     @abstractmethod
-    def _reset_feature(self):
+    def _reset_feature(self, feature: str, old_data: Any, indices: Any):
         pass
 
     def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
@@ -104,16 +105,17 @@ class Interaction(ABC):
 
         if event_type in self.registered_callbacks.keys():
             self.registered_callbacks[event_type].append(
-                CallbackData(target=target, feature=feature, new_data=new_data))
+                CallbackData(target=target, feature=feature, new_data=new_data, old_data=getattr(target, feature).copy()))
         else:
             self.registered_callbacks[event_type] = list()
             self.registered_callbacks[event_type].append(
-                CallbackData(target=target, feature=feature, new_data=new_data))
+                CallbackData(target=target, feature=feature, new_data=new_data, old_data=getattr(target, feature).copy()))
 
     def event_handler(self, event):
         if event.type in self.registered_callbacks.keys():
             for target_info in self.registered_callbacks[event.type]:
-                target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data)
+                target_info.target._reset_feature(feature=target_info.feature, old_data=target_info.old_data, indices=None)
+                target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=None)
 
 @dataclass
 class CallbackData:
@@ -121,3 +123,4 @@ class CallbackData:
     target: Graphic
     feature: str
     new_data: Any
+    old_data: Any

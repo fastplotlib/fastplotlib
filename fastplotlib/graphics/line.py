@@ -69,5 +69,10 @@ class LineGraphic(Graphic, Interaction):
         else:
             raise ValueError("name arg is not a valid feature")
 
-    def _reset_feature():
-        pass
+    def _reset_feature(self, feature: str, old_data: Any, indices: Any = None):
+        if feature in ["colors", "data"]:
+            update_func = getattr(self, f"update_{feature}")
+            update_func(old_data)
+        else:
+            raise ValueError("name arg is not a valid feature")
+
