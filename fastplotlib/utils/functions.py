@@ -30,13 +30,7 @@ def _get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
     return cmap.astype(np.float32)
 
 
-def get_colors(
-        n_colors: int,
-        cmap: str,
-        spacing: str = 'uniform',
-        alpha: float = 1.0
-    ) \
-        -> List[Union[np.ndarray, str]]:
+def get_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
     cmap = _get_cmap(cmap, alpha)
     cm_ixs = np.linspace(0, 255, n_colors, dtype=int)
     return np.take(cmap, cm_ixs, axis=0).astype(np.float32)

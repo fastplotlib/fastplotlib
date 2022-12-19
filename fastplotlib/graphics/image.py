@@ -67,7 +67,7 @@ class ImageGraphic(Graphic):
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
 
-        self.world_object: pygfx.Image = pygfx.Image(
+        self._world_object: pygfx.Image = pygfx.Image(
             pygfx.Geometry(grid=pygfx.Texture(self.data, dim=2)),
             pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=get_cmap_texture(cmap))
         )

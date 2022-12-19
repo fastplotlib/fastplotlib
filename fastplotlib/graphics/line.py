@@ -11,7 +11,7 @@ class LineGraphic(Graphic):
             data: Any,
             z_position: float = 0.0,
             size: float = 2.0,
-            colors: np.ndarray = None,
+            colors: Union[str, np.ndarray, Iterable] = "w",
             cmap: str = None,
             *args,
             **kwargs
@@ -30,7 +30,9 @@ class LineGraphic(Graphic):
         size: float, optional
             thickness of the line
 
-        colors:
+        colors: str, array, or iterable
+            specify colors as a single human readable string, a single RGBA array,
+            or an iterable of strings or RGBA arrays
 
         cmap: str, optional
             apply a colormap to the line instead of assigning colors manually
@@ -51,8 +53,8 @@ class LineGraphic(Graphic):
 
         self.data = np.ascontiguousarray(self.data)
 
-        self.world_object: pygfx.Line = pygfx.Line(
-            geometry=pygfx.Geometry(positions=self.data, colors=self.colors),
+        self._world_object: pygfx.Line = pygfx.Line(
+            geometry=pygfx.Geometry(positions=self.data, colors=self.colors.data),
             material=material(thickness=size, vertex_colors=True)
         )
 
@@ -61,7 +63,7 @@ class LineGraphic(Graphic):
     def fix_data(self):
         # TODO: data should probably be a property of any Graphic?? Or use set_data() and get_data()
         if self.data.ndim == 1:
-            self.data = np.dstack([np.arange(self.data.size), self.data])[0]
+            self.data = np.dstack([np.arange(self.data.size), self.data])[0].astype(np.float32)
 
         if self.data.shape[1] != 3:
             if self.data.shape[1] != 2:
@@ -70,7 +72,7 @@ class LineGraphic(Graphic):
             # zeros for z
             zs = np.zeros(self.data.shape[0], dtype=np.float32)
 
-            self.data = np.dstack([self.data[:, 0], self.data[:, 1], zs])[0]
+            self.data = np.dstack([self.data[:, 0], self.data[:, 1], zs])[0].astype(np.float32)
 
     def update_data(self, data: np.ndarray):
         self.data = data.astype(np.float32)
@@ -78,9 +80,3 @@ class LineGraphic(Graphic):
 
         self.world_object.geometry.positions.data[:] = self.data
         self.world_object.geometry.positions.update_range()
-
-    def update_colors(self, colors: np.ndarray):
-        super(LineGraphic, self)._set_colors(colors=colors, colors_length=self.data.shape[0], cmap=None, alpha=None)
-
-        self.world_object.geometry.colors.data[:] = self.colors
-        self.world_object.geometry.colors.update_range()

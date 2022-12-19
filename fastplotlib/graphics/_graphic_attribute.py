@@ -74,6 +74,10 @@ class ColorFeature(GraphicFeature):
 
         n_colors: number of colors to hold, if passing in a single str or single RGBA array
         """
+        # if provided as a numpy array of str
+        if isinstance(colors, np.ndarray):
+            if colors.dtype.kind in ["U", "S"]:
+                colors = colors.tolist()
         # if the color is provided as a numpy array
         if isinstance(colors, np.ndarray):
             if colors.shape == (4,):  # single RGBA array
@@ -97,10 +101,10 @@ class ColorFeature(GraphicFeature):
                 )
 
         # if the color is provided as an iterable
-        elif isinstance(colors, (list, tuple)):
+        elif isinstance(colors, (list, tuple, np.ndarray)):
             # if iterable of str
             if all([isinstance(val, str) for val in colors]):
-                if not len(list) == n_colors:
+                if not len(colors) == n_colors:
                     raise ValueError(
                         f"Valid iterable color arguments must be a `tuple` or `list` of `str` "
                         f"where the length of the iterable is the same as the number of datapoints."
