@@ -7,7 +7,14 @@ import numpy as np
 class GraphicFeature(ABC):
     def __init__(self, parent, data: Any):
         self._parent = parent
-        self._data = data
+        self._data = data.astype(np.float32)
+
+    @property
+    def data(self) -> Any:
+        return self._data
+
+    def set_parent(self, parent: Any):
+        self._parent = parent
 
     @abstractmethod
     def __getitem__(self, item):
@@ -22,9 +29,96 @@ class GraphicFeature(ABC):
         pass
 
 
+def cleanup_slice(slice_obj: slice, upper_bound) -> slice:
+    start = slice_obj.start
+    stop = slice_obj.stop
+    step = slice_obj.step
+    for attr in [start, stop, step]:
+        if attr is None:
+            continue
+        if attr < 0:
+            raise IndexError("Negative indexing not supported.")
+
+    if start is None:
+        start = 0
+
+    if stop is None:
+        stop = upper_bound
+
+    elif stop > upper_bound:
+        raise IndexError("Index out of bounds")
+
+    step = slice_obj.step
+    if step is None:
+        step = 1
+
+    return slice(start, stop, step)
+
+
 class ColorFeature(GraphicFeature):
-    def __init__(self, parent, data):
-        data = parent.geometry.colors.data
+    def __init__(self, parent, colors, n_colors):
+        """
+        ColorFeature
+
+        Parameters
+        ----------
+        parent
+
+        colors: str, array, or iterable
+            specify colors as a single human readable string, RGBA array,
+            or an iterable of strings or RGBA arrays
+
+        n_colors: number of colors to hold, if passing in a single str or single RGBA array
+        """
+        # if the color is provided as a numpy array
+        if isinstance(colors, np.ndarray):
+            if colors.shape == (4,):  # single RGBA array
+                data = np.repeat(
+                    np.array([colors]),
+                    n_colors,
+                    axis=0
+                )
+            # else assume it's already a stack of RGBA arrays, keep this directly as the data
+            elif colors.ndim == 2:
+                if colors.shape[1] != 4 and colors.shape[0] != n_colors:
+                    raise ValueError(
+                        "Valid array color arguments must be a single RGBA array or a stack of "
+                        "RGBA arrays for each datapoint in the shape [n_datapoints, 4]"
+                    )
+                data = colors
+            else:
+                raise ValueError(
+                    "Valid array color arguments must be a single RGBA array or a stack of "
+                    "RGBA arrays for each datapoint in the shape [n_datapoints, 4]"
+                )
+
+        # if the color is provided as an iterable
+        elif isinstance(colors, (list, tuple)):
+            # if iterable of str
+            if all([isinstance(val, str) for val in colors]):
+                if not len(list) == n_colors:
+                    raise ValueError(
+                        f"Valid iterable color arguments must be a `tuple` or `list` of `str` "
+                        f"where the length of the iterable is the same as the number of datapoints."
+                    )
+
+                data = np.vstack([np.array(Color(c)) for c in colors])
+
+            # if it's a single RGBA array as a tuple/list
+            elif len(colors) == 4:
+                c = Color(colors)
+                data = np.repeat(np.array([c]), n_colors, axis=0)
+
+            else:
+                raise ValueError(
+                    f"Valid iterable color arguments must be a `tuple` or `list` representing RGBA values or "
+                    f"an iterable of `str` with the same length as the number of datapoints."
+                )
+        else:
+            # assume it's a single color, use pygfx.Color to parse it
+            c = Color(colors)
+            data = np.repeat(np.array([c]), n_colors, axis=0)
+
         super(ColorFeature, self).__init__(parent, data)
 
         self._upper_bound = data.shape[0]
@@ -32,29 +126,7 @@ class ColorFeature(GraphicFeature):
     def __setitem__(self, key, value):
         # parse numerical slice indices
         if isinstance(key, slice):
-            start = key.start
-            stop = key.stop
-            step = key.step
-            for attr in [start, stop, step]:
-                if attr is None:
-                    continue
-                if attr < 0:
-                    raise IndexError("Negative indexing not supported.")
-
-            if start is None:
-                start = 0
-
-            if stop is None:
-                stop = self._upper_bound
-
-            elif stop > self._upper_bound:
-                raise IndexError("Index out of bounds")
-
-            step = key.step
-            if step is None:
-                step = 1
-
-            key = slice(start, stop, step)
+            key = cleanup_slice(key, self._upper_bound)
             indices = range(key.start, key.stop, key.step)
 
         # or single numerical index
@@ -62,6 +134,24 @@ class ColorFeature(GraphicFeature):
             if key > self._upper_bound:
                 raise IndexError("Index out of bounds")
             indices = [key]
+
+        elif isinstance(key, tuple):
+            if not isinstance(value, (float, int, np.ndarray)):
+                raise ValueError(
+                    "If using multiple-fancy indexing for color, you can only set numerical"
+                    "values since this sets the RGBA array data directly."
+                )
+
+            if len(key) != 2:
+                raise ValueError("fancy indexing for colors must be 2-dimension, i.e. [n_datapoints, RGBA]")
+
+            # set the user passed data directly
+            self._parent.world_object.geometry.colors.data[key] = value
+
+            # update range
+            _key = cleanup_slice(key[0], self._upper_bound)
+            self._update_range(_key)
+            return
 
         else:
             raise TypeError("Graphic features only support integer and numerical fancy indexing")
@@ -90,8 +180,8 @@ class ColorFeature(GraphicFeature):
                         axis=0
                     )
 
-            elif value.shape[1] == 4 and value.ndim == 2:
-                if value.shape[0] != new_data_size:
+            elif value.ndim == 2:
+                if value.shape[1] != 4 and value.shape[0] != new_data_size:
                     raise ValueError("numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)")
                 # if there is a single datapoint to change color of but user has provided shape [1, 4]
                 if new_data_size == 1:
@@ -102,23 +192,23 @@ class ColorFeature(GraphicFeature):
             else:
                 raise ValueError("numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)")
 
-        self._parent.geometry.colors.data[key] = new_colors
+        self._parent.world_object.geometry.colors.data[key] = new_colors
 
         self._update_range(key)
 
     def _update_range(self, key):
         if isinstance(key, int):
-            self._parent.geometry.colors.update_range(key, size=1)
+            self._parent.world_object.geometry.colors.update_range(key, size=1)
         if key.step is None:
             # update range according to size using the offset
-            self._parent.geometry.colors.update_range(offset=key.start, size=key.stop - key.start)
+            self._parent.world_object.geometry.colors.update_range(offset=key.start, size=key.stop - key.start)
 
         else:
             step = key.step
             ixs = range(key.start, key.stop, step)
             # convert slice to indices
             for ix in ixs:
-                self._parent.geometry.colors.update_range(ix, size=1)
+                self._parent.world_object.geometry.colors.update_range(ix, size=1)
 
     def __getitem__(self, item):
-        return self._parent.geometry.colors.data[item]
+        return self._parent.world_object.geometry.colors.data[item]
