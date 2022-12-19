@@ -9,12 +9,12 @@ class GraphicFeature(ABC):
         self._parent = parent
         self._data = data.astype(np.float32)
 
-    @property
-    def data(self) -> Any:
-        return self._data
-
     def set_parent(self, parent: Any):
         self._parent = parent
+
+    @property
+    def data(self):
+        return self._data
 
     @abstractmethod
     def __getitem__(self, item):
@@ -26,6 +26,10 @@ class GraphicFeature(ABC):
 
     @abstractmethod
     def _update_range(self, key):
+        pass
+
+    @abstractmethod
+    def __repr__(self):
         pass
 
 
@@ -56,7 +60,7 @@ def cleanup_slice(slice_obj: slice, upper_bound) -> slice:
 
 
 class ColorFeature(GraphicFeature):
-    def __init__(self, parent, colors, n_colors):
+    def __init__(self, parent, colors, n_colors, alpha: float = 1.0):
         """
         ColorFeature
 
@@ -118,6 +122,9 @@ class ColorFeature(GraphicFeature):
             # assume it's a single color, use pygfx.Color to parse it
             c = Color(colors)
             data = np.repeat(np.array([c]), n_colors, axis=0)
+
+        if alpha != 1.0:
+            data[:, -1] = alpha
 
         super(ColorFeature, self).__init__(parent, data)
 
@@ -212,3 +219,6 @@ class ColorFeature(GraphicFeature):
 
     def __getitem__(self, item):
         return self._parent.world_object.geometry.colors.data[item]
+
+    def __repr__(self):
+        return repr(self._parent.world_object.geometry.colors.data)
