@@ -46,6 +46,7 @@ class SelectionOptions:
 
 
 class HeatmapGraphic(ImageGraphic, Interaction):
+
     @property
     def indices(self) -> Any:
         pass
@@ -54,11 +55,10 @@ class HeatmapGraphic(ImageGraphic, Interaction):
     def features(self) -> List[str]:
         pass
 
-    def _set_feature(self, name: str, new_data: Any, indices: Any):
+    def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
 
-    def link(self, event: str, feature: Any, feature_data: Any, target: Graphic, target_feature: Any, target_data: Any,
-             indices_mapper: Any):
+    def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
         pass
 
     def __init__(
