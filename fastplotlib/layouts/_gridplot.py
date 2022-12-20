@@ -175,7 +175,7 @@ class GridPlot:
         self.canvas.request_draw(self.render)
 
         for subplot in self:
-            subplot.center_scene()
+            subplot.auto_scale(maintain_aspect=True, zoom=0.95)
 
         return self.canvas
 
