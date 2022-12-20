@@ -1,8 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 from typing import *
 =======
 from typing import Tuple, Any, List
 >>>>>>> 24fb5a5 (blah)
+=======
+from typing import *
+>>>>>>> 9309b41 (ugly but functional)
 
 import numpy as np
 import pygfx
@@ -77,17 +81,13 @@ class ImageGraphic(Graphic, Interaction):
         )
 
     @property
-    def indices(self) -> Any:
-        pass
-
-    @property
     def features(self) -> List[str]:
-        pass
+        return ["cmap", "data"]
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
 
-    def _reset_feature(self):
+    def _reset_feature(self, feature: str, old_data: Any):
         pass
 
     @property

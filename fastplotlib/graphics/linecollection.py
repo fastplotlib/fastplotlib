@@ -2,10 +2,9 @@ import numpy as np
 import pygfx
 from typing import Union, List
 
-from .line import LineGraphic
+from fastplotlib.graphics.line import LineGraphic
 from typing import *
-from ._base import Interaction
-
+from fastplotlib.graphics._base import Interaction
 from abc import ABC, abstractmethod
 
 
@@ -31,7 +30,7 @@ class LineCollection(Interaction):
             if not len(data) == len(cmap):
                 raise ValueError("args must be the same length")
 
-        self.collection = list()
+        self.data = list()
 
         for i, d in enumerate(data):
             if isinstance(z_position, list):
@@ -54,33 +53,30 @@ class LineCollection(Interaction):
             else:
                 _cmap = cmap
 
-            self.collection.append(LineGraphic(d, _z, _size, _colors, _cmap))
-
-    def _reset_feature(self):
-        pass
-
-    @property
-    def indices(self) -> Any:
-        pass
-
-    @indices.setter
-    @abstractmethod
-    def indices(self, indices: Any):
-        pass
+            self.data.append(LineGraphic(d, _z, _size, _colors, _cmap))
 
     @property
     def features(self) -> List[str]:
-        pass
+        return ["colors", "data"]
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
-        if feature in ["colors", "data"]:
-            update_func = getattr(self, f"update_{feature}")
-            self.collection[indices].update_func(new_data)
+        if feature in self.features:
+            update_func = getattr(self.data[indices], f"update_{feature}")
+            # if indices is a single indices or list of indices
+            self.data[indices].update_colors(new_data)
+        else:
+            raise ValueError("name arg is not a valid feature")
+
+    def _reset_feature(self, feature: str, old_data: Any):
+        if feature in self.features:
+            #update_func = getattr(self, f"update_{feature}")
+            for i, line in enumerate(self.data):
+                line.update_colors(old_data[i])
         else:
             raise ValueError("name arg is not a valid feature")
 
     def __getitem__(self, item):
-        return self.collection[item]
+        return self.data[item]
 
 
 

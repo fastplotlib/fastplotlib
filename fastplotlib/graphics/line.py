@@ -113,20 +113,17 @@ class LineGraphic(Graphic, Interaction):
         self.world_object.geometry.colors.update_range()
 
     @property
-    def indices(self) -> Any:
-        return None
-
-    @property
     def features(self) -> List[str]:
-        return None
+        return ["colors", "data"]
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any = None):
-        if feature in ["colors", "data"]:
+        if feature in self.features:
             update_func = getattr(self, f"update_{feature}")
             update_func(new_data)
         else:
             raise ValueError("name arg is not a valid feature")
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
     def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
@@ -174,6 +171,10 @@ class LineGraphic(Graphic, Interaction):
 =======
     def _reset_feature(self, feature: str, old_data: Any, indices: Any = None):
         if feature in ["colors", "data"]:
+=======
+    def _reset_feature(self, feature: str, old_data: Any):
+        if feature in self.features:
+>>>>>>> 9309b41 (ugly but functional)
             update_func = getattr(self, f"update_{feature}")
             update_func(old_data)
         else:
