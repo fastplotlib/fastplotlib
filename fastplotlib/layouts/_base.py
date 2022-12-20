@@ -104,6 +104,7 @@ class PlotArea:
         self.viewport.rect = self.get_rect()
 
     def render(self):
+        # does not flush
         self.controller.update_camera(self.camera)
         self.viewport.render(self.scene, self.camera)
 

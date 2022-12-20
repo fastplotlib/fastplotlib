@@ -143,10 +143,10 @@ class Subplot(PlotArea):
         return rect
 
     def render(self):
-        super(Subplot, self).render()
-
         for f in self._animate_funcs:
             f()
+
+        super(Subplot, self).render()
 
     def add_animations(self, *funcs: callable):
         if not all([callable(f) for f in funcs]):

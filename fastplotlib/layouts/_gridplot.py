@@ -154,11 +154,11 @@ class GridPlot:
             return self._subplots[index[0], index[1]]
 
     def render(self):
-        for subplot in self:
-            subplot.render()
-
         for f in self._animate_funcs:
             f()
+
+        for subplot in self:
+            subplot.render()
 
         self.renderer.flush()
         self.canvas.request_draw()
