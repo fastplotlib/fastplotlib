@@ -163,7 +163,16 @@ class GridPlot:
         self.renderer.flush()
         self.canvas.request_draw()
 
-    def add_animations(self, *funcs: callable):
+    def add_animations(self, *funcs: Iterable[callable]):
+        """
+        Add function(s) that are called on every render cycle
+
+        Parameters
+        ----------
+        *funcs: callable or iterable of callable
+            function(s) that are called on each render cycle
+
+        """
         for f in funcs:
             if not callable(f):
                 raise TypeError(
@@ -172,6 +181,15 @@ class GridPlot:
             self._animate_funcs += funcs
 
     def show(self):
+        """
+        begins the rendering event loop and returns the canvas
+
+        Returns
+        -------
+        WgpuCanvas
+            the canvas
+            
+        """
         self.canvas.request_draw(self.render)
 
         for subplot in self:

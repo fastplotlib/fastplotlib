@@ -59,23 +59,27 @@ class PlotArea:
     # several read-only properties
     @property
     def parent(self):
+        """The parent PlotArea"""
         return self._parent
 
     @property
     def position(self) -> Union[Tuple[int, int], Any]:
-        """Used by subclass based on its referencing system"""
+        """Used by subclass to manage its own referencing system"""
         return self._position
 
     @property
     def scene(self) -> Scene:
+        """The Scene where Graphics live"""
         return self._scene
 
     @property
     def canvas(self) -> WgpuCanvas:
+        """Canvas associated to the plot area"""
         return self._canvas
 
     @property
     def renderer(self) -> WgpuRenderer:
+        """Renderer associated to the plot area"""
         return self._renderer
 
     @property
@@ -84,6 +88,7 @@ class PlotArea:
 
     @property
     def camera(self) -> Union[OrthographicCamera, PerspectiveCamera]:
+        """camera used to view the scene"""
         return self._camera
 
     # in the future we can think about how to allow changing the controller
@@ -105,7 +110,19 @@ class PlotArea:
         for child in self.children:
             child.render()
 
-    def add_graphic(self, graphic, center: bool = True):
+    def add_graphic(self, graphic: Graphic, center: bool = True):
+        """
+        Add a Graphic to the scne
+
+        Parameters
+        ----------
+        graphic: Graphic or GraphicCollection
+            Add a Graphic or a GraphicCollection to the plot area
+
+        center: bool, default True
+            Center the camera on the newly added Graphic
+
+        """
         if graphic.name is not None:  # skip for those that have no name
             graphic_names = list()
 
@@ -131,7 +148,19 @@ class PlotArea:
         self.camera.set_view_size(*scene_lsize)
         self.camera.update_projection_matrix()
 
-    def center_graphic(self, graphic, zoom: float = 1.3):
+    def center_graphic(self, graphic: Graphic, zoom: float = 1.3):
+        """
+        Center the camera w.r.t. the passed graphic
+
+        Parameters
+        ----------
+        graphic: Graphic or GraphicCollection
+            The graphic instance to center on
+
+        zoom: float, default 1.3
+            zoom the camera after centering
+
+        """
         if not isinstance(self.camera, OrthographicCamera):
             warn("`center_graphic()` not yet implemented for `PerspectiveCamera`")
             return
@@ -192,9 +221,26 @@ class PlotArea:
         self.controller.zoom(zoom / self.controller.zoom_value)
 
     def get_graphics(self):
+        """
+        Get all the Graphic instances in the Scene
+
+        Returns
+        -------
+
+        """
         return self._graphics
 
-    def remove_graphic(self, graphic):
+    def remove_graphic(self, graphic: Graphic):
+        """
+        Remove a graphic from the scene. Note: This does not garbage collect the graphic,
+        you can add it back to the scene after removing it.
+
+        Parameters
+        ----------
+        graphic: Graphic or GraphicCollection
+            The graphic to remove from the scene
+
+        """
         self.scene.remove(graphic.world_object)
 
     def __getitem__(self, name: str):
