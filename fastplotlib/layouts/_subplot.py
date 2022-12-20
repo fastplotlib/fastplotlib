@@ -88,8 +88,12 @@ class Subplot(PlotArea):
             self.set_title(self.name)
 
     def _create_graphic(self, graphic_class, *args, **kwargs):
+        if "center" in kwargs.keys():
+            center = kwargs.pop("center")
+        else:
+            center = False
         graphic = graphic_class(*args, **kwargs)
-        self.add_graphic(graphic, center=False)
+        self.add_graphic(graphic, center=center)
 
         return graphic
 

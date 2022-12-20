@@ -1,3 +1,4 @@
+import numpy as np
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, OrbitController, \
     Viewport, WgpuRenderer
 from wgpu.gui.auto import WgpuCanvas
@@ -36,6 +37,13 @@ class PlotArea:
             self.viewport,
             self.camera
         )
+
+        # camera.far and camera.near clipping planes get
+        # wonky with setting controller.distance = 0
+        if isinstance(self.camera, OrthographicCamera):
+            self.controller.distance = 0
+            # also set a initial zoom
+            self.controller.zoom(0.8 / self.controller.zoom_value)
 
         self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
@@ -135,6 +143,15 @@ class PlotArea:
         self.controller.zoom(zoom)
 
     def center_scene(self, zoom: float = 1.3):
+        """
+        Auto-center the scene, does not scale.
+
+        Parameters
+        ----------
+        zoom: float, default 1.3
+            apply a zoom after centering the scene
+
+        """
         if not len(self.scene.children) > 0:
             return
 
@@ -147,6 +164,32 @@ class PlotArea:
         self.controller.show_object(self.camera, self.scene)
 
         self.controller.zoom(zoom)
+
+    def auto_scale(self, maintain_aspect: bool = False, zoom: float = 0.8):
+        """
+        Auto-scale the camera w.r.t to the scene
+
+        Parameters
+        ----------
+        maintain_aspect: bool, default ``False``
+            maintain the camera aspect ratio for all dimensions, if ``False`` the camera
+            is scaled according to the bounds in each dimension.
+
+        zoom: float, default 0.8
+            zoom value for the camera after auto-scaling, if zoom = 1.0 then the graphics
+            in the scene will fill the entire canvas.
+        """
+        self.center_scene()
+        self.camera.maintain_aspect = maintain_aspect
+
+        width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)
+
+        self.camera.width = width
+        self.camera.height = height
+
+        # self.controller.distance = 0
+
+        self.controller.zoom(zoom / self.controller.zoom_value)
 
     def get_graphics(self):
         return self._graphics
