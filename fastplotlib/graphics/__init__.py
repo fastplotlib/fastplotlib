@@ -12,6 +12,6 @@ __all__ = [
     "LineGraphic",
     "HistogramGraphic",
     "HeatmapGraphic",
-    "LineCollection",
-    "TextGraphic"
+    "TextGraphic",
+    "LineCollection"
 ]

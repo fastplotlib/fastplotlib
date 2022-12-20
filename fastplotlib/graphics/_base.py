@@ -7,7 +7,6 @@ from fastplotlib.utils import get_colors, map_labels_to_colors
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-# from .linecollection import LineCollection
 
 class Graphic:
     def __init__(
@@ -74,14 +73,12 @@ class Graphic:
 
 class Interaction(ABC):
     @property
-    @abstractmethod
     def indices(self) -> Any:
-        pass
+        return self.indices
 
     @indices.setter
-    @abstractmethod
     def indices(self, indices: Any):
-        pass
+        self.indices = indices
 
     @property
     @abstractmethod
@@ -93,34 +90,53 @@ class Interaction(ABC):
         pass
 
     @abstractmethod
-    def _reset_feature(self, feature: str, old_data: Any, indices: Any):
+    def _reset_feature(self, feature: str, old_data: Any):
         pass
 
-    def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
+    def link(self, event_type: str, target: Any, feature: str, new_data: Any, indices_mapper: callable = None):
         valid_events = ["click"]
         if event_type in valid_events:
             self.world_object.add_event_handler(self.event_handler, event_type)
         else:
             raise ValueError("event not possible")
 
+        if isinstance(target.data, List):
+            old_data = list()
+            for line in target.data:
+                old_data.append(getattr(line, feature).copy())
+        else:
+            old_data = getattr(target, feature).copy()
+
         if event_type in self.registered_callbacks.keys():
             self.registered_callbacks[event_type].append(
-                CallbackData(target=target, feature=feature, new_data=new_data, old_data=getattr(target, feature).copy()))
+                CallbackData(target=target, feature=feature, new_data=new_data, old_data=old_data, indices_mapper=indices_mapper))
         else:
             self.registered_callbacks[event_type] = list()
             self.registered_callbacks[event_type].append(
-                CallbackData(target=target, feature=feature, new_data=new_data, old_data=getattr(target, feature).copy()))
+                CallbackData(target=target, feature=feature, new_data=new_data, old_data=old_data, indices_mapper=indices_mapper))
 
     def event_handler(self, event):
+        if event.type == "click":
+            # storing click information for each click in self.indices
+            #self.indices(np.array(event.pick_info["index"]))
+            click_info = np.array(event.pick_info["index"])
         if event.type in self.registered_callbacks.keys():
             for target_info in self.registered_callbacks[event.type]:
-                target_info.target._reset_feature(feature=target_info.feature, old_data=target_info.old_data, indices=None)
-                target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=None)
+                # need to map the indices to the target using indices_mapper
+                if target_info.indices_mapper is not None:
+                    indices = target_info.indices_mapper(target=target_info.target, indices=click_info)
+                else:
+                    indices = None
+                # reset feature of target using stored old data
+                target_info.target._reset_feature(feature=target_info.feature, old_data=target_info.old_data)
+                # set feature of target at indice using new data
+                target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data[indices], indices=indices)
 
 @dataclass
 class CallbackData:
     """Class for keeping track of the info necessary for interactivity after event occurs."""
-    target: Graphic
+    target: Any
     feature: str
     new_data: Any
     old_data: Any
+    indices_mapper: callable = None
