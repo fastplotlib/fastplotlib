@@ -1,20 +1,34 @@
 from abc import ABC, abstractmethod
 from typing import *
-from pygfx import Color
+from pygfx import Color, Scene
 import numpy as np
 
 
 class GraphicFeature(ABC):
     def __init__(self, parent, data: Any):
         self._parent = parent
-        self._data = data.astype(np.float32)
+        if isinstance(data, np.ndarray):
+            data = data.astype(np.float32)
 
-    def set_parent(self, parent: Any):
-        self._parent = parent
+        self._data = data
 
     @property
     def data(self):
         return self._data
+
+    @abstractmethod
+    def _set(self, value):
+        pass
+
+    @abstractmethod
+    def __repr__(self):
+        pass
+
+
+class GraphicFeatureIndexable(GraphicFeature):
+    """And indexable Graphic Feature, colors, data, sizes etc."""
+    def _set(self, value):
+        self[:] = value
 
     @abstractmethod
     def __getitem__(self, item):
@@ -26,10 +40,6 @@ class GraphicFeature(ABC):
 
     @abstractmethod
     def _update_range(self, key):
-        pass
-
-    @abstractmethod
-    def __repr__(self):
         pass
 
 
@@ -59,14 +69,14 @@ def cleanup_slice(slice_obj: slice, upper_bound) -> slice:
     return slice(start, stop, step)
 
 
-class ColorFeature(GraphicFeature):
+class ColorFeature(GraphicFeatureIndexable):
     def __init__(self, parent, colors, n_colors, alpha: float = 1.0):
         """
         ColorFeature
 
         Parameters
         ----------
-        parent
+        parent: Graphic or GraphicCollection
 
         colors: str, array, or iterable
             specify colors as a single human readable string, RGBA array,

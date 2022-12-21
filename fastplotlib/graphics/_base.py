@@ -1,10 +1,10 @@
-from typing import Any
+from typing import *
 
 import numpy as np
 import pygfx
 
 from fastplotlib.utils import get_colors, map_labels_to_colors
-from ._graphic_attribute import ColorFeature
+from ._graphic_attribute import GraphicFeature, ColorFeature
 
 
 class Graphic:
@@ -43,9 +43,29 @@ class Graphic:
         if colors is not False:
             self.colors = ColorFeature(parent=self, colors=colors, n_colors=n_colors, alpha=alpha)
 
+        valid_features = ["visible"]
+        for attr_name in self.__dict__.keys():
+            attr = getattr(self, attr_name)
+            if isinstance(attr, GraphicFeature):
+                valid_features.append(attr_name)
+
+        self._valid_features = tuple(valid_features)
+
     @property
     def world_object(self) -> pygfx.WorldObject:
         return self._world_object
+
+    @property
+    def valid_features(self) -> Tuple[str]:
+        return self._valid_features
+
+    @property
+    def visible(self) -> bool:
+        return self.world_object.visible
+
+    @visible.setter
+    def visible(self, v):
+        self.world_object.visible = v
 
     @property
     def children(self) -> pygfx.WorldObject:
@@ -53,6 +73,15 @@ class Graphic:
 
     def update_data(self, data: Any):
         pass
+
+    def __setattr__(self, key, value):
+        if hasattr(self, key):
+            attr = getattr(self, key)
+            if isinstance(attr, GraphicFeature):
+                attr._set(value)
+                return
+
+        super().__setattr__(key, value)
 
     def __repr__(self):
         if self.name is not None:
