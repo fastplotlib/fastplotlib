@@ -85,7 +85,7 @@ class LineGraphic(Graphic, Interaction):
     def fix_data(self):
         # TODO: data should probably be a property of any Graphic?? Or use set_data() and get_data()
         if self.data.ndim == 1:
-            self.data = np.dstack([np.arange(self.data.size), self.data])[0]
+            self.data = np.dstack([np.arange(self.data.size), self.data])[0].astype(np.float32)
 
         if self.data.shape[1] != 3:
             if self.data.shape[1] != 2:
