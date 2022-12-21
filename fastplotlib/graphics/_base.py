@@ -4,7 +4,7 @@ import numpy as np
 import pygfx
 
 from fastplotlib.utils import get_colors, map_labels_to_colors
-from ._graphic_attribute import GraphicFeature, ColorFeature
+from ._graphic_attribute import GraphicFeature, ColorFeature, PresentFeature
 
 
 class Graphic:
@@ -42,6 +42,10 @@ class Graphic:
 
         if colors is not False:
             self.colors = ColorFeature(parent=self, colors=colors, n_colors=n_colors, alpha=alpha)
+
+        # different from visible, toggles the Graphic presence in the Scene
+        # useful for bbox calculations to ignore these Graphics
+        self.present = PresentFeature(parent=self)
 
         valid_features = ["visible"]
         for attr_name in self.__dict__.keys():
