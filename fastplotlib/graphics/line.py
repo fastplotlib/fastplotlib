@@ -42,41 +42,20 @@ class LineGraphic(Graphic):
         kwargs
             passed to Graphic
         """
-        super(LineGraphic, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
-        self.fix_data()
+        super(LineGraphic, self).__init__(data, colors=colors, cmap=cmap, *args, **kwargs)
 
         if size < 1.1:
             material = pygfx.LineThinMaterial
         else:
             material = pygfx.LineMaterial
 
-        self.data = np.ascontiguousarray(self.data)
+        # self.data = np.ascontiguousarray(self.data)
 
         self._world_object: pygfx.Line = pygfx.Line(
-            geometry=pygfx.Geometry(positions=self.data, colors=self.colors.data),
+            # self.data.feature_data because data is a Buffer
+            geometry=pygfx.Geometry(positions=self.data.feature_data, colors=self.colors.feature_data),
             material=material(thickness=size, vertex_colors=True)
         )
 
         self.world_object.position.z = z_position
-
-    def fix_data(self):
-        # TODO: data should probably be a property of any Graphic?? Or use set_data() and get_data()
-        if self.data.ndim == 1:
-            self.data = np.dstack([np.arange(self.data.size), self.data])[0].astype(np.float32)
-
-        if self.data.shape[1] != 3:
-            if self.data.shape[1] != 2:
-                raise ValueError("Must pass 1D, 2D or 3D data")
-
-            # zeros for z
-            zs = np.zeros(self.data.shape[0], dtype=np.float32)
-
-            self.data = np.dstack([self.data[:, 0], self.data[:, 1], zs])[0].astype(np.float32)
-
-    def update_data(self, data: np.ndarray):
-        self.data = data.astype(np.float32)
-        self.fix_data()
-
-        self.world_object.geometry.positions.data[:] = self.data
-        self.world_object.geometry.positions.update_range()

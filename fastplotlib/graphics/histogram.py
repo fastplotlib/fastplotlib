@@ -20,7 +20,7 @@ class HistogramGraphic(Graphic):
             data: np.ndarray = None,
             bins: Union[int, str] = 'auto',
             pre_computed: Dict[str, np.ndarray] = None,
-            colors: np.ndarray = None,
+            colors: np.ndarray = "w",
             draw_scale_factor: float = 100.0,
             draw_bin_width_scale: float = 1.0,
             **kwargs

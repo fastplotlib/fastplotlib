@@ -1,10 +1,9 @@
 from typing import *
 
-import numpy as np
 import pygfx
 
-from fastplotlib.utils import get_colors, map_labels_to_colors
-from ._graphic_attribute import GraphicFeature, ColorFeature, PresentFeature
+from ..utils import get_colors
+from .features import GraphicFeature, DataFeature, ColorFeature, PresentFeature
 
 
 class Graphic:
@@ -21,21 +20,35 @@ class Graphic:
 
         Parameters
         ----------
-        data
+        data: array-like
+            data to show in the graphic, must be float32.
+            Automatically converted to float32 for numpy arrays.
+            Tensorflow Tensors also work but this is not fully
+            tested and might not be supported in the future.
+
         colors: Any
             if ``False``, no color generation is performed, cmap is also ignored.
+
         n_colors
-        cmap
-        alpha
-        name
+
+        cmap: str
+            name of colormap to use
+
+        alpha: float, optional
+            alpha value for the colors
+
+        name: str, optional
+            name this graphic, makes it indexable within plots
+
         """
-        self.data = data.astype(np.float32)
+        # self.data = data.astype(np.float32)
+        self.data = DataFeature(parent=self, data=data, graphic_name=self.__class__.__name__)
         self.colors = None
 
         self.name = name
 
         if n_colors is None:
-            n_colors = self.data.shape[0]
+            n_colors = self.data.feature_data.shape[0]
 
         if cmap is not None and colors is not False:
             colors = get_colors(n_colors=n_colors, cmap=cmap, alpha=alpha)
@@ -60,7 +73,8 @@ class Graphic:
         return self._world_object
 
     @property
-    def valid_features(self) -> Tuple[str]:
+    def interact_features(self) -> Tuple[str]:
+        """The features for this ``Graphic`` that support interaction."""
         return self._valid_features
 
     @property
@@ -69,14 +83,12 @@ class Graphic:
 
     @visible.setter
     def visible(self, v):
+        """Toggle the visibility of this Graphic"""
         self.world_object.visible = v
 
     @property
     def children(self) -> pygfx.WorldObject:
         return self.world_object.children
-
-    def update_data(self, data: Any):
-        pass
 
     def __setattr__(self, key, value):
         if hasattr(self, key):
