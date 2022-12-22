@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from inspect import getfullargspec
+from warnings import warn
 from typing import *
 
 import numpy as np
@@ -63,6 +64,11 @@ class GraphicFeature(ABC):
         """
         if not callable(handler):
             raise TypeError("event handler must be callable")
+
+        if handler in self._event_handlers:
+            warn(f"Event handler {handler} is already registered.")
+            return
+
         self._event_handlers.append(handler)
 
     #TODO: maybe this can be implemented right here in the base class
@@ -73,7 +79,11 @@ class GraphicFeature(ABC):
 
     def _call_event_handlers(self, event_data: FeatureEvent):
         for func in self._event_handlers:
-            if len(getfullargspec(func).args) > 0:
+            try:
+                if len(getfullargspec(func).args) > 0:
+                    func(event_data)
+            except:
+                warn(f"Event handler {func} has an unresolvable argspec, trying it anyways.")
                 func(event_data)
             else:
                 func()
