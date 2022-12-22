@@ -1,4 +1,4 @@
-from ._base import GraphicFeature
+from ._base import GraphicFeature, FeatureEvent
 from pygfx import Scene
 
 
@@ -32,5 +32,20 @@ class PresentFeature(GraphicFeature):
             if self._parent.world_object in self._scene.children:
                 self._scene.remove(self._parent.world_object)
 
+        self._feature_changed(key=None, new_data=present)
+
     def __repr__(self):
         return repr(self.feature_data)
+
+    def _feature_changed(self, key, new_data):
+        # this is a non-indexable feature so key=None
+
+        pick_info = {
+            "index": None,
+            "world_object": self._parent.world_object,
+            "new_data": new_data
+        }
+
+        event_data = FeatureEvent(type="present-changed", pick_info=pick_info)
+
+        self._call_event_handlers(event_data)

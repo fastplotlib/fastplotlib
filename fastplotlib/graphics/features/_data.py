@@ -1,4 +1,4 @@
-from ._base import GraphicFeatureIndexable
+from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent
 from pygfx import Buffer
 from typing import *
 from ...utils import fix_data, to_float32
@@ -28,6 +28,9 @@ class DataFeature(GraphicFeatureIndexable):
             if hasattr(self._parent.world_object.geometry, buffer_name):
                 return buffer_name
 
+    def __repr__(self):
+        return repr(self._buffer.data)
+
     def __getitem__(self, item):
         return self._buffer.data[item]
 
@@ -44,12 +47,33 @@ class DataFeature(GraphicFeatureIndexable):
     def _update_range(self, key):
         if self._buffer_name == "grid":
             self._update_range_grid(key)
+            self._feature_changed(key=None, new_data=None)
         elif self._buffer_name == "positions":
             self._update_range_indices(key)
+            self._feature_changed(key=key, new_data=None)
 
     def _update_range_grid(self, key):
         # image data
         self._buffer.update_range((0, 0, 0), self._buffer.size)
 
-    def __repr__(self):
-        return repr(self._buffer.data)
+    def _feature_changed(self, key, new_data):
+        # for now if key=None that means all data changed, i.e. ImageGraphic
+        # also for now new data isn't stored for DataFeature
+        if key is not None:
+            key = cleanup_slice(key, self._upper_bound)
+        if isinstance(key, int):
+            indices = [key]
+        elif isinstance(key, slice):
+            indices = range(key.start, key.stop, key.step)
+        elif key is None:
+            indices = None
+
+        pick_info = {
+            "index": indices,
+            "world_object": self._parent.world_object,
+            "new_data": new_data
+        }
+
+        event_data = FeatureEvent(type="data-changed", pick_info=pick_info)
+
+        self._call_event_handlers(event_data)

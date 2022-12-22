@@ -1,10 +1,20 @@
 import numpy as np
 
-from ._base import GraphicFeatureIndexable, cleanup_slice
+from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent
 from pygfx import Color
 
 
 class ColorFeature(GraphicFeatureIndexable):
+    @property
+    def _buffer(self):
+        return self._parent.world_object.geometry.colors
+
+    def __getitem__(self, item):
+        return self._buffer.data[item]
+
+    def __repr__(self):
+        return repr(self._buffer.data)
+
     def __init__(self, parent, colors, n_colors, alpha: float = 1.0):
         """
         ColorFeature
@@ -77,10 +87,6 @@ class ColorFeature(GraphicFeatureIndexable):
 
         super(ColorFeature, self).__init__(parent, data)
 
-    @property
-    def _buffer(self):
-        return self._parent.world_object.geometry.colors
-
     def __setitem__(self, key, value):
         # parse numerical slice indices
         if isinstance(key, slice):
@@ -111,6 +117,7 @@ class ColorFeature(GraphicFeatureIndexable):
             # key[1] is going to be RGBA so get rid of it to pass to _update_range
             # _key = cleanup_slice(key[0], self._upper_bound)
             self._update_range(key)
+            self._feature_changed(key, value)
             return
 
         else:
@@ -155,27 +162,26 @@ class ColorFeature(GraphicFeatureIndexable):
         self._buffer.data[key] = new_colors
 
         self._update_range(key)
+        self._feature_changed(key, new_colors)
 
     def _update_range(self, key):
         self._update_range_indices(key)
-        # if isinstance(key, int):
-        #     self._buffer.update_range(key, size=1)
-        #     return
-        #
-        # # else assume it's a slice
-        # if key.step == 1:  # we cleaned up the slice obj so step of None becomes 1
-        #     # update range according to size using the offset
-        #     self._buffer.update_range(offset=key.start, size=key.stop - key.start)
-        #
-        # else:
-        #     step = key.step
-        #     # convert slice to indices
-        #     ixs = range(key.start, key.stop, step)
-        #     for ix in ixs:
-        #         self._buffer.update_range(ix, size=1)
 
-    def __getitem__(self, item):
-        return self._buffer.data[item]
+    def _feature_changed(self, key, new_data):
+        key = cleanup_slice(key, self._upper_bound)
+        if isinstance(key, int):
+            indices = [key]
+        elif isinstance(key, slice):
+            indices = range(key.start, key.stop, key.step)
+        else:
+            raise TypeError("feature changed key must be slice or int")
 
-    def __repr__(self):
-        return repr(self._buffer.data)
+        pick_info = {
+            "index": indices,
+            "world_object": self._parent.world_object,
+            "new_data": new_data,
+        }
+
+        event_data = FeatureEvent(type="color-changed", pick_info=pick_info)
+
+        self._call_event_handlers(event_data)
