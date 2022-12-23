@@ -1,4 +1,4 @@
-from _warnings import warn
+from warnings import warn
 from typing import Union, Dict
 
 import numpy as np
@@ -20,7 +20,7 @@ class HistogramGraphic(Graphic):
             data: np.ndarray = None,
             bins: Union[int, str] = 'auto',
             pre_computed: Dict[str, np.ndarray] = None,
-            colors: np.ndarray = None,
+            colors: np.ndarray = "w",
             draw_scale_factor: float = 100.0,
             draw_bin_width_scale: float = 1.0,
             **kwargs
@@ -82,9 +82,9 @@ class HistogramGraphic(Graphic):
 
         data = np.vstack([x_positions_bins, self.hist])
 
-        super(HistogramGraphic, self).__init__(data=data, colors=colors, colors_length=n_bins, **kwargs)
+        super(HistogramGraphic, self).__init__(data=data, colors=colors, n_colors=n_bins, **kwargs)
 
-        self.world_object: pygfx.Group = pygfx.Group()
+        self._world_object: pygfx.Group = pygfx.Group()
 
         for x_val, y_val, bin_center in zip(x_positions_bins, self.hist, self.bin_centers):
             geometry = pygfx.plane_geometry(

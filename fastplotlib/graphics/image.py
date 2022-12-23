@@ -67,8 +67,8 @@ class ImageGraphic(Graphic):
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
 
-        self.world_object: pygfx.Image = pygfx.Image(
-            pygfx.Geometry(grid=pygfx.Texture(self.data, dim=2)),
+        self._world_object: pygfx.Image = pygfx.Image(
+            pygfx.Geometry(grid=pygfx.Texture(self.data.feature_data, dim=2)),
             pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=get_cmap_texture(cmap))
         )
 
@@ -79,11 +79,3 @@ class ImageGraphic(Graphic):
     @clim.setter
     def clim(self, levels: Tuple[float, float]):
         self.world_object.material.clim = levels
-
-    def update_data(self, data: np.ndarray):
-        self.world_object.geometry.grid.data[:] = data
-        self.world_object.geometry.grid.update_range((0, 0, 0), self.world_object.geometry.grid.size)
-
-    def update_cmap(self, cmap: str, alpha: float = 1.0):
-        self.world_object.material.map = get_cmap_texture(name=cmap)
-        self.world_object.geometry.grid.update_range((0, 0, 0), self.world_object.geometry.grid.size)

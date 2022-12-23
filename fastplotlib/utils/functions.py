@@ -30,13 +30,7 @@ def _get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
     return cmap.astype(np.float32)
 
 
-def get_colors(
-        n_colors: int,
-        cmap: str,
-        spacing: str = 'uniform',
-        alpha: float = 1.0
-    ) \
-        -> List[Union[np.ndarray, str]]:
+def get_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
     cmap = _get_cmap(cmap, alpha)
     cm_ixs = np.linspace(0, 255, n_colors, dtype=int)
     return np.take(cmap, cm_ixs, axis=0).astype(np.float32)
@@ -94,3 +88,36 @@ def quick_min_max(data: np.ndarray) -> Tuple[float, float]:
         data = data[tuple(sl)]
 
     return float(np.nanmin(data)), float(np.nanmax(data))
+
+
+def to_float32(array):
+    if isinstance(array, np.ndarray):
+        return array.astype(np.float32, copy=False)
+
+    return array
+
+
+def fix_data(array, graphic_name: str) -> np.ndarray:
+    """1d or 2d to 3d, cleanup data passed from user before instantiating any Graphic class"""
+    if graphic_name == "ImageGraphic":
+        return to_float32(array)
+
+    if array.ndim == 1:
+        # for scatter if we receive just 3 points in a 1d array, treat it as just a single datapoint
+        # this is different from fix_data for LineGraphic since there we assume that a 1d array
+        # is just y-values
+        if graphic_name == "ScatterGraphic":
+            array = np.array([array])
+        elif graphic_name == "LineGraphic":
+            array = np.dstack([np.arange(array.size), array])[0].astype(np.float32)
+
+    if array.shape[1] != 3:
+        if array.shape[1] != 2:
+            raise ValueError(f"Must pass 1D, 2D or 3D data to {graphic_name}")
+
+        # zeros for z
+        zs = np.zeros(array.shape[0], dtype=np.float32)
+
+        array = np.dstack([array[:, 0], array[:, 1], zs])[0]
+
+    return array
