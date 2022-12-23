@@ -1,3 +1,4 @@
+import numpy as np
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, OrbitController, \
     Viewport, WgpuRenderer
 from wgpu.gui.auto import WgpuCanvas
@@ -37,6 +38,13 @@ class PlotArea:
             self.camera
         )
 
+        # camera.far and camera.near clipping planes get
+        # wonky with setting controller.distance = 0
+        if isinstance(self.camera, OrthographicCamera):
+            self.controller.distance = 0
+            # also set a initial zoom
+            self.controller.zoom(0.8 / self.controller.zoom_value)
+
         self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
         self._graphics: List[Graphic] = list()
@@ -51,23 +59,27 @@ class PlotArea:
     # several read-only properties
     @property
     def parent(self):
+        """The parent PlotArea"""
         return self._parent
 
     @property
     def position(self) -> Union[Tuple[int, int], Any]:
-        """Used by subclass based on its referencing system"""
+        """Used by subclass to manage its own referencing system"""
         return self._position
 
     @property
     def scene(self) -> Scene:
+        """The Scene where Graphics live"""
         return self._scene
 
     @property
     def canvas(self) -> WgpuCanvas:
+        """Canvas associated to the plot area"""
         return self._canvas
 
     @property
     def renderer(self) -> WgpuRenderer:
+        """Renderer associated to the plot area"""
         return self._renderer
 
     @property
@@ -76,6 +88,7 @@ class PlotArea:
 
     @property
     def camera(self) -> Union[OrthographicCamera, PerspectiveCamera]:
+        """camera used to view the scene"""
         return self._camera
 
     # in the future we can think about how to allow changing the controller
@@ -91,13 +104,26 @@ class PlotArea:
         self.viewport.rect = self.get_rect()
 
     def render(self):
+        # does not flush
         self.controller.update_camera(self.camera)
         self.viewport.render(self.scene, self.camera)
 
         for child in self.children:
             child.render()
 
-    def add_graphic(self, graphic, center: bool = True):
+    def add_graphic(self, graphic: Graphic, center: bool = True):
+        """
+        Add a Graphic to the scne
+
+        Parameters
+        ----------
+        graphic: Graphic or GraphicCollection
+            Add a Graphic or a GraphicCollection to the plot area
+
+        center: bool, default True
+            Center the camera on the newly added Graphic
+
+        """
         if graphic.name is not None:  # skip for those that have no name
             graphic_names = list()
 
@@ -123,7 +149,19 @@ class PlotArea:
         self.camera.set_view_size(*scene_lsize)
         self.camera.update_projection_matrix()
 
-    def center_graphic(self, graphic, zoom: float = 1.3):
+    def center_graphic(self, graphic: Graphic, zoom: float = 1.3):
+        """
+        Center the camera w.r.t. the passed graphic
+
+        Parameters
+        ----------
+        graphic: Graphic or GraphicCollection
+            The graphic instance to center on
+
+        zoom: float, default 1.3
+            zoom the camera after centering
+
+        """
         if not isinstance(self.camera, OrthographicCamera):
             warn("`center_graphic()` not yet implemented for `PerspectiveCamera`")
             return
@@ -135,6 +173,15 @@ class PlotArea:
         self.controller.zoom(zoom)
 
     def center_scene(self, zoom: float = 1.3):
+        """
+        Auto-center the scene, does not scale.
+
+        Parameters
+        ----------
+        zoom: float, default 1.3
+            apply a zoom after centering the scene
+
+        """
         if not len(self.scene.children) > 0:
             return
 
@@ -148,10 +195,53 @@ class PlotArea:
 
         self.controller.zoom(zoom)
 
+    def auto_scale(self, maintain_aspect: bool = False, zoom: float = 0.8):
+        """
+        Auto-scale the camera w.r.t to the scene
+
+        Parameters
+        ----------
+        maintain_aspect: bool, default ``False``
+            maintain the camera aspect ratio for all dimensions, if ``False`` the camera
+            is scaled according to the bounds in each dimension.
+
+        zoom: float, default 0.8
+            zoom value for the camera after auto-scaling, if zoom = 1.0 then the graphics
+            in the scene will fill the entire canvas.
+        """
+        self.center_scene()
+        self.camera.maintain_aspect = maintain_aspect
+
+        width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)
+
+        self.camera.width = width
+        self.camera.height = height
+
+        # self.controller.distance = 0
+
+        self.controller.zoom(zoom / self.controller.zoom_value)
+
     def get_graphics(self):
+        """
+        Get all the Graphic instances in the Scene
+
+        Returns
+        -------
+
+        """
         return self._graphics
 
-    def remove_graphic(self, graphic):
+    def remove_graphic(self, graphic: Graphic):
+        """
+        Remove a graphic from the scene. Note: This does not garbage collect the graphic,
+        you can add it back to the scene after removing it.
+
+        Parameters
+        ----------
+        graphic: Graphic or GraphicCollection
+            The graphic to remove from the scene
+
+        """
         self.scene.remove(graphic.world_object)
 
     def __getitem__(self, name: str):

@@ -158,7 +158,7 @@ class ImageWidget:
         for i, (ig, data) in enumerate(zip(self.image_graphics, self.data)):
             frame = self._process_indices(data, self._current_index)
             frame = self._process_frame_apply(frame, i)
-            ig.update_data(frame)
+            ig.data = frame
 
     def __init__(
             self,

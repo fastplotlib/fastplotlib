@@ -154,16 +154,25 @@ class GridPlot:
             return self._subplots[index[0], index[1]]
 
     def render(self):
-        for subplot in self:
-            subplot.render()
-
         for f in self._animate_funcs:
             f()
+
+        for subplot in self:
+            subplot.render()
 
         self.renderer.flush()
         self.canvas.request_draw()
 
-    def add_animations(self, *funcs: callable):
+    def add_animations(self, *funcs: Iterable[callable]):
+        """
+        Add function(s) that are called on every render cycle
+
+        Parameters
+        ----------
+        *funcs: callable or iterable of callable
+            function(s) that are called on each render cycle
+
+        """
         for f in funcs:
             if not callable(f):
                 raise TypeError(
@@ -172,10 +181,19 @@ class GridPlot:
             self._animate_funcs += funcs
 
     def show(self):
+        """
+        begins the rendering event loop and returns the canvas
+
+        Returns
+        -------
+        WgpuCanvas
+            the canvas
+            
+        """
         self.canvas.request_draw(self.render)
 
         for subplot in self:
-            subplot.center_scene()
+            subplot.auto_scale(maintain_aspect=True, zoom=0.95)
 
         return self.canvas
 

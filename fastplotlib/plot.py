@@ -90,7 +90,16 @@ class Plot(Subplot):
         self.canvas.request_draw()
 
     def show(self):
+        """
+        begins the rendering event loop and returns the canvas
+
+        Returns
+        -------
+        WgpuCanvas
+            the canvas
+
+        """
         self.canvas.request_draw(self.render)
-        self.center_scene()
+        self.auto_scale(maintain_aspect=True, zoom=0.95)
 
         return self.canvas

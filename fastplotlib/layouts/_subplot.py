@@ -88,8 +88,12 @@ class Subplot(PlotArea):
             self.set_title(self.name)
 
     def _create_graphic(self, graphic_class, *args, **kwargs):
+        if "center" in kwargs.keys():
+            center = kwargs.pop("center")
+        else:
+            center = False
         graphic = graphic_class(*args, **kwargs)
-        self.add_graphic(graphic, center=False)
+        self.add_graphic(graphic, center=center)
 
         return graphic
 
@@ -139,10 +143,10 @@ class Subplot(PlotArea):
         return rect
 
     def render(self):
-        super(Subplot, self).render()
-
         for f in self._animate_funcs:
             f()
+
+        super(Subplot, self).render()
 
     def add_animations(self, *funcs: callable):
         if not all([callable(f) for f in funcs]):
