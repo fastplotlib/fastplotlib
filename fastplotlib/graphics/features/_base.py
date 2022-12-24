@@ -82,10 +82,10 @@ class GraphicFeature(ABC):
             try:
                 if len(getfullargspec(func).args) > 0:
                     func(event_data)
+                else:
+                    func()
             except:
-                warn(f"Event handler {func} has an unresolvable argspec, trying it anyways.")
-                func(event_data)
-            else:
+                warn(f"Event handler {func} has an unresolvable argspec, calling it without arguments")
                 func()
 
 
