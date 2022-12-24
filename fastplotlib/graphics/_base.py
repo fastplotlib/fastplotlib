@@ -1,12 +1,5 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 from typing import *
-=======
-from typing import Any, List
->>>>>>> 95e77a1 (reorg)
-=======
-from typing import *
->>>>>>> 71eb48f (small changes and reorg)
+import numpy as np
 
 import pygfx
 
@@ -71,22 +64,19 @@ class Graphic:
         # useful for bbox calculations to ignore these Graphics
         self.present = PresentFeature(parent=self)
 
-        valid_features = ["visible"]
+        #valid_features = ["visible"]
+        self._feature_events = list()
         for attr_name in self.__dict__.keys():
             attr = getattr(self, attr_name)
             if isinstance(attr, GraphicFeature):
-                valid_features.append(attr_name)
+                self._feature_events.append(attr_name)
 
-        self._valid_features = tuple(valid_features)
+        self._feature_events = tuple(self._feature_events)
+        self._pygfx_events = ("click",)
 
     @property
     def world_object(self) -> pygfx.WorldObject:
         return self._world_object
-
-    @property
-    def interact_features(self) -> Tuple[str]:
-        """The features for this ``Graphic`` that support interaction."""
-        return self._valid_features
 
     @property
     def visible(self) -> bool:
@@ -115,120 +105,55 @@ class Graphic:
             return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
         else:
             return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
-<<<<<<< HEAD
-=======
 
 class Interaction(ABC):
-    @property
-    def indices(self) -> Any:
-        return self.indices
-
-    @indices.setter
-    def indices(self, indices: Any):
-        self.indices = indices
-
-    @property
-    @abstractmethod
-    def features(self) -> List[str]:
-        pass
-
     @abstractmethod
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
 
     @abstractmethod
-    def _reset_feature(self, feature: str, old_data: Any):
+    def _reset_feature(self, feature: str):
         pass
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    @abstractmethod
-    def event_handler(self, event):
-        pass
-
-<<<<<<< HEAD
->>>>>>> 2c00596 (beginning base logic for interactivity impl)
-=======
-=======
->>>>>>> 71eb48f (small changes and reorg)
-=======
-=======
-    def link(self, event_type: str, target: Graphic, feature: str, new_data: Any, indices_mapper: callable = None):
-=======
     def link(self, event_type: str, target: Any, feature: str, new_data: Any, indices_mapper: callable = None):
->>>>>>> 9309b41 (ugly but functional)
-        valid_events = ["click"]
-        if event_type in valid_events:
+        if event_type in self._pygfx_events:
             self.world_object.add_event_handler(self.event_handler, event_type)
+        elif event_type in self._feature_events:
+            feature = getattr(self, event_type)
+            feature.add_event_handler(self.event_handler, event_type)
         else:
             raise ValueError("event not possible")
 
-        if isinstance(target.data, List):
-            old_data = list()
-            for line in target.data:
-                old_data.append(getattr(line, feature).copy())
-        else:
-            old_data = getattr(target, feature).copy()
-
         if event_type in self.registered_callbacks.keys():
             self.registered_callbacks[event_type].append(
-                CallbackData(target=target, feature=feature, new_data=new_data, old_data=old_data, indices_mapper=indices_mapper))
+                CallbackData(target=target, feature=feature, new_data=new_data, indices_mapper=indices_mapper))
         else:
             self.registered_callbacks[event_type] = list()
             self.registered_callbacks[event_type].append(
-                CallbackData(target=target, feature=feature, new_data=new_data, old_data=old_data, indices_mapper=indices_mapper))
+                CallbackData(target=target, feature=feature, new_data=new_data, indices_mapper=indices_mapper))
 
->>>>>>> 0f22531 (small changes)
     def event_handler(self, event):
-        if event.type == "click":
-            # storing click information for each click in self.indices
-            #self.indices(np.array(event.pick_info["index"]))
-            click_info = np.array(event.pick_info["index"])
+        event_info = event.pick_info
+        #click_info = np.array(event.pick_info["index"])
         if event.type in self.registered_callbacks.keys():
             for target_info in self.registered_callbacks[event.type]:
-                # need to map the indices to the target using indices_mapper
                 if target_info.indices_mapper is not None:
-                    indices = target_info.indices_mapper(target=target_info.target, indices=click_info)
+                    indices = target_info.indices_mapper(source=self, target=target_info.target, indices=click_info)
                 else:
                     indices = None
-                # reset feature of target using stored old data
-                target_info.target._reset_feature(feature=target_info.feature, old_data=target_info.old_data)
                 # set feature of target at indice using new data
-                target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data[indices], indices=indices)
+                target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
 
->>>>>>> e203cff (updates to line, works w previous example)
 @dataclass
 class CallbackData:
     """Class for keeping track of the info necessary for interactivity after event occurs."""
-<<<<<<< HEAD
-<<<<<<< HEAD
-    def __init__(self, target: Graphic, feature: str, new_data: Any):
-        self.target = target
-        self.feature = feature
-        self.new_data = new_data
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> 95e77a1 (reorg)
-=======
-        self.indices = indices
->>>>>>> 71eb48f (small changes and reorg)
-=======
->>>>>>> e203cff (updates to line, works w previous example)
-=======
-    target: Graphic
-=======
     target: Any
->>>>>>> 9309b41 (ugly but functional)
     feature: str
     new_data: Any
-<<<<<<< HEAD
->>>>>>> 0f22531 (small changes)
-=======
-    old_data: Any
-<<<<<<< HEAD
->>>>>>> bc688fc (implementing reset_feature)
-=======
     indices_mapper: callable = None
->>>>>>> 9309b41 (ugly but functional)
+
+@dataclass
+class PreviouslyModifiedData:
+    """Class for keeping track of previously modified data at indices"""
+    previous_data: Any
+    previous_indices: Any

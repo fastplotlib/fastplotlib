@@ -7,17 +7,6 @@ from typing import *
 from fastplotlib.graphics._base import Interaction
 from abc import ABC, abstractmethod
 
-
-<<<<<<< HEAD
-<<<<<<< HEAD
-class LineCollection():
-    def __init__(self, data: List[np.ndarray], z_position: Union[List[float], float] = None, size: Union[float, List[float]] = 2.0, colors: Union[List[np.ndarray], np.ndarray] = None,
-=======
-class LineCollection(Interaction):
-    def __init__(self, data: List[np.ndarray], zlevel: Union[List[float], float] = None, size: Union[float, List[float]] = 2.0, colors: Union[List[np.ndarray], np.ndarray] = None,
->>>>>>> 16922e7 (git is so agitating sometimes)
-                 cmap: Union[List[str], str] = None, *args, **kwargs):
-=======
 class LineCollection:
     def __init__(self, data: List[np.ndarray],
                  z_position: Union[List[float], float] = None,
@@ -28,7 +17,6 @@ class LineCollection:
                  **kwargs):
 
         self.name = None
->>>>>>> a6b53ee (LineCollection has @world_object, fix float64 bug in LineGraphic)
 
         if not isinstance(z_position, float) and z_position is not None:
             if not len(data) == len(z_position):
@@ -75,10 +63,6 @@ class LineCollection:
     @property
     def world_object(self) -> pygfx.WorldObject:
         return self._world_object
-
-    @property
-    def features(self) -> List[str]:
-        return ["colors", "data"]
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         if feature in self.features:
