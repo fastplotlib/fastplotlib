@@ -22,12 +22,13 @@ import numpy as np
 plot = Plot()
 
 data = np.random.rand(512, 512)
-plot.image(data=data)
+plot.add_image(data=data)
 
 plot.show()
 ```
+![image](https://user-images.githubusercontent.com/9403332/209422734-4f983b42-e126-40a7-a681-3b8e22dbd797.png)
 
-### Fast image updates (video)
+### Fast image updates
 ```python
 from fastplotlib import Plot
 import numpy as np
@@ -39,12 +40,15 @@ image = plot.image(data=data)
 
 def update_data():
     new_data = np.random.rand(512, 512)
-    image.update_data(new_data)
+    image.data = new_data
 
 plot.add_animations(update_data)
 
 plot.show()
 ```
+
+![out](https://user-images.githubusercontent.com/9403332/209422871-6b2153f3-81ca-4f62-9200-8206a81eaf0d.gif)
+
 
 # Installation
 
@@ -93,7 +97,7 @@ jupyter lab
 For more information see: https://github.com/pygfx/wgpu-py#platform-requirements
 
 ### Windows:
-Vulkan should be installed by default on Windows 11.
+Vulkan should be installed by default on Windows 11, but you will need to install your GPU manufacturer's driver package (Nvidia or AMD). If you have an integrated GPU within your CPU, you might still need to install a driver package too, check your CPU manufacturer's info.
 
 ### Linux:
 Debian based distros:
@@ -104,7 +108,7 @@ sudo apt install mesa-vulkan-drivers
 sudo apt install libjpeg-turbo
 ```
 
-For other distros install the appropriate vulkan driver package.
+For other distros install the appropriate vulkan driver package, and optionally the corresponding `libjpeg-turbo` package for better remote-frame-buffer performance in jupyter notebooks.
 
 ### Mac OSX:
 You will need at least MacOSX v10.13, not sure how to install Vulkan drivers on Mac. If anyone knows you can add instructions here!
@@ -119,9 +123,9 @@ https://www.youtube.com/embed/-_0Gp_EqepI
 
 https://user-images.githubusercontent.com/9403332/165678225-dcf3b401-86a5-4df5-a9e5-dc65bdb0443a.mp4
 
-### Scatter plot
+### 4x Grid of Scatter plots, 1.2 million points each
 
-https://user-images.githubusercontent.com/9403332/165677576-a0aa2d0f-a201-4e0e-91bd-aed800f775ee.mp4
+[https://user-images.githubusercontent.com/9403332/165677576-a0aa2d0f-a201-4e0e-91bd-aed800f775ee.mp4](https://www.youtube.com/watch?v=j_gwi-Wf1Ao)
 
 ### Lineplot
 
