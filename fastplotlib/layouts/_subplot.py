@@ -2,7 +2,8 @@ from typing import *
 import numpy as np
 from math import copysign
 from functools import partial
-from inspect import signature
+from inspect import signature, getfullargspec
+from warnings import warn
 
 from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitOrthoController, \
     AxesHelper, GridHelper, WgpuRenderer, Background, BackgroundMaterial
@@ -53,7 +54,8 @@ class Subplot(PlotArea):
 
         self._grid: GridHelper = GridHelper(size=100, thickness=1)
 
-        self._animate_funcs = list()
+        self._animate_funcs_pre = list()
+        self._animate_funcs_post = list()
 
         super(Subplot, self).__init__(
             parent=None,
@@ -143,18 +145,80 @@ class Subplot(PlotArea):
         return rect
 
     def render(self):
-        for f in self._animate_funcs:
-            f()
+        self._call_animate_functions(self._animate_funcs_pre)
 
         super(Subplot, self).render()
 
-    def add_animations(self, *funcs: callable):
-        if not all([callable(f) for f in funcs]):
-            raise TypeError(
-                f"all positional arguments to add_animations() must be callable types"
+        self._call_animate_functions(self._animate_funcs_post)
+
+    def _call_animate_functions(self, funcs: Iterable[callable]):
+        for fn in funcs:
+            try:
+                if len(getfullargspec(fn).args) > 0:
+                    fn(self)
+                else:
+                    fn()
+            except (ValueError, TypeError):
+                warn(
+                    f"Could not resolve argspec of {self.__class__.__name__} animation function: {fn}, "
+                    f"calling it without arguments."
+                )
+                fn()
+
+    def add_animations(
+            self,
+            *funcs: Iterable[callable],
+            pre_render: bool = True,
+            post_render: bool = False
+    ):
+        """
+        Add function(s) that are called on every render cycle.
+        These are called at the Subplot level.
+
+        Parameters
+        ----------
+        *funcs: callable or iterable of callable
+            function(s) that are called on each render cycle
+
+        pre_render: bool, default ``True``, optional keyword-only argument
+            if true, these function(s) are called before a render cycle
+
+        post_render: bool, default ``False``, optional keyword-only argument
+            if true, these function(s) are called after a render cycle
+
+        """
+        for f in funcs:
+            if not callable(f):
+                raise TypeError(
+                    f"all positional arguments to add_animations() must be callable types, you have passed a: {type(f)}"
+                )
+            if pre_render:
+                self._animate_funcs_pre += funcs
+            if post_render:
+                self._animate_funcs_post += funcs
+
+    def remove_animation(self, func):
+        """
+        Removes the passed animation function from both pre and post render.
+
+        Parameters
+        ----------
+        func: callable
+            The function to remove, raises a error if it's not registered as a pre or post animation function.
+
+        """
+        if func not in self._animate_funcs_pre and func not in self._animate_funcs_post:
+            raise KeyError(
+                f"The passed function: {func} is not registered as an animation function. These are the animation "
+                f" functions that are currently registered:\n"
+                f"pre: {self._animate_funcs_pre}\n\npost: {self._animate_funcs_post}"
             )
 
-        self._animate_funcs += funcs
+        if func in self._animate_funcs_pre:
+            self._animate_funcs_pre.remove(func)
+
+        if func in self._animate_funcs_post:
+            self._animate_funcs_post.remove(func)
 
     def add_graphic(self, graphic, center: bool = True):
         super(Subplot, self).add_graphic(graphic, center)

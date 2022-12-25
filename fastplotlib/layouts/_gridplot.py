@@ -1,6 +1,8 @@
 from itertools import product
 import numpy as np
 from typing import *
+from inspect import getfullargspec
+from warnings import warn
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
 from ._defaults import create_controller
@@ -141,7 +143,9 @@ class GridPlot:
                 name=name
             )
 
-        self._animate_funcs: List[callable] = list()
+        self._animate_funcs_pre: List[callable] = list()
+        self._animate_funcs_post: List[callable] = list()
+
         self._current_iter = None
 
     def __getitem__(self, index: Union[Tuple[int, int], str]):
@@ -154,8 +158,8 @@ class GridPlot:
             return self._subplots[index[0], index[1]]
 
     def render(self):
-        for f in self._animate_funcs:
-            f()
+        # call the animation functions before render
+        self._call_animate_functions(self._animate_funcs_pre)
 
         for subplot in self:
             subplot.render()
@@ -163,14 +167,43 @@ class GridPlot:
         self.renderer.flush()
         self.canvas.request_draw()
 
-    def add_animations(self, *funcs: Iterable[callable]):
+        # call post-render animate functions
+        self._call_animate_functions(self._animate_funcs_post)
+
+    def _call_animate_functions(self, funcs: Iterable[callable]):
+        for fn in funcs:
+            try:
+                if len(getfullargspec(fn).args) > 0:
+                    fn(self)
+                else:
+                    fn()
+            except (ValueError, TypeError):
+                warn(
+                    f"Could not resolve argspec of {self.__class__.__name__} animation function: {fn}, "
+                    f"calling it without arguments."
+                )
+                fn()
+
+    def add_animations(
+            self,
+            *funcs: Iterable[callable],
+            pre_render: bool = True,
+            post_render: bool = False
+    ):
         """
-        Add function(s) that are called on every render cycle
+        Add function(s) that are called on every render cycle.
+        These are called at the GridPlot level.
 
         Parameters
         ----------
         *funcs: callable or iterable of callable
             function(s) that are called on each render cycle
+
+        pre_render: bool, default ``True``, optional keyword-only argument
+            if true, these function(s) are called before a render cycle
+
+        post_render: bool, default ``False``, optional keyword-only argument
+            if true, these function(s) are called after a render cycle
 
         """
         for f in funcs:
@@ -178,7 +211,33 @@ class GridPlot:
                 raise TypeError(
                     f"all positional arguments to add_animations() must be callable types, you have passed a: {type(f)}"
                 )
-            self._animate_funcs += funcs
+            if pre_render:
+                self._animate_funcs_pre += funcs
+            if post_render:
+                self._animate_funcs_post += funcs
+
+    def remove_animation(self, func):
+        """
+        Removes the passed animation function from both pre and post render.
+
+        Parameters
+        ----------
+        func: callable
+            The function to remove, raises a error if it's not registered as a pre or post animation function.
+
+        """
+        if func not in self._animate_funcs_pre and func not in self._animate_funcs_post:
+            raise KeyError(
+                f"The passed function: {func} is not registered as an animation function. These are the animation "
+                f" functions that are currently registered:\n"
+                f"pre: {self._animate_funcs_pre}\n\npost: {self._animate_funcs_post}"
+            )
+
+        if func in self._animate_funcs_pre:
+            self._animate_funcs_pre.remove(func)
+
+        if func in self._animate_funcs_post:
+            self._animate_funcs_post.remove(func)
 
     def show(self):
         """
