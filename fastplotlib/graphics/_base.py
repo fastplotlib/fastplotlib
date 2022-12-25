@@ -1,63 +1,33 @@
 from typing import *
 
-import pygfx
+from pygfx import WorldObject
+from pygfx.linalg import Vector3
 
-from ..utils import get_colors
-from .features import GraphicFeature, DataFeature, ColorFeature, PresentFeature
+from .features import GraphicFeature, PresentFeature
 
 
-class Graphic:
+class BaseGraphic:
+    def __init_subclass__(cls, **kwargs):
+        """set the type of the graphic in lower case like "image", "line_collection", etc."""
+        cls.type = cls.__name__.lower().replace("graphic", "").replace("collection", "_collection")
+        super().__init_subclass__(**kwargs)
+
+
+class Graphic(BaseGraphic):
     def __init__(
             self,
-            data,
-            colors: Any = False,
-            n_colors: int = None,
-            cmap: str = None,
-            alpha: float = 1.0,
             name: str = None
     ):
         """
 
         Parameters
         ----------
-        data: array-like
-            data to show in the graphic, must be float32.
-            Automatically converted to float32 for numpy arrays.
-            Tensorflow Tensors also work but this is not fully
-            tested and might not be supported in the future.
-
-        colors: Any
-            if ``False``, no color generation is performed, cmap is also ignored.
-
-        n_colors
-
-        cmap: str
-            name of colormap to use
-
-        alpha: float, optional
-            alpha value for the colors
-
         name: str, optional
             name this graphic, makes it indexable within plots
 
         """
-        # self.data = data.astype(np.float32)
-        self.data = DataFeature(parent=self, data=data, graphic_name=self.__class__.__name__)
-        self.colors = None
 
         self.name = name
-
-        if n_colors is None:
-            n_colors = self.data.feature_data.shape[0]
-
-        if cmap is not None and colors is not False:
-            colors = get_colors(n_colors=n_colors, cmap=cmap, alpha=alpha)
-
-        if colors is not False:
-            self.colors = ColorFeature(parent=self, colors=colors, n_colors=n_colors, alpha=alpha)
-
-        # different from visible, toggles the Graphic presence in the Scene
-        # useful for bbox calculations to ignore these Graphics
         self.present = PresentFeature(parent=self)
 
         valid_features = ["visible"]
@@ -69,8 +39,13 @@ class Graphic:
         self._valid_features = tuple(valid_features)
 
     @property
-    def world_object(self) -> pygfx.WorldObject:
+    def world_object(self) -> WorldObject:
         return self._world_object
+
+    @property
+    def position(self) -> Vector3:
+        """The position of the graphic"""
+        return self.world_object.position
 
     @property
     def interact_features(self) -> Tuple[str]:
@@ -87,7 +62,7 @@ class Graphic:
         self.world_object.visible = v
 
     @property
-    def children(self) -> pygfx.WorldObject:
+    def children(self) -> WorldObject:
         return self.world_object.children
 
     def __setattr__(self, key, value):

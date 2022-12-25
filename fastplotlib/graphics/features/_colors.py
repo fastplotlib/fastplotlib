@@ -1,6 +1,7 @@
 import numpy as np
 
-from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent
+from ._base import GraphicFeature, GraphicFeatureIndexable, cleanup_slice, FeatureEvent
+from ...utils import get_colors, get_cmap_texture
 from pygfx import Color
 
 
@@ -15,7 +16,7 @@ class ColorFeature(GraphicFeatureIndexable):
     def __repr__(self):
         return repr(self._buffer.data)
 
-    def __init__(self, parent, colors, n_colors, alpha: float = 1.0):
+    def __init__(self, parent, colors, n_colors: int, alpha: float = 1.0):
         """
         ColorFeature
 
@@ -27,7 +28,12 @@ class ColorFeature(GraphicFeatureIndexable):
             specify colors as a single human readable string, RGBA array,
             or an iterable of strings or RGBA arrays
 
-        n_colors: number of colors to hold, if passing in a single str or single RGBA array
+        n_colors: int
+            number of colors to hold, if passing in a single str or single RGBA array
+
+        alpha: float
+            alpha value for the colors
+
         """
         # if provided as a numpy array of str
         if isinstance(colors, np.ndarray):
@@ -183,5 +189,57 @@ class ColorFeature(GraphicFeatureIndexable):
         }
 
         event_data = FeatureEvent(type="color-changed", pick_info=pick_info)
+
+        self._call_event_handlers(event_data)
+
+
+class CmapFeature(ColorFeature):
+    """
+    Indexable colormap feature, mostly wraps colors and just provides a way to set colormaps.
+    """
+    def __init__(self, parent, colors):
+        super(ColorFeature, self).__init__(parent, colors)
+
+    def __setitem__(self, key, value):
+        key = cleanup_slice(key, self._upper_bound)
+        if not isinstance(key, slice):
+            raise TypeError("Cannot set cmap on single indices, must pass a slice object or "
+                            "set it on the entire data.")
+
+        n_colors = len(range(key.start, key.stop, key.step))
+
+        colors = get_colors(n_colors, cmap=value)
+        super(CmapFeature, self).__setitem__(key, colors)
+
+
+class ImageCmapFeature(GraphicFeature):
+    """
+    Colormap for ImageGraphic
+    """
+    def __init__(self, parent, cmap: str):
+        cmap_texture_view = get_cmap_texture(cmap)
+        super(ImageCmapFeature, self).__init__(parent, cmap_texture_view)
+        self.name = cmap
+
+    def _set(self, cmap_name: str):
+        self._parent.world_object.material.map.texture.data[:] = get_colors(256, cmap_name)
+        self._parent.world_object.material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
+        self.name = cmap_name
+
+        self._feature_changed(key=None, new_data=self.name)
+
+    def __repr__(self):
+        return repr(self.name)
+
+    def _feature_changed(self, key, new_data):
+        # this is a non-indexable feature so key=None
+
+        pick_info = {
+            "index": None,
+            "world_object": self._parent.world_object,
+            "new_data": new_data
+        }
+
+        event_data = FeatureEvent(type="cmap-changed", pick_info=pick_info)
 
         self._call_event_handlers(event_data)

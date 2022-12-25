@@ -1,32 +1,112 @@
-from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent
-from pygfx import Buffer
 from typing import *
-from ...utils import fix_data, to_float32
+
+import numpy as np
+from pygfx import Buffer, Texture
+
+from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent
 
 
-class DataFeature(GraphicFeatureIndexable):
+def to_float32(array):
+    if isinstance(array, np.ndarray):
+        return array.astype(np.float32, copy=False)
+
+    return array
+
+
+class PointsDataFeature(GraphicFeatureIndexable):
     """
-    Access to the buffer data being shown in the graphic.
-    Supports fancy indexing if the data array also does.
+    Access to the vertex buffer data shown in the graphic.
+    Supports fancy indexing if the data array also supports it.
     """
-    # the correct data buffer is search for in this order
-    data_buffer_names = ["grid", "positions"]
-
-    def __init__(self, parent, data: Any, graphic_name):
-        data = fix_data(data, graphic_name=graphic_name)
-        self.graphic_name = graphic_name
-        super(DataFeature, self).__init__(parent, data)
+    def __init__(self, parent, data: Any):
+        data = self._fix_data(data, parent)
+        super(PointsDataFeature, self).__init__(parent, data)
 
     @property
     def _buffer(self) -> Buffer:
-        buffer = getattr(self._parent.world_object.geometry, self._buffer_name)
-        return buffer
+        return self._parent.world_object.geometry.positions
+
+    def __repr__(self):
+        return repr(self._buffer.data)
+
+    def __getitem__(self, item):
+        return self._buffer.data[item]
+
+    def _fix_data(self, data, parent):
+        graphic_type = parent.__class__.__name__
+
+        if data.ndim == 1:
+            # for scatter if we receive just 3 points in a 1d array, treat it as just a single datapoint
+            # this is different from fix_data for LineGraphic since there we assume that a 1d array
+            # is just y-values
+            if graphic_type == "ScatterGraphic":
+                data = np.array([data])
+            elif graphic_type == "LineGraphic":
+                data = np.dstack([np.arange(data.size), data])[0].astype(np.float32)
+
+        if data.shape[1] != 3:
+            if data.shape[1] != 2:
+                raise ValueError(f"Must pass 1D, 2D or 3D data to {graphic_type}")
+
+            # zeros for z
+            zs = np.zeros(data.shape[0], dtype=np.float32)
+
+            data = np.dstack([data[:, 0], data[:, 1], zs])[0]
+
+        return data
+
+    def __setitem__(self, key, value):
+        # put data into right shape if they're only indexing datapoints
+        if isinstance(key, (slice, int)):
+            value = self._fix_data(value, self._parent)
+        # otherwise assume that they have the right shape
+        # numpy will throw errors if it can't broadcast
+
+        self._buffer.data[key] = value
+        self._update_range(key)
+        # avoid creating dicts constantly if there are no events to handle
+        if len(self._event_handlers) > 0:
+            self._feature_changed(key, value)
+
+    def _update_range(self, key):
+        self._update_range_indices(key)
+
+    def _feature_changed(self, key, new_data):
+        if key is not None:
+            key = cleanup_slice(key, self._upper_bound)
+        if isinstance(key, int):
+            indices = [key]
+        elif isinstance(key, slice):
+            indices = range(key.start, key.stop, key.step)
+        elif key is None:
+            indices = None
+
+        pick_info = {
+            "index": indices,
+            "world_object": self._parent.world_object,
+            "new_data": new_data
+        }
+
+        event_data = FeatureEvent(type="data-changed", pick_info=pick_info)
+
+        self._call_event_handlers(event_data)
+
+
+class ImageDataFeature(GraphicFeatureIndexable):
+    """
+    Access to the TextureView buffer shown in an ImageGraphic.
+    """
+
+    def __init__(self, parent, data: Any):
+        if data.ndim != 2:
+            raise ValueError("`data.ndim !=2`, you must pass only a 2D array to an Image graphic")
+
+        data = to_float32(data)
+        super(ImageDataFeature, self).__init__(parent, data)
 
     @property
-    def _buffer_name(self) -> str:
-        for buffer_name in self.data_buffer_names:
-            if hasattr(self._parent.world_object.geometry, buffer_name):
-                return buffer_name
+    def _buffer(self) -> Texture:
+        return self._parent.world_object.geometry.grid.texture
 
     def __repr__(self):
         return repr(self._buffer.data)
@@ -35,30 +115,20 @@ class DataFeature(GraphicFeatureIndexable):
         return self._buffer.data[item]
 
     def __setitem__(self, key, value):
-        if isinstance(key, (slice, int)):
-            # data must be provided in the right shape
-            value = fix_data(value, graphic_name=self.graphic_name)
-        else:
-            # otherwise just make sure float32
-            value = to_float32(value)
+        # make sure float32
+        value = to_float32(value)
+
         self._buffer.data[key] = value
         self._update_range(key)
 
-    def _update_range(self, key):
-        if self._buffer_name == "grid":
-            self._update_range_grid(key)
-            self._feature_changed(key=None, new_data=None)
-        elif self._buffer_name == "positions":
-            self._update_range_indices(key)
-            self._feature_changed(key=key, new_data=None)
+        # avoid creating dicts constantly if there are no events to handle
+        if len(self._event_handlers) > 0:
+            self._feature_changed(key, value)
 
-    def _update_range_grid(self, key):
-        # image data
-        self._buffer.update_range((0, 0, 0), self._buffer.size)
+    def _update_range(self, key):
+        self._buffer.update_range((0, 0, 0), size=self._buffer.size)
 
     def _feature_changed(self, key, new_data):
-        # for now if key=None that means all data changed, i.e. ImageGraphic
-        # also for now new data isn't stored for DataFeature
         if key is not None:
             key = cleanup_slice(key, self._upper_bound)
         if isinstance(key, int):

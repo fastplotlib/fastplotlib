@@ -1,10 +1,10 @@
 from typing import *
 
-import numpy as np
 import pygfx
 
 from ._base import Graphic
-from ..utils import quick_min_max, get_cmap_texture
+from .features import ImageCmapFeature, ImageDataFeature
+from ..utils import quick_min_max
 
 
 class ImageGraphic(Graphic):
@@ -14,6 +14,7 @@ class ImageGraphic(Graphic):
             vmin: int = None,
             vmax: int = None,
             cmap: str = 'plasma',
+            filter: str = "nearest",
             *args,
             **kwargs
     ):
@@ -32,10 +33,15 @@ class ImageGraphic(Graphic):
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
 
-        cmap: str, optional
+        cmap: str, optional, default "nearest"
             colormap to use to display the image data, default is ``"plasma"``
+
+        filter: str, optional, default "nearest"
+            interpolation filter, one of "nearest" or "linear"
+
         args:
             additional arguments passed to Graphic
+
         kwargs:
             additional keyword arguments passed to Graphic
 
@@ -59,23 +65,41 @@ class ImageGraphic(Graphic):
             plot.show()
 
         """
-        if data.ndim != 2:
-            raise ValueError("`data.ndim !=2`, you must pass only a 2D array to `data`")
 
-        super().__init__(data, cmap=cmap, *args, **kwargs)
+        super().__init__(*args, **kwargs)
+
+        self.data = ImageDataFeature(self, data)
 
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
 
+        self.cmap = ImageCmapFeature(self, cmap)
+
+        texture_view = pygfx.Texture(self.data.feature_data, dim=2).get_view(filter=filter)
+
         self._world_object: pygfx.Image = pygfx.Image(
-            pygfx.Geometry(grid=pygfx.Texture(self.data.feature_data, dim=2)),
-            pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=get_cmap_texture(cmap))
+            pygfx.Geometry(grid=texture_view),
+            pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap.feature_data)
         )
 
     @property
-    def clim(self) -> Tuple[float, float]:
-        return self.world_object.material.clim
+    def vmin(self) -> float:
+        return self.world_object.material.clim[0]
 
-    @clim.setter
-    def clim(self, levels: Tuple[float, float]):
-        self.world_object.material.clim = levels
+    @vmin.setter
+    def vmin(self, value: float):
+        self.world_object.material.clim = (
+            value,
+            self.world_object.material.clim[1]
+        )
+
+    @property
+    def vmax(self) -> float:
+        return self.world_object.material.clim[1]
+
+    @vmax.setter
+    def vmax(self, value: float):
+        self.world_object.material.clim = (
+            self.world_object.material.clim[0],
+            value
+        )

@@ -2,8 +2,10 @@ from typing import *
 import pygfx
 import numpy as np
 
+from ._base import BaseGraphic
 
-class TextGraphic:
+
+class TextGraphic(BaseGraphic):
     def __init__(
             self,
             text: str,

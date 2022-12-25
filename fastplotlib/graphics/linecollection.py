@@ -1,11 +1,12 @@
 import numpy as np
 import pygfx
 from typing import Union
+from ._base import BaseGraphic
 from .line import LineGraphic
 from typing import *
 
 
-class LineCollection():
+class LineCollection(BaseGraphic):
     def __init__(self, data: List[np.ndarray], z_position: Union[List[float], float] = None, size: Union[float, List[float]] = 2.0, colors: Union[List[np.ndarray], np.ndarray] = None,
                  cmap: Union[List[str], str] = None, *args, **kwargs):
 
