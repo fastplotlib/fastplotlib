@@ -6,7 +6,7 @@ from inspect import signature, getfullargspec
 from warnings import warn
 
 from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitOrthoController, \
-    AxesHelper, GridHelper, WgpuRenderer, Background, BackgroundMaterial
+    AxesHelper, GridHelper, WgpuRenderer
 from wgpu.gui.auto import WgpuCanvas
 
 from ._base import PlotArea
@@ -82,8 +82,8 @@ class Subplot(PlotArea):
             pfunc.__signature__ = signature(cls)
             pfunc.__doc__ = cls.__init__.__doc__
 
-            graphic_cls_name = graphic_cls_name.lower().replace("graphic", "").replace("collection", "_collection")
-            setattr(self, f"add_{graphic_cls_name}", pfunc)
+            # cls.type is defined in Graphic.__init_subclass__
+            setattr(self, f"add_{cls.type}", pfunc)
 
         self._title_graphic: TextGraphic = None
         if self.name is not None:
@@ -130,13 +130,13 @@ class Subplot(PlotArea):
         x_pos = ((width_canvas / self.ncols) + ((col_ix - 1) * (width_canvas / self.ncols))) + self.spacing
         y_pos = ((height_canvas / self.nrows) + ((row_ix - 1) * (height_canvas / self.nrows))) + self.spacing
         width_subplot = (width_canvas / self.ncols) - self.spacing
-        height_suplot = (height_canvas / self.nrows) - self.spacing
+        height_subplot = (height_canvas / self.nrows) - self.spacing
 
         rect = np.array([
             x_pos,
             y_pos,
             width_subplot,
-            height_suplot
+            height_subplot
         ])
 
         for dv in self.docked_viewports.values():
@@ -221,6 +221,7 @@ class Subplot(PlotArea):
             self._animate_funcs_post.remove(func)
 
     def add_graphic(self, graphic, center: bool = True):
+        graphic.world_object.position.z = len(self._graphics)
         super(Subplot, self).add_graphic(graphic, center)
 
         if isinstance(graphic, graphics.HeatmapGraphic):

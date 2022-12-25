@@ -90,6 +90,22 @@ class GraphicFeature(ABC):
 
 
 def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
+    """
+
+    If the key in an `int`, it just returns it. Otherwise,
+    it parses it and removes the `None` vals and replaces
+    them with corresponding values that can be used to
+    create a `range`, get `len` etc.
+
+    Parameters
+    ----------
+    key
+    upper_bound
+
+    Returns
+    -------
+
+    """
     if isinstance(key, int):
         return key
 
@@ -157,7 +173,7 @@ class GraphicFeatureIndexable(GraphicFeature):
         return self.feature_data.shape[0]
 
     def _update_range_indices(self, key):
-        """Currently used by colors and data"""
+        """Currently used by colors and positions data"""
         key = cleanup_slice(key, self._upper_bound)
 
         if isinstance(key, int):
@@ -178,5 +194,3 @@ class GraphicFeatureIndexable(GraphicFeature):
                     self._buffer.update_range(ix, size=1)
         else:
             raise TypeError("must pass int or slice to update range")
-
-

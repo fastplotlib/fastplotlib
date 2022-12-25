@@ -472,8 +472,8 @@ class ImageWidget:
                     max=minmax[1] + data_range_30p,
                     step=data_range / 150,
                     description=f"min-max",
-                    readout = True,
-                    readout_format = '.3f',
+                    readout=True,
+                    readout_format='.3f',
                 )
 
                 minmax_slider.observe(
@@ -779,7 +779,9 @@ class ImageWidget:
             data_ix: int,
             change: dict
     ):
-        self.image_graphics[data_ix].clim = change["new"]
+        vmin, vmax = change["new"]
+        self.image_graphics[data_ix].vmin = vmin
+        self.image_graphics[data_ix].vmax = vmax
 
     def _set_slider_layout(self, *args):
         w, h = self.plot.renderer.logical_size
