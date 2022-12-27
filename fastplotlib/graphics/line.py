@@ -15,7 +15,8 @@ class LineGraphic(Graphic):
             colors: Union[str, np.ndarray, Iterable] = "w",
             alpha: float = 1.0,
             cmap: str = None,
-            z_position: float = 0.0,
+            z_position: float = None,
+            collection_index: int = None,
             *args,
             **kwargs
     ):
@@ -52,12 +53,19 @@ class LineGraphic(Graphic):
 
         """
 
-        self.data = PointsDataFeature(self, data)
+        self.data = PointsDataFeature(self, data, collection_index=collection_index)
 
         if cmap is not None:
             colors = get_colors(n_colors=self.data.feature_data.shape[0], cmap=cmap, alpha=alpha)
 
-        self.colors = ColorFeature(self, colors, n_colors=self.data.feature_data.shape[0], alpha=alpha)
+        self.colors = ColorFeature(
+            self,
+            colors,
+            n_colors=self.data.feature_data.shape[0],
+            alpha=alpha,
+            collection_index=collection_index
+        )
+
         self.cmap = CmapFeature(self, self.colors.feature_data)
 
         super(LineGraphic, self).__init__(*args, **kwargs)
@@ -73,4 +81,5 @@ class LineGraphic(Graphic):
             material=material(thickness=size, vertex_colors=True)
         )
 
-        self.world_object.position.z = z_position
+        if z_position is not None:
+            self.world_object.position.z = z_position

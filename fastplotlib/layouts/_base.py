@@ -210,6 +210,8 @@ class PlotArea:
             in the scene will fill the entire canvas.
         """
         self.center_scene()
+        if not isinstance(maintain_aspect, bool):
+            maintain_aspect = False  # assume False
         self.camera.maintain_aspect = maintain_aspect
 
         width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)
