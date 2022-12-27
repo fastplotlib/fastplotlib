@@ -90,7 +90,8 @@ class LineCollection(GraphicCollection):
             if isinstance(size, list):
                 _s = size[i]
             else:
-                _s = 2.0
+                _s = size
+
             if cmap is None:
                 _cmap = None
 
