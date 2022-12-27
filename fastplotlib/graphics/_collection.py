@@ -12,6 +12,7 @@ class GraphicCollection(BaseGraphic):
     """Graphic Collection base class"""
     def __init__(self, name: str = None):
         self.name = name
+        self._items: List[Graphic] = list()
 
     @property
     def world_object(self) -> Group:
@@ -24,8 +25,14 @@ class GraphicCollection(BaseGraphic):
 
     def add_graphic(self, graphic: Graphic):
         """Add a graphic to the collection"""
+        if not isinstance(graphic, self.child_type):
+            raise TypeError(
+                f"Can only add graphics of the same type to a collection, "
+                f"You can only add {self.child_type} to a {self.__class__.__name__}, "
+                f"you are trying to add a {graphic.__class__.__name__}."
+            )
         self._items.append(graphic)
-        self.world_object.add(graphic)
+        self.world_object.add(graphic.world_object)
 
     def remove_graphic(self, graphic: Graphic):
         """Remove a graphic from the collection"""
@@ -55,6 +62,9 @@ class GraphicCollection(BaseGraphic):
             selection=selection,
             selection_indices=selection_indices
         )
+
+    def __len__(self):
+        return len(self._items)
 
 
 class CollectionIndexer:

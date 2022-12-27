@@ -10,6 +10,8 @@ from typing import *
 
 class LineCollection(GraphicCollection):
     """Line Collection graphic"""
+    child_type = LineGraphic
+
     def __init__(
             self,
             data: List[np.ndarray],
@@ -21,7 +23,6 @@ class LineCollection(GraphicCollection):
             *args,
             **kwargs
     ):
-
         super(LineCollection, self).__init__(name)
 
         if not isinstance(z_position, float) and z_position is not None:
@@ -78,7 +79,6 @@ class LineCollection(GraphicCollection):
                         "or must be a str of tuple/list with the same length as the data"
                     )
 
-        self._items = list()
         self._world_object = pygfx.Group()
 
         for i, d in enumerate(data):
@@ -111,8 +111,5 @@ class LineCollection(GraphicCollection):
                 cmap=_cmap,
                 collection_index=i
             )
-            self._items.append(lg)
-            self._world_object.add(lg.world_object)
 
-    def __len__(self):
-        return len(self._items)
+            self.add_graphic(lg)
