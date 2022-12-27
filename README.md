@@ -49,6 +49,12 @@ plot.show()
 
 ![out](https://user-images.githubusercontent.com/9403332/209422871-6b2153f3-81ca-4f62-9200-8206a81eaf0d.gif)
 
+### Image widget
+
+Interactive visualization of large imaging datasets in the notebook.
+
+![zfish](https://user-images.githubusercontent.com/9403332/209711810-abdb7d1d-81ce-4874-80f5-082efa2c421d.gif)
+
 
 # Installation
 
