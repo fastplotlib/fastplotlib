@@ -1,0 +1,7 @@
+numpy
+jupyterlab
+jupyter_rfb
+jupyterlab-widgets==1.1.1
+ipywidgets<8.0.0
+git+https://github.com/pygfx/pygfx.git@main
+pydata-sphinx-theme<0.10.0
