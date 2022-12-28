@@ -2,8 +2,7 @@ import numpy as np
 import pygfx
 from typing import *
 
-from ._base import Interaction, PreviouslyModifiedData
-from ._collection import GraphicCollection
+from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
 from ..utils import get_colors
 from typing import *
