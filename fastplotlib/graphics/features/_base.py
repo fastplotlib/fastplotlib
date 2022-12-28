@@ -28,12 +28,26 @@ class FeatureEvent:
 
 
 class GraphicFeature(ABC):
-    def __init__(self, parent, data: Any):
+    def __init__(self, parent, data: Any, collection_index: int = None):
+        """
+
+        Parameters
+        ----------
+        parent
+
+        data: Any
+
+        collection_index: int
+            if part of a collection, index of this graphic within the collection
+
+        """
         self._parent = parent
         if isinstance(data, np.ndarray):
             data = data.astype(np.float32)
 
         self._data = data
+
+        self._collection_index = collection_index
         self._event_handlers = list()
 
     @property
@@ -70,6 +84,12 @@ class GraphicFeature(ABC):
             return
 
         self._event_handlers.append(handler)
+
+    def remove_event_handler(self, handler: callable):
+        if handler not in self._event_handlers:
+            raise KeyError(f"event handler {handler} not registered.")
+
+        self._event_handlers.pop(handler)
 
     #TODO: maybe this can be implemented right here in the base class
     @abstractmethod

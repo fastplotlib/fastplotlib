@@ -16,7 +16,7 @@ class ColorFeature(GraphicFeatureIndexable):
     def __repr__(self):
         return repr(self._buffer.data)
 
-    def __init__(self, parent, colors, n_colors: int, alpha: float = 1.0):
+    def __init__(self, parent, colors, n_colors: int, alpha: float = 1.0, collection_index: int = None):
         """
         ColorFeature
 
@@ -91,7 +91,7 @@ class ColorFeature(GraphicFeatureIndexable):
         if alpha != 1.0:
             data[:, -1] = alpha
 
-        super(ColorFeature, self).__init__(parent, data)
+        super(ColorFeature, self).__init__(parent, data, collection_index=collection_index)
 
     def __setitem__(self, key, value):
         # parse numerical slice indices
@@ -184,6 +184,7 @@ class ColorFeature(GraphicFeatureIndexable):
 
         pick_info = {
             "index": indices,
+            "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
             "new_data": new_data,
         }

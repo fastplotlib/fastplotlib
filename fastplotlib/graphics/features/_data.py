@@ -18,9 +18,9 @@ class PointsDataFeature(GraphicFeatureIndexable):
     Access to the vertex buffer data shown in the graphic.
     Supports fancy indexing if the data array also supports it.
     """
-    def __init__(self, parent, data: Any):
+    def __init__(self, parent, data: Any, collection_index: int = None):
         data = self._fix_data(data, parent)
-        super(PointsDataFeature, self).__init__(parent, data)
+        super(PointsDataFeature, self).__init__(parent, data, collection_index=collection_index)
 
     @property
     def _buffer(self) -> Buffer:
@@ -83,6 +83,7 @@ class PointsDataFeature(GraphicFeatureIndexable):
 
         pick_info = {
             "index": indices,
+            "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
             "new_data": new_data
         }
