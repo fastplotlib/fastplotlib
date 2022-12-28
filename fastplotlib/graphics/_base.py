@@ -6,6 +6,7 @@ from pygfx.linalg import Vector3
 from .features import GraphicFeature, PresentFeature
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 class BaseGraphic:
     def __init_subclass__(cls, **kwargs):
@@ -32,13 +33,15 @@ class Graphic(BaseGraphic):
         self.registered_callbacks = dict()
         self.present = PresentFeature(parent=self)
 
-        valid_features = ["visible"]
+        #valid_features = ["visible"]
+        self._feature_events = list()
         for attr_name in self.__dict__.keys():
             attr = getattr(self, attr_name)
             if isinstance(attr, GraphicFeature):
-                valid_features.append(attr_name)
+                self._feature_events.append(attr_name)
 
-        self._valid_features = tuple(valid_features)
+        self._feature_events = tuple(self._feature_events)
+        self._pygfx_events = ("click",)
 
     @property
     def world_object(self) -> WorldObject:

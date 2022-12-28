@@ -114,3 +114,9 @@ class LineCollection(GraphicCollection, Interaction):
             )
 
             self.add_graphic(lg, reset_index=False)
+
+    def _set_feature(self, feature: str, new_data: Any, indices: Any):
+        pass
+
+    def _reset_feature(self, feature: str):
+        pass
