@@ -29,6 +29,7 @@ class Graphic(BaseGraphic):
         """
 
         self.name = name
+        self.registered_callbacks = dict()
         self.present = PresentFeature(parent=self)
 
         valid_features = ["visible"]
@@ -80,40 +81,58 @@ class Graphic(BaseGraphic):
             return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
         else:
             return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
-<<<<<<< HEAD
-=======
+
 
 class Interaction(ABC):
-    # make them abstract properties
-    @property
     @abstractmethod
-    def indices(self) -> Any:
-        pass
-
-    @indices.setter
-    @abstractmethod
-    def indices(self, indices: Any):
-        pass
-
-    @property
-    @abstractmethod
-    def features(self) -> List[str]:
+    def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
 
     @abstractmethod
-    def _set_feature(self, name: str, new_data: Any, indices: Any):
+    def _reset_feature(self, feature: str):
         pass
 
-    @abstractmethod
-    def link(self, event: str, feature: Any, feature_data: Any, target: Graphic, target_feature: Any, target_data: Any, indices_mapper: Any):
-        # event occurs, causes change in feature of current graphic to data indices from pick_info,
-        # also causes change in target graphic to target feature at target data with corresponding or mapped
-        # indices based on the indice_mapper function
+    def link(self, event_type: str, target: Any, feature: str, new_data: Any, indices_mapper: callable = None):
+        if event_type in self._pygfx_events:
+            self.world_object.add_event_handler(self.event_handler, event_type)
+        elif event_type in self._feature_events:
+            feature = getattr(self, event_type)
+            feature.add_event_handler(self.event_handler, event_type)
+        else:
+            raise ValueError("event not possible")
 
-        # events can be feature changes, when feature changes want to trigger an event
+        if event_type in self.registered_callbacks.keys():
+            self.registered_callbacks[event_type].append(
+                CallbackData(target=target, feature=feature, new_data=new_data, indices_mapper=indices_mapper))
+        else:
+            self.registered_callbacks[event_type] = list()
+            self.registered_callbacks[event_type].append(
+                CallbackData(target=target, feature=feature, new_data=new_data, indices_mapper=indices_mapper))
 
-        # indice mapper takes in source features and maps to target features
-        pass
+    def event_handler(self, event):
+        event_info = event.pick_info
+        #click_info = np.array(event.pick_info["index"])
+        if event.type in self.registered_callbacks.keys():
+            for target_info in self.registered_callbacks[event.type]:
+                if target_info.indices_mapper is not None:
+                    indices = target_info.indices_mapper(source=self, target=target_info.target, indices=click_info)
+                else:
+                    indices = None
+                # set feature of target at indice using new data
+                target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
 
 
->>>>>>> 2c00596 (beginning base logic for interactivity impl)
+@dataclass
+class CallbackData:
+    """Class for keeping track of the info necessary for interactivity after event occurs."""
+    target: Any
+    feature: str
+    new_data: Any
+    indices_mapper: callable = None
+
+
+@dataclass
+class PreviouslyModifiedData:
+    """Class for keeping track of previously modified data at indices"""
+    previous_data: Any
+    previous_indices: Any

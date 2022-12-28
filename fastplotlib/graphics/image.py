@@ -20,50 +20,35 @@ class ImageGraphic(Graphic):
     ):
         """
         Create an Image Graphic
-
         Parameters
         ----------
         data: array-like, must be 2-dimensional
             | array-like, usually numpy.ndarray, must support ``memoryview()``
             | Tensorflow Tensors also work _I think_, but not thoroughly tested
-
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
-
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
-
         cmap: str, optional, default "nearest"
             colormap to use to display the image data, default is ``"plasma"``
-
         filter: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
-
         args:
             additional arguments passed to Graphic
-
         kwargs:
             additional keyword arguments passed to Graphic
-
         Examples
         --------
-
         .. code-block:: python
-
             from fastplotlib import Plot
-
             # create a `Plot` instance
             plot = Plot()
-
             # make some random 2D image data
             data = np.random.rand(512, 512)
-
             # plot the image data
             plot.add_image(data=data)
-
             # show the plot
             plot.show()
-
         """
 
         super().__init__(*args, **kwargs)

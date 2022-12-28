@@ -1,21 +1,10 @@
 import numpy as np
 import pygfx
 from typing import *
-<<<<<<< HEAD
-
-from fastplotlib.graphics._base import Graphic
-
-=======
->>>>>>> c523c28 (accidentally deleted heatmap file)
 from .image import ImageGraphic
 
 from ..utils import quick_min_max, get_cmap_texture
 
-<<<<<<< HEAD
-from ._base import Interaction
-
-=======
->>>>>>> c523c28 (accidentally deleted heatmap file)
 
 default_selection_options = {
     "mode": "single",
@@ -51,26 +40,7 @@ class SelectionOptions:
             self.callbacks = callbacks
 
 
-<<<<<<< HEAD
-class HeatmapGraphic(ImageGraphic, Interaction):
-    @property
-    def indices(self) -> Any:
-        pass
-
-    @property
-    def features(self) -> List[str]:
-        pass
-
-    def _set_feature(self, name: str, new_data: Any, indices: Any):
-        pass
-
-    def link(self, event: str, feature: Any, feature_data: Any, target: Graphic, target_feature: Any, target_data: Any,
-             indices_mapper: Any):
-        pass
-
-=======
 class HeatmapGraphic(ImageGraphic):
->>>>>>> c523c28 (accidentally deleted heatmap file)
     def __init__(
             self,
             data: np.ndarray,
@@ -83,29 +53,11 @@ class HeatmapGraphic(ImageGraphic):
     ):
         """
         Create a Heatmap Graphic
-<<<<<<< HEAD
-
-=======
->>>>>>> c523c28 (accidentally deleted heatmap file)
         Parameters
         ----------
         data: array-like, must be 2-dimensional
             | array-like, usually numpy.ndarray, must support ``memoryview()``
             | Tensorflow Tensors also work _I think_, but not thoroughly tested
-<<<<<<< HEAD
-
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
-
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
-
-        cmap: str, optional
-            colormap to use to display the image data, default is ``"plasma"``
-
-        selection_options
-
-=======
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
         vmax: int, optional
@@ -113,7 +65,6 @@ class HeatmapGraphic(ImageGraphic):
         cmap: str, optional
             colormap to use to display the image data, default is ``"plasma"``
         selection_options
->>>>>>> c523c28 (accidentally deleted heatmap file)
         args:
             additional arguments passed to Graphic
         kwargs:
@@ -183,8 +134,4 @@ class HeatmapGraphic(ImageGraphic):
         self.world_object.add(self.selection_graphic)
         self._highlights.append(self.selection_graphic)
 
-<<<<<<< HEAD
         return rval
-=======
-        return rval
->>>>>>> c523c28 (accidentally deleted heatmap file)

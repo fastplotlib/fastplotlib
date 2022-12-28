@@ -2,13 +2,14 @@ import numpy as np
 import pygfx
 from typing import *
 
+from ._base import Interaction, PreviouslyModifiedData
 from ._collection import GraphicCollection
 from .line import LineGraphic
 from ..utils import get_colors
 from typing import *
 
 
-class LineCollection(GraphicCollection):
+class LineCollection(GraphicCollection, Interaction):
     """Line Collection graphic"""
     child_type = LineGraphic
 
