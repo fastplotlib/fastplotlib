@@ -112,4 +112,4 @@ class LineCollection(GraphicCollection):
                 collection_index=i
             )
 
-            self.add_graphic(lg)
+            self.add_graphic(lg, reset_index=False)

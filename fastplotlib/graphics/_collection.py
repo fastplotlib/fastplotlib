@@ -23,7 +23,7 @@ class GraphicCollection(BaseGraphic):
         """Get the Graphic instances within this collection"""
         return tuple(self._items)
 
-    def add_graphic(self, graphic: Graphic):
+    def add_graphic(self, graphic: Graphic, reset_index: True):
         """Add a graphic to the collection"""
         if not isinstance(graphic, self.child_type):
             raise TypeError(
@@ -32,13 +32,15 @@ class GraphicCollection(BaseGraphic):
                 f"you are trying to add a {graphic.__class__.__name__}."
             )
         self._items.append(graphic)
-        self._reset_index()
+        if reset_index:
+            self._reset_index()
         self.world_object.add(graphic.world_object)
 
-    def remove_graphic(self, graphic: Graphic):
+    def remove_graphic(self, graphic: Graphic, reset_index: True):
         """Remove a graphic from the collection"""
         self._items.remove(graphic)
-        self._reset_index()
+        if reset_index:
+            self._reset_index()
         self.world_object.remove(graphic)
 
     def _reset_index(self):
