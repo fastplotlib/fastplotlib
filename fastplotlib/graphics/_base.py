@@ -4,6 +4,7 @@ from pygfx import WorldObject
 from pygfx.linalg import Vector3
 
 from .features import GraphicFeature, PresentFeature
+#from ._collection import GraphicCollection
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -16,6 +17,10 @@ class BaseGraphic:
 
 
 class Graphic(BaseGraphic):
+    pygfx_events = [
+        "click"
+    ]
+
     def __init__(
             self,
             name: str = None
@@ -32,16 +37,6 @@ class Graphic(BaseGraphic):
         self.name = name
         self.registered_callbacks = dict()
         self.present = PresentFeature(parent=self)
-
-        #valid_features = ["visible"]
-        self._feature_events = list()
-        for attr_name in self.__dict__.keys():
-            attr = getattr(self, attr_name)
-            if isinstance(attr, GraphicFeature):
-                self._feature_events.append(attr_name)
-
-        self._feature_events = tuple(self._feature_events)
-        self._pygfx_events = ("click",)
 
     @property
     def world_object(self) -> WorldObject:
@@ -95,10 +90,10 @@ class Interaction(ABC):
     def _reset_feature(self, feature: str):
         pass
 
-    def link(self, event_type: str, target: Any, feature: str, new_data: Any, indices_mapper: callable = None):
-        if event_type in self._pygfx_events:
+    def link(self, event_type: str, target: Any, feature: str, new_data: Any, callback_function: callable = None):
+        if event_type in self.pygfx_events:
             self.world_object.add_event_handler(self.event_handler, event_type)
-        elif event_type in self._feature_events:
+        elif event_type in self.feature_events:
             feature = getattr(self, event_type)
             feature.add_event_handler(self.event_handler, event_type)
         else:
@@ -106,24 +101,24 @@ class Interaction(ABC):
 
         if event_type in self.registered_callbacks.keys():
             self.registered_callbacks[event_type].append(
-                CallbackData(target=target, feature=feature, new_data=new_data, indices_mapper=indices_mapper))
+                CallbackData(target=target, feature=feature, new_data=new_data, callback_function=callback_function))
         else:
             self.registered_callbacks[event_type] = list()
             self.registered_callbacks[event_type].append(
-                CallbackData(target=target, feature=feature, new_data=new_data, indices_mapper=indices_mapper))
+                CallbackData(target=target, feature=feature, new_data=new_data, callback_function=callback_function))
 
     def event_handler(self, event):
-        event_info = event.pick_info
-        #click_info = np.array(event.pick_info["index"])
         if event.type in self.registered_callbacks.keys():
             for target_info in self.registered_callbacks[event.type]:
-                if target_info.indices_mapper is not None:
-                    indices = target_info.indices_mapper(source=self, target=target_info.target, indices=click_info)
+                if target_info.callback_function is not None:
+                    # if callback_function is not None, then callback function should handle the entire event
+                    target_info.callback_function(source=self, target=target_info.target, event=event, new_data=target_info.new_data)
+                # elif isinstance(self, GraphicCollection):
+                #     indices = event.pick_info["collection_index"]
+                #     target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
                 else:
-                    indices = None
-                # set feature of target at indice using new data
-                target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
-
+                    target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data,
+                                                    indices=None)
 
 @dataclass
 class CallbackData:
@@ -131,7 +126,7 @@ class CallbackData:
     target: Any
     feature: str
     new_data: Any
-    indices_mapper: callable = None
+    callback_function: callable = None
 
 
 @dataclass

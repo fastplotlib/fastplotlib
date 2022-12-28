@@ -89,21 +89,21 @@ class LineGraphic(Graphic, Interaction):
             self._previous_data = {}
         elif hasattr(self, "_previous_data"):
             self._reset_feature(feature)
-        if feature in self._feature_events:
-            feature_instance = getattr(self, feature)
-            if indices is not None:
-                previous = feature_instance[indices].copy()
-                feature_instance[indices] = new_data
-            else:
-                previous = feature_instance[:].copy()
-                feature_instance[:] = new_data
-            if feature in self._previous_data.keys():
-                self._previous_data[feature].previous_data = previous
-                self._previous_data[feature].previous_indices = indices
-            else:
-                self._previous_data[feature] = PreviouslyModifiedData(previous_data=previous, previous_indices=indices)
+        # if feature in self._feature_events:
+        feature_instance = getattr(self, feature)
+        if indices is not None:
+            previous = feature_instance[indices].copy()
+            feature_instance[indices] = new_data
         else:
-            raise ValueError("name arg is not a valid feature")
+            previous = feature_instance[:].copy()
+            feature_instance[:] = new_data
+        if feature in self._previous_data.keys():
+            self._previous_data[feature].previous_data = previous
+            self._previous_data[feature].previous_indices = indices
+        else:
+            self._previous_data[feature] = PreviouslyModifiedData(previous_data=previous, previous_indices=indices)
+        # else:
+        #     raise ValueError("name arg is not a valid feature")
 
     def _reset_feature(self, feature: str):
         if feature not in self._previous_data.keys():

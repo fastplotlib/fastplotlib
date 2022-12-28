@@ -2,12 +2,17 @@ from typing import *
 
 import pygfx
 
-from ._base import Graphic
+from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import ImageCmapFeature, ImageDataFeature
 from ..utils import quick_min_max
 
 
-class ImageGraphic(Graphic):
+class ImageGraphic(Graphic, Interaction):
+    feature_events = [
+        "data-changed",
+        "color-changed",
+        "cmap-changed",
+    ]
     def __init__(
             self,
             data: Any,
@@ -88,3 +93,13 @@ class ImageGraphic(Graphic):
             self.world_object.material.clim[0],
             value
         )
+
+    def _set_feature(self, feature: str, new_data: Any, indices: Any):
+        pass
+
+    def _reset_feature(self, feature: str):
+        pass
+
+
+
+
