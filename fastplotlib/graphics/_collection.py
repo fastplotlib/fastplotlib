@@ -32,16 +32,16 @@ class GraphicCollection(BaseGraphic):
                 f"you are trying to add a {graphic.__class__.__name__}."
             )
         self._items.append(graphic)
-        self.reset_index()
+        self._reset_index()
         self.world_object.add(graphic.world_object)
 
     def remove_graphic(self, graphic: Graphic):
         """Remove a graphic from the collection"""
         self._items.remove(graphic)
-        self.reset_index()
+        self._reset_index()
         self.world_object.remove(graphic)
 
-    def reset_index(self):
+    def _reset_index(self):
         for new_index, graphic in enumerate(self._items):
             graphic.collection_index = new_index
 
