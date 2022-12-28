@@ -13,6 +13,8 @@ class PresentFeature(GraphicFeature):
         super(PresentFeature, self).__init__(parent, present, collection_index)
 
     def _set(self, present: bool):
+        value = self._parse_set_value(present)
+
         i = 0
         wo = self._parent.world_object
         while not isinstance(self._scene, (Group, Scene)):

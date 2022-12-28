@@ -57,6 +57,12 @@ class GraphicFeature(ABC):
     def _set(self, value):
         pass
 
+    def _parse_set_value(self, value):
+        if isinstance(value, GraphicFeature):
+            return value()
+
+        return value
+
     def add_event_handler(self, handler: callable):
         """
         Add an event handler. All added event handlers are called when this feature changes.
@@ -163,6 +169,7 @@ class GraphicFeatureIndexable(GraphicFeature):
     """And indexable Graphic Feature, colors, data, sizes etc."""
 
     def _set(self, value):
+        value = self._parse_set_value(value)
         self[:] = value
 
     @abstractmethod
