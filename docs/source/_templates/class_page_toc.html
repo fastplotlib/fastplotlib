@@ -1,0 +1,18 @@
+{% set class_toc = get_class_toc() %}
+
+<nav id="bd-toc-nav", style="padding-top: 1rem;">
+    <ul class="visible nav section-nav flex-column">
+        {% for item in class_toc %}
+        <li class="toc-h1 nav-item toc-entry">
+            <a class="reference internal nav-link" href="{{ item.link }}">{{ item.title }}</a>
+        </li>
+        <ul class="visible nav section-nav flex-column">
+            {% for attr in item.attributes_and_methods %}
+            <li class="toc-h2 nav-item toc-entry">
+                <a class="reference internal nav-link" href="{{ attr.link }}">{{ attr.title }}</a>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endfor %}
+    </ul>
+</nav>
