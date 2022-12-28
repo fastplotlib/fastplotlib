@@ -37,9 +37,6 @@ class PresentFeature(GraphicFeature):
 
         self._feature_changed(key=None, new_data=present)
 
-    def __repr__(self):
-        return repr(self.feature_data)
-
     def _feature_changed(self, key, new_data):
         # this is a non-indexable feature so key=None
 

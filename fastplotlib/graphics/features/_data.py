@@ -26,9 +26,6 @@ class PointsDataFeature(GraphicFeatureIndexable):
     def _buffer(self) -> Buffer:
         return self._parent.world_object.geometry.positions
 
-    def __repr__(self):
-        return repr(self._buffer.data)
-
     def __getitem__(self, item):
         return self._buffer.data[item]
 
@@ -108,9 +105,6 @@ class ImageDataFeature(GraphicFeatureIndexable):
     @property
     def _buffer(self) -> Texture:
         return self._parent.world_object.geometry.grid.texture
-
-    def __repr__(self):
-        return repr(self._buffer.data)
 
     def __getitem__(self, item):
         return self._buffer.data[item]

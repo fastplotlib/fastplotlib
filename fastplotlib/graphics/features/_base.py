@@ -50,17 +50,11 @@ class GraphicFeature(ABC):
         self._collection_index = collection_index
         self._event_handlers = list()
 
-    @property
-    def feature_data(self):
-        """graphic feature data managed by fastplotlib, do not modify directly"""
+    def __call__(self, *args, **kwargs):
         return self._data
 
     @abstractmethod
     def _set(self, value):
-        pass
-
-    @abstractmethod
-    def __repr__(self):
         pass
 
     def add_event_handler(self, handler: callable):
@@ -190,7 +184,7 @@ class GraphicFeatureIndexable(GraphicFeature):
 
     @property
     def _upper_bound(self) -> int:
-        return self.feature_data.shape[0]
+        return self._data.shape[0]
 
     def _update_range_indices(self, key):
         """Currently used by colors and positions data"""
