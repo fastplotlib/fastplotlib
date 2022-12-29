@@ -127,11 +127,10 @@ class LineCollection(GraphicCollection, Interaction):
         coll_feature = getattr(self[indices], feature)
 
         data = list()
-        for cf in coll_feature:
-            data += cf
-        data = np.array(data)
+        for fea in coll_feature._feature_instances:
+            data.append(fea._data)
 
-        previous = data
+        previous = data[0].copy()
         coll_feature._set(new_data)
 
         if feature in self._previous_data.keys():
