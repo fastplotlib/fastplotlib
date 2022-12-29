@@ -6,15 +6,15 @@ from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
 from ..utils import get_colors
 from typing import *
+from copy import deepcopy
 
 
 class LineCollection(GraphicCollection, Interaction):
     """Line Collection graphic"""
     child_type = LineGraphic
     feature_events = [
-        "data-changed",
-        "color-changed",
-        "cmap-changed",
+        "data",
+        "colors",
     ]
     def __init__(
             self,
@@ -118,34 +118,30 @@ class LineCollection(GraphicCollection, Interaction):
 
             self.add_graphic(lg, reset_index=False)
 
-    def _set_feature(self, feature: str, new_data: Any, indices: Union[int, range]):
+    def _set_feature(self, feature: str, new_data: Any, indices: Any):
         if not hasattr(self, "_previous_data"):
-            self._previous_data = {}
+            self._previous_data = dict()
         elif hasattr(self, "_previous_data"):
             self._reset_feature(feature)
-        #if feature in # need a way to check if feature is in
-        feature_instance = getattr(self, feature)
-        if indices is not None:
-            previous = feature_instance[indices].copy()
-            feature_instance[indices] = new_data
-        else:
-            previous = feature_instance[:].copy()
-            feature_instance[:] = new_data
+
+        coll_feature = getattr(self[indices], feature)
+
+        data = list()
+        for cf in coll_feature:
+            data += cf
+        data = np.array(data)
+
+        previous = data
+        coll_feature._set(new_data)
+
         if feature in self._previous_data.keys():
             self._previous_data[feature].previous_data = previous
             self._previous_data[feature].previous_indices = indices
         else:
             self._previous_data[feature] = PreviouslyModifiedData(previous_data=previous, previous_indices=indices)
-        # else:
-        #     raise ValueError("name arg is not a valid feature")
 
     def _reset_feature(self, feature: str):
-        if feature not in self._previous_data.keys():
-            raise ValueError("no previous data registered for this feature")
-        else:
-            feature_instance = getattr(self, feature)
-            if self._previous_data[feature].previous_indices is not None:
-                feature_instance[self._previous_data[feature].previous_indices] = self._previous_data[
-                    feature].previous_data
-            else:
-                feature_instance[:] = self._previous_data[feature].previous_data
+        # implemented for a single index at moment
+        prev_ixs = self._previous_data[feature].previous_indices
+        coll_feature = getattr(self[prev_ixs], feature)
+        coll_feature._set(self._previous_data[feature].previous_data)

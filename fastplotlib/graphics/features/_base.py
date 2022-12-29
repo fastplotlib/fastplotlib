@@ -9,7 +9,7 @@ from pygfx import Buffer
 
 class FeatureEvent:
     """
-    type: <feature_name>-<changed>, example: "color-changed"
+    type: <feature_name>, example: "colors"
     pick_info: dict in the form:
         {
             "index": indices where feature data was changed, ``range`` object or List[int],

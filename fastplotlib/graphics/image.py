@@ -10,7 +10,7 @@ from ..utils import quick_min_max
 class ImageGraphic(Graphic, Interaction):
     feature_events = [
         "data",
-        "cmap",
+        "colors",
     ]
     def __init__(
             self,
