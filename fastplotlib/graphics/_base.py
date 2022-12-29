@@ -10,6 +10,7 @@ from .features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+
 class BaseGraphic:
     def __init_subclass__(cls, **kwargs):
         """set the type of the graphic in lower case like "image", "line_collection", etc."""
@@ -94,9 +95,15 @@ class Interaction(ABC):
     def link(self, event_type: str, target: Any, feature: str, new_data: Any, callback_function: callable = None):
         if event_type in self.pygfx_events:
             self.world_object.add_event_handler(self.event_handler, event_type)
+
         elif event_type in self.feature_events:
-            feature = getattr(self, event_type)
-            feature.add_event_handler(self.event_handler, event_type)
+            if isinstance(self, GraphicCollection):
+                feature_instance = getattr(self[:], event_type)
+            else:
+                feature_instance = getattr(self, event_type)
+
+            feature_instance.add_event_handler(self.event_handler)
+
         else:
             raise ValueError("event not possible")
 
@@ -116,9 +123,15 @@ class Interaction(ABC):
                     target_info.callback_function(source=self, target=target_info.target, event=event, new_data=target_info.new_data)
                 elif isinstance(self, GraphicCollection):
                     # if target is a GraphicCollection, then indices will be stored in collection_index
-                    # indices = event.pick_info["collection_index"]
-                    # target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
-                    print(event.pick_info)
+                    if event.type in self.feature_events:
+                        indices = event.pick_info["collection-index"]
+
+                    # for now we only have line collections so this works
+                    else:
+                        for i, item in enumerate(self._items):
+                            if item.world_object is event.pick_info["world_object"]:
+                                indices = i
+                    target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
                 else:
                     # if target is a single graphic, then indices do not matter
                     target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data,
@@ -136,15 +149,17 @@ class CallbackData:
 @dataclass
 class PreviouslyModifiedData:
     """Class for keeping track of previously modified data at indices"""
-    previous_data: Any
-    previous_indices: Any
+    data: Any
+    indices: Any
 
 
 class GraphicCollection(BaseGraphic):
+    """Graphic Collection base class"""
+
     pygfx_events = [
         "click"
     ]
-    """Graphic Collection base class"""
+
     def __init__(self, name: str = None):
         self.name = name
         self._items: List[Graphic] = list()
@@ -294,7 +309,6 @@ class CollectionFeature:
         else:
             for fi in self._feature_instances:
                 fi._set(value)
-            key = None
 
     def add_event_handler(self, handler: callable):
         for fi in self._feature_instances:
@@ -303,6 +317,10 @@ class CollectionFeature:
     def remove_event_handler(self, handler: callable):
         for fi in self._feature_instances:
             fi.remove_event_handler(handler)
+
+    def block_events(self, b: bool):
+        for fi in self._feature_instances:
+            fi.block_events(b)
 
     def __repr__(self):
         return f"Collection feature for: <{self._feature}>"

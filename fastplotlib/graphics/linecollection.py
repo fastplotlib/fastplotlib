@@ -5,7 +5,6 @@ from typing import *
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
 from ..utils import get_colors
-from typing import *
 from copy import deepcopy
 
 
@@ -16,6 +15,7 @@ class LineCollection(GraphicCollection, Interaction):
         "data",
         "colors",
     ]
+
     def __init__(
             self,
             data: List[np.ndarray],
@@ -130,17 +130,21 @@ class LineCollection(GraphicCollection, Interaction):
         for fea in coll_feature._feature_instances:
             data.append(fea._data)
 
-        previous = data[0].copy()
+        # later we can think about multi-index events
+        previous = deepcopy(data[0])
         coll_feature._set(new_data)
 
         if feature in self._previous_data.keys():
-            self._previous_data[feature].previous_data = previous
-            self._previous_data[feature].previous_indices = indices
+            self._previous_data[feature].data = previous
+            self._previous_data[feature].indices = indices
         else:
-            self._previous_data[feature] = PreviouslyModifiedData(previous_data=previous, previous_indices=indices)
+            self._previous_data[feature] = PreviouslyModifiedData(data=previous, indices=indices)
 
     def _reset_feature(self, feature: str):
         # implemented for a single index at moment
-        prev_ixs = self._previous_data[feature].previous_indices
+        prev_ixs = self._previous_data[feature].indices
         coll_feature = getattr(self[prev_ixs], feature)
-        coll_feature._set(self._previous_data[feature].previous_data)
+
+        coll_feature.block_events(True)
+        coll_feature._set(self._previous_data[feature].data)
+        coll_feature.block_events(False)

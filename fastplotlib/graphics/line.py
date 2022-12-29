@@ -12,6 +12,7 @@ class LineGraphic(Graphic, Interaction):
         "data",
         "colors",
     ]
+
     def __init__(
             self,
             data: Any,
@@ -102,15 +103,15 @@ class LineGraphic(Graphic, Interaction):
             previous = feature_instance._data.copy()
             feature_instance._set(new_data)
         if feature in self._previous_data.keys():
-            self._previous_data[feature].previous_data = previous
-            self._previous_data[feature].previous_indices = indices
+            self._previous_data[feature].data = previous
+            self._previous_data[feature].indices = indices
         else:
-            self._previous_data[feature] = PreviouslyModifiedData(previous_data=previous, previous_indices=indices)
+            self._previous_data[feature] = PreviouslyModifiedData(data=previous, indices=indices)
 
     def _reset_feature(self, feature: str):
-        prev_ixs = self._previous_data[feature].previous_indices
+        prev_ixs = self._previous_data[feature].indices
         feature_instance = getattr(self, feature)
         if prev_ixs is not None:
-            feature_instance[prev_ixs] = self._previous_data[feature].previous_data
+            feature_instance[prev_ixs] = self._previous_data[feature].data
         else:
-            feature_instance._set(self._previous_data[feature].previous_data)
+            feature_instance._set(self._previous_data[feature].data)

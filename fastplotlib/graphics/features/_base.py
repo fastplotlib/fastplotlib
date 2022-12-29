@@ -50,6 +50,11 @@ class GraphicFeature(ABC):
         self._collection_index = collection_index
         self._event_handlers = list()
 
+        self._block_events = False
+
+    def block_events(self, b: bool):
+        self._block_events = b
+
     @property
     def feature_data(self):
         """graphic feature data managed by fastplotlib, do not modify directly"""
@@ -98,6 +103,9 @@ class GraphicFeature(ABC):
         pass
 
     def _call_event_handlers(self, event_data: FeatureEvent):
+        if self._block_events:
+            return
+
         for func in self._event_handlers:
             try:
                 if len(getfullargspec(func).args) > 0:
