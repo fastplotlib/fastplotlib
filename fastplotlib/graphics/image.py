@@ -64,11 +64,11 @@ class ImageGraphic(Graphic, Interaction):
 
         self.cmap = ImageCmapFeature(self, cmap)
 
-        texture_view = pygfx.Texture(self.data.feature_data, dim=2).get_view(filter=filter)
+        texture_view = pygfx.Texture(self.data(), dim=2).get_view(filter=filter)
 
         self._world_object: pygfx.Image = pygfx.Image(
             pygfx.Geometry(grid=texture_view),
-            pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap.feature_data)
+            pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap())
         )
 
     @property

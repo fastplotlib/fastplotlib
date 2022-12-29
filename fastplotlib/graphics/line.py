@@ -61,17 +61,17 @@ class LineGraphic(Graphic, Interaction):
         self.data = PointsDataFeature(self, data, collection_index=collection_index)
 
         if cmap is not None:
-            colors = get_colors(n_colors=self.data.feature_data.shape[0], cmap=cmap, alpha=alpha)
+            colors = get_colors(n_colors=self.data().shape[0], cmap=cmap, alpha=alpha)
 
         self.colors = ColorFeature(
             self,
             colors,
-            n_colors=self.data.feature_data.shape[0],
+            n_colors=self.data().shape[0],
             alpha=alpha,
             collection_index=collection_index
         )
 
-        self.cmap = CmapFeature(self, self.colors.feature_data)
+        self.cmap = CmapFeature(self, self.colors())
 
         super(LineGraphic, self).__init__(*args, **kwargs)
 
@@ -82,7 +82,7 @@ class LineGraphic(Graphic, Interaction):
 
         self._world_object: pygfx.Line = pygfx.Line(
             # self.data.feature_data because data is a Buffer
-            geometry=pygfx.Geometry(positions=self.data.feature_data, colors=self.colors.feature_data),
+            geometry=pygfx.Geometry(positions=self.data(), colors=self.colors()),
             material=material(thickness=size, vertex_colors=True)
         )
 

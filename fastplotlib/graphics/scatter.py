@@ -55,25 +55,25 @@ class ScatterGraphic(Graphic):
         self.data = PointsDataFeature(self, data)
 
         if cmap is not None:
-            colors = get_colors(n_colors=self.data.feature_data.shape[0], cmap=cmap, alpha=alpha)
+            colors = get_colors(n_colors=self.data().shape[0], cmap=cmap, alpha=alpha)
 
-        self.colors = ColorFeature(self, colors, n_colors=self.data.feature_data.shape[0], alpha=alpha)
-        self.cmap = CmapFeature(self, self.colors.feature_data)
+        self.colors = ColorFeature(self, colors, n_colors=self.data().shape[0], alpha=alpha)
+        self.cmap = CmapFeature(self, self.colors())
 
         if isinstance(sizes, int):
-            sizes = np.full(self.data.feature_data.shape[0], sizes, dtype=np.float32)
+            sizes = np.full(self.data().shape[0], sizes, dtype=np.float32)
         elif isinstance(sizes, np.ndarray):
-            if (sizes.ndim != 1) or (sizes.size != self.data.feature_data.shape[0]):
+            if (sizes.ndim != 1) or (sizes.size != self.data().shape[0]):
                 raise ValueError(f"numpy array of `sizes` must be 1 dimensional with "
                                  f"the same length as the number of datapoints")
         elif isinstance(sizes, list):
-            if len(sizes) != self.data.feature_data.shape[0]:
+            if len(sizes) != self.data().shape[0]:
                 raise ValueError("list of `sizes` must have the same length as the number of datapoints")
 
         super(ScatterGraphic, self).__init__(*args, **kwargs)
 
         self._world_object: pygfx.Points = pygfx.Points(
-            pygfx.Geometry(positions=self.data.feature_data, sizes=sizes, colors=self.colors.feature_data),
+            pygfx.Geometry(positions=self.data(), sizes=sizes, colors=self.colors()),
             material=pygfx.PointsMaterial(vertex_colors=True, vertex_sizes=True)
         )
 

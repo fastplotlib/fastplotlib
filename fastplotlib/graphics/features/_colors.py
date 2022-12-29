@@ -13,9 +13,6 @@ class ColorFeature(GraphicFeatureIndexable):
     def __getitem__(self, item):
         return self._buffer.data[item]
 
-    def __repr__(self):
-        return repr(self._buffer.data)
-
     def __init__(self, parent, colors, n_colors: int, alpha: float = 1.0, collection_index: int = None):
         """
         ColorFeature
@@ -228,9 +225,6 @@ class ImageCmapFeature(GraphicFeature):
         self.name = cmap_name
 
         self._feature_changed(key=None, new_data=self.name)
-
-    def __repr__(self):
-        return repr(self.name)
 
     def _feature_changed(self, key, new_data):
         # this is a non-indexable feature so key=None

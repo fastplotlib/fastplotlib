@@ -13,6 +13,8 @@ class PresentFeature(GraphicFeature):
         super(PresentFeature, self).__init__(parent, present, collection_index)
 
     def _set(self, present: bool):
+        value = self._parse_set_value(present)
+
         i = 0
         wo = self._parent.world_object
         while not isinstance(self._scene, (Group, Scene)):
@@ -36,9 +38,6 @@ class PresentFeature(GraphicFeature):
                 self._scene.remove(self._parent.world_object)
 
         self._feature_changed(key=None, new_data=present)
-
-    def __repr__(self):
-        return repr(self.feature_data)
 
     def _feature_changed(self, key, new_data):
         # this is a non-indexable feature so key=None
