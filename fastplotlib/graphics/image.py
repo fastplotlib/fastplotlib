@@ -2,12 +2,16 @@ from typing import *
 
 import pygfx
 
-from ._base import Graphic
+from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import ImageCmapFeature, ImageDataFeature
 from ..utils import quick_min_max
 
 
-class ImageGraphic(Graphic):
+class ImageGraphic(Graphic, Interaction):
+    feature_events = [
+        "data",
+        "colors",
+    ]
     def __init__(
             self,
             data: Any,
@@ -20,50 +24,35 @@ class ImageGraphic(Graphic):
     ):
         """
         Create an Image Graphic
-
         Parameters
         ----------
         data: array-like, must be 2-dimensional
             | array-like, usually numpy.ndarray, must support ``memoryview()``
             | Tensorflow Tensors also work _I think_, but not thoroughly tested
-
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
-
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
-
         cmap: str, optional, default "nearest"
             colormap to use to display the image data, default is ``"plasma"``
-
         filter: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
-
         args:
             additional arguments passed to Graphic
-
         kwargs:
             additional keyword arguments passed to Graphic
-
         Examples
         --------
-
         .. code-block:: python
-
             from fastplotlib import Plot
-
             # create a `Plot` instance
             plot = Plot()
-
             # make some random 2D image data
             data = np.random.rand(512, 512)
-
             # plot the image data
             plot.add_image(data=data)
-
             # show the plot
             plot.show()
-
         """
 
         super().__init__(*args, **kwargs)
@@ -103,3 +92,13 @@ class ImageGraphic(Graphic):
             self.world_object.material.clim[0],
             value
         )
+
+    def _set_feature(self, feature: str, new_data: Any, indices: Any):
+        pass
+
+    def _reset_feature(self, feature: str):
+        pass
+
+
+
+

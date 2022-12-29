@@ -186,7 +186,7 @@ class ColorFeature(GraphicFeatureIndexable):
             "new_data": new_data,
         }
 
-        event_data = FeatureEvent(type="color-changed", pick_info=pick_info)
+        event_data = FeatureEvent(type="colors", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
 
@@ -235,6 +235,6 @@ class ImageCmapFeature(GraphicFeature):
             "new_data": new_data
         }
 
-        event_data = FeatureEvent(type="cmap-changed", pick_info=pick_info)
+        event_data = FeatureEvent(type="cmap", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
