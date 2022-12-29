@@ -19,6 +19,7 @@ class LineSlider(Graphic):
             slider: IntSlider = None,
             thickness: float = 2.5,
             color: Any = "w",
+            name: str = None,
     ):
         if orientation == "v":
             if x_pos is None:
@@ -66,6 +67,8 @@ class LineSlider(Graphic):
 
         self.slider = slider
         self.slider.observe(self.set_position, "value")
+
+        self.name = name
 
     def set_position(self, change):
         self.position.x = change["new"]
