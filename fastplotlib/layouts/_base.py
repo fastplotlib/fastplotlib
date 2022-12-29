@@ -4,6 +4,7 @@ from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomControlle
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
 from ..graphics._base import Graphic
+from ..graphics.line_slider import LineSlider
 from typing import *
 
 
@@ -48,6 +49,9 @@ class PlotArea:
         self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
         self._graphics: List[Graphic] = list()
+
+        # hacky workaround for now to exclude from bbox calculations
+        self._sliders: List[LineSlider] = list()
 
         self.name = name
 
@@ -124,6 +128,11 @@ class PlotArea:
             Center the camera on the newly added Graphic
 
         """
+        if not isinstance(graphic, Graphic):
+            raise TypeError(
+                f"Can only add Graphic types to a PlotArea, you have passed a: {type(graphic)}"
+            )
+
         if graphic.name is not None:  # skip for those that have no name
             graphic_names = list()
 
@@ -133,11 +142,18 @@ class PlotArea:
             if graphic.name in graphic_names:
                 raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
 
-        self._graphics.append(graphic)
+        if isinstance(graphic, LineSlider):
+            self._sliders.append(graphic)
+        else:
+            self._graphics.append(graphic)
+
         self.scene.add(graphic.world_object)
 
         if center:
             self.center_graphic(graphic)
+
+        # if hasattr(graphic, "_add_plot_area_hook"):
+        #     graphic._add_plot_area_hook(self.viewport, self.camera)
 
     def _refresh_camera(self):
         self.controller.update_camera(self.camera)
@@ -214,7 +230,14 @@ class PlotArea:
             maintain_aspect = False  # assume False
         self.camera.maintain_aspect = maintain_aspect
 
+        # hacky workaround for now until I figure out how to put it in its own scene
+        for slider in self._sliders:
+            self.scene.remove(slider.world_object)
+
         width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)
+
+        for slider in self._sliders:
+            self.scene.add(slider.world_object)
 
         self.camera.width = width
         self.camera.height = height

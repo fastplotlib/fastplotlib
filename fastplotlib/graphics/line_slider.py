@@ -6,7 +6,7 @@ import pygfx
 from pygfx import TransformGizmo, Color
 from ipywidgets import IntSlider
 
-from ..graphics._base import Graphic
+from ._base import Graphic
 
 
 class LineSlider(Graphic):
