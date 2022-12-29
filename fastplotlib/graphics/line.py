@@ -2,12 +2,17 @@ from typing import *
 import numpy as np
 import pygfx
 
-from ._base import Graphic
+from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature
 from ..utils import get_colors
 
 
-class LineGraphic(Graphic):
+class LineGraphic(Graphic, Interaction):
+    feature_events = [
+        "data",
+        "colors",
+    ]
+
     def __init__(
             self,
             data: Any,
@@ -83,3 +88,30 @@ class LineGraphic(Graphic):
 
         if z_position is not None:
             self.world_object.position.z = z_position
+
+    def _set_feature(self, feature: str, new_data: Any, indices: Any = None):
+        if not hasattr(self, "_previous_data"):
+            self._previous_data = dict()
+        elif hasattr(self, "_previous_data"):
+            self._reset_feature(feature)
+
+        feature_instance = getattr(self, feature)
+        if indices is not None:
+            previous = feature_instance[indices].copy()
+            feature_instance[indices] = new_data
+        else:
+            previous = feature_instance._data.copy()
+            feature_instance._set(new_data)
+        if feature in self._previous_data.keys():
+            self._previous_data[feature].data = previous
+            self._previous_data[feature].indices = indices
+        else:
+            self._previous_data[feature] = PreviouslyModifiedData(data=previous, indices=indices)
+
+    def _reset_feature(self, feature: str):
+        prev_ixs = self._previous_data[feature].indices
+        feature_instance = getattr(self, feature)
+        if prev_ixs is not None:
+            feature_instance[prev_ixs] = self._previous_data[feature].data
+        else:
+            feature_instance._set(self._previous_data[feature].data)

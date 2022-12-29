@@ -2,15 +2,19 @@ import numpy as np
 import pygfx
 from typing import *
 
-from ._collection import GraphicCollection
+from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
 from ..utils import get_colors
-from typing import *
+from copy import deepcopy
 
 
-class LineCollection(GraphicCollection):
+class LineCollection(GraphicCollection, Interaction):
     """Line Collection graphic"""
     child_type = LineGraphic
+    feature_events = [
+        "data",
+        "colors",
+    ]
 
     def __init__(
             self,
@@ -113,3 +117,34 @@ class LineCollection(GraphicCollection):
             )
 
             self.add_graphic(lg, reset_index=False)
+
+    def _set_feature(self, feature: str, new_data: Any, indices: Any):
+        if not hasattr(self, "_previous_data"):
+            self._previous_data = dict()
+        elif hasattr(self, "_previous_data"):
+            self._reset_feature(feature)
+
+        coll_feature = getattr(self[indices], feature)
+
+        data = list()
+        for fea in coll_feature._feature_instances:
+            data.append(fea._data)
+
+        # later we can think about multi-index events
+        previous = deepcopy(data[0])
+        coll_feature._set(new_data)
+
+        if feature in self._previous_data.keys():
+            self._previous_data[feature].data = previous
+            self._previous_data[feature].indices = indices
+        else:
+            self._previous_data[feature] = PreviouslyModifiedData(data=previous, indices=indices)
+
+    def _reset_feature(self, feature: str):
+        # implemented for a single index at moment
+        prev_ixs = self._previous_data[feature].indices
+        coll_feature = getattr(self[prev_ixs], feature)
+
+        coll_feature.block_events(True)
+        coll_feature._set(self._previous_data[feature].data)
+        coll_feature.block_events(False)

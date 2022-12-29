@@ -88,7 +88,7 @@ class PointsDataFeature(GraphicFeatureIndexable):
             "new_data": new_data
         }
 
-        event_data = FeatureEvent(type="data-changed", pick_info=pick_info)
+        event_data = FeatureEvent(type="data", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
 
@@ -145,6 +145,6 @@ class ImageDataFeature(GraphicFeatureIndexable):
             "new_data": new_data
         }
 
-        event_data = FeatureEvent(type="data-changed", pick_info=pick_info)
+        event_data = FeatureEvent(type="data", pick_info=pick_info)
 
         self._call_event_handlers(event_data)

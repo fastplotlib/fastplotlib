@@ -53,24 +53,18 @@ class HeatmapGraphic(ImageGraphic):
     ):
         """
         Create a Heatmap Graphic
-
         Parameters
         ----------
         data: array-like, must be 2-dimensional
             | array-like, usually numpy.ndarray, must support ``memoryview()``
             | Tensorflow Tensors also work _I think_, but not thoroughly tested
-
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
-
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
-
         cmap: str, optional
             colormap to use to display the image data, default is ``"plasma"``
-
         selection_options
-
         args:
             additional arguments passed to Graphic
         kwargs:
