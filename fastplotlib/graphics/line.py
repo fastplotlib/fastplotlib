@@ -8,6 +8,11 @@ from ..utils import get_colors
 
 
 class LineGraphic(Graphic, Interaction):
+    feature_events = [
+        "data",
+        "colors",
+        "cmap",
+    ]
     def __init__(
             self,
             data: Any,
@@ -86,32 +91,27 @@ class LineGraphic(Graphic, Interaction):
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any = None):
         if not hasattr(self, "_previous_data"):
-            self._previous_data = {}
+            self._previous_data = dict()
         elif hasattr(self, "_previous_data"):
             self._reset_feature(feature)
-        # if feature in self._feature_events:
+
         feature_instance = getattr(self, feature)
         if indices is not None:
             previous = feature_instance[indices].copy()
             feature_instance[indices] = new_data
         else:
-            previous = feature_instance[:].copy()
-            feature_instance[:] = new_data
+            previous = feature_instance._data.copy()
+            feature_instance._set(new_data)
         if feature in self._previous_data.keys():
             self._previous_data[feature].previous_data = previous
             self._previous_data[feature].previous_indices = indices
         else:
             self._previous_data[feature] = PreviouslyModifiedData(previous_data=previous, previous_indices=indices)
-        # else:
-        #     raise ValueError("name arg is not a valid feature")
 
     def _reset_feature(self, feature: str):
-        if feature not in self._previous_data.keys():
-            raise ValueError("no previous data registered for this feature")
+        prev_ixs = self._previous_data[feature].previous_indices
+        feature_instance = getattr(self, feature)
+        if prev_ixs is not None:
+            feature_instance[prev_ixs] = self._previous_data[feature].previous_data
         else:
-            feature_instance = getattr(self, feature)
-            if self._previous_data[feature].previous_indices is not None:
-                feature_instance[self._previous_data[feature].previous_indices] = self._previous_data[
-                    feature].previous_data
-            else:
-                feature_instance[:] = self._previous_data[feature].previous_data
+            feature_instance._set(self._previous_data[feature].previous_data)

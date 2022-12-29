@@ -114,10 +114,12 @@ class Interaction(ABC):
                 if target_info.callback_function is not None:
                     # if callback_function is not None, then callback function should handle the entire event
                     target_info.callback_function(source=self, target=target_info.target, event=event, new_data=target_info.new_data)
-                elif isinstance(self, GraphicCollection):
+                elif isinstance(target_info.target, GraphicCollection):
+                    # if target is a GraphicCollection, then indices will be stored in collection_index
                     indices = event.pick_info["collection_index"]
                     target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
                 else:
+                    # if target is a single graphic, then indices do not matter
                     target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data,
                                                     indices=None)
 

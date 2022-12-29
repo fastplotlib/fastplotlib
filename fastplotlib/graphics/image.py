@@ -9,9 +9,8 @@ from ..utils import quick_min_max
 
 class ImageGraphic(Graphic, Interaction):
     feature_events = [
-        "data-changed",
-        "color-changed",
-        "cmap-changed",
+        "data",
+        "cmap",
     ]
     def __init__(
             self,
