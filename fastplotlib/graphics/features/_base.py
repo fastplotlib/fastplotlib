@@ -49,9 +49,10 @@ class GraphicFeature(ABC):
 
         self._collection_index = collection_index
         self._event_handlers = list()
+        self._block_events = False
 
     def __call__(self, *args, **kwargs):
-        self._block_events = False
+        return self._data
 
     def block_events(self, b: bool):
         self._block_events = b
