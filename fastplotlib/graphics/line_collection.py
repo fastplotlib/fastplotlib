@@ -20,7 +20,7 @@ class LineCollection(GraphicCollection, Interaction):
             self,
             data: List[np.ndarray],
             z_position: Union[List[float], float] = None,
-            size: Union[float, List[float]] = 2.0,
+            thickness: Union[float, List[float]] = 2.0,
             colors: Union[List[np.ndarray], np.ndarray] = "w",
             cmap: Union[List[str], str] = None,
             name: str = None,
@@ -33,8 +33,8 @@ class LineCollection(GraphicCollection, Interaction):
             if len(data) != len(z_position):
                 raise ValueError("z_position must be a single float or an iterable with same length as data")
 
-        if not isinstance(size, float):
-            if len(size) != len(data):
+        if not isinstance(thickness, float):
+            if len(thickness) != len(data):
                 raise ValueError("args must be a single float or an iterable with same length as data")
 
         # cmap takes priority over colors
@@ -91,10 +91,10 @@ class LineCollection(GraphicCollection, Interaction):
             else:
                 _z = 1.0
 
-            if isinstance(size, list):
-                _s = size[i]
+            if isinstance(thickness, list):
+                _s = thickness[i]
             else:
-                _s = size
+                _s = thickness
 
             if cmap is None:
                 _cmap = None
@@ -109,7 +109,7 @@ class LineCollection(GraphicCollection, Interaction):
 
             lg = LineGraphic(
                 data=d,
-                size=_s,
+                thickness=_s,
                 colors=_c,
                 z_position=_z,
                 cmap=_cmap,
@@ -141,6 +141,9 @@ class LineCollection(GraphicCollection, Interaction):
             self._previous_data[feature] = PreviouslyModifiedData(data=previous, indices=indices)
 
     def _reset_feature(self, feature: str):
+        if feature not in self._previous_data.keys():
+            return
+
         # implemented for a single index at moment
         prev_ixs = self._previous_data[feature].indices
         coll_feature = getattr(self[prev_ixs], feature)
@@ -162,7 +165,7 @@ class LineStack(LineCollection):
             self,
             data: List[np.ndarray],
             z_position: Union[List[float], float] = None,
-            size: Union[float, List[float]] = 2.0,
+            thickness: Union[float, List[float]] = 2.0,
             colors: Union[List[np.ndarray], np.ndarray] = "w",
             cmap: Union[List[str], str] = None,
             separation: float = 10,
@@ -174,7 +177,7 @@ class LineStack(LineCollection):
         super(LineStack, self).__init__(
             data=data,
             z_position=z_position,
-            size=size,
+            thickness=thickness,
             colors=colors,
             cmap=cmap,
             name=name

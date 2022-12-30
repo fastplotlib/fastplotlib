@@ -3,7 +3,7 @@ import numpy as np
 import pygfx
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
-from .features import PointsDataFeature, ColorFeature, CmapFeature
+from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
 from ..utils import get_colors
 
 
@@ -16,7 +16,7 @@ class LineGraphic(Graphic, Interaction):
     def __init__(
             self,
             data: Any,
-            size: float = 2.0,
+            thickness: float = 2.0,
             colors: Union[str, np.ndarray, Iterable] = "w",
             alpha: float = 1.0,
             cmap: str = None,
@@ -33,7 +33,7 @@ class LineGraphic(Graphic, Interaction):
         data: array-like
             Line data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
 
-        size: float, optional, default 2.0
+        thickness: float, optional, default 2.0
             thickness of the line
 
         colors: str, array, or iterable, default "w"
@@ -75,15 +75,17 @@ class LineGraphic(Graphic, Interaction):
 
         super(LineGraphic, self).__init__(*args, **kwargs)
 
-        if size < 1.1:
+        if thickness < 1.1:
             material = pygfx.LineThinMaterial
         else:
             material = pygfx.LineMaterial
 
+        self.thickness = ThicknessFeature(self, thickness)
+
         self._world_object: pygfx.Line = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=self.data(), colors=self.colors()),
-            material=material(thickness=size, vertex_colors=True)
+            material=material(thickness=self.thickness(), vertex_colors=True)
         )
 
         if z_position is not None:
@@ -109,6 +111,9 @@ class LineGraphic(Graphic, Interaction):
             self._previous_data[feature] = PreviouslyModifiedData(data=previous, indices=indices)
 
     def _reset_feature(self, feature: str):
+        if feature not in self._previous_data.keys():
+            return
+
         prev_ixs = self._previous_data[feature].indices
         feature_instance = getattr(self, feature)
         if prev_ixs is not None:
