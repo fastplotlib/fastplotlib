@@ -225,14 +225,14 @@ class PlotArea:
             zoom value for the camera after auto-scaling, if zoom = 1.0 then the graphics
             in the scene will fill the entire canvas.
         """
+        # hacky workaround for now until I figure out how to put it in its own scene
+        for slider in self._sliders:
+            self.scene.remove(slider.world_object)
+
         self.center_scene()
         if not isinstance(maintain_aspect, bool):
             maintain_aspect = False  # assume False
         self.camera.maintain_aspect = maintain_aspect
-
-        # hacky workaround for now until I figure out how to put it in its own scene
-        for slider in self._sliders:
-            self.scene.remove(slider.world_object)
 
         width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)
 
