@@ -49,6 +49,12 @@ plot.show()
 
 ![out](https://user-images.githubusercontent.com/9403332/209422871-6b2153f3-81ca-4f62-9200-8206a81eaf0d.gif)
 
+### Interactivity
+
+![interact](https://user-images.githubusercontent.com/9403332/210027199-6e4ac193-6096-4d18-80d5-a41591ea4d4f.gif)
+
+This is all in the notebook and non-blocking!
+
 ### Image widget
 
 Interactive visualization of large imaging datasets in the notebook.
