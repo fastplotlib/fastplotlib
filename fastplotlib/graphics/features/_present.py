@@ -13,7 +13,7 @@ class PresentFeature(GraphicFeature):
         super(PresentFeature, self).__init__(parent, present, collection_index)
 
     def _set(self, present: bool):
-        value = self._parse_set_value(present)
+        present = self._parse_set_value(present)
 
         i = 0
         wo = self._parent.world_object
@@ -37,6 +37,7 @@ class PresentFeature(GraphicFeature):
             if self._parent.world_object in self._scene.children:
                 self._scene.remove(self._parent.world_object)
 
+        self._data = present
         self._feature_changed(key=None, new_data=present)
 
     def _feature_changed(self, key, new_data):

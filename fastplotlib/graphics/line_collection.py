@@ -148,3 +148,39 @@ class LineCollection(GraphicCollection, Interaction):
         coll_feature.block_events(True)
         coll_feature._set(self._previous_data[feature].data)
         coll_feature.block_events(False)
+
+
+axes = {
+    "x": 0,
+    "y": 1,
+    "z": 2
+}
+
+
+class LineStack(LineCollection):
+    def __init__(
+            self,
+            data: List[np.ndarray],
+            z_position: Union[List[float], float] = None,
+            size: Union[float, List[float]] = 2.0,
+            colors: Union[List[np.ndarray], np.ndarray] = "w",
+            cmap: Union[List[str], str] = None,
+            separation: float = 10,
+            separation_axis: str = "y",
+            name: str = None,
+            *args,
+            **kwargs
+    ):
+        super(LineStack, self).__init__(
+            data=data,
+            z_position=z_position,
+            size=size,
+            colors=colors,
+            cmap=cmap,
+            name=name
+        )
+
+        axis_zero = 0
+        for i, line in enumerate(self._items):
+            getattr(line.position, f"set_{separation_axis}")(axis_zero)
+            axis_zero = axis_zero + line.data()[:, axes[separation_axis]].max() + separation

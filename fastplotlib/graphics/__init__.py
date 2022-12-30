@@ -4,7 +4,7 @@ from .scatter import ScatterGraphic
 from .image import ImageGraphic
 from .heatmap import HeatmapGraphic
 from .text import TextGraphic
-from .linecollection import LineCollection
+from .line_collection import LineCollection, LineStack
 
 __all__ = [
     "ImageGraphic",
@@ -13,5 +13,6 @@ __all__ = [
     "HistogramGraphic",
     "HeatmapGraphic",
     "LineCollection",
+    "LineStack",
     "TextGraphic"
 ]
