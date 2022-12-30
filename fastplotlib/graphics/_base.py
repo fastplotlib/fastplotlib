@@ -50,11 +50,6 @@ class Graphic(BaseGraphic):
         return self.world_object.position
 
     @property
-    def interact_features(self) -> Tuple[str]:
-        """The features for this ``Graphic`` that support interaction."""
-        return self._valid_features
-
-    @property
     def visible(self) -> bool:
         return self.world_object.visible
 
@@ -153,7 +148,7 @@ class PreviouslyModifiedData:
     indices: Any
 
 
-class GraphicCollection(BaseGraphic):
+class GraphicCollection(Graphic):
     """Graphic Collection base class"""
 
     pygfx_events = [
@@ -161,9 +156,8 @@ class GraphicCollection(BaseGraphic):
     ]
 
     def __init__(self, name: str = None):
-        self.name = name
+        super(GraphicCollection, self).__init__(name)
         self._items: List[Graphic] = list()
-        self.registered_callbacks = dict()
 
     @property
     def world_object(self) -> Group:
