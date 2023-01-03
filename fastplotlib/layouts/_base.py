@@ -237,7 +237,7 @@ class PlotArea:
         if len(self.scene.children) > 0:
             width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)
         else:
-            width, height, depth = (0, 0, 0)
+            width, height, depth = (1, 1, 1)
 
         for slider in self._sliders:
             self.scene.add(slider.world_object)
