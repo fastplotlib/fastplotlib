@@ -1,18 +1,21 @@
 # fastplotlib
 [![Gitter](https://badges.gitter.im/fastplotlib/community.svg)](https://gitter.im/fastplotlib/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-A fast plotting library built using the `pygfx` render engine that can use [Vulkan](https://en.wikipedia.org/wiki/Vulkan), so it is very fast!
+A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine which can target [Vulkan](https://en.wikipedia.org/wiki/Vulkan) via WGPU, so it is very fast!
 
-Checkout pygfx!
-https://github.com/pygfx/pygfx
+`fastplotlib` is in the alpha stage and experimental, but you're welcome to try it out or contribute! `fastplotlib` is focussed on very fast interactive plotting in the notebook using an expressive API.
 
-`fastplotlib` is in the alpha stage and experimental, but you're welcome to try it out or contribute!
+Questions, ideas? Post an issue or [chat on gitter](https://gitter.im/fastplotlib/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link).
 
-Questions, ideas? Chat on gitter: https://gitter.im/fastplotlib/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link 
+![epic](https://user-images.githubusercontent.com/9403332/210304473-f36f2aaf-319e-435b-bcc8-0e8d3e1ef282.gif)
 
 # Examples
 
 **See the examples directory. Start out with `simple.ipynb`.**
+
+### Neuroscience usecase demonstrating fastplotlib's capabilities
+
+https://user-images.githubusercontent.com/9403332/210304485-e554b648-50b4-4243-b292-a9ed30514a2d.mp4
 
 ### Simple image plot
 ```python
