@@ -2,10 +2,10 @@ from typing import *
 import pygfx
 import numpy as np
 
-from ._base import BaseGraphic
+from ._base import Graphic
 
 
-class TextGraphic(BaseGraphic):
+class TextGraphic(Graphic):
     def __init__(
             self,
             text: str,
@@ -13,9 +13,12 @@ class TextGraphic(BaseGraphic):
             size: int = 10,
             face_color: Union[str, np.ndarray] = "w",
             outline_color: Union[str, np.ndarray] = "w",
-            outline_thickness=0
+            outline_thickness=0,
+            name: str = None,
     ):
-        self.world_object = pygfx.Text(
+        super(TextGraphic, self).__init__(name=name)
+
+        self._world_object = pygfx.Text(
             pygfx.TextGeometry(text=text, font_size=size, screen_space=False),
             pygfx.TextMaterial(color=face_color, outline_color=outline_color, outline_thickness=outline_thickness)
         )

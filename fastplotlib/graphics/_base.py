@@ -214,7 +214,9 @@ class GraphicCollection(Graphic):
 
             selection_indices = key
         else:
-            raise TypeError("Graphic Collection indexing supports int, slice, tuple or list of integers")
+            raise TypeError(f"Graphic Collection indexing supports int, slice, tuple or list of integers, "
+                            f"you have passed a <{type(key)}>")
+
         return CollectionIndexer(
             parent=self,
             selection=selection,
