@@ -1,9 +1,9 @@
 # fastplotlib
 [![Gitter](https://badges.gitter.im/fastplotlib/community.svg)](https://gitter.im/fastplotlib/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine which can target [Vulkan](https://en.wikipedia.org/wiki/Vulkan) via WGPU, so it is very fast!
+A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine and utilize [Vulkan](https://en.wikipedia.org/wiki/Vulkan) via WGPU, so it is very fast! `fastplotlib` is focussed on very fast interactive plotting in the notebook using an expressive API. It does also work within desktop applications using `glfw` or `Qt`.
 
-`fastplotlib` is in the alpha stage and experimental, but you're welcome to try it out or contribute! `fastplotlib` is focussed on very fast interactive plotting in the notebook using an expressive API.
+`fastplotlib` is currently in the early alpha stage with breaking changes every ~week, but you're welcome to try it out or contribute! See our [Roadmap for 2023](https://github.com/kushalkolar/fastplotlib/issues/55).
 
 Questions, ideas? Post an issue or [chat on gitter](https://gitter.im/fastplotlib/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link).
 
@@ -13,7 +13,7 @@ Questions, ideas? Post an issue or [chat on gitter](https://gitter.im/fastplotli
 
 **See the examples directory. Start out with `simple.ipynb`.**
 
-### Neuroscience usecase demonstrating fastplotlib's capabilities
+### Neuroscience usecase demonstrating some of fastplotlib's capabilities
 
 https://user-images.githubusercontent.com/9403332/210304485-e554b648-50b4-4243-b292-a9ed30514a2d.mp4
 
