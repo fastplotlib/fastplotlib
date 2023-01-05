@@ -3,9 +3,7 @@ from ._base import GraphicFeature, FeatureEvent
 
 class ThicknessFeature(GraphicFeature):
     """
-    Toggles if the object is present in the scene, different from visible \n
-    Useful for computing bounding boxes from the Scene to only include graphics
-    that are present
+    Used by Line graphics for line material thickness
     """
     def __init__(self, parent, thickness: float):
         self._scene = None
