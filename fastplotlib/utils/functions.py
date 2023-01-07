@@ -31,6 +31,27 @@ def _get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
 
 
 def get_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
+    """
+    Get colors from a colormap. The returned colors are uniformly spaced, except
+    for qualitative colormaps where they are returned subsequently.
+
+    Parameters
+    ----------
+    n_colors: int
+        number of colors to get
+
+    cmap: str
+        name of colormap
+
+    alpha: float, default 1.0
+        alpha value
+
+    Returns
+    -------
+    np.ndarray
+        shape is [n_colors, 4], where the last dimension is RGBA
+
+    """
     name = cmap
     cmap = _get_cmap(name, alpha)
 
@@ -50,13 +71,54 @@ def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
     return Texture(cmap, dim=1).get_view()
 
 
-def get_cmap_labels(labels: iter, cmap: str, **kwargs) -> OrderedDict:
+def get_colors_dict(labels: iter, cmap: str, **kwargs) -> OrderedDict:
     """
-    Get a dict for mapping labels onto colors
-    Any kwargs are passed to auto_colormap()
-    :param labels:  labels for creating a colormap. Order is maintained if it is a list of unique elements.
-    :param cmap:    name of colormap
-    :return:        dict of labels as keys and colors as values
+    Get a dict for mapping labels onto colors.
+
+    Parameters
+    ----------
+    labels: Iterable[Any]
+        labels for creating a colormap. Order is maintained if it is a list of unique elements.
+
+    cmap: str
+        name of colormap
+
+    **kwargs
+        passed to get_colors()
+
+    Returns
+    -------
+    OrderedDict
+        keys are labels, values are colors
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        from fastplotlib.utils import get_colors_dict
+
+        labels = ["l1", "l2", "l3"]
+        labels_cmap = get_colors_dict(labels, cmap="tab10")
+
+        # illustration of what the `labels_cmap` dict would look like:
+        # keep in mind that the tab10 cmap was chosen here
+
+        {
+            "l1": <RGBA array for the blue 'tab10' color>,
+            "l2": <RGBA array for the orange 'tab10' color>,
+            "l3": <RGBA array for the green 'tab10' color>,
+        }
+
+        # another example with a non-qualitative cmap
+        labels_cmap_seismic = get_colors_dict(labels, cmap="bwr")
+
+        {
+            "l1": <RGBA array for the blue 'bwr' color>,
+            "l2": <RGBA array for the white 'bwr' color>,
+            "l3": <RGBA array for the red 'bwr' color>,
+        }
+
     """
     if not len(set(labels)) == len(labels):
         labels = list(set(labels))
@@ -66,18 +128,6 @@ def get_cmap_labels(labels: iter, cmap: str, **kwargs) -> OrderedDict:
     colors = get_colors(len(labels), cmap, **kwargs)
 
     return OrderedDict(zip(labels, colors))
-
-
-def map_labels_to_colors(labels: iter, cmap: str, **kwargs) -> list:
-    """
-    Map labels onto colors according to chosen colormap
-    Any kwargs are passed to auto_colormap()
-    :param labels:  labels for mapping onto a colormap
-    :param cmap:    name of colormap
-    :return:        list of colors mapped onto the labels
-    """
-    mapper = get_cmap_labels(labels, cmap, **kwargs)
-    return list(map(mapper.get, labels))
 
 
 def quick_min_max(data: np.ndarray) -> Tuple[float, float]:
