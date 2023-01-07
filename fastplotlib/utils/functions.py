@@ -31,7 +31,16 @@ def _get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
 
 
 def get_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
-    cmap = _get_cmap(cmap, alpha)
+    name = cmap
+    cmap = _get_cmap(name, alpha)
+
+    if name in qual_cmaps:
+        max_colors = cmap.shape[0]
+        if n_colors > cmap.shape[0]:
+            raise ValueError(f"You have requested <{n_colors}> but only <{max_colors} existing for the "
+                             f"chosen cmap: <{cmap}>")
+        return cmap[:n_colors]
+
     cm_ixs = np.linspace(0, 255, n_colors, dtype=int)
     return np.take(cmap, cm_ixs, axis=0).astype(np.float32)
 
@@ -78,7 +87,7 @@ def quick_min_max(data: np.ndarray) -> Tuple[float, float]:
 
     if hasattr(data, "min") and hasattr(data, "max"):
         # if value is pre-computed
-        if isinstance(data.min, (float, int)) and isinstance(data.max, (float, int)):
+        if isinstance(data.min, (float, int, np.number)) and isinstance(data.max, (float, int, np.number)):
             return data.min, data.max
 
     while data.size > 1e6:
