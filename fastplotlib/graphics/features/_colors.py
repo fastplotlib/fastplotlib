@@ -1,7 +1,7 @@
 import numpy as np
 
 from ._base import GraphicFeature, GraphicFeatureIndexable, cleanup_slice, FeatureEvent
-from ...utils import get_colors, get_cmap_texture
+from ...utils import make_colors, get_cmap_texture
 from pygfx import Color
 
 
@@ -206,7 +206,7 @@ class CmapFeature(ColorFeature):
 
         n_colors = len(range(key.start, key.stop, key.step))
 
-        colors = get_colors(n_colors, cmap=value)
+        colors = make_colors(n_colors, cmap=value)
         super(CmapFeature, self).__setitem__(key, colors)
 
 
@@ -220,7 +220,7 @@ class ImageCmapFeature(GraphicFeature):
         self.name = cmap
 
     def _set(self, cmap_name: str):
-        self._parent.world_object.material.map.texture.data[:] = get_colors(256, cmap_name)
+        self._parent.world_object.material.map.texture.data[:] = make_colors(256, cmap_name)
         self._parent.world_object.material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
         self.name = cmap_name
 

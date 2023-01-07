@@ -30,7 +30,7 @@ def _get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
     return cmap.astype(np.float32)
 
 
-def get_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
+def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
     """
     Get colors from a colormap. The returned colors are uniformly spaced, except
     for qualitative colormaps where they are returned subsequently.
@@ -84,7 +84,7 @@ def get_colors_dict(labels: iter, cmap: str, **kwargs) -> OrderedDict:
         name of colormap
 
     **kwargs
-        passed to get_colors()
+        passed to make_colors()
 
     Returns
     -------
@@ -125,7 +125,7 @@ def get_colors_dict(labels: iter, cmap: str, **kwargs) -> OrderedDict:
     else:
         labels = list(labels)
 
-    colors = get_colors(len(labels), cmap, **kwargs)
+    colors = make_colors(len(labels), cmap, **kwargs)
 
     return OrderedDict(zip(labels, colors))
 
