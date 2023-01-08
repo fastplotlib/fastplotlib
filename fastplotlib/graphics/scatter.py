@@ -5,7 +5,7 @@ import pygfx
 
 from ._base import Graphic
 from .features import PointsDataFeature, ColorFeature, CmapFeature
-from ..utils import get_colors
+from ..utils import make_colors
 
 
 class ScatterGraphic(Graphic):
@@ -55,7 +55,7 @@ class ScatterGraphic(Graphic):
         self.data = PointsDataFeature(self, data)
 
         if cmap is not None:
-            colors = get_colors(n_colors=self.data().shape[0], cmap=cmap, alpha=alpha)
+            colors = make_colors(n_colors=self.data().shape[0], cmap=cmap, alpha=alpha)
 
         self.colors = ColorFeature(self, colors, n_colors=self.data().shape[0], alpha=alpha)
         self.cmap = CmapFeature(self, self.colors())

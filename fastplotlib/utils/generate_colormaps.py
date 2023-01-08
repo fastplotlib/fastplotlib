@@ -31,7 +31,14 @@ class ColormapNames:
 
 
 def make_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
-    cmap = np.vstack([getattr(cm, name)(i) for i in range(256)])
+    _cm = getattr(cm, name)
+
+    if name in ColormapNames.qualitative:
+        n_colors = getattr(_cm, "N")
+    else:
+        n_colors = 256
+
+    cmap = np.vstack([_cm(i) for i in range(n_colors)])
     cmap[:, -1] = alpha
 
     return cmap.astype(np.float32)

@@ -4,7 +4,7 @@ import pygfx
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
-from ..utils import get_colors
+from ..utils import make_colors
 
 
 class LineGraphic(Graphic, Interaction):
@@ -61,7 +61,7 @@ class LineGraphic(Graphic, Interaction):
         self.data = PointsDataFeature(self, data, collection_index=collection_index)
 
         if cmap is not None:
-            colors = get_colors(n_colors=self.data().shape[0], cmap=cmap, alpha=alpha)
+            colors = make_colors(n_colors=self.data().shape[0], cmap=cmap, alpha=alpha)
 
         self.colors = ColorFeature(
             self,

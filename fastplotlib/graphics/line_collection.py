@@ -4,7 +4,7 @@ from typing import *
 
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
-from ..utils import get_colors
+from ..utils import make_colors
 from copy import deepcopy
 
 
@@ -41,7 +41,7 @@ class LineCollection(GraphicCollection, Interaction):
         if cmap is not None:
             # cmap across lines
             if isinstance(cmap, str):
-                colors = get_colors(len(data), cmap)
+                colors = make_colors(len(data), cmap)
                 single_color = False
                 cmap = None
             elif isinstance(cmap, (tuple, list)):
