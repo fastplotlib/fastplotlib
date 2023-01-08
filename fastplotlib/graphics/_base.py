@@ -1,4 +1,7 @@
 from typing import *
+from warnings import warn
+
+import numpy as np
 
 from .features._base import cleanup_slice
 
@@ -92,10 +95,19 @@ class Interaction(ABC):
     def _reset_feature(self, feature: str):
         pass
 
-    def link(self, event_type: str, target: Any, feature: str, new_data: Any, callback_function: callable = None):
+    def link(
+            self,
+            event_type: str,
+            target: Any,
+            feature: str,
+            new_data: Any,
+            callback: callable = None,
+            bidirectional: bool = False
+    ):
         if event_type in self.pygfx_events:
             self.world_object.add_event_handler(self.event_handler, event_type)
 
+        # make sure event is valid
         elif event_type in self.feature_events:
             if isinstance(self, GraphicCollection):
                 feature_instance = getattr(self[:], event_type)
@@ -105,15 +117,35 @@ class Interaction(ABC):
             feature_instance.add_event_handler(self.event_handler)
 
         else:
-            raise ValueError("event not possible")
+            raise ValueError(f"Invalid event, valid events are: {self.pygfx_events + self.feature_events}")
 
-        if event_type in self.registered_callbacks.keys():
-            self.registered_callbacks[event_type].append(
-                CallbackData(target=target, feature=feature, new_data=new_data, callback_function=callback_function))
-        else:
+        # make sure target feature is valid
+        if feature is not None:
+            if feature not in target.feature_events:
+                raise ValueError(f"Invalid feature for target, valid features are: {target.feature_events}")
+
+        if event_type not in self.registered_callbacks.keys():
             self.registered_callbacks[event_type] = list()
-            self.registered_callbacks[event_type].append(
-                CallbackData(target=target, feature=feature, new_data=new_data, callback_function=callback_function))
+
+        callback_data = CallbackData(target=target, feature=feature, new_data=new_data, callback_function=callback)
+
+        for existing_callback_data in self.registered_callbacks[event_type]:
+            if existing_callback_data == callback_data:
+                warn("linkage already exists for given event, target, and data, skipping")
+                return
+
+        self.registered_callbacks[event_type].append(callback_data)
+
+        if bidirectional:
+            target.link(
+                event_type=event_type,
+                target=self,
+                feature=feature,
+                new_data=new_data,
+                callback=callback,
+                bidirectional=False  # else infinite recursion, otherwise target will call
+                                     # this instance .link(), and then it will happen again etc.
+            )
 
     def event_handler(self, event):
         if event.type in self.registered_callbacks.keys():
@@ -145,6 +177,28 @@ class CallbackData:
     new_data: Any
     callback_function: callable = None
 
+    def __eq__(self, other):
+        if not isinstance(other, CallbackData):
+            raise TypeError("Can only compare against other <CallbackData> types")
+
+        if other.target is not self.target:
+            return False
+
+        if not other.feature == self.feature:
+            return False
+
+        if not other.new_data == self.new_data:
+            return False
+
+        if (self.callback_function is None) and (other.callback_function is None):
+            return True
+
+        if other.callback_function is self.callback_function:
+            return True
+
+        else:
+            return False
+
 
 @dataclass
 class PreviouslyModifiedData:
@@ -155,10 +209,6 @@ class PreviouslyModifiedData:
 
 class GraphicCollection(Graphic):
     """Graphic Collection base class"""
-
-    pygfx_events = [
-        "click"
-    ]
 
     def __init__(self, name: str = None):
         super(GraphicCollection, self).__init__(name)
@@ -207,14 +257,21 @@ class GraphicCollection(Graphic):
             selection = self._items[key]
 
         # fancy-ish indexing
-        elif isinstance(key, (tuple, list)):
+        elif isinstance(key, (tuple, list, np.ndarray)):
+            if isinstance(key, np.ndarray):
+                if not key.ndim == 1:
+                    raise TypeError(f"{self.__class__.__name__} indexing supports "
+                                    f"1D numpy arrays, int, slice, tuple or list of integers, "
+                                    f"your numpy arrays has <{key.ndim}> dimensions.")
             selection = list()
+
             for ix in key:
                 selection.append(self._items[ix])
 
             selection_indices = key
         else:
-            raise TypeError(f"Graphic Collection indexing supports int, slice, tuple or list of integers, "
+            raise TypeError(f"{self.__class__.__name__} indexing supports "
+                            f"1D numpy arrays, int, slice, tuple or list of integers, "
                             f"you have passed a <{type(key)}>")
 
         return CollectionIndexer(

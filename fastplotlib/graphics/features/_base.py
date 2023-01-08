@@ -107,8 +107,13 @@ class GraphicFeature(ABC):
 
         for func in self._event_handlers:
             try:
-                if len(getfullargspec(func).args) > 0:
-                    func(event_data)
+                args = getfullargspec(func).args
+
+                if len(args) > 0:
+                    if args[0] == "self" and not len(args) > 1:
+                        func()
+                    else:
+                        func(event_data)
                 else:
                     func()
             except:

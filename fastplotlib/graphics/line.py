@@ -11,6 +11,9 @@ class LineGraphic(Graphic, Interaction):
     feature_events = [
         "data",
         "colors",
+        "cmap",
+        "thickness",
+        "present"
     ]
 
     def __init__(
