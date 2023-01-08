@@ -15,7 +15,7 @@ DEFAULT_DIMS_ORDER = \
         2: "xy",
         3: "txy",
         4: "tzxy",
-        # 5: "tczxy",  # no 5 dim stuff for now
+        5: "tzcxy",
     }
 
 
@@ -347,9 +347,16 @@ class ImageWidget:
                 f"{self.dims_order}"
             )
 
-        # by default slider is only made for "t" - time dimension
+        # if slider_dims not provided
         if slider_dims is None:
-            slider_dims = "t"
+            # by default sliders are made for all dimensions except the last 2
+            default_dim_names = {0: "t", 1: "z", 2: "c"}
+            slider_dims = list()
+            for dim in range(self.ndim - 2):
+                if dim in default_dim_names.keys():
+                    slider_dims.append(default_dim_names[dim])
+                else:
+                    slider_dims.append(f"{dim}")
 
         # slider for only one of the dimensions
         if isinstance(slider_dims, (int, str)):
@@ -488,7 +495,7 @@ class ImageWidget:
 
             frame = self._process_indices(self.data[0], slice_indices=self._current_index)
 
-            self.image_graphics: List[ImageGraphic] = [self.plot.add_image(data=frame, **kwargs)]
+            self.image_graphics: List[ImageGraphic] = [self.plot.add_image(data=frame, name="image", **kwargs)]
 
         elif self._plot_type == "grid":
             self._plot: GridPlot = GridPlot(shape=grid_shape, controllers="sync")
@@ -532,7 +539,7 @@ class ImageWidget:
                     _kwargs = kwargs
 
                 frame = self._process_indices(d, slice_indices=self._current_index)
-                ig = ImageGraphic(frame, **_kwargs)
+                ig = ImageGraphic(frame, name="image", **_kwargs)
                 subplot.add_graphic(ig)
                 subplot.name = name
                 subplot.set_title(name)
