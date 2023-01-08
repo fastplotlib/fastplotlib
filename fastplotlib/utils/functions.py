@@ -71,7 +71,7 @@ def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
     return Texture(cmap, dim=1).get_view()
 
 
-def get_colors_dict(labels: iter, cmap: str, **kwargs) -> OrderedDict:
+def make_colors_dict(labels: iter, cmap: str, **kwargs) -> OrderedDict:
     """
     Get a dict for mapping labels onto colors.
 
