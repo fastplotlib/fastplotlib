@@ -1,5 +1,6 @@
 from .plot import Plot
 from .layouts import GridPlot
+from .widgets import ImageWidget
 from pathlib import Path
 from wgpu.gui.auto import run
 
