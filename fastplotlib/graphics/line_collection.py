@@ -9,7 +9,6 @@ from copy import deepcopy
 
 
 class LineCollection(GraphicCollection, Interaction):
-    """Line Collection graphic"""
     child_type = LineGraphic
     feature_events = [
         "data",
@@ -30,6 +29,41 @@ class LineCollection(GraphicCollection, Interaction):
             *args,
             **kwargs
     ):
+        """
+        Create a Line Collection
+
+        Parameters
+        ----------
+        data: list of array-like
+            List of line data to plot, if elements 2D must be of shape [n_points, 2], if elements
+            3D must be of shape [n_points, 3]
+
+        z_position: list of float or float, optional
+            z-axis position for each line graphic, single value will apply to
+            all line graphics in the collection
+
+        thickness: float or list of float, default 2.0
+            thickness of each line in the collection, sinlge value will apply to
+            all line graphics in the collection
+
+        colors: list array or array, default "w"
+            specify color for each line graphic as a list of RGBA arrays or a single
+            RGBA array that will apply to all line graphics in the collection
+
+        cmap: list of str or str, optional
+            apply colormap to each individual line in the collection instead of passing
+            colors manually, single str will apply same cmap to all lines in the collection,
+            overrides any arguments passed to "colors"
+
+        name: str, optional
+            name of the line collection
+
+        args
+            passed to GraphicCollection
+
+        kwargs
+            passed to GraphicCollection
+        """
         super(LineCollection, self).__init__(name)
 
         if not isinstance(z_position, float) and z_position is not None:
@@ -188,6 +222,47 @@ class LineStack(LineCollection):
             *args,
             **kwargs
     ):
+        """
+        Create a line stack
+
+        Parameters
+        ----------
+        data: list of array-like
+            List of line data to plot, if elements 2D must be of shape [n_points, 2], if elements
+            3D must be of shape [n_points, 3]
+
+        z_position: list of float or float, optional
+            z-axis position for each line graphic, single value will apply to
+            all line graphics in the stack
+
+        thickness: float or list of float, default 2.0
+            thickness of each line in the collection, sinlge value will apply to
+            all line graphics in the stack
+
+        colors: list array or array, default "w"
+            specify color for each line graphic as a list of RGBA arrays or a single
+            RGBA array that will apply to all line graphics in the stack
+
+        cmap: list of str or str, optional
+            apply colormap to each individual line in the stack instead of passing
+            colors manually, single str will apply same cmap to all lines in the stack,
+            overrides any arguments passed to "colors"
+
+        separation: float, default 10
+            space in between each line graphic in the stack
+
+        separation_axis: str, default "y"
+            axis in which the line graphics in the stack should be separated
+
+        name: str, optional
+            name of the line stack
+
+        args
+            passed to LineCollection
+
+        kwargs
+            passed to LineCollection
+        """
         super(LineStack, self).__init__(
             data=data,
             z_position=z_position,
