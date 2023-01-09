@@ -160,7 +160,7 @@ class Interaction(ABC):
             )
 
     def event_handler(self, event):
-        if event.type not in self.registered_callbacks.keys():
+        if event.type in self.registered_callbacks.keys():
             for target_info in self.registered_callbacks[event.type]:
                 if target_info.callback_function is not None:
                     # if callback_function is not None, then callback function should handle the entire event
