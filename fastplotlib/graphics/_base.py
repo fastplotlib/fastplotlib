@@ -116,6 +116,31 @@ class Interaction(ABC):
             callback: callable = None,
             bidirectional: bool = False
     ):
+        '''
+        Link to graphics together
+
+        Parameters
+        ----------
+        event_type: str
+            can be a pygfx event (click, etc.) or appropriate feature event associated with
+            the graphic
+        target: Any
+            graphic to be linked to
+        feature: str
+            feature of the target graphic that will change following the event
+        new_data: Any
+            appropriate data that will be changed in the feature of the target graphic after
+            the event occurs
+        callback: callable, optional
+            callable
+        bidirectional: bool, default False
+            if True, links target graphic to change the same feature with the same data following
+            the same event
+
+        Returns
+        -------
+        None
+        '''
         if event_type in PYGFX_EVENTS:
             self.world_object.add_event_handler(self.event_handler, event_type)
 
@@ -160,6 +185,7 @@ class Interaction(ABC):
             )
 
     def event_handler(self, event):
+        """Handles the event after it occurs when two graphic have been linked together."""
         if event.type in self.registered_callbacks.keys():
             for target_info in self.registered_callbacks[event.type]:
                 if target_info.callback_function is not None:
