@@ -14,6 +14,22 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 
+PYGFX_EVENTS = [
+    "key_down",
+    "key_up",
+    "pointer_down",
+    "pointer_move",
+    "pointer_up",
+    "pointer_enter",
+    "pointer_leave",
+    "click",
+    "double_click",
+    "wheel",
+    "close",
+    "resize",
+]
+
+
 class BaseGraphic:
     def __init_subclass__(cls, **kwargs):
         """set the type of the graphic in lower case like "image", "line_collection", etc."""
@@ -27,10 +43,6 @@ class BaseGraphic:
 
 
 class Graphic(BaseGraphic):
-    pygfx_events = [
-        "click"
-    ]
-
     def __init__(
             self, name: str = None):
         """
@@ -104,7 +116,7 @@ class Interaction(ABC):
             callback: callable = None,
             bidirectional: bool = False
     ):
-        if event_type in self.pygfx_events:
+        if event_type in PYGFX_EVENTS:
             self.world_object.add_event_handler(self.event_handler, event_type)
 
         # make sure event is valid
@@ -117,7 +129,7 @@ class Interaction(ABC):
             feature_instance.add_event_handler(self.event_handler)
 
         else:
-            raise ValueError(f"Invalid event, valid events are: {self.pygfx_events + self.feature_events}")
+            raise ValueError(f"Invalid event, valid events are: {PYGFX_EVENTS + self.feature_events}")
 
         # make sure target feature is valid
         if feature is not None:
