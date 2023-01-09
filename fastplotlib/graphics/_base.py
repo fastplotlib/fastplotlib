@@ -362,11 +362,14 @@ class CollectionIndexer:
         selection
         selection_indices: Union[list, range]
         """
+        self._parent = parent
         self._selection = selection
         self._selection_indices = selection_indices
 
-        for attr_name in self._selection[0].__dict__.keys():
-            attr = getattr(self._selection[0], attr_name)
+        # we use parent.graphics[0] instead of selection[0]
+        # because the selection can be empty
+        for attr_name in self._parent.graphics[0].__dict__.keys():
+            attr = getattr(self._parent.graphics[0], attr_name)
             if isinstance(attr, GraphicFeature):
                 collection_feature = CollectionFeature(
                     parent,
@@ -412,13 +415,16 @@ class CollectionFeature:
 
         self._feature_instances: List[GraphicFeature] = list()
 
-        for graphic in self._selection:
-            fi = getattr(graphic, self._feature)
-            self._feature_instances.append(fi)
+        if len(self._selection) > 0:
+            for graphic in self._selection:
+                fi = getattr(graphic, self._feature)
+                self._feature_instances.append(fi)
 
-        if isinstance(fi, GraphicFeatureIndexable):
-            self._indexable = True
-        else:
+            if isinstance(fi, GraphicFeatureIndexable):
+                self._indexable = True
+            else:
+                self._indexable = False
+        else:  # it's an empty selection so it doesn't really matter
             self._indexable = False
 
     def _set(self, value):
