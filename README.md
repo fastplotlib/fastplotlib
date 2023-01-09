@@ -1,6 +1,8 @@
 # fastplotlib
 [![Gitter](https://badges.gitter.im/fastplotlib/community.svg)](https://gitter.im/fastplotlib/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
+[**Installation**](https://github.com/kushalkolar/fastplotlib#installation) | [**GPU Drivers**](https://github.com/kushalkolar/fastplotlib/edit/master/README.md#install-vulkan-drivers) | [**Examples**](https://github.com/kushalkolar/fastplotlib/edit/master/README.md#examples)
+
 A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine utilizing [Vulkan](https://en.wikipedia.org/wiki/Vulkan) via WGPU, so it is very fast! `fastplotlib` is focussed on very fast interactive plotting in the notebook using an expressive API. It also works within desktop applications using `glfw` or `Qt`.
 
 `fastplotlib` is currently in the **early alpha stage with breaking changes every ~week**, but you're welcome to try it out or contribute! See our [Roadmap for 2023](https://github.com/kushalkolar/fastplotlib/issues/55).
@@ -112,7 +114,7 @@ jupyter lab
 For more information see: https://github.com/pygfx/wgpu-py#platform-requirements
 
 ### Windows:
-Vulkan should be installed by default on Windows 11, but you will need to install your GPU manufacturer's driver package (Nvidia or AMD). If you have an integrated GPU within your CPU, you might still need to install a driver package too, check your CPU manufacturer's info.
+Vulkan should be installed by default on Windows 11, but you will need to install your GPU manufacturer's driver package (Nvidia or AMD). If you have an integrated GPU within your CPU, you might still need to install a driver package too, check your CPU manufacturer's info. We recommend installing C compilers so that you can install `simplejpeg` which improves remote frame buffer performance in notebooks.
 
 ### Linux:
 Debian based distros:
@@ -126,7 +128,7 @@ sudo apt install libjpeg-turbo
 For other distros install the appropriate vulkan driver package, and optionally the corresponding `libjpeg-turbo` package for better remote-frame-buffer performance in jupyter notebooks.
 
 ### Mac OSX:
-You will need at least MacOSX v10.13, not sure how to install Vulkan drivers on Mac. If anyone knows you can add instructions here!
+As far as I know, WGPU uses Metal instead of Vulkan on Mac. I think you will need at least Mac OSX 10.13.
 
 # Gallery
 
