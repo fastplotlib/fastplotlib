@@ -100,6 +100,11 @@ class PlotArea:
     def controller(self) -> Union[PanZoomController, OrbitController]:
         return self._controller
 
+    @property
+    def graphics(self) -> Tuple[Graphic]:
+        """returns the Graphics in the plot area"""
+        return tuple(self._graphics)
+
     def get_rect(self) -> Tuple[float, float, float, float]:
         """allows setting the region occupied by the viewport w.r.t. the parent"""
         raise NotImplementedError("Must be implemented in subclass")
@@ -117,7 +122,7 @@ class PlotArea:
 
     def add_graphic(self, graphic: Graphic, center: bool = True):
         """
-        Add a Graphic to the scne
+        Add a Graphic to the scene
 
         Parameters
         ----------
@@ -134,14 +139,9 @@ class PlotArea:
             )
 
         if graphic.name is not None:  # skip for those that have no name
-            graphic_names = list()
+            self._check_graphic_name_exists(graphic.name)
 
-            for g in self._graphics:
-                graphic_names.append(g.name)
-
-            if graphic.name in graphic_names:
-                raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
-
+        # TODO: need to refactor LineSlider entirely
         if isinstance(graphic, LineSlider):
             self._sliders.append(graphic)
         else:
@@ -154,6 +154,15 @@ class PlotArea:
 
         # if hasattr(graphic, "_add_plot_area_hook"):
         #     graphic._add_plot_area_hook(self.viewport, self.camera)
+
+    def _check_graphic_name_exists(self, name):
+        graphic_names = list()
+
+        for g in self._graphics:
+            graphic_names.append(g.name)
+
+        if name in graphic_names:
+            raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
 
     def _refresh_camera(self):
         self.controller.update_camera(self.camera)
@@ -249,16 +258,6 @@ class PlotArea:
 
         self.controller.zoom(zoom / self.controller.zoom_value)
 
-    def get_graphics(self):
-        """
-        Get all the Graphic instances in the Scene
-
-        Returns
-        -------
-
-        """
-        return self._graphics
-
     def remove_graphic(self, graphic: Graphic):
         """
         Remove a graphic from the scene. Note: This does not garbage collect the graphic,
@@ -296,5 +295,5 @@ class PlotArea:
         return f"{self}\n" \
                f"  parent: {self.parent}\n" \
                f"  Graphics:\n" \
-               f"\t{newline.join(graphic.__repr__() for graphic in self.get_graphics())}" \
+               f"\t{newline.join(graphic.__repr__() for graphic in self._graphics)}" \
                f"\n"

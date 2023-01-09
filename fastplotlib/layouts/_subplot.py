@@ -94,6 +94,10 @@ class Subplot(PlotArea):
             center = kwargs.pop("center")
         else:
             center = False
+
+        if "name" in kwargs.keys():
+            self._check_graphic_name_exists(kwargs["name"])
+
         graphic = graphic_class(*args, **kwargs)
         self.add_graphic(graphic, center=center)
 
