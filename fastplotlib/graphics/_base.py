@@ -32,9 +32,7 @@ class Graphic(BaseGraphic):
     ]
 
     def __init__(
-            self,
-            name: str = None
-    ):
+            self, name: str = None):
         """
 
         Parameters
@@ -80,13 +78,15 @@ class Graphic(BaseGraphic):
         super().__setattr__(key, value)
 
     def __repr__(self):
+        rval = f"{self.__class__.__name__} @ {hex(id(self))}"
         if self.name is not None:
-            return f"'{self.name}' fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
+            return f"'{self.name}': {rval}"
         else:
-            return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}"
+            return rval
 
 
 class Interaction(ABC):
+    """Mixin class that makes graphics interactive"""
     @abstractmethod
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
@@ -148,11 +148,12 @@ class Interaction(ABC):
             )
 
     def event_handler(self, event):
-        if event.type in self.registered_callbacks.keys():
+        if event.type not in self.registered_callbacks.keys():
             for target_info in self.registered_callbacks[event.type]:
                 if target_info.callback_function is not None:
                     # if callback_function is not None, then callback function should handle the entire event
                     target_info.callback_function(source=self, target=target_info.target, event=event, new_data=target_info.new_data)
+
                 elif isinstance(self, GraphicCollection):
                     # if target is a GraphicCollection, then indices will be stored in collection_index
                     if event.type in self.feature_events:
@@ -160,7 +161,7 @@ class Interaction(ABC):
 
                     # for now we only have line collections so this works
                     else:
-                        for i, item in enumerate(self._items):
+                        for i, item in enumerate(self._graphics):
                             if item.world_object is event.pick_info["world_object"]:
                                 indices = i
                     target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
@@ -168,6 +169,7 @@ class Interaction(ABC):
                     # if target is a single graphic, then indices do not matter
                     target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data,
                                                     indices=None)
+
 
 @dataclass
 class CallbackData:
@@ -212,16 +214,16 @@ class GraphicCollection(Graphic):
 
     def __init__(self, name: str = None):
         super(GraphicCollection, self).__init__(name)
-        self._items: List[Graphic] = list()
+        self._graphics: List[Graphic] = list()
 
     @property
     def world_object(self) -> Group:
         return self._world_object
 
     @property
-    def items(self) -> Tuple[Graphic]:
-        """Get the Graphic instances within this collection"""
-        return tuple(self._items)
+    def graphics(self) -> Tuple[Graphic]:
+        """returns the Graphics within this collection"""
+        return tuple(self._graphics)
 
     def add_graphic(self, graphic: Graphic, reset_index: True):
         """Add a graphic to the collection"""
@@ -231,20 +233,20 @@ class GraphicCollection(Graphic):
                 f"You can only add {self.child_type} to a {self.__class__.__name__}, "
                 f"you are trying to add a {graphic.__class__.__name__}."
             )
-        self._items.append(graphic)
+        self._graphics.append(graphic)
         if reset_index:
             self._reset_index()
         self.world_object.add(graphic.world_object)
 
     def remove_graphic(self, graphic: Graphic, reset_index: True):
         """Remove a graphic from the collection"""
-        self._items.remove(graphic)
+        self._graphics.remove(graphic)
         if reset_index:
             self._reset_index()
         self.world_object.remove(graphic)
 
     def _reset_index(self):
-        for new_index, graphic in enumerate(self._items):
+        for new_index, graphic in enumerate(self._graphics):
             graphic.collection_index = new_index
 
     def __getitem__(self, key):
@@ -254,7 +256,7 @@ class GraphicCollection(Graphic):
         if isinstance(key, slice):
             key = cleanup_slice(key, upper_bound=len(self))
             selection_indices = range(key.start, key.stop, key.step)
-            selection = self._items[key]
+            selection = self._graphics[key]
 
         # fancy-ish indexing
         elif isinstance(key, (tuple, list, np.ndarray)):
@@ -266,7 +268,7 @@ class GraphicCollection(Graphic):
             selection = list()
 
             for ix in key:
-                selection.append(self._items[ix])
+                selection.append(self._graphics[ix])
 
             selection_indices = key
         else:
@@ -281,7 +283,11 @@ class GraphicCollection(Graphic):
         )
 
     def __len__(self):
-        return len(self._items)
+        return len(self._graphics)
+
+    def __repr__(self):
+        rval = super().__repr__()
+        return f"{rval}\nCollection of <{len(self._graphics)}> Graphics"
 
 
 class CollectionIndexer:
@@ -309,11 +315,15 @@ class CollectionIndexer:
                 collection_feature = CollectionFeature(
                     parent,
                     self._selection,
-                    selection_indices=selection_indices,
+                    selection_indices=self._selection_indices,
                     feature=attr_name
                 )
-                collection_feature.__doc__ = f"indexable {attr_name} feature for collection"
+                collection_feature.__doc__ = f"indexable <{attr_name}> feature for collection"
                 setattr(self, attr_name, collection_feature)
+
+    @property
+    def graphics(self) -> Tuple[Graphic]:
+        return tuple(self._selection)
 
     def __setattr__(self, key, value):
         if hasattr(self, key):
@@ -324,9 +334,12 @@ class CollectionIndexer:
 
         super().__setattr__(key, value)
 
+    def __len__(self):
+        return len(self._selection)
+
     def __repr__(self):
         return f"{self.__class__.__name__} @ {hex(id(self))}\n" \
-               f"Collection of <{len(self._selection)}> {self._selection[0].__class__.__name__}"
+               f"Selection of <{len(self._selection)}> {self._selection[0].__class__.__name__}"
 
 
 class CollectionFeature:
