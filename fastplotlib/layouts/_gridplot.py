@@ -61,6 +61,7 @@ class GridPlot:
 
         renderer: pygfx.Renderer, optional
             pygfx renderer instance
+
         """
         self.shape = shape
 
