@@ -25,11 +25,12 @@ class ImageGraphic(Graphic, Interaction):
     ):
         """
         Create an Image Graphic
+
         Parameters
         ----------
         data: array-like, must be 2-dimensional
-            | array-like, usually numpy.ndarray, must support ``memoryview()``
-            | Tensorflow Tensors also work _I think_, but not thoroughly tested
+            array-like, usually numpy.ndarray, must support ``memoryview()``
+            Tensorflow Tensors also work I think, but not thoroughly tested
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
         vmax: int, optional
@@ -42,9 +43,11 @@ class ImageGraphic(Graphic, Interaction):
             additional arguments passed to Graphic
         kwargs:
             additional keyword arguments passed to Graphic
+
         Examples
         --------
         .. code-block:: python
+
             from fastplotlib import Plot
             # create a `Plot` instance
             plot = Plot()

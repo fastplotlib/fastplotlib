@@ -117,7 +117,7 @@ class Interaction(ABC):
             bidirectional: bool = False
     ):
         '''
-        Link to graphics together
+        Link two graphics together
 
         Parameters
         ----------

@@ -11,6 +11,7 @@ Welcome to fastplotlib's documentation!
    :caption: Contents:
    
    Layouts <api/layouts>
+   Graphics <api/graphics>
 
 
 
