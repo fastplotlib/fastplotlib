@@ -10,8 +10,11 @@ Welcome to fastplotlib's documentation!
    :maxdepth: 2
    :caption: Contents:
    
-   Layouts <api/layouts>
+   Plot <api/plot>
+   Subplot <api/subplot>
+   Gridplot <api/gridplot>
    Graphics <api/graphics>
+   Widgets <api/widgets>
 
 
 

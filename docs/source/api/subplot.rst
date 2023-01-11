@@ -1,21 +1,4 @@
-.. _api_layouts:
-
-Layouts
-*******
-
-Plot
-####
-
-.. autoclass:: fastplotlib.Plot
-    :members:
-    :inherited-members:
-
-GridPlot
-########
-
-.. autoclass:: fastplotlib.GridPlot
-    :members:
-    :inherited-members:
+.. _api_subplot:
 
 Subplot
 #######

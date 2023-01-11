@@ -30,7 +30,7 @@ class ImageGraphic(Graphic, Interaction):
         ----------
         data: array-like, must be 2-dimensional
             array-like, usually numpy.ndarray, must support ``memoryview()``
-            Tensorflow Tensors also work I think, but not thoroughly tested
+            Tensorflow Tensors also work **probably**, but not thoroughly tested
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
         vmax: int, optional
