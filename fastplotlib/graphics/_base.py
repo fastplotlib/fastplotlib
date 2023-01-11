@@ -117,29 +117,41 @@ class Interaction(ABC):
             bidirectional: bool = False
     ):
         '''
-        Link two graphics together
+        Link this graphic to another graphic upon an ``event_type`` to change the ``feature``
+        of a ``target`` graphic.
 
         Parameters
         ----------
         event_type: str
-            can be a pygfx event (click, etc.) or appropriate feature event associated with
-            the graphic
+            can be a pygfx event ("key_down", "key_up","pointer_down", "pointer_move", "pointer_up",
+            "pointer_enter", "pointer_leave", "click", "double_click", "wheel", "close", "resize")
+            or appropriate feature event (i.e. colors, data) associated with the graphic (can use
+            ``graphic_instance.feature_events`` to get a list of the valid feature events for the
+            graphic)
         target: Any
             graphic to be linked to
         feature: str
-            feature of the target graphic that will change following the event
+            feature (i.e. colors, data, visibility) of the target graphic that will change following
+            the event
         new_data: Any
             appropriate data that will be changed in the feature of the target graphic after
             the event occurs
         callback: callable, optional
-            callable
+            user-specified callable that will handle event, must take in the graphic source ``self``,
+            the ``target`` graphic, event, and ``new_data``
         bidirectional: bool, default False
-            if True, links target graphic to change the same feature with the same data following
-            the same event
+            if True, links target graphic to change the same ``feature`` with the same ``new_data``
+            following the same event
 
         Returns
         -------
         None
+
+        Examples
+        --------
+        .. code-block::python
+
+            from fastplotlib import
         '''
         if event_type in PYGFX_EVENTS:
             self.world_object.add_event_handler(self.event_handler, event_type)
@@ -184,7 +196,7 @@ class Interaction(ABC):
                                      # this instance .link(), and then it will happen again etc.
             )
 
-    def event_handler(self, event):
+    def _event_handler(self, event):
         """Handles the event after it occurs when two graphic have been linked together."""
         if event.type in self.registered_callbacks.keys():
             for target_info in self.registered_callbacks[event.type]:

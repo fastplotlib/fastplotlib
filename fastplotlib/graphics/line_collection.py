@@ -35,25 +35,27 @@ class LineCollection(GraphicCollection, Interaction):
         Parameters
         ----------
         data: list of array-like
-            List of line data to plot, if elements 2D must be of shape [n_points, 2], if elements
-            3D must be of shape [n_points, 3]
+            List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
+            if elements are 2D, interpreted as [y_vals, n_lines]
 
         z_position: list of float or float, optional
-            z-axis position for each line graphic, single value will apply to
-            all line graphics in the collection
+            | if ``float``, single position will be used for all lines
+            | if ``list`` of ``float``, each value will apply to the individual lines
 
         thickness: float or list of float, default 2.0
-            thickness of each line in the collection, sinlge value will apply to
-            all line graphics in the collection
+            | if ``float``, single thickness will be used for all lines
+            | if ``list`` of ``float``, each value will apply to the individual lines
 
-        colors: list array or array, default "w"
-            specify color for each line graphic as a list of RGBA arrays or a single
-            RGBA array that will apply to all line graphics in the collection
+        colors: str, RGBA array, list of RGBA array, or list of str, default "w"
+            | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
+            | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
+            | is ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
+            | if ``list`` of ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
         cmap: list of str or str, optional
-            apply colormap to each individual line in the collection instead of passing
-            colors manually, single str will apply same cmap to all lines in the collection,
-            overrides any arguments passed to "colors"
+            | if ``str``, single cmap will be used for all lines
+            | if ``list`` of ``str``, each cmap will apply to the individual lines
+            **Note:** ``cmap`` overrides any arguments passed to ``colors``
 
         name: str, optional
             name of the line collection
@@ -63,6 +65,13 @@ class LineCollection(GraphicCollection, Interaction):
 
         kwargs
             passed to GraphicCollection
+
+        Examples
+        --------
+        .. code-block::python
+
+            from fastplotlib import
+
         """
         super(LineCollection, self).__init__(name)
 
@@ -228,25 +237,30 @@ class LineStack(LineCollection):
         Parameters
         ----------
         data: list of array-like
-            List of line data to plot, if elements 2D must be of shape [n_points, 2], if elements
-            3D must be of shape [n_points, 3]
+            List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
+            if elements are 2D, interpreted as [y_vals, n_lines]
 
         z_position: list of float or float, optional
-            z-axis position for each line graphic, single value will apply to
-            all line graphics in the stack
+            | if ``float``, single position will be used for all lines
+            | if ``list`` of ``float``, each value will apply to individual lines
 
         thickness: float or list of float, default 2.0
-            thickness of each line in the collection, sinlge value will apply to
-            all line graphics in the stack
+            | if ``float``, single thickness will be used for all lines
+            | if ``list`` of ``float``, each value will apply to the individual lines
 
-        colors: list array or array, default "w"
-            specify color for each line graphic as a list of RGBA arrays or a single
-            RGBA array that will apply to all line graphics in the stack
+        colors: str, RGBA array, list of RGBA array, or list of str, default "w"
+            | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
+            | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
+            | is ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
+            | if ``list`` of ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
         cmap: list of str or str, optional
-            apply colormap to each individual line in the stack instead of passing
-            colors manually, single str will apply same cmap to all lines in the stack,
-            overrides any arguments passed to "colors"
+            | if ``str``, single cmap will be used for all lines
+            | if ``list`` of ``str``, each cmap will apply to the individual lines
+            **Note:** ``cmap`` overrides any arguments passed to ``colors``
+
+        name: str, optional
+            name of the line stack
 
         separation: float, default 10
             space in between each line graphic in the stack
@@ -262,6 +276,13 @@ class LineStack(LineCollection):
 
         kwargs
             passed to LineCollection
+
+        Examples
+        --------
+        .. code-block::python
+
+            from fastplotlib import
+
         """
         super(LineStack, self).__init__(
             data=data,

@@ -22,12 +22,12 @@ class LineSlider(Graphic):
             name: str = None,
     ):
         """
-        Create a line slider
+        Create a horizontal or vertical line slider that is synced to an ipywidget IntSlider
 
         Parameters
         ----------
         orientation: str, default "v"
-            indicates whether slider should be horizontal or vertical in orientation
+            one of "v" - vertical, or "h" - horizontal
 
         x_pos: float, optional
             x-position of slider
