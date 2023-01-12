@@ -10,13 +10,13 @@ from copy import deepcopy
 
 class LineCollection(GraphicCollection, Interaction):
     child_type = LineGraphic
-    feature_events = [
+    feature_events = (
         "data",
         "colors",
         "cmap",
         "thickness",
         "present"
-    ]
+    )
 
     def __init__(
             self,
@@ -34,7 +34,8 @@ class LineCollection(GraphicCollection, Interaction):
 
         Parameters
         ----------
-        data: list of array-like
+
+        data: list of array-like or array
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
 
@@ -49,8 +50,8 @@ class LineCollection(GraphicCollection, Interaction):
         colors: str, RGBA array, list of RGBA array, or list of str, default "w"
             | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
-            | is ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
-            | if ``list`` of ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
+            | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
+            | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
         cmap: list of str or str, optional
             | if ``str``, single cmap will be used for all lines

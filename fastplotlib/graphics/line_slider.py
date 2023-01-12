@@ -28,6 +28,7 @@ class LineSlider(Graphic):
         ----------
         orientation: str, default "v"
             one of "v" - vertical, or "h" - horizontal
+            **Note**: horizontal has not been implemented yet
 
         x_pos: float, optional
             x-position of slider

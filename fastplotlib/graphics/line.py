@@ -8,13 +8,13 @@ from ..utils import make_colors
 
 
 class LineGraphic(Graphic, Interaction):
-    feature_events = [
+    feature_events = (
         "data",
         "colors",
         "cmap",
         "thickness",
         "present"
-    ]
+    )
 
     def __init__(
             self,

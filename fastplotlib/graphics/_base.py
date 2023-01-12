@@ -125,23 +125,29 @@ class Interaction(ABC):
         event_type: str
             can be a pygfx event ("key_down", "key_up","pointer_down", "pointer_move", "pointer_up",
             "pointer_enter", "pointer_leave", "click", "double_click", "wheel", "close", "resize")
-            or appropriate feature event (i.e. colors, data) associated with the graphic (can use
-            ``graphic_instance.feature_events`` to get a list of the valid feature events for the
+            or appropriate feature event (ex. colors, data, etc.) associated with the graphic (can use
+            ``graphic_instance.feature_events`` to get a tuple of the valid feature events for the
             graphic)
         target: Any
             graphic to be linked to
         feature: str
-            feature (i.e. colors, data, visibility) of the target graphic that will change following
+            feature (ex. colors, data, etc.) of the target graphic that will change following
             the event
         new_data: Any
             appropriate data that will be changed in the feature of the target graphic after
             the event occurs
         callback: callable, optional
-            user-specified callable that will handle event, must take in the graphic source ``self``,
-            the ``target`` graphic, event, and ``new_data``
+            user-specified callable that will handle event,
+            the callable must take the following four arguments
+            | ''source'' - this graphic instance
+            | ''target'' - the graphic to be changed following the event
+            | ''event'' - the ''pygfx event'' or ''feature event'' that occurs
+            | ''new_data'' - the appropriate data of the ''target'' that will be changed
         bidirectional: bool, default False
-            if True, links target graphic to change the same ``feature`` with the same ``new_data``
-            following the same event
+            if True, the target graphic is also linked back to this graphic instance using the
+            same arguments
+            For example:
+            .. code-block::python
 
         Returns
         -------
