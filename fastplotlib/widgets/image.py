@@ -662,7 +662,7 @@ class ImageWidget:
     def _process_indices(
             self,
             array: np.ndarray,
-            slice_indices: dict[Union[int, str], int]
+            slice_indices: Dict[Union[int, str], int]
     ) -> np.ndarray:
         """
         Get the 2D array from the given slice indices. If not returning a 2D slice (such as due to window_funcs)
@@ -673,7 +673,7 @@ class ImageWidget:
         array: np.ndarray
             array-like to get a 2D slice from
 
-        slice_indices: dict[int, int]
+        slice_indices: Dict[int, int]
             dict in form of {dimension_index: slice_index}
             For example if an array has shape [1000, 30, 512, 512] corresponding to [t, z, x, y]:
                 To get the 100th timepoint and 3rd z-plane pass:
