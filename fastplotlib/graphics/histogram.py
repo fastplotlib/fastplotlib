@@ -56,7 +56,7 @@ class HistogramGraphic(Graphic):
         else:
             if not set(pre_computed.keys()) == {'hist', 'bin_edges'}:
                 raise ValueError("argument to `pre_computed` must be a `dict` with keys 'hist' and 'bin_edges'")
-            if not all(type(v) is np.ndarray for v in pre_computed.values()):
+            if not all(isinstance(v, np.ndarray) for v in pre_computed.values()):
                 raise ValueError("argument to `pre_computed` must be a `dict` where the values are numpy.ndarray")
             self.hist, self.bin_edges = pre_computed["hist"], pre_computed["bin_edges"]
 
