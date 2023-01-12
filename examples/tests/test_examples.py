@@ -14,13 +14,15 @@ import numpy as np
 import pytest
 import wgpu.gui.offscreen
 
-from examples.tests.testutils import (
-    is_lavapipe,
-    find_examples,
-    ROOT,
-    screenshots_dir,
-    diffs_dir,
-)
+# from .testutils import (
+#     is_lavapipe,
+#     find_examples,
+#     ROOT,
+#     screenshots_dir,
+#     diffs_dir,
+# )
+
+from testutils import is_lavapipe, find_examples, ROOT, screenshots_dir, diffs_dir
 
 
 # run all tests unless they opt-out
@@ -116,7 +118,7 @@ def test_examples_screenshots(
     request.addfinalizer(unload_module)
 
     # render a frame
-    img = example.renderer.target.draw()
+    img = example.plot.renderer.target.draw()
 
     # check if _something_ was rendered
     assert img is not None and img.size > 0
@@ -188,4 +190,4 @@ if __name__ == "__main__":
     os.environ["WGPU_FORCE_OFFSCREEN"] = "true"
     pytest.getoption = lambda x: False
     is_lavapipe = True  # noqa: F811
-    test_examples_screenshots("validate_volume", pytest, None, None)
+    test_examples_screenshots("validate_volume", pytest, None, None, "regenerate_screenshots")

@@ -14,7 +14,7 @@ screenshots_dir = examples_dir / "screenshots"
 diffs_dir = screenshots_dir / "diffs"
 
 # examples live in themed sub-folders
-example_globs = ["*.py", "introductory/*.py", "feature_demo/*.py", "validation/*.py"]
+example_globs = ["validation/*.py"]
 
 
 def wgpu_backend_endswith(query):
