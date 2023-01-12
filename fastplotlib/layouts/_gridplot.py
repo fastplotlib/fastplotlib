@@ -64,7 +64,7 @@ class GridPlot:
         """
         self.shape = shape
 
-        if type(cameras) is str:
+        if isinstance(camera, str):
             if cameras not in valid_cameras:
                 raise ValueError(f"If passing a str, `cameras` must be one of: {valid_cameras}")
             # create the array representing the views for each subplot in the grid
@@ -149,7 +149,7 @@ class GridPlot:
         self._current_iter = None
 
     def __getitem__(self, index: Union[Tuple[int, int], str]):
-        if type(index) == str:
+        if isinstance(index, str):
             for subplot in self._subplots.ravel():
                 if subplot.name == index:
                     return subplot
