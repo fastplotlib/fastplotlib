@@ -69,15 +69,13 @@ Interactive visualization of large imaging datasets in the notebook.
 
 # Installation
 
-Install directly from GitHub using `pip`.
+Install using `pip`.
 
 ```bash
-pip install git+https://github.com/kushalkolar/fastplotlib.git
+pip install fastplotlib
 ```
 
-Note: do not download the version that is currently on PYPI (i.e. don't just do `pip install fastplotlib`, it is outdated (we're waiting for the next release of `pygfx`)
-
-**Installing `simplejpeg` is recommended for faster plotting in notebooks using rfb. You will need C compilers setup on your computer to install it:**
+**Installing `simplejpeg` is recommended for faster plotting in notebooks using remote frame buffer. You will need C compilers to install it:**
 
 ```bash
 pip install simplejpeg
@@ -94,7 +92,7 @@ cd fastplotlib/examples
 jupyter lab
 ```
 
-You will need a GPU that supports Vulkan (iGPUs in CPUs should be fine). Generally if your GPU is from 2017 or later it should support Vulkan. See the section on "Install Vulkan drivers" below for more information.
+**Note:** `fastplotlib` and `pygfx` are fast evolving projects, the version available through pip might be outdated, you will need to follow the "For Development" instructions below if you want the latest features. You can find the release history on pypi here: https://pypi.org/project/fastplotlib/#history 
 
 ### For Development
 
@@ -110,6 +108,8 @@ jupyter lab
 ```
 
 ## Install Vulkan drivers
+
+You will need a GPU that supports Vulkan (integrated GPUs in CPUs are usually fine). Generally if your GPU is from 2017 or later it should support Vulkan.
 
 For more information see: https://github.com/pygfx/wgpu-py#platform-requirements
 
