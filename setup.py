@@ -4,7 +4,7 @@ from pathlib import Path
 
 install_requires = [
     'numpy',
-    'pygfx @ git+https://github.com/pygfx/pygfx.git@main',
+    'pygfx>=0.1.10',
     'jupyterlab',
     'jupyterlab-widgets==1.1.1',
     'ipywidgets<8.0.0',
