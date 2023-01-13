@@ -65,7 +65,7 @@ class GridPlot:
         """
         self.shape = shape
 
-        if isinstance(camera, str):
+        if isinstance(cameras, str):
             if cameras not in valid_cameras:
                 raise ValueError(f"If passing a str, `cameras` must be one of: {valid_cameras}")
             # create the array representing the views for each subplot in the grid
