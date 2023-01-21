@@ -5,6 +5,13 @@ from ...utils import make_colors, get_cmap_texture
 from pygfx import Color
 
 
+def _make_pygfx_colors(colors, n_colors):
+    """parse and make colors array using pyfx.Color"""
+    c = Color(colors)
+    colors_array = np.repeat(np.array([c]), n_colors, axis=0)
+    return colors_array
+
+
 class ColorFeature(GraphicFeatureIndexable):
     @property
     def _buffer(self):
@@ -80,10 +87,15 @@ class ColorFeature(GraphicFeatureIndexable):
                     f"Valid iterable color arguments must be a `tuple` or `list` representing RGBA values or "
                     f"an iterable of `str` with the same length as the number of datapoints."
                 )
+        elif isinstance(colors, str):
+            if colors == "random":
+                data = np.random.rand(n_colors, 4)
+                data[:, -1] = alpha
+            else:
+                data = _make_pygfx_colors(colors, n_colors)
         else:
             # assume it's a single color, use pygfx.Color to parse it
-            c = Color(colors)
-            data = np.repeat(np.array([c]), n_colors, axis=0)
+            data = _make_pygfx_colors(colors, n_colors)
 
         if alpha != 1.0:
             data[:, -1] = alpha
