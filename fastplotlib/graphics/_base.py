@@ -116,7 +116,7 @@ class Interaction(ABC):
             callback: callable = None,
             bidirectional: bool = False
     ):
-        '''
+        """
         Link this graphic to another graphic upon an ``event_type`` to change the ``feature``
         of a ``target`` graphic.
 
@@ -155,10 +155,35 @@ class Interaction(ABC):
 
         Examples
         --------
-        .. code-block::python
+        .. code-block:: python
 
-            from fastplotlib import
-        '''
+            from fastplotlib import Plot
+            import numpy as np
+            # generate data for cosine and sine wave
+            xs = np.linspace(-10, 10, 100)
+            # sine wave
+            ys = np.sin(xs)
+            sine = np.dstack([xs, ys])[0]
+            # cosine wave
+            ys = np.cos(xs) + 5
+            cosine = np.dstack([xs, ys])[0]
+            # instantiate a plot
+            plot = Plot()
+            # create graphics and add them to the plot
+            sine_graphic = plot.add_line(data=sine, thickness=5, colors="magenta")
+            cosine_graphic = plot.add_line(data=cosine, thickness=12, cmap="autumn")
+            # show plot
+            plot.show()
+            # link color change of sine graphic to cosine graphic
+            sine_graphic.link(event_type="colors",
+                        target=cosine_graphic,
+                        feature="colors",
+                        new_data="w",
+                        bidirectional=False)
+            # changing colors of sine graphic at indexes 1-3 to red
+            # changes cosine graphic to white
+            sine_graphic.colors[1:3] = "r"
+        """
         if event_type in PYGFX_EVENTS:
             self.world_object.add_event_handler(self.event_handler, event_type)
 
@@ -169,7 +194,7 @@ class Interaction(ABC):
             else:
                 feature_instance = getattr(self, event_type)
 
-            feature_instance.add_event_handler(self.event_handler)
+            feature_instance.add_event_handler(self._event_handler)
 
         else:
             raise ValueError(f"Invalid event, valid events are: {PYGFX_EVENTS + self.feature_events}")
