@@ -16,6 +16,26 @@ class TextGraphic(Graphic):
             outline_thickness=0,
             name: str = None,
     ):
+        """
+        Create a text Graphic
+
+        Parameters
+        ----------
+        text: str
+            display text
+        position: int tuple, default (0, 0, 0)
+            int tuple indicating location of text in scene
+        size: int, default 10
+            text size
+        face_color: str or array, default "w"
+            str or RGBA array to set the color of the text
+        outline_color: str or array, default "w"
+            str or RGBA array to set the outline color of the text
+        outline_thickness: int, default 0
+            text outline thickness
+        name: str, optional
+            name of graphic, passed to Graphic
+        """
         super(TextGraphic, self).__init__(name=name)
 
         self._world_object = pygfx.Text(

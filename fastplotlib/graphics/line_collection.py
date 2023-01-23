@@ -69,10 +69,28 @@ class LineCollection(GraphicCollection, Interaction):
 
         Examples
         --------
-        .. code-block::python
+        .. code-block:: python
 
-            from fastplotlib import
-
+            from fastplotlib import Plot
+            from fastplotlib.graphics import LineCollection
+            # creating data for sine and cosine waves
+            xs = np.linspace(-10, 10, 100)
+            ys = np.sin(xs)
+            sine = np.dstack([xs, ys])[0]
+            ys = np.cos(xs) + 5
+            cosine = np.dstack([xs, ys])[0]
+            # creating plot
+            plot = Plot()
+            # creating a line collection using the sine and cosine wave data
+            line_collection = LineCollection(data=[sine, cosine], cmap=["Oranges", "Blues"], thickness=20.0)
+            # add graphic to plot
+            plot.add_graphic(line_collection)
+            # show plot
+            plot.show()
+            # change the color of the sine wave to white
+            line_collection[0].colors = "w"
+            # change certain color indexes of the cosine data to red
+            line_collection[1].colors[0:15] = "r"
         """
         super(LineCollection, self).__init__(name)
 
@@ -280,9 +298,7 @@ class LineStack(LineCollection):
 
         Examples
         --------
-        .. code-block::python
 
-            from fastplotlib import
 
         """
         super(LineStack, self).__init__(
