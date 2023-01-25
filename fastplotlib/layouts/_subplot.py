@@ -27,6 +27,30 @@ class Subplot(PlotArea):
             name: str = None,
             **kwargs
     ):
+        """
+        General plot object that comprises ``Gridplot``. Each ``Gridplot`` instance will have [n rows, n columns]
+        of subplots.
+
+        Parameters
+        ----------
+        position: int tuple, optional
+            corresponds to the [row, column] position of the subplot within a ``Gridplot``
+        parent_dims: int tuple, optional
+            dimensions of parent ``PlotArea``, used in determining size of subplot to create ``DockedViewports`` on
+            all sides of the subplot
+        camera: str, default '2d'
+            indicates the kind of pygfx camera that will be instantiated, '2d' uses pygfx ``OrthographicCamera`` and
+            '3d' uses pygfx ``PerspectiveCamera``
+        controller: PanZoomController or OrbitOrthoController, optional
+            ``PanZoomController`` type is used for 2D pan-zoom camera control and ``OrbitController`` type is used for
+            rotating the camera around a center position, used to control the camera
+        canvas: WgpuCanvas, optional
+            provides surface on which a scene will be rendered
+        renderer: WgpuRenderer, optional
+            object used to render scenes using wgpu
+        name: str, optional
+            name of the subplot, will appear as ``TextGraphic`` above the subplot
+        """
         if canvas is None:
             canvas = WgpuCanvas()
 
@@ -104,6 +128,7 @@ class Subplot(PlotArea):
         return graphic
 
     def set_title(self, text: Any):
+        """Adds the name of a subplot to 'top' viewport if defined."""
         if text is None:
             return
 
@@ -120,6 +145,7 @@ class Subplot(PlotArea):
             self.center_title()
 
     def center_title(self):
+        """Centers name of subplot."""
         if self._title_graphic is None:
             raise AttributeError("No title graphic is set")
 
@@ -128,6 +154,7 @@ class Subplot(PlotArea):
         self._title_graphic.world_object.position.y = -3.5
 
     def get_rect(self):
+        """Returns the size of a subplot."""
         row_ix, col_ix = self.position
         width_canvas, height_canvas = self.renderer.logical_size
 
@@ -225,6 +252,7 @@ class Subplot(PlotArea):
             self._animate_funcs_post.remove(func)
 
     def add_graphic(self, graphic, center: bool = True):
+        """Adds a Graphic to the subplot."""
         graphic.world_object.position.z = len(self._graphics)
         super(Subplot, self).add_graphic(graphic, center)
 
@@ -232,12 +260,14 @@ class Subplot(PlotArea):
             self.controller.scale.y = copysign(self.controller.scale.y, -1)
 
     def set_axes_visibility(self, visible: bool):
+        """Toggles axes visibility."""
         if visible:
             self.scene.add(self._axes)
         else:
             self.scene.remove(self._axes)
 
     def set_grid_visibility(self, visible: bool):
+        """Toggles grid visibility."""
         if visible:
             self.scene.add(self._grid)
         else:

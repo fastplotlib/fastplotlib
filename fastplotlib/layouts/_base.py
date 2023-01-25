@@ -22,21 +22,29 @@ class PlotArea:
     ):
         """
         Base class for plot creation and management. ``PlotArea`` is not intended to be instantiated by users
-        but rather to provide functionallity for ``subplots`` in ``gridplots`` and ``single plots``.
+        but rather to provide functionallity for ``subplot`` in ``gridplot`` and single ``plot``.
 
         Parameters
         ----------
         parent: PlotArea
             parent class of subclasses will be a ``PlotArea`` instance
         position: Any
-            typical use will be for ``subplots`` in a ``gridplot``, position would correspond to the row/column
+            typical use will be for ``subplots`` in a ``gridplot``, position would correspond to the ``[row, column]``
             location of the ``subplot`` in its ``gridplot``
-        camera:
-        controller:
-        scene:
-        canvas:
-        renderer:
-        name:
+        camera: pygfx OrthographicCamera or pygfx PerspectiveCamera
+            ``OrthographicCamera`` type is used to visualize 2D content and ``PerspectiveCamera`` type is used to view
+            3D content, used to view the scene
+        controller: pygfx PanZoomController or pygfx OrbitController
+            ``PanZoomController`` type is used for 2D pan-zoom camera control and ``OrbitController`` type is used for
+            rotating the camera around a center position, used to control the camera
+        scene: pygfx Scene
+            represents the root of a scene graph, will have a ``camera`` being controlled by a ``controller``
+        canvas: WgpuCanvas
+            provides surface on which a scene will be rendered
+        renderer: WgpuRenderer
+            object used to render scenes using wgpu
+        name: str, optional
+            name of ``subplot`` or ``plot`` subclass being instantiated
         """
         self._parent: PlotArea = parent
         self._position = position
@@ -116,6 +124,7 @@ class PlotArea:
     # in the future we can think about how to allow changing the controller
     @property
     def controller(self) -> Union[PanZoomController, OrbitController]:
+        """controller used to control camera"""
         return self._controller
 
     @property
