@@ -60,24 +60,27 @@ class Graphic(BaseGraphic):
 
     @property
     def world_object(self) -> WorldObject:
+        """Return the underlying pygfx WorldObject."""
         return self._world_object
 
     @property
     def position(self) -> Vector3:
-        """The position of the graphic"""
+        """The position of the graphic."""
         return self.world_object.position
 
     @property
     def visible(self) -> bool:
+        """Returns the visibility of the pygfx WorldObject."""
         return self.world_object.visible
 
     @visible.setter
     def visible(self, v):
-        """Toggle the visibility of this Graphic"""
+        """Toggle the visibility of this Graphic."""
         self.world_object.visible = v
 
     @property
     def children(self) -> WorldObject:
+        """Return the children of the WorldObject."""
         return self.world_object.children
 
     def __setattr__(self, key, value):
@@ -299,6 +302,7 @@ class GraphicCollection(Graphic):
 
     @property
     def world_object(self) -> Group:
+        """Returns the underling pygfx WorldObject."""
         return self._world_object
 
     @property
@@ -383,9 +387,12 @@ class CollectionIndexer:
 
         Parameters
         ----------
-        parent
-        selection
+        parent: GraphicCollection
+            the GraphicCollection object that is being indexed
+        selection: list of Graphics
+            a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
         selection_indices: Union[list, range]
+            the corresponding indices from the parent GraphicCollection that were selected
         """
         self._parent = parent
         self._selection = selection
@@ -407,6 +414,7 @@ class CollectionIndexer:
 
     @property
     def graphics(self) -> Tuple[Graphic]:
+        """Returns a tuple of the selected graphics."""
         return tuple(self._selection)
 
     def __setattr__(self, key, value):
@@ -432,8 +440,19 @@ class CollectionFeature:
             self,
             parent: GraphicCollection,
             selection: List[Graphic],
-            selection_indices, feature: str
+            selection_indices,
+            feature: str
     ):
+        """
+        parent: GraphicCollection
+            GraphicCollection feature instance that is being indexed
+        selection: list of Graphics
+            a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
+        selection_indices: Union[list, range]
+            the corresponding indices from the parent GraphicCollection that were selected
+        feature: str
+            feature of Graphics in the GraphicCollection being indexed
+        """
         self._selection = selection
         self._selection_indices = selection_indices
         self._feature = feature
@@ -469,14 +488,17 @@ class CollectionFeature:
                 fi._set(value)
 
     def add_event_handler(self, handler: callable):
+        """Adds an event handler to each of the selected Graphics from the parent GraphicCollection"""
         for fi in self._feature_instances:
             fi.add_event_handler(handler)
 
     def remove_event_handler(self, handler: callable):
+        """Removes an event handler from each of the selected Graphics of the parent GraphicCollection"""
         for fi in self._feature_instances:
             fi.remove_event_handler(handler)
 
     def block_events(self, b: bool):
+        """Prevents event handling from occurring."""
         for fi in self._feature_instances:
             fi.block_events(b)
 
