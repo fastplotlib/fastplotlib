@@ -20,6 +20,24 @@ class PlotArea:
             renderer: WgpuRenderer,
             name: str = None,
     ):
+        """
+        Base class for plot creation and management. ``PlotArea`` is not intended to be instantiated by users
+        but rather to provide functionallity for ``subplots`` in ``gridplots`` and ``single plots``.
+
+        Parameters
+        ----------
+        parent: PlotArea
+            parent class of subclasses will be a ``PlotArea`` instance
+        position: Any
+            typical use will be for ``subplots`` in a ``gridplot``, position would correspond to the row/column
+            location of the ``subplot`` in its ``gridplot``
+        camera:
+        controller:
+        scene:
+        canvas:
+        renderer:
+        name:
+        """
         self._parent: PlotArea = parent
         self._position = position
 
