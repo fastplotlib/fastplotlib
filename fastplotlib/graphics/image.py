@@ -77,12 +77,12 @@ class ImageGraphic(Graphic, Interaction):
 
     @property
     def vmin(self) -> float:
-        """Returns the minimum contrast limit."""
+        """Minimum contrast limit."""
         return self.world_object.material.clim[0]
 
     @vmin.setter
     def vmin(self, value: float):
-        """Sets the minimum contrast limit."""
+        """Minimum contrast limit."""
         self.world_object.material.clim = (
             value,
             self.world_object.material.clim[1]
@@ -90,12 +90,12 @@ class ImageGraphic(Graphic, Interaction):
 
     @property
     def vmax(self) -> float:
-        """Returns the maximum contrast limit."""
+        """Maximum contrast limit."""
         return self.world_object.material.clim[1]
 
     @vmax.setter
     def vmax(self, value: float):
-        """Sets the maximum contrast limit."""
+        """Maximum contrast limit."""
         self.world_object.material.clim = (
             self.world_object.material.clim[0],
             value

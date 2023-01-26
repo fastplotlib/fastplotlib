@@ -78,13 +78,13 @@ class LineCollection(GraphicCollection, Interaction):
             ys = np.sin(xs)
             sine = np.dstack([xs, ys])[0]
             ys = np.sin(xs) + 10
-            ys = np.cos(xs) + 5
             sine2 = np.dstack([xs, ys])[0]
+            ys = np.cos(xs) + 5
             cosine = np.dstack([xs, ys])[0]
             # creating plot
             plot = Plot()
             # creating a line collection using the sine and cosine wave data
-            line_collection = LineCollection(data=[sine, cosine, sine2], cmap=["Oranges", "Blues"], thickness=20.0)
+            line_collection = LineCollection(data=[sine, cosine, sine2], cmap=["Oranges", "Blues", "Reds"], thickness=20.0)
             # add graphic to plot
             plot.add_graphic(line_collection)
             # show plot
@@ -307,7 +307,30 @@ class LineStack(LineCollection):
 
         Examples
         --------
+        .. code-block:: python
 
+            from fastplotlib import Plot
+            from fastplotlib.graphics import LineStack
+            # create line data
+            xs = np.linspace(-10, 10, 100)
+            ys = np.sin(xs)
+            sine = np.dstack([xs, ys])[0]
+            ys = np.sin(xs) + 10
+            sine2 = np.dstack([xs, ys])[0]
+            ys = np.cos(xs) + 5
+            cosine = np.dstack([xs, ys])[0]
+            # create line stack
+            line_stack = LineStack(data=[sine, cosine, sine2], cmap=["Oranges", "Blues", "Reds"], thickness=20.0)
+            # add graphic to plot
+            plot.add_graphic(line_stack)
+            # show plot
+            plot.show()
+            # change the color of the sine wave to white
+            line_stack[0].colors = "w"
+            # change certain color indexes of the cosine data to red
+            line_stack[1].colors[0:15] = "r"
+            # can also do slicing
+            line_stack[2].colors[35:70] = "magenta"
 
         """
         super(LineStack, self).__init__(

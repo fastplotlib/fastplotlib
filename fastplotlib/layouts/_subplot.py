@@ -28,7 +28,7 @@ class Subplot(PlotArea):
             **kwargs
     ):
         """
-        General plot object that comprises ``Gridplot``. Each ``Gridplot`` instance will have [n rows, n columns]
+        General plot object that composes a ``Gridplot``. Each ``Gridplot`` instance will have [n rows, n columns]
         of subplots.
 
         Parameters
@@ -36,8 +36,7 @@ class Subplot(PlotArea):
         position: int tuple, optional
             corresponds to the [row, column] position of the subplot within a ``Gridplot``
         parent_dims: int tuple, optional
-            dimensions of parent ``PlotArea``, used in determining size of subplot to create ``DockedViewports`` on
-            all sides of the subplot
+            dimensions of the parent ``GridPlot``
         camera: str, default '2d'
             indicates the kind of pygfx camera that will be instantiated, '2d' uses pygfx ``OrthographicCamera`` and
             '3d' uses pygfx ``PerspectiveCamera``
@@ -128,7 +127,7 @@ class Subplot(PlotArea):
         return graphic
 
     def set_title(self, text: Any):
-        """Adds the name of a subplot to 'top' viewport if defined."""
+        """Sets the name of a subplot to 'top' viewport if defined."""
         if text is None:
             return
 
@@ -154,7 +153,7 @@ class Subplot(PlotArea):
         self._title_graphic.world_object.position.y = -3.5
 
     def get_rect(self):
-        """Returns the size of a subplot."""
+        """Returns the bounding box that defines the Subplot within the canvas."""
         row_ix, col_ix = self.position
         width_canvas, height_canvas = self.renderer.logical_size
 

@@ -38,7 +38,7 @@ class PlotArea:
             ``PanZoomController`` type is used for 2D pan-zoom camera control and ``OrbitController`` type is used for
             rotating the camera around a center position, used to control the camera
         scene: pygfx Scene
-            represents the root of a scene graph, will have a ``camera`` being controlled by a ``controller``
+            represents the root of a scene graph, will be viewed by the given ``camera``
         canvas: WgpuCanvas
             provides surface on which a scene will be rendered
         renderer: WgpuRenderer

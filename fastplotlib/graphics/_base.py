@@ -60,22 +60,23 @@ class Graphic(BaseGraphic):
 
     @property
     def world_object(self) -> WorldObject:
-        """Return the underlying pygfx WorldObject."""
+        """Associated pygfx WorldObject."""
         return self._world_object
 
     @property
     def position(self) -> Vector3:
-        """The position of the graphic."""
+        """The position of the graphic. You can access or change
+        using position.x, position.y, etc."""
         return self.world_object.position
 
     @property
     def visible(self) -> bool:
-        """Returns the visibility of the pygfx WorldObject."""
+        """Access or change the visibility."""
         return self.world_object.visible
 
     @visible.setter
-    def visible(self, v):
-        """Toggle the visibility of this Graphic."""
+    def visible(self, v) -> bool:
+        """Access or change the visibility."""
         self.world_object.visible = v
 
     @property
@@ -156,36 +157,6 @@ class Interaction(ABC):
         -------
         None
 
-        Examples
-        --------
-        .. code-block:: python
-
-            from fastplotlib import Plot
-            import numpy as np
-            # generate data for cosine and sine wave
-            xs = np.linspace(-10, 10, 100)
-            # sine wave
-            ys = np.sin(xs)
-            sine = np.dstack([xs, ys])[0]
-            # cosine wave
-            ys = np.cos(xs) + 5
-            cosine = np.dstack([xs, ys])[0]
-            # instantiate a plot
-            plot = Plot()
-            # create graphics and add them to the plot
-            sine_graphic = plot.add_line(data=sine, thickness=5, colors="magenta")
-            cosine_graphic = plot.add_line(data=cosine, thickness=12, cmap="autumn")
-            # show plot
-            plot.show()
-            # link color change of sine graphic to cosine graphic
-            sine_graphic.link(event_type="colors",
-                        target=cosine_graphic,
-                        feature="colors",
-                        new_data="w",
-                        bidirectional=False)
-            # changing colors of sine graphic at indexes 1-3 to red
-            # changes cosine graphic to white
-            sine_graphic.colors[1:3] = "r"
         """
         if event_type in PYGFX_EVENTS:
             self.world_object.add_event_handler(self.event_handler, event_type)
@@ -498,7 +469,7 @@ class CollectionFeature:
             fi.remove_event_handler(handler)
 
     def block_events(self, b: bool):
-        """Prevents event handling from occurring."""
+        """Blocks event handling from occurring."""
         for fi in self._feature_instances:
             fi.block_events(b)
 
