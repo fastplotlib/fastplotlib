@@ -8,10 +8,10 @@ from ..utils import quick_min_max
 
 
 class ImageGraphic(Graphic, Interaction):
-    feature_events = [
+    feature_events = (
         "data",
         "cmap",
-    ]
+    )
 
     def __init__(
             self,
@@ -25,11 +25,12 @@ class ImageGraphic(Graphic, Interaction):
     ):
         """
         Create an Image Graphic
+
         Parameters
         ----------
         data: array-like, must be 2-dimensional
-            | array-like, usually numpy.ndarray, must support ``memoryview()``
-            | Tensorflow Tensors also work _I think_, but not thoroughly tested
+            array-like, usually numpy.ndarray, must support ``memoryview()``
+            Tensorflow Tensors also work **probably**, but not thoroughly tested
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
         vmax: int, optional
@@ -42,9 +43,11 @@ class ImageGraphic(Graphic, Interaction):
             additional arguments passed to Graphic
         kwargs:
             additional keyword arguments passed to Graphic
+
         Examples
         --------
         .. code-block:: python
+
             from fastplotlib import Plot
             # create a `Plot` instance
             plot = Plot()
@@ -74,10 +77,12 @@ class ImageGraphic(Graphic, Interaction):
 
     @property
     def vmin(self) -> float:
+        """Minimum contrast limit."""
         return self.world_object.material.clim[0]
 
     @vmin.setter
     def vmin(self, value: float):
+        """Minimum contrast limit."""
         self.world_object.material.clim = (
             value,
             self.world_object.material.clim[1]
@@ -85,10 +90,12 @@ class ImageGraphic(Graphic, Interaction):
 
     @property
     def vmax(self) -> float:
+        """Maximum contrast limit."""
         return self.world_object.material.clim[1]
 
     @vmax.setter
     def vmax(self, value: float):
+        """Maximum contrast limit."""
         self.world_object.material.clim = (
             self.world_object.material.clim[0],
             value

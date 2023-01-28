@@ -60,24 +60,28 @@ class Graphic(BaseGraphic):
 
     @property
     def world_object(self) -> WorldObject:
+        """Associated pygfx WorldObject."""
         return self._world_object
 
     @property
     def position(self) -> Vector3:
-        """The position of the graphic"""
+        """The position of the graphic. You can access or change
+        using position.x, position.y, etc."""
         return self.world_object.position
 
     @property
     def visible(self) -> bool:
+        """Access or change the visibility."""
         return self.world_object.visible
 
     @visible.setter
-    def visible(self, v):
-        """Toggle the visibility of this Graphic"""
+    def visible(self, v) -> bool:
+        """Access or change the visibility."""
         self.world_object.visible = v
 
     @property
     def children(self) -> WorldObject:
+        """Return the children of the WorldObject."""
         return self.world_object.children
 
     def __setattr__(self, key, value):
@@ -116,6 +120,44 @@ class Interaction(ABC):
             callback: callable = None,
             bidirectional: bool = False
     ):
+        """
+        Link this graphic to another graphic upon an ``event_type`` to change the ``feature``
+        of a ``target`` graphic.
+
+        Parameters
+        ----------
+        event_type: str
+            can be a pygfx event ("key_down", "key_up","pointer_down", "pointer_move", "pointer_up",
+            "pointer_enter", "pointer_leave", "click", "double_click", "wheel", "close", "resize")
+            or appropriate feature event (ex. colors, data, etc.) associated with the graphic (can use
+            ``graphic_instance.feature_events`` to get a tuple of the valid feature events for the
+            graphic)
+        target: Any
+            graphic to be linked to
+        feature: str
+            feature (ex. colors, data, etc.) of the target graphic that will change following
+            the event
+        new_data: Any
+            appropriate data that will be changed in the feature of the target graphic after
+            the event occurs
+        callback: callable, optional
+            user-specified callable that will handle event,
+            the callable must take the following four arguments
+            | ''source'' - this graphic instance
+            | ''target'' - the graphic to be changed following the event
+            | ''event'' - the ''pygfx event'' or ''feature event'' that occurs
+            | ''new_data'' - the appropriate data of the ''target'' that will be changed
+        bidirectional: bool, default False
+            if True, the target graphic is also linked back to this graphic instance using the
+            same arguments
+            For example:
+            .. code-block::python
+
+        Returns
+        -------
+        None
+
+        """
         if event_type in PYGFX_EVENTS:
             self.world_object.add_event_handler(self.event_handler, event_type)
 
@@ -126,7 +168,7 @@ class Interaction(ABC):
             else:
                 feature_instance = getattr(self, event_type)
 
-            feature_instance.add_event_handler(self.event_handler)
+            feature_instance.add_event_handler(self._event_handler)
 
         else:
             raise ValueError(f"Invalid event, valid events are: {PYGFX_EVENTS + self.feature_events}")
@@ -159,7 +201,8 @@ class Interaction(ABC):
                                      # this instance .link(), and then it will happen again etc.
             )
 
-    def event_handler(self, event):
+    def _event_handler(self, event):
+        """Handles the event after it occurs when two graphic have been linked together."""
         if event.type in self.registered_callbacks.keys():
             for target_info in self.registered_callbacks[event.type]:
                 if target_info.callback_function is not None:
@@ -230,6 +273,7 @@ class GraphicCollection(Graphic):
 
     @property
     def world_object(self) -> Group:
+        """Returns the underling pygfx WorldObject."""
         return self._world_object
 
     @property
@@ -314,9 +358,12 @@ class CollectionIndexer:
 
         Parameters
         ----------
-        parent
-        selection
+        parent: GraphicCollection
+            the GraphicCollection object that is being indexed
+        selection: list of Graphics
+            a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
         selection_indices: Union[list, range]
+            the corresponding indices from the parent GraphicCollection that were selected
         """
         self._parent = parent
         self._selection = selection
@@ -338,6 +385,7 @@ class CollectionIndexer:
 
     @property
     def graphics(self) -> Tuple[Graphic]:
+        """Returns a tuple of the selected graphics."""
         return tuple(self._selection)
 
     def __setattr__(self, key, value):
@@ -363,8 +411,19 @@ class CollectionFeature:
             self,
             parent: GraphicCollection,
             selection: List[Graphic],
-            selection_indices, feature: str
+            selection_indices,
+            feature: str
     ):
+        """
+        parent: GraphicCollection
+            GraphicCollection feature instance that is being indexed
+        selection: list of Graphics
+            a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
+        selection_indices: Union[list, range]
+            the corresponding indices from the parent GraphicCollection that were selected
+        feature: str
+            feature of Graphics in the GraphicCollection being indexed
+        """
         self._selection = selection
         self._selection_indices = selection_indices
         self._feature = feature
@@ -400,14 +459,17 @@ class CollectionFeature:
                 fi._set(value)
 
     def add_event_handler(self, handler: callable):
+        """Adds an event handler to each of the selected Graphics from the parent GraphicCollection"""
         for fi in self._feature_instances:
             fi.add_event_handler(handler)
 
     def remove_event_handler(self, handler: callable):
+        """Removes an event handler from each of the selected Graphics of the parent GraphicCollection"""
         for fi in self._feature_instances:
             fi.remove_event_handler(handler)
 
     def block_events(self, b: bool):
+        """Blocks event handling from occurring."""
         for fi in self._feature_instances:
             fi.block_events(b)
 

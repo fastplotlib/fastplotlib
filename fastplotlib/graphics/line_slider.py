@@ -21,6 +21,36 @@ class LineSlider(Graphic):
             color: Any = "w",
             name: str = None,
     ):
+        """
+        Create a horizontal or vertical line slider that is synced to an ipywidget IntSlider
+
+        Parameters
+        ----------
+        orientation: str, default "v"
+            one of "v" - vertical, or "h" - horizontal
+            **Note**: horizontal has not been implemented yet
+
+        x_pos: float, optional
+            x-position of slider
+
+        y_pos: float, optional
+            y-position of slider
+
+        bounds: 2-element int tuple, optional
+            set length of slider by bounding it between two x-pos or two y-pos
+
+        slider: IntSlider, optional
+            pygfx slider to handle event for slider
+
+        thickness: float, default 2.5
+            thickness of the slider
+
+        color: Any, default "w"
+            value to set the color of the slider
+
+        name: str, optional
+            name of line slider
+        """
         if orientation == "v":
             if x_pos is None:
                 raise ValueError("Must pass `x_pos` if orientation is 'v'")
