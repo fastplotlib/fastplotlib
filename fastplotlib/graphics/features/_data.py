@@ -96,8 +96,11 @@ class ImageDataFeature(GraphicFeatureIndexable):
     """
 
     def __init__(self, parent, data: Any):
-        if data.ndim != 2:
-            raise ValueError("`data.ndim !=2`, you must pass only a 2D array to an Image graphic")
+        if data.ndim not in (2, 3):
+            raise ValueError(
+                "`data.ndim` must be 2 or 3, ImageGraphic data shape must be "
+                "``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``"
+            )
 
         data = to_float32(data)
         super(ImageDataFeature, self).__init__(parent, data)
