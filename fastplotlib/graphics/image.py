@@ -28,15 +28,16 @@ class ImageGraphic(Graphic, Interaction):
 
         Parameters
         ----------
-        data: array-like, must be 2-dimensional
+        data: array-like
             array-like, usually numpy.ndarray, must support ``memoryview()``
             Tensorflow Tensors also work **probably**, but not thoroughly tested
+            | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
-        cmap: str, optional, default "nearest"
-            colormap to use to display the image data, default is ``"plasma"``
+        cmap: str, optional, default "plasma"
+            colormap to use to display the image data, ignored if data is RGB
         filter: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
         args:
@@ -66,13 +67,23 @@ class ImageGraphic(Graphic, Interaction):
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
 
-        self.cmap = ImageCmapFeature(self, cmap)
-
         texture_view = pygfx.Texture(self.data(), dim=2).get_view(filter=filter)
 
+        geometry = pygfx.Geometry(grid=texture_view)
+
+        # if data is RGB
+        if self.data().ndim == 3:
+            self.cmap = None
+            material = pygfx.ImageBasicMaterial(clim=(vmin, vmax))
+
+        # if data is just 2D without color information, use colormap LUT
+        else:
+            self.cmap = ImageCmapFeature(self, cmap)
+            material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap())
+
         self._world_object: pygfx.Image = pygfx.Image(
-            pygfx.Geometry(grid=texture_view),
-            pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap())
+            geometry,
+            material
         )
 
     @property
