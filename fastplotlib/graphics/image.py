@@ -36,8 +36,8 @@ class ImageGraphic(Graphic, Interaction):
             minimum value for color scaling, calculated from data if not provided
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
-        cmap: str, optional, default "nearest"
-            colormap to use to display the image data, default is ``"plasma"``
+        cmap: str, optional, default "plasma"
+            colormap to use to display the image data, ignored if data is RGB
         filter: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
         args:
