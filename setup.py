@@ -6,8 +6,6 @@ install_requires = [
     'numpy',
     'pygfx>=0.1.10',
     'jupyterlab',
-    'jupyterlab-widgets==1.1.1',
-    'ipywidgets<8.0.0',
     'jupyter-rfb',
 ]
 
