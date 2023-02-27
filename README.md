@@ -117,7 +117,7 @@ jupyter lab
 
 You will need a GPU that supports Vulkan (integrated GPUs in CPUs are usually fine). Generally if your GPU is from 2017 or later it should support Vulkan.
 
-For more information see: https://github.com/pygfx/wgpu-py#platform-requirements
+For more information see: https://wgpu-py.readthedocs.io/en/stable/start.html#platform-requirements
 
 ### Windows:
 Vulkan should be installed by default on Windows 11, but you will need to install your GPU manufacturer's driver package (Nvidia or AMD). If you have an integrated GPU within your CPU, you might still need to install a driver package too, check your CPU manufacturer's info. We recommend installing C compilers so that you can install `simplejpeg` which improves remote frame buffer performance in notebooks.
