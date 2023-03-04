@@ -255,9 +255,6 @@ class Subplot(PlotArea):
         graphic.world_object.position.z = len(self._graphics)
         super(Subplot, self).add_graphic(graphic, center)
 
-        if isinstance(graphic, graphics.HeatmapGraphic):
-            self.controller.scale.y = copysign(self.controller.scale.y, -1)
-
     def set_axes_visibility(self, visible: bool):
         """Toggles axes visibility."""
         if visible:

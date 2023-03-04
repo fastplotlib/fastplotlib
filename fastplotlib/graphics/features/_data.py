@@ -3,14 +3,7 @@ from typing import *
 import numpy as np
 from pygfx import Buffer, Texture
 
-from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent
-
-
-def to_float32(array):
-    if isinstance(array, np.ndarray):
-        return array.astype(np.float32, copy=False)
-
-    return array
+from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent, to_gpu_supported_dtype
 
 
 class PointsDataFeature(GraphicFeatureIndexable):
@@ -102,7 +95,7 @@ class ImageDataFeature(GraphicFeatureIndexable):
                 "``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``"
             )
 
-        data = to_float32(data)
+        data = to_gpu_supported_dtype(data)
         super(ImageDataFeature, self).__init__(parent, data)
 
     @property
@@ -114,7 +107,7 @@ class ImageDataFeature(GraphicFeatureIndexable):
 
     def __setitem__(self, key, value):
         # make sure float32
-        value = to_float32(value)
+        value = to_gpu_supported_dtype(value)
 
         self._buffer.data[key] = value
         self._update_range(key)
@@ -125,6 +118,50 @@ class ImageDataFeature(GraphicFeatureIndexable):
 
     def _update_range(self, key):
         self._buffer.update_range((0, 0, 0), size=self._buffer.size)
+
+    def _feature_changed(self, key, new_data):
+        if key is not None:
+            key = cleanup_slice(key, self._upper_bound)
+        if isinstance(key, int):
+            indices = [key]
+        elif isinstance(key, slice):
+            indices = range(key.start, key.stop, key.step)
+        elif key is None:
+            indices = None
+
+        pick_info = {
+            "index": indices,
+            "world_object": self._parent.world_object,
+            "new_data": new_data
+        }
+
+        event_data = FeatureEvent(type="data", pick_info=pick_info)
+
+        self._call_event_handlers(event_data)
+
+
+class HeatmapDataFeature(ImageDataFeature):
+    @property
+    def _buffer(self) -> List[Texture]:
+        return [img.geometry.grid.texture for img in self._parent.world_object.children]
+
+    def __getitem__(self, item):
+        return self._data[item]
+
+    def __setitem__(self, key, value):
+        # make sure supported type, not float64 etc.
+        value = to_gpu_supported_dtype(value)
+
+        self._data[key] = value
+        self._update_range(key)
+
+        # avoid creating dicts constantly if there are no events to handle
+        if len(self._event_handlers) > 0:
+            self._feature_changed(key, value)
+
+    def _update_range(self, key):
+        for buffer in self._buffer:
+            buffer.update_range((0, 0, 0), size=buffer.size)
 
     def _feature_changed(self, key, new_data):
         if key is not None:
