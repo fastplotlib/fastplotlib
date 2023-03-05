@@ -25,6 +25,8 @@ class PointsDataFeature(GraphicFeatureIndexable):
     def _fix_data(self, data, parent):
         graphic_type = parent.__class__.__name__
 
+        data = to_gpu_supported_dtype(data)
+
         if data.ndim == 1:
             # for scatter if we receive just 3 points in a 1d array, treat it as just a single datapoint
             # this is different from fix_data for LineGraphic since there we assume that a 1d array
@@ -32,14 +34,14 @@ class PointsDataFeature(GraphicFeatureIndexable):
             if graphic_type == "ScatterGraphic":
                 data = np.array([data])
             elif graphic_type == "LineGraphic":
-                data = np.dstack([np.arange(data.size), data])[0].astype(np.float32)
+                data = np.dstack([np.arange(data.size, dtype=data.dtype), data])[0]
 
         if data.shape[1] != 3:
             if data.shape[1] != 2:
                 raise ValueError(f"Must pass 1D, 2D or 3D data to {graphic_type}")
 
             # zeros for z
-            zs = np.zeros(data.shape[0], dtype=np.float32)
+            zs = np.zeros(data.shape[0], dtype=data.dtype)
 
             data = np.dstack([data[:, 0], data[:, 1], zs])[0]
 

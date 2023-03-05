@@ -20,6 +20,9 @@ supported_dtypes = [
 
 
 def to_gpu_supported_dtype(array):
+    """
+    If ``array`` is a numpy array, converts it to a supported type. GPUs don't support 64 bit dtypes.
+    """
     if isinstance(array, np.ndarray):
         if array.dtype not in supported_dtypes:
             if np.issubdtype(array.dtype, np.integer):
@@ -69,10 +72,8 @@ class GraphicFeature(ABC):
 
         """
         self._parent = parent
-        if isinstance(data, np.ndarray):
-            data = to_gpu_supported_dtype(data)
 
-        self._data = data
+        self._data = to_gpu_supported_dtype(data)
 
         self._collection_index = collection_index
         self._event_handlers = list()
