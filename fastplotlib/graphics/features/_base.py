@@ -8,6 +8,9 @@ from pygfx import Buffer
 
 
 supported_dtypes = [
+    np.uint8,
+    np.uint16,
+    np.uint32,
     np.int8,
     np.int16,
     np.int32,
