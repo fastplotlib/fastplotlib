@@ -206,7 +206,7 @@ class CmapFeature(ColorFeature):
 
         n_colors = len(range(key.start, key.stop, key.step))
 
-        colors = make_colors(n_colors, cmap=value)
+        colors = make_colors(n_colors, cmap=value).astype(self._data.dtype)
         super(CmapFeature, self).__setitem__(key, colors)
 
 
