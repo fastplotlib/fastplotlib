@@ -238,3 +238,16 @@ class ImageCmapFeature(GraphicFeature):
         event_data = FeatureEvent(type="cmap", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
+
+
+class HeatmapCmapFeature(ImageCmapFeature):
+    """
+    Colormap for HeatmapGraphic
+    """
+
+    def _set(self, cmap_name: str):
+        self._parent._material.map.texture.data[:] = make_colors(256, cmap_name)
+        self._parent._material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
+        self.name = cmap_name
+
+        self._feature_changed(key=None, new_data=self.name)

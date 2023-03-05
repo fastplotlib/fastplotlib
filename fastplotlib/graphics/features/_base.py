@@ -7,6 +7,33 @@ import numpy as np
 from pygfx import Buffer
 
 
+supported_dtypes = [
+    np.uint8,
+    np.uint16,
+    np.uint32,
+    np.int8,
+    np.int16,
+    np.int32,
+    np.float16,
+    np.float32
+]
+
+
+def to_gpu_supported_dtype(array):
+    if isinstance(array, np.ndarray):
+        if array.dtype not in supported_dtypes:
+            if np.issubdtype(array.dtype, np.integer):
+                warn(f"converting {array.dtype} array to int32")
+                return array.astype(np.int32)
+            elif np.issubdtype(array.dtype, np.floating):
+                warn(f"converting {array.dtype} array to float32")
+                return array.astype(np.float32, copy=False)
+            else:
+                raise TypeError("Unsupported type, supported array types must be int or float dtypes")
+
+    return array
+
+
 class FeatureEvent:
     """
     type: <feature_name>, example: "colors"
@@ -43,7 +70,7 @@ class GraphicFeature(ABC):
         """
         self._parent = parent
         if isinstance(data, np.ndarray):
-            data = data.astype(np.float32)
+            data = to_gpu_supported_dtype(data)
 
         self._data = data
 
@@ -227,3 +254,4 @@ class GraphicFeatureIndexable(GraphicFeature):
                     self._buffer.update_range(ix, size=1)
         else:
             raise TypeError("must pass int or slice to update range")
+
