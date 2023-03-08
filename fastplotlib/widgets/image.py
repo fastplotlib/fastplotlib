@@ -170,6 +170,7 @@ class ImageWidget:
             vmin_vmax_sliders: bool = False,
             grid_shape: Tuple[int, int] = None,
             names: List[str] = None,
+            grid_plot_kwargs: dict = None,
             **kwargs
     ):
         """
@@ -471,12 +472,12 @@ class ImageWidget:
 
             if vmin_vmax_sliders:
                 data_range = np.ptp(minmax)
-                data_range_30p = np.ptp(minmax) * 0.3
+                data_range_40p = np.ptp(minmax) * 0.3
 
                 minmax_slider = FloatRangeSlider(
                     value=minmax,
-                    min=minmax[0] - data_range_30p,
-                    max=minmax[1] + data_range_30p,
+                    min=minmax[0] - data_range_40p,
+                    max=minmax[1] + data_range_40p,
                     step=data_range / 150,
                     description=f"min-max",
                     readout=True,
@@ -494,11 +495,15 @@ class ImageWidget:
                 kwargs["vmin"], kwargs["vmax"] = minmax
 
             frame = self._process_indices(self.data[0], slice_indices=self._current_index)
+            frame = self._process_frame_apply(frame, 0)
 
             self.image_graphics: List[ImageGraphic] = [self.plot.add_image(data=frame, name="image", **kwargs)]
 
         elif self._plot_type == "grid":
-            self._plot: GridPlot = GridPlot(shape=grid_shape, controllers="sync")
+            if grid_plot_kwargs is None:
+                grid_plot_kwargs = {"controllers": "sync"}
+
+            self._plot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs)
 
             self.image_graphics = list()
             for data_ix, (d, subplot) in enumerate(zip(self.data, self.plot)):
@@ -513,12 +518,12 @@ class ImageWidget:
 
                 if vmin_vmax_sliders:
                     data_range = np.ptp(minmax)
-                    data_range_30p = np.ptp(minmax) * 0.4
+                    data_range_40p = np.ptp(minmax) * 0.4
 
                     minmax_slider = FloatRangeSlider(
                         value=minmax,
-                        min=minmax[0] - data_range_30p,
-                        max=minmax[1] + data_range_30p,
+                        min=minmax[0] - data_range_40p,
+                        max=minmax[1] + data_range_40p,
                         step=data_range / 150,
                         description=f"mm: {name_slider}",
                         readout=True,
@@ -539,6 +544,7 @@ class ImageWidget:
                     _kwargs = kwargs
 
                 frame = self._process_indices(d, slice_indices=self._current_index)
+                frame = self._process_frame_apply(frame, data_ix)
                 ig = ImageGraphic(frame, name="image", **_kwargs)
                 subplot.add_graphic(ig)
                 subplot.name = name
@@ -767,10 +773,16 @@ class ImageWidget:
             return indices_dim
 
     def _process_frame_apply(self, array, data_ix) -> np.ndarray:
+        if callable(self.frame_apply):
+            return self.frame_apply(array)
+
         if data_ix not in self.frame_apply.keys():
             return array
-        if self.frame_apply[data_ix] is not None:
+
+        elif self.frame_apply[data_ix] is not None:
             return self.frame_apply[data_ix](array)
+
+        return array
 
     def _slider_value_changed(
             self,
@@ -800,6 +812,32 @@ class ImageWidget:
 
         for mm in self.vmin_vmax_sliders:
             mm.layout = Layout(width=f"{w}px")
+
+    def _get_vmin_vmax_range(self, data: np.ndarray) -> Tuple[int, int]:
+        minmax = quick_min_max(data)
+
+        data_range = np.ptp(minmax)
+        data_range_40p = np.ptp(minmax) * 0.4
+
+        _range = (
+            minmax,
+            data_range,
+            minmax[0] - data_range_40p,
+            minmax[1] + data_range_40p
+        )
+
+        return _range
+
+    def reset_vmin_vmax(self):
+        """
+        Reset the vmin and vmax w.r.t. the currently displayed image(s)
+        """
+        for i, ig in enumerate(self.image_graphics):
+            mm = self._get_vmin_vmax_range(ig.data())
+            self.vmin_vmax_sliders[i].min = mm[2]
+            self.vmin_vmax_sliders[i].max = mm[3]
+            self.vmin_vmax_sliders[i].step = mm[1] / 150
+            self.vmin_vmax_sliders[i].value = mm[0]
 
     def show(self):
         """
