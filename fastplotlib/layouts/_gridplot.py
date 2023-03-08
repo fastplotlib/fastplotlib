@@ -71,8 +71,9 @@ class GridPlot:
             # create the array representing the views for each subplot in the grid
             cameras = np.array([cameras] * self.shape[0] * self.shape[1]).reshape(self.shape)
 
-        if controllers == "sync":
-            controllers = np.zeros(self.shape[0] * self.shape[1], dtype=int).reshape(self.shape)
+        if isinstance(controllers, str):
+            if controllers == "sync":
+                controllers = np.zeros(self.shape[0] * self.shape[1], dtype=int).reshape(self.shape)
 
         if controllers is None:
             controllers = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
@@ -82,13 +83,31 @@ class GridPlot:
         if controllers.shape != self.shape:
             raise ValueError
 
+        self._controllers = np.empty(shape=cameras.shape, dtype=object)
+
         cameras = to_array(cameras)
 
         if cameras.shape != self.shape:
             raise ValueError
 
-        if not np.all(np.sort(np.unique(controllers)) == np.arange(np.unique(controllers).size)):
-            raise ValueError("controllers must be consecutive integers")
+        # create controllers if the arguments were integers
+        if np.issubdtype(controllers.dtype, np.integer):
+            if not np.all(np.sort(np.unique(controllers)) == np.arange(np.unique(controllers).size)):
+                raise ValueError("controllers must be consecutive integers")
+
+            for controller in np.unique(controllers):
+                cam = np.unique(cameras[controllers == controller])
+                if cam.size > 1:
+                    raise ValueError(
+                        f"Controller id: {controller} has been assigned to multiple different camera types")
+
+                self._controllers[controllers == controller] = create_controller(cam[0])
+        # else assume it's a single pygfx.Controller instance or a list of controllers
+        else:
+            if isinstance(controllers, pygfx.Controller):
+                self._controllers = np.array([controllers] * shape[0] * shape[1]).reshape(shape)
+            else:
+                self._controllers = np.array(controllers).reshape(shape)
 
         if canvas is None:
             canvas = WgpuCanvas()
@@ -111,18 +130,9 @@ class GridPlot:
         self._subplots: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
         # self.viewports: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
 
-        self._controllers: List[pygfx.PanZoomController] = [
-            pygfx.PanZoomController() for i in range(np.unique(controllers).size)
-        ]
-
-        self._controllers = np.empty(shape=cameras.shape, dtype=object)
-
-        for controller in np.unique(controllers):
-            cam = np.unique(cameras[controllers == controller])
-            if cam.size > 1:
-                raise ValueError(f"Controller id: {controller} has been assigned to multiple different camera types")
-
-            self._controllers[controllers == controller] = create_controller(cam[0])
+        # self._controllers: List[pygfx.PanZoomController] = [
+        #     pygfx.PanZoomController() for i in range(np.unique(controllers).size)
+        # ]
 
         for i, j in self._get_iterator():
             position = (i, j)
