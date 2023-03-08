@@ -228,6 +228,9 @@ class ImageWidget:
         grid_shape: Optional[Tuple[int, int]]
             manually provide the shape for a gridplot, otherwise a square gridplot is approximated.
 
+        grid_plot_kwargs: dict, optional
+            passed to `GridPlot`
+
         names: Optional[str]
             gives names to the subplots
 
