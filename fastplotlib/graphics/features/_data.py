@@ -108,6 +108,9 @@ class ImageDataFeature(GraphicFeatureIndexable):
         """Update the GPU with the buffer"""
         self._update_range(None)
 
+    def __call__(self, *args, **kwargs):
+        return self.buffer.data
+
     def __getitem__(self, item):
         return self.buffer.data[item]
 
@@ -158,6 +161,9 @@ class HeatmapDataFeature(ImageDataFeature):
 
     def __getitem__(self, item):
         return self._data[item]
+
+    def __call__(self, *args, **kwargs):
+        return self.buffer.data
 
     def __setitem__(self, key, value):
         # make sure supported type, not float64 etc.
