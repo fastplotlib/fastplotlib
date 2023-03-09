@@ -1,7 +1,7 @@
 from typing import *
 
 import numpy as np
-from pygfx import Buffer, Texture
+from pygfx import Buffer, Texture, TextureView
 
 from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent, to_gpu_supported_dtype
 
@@ -16,11 +16,11 @@ class PointsDataFeature(GraphicFeatureIndexable):
         super(PointsDataFeature, self).__init__(parent, data, collection_index=collection_index)
 
     @property
-    def _buffer(self) -> Buffer:
+    def buffer(self) -> Buffer:
         return self._parent.world_object.geometry.positions
 
     def __getitem__(self, item):
-        return self._buffer.data[item]
+        return self.buffer.data[item]
 
     def _fix_data(self, data, parent):
         graphic_type = parent.__class__.__name__
@@ -54,7 +54,7 @@ class PointsDataFeature(GraphicFeatureIndexable):
         # otherwise assume that they have the right shape
         # numpy will throw errors if it can't broadcast
 
-        self._buffer.data[key] = value
+        self.buffer.data[key] = value
         self._update_range(key)
         # avoid creating dicts constantly if there are no events to handle
         if len(self._event_handlers) > 0:
@@ -97,21 +97,25 @@ class ImageDataFeature(GraphicFeatureIndexable):
                 "``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``"
             )
 
-        data = to_gpu_supported_dtype(data)
         super(ImageDataFeature, self).__init__(parent, data)
 
     @property
-    def _buffer(self) -> Texture:
+    def buffer(self) -> Texture:
+        """Texture buffer for the image data"""
         return self._parent.world_object.geometry.grid.texture
 
+    def update_gpu(self):
+        """Update the GPU with the buffer"""
+        self._update_range(None)
+
     def __getitem__(self, item):
-        return self._buffer.data[item]
+        return self.buffer.data[item]
 
     def __setitem__(self, key, value):
         # make sure float32
         value = to_gpu_supported_dtype(value)
 
-        self._buffer.data[key] = value
+        self.buffer.data[key] = value
         self._update_range(key)
 
         # avoid creating dicts constantly if there are no events to handle
@@ -119,7 +123,7 @@ class ImageDataFeature(GraphicFeatureIndexable):
             self._feature_changed(key, value)
 
     def _update_range(self, key):
-        self._buffer.update_range((0, 0, 0), size=self._buffer.size)
+        self.buffer.update_range((0, 0, 0), size=self.buffer.size)
 
     def _feature_changed(self, key, new_data):
         if key is not None:
@@ -144,8 +148,13 @@ class ImageDataFeature(GraphicFeatureIndexable):
 
 class HeatmapDataFeature(ImageDataFeature):
     @property
-    def _buffer(self) -> List[Texture]:
+    def buffer(self) -> List[Texture]:
+        """list of Texture buffer for the image data"""
         return [img.geometry.grid.texture for img in self._parent.world_object.children]
+
+    def update_gpu(self):
+        """Update the GPU with the buffer"""
+        self._update_range(None)
 
     def __getitem__(self, item):
         return self._data[item]
@@ -162,7 +171,7 @@ class HeatmapDataFeature(ImageDataFeature):
             self._feature_changed(key, value)
 
     def _update_range(self, key):
-        for buffer in self._buffer:
+        for buffer in self.buffer:
             buffer.update_range((0, 0, 0), size=buffer.size)
 
     def _feature_changed(self, key, new_data):

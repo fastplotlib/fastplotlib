@@ -4,7 +4,7 @@ from warnings import warn
 from typing import *
 
 import numpy as np
-from pygfx import Buffer
+from pygfx import Buffer, Texture
 
 
 supported_dtypes = [
@@ -226,7 +226,7 @@ class GraphicFeatureIndexable(GraphicFeature):
 
     @property
     @abstractmethod
-    def _buffer(self) -> Buffer:
+    def buffer(self) -> Union[Buffer, Texture]:
         pass
 
     @property
@@ -238,21 +238,21 @@ class GraphicFeatureIndexable(GraphicFeature):
         key = cleanup_slice(key, self._upper_bound)
 
         if isinstance(key, int):
-            self._buffer.update_range(key, size=1)
+            self.buffer.update_range(key, size=1)
             return
 
         # else if it's a slice obj
         if isinstance(key, slice):
             if key.step == 1:  # we cleaned up the slice obj so step of None becomes 1
                 # update range according to size using the offset
-                self._buffer.update_range(offset=key.start, size=key.stop - key.start)
+                self.buffer.update_range(offset=key.start, size=key.stop - key.start)
 
             else:
                 step = key.step
                 # convert slice to indices
                 ixs = range(key.start, key.stop, step)
                 for ix in ixs:
-                    self._buffer.update_range(ix, size=1)
+                    self.buffer.update_range(ix, size=1)
         else:
             raise TypeError("must pass int or slice to update range")
 
