@@ -159,7 +159,7 @@ class Interaction(ABC):
 
         """
         if event_type in PYGFX_EVENTS:
-            self.world_object.add_event_handler(self.event_handler, event_type)
+            self.world_object.add_event_handler(self._event_handler, event_type)
 
         # make sure event is valid
         elif event_type in self.feature_events:
