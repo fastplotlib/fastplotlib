@@ -7,11 +7,11 @@ from pygfx import Color
 
 class ColorFeature(GraphicFeatureIndexable):
     @property
-    def _buffer(self):
+    def buffer(self):
         return self._parent.world_object.geometry.colors
 
     def __getitem__(self, item):
-        return self._buffer.data[item]
+        return self.buffer.data[item]
 
     def __init__(self, parent, colors, n_colors: int, alpha: float = 1.0, collection_index: int = None):
         """
@@ -113,7 +113,7 @@ class ColorFeature(GraphicFeatureIndexable):
                 raise ValueError("fancy indexing for colors must be 2-dimension, i.e. [n_datapoints, RGBA]")
 
             # set the user passed data directly
-            self._buffer.data[key] = value
+            self.buffer.data[key] = value
 
             # update range
             # first slice obj is going to be the indexing so use key[0]
@@ -162,7 +162,7 @@ class ColorFeature(GraphicFeatureIndexable):
             else:
                 raise ValueError("numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)")
 
-        self._buffer.data[key] = new_colors
+        self.buffer.data[key] = new_colors
 
         self._update_range(key)
         self._feature_changed(key, new_colors)

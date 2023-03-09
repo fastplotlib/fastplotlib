@@ -2,11 +2,13 @@ from typing import *
 from math import ceil
 from itertools import product
 
+import numpy as np
 import pygfx
 from pygfx.utils import unpack_bitfield
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import ImageCmapFeature, ImageDataFeature, HeatmapDataFeature, HeatmapCmapFeature
+from .features._base import to_gpu_supported_dtype
 from ..utils import quick_min_max
 
 
@@ -23,6 +25,7 @@ class ImageGraphic(Graphic, Interaction):
             vmax: int = None,
             cmap: str = 'plasma',
             filter: str = "nearest",
+            isolated_buffer: bool = True,
             *args,
             **kwargs
     ):
@@ -43,6 +46,10 @@ class ImageGraphic(Graphic, Interaction):
             colormap to use to display the image data, ignored if data is RGB
         filter: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then
+            set the data, useful if the data arrays are ready-only such as memmaps.
+            If False, the input array is itself used as the buffer.
         args:
             additional arguments passed to Graphic
         kwargs:
@@ -65,20 +72,29 @@ class ImageGraphic(Graphic, Interaction):
 
         super().__init__(*args, **kwargs)
 
-        self.data = ImageDataFeature(self, data)
+        data = to_gpu_supported_dtype(data)
+
+        # TODO: we need to organize and do this better
+        if isolated_buffer:
+            # initialize a buffer with the same shape as the input data
+            # we do not directly use the input data array as the buffer
+            # because if the input array is a read-only type, such as
+            # numpy memmaps, we would not be able to change the image data
+            buffer_init = np.zeros(shape=data.shape, dtype=data.dtype)
+        else:
+            buffer_init = data
 
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
 
-        texture_view = pygfx.Texture(self.data(), dim=2).get_view(filter=filter)
+        texture_view = pygfx.Texture(buffer_init, dim=2).get_view(filter=filter)
 
         geometry = pygfx.Geometry(grid=texture_view)
 
         # if data is RGB
-        if self.data().ndim == 3:
+        if data.ndim == 3:
             self.cmap = None
             material = pygfx.ImageBasicMaterial(clim=(vmin, vmax))
-
         # if data is just 2D without color information, use colormap LUT
         else:
             self.cmap = ImageCmapFeature(self, cmap)
@@ -88,6 +104,13 @@ class ImageGraphic(Graphic, Interaction):
             geometry,
             material
         )
+
+        self.data = ImageDataFeature(self, data)
+        # TODO: we need to organize and do this better
+        if isolated_buffer:
+            # if the buffer was initialized with zeros
+            # set it with the actual data
+            self.data = data
 
     @property
     def vmin(self) -> float:
@@ -176,6 +199,7 @@ class HeatmapGraphic(Graphic, Interaction):
             cmap: str = 'plasma',
             filter: str = "nearest",
             chunk_size: int = 8192,
+            isolated_buffer: bool = True,
             *args,
             **kwargs
     ):
@@ -198,6 +222,10 @@ class HeatmapGraphic(Graphic, Interaction):
             interpolation filter, one of "nearest" or "linear"
         chunk_size: int, default 8192, max 8192
             chunk size for each tile used to make up the heatmap texture
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then
+            set the data, useful if the data arrays are ready-only such as memmaps.
+            If False, the input array is itself used as the buffer.
         args:
             additional arguments passed to Graphic
         kwargs:
@@ -223,7 +251,17 @@ class HeatmapGraphic(Graphic, Interaction):
         if chunk_size > 8192:
             raise ValueError("Maximum chunk size is 8192")
 
-        self.data = HeatmapDataFeature(self, data)
+        data = to_gpu_supported_dtype(data)
+
+        # TODO: we need to organize and do this better
+        if isolated_buffer:
+            # initialize a buffer with the same shape as the input data
+            # we do not directly use the input data array as the buffer
+            # because if the input array is a read-only type, such as
+            # numpy memmaps, we would not be able to change the image data
+            buffer_init = np.zeros(shape=data.shape, dtype=data.dtype)
+        else:
+            buffer_init = data
 
         row_chunks = range(ceil(data.shape[0] / chunk_size))
         col_chunks = range(ceil(data.shape[1] / chunk_size))
@@ -249,7 +287,7 @@ class HeatmapGraphic(Graphic, Interaction):
             # x and y positions of the Tile in world space coordinates
             y_pos, x_pos = row_start, col_start
 
-            tex_view = pygfx.Texture(data[row_start:row_stop, col_start:col_stop], dim=2).get_view(filter=filter)
+            tex_view = pygfx.Texture(buffer_init[row_start:row_stop, col_start:col_stop], dim=2).get_view(filter=filter)
             geometry = pygfx.Geometry(grid=tex_view)
             # material = pygfx.ImageBasicMaterial(clim=(0, 1), map=self.cmap())
 
@@ -263,6 +301,13 @@ class HeatmapGraphic(Graphic, Interaction):
             img.position.set_y(y_pos)
 
             self.world_object.add(img)
+
+        self.data = HeatmapDataFeature(self, buffer_init)
+        # TODO: we need to organize and do this better
+        if isolated_buffer:
+            # if the buffer was initialized with zeros
+            # set it with the actual data
+            self.data = data
 
     @property
     def vmin(self) -> float:
