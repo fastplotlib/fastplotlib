@@ -174,8 +174,8 @@ class ImageWidget:
             **kwargs
     ):
         """
-        A high level for displaying n-dimensional image data in conjunction with automatically generated sliders for
-        navigating through 1-2 selected dimensions within the image data.
+        A high level widget for displaying n-dimensional image data in conjunction with automatically generated
+        sliders for navigating through 1-2 selected dimensions within image data.
 
         Can display a single n-dimensional image array or a grid of n-dimensional images.
 
