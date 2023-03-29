@@ -837,10 +837,15 @@ class ImageWidget:
         """
         for i, ig in enumerate(self.image_graphics):
             mm = self._get_vmin_vmax_range(ig.data())
-            self.vmin_vmax_sliders[i].min = mm[2]
-            self.vmin_vmax_sliders[i].max = mm[3]
-            self.vmin_vmax_sliders[i].step = mm[1] / 150
-            self.vmin_vmax_sliders[i].value = mm[0]
+
+            state = {
+                "value": mm[0],
+                "step": mm[1] / 150,
+                "min": mm[2],
+                "max": mm[3]
+            }
+
+            self.vmin_vmax_sliders[i].set_state(state)
 
     def show(self):
         """
