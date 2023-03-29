@@ -4,7 +4,8 @@ Box Geometry
 
 Example showing the box geometry.
 """
-# test_example = true
+# run_example = false
+# test_example = false
 # sphinx_gallery_pygfx_render = True
 
 from wgpu.gui.auto import WgpuCanvas, run

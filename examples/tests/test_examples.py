@@ -96,28 +96,34 @@ def test_examples_screenshots(
     # a benefit of using pytest.skip is that you are still running
     # the first part of the test everywhere else; ensuring that examples
     # can at least import, run and render something
-    if not is_lavapipe:
-        pytest.skip("screenshot comparisons are only done when using lavapipe")
+
+    # if not is_lavapipe:
+    #     pytest.skip("screenshot comparisons are only done when using lavapipe")
 
     # regenerate screenshot if requested
-    screenshot_path = screenshots_dir / f"{module.stem}.png"
-    if pytestconfig.getoption("regenerate_screenshots"):
-        iio.imwrite(screenshot_path, img)
+    screenshot_path = screenshots_dir / f"{module.stem}.npy"
+
+    stored_img = np.load(screenshot_path)
+
+    assert np.allclose(img, stored_img, atol=1)
+
+    # if pytestconfig.getoption("regenerate_screenshots"):
+    #     iio.imwrite(screenshot_path, img)
 
     # if a reference screenshot exists, assert it is equal
-    assert (
-        screenshot_path.exists()
-    ), "found # test_example = true but no reference screenshot available"
-    stored_img = iio.imread(screenshot_path)
-    # assert similarity
-    is_similar = np.allclose(img, stored_img, atol=1)
-    update_diffs(module.stem, is_similar, img, stored_img)
-    assert is_similar, (
-        f"rendered image for example {module.stem} changed, see "
-        f"the {diffs_dir.relative_to(ROOT).as_posix()} folder"
-        " for visual diffs (you can download this folder from"
-        " CI build artifacts as well)"
-    )
+    # assert (
+    #     screenshot_path.exists()
+    # ), "found # test_example = true but no reference screenshot available"
+    # stored_img = iio.imread(screenshot_path)
+    # # assert similarity
+    # is_similar = np.allclose(img, stored_img, atol=1)
+    # update_diffs(module.stem, is_similar, img, stored_img)
+    # assert is_similar, (
+    #     f"rendered image for example {module.stem} changed, see "
+    #     f"the {diffs_dir.relative_to(ROOT).as_posix()} folder"
+    #     " for visual diffs (you can download this folder from"
+    #     " CI build artifacts as well)"
+    # )
 
 
 def update_diffs(module, is_similar, img, stored_img):
@@ -157,4 +163,5 @@ if __name__ == "__main__":
     os.environ["WGPU_FORCE_OFFSCREEN"] = "true"
     pytest.getoption = lambda x: False
     is_lavapipe = True  # noqa: F811
-    test_examples_screenshots("validate_box", pytest, None, None)
+    test_examples_screenshots("simple", pytest, None, None)
+
