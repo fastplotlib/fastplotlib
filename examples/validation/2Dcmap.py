@@ -2,7 +2,7 @@
 Simple Plot
 ============
 
-Example showing cmap change with 512 x 512 pre-saved random image.
+Example showing simple plot creation and subsequent cmap change with 512 x 512 pre-saved random image.
 """
 # test_example = true
 
@@ -27,8 +27,6 @@ plot.show()
 image_graphic.cmap = "viridis"
 
 img = np.asarray(plot.renderer.target.draw())
-
-np.save("/home/caitlin/repos/fastplotlib/examples/screenshots/2Dcmap.npy", img)
 
 if __name__ == "__main__":
     print(__doc__)

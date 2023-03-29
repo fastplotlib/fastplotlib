@@ -2,7 +2,7 @@
 Simple Plot
 ============
 
-Example showing the simple plot creation with 512 x 512 pre-saved random image.
+Example showing the simple plot creation followed by changing the vmin/vmax with 512 x 512 pre-saved random image.
 """
 # test_example = true
 
@@ -23,6 +23,9 @@ data = np.load("../data/2Drand.npy")
 image_graphic = plot.add_image(data=data, name="random-image")
 
 plot.show()
+
+image_graphic.vmin = 0.5
+image_graphic.vmax = 0.75
 
 img = np.asarray(plot.renderer.target.draw())
 
