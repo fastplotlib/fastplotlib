@@ -45,6 +45,8 @@ sinc_graphic = plot.add_line(data=sinc, thickness=5, colors=colors)
 
 plot.show()
 
+plot.center_scene()
+
 img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":

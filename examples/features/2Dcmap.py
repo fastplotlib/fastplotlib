@@ -28,5 +28,7 @@ image_graphic.cmap = "viridis"
 
 img = np.asarray(plot.renderer.target.draw())
 
+np.save("../screenshots/2Dcmap.npy", img)
+
 if __name__ == "__main__":
     print(__doc__)

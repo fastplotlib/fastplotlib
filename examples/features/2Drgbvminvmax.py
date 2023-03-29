@@ -30,5 +30,7 @@ image_graphic.vmax = 0.75
 
 img = np.asarray(plot.renderer.target.draw())
 
+np.save("../screenshots/2Drgbvminvmax.npy", img)
+
 if __name__ == "__main__":
     print(__doc__)

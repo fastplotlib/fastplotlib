@@ -49,6 +49,8 @@ cosine_graphic.data[10:50:5, :2] = sine[10:50:5]
 cosine_graphic.data[90:, 1] = 7
 cosine_graphic.data[0] = np.array([[-10, 0, 0]])
 
+plot.center_scene()
+
 img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":

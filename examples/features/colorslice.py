@@ -57,6 +57,8 @@ sine_graphic.cmap = "seismic"
 # more complex indexing, set the blue value directly from an array
 cosine_graphic.colors[65:90, 0] = np.linspace(0, 1, 90-65)
 
+plot.center_scene()
+
 img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":

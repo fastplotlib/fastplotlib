@@ -26,6 +26,7 @@ plot.show()
 
 img = np.asarray(plot.renderer.target.draw())
 
+np.save("../screenshots/simple.npy", img)
+
 if __name__ == "__main__":
     print(__doc__)
-
