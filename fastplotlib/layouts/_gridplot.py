@@ -83,9 +83,10 @@ class GridPlot:
         if controllers.shape != self.shape:
             raise ValueError
 
+        cameras = to_array(cameras)
+
         self._controllers = np.empty(shape=cameras.shape, dtype=object)
 
-        cameras = to_array(cameras)
 
         if cameras.shape != self.shape:
             raise ValueError
