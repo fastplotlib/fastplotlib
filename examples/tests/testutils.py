@@ -14,7 +14,7 @@ screenshots_dir = examples_dir / "screenshots"
 diffs_dir = screenshots_dir / "diffs"
 
 # examples live in themed sub-folders
-example_globs = ["validation/*.py", "features/*.py"]
+example_globs = ["*.py", "image/*.py", "line/*.py"]
 
 
 def get_wgpu_backend():
@@ -56,3 +56,4 @@ def find_examples(query=None, negative_query=None, return_stems=False):
     if return_stems:
         result = [r.stem for r in result]
     return result
+

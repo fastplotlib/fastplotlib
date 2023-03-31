@@ -17,7 +17,7 @@ renderer = WgpuRenderer(canvas)
 
 plot = Plot(canvas=canvas, renderer=renderer)
 
-data = np.load("../data/2Drand.npy")
+data = np.load("../data/random.npy")
 
 # plot the image data
 image_graphic = plot.add_image(data=data, name="random-image")
@@ -27,8 +27,6 @@ plot.show()
 image_graphic.cmap = "viridis"
 
 img = np.asarray(plot.renderer.target.draw())
-
-np.save("../screenshots/2Dcmap.npy", img)
 
 if __name__ == "__main__":
     print(__doc__)

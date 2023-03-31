@@ -2,10 +2,8 @@
 Line Plot
 ============
 
-Example showing color slicing with cosine, sine, sinc lines.
+Example showing present feature for lines.
 """
-
-# test_example = true
 
 from fastplotlib import Plot
 import numpy as np
@@ -34,23 +32,13 @@ sinc_graphic = plot.add_line(data=sinc, thickness=5, colors=colors)
 
 plot.show()
 
-# indexing of colors
-cosine_graphic.colors[:15] = "magenta"
-cosine_graphic.colors[90:] = "red"
-cosine_graphic.colors[60] = "w"
-
-# indexing to assign colormaps to entire lines or segments
-sinc_graphic.cmap[10:50] = "gray"
-sine_graphic.cmap = "seismic"
-
-# more complex indexing, set the blue value directly from an array
-cosine_graphic.colors[65:90, 0] = np.linspace(0, 1, 90-65)
+sinc_graphic.present = False
 
 plot.center_scene()
 
 img = np.asarray(plot.renderer.target.draw())
 
-#np.save('../screenshots/colorslice.npy', img)
+#np.save('../screenshots/present.npy', img)
 
 if __name__ == "__main__":
     print(__doc__)

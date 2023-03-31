@@ -18,20 +18,9 @@ renderer = WgpuRenderer(canvas)
 
 plot = Plot(canvas=canvas, renderer=renderer)
 
-# linspace, create 100 evenly spaced x values from -10 to 10
-xs = np.linspace(-10, 10, 100)
-# sine wave
-ys = np.sin(xs)
-sine = np.dstack([xs, ys])[0]
-
-# cosine wave
-ys = np.cos(xs) + 5
-cosine = np.dstack([xs, ys])[0]
-
-# sinc function
-a = 0.5
-ys = np.sinc(xs) * 3 + 8
-sinc = np.dstack([xs, ys])[0]
+sine = np.load("../data/sine.npy")
+cosine = np.load("../data/cosine.npy")
+sinc = np.load("../data/sinc.npy")
 
 # plot sine wave, use a single color
 sine_graphic = plot.add_line(data=sine, thickness=5, colors="magenta")
@@ -52,6 +41,8 @@ cosine_graphic.data[0] = np.array([[-10, 0, 0]])
 plot.center_scene()
 
 img = np.asarray(plot.renderer.target.draw())
+
+#np.save('../screenshots/dataslice.npy', img)
 
 if __name__ == "__main__":
     print(__doc__)

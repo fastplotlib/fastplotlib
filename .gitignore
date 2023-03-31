@@ -131,3 +131,7 @@ dmypy.json
 # Pycharm
 .idea/
 
+# screenshots for tests
+/examples/screenshots
+/examples/data
+

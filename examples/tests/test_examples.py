@@ -12,7 +12,7 @@ import imageio.v3 as iio
 import numpy as np
 import pytest
 
-from examples.tests.testutils import (
+from testutils import (
     wgpu_backend,
     is_lavapipe,
     find_examples,
@@ -20,7 +20,6 @@ from examples.tests.testutils import (
     screenshots_dir,
     diffs_dir,
 )
-
 
 # run all tests unless they opt-out
 examples_to_run = find_examples(negative_query="# run_example = false")
@@ -68,7 +67,7 @@ def test_that_we_are_on_lavapipe():
 
 @pytest.mark.parametrize("module", examples_to_test, ids=lambda x: x.stem)
 def test_examples_screenshots(
-    module, pytestconfig, force_offscreen, mock_time, request
+        module, pytestconfig, force_offscreen, mock_time, request
 ):
     """Run every example marked for testing."""
 
@@ -103,31 +102,23 @@ def test_examples_screenshots(
     # regenerate screenshot if requested
     screenshot_path = screenshots_dir / f"{module.stem}.npy"
 
-    stored_img = np.load(screenshot_path)
-
-    diffs = img - stored_img
-    print(diffs)
-
-    assert np.allclose(img, stored_img, atol=3)
-
-
     # if pytestconfig.getoption("regenerate_screenshots"):
-    #     iio.imwrite(screenshot_path, img)
+    #     np.save(screenshot_path, img)
 
     # if a reference screenshot exists, assert it is equal
-    # assert (
-    #     screenshot_path.exists()
-    # ), "found # test_example = true but no reference screenshot available"
-    # stored_img = iio.imread(screenshot_path)
-    # # assert similarity
-    # is_similar = np.allclose(img, stored_img, atol=1)
-    # update_diffs(module.stem, is_similar, img, stored_img)
-    # assert is_similar, (
-    #     f"rendered image for example {module.stem} changed, see "
-    #     f"the {diffs_dir.relative_to(ROOT).as_posix()} folder"
-    #     " for visual diffs (you can download this folder from"
-    #     " CI build artifacts as well)"
-    # )
+    assert (
+        screenshot_path.exists()
+    ), "found # test_example = true but no reference screenshot available"
+    stored_img = np.load(screenshot_path)
+    # assert similarity
+    is_similar = np.allclose(img, stored_img, atol=1)
+    update_diffs(module.stem, is_similar, img, stored_img)
+    assert is_similar, (
+        f"rendered image for example {module.stem} changed, see "
+        f"the {diffs_dir.relative_to(ROOT).as_posix()} folder"
+        " for visual diffs (you can download this folder from"
+        " CI build artifacts as well)"
+    )
 
 
 def update_diffs(module, is_similar, img, stored_img):
@@ -165,7 +156,6 @@ def update_diffs(module, is_similar, img, stored_img):
 if __name__ == "__main__":
     # Enable tweaking in an IDE by running in an interactive session.
     os.environ["WGPU_FORCE_OFFSCREEN"] = "true"
-    pytest.getoption = lambda x: False
+    # pytest.getoption = lambda x: False
     is_lavapipe = True  # noqa: F811
     test_examples_screenshots("simple", pytest, None, None)
-
