@@ -3,7 +3,7 @@ from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomControlle
     Viewport, WgpuRenderer
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
-from ..graphics._base import Graphic, WORLD_OBJECTS
+from ..graphics._base import Graphic, GraphicCollection, WORLD_OBJECTS
 from ..graphics.line_slider import LineSlider
 from typing import *
 
@@ -319,8 +319,18 @@ class PlotArea:
 
         self._graphics.remove(graphic)
 
-        # delete associated world object to free GPU VRAM
+        # for GraphicCollection objects
+        if isinstance(graphic, GraphicCollection):
+            # clear Group
+            graphic.world_object.clear()
+            # delete all child world objects in the collection
+            for g in graphic.graphics:
+                subloc = hex(id(g))
+                del WORLD_OBJECTS[subloc]
+
+        # get mem location of graphic
         loc = hex(id(graphic))
+        # delete world object
         del WORLD_OBJECTS[loc]
 
         del graphic

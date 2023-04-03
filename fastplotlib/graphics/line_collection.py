@@ -157,7 +157,7 @@ class LineCollection(GraphicCollection, Interaction):
                         "or must be a str of tuple/list with the same length as the data"
                     )
 
-        self._world_object = pygfx.Group()
+        self._set_world_object(pygfx.Group())
 
         for i, d in enumerate(data):
             if isinstance(z_position, list):

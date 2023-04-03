@@ -85,11 +85,13 @@ class LineGraphic(Graphic, Interaction):
 
         self.thickness = ThicknessFeature(self, thickness)
 
-        self._world_object: pygfx.Line = pygfx.Line(
+        world_object: pygfx.Line = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=self.data(), colors=self.colors()),
             material=material(thickness=self.thickness(), vertex_colors=True)
         )
+
+        self._set_world_object(world_object)
 
         if z_position is not None:
             self.world_object.position.z = z_position

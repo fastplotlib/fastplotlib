@@ -72,9 +72,11 @@ class ScatterGraphic(Graphic):
 
         super(ScatterGraphic, self).__init__(*args, **kwargs)
 
-        self._world_object: pygfx.Points = pygfx.Points(
+        world_object = pygfx.Points(
             pygfx.Geometry(positions=self.data(), sizes=sizes, colors=self.colors()),
             material=pygfx.PointsMaterial(vertex_colors=True, vertex_sizes=True)
         )
+
+        self._set_world_object(world_object)
 
         self.world_object.position.z = z_position
