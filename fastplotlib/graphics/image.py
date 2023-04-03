@@ -274,7 +274,8 @@ class HeatmapGraphic(Graphic, Interaction):
         start_ixs = [list(map(lambda c: c * chunk_size, chunk)) for chunk in chunks]
         stop_ixs = [list(map(lambda c: c + chunk_size, chunk)) for chunk in start_ixs]
 
-        self._world_object = pygfx.Group()
+        world_object = pygfx.Group()
+        self._set_world_object(world_object)
 
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
