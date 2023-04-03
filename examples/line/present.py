@@ -5,6 +5,8 @@ Line Plot
 Example showing present feature for lines.
 """
 
+# test_example = true
+
 from fastplotlib import Plot
 import numpy as np
 
@@ -35,6 +37,8 @@ plot.show()
 sinc_graphic.present = False
 
 plot.center_scene()
+
+plot.auto_scale()
 
 img = np.asarray(plot.renderer.target.draw())
 

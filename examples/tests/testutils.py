@@ -14,7 +14,7 @@ screenshots_dir = examples_dir / "screenshots"
 diffs_dir = screenshots_dir / "diffs"
 
 # examples live in themed sub-folders
-example_globs = ["*.py", "image/*.py", "line/*.py"]
+example_globs = ["*.py", "image/*.py", "line/*.py", "scatter/*.py", "gridplot/*.py"]
 
 
 def get_wgpu_backend():
