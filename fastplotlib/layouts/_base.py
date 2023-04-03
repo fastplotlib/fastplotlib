@@ -3,7 +3,7 @@ from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomControlle
     Viewport, WgpuRenderer
 from wgpu.gui.auto import WgpuCanvas
 from warnings import warn
-from ..graphics._base import Graphic
+from ..graphics._base import Graphic, WORLD_OBJECTS
 from ..graphics.line_slider import LineSlider
 from typing import *
 
@@ -287,8 +287,9 @@ class PlotArea:
 
     def remove_graphic(self, graphic: Graphic):
         """
-        Remove a graphic from the scene. Note: This does not garbage collect the graphic,
-        you can add it back to the scene after removing it.
+        Remove a ``Graphic`` from the scene. Note: This does not garbage collect the graphic,
+        you can add it back to the scene after removing it. Use ``delete_graphic()`` to
+        delete and garbage collect a ``Graphic``.
 
         Parameters
         ----------
@@ -296,7 +297,41 @@ class PlotArea:
             The graphic to remove from the scene
 
         """
+
         self.scene.remove(graphic.world_object)
+
+    def delete_graphic(self, graphic: Graphic):
+        """
+        Delete the graphic, garbage collects and frees GPU VRAM.
+
+        Parameters
+        ----------
+        graphic: Graphic or GraphicCollection
+            The graphic to delete
+
+        """
+
+        if graphic not in self._graphics:
+            raise KeyError
+
+        if graphic.world_object in self.scene.children:
+            self.scene.remove(graphic.world_object)
+
+        self._graphics.remove(graphic)
+
+        # delete associated world object to free GPU VRAM
+        loc = hex(id(graphic))
+        del WORLD_OBJECTS[loc]
+
+        del graphic
+
+    def clear(self):
+        """
+        Clear the Plot or Subplot. Also performs garbage collection, i.e. runs ``delete_graphic`` on all graphics.
+        """
+
+        for g in self._graphics:
+            self.delete_graphic(g)
 
     def __getitem__(self, name: str):
         for graphic in self._graphics:

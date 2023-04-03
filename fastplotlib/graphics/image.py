@@ -100,10 +100,12 @@ class ImageGraphic(Graphic, Interaction):
             self.cmap = ImageCmapFeature(self, cmap)
             material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap())
 
-        self._world_object: pygfx.Image = pygfx.Image(
+        world_object = pygfx.Image(
             geometry,
             material
         )
+
+        self._set_world_object(world_object)
 
         self.data = ImageDataFeature(self, data)
         # TODO: we need to organize and do this better

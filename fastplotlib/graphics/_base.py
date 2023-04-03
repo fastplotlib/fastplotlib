@@ -1,4 +1,5 @@
 from typing import *
+import weakref
 from warnings import warn
 
 import numpy as np
@@ -12,6 +13,11 @@ from .features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+
+
+# dict that holds all world objects for a given python kernel/session
+# Graphic objects only use proxies to WorldObjects
+WORLD_OBJECTS: Dict[str, WorldObject] = dict()  #: {hex id str: WorldObject}
 
 
 PYGFX_EVENTS = [
@@ -58,10 +64,15 @@ class Graphic(BaseGraphic):
         self.registered_callbacks = dict()
         self.present = PresentFeature(parent=self)
 
+        self._world_objects = WORLD_OBJECTS
+
     @property
     def world_object(self) -> WorldObject:
-        """Associated pygfx WorldObject."""
-        return self._world_object
+        """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
+        return weakref.proxy(self._world_objects[hex(id(self))])
+
+    def _set_world_object(self, wo: WorldObject):
+        self._world_objects[hex(id(self))] = wo
 
     @property
     def position(self) -> Vector3:
@@ -75,7 +86,7 @@ class Graphic(BaseGraphic):
         return self.world_object.visible
 
     @visible.setter
-    def visible(self, v) -> bool:
+    def visible(self, v: bool):
         """Access or change the visibility."""
         self.world_object.visible = v
 
@@ -99,6 +110,9 @@ class Graphic(BaseGraphic):
             return f"'{self.name}': {rval}"
         else:
             return rval
+
+    def __del__(self):
+        del self._world_objects[hex(id(self))]
 
 
 class Interaction(ABC):
@@ -270,11 +284,6 @@ class GraphicCollection(Graphic):
     def __init__(self, name: str = None):
         super(GraphicCollection, self).__init__(name)
         self._graphics: List[Graphic] = list()
-
-    @property
-    def world_object(self) -> Group:
-        """Returns the underling pygfx WorldObject."""
-        return self._world_object
 
     @property
     def graphics(self) -> Tuple[Graphic]:
