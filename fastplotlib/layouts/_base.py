@@ -186,14 +186,13 @@ class PlotArea:
         if graphic.name is not None:  # skip for those that have no name
             self._check_graphic_name_exists(graphic.name)
 
-        # store in GRAPHICS dict
-        loc = graphic.loc
-        GRAPHICS[loc] = graphic
-
         # TODO: need to refactor LineSlider entirely
         if isinstance(graphic, LineSlider):
             self._sliders.append(graphic)  # don't manage garbage collection of LineSliders for now
         else:
+            # store in GRAPHICS dict
+            loc = graphic.loc
+            GRAPHICS[loc] = graphic
             self._graphics.append(loc)  # add hex id string for referencing this graphic instance
 
         # add world object to scene
