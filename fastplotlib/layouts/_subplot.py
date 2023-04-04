@@ -2,6 +2,7 @@ from typing import *
 import numpy as np
 from math import copysign
 from functools import partial
+import weakref
 from inspect import signature, getfullargspec
 from warnings import warn
 
@@ -112,7 +113,7 @@ class Subplot(PlotArea):
         if self.name is not None:
             self.set_title(self.name)
 
-    def _create_graphic(self, graphic_class, *args, **kwargs):
+    def _create_graphic(self, graphic_class, *args, **kwargs) -> weakref.proxy:
         if "center" in kwargs.keys():
             center = kwargs.pop("center")
         else:
@@ -124,7 +125,8 @@ class Subplot(PlotArea):
         graphic = graphic_class(*args, **kwargs)
         self.add_graphic(graphic, center=center)
 
-        return graphic
+        # only return a proxy to the real graphic
+        return weakref.proxy(graphic)
 
     def set_title(self, text: Any):
         """Sets the name of a subplot to 'top' viewport if defined."""

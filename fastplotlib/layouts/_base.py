@@ -1,11 +1,21 @@
+from warnings import warn
+from typing import *
+import weakref
+
 import numpy as np
+
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, OrbitController, \
     Viewport, WgpuRenderer
 from wgpu.gui.auto import WgpuCanvas
-from warnings import warn
-from ..graphics._base import Graphic, GraphicCollection, WORLD_OBJECTS
+
+from ..graphics._base import Graphic, GraphicCollection
 from ..graphics.line_slider import LineSlider
-from typing import *
+
+
+# dict to store Graphic instances
+# this is the only place where the real references to Graphics are stored in a Python session
+# {hex id str: Graphic}
+GRAPHICS: Dict[str, Graphic] = dict()
 
 
 class PlotArea:
@@ -74,7 +84,9 @@ class PlotArea:
 
         self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
-        self._graphics: List[Graphic] = list()
+        # list of hex id strings for all graphics managed by this PlotArea
+        # the real Graphic instances are stored in the ``GRAPHICS`` dict
+        self._graphics: List[str] = list()
 
         # hacky workaround for now to exclude from bbox calculations
         self._sliders: List[LineSlider] = list()
@@ -129,8 +141,13 @@ class PlotArea:
 
     @property
     def graphics(self) -> Tuple[Graphic]:
-        """returns the Graphics in the plot area"""
-        return tuple(self._graphics)
+        """Graphics in the plot area. Always returns a proxy to the Graphic instances."""
+        proxies = list()
+        for loc in self._graphics:
+            p = weakref.proxy(GRAPHICS[loc])
+            proxies.append(p)
+
+        return tuple(proxies)
 
     def get_rect(self) -> Tuple[float, float, float, float]:
         """allows setting the region occupied by the viewport w.r.t. the parent"""
@@ -154,7 +171,8 @@ class PlotArea:
         Parameters
         ----------
         graphic: Graphic or GraphicCollection
-            Add a Graphic or a GraphicCollection to the plot area
+            Add a Graphic or a GraphicCollection to the plot area.
+            Note: this must be a real Graphic instance and not a proxy
 
         center: bool, default True
             Center the camera on the newly added Graphic
@@ -168,12 +186,17 @@ class PlotArea:
         if graphic.name is not None:  # skip for those that have no name
             self._check_graphic_name_exists(graphic.name)
 
+        # store in GRAPHICS dict
+        loc = graphic.loc
+        GRAPHICS[loc] = graphic
+
         # TODO: need to refactor LineSlider entirely
         if isinstance(graphic, LineSlider):
-            self._sliders.append(graphic)
+            self._sliders.append(graphic)  # don't manage garbage collection of LineSliders for now
         else:
-            self._graphics.append(graphic)
+            self._graphics.append(loc)  # add hex id string for referencing this graphic instance
 
+        # add world object to scene
         self.scene.add(graphic.world_object)
 
         if center:
@@ -185,7 +208,7 @@ class PlotArea:
     def _check_graphic_name_exists(self, name):
         graphic_names = list()
 
-        for g in self._graphics:
+        for g in self.graphics:
             graphic_names.append(g.name)
 
         if name in graphic_names:
@@ -311,45 +334,53 @@ class PlotArea:
 
         """
 
-        if graphic not in self._graphics:
-            raise KeyError
+        # graphic_loc = hex(id(graphic.__repr__.__self__))
 
+        # get location
+        graphic_loc = graphic.loc
+
+        if graphic_loc not in self._graphics:
+            raise KeyError(f"Graphic with following address not found in plot area: {graphic_loc}")
+
+        # remove from scene if necessary
         if graphic.world_object in self.scene.children:
             self.scene.remove(graphic.world_object)
 
-        self._graphics.remove(graphic)
+        # remove from list of addresses
+        self._graphics.remove(graphic_loc)
 
         # for GraphicCollection objects
-        if isinstance(graphic, GraphicCollection):
-            # clear Group
-            graphic.world_object.clear()
+        # if isinstance(graphic, GraphicCollection):
+        #     # clear Group
+        #     graphic.world_object.clear()
+            # graphic.clear()
             # delete all child world objects in the collection
-            for g in graphic.graphics:
-                subloc = hex(id(g))
-                del WORLD_OBJECTS[subloc]
+            # for g in graphic.graphics:
+            #     subloc = hex(id(g))
+            #     del WORLD_OBJECTS[subloc]
 
         # get mem location of graphic
-        loc = hex(id(graphic))
+        # loc = hex(id(graphic))
         # delete world object
-        del WORLD_OBJECTS[loc]
+        #del WORLD_OBJECTS[graphic_loc]
 
-        del graphic
+        del GRAPHICS[graphic_loc]
 
     def clear(self):
         """
         Clear the Plot or Subplot. Also performs garbage collection, i.e. runs ``delete_graphic`` on all graphics.
         """
 
-        for g in self._graphics:
+        for g in self.graphics:
             self.delete_graphic(g)
 
     def __getitem__(self, name: str):
-        for graphic in self._graphics:
+        for graphic in self.graphics:
             if graphic.name == name:
                 return graphic
 
         graphic_names = list()
-        for g in self._graphics:
+        for g in self.graphics:
             graphic_names.append(g.name)
         raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
 
@@ -367,5 +398,5 @@ class PlotArea:
         return f"{self}\n" \
                f"  parent: {self.parent}\n" \
                f"  Graphics:\n" \
-               f"\t{newline.join(graphic.__repr__() for graphic in self._graphics)}" \
+               f"\t{newline.join(graphic.__repr__() for graphic in self.graphics)}" \
                f"\n"

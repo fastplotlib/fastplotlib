@@ -38,10 +38,12 @@ class TextGraphic(Graphic):
         """
         super(TextGraphic, self).__init__(name=name)
 
-        self._world_object = pygfx.Text(
+        world_object = pygfx.Text(
             pygfx.TextGeometry(text=text, font_size=size, screen_space=False),
             pygfx.TextMaterial(color=face_color, outline_color=outline_color, outline_thickness=outline_thickness)
         )
+
+        self._set_world_object(world_object)
 
         self.world_object.position.set(*position)
 

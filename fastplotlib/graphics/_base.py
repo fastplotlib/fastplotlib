@@ -50,7 +50,8 @@ class BaseGraphic:
 
 class Graphic(BaseGraphic):
     def __init__(
-            self, name: str = None):
+            self, name: str = None
+    ):
         """
 
         Parameters
@@ -64,15 +65,16 @@ class Graphic(BaseGraphic):
         self.registered_callbacks = dict()
         self.present = PresentFeature(parent=self)
 
-        self._world_objects = WORLD_OBJECTS
+        # store hex id str of Graphic instance mem location
+        self.loc: str = hex(id(self))
 
     @property
     def world_object(self) -> WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
-        return weakref.proxy(self._world_objects[hex(id(self))])
+        return weakref.proxy(WORLD_OBJECTS[hex(id(self))])
 
     def _set_world_object(self, wo: WorldObject):
-        self._world_objects[hex(id(self))] = wo
+        WORLD_OBJECTS[hex(id(self))] = wo
 
     @property
     def position(self) -> Vector3:
@@ -112,7 +114,7 @@ class Graphic(BaseGraphic):
             return rval
 
     def __del__(self):
-        del self._world_objects[hex(id(self))]
+        del WORLD_OBJECTS[self.loc]
 
 
 class Interaction(ABC):
@@ -278,17 +280,21 @@ class PreviouslyModifiedData:
     indices: Any
 
 
+COLLECTION_GRAPHICS: dict[str, Graphic] = dict()
+
+
 class GraphicCollection(Graphic):
     """Graphic Collection base class"""
 
     def __init__(self, name: str = None):
         super(GraphicCollection, self).__init__(name)
-        self._graphics: List[Graphic] = list()
+        self._graphics: List[str] = list()
 
     @property
     def graphics(self) -> Tuple[Graphic]:
-        """returns the Graphics within this collection"""
-        return tuple(self._graphics)
+        """The Graphics within this collection. Always returns a proxy to the Graphics."""
+        proxies = [weakref.proxy(COLLECTION_GRAPHICS[loc]) for loc in self._graphics]
+        return tuple(proxies)
 
     def add_graphic(self, graphic: Graphic, reset_index: True):
         """Add a graphic to the collection"""
@@ -298,7 +304,11 @@ class GraphicCollection(Graphic):
                 f"You can only add {self.child_type} to a {self.__class__.__name__}, "
                 f"you are trying to add a {graphic.__class__.__name__}."
             )
-        self._graphics.append(graphic)
+
+        loc = hex(id(graphic))
+        COLLECTION_GRAPHICS[loc] = graphic
+
+        self._graphics.append(loc)
         if reset_index:
             self._reset_index()
         self.world_object.add(graphic.world_object)
@@ -306,9 +316,19 @@ class GraphicCollection(Graphic):
     def remove_graphic(self, graphic: Graphic, reset_index: True):
         """Remove a graphic from the collection"""
         self._graphics.remove(graphic)
+
         if reset_index:
             self._reset_index()
-        self.world_object.remove(graphic)
+
+        self.world_object.remove(graphic.world_object)
+            
+    def __del__(self):
+        self.world_object.clear()
+
+        for loc in self._graphics:
+            del COLLECTION_GRAPHICS[loc]
+            
+        super().__del__()
 
     def _reset_index(self):
         for new_index, graphic in enumerate(self._graphics):
@@ -374,7 +394,7 @@ class CollectionIndexer:
         selection_indices: Union[list, range]
             the corresponding indices from the parent GraphicCollection that were selected
         """
-        self._parent = parent
+        self._parent = weakref.proxy(parent)
         self._selection = selection
         self._selection_indices = selection_indices
 
