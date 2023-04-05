@@ -343,6 +343,6 @@ class LineStack(LineCollection):
         )
 
         axis_zero = 0
-        for i, line in enumerate(self._graphics):
+        for i, line in enumerate(self.graphics):
             getattr(line.position, f"set_{separation_axis}")(axis_zero)
             axis_zero = axis_zero + line.data()[:, axes[separation_axis]].max() + separation
