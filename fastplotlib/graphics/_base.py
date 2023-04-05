@@ -315,7 +315,7 @@ class GraphicCollection(Graphic):
 
     def remove_graphic(self, graphic: Graphic, reset_index: True):
         """Remove a graphic from the collection"""
-        self._graphics.remove(graphic)
+        self._graphics.remove(graphic.loc)
 
         if reset_index:
             self._reset_index()
@@ -341,7 +341,7 @@ class GraphicCollection(Graphic):
         if isinstance(key, slice):
             key = cleanup_slice(key, upper_bound=len(self))
             selection_indices = range(key.start, key.stop, key.step)
-            selection = self._graphics[key]
+            selection = self.graphics[key]
 
         # fancy-ish indexing
         elif isinstance(key, (tuple, list, np.ndarray)):
@@ -353,7 +353,7 @@ class GraphicCollection(Graphic):
             selection = list()
 
             for ix in key:
-                selection.append(self._graphics[ix])
+                selection.append(self.graphics[ix])
 
             selection_indices = key
         else:
