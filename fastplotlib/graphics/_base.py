@@ -232,8 +232,13 @@ class Interaction(ABC):
 
                     # for now we only have line collections so this works
                     else:
-                        for i, item in enumerate(self._graphics):
-                            if item.world_object is event.pick_info["world_object"]:
+                        # get index of world object that made this event
+                        for i, item in enumerate(self.graphics):
+                            wo = WORLD_OBJECTS[item.loc]
+                            # we only store hex id of worldobject, but worldobject `pick_info` is always the real object
+                            # so if pygfx worldobject triggers an event by itself, such as `click`, etc., this will be
+                            # the real world object in the pick_info and not the proxy
+                            if wo is event.pick_info["world_object"]:
                                 indices = i
                     target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
                 else:
