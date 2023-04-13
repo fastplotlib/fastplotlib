@@ -74,7 +74,7 @@ class LineSlider(Graphic):
         else:
             material = pygfx.LineMaterial
 
-        colors_inner = np.repeat([Color("w")], 2, axis=0).astype(np.float32)
+        colors_inner = np.repeat([Color(color)], 2, axis=0).astype(np.float32)
         colors_outer = np.repeat([Color([1., 1., 1., 0.25])], 2, axis=0).astype(np.float32)
 
         line_inner = pygfx.Line(
@@ -88,17 +88,19 @@ class LineSlider(Graphic):
             material=material(thickness=thickness + 4, vertex_colors=True)
         )
 
-        self._world_object = pygfx.Group()
+        world_object = pygfx.Group()
 
-        self._world_object.add(line_outer)
-        self._world_object.add(line_inner)
+        world_object.add(line_outer)
+        world_object.add(line_inner)
+
+        self._set_world_object(world_object)
 
         self.position.x = x_pos
 
         self.slider = slider
         self.slider.observe(self.set_position, "value")
 
-        self.name = name
+        super().__init__(name=name)
 
     def set_position(self, change):
         self.position.x = change["new"]

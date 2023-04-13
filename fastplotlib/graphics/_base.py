@@ -1,4 +1,5 @@
 from typing import *
+import weakref
 from warnings import warn
 
 import numpy as np
@@ -12,6 +13,11 @@ from .features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+
+
+# dict that holds all world objects for a given python kernel/session
+# Graphic objects only use proxies to WorldObjects
+WORLD_OBJECTS: Dict[str, WorldObject] = dict()  #: {hex id str: WorldObject}
 
 
 PYGFX_EVENTS = [
@@ -44,7 +50,8 @@ class BaseGraphic:
 
 class Graphic(BaseGraphic):
     def __init__(
-            self, name: str = None):
+            self, name: str = None
+    ):
         """
 
         Parameters
@@ -58,10 +65,16 @@ class Graphic(BaseGraphic):
         self.registered_callbacks = dict()
         self.present = PresentFeature(parent=self)
 
+        # store hex id str of Graphic instance mem location
+        self.loc: str = hex(id(self))
+
     @property
     def world_object(self) -> WorldObject:
-        """Associated pygfx WorldObject."""
-        return self._world_object
+        """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
+        return weakref.proxy(WORLD_OBJECTS[hex(id(self))])
+
+    def _set_world_object(self, wo: WorldObject):
+        WORLD_OBJECTS[hex(id(self))] = wo
 
     @property
     def position(self) -> Vector3:
@@ -75,7 +88,7 @@ class Graphic(BaseGraphic):
         return self.world_object.visible
 
     @visible.setter
-    def visible(self, v) -> bool:
+    def visible(self, v: bool):
         """Access or change the visibility."""
         self.world_object.visible = v
 
@@ -99,6 +112,9 @@ class Graphic(BaseGraphic):
             return f"'{self.name}': {rval}"
         else:
             return rval
+
+    def __del__(self):
+        del WORLD_OBJECTS[self.loc]
 
 
 class Interaction(ABC):
@@ -216,8 +232,13 @@ class Interaction(ABC):
 
                     # for now we only have line collections so this works
                     else:
-                        for i, item in enumerate(self._graphics):
-                            if item.world_object is event.pick_info["world_object"]:
+                        # get index of world object that made this event
+                        for i, item in enumerate(self.graphics):
+                            wo = WORLD_OBJECTS[item.loc]
+                            # we only store hex id of worldobject, but worldobject `pick_info` is always the real object
+                            # so if pygfx worldobject triggers an event by itself, such as `click`, etc., this will be
+                            # the real world object in the pick_info and not the proxy
+                            if wo is event.pick_info["world_object"]:
                                 indices = i
                     target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
                 else:
@@ -264,22 +285,21 @@ class PreviouslyModifiedData:
     indices: Any
 
 
+COLLECTION_GRAPHICS: dict[str, Graphic] = dict()
+
+
 class GraphicCollection(Graphic):
     """Graphic Collection base class"""
 
     def __init__(self, name: str = None):
         super(GraphicCollection, self).__init__(name)
-        self._graphics: List[Graphic] = list()
-
-    @property
-    def world_object(self) -> Group:
-        """Returns the underling pygfx WorldObject."""
-        return self._world_object
+        self._graphics: List[str] = list()
 
     @property
     def graphics(self) -> Tuple[Graphic]:
-        """returns the Graphics within this collection"""
-        return tuple(self._graphics)
+        """The Graphics within this collection. Always returns a proxy to the Graphics."""
+        proxies = [weakref.proxy(COLLECTION_GRAPHICS[loc]) for loc in self._graphics]
+        return tuple(proxies)
 
     def add_graphic(self, graphic: Graphic, reset_index: True):
         """Add a graphic to the collection"""
@@ -289,17 +309,31 @@ class GraphicCollection(Graphic):
                 f"You can only add {self.child_type} to a {self.__class__.__name__}, "
                 f"you are trying to add a {graphic.__class__.__name__}."
             )
-        self._graphics.append(graphic)
+
+        loc = hex(id(graphic))
+        COLLECTION_GRAPHICS[loc] = graphic
+
+        self._graphics.append(loc)
         if reset_index:
             self._reset_index()
         self.world_object.add(graphic.world_object)
 
     def remove_graphic(self, graphic: Graphic, reset_index: True):
         """Remove a graphic from the collection"""
-        self._graphics.remove(graphic)
+        self._graphics.remove(graphic.loc)
+
         if reset_index:
             self._reset_index()
-        self.world_object.remove(graphic)
+
+        self.world_object.remove(graphic.world_object)
+            
+    def __del__(self):
+        self.world_object.clear()
+
+        for loc in self._graphics:
+            del COLLECTION_GRAPHICS[loc]
+            
+        super().__del__()
 
     def _reset_index(self):
         for new_index, graphic in enumerate(self._graphics):
@@ -312,7 +346,7 @@ class GraphicCollection(Graphic):
         if isinstance(key, slice):
             key = cleanup_slice(key, upper_bound=len(self))
             selection_indices = range(key.start, key.stop, key.step)
-            selection = self._graphics[key]
+            selection = self.graphics[key]
 
         # fancy-ish indexing
         elif isinstance(key, (tuple, list, np.ndarray)):
@@ -324,7 +358,7 @@ class GraphicCollection(Graphic):
             selection = list()
 
             for ix in key:
-                selection.append(self._graphics[ix])
+                selection.append(self.graphics[ix])
 
             selection_indices = key
         else:
@@ -365,7 +399,7 @@ class CollectionIndexer:
         selection_indices: Union[list, range]
             the corresponding indices from the parent GraphicCollection that were selected
         """
-        self._parent = parent
+        self._parent = weakref.proxy(parent)
         self._selection = selection
         self._selection_indices = selection_indices
 

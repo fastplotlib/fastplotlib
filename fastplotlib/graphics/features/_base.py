@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from inspect import getfullargspec
 from warnings import warn
 from typing import *
+import weakref
 
 import numpy as np
 from pygfx import Buffer, Texture
@@ -71,7 +72,7 @@ class GraphicFeature(ABC):
             if part of a collection, index of this graphic within the collection
 
         """
-        self._parent = parent
+        self._parent = weakref.proxy(parent)
 
         self._data = to_gpu_supported_dtype(data)
 
