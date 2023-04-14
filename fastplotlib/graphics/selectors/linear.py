@@ -89,7 +89,7 @@ class LinearSelector(Graphic, Interaction):
             height: int,
             position: Tuple[int, int],
             resizable: bool = False,
-            fill_color=(0, 0, 0.5),
+            fill_color=(0, 0, 0.35),
             edge_color=(0.8, 0.8, 0),
             name: str = None
     ):
@@ -123,8 +123,10 @@ class LinearSelector(Graphic, Interaction):
         self.world_object.add(self.fill)
 
         self._move_info = None
+        self._event_source: str = None
 
         self.limits = limits
+        self._resizable = resizable
 
         left_line_data = np.array(
             [[position[0], (-height / 2) + position[1], 0.5],
@@ -133,7 +135,7 @@ class LinearSelector(Graphic, Interaction):
 
         left_line = pygfx.Line(
             pygfx.Geometry(positions=left_line_data, colors=np.repeat([pygfx.Color(edge_color)], 2, axis=0)),
-            pygfx.LineMaterial(thickness=2, vertex_colors=True)
+            pygfx.LineMaterial(thickness=5, vertex_colors=True)
         )
 
         right_line_data = np.array(
@@ -143,7 +145,7 @@ class LinearSelector(Graphic, Interaction):
 
         right_line = pygfx.Line(
             pygfx.Geometry(positions=right_line_data, colors=np.repeat([pygfx.Color(edge_color)], 2, axis=0)),
-            pygfx.LineMaterial(thickness=2, vertex_colors=True)
+            pygfx.LineMaterial(thickness=5, vertex_colors=True)
         )
 
         self.world_object.add(left_line)
@@ -158,13 +160,23 @@ class LinearSelector(Graphic, Interaction):
         # called when this selector is added to a plot area
         self._plot_area = plot_area
 
-        self.fill.add_event_handler(self._move_start, "pointer_down")
+        move_start_fill = partial(self._move_start, "fill")
+        move_start_edge_left = partial(self._move_start, "edge-left")
+        move_start_edge_right = partial(self._move_start, "edge-right")
+
+        self.fill.add_event_handler(move_start_fill, "pointer_down")
+
+        if self._resizable:
+            self.edges[0].add_event_handler(move_start_edge_left, "pointer_down")
+            self.edges[1].add_event_handler(move_start_edge_right, "pointer_down")
+
         self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
         self._plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
 
-    def _move_start(self, ev):
+    def _move_start(self, event_source: str, ev):
         self._plot_area.controller.enabled = False
         self._move_info = {"last_pos": (ev.x, ev.y)}
+        self._event_source = event_source
 
     def _move(self, ev):
         if self._move_info is None:
@@ -178,12 +190,25 @@ class LinearSelector(Graphic, Interaction):
 
         self._move_info = {"last_pos": (ev.x, ev.y)}
 
-        # clip based on the limits
-        left_bound = self.bounds()[0] - delta[0]
-        right_bound = self.bounds()[1] - delta[0]
+        if self._event_source == "edge-left":
+            left_bound = self.bounds()[0] - delta[0]
+            right_bound = self.bounds()[1]
 
-        if left_bound <= self.limits[0] or right_bound >= self.limits[1]:
-            self._move_end(None)
+        elif self._event_source == "edge-right":
+            left_bound = self.bounds()[0]
+            right_bound = self.bounds()[1] - delta[0]
+
+        elif self._event_source == "fill":
+            left_bound = self.bounds()[0] - delta[0]
+            right_bound = self.bounds()[1] - delta[0]
+
+        # clip based on the limits
+        if left_bound < self.limits[0] or right_bound > self.limits[1]:
+            return
+
+        # make sure width > 2
+        # has to be at least 2 otherwise can't join datapoints for lines
+        if (right_bound - left_bound) < 2:
             return
 
         # set the new bounds
