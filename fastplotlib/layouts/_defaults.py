@@ -8,9 +8,9 @@ camera_types = {
 
 controller_types = {
     '2d': pygfx.PanZoomController,
-    '3d': pygfx.OrbitOrthoController,
+    '3d': pygfx.OrbitController,
     pygfx.OrthographicCamera: pygfx.PanZoomController,
-    pygfx.PerspectiveCamera: pygfx.OrbitOrthoController,
+    pygfx.PerspectiveCamera: pygfx.OrbitController,
 }
 
 

@@ -10,7 +10,7 @@ class Plot(Subplot):
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
             camera: str = '2d',
-            controller: Union[pygfx.PanZoomController, pygfx.OrbitOrthoController] = None,
+            controller: Union[pygfx.PanZoomController, pygfx.OrbitController] = None,
             **kwargs
     ):
         """

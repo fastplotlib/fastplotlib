@@ -68,7 +68,7 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
 
 def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
     cmap = _get_cmap(name)
-    return Texture(cmap, dim=1).get_view()
+    return Texture(cmap, dim=1)
 
 
 def make_colors_dict(labels: iter, cmap: str, **kwargs) -> OrderedDict:
