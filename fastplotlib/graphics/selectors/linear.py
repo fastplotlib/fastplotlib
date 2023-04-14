@@ -94,17 +94,35 @@ class LinearSelector(Graphic, Interaction):
             name: str = None
     ):
         """
+        Create a LinearSelector graphic which can be moved only along the x-axis. Useful for sub-selecting
+        data Line graphics or Heatmap graphics.
+
+        bounds[0], limits[0], and position[0] must be identical
 
         Parameters
         ----------
-        bounds
-        limits
-        height
-        position
-        fill_color
-        edge_color
-        name
+        bounds: (int, int)
+            the initial bounds of the linear selector
+
+        limits: (int, int)
+            (min limit, max limit) for the selector
+
+        height: int
+            height of the selector
+
+        position: (int, int)
+            initial position of the selector
+
+        fill_color: str, array, or tuple
+            fill color for the selector, passed to pygfx.Color
+
+        edge_color: str, array, or tuple
+            edge color for the selector, passed to pygfx.Color
+
+        name: str
+            name for this selector graphic
         """
+
         if limits[0] != position[0] != bounds[0]:
             raise ValueError("limits[0] != position[0] != bounds[0]")
 
@@ -115,7 +133,7 @@ class LinearSelector(Graphic, Interaction):
 
         self.fill = pygfx.Mesh(
             pygfx.box_geometry(1, height, 1),
-            pygfx.MeshBasicMaterial(color=fill_color)
+            pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color))
         )
 
         self.fill.position.set(*position, -2)
