@@ -1,5 +1,6 @@
 from typing import *
 import numpy as np
+from functools import partial
 
 import pygfx
 from pygfx.linalg import Vector3
@@ -49,9 +50,16 @@ class LinearBoundsFeature(GraphicFeature):
 
         self._parent.fill.geometry.positions.data[x_left, 0] = value[0]
         self._parent.fill.geometry.positions.data[x_right, 0] = value[1]
+
+        self._parent.edges[0].geometry.positions.data[:, 0] = value[0]
+        self._parent.edges[1].geometry.positions.data[:, 0] = value[1]
+
         self._data = (value[0], value[1])
 
         self._parent.fill.geometry.positions.update_range()
+
+        self._parent.edges[0].geometry.positions.update_range()
+        self._parent.edges[1].geometry.positions.update_range()
 
         self._feature_changed(key=None, new_data=value)
 
@@ -80,10 +88,26 @@ class LinearSelector(Graphic, Interaction):
             limits: Tuple[int, int],
             height: int,
             position: Tuple[int, int],
-            fill_color=(0.1, 0.1, 0.1),
-            edge_color="w",
+            resizable: bool = False,
+            fill_color=(0, 0, 0.5),
+            edge_color=(0.8, 0.8, 0),
             name: str = None
     ):
+        """
+
+        Parameters
+        ----------
+        bounds
+        limits
+        height
+        position
+        fill_color
+        edge_color
+        name
+        """
+        if limits[0] != position[0] != bounds[0]:
+            raise ValueError("limits[0] != position[0] != bounds[0]")
+
         super(LinearSelector, self).__init__(name=name)
 
         group = pygfx.Group()
@@ -100,13 +124,35 @@ class LinearSelector(Graphic, Interaction):
 
         self._move_info = None
 
-        self.edges = None
+        self.limits = limits
+
+        left_line_data = np.array(
+            [[position[0], (-height / 2) + position[1], 0.5],
+             [position[0], (height / 2) + position[1], 0.5]]
+        ).astype(np.float32)
+
+        left_line = pygfx.Line(
+            pygfx.Geometry(positions=left_line_data, colors=np.repeat([pygfx.Color(edge_color)], 2, axis=0)),
+            pygfx.LineMaterial(thickness=2, vertex_colors=True)
+        )
+
+        right_line_data = np.array(
+            [[bounds[1], (-height / 2) + position[1], 0.5],
+             [bounds[1], (height / 2) + position[1], 0.5]]
+        ).astype(np.float32)
+
+        right_line = pygfx.Line(
+            pygfx.Geometry(positions=right_line_data, colors=np.repeat([pygfx.Color(edge_color)], 2, axis=0)),
+            pygfx.LineMaterial(thickness=2, vertex_colors=True)
+        )
+
+        self.world_object.add(left_line)
+        self.world_object.add(right_line)
+
+        self.edges: Tuple[pygfx.Line, pygfx.Line] = (left_line, right_line)
 
         self.bounds = LinearBoundsFeature(self, bounds)
         self.bounds = bounds
-        self.timer = 0
-
-        self.limits = limits
 
     def _add_plot_area_hook(self, plot_area):
         # called when this selector is added to a plot area
@@ -136,8 +182,6 @@ class LinearSelector(Graphic, Interaction):
         left_bound = self.bounds()[0] - delta[0]
         right_bound = self.bounds()[1] - delta[0]
 
-        print(left_bound, right_bound)
-
         if left_bound <= self.limits[0] or right_bound >= self.limits[1]:
             self._move_end(None)
             return
@@ -149,6 +193,8 @@ class LinearSelector(Graphic, Interaction):
 
     def _move_end(self, ev):
         self._move_info = None
+        # sometimes weird stuff happens so we want to make sure the controller is reset
+        self._plot_area.controller.enabled = True
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
