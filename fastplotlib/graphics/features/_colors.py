@@ -220,8 +220,8 @@ class ImageCmapFeature(GraphicFeature):
         self.name = cmap
 
     def _set(self, cmap_name: str):
-        self._parent.world_object.material.map.texture.data[:] = make_colors(256, cmap_name)
-        self._parent.world_object.material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
+        self._parent.world_object.material.map.data[:] = make_colors(256, cmap_name)
+        self._parent.world_object.material.map.update_range((0, 0, 0), size=(256, 1, 1))
         self.name = cmap_name
 
         self._feature_changed(key=None, new_data=self.name)
@@ -246,8 +246,8 @@ class HeatmapCmapFeature(ImageCmapFeature):
     """
 
     def _set(self, cmap_name: str):
-        self._parent._material.map.texture.data[:] = make_colors(256, cmap_name)
-        self._parent._material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
+        self._parent._material.map.data[:] = make_colors(256, cmap_name)
+        self._parent._material.map.update_range((0, 0, 0), size=(256, 1, 1))
         self.name = cmap_name
 
         self._feature_changed(key=None, new_data=self.name)

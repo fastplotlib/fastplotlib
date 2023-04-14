@@ -1,7 +1,7 @@
 from typing import *
 
 import numpy as np
-from pygfx import Buffer, Texture, TextureView
+from pygfx import Buffer, Texture
 
 from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent, to_gpu_supported_dtype
 
@@ -87,7 +87,7 @@ class PointsDataFeature(GraphicFeatureIndexable):
 
 class ImageDataFeature(GraphicFeatureIndexable):
     """
-    Access to the TextureView buffer shown in an ImageGraphic.
+    Access to the Texture buffer shown in an ImageGraphic.
     """
 
     def __init__(self, parent, data: Any):
@@ -102,7 +102,7 @@ class ImageDataFeature(GraphicFeatureIndexable):
     @property
     def buffer(self) -> Texture:
         """Texture buffer for the image data"""
-        return self._parent.world_object.geometry.grid.texture
+        return self._parent.world_object.geometry.grid
 
     def update_gpu(self):
         """Update the GPU with the buffer"""
@@ -153,7 +153,7 @@ class HeatmapDataFeature(ImageDataFeature):
     @property
     def buffer(self) -> List[Texture]:
         """list of Texture buffer for the image data"""
-        return [img.geometry.grid.texture for img in self._parent.world_object.children]
+        return [img.geometry.grid for img in self._parent.world_object.children]
 
     def update_gpu(self):
         """Update the GPU with the buffer"""

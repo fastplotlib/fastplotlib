@@ -4,7 +4,6 @@ from itertools import product
 
 import numpy as np
 import pygfx
-from pygfx.utils import unpack_bitfield
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import ImageCmapFeature, ImageDataFeature, HeatmapDataFeature, HeatmapCmapFeature
@@ -87,18 +86,18 @@ class ImageGraphic(Graphic, Interaction):
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
 
-        texture_view = pygfx.Texture(buffer_init, dim=2).get_view(filter=filter)
+        texture = pygfx.Texture(buffer_init, dim=2)
 
-        geometry = pygfx.Geometry(grid=texture_view)
+        geometry = pygfx.Geometry(grid=texture)
 
         # if data is RGB
         if data.ndim == 3:
             self.cmap = None
-            material = pygfx.ImageBasicMaterial(clim=(vmin, vmax))
+            material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map_interpolation=filter)
         # if data is just 2D without color information, use colormap LUT
         else:
             self.cmap = ImageCmapFeature(self, cmap)
-            material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap())
+            material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter)
 
         world_object = pygfx.Image(
             geometry,
@@ -151,21 +150,13 @@ class _ImageTile(pygfx.Image):
     """
     Similar to pygfx.Image, only difference is that it contains a few properties to keep track of
     row chunk index, column chunk index
-
-
     """
     def _wgpu_get_pick_info(self, pick_value):
-        tex = self.geometry.grid
-        if hasattr(tex, "texture"):
-            tex = tex.texture  # tex was a view
-        # This should match with the shader
-        values = unpack_bitfield(pick_value, wobject_id=20, x=22, y=22)
-        x = values["x"] / 4194304 * tex.size[0] - 0.5
-        y = values["y"] / 4194304 * tex.size[1] - 0.5
-        ix, iy = int(x + 0.5), int(y + 0.5)
+        pick_info = super()._wgpu_get_pick_info(pick_value)
+
+        # add row chunk and col chunk index to pick_info dict
         return {
-            "index": (ix, iy),
-            "pixel_coord": (x - ix, y - iy),
+            **pick_info,
             "row_chunk_index": self.row_chunk_index,
             "col_chunk_index": self.col_chunk_index
         }
@@ -281,7 +272,7 @@ class HeatmapGraphic(Graphic, Interaction):
             vmin, vmax = quick_min_max(data)
 
         self.cmap = HeatmapCmapFeature(self, cmap)
-        self._material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap())
+        self._material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter)
 
         for start, stop, chunk in zip(start_ixs, stop_ixs, chunks):
             row_start, col_start = start
@@ -290,8 +281,8 @@ class HeatmapGraphic(Graphic, Interaction):
             # x and y positions of the Tile in world space coordinates
             y_pos, x_pos = row_start, col_start
 
-            tex_view = pygfx.Texture(buffer_init[row_start:row_stop, col_start:col_stop], dim=2).get_view(filter=filter)
-            geometry = pygfx.Geometry(grid=tex_view)
+            texture = pygfx.Texture(buffer_init[row_start:row_stop, col_start:col_stop], dim=2)
+            geometry = pygfx.Geometry(grid=texture)
             # material = pygfx.ImageBasicMaterial(clim=(0, 1), map=self.cmap())
 
             img = _ImageTile(geometry, self._material)

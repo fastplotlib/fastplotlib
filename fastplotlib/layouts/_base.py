@@ -70,17 +70,10 @@ class PlotArea:
         self._camera = camera
         self._controller = controller
 
-        self.controller.add_default_event_handlers(
+        self.controller.add_camera(self.camera)
+        self.controller.register_events(
             self.viewport,
-            self.camera
         )
-
-        # camera.far and camera.near clipping planes get
-        # wonky with setting controller.distance = 0
-        if isinstance(self.camera, OrthographicCamera):
-            self.controller.distance = 0
-            # also set a initial zoom
-            self.controller.zoom(0.8 / self.controller.zoom_value)
 
         self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
@@ -158,7 +151,6 @@ class PlotArea:
 
     def render(self):
         # does not flush
-        self.controller.update_camera(self.camera)
         self.viewport.render(self.scene, self.camera)
 
         for child in self.children:
@@ -213,17 +205,7 @@ class PlotArea:
         if name in graphic_names:
             raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
 
-    def _refresh_camera(self):
-        self.controller.update_camera(self.camera)
-        if sum(self.renderer.logical_size) > 0:
-            scene_lsize = self.viewport.rect[2], self.viewport.rect[3]
-        else:
-            scene_lsize = (1, 1)
-
-        self.camera.set_view_size(*scene_lsize)
-        self.camera.update_projection_matrix()
-
-    def center_graphic(self, graphic: Graphic, zoom: float = 1.3):
+    def center_graphic(self, graphic: Graphic, zoom: float = 1.35):
         """
         Center the camera w.r.t. the passed graphic
 
@@ -236,17 +218,14 @@ class PlotArea:
             zoom the camera after centering
 
         """
-        if not isinstance(self.camera, OrthographicCamera):
-            warn("`center_graphic()` not yet implemented for `PerspectiveCamera`")
-            return
 
-        self._refresh_camera()
+        self.camera.show_object(graphic.world_object)
 
-        self.controller.show_object(self.camera, graphic.world_object)
+        # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
+        # probably because camera.show_object uses bounding sphere
+        self.camera.zoom = zoom
 
-        self.controller.zoom(zoom)
-
-    def center_scene(self, zoom: float = 1.3):
+    def center_scene(self, zoom: float = 1.35):
         """
         Auto-center the scene, does not scale.
 
@@ -259,15 +238,11 @@ class PlotArea:
         if not len(self.scene.children) > 0:
             return
 
-        if not isinstance(self.camera, OrthographicCamera):
-            warn("`center_scene()` not yet implemented for `PerspectiveCamera`")
-            return
+        self.camera.show_object(self.scene)
 
-        self._refresh_camera()
-
-        self.controller.show_object(self.camera, self.scene)
-
-        self.controller.zoom(zoom)
+        # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
+        # probably because camera.show_object uses bounding sphere
+        self.camera.zoom = zoom
 
     def auto_scale(self, maintain_aspect: bool = False, zoom: float = 0.8):
         """
@@ -303,9 +278,7 @@ class PlotArea:
         self.camera.width = width
         self.camera.height = height
 
-        # self.controller.distance = 0
-
-        self.controller.zoom(zoom / self.controller.zoom_value)
+        self.camera.zoom = zoom
 
     def remove_graphic(self, graphic: Graphic):
         """

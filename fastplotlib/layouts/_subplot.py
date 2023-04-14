@@ -6,7 +6,7 @@ import weakref
 from inspect import signature, getfullargspec
 from warnings import warn
 
-from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitOrthoController, \
+from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitController, \
     AxesHelper, GridHelper, WgpuRenderer
 from wgpu.gui.auto import WgpuCanvas
 
@@ -22,7 +22,7 @@ class Subplot(PlotArea):
             position: Tuple[int, int] = None,
             parent_dims: Tuple[int, int] = None,
             camera: str = '2d',
-            controller: Union[PanZoomController, OrbitOrthoController] = None,
+            controller: Union[PanZoomController, OrbitController] = None,
             canvas: WgpuCanvas = None,
             renderer: WgpuRenderer = None,
             name: str = None,
