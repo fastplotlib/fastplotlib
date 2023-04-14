@@ -193,8 +193,8 @@ class PlotArea:
         if center:
             self.center_graphic(graphic)
 
-        # if hasattr(graphic, "_add_plot_area_hook"):
-        #     graphic._add_plot_area_hook(self.viewport, self.camera)
+        if hasattr(graphic, "_add_plot_area_hook"):
+            graphic._add_plot_area_hook(self)
 
     def _check_graphic_name_exists(self, name):
         graphic_names = list()

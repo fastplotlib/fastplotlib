@@ -89,7 +89,7 @@ class Plot(Subplot):
         self.renderer.flush()
         self.canvas.request_draw()
 
-    def show(self):
+    def show(self, autoscale: bool = True):
         """
         begins the rendering event loop and returns the canvas
 
@@ -100,6 +100,7 @@ class Plot(Subplot):
 
         """
         self.canvas.request_draw(self.render)
-        self.auto_scale(maintain_aspect=True, zoom=0.95)
+        if autoscale:
+            self.auto_scale(maintain_aspect=True, zoom=0.95)
 
         return self.canvas
