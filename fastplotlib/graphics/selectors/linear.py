@@ -5,7 +5,7 @@ from functools import partial
 import pygfx
 from pygfx.linalg import Vector3
 
-from .._base import Graphic, Interaction
+from .._base import Graphic, Interaction, GraphicCollection
 from ..features._base import GraphicFeature, FeatureEvent
 
 
@@ -206,13 +206,39 @@ class LinearSelector(Graphic, Interaction):
                 "pointer_enter"
             )
             edge_line.add_event_handler(
-                partial(self._pointer_leave_edge, edge_line),
+                partial(self._pointer_leave_edge),
                 "pointer_leave"
             )
 
         # set the initial bounds of the selector
         self.bounds = LinearBoundsFeature(self, bounds)
         self.bounds = bounds
+
+    def get_selected_data(self) -> Union[np.ndarray, List[np.ndarray]]:
+        """
+        Get the ``Graphic`` data bounded by the current selection.
+        Returns a view of the full data array.
+        If the ``Graphic`` is a collection, such as a ``LineStack``, it returns a list of views of the full array.
+
+        Returns
+        -------
+        Union[np.ndarray, List[np.ndarray]]
+            view or list of views of the full array
+
+        """
+        if self.parent is None:
+            raise AttributeError("No parent Graphic associated with selector")
+
+        # slice along x-axis
+        x_slice = slice(*self.bounds())
+
+        if isinstance(self.parent, GraphicCollection):
+            # this will return a list of views of the arrays, therefore no copy operations occur
+            # it's fine and fast even as a list of views because there is no re-allocating of memory
+            # this is fast even for slicing a 10,000 x 5,000 LineStack
+            return self.parent[:].data[x_slice]
+
+        return self.parent.data.buffer.data[x_slice]
 
     def _add_plot_area_hook(self, plot_area):
         # called when this selector is added to a plot area
@@ -303,7 +329,7 @@ class LinearSelector(Graphic, Interaction):
         edge.geometry.colors.data[:] = np.repeat([pygfx.Color("magenta")], 2, axis=0)
         edge.geometry.colors.update_range()
 
-    def _pointer_leave_edge(self, edge: pygfx.Line,  ev):
+    def _pointer_leave_edge(self,  ev):
         if self._move_info is not None and self._event_source.startswith("edge"):
             return
 
