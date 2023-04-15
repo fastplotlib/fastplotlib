@@ -4,6 +4,7 @@ import pygfx
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
+from .selectors import LinearSelector
 from ..utils import make_colors
 
 
@@ -95,6 +96,64 @@ class LineGraphic(Graphic, Interaction):
 
         if z_position is not None:
             self.world_object.position.z = z_position
+
+        self.selectors: List[LinearSelector] = list()
+
+    def add_linear_selector(self, padding: float = 100.0, **kwargs):
+        """
+        Add a ``LinearSelector``.
+
+        Parameters
+        ----------
+        padding: float, default 100.0
+            Extends the linear selector along the y-axis to make it easier to interact with.
+
+        kwargs
+            passed to ``LinearSelector``
+
+        Returns
+        -------
+        LinearSelector
+            linear selection graphic
+        """
+        data = self.data()
+        # x limits
+        x_limits = (data[0, 0], data[-1, 0])
+
+        # initial bounds are 20% of the limits range
+        bounds_init = (x_limits[0], int(np.ptp(x_limits) * 0.2))
+
+        # width of the y-vals + padding
+        height = np.ptp(data[:, 1]) + padding
+
+        # initial position of the selector
+        position_y = (data[:, 1].min() + data[:, 1].max()) / 2
+        position = (x_limits[0], position_y)
+
+        # create selector
+        selector = LinearSelector(
+            bounds=bounds_init,
+            limits=x_limits,
+            height=height,
+            position=position,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+        # so that it is below this graphic
+        selector.position.set_z(self.position.z - 1)
+        
+        self.selectors.append(selector)
+
+        return selector
+
+    def remove_selector(self, selector: LinearSelector):
+        self.selectors.remove(selector)
+        self._plot_area.delete_graphic(selector)
+
+    def _add_plot_area_hook(self, plot_area):
+        self._plot_area = plot_area
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any = None):
         if not hasattr(self, "_previous_data"):

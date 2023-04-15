@@ -36,10 +36,12 @@ y_bottom = np.array([
 ])
 
 
-class LinearBoundsFeature(GraphicFeature):
+class _LinearBoundsFeature(GraphicFeature):
     """Feature for a linear bounding region"""
     def __init__(self, parent, bounds: Tuple[int, int]):
-        super(LinearBoundsFeature, self).__init__(parent, data=bounds)
+        # int so we can use these as slice indices for other purposes
+        bounds = tuple(map(int, bounds))
+        super(_LinearBoundsFeature, self).__init__(parent, data=bounds)
 
     def _set(self, value):
         # sets new bounds
@@ -48,6 +50,9 @@ class LinearBoundsFeature(GraphicFeature):
                 "Bounds must be a tuple in the form of `(min_bound, max_bound)`, "
                 "where `min_bound` and `max_bound` are numeric values."
             )
+
+        # int so we can use these as slice indices for other purposes
+        value = tuple(map(int, value))
 
         # change left x position of the fill mesh
         self._parent.fill.geometry.positions.data[x_left, 0] = value[0]
@@ -86,7 +91,6 @@ class LinearBoundsFeature(GraphicFeature):
 
 
 class LinearSelector(Graphic, Interaction):
-    """Linear region selector, for lines or line collections."""
     feature_events = (
         "bounds"
     )
@@ -105,7 +109,7 @@ class LinearSelector(Graphic, Interaction):
     ):
         """
         Create a LinearSelector graphic which can be moved only along the x-axis. Useful for sub-selecting
-        data Line graphics or Heatmap graphics.
+        data on Line graphics.
 
         bounds[0], limits[0], and position[0] must be identical
 
@@ -205,13 +209,10 @@ class LinearSelector(Graphic, Interaction):
                 partial(self._pointer_enter_edge, edge_line),
                 "pointer_enter"
             )
-            edge_line.add_event_handler(
-                partial(self._pointer_leave_edge),
-                "pointer_leave"
-            )
+            edge_line.add_event_handler(self._pointer_leave_edge, "pointer_leave")
 
         # set the initial bounds of the selector
-        self.bounds = LinearBoundsFeature(self, bounds)
+        self.bounds = _LinearBoundsFeature(self, bounds)
         self.bounds = bounds
 
     def get_selected_data(self) -> Union[np.ndarray, List[np.ndarray]]:
