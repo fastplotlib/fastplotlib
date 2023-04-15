@@ -9,7 +9,7 @@ from .._base import Graphic, Interaction, GraphicCollection
 from ..features._base import GraphicFeature, FeatureEvent
 
 
-# positions for indexing the BoxGeometry to set the "width" and "height" of the box
+# positions for indexing the BoxGeometry to set the "width" and "size" of the box
 # hacky but I don't think we can morph meshes in pygfx yet: https://github.com/pygfx/pygfx/issues/346
 x_right = np.array([
     True,  True,  True,  True, False, False, False, False, False,
@@ -99,8 +99,9 @@ class LinearSelector(Graphic, Interaction):
             self,
             bounds: Tuple[int, int],
             limits: Tuple[int, int],
-            height: int,
+            size: int,
             position: Tuple[int, int],
+            axis: str = "x",
             parent: Graphic = None,
             resizable: bool = False,
             fill_color=(0, 0, 0.35),
@@ -121,11 +122,17 @@ class LinearSelector(Graphic, Interaction):
         limits: (int, int)
             (min limit, max limit) for the selector
 
-        height: int
+        size: int
             height of the selector
 
         position: (int, int)
             initial position of the selector
+
+        axis: str, default "x"
+            "x" | "y", axis for the selector
+
+        parent: Graphic, default ``None``
+            associated this selector with a parent Graphic
 
         resizable: bool
             if ``True``, the edges can be dragged to resize the width of the linear selection
@@ -155,7 +162,7 @@ class LinearSelector(Graphic, Interaction):
 
         # the fill of the selection
         self.fill = pygfx.Mesh(
-            pygfx.box_geometry(1, height, 1),
+            pygfx.box_geometry(1, size, 1),
             pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color))
         )
 
@@ -177,8 +184,8 @@ class LinearSelector(Graphic, Interaction):
 
         # position data for the left edge line
         left_line_data = np.array(
-            [[position[0], (-height / 2) + position[1], 0.5],
-             [position[0], (height / 2) + position[1], 0.5]]
+            [[position[0], (-size / 2) + position[1], 0.5],
+             [position[0], (size / 2) + position[1], 0.5]]
         ).astype(np.float32)
 
         left_line = pygfx.Line(
@@ -188,8 +195,8 @@ class LinearSelector(Graphic, Interaction):
 
         # position data for the right edge line
         right_line_data = np.array(
-            [[bounds[1], (-height / 2) + position[1], 0.5],
-             [bounds[1], (height / 2) + position[1], 0.5]]
+            [[bounds[1], (-size / 2) + position[1], 0.5],
+             [bounds[1], (size / 2) + position[1], 0.5]]
         ).astype(np.float32)
 
         right_line = pygfx.Line(
@@ -237,13 +244,18 @@ class LinearSelector(Graphic, Interaction):
                 "You must either set a ``parent`` Graphic on the selector, or pass a graphic."
             )
 
+        # use passed graphic if provided, else use parent
         if graphic is not None:
             source = graphic
         else:
             source = self.parent
 
+        # if the graphic position is not at (0, 0) then the bounds must be offset
+        offset = source.position.x
+        offset_bounds = (v - offset for v in self.bounds())
+
         # slice along x-axis
-        x_slice = slice(*self.bounds())
+        x_slice = slice(*offset_bounds)
 
         if isinstance(source, GraphicCollection):
             # this will return a list of views of the arrays, therefore no copy operations occur

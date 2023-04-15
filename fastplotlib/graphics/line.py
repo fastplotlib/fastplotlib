@@ -134,7 +134,7 @@ class LineGraphic(Graphic, Interaction):
         selector = LinearSelector(
             bounds=bounds_init,
             limits=x_limits,
-            height=height,
+            size=height,
             position=position,
             parent=self,
             **kwargs
