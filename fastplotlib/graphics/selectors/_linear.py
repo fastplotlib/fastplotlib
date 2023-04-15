@@ -220,9 +220,13 @@ class LinearSelector(Graphic, Interaction):
         Get the ``Graphic`` data bounded by the current selection.
         Returns a view of the full data array.
         If the ``Graphic`` is a collection, such as a ``LineStack``, it returns a list of views of the full array.
+        Can be performed on the ``parent`` Graphic or on another graphic by passing to the ``graphic`` arg.
 
         Returns
         -------
+        graphic: Graphic, optional
+            if provided, returns the data selection from this graphic instead of the graphic set as ``parent``
+
         Union[np.ndarray, List[np.ndarray]]
             view or list of views of the full array
 
