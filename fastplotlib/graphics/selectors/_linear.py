@@ -215,7 +215,7 @@ class LinearSelector(Graphic, Interaction):
         self.bounds = _LinearBoundsFeature(self, bounds)
         self.bounds = bounds
 
-    def get_selected_data(self) -> Union[np.ndarray, List[np.ndarray]]:
+    def get_selected_data(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Get the ``Graphic`` data bounded by the current selection.
         Returns a view of the full data array.
@@ -227,19 +227,27 @@ class LinearSelector(Graphic, Interaction):
             view or list of views of the full array
 
         """
-        if self.parent is None:
-            raise AttributeError("No parent Graphic associated with selector")
+        if self.parent is None and graphic is None:
+            raise AttributeError(
+                "No Graphic to apply selector. "
+                "You must either set a ``parent`` Graphic on the selector, or pass a graphic."
+            )
+
+        if graphic is not None:
+            source = graphic
+        else:
+            source = self.parent
 
         # slice along x-axis
         x_slice = slice(*self.bounds())
 
-        if isinstance(self.parent, GraphicCollection):
+        if isinstance(source, GraphicCollection):
             # this will return a list of views of the arrays, therefore no copy operations occur
             # it's fine and fast even as a list of views because there is no re-allocating of memory
             # this is fast even for slicing a 10,000 x 5,000 LineStack
-            return self.parent[:].data[x_slice]
+            return source[:].data[x_slice]
 
-        return self.parent.data.buffer.data[x_slice]
+        return source.data.buffer.data[x_slice]
 
     def _add_plot_area_hook(self, plot_area):
         # called when this selector is added to a plot area
