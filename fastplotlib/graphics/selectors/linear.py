@@ -97,6 +97,7 @@ class LinearSelector(Graphic, Interaction):
             limits: Tuple[int, int],
             height: int,
             position: Tuple[int, int],
+            parent: Graphic = None,
             resizable: bool = False,
             fill_color=(0, 0, 0.35),
             edge_color=(0.8, 0.8, 0),
@@ -140,6 +141,8 @@ class LinearSelector(Graphic, Interaction):
 
         super(LinearSelector, self).__init__(name=name)
 
+        self.parent = parent
+
         # world object for this will be a group
         # basic mesh for the fill area of the selector
         # line for each edge of the selector
@@ -166,6 +169,8 @@ class LinearSelector(Graphic, Interaction):
         self.limits = limits
         self._resizable = resizable
 
+        self._edge_color = np.repeat([pygfx.Color(edge_color)], 2, axis=0)
+
         # position data for the left edge line
         left_line_data = np.array(
             [[position[0], (-height / 2) + position[1], 0.5],
@@ -173,8 +178,8 @@ class LinearSelector(Graphic, Interaction):
         ).astype(np.float32)
 
         left_line = pygfx.Line(
-            pygfx.Geometry(positions=left_line_data, colors=np.repeat([pygfx.Color(edge_color)], 2, axis=0)),
-            pygfx.LineMaterial(thickness=5, vertex_colors=True)
+            pygfx.Geometry(positions=left_line_data, colors=self._edge_color.copy()),
+            pygfx.LineMaterial(thickness=3, vertex_colors=True)
         )
 
         # position data for the right edge line
@@ -184,8 +189,8 @@ class LinearSelector(Graphic, Interaction):
         ).astype(np.float32)
 
         right_line = pygfx.Line(
-            pygfx.Geometry(positions=right_line_data, colors=np.repeat([pygfx.Color(edge_color)], 2, axis=0)),
-            pygfx.LineMaterial(thickness=5, vertex_colors=True)
+            pygfx.Geometry(positions=right_line_data, colors=self._edge_color.copy()),
+            pygfx.LineMaterial(thickness=3, vertex_colors=True)
         )
 
         # add the edge lines
@@ -193,6 +198,17 @@ class LinearSelector(Graphic, Interaction):
         self.world_object.add(right_line)
 
         self.edges: Tuple[pygfx.Line, pygfx.Line] = (left_line, right_line)
+
+        # highlight the edges when mouse is hovered
+        for edge_line in self.edges:
+            edge_line.add_event_handler(
+                partial(self._pointer_enter_edge, edge_line),
+                "pointer_enter"
+            )
+            edge_line.add_event_handler(
+                partial(self._pointer_leave_edge, edge_line),
+                "pointer_leave"
+            )
 
         # set the initial bounds of the selector
         self.bounds = LinearBoundsFeature(self, bounds)
@@ -279,6 +295,25 @@ class LinearSelector(Graphic, Interaction):
         self._move_info = None
         # sometimes weird stuff happens so we want to make sure the controller is reset
         self._plot_area.controller.enabled = True
+
+        self._reset_edge_color()
+
+    def _pointer_enter_edge(self, edge: pygfx.Line, ev):
+        edge.material.thickness = 6
+        edge.geometry.colors.data[:] = np.repeat([pygfx.Color("magenta")], 2, axis=0)
+        edge.geometry.colors.update_range()
+
+    def _pointer_leave_edge(self, edge: pygfx.Line,  ev):
+        if self._move_info is not None and self._event_source.startswith("edge"):
+            return
+
+        self._reset_edge_color()
+
+    def _reset_edge_color(self):
+        for edge in self.edges:
+            edge.material.thickness = 3
+            edge.geometry.colors.data[:] = self._edge_color
+            edge.geometry.colors.update_range()
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
