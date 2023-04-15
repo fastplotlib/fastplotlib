@@ -37,6 +37,7 @@ y_bottom = np.array([
 
 
 class LinearBoundsFeature(GraphicFeature):
+    """Feature for a linear bounding region"""
     def __init__(self, parent, bounds: Tuple[int, int]):
         super(LinearBoundsFeature, self).__init__(parent, data=bounds)
 
@@ -48,19 +49,27 @@ class LinearBoundsFeature(GraphicFeature):
                 "where `min_bound` and `max_bound` are numeric values."
             )
 
+        # change left x position of the fill mesh
         self._parent.fill.geometry.positions.data[x_left, 0] = value[0]
+
+        # change right x position of the fill mesh
         self._parent.fill.geometry.positions.data[x_right, 0] = value[1]
 
+        # change  position of the left edge line
         self._parent.edges[0].geometry.positions.data[:, 0] = value[0]
+
+        # change  position of the right edge line
         self._parent.edges[1].geometry.positions.data[:, 0] = value[1]
 
         self._data = (value[0], value[1])
 
+        # send changes to GPU
         self._parent.fill.geometry.positions.update_range()
 
         self._parent.edges[0].geometry.positions.update_range()
         self._parent.edges[1].geometry.positions.update_range()
 
+        # calls any events
         self._feature_changed(key=None, new_data=value)
 
     def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
@@ -113,6 +122,9 @@ class LinearSelector(Graphic, Interaction):
         position: (int, int)
             initial position of the selector
 
+        resizable: bool
+            if ``True``, the edges can be dragged to resize the width of the linear selection
+
         fill_color: str, array, or tuple
             fill color for the selector, passed to pygfx.Color
 
@@ -128,9 +140,13 @@ class LinearSelector(Graphic, Interaction):
 
         super(LinearSelector, self).__init__(name=name)
 
+        # world object for this will be a group
+        # basic mesh for the fill area of the selector
+        # line for each edge of the selector
         group = pygfx.Group()
         self._set_world_object(group)
 
+        # the fill of the selection
         self.fill = pygfx.Mesh(
             pygfx.box_geometry(1, height, 1),
             pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color))
@@ -140,12 +156,17 @@ class LinearSelector(Graphic, Interaction):
 
         self.world_object.add(self.fill)
 
+        # will be used to store the mouse pointer x y movements
+        # so deltas can be calculated for interacting with the selection
         self._move_info = None
+
+        # mouse events can come from either the fill mesh world object, or one of the lines on the edge of the selector
         self._event_source: str = None
 
         self.limits = limits
         self._resizable = resizable
 
+        # position data for the left edge line
         left_line_data = np.array(
             [[position[0], (-height / 2) + position[1], 0.5],
              [position[0], (height / 2) + position[1], 0.5]]
@@ -156,6 +177,7 @@ class LinearSelector(Graphic, Interaction):
             pygfx.LineMaterial(thickness=5, vertex_colors=True)
         )
 
+        # position data for the right edge line
         right_line_data = np.array(
             [[bounds[1], (-height / 2) + position[1], 0.5],
              [bounds[1], (height / 2) + position[1], 0.5]]
@@ -166,11 +188,13 @@ class LinearSelector(Graphic, Interaction):
             pygfx.LineMaterial(thickness=5, vertex_colors=True)
         )
 
+        # add the edge lines
         self.world_object.add(left_line)
         self.world_object.add(right_line)
 
         self.edges: Tuple[pygfx.Line, pygfx.Line] = (left_line, right_line)
 
+        # set the initial bounds of the selector
         self.bounds = LinearBoundsFeature(self, bounds)
         self.bounds = bounds
 
@@ -178,6 +202,7 @@ class LinearSelector(Graphic, Interaction):
         # called when this selector is added to a plot area
         self._plot_area = plot_area
 
+        # need partials so that the source of the event is passed to the `_move_start` handler
         move_start_fill = partial(self._move_start, "fill")
         move_start_edge_left = partial(self._move_start, "edge-left")
         move_start_edge_right = partial(self._move_start, "edge-right")
@@ -192,7 +217,15 @@ class LinearSelector(Graphic, Interaction):
         self._plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
 
     def _move_start(self, event_source: str, ev):
-        self._plot_area.controller.enabled = False
+        """
+        Parameters
+        ----------
+        event_source: str
+            "fill" | "edge-left" | "edge-right"
+
+        """
+        # self._plot_area.controller.enabled = False
+        # last pointer position
         self._move_info = {"last_pos": (ev.x, ev.y)}
         self._event_source = event_source
 
@@ -200,6 +233,8 @@ class LinearSelector(Graphic, Interaction):
         if self._move_info is None:
             return
 
+        # disable the controller, otherwise the panzoom or other controllers will move the camera and will not
+        # allow the selector to process the mouse events
         self._plot_area.controller.enabled = False
 
         last = self._move_info["last_pos"]
@@ -209,22 +244,27 @@ class LinearSelector(Graphic, Interaction):
         self._move_info = {"last_pos": (ev.x, ev.y)}
 
         if self._event_source == "edge-left":
+            # change only the left bound
+            # move the left edge only, expand the fill in the leftward direction
             left_bound = self.bounds()[0] - delta[0]
             right_bound = self.bounds()[1]
 
         elif self._event_source == "edge-right":
+            # change only the right bound
+            # move the right edge only, expand the fill in the rightward direction
             left_bound = self.bounds()[0]
             right_bound = self.bounds()[1] - delta[0]
 
         elif self._event_source == "fill":
+            # move the entire selector
             left_bound = self.bounds()[0] - delta[0]
             right_bound = self.bounds()[1] - delta[0]
 
-        # clip based on the limits
+        # if the limits are met do nothing
         if left_bound < self.limits[0] or right_bound > self.limits[1]:
             return
 
-        # make sure width > 2
+        # make sure `selector width > 2`, left edge must not move past right edge!
         # has to be at least 2 otherwise can't join datapoints for lines
         if (right_bound - left_bound) < 2:
             return
@@ -232,6 +272,7 @@ class LinearSelector(Graphic, Interaction):
         # set the new bounds
         self.bounds = (left_bound, right_bound)
 
+        # re-enable the controller
         self._plot_area.controller.enabled = True
 
     def _move_end(self, ev):
