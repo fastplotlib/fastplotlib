@@ -52,7 +52,7 @@ class _LinearBoundsFeature(GraphicFeature):
             )
 
         # int so we can use these as slice indices for other purposes
-        value = tuple(map(int, value))
+        # value = tuple(map(int, value))
 
         # change left x position of the fill mesh
         self._parent.fill.geometry.positions.data[x_left, 0] = value[0]
@@ -66,7 +66,7 @@ class _LinearBoundsFeature(GraphicFeature):
         # change  position of the right edge line
         self._parent.edges[1].geometry.positions.data[:, 0] = value[1]
 
-        self._data = (value[0], value[1])
+        self._data = value#(value[0], value[1])
 
         # send changes to GPU
         self._parent.fill.geometry.positions.update_range()
@@ -253,6 +253,8 @@ class LinearSelector(Graphic, Interaction):
         # if the graphic position is not at (0, 0) then the bounds must be offset
         offset = source.position.x
         offset_bounds = (v - offset for v in self.bounds())
+        # need them to be int to use as indices
+        offset_bounds = tuple(map(int, offset_bounds))
 
         # slice along x-axis
         x_slice = slice(*offset_bounds)
@@ -293,7 +295,7 @@ class LinearSelector(Graphic, Interaction):
         """
         # self._plot_area.controller.enabled = False
         # last pointer position
-        self._move_info = {"last_pos": (ev.x, ev.y)}
+        self._move_info = {"last_pos": (np.int64(ev.x), np.int64(ev.y))}
         self._event_source = event_source
 
     def _move(self, ev):
@@ -306,26 +308,53 @@ class LinearSelector(Graphic, Interaction):
 
         last = self._move_info["last_pos"]
 
-        delta = (last[0] - ev.x, last[1] - ev.y)
+        # new - last
+        # pointer move events are in viewport or canvas space
+        delta = Vector3(ev.x - last[0], ev.y - last[1])
 
         self._move_info = {"last_pos": (ev.x, ev.y)}
+
+        viewport_size = self._plot_area.viewport.logical_size
+
+        # convert delta to NDC coordinates using viewport size
+        delta_ndc = delta.multiply(
+            Vector3(
+                2 / viewport_size[0],
+                -2 / viewport_size[1],
+                0
+            )
+        )
+
+        camera = self._plot_area.camera
+
+        # left bound current world position
+        left_vec = Vector3(self.bounds()[0])
+        # compute and add delta in projected NDC space and then unproject back to world space
+        left_vec.project(camera).add(delta_ndc).unproject(camera)
+
+        # left bound current world position
+        right_vec = Vector3(self.bounds()[1])
+        # compute and add delta in projected NDC space and then unproject back to world space
+        right_vec.project(camera).add(delta_ndc).unproject(camera)
+
+        print(right_vec)
 
         if self._event_source == "edge-left":
             # change only the left bound
             # move the left edge only, expand the fill in the leftward direction
-            left_bound = self.bounds()[0] - delta[0]
+            left_bound = left_vec.x
             right_bound = self.bounds()[1]
 
         elif self._event_source == "edge-right":
             # change only the right bound
             # move the right edge only, expand the fill in the rightward direction
             left_bound = self.bounds()[0]
-            right_bound = self.bounds()[1] - delta[0]
+            right_bound = right_vec.x
 
         elif self._event_source == "fill":
             # move the entire selector
-            left_bound = self.bounds()[0] - delta[0]
-            right_bound = self.bounds()[1] - delta[0]
+            left_bound = left_vec.x
+            right_bound = right_vec.x
 
         # if the limits are met do nothing
         if left_bound < self.limits[0] or right_bound > self.limits[1]:
