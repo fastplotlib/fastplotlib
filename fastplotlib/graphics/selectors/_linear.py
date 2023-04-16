@@ -337,8 +337,6 @@ class LinearSelector(Graphic, Interaction):
             (source.data()[:, dim] >= offset_bounds[0]) & (source.data()[:, dim] <= offset_bounds[1])
         )[0]
 
-        print(ixs)
-
         s = slice(ixs[0], ixs[-1])
 
         if isinstance(source, GraphicCollection):
@@ -443,8 +441,6 @@ class LinearSelector(Graphic, Interaction):
             # move the entire selector
             bound0 = getattr(vec0, self.bounds.axis)
             bound1 = getattr(vec1, self.bounds.axis)
-
-        # print(bound0, bound1)
 
         # if the limits are met do nothing
         if bound0 < self.limits[0] or bound1 > self.limits[1]:
