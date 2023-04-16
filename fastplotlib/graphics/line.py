@@ -1,4 +1,6 @@
 from typing import *
+import weakref
+
 import numpy as np
 import pygfx
 
@@ -97,11 +99,10 @@ class LineGraphic(Graphic, Interaction):
         if z_position is not None:
             self.world_object.position.z = z_position
 
-        self.selectors: List[LinearSelector] = list()
-
-    def add_linear_selector(self, padding: float = 100.0, **kwargs):
+    def add_linear_selector(self, padding: float = 100.0, **kwargs) -> LinearSelector:
         """
-        Add a ``LinearSelector``.
+        Add a ``LinearSelector``. Selectors are just ``Graphic`` objects so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
 
         Parameters
         ----------
@@ -160,14 +161,10 @@ class LineGraphic(Graphic, Interaction):
         self._plot_area.add_graphic(selector, center=False)
         # so that it is below this graphic
         selector.position.set_z(self.position.z - 1)
-        
-        self.selectors.append(selector)
 
-        return selector
-
-    def remove_selector(self, selector: LinearSelector):
-        self.selectors.remove(selector)
-        self._plot_area.delete_graphic(selector)
+        # PlotArea manages this for garbage collection etc. just like all other Graphics
+        # so we should only work with a proxy on the user-end
+        return weakref.proxy(selector)
 
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area

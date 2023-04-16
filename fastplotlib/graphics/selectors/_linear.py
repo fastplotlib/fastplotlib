@@ -362,15 +362,15 @@ class LinearSelector(Graphic, Interaction):
         self._plot_area = plot_area
 
         # need partials so that the source of the event is passed to the `_move_start` handler
-        move_start_fill = partial(self._move_start, "fill")
-        move_start_edge_0 = partial(self._move_start, "edge-0")
-        move_start_edge_1 = partial(self._move_start, "edge-1")
+        self._move_start_fill = partial(self._move_start, "fill")
+        self._move_start_edge_0 = partial(self._move_start, "edge-0")
+        self._move_start_edge_1 = partial(self._move_start, "edge-1")
 
-        self.fill.add_event_handler(move_start_fill, "pointer_down")
+        self.fill.add_event_handler(self._move_start_fill, "pointer_down")
 
         if self._resizable:
-            self.edges[0].add_event_handler(move_start_edge_0, "pointer_down")
-            self.edges[1].add_event_handler(move_start_edge_1, "pointer_down")
+            self.edges[0].add_event_handler(self._move_start_edge_0, "pointer_down")
+            self.edges[1].add_event_handler(self._move_start_edge_1, "pointer_down")
 
         self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
         self._plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
@@ -496,3 +496,13 @@ class LinearSelector(Graphic, Interaction):
 
     def _reset_feature(self, feature: str):
         pass
+
+    def __del__(self):
+        self.fill.remove_event_handler(self._move_start_fill, "pointer_down")
+
+        if self._resizable:
+            self.edges[0].remove_event_handler(self._move_start_edge_0, "pointer_down")
+            self.edges[1].remove_event_handler(self._move_start_edge_1, "pointer_down")
+
+        self._plot_area.renderer.remove_event_handler(self._move, "pointer_move")
+        self._plot_area.renderer.remove_event_handler(self._move_end, "pointer_up")
