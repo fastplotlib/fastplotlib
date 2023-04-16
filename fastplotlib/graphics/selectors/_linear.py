@@ -39,8 +39,6 @@ y_bottom = np.array([
 class _LinearBoundsFeature(GraphicFeature):
     """Feature for a linear bounding region"""
     def __init__(self, parent, bounds: Tuple[int, int], axis: str):
-        # int so we can use these as slice indices for other purposes
-        bounds = tuple(map(int, bounds))
         super(_LinearBoundsFeature, self).__init__(parent, data=bounds)
 
         self._axis = axis
@@ -57,9 +55,6 @@ class _LinearBoundsFeature(GraphicFeature):
                 "Bounds must be a tuple in the form of `(min_bound, max_bound)`, "
                 "where `min_bound` and `max_bound` are numeric values."
             )
-
-        # int so we can use these as slice indices for other purposes
-        # value = tuple(map(int, value))
 
         if self.axis == "x":
             # change left x position of the fill mesh
@@ -319,17 +314,40 @@ class LinearSelector(Graphic, Interaction):
             view or list of views of the full array
 
         """
-        if self.parent is None and graphic is None:
-            raise AttributeError(
-                "No Graphic to apply selector. "
-                "You must either set a ``parent`` Graphic on the selector, or pass a graphic."
-            )
+        source = self._get_source(graphic)
+        ixs = self.get_selected_indices(source)
 
-        # use passed graphic if provided, else use parent
-        if graphic is not None:
-            source = graphic
-        else:
-            source = self.parent
+        s = slice(ixs[0], ixs[-1])
+
+        if isinstance(source, GraphicCollection):
+            # this will return a list of views of the arrays, therefore no copy operations occur
+            # it's fine and fast even as a list of views because there is no re-allocating of memory
+            # this is fast even for slicing a 10,000 x 5,000 LineStack
+            return source[:].data[s]
+
+        return source.data.buffer.data[s]
+
+    def get_selected_indices(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
+        """
+        Returns the indices of the ``Graphic`` data bounded by the current selection.
+        This is useful because the ``bounds`` min and max are not necessarily the same
+        as the Line Geometry positions x-vals or y-vals. For example, if if you used a
+        np.linspace(0, 100, 1000) for xvals in your line, then you will have 1,000
+        x-positions. If the selection ``bounds`` are set to ``(0, 10)``, the returned
+        indices would be ``(0, 100``.
+
+        Parameters
+        ----------
+        graphic: Graphic, optional
+            if provided, returns the selection indices from this graphic instead of the graphic set as ``parent``
+
+        Returns
+        -------
+        Union[np.ndarray, List[np.ndarray]]
+            data indices of the selection
+
+        """
+        source = self._get_source(graphic)
 
         # if the graphic position is not at (0, 0) then the bounds must be offset
         offset = getattr(source.position, self.bounds.axis)
@@ -346,16 +364,22 @@ class LinearSelector(Graphic, Interaction):
             (source.data()[:, dim] >= offset_bounds[0]) & (source.data()[:, dim] <= offset_bounds[1])
         )[0]
 
-        s = slice(ixs[0], ixs[-1])
+        return ixs
 
-        if isinstance(source, GraphicCollection):
-            # this will return a list of views of the arrays, therefore no copy operations occur
-            # it's fine and fast even as a list of views because there is no re-allocating of memory
-            # this is fast even for slicing a 10,000 x 5,000 LineStack
+    def _get_source(self, graphic):
+        if self.parent is None and graphic is None:
+            raise AttributeError(
+                "No Graphic to apply selector. "
+                "You must either set a ``parent`` Graphic on the selector, or pass a graphic."
+            )
 
-            return source[:].data[s]
+        # use passed graphic if provided, else use parent
+        if graphic is not None:
+            source = graphic
+        else:
+            source = self.parent
 
-        return source.data.buffer.data[s]
+        return source
 
     def _add_plot_area_hook(self, plot_area):
         # called when this selector is added to a plot area
