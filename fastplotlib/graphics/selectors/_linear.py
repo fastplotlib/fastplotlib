@@ -173,11 +173,20 @@ class LinearSelector(Graphic, Interaction):
         limits = tuple(map(round, limits))
         position = tuple(map(round, position))
 
-        if limits[0] != position[0] != bounds[0]:
-            raise ValueError(
-                f"limits[0] != position[0] != bounds[0]\n"
-                f"{limits[0]} != {position[0]} != {bounds[0]}"
-            )
+        if axis == "x":
+            if limits[0] != position[0] != bounds[0]:
+                raise ValueError(
+                    f"limits[0] != position[0] != bounds[0]\n"
+                    f"{limits[0]} != {position[0]} != {bounds[0]}"
+                )
+
+        elif axis == "y":
+            # initial y-position is position[1]
+            if limits[0] != position[1] != bounds[0]:
+                raise ValueError(
+                    f"limits[0] != position[1] != bounds[0]\n"
+                    f"{limits[0]} != {position[1]} != {bounds[0]}"
+                )
 
         super(LinearSelector, self).__init__(name=name)
 
