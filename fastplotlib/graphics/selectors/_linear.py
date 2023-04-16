@@ -38,10 +38,17 @@ y_bottom = np.array([
 
 class _LinearBoundsFeature(GraphicFeature):
     """Feature for a linear bounding region"""
-    def __init__(self, parent, bounds: Tuple[int, int]):
+    def __init__(self, parent, bounds: Tuple[int, int], axis: str):
         # int so we can use these as slice indices for other purposes
         bounds = tuple(map(int, bounds))
         super(_LinearBoundsFeature, self).__init__(parent, data=bounds)
+
+        self._axis = axis
+
+    @property
+    def axis(self) -> str:
+        """one of "x" | "y" """
+        return self._axis
 
     def _set(self, value):
         # sets new bounds
@@ -54,17 +61,31 @@ class _LinearBoundsFeature(GraphicFeature):
         # int so we can use these as slice indices for other purposes
         # value = tuple(map(int, value))
 
-        # change left x position of the fill mesh
-        self._parent.fill.geometry.positions.data[x_left, 0] = value[0]
+        if self.axis == "x":
+            # change left x position of the fill mesh
+            self._parent.fill.geometry.positions.data[x_left, 0] = value[0]
 
-        # change right x position of the fill mesh
-        self._parent.fill.geometry.positions.data[x_right, 0] = value[1]
+            # change right x position of the fill mesh
+            self._parent.fill.geometry.positions.data[x_right, 0] = value[1]
 
-        # change  position of the left edge line
-        self._parent.edges[0].geometry.positions.data[:, 0] = value[0]
+            # change x position of the left edge line
+            self._parent.edges[0].geometry.positions.data[:, 0] = value[0]
 
-        # change  position of the right edge line
-        self._parent.edges[1].geometry.positions.data[:, 0] = value[1]
+            # change x position of the right edge line
+            self._parent.edges[1].geometry.positions.data[:, 0] = value[1]
+
+        elif self.axis == "y":
+            # change bottom y position of the fill mesh
+            self._parent.fill.geometry.positions.data[y_bottom, 1] = value[0]
+
+            # change top position of the fill mesh
+            self._parent.fill.geometry.positions.data[y_top, 1] = value[1]
+
+            # change y position of the bottom edge line
+            self._parent.edges[0].geometry.positions.data[:, 1] = value[0]
+
+            # change y position of the top edge line
+            self._parent.edges[1].geometry.positions.data[:, 1] = value[1]
 
         self._data = value#(value[0], value[1])
 
@@ -147,8 +168,16 @@ class LinearSelector(Graphic, Interaction):
             name for this selector graphic
         """
 
+        # lots of very close to zero values etc. so round them
+        bounds = tuple(map(round, bounds))
+        limits = tuple(map(round, limits))
+        position = tuple(map(round, position))
+
         if limits[0] != position[0] != bounds[0]:
-            raise ValueError("limits[0] != position[0] != bounds[0]")
+            raise ValueError(
+                f"limits[0] != position[0] != bounds[0]\n"
+                f"{limits[0]} != {position[0]} != {bounds[0]}"
+            )
 
         super(LinearSelector, self).__init__(name=name)
 
@@ -160,11 +189,20 @@ class LinearSelector(Graphic, Interaction):
         group = pygfx.Group()
         self._set_world_object(group)
 
-        # the fill of the selection
-        self.fill = pygfx.Mesh(
+        if axis == "x":
+            mesh = pygfx.Mesh(
             pygfx.box_geometry(1, size, 1),
             pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color))
-        )
+            )
+
+        elif axis == "y":
+            mesh = pygfx.Mesh(
+                pygfx.box_geometry(size, 1, 1),
+                pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color))
+            )
+
+        # the fill of the selection
+        self.fill = mesh
 
         self.fill.position.set(*position, -2)
 
@@ -182,33 +220,60 @@ class LinearSelector(Graphic, Interaction):
 
         self._edge_color = np.repeat([pygfx.Color(edge_color)], 2, axis=0)
 
-        # position data for the left edge line
-        left_line_data = np.array(
-            [[position[0], (-size / 2) + position[1], 0.5],
-             [position[0], (size / 2) + position[1], 0.5]]
-        ).astype(np.float32)
+        if axis == "x":
+            # position data for the left edge line
+            left_line_data = np.array(
+                [[position[0], (-size / 2) + position[1], 0.5],
+                 [position[0], (size / 2) + position[1], 0.5]]
+            ).astype(np.float32)
 
-        left_line = pygfx.Line(
-            pygfx.Geometry(positions=left_line_data, colors=self._edge_color.copy()),
-            pygfx.LineMaterial(thickness=3, vertex_colors=True)
-        )
+            left_line = pygfx.Line(
+                pygfx.Geometry(positions=left_line_data, colors=self._edge_color.copy()),
+                pygfx.LineMaterial(thickness=3, vertex_colors=True)
+            )
 
-        # position data for the right edge line
-        right_line_data = np.array(
-            [[bounds[1], (-size / 2) + position[1], 0.5],
-             [bounds[1], (size / 2) + position[1], 0.5]]
-        ).astype(np.float32)
+            # position data for the right edge line
+            right_line_data = np.array(
+                [[bounds[1], (-size / 2) + position[1], 0.5],
+                 [bounds[1], (size / 2) + position[1], 0.5]]
+            ).astype(np.float32)
 
-        right_line = pygfx.Line(
-            pygfx.Geometry(positions=right_line_data, colors=self._edge_color.copy()),
-            pygfx.LineMaterial(thickness=3, vertex_colors=True)
-        )
+            right_line = pygfx.Line(
+                pygfx.Geometry(positions=right_line_data, colors=self._edge_color.copy()),
+                pygfx.LineMaterial(thickness=3, vertex_colors=True)
+            )
+
+            self.edges: Tuple[pygfx.Line, pygfx.Line] = (left_line, right_line)
+
+        elif axis == "y":
+            # position data for the left edge line
+            bottom_line_data = \
+                np.array(
+                    [[(-size / 2) + position[0], position[1], 0.5],
+                     [ (size / 2) + position[0], position[1], 0.5]]
+                ).astype(np.float32)
+
+            bottom_line = pygfx.Line(
+                pygfx.Geometry(positions=bottom_line_data, colors=self._edge_color.copy()),
+                pygfx.LineMaterial(thickness=3, vertex_colors=True)
+            )
+
+            # position data for the right edge line
+            top_line_data = np.array(
+                [[(-size / 2) + position[0], bounds[1], 0.5],
+                 [ (size / 2) + position[0], bounds[1], 0.5]]
+            ).astype(np.float32)
+
+            top_line = pygfx.Line(
+                pygfx.Geometry(positions=top_line_data, colors=self._edge_color.copy()),
+                pygfx.LineMaterial(thickness=3, vertex_colors=True)
+            )
+
+            self.edges: Tuple[pygfx.Line, pygfx.Line] = (bottom_line, top_line)
 
         # add the edge lines
-        self.world_object.add(left_line)
-        self.world_object.add(right_line)
-
-        self.edges: Tuple[pygfx.Line, pygfx.Line] = (left_line, right_line)
+        for edge in self.edges:
+            self.world_object.add(edge)
 
         # highlight the edges when mouse is hovered
         for edge_line in self.edges:
@@ -219,8 +284,8 @@ class LinearSelector(Graphic, Interaction):
             edge_line.add_event_handler(self._pointer_leave_edge, "pointer_leave")
 
         # set the initial bounds of the selector
-        self.bounds = _LinearBoundsFeature(self, bounds)
-        self.bounds = bounds
+        self.bounds = _LinearBoundsFeature(self, bounds, axis=axis)
+        self.bounds: _LinearBoundsFeature = bounds
 
     def get_selected_data(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
         """
@@ -229,11 +294,18 @@ class LinearSelector(Graphic, Interaction):
         If the ``Graphic`` is a collection, such as a ``LineStack``, it returns a list of views of the full array.
         Can be performed on the ``parent`` Graphic or on another graphic by passing to the ``graphic`` arg.
 
-        Returns
-        -------
+        **NOTE:** You must be aware of the axis for the selector. The sub-selected data that is returned will be of
+        shape ``[n_points_selected, 3]``. If you have selected along the x-axis then you can access y-values of the
+        subselection like this: sub[:, 1]. Conversely, if you have selected along the y-axis then you can access the
+        x-values of the subselection like this: sub[:, 0].
+
+        Parameters
+        ----------
         graphic: Graphic, optional
             if provided, returns the data selection from this graphic instead of the graphic set as ``parent``
 
+        Returns
+        -------
         Union[np.ndarray, List[np.ndarray]]
             view or list of views of the full array
 
@@ -251,21 +323,32 @@ class LinearSelector(Graphic, Interaction):
             source = self.parent
 
         # if the graphic position is not at (0, 0) then the bounds must be offset
-        offset = source.position.x
-        offset_bounds = (v - offset for v in self.bounds())
+        offset = getattr(source.position, self.bounds.axis)
+        offset_bounds = tuple(v - offset for v in self.bounds())
         # need them to be int to use as indices
         offset_bounds = tuple(map(int, offset_bounds))
 
-        # slice along x-axis
-        x_slice = slice(*offset_bounds)
+        if self.bounds.axis == "x":
+            dim = 0
+        else:
+            dim = 1
+        # now we need to map from graphic space to data space
+        ixs = np.where(
+            (source.data()[:, dim] >= offset_bounds[0]) & (source.data()[:, dim] <= offset_bounds[1])
+        )[0]
+
+        print(ixs)
+
+        s = slice(ixs[0], ixs[-1])
 
         if isinstance(source, GraphicCollection):
             # this will return a list of views of the arrays, therefore no copy operations occur
             # it's fine and fast even as a list of views because there is no re-allocating of memory
             # this is fast even for slicing a 10,000 x 5,000 LineStack
-            return source[:].data[x_slice]
 
-        return source.data.buffer.data[x_slice]
+            return source[:].data[s]
+
+        return source.data.buffer.data[s]
 
     def _add_plot_area_hook(self, plot_area):
         # called when this selector is added to a plot area
@@ -273,14 +356,14 @@ class LinearSelector(Graphic, Interaction):
 
         # need partials so that the source of the event is passed to the `_move_start` handler
         move_start_fill = partial(self._move_start, "fill")
-        move_start_edge_left = partial(self._move_start, "edge-left")
-        move_start_edge_right = partial(self._move_start, "edge-right")
+        move_start_edge_0 = partial(self._move_start, "edge-0")
+        move_start_edge_1 = partial(self._move_start, "edge-1")
 
         self.fill.add_event_handler(move_start_fill, "pointer_down")
 
         if self._resizable:
-            self.edges[0].add_event_handler(move_start_edge_left, "pointer_down")
-            self.edges[1].add_event_handler(move_start_edge_right, "pointer_down")
+            self.edges[0].add_event_handler(move_start_edge_0, "pointer_down")
+            self.edges[1].add_event_handler(move_start_edge_1, "pointer_down")
 
         self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
         self._plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
@@ -295,7 +378,7 @@ class LinearSelector(Graphic, Interaction):
         """
         # self._plot_area.controller.enabled = False
         # last pointer position
-        self._move_info = {"last_pos": (np.int64(ev.x), np.int64(ev.y))}
+        self._move_info = {"last_pos": (ev.x, ev.y)}
         self._event_source = event_source
 
     def _move(self, ev):
@@ -317,6 +400,7 @@ class LinearSelector(Graphic, Interaction):
         viewport_size = self._plot_area.viewport.logical_size
 
         # convert delta to NDC coordinates using viewport size
+        # also since these are just deltas we don't have to calculate positions relative to the viewport
         delta_ndc = delta.multiply(
             Vector3(
                 2 / viewport_size[0],
@@ -327,44 +411,53 @@ class LinearSelector(Graphic, Interaction):
 
         camera = self._plot_area.camera
 
-        # left bound current world position
-        left_vec = Vector3(self.bounds()[0])
+        # edge-0 bound current world position
+        if self.bounds.axis == "x":
+            # left bound position
+            vec0 = Vector3(self.bounds()[0])
+        else:
+            # bottom bound position
+            vec0 = Vector3(0, self.bounds()[0])
         # compute and add delta in projected NDC space and then unproject back to world space
-        left_vec.project(camera).add(delta_ndc).unproject(camera)
+        vec0.project(camera).add(delta_ndc).unproject(camera)
 
-        # left bound current world position
-        right_vec = Vector3(self.bounds()[1])
+        # edge-1 bound current world position
+        if self.bounds.axis == "x":
+            vec1 = Vector3(self.bounds()[1])
+        else:
+            vec1 = Vector3(0, self.bounds()[1])
         # compute and add delta in projected NDC space and then unproject back to world space
-        right_vec.project(camera).add(delta_ndc).unproject(camera)
+        vec1.project(camera).add(delta_ndc).unproject(camera)
 
-        if self._event_source == "edge-left":
-            # change only the left bound
-            # move the left edge only, expand the fill in the leftward direction
-            left_bound = left_vec.x
-            right_bound = self.bounds()[1]
+        if self._event_source == "edge-0":
+            # change only the left bound or bottom bound
+            bound0 = getattr(vec0, self.bounds.axis)  # gets either vec.x or vec.y
+            bound1 = self.bounds()[1]
 
-        elif self._event_source == "edge-right":
-            # change only the right bound
-            # move the right edge only, expand the fill in the rightward direction
-            left_bound = self.bounds()[0]
-            right_bound = right_vec.x
+        elif self._event_source == "edge-1":
+            # change only the right bound or top bound
+            bound0 = self.bounds()[0]
+            bound1 = getattr(vec1, self.bounds.axis)   # gets either vec.x or vec.y
 
         elif self._event_source == "fill":
             # move the entire selector
-            left_bound = left_vec.x
-            right_bound = right_vec.x
+            bound0 = getattr(vec0, self.bounds.axis)
+            bound1 = getattr(vec1, self.bounds.axis)
+
+        # print(bound0, bound1)
 
         # if the limits are met do nothing
-        if left_bound < self.limits[0] or right_bound > self.limits[1]:
+        if bound0 < self.limits[0] or bound1 > self.limits[1]:
             return
 
         # make sure `selector width > 2`, left edge must not move past right edge!
+        # or bottom edge must not move past top edge!
         # has to be at least 2 otherwise can't join datapoints for lines
-        if (right_bound - left_bound) < 2:
+        if (bound1 - bound0) < 2:
             return
 
         # set the new bounds
-        self.bounds = (left_bound, right_bound)
+        self.bounds = (bound0, bound1)
 
         # re-enable the controller
         self._plot_area.controller.enabled = True

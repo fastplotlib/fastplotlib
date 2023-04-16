@@ -117,24 +117,41 @@ class LineGraphic(Graphic, Interaction):
             linear selection graphic
         """
         data = self.data()
-        # x limits
-        x_limits = (data[0, 0], data[-1, 0])
+
+        if "axis" in kwargs.keys():
+            axis = kwargs["axis"]
+        else:
+            axis = "x"
+
+        if axis == "x":
+            # x limits
+            limits = (data[0, 0], data[-1, 0])
+
+            # height + padding
+            size = np.ptp(data[:, 1]) + padding
+
+            # initial position of the selector
+            position_y = (data[:, 1].min() + data[:, 1].max()) / 2
+            position = (limits[0], position_y)
+        else:
+            # y limits
+            limits = (data[0, 1], data[-1, 1])
+
+            # width + padding
+            size = np.ptp(data[:, 0]) + padding
+
+            # initial position of the selector
+            position_x = (data[:, 0].min() + data[:, 0].max()) / 2
+            position = (position_x, limits[0])
 
         # initial bounds are 20% of the limits range
-        bounds_init = (x_limits[0], int(np.ptp(x_limits) * 0.2))
-
-        # width of the y-vals + padding
-        height = np.ptp(data[:, 1]) + padding
-
-        # initial position of the selector
-        position_y = (data[:, 1].min() + data[:, 1].max()) / 2
-        position = (x_limits[0], position_y)
+        bounds_init = (limits[0], int(np.ptp(limits) * 0.2))
 
         # create selector
         selector = LinearSelector(
             bounds=bounds_init,
-            limits=x_limits,
-            size=height,
+            limits=limits,
+            size=size,
             position=position,
             parent=self,
             **kwargs
