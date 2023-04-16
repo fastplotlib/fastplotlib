@@ -337,8 +337,6 @@ class LinearSelector(Graphic, Interaction):
         # compute and add delta in projected NDC space and then unproject back to world space
         right_vec.project(camera).add(delta_ndc).unproject(camera)
 
-        print(right_vec)
-
         if self._event_source == "edge-left":
             # change only the left bound
             # move the left edge only, expand the fill in the leftward direction
