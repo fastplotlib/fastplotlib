@@ -10,7 +10,7 @@ from ..features._base import GraphicFeature, FeatureEvent
 
 
 # positions for indexing the BoxGeometry to set the "width" and "size" of the box
-# hacky but I don't think we can morph meshes in pygfx yet: https://github.com/pygfx/pygfx/issues/346
+# hacky, but I don't think we can morph meshes in pygfx yet: https://github.com/pygfx/pygfx/issues/346
 x_right = np.array([
     True,  True,  True,  True, False, False, False, False, False,
     True, False,  True,  True, False,  True, False, False,  True,
@@ -36,10 +36,10 @@ y_bottom = np.array([
 ])
 
 
-class _LinearBoundsFeature(GraphicFeature):
+class LinearBoundsFeature(GraphicFeature):
     """Feature for a linear bounding region"""
     def __init__(self, parent, bounds: Tuple[int, int], axis: str):
-        super(_LinearBoundsFeature, self).__init__(parent, data=bounds)
+        super(LinearBoundsFeature, self).__init__(parent, data=bounds)
 
         self._axis = axis
 
@@ -116,10 +116,10 @@ class LinearSelector(Graphic, Interaction):
             bounds: Tuple[int, int],
             limits: Tuple[int, int],
             size: int,
-            position: Tuple[int, int],
+            origin: Tuple[int, int],
             axis: str = "x",
             parent: Graphic = None,
-            resizable: bool = False,
+            resizable: bool = True,
             fill_color=(0, 0, 0.35),
             edge_color=(0.8, 0.8, 0),
             name: str = None
@@ -139,9 +139,9 @@ class LinearSelector(Graphic, Interaction):
             (min limit, max limit) for the selector
 
         size: int
-            height of the selector
+            height or width of the selector
 
-        position: (int, int)
+        origin: (int, int)
             initial position of the selector
 
         axis: str, default "x"
@@ -166,22 +166,24 @@ class LinearSelector(Graphic, Interaction):
         # lots of very close to zero values etc. so round them
         bounds = tuple(map(round, bounds))
         limits = tuple(map(round, limits))
-        position = tuple(map(round, position))
+        origin = tuple(map(round, origin))
 
-        if axis == "x":
-            if limits[0] != position[0] != bounds[0]:
-                raise ValueError(
-                    f"limits[0] != position[0] != bounds[0]\n"
-                    f"{limits[0]} != {position[0]} != {bounds[0]}"
-                )
-
-        elif axis == "y":
-            # initial y-position is position[1]
-            if limits[0] != position[1] != bounds[0]:
-                raise ValueError(
-                    f"limits[0] != position[1] != bounds[0]\n"
-                    f"{limits[0]} != {position[1]} != {bounds[0]}"
-                )
+        # TODO: sanity checks, we recommend users to add LinearSelection using the add_linear_selector() methods
+        # TODO: so we can worry about the sanity checks later
+        # if axis == "x":
+        #     if limits[0] != origin[0] != bounds[0]:
+        #         raise ValueError(
+        #             f"limits[0] != position[0] != bounds[0]\n"
+        #             f"{limits[0]} != {origin[0]} != {bounds[0]}"
+        #         )
+        #
+        # elif axis == "y":
+        #     # initial y-position is position[1]
+        #     if limits[0] != origin[1] != bounds[0]:
+        #         raise ValueError(
+        #             f"limits[0] != position[1] != bounds[0]\n"
+        #             f"{limits[0]} != {origin[1]} != {bounds[0]}"
+        #         )
 
         super(LinearSelector, self).__init__(name=name)
 
@@ -208,7 +210,7 @@ class LinearSelector(Graphic, Interaction):
         # the fill of the selection
         self.fill = mesh
 
-        self.fill.position.set(*position, -2)
+        self.fill.position.set(*origin, -2)
 
         self.world_object.add(self.fill)
 
@@ -227,8 +229,8 @@ class LinearSelector(Graphic, Interaction):
         if axis == "x":
             # position data for the left edge line
             left_line_data = np.array(
-                [[position[0], (-size / 2) + position[1], 0.5],
-                 [position[0], (size / 2) + position[1], 0.5]]
+                [[origin[0], (-size / 2) + origin[1], 0.5],
+                 [origin[0], (size / 2) + origin[1], 0.5]]
             ).astype(np.float32)
 
             left_line = pygfx.Line(
@@ -238,8 +240,8 @@ class LinearSelector(Graphic, Interaction):
 
             # position data for the right edge line
             right_line_data = np.array(
-                [[bounds[1], (-size / 2) + position[1], 0.5],
-                 [bounds[1], (size / 2) + position[1], 0.5]]
+                [[bounds[1], (-size / 2) + origin[1], 0.5],
+                 [bounds[1], (size / 2) + origin[1], 0.5]]
             ).astype(np.float32)
 
             right_line = pygfx.Line(
@@ -253,8 +255,8 @@ class LinearSelector(Graphic, Interaction):
             # position data for the left edge line
             bottom_line_data = \
                 np.array(
-                    [[(-size / 2) + position[0], position[1], 0.5],
-                     [ (size / 2) + position[0], position[1], 0.5]]
+                    [[(-size / 2) + origin[0], origin[1], 0.5],
+                     [(size / 2) + origin[0], origin[1], 0.5]]
                 ).astype(np.float32)
 
             bottom_line = pygfx.Line(
@@ -264,8 +266,8 @@ class LinearSelector(Graphic, Interaction):
 
             # position data for the right edge line
             top_line_data = np.array(
-                [[(-size / 2) + position[0], bounds[1], 0.5],
-                 [ (size / 2) + position[0], bounds[1], 0.5]]
+                [[(-size / 2) + origin[0], bounds[1], 0.5],
+                 [(size / 2) + origin[0], bounds[1], 0.5]]
             ).astype(np.float32)
 
             top_line = pygfx.Line(
@@ -277,6 +279,7 @@ class LinearSelector(Graphic, Interaction):
 
         # add the edge lines
         for edge in self.edges:
+            edge.position.set_z(-1)
             self.world_object.add(edge)
 
         # highlight the edges when mouse is hovered
@@ -288,10 +291,19 @@ class LinearSelector(Graphic, Interaction):
             edge_line.add_event_handler(self._pointer_leave_edge, "pointer_leave")
 
         # set the initial bounds of the selector
-        self.bounds = _LinearBoundsFeature(self, bounds, axis=axis)
-        self.bounds: _LinearBoundsFeature = bounds
+        self._bounds = LinearBoundsFeature(self, bounds, axis=axis)
+        self._bounds: LinearBoundsFeature = bounds
 
-    def get_selected_data(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
+    @property
+    def bounds(self) -> LinearBoundsFeature:
+        """
+        The current bounds of the selection in world space. These bounds will NOT necessarily correspond to the
+        indices of the data that are under the selection. Use ``get_selected_indices()` which maps from
+        world space to data indices.
+        """
+        return self._bounds
+
+    def get_selected_data(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray], None]:
         """
         Get the ``Graphic`` data bounded by the current selection.
         Returns a view of the full data array.
@@ -310,22 +322,34 @@ class LinearSelector(Graphic, Interaction):
 
         Returns
         -------
-        Union[np.ndarray, List[np.ndarray]]
-            view or list of views of the full array
+        np.ndarray, List[np.ndarray], or None
+            view or list of views of the full array, returns ``None`` if selection is empty
 
         """
         source = self._get_source(graphic)
         ixs = self.get_selected_indices(source)
 
-        s = slice(ixs[0], ixs[-1])
-
         if isinstance(source, GraphicCollection):
             # this will return a list of views of the arrays, therefore no copy operations occur
             # it's fine and fast even as a list of views because there is no re-allocating of memory
             # this is fast even for slicing a 10,000 x 5,000 LineStack
-            return source[:].data[s]
+            data_selections: List[np.ndarray] = list()
 
-        return source.data.buffer.data[s]
+            for i, g in enumerate(source.graphics):
+                if ixs[i].size == 0:
+                    data_selections.append(None)
+                else:
+                    s = slice(ixs[i][0], ixs[i][-1])
+                    data_selections.append(g.data.buffer.data[s])
+
+            return source[:].data[s]
+        # just for one graphic
+        else:
+            if ixs.size == 0:
+                return None
+
+            s = slice(ixs[0], ixs[-1])
+            return source.data.buffer.data[s]
 
     def get_selected_indices(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
         """
@@ -360,9 +384,20 @@ class LinearSelector(Graphic, Interaction):
         else:
             dim = 1
         # now we need to map from graphic space to data space
-        ixs = np.where(
-            (source.data()[:, dim] >= offset_bounds[0]) & (source.data()[:, dim] <= offset_bounds[1])
-        )[0]
+        # we can have more than 1 datapoint between two integer locations in the world space
+        if isinstance(source, GraphicCollection):
+            ixs = list()
+            for g in source.graphics:
+                # map for each graphic in the collection
+                g_ixs = np.where(
+                    (g.data()[:, dim] >= offset_bounds[0]) & (g.data()[:, dim] <= offset_bounds[1])
+                )[0]
+                ixs.append(g_ixs)
+        else:
+            # map this only this graphic
+            ixs = np.where(
+                (source.data()[:, dim] >= offset_bounds[0]) & (source.data()[:, dim] <= offset_bounds[1])
+            )[0]
 
         return ixs
 
@@ -479,10 +514,10 @@ class LinearSelector(Graphic, Interaction):
         if bound0 < self.limits[0] or bound1 > self.limits[1]:
             return
 
-        # make sure `selector width > 2`, left edge must not move past right edge!
+        # make sure `selector width >= 2`, left edge must not move past right edge!
         # or bottom edge must not move past top edge!
         # has to be at least 2 otherwise can't join datapoints for lines
-        if (bound1 - bound0) < 2:
+        if not (bound1 - bound0) >= 2:
             return
 
         # set the new bounds

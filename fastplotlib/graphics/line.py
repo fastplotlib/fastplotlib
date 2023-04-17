@@ -101,7 +101,7 @@ class LineGraphic(Graphic, Interaction):
 
     def add_linear_selector(self, padding: float = 100.0, **kwargs) -> LinearSelector:
         """
-        Add a ``LinearSelector``. Selectors are just ``Graphic`` objects so you can manage, remove, or delete them
+        Add a ``LinearSelector``. Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
         from a plot area just like any other ``Graphic``.
 
         Parameters
@@ -116,44 +116,17 @@ class LineGraphic(Graphic, Interaction):
         -------
         LinearSelector
             linear selection graphic
+
         """
-        data = self.data()
 
-        if "axis" in kwargs.keys():
-            axis = kwargs["axis"]
-        else:
-            axis = "x"
-
-        if axis == "x":
-            # x limits
-            limits = (data[0, 0], data[-1, 0])
-
-            # height + padding
-            size = np.ptp(data[:, 1]) + padding
-
-            # initial position of the selector
-            position_y = (data[:, 1].min() + data[:, 1].max()) / 2
-            position = (limits[0], position_y)
-        else:
-            # y limits
-            limits = (data[0, 1], data[-1, 1])
-
-            # width + padding
-            size = np.ptp(data[:, 0]) + padding
-
-            # initial position of the selector
-            position_x = (data[:, 0].min() + data[:, 0].max()) / 2
-            position = (position_x, limits[0])
-
-        # initial bounds are 20% of the limits range
-        bounds_init = (limits[0], int(np.ptp(limits) * 0.2))
+        bounds_init, limits, size, origin = self._get_linear_selector_init_args(padding, **kwargs)
 
         # create selector
         selector = LinearSelector(
             bounds=bounds_init,
             limits=limits,
             size=size,
-            position=position,
+            origin=origin,
             parent=self,
             **kwargs
         )
@@ -165,6 +138,46 @@ class LineGraphic(Graphic, Interaction):
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end
         return weakref.proxy(selector)
+
+    def _get_linear_selector_init_args(self, padding: float, **kwargs):
+        data = self.data()
+
+        if "axis" in kwargs.keys():
+            axis = kwargs["axis"]
+        else:
+            axis = "x"
+
+        if axis == "x":
+            offset = self.position.x
+            # x limits
+            limits = (data[0, 0] + offset, data[-1, 0] + offset)
+
+            # height + padding
+            size = np.ptp(data[:, 1]) + padding
+
+            # initial position of the selector
+            position_y = (data[:, 1].min() + data[:, 1].max()) / 2
+
+            # need y offset too for this
+            origin = (limits[0] - offset, position_y + self.position.y)
+        else:
+            offset = self.position.y
+            # y limits
+            limits = (data[0, 1] + offset, data[-1, 1] + offset)
+
+            # width + padding
+            size = np.ptp(data[:, 0]) + padding
+
+            # initial position of the selector
+            position_x = (data[:, 0].min() + data[:, 0].max()) / 2
+
+            # need x offset too for this
+            origin = (position_x + self.position.x, limits[0] - offset)
+
+        # initial bounds are 20% of the limits range
+        bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
+
+        return bounds_init, limits, size, origin
 
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
