@@ -238,6 +238,7 @@ class LineCollection(GraphicCollection, Interaction):
         if isinstance(self, LineStack):
             # sum them if it's a stack
             size = sum(sizes)
+            size += self.separation * len(sizes)
         else:
             # just the biggest one if not stacked
             size = max(sizes)
@@ -430,3 +431,5 @@ class LineStack(LineCollection):
         for i, line in enumerate(self.graphics):
             getattr(line.position, f"set_{separation_axis}")(axis_zero)
             axis_zero = axis_zero + line.data()[:, axes[separation_axis]].max() + separation
+
+        self.separation = separation
