@@ -6,7 +6,7 @@ import numpy as np
 import pygfx
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
-from .features import ImageCmapFeature, ImageDataFeature, HeatmapDataFeature, HeatmapCmapFeature
+from .features import ImageCmapFeature, ImageDataFeature, HeatmapDataFeature, HeatmapCmapFeature, PresentFeature
 from .features._base import to_gpu_supported_dtype
 from ..utils import quick_min_max
 
@@ -15,6 +15,7 @@ class ImageGraphic(Graphic, Interaction):
     feature_events = (
         "data",
         "cmap",
+        "present"
     )
 
     def __init__(
@@ -53,6 +54,18 @@ class ImageGraphic(Graphic, Interaction):
             additional arguments passed to Graphic
         kwargs:
             additional keyword arguments passed to Graphic
+
+        Features
+        --------
+
+        **data**: :class:`.ImageDataFeature`
+            Manages the data buffer displayed in the ImageGraphic
+
+        **cmap**: :class:`.ImageCmapFeature`
+            Manages the colormap
+
+        **present**: :class:`.PresentFeature`
+            Control the presence of the Graphic in the scene
 
         Examples
         --------
