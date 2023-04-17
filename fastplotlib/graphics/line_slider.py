@@ -22,13 +22,14 @@ class SliderValueFeature(GraphicFeature):
 
     **pick info**
 
-    +-----------------+----------------------------------------------------------------+
-    | key             | value                                                          |
-    +=================+================================================================+
-    | "new_data"      | the new slider position in world coordinates                   |
-    | "graphic_index" | the graphic data index that corresponds to the slider position |
-    | "world_object"  | parent world object                                            |
-    +-----------------+----------------------------------------------------------------+
+    +------------------+----------------------------------------------------------------+
+    | key              | value                                                          |
+    +==================+================================================================+
+    | "new_data"       | the new slider position in world coordinates                   |
+    | "selected_index" | the graphic data index that corresponds to the slider position |
+    | "world_object"   | parent world object                                            |
+    | "graphic"        | LineSlider instance                                            |
+    +------------------+----------------------------------------------------------------+
 
     """
     def __init__(self, parent, axis: str, value: float):
@@ -59,7 +60,8 @@ class SliderValueFeature(GraphicFeature):
             "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
             "new_data": new_data,
-            "graphic_index": g_ix
+            "selected_index": g_ix,
+            "graphic": self._parent
         }
 
         event_data = FeatureEvent(type="slider", pick_info=pick_info)
@@ -189,6 +191,7 @@ class LineSlider(Graphic):
         widget.value = int(self.value())
         widget.observe(self._ipywidget_callback, "value")
         self.value.add_event_handler(self._update_ipywidget)
+        self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
 
     def _update_ipywidget(self, ev):
         # update the ipywidget slider value when LineSlider value changes
@@ -202,6 +205,11 @@ class LineSlider(Graphic):
             return
 
         self.value = change["new"]
+
+    def _set_slider_layout(self, *args):
+        w, h = self._plot_area.renderer.logical_size
+
+        self.ipywidget_slider.layout = ipywidgets.Layout(width=f"{w}px")
 
     def make_ipywidget_slider(self, kind: str = "IntSlider", **kwargs):
         """
@@ -271,9 +279,9 @@ class LineSlider(Graphic):
         idx = np.searchsorted(to_search, find_value, side="left")
 
         if idx > 0 and (idx == len(to_search) or math.fabs(find_value - to_search[idx - 1]) < math.fabs(find_value - to_search[idx])):
-            return idx - 1
+            return int(idx - 1)
         else:
-            return idx
+            return int(idx)
 
     def _get_source(self, graphic):
         if self.parent is None and graphic is None:
