@@ -17,19 +17,19 @@ from .features._base import FeatureEvent
 
 
 class SliderValueFeature(GraphicFeature):
+    # A bit much to have a class for this but this allows it to integrate with the fastplotlib callback system
     """
-    A bit much to have a class for this but this allows it to integrate with the fastplotlib callback system
+    Manages the slider value and callbacks
 
     **pick info**
 
-    +------------------+----------------------------------------------------------------+
-    | key              | value                                                          |
-    +==================+================================================================+
-    | "new_data"       | the new slider position in world coordinates                   |
-    | "selected_index" | the graphic data index that corresponds to the slider position |
-    | "world_object"   | parent world object                                            |
-    | "graphic"        | LineSlider instance                                            |
-    +------------------+----------------------------------------------------------------+
+     ================== ================================================================
+      key                value
+     ================== ================================================================
+      "new_data"         the new slider position in world coordinates
+      "selected_index"   the graphic data index that corresponds to the slider position
+      "world_object"     parent world object
+     ================== ================================================================
 
     """
     def __init__(self, parent, axis: str, value: float):
@@ -110,10 +110,11 @@ class LineSlider(Graphic):
 
         Features
         --------
-        value: SliderValueFeature
-            | value() returns the current slider position in world coordinates
-            | use value.add_event_handler() to add callback functions that are called
-              when the LineSlider value changes. See feaure class for event pick_info table
+
+        value: :class:`SliderValueFeature`
+            ``value()`` returns the current slider position in world coordinates
+            use ``value.add_event_handler()`` to add callback functions that are
+            called when the LineSlider value changes. See feaure class for event pick_info table
 
         """
 
