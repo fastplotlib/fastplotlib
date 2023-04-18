@@ -12,8 +12,8 @@ try:
 except:
     HAS_IPYWIDGETS = False
 
-from ._base import Graphic, GraphicFeature
-from .features._base import FeatureEvent
+from .._base import Graphic, GraphicFeature
+from ..features._base import FeatureEvent
 
 
 class SliderValueFeature(GraphicFeature):
@@ -69,7 +69,7 @@ class SliderValueFeature(GraphicFeature):
         self._call_event_handlers(event_data)
 
 
-class LineSlider(Graphic):
+class LinearSelector(Graphic):
     def __init__(
             self,
             value: int,
@@ -114,7 +114,7 @@ class LineSlider(Graphic):
         value: :class:`SliderValueFeature`
             ``value()`` returns the current slider position in world coordinates
             use ``value.add_event_handler()`` to add callback functions that are
-            called when the LineSlider value changes. See feaure class for event pick_info table
+            called when the LinearSelector value changes. See feaure class for event pick_info table
 
         """
 
@@ -140,7 +140,7 @@ class LineSlider(Graphic):
 
         self.axis = axis
 
-        super(LineSlider, self).__init__(name=name)
+        super(LinearSelector, self).__init__(name=name)
 
         if thickness < 1.1:
             material = pygfx.LineThinMaterial
@@ -188,20 +188,20 @@ class LineSlider(Graphic):
         self._block_ipywidget_call = False
 
     def _setup_ipywidget_slider(self, widget):
-        # setup ipywidget slider with callbacks to this LineSlider
+        # setup ipywidget slider with callbacks to this LinearSelector
         widget.value = int(self.value())
         widget.observe(self._ipywidget_callback, "value")
         self.value.add_event_handler(self._update_ipywidget)
         self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
 
     def _update_ipywidget(self, ev):
-        # update the ipywidget slider value when LineSlider value changes
+        # update the ipywidget slider value when LinearSelector value changes
         self._block_ipywidget_call = True
         self.ipywidget_slider.value = int(ev.pick_info["new_data"])
         self._block_ipywidget_call = False
 
     def _ipywidget_callback(self, change):
-        # update the LineSlider if the ipywidget value changes
+        # update the LinearSelector if the ipywidget value changes
         if self._block_ipywidget_call:
             return
 
@@ -214,7 +214,7 @@ class LineSlider(Graphic):
 
     def make_ipywidget_slider(self, kind: str = "IntSlider", **kwargs):
         """
-        Makes and returns an ipywidget slider that is associated to this LineSlider
+        Makes and returns an ipywidget slider that is associated to this LinearSelector
 
         Parameters
         ----------
