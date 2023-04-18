@@ -100,7 +100,7 @@ class LineGraphic(Graphic, Interaction):
             self.world_object.position.z = z_position
 
     def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs):
-        bounds_init, limits, size, origin, axis = self._get_linear_selector_init_args(padding, **kwargs)
+        bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
 
         if selection is None:
             selection = limits[0]
@@ -108,16 +108,12 @@ class LineGraphic(Graphic, Interaction):
         if selection < limits[0] or selection > limits[1]:
             raise ValueError(f"the passed selection: {selection} is beyond the limits: {limits}")
 
-        if axis == "x":
-            end_points = (self.data()[:, 1].min() - padding, self.data()[:, 1].max() + padding)
-        else:
-            end_points = (self.data()[:, 0].min() - padding, self.data()[:, 0].max() + padding)
-
         selector = LinearSelector(
             selection=selection,
             limits=limits,
             end_points=end_points,
-            parent=self
+            parent=self,
+            **kwargs
         )
 
         self._plot_area.add_graphic(selector, center=False)
@@ -145,7 +141,7 @@ class LineGraphic(Graphic, Interaction):
 
         """
 
-        bounds_init, limits, size, origin = self._get_linear_selector_init_args(padding, **kwargs)
+        bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
 
         # create selector
         selector = LinearRegionSelector(
@@ -165,6 +161,7 @@ class LineGraphic(Graphic, Interaction):
         # so we should only work with a proxy on the user-end
         return weakref.proxy(selector)
 
+    # TODO: this method is a bit of a mess, can refactor later
     def _get_linear_selector_init_args(self, padding: float, **kwargs):
         # computes initial bounds, limits, size and origin of linear selectors
         data = self.data()
@@ -187,6 +184,10 @@ class LineGraphic(Graphic, Interaction):
 
             # need y offset too for this
             origin = (limits[0] - offset, position_y + self.position.y)
+
+            # endpoints of the data range
+            # used by linear selector but not linear region
+            end_points = (self.data()[:, 1].min() - padding, self.data()[:, 1].max() + padding)
         else:
             offset = self.position.y
             # y limits
@@ -201,10 +202,12 @@ class LineGraphic(Graphic, Interaction):
             # need x offset too for this
             origin = (position_x + self.position.x, limits[0] - offset)
 
+            end_points = (self.data()[:, 0].min() - padding, self.data()[:, 0].max() + padding)
+
         # initial bounds are 20% of the limits range
         bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
 
-        return bounds_init, limits, size, origin, axis
+        return bounds_init, limits, size, origin, axis, end_points
 
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area

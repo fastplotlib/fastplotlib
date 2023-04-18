@@ -12,7 +12,7 @@ try:
 except:
     HAS_IPYWIDGETS = False
 
-from .._base import Graphic, GraphicFeature
+from .._base import Graphic, GraphicFeature, GraphicCollection
 from ..features._base import FeatureEvent
 
 
@@ -262,7 +262,7 @@ class LinearSelector(Graphic):
 
         return slider
 
-    def get_selected_index(self, graphic: Graphic = None) -> int:
+    def get_selected_index(self, graphic: Graphic = None) -> Union[int, List[int]]:
         """
         Data index the slider is currently at w.r.t. the Graphic data.
 
@@ -273,12 +273,22 @@ class LinearSelector(Graphic):
 
         Returns
         -------
-        int
-            data index the slider is currently at
+        int or List[int]
+            data index the slider is currently at, list of ``int`` if a Collection
         """
 
         graphic = self._get_source(graphic)
 
+        if isinstance(graphic, GraphicCollection):
+            ixs = list()
+            for g in graphic.graphics:
+                ixs.append(self._get_selected_index(g))
+
+            return ixs
+
+        return self._get_selected_index(graphic)
+
+    def _get_selected_index(self, graphic):
         # the array to search for the closest value along that axis
         if self.axis == "x":
             to_search = graphic.data()[:, 0]

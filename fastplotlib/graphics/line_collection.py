@@ -7,7 +7,7 @@ import pygfx
 
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
-from .selectors import LinearRegionSelector
+from .selectors import LinearRegionSelector, LinearSelector
 from ..utils import make_colors
 
 
@@ -195,6 +195,28 @@ class LineCollection(GraphicCollection, Interaction):
 
             self.add_graphic(lg, reset_index=False)
 
+    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs):
+        bounds, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+
+        if selection is None:
+            selection = limits[0]
+
+        if selection < limits[0] or selection > limits[1]:
+            raise ValueError(f"the passed selection: {selection} is beyond the limits: {limits}")
+
+        selector = LinearSelector(
+            selection=selection,
+            limits=limits,
+            end_points=end_points,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+        selector.position.z = self.position.z + 1
+
+        return weakref.proxy(selector)
+
     def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
         """
         Add a ``LinearRegionSelector``.
@@ -216,50 +238,7 @@ class LineCollection(GraphicCollection, Interaction):
 
         """
 
-        bounds_init = list()
-        limits = list()
-        sizes = list()
-        origin = list()
-
-        for g in self.graphics:
-            _bounds_init, _limits, _size, _origin = g._get_linear_selector_init_args(padding=0, **kwargs)
-            bounds_init.append(_bounds_init)
-            limits.append(_limits)
-            sizes.append(_size)
-            origin.append(_origin)
-
-        # set the init bounds using the extents of the collection
-        b = np.vstack(bounds_init)
-        bounds = (b[:, 0].min(), b[:, 1].max())
-
-        # set the limits using the extents of the collection
-        l = np.vstack(limits)
-        limits = (l[:, 0].min(), l[:, 1].max())
-
-        if isinstance(self, LineStack):
-            # sum them if it's a stack
-            size = sum(sizes)
-            size += self.separation * len(sizes)
-        else:
-            # just the biggest one if not stacked
-            size = max(sizes)
-
-        size += padding
-
-        # origin is the (min origin + max origin) / 2
-        if "axis" in kwargs.keys():
-            axis = kwargs["axis"]
-        else:
-            axis = "x"
-
-        if axis == "x":
-            o = np.vstack(origin)
-            origin_y = (o[:, 1].min() + o[:, 1].max()) / 2
-            origin = (limits[0], origin_y)
-        else:
-            o = np.vstack(origin)
-            origin_x = (o[:, 0].min() + o[:, 0].max()) / 2
-            origin = (origin_x, limits[0])
+        bounds, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
 
         selector = LinearRegionSelector(
             bounds=bounds,
@@ -274,6 +253,65 @@ class LineCollection(GraphicCollection, Interaction):
         selector.position.set_z(self.position.z - 1)
 
         return weakref.proxy(selector)
+
+    def _get_linear_selector_init_args(self, padding, **kwargs):
+        bounds_init = list()
+        limits = list()
+        sizes = list()
+        origin = list()
+        end_points = list()
+
+        for g in self.graphics:
+            _bounds_init, _limits, _size, _origin, axis, _end_points = \
+                g._get_linear_selector_init_args(padding=0, **kwargs)
+
+            bounds_init.append(_bounds_init)
+            limits.append(_limits)
+            sizes.append(_size)
+            origin.append(_origin)
+            end_points.append(_end_points)
+
+        # set the init bounds using the extents of the collection
+        b = np.vstack(bounds_init)
+        bounds = (b[:, 0].min(), b[:, 1].max())
+
+        # set the limits using the extents of the collection
+        l = np.vstack(limits)
+        limits = (l[:, 0].min(), l[:, 1].max())
+
+        # stack endpoints
+        end_points = np.vstack(end_points)
+        # use the min endpoint for index 0, highest endpoint for index 1
+        end_points = [end_points[:, 0].min() - padding, end_points[:, 1].max() + padding]
+
+        # TODO: refactor this to use `LineStack.graphics[-1].position.y`
+        if isinstance(self, LineStack):
+            stack_offset = self.separation * len(sizes)
+            # sum them if it's a stack
+            size = sum(sizes)
+            # add the separations
+            size += stack_offset
+
+            # a better way to get the max y value?
+            # graphics y-position + data y-max + padding
+            end_points[1] = self.graphics[-1].position.y + self.graphics[-1].data()[:, 1].max() + padding
+
+        else:
+            # just the biggest one if not stacked
+            size = max(sizes)
+
+        size += padding
+
+        if axis == "x":
+            o = np.vstack(origin)
+            origin_y = (o[:, 1].min() + o[:, 1].max()) / 2
+            origin = (limits[0], origin_y)
+        else:
+            o = np.vstack(origin)
+            origin_x = (o[:, 0].min() + o[:, 0].max()) / 2
+            origin = (origin_x, limits[0])
+
+        return bounds, limits, size, origin, axis, end_points
 
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
