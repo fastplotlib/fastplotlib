@@ -113,6 +113,16 @@ class Graphic(BaseGraphic):
         else:
             return rval
 
+    def __eq__(self, other):
+        # This is necessary because we use Graphics as weakref proxies
+        if not isinstance(other, Graphic):
+            raise TypeError("`==` operator is only valid between two Graphics")
+
+        if self.loc == other.loc:
+            return True
+
+        return False
+
     def __del__(self):
         del WORLD_OBJECTS[self.loc]
 

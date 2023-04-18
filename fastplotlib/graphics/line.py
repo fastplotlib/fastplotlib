@@ -6,7 +6,7 @@ import pygfx
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
-from .selectors import LinearRegionSelector
+from .selectors import LinearRegionSelector, LinearSelector
 from ..utils import make_colors
 
 
@@ -99,6 +99,32 @@ class LineGraphic(Graphic, Interaction):
         if z_position is not None:
             self.world_object.position.z = z_position
 
+    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs):
+        bounds_init, limits, size, origin, axis = self._get_linear_selector_init_args(padding, **kwargs)
+
+        if selection is None:
+            selection = limits[0]
+
+        if selection < limits[0] or selection > limits[1]:
+            raise ValueError(f"the passed selection: {selection} is beyond the limits: {limits}")
+
+        if axis == "x":
+            end_points = (self.data()[:, 1].min() - padding, self.data()[:, 1].max() + padding)
+        else:
+            end_points = (self.data()[:, 0].min() - padding, self.data()[:, 0].max() + padding)
+
+        selector = LinearSelector(
+            selection=selection,
+            limits=limits,
+            end_points=end_points,
+            parent=self
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+        selector.position.z = self.position.z + 1
+
+        return weakref.proxy(selector)
+
     def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -178,7 +204,7 @@ class LineGraphic(Graphic, Interaction):
         # initial bounds are 20% of the limits range
         bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
 
-        return bounds_init, limits, size, origin
+        return bounds_init, limits, size, origin, axis
 
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area

@@ -16,24 +16,25 @@ from .._base import Graphic, GraphicFeature
 from ..features._base import FeatureEvent
 
 
-class SliderValueFeature(GraphicFeature):
+class LinearSelectionFeature(GraphicFeature):
     # A bit much to have a class for this but this allows it to integrate with the fastplotlib callback system
     """
-    Manages the slider value and callbacks
+    Manages the slider selection and callbacks
 
     **pick info**
 
      ================== ================================================================
-      key                value
+      key                selection
      ================== ================================================================
-      "new_data"         the new slider position in world coordinates
+      "graphic"          the selection graphic
       "selected_index"   the graphic data index that corresponds to the slider position
-      "world_object"     parent world object
+      "new_data"         the new slider position in world coordinates
+      "delta"            the delta vector of the graphic in NDC
      ================== ================================================================
 
     """
     def __init__(self, parent, axis: str, value: float):
-        super(SliderValueFeature, self).__init__(parent, data=value)
+        super(LinearSelectionFeature, self).__init__(parent, data=value)
 
         self.axis = axis
 
@@ -55,13 +56,19 @@ class SliderValueFeature(GraphicFeature):
         else:
             g_ix = None
 
+        # get pygfx event and reset it
+        pygfx_ev = self._parent._pygfx_event
+        self._parent._pygfx_event = None
+
         pick_info = {
             "index": None,
             "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
             "new_data": new_data,
             "selected_index": g_ix,
-            "graphic": self._parent
+            "graphic": self._parent,
+            "delta": self._parent.delta,
+            "pygfx_event": pygfx_ev
         }
 
         event_data = FeatureEvent(type="slider", pick_info=pick_info)
@@ -70,9 +77,11 @@ class SliderValueFeature(GraphicFeature):
 
 
 class LinearSelector(Graphic):
+    feature_events = ("selection")
+
     def __init__(
             self,
-            value: int,
+            selection: int,
             limits: Tuple[int, int],
             axis: str = "x",
             parent: Graphic = None,
@@ -87,11 +96,11 @@ class LinearSelector(Graphic):
 
         Parameters
         ----------
+        selection: int
+            initial x or y selected value for the slider
+
         axis: str, default "x"
             "x" | "y", the axis which the slider can move along
-
-        origin: int
-            the initial position of the slider, x or y value depending on "axis" argument
 
         end_points: (int, int)
             set length of slider by bounding it between two x-pos or two y-pos
@@ -103,7 +112,7 @@ class LinearSelector(Graphic):
             thickness of the slider
 
         color: Any, default "w"
-            value to set the color of the slider
+            selection to set the color of the slider
 
         name: str, optional
             name of line slider
@@ -111,15 +120,15 @@ class LinearSelector(Graphic):
         Features
         --------
 
-        value: :class:`SliderValueFeature`
-            ``value()`` returns the current slider position in world coordinates
-            use ``value.add_event_handler()`` to add callback functions that are
-            called when the LinearSelector value changes. See feaure class for event pick_info table
+        selection: :class:`LinearSelectionFeature`
+            ``selection()`` returns the current slider position in world coordinates
+            use ``selection.add_event_handler()`` to add callback functions that are
+            called when the LinearSelector selection changes. See feaure class for event pick_info table
 
         """
 
         self.limits = tuple(map(round, limits))
-        value = round(value)
+        selection = round(selection)
 
         if axis == "x":
             xs = np.zeros(2)
@@ -171,10 +180,12 @@ class LinearSelector(Graphic):
         self._set_world_object(world_object)
 
         # set x or y position
-        pos = getattr(self.position, axis)
-        pos = value
+        if axis == "x":
+            self.position.x = selection
+        else:
+            self.position.y = selection
 
-        self.value = SliderValueFeature(self, axis=axis, value=value)
+        self.selection = LinearSelectionFeature(self, axis=axis, value=selection)
 
         self.ipywidget_slider = ipywidget_slider
 
@@ -182,6 +193,8 @@ class LinearSelector(Graphic):
             self._setup_ipywidget_slider(ipywidget_slider)
 
         self._move_info: dict = None
+        self.delta = None
+        self._pygfx_event = None
 
         self.parent = parent
 
@@ -189,9 +202,9 @@ class LinearSelector(Graphic):
 
     def _setup_ipywidget_slider(self, widget):
         # setup ipywidget slider with callbacks to this LinearSelector
-        widget.value = int(self.value())
+        widget.value = int(self.selection())
         widget.observe(self._ipywidget_callback, "value")
-        self.value.add_event_handler(self._update_ipywidget)
+        self.selection.add_event_handler(self._update_ipywidget)
         self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
 
     def _update_ipywidget(self, ev):
@@ -205,7 +218,7 @@ class LinearSelector(Graphic):
         if self._block_ipywidget_call:
             return
 
-        self.value = change["new"]
+        self.selection = change["new"]
 
     def _set_slider_layout(self, *args):
         w, h = self._plot_area.renderer.logical_size
@@ -240,7 +253,7 @@ class LinearSelector(Graphic):
         slider = cls(
             min=self.limits[0],
             max=self.limits[1],
-            value=int(self.value()),
+            value=int(self.selection()),
             step=1,
             **kwargs
         )
@@ -274,7 +287,7 @@ class LinearSelector(Graphic):
             to_search = graphic.data()[:, 1]
             offset = getattr(graphic.position, self.axis)
 
-        find_value = self.value() - offset
+        find_value = self.selection() - offset
 
         # get closest data index to the world space position of the slider
         idx = np.searchsorted(to_search, find_value, side="left")
@@ -327,9 +340,9 @@ class LinearSelector(Graphic):
             return
 
         if self.axis == "x":
-            self.value = world_pos.x
+            self.selection = world_pos.x
         else:
-            self.value = world_pos.y
+            self.selection = world_pos.y
 
     def _move_start(self, ev):
         self._move_info = {"last_pos": (ev.x, ev.y)}
@@ -346,13 +359,30 @@ class LinearSelector(Graphic):
         # pointer move events are in viewport or canvas space
         delta = Vector3(ev.x - last[0], ev.y - last[1])
 
+        self._pygfx_event = ev
+
+        self._move_graphic(delta)
+
         self._move_info = {"last_pos": (ev.x, ev.y)}
+        self._plot_area.controller.enabled = True
+
+    def _move_graphic(self, delta: Vector3):
+        """
+        Moves the graphic, updates SelectionFeature
+
+        Parameters
+        ----------
+        delta_ndc: Vector3
+            the delta by which to move this Graphic, in screen coordinates
+
+        """
+        self.delta = delta.clone()
 
         viewport_size = self._plot_area.viewport.logical_size
 
         # convert delta to NDC coordinates using viewport size
         # also since these are just deltas we don't have to calculate positions relative to the viewport
-        delta_ndc = delta.multiply(
+        delta_ndc = delta.clone().multiply(
             Vector3(
                 2 / viewport_size[0],
                 -2 / viewport_size[1],
@@ -373,8 +403,8 @@ class LinearSelector(Graphic):
         if new_value < self.limits[0] or new_value > self.limits[1]:
             return
 
-        self.value = new_value
-        self._plot_area.controller.enabled = True
+        self.selection = new_value
+        self.delta = None
 
     def _move_end(self, ev):
         self._move_info = None

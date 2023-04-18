@@ -9,7 +9,7 @@ from pygfx.linalg import Vector3
 from wgpu.gui.auto import WgpuCanvas
 
 from ..graphics._base import Graphic, GraphicCollection
-from ..graphics.line_slider import LineSlider
+from ..graphics.selectors import LinearSelector
 
 
 # dict to store Graphic instances
@@ -82,7 +82,7 @@ class PlotArea:
         self._graphics: List[str] = list()
 
         # hacky workaround for now to exclude from bbox calculations
-        self._sliders: List[LineSlider] = list()
+        self._selectors = list()
 
         self.name = name
 
@@ -212,9 +212,9 @@ class PlotArea:
         if graphic.name is not None:  # skip for those that have no name
             self._check_graphic_name_exists(graphic.name)
 
-        # TODO: need to refactor LineSlider entirely
-        if isinstance(graphic, LineSlider):
-            self._sliders.append(graphic)  # don't manage garbage collection of LineSliders for now
+        # TODO: need to refactor LinearSelector entirely
+        if isinstance(graphic, LinearSelector):
+            self._selectors.append(graphic)  # don't manage garbage collection of LineSliders for now
         else:
             # store in GRAPHICS dict
             loc = graphic.loc
@@ -293,7 +293,8 @@ class PlotArea:
             in the scene will fill the entire canvas.
         """
         # hacky workaround for now until I figure out how to put it in its own scene
-        for slider in self._sliders:
+        # TODO: remove all selectors from a scene to calculate scene bbox
+        for slider in self._selectors:
             self.scene.remove(slider.world_object)
 
         self.center_scene()
@@ -306,7 +307,7 @@ class PlotArea:
         else:
             width, height, depth = (1, 1, 1)
 
-        for slider in self._sliders:
+        for slider in self._selectors:
             self.scene.add(slider.world_object)
 
         self.camera.width = width
