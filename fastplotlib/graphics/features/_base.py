@@ -145,7 +145,7 @@ class GraphicFeature(ABC):
                         func(event_data)
                 else:
                     func()
-            except:
+            except TypeError:
                 warn(f"Event handler {func} has an unresolvable argspec, calling it without arguments")
                 func()
 

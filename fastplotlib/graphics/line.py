@@ -1,9 +1,12 @@
 from typing import *
+import weakref
+
 import numpy as np
 import pygfx
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
+from .selectors import LinearRegionSelector
 from ..utils import make_colors
 
 
@@ -95,6 +98,90 @@ class LineGraphic(Graphic, Interaction):
 
         if z_position is not None:
             self.world_object.position.z = z_position
+
+    def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
+        """
+        Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        padding: float, default 100.0
+            Extends the linear selector along the y-axis to make it easier to interact with.
+
+        kwargs
+            passed to ``LinearRegionSelector``
+
+        Returns
+        -------
+        LinearRegionSelector
+            linear selection graphic
+
+        """
+
+        bounds_init, limits, size, origin = self._get_linear_selector_init_args(padding, **kwargs)
+
+        # create selector
+        selector = LinearRegionSelector(
+            bounds=bounds_init,
+            limits=limits,
+            size=size,
+            origin=origin,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+        # so that it is below this graphic
+        selector.position.set_z(self.position.z - 1)
+
+        # PlotArea manages this for garbage collection etc. just like all other Graphics
+        # so we should only work with a proxy on the user-end
+        return weakref.proxy(selector)
+
+    def _get_linear_selector_init_args(self, padding: float, **kwargs):
+        # computes initial bounds, limits, size and origin of linear selectors
+        data = self.data()
+
+        if "axis" in kwargs.keys():
+            axis = kwargs["axis"]
+        else:
+            axis = "x"
+
+        if axis == "x":
+            offset = self.position.x
+            # x limits
+            limits = (data[0, 0] + offset, data[-1, 0] + offset)
+
+            # height + padding
+            size = np.ptp(data[:, 1]) + padding
+
+            # initial position of the selector
+            position_y = (data[:, 1].min() + data[:, 1].max()) / 2
+
+            # need y offset too for this
+            origin = (limits[0] - offset, position_y + self.position.y)
+        else:
+            offset = self.position.y
+            # y limits
+            limits = (data[0, 1] + offset, data[-1, 1] + offset)
+
+            # width + padding
+            size = np.ptp(data[:, 0]) + padding
+
+            # initial position of the selector
+            position_x = (data[:, 0].min() + data[:, 0].max()) / 2
+
+            # need x offset too for this
+            origin = (position_x + self.position.x, limits[0] - offset)
+
+        # initial bounds are 20% of the limits range
+        bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
+
+        return bounds_init, limits, size, origin
+
+    def _add_plot_area_hook(self, plot_area):
+        self._plot_area = plot_area
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any = None):
         if not hasattr(self, "_previous_data"):

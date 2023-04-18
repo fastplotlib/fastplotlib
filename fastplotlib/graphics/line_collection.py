@@ -1,11 +1,14 @@
+from typing import *
+from copy import deepcopy
+import weakref
+
 import numpy as np
 import pygfx
-from typing import *
 
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
+from .selectors import LinearRegionSelector
 from ..utils import make_colors
-from copy import deepcopy
 
 
 class LineCollection(GraphicCollection, Interaction):
@@ -192,6 +195,89 @@ class LineCollection(GraphicCollection, Interaction):
 
             self.add_graphic(lg, reset_index=False)
 
+    def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
+        """
+        Add a ``LinearRegionSelector``.
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a plot area just like
+        any other ``Graphic``.
+
+        Parameters
+        ----------
+        padding: float, default 100.0
+            Extends the linear selector along the y-axis to make it easier to interact with.
+
+        kwargs
+            passed to ``LinearRegionSelector``
+
+        Returns
+        -------
+        LinearRegionSelector
+            linear selection graphic
+
+        """
+
+        bounds_init = list()
+        limits = list()
+        sizes = list()
+        origin = list()
+
+        for g in self.graphics:
+            _bounds_init, _limits, _size, _origin = g._get_linear_selector_init_args(padding=0, **kwargs)
+            bounds_init.append(_bounds_init)
+            limits.append(_limits)
+            sizes.append(_size)
+            origin.append(_origin)
+
+        # set the init bounds using the extents of the collection
+        b = np.vstack(bounds_init)
+        bounds = (b[:, 0].min(), b[:, 1].max())
+
+        # set the limits using the extents of the collection
+        l = np.vstack(limits)
+        limits = (l[:, 0].min(), l[:, 1].max())
+
+        if isinstance(self, LineStack):
+            # sum them if it's a stack
+            size = sum(sizes)
+            size += self.separation * len(sizes)
+        else:
+            # just the biggest one if not stacked
+            size = max(sizes)
+
+        size += padding
+
+        # origin is the (min origin + max origin) / 2
+        if "axis" in kwargs.keys():
+            axis = kwargs["axis"]
+        else:
+            axis = "x"
+
+        if axis == "x":
+            o = np.vstack(origin)
+            origin_y = (o[:, 1].min() + o[:, 1].max()) / 2
+            origin = (limits[0], origin_y)
+        else:
+            o = np.vstack(origin)
+            origin_x = (o[:, 0].min() + o[:, 0].max()) / 2
+            origin = (origin_x, limits[0])
+
+        selector = LinearRegionSelector(
+            bounds=bounds,
+            limits=limits,
+            size=size,
+            origin=origin,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+        selector.position.set_z(self.position.z - 1)
+
+        return weakref.proxy(selector)
+
+    def _add_plot_area_hook(self, plot_area):
+        self._plot_area = plot_area
+
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         if not hasattr(self, "_previous_data"):
             self._previous_data = dict()
@@ -346,3 +432,5 @@ class LineStack(LineCollection):
         for i, line in enumerate(self.graphics):
             getattr(line.position, f"set_{separation_axis}")(axis_zero)
             axis_zero = axis_zero + line.data()[:, axes[separation_axis]].max() + separation
+
+        self.separation = separation
