@@ -6,7 +6,7 @@ import pygfx
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
-from .selectors import LinearSelector
+from .selectors import LinearRegionSelector
 from ..utils import make_colors
 
 
@@ -99,10 +99,10 @@ class LineGraphic(Graphic, Interaction):
         if z_position is not None:
             self.world_object.position.z = z_position
 
-    def add_linear_selector(self, padding: float = 100.0, **kwargs) -> LinearSelector:
+    def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
         """
-        Add a ``LinearSelector``. Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
-        from a plot area just like any other ``Graphic``.
+        Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
 
         Parameters
         ----------
@@ -110,11 +110,11 @@ class LineGraphic(Graphic, Interaction):
             Extends the linear selector along the y-axis to make it easier to interact with.
 
         kwargs
-            passed to ``LinearSelector``
+            passed to ``LinearRegionSelector``
 
         Returns
         -------
-        LinearSelector
+        LinearRegionSelector
             linear selection graphic
 
         """
@@ -122,7 +122,7 @@ class LineGraphic(Graphic, Interaction):
         bounds_init, limits, size, origin = self._get_linear_selector_init_args(padding, **kwargs)
 
         # create selector
-        selector = LinearSelector(
+        selector = LinearRegionSelector(
             bounds=bounds_init,
             limits=limits,
             size=size,
@@ -140,6 +140,7 @@ class LineGraphic(Graphic, Interaction):
         return weakref.proxy(selector)
 
     def _get_linear_selector_init_args(self, padding: float, **kwargs):
+        # computes initial bounds, limits, size and origin of linear selectors
         data = self.data()
 
         if "axis" in kwargs.keys():

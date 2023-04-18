@@ -7,7 +7,7 @@ import pygfx
 
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
-from .selectors import LinearSelector
+from .selectors import LinearRegionSelector
 from ..utils import make_colors
 
 
@@ -195,10 +195,11 @@ class LineCollection(GraphicCollection, Interaction):
 
             self.add_graphic(lg, reset_index=False)
 
-    def add_linear_selector(self, padding: float = 100.0, **kwargs) -> LinearSelector:
+    def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
         """
-        Add a ``LinearSelector``. Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
-        from a plot area just like any other ``Graphic``.
+        Add a ``LinearRegionSelector``.
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a plot area just like
+        any other ``Graphic``.
 
         Parameters
         ----------
@@ -206,11 +207,11 @@ class LineCollection(GraphicCollection, Interaction):
             Extends the linear selector along the y-axis to make it easier to interact with.
 
         kwargs
-            passed to ``LinearSelector``
+            passed to ``LinearRegionSelector``
 
         Returns
         -------
-        LinearSelector
+        LinearRegionSelector
             linear selection graphic
 
         """
@@ -260,7 +261,7 @@ class LineCollection(GraphicCollection, Interaction):
             origin_x = (o[:, 0].min() + o[:, 0].max()) / 2
             origin = (origin_x, limits[0])
 
-        selector = LinearSelector(
+        selector = LinearRegionSelector(
             bounds=bounds,
             limits=limits,
             size=size,

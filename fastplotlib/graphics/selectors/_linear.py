@@ -38,7 +38,7 @@ y_bottom = np.array([
 
 class LinearBoundsFeature(GraphicFeature):
     """
-    Feature for a linear bounding region
+    Feature for a linearly bounding region
 
     Pick Info
     ---------
@@ -132,7 +132,7 @@ class LinearBoundsFeature(GraphicFeature):
         self._call_event_handlers(event_data)
 
 
-class LinearSelector(Graphic, Interaction):
+class LinearRegionSelector(Graphic, Interaction):
     feature_events = (
         "bounds"
     )
@@ -151,8 +151,8 @@ class LinearSelector(Graphic, Interaction):
             name: str = None
     ):
         """
-        Create a LinearSelector graphic which can be moved only along the x-axis. Useful for sub-selecting
-        data on Line graphics.
+        Create a LinearRegionSelector graphic which can be moved only along either the x-axis or y-axis.
+        Allows sub-selecting data from a ``Graphic`` or from multiple Graphics.
 
         bounds[0], limits[0], and position[0] must be identical
 
@@ -211,7 +211,7 @@ class LinearSelector(Graphic, Interaction):
         #             f"{limits[0]} != {origin[1]} != {bounds[0]}"
         #         )
 
-        super(LinearSelector, self).__init__(name=name)
+        super(LinearRegionSelector, self).__init__(name=name)
 
         self.parent = parent
 
