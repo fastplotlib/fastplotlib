@@ -37,7 +37,21 @@ y_bottom = np.array([
 
 
 class LinearBoundsFeature(GraphicFeature):
-    """Feature for a linear bounding region"""
+    """
+    Feature for a linear bounding region
+
+    Pick Info
+    ---------
+
+    +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
+    | key                | type                          | description                                                                          |
+    +====================+===============================+======================================================================================+
+    | "selected_indices" | ``numpy.ndarray`` or ``None`` | selected graphic data indices                                                        |
+    | "selected_data"    | ``numpy.ndarray`` or ``None`` | selected graphic data                                                                |
+    | "new_data"         | ``(float, float)``            | current bounds in world coordinates, NOT necessarily the same as "selected_indices". |
+    +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
+
+    """
     def __init__(self, parent, bounds: Tuple[int, int], axis: str):
         super(LinearBoundsFeature, self).__init__(parent, data=bounds)
 
@@ -94,11 +108,23 @@ class LinearBoundsFeature(GraphicFeature):
         self._feature_changed(key=None, new_data=value)
 
     def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
+        if len(self._event_handlers) < 1:
+            return
+
+        if self._parent.parent is not None:
+            selected_ixs = self._parent.get_selected_indices()
+            selected_data = self._parent.get_selected_data()
+        else:
+            selected_ixs = None
+            selected_data = None
+
         pick_info = {
             "index": None,
             "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
-            "new_data": new_data
+            "new_data": new_data,
+            "selected_indices": selected_ixs,
+            "selected_data": selected_data
         }
 
         event_data = FeatureEvent(type="bounds", pick_info=pick_info)
