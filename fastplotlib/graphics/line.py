@@ -6,7 +6,7 @@ import pygfx
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
-from .selectors import LinearRegionSelector
+from .selectors import LinearRegionSelector, LinearSelector
 from ..utils import make_colors
 
 
@@ -99,6 +99,48 @@ class LineGraphic(Graphic, Interaction):
         if z_position is not None:
             self.world_object.position.z = z_position
 
+    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
+        """
+        Adds a linear selector.
+
+        Parameters
+        ----------
+        selection: int
+            initial position of the selector
+
+        padding: float
+            pad the length of the selector
+
+        kwargs
+            passed to :class:`.LinearSelector`
+
+        Returns
+        -------
+        LinearSelector
+
+        """
+
+        bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+
+        if selection is None:
+            selection = limits[0]
+
+        if selection < limits[0] or selection > limits[1]:
+            raise ValueError(f"the passed selection: {selection} is beyond the limits: {limits}")
+
+        selector = LinearSelector(
+            selection=selection,
+            limits=limits,
+            end_points=end_points,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+        selector.position.z = self.position.z + 1
+
+        return weakref.proxy(selector)
+
     def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -119,7 +161,7 @@ class LineGraphic(Graphic, Interaction):
 
         """
 
-        bounds_init, limits, size, origin = self._get_linear_selector_init_args(padding, **kwargs)
+        bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
 
         # create selector
         selector = LinearRegionSelector(
@@ -139,6 +181,7 @@ class LineGraphic(Graphic, Interaction):
         # so we should only work with a proxy on the user-end
         return weakref.proxy(selector)
 
+    # TODO: this method is a bit of a mess, can refactor later
     def _get_linear_selector_init_args(self, padding: float, **kwargs):
         # computes initial bounds, limits, size and origin of linear selectors
         data = self.data()
@@ -161,6 +204,10 @@ class LineGraphic(Graphic, Interaction):
 
             # need y offset too for this
             origin = (limits[0] - offset, position_y + self.position.y)
+
+            # endpoints of the data range
+            # used by linear selector but not linear region
+            end_points = (self.data()[:, 1].min() - padding, self.data()[:, 1].max() + padding)
         else:
             offset = self.position.y
             # y limits
@@ -175,10 +222,12 @@ class LineGraphic(Graphic, Interaction):
             # need x offset too for this
             origin = (position_x + self.position.x, limits[0] - offset)
 
+            end_points = (self.data()[:, 0].min() - padding, self.data()[:, 0].max() + padding)
+
         # initial bounds are 20% of the limits range
         bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
 
-        return bounds_init, limits, size, origin
+        return bounds_init, limits, size, origin, axis, end_points
 
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area

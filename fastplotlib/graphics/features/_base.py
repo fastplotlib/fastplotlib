@@ -122,7 +122,7 @@ class GraphicFeature(ABC):
         if handler not in self._event_handlers:
             raise KeyError(f"event handler {handler} not registered.")
 
-        self._event_handlers.pop(handler)
+        self._event_handlers.remove(handler)
 
     #TODO: maybe this can be implemented right here in the base class
     @abstractmethod
