@@ -99,7 +99,27 @@ class LineGraphic(Graphic, Interaction):
         if z_position is not None:
             self.world_object.position.z = z_position
 
-    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs):
+    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
+        """
+        Adds a linear selector.
+
+        Parameters
+        ----------
+        selection: int
+            initial position of the selector
+
+        padding: float
+            pad the length of the selector
+
+        kwargs
+            passed to :class:`.LinearSelector`
+
+        Returns
+        -------
+        LinearSelector
+
+        """
+
         bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
 
         if selection is None:

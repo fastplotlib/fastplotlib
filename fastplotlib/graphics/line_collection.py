@@ -195,7 +195,29 @@ class LineCollection(GraphicCollection, Interaction):
 
             self.add_graphic(lg, reset_index=False)
 
-    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs):
+    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
+        """
+        Adds a :class:`.LinearSelector` .
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a plot area just like
+        any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: int
+            initial position of the selector
+
+        padding: float
+            pad the length of the selector
+
+        kwargs
+            passed to :class:`.LinearSelector`
+
+        Returns
+        -------
+        LinearSelector
+
+        """
+
         bounds, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
 
         if selection is None:
@@ -219,7 +241,7 @@ class LineCollection(GraphicCollection, Interaction):
 
     def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
         """
-        Add a ``LinearRegionSelector``.
+        Add a :class:`.LinearRegionSelector`
         Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a plot area just like
         any other ``Graphic``.
 

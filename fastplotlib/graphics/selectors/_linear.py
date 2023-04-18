@@ -79,6 +79,7 @@ class LinearSelectionFeature(GraphicFeature):
 class LinearSelector(Graphic):
     feature_events = ("selection")
 
+    # TODO: make `selection` arg in graphics data space not world space
     def __init__(
             self,
             selection: int,
@@ -97,7 +98,7 @@ class LinearSelector(Graphic):
         Parameters
         ----------
         selection: int
-            initial x or y selected value for the slider
+            initial x or y selected position for the slider, in world space
 
         axis: str, default "x"
             "x" | "y", the axis which the slider can move along
