@@ -221,7 +221,7 @@ class LinearSelector(Graphic):
 
         # if not False, moves the slider on every render cycle
         self._key_move_value = False
-        self.step: float = 1.0
+        self.step: float = 1.0  #: step size for moving selector using the arrow keys
         self.key_bind_modifier = arrow_keys_modifier
 
         self._block_ipywidget_call = False
@@ -350,12 +350,10 @@ class LinearSelector(Graphic):
 
     def _key_move(self):
         if self._key_move_value:
-            # step * direction * camera scale
-            camera_scale = getattr(self._plot_area.camera.scale, self.axis)
-            sign_camera = math.copysign(1, camera_scale)
-            step_value = sign_camera * math.copysign(self.step, key_bind_direction[self._key_move_value])
-
-            delta = Vector3(step_value, step_value, 0)
+            # step * direction
+            # TODO: step size in world space intead of screen space
+            direction = key_bind_direction[self._key_move_value]
+            delta = Vector3(self.step, self.step, 0).multiply_scalar(direction)
             # we provide both x and y, depending on the axis this selector is on the other value is ignored anyways
             self._move_graphic(delta=delta)
 
