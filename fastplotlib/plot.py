@@ -1,10 +1,16 @@
 from typing import *
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
-from .layouts._subplot import Subplot
-from .utils.record import VideoWriter
 from multiprocessing import Queue
 from time import time
+
+from .layouts._subplot import Subplot
+
+try:
+    from .utils.record import VideoWriter
+    HAS_OPENCV = True
+except ImportError:
+    HAS_OPENCV = False
 
 
 class Plot(Subplot):
@@ -86,7 +92,7 @@ class Plot(Subplot):
             **kwargs
         )
 
-        self._record_writer: VideoWriter = None
+        self._record_writer = None
         self._record_queue = Queue()
         self._record_fps = 30
         self._record_timer = 0
@@ -99,6 +105,7 @@ class Plot(Subplot):
 
     def _record(self):
         t = time()
+        # this is required else it tries to record EVERY frame and slows everything else down
         if t - self._record_timer < (1 / self._record_fps):
             return
 
@@ -112,6 +119,9 @@ class Plot(Subplot):
 
     def record_start(self, path, fps: int = 30, fourcc: str = "XVID"):
         """start a recording"""
+        if not HAS_OPENCV:
+            raise ModuleNotFoundError("Recording to video file requires `opencv`")
+
         self._record_queue = Queue()
 
         ss = self.canvas.snapshot()
@@ -119,9 +129,11 @@ class Plot(Subplot):
         self._record_writer = VideoWriter(
             path=path,
             queue=self._record_queue,
-            fps=fps,
-            dims=(ss.width, ss.height)
+            fps=int(fps - (fps * 0.1)),  # remove 10% to account for other added animations
+            dims=(ss.width, ss.height),
+            fourcc=fourcc
         )
+
         self._record_writer.start()
 
         self._record_fps = fps
