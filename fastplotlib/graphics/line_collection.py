@@ -30,6 +30,7 @@ class LineCollection(GraphicCollection, Interaction):
             alpha: float = 1.0,
             cmap: Union[List[str], str] = None,
             name: str = None,
+            metadata: Union[list, tuple, np.ndarray] = None,
             *args,
             **kwargs
     ):
@@ -64,6 +65,10 @@ class LineCollection(GraphicCollection, Interaction):
 
         name: str, optional
             name of the line collection
+
+        metadata: list, tuple, or array
+            metadata associated with this collection, this is for the user to manage.
+            ``len(metadata)`` must be same as ``len(data)``
 
         args
             passed to GraphicCollection
@@ -114,6 +119,13 @@ class LineCollection(GraphicCollection, Interaction):
         if not isinstance(thickness, float):
             if len(thickness) != len(data):
                 raise ValueError("args must be a single float or an iterable with same length as data")
+
+        if metadata is not None:
+            if len(metadata) != len(data):
+                raise ValueError(
+                    f"len(metadata) != len(data)\n"
+                    f"{len(metadata)} != {len(data)}"
+                )
 
         # cmap takes priority over colors
         if cmap is not None:
@@ -196,13 +208,19 @@ class LineCollection(GraphicCollection, Interaction):
                 _cmap = cmap[i]
                 _c = None
 
+            if metadata is not None:
+                _m = metadata[i]
+            else:
+                _m = None
+
             lg = LineGraphic(
                 data=d,
                 thickness=_s,
                 colors=_c,
                 z_position=_z,
                 cmap=_cmap,
-                collection_index=i
+                collection_index=i,
+                metadata=_m
             )
 
             self.add_graphic(lg, reset_index=False)
@@ -497,7 +515,8 @@ class LineStack(LineCollection):
             thickness=thickness,
             colors=colors,
             cmap=cmap,
-            name=name
+            name=name,
+            **kwargs
         )
 
         axis_zero = 0
