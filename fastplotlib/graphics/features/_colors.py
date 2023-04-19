@@ -1,15 +1,8 @@
 import numpy as np
 
 from ._base import GraphicFeature, GraphicFeatureIndexable, cleanup_slice, FeatureEvent
-from ...utils import make_colors, get_cmap_texture
+from ...utils import make_colors, get_cmap_texture, make_pygfx_colors
 from pygfx import Color
-
-
-def _make_pygfx_colors(colors, n_colors):
-    """parse and make colors array using pyfx.Color"""
-    c = Color(colors)
-    colors_array = np.repeat(np.array([c]), n_colors, axis=0)
-    return colors_array
 
 
 class ColorFeature(GraphicFeatureIndexable):
@@ -92,10 +85,10 @@ class ColorFeature(GraphicFeatureIndexable):
                 data = np.random.rand(n_colors, 4)
                 data[:, -1] = alpha
             else:
-                data = _make_pygfx_colors(colors, n_colors)
+                data = make_pygfx_colors(colors, n_colors)
         else:
             # assume it's a single color, use pygfx.Color to parse it
-            data = _make_pygfx_colors(colors, n_colors)
+            data = make_pygfx_colors(colors, n_colors)
 
         if alpha != 1.0:
             data[:, -1] = alpha

@@ -27,6 +27,7 @@ class LineCollection(GraphicCollection, Interaction):
             z_position: Union[List[float], float] = None,
             thickness: Union[float, List[float]] = 2.0,
             colors: Union[List[np.ndarray], np.ndarray] = "w",
+            alpha: float = 1.0,
             cmap: Union[List[str], str] = None,
             name: str = None,
             *args,
@@ -131,33 +132,44 @@ class LineCollection(GraphicCollection, Interaction):
                                  "with the same length as the data")
         else:
             if isinstance(colors, np.ndarray):
+                # single color for all lines in the collection as RGBA
                 if colors.shape == (4,):
                     single_color = True
 
+                # colors specified for each line as array of shape [n_lines, RGBA]
                 elif colors.shape == (len(data), 4):
                     single_color = False
 
                 else:
                     raise ValueError(
-                        "numpy array colors argument must be of shape (4,) or (len(data), 4)"
+                        f"numpy array colors argument must be of shape (4,) or (n_lines, 4)."
+                        f"You have pass the following shape: {colors.shape}"
                     )
 
             elif isinstance(colors, str):
-                single_color = True
-                colors = pygfx.Color(colors)
+                if colors == "random":
+                    colors = np.random.rand(len(data), 4)
+                    colors[:, -1] = alpha
+                    single_color = False
+                else:
+                    # parse string color
+                    single_color = True
+                    colors = pygfx.Color(colors)
 
             elif isinstance(colors, (tuple, list)):
                 if len(colors) == 4:
+                    # single color specified as (R, G, B, A) tuple or list
                     if all([isinstance(c, (float, int)) for c in colors]):
                         single_color = True
 
                 elif len(colors) == len(data):
+                    # colors passed as list/tuple of colors, such as list of string
                     single_color = False
 
                 else:
                     raise ValueError(
                         "tuple or list colors argument must be a single color represented as [R, G, B, A], "
-                        "or must be a str of tuple/list with the same length as the data"
+                        "or must be a tuple/list of colors represented by a string with the same length as the data"
                     )
 
         self._set_world_object(pygfx.Group())
