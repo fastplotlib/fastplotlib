@@ -2,6 +2,9 @@ from typing import *
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
 from .layouts._subplot import Subplot
+from .utils.record import VideoWriter
+from multiprocessing import Queue
+from time import time
 
 
 class Plot(Subplot):
@@ -83,11 +86,55 @@ class Plot(Subplot):
             **kwargs
         )
 
+        self._record_writer: VideoWriter = None
+        self._record_queue = Queue()
+        self._record_fps = 30
+        self._record_timer = 0
+
     def render(self):
         super(Plot, self).render()
 
         self.renderer.flush()
         self.canvas.request_draw()
+
+    def _record(self):
+        t = time()
+        if t - self._record_timer < (1 / self._record_fps):
+            return
+
+        self._record_timer = t
+
+        if self._record_writer is not None:
+            ss = self.canvas.snapshot()
+            # exclude alpha channel
+            self._record_queue.put(ss.data[:, :, :-1])
+            # self._record_writer.writer.write(ss.data[:, :, -1])
+
+    def record_start(self, path, fps: int = 30, fourcc: str = "XVID"):
+        """start a recording"""
+        self._record_queue = Queue()
+
+        ss = self.canvas.snapshot()
+
+        self._record_writer = VideoWriter(
+            path=path,
+            queue=self._record_queue,
+            fps=fps,
+            dims=(ss.width, ss.height)
+        )
+        self._record_writer.start()
+
+        self._record_fps = fps
+        self._record_timer = time()
+
+        self.add_animations(self._record)
+
+    def record_stop(self):
+        """end a current recording"""
+        self._record_queue.put(None)
+        self._record_writer = None
+
+        self.remove_animation(self._record)
 
     def show(self, autoscale: bool = True):
         """
