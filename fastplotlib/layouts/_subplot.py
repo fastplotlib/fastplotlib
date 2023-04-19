@@ -5,6 +5,7 @@ from functools import partial
 import weakref
 from inspect import signature, getfullargspec
 from warnings import warn
+import traceback
 
 from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitController, \
     AxesHelper, GridHelper, WgpuRenderer
@@ -186,10 +187,13 @@ class Subplot(PlotArea):
     def _call_animate_functions(self, funcs: Iterable[callable]):
         for fn in funcs:
             try:
-                if len(getfullargspec(fn).args) > 0:
-                    fn(self)
-                else:
-                    fn()
+                args = getfullargspec(fn).args
+
+                if len(args) > 0:
+                    if args[0] == "self" and not len(args) > 1:
+                        fn()
+                    else:
+                        fn(self)
             except (ValueError, TypeError):
                 warn(
                     f"Could not resolve argspec of {self.__class__.__name__} animation function: {fn}, "

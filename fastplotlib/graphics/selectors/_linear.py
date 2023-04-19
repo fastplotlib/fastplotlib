@@ -16,6 +16,15 @@ from .._base import Graphic, GraphicFeature, GraphicCollection
 from ..features._base import FeatureEvent
 
 
+# key bindings used to move the slider
+key_bind_direction = {
+    "ArrowRight": 1,
+    "ArrowLeft": -1,
+    "ArrowUp": 1,
+    "ArrowDown": -1,
+}
+
+
 class LinearSelectionFeature(GraphicFeature):
     # A bit much to have a class for this but this allows it to integrate with the fastplotlib callback system
     """
@@ -87,6 +96,7 @@ class LinearSelector(Graphic):
             axis: str = "x",
             parent: Graphic = None,
             end_points: Tuple[int, int] = None,
+            arrow_keys_modifier: str = "Shift",
             ipywidget_slider: ipywidgets.IntSlider = None,
             thickness: float = 2.5,
             color: Any = "w",
@@ -100,11 +110,21 @@ class LinearSelector(Graphic):
         selection: int
             initial x or y selected position for the slider, in world space
 
+        limits: (int, int)
+            (min, max) limits along the x or y axis for the selector
+
         axis: str, default "x"
             "x" | "y", the axis which the slider can move along
 
+        parent: Graphic
+            parent graphic for this LineSelector
+
         end_points: (int, int)
             set length of slider by bounding it between two x-pos or two y-pos
+
+        arrow_keys_modifier: str
+            modifier key that must be pressed to initiate movement using arrow keys, must be one of:
+            "Control", "Shift", "Alt" or ``None``
 
         ipywidget_slider: IntSlider, optional
             ipywidget slider to associate with this graphic
@@ -198,6 +218,11 @@ class LinearSelector(Graphic):
         self._pygfx_event = None
 
         self.parent = parent
+
+        # if not False, moves the slider on every render cycle
+        self._key_move_value = False
+        self.step: float = 1.0
+        self.key_bind_modifier = arrow_keys_modifier
 
         self._block_ipywidget_call = False
 
@@ -323,6 +348,34 @@ class LinearSelector(Graphic):
 
         return source
 
+    def _key_move(self):
+        if self._key_move_value:
+            # step * direction * camera scale
+            camera_scale = getattr(self._plot_area.camera.scale, self.axis)
+            sign_camera = math.copysign(1, camera_scale)
+            step_value = sign_camera * math.copysign(self.step, key_bind_direction[self._key_move_value])
+
+            delta = Vector3(step_value, step_value, 0)
+            # we provide both x and y, depending on the axis this selector is on the other value is ignored anyways
+            self._move_graphic(delta=delta)
+
+    def _key_move_start(self, ev):
+        if self.key_bind_modifier is not None and self.key_bind_modifier not in ev.modifiers:
+            return
+
+        if self.axis == "x" and ev.key in ["ArrowRight", "ArrowLeft"]:
+            self._key_move_value = ev.key
+
+        elif self.axis == "y" and ev.key in ["ArrowUp", "ArrowDown"]:
+            self._key_move_value = ev.key
+
+    def _key_move_end(self, ev):
+        if self.axis == "x" and ev.key in ["ArrowRight", "ArrowLeft"]:
+            self._key_move_value = False
+
+        elif self.axis == "y" and ev.key in ["ArrowUp", "ArrowDown"]:
+            self._key_move_value = False
+
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
@@ -337,6 +390,12 @@ class LinearSelector(Graphic):
         # mouse hover color events
         self.world_object.add_event_handler(self._pointer_enter, "pointer_enter")
         self.world_object.add_event_handler(self._pointer_leave, "pointer_leave")
+
+        # arrow key bindings
+        self._plot_area.renderer.add_event_handler(self._key_move_start, "key_down")
+        self._plot_area.renderer.add_event_handler(self._key_move_end, "key_up")
+
+        self._plot_area.add_animations(self._key_move)
 
     def _move_to_pointer(self, ev):
         # middle mouse button clicks
