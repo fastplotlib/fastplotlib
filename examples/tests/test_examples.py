@@ -75,5 +75,5 @@ def test_example_screenshots(module, force_offscreen, regenerate_screenshots=Fal
 
 
 if __name__ == "__main__":
-    test_examples_run()
-    test_example_screenshots()
+    test_examples_run("simple")
+    test_example_screenshots("simple", regenerate_screenshots=True)
