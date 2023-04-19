@@ -358,7 +358,9 @@ class GraphicCollection(Graphic):
     def __getitem__(self, key):
         if isinstance(key, (int, np.integer)):
             # single graphic indexed
-            return self.graphics[key]
+            # !! IMPORTANT: this must return a CollectionIndexer even though it's only one graphic!!
+            # otherwise it doesn't work properly with events that except collections
+            key = [key]
 
         if isinstance(key, slice):
             key = cleanup_slice(key, upper_bound=len(self))
