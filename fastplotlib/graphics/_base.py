@@ -356,8 +356,9 @@ class GraphicCollection(Graphic):
             graphic.collection_index = new_index
 
     def __getitem__(self, key):
-        if isinstance(key, int):
-            key = [key]
+        if isinstance(key, (int, np.integer)):
+            # single graphic indexed
+            return self.graphics[key]
 
         if isinstance(key, slice):
             key = cleanup_slice(key, upper_bound=len(self))
