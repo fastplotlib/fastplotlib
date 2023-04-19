@@ -194,6 +194,8 @@ class Subplot(PlotArea):
                         fn()
                     else:
                         fn(self)
+                else:
+                    fn()
             except (ValueError, TypeError):
                 warn(
                     f"Could not resolve argspec of {self.__class__.__name__} animation function: {fn}, "
