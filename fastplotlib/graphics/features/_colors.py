@@ -1,6 +1,6 @@
 import numpy as np
 
-from ._base import GraphicFeature, GraphicFeatureIndexable, cleanup_slice, FeatureEvent
+from ._base import GraphicFeature, GraphicFeatureIndexable, cleanup_slice, FeatureEvent, cleanup_array_slice
 from ...utils import make_colors, get_cmap_texture, make_pygfx_colors
 from pygfx import Color
 
@@ -102,9 +102,8 @@ class ColorFeature(GraphicFeatureIndexable):
             indices = range(_key.start, _key.stop, _key.step)
 
         # or single numerical index
-        elif isinstance(key, int):
-            if key > self._upper_bound:
-                raise IndexError("Index out of bounds")
+        elif isinstance(key, (int, np.integer)):
+            key = cleanup_slice(key, self._upper_bound)
             indices = [key]
 
         elif isinstance(key, tuple):
@@ -127,6 +126,10 @@ class ColorFeature(GraphicFeatureIndexable):
             self._update_range(key)
             self._feature_changed(key, value)
             return
+
+        elif isinstance(key, np.ndarray):
+            key = cleanup_array_slice(key, self._upper_bound)
+            indices = key
 
         else:
             raise TypeError("Graphic features only support integer and numerical fancy indexing")
@@ -181,6 +184,8 @@ class ColorFeature(GraphicFeatureIndexable):
             indices = [key]
         elif isinstance(key, slice):
             indices = range(key.start, key.stop, key.step)
+        elif isinstance(key, np.ndarray):
+            indices = key
         else:
             raise TypeError("feature changed key must be slice or int")
 
@@ -205,11 +210,16 @@ class CmapFeature(ColorFeature):
 
     def __setitem__(self, key, value):
         key = cleanup_slice(key, self._upper_bound)
-        if not isinstance(key, slice):
-            raise TypeError("Cannot set cmap on single indices, must pass a slice object or "
-                            "set it on the entire data.")
+        if not isinstance(key, (slice, np.ndarray)):
+            raise TypeError("Cannot set cmap on single indices, must pass a slice object, "
+                            "numpy.ndarray or set it on the entire data.")
 
-        n_colors = len(range(key.start, key.stop, key.step))
+        if isinstance(key, slice):
+            n_colors = len(range(key.start, key.stop, key.step))
+
+        else:
+            # numpy array
+            n_colors = key.size
 
         colors = make_colors(n_colors, cmap=value).astype(self._data.dtype)
         super(CmapFeature, self).__setitem__(key, colors)
