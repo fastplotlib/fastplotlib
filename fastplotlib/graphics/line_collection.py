@@ -10,8 +10,6 @@ from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 from ..utils import make_colors
 
-from icecream import ic
-
 
 class LineCollection(GraphicCollection, Interaction):
     child_type = LineGraphic
