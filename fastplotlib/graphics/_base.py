@@ -50,7 +50,9 @@ class BaseGraphic:
 
 class Graphic(BaseGraphic):
     def __init__(
-            self, name: str = None
+            self,
+            name: str = None,
+            metadata: Any = None
     ):
         """
 
@@ -59,9 +61,13 @@ class Graphic(BaseGraphic):
         name: str, optional
             name this graphic, makes it indexable within plots
 
+        metadata: Any, optional
+            metadata attached to this Graphic, this is for the user to manage
+
         """
 
         self.name = name
+        self.metadata = metadata
         self.registered_callbacks = dict()
         self.present = PresentFeature(parent=self)
 
