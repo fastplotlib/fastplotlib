@@ -8,7 +8,7 @@ Example showing simple 2x3 GridPlot with pre-saved 512x512 random images.
 
 from fastplotlib import GridPlot
 import numpy as np
-from pathlib import Path
+import imageio.v3 as iio
 
 from wgpu.gui.offscreen import WgpuCanvas
 from pygfx import WgpuRenderer
@@ -18,11 +18,10 @@ renderer = WgpuRenderer(canvas)
 
 plot = GridPlot(shape=(2,3), canvas=canvas, renderer=renderer)
 
-data_path = Path(__file__).parent.parent.joinpath("data", "random.npy")
-data = np.load(data_path)
+im = iio.imread("imageio:clock.png")
 
 for subplot in plot:
-    subplot.add_image(data=data)
+    subplot.add_image(data=im)
 
 plot.show()
 
