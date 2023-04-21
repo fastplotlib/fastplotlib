@@ -170,6 +170,12 @@ def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
     if isinstance(key, int):
         return key
 
+    if isinstance(key, np.ndarray):
+        return cleanup_array_slice(key, upper_bound)
+
+    # if isinstance(key, np.integer):
+    #     return int(key)
+
     if isinstance(key, tuple):
         # if tuple of slice we only need the first obj
         # since the first obj is the datapoint indices
@@ -197,13 +203,54 @@ def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
         stop = upper_bound
 
     elif stop > upper_bound:
-        raise IndexError("Index out of bounds")
+        raise IndexError(f"Index: `{stop}` out of bounds for feature array of size: `{upper_bound}`")
 
     step = key.step
     if step is None:
         step = 1
 
     return slice(start, stop, step)
+    # return slice(int(start), int(stop), int(step))
+
+
+def cleanup_array_slice(key: np.ndarray, upper_bound) -> np.ndarray:
+    """
+    Cleanup numpy array used for fancy indexing, make sure key[-1] <= upper_bound.
+
+    Parameters
+    ----------
+    key: np.ndarray
+        integer or boolean array
+
+    upper_bound
+
+    Returns
+    -------
+    np.ndarray
+        integer indexing array
+
+    """
+
+    if key.ndim > 1:
+        raise TypeError(
+            f"Can only use 1D boolean or integer arrays for fancy indexing"
+        )
+
+    # if boolean array convert to integer array of indices
+    if key.dtype == bool:
+        key = np.nonzero(key)[0]
+
+    # make sure indices within bounds of feature buffer range
+    if key[-1] > upper_bound:
+        raise IndexError(f"Index: `{key[-1]}` out of bounds for feature array of size: `{upper_bound}`")
+
+    # make sure indices are integers
+    if np.issubdtype(key.dtype, np.integer):
+        return key
+
+    raise TypeError(
+        f"Can only use 1D boolean or integer arrays for fancy indexing"
+    )
 
 
 class GraphicFeatureIndexable(GraphicFeature):
@@ -236,7 +283,8 @@ class GraphicFeatureIndexable(GraphicFeature):
 
     def _update_range_indices(self, key):
         """Currently used by colors and positions data"""
-        key = cleanup_slice(key, self._upper_bound)
+        if not isinstance(key, np.ndarray):
+            key = cleanup_slice(key, self._upper_bound)
 
         if isinstance(key, int):
             self.buffer.update_range(key, size=1)
@@ -254,6 +302,12 @@ class GraphicFeatureIndexable(GraphicFeature):
                 ixs = range(key.start, key.stop, step)
                 for ix in ixs:
                     self.buffer.update_range(ix, size=1)
+
+        # TODO: See how efficient this is with large indexing
+        elif isinstance(key, np.ndarray):
+            for ix in key:
+                self.buffer.update_range(int(ix), size=1)
+
         else:
             raise TypeError("must pass int or slice to update range")
 
