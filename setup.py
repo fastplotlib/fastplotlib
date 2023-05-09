@@ -13,7 +13,8 @@ install_requires = [
 extras_require = {
     "docs": [
         "sphinx",
-        "pydata-sphinx-theme<0.10.0"
+        "pydata-sphinx-theme<0.10.0",
+        "glfw"
     ],
 }
 
