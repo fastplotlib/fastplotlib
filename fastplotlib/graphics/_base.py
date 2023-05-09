@@ -301,7 +301,7 @@ class PreviouslyModifiedData:
     indices: Any
 
 
-COLLECTION_GRAPHICS: dict[str, Graphic] = dict()
+COLLECTION_GRAPHICS: Dict[str, Graphic] = dict()
 
 
 class GraphicCollection(Graphic):
