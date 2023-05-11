@@ -18,19 +18,24 @@ renderer = WgpuRenderer(canvas)
 
 plot = Plot(canvas=canvas, renderer=renderer)
 
-data_path = Path(__file__).parent.parent.joinpath("data", "scatter.npy")
+data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
 data = np.load(data_path)
 
-scatter_graphic = plot.add_scatter(data=data, sizes=3, alpha=0.7)
+n_points = 50
+colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
+
+scatter_graphic = plot.add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
 
 plot.show()
 
 plot.center_scene()
 
-scatter_graphic.data[0] = np.array([[35, -20, -5]])
-scatter_graphic.data[1] = np.array([[30, -20, -5]])
-scatter_graphic.data[2] = np.array([[40, -20, -5]])
-scatter_graphic.data[3] = np.array([[25, -20, -5]])
+scatter_graphic.data[0] = np.array([[5, 3, 1.5]])
+scatter_graphic.data[1] = np.array([[4.3, 3.2, 1.3]])
+scatter_graphic.data[2] = np.array([[5.2, 2.7, 1.7]])
+
+scatter_graphic.data[10:15] = scatter_graphic.data[0:5] + np.array([1, 1, 1])
+scatter_graphic.data[50:100:2] = scatter_graphic.data[100:150:2] + np.array([1,1,0])
 
 img = np.asarray(plot.renderer.target.draw())
 
