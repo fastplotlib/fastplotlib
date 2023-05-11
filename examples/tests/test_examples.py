@@ -61,6 +61,10 @@ def test_example_screenshots(module, force_offscreen, regenerate_screenshots=Fal
     # check if _something_ was rendered
     assert img is not None and img.size > 0
 
+    # if screenshots dir does not exist, will create and generate screenshots
+    if not os.path.exists(screenshots_dir):
+        os.mkdir(screenshots_dir)
+
     screenshot_path = screenshots_dir / f"{module.stem}.npy"
 
     if regenerate_screenshots:

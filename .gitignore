@@ -132,6 +132,5 @@ dmypy.json
 .idea/
 
 # Binary files for testing
-examples/data
 examples/screenshots
 
