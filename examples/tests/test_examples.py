@@ -6,6 +6,7 @@ import runpy
 import pytest
 import os
 import numpy as np
+import imageio.v3 as iio
 
 from .testutils import (
     ROOT,
@@ -14,6 +15,7 @@ from .testutils import (
     find_examples,
     wgpu_backend,
     is_lavapipe,
+    diffs_dir
 )
 
 # run all tests unless they opt-out
@@ -75,7 +77,45 @@ def test_example_screenshots(module, force_offscreen, regenerate_screenshots=Fal
     ), "found # test_example = true but no reference screenshot available"
     stored_img = np.load(screenshot_path)
     is_similar = np.allclose(img, stored_img, atol=1)
-    assert is_similar
+    update_diffs(module.stem, is_similar, img, stored_img)
+    assert is_similar, (
+        f"rendered image for example {module.stem} changed, see "
+        f"the {diffs_dir.relative_to(ROOT).as_posix()} folder"
+        " for visual diffs (you can download this folder from"
+        " CI build artifacts as well)"
+    )
+
+
+def update_diffs(module, is_similar, img, stored_img):
+    diffs_dir.mkdir(exist_ok=True)
+
+    diffs_rgba = None
+
+    def get_diffs_rgba(slicer):
+        # lazily get and cache the diff computation
+        nonlocal diffs_rgba
+        if diffs_rgba is None:
+            # cast to float32 to avoid overflow
+            # compute absolute per-pixel difference
+            diffs_rgba = np.abs(stored_img.astype("f4") - img)
+            # magnify small values, making it easier to spot small errors
+            diffs_rgba = ((diffs_rgba / 255) ** 0.25) * 255
+            # cast back to uint8
+            diffs_rgba = diffs_rgba.astype("u1")
+        return diffs_rgba[..., slicer]
+
+    # split into an rgb and an alpha diff
+    diffs = {
+        diffs_dir / f"{module}-rgb.png": slice(0, 3),
+        diffs_dir / f"{module}-alpha.png": 3,
+    }
+
+    for path, slicer in diffs.items():
+        if not is_similar:
+            diff = get_diffs_rgba(slicer)
+            iio.imwrite(path, diff)
+        elif path.exists():
+            path.unlink()
 
 
 if __name__ == "__main__":
