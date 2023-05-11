@@ -11,6 +11,7 @@ from itertools import chain
 ROOT = Path(__file__).parents[2]  # repo root
 examples_dir = ROOT / "examples"
 screenshots_dir = examples_dir / "screenshots"
+diffs_dir = examples_dir / "diffs"
 
 # examples live in themed sub-folders
 example_globs = ["image/*.py", "scatter/*.py", "line/*.py", "gridplot/*.py"]
