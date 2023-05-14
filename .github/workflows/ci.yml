@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - fpl-tests
   pull_request:
     branches:
       - master
@@ -47,13 +46,16 @@ jobs:
 #        python -m pip install --upgrade pip
 #        pip install -r requirements.txt
 #        pip install -e .
+#        git clone https://github.com/pygfx/pygfx.git
+#        cd pygfx
+#        git reset --hard 88ed3f31ed14840eb84259c3b1bd1cac740ecf25
 #    - name: Show wgpu backend
 #      run:
 #        python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
 #    - name: Test examples
 #      env:
 #        PYGFX_EXPECT_LAVAPIPE: true
-#      run:
+#      run: |
 #        pip install pytest
 #        REGENERATE_SCREENSHOTS=1 pytest -v examples
 #    - uses: actions/upload-artifact@v3
