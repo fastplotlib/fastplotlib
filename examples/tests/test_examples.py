@@ -49,7 +49,7 @@ def test_that_we_are_on_lavapipe():
 
 
 @pytest.mark.parametrize("module", examples_to_test, ids=lambda x: x.stem)
-def test_example_screenshots(module, force_offscreen, regenerate_screenshots=False):
+def test_example_screenshots(module, force_offscreen):
     """Make sure that every example marked outputs the expected."""
     # (relative) module name from project root
     module_name = module.relative_to(ROOT/"examples").with_suffix("").as_posix().replace("/", ".")
@@ -63,14 +63,14 @@ def test_example_screenshots(module, force_offscreen, regenerate_screenshots=Fal
     # check if _something_ was rendered
     assert img is not None and img.size > 0
 
-    # if screenshots dir does not exist, will create and generate screenshots
+    # if screenshots dir does not exist, will create
     if not os.path.exists(screenshots_dir):
         os.mkdir(screenshots_dir)
 
     screenshot_path = screenshots_dir / f"{module.stem}.npy"
 
-    if regenerate_screenshots:
-        np.save(screenshot_path, img)
+    # if regenerate_screenshots == "True":
+    #     np.save(screenshot_path, img)
 
     assert (
         screenshot_path.exists()
@@ -120,4 +120,4 @@ def update_diffs(module, is_similar, img, stored_img):
 
 if __name__ == "__main__":
     test_examples_run("simple")
-    test_example_screenshots("simple", regenerate_screenshots=True)
+    test_example_screenshots("simple")
