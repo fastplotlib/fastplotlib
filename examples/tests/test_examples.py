@@ -69,8 +69,9 @@ def test_example_screenshots(module, force_offscreen):
 
     screenshot_path = screenshots_dir / f"{module.stem}.npy"
 
-    # if regenerate_screenshots == "True":
-    #     np.save(screenshot_path, img)
+    if "REGENERATE_SCREENSHOTS" in os.environ.keys():
+        if os.environ["REGENERATE_SCREENSHOTS"] == "1":
+            np.save(screenshot_path, img)
 
     assert (
         screenshot_path.exists()
