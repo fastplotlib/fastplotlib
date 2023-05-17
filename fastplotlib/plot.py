@@ -11,6 +11,7 @@ class Plot(Subplot):
             renderer: pygfx.Renderer = None,
             camera: str = '2d',
             controller: Union[pygfx.PanZoomController, pygfx.OrbitController] = None,
+            size: Tuple[int, int] = (500, 300),
             **kwargs
     ):
         """
@@ -30,6 +31,9 @@ class Plot(Subplot):
         controller: None, PanZoomController or OrbitOrthoController, optional
             Usually ``None``, you can pass an existing controller from another
             ``Plot`` or ``Subplot`` within a ``GridPlot`` to synchronize them.
+
+        size: (int, int)
+            starting size of canvas, default (500, 300)
 
         kwargs
             passed to Subplot, for example ``name``
@@ -83,6 +87,8 @@ class Plot(Subplot):
             **kwargs
         )
 
+        self._starting_size = size
+
     def render(self):
         super(Plot, self).render()
 
@@ -102,5 +108,7 @@ class Plot(Subplot):
         self.canvas.request_draw(self.render)
         if autoscale:
             self.auto_scale(maintain_aspect=True, zoom=0.95)
+
+        self.canvas.set_logical_size(*self._starting_size)
 
         return self.canvas
