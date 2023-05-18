@@ -54,7 +54,7 @@ jobs:
         PYGFX_EXPECT_LAVAPIPE: true
       run: |
         pip install pytest
-        pip install git+https://github.com/pygfx/pygfx.git@e683ae4542ae96ae8dce59a17f74b50bf996a4fa
+        pip install git+https://github.com/pygfx/pygfx.git@88ed3f31ed14840eb84259c3b1bd1cac740ecf25
         REGENERATE_SCREENSHOTS=1 pytest -v examples
     - uses: actions/upload-artifact@v3
       if: ${{ failure() }}
