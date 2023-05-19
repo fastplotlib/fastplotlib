@@ -1,4 +1,5 @@
 from typing import *
+from ipywidgets import HBox, Checkbox, Layout, Button, ToggleButton, VBox
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
 from .layouts._subplot import Subplot
@@ -11,6 +12,7 @@ class Plot(Subplot):
             renderer: pygfx.Renderer = None,
             camera: str = '2d',
             controller: Union[pygfx.PanZoomController, pygfx.OrbitController] = None,
+            toolbar: bool = True,
             **kwargs
     ):
         """
@@ -83,6 +85,8 @@ class Plot(Subplot):
             **kwargs
         )
 
+        self.toolbar = toolbar
+
     def render(self):
         super(Plot, self).render()
 
@@ -103,4 +107,55 @@ class Plot(Subplot):
         if autoscale:
             self.auto_scale(maintain_aspect=True, zoom=0.95)
 
-        return self.canvas
+        if self.toolbar:
+            tools = ToolBar(self).toolbar
+            return VBox([self.canvas, tools])
+        else:
+            return self.canvas
+
+
+class ToolBar:
+    def __init__(self,
+                 plot: Plot):
+        """
+        Basic toolbar for a Plot instance.
+
+        Parameters
+        ----------
+        plot:
+        """
+        self.plot = plot
+
+        self._tools = list()
+
+        auto_tool = Button(value=False, disabled=False, icon='expand-arrows-alt', layout=Layout(width='auto'))
+        center_tool = Button(value=False, disabled=False, icon='compress-arrows-alt', layout=Layout(width='auto'))
+        panzoom_tool = ToggleButton(value=False, disabled=False, icon='hand-pointer', layout=Layout(width='auto'))
+        maintain_aspect_tool = ToggleButton(value=False, disabled=False, description="1:1", layout=Layout(width='auto'))
+        maintain_aspect_tool.style.font_weight = "bold"
+        self._tools.extend([auto_tool, center_tool, panzoom_tool, maintain_aspect_tool])
+
+        def auto_scale(obj):
+            if maintain_aspect_tool.value:
+                self.plot.auto_scale(maintain_aspect=True)
+            else:
+                self.plot.auto_scale()
+
+        def center_scene(obj):
+            self.plot.center_scene()
+
+        def panzoom_control(obj):
+            if panzoom_tool.value:
+                # toggle pan zoom controller
+                self.plot.controller.enabled = False
+            else:
+                self.plot.controller.enabled = True
+
+        panzoom_tool.observe(panzoom_control, 'value')
+        auto_tool.on_click(auto_scale)
+        center_tool.on_click(center_scene)
+
+    @property
+    def toolbar(self):
+        return HBox(self._tools)
+    
