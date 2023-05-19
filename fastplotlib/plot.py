@@ -1,5 +1,5 @@
 from typing import *
-from ipywidgets import HBox, Checkbox, Layout, Button, ToggleButton, VBox
+from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
 from .layouts._subplot import Subplot

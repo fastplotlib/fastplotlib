@@ -7,6 +7,7 @@ import pygfx
 from wgpu.gui.auto import WgpuCanvas
 from ._defaults import create_controller
 from ._subplot import Subplot
+from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
 
 
 def to_array(a) -> np.ndarray:
@@ -30,6 +31,7 @@ class GridPlot:
             controllers: Union[np.ndarray, str] = None,
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
+            toolbar: bool = True,
             **kwargs
     ):
         """
@@ -64,6 +66,7 @@ class GridPlot:
 
         """
         self.shape = shape
+        self.toolbar = toolbar
 
         if isinstance(cameras, str):
             if cameras not in valid_cameras:
@@ -266,7 +269,11 @@ class GridPlot:
         for subplot in self:
             subplot.auto_scale(maintain_aspect=True, zoom=0.95)
 
-        return self.canvas
+        if self.toolbar:
+            tools = GridPlotToolBar(self).toolbar
+            return VBox([self.canvas, tools])
+        else:
+            return self.canvas
 
     def _get_iterator(self):
         return product(range(self.shape[0]), range(self.shape[1]))
@@ -281,3 +288,61 @@ class GridPlot:
 
     def __repr__(self):
         return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n"
+
+
+class GridPlotToolBar:
+    def __init__(self,
+                 plot: GridPlot):
+        """
+        Basic toolbar for a GridPlot instance.
+
+        Parameters
+        ----------
+        plot:
+        """
+        self.plot = plot
+
+        self._tools = list()
+
+        auto_tool = Button(value=False, disabled=False, icon='expand-arrows-alt', layout=Layout(width='auto'))
+        center_tool = Button(value=False, disabled=False, icon='compress-arrows-alt', layout=Layout(width='auto'))
+        panzoom_tool = ToggleButton(value=False, disabled=False, icon='hand-pointer', layout=Layout(width='auto'))
+        maintain_aspect_tool = ToggleButton(value=False, disabled=False, description="1:1", layout=Layout(width='auto'))
+        maintain_aspect_tool.style.font_weight = "bold"
+        self._tools.extend([auto_tool, center_tool, panzoom_tool, maintain_aspect_tool])
+
+        positions = [[i, j] for i, j in self.plot._get_iterator()]
+        values = list()
+        for pos in positions:
+            if self.plot[pos].name is not None:
+                values.append(self.plot[pos].name)
+            else:
+                values.append(tuple(pos))
+        self._dropdown = Dropdown(options=values, disabled=False, description='Plots:')
+
+        def auto_scale(obj):
+            current = self._dropdown.value
+            if maintain_aspect_tool.value:
+                self.plot[current].auto_scale(maintain_aspect=True)
+            else:
+                self.plot[current].auto_scale()
+
+        def center_scene(obj):
+            current = self._dropdown.value
+            self.plot[current].center_scene()
+
+        def panzoom_control(obj):
+            current = self._dropdown.value
+            if panzoom_tool.value:
+                # toggle pan zoom controller
+                self.plot[current].controller.enabled = False
+            else:
+                self.plot[current].controller.enabled = True
+
+        panzoom_tool.observe(panzoom_control, 'value')
+        auto_tool.on_click(auto_scale)
+        center_tool.on_click(center_scene)
+
+    @property
+    def toolbar(self):
+        return HBox([HBox(self._tools), self._dropdown])
