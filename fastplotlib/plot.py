@@ -12,7 +12,6 @@ class Plot(Subplot):
             renderer: pygfx.Renderer = None,
             camera: str = '2d',
             controller: Union[pygfx.PanZoomController, pygfx.OrbitController] = None,
-            toolbar: bool = True,
             **kwargs
     ):
         """
@@ -85,15 +84,13 @@ class Plot(Subplot):
             **kwargs
         )
 
-        self.toolbar = toolbar
-
     def render(self):
         super(Plot, self).render()
 
         self.renderer.flush()
         self.canvas.request_draw()
 
-    def show(self, autoscale: bool = True):
+    def show(self, autoscale: bool = True, toolbar: bool = True):
         """
         begins the rendering event loop and returns the canvas
 
@@ -107,7 +104,7 @@ class Plot(Subplot):
         if autoscale:
             self.auto_scale(maintain_aspect=True, zoom=0.95)
 
-        if self.toolbar:
+        if toolbar:
             tools = ToolBar(self).toolbar
             return VBox([self.canvas, tools])
         else:
@@ -122,21 +119,28 @@ class ToolBar:
 
         Parameters
         ----------
-        plot:
+        plot: encapsulated plot instance that will be manipulated using the toolbar buttons
         """
         self.plot = plot
 
-        self._tools = list()
+        self.autoscale_button = Button(value=False, disabled=False, icon='expand-arrows-alt',
+                                       layout=Layout(width='auto'), tooltip='Auto-scale the camera w.r.t to the scene')
+        self.center_scene_button = Button(value=False, disabled=False, icon='compress-arrows-alt',
+                                          layout=Layout(width='auto'), tooltip='Auto-center the scene, does not scale')
+        self.panzoom_controller_button = ToggleButton(value=True, disabled=False, icon='hand-pointer',
+                                                      layout=Layout(width='auto'), tooltip='Toggle panzoom controller')
+        self.maintain_aspect_button = ToggleButton(value=True, disabled=False, description="1:1",
+                                                   layout=Layout(width='auto'),
+                                                   tooltip='Maintain camera aspect ratio for all dims')
+        self.maintain_aspect_button.style.font_weight = "bold"
 
-        auto_tool = Button(value=False, disabled=False, icon='expand-arrows-alt', layout=Layout(width='auto'))
-        center_tool = Button(value=False, disabled=False, icon='compress-arrows-alt', layout=Layout(width='auto'))
-        panzoom_tool = ToggleButton(value=False, disabled=False, icon='hand-pointer', layout=Layout(width='auto'))
-        maintain_aspect_tool = ToggleButton(value=False, disabled=False, description="1:1", layout=Layout(width='auto'))
-        maintain_aspect_tool.style.font_weight = "bold"
-        self._tools.extend([auto_tool, center_tool, panzoom_tool, maintain_aspect_tool])
+        self._widget = HBox([self.autoscale_button,
+                             self.center_scene_button,
+                             self.panzoom_controller_button,
+                             self.maintain_aspect_button])
 
         def auto_scale(obj):
-            if maintain_aspect_tool.value:
+            if self.maintain_aspect_button.value:
                 self.plot.auto_scale(maintain_aspect=True)
             else:
                 self.plot.auto_scale()
@@ -145,16 +149,12 @@ class ToolBar:
             self.plot.center_scene()
 
         def panzoom_control(obj):
-            if panzoom_tool.value:
-                # toggle pan zoom controller
-                self.plot.controller.enabled = False
-            else:
-                self.plot.controller.enabled = True
+            self.plot.controller.enabled = self.panzoom_controller_button.value
 
-        panzoom_tool.observe(panzoom_control, 'value')
-        auto_tool.on_click(auto_scale)
-        center_tool.on_click(center_scene)
+        self.panzoom_controller_button.observe(panzoom_control, 'value')
+        self.autoscale_button.on_click(auto_scale)
+        self.center_scene_button.on_click(center_scene)
 
     @property
     def toolbar(self):
-        return HBox(self._tools)
+        return self._widget
