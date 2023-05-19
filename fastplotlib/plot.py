@@ -158,4 +158,3 @@ class ToolBar:
     @property
     def toolbar(self):
         return HBox(self._tools)
-    
