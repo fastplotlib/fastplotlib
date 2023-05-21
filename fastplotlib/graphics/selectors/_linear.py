@@ -166,8 +166,6 @@ class LinearSelector(Graphic, BaseSelector):
 
         line_data = line_data.astype(np.float32)
 
-        self.axis = axis
-
         # super(LinearSelector, self).__init__(name=name)
         # init Graphic
         Graphic.__init__(self, name=name)
@@ -226,6 +224,7 @@ class LinearSelector(Graphic, BaseSelector):
             edges=(line_inner, self.line_outer),
             hover_responsive=(line_inner, self.line_outer),
             arrow_keys_modifier=arrow_keys_modifier,
+            axis=axis,
         )
 
     def _setup_ipywidget_slider(self, widget):
@@ -292,7 +291,9 @@ class LinearSelector(Graphic, BaseSelector):
 
     def get_selected_index(self, graphic: Graphic = None) -> Union[int, List[int]]:
         """
-        Data index the slider is currently at w.r.t. the Graphic data.
+        Data index the slider is currently at w.r.t. the Graphic data. With LineGraphic data, the geometry x or y
+        position is not always the data position, for example if plotting data using np.linspace. Use this to get
+        the data index of the slider.
 
         Parameters
         ----------
@@ -319,23 +320,30 @@ class LinearSelector(Graphic, BaseSelector):
     def _get_selected_index(self, graphic):
         # the array to search for the closest value along that axis
         if self.axis == "x":
-            to_search = graphic.data()[:, 0]
+            geo_positions = graphic.data()[:, 0]
             offset = getattr(graphic.position, self.axis)
         else:
-            to_search = graphic.data()[:, 1]
+            geo_positions = graphic.data()[:, 1]
             offset = getattr(graphic.position, self.axis)
 
-        find_value = self.selection() - offset
+        if "Line" in graphic.__class__.__name__:
+            # we want to find the index of the geometry position that is closest to the slider's geometry position
+            find_value = self.selection() - offset
 
-        # get closest data index to the world space position of the slider
-        idx = np.searchsorted(to_search, find_value, side="left")
+            # get closest data index to the world space position of the slider
+            idx = np.searchsorted(geo_positions, find_value, side="left")
 
-        if idx > 0 and (idx == len(to_search) or math.fabs(find_value - to_search[idx - 1]) < math.fabs(find_value - to_search[idx])):
-            return int(idx - 1)
-        else:
-            return int(idx)
+            if idx > 0 and (idx == len(geo_positions) or math.fabs(find_value - geo_positions[idx - 1]) < math.fabs(find_value - geo_positions[idx])):
+                return int(idx - 1)
+            else:
+                return int(idx)
 
-    def _move_graphic(self, delta: Vector3):
+        if "Heatmap" in graphic.__class__.__name__ or "Image" in graphic.__class__.__name__:
+            # indices map directly to grid geometry for image data buffer
+            index = self.selection() - offset
+            return int(index)
+
+    def _move_graphic(self, delta: Vector3, ev):
         """
         Moves the graphic
 

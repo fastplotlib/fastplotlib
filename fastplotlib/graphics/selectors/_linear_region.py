@@ -8,32 +8,7 @@ from .._base import Graphic, GraphicCollection
 from ..features._base import GraphicFeature, FeatureEvent
 from ._base_selector import BaseSelector
 
-
-# positions for indexing the BoxGeometry to set the "width" and "size" of the box
-# hacky, but I don't think we can morph meshes in pygfx yet: https://github.com/pygfx/pygfx/issues/346
-x_right = np.array([
-    True,  True,  True,  True, False, False, False, False, False,
-    True, False,  True,  True, False,  True, False, False,  True,
-    False,  True,  True, False,  True, False
-])
-
-x_left = np.array([
-    False, False, False, False,  True,  True,  True,  True,  True,
-    False,  True, False, False,  True, False,  True,  True, False,
-    True, False, False,  True, False,  True
-])
-
-y_top = np.array([
-    False,  True, False,  True, False,  True, False,  True,  True,
-    True,  True,  True, False, False, False, False, False, False,
-    True,  True, False, False,  True,  True
-])
-
-y_bottom = np.array([
-    True, False,  True, False,  True, False,  True, False, False,
-    False, False, False,  True,  True,  True,  True,  True,  True,
-    False, False,  True,  True, False, False
-])
+from ._mesh_positions import x_right, x_left, y_top, y_bottom
 
 
 class LinearBoundsFeature(GraphicFeature):
@@ -167,7 +142,10 @@ class LinearRegionSelector(Graphic, BaseSelector):
         Create a LinearRegionSelector graphic which can be moved only along either the x-axis or y-axis.
         Allows sub-selecting data from a ``Graphic`` or from multiple Graphics.
 
-        bounds[0], limits[0], and position[0] must be identical
+        bounds[0], limits[0], and position[0] must be identical.
+
+        Holding the right mouse button while dragging an edge will force the entire region selector to move. This is
+        a when using transparent fill areas due to ``pygfx`` picking limitations.
 
         Parameters
         ----------
@@ -187,7 +165,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
             "x" | "y", axis for the selector
 
         parent: Graphic, default ``None``
-            associated this selector with a parent Graphic
+            associate this selector with a parent Graphic
 
         resizable: bool
             if ``True``, the edges can be dragged to resize the width of the linear selection
@@ -323,6 +301,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
             fill=(self.fill,),
             hover_responsive=self.edges,
             arrow_keys_modifier=arrow_keys_modifier,
+            axis=axis,
         )
 
     @property
@@ -360,27 +339,35 @@ class LinearRegionSelector(Graphic, BaseSelector):
         source = self._get_source(graphic)
         ixs = self.get_selected_indices(source)
 
-        if isinstance(source, GraphicCollection):
-            # this will return a list of views of the arrays, therefore no copy operations occur
-            # it's fine and fast even as a list of views because there is no re-allocating of memory
-            # this is fast even for slicing a 10,000 x 5,000 LineStack
-            data_selections: List[np.ndarray] = list()
+        if "Line" in source.__class__.__name__:
+            if isinstance(source, GraphicCollection):
+                # this will return a list of views of the arrays, therefore no copy operations occur
+                # it's fine and fast even as a list of views because there is no re-allocating of memory
+                # this is fast even for slicing a 10,000 x 5,000 LineStack
+                data_selections: List[np.ndarray] = list()
 
-            for i, g in enumerate(source.graphics):
-                if ixs[i].size == 0:
-                    data_selections.append(None)
-                else:
-                    s = slice(ixs[i][0], ixs[i][-1])
-                    data_selections.append(g.data.buffer.data[s])
+                for i, g in enumerate(source.graphics):
+                    if ixs[i].size == 0:
+                        data_selections.append(None)
+                    else:
+                        s = slice(ixs[i][0], ixs[i][-1])
+                        data_selections.append(g.data.buffer.data[s])
 
-            return source[:].data[s]
-        # just for one graphic
-        else:
-            if ixs.size == 0:
-                return None
+                return source[:].data[s]
+            # just for one Line graphic
+            else:
+                if ixs.size == 0:
+                    return None
 
+                s = slice(ixs[0], ixs[-1])
+                return source.data.buffer.data[s]
+
+        if "Heatmap" in graphic.__class__.__name__ or "Image" in graphic.__class__.__name__:
             s = slice(ixs[0], ixs[-1])
-            return source.data.buffer.data[s]
+            if self.axis == "x":
+                return source.data()[:, s]
+            elif self.axis == "y":
+                return source.data()[s]
 
     def get_selected_indices(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
         """
@@ -389,7 +376,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
         as the Line Geometry positions x-vals or y-vals. For example, if if you used a
         np.linspace(0, 100, 1000) for xvals in your line, then you will have 1,000
         x-positions. If the selection ``bounds`` are set to ``(0, 10)``, the returned
-        indices would be ``(0, 100``.
+        indices would be ``(0, 100)``.
 
         Parameters
         ----------
@@ -399,7 +386,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
         Returns
         -------
         Union[np.ndarray, List[np.ndarray]]
-            data indices of the selection
+            data indices of the selection, list of np.ndarray if graphic is LineCollection
 
         """
         source = self._get_source(graphic)
@@ -407,6 +394,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
         # if the graphic position is not at (0, 0) then the bounds must be offset
         offset = getattr(source.position, self.bounds.axis)
         offset_bounds = tuple(v - offset for v in self.bounds())
+
         # need them to be int to use as indices
         offset_bounds = tuple(map(int, offset_bounds))
 
@@ -414,25 +402,32 @@ class LinearRegionSelector(Graphic, BaseSelector):
             dim = 0
         else:
             dim = 1
-        # now we need to map from graphic space to data space
-        # we can have more than 1 datapoint between two integer locations in the world space
-        if isinstance(source, GraphicCollection):
-            ixs = list()
-            for g in source.graphics:
-                # map for each graphic in the collection
-                g_ixs = np.where(
-                    (g.data()[:, dim] >= offset_bounds[0]) & (g.data()[:, dim] <= offset_bounds[1])
+
+        if "Line" in source.__class__.__name__:
+            # now we need to map from graphic space to data space
+            # we can have more than 1 datapoint between two integer locations in the world space
+            if isinstance(source, GraphicCollection):
+                ixs = list()
+                for g in source.graphics:
+                    # map for each graphic in the collection
+                    g_ixs = np.where(
+                        (g.data()[:, dim] >= offset_bounds[0]) & (g.data()[:, dim] <= offset_bounds[1])
+                    )[0]
+                    ixs.append(g_ixs)
+            else:
+                # map this only this graphic
+                ixs = np.where(
+                    (source.data()[:, dim] >= offset_bounds[0]) & (source.data()[:, dim] <= offset_bounds[1])
                 )[0]
-                ixs.append(g_ixs)
-        else:
-            # map this only this graphic
-            ixs = np.where(
-                (source.data()[:, dim] >= offset_bounds[0]) & (source.data()[:, dim] <= offset_bounds[1])
-            )[0]
 
-        return ixs
+            return ixs
 
-    def _move_graphic(self, delta):
+        if "Heatmap" in graphic.__class__.__name__ or "Image" in graphic.__class__.__name__:
+            # indices map directly to grid geometry for image data buffer
+            ixs = np.arange(*self.bounds(), dtype=int)
+            return ixs
+
+    def _move_graphic(self, delta, ev):
         # edge-0 bound current world position
         if self.bounds.axis == "x":
             # new left bound position
@@ -447,8 +442,17 @@ class LinearRegionSelector(Graphic, BaseSelector):
             # new top bound position
             bound_pos_1 = Vector3(0, self.bounds()[1]).add(delta)
 
+        # workaround because transparent objects are not pickable in pygfx
+        if ev is not None:
+            if 2 in ev.buttons:
+                force_fill_move = True
+            else:
+                force_fill_move = False
+        else:
+            force_fill_move = False
+
         # move entire selector if source was fill
-        if self._move_info.source == self.fill:
+        if self._move_info.source == self.fill or force_fill_move:
             bound0 = getattr(bound_pos_0, self.bounds.axis)
             bound1 = getattr(bound_pos_1, self.bounds.axis)
             # set the new bounds

@@ -2,8 +2,6 @@ from typing import *
 from dataclasses import dataclass
 from functools import partial
 
-import numpy as np
-
 from pygfx.linalg import Vector3
 from pygfx import WorldObject, Line, Mesh, Points
 
@@ -40,7 +38,7 @@ class BaseSelector:
             vertices: Tuple[Points, ...] = None,
             hover_responsive: Tuple[WorldObject, ...] = None,
             arrow_keys_modifier: str = None,
-            axis_constraint: str = None
+            axis: str = None
     ):
         if edges is None:
             edges = tuple()
@@ -64,7 +62,7 @@ class BaseSelector:
             for wo in self._hover_responsive:
                 self._original_colors[wo] = wo.material.color
 
-        self.axis_constraint = axis_constraint
+        self.axis = axis
 
         # current delta in world coordinates
         self.delta: Vector3 = None
@@ -73,7 +71,6 @@ class BaseSelector:
         # if not False, moves the slider on every render cycle
         self._key_move_value = False
         self.step: float = 1.0  #: step size for moving selector using the arrow keys
-
 
         self._move_info: MoveInfo = None
 
@@ -178,14 +175,14 @@ class BaseSelector:
         self.delta = world_pos.clone().sub(self._move_info.last_position)
         self._pygfx_event = ev
 
-        self._move_graphic(self.delta)
+        self._move_graphic(self.delta, ev)
 
         # update last position
         self._move_info.last_position = world_pos
 
         self._plot_area.controller.enabled = True
 
-    def _move_graphic(self, delta):
+    def _move_graphic(self, delta, ev):
         raise NotImplementedError("Must be implemented in subclass")
 
     def _move_end(self, ev):
@@ -219,7 +216,7 @@ class BaseSelector:
         else:
             self._move_info = MoveInfo(last_position=current_position, source=self._edges[0])
 
-        self._move_graphic(self.delta)
+        self._move_graphic(self.delta, ev)
         self._move_info = None
 
     def _pointer_enter(self, ev):
@@ -241,8 +238,6 @@ class BaseSelector:
             wo.material.color = self._original_colors[wo]
 
     def _key_hold(self):
-        self._plot_area.set_title(str(self._key_move_value))
-
         if self._key_move_value:
             # direction vector * step
             delta = key_bind_direction[self._key_move_value].clone().multiply_scalar(self.step)
@@ -256,7 +251,7 @@ class BaseSelector:
                 self._move_info = MoveInfo(last_position=None, source=self._edges[0])
 
             # move the graphic
-            self._move_graphic(delta=delta)
+            self._move_graphic(delta=delta, ev=None)
 
             self._move_info = None
 

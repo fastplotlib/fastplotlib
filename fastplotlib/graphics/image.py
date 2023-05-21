@@ -1,11 +1,13 @@
 from typing import *
 from math import ceil
 from itertools import product
+import weakref
 
 import numpy as np
 import pygfx
 
 from ._base import Graphic, Interaction, PreviouslyModifiedData
+from .selectors import LinearSelector, LinearRegionSelector
 from .features import ImageCmapFeature, ImageDataFeature, HeatmapDataFeature, HeatmapCmapFeature
 from .features._base import to_gpu_supported_dtype
 from ..utils import quick_min_max
@@ -328,6 +330,147 @@ class HeatmapGraphic(Graphic, Interaction):
             self._material.clim[0],
             value
         )
+
+    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
+        """
+        Adds a linear selector.
+
+        Parameters
+        ----------
+        selection: int
+            initial position of the selector
+
+        padding: float
+            pad the length of the selector
+
+        kwargs
+            passed to :class:`.LinearSelector`
+
+        Returns
+        -------
+        LinearSelector
+
+        """
+
+        bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+
+        if selection is None:
+            selection = limits[0]
+
+        if selection < limits[0] or selection > limits[1]:
+            raise ValueError(f"the passed selection: {selection} is beyond the limits: {limits}")
+
+        selector = LinearSelector(
+            selection=selection,
+            limits=limits,
+            end_points=end_points,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+        selector.position.z = self.position.z + 1
+
+        return weakref.proxy(selector)
+
+    def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
+        """
+        Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        padding: float, default 100.0
+            Extends the linear selector along the y-axis to make it easier to interact with.
+
+        kwargs
+            passed to ``LinearRegionSelector``
+
+        Returns
+        -------
+        LinearRegionSelector
+            linear selection graphic
+
+        """
+
+        bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+
+        # create selector
+        selector = LinearRegionSelector(
+            bounds=bounds_init,
+            limits=limits,
+            size=size,
+            origin=origin,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+        # so that it is above this graphic
+        selector.position.set_z(self.position.z + 3)
+        selector.fill.material.color = (*selector.fill.material.color[:-1], 0.2)
+
+        # PlotArea manages this for garbage collection etc. just like all other Graphics
+        # so we should only work with a proxy on the user-end
+        return weakref.proxy(selector)
+
+    # TODO: this method is a bit of a mess, can refactor later
+    def _get_linear_selector_init_args(self, padding: float, **kwargs):
+        # computes initial bounds, limits, size and origin of linear selectors
+        data = self.data()
+
+        if "axis" in kwargs.keys():
+            axis = kwargs["axis"]
+        else:
+            axis = "x"
+
+        if axis == "x":
+            offset = self.position.x
+            # x limits, number of columns
+            limits = (offset, data.shape[1])
+
+            # size is number of rows + padding
+            # used by LinearRegionSelector but not LinearSelector
+            size = data.shape[0] + padding
+
+            # initial position of the selector
+            # center row
+            position_y = data.shape[0] / 2
+
+            # need y offset too for this
+            origin = (limits[0] - offset, position_y + self.position.y)
+
+            # endpoints of the data range
+            # used by linear selector but not linear region
+            # padding, n_rows + padding
+            end_points = (0 - padding, data.shape[0] + padding)
+        else:
+            offset = self.position.y
+            # y limits
+            limits = (offset, data.shape[0])
+
+            # width + padding
+            # used by LinearRegionSelector but not LinearSelector
+            size = data.shape[1] + padding
+
+            # initial position of the selector
+            position_x = data.shape[1] / 2
+
+            # need x offset too for this
+            origin = (position_x + self.position.x, limits[0] - offset)
+
+            # endpoints of the data range
+            # used by linear selector but not linear region
+            end_points = (0 - padding, data.shape[1] + padding)
+
+        # initial bounds are 20% of the limits range
+        # used by LinearRegionSelector but not LinearSelector
+        bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
+
+        return bounds_init, limits, size, origin, axis, end_points
+
+    def _add_plot_area_hook(self, plot_area):
+        self._plot_area = plot_area
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
