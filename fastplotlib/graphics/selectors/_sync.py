@@ -16,7 +16,7 @@ class Synchronizer:
             selectors to synchronize
 
         key_bind: str, default ``"Shift"``
-            one of ``"Control"``, ``"Shift"`` and ``"Alt"``
+            one of ``"Control"``, ``"Shift"`` and ``"Alt"`` or ``None``
         """
         self._selectors = list()
         self.key_bind = key_bind

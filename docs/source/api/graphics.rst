@@ -30,18 +30,11 @@ Line Stack
 .. autoclass:: fastplotlib.graphics.line_collection.LineStack
     :members:
     :inherited-members:
-    
-Line Slider
-###########
-
-.. autoclass:: fastplotlib.graphics.line_slider.LineSlider
-    :members:
-    :inherited-members:
 
 Heatmap
 #######
 
-.. autoclass:: fastplotlib.graphics.heatmap.HeatmapGraphic
+.. autoclass:: fastplotlib.graphics.image.HeatmapGraphic
     :members:
     :inherited-members:
 

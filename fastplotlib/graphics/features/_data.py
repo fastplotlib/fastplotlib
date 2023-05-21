@@ -161,15 +161,11 @@ class HeatmapDataFeature(ImageDataFeature):
         """list of Texture buffer for the image data"""
         return [img.geometry.grid for img in self._parent.world_object.children]
 
-    def update_gpu(self):
-        """Update the GPU with the buffer"""
-        self._update_range(None)
-
     def __getitem__(self, item):
         return self._data[item]
 
     def __call__(self, *args, **kwargs):
-        return self.buffer.data
+        return self._data
 
     def __setitem__(self, key, value):
         # make sure supported type, not float64 etc.
