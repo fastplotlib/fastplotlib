@@ -14,6 +14,7 @@ except:
 
 from .._base import Graphic, GraphicFeature, GraphicCollection
 from ..features._base import FeatureEvent
+from ._selectors_base import BaseSelector
 
 
 # key bindings used to move the slider
@@ -85,8 +86,8 @@ class LinearSelectionFeature(GraphicFeature):
         self._call_event_handlers(event_data)
 
 
-class LinearSelector(Graphic):
-    feature_events = ("selection")
+class LinearSelector(Graphic, BaseSelector):
+    feature_events = ("selection",)
 
     # TODO: make `selection` arg in graphics data space not world space
     def __init__(
@@ -170,25 +171,26 @@ class LinearSelector(Graphic):
 
         self.axis = axis
 
-        super(LinearSelector, self).__init__(name=name)
+        # super(LinearSelector, self).__init__(name=name)
+        # init Graphic
+        Graphic.__init__(self, name=name)
 
         if thickness < 1.1:
             material = pygfx.LineThinMaterial
         else:
             material = pygfx.LineMaterial
 
-        colors_inner = np.repeat([pygfx.Color(color)], 2, axis=0).astype(np.float32)
-        self.colors_outer = np.repeat([pygfx.Color([0.3, 0.3, 0.3, 1.0])], 2, axis=0).astype(np.float32)
+        self.colors_outer = pygfx.Color([0.3, 0.3, 0.3, 1.0])
 
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
-            geometry=pygfx.Geometry(positions=line_data, colors=colors_inner),
-            material=material(thickness=thickness, vertex_colors=True)
+            geometry=pygfx.Geometry(positions=line_data),
+            material=material(thickness=thickness, color=color)
         )
 
         self.line_outer = pygfx.Line(
-            geometry=pygfx.Geometry(positions=line_data, colors=self.colors_outer.copy()),
-            material=material(thickness=thickness + 6, vertex_colors=True)
+            geometry=pygfx.Geometry(positions=line_data),
+            material=material(thickness=thickness + 6, color=self.colors_outer)
         )
 
         line_inner.position.z = self.line_outer.position.z + 1
@@ -225,6 +227,13 @@ class LinearSelector(Graphic):
         self.key_bind_modifier = arrow_keys_modifier
 
         self._block_ipywidget_call = False
+
+        # init base selector
+        BaseSelector.__init__(
+            self,
+            edges=[line_inner, self.line_outer],
+            hover_responsive=[line_inner, self.line_outer],
+        )
 
     def _setup_ipywidget_slider(self, widget):
         # setup ipywidget slider with callbacks to this LinearSelector
@@ -348,53 +357,6 @@ class LinearSelector(Graphic):
 
         return source
 
-    def _key_move(self):
-        if self._key_move_value:
-            # step * direction
-            # TODO: step size in world space intead of screen space
-            direction = key_bind_direction[self._key_move_value]
-            delta = Vector3(self.step, self.step, 0).multiply_scalar(direction)
-            # we provide both x and y, depending on the axis this selector is on the other value is ignored anyways
-            self._move_graphic(delta=delta)
-
-    def _key_move_start(self, ev):
-        if self.key_bind_modifier is not None and self.key_bind_modifier not in ev.modifiers:
-            return
-
-        if self.axis == "x" and ev.key in ["ArrowRight", "ArrowLeft"]:
-            self._key_move_value = ev.key
-
-        elif self.axis == "y" and ev.key in ["ArrowUp", "ArrowDown"]:
-            self._key_move_value = ev.key
-
-    def _key_move_end(self, ev):
-        if self.axis == "x" and ev.key in ["ArrowRight", "ArrowLeft"]:
-            self._key_move_value = False
-
-        elif self.axis == "y" and ev.key in ["ArrowUp", "ArrowDown"]:
-            self._key_move_value = False
-
-    def _add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
-
-        # move events
-        self.world_object.add_event_handler(self._move_start, "pointer_down")
-        self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
-        self._plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
-
-        # move directly to location of center mouse button click
-        self._plot_area.renderer.add_event_handler(self._move_to_pointer, "click")
-
-        # mouse hover color events
-        self.world_object.add_event_handler(self._pointer_enter, "pointer_enter")
-        self.world_object.add_event_handler(self._pointer_leave, "pointer_leave")
-
-        # arrow key bindings
-        self._plot_area.renderer.add_event_handler(self._key_move_start, "key_down")
-        self._plot_area.renderer.add_event_handler(self._key_move_end, "key_up")
-
-        self._plot_area.add_animations(self._key_move)
-
     def _move_to_pointer(self, ev):
         # middle mouse button clicks
         if ev.button != 3:
@@ -412,82 +374,20 @@ class LinearSelector(Graphic):
         else:
             self.selection = world_pos.y
 
-    def _move_start(self, ev):
-        self._move_info = {"last_pos": (ev.x, ev.y)}
-
-    def _move(self, ev):
-        if self._move_info is None:
-            return
-
-        self._plot_area.controller.enabled = False
-
-        last = self._move_info["last_pos"]
-
-        # new - last
-        # pointer move events are in viewport or canvas space
-        delta = Vector3(ev.x - last[0], ev.y - last[1])
-
-        self._pygfx_event = ev
-
-        self._move_graphic(delta)
-
-        self._move_info = {"last_pos": (ev.x, ev.y)}
-        self._plot_area.controller.enabled = True
-
     def _move_graphic(self, delta: Vector3):
         """
-        Moves the graphic, updates SelectionFeature
 
         Parameters
         ----------
-        delta_ndc: Vector3
-            the delta by which to move this Graphic, in screen coordinates
+        delta: Vector3
+            delta in world space
+
+        Returns
+        -------
 
         """
-        self.delta = delta.clone()
 
-        viewport_size = self._plot_area.viewport.logical_size
-
-        # convert delta to NDC coordinates using viewport size
-        # also since these are just deltas we don't have to calculate positions relative to the viewport
-        delta_ndc = delta.clone().multiply(
-            Vector3(
-                2 / viewport_size[0],
-                -2 / viewport_size[1],
-                0
-            )
-        )
-
-        camera = self._plot_area.camera
-
-        # current world position
-        vec = self.position.clone()
-
-        # compute and add delta in projected NDC space and then unproject back to world space
-        vec.project(camera).add(delta_ndc).unproject(camera)
-
-        new_value = getattr(vec, self.axis)
-
-        if new_value < self.limits[0] or new_value > self.limits[1]:
-            return
-
-        self.selection = new_value
-        self.delta = None
-
-    def _move_end(self, ev):
-        self._move_info = None
-        self._plot_area.controller.enabled = True
-
-    def _pointer_enter(self, ev):
-        self.line_outer.geometry.colors.data[:] = np.repeat([pygfx.Color("magenta")], 2, axis=0)
-        self.line_outer.geometry.colors.update_range()
-
-    def _pointer_leave(self, ev):
-        if self._move_info is not None:
-            return
-
-        self._reset_color()
-
-    def _reset_color(self):
-        self.line_outer.geometry.colors.data[:] = self.colors_outer
-        self.line_outer.geometry.colors.update_range()
+        if self.axis == "x":
+            self.selection = self.selection() + delta.x
+        else:
+            self.selection = self.selection() + delta.y
