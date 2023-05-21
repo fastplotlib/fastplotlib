@@ -362,7 +362,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
                 s = slice(ixs[0], ixs[-1])
                 return source.data.buffer.data[s]
 
-        if "Heatmap" in graphic.__class__.__name__ or "Image" in graphic.__class__.__name__:
+        if "Heatmap" in source.__class__.__name__ or "Image" in source.__class__.__name__:
             s = slice(ixs[0], ixs[-1])
             if self.axis == "x":
                 return source.data()[:, s]
@@ -422,7 +422,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
             return ixs
 
-        if "Heatmap" in graphic.__class__.__name__ or "Image" in graphic.__class__.__name__:
+        if "Heatmap" in source.__class__.__name__ or "Image" in source.__class__.__name__:
             # indices map directly to grid geometry for image data buffer
             ixs = np.arange(*self.bounds(), dtype=int)
             return ixs

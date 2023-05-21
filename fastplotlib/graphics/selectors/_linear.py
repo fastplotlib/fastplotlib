@@ -306,16 +306,16 @@ class LinearSelector(Graphic, BaseSelector):
             data index the slider is currently at, list of ``int`` if a Collection
         """
 
-        graphic = self._get_source(graphic)
+        source = self._get_source(graphic)
 
-        if isinstance(graphic, GraphicCollection):
+        if isinstance(source, GraphicCollection):
             ixs = list()
-            for g in graphic.graphics:
+            for g in source.graphics:
                 ixs.append(self._get_selected_index(g))
 
             return ixs
 
-        return self._get_selected_index(graphic)
+        return self._get_selected_index(source)
 
     def _get_selected_index(self, graphic):
         # the array to search for the closest value along that axis
