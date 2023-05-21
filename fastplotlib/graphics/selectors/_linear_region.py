@@ -1,13 +1,12 @@
 from typing import *
 import numpy as np
-from functools import partial
 
 import pygfx
 from pygfx.linalg import Vector3
 
 from .._base import Graphic, GraphicCollection
 from ..features._base import GraphicFeature, FeatureEvent
-from ._selectors_base import BaseSelector
+from ._base_selector import BaseSelector
 
 
 # positions for indexing the BoxGeometry to set the "width" and "size" of the box
@@ -161,6 +160,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
             resizable: bool = True,
             fill_color=(0, 0, 0.35),
             edge_color=(0.8, 0.8, 0),
+            arrow_keys_modifier: str = "Shift",
             name: str = None
     ):
         """
@@ -322,6 +322,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
             edges=self.edges,
             fill=(self.fill,),
             hover_responsive=self.edges,
+            arrow_keys_modifier=arrow_keys_modifier,
         )
 
     @property

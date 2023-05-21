@@ -14,16 +14,7 @@ except:
 
 from .._base import Graphic, GraphicFeature, GraphicCollection
 from ..features._base import FeatureEvent
-from ._selectors_base import BaseSelector
-
-
-# key bindings used to move the slider
-key_bind_direction = {
-    "ArrowRight": 1,
-    "ArrowLeft": -1,
-    "ArrowUp": 1,
-    "ArrowDown": -1,
-}
+from ._base_selector import BaseSelector
 
 
 class LinearSelectionFeature(GraphicFeature):
@@ -227,11 +218,6 @@ class LinearSelector(Graphic, BaseSelector):
 
         self.parent = parent
 
-        # if not False, moves the slider on every render cycle
-        self._key_move_value = False
-        self.step: float = 1.0  #: step size for moving selector using the arrow keys
-        self.key_bind_modifier = arrow_keys_modifier
-
         self._block_ipywidget_call = False
 
         # init base selector
@@ -239,6 +225,7 @@ class LinearSelector(Graphic, BaseSelector):
             self,
             edges=(line_inner, self.line_outer),
             hover_responsive=(line_inner, self.line_outer),
+            arrow_keys_modifier=arrow_keys_modifier,
         )
 
     def _setup_ipywidget_slider(self, widget):
@@ -347,23 +334,6 @@ class LinearSelector(Graphic, BaseSelector):
             return int(idx - 1)
         else:
             return int(idx)
-
-    def _move_to_pointer(self, ev):
-        # middle mouse button clicks
-        if ev.button != 3:
-            return
-
-        click_pos = (ev.x, ev.y)
-        world_pos = self._plot_area.map_screen_to_world(click_pos)
-
-        # outside this viewport
-        if world_pos is None:
-            return
-
-        if self.axis == "x":
-            self.selection = world_pos.x
-        else:
-            self.selection = world_pos.y
 
     def _move_graphic(self, delta: Vector3):
         """

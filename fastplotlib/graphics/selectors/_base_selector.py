@@ -4,11 +4,8 @@ from functools import partial
 
 import numpy as np
 
-import pygfx
 from pygfx.linalg import Vector3
 from pygfx import WorldObject, Line, Mesh, Points
-
-from .._base import Graphic
 
 
 @dataclass
@@ -42,6 +39,7 @@ class BaseSelector:
             fill: Tuple[Mesh, ...] = None,
             vertices: Tuple[Points, ...] = None,
             hover_responsive: Tuple[WorldObject, ...] = None,
+            arrow_keys_modifier: str = None,
             axis_constraint: str = None
     ):
         if edges is None:
@@ -71,7 +69,11 @@ class BaseSelector:
         # current delta in world coordinates
         self.delta: Vector3 = None
 
+        self.arrow_keys_modifier = arrow_keys_modifier
+        # if not False, moves the slider on every render cycle
         self._key_move_value = False
+        self.step: float = 1.0  #: step size for moving selector using the arrow keys
+
 
         self._move_info: MoveInfo = None
 
@@ -115,9 +117,9 @@ class BaseSelector:
 
         # move directly to location of center mouse button click
         # check if _move_to_pointer is implemented or not
-        kh = getattr(self, "_move_to_pointer")
-        if not kh.__qualname__.partition(".")[0] == "BaseSelector":
-            self._plot_area.renderer.add_event_handler(self._move_to_pointer, "click")
+        # kh = getattr(self, "_move_to_pointer")
+        # if not kh.__qualname__.partition(".")[0] == "BaseSelector":
+        self._plot_area.renderer.add_event_handler(self._move_to_pointer, "click")
 
         # mouse hover color events
         for wo in self._hover_responsive:
@@ -129,9 +131,9 @@ class BaseSelector:
         self._plot_area.renderer.add_event_handler(self._key_up, "key_up")
 
         # check if _key_hold is implemented or not
-        kh = getattr(self, "_key_hold")
-        if not kh.__qualname__.partition(".")[0] == "BaseSelector":
-            self._plot_area.add_animations(self._key_hold)
+        # kh = getattr(self, "_key_hold")
+        # if not kh.__qualname__.partition(".")[0] == "BaseSelector":
+        self._plot_area.add_animations(self._key_hold)
 
     def _move_start(self, event_source: WorldObject, ev):
         """
@@ -198,7 +200,34 @@ class BaseSelector:
         self._plot_area.controller.enabled = True
 
     def _move_to_pointer(self, ev):
-        raise NotImplementedError("Must be implemented in subclass")
+        """
+        Calculates delta just using current world object position and calls self._move_graphic().
+        """
+        current_position = self.world_object.position.clone()
+
+        # middle mouse button clicks
+        if ev.button != 3:
+            return
+
+        click_pos = (ev.x, ev.y)
+        world_pos = self._plot_area.map_screen_to_world(click_pos)
+
+        # outside this viewport
+        if world_pos is None:
+            return
+
+        self.delta = world_pos.clone().sub(current_position)
+        self._pygfx_event = ev
+
+        # use fill by default as the source
+        if len(self._fill) > 0:
+            self._move_info = MoveInfo(last_position=current_position, source=self._fill[0])
+        # else use an edge
+        else:
+            self._move_info = MoveInfo(last_position=current_position, source=self._edges[0])
+
+        self._move_graphic(self.delta)
+        self._move_info = None
 
     def _pointer_enter(self, ev):
         if self._hover_responsive is None:
@@ -219,27 +248,36 @@ class BaseSelector:
             wo.material.color = self._original_colors[wo]
 
     def _key_hold(self):
+        self._plot_area.set_title(str(self._key_move_value))
+
         if self._key_move_value:
             # direction vector * step
-            delta = key_bind_direction[self._key_move_value].multiply(self.step)
+            delta = key_bind_direction[self._key_move_value].clone().multiply_scalar(self.step)
 
             # set event source
-            self._move_info = MoveInfo(
-                last_position=None,
-                source="key"
-            )
+            # use fill by default as the source
+            if len(self._fill) > 0:
+                self._move_info = MoveInfo(last_position=None, source=self._fill[0])
+            # else use an edge
+            else:
+                self._move_info = MoveInfo(last_position=None, source=self._edges[0])
+
             # move the graphic
             self._move_graphic(delta=delta)
+
+            self._move_info = None
 
     def _key_down(self, ev):
         # key bind modifier must be set and must be used for the event
         # for example. if "Shift" is set as a modifier, then "Shift" must be used as a modifier during this event
-        if self.key_bind_modifier is not None and self.key_bind_modifier not in ev.modifiers:
+        if self.arrow_keys_modifier is not None and self.arrow_keys_modifier not in ev.modifiers:
             return
 
         # ignore if non-arrow key is pressed
         if ev.key not in key_bind_direction.keys():
             return
+
+        # print(ev.key)
 
         self._key_move_value = ev.key
 
@@ -247,3 +285,5 @@ class BaseSelector:
         # if arrow key is released, stop moving
         if ev.key in key_bind_direction.keys():
             self._key_move_value = False
+
+        self._move_info = None
