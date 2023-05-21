@@ -33,6 +33,8 @@ class LinearBoundsFeature(GraphicFeature):
         self._axis = axis
         self.limits = limits
 
+        self._set(bounds)
+
     @property
     def axis(self) -> str:
         """one of "x" | "y" """
@@ -293,7 +295,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         # set the initial bounds of the selector
         self._bounds = LinearBoundsFeature(self, bounds, axis=axis, limits=limits)
-        self._bounds: LinearBoundsFeature = bounds
+        # self._bounds: LinearBoundsFeature = bounds
 
         BaseSelector.__init__(
             self,
