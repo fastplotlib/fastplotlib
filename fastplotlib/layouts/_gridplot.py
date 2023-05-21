@@ -166,7 +166,7 @@ class GridPlot:
 
         self._starting_size = size
 
-    def __getitem__(self, index: Union[Tuple[int, int], str]):
+    def __getitem__(self, index: Union[Tuple[int, int], str]) -> Subplot:
         if isinstance(index, str):
             for subplot in self._subplots.ravel():
                 if subplot.name == index:
@@ -275,6 +275,9 @@ class GridPlot:
         self.canvas.set_logical_size(*self._starting_size)
 
         return self.canvas
+
+    def close(self):
+        self.canvas.close()
 
     def _get_iterator(self):
         return product(range(self.shape[0]), range(self.shape[1]))

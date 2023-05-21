@@ -223,6 +223,10 @@ class Interaction(ABC):
         self.registered_callbacks[event_type].append(callback_data)
 
         if bidirectional:
+            if event_type in PYGFX_EVENTS:
+                warn("cannot use bidirectional link for pygfx events")
+                return
+            
             target.link(
                 event_type=event_type,
                 target=self,
