@@ -26,6 +26,8 @@ class Synchronizer:
 
         self.block_event = False
 
+        self.enabled: bool = True
+
     @property
     def selectors(self):
         """Selectors managed by the Synchronizer"""
@@ -46,6 +48,9 @@ class Synchronizer:
             # because infinite recursion
             return
 
+        if not self.enabled:
+            return
+
         self.block_event = True
 
         source = ev.pick_info["graphic"]
@@ -63,18 +68,18 @@ class Synchronizer:
                 return
 
         if delta is not None:
-            self._move_selectors(source, delta)
+            self._move_selectors(source, delta, ev)
 
         self.block_event = False
 
-    def _move_selectors(self, source, delta):
+    def _move_selectors(self, source, delta, ev):
         for s in self.selectors:
             # must use == and not is to compare Graphics because they are weakref proxies!
             if s == source:
                 # if it's the source, since it has already movied
                 continue
 
-            s._move_graphic(delta)
+            s._move_graphic(delta, ev)
 
     def __del__(self):
         for s in self.selectors:

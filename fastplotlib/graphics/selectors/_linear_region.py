@@ -178,6 +178,10 @@ class LinearRegionSelector(Graphic, BaseSelector):
         edge_color: str, array, or tuple
             edge color for the selector, passed to pygfx.Color
 
+        arrow_keys_modifier: str
+            modifier key that must be pressed to initiate movement using arrow keys, must be one of:
+            "Control", "Shift", "Alt" or ``None``
+
         name: str
             name for this selector graphic
         """
