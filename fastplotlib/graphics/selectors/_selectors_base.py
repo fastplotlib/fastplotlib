@@ -74,16 +74,28 @@ class BaseSelector:
         self._key_move_value = False
 
     def get_selected_index(self):
-        pass
+        raise NotImplementedError
 
     def get_selected_indices(self):
-        pass
+        raise NotImplementedError
 
     def get_selected_data(self):
-        pass
+        raise NotImplementedError
 
-    def _get_source(self):
-        pass
+    def _get_source(self, graphic):
+        if self.parent is None and graphic is None:
+            raise AttributeError(
+                "No Graphic to apply selector. "
+                "You must either set a ``parent`` Graphic on the selector, or pass a graphic."
+            )
+
+        # use passed graphic if provided, else use parent
+        if graphic is not None:
+            source = graphic
+        else:
+            source = self.parent
+
+        return source
 
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
@@ -183,7 +195,7 @@ class BaseSelector:
         self._move_info = None
         self._plot_area.controller.enabled = True
 
-    def _move_to_pointer(self):
+    def _move_to_pointer(self, ev):
         raise NotImplementedError("Must be implemented in subclass")
 
     def _pointer_enter(self, ev):

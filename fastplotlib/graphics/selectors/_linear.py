@@ -43,12 +43,16 @@ class LinearSelectionFeature(GraphicFeature):
      ================== ================================================================
 
     """
-    def __init__(self, parent, axis: str, value: float):
+    def __init__(self, parent, axis: str, value: float, limits: Tuple[int, int]):
         super(LinearSelectionFeature, self).__init__(parent, data=value)
 
         self.axis = axis
+        self.limits = limits
 
     def _set(self, value: float):
+        if not (self.limits[0] <= value <= self.limits[1]):
+            return
+
         if self.axis == "x":
             self._parent.position.x = value
         else:
@@ -112,7 +116,7 @@ class LinearSelector(Graphic, BaseSelector):
             initial x or y selected position for the slider, in world space
 
         limits: (int, int)
-            (min, max) limits along the x or y axis for the selector
+            (min, max) limits along the x or y axis for the selector, in world space
 
         axis: str, default "x"
             "x" | "y", the axis which the slider can move along
@@ -148,8 +152,10 @@ class LinearSelector(Graphic, BaseSelector):
             called when the LinearSelector selection changes. See feaure class for event pick_info table
 
         """
+        if len(limits) != 2:
+            raise ValueError("limits must be a tuple of 2 integers, i.e. (int, int)")
 
-        self.limits = tuple(map(round, limits))
+        limits = tuple(map(round, limits))
         selection = round(selection)
 
         if axis == "x":
@@ -208,7 +214,7 @@ class LinearSelector(Graphic, BaseSelector):
         else:
             self.position.y = selection
 
-        self.selection = LinearSelectionFeature(self, axis=axis, value=selection)
+        self.selection = LinearSelectionFeature(self, axis=axis, value=selection, limits=limits)
 
         self.ipywidget_slider = ipywidget_slider
 
@@ -286,8 +292,8 @@ class LinearSelector(Graphic, BaseSelector):
         cls = getattr(ipywidgets, kind)
 
         slider = cls(
-            min=self.limits[0],
-            max=self.limits[1],
+            min=self.selection.limits[0],
+            max=self.selection.limits[1],
             value=int(self.selection()),
             step=1,
             **kwargs
@@ -341,21 +347,6 @@ class LinearSelector(Graphic, BaseSelector):
             return int(idx - 1)
         else:
             return int(idx)
-
-    def _get_source(self, graphic):
-        if self.parent is None and graphic is None:
-            raise AttributeError(
-                "No Graphic to apply selector. "
-                "You must either set a ``parent`` Graphic on the selector, or pass a graphic."
-            )
-
-        # use passed graphic if provided, else use parent
-        if graphic is not None:
-            source = graphic
-        else:
-            source = self.parent
-
-        return source
 
     def _move_to_pointer(self, ev):
         # middle mouse button clicks
