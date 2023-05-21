@@ -112,3 +112,6 @@ class Plot(Subplot):
         self.canvas.set_logical_size(*self._starting_size)
 
         return self.canvas
+
+    def close(self):
+        self.canvas.close()
