@@ -71,6 +71,7 @@ class BaseSelector:
         # if not False, moves the slider on every render cycle
         self._key_move_value = False
         self.step: float = 1.0  #: step size for moving selector using the arrow keys
+        self.arrow_key_events_enabled = False
 
         self._move_info: MoveInfo = None
 
@@ -105,6 +106,9 @@ class BaseSelector:
         for wo in self._world_objects:
             pfunc_down = partial(self._move_start, wo)
             wo.add_event_handler(pfunc_down, "pointer_down")
+
+            # double-click to enable arrow-key moveable mode
+            wo.add_event_handler(self._toggle_arrow_key_moveable, "double_click")
 
         # when the pointer moves
         self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
@@ -237,8 +241,11 @@ class BaseSelector:
         for wo in self._hover_responsive:
             wo.material.color = self._original_colors[wo]
 
+    def _toggle_arrow_key_moveable(self, ev):
+        self.arrow_key_events_enabled = not self.arrow_key_events_enabled
+
     def _key_hold(self):
-        if self._key_move_value:
+        if self._key_move_value and self.arrow_key_events_enabled:
             # direction vector * step
             delta = key_bind_direction[self._key_move_value].clone().multiply_scalar(self.step)
 

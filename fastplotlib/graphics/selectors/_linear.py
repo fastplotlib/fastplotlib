@@ -120,7 +120,8 @@ class LinearSelector(Graphic, BaseSelector):
 
         arrow_keys_modifier: str
             modifier key that must be pressed to initiate movement using arrow keys, must be one of:
-            "Control", "Shift", "Alt" or ``None``
+            "Control", "Shift", "Alt" or ``None``. Double click on the selector first to enable the
+            arrow key movements, or set the attribute ``arrow_key_events_enabled = True``
 
         ipywidget_slider: IntSlider, optional
             ipywidget slider to associate with this graphic
