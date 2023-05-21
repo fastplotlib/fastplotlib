@@ -5,8 +5,9 @@ from functools import partial
 import pygfx
 from pygfx.linalg import Vector3
 
-from .._base import Graphic, Interaction, GraphicCollection
+from .._base import Graphic, GraphicCollection
 from ..features._base import GraphicFeature, FeatureEvent
+from ._selectors_base import BaseSelector
 
 
 # positions for indexing the BoxGeometry to set the "width" and "size" of the box
@@ -52,23 +53,35 @@ class LinearBoundsFeature(GraphicFeature):
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
 
     """
-    def __init__(self, parent, bounds: Tuple[int, int], axis: str):
+    def __init__(self, parent, bounds: Tuple[int, int], axis: str, limits: Tuple[int, int]):
         super(LinearBoundsFeature, self).__init__(parent, data=bounds)
 
         self._axis = axis
+        self.limits = limits
 
     @property
     def axis(self) -> str:
         """one of "x" | "y" """
         return self._axis
 
-    def _set(self, value):
+    def _set(self, value: Tuple[float, float]):
         # sets new bounds
         if not isinstance(value, tuple):
             raise TypeError(
                 "Bounds must be a tuple in the form of `(min_bound, max_bound)`, "
                 "where `min_bound` and `max_bound` are numeric values."
             )
+
+        # make sure bounds not exceeded
+        for v in value:
+            if not (self.limits[0] <= v <= self.limits[1]):
+                return
+
+        # make sure `selector width >= 2`, left edge must not move past right edge!
+        # or bottom edge must not move past top edge!
+        # has to be at least 2 otherwise can't join datapoints for lines
+        if not (value[1] - value[0]) >= 2:
+            return
 
         if self.axis == "x":
             # change left x position of the fill mesh
@@ -132,7 +145,7 @@ class LinearBoundsFeature(GraphicFeature):
         self._call_event_handlers(event_data)
 
 
-class LinearRegionSelector(Graphic, Interaction):
+class LinearRegionSelector(Graphic, BaseSelector):
     feature_events = (
         "bounds"
     )
@@ -211,7 +224,7 @@ class LinearRegionSelector(Graphic, Interaction):
         #             f"{limits[0]} != {origin[1]} != {bounds[0]}"
         #         )
 
-        super(LinearRegionSelector, self).__init__(name=name)
+        Graphic.__init__(self, name=name)
 
         self.parent = parent
 
@@ -235,22 +248,11 @@ class LinearRegionSelector(Graphic, Interaction):
 
         # the fill of the selection
         self.fill = mesh
-
         self.fill.position.set(*origin, -2)
 
         self.world_object.add(self.fill)
 
-        # will be used to store the mouse pointer x y movements
-        # so deltas can be calculated for interacting with the selection
-        self._move_info = None
-
-        # mouse events can come from either the fill mesh world object, or one of the lines on the edge of the selector
-        self._event_source: str = None
-
-        self.limits = limits
         self._resizable = resizable
-
-        self._edge_color = np.repeat([pygfx.Color(edge_color)], 2, axis=0)
 
         if axis == "x":
             # position data for the left edge line
@@ -260,8 +262,8 @@ class LinearRegionSelector(Graphic, Interaction):
             ).astype(np.float32)
 
             left_line = pygfx.Line(
-                pygfx.Geometry(positions=left_line_data, colors=self._edge_color.copy()),
-                pygfx.LineMaterial(thickness=3, vertex_colors=True)
+                pygfx.Geometry(positions=left_line_data),
+                pygfx.LineMaterial(thickness=3, color=edge_color)
             )
 
             # position data for the right edge line
@@ -271,8 +273,8 @@ class LinearRegionSelector(Graphic, Interaction):
             ).astype(np.float32)
 
             right_line = pygfx.Line(
-                pygfx.Geometry(positions=right_line_data, colors=self._edge_color.copy()),
-                pygfx.LineMaterial(thickness=3, vertex_colors=True)
+                pygfx.Geometry(positions=right_line_data),
+                pygfx.LineMaterial(thickness=3, color=edge_color)
             )
 
             self.edges: Tuple[pygfx.Line, pygfx.Line] = (left_line, right_line)
@@ -286,8 +288,8 @@ class LinearRegionSelector(Graphic, Interaction):
                 ).astype(np.float32)
 
             bottom_line = pygfx.Line(
-                pygfx.Geometry(positions=bottom_line_data, colors=self._edge_color.copy()),
-                pygfx.LineMaterial(thickness=3, vertex_colors=True)
+                pygfx.Geometry(positions=bottom_line_data),
+                pygfx.LineMaterial(thickness=3, color=edge_color)
             )
 
             # position data for the right edge line
@@ -297,28 +299,30 @@ class LinearRegionSelector(Graphic, Interaction):
             ).astype(np.float32)
 
             top_line = pygfx.Line(
-                pygfx.Geometry(positions=top_line_data, colors=self._edge_color.copy()),
-                pygfx.LineMaterial(thickness=3, vertex_colors=True)
+                pygfx.Geometry(positions=top_line_data),
+                pygfx.LineMaterial(thickness=3, color=edge_color)
             )
 
             self.edges: Tuple[pygfx.Line, pygfx.Line] = (bottom_line, top_line)
+
+        else:
+            raise ValueError("axis argument must be one of 'x' or 'y'")
 
         # add the edge lines
         for edge in self.edges:
             edge.position.set_z(-1)
             self.world_object.add(edge)
 
-        # highlight the edges when mouse is hovered
-        for edge_line in self.edges:
-            edge_line.add_event_handler(
-                partial(self._pointer_enter_edge, edge_line),
-                "pointer_enter"
-            )
-            edge_line.add_event_handler(self._pointer_leave_edge, "pointer_leave")
-
         # set the initial bounds of the selector
-        self._bounds = LinearBoundsFeature(self, bounds, axis=axis)
+        self._bounds = LinearBoundsFeature(self, bounds, axis=axis, limits=limits)
         self._bounds: LinearBoundsFeature = bounds
+
+        BaseSelector.__init__(
+            self,
+            edges=self.edges,
+            fill=(self.fill,),
+            hover_responsive=self.edges,
+        )
 
     @property
     def bounds(self) -> LinearBoundsFeature:
@@ -427,160 +431,48 @@ class LinearRegionSelector(Graphic, Interaction):
 
         return ixs
 
-    def _get_source(self, graphic):
-        if self.parent is None and graphic is None:
-            raise AttributeError(
-                "No Graphic to apply selector. "
-                "You must either set a ``parent`` Graphic on the selector, or pass a graphic."
-            )
-
-        # use passed graphic if provided, else use parent
-        if graphic is not None:
-            source = graphic
-        else:
-            source = self.parent
-
-        return source
-
-    def _add_plot_area_hook(self, plot_area):
-        # called when this selector is added to a plot area
-        self._plot_area = plot_area
-
-        # need partials so that the source of the event is passed to the `_move_start` handler
-        self._move_start_fill = partial(self._move_start, "fill")
-        self._move_start_edge_0 = partial(self._move_start, "edge-0")
-        self._move_start_edge_1 = partial(self._move_start, "edge-1")
-
-        self.fill.add_event_handler(self._move_start_fill, "pointer_down")
-
-        if self._resizable:
-            self.edges[0].add_event_handler(self._move_start_edge_0, "pointer_down")
-            self.edges[1].add_event_handler(self._move_start_edge_1, "pointer_down")
-
-        self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
-        self._plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
-
-    def _move_start(self, event_source: str, ev):
-        """
-        Parameters
-        ----------
-        event_source: str
-            "fill" | "edge-left" | "edge-right"
-
-        """
-        # self._plot_area.controller.enabled = False
-        # last pointer position
-        self._move_info = {"last_pos": (ev.x, ev.y)}
-        self._event_source = event_source
-
-    def _move(self, ev):
-        if self._move_info is None:
-            return
-
-        # disable the controller, otherwise the panzoom or other controllers will move the camera and will not
-        # allow the selector to process the mouse events
-        self._plot_area.controller.enabled = False
-
-        last = self._move_info["last_pos"]
-
-        # new - last
-        # pointer move events are in viewport or canvas space
-        delta = Vector3(ev.x - last[0], ev.y - last[1])
-
-        self._move_info = {"last_pos": (ev.x, ev.y)}
-
-        viewport_size = self._plot_area.viewport.logical_size
-
-        # convert delta to NDC coordinates using viewport size
-        # also since these are just deltas we don't have to calculate positions relative to the viewport
-        delta_ndc = delta.multiply(
-            Vector3(
-                2 / viewport_size[0],
-                -2 / viewport_size[1],
-                0
-            )
-        )
-
-        camera = self._plot_area.camera
-
+    def _move_graphic(self, delta):
         # edge-0 bound current world position
         if self.bounds.axis == "x":
-            # left bound position
-            vec0 = Vector3(self.bounds()[0])
+            # new left bound position
+            bound_pos_0 = Vector3(self.bounds()[0]).add(delta)
+
+            # new right bound position
+            bound_pos_1 = Vector3(self.bounds()[1]).add(delta)
         else:
-            # bottom bound position
-            vec0 = Vector3(0, self.bounds()[0])
-        # compute and add delta in projected NDC space and then unproject back to world space
-        vec0.project(camera).add(delta_ndc).unproject(camera)
+            # new bottom bound position
+            bound_pos_0 = Vector3(0, self.bounds()[0]).add(delta)
 
-        # edge-1 bound current world position
-        if self.bounds.axis == "x":
-            vec1 = Vector3(self.bounds()[1])
-        else:
-            vec1 = Vector3(0, self.bounds()[1])
-        # compute and add delta in projected NDC space and then unproject back to world space
-        vec1.project(camera).add(delta_ndc).unproject(camera)
+            # new top bound position
+            bound_pos_1 = Vector3(0, self.bounds()[1]).add(delta)
 
-        if self._event_source == "edge-0":
-            # change only the left bound or bottom bound
-            bound0 = getattr(vec0, self.bounds.axis)  # gets either vec.x or vec.y
-            bound1 = self.bounds()[1]
-
-        elif self._event_source == "edge-1":
-            # change only the right bound or top bound
-            bound0 = self.bounds()[0]
-            bound1 = getattr(vec1, self.bounds.axis)   # gets either vec.x or vec.y
-
-        elif self._event_source == "fill":
-            # move the entire selector
-            bound0 = getattr(vec0, self.bounds.axis)
-            bound1 = getattr(vec1, self.bounds.axis)
-
-        # if the limits are met do nothing
-        if bound0 < self.limits[0] or bound1 > self.limits[1]:
+        # move entire selector if source was fill
+        if self._move_info.source == self.fill:
+            bound0 = getattr(bound_pos_0, self.bounds.axis)
+            bound1 = getattr(bound_pos_1, self.bounds.axis)
+            # set the new bounds
+            self.bounds = (bound0, bound1)
             return
 
-        # make sure `selector width >= 2`, left edge must not move past right edge!
-        # or bottom edge must not move past top edge!
-        # has to be at least 2 otherwise can't join datapoints for lines
-        if not (bound1 - bound0) >= 2:
+        # if selector is not resizable do nothing
+        if not self._resizable:
+            return
+
+        # if resizable, move edges
+        if self._move_info.source == self.edges[0]:
+            # change only left or bottom bound
+            bound0 = getattr(bound_pos_0, self.bounds.axis)
+            bound1 = self.bounds()[1]
+
+        elif self._move_info.source == self.edges[1]:
+            # change only right or top bound
+            bound0 = self.bounds()[0]
+            bound1 = getattr(bound_pos_1, self.bounds.axis)
+        else:
             return
 
         # set the new bounds
         self.bounds = (bound0, bound1)
-
-        # re-enable the controller
-        self._plot_area.controller.enabled = True
-
-    def _move_end(self, ev):
-        self._move_info = None
-        # sometimes weird stuff happens so we want to make sure the controller is reset
-        self._plot_area.controller.enabled = True
-
-        self._reset_edge_color()
-
-    def _pointer_enter_edge(self, edge: pygfx.Line, ev):
-        edge.material.thickness = 6
-        edge.geometry.colors.data[:] = np.repeat([pygfx.Color("magenta")], 2, axis=0)
-        edge.geometry.colors.update_range()
-
-    def _pointer_leave_edge(self,  ev):
-        if self._move_info is not None and self._event_source.startswith("edge"):
-            return
-
-        self._reset_edge_color()
-
-    def _reset_edge_color(self):
-        for edge in self.edges:
-            edge.material.thickness = 3
-            edge.geometry.colors.data[:] = self._edge_color
-            edge.geometry.colors.update_range()
-
-    def _set_feature(self, feature: str, new_data: Any, indices: Any):
-        pass
-
-    def _reset_feature(self, feature: str):
-        pass
 
     def __del__(self):
         self.fill.remove_event_handler(self._move_start_fill, "pointer_down")

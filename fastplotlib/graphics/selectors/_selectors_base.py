@@ -38,28 +38,28 @@ key_bind_direction = {
 class BaseSelector:
     def __init__(
             self,
-            edges: List[Line] = None,
-            vertices: List[Line] = None,
-            fill: List[Points] = None,
-            hover_responsive: List[WorldObject] = None,
+            edges: Tuple[Line, ...] = None,
+            fill: Tuple[Mesh, ...] = None,
+            vertices: Tuple[Points, ...] = None,
+            hover_responsive: Tuple[WorldObject, ...] = None,
             axis_constraint: str = None
     ):
         if edges is None:
-            edges = list()
+            edges = tuple()
 
         if fill is None:
-            fill = list()
+            fill = tuple()
 
         if vertices is None:
-            vertices = list()
+            vertices = tuple()
 
-        self._edges: List[Line] = edges
-        self._fill: List[Mesh] = fill
-        self._vertices: List[Points] = vertices
+        self._edges: Tuple[Line, ...] = edges
+        self._fill: Tuple[Mesh, ...] = fill
+        self._vertices: Tuple[Points, ...] = vertices
 
-        self._world_objects: List[WorldObject] = self._edges + self._fill + self._vertices
+        self._world_objects: Tuple[WorldObject, ...] = self._edges + self._fill + self._vertices
 
-        self._hover_responsive: List[WorldObject] = hover_responsive
+        self._hover_responsive: Tuple[WorldObject, ...] = hover_responsive
 
         if hover_responsive is not None:
             self._original_colors = dict()
@@ -72,6 +72,8 @@ class BaseSelector:
         self.delta: Vector3 = None
 
         self._key_move_value = False
+
+        self._move_info: MoveInfo = None
 
     def get_selected_index(self):
         raise NotImplementedError

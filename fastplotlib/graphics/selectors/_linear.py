@@ -237,8 +237,8 @@ class LinearSelector(Graphic, BaseSelector):
         # init base selector
         BaseSelector.__init__(
             self,
-            edges=[line_inner, self.line_outer],
-            hover_responsive=[line_inner, self.line_outer],
+            edges=(line_inner, self.line_outer),
+            hover_responsive=(line_inner, self.line_outer),
         )
 
     def _setup_ipywidget_slider(self, widget):
@@ -367,14 +367,12 @@ class LinearSelector(Graphic, BaseSelector):
 
     def _move_graphic(self, delta: Vector3):
         """
+        Moves the graphic
 
         Parameters
         ----------
         delta: Vector3
             delta in world space
-
-        Returns
-        -------
 
         """
 
