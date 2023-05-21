@@ -116,9 +116,6 @@ class BaseSelector:
         self._plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
 
         # move directly to location of center mouse button click
-        # check if _move_to_pointer is implemented or not
-        # kh = getattr(self, "_move_to_pointer")
-        # if not kh.__qualname__.partition(".")[0] == "BaseSelector":
         self._plot_area.renderer.add_event_handler(self._move_to_pointer, "click")
 
         # mouse hover color events
@@ -129,10 +126,6 @@ class BaseSelector:
         # arrow key bindings
         self._plot_area.renderer.add_event_handler(self._key_down, "key_down")
         self._plot_area.renderer.add_event_handler(self._key_up, "key_up")
-
-        # check if _key_hold is implemented or not
-        # kh = getattr(self, "_key_hold")
-        # if not kh.__qualname__.partition(".")[0] == "BaseSelector":
         self._plot_area.add_animations(self._key_hold)
 
     def _move_start(self, event_source: WorldObject, ev):
@@ -287,3 +280,19 @@ class BaseSelector:
             self._key_move_value = False
 
         self._move_info = None
+
+    def __del__(self):
+        # clear wo event handlers
+        for wo in self._world_objects:
+            wo._event_handlers.clear()
+
+        # remove renderer event handlers
+        self._plot_area.renderer.remove_event_handler(self._move, "pointer_move")
+        self._plot_area.renderer.remove_event_handler(self._move_end, "pointer_up")
+        self._plot_area.renderer.remove_event_handler(self._move_to_pointer, "click")
+
+        self._plot_area.renderer.remove_event_handler(self._key_down, "key_down")
+        self._plot_area.renderer.remove_event_handler(self._key_up, "key_up")
+
+        # remove animation func
+        self._plot_area.remove_animation(self._key_hold)

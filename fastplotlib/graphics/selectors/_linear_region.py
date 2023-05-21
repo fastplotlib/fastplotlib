@@ -474,13 +474,3 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         # set the new bounds
         self.bounds = (bound0, bound1)
-
-    def __del__(self):
-        self.fill.remove_event_handler(self._move_start_fill, "pointer_down")
-
-        if self._resizable:
-            self.edges[0].remove_event_handler(self._move_start_edge_0, "pointer_down")
-            self.edges[1].remove_event_handler(self._move_start_edge_1, "pointer_down")
-
-        self._plot_area.renderer.remove_event_handler(self._move, "pointer_move")
-        self._plot_area.renderer.remove_event_handler(self._move_end, "pointer_up")
