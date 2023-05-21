@@ -5,12 +5,6 @@ from wgpu.gui.auto import WgpuCanvas
 from .layouts._subplot import Subplot
 from .layouts._record_mixin import RecordMixin
 
-try:
-    from .utils.record import VideoWriter
-    HAS_OPENCV = True
-except ImportError:
-    HAS_OPENCV = False
-
 
 class Plot(Subplot, RecordMixin):
     def __init__(

@@ -25,7 +25,6 @@ class VideoWriterAV(Process):
             options: dict = None
     ):
         super().__init__()
-        self.path = path
         self.queue = queue
 
         self.container = av.open(path, mode="w")
