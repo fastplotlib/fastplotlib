@@ -9,13 +9,14 @@ from pygfx.linalg import Vector3
 from wgpu.gui.auto import WgpuCanvas
 
 from ..graphics._base import Graphic, GraphicCollection
-from ..graphics.selectors import LinearSelector
+from ..graphics.selectors._base_selector import BaseSelector
 
 
 # dict to store Graphic instances
 # this is the only place where the real references to Graphics are stored in a Python session
 # {hex id str: Graphic}
 GRAPHICS: Dict[str, Graphic] = dict()
+SELECTORS: Dict[str, BaseSelector] = dict()
 
 
 class PlotArea:
@@ -81,8 +82,9 @@ class PlotArea:
         # the real Graphic instances are stored in the ``GRAPHICS`` dict
         self._graphics: List[str] = list()
 
-        # hacky workaround for now to exclude from bbox calculations
-        self._selectors = list()
+        # selectors are in their own list so they can be excluded from scene bbox calculations
+        # managed similar to GRAPHICS for garbage collection etc.
+        self._selectors: List[str] = list()
 
         self.name = name
 
@@ -133,10 +135,20 @@ class PlotArea:
         return self._controller
 
     @property
-    def graphics(self) -> Tuple[Graphic]:
+    def graphics(self) -> Tuple[Graphic, ...]:
         """Graphics in the plot area. Always returns a proxy to the Graphic instances."""
         proxies = list()
         for loc in self._graphics:
+            p = weakref.proxy(GRAPHICS[loc])
+            proxies.append(p)
+
+        return tuple(proxies)
+
+    @property
+    def selectors(self) -> Tuple[BaseSelector, ...]:
+        """Selectors in the plot area. Always returns a proxy to the Graphic instances."""
+        proxies = list()
+        for loc in self._selectors:
             p = weakref.proxy(GRAPHICS[loc])
             proxies.append(p)
 
@@ -212,8 +224,10 @@ class PlotArea:
         if graphic.name is not None:  # skip for those that have no name
             self._check_graphic_name_exists(graphic.name)
 
-        # TODO: need to refactor LinearSelector entirely
-        if isinstance(graphic, LinearSelector):
+        if isinstance(graphic, BaseSelector):
+            # store in SELECTORS dict
+            loc = graphic.loc
+            SELECTORS[loc] = graphic
             self._selectors.append(graphic)  # don't manage garbage collection of LineSliders for now
         else:
             # store in GRAPHICS dict
@@ -292,10 +306,10 @@ class PlotArea:
             zoom value for the camera after auto-scaling, if zoom = 1.0 then the graphics
             in the scene will fill the entire canvas.
         """
-        # hacky workaround for now until I figure out how to put it in its own scene
-        # TODO: remove all selectors from a scene to calculate scene bbox
-        for slider in self._selectors:
-            self.scene.remove(slider.world_object)
+        # hacky workaround for now until we decided if we want to put selectors in their own scene
+        # remove all selectors from a scene to calculate scene bbox
+        for selector in self._selectors:
+            self.scene.remove(selector.world_object)
 
         self.center_scene()
         if not isinstance(maintain_aspect, bool):
@@ -307,8 +321,8 @@ class PlotArea:
         else:
             width, height, depth = (1, 1, 1)
 
-        for slider in self._selectors:
-            self.scene.add(slider.world_object)
+        for selector in self._selectors:
+            self.scene.add(selector.world_object)
 
         self.camera.width = width
         self.camera.height = height
@@ -346,7 +360,14 @@ class PlotArea:
         # get location
         graphic_loc = graphic.loc
 
-        if graphic_loc not in self._graphics:
+        # check which dict it's in
+        if graphic_loc in self._graphics:
+            glist = self._graphics
+            kind = "graphic"
+        elif graphic in self._selectors:
+            kind = "selector"
+            glist = self._selectors
+        else:
             raise KeyError(f"Graphic with following address not found in plot area: {graphic_loc}")
 
         # remove from scene if necessary
@@ -354,7 +375,7 @@ class PlotArea:
             self.scene.remove(graphic.world_object)
 
         # remove from list of addresses
-        self._graphics.remove(graphic_loc)
+        glist.remove(graphic_loc)
 
         # for GraphicCollection objects
         # if isinstance(graphic, GraphicCollection):
@@ -371,7 +392,10 @@ class PlotArea:
         # delete world object
         #del WORLD_OBJECTS[graphic_loc]
 
-        del GRAPHICS[graphic_loc]
+        if kind == "graphic":
+            del GRAPHICS[graphic_loc]
+        elif kind == "selector":
+            del SELECTORS[graphic_loc]
 
     def clear(self):
         """
