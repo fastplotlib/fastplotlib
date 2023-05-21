@@ -50,7 +50,9 @@ class BaseGraphic:
 
 class Graphic(BaseGraphic):
     def __init__(
-            self, name: str = None
+            self,
+            name: str = None,
+            metadata: Any = None
     ):
         """
 
@@ -59,9 +61,13 @@ class Graphic(BaseGraphic):
         name: str, optional
             name this graphic, makes it indexable within plots
 
+        metadata: Any, optional
+            metadata attached to this Graphic, this is for the user to manage
+
         """
 
         self.name = name
+        self.metadata = metadata
         self.registered_callbacks = dict()
         self.present = PresentFeature(parent=self)
 
@@ -112,6 +118,16 @@ class Graphic(BaseGraphic):
             return f"'{self.name}': {rval}"
         else:
             return rval
+
+    def __eq__(self, other):
+        # This is necessary because we use Graphics as weakref proxies
+        if not isinstance(other, Graphic):
+            raise TypeError("`==` operator is only valid between two Graphics")
+
+        if self.loc == other.loc:
+            return True
+
+        return False
 
     def __del__(self):
         del WORLD_OBJECTS[self.loc]
@@ -285,7 +301,7 @@ class PreviouslyModifiedData:
     indices: Any
 
 
-COLLECTION_GRAPHICS: dict[str, Graphic] = dict()
+COLLECTION_GRAPHICS: Dict[str, Graphic] = dict()
 
 
 class GraphicCollection(Graphic):
@@ -340,7 +356,10 @@ class GraphicCollection(Graphic):
             graphic.collection_index = new_index
 
     def __getitem__(self, key):
-        if isinstance(key, int):
+        if isinstance(key, (int, np.integer)):
+            # single graphic indexed
+            # !! IMPORTANT: this must return a CollectionIndexer even though it's only one graphic!!
+            # otherwise it doesn't work properly with events that except collections
             key = [key]
 
         if isinstance(key, slice):

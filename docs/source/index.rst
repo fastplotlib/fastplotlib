@@ -15,6 +15,7 @@ Welcome to fastplotlib's documentation!
    Gridplot <api/gridplot>
    Graphics <api/graphics>
    Graphic Features <api/graphic_features>
+   Selectors <api/selectors>
    Widgets <api/widgets>
 
 Summary

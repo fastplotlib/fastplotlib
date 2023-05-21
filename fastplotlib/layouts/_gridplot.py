@@ -30,6 +30,7 @@ class GridPlot:
             controllers: Union[np.ndarray, str] = None,
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
+            size: Tuple[int, int] = (500, 300),
             **kwargs
     ):
         """
@@ -61,6 +62,9 @@ class GridPlot:
 
         renderer: pygfx.Renderer, optional
             pygfx renderer instance
+
+        size: (int, int)
+            starting size of canvas, default (500, 300)
 
         """
         self.shape = shape
@@ -159,6 +163,8 @@ class GridPlot:
         self._animate_funcs_post: List[callable] = list()
 
         self._current_iter = None
+
+        self._starting_size = size
 
     def __getitem__(self, index: Union[Tuple[int, int], str]):
         if isinstance(index, str):
@@ -265,6 +271,8 @@ class GridPlot:
 
         for subplot in self:
             subplot.auto_scale(maintain_aspect=True, zoom=0.95)
+
+        self.canvas.set_logical_size(*self._starting_size)
 
         return self.canvas
 

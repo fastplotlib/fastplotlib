@@ -1,5 +1,5 @@
 import numpy as np
-from pygfx import Texture
+from pygfx import Texture, Color
 from collections import OrderedDict
 from typing import *
 from pathlib import Path
@@ -147,3 +147,10 @@ def quick_min_max(data: np.ndarray) -> Tuple[float, float]:
         data = data[tuple(sl)]
 
     return float(np.nanmin(data)), float(np.nanmax(data))
+
+
+def make_pygfx_colors(colors, n_colors):
+    """parse and make colors array using pyfx.Color"""
+    c = Color(colors)
+    colors_array = np.repeat(np.array([c]), n_colors, axis=0)
+    return colors_array

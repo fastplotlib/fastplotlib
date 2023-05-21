@@ -1,11 +1,14 @@
+from typing import *
+from copy import deepcopy
+import weakref
+
 import numpy as np
 import pygfx
-from typing import *
 
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
+from .selectors import LinearRegionSelector, LinearSelector
 from ..utils import make_colors
-from copy import deepcopy
 
 
 class LineCollection(GraphicCollection, Interaction):
@@ -24,8 +27,10 @@ class LineCollection(GraphicCollection, Interaction):
             z_position: Union[List[float], float] = None,
             thickness: Union[float, List[float]] = 2.0,
             colors: Union[List[np.ndarray], np.ndarray] = "w",
+            alpha: float = 1.0,
             cmap: Union[List[str], str] = None,
             name: str = None,
+            metadata: Union[list, tuple, np.ndarray] = None,
             *args,
             **kwargs
     ):
@@ -60,6 +65,10 @@ class LineCollection(GraphicCollection, Interaction):
 
         name: str, optional
             name of the line collection
+
+        metadata: list, tuple, or array
+            metadata associated with this collection, this is for the user to manage.
+            ``len(metadata)`` must be same as ``len(data)``
 
         args
             passed to GraphicCollection
@@ -111,6 +120,13 @@ class LineCollection(GraphicCollection, Interaction):
             if len(thickness) != len(data):
                 raise ValueError("args must be a single float or an iterable with same length as data")
 
+        if metadata is not None:
+            if len(metadata) != len(data):
+                raise ValueError(
+                    f"len(metadata) != len(data)\n"
+                    f"{len(metadata)} != {len(data)}"
+                )
+
         # cmap takes priority over colors
         if cmap is not None:
             # cmap across lines
@@ -128,33 +144,44 @@ class LineCollection(GraphicCollection, Interaction):
                                  "with the same length as the data")
         else:
             if isinstance(colors, np.ndarray):
+                # single color for all lines in the collection as RGBA
                 if colors.shape == (4,):
                     single_color = True
 
+                # colors specified for each line as array of shape [n_lines, RGBA]
                 elif colors.shape == (len(data), 4):
                     single_color = False
 
                 else:
                     raise ValueError(
-                        "numpy array colors argument must be of shape (4,) or (len(data), 4)"
+                        f"numpy array colors argument must be of shape (4,) or (n_lines, 4)."
+                        f"You have pass the following shape: {colors.shape}"
                     )
 
             elif isinstance(colors, str):
-                single_color = True
-                colors = pygfx.Color(colors)
+                if colors == "random":
+                    colors = np.random.rand(len(data), 4)
+                    colors[:, -1] = alpha
+                    single_color = False
+                else:
+                    # parse string color
+                    single_color = True
+                    colors = pygfx.Color(colors)
 
             elif isinstance(colors, (tuple, list)):
                 if len(colors) == 4:
+                    # single color specified as (R, G, B, A) tuple or list
                     if all([isinstance(c, (float, int)) for c in colors]):
                         single_color = True
 
                 elif len(colors) == len(data):
+                    # colors passed as list/tuple of colors, such as list of string
                     single_color = False
 
                 else:
                     raise ValueError(
                         "tuple or list colors argument must be a single color represented as [R, G, B, A], "
-                        "or must be a str of tuple/list with the same length as the data"
+                        "or must be a tuple/list of colors represented by a string with the same length as the data"
                     )
 
         self._set_world_object(pygfx.Group())
@@ -181,16 +208,165 @@ class LineCollection(GraphicCollection, Interaction):
                 _cmap = cmap[i]
                 _c = None
 
+            if metadata is not None:
+                _m = metadata[i]
+            else:
+                _m = None
+
             lg = LineGraphic(
                 data=d,
                 thickness=_s,
                 colors=_c,
                 z_position=_z,
                 cmap=_cmap,
-                collection_index=i
+                collection_index=i,
+                metadata=_m
             )
 
             self.add_graphic(lg, reset_index=False)
+
+    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
+        """
+        Adds a :class:`.LinearSelector` .
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a plot area just like
+        any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: int
+            initial position of the selector
+
+        padding: float
+            pad the length of the selector
+
+        kwargs
+            passed to :class:`.LinearSelector`
+
+        Returns
+        -------
+        LinearSelector
+
+        """
+
+        bounds, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+
+        if selection is None:
+            selection = limits[0]
+
+        if selection < limits[0] or selection > limits[1]:
+            raise ValueError(f"the passed selection: {selection} is beyond the limits: {limits}")
+
+        selector = LinearSelector(
+            selection=selection,
+            limits=limits,
+            end_points=end_points,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+        selector.position.z = self.position.z + 1
+
+        return weakref.proxy(selector)
+
+    def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
+        """
+        Add a :class:`.LinearRegionSelector`
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a plot area just like
+        any other ``Graphic``.
+
+        Parameters
+        ----------
+        padding: float, default 100.0
+            Extends the linear selector along the y-axis to make it easier to interact with.
+
+        kwargs
+            passed to ``LinearRegionSelector``
+
+        Returns
+        -------
+        LinearRegionSelector
+            linear selection graphic
+
+        """
+
+        bounds, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+
+        selector = LinearRegionSelector(
+            bounds=bounds,
+            limits=limits,
+            size=size,
+            origin=origin,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+        selector.position.set_z(self.position.z - 1)
+
+        return weakref.proxy(selector)
+
+    def _get_linear_selector_init_args(self, padding, **kwargs):
+        bounds_init = list()
+        limits = list()
+        sizes = list()
+        origin = list()
+        end_points = list()
+
+        for g in self.graphics:
+            _bounds_init, _limits, _size, _origin, axis, _end_points = \
+                g._get_linear_selector_init_args(padding=0, **kwargs)
+
+            bounds_init.append(_bounds_init)
+            limits.append(_limits)
+            sizes.append(_size)
+            origin.append(_origin)
+            end_points.append(_end_points)
+
+        # set the init bounds using the extents of the collection
+        b = np.vstack(bounds_init)
+        bounds = (b[:, 0].min(), b[:, 1].max())
+
+        # set the limits using the extents of the collection
+        l = np.vstack(limits)
+        limits = (l[:, 0].min(), l[:, 1].max())
+
+        # stack endpoints
+        end_points = np.vstack(end_points)
+        # use the min endpoint for index 0, highest endpoint for index 1
+        end_points = [end_points[:, 0].min() - padding, end_points[:, 1].max() + padding]
+
+        # TODO: refactor this to use `LineStack.graphics[-1].position.y`
+        if isinstance(self, LineStack):
+            stack_offset = self.separation * len(sizes)
+            # sum them if it's a stack
+            size = sum(sizes)
+            # add the separations
+            size += stack_offset
+
+            # a better way to get the max y value?
+            # graphics y-position + data y-max + padding
+            end_points[1] = self.graphics[-1].position.y + self.graphics[-1].data()[:, 1].max() + padding
+
+        else:
+            # just the biggest one if not stacked
+            size = max(sizes)
+
+        size += padding
+
+        if axis == "x":
+            o = np.vstack(origin)
+            origin_y = (o[:, 1].min() + o[:, 1].max()) / 2
+            origin = (limits[0], origin_y)
+        else:
+            o = np.vstack(origin)
+            origin_x = (o[:, 0].min() + o[:, 0].max()) / 2
+            origin = (origin_x, limits[0])
+
+        return bounds, limits, size, origin, axis, end_points
+
+    def _add_plot_area_hook(self, plot_area):
+        self._plot_area = plot_area
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         if not hasattr(self, "_previous_data"):
@@ -339,10 +515,13 @@ class LineStack(LineCollection):
             thickness=thickness,
             colors=colors,
             cmap=cmap,
-            name=name
+            name=name,
+            **kwargs
         )
 
         axis_zero = 0
         for i, line in enumerate(self.graphics):
             getattr(line.position, f"set_{separation_axis}")(axis_zero)
             axis_zero = axis_zero + line.data()[:, axes[separation_axis]].max() + separation
+
+        self.separation = separation

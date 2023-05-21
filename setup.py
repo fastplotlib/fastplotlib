@@ -10,6 +10,14 @@ install_requires = [
 ]
 
 
+extras_require = {
+    "docs": [
+        "sphinx",
+        "pydata-sphinx-theme<0.10.0",
+        "glfw"
+    ],
+}
+
 with open(Path(__file__).parent.joinpath("README.md")) as f:
     readme = f.read()
 
@@ -37,6 +45,7 @@ setup(
     author_email='',
     python_requires='>=3.8',
     install_requires=install_requires,
+    extras_require=extras_require,
     include_package_data=True,
     description='A fast plotting library built using the pygfx render engine'
 )

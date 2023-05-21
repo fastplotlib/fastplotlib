@@ -3,7 +3,7 @@ from typing import *
 import numpy as np
 from pygfx import Buffer, Texture
 
-from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent, to_gpu_supported_dtype
+from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent, to_gpu_supported_dtype, cleanup_array_slice
 
 
 class PointsDataFeature(GraphicFeatureIndexable):
@@ -48,8 +48,12 @@ class PointsDataFeature(GraphicFeatureIndexable):
         return data
 
     def __setitem__(self, key, value):
+        if isinstance(key, np.ndarray):
+            # make sure 1D array of int or boolean
+            key = cleanup_array_slice(key, self._upper_bound)
+
         # put data into right shape if they're only indexing datapoints
-        if isinstance(key, (slice, int)):
+        if isinstance(key, (slice, int, np.ndarray, np.integer)):
             value = self._fix_data(value, self._parent)
         # otherwise assume that they have the right shape
         # numpy will throw errors if it can't broadcast
@@ -66,10 +70,12 @@ class PointsDataFeature(GraphicFeatureIndexable):
     def _feature_changed(self, key, new_data):
         if key is not None:
             key = cleanup_slice(key, self._upper_bound)
-        if isinstance(key, int):
+        if isinstance(key, (int, np.integer)):
             indices = [key]
         elif isinstance(key, slice):
             indices = range(key.start, key.stop, key.step)
+        elif isinstance(key, np.ndarray):
+            indices = key
         elif key is None:
             indices = None
 
@@ -155,15 +161,11 @@ class HeatmapDataFeature(ImageDataFeature):
         """list of Texture buffer for the image data"""
         return [img.geometry.grid for img in self._parent.world_object.children]
 
-    def update_gpu(self):
-        """Update the GPU with the buffer"""
-        self._update_range(None)
-
     def __getitem__(self, item):
         return self._data[item]
 
     def __call__(self, *args, **kwargs):
-        return self.buffer.data
+        return self._data
 
     def __setitem__(self, key, value):
         # make sure supported type, not float64 etc.
