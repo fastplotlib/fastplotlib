@@ -2,8 +2,12 @@ from typing import *
 from dataclasses import dataclass
 from functools import partial
 
-from pygfx.linalg import Vector3
 from pygfx import WorldObject, Line, Mesh, Points
+
+class dummy:
+    pass
+
+Vector3 = dummy
 
 
 @dataclass
@@ -22,10 +26,10 @@ class MoveInfo:
 
 # key bindings used to move the selector
 key_bind_direction = {
-    "ArrowRight": Vector3(1, 0, 0),
-    "ArrowLeft": Vector3(-1, 0, 0),
-    "ArrowUp": Vector3(0, 1, 0),
-    "ArrowDown": Vector3(0, -1, 0),
+    "ArrowRight": (1, 0, 0),
+    "ArrowLeft": (-1, 0, 0),
+    "ArrowUp": (0, 1, 0),
+    "ArrowDown": (0, -1, 0),
 }
 
 
@@ -225,7 +229,7 @@ class BaseSelector:
         """
         Calculates delta just using current world object position and calls self._move_graphic().
         """
-        current_position = self.world_object.position.clone()
+        current_position = self.position
 
         # middle mouse button clicks
         if ev.button != 3:

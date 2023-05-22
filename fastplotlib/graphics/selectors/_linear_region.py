@@ -2,7 +2,6 @@ from typing import *
 import numpy as np
 
 import pygfx
-from pygfx.linalg import Vector3
 
 from .._base import Graphic, GraphicCollection
 from ..features._base import GraphicFeature, FeatureEvent
@@ -234,7 +233,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         # the fill of the selection
         self.fill = mesh
-        self.fill.position.set(*origin, -2)
+        self.fill.position = (*origin, -2)
 
         self.world_object.add(self.fill)
 
@@ -296,7 +295,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         # add the edge lines
         for edge in self.edges:
-            edge.position.set_z(-1)
+            edge.position_z = -1
             self.world_object.add(edge)
 
         # set the initial bounds of the selector

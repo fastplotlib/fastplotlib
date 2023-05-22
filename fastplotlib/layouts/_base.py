@@ -5,7 +5,6 @@ import numpy as np
 
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, OrbitController, \
     Viewport, WgpuRenderer
-from pygfx.linalg import Vector3
 from wgpu.gui.auto import WgpuCanvas
 
 from ..graphics._base import Graphic, GraphicCollection
@@ -158,7 +157,7 @@ class PlotArea:
         """allows setting the region occupied by the viewport w.r.t. the parent"""
         raise NotImplementedError("Must be implemented in subclass")
 
-    def map_screen_to_world(self, pos: Tuple[float, float]) -> Vector3:
+    def map_screen_to_world(self, pos: Tuple[float, float]):
         """
         Map screen position to world position
 
@@ -181,11 +180,12 @@ class PlotArea:
         )
 
         # convert screen position to NDC
-        pos_ndc = Vector3(
+        pos_ndc = (
             pos_rel[0] / vs[0] * 2 - 1,
             -(pos_rel[1] / vs[1] * 2 - 1),
             0
         )
+
 
         # get world position
         pos_world = self.camera.position.clone().project(self.camera).add(pos_ndc).unproject(self.camera)
