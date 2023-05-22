@@ -229,6 +229,8 @@ class LinearRegionSelector(Graphic, BaseSelector):
                 pygfx.box_geometry(size, 1, 1),
                 pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color))
             )
+        else:
+            raise ValueError("`axis` must be one of 'x' or 'y'")
 
         # the fill of the selection
         self.fill = mesh
@@ -314,7 +316,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
     def bounds(self) -> LinearBoundsFeature:
         """
         The current bounds of the selection in world space. These bounds will NOT necessarily correspond to the
-        indices of the data that are under the selection. Use ``get_selected_indices()` which maps from
+        indices of the data that are under the selection. Use ``get_selected_indices()`` which maps from
         world space to data indices.
         """
         return self._bounds

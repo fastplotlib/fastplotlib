@@ -110,6 +110,11 @@ class BaseSelector:
             # double-click to enable arrow-key moveable mode
             wo.add_event_handler(self._toggle_arrow_key_moveable, "double_click")
 
+        for fill in self._fill:
+            if fill.material.color_is_transparent:
+                pfunc_fill = partial(self._check_fill_pointer_event, fill)
+                self._plot_area.renderer.add_event_handler(pfunc_fill, "pointer_down")
+
         # when the pointer moves
         self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
 
@@ -129,6 +134,27 @@ class BaseSelector:
         self._plot_area.renderer.add_event_handler(self._key_up, "key_up")
         self._plot_area.add_animations(self._key_hold)
 
+    def _check_fill_pointer_event(self, event_source: WorldObject, ev):
+        world_pos = self._plot_area.map_screen_to_world((ev.x, ev.y))
+        # outside viewport, ignore
+        # this shouldn't be possible since the event handler is registered to the fill mesh world object
+        # but I like sanity checks anyways
+        if world_pos is None:
+            return
+
+        bbox = event_source.get_world_bounding_box()
+
+        xmin, ymin, zmin = bbox[0]
+        xmax, ymax, zmax = bbox[1]
+
+        if not (xmin <= world_pos.x <= xmax):
+            return
+
+        if not (ymin <= world_pos.y <= ymax):
+            return
+
+        self._move_start(event_source, ev)
+
     def _move_start(self, event_source: WorldObject, ev):
         """
         Called on "pointer_down" events
@@ -136,7 +162,9 @@ class BaseSelector:
         Parameters
         ----------
         event_source: WorldObject
-            event source, for example selection fill area ``Mesh`` an edge ``Line`` or vertex ``Points``
+            event source, for example selection fill area ``Mesh`` an edge ``Line`` or vertex ``Points``.
+            This helps keep the event source within the MoveInfo so that during "pointer_move" events (which are
+            from the renderer) we know the original source of the "move action".
 
         ev: Event
             pygfx ``Event``

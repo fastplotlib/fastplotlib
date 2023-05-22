@@ -163,7 +163,7 @@ class LinearSelector(Graphic, BaseSelector):
 
             line_data = np.column_stack([xs, ys, zs])
         else:
-            raise ValueError("`axis` must be one of 'v' or 'h'")
+            raise ValueError("`axis` must be one of 'x' or 'y'")
 
         line_data = line_data.astype(np.float32)
 

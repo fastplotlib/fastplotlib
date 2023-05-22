@@ -14,16 +14,16 @@ from ..utils import quick_min_max
 
 
 class _ImageHeatmapSelectorsMixin:
-    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
+    def add_linear_selector(self, selection: int = None, padding: float = None, **kwargs) -> LinearSelector:
         """
         Adds a linear selector.
 
         Parameters
         ----------
-        selection: int
+        selection: int, optional
             initial position of the selector
 
-        padding: float
+        padding: float, optional
             pad the length of the selector
 
         kwargs
@@ -34,6 +34,12 @@ class _ImageHeatmapSelectorsMixin:
         LinearSelector
 
         """
+
+        # default padding is 15% the height or width of the image
+        if "axis" in kwargs.keys():
+            axis = kwargs["axis"]
+        else:
+            axis = "x"
 
         bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
 
@@ -56,17 +62,17 @@ class _ImageHeatmapSelectorsMixin:
 
         return weakref.proxy(selector)
 
-    def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
+    def add_linear_region_selector(self, padding: float = None, **kwargs) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
         remove, or delete them from a plot area just like any other ``Graphic``.
 
         Parameters
         ----------
-        padding: float, default 100.0
+        padding: float, optional
             Extends the linear selector along the y-axis to make it easier to interact with.
 
-        kwargs
+        kwargs, optional
             passed to ``LinearRegionSelector``
 
         Returns
@@ -85,13 +91,13 @@ class _ImageHeatmapSelectorsMixin:
             size=size,
             origin=origin,
             parent=weakref.proxy(self),
+            fill_color=(0, 0, 0.35, 0.2),
             **kwargs
         )
 
         self._plot_area.add_graphic(selector, center=False)
         # so that it is above this graphic
         selector.position.set_z(self.position.z + 3)
-        selector.fill.material.color = (*selector.fill.material.color[:-1], 0.2)
 
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end
@@ -106,6 +112,14 @@ class _ImageHeatmapSelectorsMixin:
             axis = kwargs["axis"]
         else:
             axis = "x"
+
+        if padding is None:
+            if axis == "x":
+                # based on number of rows
+                padding = int(data.shape[0] * 0.15)
+            elif axis == "y":
+                # based on number of columns
+                padding = int(data.shape[1] * 0.15)
 
         if axis == "x":
             offset = self.position.x
