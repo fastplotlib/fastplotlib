@@ -1,3 +1,4 @@
+import itertools
 from itertools import product
 import numpy as np
 from typing import *
@@ -8,6 +9,7 @@ from wgpu.gui.auto import WgpuCanvas
 from ._defaults import create_controller
 from ._subplot import Subplot
 from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
+from wgpu.gui.jupyter import JupyterWgpuCanvas
 
 
 def to_array(a) -> np.ndarray:
@@ -31,7 +33,6 @@ class GridPlot:
             controllers: Union[np.ndarray, str] = None,
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
-            toolbar: bool = True,
             **kwargs
     ):
         """
@@ -66,7 +67,7 @@ class GridPlot:
 
         """
         self.shape = shape
-        self.toolbar = toolbar
+        self.toolbar = None
 
         if isinstance(cameras, str):
             if cameras not in valid_cameras:
@@ -254,7 +255,7 @@ class GridPlot:
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
-    def show(self):
+    def show(self, toolbar: bool = True):
         """
         begins the rendering event loop and returns the canvas
 
@@ -269,9 +270,15 @@ class GridPlot:
         for subplot in self:
             subplot.auto_scale(maintain_aspect=True, zoom=0.95)
 
-        if self.toolbar:
-            tools = GridPlotToolBar(self).toolbar
-            return VBox([self.canvas, tools])
+        # check if in jupyter notebook or not
+        if not isinstance(self.canvas, JupyterWgpuCanvas):
+            return self.canvas
+
+        if toolbar and self.toolbar is None:
+            self.toolbar = GridPlotToolBar(self).widget
+            return VBox([self.canvas, self.toolbar])
+        elif toolbar and self.toolbar is not None:
+            return VBox([self.canvas, self.toolbar])
         else:
             return self.canvas
 
@@ -302,47 +309,56 @@ class GridPlotToolBar:
         """
         self.plot = plot
 
-        self._tools = list()
+        self.autoscale_button = Button(value=False, disabled=False, icon='expand-arrows-alt',
+                                       layout=Layout(width='auto'), tooltip='auto-scale scene')
+        self.center_scene_button = Button(value=False, disabled=False, icon='align-center',
+                                          layout=Layout(width='auto'), tooltip='auto-center scene')
+        self.panzoom_controller_button = ToggleButton(value=True, disabled=False, icon='hand-pointer',
+                                                      layout=Layout(width='auto'), tooltip='panzoom controller')
+        self.maintain_aspect_button = ToggleButton(value=True, disabled=False, description="1:1",
+                                                   layout=Layout(width='auto'), tooltip='maintain aspect')
+        self.maintain_aspect_button.style.font_weight = "bold"
 
-        auto_tool = Button(value=False, disabled=False, icon='expand-arrows-alt', layout=Layout(width='auto'))
-        center_tool = Button(value=False, disabled=False, icon='compress-arrows-alt', layout=Layout(width='auto'))
-        panzoom_tool = ToggleButton(value=False, disabled=False, icon='hand-pointer', layout=Layout(width='auto'))
-        maintain_aspect_tool = ToggleButton(value=False, disabled=False, description="1:1", layout=Layout(width='auto'))
-        maintain_aspect_tool.style.font_weight = "bold"
-        self._tools.extend([auto_tool, center_tool, panzoom_tool, maintain_aspect_tool])
-
-        positions = [[i, j] for i, j in self.plot._get_iterator()]
+        positions = list(product(range(self.plot.shape[0]), range(self.plot.shape[1])))
         values = list()
         for pos in positions:
             if self.plot[pos].name is not None:
                 values.append(self.plot[pos].name)
             else:
-                values.append(tuple(pos))
-        self._dropdown = Dropdown(options=values, disabled=False, description='Plots:')
+                values.append(str(pos))
+        self.dropdown = Dropdown(options=values, disabled=False, description='Subplots:')
 
-        def auto_scale(obj):
-            current = self._dropdown.value
-            if maintain_aspect_tool.value:
-                self.plot[current].auto_scale(maintain_aspect=True)
-            else:
-                self.plot[current].auto_scale()
+        self.widget = HBox([self.autoscale_button,
+                            self.center_scene_button,
+                            self.panzoom_controller_button,
+                            self.maintain_aspect_button,
+                            self.dropdown])
 
-        def center_scene(obj):
-            current = self._dropdown.value
-            self.plot[current].center_scene()
+        self.panzoom_controller_button.observe(self.panzoom_control, 'value')
+        self.autoscale_button.on_click(self.auto_scale)
+        self.center_scene_button.on_click(self.center_scene)
+        self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
 
-        def panzoom_control(obj):
-            current = self._dropdown.value
-            if panzoom_tool.value:
-                # toggle pan zoom controller
-                self.plot[current].controller.enabled = False
-            else:
-                self.plot[current].controller.enabled = True
+    def parser(self) -> Subplot:
+        # parses dropdown value as plot name or position
+        current = self.dropdown.value
+        if current[0] == "(":
+            return self.plot[eval(current)]
+        else:
+            return self.plot[current]
 
-        panzoom_tool.observe(panzoom_control, 'value')
-        auto_tool.on_click(auto_scale)
-        center_tool.on_click(center_scene)
+    def auto_scale(self, obj):
+        current = self.parser()
+        current.auto_scale(maintain_aspect=current.camera.maintain_aspect)
 
-    @property
-    def toolbar(self):
-        return HBox([HBox(self._tools), self._dropdown])
+    def center_scene(self, obj):
+        current = self.parser()
+        current.center_scene()
+
+    def panzoom_control(self, obj):
+        current = self.parser()
+        current.controller.enabled = self.panzoom_controller_button.value
+
+    def maintain_aspect(self, obj):
+        current = self.parser()
+        current.camera.maintain_aspect = self.maintain_aspect_button.value
