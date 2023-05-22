@@ -149,7 +149,7 @@ class PlotArea:
         """Selectors in the plot area. Always returns a proxy to the Graphic instances."""
         proxies = list()
         for loc in self._selectors:
-            p = weakref.proxy(GRAPHICS[loc])
+            p = weakref.proxy(SELECTORS[loc])
             proxies.append(p)
 
         return tuple(proxies)
@@ -228,7 +228,7 @@ class PlotArea:
             # store in SELECTORS dict
             loc = graphic.loc
             SELECTORS[loc] = graphic
-            self._selectors.append(graphic)  # don't manage garbage collection of LineSliders for now
+            self._selectors.append(loc)  # don't manage garbage collection of LineSliders for now
         else:
             # store in GRAPHICS dict
             loc = graphic.loc
@@ -308,7 +308,7 @@ class PlotArea:
         """
         # hacky workaround for now until we decided if we want to put selectors in their own scene
         # remove all selectors from a scene to calculate scene bbox
-        for selector in self._selectors:
+        for selector in self.selectors:
             self.scene.remove(selector.world_object)
 
         self.center_scene()
@@ -321,7 +321,7 @@ class PlotArea:
         else:
             width, height, depth = (1, 1, 1)
 
-        for selector in self._selectors:
+        for selector in self.selectors:
             self.scene.add(selector.world_object)
 
         self.camera.width = width
@@ -354,48 +354,32 @@ class PlotArea:
             The graphic to delete
 
         """
-
-        # graphic_loc = hex(id(graphic.__repr__.__self__))
-
+        # TODO: proper gc of selectors, RAM is freed for regular graphics but not selectors
+        # TODO: references to selectors must be lingering somewhere
         # get location
-        graphic_loc = graphic.loc
+        loc = graphic.loc
 
         # check which dict it's in
-        if graphic_loc in self._graphics:
+        if loc in self._graphics:
             glist = self._graphics
             kind = "graphic"
-        elif graphic in self._selectors:
+        elif loc in self._selectors:
             kind = "selector"
             glist = self._selectors
         else:
-            raise KeyError(f"Graphic with following address not found in plot area: {graphic_loc}")
+            raise KeyError(f"Graphic with following address not found in plot area: {loc}")
 
         # remove from scene if necessary
         if graphic.world_object in self.scene.children:
             self.scene.remove(graphic.world_object)
 
         # remove from list of addresses
-        glist.remove(graphic_loc)
-
-        # for GraphicCollection objects
-        # if isinstance(graphic, GraphicCollection):
-        #     # clear Group
-        #     graphic.world_object.clear()
-            # graphic.clear()
-            # delete all child world objects in the collection
-            # for g in graphic.graphics:
-            #     subloc = hex(id(g))
-            #     del WORLD_OBJECTS[subloc]
-
-        # get mem location of graphic
-        # loc = hex(id(graphic))
-        # delete world object
-        #del WORLD_OBJECTS[graphic_loc]
+        glist.remove(loc)
 
         if kind == "graphic":
-            del GRAPHICS[graphic_loc]
+            del GRAPHICS[loc]
         elif kind == "selector":
-            del SELECTORS[graphic_loc]
+            del SELECTORS[loc]
 
     def clear(self):
         """
