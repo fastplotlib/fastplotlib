@@ -229,6 +229,8 @@ class LinearRegionSelector(Graphic, BaseSelector):
                 pygfx.box_geometry(size, 1, 1),
                 pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color))
             )
+        else:
+            raise ValueError("`axis` must be one of 'x' or 'y'")
 
         # the fill of the selection
         self.fill = mesh
@@ -314,7 +316,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
     def bounds(self) -> LinearBoundsFeature:
         """
         The current bounds of the selection in world space. These bounds will NOT necessarily correspond to the
-        indices of the data that are under the selection. Use ``get_selected_indices()` which maps from
+        indices of the data that are under the selection. Use ``get_selected_indices()`` which maps from
         world space to data indices.
         """
         return self._bounds
@@ -433,8 +435,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
             ixs = np.arange(*self.bounds(), dtype=int)
             return ixs
 
-    def _move_graphic(self, delta, ev):
-        # edge-0 bound current world position
+    def _move_graphic(self, delta):
         if self.bounds.axis == "x":
             # new left bound position
             bound_pos_0 = Vector3(self.bounds()[0]).add(delta)
@@ -448,17 +449,8 @@ class LinearRegionSelector(Graphic, BaseSelector):
             # new top bound position
             bound_pos_1 = Vector3(0, self.bounds()[1]).add(delta)
 
-        # workaround because transparent objects are not pickable in pygfx
-        if ev is not None:
-            if 2 in ev.buttons:
-                force_fill_move = True
-            else:
-                force_fill_move = False
-        else:
-            force_fill_move = False
-
         # move entire selector if source was fill
-        if self._move_info.source == self.fill or force_fill_move:
+        if self._move_info.source == self.fill:
             bound0 = getattr(bound_pos_0, self.bounds.axis)
             bound1 = getattr(bound_pos_1, self.bounds.axis)
             # set the new bounds

@@ -71,12 +71,14 @@ class RectangleBoundsFeature(GraphicFeature):
 
         # change the edge lines
 
+        # each edge line is defined by two end points which are stored in the
+        # geometry.positions
         # [x0, y0, z0]
         # [x1, y1, z0]
 
         # left line
         z = self._parent.edges[0].geometry.positions.data[:, -1][0]
-        self._parent.edges[0].geometry.position.data[:] = np.array(
+        self._parent.edges[0].geometry.positions.data[:] = np.array(
             [
                 [xmin, ymin, z],
                 [xmin, ymax, z]
@@ -84,7 +86,7 @@ class RectangleBoundsFeature(GraphicFeature):
         )
 
         # right line
-        self._parent.edges[1].geometry.position.data[:] = np.array(
+        self._parent.edges[1].geometry.positions.data[:] = np.array(
             [
                 [xmax, ymin, z],
                 [xmax, ymax, z]
@@ -92,7 +94,7 @@ class RectangleBoundsFeature(GraphicFeature):
         )
 
         # bottom line
-        self._parent.edges[2].geometry.position.data[:] = np.array(
+        self._parent.edges[2].geometry.positions.data[:] = np.array(
             [
                 [xmin, ymin, z],
                 [xmax, ymin, z]
@@ -100,7 +102,7 @@ class RectangleBoundsFeature(GraphicFeature):
         )
 
         # top line
-        self._parent.edges[3].geometry.position.data[:] = np.array(
+        self._parent.edges[3].geometry.positions.data[:] = np.array(
             [
                 [xmin, ymax, z],
                 [xmax, ymax, z]
@@ -118,31 +120,34 @@ class RectangleBoundsFeature(GraphicFeature):
         # calls any events
         self._feature_changed(key=None, new_data=value)
 
+    # TODO: feature_changed
     def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
         return
-
-        if len(self._event_handlers) < 1:
-            return
-
-        if self._parent.parent is not None:
-            selected_ixs = self._parent.get_selected_indices()
-            selected_data = self._parent.get_selected_data()
-        else:
-            selected_ixs = None
-            selected_data = None
-
-        pick_info = {
-            "index": None,
-            "collection-index": self._collection_index,
-            "world_object": self._parent.world_object,
-            "new_data": new_data,
-            "selected_indices": selected_ixs,
-            "selected_data": selected_data
-        }
-
-        event_data = FeatureEvent(type="bounds", pick_info=pick_info)
-
-        self._call_event_handlers(event_data)
+        # if len(self._event_handlers) < 1:
+        #     return
+        #
+        # if self._parent.parent is not None:
+        #     selected_ixs = self._parent.get_selected_indices()
+        #     selected_data = self._parent.get_selected_data()
+        # else:
+        #     selected_ixs = None
+        #     selected_data = None
+        #
+        # pick_info = {
+        #     "index": None,
+        #     "collection-index": self._collection_index,
+        #     "world_object": self._parent.world_object,
+        #     "new_data": new_data,
+        #     "selected_indices": selected_ixs,
+        #     "selected_data": selected_data
+        #     "graphic",
+        #     "delta",
+        #     "pygfx_event"
+        # }
+        #
+        # event_data = FeatureEvent(type="bounds", pick_info=pick_info)
+        #
+        # self._call_event_handlers(event_data)
 
 
 class RectangleRegionSelector(Graphic, BaseSelector):
@@ -280,9 +285,10 @@ class RectangleRegionSelector(Graphic, BaseSelector):
 
         # add the edge lines
         for edge in self.edges:
-            edge.position.set_z(-1)
+            edge.position.set(*origin, -1)
             self.world_object.add(edge)
 
+        self._resizable = resizable
         self._bounds = RectangleBoundsFeature(self, bounds, axis=axis, limits=limits)
 
         BaseSelector.__init__(
@@ -297,8 +303,57 @@ class RectangleRegionSelector(Graphic, BaseSelector):
     @property
     def bounds(self) -> RectangleBoundsFeature:
         """
-        The current bounds of the selection in world space. These bounds will NOT necessarily correspond to the
-        indices of the data that are under the selection. Use ``get_selected_indices()` which maps from
-        world space to data indices.
+        (xmin, xmax, ymin, ymax) The current bounds of the selection in world space.
+
+        These bounds will NOT necessarily correspond to the indices of the data that are under the selection.
+        Use ``get_selected_indices()` which maps from world space to data indices.
         """
         return self._bounds
+
+    def _move_graphic(self, delta):
+        # new left bound position
+        xmin_new = Vector3(self.bounds()[0]).add(delta).x
+
+        # new right bound position
+        xmax_new = Vector3(self.bounds()[1]).add(delta).x
+
+        # new bottom bound position
+        ymin_new = Vector3(0, self.bounds()[2]).add(delta).y
+
+        # new top bound position
+        ymax_new = Vector3(0, self.bounds()[3]).add(delta).y
+
+        # move entire selector if source was fill
+        if self._move_info.source == self.fill:
+            # set the new bounds
+            self.bounds = (xmin_new, xmax_new, ymin_new, ymax_new)
+            return
+
+        # if selector is not resizable do nothing
+        if not self._resizable:
+            return
+
+        # if resizable, move edges
+
+        xmin, xmax, ymin, ymax = self.bounds()
+
+        # change only left bound
+        if self._move_info.source == self.edges[0]:
+            xmin = xmin_new
+
+        # change only right bound
+        elif self._move_info.source == self.edges[1]:
+            xmax = xmax_new
+
+        # change only bottom bound
+        elif self._move_info.source == self.edges[2]:
+            ymin = ymin_new
+
+        # change only top bound
+        elif self._move_info.source == self.edges[3]:
+            ymax = ymax_new
+        else:
+            return
+
+        # set the new bounds
+        self.bounds = (xmin, xmax, ymin, ymax)
