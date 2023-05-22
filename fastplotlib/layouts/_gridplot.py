@@ -318,6 +318,8 @@ class GridPlotToolBar:
         self.maintain_aspect_button = ToggleButton(value=True, disabled=False, description="1:1",
                                                    layout=Layout(width='auto'), tooltip='maintain aspect')
         self.maintain_aspect_button.style.font_weight = "bold"
+        self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
+                                         layout=Layout(width='auto'), tooltip='rotate')
 
         positions = list(product(range(self.plot.shape[0]), range(self.plot.shape[1])))
         values = list()
@@ -332,12 +334,14 @@ class GridPlotToolBar:
                             self.center_scene_button,
                             self.panzoom_controller_button,
                             self.maintain_aspect_button,
+                            self.flip_camera_button,
                             self.dropdown])
 
         self.panzoom_controller_button.observe(self.panzoom_control, 'value')
         self.autoscale_button.on_click(self.auto_scale)
         self.center_scene_button.on_click(self.center_scene)
         self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
+        self.flip_camera_button.on_click(self.flip_camera)
 
     def parser(self) -> Subplot:
         # parses dropdown value as plot name or position
@@ -362,3 +366,7 @@ class GridPlotToolBar:
     def maintain_aspect(self, obj):
         current = self.parser()
         current.camera.maintain_aspect = self.maintain_aspect_button.value
+
+    def flip_camera(self, obj):
+        current = self.parser()
+        current.camera.scale.y = -1 * current.camera.scale.y

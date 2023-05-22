@@ -142,16 +142,20 @@ class ToolBar:
                                                    layout=Layout(width='auto'),
                                                    tooltip='maintain aspect')
         self.maintain_aspect_button.style.font_weight = "bold"
+        self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
+                                         layout=Layout(width='auto'), tooltip='rotate')
 
         self.widget = HBox([self.autoscale_button,
                             self.center_scene_button,
                             self.panzoom_controller_button,
-                            self.maintain_aspect_button])
+                            self.maintain_aspect_button,
+                            self.flip_camera_button])
 
         self.panzoom_controller_button.observe(self.panzoom_control, 'value')
         self.autoscale_button.on_click(self.auto_scale)
         self.center_scene_button.on_click(self.center_scene)
         self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
+        self.flip_camera_button.on_click(self.flip_camera)
 
     def auto_scale(self, obj):
         self.plot.auto_scale(maintain_aspect=self.plot.camera.maintain_aspect)
@@ -164,3 +168,6 @@ class ToolBar:
 
     def maintain_aspect(self, obj):
         self.plot.camera.maintain_aspect = self.maintain_aspect_button.value
+
+    def flip_camera(self, obj):
+        self.plot.camera.scale.y = -1 * self.plot.camera.scale.y
