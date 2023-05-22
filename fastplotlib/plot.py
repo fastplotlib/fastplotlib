@@ -1,10 +1,12 @@
 from typing import *
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
+
 from .layouts._subplot import Subplot
+from .layouts._record_mixin import RecordMixin
 
 
-class Plot(Subplot):
+class Plot(Subplot, RecordMixin):
     def __init__(
             self,
             canvas: WgpuCanvas = None,
@@ -86,6 +88,7 @@ class Plot(Subplot):
             controller=controller,
             **kwargs
         )
+        super(RecordMixin, self).__init__()
 
         self._starting_size = size
 

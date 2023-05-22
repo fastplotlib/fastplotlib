@@ -7,6 +7,7 @@ import pygfx
 from wgpu.gui.auto import WgpuCanvas
 from ._defaults import create_controller
 from ._subplot import Subplot
+from ._record_mixin import RecordMixin
 
 
 def to_array(a) -> np.ndarray:
@@ -22,7 +23,7 @@ def to_array(a) -> np.ndarray:
 valid_cameras = ["2d", "2d-big", "3d", "3d-big"]
 
 
-class GridPlot:
+class GridPlot(RecordMixin):
     def __init__(
             self,
             shape: Tuple[int, int],
@@ -90,7 +91,6 @@ class GridPlot:
         cameras = to_array(cameras)
 
         self._controllers = np.empty(shape=cameras.shape, dtype=object)
-
 
         if cameras.shape != self.shape:
             raise ValueError
@@ -165,6 +165,8 @@ class GridPlot:
         self._current_iter = None
 
         self._starting_size = size
+        
+        super(RecordMixin, self).__init__()
 
     def __getitem__(self, index: Union[Tuple[int, int], str]) -> Subplot:
         if isinstance(index, str):
