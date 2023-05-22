@@ -1,8 +1,9 @@
 from typing import *
-from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
 from .layouts._subplot import Subplot
+from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
+from wgpu.gui.jupyter import JupyterWgpuCanvas
 
 
 class Plot(Subplot):
@@ -84,6 +85,8 @@ class Plot(Subplot):
             **kwargs
         )
 
+        self.toolbar = None
+
     def render(self):
         super(Plot, self).render()
 
@@ -104,9 +107,15 @@ class Plot(Subplot):
         if autoscale:
             self.auto_scale(maintain_aspect=True, zoom=0.95)
 
-        if toolbar:
-            tools = ToolBar(self).toolbar
-            return VBox([self.canvas, tools])
+        # check if in jupyter notebook or not
+        if not isinstance(self.canvas, JupyterWgpuCanvas):
+            return self.canvas
+
+        if toolbar and self.toolbar is None:
+            self.toolbar = ToolBar(self).widget
+            return VBox([self.canvas, self.toolbar])
+        elif toolbar and self.toolbar is not None:
+            return VBox([self.canvas, self.toolbar])
         else:
             return self.canvas
 
@@ -124,37 +133,34 @@ class ToolBar:
         self.plot = plot
 
         self.autoscale_button = Button(value=False, disabled=False, icon='expand-arrows-alt',
-                                       layout=Layout(width='auto'), tooltip='Auto-scale the camera w.r.t to the scene')
-        self.center_scene_button = Button(value=False, disabled=False, icon='compress-arrows-alt',
-                                          layout=Layout(width='auto'), tooltip='Auto-center the scene, does not scale')
+                                       layout=Layout(width='auto'), tooltip='auto-scale scene')
+        self.center_scene_button = Button(value=False, disabled=False, icon='align-center',
+                                          layout=Layout(width='auto'), tooltip='auto-center scene')
         self.panzoom_controller_button = ToggleButton(value=True, disabled=False, icon='hand-pointer',
-                                                      layout=Layout(width='auto'), tooltip='Toggle panzoom controller')
+                                                      layout=Layout(width='auto'), tooltip='panzoom controller')
         self.maintain_aspect_button = ToggleButton(value=True, disabled=False, description="1:1",
                                                    layout=Layout(width='auto'),
-                                                   tooltip='Maintain camera aspect ratio for all dims')
+                                                   tooltip='maintain aspect')
         self.maintain_aspect_button.style.font_weight = "bold"
 
-        self._widget = HBox([self.autoscale_button,
-                             self.center_scene_button,
-                             self.panzoom_controller_button,
-                             self.maintain_aspect_button])
+        self.widget = HBox([self.autoscale_button,
+                            self.center_scene_button,
+                            self.panzoom_controller_button,
+                            self.maintain_aspect_button])
 
-        def auto_scale(obj):
-            if self.maintain_aspect_button.value:
-                self.plot.auto_scale(maintain_aspect=True)
-            else:
-                self.plot.auto_scale()
+        self.panzoom_controller_button.observe(self.panzoom_control, 'value')
+        self.autoscale_button.on_click(self.auto_scale)
+        self.center_scene_button.on_click(self.center_scene)
+        self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
 
-        def center_scene(obj):
-            self.plot.center_scene()
+    def auto_scale(self, obj):
+        self.plot.auto_scale(maintain_aspect=self.plot.camera.maintain_aspect)
 
-        def panzoom_control(obj):
-            self.plot.controller.enabled = self.panzoom_controller_button.value
+    def center_scene(self, obj):
+        self.plot.center_scene()
 
-        self.panzoom_controller_button.observe(panzoom_control, 'value')
-        self.autoscale_button.on_click(auto_scale)
-        self.center_scene_button.on_click(center_scene)
+    def panzoom_control(self, obj):
+        self.plot.controller.enabled = self.panzoom_controller_button.value
 
-    @property
-    def toolbar(self):
-        return self._widget
+    def maintain_aspect(self, obj):
+        self.plot.camera.maintain_aspect = self.maintain_aspect_button.value
