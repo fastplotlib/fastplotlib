@@ -68,18 +68,18 @@ class Synchronizer:
                 return
 
         if delta is not None:
-            self._move_selectors(source, delta, ev)
+            self._move_selectors(source, delta)
 
         self.block_event = False
 
-    def _move_selectors(self, source, delta, ev):
+    def _move_selectors(self, source, delta):
         for s in self.selectors:
             # must use == and not is to compare Graphics because they are weakref proxies!
             if s == source:
                 # if it's the source, since it has already movied
                 continue
 
-            s._move_graphic(delta, ev)
+            s._move_graphic(delta)
 
     def __del__(self):
         for s in self.selectors:

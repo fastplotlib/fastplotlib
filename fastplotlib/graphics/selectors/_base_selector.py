@@ -207,14 +207,14 @@ class BaseSelector:
         self.delta = world_pos.clone().sub(self._move_info.last_position)
         self._pygfx_event = ev
 
-        self._move_graphic(self.delta, ev)
+        self._move_graphic(self.delta)
 
         # update last position
         self._move_info.last_position = world_pos
 
         self._plot_area.controller.enabled = True
 
-    def _move_graphic(self, delta, ev):
+    def _move_graphic(self, delta):
         raise NotImplementedError("Must be implemented in subclass")
 
     def _move_end(self, ev):
@@ -248,7 +248,7 @@ class BaseSelector:
         else:
             self._move_info = MoveInfo(last_position=current_position, source=self._edges[0])
 
-        self._move_graphic(self.delta, ev)
+        self._move_graphic(self.delta)
         self._move_info = None
 
     def _pointer_enter(self, ev):
@@ -286,7 +286,7 @@ class BaseSelector:
                 self._move_info = MoveInfo(last_position=None, source=self._edges[0])
 
             # move the graphic
-            self._move_graphic(delta=delta, ev=None)
+            self._move_graphic(delta=delta)
 
             self._move_info = None
 

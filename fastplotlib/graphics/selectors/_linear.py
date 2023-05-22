@@ -344,7 +344,7 @@ class LinearSelector(Graphic, BaseSelector):
             index = self.selection() - offset
             return int(index)
 
-    def _move_graphic(self, delta: Vector3, ev):
+    def _move_graphic(self, delta: Vector3):
         """
         Moves the graphic
 
