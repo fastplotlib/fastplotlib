@@ -71,6 +71,8 @@ class RectangleBoundsFeature(GraphicFeature):
 
         # change the edge lines
 
+        # each edge line is defined by two end points which are stored in the
+        # geometry.positions
         # [x0, y0, z0]
         # [x1, y1, z0]
 
@@ -118,31 +120,34 @@ class RectangleBoundsFeature(GraphicFeature):
         # calls any events
         self._feature_changed(key=None, new_data=value)
 
+    # TODO: feature_changed
     def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
         return
-
-        if len(self._event_handlers) < 1:
-            return
-
-        if self._parent.parent is not None:
-            selected_ixs = self._parent.get_selected_indices()
-            selected_data = self._parent.get_selected_data()
-        else:
-            selected_ixs = None
-            selected_data = None
-
-        pick_info = {
-            "index": None,
-            "collection-index": self._collection_index,
-            "world_object": self._parent.world_object,
-            "new_data": new_data,
-            "selected_indices": selected_ixs,
-            "selected_data": selected_data
-        }
-
-        event_data = FeatureEvent(type="bounds", pick_info=pick_info)
-
-        self._call_event_handlers(event_data)
+        # if len(self._event_handlers) < 1:
+        #     return
+        #
+        # if self._parent.parent is not None:
+        #     selected_ixs = self._parent.get_selected_indices()
+        #     selected_data = self._parent.get_selected_data()
+        # else:
+        #     selected_ixs = None
+        #     selected_data = None
+        #
+        # pick_info = {
+        #     "index": None,
+        #     "collection-index": self._collection_index,
+        #     "world_object": self._parent.world_object,
+        #     "new_data": new_data,
+        #     "selected_indices": selected_ixs,
+        #     "selected_data": selected_data
+        #     "graphic",
+        #     "delta",
+        #     "pygfx_event"
+        # }
+        #
+        # event_data = FeatureEvent(type="bounds", pick_info=pick_info)
+        #
+        # self._call_event_handlers(event_data)
 
 
 class RectangleRegionSelector(Graphic, BaseSelector):
@@ -280,7 +285,7 @@ class RectangleRegionSelector(Graphic, BaseSelector):
 
         # add the edge lines
         for edge in self.edges:
-            edge.position.set_z(-1)
+            edge.position.set(*origin, -1)
             self.world_object.add(edge)
 
         self._resizable = resizable
