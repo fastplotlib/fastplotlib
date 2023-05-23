@@ -1,18 +1,21 @@
 from typing import *
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
+
 from .layouts._subplot import Subplot
 from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
 from wgpu.gui.jupyter import JupyterWgpuCanvas
+from .layouts._record_mixin import RecordMixin
 
 
-class Plot(Subplot):
+class Plot(Subplot, RecordMixin):
     def __init__(
             self,
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
             camera: str = '2d',
             controller: Union[pygfx.PanZoomController, pygfx.OrbitController] = None,
+            size: Tuple[int, int] = (500, 300),
             **kwargs
     ):
         """
@@ -32,6 +35,9 @@ class Plot(Subplot):
         controller: None, PanZoomController or OrbitOrthoController, optional
             Usually ``None``, you can pass an existing controller from another
             ``Plot`` or ``Subplot`` within a ``GridPlot`` to synchronize them.
+
+        size: (int, int)
+            starting size of canvas, default (500, 300)
 
         kwargs
             passed to Subplot, for example ``name``
@@ -84,6 +90,9 @@ class Plot(Subplot):
             controller=controller,
             **kwargs
         )
+        super(RecordMixin, self).__init__()
+
+        self._starting_size = size
 
         self.toolbar = None
 
@@ -106,6 +115,8 @@ class Plot(Subplot):
         self.canvas.request_draw(self.render)
         if autoscale:
             self.auto_scale(maintain_aspect=True, zoom=0.95)
+            
+        self.canvas.set_logical_size(*self._starting_size)
 
         # check if in jupyter notebook or not
         if not isinstance(self.canvas, JupyterWgpuCanvas):
@@ -119,7 +130,10 @@ class Plot(Subplot):
         else:
             return self.canvas
 
+    def close(self):
+        self.canvas.close()
 
+        
 class ToolBar:
     def __init__(self,
                  plot: Plot):
@@ -171,3 +185,4 @@ class ToolBar:
 
     def flip_camera(self, obj):
         self.plot.camera.scale.y = -1 * self.plot.camera.scale.y
+      

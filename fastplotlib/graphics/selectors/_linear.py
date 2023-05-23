@@ -14,15 +14,7 @@ except:
 
 from .._base import Graphic, GraphicFeature, GraphicCollection
 from ..features._base import FeatureEvent
-
-
-# key bindings used to move the slider
-key_bind_direction = {
-    "ArrowRight": 1,
-    "ArrowLeft": -1,
-    "ArrowUp": 1,
-    "ArrowDown": -1,
-}
+from ._base_selector import BaseSelector
 
 
 class LinearSelectionFeature(GraphicFeature):
@@ -42,12 +34,16 @@ class LinearSelectionFeature(GraphicFeature):
      ================== ================================================================
 
     """
-    def __init__(self, parent, axis: str, value: float):
+    def __init__(self, parent, axis: str, value: float, limits: Tuple[int, int]):
         super(LinearSelectionFeature, self).__init__(parent, data=value)
 
         self.axis = axis
+        self.limits = limits
 
     def _set(self, value: float):
+        if not (self.limits[0] <= value <= self.limits[1]):
+            return
+
         if self.axis == "x":
             self._parent.position.x = value
         else:
@@ -85,8 +81,8 @@ class LinearSelectionFeature(GraphicFeature):
         self._call_event_handlers(event_data)
 
 
-class LinearSelector(Graphic):
-    feature_events = ("selection")
+class LinearSelector(Graphic, BaseSelector):
+    feature_events = ("selection",)
 
     # TODO: make `selection` arg in graphics data space not world space
     def __init__(
@@ -111,7 +107,7 @@ class LinearSelector(Graphic):
             initial x or y selected position for the slider, in world space
 
         limits: (int, int)
-            (min, max) limits along the x or y axis for the selector
+            (min, max) limits along the x or y axis for the selector, in world space
 
         axis: str, default "x"
             "x" | "y", the axis which the slider can move along
@@ -124,7 +120,8 @@ class LinearSelector(Graphic):
 
         arrow_keys_modifier: str
             modifier key that must be pressed to initiate movement using arrow keys, must be one of:
-            "Control", "Shift", "Alt" or ``None``
+            "Control", "Shift", "Alt" or ``None``. Double click on the selector first to enable the
+            arrow key movements, or set the attribute ``arrow_key_events_enabled = True``
 
         ipywidget_slider: IntSlider, optional
             ipywidget slider to associate with this graphic
@@ -147,8 +144,10 @@ class LinearSelector(Graphic):
             called when the LinearSelector selection changes. See feaure class for event pick_info table
 
         """
+        if len(limits) != 2:
+            raise ValueError("limits must be a tuple of 2 integers, i.e. (int, int)")
 
-        self.limits = tuple(map(round, limits))
+        limits = tuple(map(round, limits))
         selection = round(selection)
 
         if axis == "x":
@@ -164,31 +163,30 @@ class LinearSelector(Graphic):
 
             line_data = np.column_stack([xs, ys, zs])
         else:
-            raise ValueError("`axis` must be one of 'v' or 'h'")
+            raise ValueError("`axis` must be one of 'x' or 'y'")
 
         line_data = line_data.astype(np.float32)
 
-        self.axis = axis
-
-        super(LinearSelector, self).__init__(name=name)
+        # super(LinearSelector, self).__init__(name=name)
+        # init Graphic
+        Graphic.__init__(self, name=name)
 
         if thickness < 1.1:
             material = pygfx.LineThinMaterial
         else:
             material = pygfx.LineMaterial
 
-        colors_inner = np.repeat([pygfx.Color(color)], 2, axis=0).astype(np.float32)
-        self.colors_outer = np.repeat([pygfx.Color([0.3, 0.3, 0.3, 1.0])], 2, axis=0).astype(np.float32)
+        self.colors_outer = pygfx.Color([0.3, 0.3, 0.3, 1.0])
 
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
-            geometry=pygfx.Geometry(positions=line_data, colors=colors_inner),
-            material=material(thickness=thickness, vertex_colors=True)
+            geometry=pygfx.Geometry(positions=line_data),
+            material=material(thickness=thickness, color=color)
         )
 
         self.line_outer = pygfx.Line(
-            geometry=pygfx.Geometry(positions=line_data, colors=self.colors_outer.copy()),
-            material=material(thickness=thickness + 6, vertex_colors=True)
+            geometry=pygfx.Geometry(positions=line_data),
+            material=material(thickness=thickness + 6, color=self.colors_outer)
         )
 
         line_inner.position.z = self.line_outer.position.z + 1
@@ -206,7 +204,7 @@ class LinearSelector(Graphic):
         else:
             self.position.y = selection
 
-        self.selection = LinearSelectionFeature(self, axis=axis, value=selection)
+        self.selection = LinearSelectionFeature(self, axis=axis, value=selection, limits=limits)
 
         self.ipywidget_slider = ipywidget_slider
 
@@ -219,12 +217,16 @@ class LinearSelector(Graphic):
 
         self.parent = parent
 
-        # if not False, moves the slider on every render cycle
-        self._key_move_value = False
-        self.step: float = 1.0  #: step size for moving selector using the arrow keys
-        self.key_bind_modifier = arrow_keys_modifier
-
         self._block_ipywidget_call = False
+
+        # init base selector
+        BaseSelector.__init__(
+            self,
+            edges=(line_inner, self.line_outer),
+            hover_responsive=(line_inner, self.line_outer),
+            arrow_keys_modifier=arrow_keys_modifier,
+            axis=axis,
+        )
 
     def _setup_ipywidget_slider(self, widget):
         # setup ipywidget slider with callbacks to this LinearSelector
@@ -277,8 +279,8 @@ class LinearSelector(Graphic):
         cls = getattr(ipywidgets, kind)
 
         slider = cls(
-            min=self.limits[0],
-            max=self.limits[1],
+            min=self.selection.limits[0],
+            max=self.selection.limits[1],
             value=int(self.selection()),
             step=1,
             **kwargs
@@ -290,7 +292,9 @@ class LinearSelector(Graphic):
 
     def get_selected_index(self, graphic: Graphic = None) -> Union[int, List[int]]:
         """
-        Data index the slider is currently at w.r.t. the Graphic data.
+        Data index the slider is currently at w.r.t. the Graphic data. With LineGraphic data, the geometry x or y
+        position is not always the data position, for example if plotting data using np.linspace. Use this to get
+        the data index of the slider.
 
         Parameters
         ----------
@@ -303,191 +307,55 @@ class LinearSelector(Graphic):
             data index the slider is currently at, list of ``int`` if a Collection
         """
 
-        graphic = self._get_source(graphic)
+        source = self._get_source(graphic)
 
-        if isinstance(graphic, GraphicCollection):
+        if isinstance(source, GraphicCollection):
             ixs = list()
-            for g in graphic.graphics:
+            for g in source.graphics:
                 ixs.append(self._get_selected_index(g))
 
             return ixs
 
-        return self._get_selected_index(graphic)
+        return self._get_selected_index(source)
 
     def _get_selected_index(self, graphic):
         # the array to search for the closest value along that axis
         if self.axis == "x":
-            to_search = graphic.data()[:, 0]
+            geo_positions = graphic.data()[:, 0]
             offset = getattr(graphic.position, self.axis)
         else:
-            to_search = graphic.data()[:, 1]
+            geo_positions = graphic.data()[:, 1]
             offset = getattr(graphic.position, self.axis)
 
-        find_value = self.selection() - offset
+        if "Line" in graphic.__class__.__name__:
+            # we want to find the index of the geometry position that is closest to the slider's geometry position
+            find_value = self.selection() - offset
 
-        # get closest data index to the world space position of the slider
-        idx = np.searchsorted(to_search, find_value, side="left")
+            # get closest data index to the world space position of the slider
+            idx = np.searchsorted(geo_positions, find_value, side="left")
 
-        if idx > 0 and (idx == len(to_search) or math.fabs(find_value - to_search[idx - 1]) < math.fabs(find_value - to_search[idx])):
-            return int(idx - 1)
-        else:
-            return int(idx)
+            if idx > 0 and (idx == len(geo_positions) or math.fabs(find_value - geo_positions[idx - 1]) < math.fabs(find_value - geo_positions[idx])):
+                return int(idx - 1)
+            else:
+                return int(idx)
 
-    def _get_source(self, graphic):
-        if self.parent is None and graphic is None:
-            raise AttributeError(
-                "No Graphic to apply selector. "
-                "You must either set a ``parent`` Graphic on the selector, or pass a graphic."
-            )
-
-        # use passed graphic if provided, else use parent
-        if graphic is not None:
-            source = graphic
-        else:
-            source = self.parent
-
-        return source
-
-    def _key_move(self):
-        if self._key_move_value:
-            # step * direction
-            # TODO: step size in world space intead of screen space
-            direction = key_bind_direction[self._key_move_value]
-            delta = Vector3(self.step, self.step, 0).multiply_scalar(direction)
-            # we provide both x and y, depending on the axis this selector is on the other value is ignored anyways
-            self._move_graphic(delta=delta)
-
-    def _key_move_start(self, ev):
-        if self.key_bind_modifier is not None and self.key_bind_modifier not in ev.modifiers:
-            return
-
-        if self.axis == "x" and ev.key in ["ArrowRight", "ArrowLeft"]:
-            self._key_move_value = ev.key
-
-        elif self.axis == "y" and ev.key in ["ArrowUp", "ArrowDown"]:
-            self._key_move_value = ev.key
-
-    def _key_move_end(self, ev):
-        if self.axis == "x" and ev.key in ["ArrowRight", "ArrowLeft"]:
-            self._key_move_value = False
-
-        elif self.axis == "y" and ev.key in ["ArrowUp", "ArrowDown"]:
-            self._key_move_value = False
-
-    def _add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
-
-        # move events
-        self.world_object.add_event_handler(self._move_start, "pointer_down")
-        self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
-        self._plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
-
-        # move directly to location of center mouse button click
-        self._plot_area.renderer.add_event_handler(self._move_to_pointer, "click")
-
-        # mouse hover color events
-        self.world_object.add_event_handler(self._pointer_enter, "pointer_enter")
-        self.world_object.add_event_handler(self._pointer_leave, "pointer_leave")
-
-        # arrow key bindings
-        self._plot_area.renderer.add_event_handler(self._key_move_start, "key_down")
-        self._plot_area.renderer.add_event_handler(self._key_move_end, "key_up")
-
-        self._plot_area.add_animations(self._key_move)
-
-    def _move_to_pointer(self, ev):
-        # middle mouse button clicks
-        if ev.button != 3:
-            return
-
-        click_pos = (ev.x, ev.y)
-        world_pos = self._plot_area.map_screen_to_world(click_pos)
-
-        # outside this viewport
-        if world_pos is None:
-            return
-
-        if self.axis == "x":
-            self.selection = world_pos.x
-        else:
-            self.selection = world_pos.y
-
-    def _move_start(self, ev):
-        self._move_info = {"last_pos": (ev.x, ev.y)}
-
-    def _move(self, ev):
-        if self._move_info is None:
-            return
-
-        self._plot_area.controller.enabled = False
-
-        last = self._move_info["last_pos"]
-
-        # new - last
-        # pointer move events are in viewport or canvas space
-        delta = Vector3(ev.x - last[0], ev.y - last[1])
-
-        self._pygfx_event = ev
-
-        self._move_graphic(delta)
-
-        self._move_info = {"last_pos": (ev.x, ev.y)}
-        self._plot_area.controller.enabled = True
+        if "Heatmap" in graphic.__class__.__name__ or "Image" in graphic.__class__.__name__:
+            # indices map directly to grid geometry for image data buffer
+            index = self.selection() - offset
+            return int(index)
 
     def _move_graphic(self, delta: Vector3):
         """
-        Moves the graphic, updates SelectionFeature
+        Moves the graphic
 
         Parameters
         ----------
-        delta_ndc: Vector3
-            the delta by which to move this Graphic, in screen coordinates
+        delta: Vector3
+            delta in world space
 
         """
-        self.delta = delta.clone()
 
-        viewport_size = self._plot_area.viewport.logical_size
-
-        # convert delta to NDC coordinates using viewport size
-        # also since these are just deltas we don't have to calculate positions relative to the viewport
-        delta_ndc = delta.clone().multiply(
-            Vector3(
-                2 / viewport_size[0],
-                -2 / viewport_size[1],
-                0
-            )
-        )
-
-        camera = self._plot_area.camera
-
-        # current world position
-        vec = self.position.clone()
-
-        # compute and add delta in projected NDC space and then unproject back to world space
-        vec.project(camera).add(delta_ndc).unproject(camera)
-
-        new_value = getattr(vec, self.axis)
-
-        if new_value < self.limits[0] or new_value > self.limits[1]:
-            return
-
-        self.selection = new_value
-        self.delta = None
-
-    def _move_end(self, ev):
-        self._move_info = None
-        self._plot_area.controller.enabled = True
-
-    def _pointer_enter(self, ev):
-        self.line_outer.geometry.colors.data[:] = np.repeat([pygfx.Color("magenta")], 2, axis=0)
-        self.line_outer.geometry.colors.update_range()
-
-    def _pointer_leave(self, ev):
-        if self._move_info is not None:
-            return
-
-        self._reset_color()
-
-    def _reset_color(self):
-        self.line_outer.geometry.colors.data[:] = self.colors_outer
-        self.line_outer.geometry.colors.update_range()
+        if self.axis == "x":
+            self.selection = self.selection() + delta.x
+        else:
+            self.selection = self.selection() + delta.y
