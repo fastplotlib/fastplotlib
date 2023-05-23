@@ -184,5 +184,4 @@ class ToolBar:
         self.plot.camera.maintain_aspect = self.maintain_aspect_button.value
 
     def flip_camera(self, obj):
-        self.plot.camera.scale.y = -1 * self.plot.camera.scale.y
-      
+        self.plot.camera.world.scale_y *= -1

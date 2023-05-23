@@ -2,7 +2,6 @@ from typing import *
 import numpy as np
 
 import pygfx
-from pygfx.linalg import Vector3
 
 from .._base import Graphic, GraphicCollection
 from ..features._base import GraphicFeature, FeatureEvent

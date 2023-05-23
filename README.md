@@ -21,6 +21,9 @@ Questions, ideas? Post an issue or [chat on gitter](https://gitter.im/fastplotli
 
 **See the examples directory. Start out with `simple.ipynb`.**
 
+**IMPORTANT NOTE: If you install `fastplotlib` and `pygfx` from `pypi` (i.e. pip install pygfx), you will need to use the examples from this commit until `pygfx` publishes a new release to `pypi`: https://github.com/kushalkolar/fastplotlib/tree/f872155eb687b18e3cc9b3b720eb9e241a9f974c/examples .** 
+The current examples will work if you installed `fastplotlib` and `pygfx` directly from github.
+
 ### Neuroscience usecase demonstrating some of fastplotlib's capabilities
 
 https://user-images.githubusercontent.com/9403332/210304485-e554b648-50b4-4243-b292-a9ed30514a2d.mp4

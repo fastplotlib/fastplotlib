@@ -58,7 +58,7 @@ class _ImageHeatmapSelectorsMixin:
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        selector.position.z = self.position.z + 1
+        selector.position_z = self.position_z + 1
 
         return weakref.proxy(selector)
 
@@ -97,7 +97,7 @@ class _ImageHeatmapSelectorsMixin:
 
         self._plot_area.add_graphic(selector, center=False)
         # so that it is above this graphic
-        selector.position.set_z(self.position.z + 3)
+        selector.position_z = self.position_z + 3
 
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end

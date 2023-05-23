@@ -151,9 +151,9 @@ class Subplot(PlotArea):
         if self._title_graphic is None:
             raise AttributeError("No title graphic is set")
 
-        self._title_graphic.world_object.position.set(0, 0, 0)
+        self._title_graphic.world_object.position = (0, 0, 0)
         self.docked_viewports["top"].center_graphic(self._title_graphic, zoom=1.5)
-        self._title_graphic.world_object.position.y = -3.5
+        self._title_graphic.world_object.position_y = -3.5
 
     def get_rect(self):
         """Returns the bounding box that defines the Subplot within the canvas."""
@@ -260,7 +260,7 @@ class Subplot(PlotArea):
 
     def add_graphic(self, graphic, center: bool = True):
         """Adds a Graphic to the subplot."""
-        graphic.world_object.position.z = len(self._graphics)
+        graphic.position_z = len(self._graphics)
         super(Subplot, self).add_graphic(graphic, center)
 
     def set_axes_visibility(self, visible: bool):

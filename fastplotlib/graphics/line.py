@@ -97,7 +97,7 @@ class LineGraphic(Graphic, Interaction):
         self._set_world_object(world_object)
 
         if z_position is not None:
-            self.world_object.position.z = z_position
+            self.position_z = z_position
 
     def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
         """
@@ -137,7 +137,7 @@ class LineGraphic(Graphic, Interaction):
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        selector.position.z = self.position.z + 1
+        selector.position_z = self.position_z + 1
 
         return weakref.proxy(selector)
 
@@ -175,7 +175,7 @@ class LineGraphic(Graphic, Interaction):
 
         self._plot_area.add_graphic(selector, center=False)
         # so that it is below this graphic
-        selector.position.set_z(self.position.z - 1)
+        selector.position_z = self.position_z - 1
 
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end
@@ -192,7 +192,7 @@ class LineGraphic(Graphic, Interaction):
             axis = "x"
 
         if axis == "x":
-            offset = self.position.x
+            offset = self.position_x
             # x limits
             limits = (data[0, 0] + offset, data[-1, 0] + offset)
 
@@ -203,13 +203,13 @@ class LineGraphic(Graphic, Interaction):
             position_y = (data[:, 1].min() + data[:, 1].max()) / 2
 
             # need y offset too for this
-            origin = (limits[0] - offset, position_y + self.position.y)
+            origin = (limits[0] - offset, position_y + self.position_y)
 
             # endpoints of the data range
             # used by linear selector but not linear region
             end_points = (self.data()[:, 1].min() - padding, self.data()[:, 1].max() + padding)
         else:
-            offset = self.position.y
+            offset = self.position_y
             # y limits
             limits = (data[0, 1] + offset, data[-1, 1] + offset)
 
@@ -220,7 +220,7 @@ class LineGraphic(Graphic, Interaction):
             position_x = (data[:, 0].min() + data[:, 0].max()) / 2
 
             # need x offset too for this
-            origin = (position_x + self.position.x, limits[0] - offset)
+            origin = (position_x + self.position_x, limits[0] - offset)
 
             end_points = (self.data()[:, 0].min() - padding, self.data()[:, 0].max() + padding)
 

@@ -2,7 +2,8 @@ from typing import *
 from dataclasses import dataclass
 from functools import partial
 
-from pygfx.linalg import Vector3
+import numpy as np
+
 from pygfx import WorldObject, Line, Mesh, Points
 
 
@@ -14,18 +15,18 @@ class MoveInfo:
 
     # last position for an edge, fill, or vertex in world coordinates
     # can be None, such as key events
-    last_position: Vector3 | None
+    last_position: Union[np.ndarray, None]
 
     # WorldObject or "key" event
-    source: WorldObject | str
+    source: Union[WorldObject, str]
 
 
 # key bindings used to move the selector
 key_bind_direction = {
-    "ArrowRight": Vector3(1, 0, 0),
-    "ArrowLeft": Vector3(-1, 0, 0),
-    "ArrowUp": Vector3(0, 1, 0),
-    "ArrowDown": Vector3(0, -1, 0),
+    "ArrowRight": np.array([1, 0, 0]),
+    "ArrowLeft": np.array([-1, 0, 0]),
+    "ArrowUp": np.array([0, 1, 0]),
+    "ArrowDown": np.array([0, -1, 0]),
 }
 
 
@@ -65,7 +66,7 @@ class BaseSelector:
         self.axis = axis
 
         # current delta in world coordinates
-        self.delta: Vector3 = None
+        self.delta: np.ndarray = None
 
         self.arrow_keys_modifier = arrow_keys_modifier
         # if not False, moves the slider on every render cycle
@@ -135,7 +136,7 @@ class BaseSelector:
         self._plot_area.add_animations(self._key_hold)
 
     def _check_fill_pointer_event(self, event_source: WorldObject, ev):
-        world_pos = self._plot_area.map_screen_to_world((ev.x, ev.y))
+        world_pos = self._plot_area.map_screen_to_world(ev)
         # outside viewport, ignore
         # this shouldn't be possible since the event handler is registered to the fill mesh world object
         # but I like sanity checks anyways
@@ -147,10 +148,10 @@ class BaseSelector:
         xmin, ymin, zmin = bbox[0]
         xmax, ymax, zmax = bbox[1]
 
-        if not (xmin <= world_pos.x <= xmax):
+        if not (xmin <= world_pos[0] <= xmax):
             return
 
-        if not (ymin <= world_pos.y <= ymax):
+        if not (ymin <= world_pos[1] <= ymax):
             return
 
         self._move_start(event_source, ev)
@@ -170,7 +171,7 @@ class BaseSelector:
             pygfx ``Event``
 
         """
-        last_position = self._plot_area.map_screen_to_world((ev.x, ev.y))
+        last_position = self._plot_area.map_screen_to_world(ev)
 
         self._move_info = MoveInfo(
             last_position=last_position,
@@ -196,15 +197,14 @@ class BaseSelector:
         self._plot_area.controller.enabled = False
 
         # get pointer current world position
-        pointer_pos_screen = (ev.x, ev.y)
-        world_pos = self._plot_area.map_screen_to_world(pointer_pos_screen)
+        world_pos = self._plot_area.map_screen_to_world(ev)
 
         # outside this viewport
         if world_pos is None:
             return
 
         # compute the delta
-        self.delta = world_pos.clone().sub(self._move_info.last_position)
+        self.delta = world_pos - self._move_info.last_position
         self._pygfx_event = ev
 
         self._move_graphic(self.delta)
@@ -214,7 +214,7 @@ class BaseSelector:
 
         self._plot_area.controller.enabled = True
 
-    def _move_graphic(self, delta):
+    def _move_graphic(self, delta: np.ndarray):
         raise NotImplementedError("Must be implemented in subclass")
 
     def _move_end(self, ev):
@@ -225,26 +225,25 @@ class BaseSelector:
         """
         Calculates delta just using current world object position and calls self._move_graphic().
         """
-        current_position = self.world_object.position.clone()
+        current_position: np.ndarray = self.position
 
         # middle mouse button clicks
         if ev.button != 3:
             return
 
-        click_pos = (ev.x, ev.y)
-        world_pos = self._plot_area.map_screen_to_world(click_pos)
+        world_pos = self._plot_area.map_screen_to_world(ev)
 
         # outside this viewport
         if world_pos is None:
             return
 
-        self.delta = world_pos.clone().sub(current_position)
+        self.delta = world_pos - current_position
         self._pygfx_event = ev
 
-        # use fill by default as the source
+        # use fill by default as the source, such as in region selectors
         if len(self._fill) > 0:
             self._move_info = MoveInfo(last_position=current_position, source=self._fill[0])
-        # else use an edge
+        # else use an edge, such as for linear selector
         else:
             self._move_info = MoveInfo(last_position=current_position, source=self._edges[0])
 
@@ -275,7 +274,7 @@ class BaseSelector:
     def _key_hold(self):
         if self._key_move_value and self.arrow_key_events_enabled:
             # direction vector * step
-            delta = key_bind_direction[self._key_move_value].clone().multiply_scalar(self.step)
+            delta = key_bind_direction[self._key_move_value] * self.step
 
             # set event source
             # use fill by default as the source
