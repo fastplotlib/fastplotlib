@@ -1,3 +1,4 @@
+import itertools
 from itertools import product
 import numpy as np
 from typing import *
@@ -7,6 +8,8 @@ import pygfx
 from wgpu.gui.auto import WgpuCanvas
 from ._defaults import create_controller
 from ._subplot import Subplot
+from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
+from wgpu.gui.jupyter import JupyterWgpuCanvas
 from ._record_mixin import RecordMixin
 
 
@@ -69,6 +72,7 @@ class GridPlot(RecordMixin):
 
         """
         self.shape = shape
+        self.toolbar = None
 
         if isinstance(cameras, str):
             if cameras not in valid_cameras:
@@ -259,7 +263,7 @@ class GridPlot(RecordMixin):
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
-    def show(self):
+    def show(self, toolbar: bool = True):
         """
         begins the rendering event loop and returns the canvas
 
@@ -273,10 +277,20 @@ class GridPlot(RecordMixin):
 
         for subplot in self:
             subplot.auto_scale(maintain_aspect=True, zoom=0.95)
-
+        
         self.canvas.set_logical_size(*self._starting_size)
 
-        return self.canvas
+        # check if in jupyter notebook or not
+        if not isinstance(self.canvas, JupyterWgpuCanvas):
+            return self.canvas
+
+        if toolbar and self.toolbar is None:
+            self.toolbar = GridPlotToolBar(self).widget
+            return VBox([self.canvas, self.toolbar])
+        elif toolbar and self.toolbar is not None:
+            return VBox([self.canvas, self.toolbar])
+        else:
+            return self.canvas
 
     def close(self):
         self.canvas.close()
@@ -294,3 +308,94 @@ class GridPlot(RecordMixin):
 
     def __repr__(self):
         return f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n"
+
+
+class GridPlotToolBar:
+    def __init__(self,
+                 plot: GridPlot):
+        """
+        Basic toolbar for a GridPlot instance.
+
+        Parameters
+        ----------
+        plot:
+        """
+        self.plot = plot
+
+        self.autoscale_button = Button(value=False, disabled=False, icon='expand-arrows-alt',
+                                       layout=Layout(width='auto'), tooltip='auto-scale scene')
+        self.center_scene_button = Button(value=False, disabled=False, icon='align-center',
+                                          layout=Layout(width='auto'), tooltip='auto-center scene')
+        self.panzoom_controller_button = ToggleButton(value=True, disabled=False, icon='hand-pointer',
+                                                      layout=Layout(width='auto'), tooltip='panzoom controller')
+        self.maintain_aspect_button = ToggleButton(value=True, disabled=False, description="1:1",
+                                                   layout=Layout(width='auto'), tooltip='maintain aspect')
+        self.maintain_aspect_button.style.font_weight = "bold"
+        self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
+                                         layout=Layout(width='auto'), tooltip='flip')
+
+        positions = list(product(range(self.plot.shape[0]), range(self.plot.shape[1])))
+        values = list()
+        for pos in positions:
+            if self.plot[pos].name is not None:
+                values.append(self.plot[pos].name)
+            else:
+                values.append(str(pos))
+        self.dropdown = Dropdown(options=values, disabled=False, description='Subplots:')
+
+        self.widget = HBox([self.autoscale_button,
+                            self.center_scene_button,
+                            self.panzoom_controller_button,
+                            self.maintain_aspect_button,
+                            self.flip_camera_button,
+                            self.dropdown])
+
+        self.panzoom_controller_button.observe(self.panzoom_control, 'value')
+        self.autoscale_button.on_click(self.auto_scale)
+        self.center_scene_button.on_click(self.center_scene)
+        self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
+        self.flip_camera_button.on_click(self.flip_camera)
+
+        self.plot.renderer.add_event_handler(self.update_current_subplot, "click")
+
+    @property
+    def current_subplot(self) -> Subplot:
+        # parses dropdown value as plot name or position
+        current = self.dropdown.value
+        if current[0] == "(":
+            return self.plot[eval(current)]
+        else:
+            return self.plot[current]
+
+    def auto_scale(self, obj):
+        current = self.current_subplot
+        current.auto_scale(maintain_aspect=current.camera.maintain_aspect)
+
+    def center_scene(self, obj):
+        current = self.current_subplot
+        current.center_scene()
+
+    def panzoom_control(self, obj):
+        current = self.current_subplot
+        current.controller.enabled = self.panzoom_controller_button.value
+
+    def maintain_aspect(self, obj):
+        current = self.current_subplot
+        current.camera.maintain_aspect = self.maintain_aspect_button.value
+
+    def flip_camera(self, obj):
+        current = self.current_subplot
+        current.camera.scale.y = -1 * current.camera.scale.y
+
+    def update_current_subplot(self, ev):
+        for subplot in self.plot:
+            pos = subplot.map_screen_to_world((ev.x, ev.y))
+            if pos is not None:
+                # update self.dropdown
+                if subplot.name is None:
+                    self.dropdown.value = str(subplot.position)
+                else:
+                    self.dropdown.value = subplot.name
+                self.panzoom_controller_button.value = subplot.controller.enabled
+                self.maintain_aspect_button.value = subplot.camera.maintain_aspect
+
