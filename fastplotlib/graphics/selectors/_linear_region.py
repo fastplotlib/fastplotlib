@@ -233,7 +233,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         # the fill of the selection
         self.fill = mesh
-        self.fill.position = (*origin, -2)
+        self.fill.world.position = (*origin, -2)
 
         self.world_object.add(self.fill)
 
@@ -295,7 +295,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         # add the edge lines
         for edge in self.edges:
-            edge.position_z = -1
+            edge.world.z = -1
             self.world_object.add(edge)
 
         # set the initial bounds of the selector
@@ -399,7 +399,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
         source = self._get_source(graphic)
 
         # if the graphic position is not at (0, 0) then the bounds must be offset
-        offset = getattr(source.position, self.bounds.axis)
+        offset = getattr(source, f"position_{self.bounds.axis}")
         offset_bounds = tuple(v - offset for v in self.bounds())
 
         # need them to be int to use as indices
@@ -434,26 +434,31 @@ class LinearRegionSelector(Graphic, BaseSelector):
             ixs = np.arange(*self.bounds(), dtype=int)
             return ixs
 
-    def _move_graphic(self, delta):
+    def _move_graphic(self, delta: np.ndarray):
+        # add delta to current bounds to get new positions
         if self.bounds.axis == "x":
+            # min and max of current bounds, i.e. the edges
+            xmin, xmax = self.bounds()
+
             # new left bound position
-            bound_pos_0 = Vector3(self.bounds()[0]).add(delta)
+            bound0_new = xmin + delta[0]
 
             # new right bound position
-            bound_pos_1 = Vector3(self.bounds()[1]).add(delta)
+            bound1_new = xmax + delta[0]
         else:
+            # min and max of current bounds, i.e. the edges
+            ymin, ymax = self.bounds()
+
             # new bottom bound position
-            bound_pos_0 = Vector3(0, self.bounds()[0]).add(delta)
+            bound0_new = ymin + delta[1]
 
             # new top bound position
-            bound_pos_1 = Vector3(0, self.bounds()[1]).add(delta)
+            bound1_new = ymax + delta[1]
 
         # move entire selector if source was fill
         if self._move_info.source == self.fill:
-            bound0 = getattr(bound_pos_0, self.bounds.axis)
-            bound1 = getattr(bound_pos_1, self.bounds.axis)
             # set the new bounds
-            self.bounds = (bound0, bound1)
+            self.bounds = (bound0_new, bound1_new)
             return
 
         # if selector is not resizable do nothing
@@ -463,15 +468,10 @@ class LinearRegionSelector(Graphic, BaseSelector):
         # if resizable, move edges
         if self._move_info.source == self.edges[0]:
             # change only left or bottom bound
-            bound0 = getattr(bound_pos_0, self.bounds.axis)
-            bound1 = self.bounds()[1]
+            self.bounds = (bound0_new, self.bounds()[1])
 
         elif self._move_info.source == self.edges[1]:
             # change only right or top bound
-            bound0 = self.bounds()[0]
-            bound1 = getattr(bound_pos_1, self.bounds.axis)
+            self.bounds = (self.bounds()[0], bound1_new)
         else:
             return
-
-        # set the new bounds
-        self.bounds = (bound0, bound1)

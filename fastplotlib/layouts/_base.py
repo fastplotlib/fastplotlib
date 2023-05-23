@@ -3,8 +3,10 @@ import weakref
 
 import numpy as np
 
+import pygfx
 from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, OrbitController, \
     Viewport, WgpuRenderer
+from pylinalg import vec_transform, vec_unproject
 from wgpu.gui.auto import WgpuCanvas
 
 from ..graphics._base import Graphic, GraphicCollection
@@ -157,16 +159,18 @@ class PlotArea:
         """allows setting the region occupied by the viewport w.r.t. the parent"""
         raise NotImplementedError("Must be implemented in subclass")
 
-    def map_screen_to_world(self, pos: Tuple[float, float]):
+    def map_screen_to_world(self, pos: Union[Tuple[float, float], pygfx.PointerEvent]) -> np.ndarray:
         """
         Map screen position to world position
 
         Parameters
         ----------
-        pos: (float, float)
-            (x, y) screen coordinates
+        pos: (float, float) | pygfx.PointerEvent
+            ``(x, y)`` screen coordinates, or ``pygfx.PointerEvent``
 
         """
+        if isinstance(pos, pygfx.PointerEvent):
+            pos = pos.x, pos.y
 
         if not self.viewport.is_inside(*pos):
             return None
@@ -186,11 +190,12 @@ class PlotArea:
             0
         )
 
-
         # get world position
-        pos_world = self.camera.position.clone().project(self.camera).add(pos_ndc).unproject(self.camera)
+        pos_ndc += vec_transform(self.camera.world.position, self.camera.camera_matrix)
+        pos_world = vec_unproject(pos_ndc[:2], self.camera.camera_matrix)
 
-        return pos_world
+        # default z is zero for now
+        return np.array([*pos_world[:2], 0])
 
     def set_viewport_rect(self, *args):
         self.viewport.rect = self.get_rect()

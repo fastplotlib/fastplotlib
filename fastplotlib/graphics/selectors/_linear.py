@@ -188,7 +188,7 @@ class LinearSelector(Graphic, BaseSelector):
             material=material(thickness=thickness + 6, color=self.colors_outer)
         )
 
-        line_inner.position.z = self.line_outer.position.z + 1
+        line_inner.world.z = self.line_outer.world.z + 1
 
         world_object = pygfx.Group()
 
@@ -343,18 +343,18 @@ class LinearSelector(Graphic, BaseSelector):
             index = self.selection() - offset
             return int(index)
 
-    def _move_graphic(self, delta):
+    def _move_graphic(self, delta: np.ndarray):
         """
         Moves the graphic
 
         Parameters
         ----------
-        delta: Vector3
+        delta: np.ndarray
             delta in world space
 
         """
 
         if self.axis == "x":
-            self.selection = self.selection() + delta.x
+            self.selection = self.selection() + delta[0]
         else:
-            self.selection = self.selection() + delta.y
+            self.selection = self.selection() + delta[1]
