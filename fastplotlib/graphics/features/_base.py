@@ -3,6 +3,7 @@ from inspect import getfullargspec
 from warnings import warn
 from typing import *
 import weakref
+from dataclasses import dataclass
 
 import numpy as np
 from pygfx import Buffer, Texture
@@ -40,13 +41,20 @@ def to_gpu_supported_dtype(array):
 
 class FeatureEvent:
     """
-    type: <feature_name>, example: "colors"
+    Dataclass that holds feature event information. Has ``type`` and ``pick_info`` attributes.
+
+    Attributes
+    ----------
+    type: str, example "colors"
+
     pick_info: dict in the form:
-        {
-            "index": indices where feature data was changed, ``range`` object or List[int],
-            "world_object": world object the feature belongs to,
-            "new_values": the new values
-        }
+     ============== =======================================================================
+      index          indices where feature data was changed, ``range`` object or List[int]
+     ============== =======================================================================
+      world_object   world object the feature belongs to
+      new_data       the new data for this feature
+     ============== =======================================================================
+
     """
     def __init__(self, type: str, pick_info: dict):
         self.type = type
@@ -60,18 +68,15 @@ class FeatureEvent:
 
 class GraphicFeature(ABC):
     def __init__(self, parent, data: Any, collection_index: int = None):
-        """
-
-        Parameters
-        ----------
-        parent
-
-        data: Any
-
-        collection_index: int
-            if part of a collection, index of this graphic within the collection
-
-        """
+        # not shown as a docstring so it doesn't show up in the docs
+        # Parameters
+        # ----------
+        # parent
+        #
+        # data: Any
+        #
+        # collection_index: int
+        #     if part of a collection, index of this graphic within the collection
         self._parent = weakref.proxy(parent)
 
         self._data = to_gpu_supported_dtype(data)
@@ -119,6 +124,15 @@ class GraphicFeature(ABC):
         self._event_handlers.append(handler)
 
     def remove_event_handler(self, handler: callable):
+        """
+        Remove a registered event handler
+
+        Parameters
+        ----------
+        handler: callable
+            event handler to remove
+
+        """
         if handler not in self._event_handlers:
             raise KeyError(f"event handler {handler} not registered.")
 
@@ -254,7 +268,7 @@ def cleanup_array_slice(key: np.ndarray, upper_bound) -> np.ndarray:
 
 
 class GraphicFeatureIndexable(GraphicFeature):
-    """And indexable Graphic Feature, colors, data, sizes etc."""
+    """An indexable Graphic Feature, colors, data, sizes etc."""
 
     def _set(self, value):
         value = self._parse_set_value(value)

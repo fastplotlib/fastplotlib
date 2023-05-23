@@ -16,7 +16,7 @@ class Synchronizer:
             selectors to synchronize
 
         key_bind: str, default ``"Shift"``
-            one of ``"Control"``, ``"Shift"`` and ``"Alt"``
+            one of ``"Control"``, ``"Shift"`` and ``"Alt"`` or ``None``
         """
         self._selectors = list()
         self.key_bind = key_bind
@@ -25,6 +25,8 @@ class Synchronizer:
             self.add(s)
 
         self.block_event = False
+
+        self.enabled: bool = True
 
     @property
     def selectors(self):
@@ -44,6 +46,9 @@ class Synchronizer:
     def _handle_event(self, ev):
         if self.block_event:
             # because infinite recursion
+            return
+
+        if not self.enabled:
             return
 
         self.block_event = True

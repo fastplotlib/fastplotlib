@@ -10,6 +10,7 @@ from ._defaults import create_controller
 from ._subplot import Subplot
 from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
 from wgpu.gui.jupyter import JupyterWgpuCanvas
+from ._record_mixin import RecordMixin
 
 
 def to_array(a) -> np.ndarray:
@@ -25,7 +26,7 @@ def to_array(a) -> np.ndarray:
 valid_cameras = ["2d", "2d-big", "3d", "3d-big"]
 
 
-class GridPlot:
+class GridPlot(RecordMixin):
     def __init__(
             self,
             shape: Tuple[int, int],
@@ -33,6 +34,7 @@ class GridPlot:
             controllers: Union[np.ndarray, str] = None,
             canvas: WgpuCanvas = None,
             renderer: pygfx.Renderer = None,
+            size: Tuple[int, int] = (500, 300),
             **kwargs
     ):
         """
@@ -65,6 +67,9 @@ class GridPlot:
         renderer: pygfx.Renderer, optional
             pygfx renderer instance
 
+        size: (int, int)
+            starting size of canvas, default (500, 300)
+
         """
         self.shape = shape
         self.toolbar = None
@@ -90,7 +95,6 @@ class GridPlot:
         cameras = to_array(cameras)
 
         self._controllers = np.empty(shape=cameras.shape, dtype=object)
-
 
         if cameras.shape != self.shape:
             raise ValueError
@@ -164,7 +168,11 @@ class GridPlot:
 
         self._current_iter = None
 
-    def __getitem__(self, index: Union[Tuple[int, int], str]):
+        self._starting_size = size
+        
+        super(RecordMixin, self).__init__()
+
+    def __getitem__(self, index: Union[Tuple[int, int], str]) -> Subplot:
         if isinstance(index, str):
             for subplot in self._subplots.ravel():
                 if subplot.name == index:
@@ -269,6 +277,8 @@ class GridPlot:
 
         for subplot in self:
             subplot.auto_scale(maintain_aspect=True, zoom=0.95)
+        
+        self.canvas.set_logical_size(*self._starting_size)
 
         # check if in jupyter notebook or not
         if not isinstance(self.canvas, JupyterWgpuCanvas):
@@ -281,6 +291,9 @@ class GridPlot:
             return VBox([self.canvas, self.toolbar])
         else:
             return self.canvas
+
+    def close(self):
+        self.canvas.close()
 
     def _get_iterator(self):
         return product(range(self.shape[0]), range(self.shape[1]))

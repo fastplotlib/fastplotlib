@@ -17,12 +17,11 @@ release = 'v0.1.0.a6'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = ["sphinx.ext.napoleon", "sphinx.ext.autodoc"]
-autodoc_typehints = "description"
 
 templates_path = ['_templates']
 exclude_patterns = []
 
-
+napoleon_custom_sections = ['Features']
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
@@ -32,8 +31,11 @@ html_theme_options = {"page_sidebar_items": ["class_page_toc"]}
 
 html_static_path = ['_static']
 
-autodoc_member_order = 'bysource'
+autodoc_member_order = 'groupwise'
 autoclass_content = "both"
+
+autodoc_typehints = "description"
+autodoc_typehints_description_target = "documented_params"
 
 def _setup_navbar_side_toctree(app: Any):
 
