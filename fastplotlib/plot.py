@@ -143,7 +143,7 @@ class ToolBar:
                                                    tooltip='maintain aspect')
         self.maintain_aspect_button.style.font_weight = "bold"
         self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
-                                         layout=Layout(width='auto'), tooltip='rotate')
+                                         layout=Layout(width='auto'), tooltip='flip')
 
         self.widget = HBox([self.autoscale_button,
                             self.center_scene_button,

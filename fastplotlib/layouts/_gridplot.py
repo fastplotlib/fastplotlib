@@ -319,7 +319,7 @@ class GridPlotToolBar:
                                                    layout=Layout(width='auto'), tooltip='maintain aspect')
         self.maintain_aspect_button.style.font_weight = "bold"
         self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
-                                         layout=Layout(width='auto'), tooltip='rotate')
+                                         layout=Layout(width='auto'), tooltip='flip')
 
         positions = list(product(range(self.plot.shape[0]), range(self.plot.shape[1])))
         values = list()
@@ -343,6 +343,9 @@ class GridPlotToolBar:
         self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
         self.flip_camera_button.on_click(self.flip_camera)
 
+        self.plot.renderer.add_event_handler(self.click_handler, "click")
+
+    @property
     def parser(self) -> Subplot:
         # parses dropdown value as plot name or position
         current = self.dropdown.value
@@ -352,21 +355,31 @@ class GridPlotToolBar:
             return self.plot[current]
 
     def auto_scale(self, obj):
-        current = self.parser()
+        current = self.parser
         current.auto_scale(maintain_aspect=current.camera.maintain_aspect)
 
     def center_scene(self, obj):
-        current = self.parser()
+        current = self.parser
         current.center_scene()
 
     def panzoom_control(self, obj):
-        current = self.parser()
+        current = self.parser
         current.controller.enabled = self.panzoom_controller_button.value
 
     def maintain_aspect(self, obj):
-        current = self.parser()
+        current = self.parser
         current.camera.maintain_aspect = self.maintain_aspect_button.value
 
     def flip_camera(self, obj):
-        current = self.parser()
+        current = self.parser
         current.camera.scale.y = -1 * current.camera.scale.y
+
+    def click_handler(self, ev):
+        for subplot in self.plot:
+            pos = subplot.map_screen_to_world((ev.x, ev.y))
+            if pos is not None:
+                # update self.dropdown
+                if subplot.name is None:
+                    self.dropdown.value = str(subplot.position)
+                else:
+                    self.dropdown.value = subplot.name
