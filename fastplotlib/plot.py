@@ -1,11 +1,12 @@
 from typing import *
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
-
 from .layouts._subplot import Subplot
 from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
 from wgpu.gui.jupyter import JupyterWgpuCanvas
 from .layouts._record_mixin import RecordMixin
+from datetime import datetime
+import traceback
 
 
 class Plot(Subplot, RecordMixin):
@@ -90,7 +91,7 @@ class Plot(Subplot, RecordMixin):
             controller=controller,
             **kwargs
         )
-        super(RecordMixin, self).__init__()
+        RecordMixin.__init__(self)
 
         self._starting_size = size
 
@@ -115,7 +116,7 @@ class Plot(Subplot, RecordMixin):
         self.canvas.request_draw(self.render)
         if autoscale:
             self.auto_scale(maintain_aspect=True, zoom=0.95)
-            
+
         self.canvas.set_logical_size(*self._starting_size)
 
         # check if in jupyter notebook or not
@@ -133,7 +134,7 @@ class Plot(Subplot, RecordMixin):
     def close(self):
         self.canvas.close()
 
-        
+
 class ToolBar:
     def __init__(self,
                  plot: Plot):
@@ -158,18 +159,22 @@ class ToolBar:
         self.maintain_aspect_button.style.font_weight = "bold"
         self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
                                          layout=Layout(width='auto'), tooltip='flip')
+        self.record_button = ToggleButton(value=False, disabled=False, icon='video',
+                                          layout=Layout(width='auto'), tooltip='record')
 
         self.widget = HBox([self.autoscale_button,
                             self.center_scene_button,
                             self.panzoom_controller_button,
                             self.maintain_aspect_button,
-                            self.flip_camera_button])
+                            self.flip_camera_button,
+                            self.record_button])
 
         self.panzoom_controller_button.observe(self.panzoom_control, 'value')
         self.autoscale_button.on_click(self.auto_scale)
         self.center_scene_button.on_click(self.center_scene)
         self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
         self.flip_camera_button.on_click(self.flip_camera)
+        self.record_button.observe(self.record_plot, 'value')
 
     def auto_scale(self, obj):
         self.plot.auto_scale(maintain_aspect=self.plot.camera.maintain_aspect)
@@ -185,4 +190,14 @@ class ToolBar:
 
     def flip_camera(self, obj):
         self.plot.camera.scale.y = -1 * self.plot.camera.scale.y
-      
+
+    def record_plot(self, obj):
+        if self.record_button.value:
+            try:
+                self.plot.record_start(f"./{datetime.now().isoformat()}.mp4")
+            except ModuleNotFoundError or FileExistsError:
+                traceback.print_exc()
+                self.record_button.value = False
+        else:
+            self.plot.record_stop()
+

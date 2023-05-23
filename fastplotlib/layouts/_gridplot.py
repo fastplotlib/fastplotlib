@@ -1,4 +1,5 @@
-import itertools
+import traceback
+from datetime import datetime
 from itertools import product
 import numpy as np
 from typing import *
@@ -169,8 +170,8 @@ class GridPlot(RecordMixin):
         self._current_iter = None
 
         self._starting_size = size
-        
-        super(RecordMixin, self).__init__()
+
+        RecordMixin.__init__(self)
 
     def __getitem__(self, index: Union[Tuple[int, int], str]) -> Subplot:
         if isinstance(index, str):
@@ -333,6 +334,8 @@ class GridPlotToolBar:
         self.maintain_aspect_button.style.font_weight = "bold"
         self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
                                          layout=Layout(width='auto'), tooltip='flip')
+        self.record_button = ToggleButton(value=False, disabled=False, icon='video',
+                                          layout=Layout(width='auto'), tooltip='record')
 
         positions = list(product(range(self.plot.shape[0]), range(self.plot.shape[1])))
         values = list()
@@ -348,6 +351,7 @@ class GridPlotToolBar:
                             self.panzoom_controller_button,
                             self.maintain_aspect_button,
                             self.flip_camera_button,
+                            self.record_button,
                             self.dropdown])
 
         self.panzoom_controller_button.observe(self.panzoom_control, 'value')
@@ -355,6 +359,7 @@ class GridPlotToolBar:
         self.center_scene_button.on_click(self.center_scene)
         self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
         self.flip_camera_button.on_click(self.flip_camera)
+        self.record_button.observe(self.record_plot, 'value')
 
         self.plot.renderer.add_event_handler(self.update_current_subplot, "click")
 
@@ -398,4 +403,15 @@ class GridPlotToolBar:
                     self.dropdown.value = subplot.name
                 self.panzoom_controller_button.value = subplot.controller.enabled
                 self.maintain_aspect_button.value = subplot.camera.maintain_aspect
+
+    def record_plot(self, obj):
+        if self.record_button.value:
+            try:
+                self.plot.record_start(f"./{datetime.now().isoformat()}.mp4")
+            except ModuleNotFoundError or FileExistsError:
+                traceback.print_exc()
+                self.record_button.value = False
+        else:
+            self.plot.record_stop()
+
 
