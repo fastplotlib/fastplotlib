@@ -383,3 +383,6 @@ class GridPlotToolBar:
                     self.dropdown.value = str(subplot.position)
                 else:
                     self.dropdown.value = subplot.name
+                subplot.controller.enabled = self.panzoom_controller_button.value
+                subplot.camera.maintain_aspect = self.maintain_aspect_button.value
+
