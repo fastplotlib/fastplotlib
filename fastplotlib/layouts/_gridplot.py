@@ -343,10 +343,10 @@ class GridPlotToolBar:
         self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
         self.flip_camera_button.on_click(self.flip_camera)
 
-        self.plot.renderer.add_event_handler(self.click_handler, "click")
+        self.plot.renderer.add_event_handler(self.update_current_subplot, "click")
 
     @property
-    def parser(self) -> Subplot:
+    def current_subplot(self) -> Subplot:
         # parses dropdown value as plot name or position
         current = self.dropdown.value
         if current[0] == "(":
@@ -355,26 +355,26 @@ class GridPlotToolBar:
             return self.plot[current]
 
     def auto_scale(self, obj):
-        current = self.parser
+        current = self.current_subplot
         current.auto_scale(maintain_aspect=current.camera.maintain_aspect)
 
     def center_scene(self, obj):
-        current = self.parser
+        current = self.current_subplot
         current.center_scene()
 
     def panzoom_control(self, obj):
-        current = self.parser
+        current = self.current_subplot
         current.controller.enabled = self.panzoom_controller_button.value
 
     def maintain_aspect(self, obj):
-        current = self.parser
+        current = self.current_subplot
         current.camera.maintain_aspect = self.maintain_aspect_button.value
 
     def flip_camera(self, obj):
-        current = self.parser
+        current = self.current_subplot
         current.camera.scale.y = -1 * current.camera.scale.y
 
-    def click_handler(self, ev):
+    def update_current_subplot(self, ev):
         for subplot in self.plot:
             pos = subplot.map_screen_to_world((ev.x, ev.y))
             if pos is not None:
@@ -383,6 +383,6 @@ class GridPlotToolBar:
                     self.dropdown.value = str(subplot.position)
                 else:
                     self.dropdown.value = subplot.name
-                subplot.controller.enabled = self.panzoom_controller_button.value
-                subplot.camera.maintain_aspect = self.maintain_aspect_button.value
+                self.panzoom_controller_button.value = subplot.controller.enabled
+                self.maintain_aspect_button.value = subplot.camera.maintain_aspect
 
