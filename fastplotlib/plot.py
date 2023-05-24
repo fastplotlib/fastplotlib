@@ -134,6 +134,7 @@ class Plot(Subplot, RecordMixin):
     def close(self):
         self.canvas.close()
 
+
 class ToolBar:
     def __init__(self,
                  plot: Plot):
@@ -166,7 +167,7 @@ class ToolBar:
                             self.panzoom_controller_button,
                             self.maintain_aspect_button,
                             self.flip_camera_button,
-                            self.record_button]),
+                            self.record_button])
 
         self.panzoom_controller_button.observe(self.panzoom_control, 'value')
         self.autoscale_button.on_click(self.auto_scale)
