@@ -1,8 +1,13 @@
+import traceback
+from datetime import datetime
+
+from wgpu.gui.jupyter import JupyterWgpuCanvas
+
 from ..plot import Plot
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
 from ..utils import quick_min_max
-from ipywidgets.widgets import IntSlider, VBox, HBox, Layout, FloatRangeSlider
+from ipywidgets.widgets import IntSlider, VBox, HBox, Layout, FloatRangeSlider, Button, ToggleButton, Play, jslink
 import numpy as np
 from typing import *
 from warnings import warn
@@ -238,6 +243,7 @@ class ImageWidget:
             passed to fastplotlib.graphics.Image
         """
         self._names = None
+        self.toolbar = None
 
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
@@ -590,7 +596,7 @@ class ImageWidget:
 
         # TODO: So just stack everything vertically for now
         self.widget = VBox([
-            self.plot.canvas,
+            #self.plot.canvas,
             *list(self._sliders.values()),
             *self.vmin_vmax_sliders
         ])
@@ -847,7 +853,7 @@ class ImageWidget:
 
             self.vmin_vmax_sliders[i].set_state(state)
 
-    def show(self):
+    def show(self, toolbar: bool = True):
         """
         Show the widget
 
@@ -856,7 +862,102 @@ class ImageWidget:
         VBox
             ``ipywidgets.VBox`` stacking the plotter and sliders in a vertical layout
         """
-        # start render loop
-        self.plot.show()
+        canvas = self.plot.show(toolbar=False)
 
-        return self.widget
+        # check if in jupyter notebook or not
+        if not isinstance(canvas, JupyterWgpuCanvas):
+            return VBox([self.plot.show(toolbar=False), self.widget])
+
+        if toolbar and self.toolbar is None:
+            self.toolbar = ImageWidgetToolbar(self).widget
+            return VBox([canvas, self.toolbar, self.widget])
+        elif toolbar and self.toolbar is not None:
+            return VBox([canvas, self.toolbar, self.widget])
+        else:
+            return canvas
+
+
+class ImageWidgetToolbar:
+    def __init__(self,
+                 iw: ImageWidget):
+        """
+        Basic toolbar for a ImageWidget instance.
+
+        Parameters
+        ----------
+        plot:
+        """
+        self.iw = iw
+        self.plot = iw.plot
+
+        self.autoscale_button = Button(value=False, disabled=False, icon='expand-arrows-alt',
+                                       layout=Layout(width='auto'), tooltip='auto-scale scene')
+        self.center_scene_button = Button(value=False, disabled=False, icon='align-center',
+                                          layout=Layout(width='auto'), tooltip='auto-center scene')
+        self.panzoom_controller_button = ToggleButton(value=True, disabled=False, icon='hand-pointer',
+                                                      layout=Layout(width='auto'), tooltip='panzoom controller')
+        self.maintain_aspect_button = ToggleButton(value=True, disabled=False, description="1:1",
+                                                   layout=Layout(width='auto'), tooltip='maintain aspect')
+        self.maintain_aspect_button.style.font_weight = "bold"
+        self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
+                                         layout=Layout(width='auto'), tooltip='flip')
+        self.play_button = Play(
+                            value=0,
+                            min=iw.sliders["t"].min,
+                            max=iw.sliders["t"].max,
+                            step=iw.sliders["t"].step,
+                            description="play/pause",
+                            disabled=False)
+
+        self.record_button = ToggleButton(value=False, disabled=False, icon='video',
+                                          layout=Layout(width='auto'), tooltip='record')
+
+        # check what plot is encapsulated and create appropriate toolbar options
+        if isinstance(self.plot, Plot):
+            self.widget = HBox([self.autoscale_button,
+                                self.center_scene_button,
+                                self.panzoom_controller_button,
+                                self.maintain_aspect_button,
+                                self.flip_camera_button,
+                                self.play_button,
+                                self.record_button])
+        else: # gridplot encapsulated
+            pass
+
+        self.panzoom_controller_button.observe(self.panzoom_control, 'value')
+        self.autoscale_button.on_click(self.auto_scale)
+        self.center_scene_button.on_click(self.center_scene)
+        self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
+        self.flip_camera_button.on_click(self.flip_camera)
+        self.record_button.observe(self.record_plot, 'value')
+        self.link_play()
+
+    def auto_scale(self, obj):
+        self.plot.auto_scale(maintain_aspect=self.plot.camera.maintain_aspect)
+
+    def center_scene(self, obj):
+        self.plot.center_scene()
+
+    def panzoom_control(self, obj):
+        self.plot.controller.enabled = self.panzoom_controller_button.value
+
+    def maintain_aspect(self, obj):
+        self.plot.camera.maintain_aspect = self.maintain_aspect_button.value
+
+    def flip_camera(self, obj):
+        self.plot.camera.world.scale_y *= -1
+
+    def record_plot(self, obj):
+        if self.record_button.value:
+            try:
+                self.plot.record_start(f"./{datetime.now().isoformat()}.mp4")
+            except ModuleNotFoundError or FileExistsError:
+                traceback.print_exc()
+                self.record_button.value = False
+        else:
+            self.plot.record_stop()
+
+    def link_play(self):
+        jslink((self.play_button, 'value'), (self.iw.sliders["t"], 'value'))
+
+
