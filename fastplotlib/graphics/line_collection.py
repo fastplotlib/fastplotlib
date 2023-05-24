@@ -265,7 +265,7 @@ class LineCollection(GraphicCollection, Interaction):
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        selector.position.z = self.position.z + 1
+        selector.position_z = self.position_z + 1
 
         return weakref.proxy(selector)
 
@@ -302,7 +302,7 @@ class LineCollection(GraphicCollection, Interaction):
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        selector.position.set_z(self.position.z - 1)
+        selector.position_z = self.position_z - 1
 
         return weakref.proxy(selector)
 
@@ -346,7 +346,7 @@ class LineCollection(GraphicCollection, Interaction):
 
             # a better way to get the max y value?
             # graphics y-position + data y-max + padding
-            end_points[1] = self.graphics[-1].position.y + self.graphics[-1].data()[:, 1].max() + padding
+            end_points[1] = self.graphics[-1].position_y + self.graphics[-1].data()[:, 1].max() + padding
 
         else:
             # just the biggest one if not stacked
@@ -521,7 +521,11 @@ class LineStack(LineCollection):
 
         axis_zero = 0
         for i, line in enumerate(self.graphics):
-            getattr(line.position, f"set_{separation_axis}")(axis_zero)
+            if separation_axis == "x":
+                line.position_x = axis_zero
+            elif separation_axis == "y":
+                line.position_y = axis_zero
+
             axis_zero = axis_zero + line.data()[:, axes[separation_axis]].max() + separation
 
         self.separation = separation

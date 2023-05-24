@@ -4,7 +4,6 @@ import math
 import numpy as np
 
 import pygfx
-from pygfx.linalg import Vector3
 
 try:
     import ipywidgets
@@ -45,9 +44,9 @@ class LinearSelectionFeature(GraphicFeature):
             return
 
         if self.axis == "x":
-            self._parent.position.x = value
+            self._parent.position_x = value
         else:
-            self._parent.position.y = value
+            self._parent.position_y = value
 
         self._data = value
         self._feature_changed(key=None, new_data=value)
@@ -189,7 +188,7 @@ class LinearSelector(Graphic, BaseSelector):
             material=material(thickness=thickness + 6, color=self.colors_outer)
         )
 
-        line_inner.position.z = self.line_outer.position.z + 1
+        line_inner.world.z = self.line_outer.world.z + 1
 
         world_object = pygfx.Group()
 
@@ -200,9 +199,9 @@ class LinearSelector(Graphic, BaseSelector):
 
         # set x or y position
         if axis == "x":
-            self.position.x = selection
+            self.position_x = selection
         else:
-            self.position.y = selection
+            self.position_y = selection
 
         self.selection = LinearSelectionFeature(self, axis=axis, value=selection, limits=limits)
 
@@ -322,10 +321,10 @@ class LinearSelector(Graphic, BaseSelector):
         # the array to search for the closest value along that axis
         if self.axis == "x":
             geo_positions = graphic.data()[:, 0]
-            offset = getattr(graphic.position, self.axis)
+            offset = getattr(graphic, f"position_{self.axis}")
         else:
             geo_positions = graphic.data()[:, 1]
-            offset = getattr(graphic.position, self.axis)
+            offset = getattr(graphic, f"position_{self.axis}")
 
         if "Line" in graphic.__class__.__name__:
             # we want to find the index of the geometry position that is closest to the slider's geometry position
@@ -344,18 +343,18 @@ class LinearSelector(Graphic, BaseSelector):
             index = self.selection() - offset
             return int(index)
 
-    def _move_graphic(self, delta: Vector3):
+    def _move_graphic(self, delta: np.ndarray):
         """
         Moves the graphic
 
         Parameters
         ----------
-        delta: Vector3
+        delta: np.ndarray
             delta in world space
 
         """
 
         if self.axis == "x":
-            self.selection = self.selection() + delta.x
+            self.selection = self.selection() + delta[0]
         else:
-            self.selection = self.selection() + delta.y
+            self.selection = self.selection() + delta[1]

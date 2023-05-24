@@ -79,4 +79,4 @@ class ScatterGraphic(Graphic):
 
         self._set_world_object(world_object)
 
-        self.world_object.position.z = z_position
+        self.position_z = z_position

@@ -334,6 +334,7 @@ class GridPlotToolBar:
         self.maintain_aspect_button.style.font_weight = "bold"
         self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
                                          layout=Layout(width='auto'), tooltip='flip')
+
         self.record_button = ToggleButton(value=False, disabled=False, icon='video',
                                           layout=Layout(width='auto'), tooltip='record')
 
@@ -390,7 +391,7 @@ class GridPlotToolBar:
 
     def flip_camera(self, obj):
         current = self.current_subplot
-        current.camera.scale.y = -1 * current.camera.scale.y
+        current.camera.world.scale_y *= -1
 
     def update_current_subplot(self, ev):
         for subplot in self.plot:
@@ -413,5 +414,3 @@ class GridPlotToolBar:
                 self.record_button.value = False
         else:
             self.plot.record_stop()
-
-

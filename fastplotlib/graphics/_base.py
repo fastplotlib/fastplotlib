@@ -7,8 +7,6 @@ import numpy as np
 from .features._base import cleanup_slice
 
 from pygfx import WorldObject, Group
-from pygfx.linalg import Vector3
-
 from .features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
 
 from abc import ABC, abstractmethod
@@ -83,10 +81,38 @@ class Graphic(BaseGraphic):
         WORLD_OBJECTS[hex(id(self))] = wo
 
     @property
-    def position(self) -> Vector3:
+    def position(self) -> np.ndarray:
         """The position of the graphic. You can access or change
         using position.x, position.y, etc."""
-        return self.world_object.position
+        return self.world_object.world.position
+
+    @property
+    def position_x(self) -> float:
+        return self.world_object.world.x
+
+    @property
+    def position_y(self) -> float:
+        return self.world_object.world.y
+
+    @property
+    def position_z(self) -> float:
+        return self.world_object.world.z
+
+    @position.setter
+    def position(self, val):
+        self.world_object.world.position = val
+
+    @position_x.setter
+    def position_x(self, val):
+        self.world_object.world.x = val
+
+    @position_y.setter
+    def position_y(self, val):
+        self.world_object.world.y = val
+
+    @position_z.setter
+    def position_z(self, val):
+        self.world_object.world.z = val
 
     @property
     def visible(self) -> bool:
@@ -99,7 +125,7 @@ class Graphic(BaseGraphic):
         self.world_object.visible = v
 
     @property
-    def children(self) -> WorldObject:
+    def children(self) -> List[WorldObject]:
         """Return the children of the WorldObject."""
         return self.world_object.children
 

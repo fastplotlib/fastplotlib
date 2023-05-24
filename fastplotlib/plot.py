@@ -116,7 +116,7 @@ class Plot(Subplot, RecordMixin):
         self.canvas.request_draw(self.render)
         if autoscale:
             self.auto_scale(maintain_aspect=True, zoom=0.95)
-
+            
         self.canvas.set_logical_size(*self._starting_size)
 
         # check if in jupyter notebook or not
@@ -133,7 +133,6 @@ class Plot(Subplot, RecordMixin):
 
     def close(self):
         self.canvas.close()
-
 
 class ToolBar:
     def __init__(self,
@@ -168,6 +167,7 @@ class ToolBar:
                             self.maintain_aspect_button,
                             self.flip_camera_button,
                             self.record_button])
+                            self.flip_camera_button])
 
         self.panzoom_controller_button.observe(self.panzoom_control, 'value')
         self.autoscale_button.on_click(self.auto_scale)
@@ -189,7 +189,7 @@ class ToolBar:
         self.plot.camera.maintain_aspect = self.maintain_aspect_button.value
 
     def flip_camera(self, obj):
-        self.plot.camera.scale.y = -1 * self.plot.camera.scale.y
+        self.plot.camera.world.scale_y *= -1
 
     def record_plot(self, obj):
         if self.record_button.value:
@@ -200,4 +200,3 @@ class ToolBar:
                 self.record_button.value = False
         else:
             self.plot.record_stop()
-
