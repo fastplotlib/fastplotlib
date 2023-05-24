@@ -308,7 +308,7 @@ class GraphicFeatureIndexable(GraphicFeature):
 
     def _update_range_indices(self, key):
         """Currently used by colors and positions data"""
-        if self.sub_range is not None:
+        if (self.sub_range.start is not None) and (self.sub_range.stop is not None):
             size = self.sub_range.stop + self.sub_range.start
             self.buffer.update_range(offset=self.sub_range.start, size=size)
 
