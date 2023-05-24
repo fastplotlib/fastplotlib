@@ -11,9 +11,9 @@ class ColorFeature(GraphicFeatureIndexable):
         return self._parent.world_object.geometry.colors
 
     def __getitem__(self, item):
-        return self.buffer.data[item]
+        return self.buffer.data[self.sub_range][item]
 
-    def __init__(self, parent, colors, n_colors: int, alpha: float = 1.0, collection_index: int = None):
+    def __init__(self, parent, colors, n_colors: int, alpha: float = 1.0, collection_index: int = None, sub_range=None):
         """
         ColorFeature
 
@@ -93,7 +93,7 @@ class ColorFeature(GraphicFeatureIndexable):
         if alpha != 1.0:
             data[:, -1] = alpha
 
-        super(ColorFeature, self).__init__(parent, data, collection_index=collection_index)
+        super(ColorFeature, self).__init__(parent, data, collection_index=collection_index, sub_range=sub_range)
 
     def __setitem__(self, key, value):
         # parse numerical slice indices
@@ -117,7 +117,7 @@ class ColorFeature(GraphicFeatureIndexable):
                 raise ValueError("fancy indexing for colors must be 2-dimension, i.e. [n_datapoints, RGBA]")
 
             # set the user passed data directly
-            self.buffer.data[key] = value
+            self.buffer.data[self.sub_range][key] = value
 
             # update range
             # first slice obj is going to be the indexing so use key[0]
@@ -133,6 +133,9 @@ class ColorFeature(GraphicFeatureIndexable):
 
         else:
             raise TypeError("Graphic features only support integer and numerical fancy indexing")
+
+        if self.sub_range is not None:
+            indices = range(self.sub_range.start, self.sub_range.stop)
 
         new_data_size = len(indices)
 
@@ -169,8 +172,9 @@ class ColorFeature(GraphicFeatureIndexable):
 
             else:
                 raise ValueError("numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)")
+        print(key)
 
-        self.buffer.data[key] = new_colors
+        self.buffer.data[self.sub_range][key] = new_colors
 
         self._update_range(key)
         self._feature_changed(key, new_colors)

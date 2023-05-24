@@ -75,7 +75,7 @@ class Graphic(BaseGraphic):
     @property
     def world_object(self) -> WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
-        return weakref.proxy(WORLD_OBJECTS[hex(id(self))])
+        return weakref.proxy(WORLD_OBJECTS[self.loc])
 
     def _set_world_object(self, wo: WorldObject):
         WORLD_OBJECTS[hex(id(self))] = wo
@@ -271,13 +271,14 @@ class Interaction(ABC):
                     # if callback_function is not None, then callback function should handle the entire event
                     target_info.callback_function(source=self, target=target_info.target, event=event, new_data=target_info.new_data)
 
-                elif isinstance(self, GraphicCollection):
+                elif isinstance(self, GraphicCollection) or self.__class__.__name__ == "FastLineCollection":
                     # if target is a GraphicCollection, then indices will be stored in collection_index
                     if event.type in self.feature_events:
                         indices = event.pick_info["collection-index"]
 
                     # for now we only have line collections so this works
                     else:
+                        # TODO: Think about fast line collection since it's one world object
                         # get index of world object that made this event
                         for i, item in enumerate(self.graphics):
                             wo = WORLD_OBJECTS[item.loc]

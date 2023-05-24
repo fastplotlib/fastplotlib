@@ -269,6 +269,17 @@ def cleanup_array_slice(key: np.ndarray, upper_bound) -> np.ndarray:
 
 class GraphicFeatureIndexable(GraphicFeature):
     """An indexable Graphic Feature, colors, data, sizes etc."""
+    def __init__(self, parent, data: Any, collection_index: int = None, sub_range: Tuple[int, int] = None):
+        super(GraphicFeatureIndexable, self).__init__(
+            parent=parent,
+            data=data,
+            collection_index=collection_index
+        )
+
+        if sub_range is not None:
+            self.sub_range = slice(*sub_range)
+        else:
+            self.sub_range = slice(None)
 
     def _set(self, value):
         value = self._parse_set_value(value)
@@ -297,6 +308,10 @@ class GraphicFeatureIndexable(GraphicFeature):
 
     def _update_range_indices(self, key):
         """Currently used by colors and positions data"""
+        if self.sub_range is not None:
+            size = self.sub_range.stop + self.sub_range.start
+            self.buffer.update_range(offset=self.sub_range.start, size=size)
+
         if not isinstance(key, np.ndarray):
             key = cleanup_slice(key, self._upper_bound)
 

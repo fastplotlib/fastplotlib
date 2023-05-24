@@ -11,16 +11,16 @@ class PointsDataFeature(GraphicFeatureIndexable):
     Access to the vertex buffer data shown in the graphic.
     Supports fancy indexing if the data array also supports it.
     """
-    def __init__(self, parent, data: Any, collection_index: int = None):
+    def __init__(self, parent, data: Any, collection_index: int = None, sub_range=None):
         data = self._fix_data(data, parent)
-        super(PointsDataFeature, self).__init__(parent, data, collection_index=collection_index)
+        super(PointsDataFeature, self).__init__(parent, data, collection_index=collection_index, sub_range=sub_range)
 
     @property
     def buffer(self) -> Buffer:
         return self._parent.world_object.geometry.positions
 
     def __getitem__(self, item):
-        return self.buffer.data[item]
+        return self.buffer.data[self.sub_range][item]
 
     def _fix_data(self, data, parent):
         graphic_type = parent.__class__.__name__
@@ -58,7 +58,7 @@ class PointsDataFeature(GraphicFeatureIndexable):
         # otherwise assume that they have the right shape
         # numpy will throw errors if it can't broadcast
 
-        self.buffer.data[key] = value
+        self.buffer.data[self.sub_range][key] = value
         self._update_range(key)
         # avoid creating dicts constantly if there are no events to handle
         if len(self._event_handlers) > 0:
