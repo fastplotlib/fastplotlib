@@ -10,13 +10,12 @@ from ..plot import Plot
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
 from ..utils import quick_min_max
-from ipywidgets.widgets import IntSlider, VBox, HBox, Layout, FloatRangeSlider, Button, ToggleButton, Play, jslink
+from ipywidgets.widgets import IntSlider, VBox, HBox, Layout, FloatRangeSlider, Button, BoundedIntText, Play, jslink
 import numpy as np
 from typing import *
 from warnings import warn
 from functools import partial
 from copy import deepcopy
-
 
 DEFAULT_DIMS_ORDER = \
     {
@@ -344,7 +343,8 @@ class ImageWidget:
                             f"index {data_ix} out of bounds for `dims_order`, the bounds are 0 - {len(self.data)}"
                         )
             else:
-                raise TypeError(f"`dims_order` must be a <str> or <Dict[int: str]>, you have passed a: <{type(dims_order)}>")
+                raise TypeError(
+                    f"`dims_order` must be a <str> or <Dict[int: str]>, you have passed a: <{type(dims_order)}>")
 
         if not len(self.dims_order[0]) == self.ndim:
             raise ValueError(
@@ -599,7 +599,7 @@ class ImageWidget:
 
         # TODO: So just stack everything vertically for now
         self.widget = VBox([
-            #self.plot.canvas,
+            # self.plot.canvas,
             *list(self._sliders.values()),
             *self.vmin_vmax_sliders
         ])
@@ -865,22 +865,18 @@ class ImageWidget:
         VBox
             ``ipywidgets.VBox`` stacking the plotter and sliders in a vertical layout
         """
-        canvas = self.plot.show(toolbar=False)
 
         # check if in jupyter notebook or not
-        if not isinstance(canvas, JupyterWgpuCanvas):
+        if not isinstance(self.plot.canvas, JupyterWgpuCanvas):
             return VBox([self.plot.show(toolbar=False), self.widget])
 
         if toolbar and self.toolbar is None:
-            play_button = ImageWidgetToolbar(self).widget
-            toolbar = self.plot.show().children[1] # get underlying toolbar
-            toolbar.children += (play_button,) # add play button to underlying plot toolbar
-            self.toolbar = toolbar
-            return VBox([canvas, self.toolbar, self.widget])
+            self.toolbar = ImageWidgetToolbar(self).widget
+            return VBox([self.plot.show(), self.toolbar, self.widget])
         elif toolbar and self.toolbar is not None:
-            return VBox([canvas, self.toolbar, self.widget])
+            return VBox([self.plot.show(), self.toolbar, self.widget])
         else:
-            return VBox([canvas, self.widget])
+            return VBox([self.plot.show(toolbar=False), self.widget])
 
 
 class ImageWidgetToolbar:
@@ -896,18 +892,29 @@ class ImageWidgetToolbar:
         self.iw = iw
         self.plot = iw.plot
 
+        self.reset_vminvmax_button = Button(value=False, disabled=False, icon='adjust',
+                                            layout=Layout(width='auto'), tooltip='reset vmin/vmax')
+
+        self.step_size_setter = BoundedIntText(value=1, min=1, max=self.iw.sliders['t'].max, step=1,
+                                               description='Step Size:', disabled=False,
+                                               description_tooltip='set slider step', layout=Layout(width='150px'))
         self.play_button = Play(
-                            value=0,
-                            min=iw.sliders["t"].min,
-                            max=iw.sliders["t"].max,
-                            step=iw.sliders["t"].step,
-                            description="play/pause",
-                            disabled=False)
+            value=0,
+            min=iw.sliders["t"].min,
+            max=iw.sliders["t"].max,
+            step=iw.sliders["t"].step,
+            description="play/pause",
+            disabled=False)
 
-        self.widget = HBox([self.play_button])
+        self.widget = HBox([self.reset_vminvmax_button, self.play_button, self.step_size_setter])
 
+        self.reset_vminvmax_button.on_click(self.reset_vminvmax)
+        self.step_size_setter.observe(self.change_stepsize, 'value')
         jslink((self.play_button, 'value'), (self.iw.sliders["t"], 'value'))
 
+    def reset_vminvmax(self, obj):
+        if len(self.iw.vmin_vmax_sliders) != 0:
+            self.iw.reset_vmin_vmax()
 
-
-
+    def change_stepsize(self, obj):
+        self.iw.sliders['t'].step = self.step_size_setter.value

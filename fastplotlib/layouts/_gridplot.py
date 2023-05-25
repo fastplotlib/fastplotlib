@@ -278,7 +278,7 @@ class GridPlot(RecordMixin):
 
         for subplot in self:
             subplot.auto_scale(maintain_aspect=True, zoom=0.95)
-        
+
         self.canvas.set_logical_size(*self._starting_size)
 
         # check if in jupyter notebook or not
@@ -345,7 +345,8 @@ class GridPlotToolBar:
                 values.append(self.plot[pos].name)
             else:
                 values.append(str(pos))
-        self.dropdown = Dropdown(options=values, disabled=False, description='Subplots:')
+        self.dropdown = Dropdown(options=values, disabled=False, description='Subplots:',
+                                 layout=Layout(width='200px'))
 
         self.widget = HBox([self.autoscale_button,
                             self.center_scene_button,
