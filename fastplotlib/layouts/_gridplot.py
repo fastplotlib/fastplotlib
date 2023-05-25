@@ -408,8 +408,8 @@ class GridPlotToolBar:
     def record_plot(self, obj):
         if self.record_button.value:
             try:
-                self.plot.record_start(f"./{datetime.now().isoformat()}.mp4")
-            except ModuleNotFoundError or FileExistsError:
+                self.plot.record_start(f"./{datetime.now().isoformat(timespec='seconds').replace(':', '_')}.mp4")
+            except Exception:
                 traceback.print_exc()
                 self.record_button.value = False
         else:

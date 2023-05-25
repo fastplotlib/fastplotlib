@@ -872,7 +872,10 @@ class ImageWidget:
             return VBox([self.plot.show(toolbar=False), self.widget])
 
         if toolbar and self.toolbar is None:
-            self.toolbar = ImageWidgetToolbar(self).widget
+            play_button = ImageWidgetToolbar(self).widget
+            toolbar = self.plot.show().children[1] # get underlying toolbar
+            toolbar.children += (play_button,) # add play button to underlying plot toolbar
+            self.toolbar = toolbar
             return VBox([canvas, self.toolbar, self.widget])
         elif toolbar and self.toolbar is not None:
             return VBox([canvas, self.toolbar, self.widget])
@@ -892,19 +895,7 @@ class ImageWidgetToolbar:
         """
         self.iw = iw
         self.plot = iw.plot
-        self.gridplot = False
 
-        self.autoscale_button = Button(value=False, disabled=False, icon='expand-arrows-alt',
-                                       layout=Layout(width='auto'), tooltip='auto-scale scene')
-        self.center_scene_button = Button(value=False, disabled=False, icon='align-center',
-                                          layout=Layout(width='auto'), tooltip='auto-center scene')
-        self.panzoom_controller_button = ToggleButton(value=True, disabled=False, icon='hand-pointer',
-                                                      layout=Layout(width='auto'), tooltip='panzoom controller')
-        self.maintain_aspect_button = ToggleButton(value=True, disabled=False, description="1:1",
-                                                   layout=Layout(width='auto'), tooltip='maintain aspect')
-        self.maintain_aspect_button.style.font_weight = "bold"
-        self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
-                                         layout=Layout(width='auto'), tooltip='flip')
         self.play_button = Play(
                             value=0,
                             min=iw.sliders["t"].min,
@@ -913,113 +904,10 @@ class ImageWidgetToolbar:
                             description="play/pause",
                             disabled=False)
 
-        self.record_button = ToggleButton(value=False, disabled=False, icon='video',
-                                          layout=Layout(width='auto'), tooltip='record')
+        self.widget = HBox([self.play_button])
 
-        # check what plot is encapsulated and create appropriate toolbar options
-        if isinstance(self.plot, Plot):
-            self.widget = HBox([self.autoscale_button,
-                                self.center_scene_button,
-                                self.panzoom_controller_button,
-                                self.maintain_aspect_button,
-                                self.flip_camera_button,
-                                self.play_button,
-                                self.record_button])
-        else: # gridplot encapsulated
-            self.gridplot = True
-            positions = list(product(range(self.plot.shape[0]), range(self.plot.shape[1])))
-            values = list()
-            for pos in positions:
-                if self.plot[pos].name is not None:
-                    values.append(self.plot[pos].name)
-                else:
-                    values.append(str(pos))
-            self.dropdown = Dropdown(options=values, disabled=False, description='Subplots:')
-
-            self.widget = HBox([self.autoscale_button,
-                                self.center_scene_button,
-                                self.panzoom_controller_button,
-                                self.maintain_aspect_button,
-                                self.flip_camera_button,
-                                self.play_button,
-                                self.record_button,
-                                self.dropdown])
-
-        self.panzoom_controller_button.observe(self.panzoom_control, 'value')
-        self.autoscale_button.on_click(self.auto_scale)
-        self.center_scene_button.on_click(self.center_scene)
-        self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
-        self.flip_camera_button.on_click(self.flip_camera)
-        self.record_button.observe(self.record_plot, 'value')
-        self.link_play()
-
-        self.plot.renderer.add_event_handler(self.update_current_subplot, "click")
-
-    @property
-    def current_subplot(self) -> Subplot:
-        # parses dropdown value as plot name or position
-        current = self.dropdown.value
-        if current[0] == "(":
-            return self.plot[eval(current)]
-        else:
-            return self.plot[current]
-
-    def auto_scale(self, obj):
-        if self.gridplot:
-            current = self.current_subplot
-            current.auto_scale(maintain_aspect=current.camera.maintain_aspect)
-        else:
-            self.plot.auto_scale(maintain_aspect=self.plot.camera.maintain_aspect)
-
-    def center_scene(self, obj):
-        if self.gridplot:
-            current = self.current_subplot
-            current.center_scene()
-        else:
-            self.plot.center_scene()
-
-    def panzoom_control(self, obj):
-        if self.gridplot:
-            current = self.current_subplot
-            current.controller.enabled = self.panzoom_controller_button.value
-        else:
-            self.plot.controller.enabled = self.panzoom_controller_button.value
-
-    def maintain_aspect(self, obj):
-        if self.gridplot:
-            current = self.current_subplot
-            current.camera.maintain_aspect = self.maintain_aspect_button.value
-        else:
-            self.plot.camera.maintain_aspect = self.maintain_aspect_button.value
-
-    def flip_camera(self, obj):
-        if self.gridplot:
-            current = self.current_subplot
-            current.camera.world.scale_y *= -1
-        else:
-            self.plot.camera.world.scale_y *= -1
-
-    def record_plot(self, obj):
-        if self.record_button.value:
-            try:
-                self.plot.record_start(f"./{datetime.now().isoformat()}.mp4")
-            except ModuleNotFoundError or FileExistsError:
-                traceback.print_exc()
-                self.record_button.value = False
-        else:
-            self.plot.record_stop()
-
-    def link_play(self):
         jslink((self.play_button, 'value'), (self.iw.sliders["t"], 'value'))
 
-    def update_current_subplot(self, ev):
-        for subplot in self.plot:
-            pos = subplot.map_screen_to_world((ev.x, ev.y))
-            if pos is not None:
-                # update self.dropdown
-                if subplot.name is None:
-                    self.dropdown.value = str(subplot.position)
-                else:
-                    self.dropdown.value = subplot.name
-                self.panzoom_controller_button.value = subplot.controller.enabled
-                self.maintain_aspect_button.value = subplot.camera.maintain_aspect
+
+
+
