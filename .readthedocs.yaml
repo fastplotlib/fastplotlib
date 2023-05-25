@@ -11,7 +11,7 @@ build:
     - mesa-vulkan-drivers
     - libglfw3
   jobs:
-    post_build:
+    pre_install:
       - pip install git+https://github.com/pygfx/pygfx.git@main
 
 sphinx:
