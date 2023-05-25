@@ -332,7 +332,7 @@ class GridPlotToolBar:
         self.maintain_aspect_button = ToggleButton(value=True, disabled=False, description="1:1",
                                                    layout=Layout(width='auto'), tooltip='maintain aspect')
         self.maintain_aspect_button.style.font_weight = "bold"
-        self.flip_camera_button = Button(value=False, disabled=False, icon='sync-alt',
+        self.flip_camera_button = Button(value=False, disabled=False, icon='arrows-v',
                                          layout=Layout(width='auto'), tooltip='flip')
 
         self.record_button = ToggleButton(value=False, disabled=False, icon='video',
