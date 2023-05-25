@@ -138,6 +138,9 @@ class GraphicFeature(ABC):
 
         self._event_handlers.remove(handler)
 
+    def clear_event_handlers(self):
+        self._event_handlers.clear()
+
     #TODO: maybe this can be implemented right here in the base class
     @abstractmethod
     def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
@@ -227,9 +230,11 @@ def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
     # return slice(int(start), int(stop), int(step))
 
 
-def cleanup_array_slice(key: np.ndarray, upper_bound) -> np.ndarray:
+def cleanup_array_slice(key: np.ndarray, upper_bound) -> Union[np.ndarray, None]:
     """
     Cleanup numpy array used for fancy indexing, make sure key[-1] <= upper_bound.
+
+    Returns None if nothing to change.
 
     Parameters
     ----------
@@ -253,6 +258,9 @@ def cleanup_array_slice(key: np.ndarray, upper_bound) -> np.ndarray:
     # if boolean array convert to integer array of indices
     if key.dtype == bool:
         key = np.nonzero(key)[0]
+
+    if key.size < 1:
+        return None
 
     # make sure indices within bounds of feature buffer range
     if key[-1] > upper_bound:

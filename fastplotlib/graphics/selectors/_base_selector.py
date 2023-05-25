@@ -325,3 +325,9 @@ class BaseSelector:
 
         # remove animation func
         self._plot_area.remove_animation(self._key_hold)
+
+        if hasattr(self, "feature_events"):
+            feature_names = getattr(self, "feature_events")
+            for n in feature_names:
+                fea = getattr(self, n)
+                fea.clear_event_handlers()
