@@ -94,7 +94,7 @@ def parse_data(data):
 
 
 # we use interactive features setters from LineGraphic but we don't instantiate the world object etc.
-class PseudoLine(LineGraphic):
+class LineSegment(LineGraphic):
     def __init__(
             self,
             data,
@@ -144,7 +144,25 @@ class FastLineCollection(Graphic):
         Uses a single LineGraphic to behave like a collection
         """
 
-        data_stack = parse_data(np.vstack(data).astype(np.float32))
+        ndims = [d.ndim for d in data]
+        unique_ndims = np.unique(ndims)
+
+        if not len(unique_ndims) == 1:
+            raise ValueError(
+                f"`data` arrays must have same number of dimensions, "
+                f"the unique ndims for the passed `data` are: {unique_ndims}"
+            )
+
+        # nan point between each individual data array
+        nan_joins = np.array([[np.nan, np.nan, np.nan]])
+
+        data_with_nans = list()
+        for d in data:
+            d = parse_data(d)
+            data_with_nans.append(d)
+            data_with_nans.append(nan_joins)
+
+        data_stack = parse_data(np.vstack(data_with_nans).astype(np.float32))
 
         self.graphics = list()
 
@@ -160,7 +178,8 @@ class FastLineCollection(Graphic):
                 c[-1] = alpha
                 # this will generate repeats so that it has the same number of colors as the geometry positions
                 # for each datapoint
-                c = parse_colors(c, single_line_data.shape[0], alpha=alpha).astype(np.float32)
+                # add one for the nan joins
+                c = parse_colors(c, single_line_data.shape[0] + 1, alpha=alpha).astype(np.float32)
                 colors_list.append(c)
 
             colors_array = np.vstack(colors_list).astype(np.float32)
@@ -172,24 +191,23 @@ class FastLineCollection(Graphic):
         start_offset = 0
         for i, single_line_data in enumerate(data):
             # sub buffer range
-            # skip first and last index because it joins between segments
-            sub_range = (start_offset + 1, start_offset + single_line_data.shape[0] - 1)
+            sub_range = (start_offset, start_offset + single_line_data.shape[0] + 1)
 
-            pseudo_line = PseudoLine(
+            pseudo_line = LineSegment(
                 data=data_stack[slice(*sub_range)],
                 colors=colors_array[slice(*sub_range)],
                 collection_index=i,
-                buffer_sub_range=sub_range
+                buffer_sub_range=(sub_range[0], sub_range[1] - 1)  # sub_range for the user
             )
             self.graphics.append(pseudo_line)
 
-            start_offset += single_line_data.shape[0]
+            start_offset += single_line_data.shape[0] + 1
             zero_alpha_ixs += [start_offset - 1, start_offset]
 
-        # set the alpha of in-between points to zero
-        zero_alpha_ixs = np.array(zero_alpha_ixs[:-1])
-
-        colors_array[zero_alpha_ixs, -1] = 0
+        # # set the alpha of in-between points to zero
+        # zero_alpha_ixs = np.array(zero_alpha_ixs[:-1])
+        #
+        # colors_array[zero_alpha_ixs, -1] = 0
 
         super(FastLineCollection, self).__init__(*args, *kwargs)
 
