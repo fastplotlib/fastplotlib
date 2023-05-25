@@ -394,6 +394,9 @@ class PlotArea:
         for g in self.graphics:
             self.delete_graphic(g)
 
+        for s in self.selectors:
+            self.delete_graphic(s)
+
     def __getitem__(self, name: str):
         for graphic in self.graphics:
             if graphic.name == name:

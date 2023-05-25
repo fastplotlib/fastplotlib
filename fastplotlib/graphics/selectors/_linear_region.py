@@ -11,6 +11,9 @@ from ._mesh_positions import x_right, x_left, y_top, y_bottom
 
 
 class LinearBoundsFeature(GraphicFeature):
+    feature_events = (
+        "data",
+    )
     """
     Feature for a linearly bounding region
 
@@ -121,10 +124,6 @@ class LinearBoundsFeature(GraphicFeature):
 
 
 class LinearRegionSelector(Graphic, BaseSelector):
-    feature_events = (
-        "bounds"
-    )
-
     def __init__(
             self,
             bounds: Tuple[int, int],
