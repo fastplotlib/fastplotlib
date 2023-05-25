@@ -10,6 +10,9 @@ build:
     - libxcb-xfixes0-dev
     - mesa-vulkan-drivers
     - libglfw3
+  jobs:
+    pre_install:
+      - pip install git+https://github.com/pygfx/pygfx.git@main
 
 sphinx:
   configuration: docs/source/conf.py
