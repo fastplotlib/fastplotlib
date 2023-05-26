@@ -43,7 +43,7 @@ class LineGraphic(Graphic, Interaction):
             thickness of the line
 
         colors: str, array, or iterable, default "w"
-            specify colors as a single human readable string, a single RGBA array,
+            specify colors as a single human-readable string, a single RGBA array,
             or an iterable of strings or RGBA arrays
 
         cmap: str, optional
@@ -61,6 +61,20 @@ class LineGraphic(Graphic, Interaction):
 
         kwargs
             passed to Graphic
+
+        Features
+        --------
+
+        **data**: :class:`.ImageDataFeature`
+            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
+            ex: ``scatter.data[:, 0] = 5```, ``scatter.data[xs > 5] = 3``
+
+        **colors**: :class:`.ColorFeature`
+            Manages the color buffer, allows regular and fancy indexing.
+            ex: ``scatter.data[:, 1] = 0.5``, ``scatter.colors[xs > 5] = "cyan"``
+
+        **present**: :class:`.PresentFeature`
+            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
         """
 

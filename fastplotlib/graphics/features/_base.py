@@ -48,12 +48,14 @@ class FeatureEvent:
     type: str, example "colors"
 
     pick_info: dict in the form:
-     ============== =======================================================================
-      index          indices where feature data was changed, ``range`` object or List[int]
-     ============== =======================================================================
-      world_object   world object the feature belongs to
-      new_data       the new data for this feature
-     ============== =======================================================================
+
+        ============== =============================================================================
+        key             value
+        ============== =============================================================================
+        "index"         indices where feature data was changed, ``range`` object or ``List[int]``
+        "world_object"  world object the feature belongs to
+        "new_data:      the new data for this feature
+        ============== =============================================================================
 
     """
     def __init__(self, type: str, pick_info: dict):
@@ -105,8 +107,8 @@ class GraphicFeature(ABC):
         """
         Add an event handler. All added event handlers are called when this feature changes.
         The `handler` can optionally accept ``FeatureEvent`` as the first and only argument.
-        The ``FeatureEvent`` only has two attributes, `type` which denotes the type of event
-        as a str in the form of "<feature_name>-changed", such as "color-changed".
+        The ``FeatureEvent`` only has two attributes, ``type`` which denotes the type of event
+        as a ``str`` in the form of "<feature_name>", such as "color".
 
         Parameters
         ----------
@@ -289,6 +291,7 @@ class GraphicFeatureIndexable(GraphicFeature):
     @property
     @abstractmethod
     def buffer(self) -> Union[Buffer, Texture]:
+        """Underlying buffer for this feature"""
         pass
 
     @property

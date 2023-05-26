@@ -21,7 +21,7 @@ class LinearSelectionFeature(GraphicFeature):
     """
     Manages the slider selection and callbacks
 
-    **pick info**
+    **event pick info**
 
      ================== ================================================================
       key                selection

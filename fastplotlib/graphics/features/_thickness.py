@@ -3,7 +3,18 @@ from ._base import GraphicFeature, FeatureEvent
 
 class ThicknessFeature(GraphicFeature):
     """
-    Used by Line graphics for line material thickness
+    Used by Line graphics for line material thickness.
+
+    **event pick info:**
+
+     ===================== ======================== =========================================================================
+      key                  type                     description
+     ==================== ======================== =========================================================================
+      "index"              ``None``                 not used
+      "new_data"           ``float``                new thickness value
+      "collection-index"   int                      the index of the graphic within the collection that triggered the event
+      "world_object"       pygfx.WorldObject        world object
+     ==================== ======================== ========================================================================
     """
     def __init__(self, parent, thickness: float):
         self._scene = None

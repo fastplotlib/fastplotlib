@@ -6,6 +6,22 @@ from pygfx import Color
 
 
 class ColorFeature(GraphicFeatureIndexable):
+    """
+    Manages the color buffer for :class:`LineGraphic` or :class:`ScatterGraphic`
+
+    **event pick info:**
+
+     ==================== =============================== =========================================================================
+      key                  type                            description
+     ==================== =============================== =========================================================================
+      "index"              ``numpy.ndarray`` or ``None``   changed indices in the buffer
+      "new_data"           ``numpy.ndarray`` or ``None``   new buffer data at the changed indices
+      "collection-index"   int                             the index of the graphic within the collection that triggered the event
+      "world_object"       pygfx.WorldObject               world object
+     ==================== =============================== =========================================================================
+
+
+    """
     @property
     def buffer(self):
         return self._parent.world_object.geometry.colors
@@ -204,6 +220,8 @@ class ColorFeature(GraphicFeatureIndexable):
 class CmapFeature(ColorFeature):
     """
     Indexable colormap feature, mostly wraps colors and just provides a way to set colormaps.
+
+    Same event pick info as :class:`ColorFeature`
     """
     def __init__(self, parent, colors):
         super(ColorFeature, self).__init__(parent, colors)
@@ -227,7 +245,19 @@ class CmapFeature(ColorFeature):
 
 class ImageCmapFeature(GraphicFeature):
     """
-    Colormap for ImageGraphic
+    Colormap for :class:`ImageGraphic`
+
+    **event pick info:**
+
+     ================ =================== ===============
+      key              type                description
+     ================ =================== ===============
+      "index"          ``None``            not used
+      "new_data"       ``str``             colormap name
+      "world_object"   pygfx.WorldObject   world object
+     ================ =================== ===============
+
+
     """
     def __init__(self, parent, cmap: str):
         cmap_texture_view = get_cmap_texture(cmap)
@@ -257,7 +287,9 @@ class ImageCmapFeature(GraphicFeature):
 
 class HeatmapCmapFeature(ImageCmapFeature):
     """
-    Colormap for HeatmapGraphic
+    Colormap for :class:`HeatmapGraphic`
+
+    Same event pick info as :class:`ImageCmapFeature`
     """
 
     def _set(self, cmap_name: str):

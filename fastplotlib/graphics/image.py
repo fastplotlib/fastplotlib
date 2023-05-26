@@ -226,6 +226,7 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene
 
+
         Examples
         --------
         .. code-block:: python
@@ -396,6 +397,20 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
         kwargs:
             additional keyword arguments passed to Graphic
 
+
+        Features
+        --------
+
+        **data**: :class:`.HeatmapDataFeature`
+            Manages the data buffer displayed in the HeatmapGraphic
+
+        **cmap**: :class:`.HeatmapCmapFeature`
+            Manages the colormap
+
+        **present**: :class:`.PresentFeature`
+            Control the presence of the Graphic in the scene
+
+
         Examples
         --------
         .. code-block:: python
@@ -403,10 +418,13 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
             from fastplotlib import Plot
             # create a `Plot` instance
             plot = Plot()
-            # make some random 2D image data
-            data = np.random.rand(512, 512)
-            # plot the image data
-            plot.add_image(data=data)
+
+            # make some random 2D heatmap data
+            data = np.random.rand(10_000, 8_000)
+
+            # add a heatmap
+            plot.add_heatmap(data=data)
+
             # show the plot
             plot.show()
         """
