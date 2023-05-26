@@ -6,56 +6,49 @@ Graphics
 Image
 #####
 
-.. autoclass:: fastplotlib.graphics.image.ImageGraphic
+.. autoclass:: fastplotlib.graphics.ImageGraphic
     :members:
     :inherited-members:
 
 Line
 ####
 
-.. autoclass:: fastplotlib.graphics.line.LineGraphic
+.. autoclass:: fastplotlib.graphics.LineGraphic
     :members:
     :inherited-members:
     
 Line Collection
 ###############
 
-.. autoclass:: fastplotlib.graphics.line_collection.LineCollection
+.. autoclass:: fastplotlib.graphics.LineCollection
     :members:
     :inherited-members:
 
 Line Stack
 ##########
 
-.. autoclass:: fastplotlib.graphics.line_collection.LineStack
+.. autoclass:: fastplotlib.graphics.LineStack
     :members:
     :inherited-members:
 
 Heatmap
 #######
 
-.. autoclass:: fastplotlib.graphics.image.HeatmapGraphic
-    :members:
-    :inherited-members:
-
-Histogram
-#########
-
-.. autoclass:: fastplotlib.graphics.histogram.HistogramGraphic
+.. autoclass:: fastplotlib.graphics.HeatmapGraphic
     :members:
     :inherited-members:
 
 Scatter
 #######
 
-.. autoclass:: fastplotlib.graphics.scatter.ScatterGraphic
+.. autoclass:: fastplotlib.graphics.ScatterGraphic
     :members:
     :inherited-members:
 
 Text
 ####
 
-.. autoclass:: fastplotlib.graphics.text.TextGraphic
+.. autoclass:: fastplotlib.graphics.TextGraphic
     :members:
     :inherited-members:
 

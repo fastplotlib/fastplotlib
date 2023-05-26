@@ -137,7 +137,7 @@ class LinearSelector(Graphic, BaseSelector):
         Features
         --------
 
-        selection: :class:`LinearSelectionFeature`
+        selection: :class:`.LinearSelectionFeature`
             ``selection()`` returns the current slider position in world coordinates
             use ``selection.add_event_handler()`` to add callback functions that are
             called when the LinearSelector selection changes. See feaure class for event pick_info table

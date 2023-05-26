@@ -20,8 +20,8 @@ class ColorFeature(GraphicFeatureIndexable):
       "world_object"       pygfx.WorldObject               world object
      ==================== =============================== =========================================================================
 
-
     """
+
     @property
     def buffer(self):
         return self._parent.world_object.geometry.colors

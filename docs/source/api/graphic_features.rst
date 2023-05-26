@@ -3,6 +3,25 @@
 Graphic Features
 ****************
 
+FeatureEvent
+############
+
+    Dataclass that holds feature event information. Has ``type`` and ``pick_info`` attributes.
+
+    **Attributes**
+
+    - type: ``str``, example "colors"
+
+    - pick_info: ``dict`` in the form:
+
+        ============== =============================================================================
+        key             value
+        ============== =============================================================================
+        "index"         indices where feature data was changed, ``range`` object or ``List[int]``
+        "world_object"  world object the feature belongs to
+        "new_data:      the new data for this feature
+        ============== =============================================================================
+
 Image
 #####
 
@@ -36,13 +55,13 @@ Heatmap
 Line
 ####
 
-.. autoclass:: fastplotlib.graphics.features.PositionsDataFeature
+.. autoclass:: fastplotlib.graphics.features.PointsDataFeature
     :members:
     :inherited-members:
     :exclude-members: __init__
     :no-undoc-members:
 
-.. autoclass:: fastplotlib.graphics.features.ColorsFeature
+.. autoclass:: fastplotlib.graphics.features.ColorFeature
     :members:
     :inherited-members:
     :exclude-members: __init__
@@ -57,13 +76,13 @@ Line
 Scatter
 #######
 
-.. autoclass:: fastplotlib.graphics.features.PositionsDataFeature
+.. autoclass:: fastplotlib.graphics.features.PointsDataFeature
     :members:
     :inherited-members:
     :exclude-members: __init__
     :no-undoc-members:
 
-.. autoclass:: fastplotlib.graphics.features.ColorsFeature
+.. autoclass:: fastplotlib.graphics.features.ColorFeature
     :members:
     :inherited-members:
     :exclude-members: __init__
