@@ -51,6 +51,20 @@ class ScatterGraphic(Graphic):
         kwargs
             passed to Graphic
 
+        Features
+        --------
+
+        **data**: :class:`.ImageDataFeature`
+            Manages the scatter [x, y, z] positions data buffer, allows regular and fancy indexing.
+            ex: ``scatter.data[:, 0] = 5```, ``scatter.data[xs > 5] = 3``
+
+        **colors**: :class:`.ColorFeature`
+            Manages the color buffer, allows regular and fancy indexing.
+            ex: ``scatter.data[:, 1] = 0.5``, ``scatter.colors[xs > 5] = "cyan"``
+
+        **present**: :class:`.PresentFeature`
+            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
+
         """
         self.data = PointsDataFeature(self, data)
 

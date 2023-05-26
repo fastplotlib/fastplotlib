@@ -4,9 +4,20 @@ from pygfx import Scene, Group
 
 class PresentFeature(GraphicFeature):
     """
-    Toggles if the object is present in the scene, different from visible \n
+    Toggles if the object is present in the scene, different from visible.
     Useful for computing bounding boxes from the Scene to only include graphics
-    that are present
+    that are present.
+
+    **event pick info:**
+
+     ==================== ======================== =========================================================================
+      key                  type                     description
+     ==================== ======================== =========================================================================
+      "index"              ``None``                 not used
+      "new_data"           ``bool``                 new data, ``True`` or ``False``
+      "collection-index"   int                      the index of the graphic within the collection that triggered the event
+      "world_object"       pygfx.WorldObject        world object
+     ==================== ======================== ========================================================================
     """
     def __init__(self, parent, present: bool = True, collection_index: int = False):
         self._scene = None
