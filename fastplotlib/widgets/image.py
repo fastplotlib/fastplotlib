@@ -599,7 +599,6 @@ class ImageWidget:
 
         # TODO: So just stack everything vertically for now
         self.widget = VBox([
-            # self.plot.canvas,
             *list(self._sliders.values()),
             *self.vmin_vmax_sliders
         ])
