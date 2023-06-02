@@ -281,20 +281,20 @@ class GridPlot(RecordMixin):
 
         self.canvas.set_logical_size(*self._starting_size)
 
-        # check if in jupyter notebook or not
-        if not isinstance(self.canvas, JupyterWgpuCanvas):
+        # check if in jupyter notebook, or if toolbar is False
+        if (not isinstance(self.canvas, JupyterWgpuCanvas)) or (not toolbar):
             return self.canvas
 
-        if toolbar and self.toolbar is None:
-            self.toolbar = GridPlotToolBar(self).widget
-            return VBox([self.canvas, self.toolbar])
-        elif toolbar and self.toolbar is not None:
-            return VBox([self.canvas, self.toolbar])
-        else:
-            return self.canvas
+        if self.toolbar is None:
+            self.toolbar = GridPlotToolBar(self)
+
+        return VBox([self.canvas, self.toolbar.widget])
 
     def close(self):
         self.canvas.close()
+
+        if self.toolbar is not None:
+            self.toolbar.widget.close()
 
     def _get_iterator(self):
         return product(range(self.shape[0]), range(self.shape[1]))

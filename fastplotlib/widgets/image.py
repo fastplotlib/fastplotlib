@@ -598,7 +598,7 @@ class ImageWidget:
         self.block_sliders: bool = False
 
         # TODO: So just stack everything vertically for now
-        self.widget = VBox([
+        self._vbox_sliders = VBox([
             *list(self._sliders.values()),
             *self.vmin_vmax_sliders
         ])
@@ -865,17 +865,23 @@ class ImageWidget:
             ``ipywidgets.VBox`` stacking the plotter and sliders in a vertical layout
         """
 
-        # check if in jupyter notebook or not
         if not isinstance(self.plot.canvas, JupyterWgpuCanvas):
-            return VBox([self.plot.show(toolbar=False), self.widget])
+            raise TypeError("ImageWidget is currently not supported outside of Jupyter")
 
-        if toolbar and self.toolbar is None:
-            self.toolbar = ImageWidgetToolbar(self).widget
-            return VBox([self.plot.show(), self.toolbar, self.widget])
-        elif toolbar and self.toolbar is not None:
-            return VBox([self.plot.show(), self.toolbar, self.widget])
-        else:
-            return VBox([self.plot.show(toolbar=False), self.widget])
+        # check if in jupyter notebook, or if toolbar is False
+        if (not isinstance(self.plot.canvas, JupyterWgpuCanvas)) or (not toolbar):
+            return VBox([self.plot.show(toolbar=False), self._vbox_sliders])
+
+        if self.toolbar is None:
+            self.toolbar = ImageWidgetToolbar(self)
+
+        return VBox(
+            [
+                self.plot.show(toolbar=True),
+                self.toolbar.widget,
+                self._vbox_sliders,
+            ]
+        )
 
 
 class ImageWidgetToolbar:
