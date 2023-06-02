@@ -145,6 +145,9 @@ class ColorFeature(GraphicFeatureIndexable):
 
         elif isinstance(key, np.ndarray):
             key = cleanup_array_slice(key, self._upper_bound)
+            if key is None:
+                return
+
             indices = key
 
         else:
