@@ -9,9 +9,9 @@ on:
       - master
 
 jobs:
-
-  test-linux-builds:
-    name: ${{ matrix.name }}
+  
+  test-examples-build:
+    name: Test examples
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -25,29 +25,10 @@ jobs:
             pyversion: '3.11'
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.pyversion }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.pyversion }}
-    - name: Install package and dev dependencies
-      run: |
-        python -m pip install --upgrade pip
-        # remove pygfx from requirements, we install a specific commit of pygfx since both fpl and pygfx are fast evolving
-        sed -i "/pygfx/d" ./setup.py
-        pip install git+https://github.com/pygfx/pygfx.git@88ed3f31ed14840eb84259c3b1bd1cac740ecf25
-        pip install -e .
-
-  test-examples-build:
-    name: Test examples
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-    steps:
-    - uses: actions/checkout@v3
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
-        python-version: '3.10'
+        python-version: ${{ matrix.pyversion }}
     - name: Install llvmpipe and lavapipe for offscreen canvas
       run: |
         sudo apt-get update -y -qq
