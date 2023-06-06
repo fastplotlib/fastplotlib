@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - fpl-tests
   pull_request:
     branches:
       - master
