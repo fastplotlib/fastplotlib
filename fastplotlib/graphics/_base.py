@@ -341,11 +341,19 @@ class GraphicCollection(Graphic):
         super(GraphicCollection, self).__init__(name)
         self._graphics: List[str] = list()
 
+        self._graphics_changed: bool = True
+        self._graphics_array: np.ndarray[Graphic] = None
+
     @property
-    def graphics(self) -> Tuple[Graphic]:
+    def graphics(self) -> np.ndarray[Graphic]:
         """The Graphics within this collection. Always returns a proxy to the Graphics."""
-        proxies = [weakref.proxy(COLLECTION_GRAPHICS[loc]) for loc in self._graphics]
-        return tuple(proxies)
+        if self._graphics_changed:
+            proxies = [weakref.proxy(COLLECTION_GRAPHICS[loc]) for loc in self._graphics]
+            self._graphics_array = np.array(proxies)
+            self._graphics_array.flags["WRITEABLE"] = False
+            self._graphics_changed = False
+
+        return self._graphics_array
 
     def add_graphic(self, graphic: Graphic, reset_index: True):
         """Add a graphic to the collection"""
@@ -364,6 +372,8 @@ class GraphicCollection(Graphic):
             self._reset_index()
         self.world_object.add(graphic.world_object)
 
+        self._graphics_changed = True
+
     def remove_graphic(self, graphic: Graphic, reset_index: True):
         """Remove a graphic from the collection"""
         self._graphics.remove(graphic.loc)
@@ -372,6 +382,8 @@ class GraphicCollection(Graphic):
             self._reset_index()
 
         self.world_object.remove(graphic.world_object)
+
+        self._graphics_changed = True
             
     def __del__(self):
         self.world_object.clear()
