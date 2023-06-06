@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - fpl-tests
   pull_request:
     branches:
       - master
@@ -52,7 +51,7 @@ jobs:
         REGENERATE_SCREENSHOTS=1 pytest -v examples
         pytest --nbmake notebooks/
     - uses: actions/upload-artifact@v3
-      #if: ${{ failure() }}
+      if: ${{ failure() }}
       with:
         name: screenshot-diffs
         path: examples/screenshots/diffs
