@@ -67,16 +67,18 @@ def test_example_screenshots(module, force_offscreen):
     if not os.path.exists(screenshots_dir):
         os.mkdir(screenshots_dir)
 
-    screenshot_path = screenshots_dir / f"{module.stem}.npy"
+    screenshot_path = screenshots_dir / f"{module.stem}.png"
 
     if "REGENERATE_SCREENSHOTS" in os.environ.keys():
         if os.environ["REGENERATE_SCREENSHOTS"] == "1":
-            np.save(screenshot_path, img)
+            iio.imwrite(screenshot_path, img)
+            #np.save(screenshot_path, img)
 
     assert (
         screenshot_path.exists()
     ), "found # test_example = true but no reference screenshot available"
-    stored_img = np.load(screenshot_path)
+    #stored_img = np.load(screenshot_path)
+    stored_img = iio.imread(screenshot_path)
     is_similar = np.allclose(img, stored_img, atol=1)
     update_diffs(module.stem, is_similar, img, stored_img)
     assert is_similar, (
