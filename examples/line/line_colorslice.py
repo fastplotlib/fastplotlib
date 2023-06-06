@@ -55,11 +55,11 @@ sine_graphic.cmap = "seismic"
 cosine_graphic.colors[65:90, 0] = np.linspace(0, 1, 90-65)
 
 # additional fancy indexing using numpy
-# key = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 67, 19])
-# sinc_graphic.colors[key] = "Red"
-#
-# key2 = np.array([True, False, True, False, True, True, True, True])
-# cosine_graphic.colors[key2] = "Green"
+key = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 67, 19])
+sinc_graphic.colors[key] = "Red"
+
+key2 = np.array([True, False, True, False, True, True, True, True])
+cosine_graphic.colors[key2] = "Green"
 
 plot.center_scene()
 
