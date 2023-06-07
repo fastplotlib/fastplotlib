@@ -862,7 +862,7 @@ class ImageWidget:
             self.current_index["t"] = 0
             self.sliders["t"].value = 0
 
-        if isinstance(new_data, np.ndarray):
+        if isinstance(new_data, np.ndarray) and isinstance(self.plot, Plot):
             if new_data.shape != self._data[0].shape:
                 raise ValueError(f"new data shape {new_data.shape} does not equal current data shape {self._data[0].shape}")
             self._data[0] = new_data
