@@ -856,11 +856,13 @@ class ImageWidget:
 
             self.vmin_vmax_sliders[i].set_state(state)
 
-    def set_data(self, new_data: Union[np.ndarray, List[np.ndarray]], reset_vmin_vmax: bool = True, reset_current_index: bool = True):
+    def set_data(self, new_data: Union[np.ndarray, List[np.ndarray]], reset_vmin_vmax: bool = True, reset_indices: bool = True):
         """Change data of widget"""
-        if reset_current_index:
-            self.current_index["t"] = 0
-            self.sliders["t"].value = 0
+        if reset_indices:
+            for key in self.current_index:
+                self.current_index[key] = 0
+            for key in self.sliders:
+                self.sliders[key].value = 0
 
         if isinstance(new_data, np.ndarray) and isinstance(self.plot, Plot):
             if new_data.shape != self._data[0].shape:
@@ -870,12 +872,12 @@ class ImageWidget:
         else:
             if len(self._data) != len(new_data):
                 raise ValueError(f"number of new data arrays {len(new_data)} must match current number of data arrays {len(self._data)}")
-            positions = list(product(range(self.plot.shape[0]), range(self.plot.shape[1])))
-            for i, (new_darray, darray) in enumerate(zip(new_data, self._data)):
+            for i, (new_darray, darray, subplot) in enumerate(zip(new_data, self._data, self.plot)):
                 if new_darray.shape != darray.shape:
                     raise ValueError(f"new data shape {new_darray.shape} does not equal current data shape {darray.shape}")
                 self._data[i] = new_data[i]
-                self.plot[positions[i][0], positions[i][1]].graphics[0].data = self._data[i][self.current_index["t"]]
+                # we assume that graphics[0] is always the image widget managed data
+                subplot.graphics[0].data = self._data[i][self.current_index["t"]]
 
         if reset_vmin_vmax and len(self.vmin_vmax_sliders) != 0:
             self.reset_vmin_vmax()
