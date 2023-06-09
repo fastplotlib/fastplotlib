@@ -885,41 +885,6 @@ class ImageWidget:
         if reset_vmin_vmax:
             self.reset_vmin_vmax()
 
-    def _set_current_index(self, index: Dict[str, int], force: bool = False):
-        """Current index setter. Takes optional kwarg 'force' to update widget graphic data even if index has not
-        changed."""
-        if not set(index.keys()).issubset(set(self._current_index.keys())):
-            raise KeyError(
-                f"All dimension keys for setting `current_index` must be present in the widget sliders. "
-                f"The dimensions currently used for sliders are: {list(self.current_index.keys())}"
-            )
-
-        for k, val in index.items():
-            if not isinstance(val, int):
-                raise TypeError("Indices for all dimensions must be int")
-            if val < 0:
-                raise IndexError("negative indexing is not supported for ImageWidget")
-            if val > self._dims_max_bounds[k]:
-                raise IndexError(f"index {val} is out of bounds for dimension '{k}' "
-                                 f"which has a max bound of: {self._dims_max_bounds[k]}")
-
-        self._current_index.update(index)
-
-        # can make a callback_block decorator later
-        self.block_sliders = True
-        for k in index.keys():
-            self.sliders[k].value = index[k]
-        self.block_sliders = False
-
-        for i, (ig, data) in enumerate(zip(self.image_graphics, self.data)):
-            frame = self._process_indices(data, self._current_index)
-            frame = self._process_frame_apply(frame, i)
-            ig.data = frame
-
-        if force:
-            # need to force update of frame
-            pass
-
     def show(self, toolbar: bool = True):
         """
         Show the widget
