@@ -847,14 +847,18 @@ class ImageWidget:
         for i, ig in enumerate(self.image_graphics):
             mm = self._get_vmin_vmax_range(ig.data())
 
-            state = {
-                "value": mm[0],
-                "step": mm[1] / 150,
-                "min": mm[2],
-                "max": mm[3]
-            }
+            if len(self.vmin_vmax_sliders) != 0:
+                state = {
+                    "value": mm[0],
+                    "step": mm[1] / 150,
+                    "min": mm[2],
+                    "max": mm[3]
+                }
 
-            self.vmin_vmax_sliders[i].set_state(state)
+                self.vmin_vmax_sliders[i].set_state(state)
+            else:
+                ig.vmin = mm[2]
+                ig.vmax = mm[3]
 
     def set_data(self, new_data: Union[np.ndarray, List[np.ndarray]], reset_vmin_vmax: bool = True, reset_indices: bool = True):
         """Change data of widget"""
@@ -879,7 +883,7 @@ class ImageWidget:
                 # we assume that graphics[0] is always the image widget managed data
                 subplot.graphics[0].data = self._data[i][self.current_index["t"]]
 
-        if reset_vmin_vmax and len(self.vmin_vmax_sliders) != 0:
+        if reset_vmin_vmax:
             self.reset_vmin_vmax()
 
     def show(self, toolbar: bool = True):
