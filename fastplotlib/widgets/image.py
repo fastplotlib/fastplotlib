@@ -857,30 +857,76 @@ class ImageWidget:
 
                 self.vmin_vmax_sliders[i].set_state(state)
             else:
-                ig.vmin = mm[2]
-                ig.vmax = mm[3]
+                ig.min, ig.max = mm
 
-    def set_data(self, new_data: Union[np.ndarray, List[np.ndarray]], reset_vmin_vmax: bool = True, reset_indices: bool = True):
-        """Change data of widget"""
+    def set_data(
+            self,
+            new_data: Union[np.ndarray, List[np.ndarray]],
+            reset_vmin_vmax: bool = True,
+            reset_indices: bool = True
+    ):
+        """
+        Change data of widget. Note: sliders max currently update only for ``txy`` and ``tzxy`` data.
+
+        Parameters
+        ----------
+        new_data: array-like or list of array-like
+            The new data to display in the widget
+
+        reset_vmin_vmax: bool, default ``True``
+            reset the vmin vmax levels based on the new data
+
+        reset_indices: bool, default ``True``
+            reset the current index for all dimensions to 0
+
+        """
+
         if reset_indices:
             for key in self.current_index:
                 self.current_index[key] = 0
             for key in self.sliders:
                 self.sliders[key].value = 0
 
+        # single plot
         if isinstance(new_data, np.ndarray) and isinstance(self.plot, Plot):
-            if new_data.shape != self._data[0].shape:
-                raise ValueError(f"new data shape {new_data.shape} does not equal current data shape {self._data[0].shape}")
+            if new_data.ndim != self._data[0].ndim:
+                raise ValueError(
+                    f"new data ndim {new_data.ndim} does not equal current data ndim {self._data[0].ndim}"
+                )
             self._data[0] = new_data
             self.current_index = self.current_index
-        else:
+        else:  # gridplot
             if len(self._data) != len(new_data):
-                raise ValueError(f"number of new data arrays {len(new_data)} must match current number of data arrays {len(self._data)}")
-            for i, (new_darray, darray, subplot) in enumerate(zip(new_data, self._data, self.plot)):
-                if new_darray.shape != darray.shape:
-                    raise ValueError(f"new data shape {new_darray.shape} does not equal current data shape {darray.shape}")
-                self._data[i] = new_data[i]
-                self.current_index = self.current_index
+                raise ValueError(
+                    f"number of new data arrays {len(new_data)} must match"
+                    f" current number of data arrays {len(self._data)}"
+                )
+            # check all arrays
+            for i, (new_array, current_array) in enumerate(zip(new_data, self._data)):
+                if new_array.ndim != current_array.ndim:
+                    raise ValueError(
+                        f"new data ndim {new_array.ndim} at index {i} "
+                        f"does not equal current data ndim {current_array.ndim}"
+                    )
+
+            # if checks pass, update with new data
+            max_lengths = {"t": np.inf, "z": np.inf}
+            for i, (new_array, current_array, subplot) in enumerate(zip(new_data, self._data, self.plot)):
+                self._data[i] = new_array
+
+                if new_array.ndim > 2:
+                    # to set max of time slider, txy or tzxy
+                    max_lengths["t"] = min(max_lengths["t"], new_array.shape[0])
+
+                if new_array.ndim > 3:  # tzxy
+                    max_lengths["z"] = min(max_lengths["z"], new_array.shape[1])
+
+            # set slider maxes
+            for key in self.sliders.keys():
+                self.sliders[key].max = max_lengths[key]
+
+            # force graphics to update
+            self.current_index = self.current_index
 
         if reset_vmin_vmax:
             self.reset_vmin_vmax()
