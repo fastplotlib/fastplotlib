@@ -154,3 +154,15 @@ def make_pygfx_colors(colors, n_colors):
     c = Color(colors)
     colors_array = np.repeat(np.array([c]), n_colors, axis=0)
     return colors_array
+
+
+def calculate_gridshape(n_subplots: int) -> Tuple[int, int]:
+    """
+    Returns ``(n_rows, n_cols)`` from given number of subplots ``n_subplots``
+    """
+    sr = np.sqrt(n_subplots)
+
+    return (
+        int(np.round(sr)),
+        int(np.ceil(sr))
+    )

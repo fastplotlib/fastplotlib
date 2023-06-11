@@ -291,10 +291,16 @@ class GridPlot(RecordMixin):
         return VBox([self.canvas, self.toolbar.widget])
 
     def close(self):
+        """Close the GridPlot"""
         self.canvas.close()
 
         if self.toolbar is not None:
             self.toolbar.widget.close()
+
+    def clear(self):
+        """Clear all Subplots"""
+        for subplot in self:
+            subplot.clear()
 
     def _get_iterator(self):
         return product(range(self.shape[0]), range(self.shape[1]))

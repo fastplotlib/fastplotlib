@@ -87,7 +87,7 @@ class PlotArea:
         # managed similar to GRAPHICS for garbage collection etc.
         self._selectors: List[str] = list()
 
-        self.name = name
+        self._name = name
 
         # need to think about how to deal with children better
         self.children = list()
@@ -154,6 +154,14 @@ class PlotArea:
             proxies.append(p)
 
         return tuple(proxies)
+
+    @property
+    def name(self) -> Any:
+        return self._name
+
+    @name.setter
+    def name(self, name: Any):
+        self._name = name
 
     def get_rect(self) -> Tuple[float, float, float, float]:
         """allows setting the region occupied by the viewport w.r.t. the parent"""

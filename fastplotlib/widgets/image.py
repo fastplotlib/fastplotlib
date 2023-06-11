@@ -11,7 +11,7 @@ from wgpu.gui.jupyter import JupyterWgpuCanvas
 from ..plot import Plot
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
-from ..utils import quick_min_max
+from ..utils import quick_min_max, calculate_gridshape
 
 
 DEFAULT_DIMS_ORDER = \
@@ -21,14 +21,6 @@ DEFAULT_DIMS_ORDER = \
         4: "tzxy",
         5: "tzcxy",
     }
-
-
-def _calc_gridshape(n):
-    sr = np.sqrt(n)
-    return (
-        int(np.round(sr)),
-        int(np.ceil(sr))
-    )
 
 
 def _is_arraylike(obj) -> bool:
@@ -248,11 +240,11 @@ class ImageWidget:
             # verify that it's a list of np.ndarray
             if all([_is_arraylike(d) for d in data]):
                 if grid_shape is None:
-                    grid_shape = _calc_gridshape(len(data))
+                    grid_shape = calculate_gridshape(len(data))
 
                 # verify that user-specified grid shape is large enough for the number of image arrays passed
                 elif grid_shape[0] * grid_shape[1] < len(data):
-                    grid_shape = _calc_gridshape(len(data))
+                    grid_shape = calculate_gridshape(len(data))
                     warn(f"Invalid `grid_shape` passed, setting grid shape to: {grid_shape}")
 
                 _ndim = [d.ndim for d in data]
@@ -821,11 +813,22 @@ class ImageWidget:
         for mm in self.vmin_vmax_sliders:
             mm.layout = Layout(width=f"{w}px")
 
-    def _get_vmin_vmax_range(self, data: np.ndarray) -> Tuple[int, int]:
+    def _get_vmin_vmax_range(self, data: np.ndarray) -> tuple:
+        """
+        Parameters
+        ----------
+        data
+
+        Returns
+        -------
+        Tuple[Tuple[float, float], float, float, float]
+            (min, max), data_range, min - (data_range * 0.4), max + (data_range * 0.4)
+        """
+
         minmax = quick_min_max(data)
 
         data_range = np.ptp(minmax)
-        data_range_40p = np.ptp(minmax) * 0.4
+        data_range_40p = data_range * 0.4
 
         _range = (
             minmax,

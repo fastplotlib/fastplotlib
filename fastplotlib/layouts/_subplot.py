@@ -129,6 +129,15 @@ class Subplot(PlotArea):
         # only return a proxy to the real graphic
         return weakref.proxy(graphic)
 
+    @property
+    def name(self) -> Any:
+        return self._name
+
+    @name.setter
+    def name(self, name: Any):
+        self._name = name
+        self.set_title(name)
+
     def set_title(self, text: Any):
         """Sets the name of a subplot to 'top' viewport if defined."""
         if text is None:

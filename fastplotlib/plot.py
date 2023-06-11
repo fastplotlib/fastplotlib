@@ -129,6 +129,7 @@ class Plot(Subplot, RecordMixin):
         return VBox([self.canvas, self.toolbar.widget])
 
     def close(self):
+        """Close Plot"""
         self.canvas.close()
 
         if self.toolbar is not None:
