@@ -116,9 +116,9 @@ cd examples
 jupyter lab
 ```
 
-## Install Vulkan drivers
+## Graphics drivers
 
-You will need a GPU that supports Vulkan (integrated GPUs in CPUs are usually fine). Generally if your GPU is from 2017 or later it should support Vulkan.
+You will need a relatively modern GPU (newer integrated GPUs in CPUs are usually fine). Generally if your GPU is from 2017 or later it should support Vulkan.
 
 For more information see: https://wgpu-py.readthedocs.io/en/stable/start.html#platform-requirements
 
@@ -136,24 +136,13 @@ sudo apt install libjpeg-turbo
 
 For other distros install the appropriate vulkan driver package, and optionally the corresponding `libjpeg-turbo` package for better remote-frame-buffer performance in jupyter notebooks.
 
+#### CPU/software rendering (Lavapipe)
+
+If you do not have a GPU you can perform limited software rendering using lavapipe. This should get you everything you need for that on Debian or Ubuntu based distros:
+
+```bash
+sudo apt install llvm-dev libturbojpeg* libgl1-mesa-dev libgl1-mesa-glx libglapi-mesa libglx-mesa0 mesa-common-dev mesa-vulkan-drivers
+```
+
 ### Mac OSX:
 As far as I know, WGPU uses Metal instead of Vulkan on Mac. I think you will need at least Mac OSX 10.13.
-
-# Gallery
-
-### Extremely fast image updates, 5 x 5 gridplot
-
-https://www.youtube.com/embed/-_0Gp_EqepI
-
-### Very fast image updates with some synced controllers
-
-https://user-images.githubusercontent.com/9403332/165678225-dcf3b401-86a5-4df5-a9e5-dc65bdb0443a.mp4
-
-### 4x Grid of Scatter plots, 1.2 million points each
-
-[https://user-images.githubusercontent.com/9403332/165677576-a0aa2d0f-a201-4e0e-91bd-aed800f775ee.mp4](https://www.youtube.com/watch?v=j_gwi-Wf1Ao)
-
-### Lineplot
-
-https://user-images.githubusercontent.com/9403332/165678270-aea65a83-6cc1-4edc-981c-4857eaf293c7.mp4
-
