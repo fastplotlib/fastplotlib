@@ -79,9 +79,9 @@ class _WindowFunctions:
 
 class ImageWidget:
     @property
-    def plot(self) -> Union[Plot, GridPlot]:
+    def plot(self) -> GridPlot:
         """
-        The plotter used by the ImageWidget. Either a simple ``Plot`` or ``GridPlot``.
+        The plotter used by the ImageWidget. Will always be a ``GridPlot``.
         """
         return self._plot
 
@@ -269,8 +269,6 @@ class ImageWidget:
                         )
                     self._names = names
 
-                self._plot_type = "grid"
-
             else:
                 raise TypeError(
                     f"If passing a list to `data` all elements must be an "
@@ -283,7 +281,7 @@ class ImageWidget:
             self._data = [data]
             self._ndim = self.data[0].ndim
 
-            self._plot_type = "single"
+            grid_shape = calculate_gridshape(len(self._data))
         else:
             raise TypeError(
                 f"`data` must be an array-like type representing an n-dimensional image "
@@ -466,91 +464,56 @@ class ImageWidget:
             for array, order in zip(self.data, self.dims_order):
                 self._dims_max_bounds[_dim] = min(self._dims_max_bounds[_dim], array.shape[order.index(_dim)])
 
-        if self._plot_type == "single":
-            self._plot: Plot = Plot()
+        if grid_plot_kwargs is None:
+            grid_plot_kwargs = {"controllers": "sync"}
 
-            minmax = quick_min_max(self.data[0])
+        self._plot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs)
+
+        self.image_graphics = list()
+        for data_ix, (d, subplot) in enumerate(zip(self.data, self.plot)):
+            minmax = quick_min_max(self.data[data_ix])
+
+            if self._names is not None:
+                name = self._names[data_ix]
+                name_slider = name
+            else:
+                name = None
+                name_slider = ""
 
             if vmin_vmax_sliders:
                 data_range = np.ptp(minmax)
-                data_range_40p = np.ptp(minmax) * 0.3
+                data_range_40p = np.ptp(minmax) * 0.4
 
                 minmax_slider = FloatRangeSlider(
                     value=minmax,
                     min=minmax[0] - data_range_40p,
                     max=minmax[1] + data_range_40p,
                     step=data_range / 150,
-                    description=f"min-max",
+                    description=f"mm: {name_slider}",
                     readout=True,
                     readout_format='.3f',
                 )
 
                 minmax_slider.observe(
-                    partial(self._vmin_vmax_slider_changed, 0),
+                    partial(self._vmin_vmax_slider_changed, data_ix),
                     names="value"
                 )
 
                 self.vmin_vmax_sliders.append(minmax_slider)
 
             if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
-                kwargs["vmin"], kwargs["vmax"] = minmax
+                _kwargs = deepcopy(kwargs)
+                _kwargs["vmin"], _kwargs["vmax"] = minmax
+            else:
+                _kwargs = kwargs
 
-            frame = self._process_indices(self.data[0], slice_indices=self._current_index)
-            frame = self._process_frame_apply(frame, 0)
-
-            self.image_graphics: List[ImageGraphic] = [self.plot.add_image(data=frame, name="image", **kwargs)]
-
-        elif self._plot_type == "grid":
-            if grid_plot_kwargs is None:
-                grid_plot_kwargs = {"controllers": "sync"}
-
-            self._plot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs)
-
-            self.image_graphics = list()
-            for data_ix, (d, subplot) in enumerate(zip(self.data, self.plot)):
-                minmax = quick_min_max(self.data[data_ix])
-
-                if self._names is not None:
-                    name = self._names[data_ix]
-                    name_slider = name
-                else:
-                    name = None
-                    name_slider = ""
-
-                if vmin_vmax_sliders:
-                    data_range = np.ptp(minmax)
-                    data_range_40p = np.ptp(minmax) * 0.4
-
-                    minmax_slider = FloatRangeSlider(
-                        value=minmax,
-                        min=minmax[0] - data_range_40p,
-                        max=minmax[1] + data_range_40p,
-                        step=data_range / 150,
-                        description=f"mm: {name_slider}",
-                        readout=True,
-                        readout_format='.3f',
-                    )
-
-                    minmax_slider.observe(
-                        partial(self._vmin_vmax_slider_changed, data_ix),
-                        names="value"
-                    )
-
-                    self.vmin_vmax_sliders.append(minmax_slider)
-
-                if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
-                    _kwargs = deepcopy(kwargs)
-                    _kwargs["vmin"], _kwargs["vmax"] = minmax
-                else:
-                    _kwargs = kwargs
-
-                frame = self._process_indices(d, slice_indices=self._current_index)
-                frame = self._process_frame_apply(frame, data_ix)
-                ig = ImageGraphic(frame, name="image", **_kwargs)
-                subplot.add_graphic(ig)
-                subplot.name = name
-                subplot.set_title(name)
-                self.image_graphics.append(ig)
+            frame = self._process_indices(d, slice_indices=self._current_index)
+            frame = self._process_frame_apply(frame, data_ix)
+            ig = ImageGraphic(frame, name="image", **_kwargs)
+            subplot.add_graphic(ig)
+            subplot.name = name
+            subplot.set_title(name)
+            self.image_graphics.append(ig)
 
         self.plot.renderer.add_event_handler(self._set_slider_layout, "resize")
 
