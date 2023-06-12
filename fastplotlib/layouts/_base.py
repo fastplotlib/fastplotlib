@@ -248,6 +248,64 @@ class PlotArea:
             GRAPHICS[loc] = graphic
             self._graphics.append(loc)  # add hex id string for referencing this graphic instance
 
+        graphic.position_z = len(self._graphics)
+
+        # add world object to scene
+        self.scene.add(graphic.world_object)
+
+        if center:
+            self.center_graphic(graphic)
+
+        if hasattr(graphic, "_add_plot_area_hook"):
+            graphic._add_plot_area_hook(self)
+
+    def insert_graphic(self, graphic: Graphic, center: bool = True, position: int = 0, z_position: int = None):
+        """
+        Insert graphic into scene at given position (index) in stored graphics.
+        Replaces graphic at current index if it exists.
+
+        Parameters
+        ----------
+        graphic: Graphic or GraphicCollection
+            Add a Graphic or a GraphicCollection to the plot area at a given position.
+            Note: this must be a real Graphic instance and not a proxy
+
+        center: bool, default True
+            Center the camera on the newly added Graphic
+
+        position: int, default 0
+            Index to insert graphic. Will default replace graphic at index 0. If position is IndexOutOfBounds,
+            will place at last possible position.
+
+        """
+        if not isinstance(graphic, Graphic):
+            raise TypeError(
+                f"Can only add Graphic types to a PlotArea, you have passed a: {type(graphic)}"
+            )
+
+        if position >= len(self._graphics):
+            raise IndexError(f"Position {position} is out of bounds for length {len(self._graphics)} of graphics "
+                             f"currently in the PlotArea\n"
+                             f"Call add_graphic method to insert graphic in the last position of the stored graphics")
+
+        if isinstance(graphic, BaseSelector):
+            # store in SELECTORS dict
+            loc = graphic.loc
+            SELECTORS[loc] = graphic
+            # add graphic at desired position
+            self._selectors.insert(position, loc)  # don't manage garbage collection of LineSliders for now
+        else:
+            # store in GRAPHICS dict
+            loc = graphic.loc
+            GRAPHICS[loc] = graphic
+            # add graphic at desired position
+            self._graphics.insert(position, loc)  # add hex id string for referencing this graphic instance
+
+        if z_position is None:
+            graphic.position_z = len(self._graphics)
+        else:
+            graphic.position_z = z_position
+
         # add world object to scene
         self.scene.add(graphic.world_object)
 
