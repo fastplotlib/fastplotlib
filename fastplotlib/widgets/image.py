@@ -79,11 +79,11 @@ class _WindowFunctions:
 
 class ImageWidget:
     @property
-    def plot(self) -> GridPlot:
+    def gridplot(self) -> GridPlot:
         """
-        The plotter used by the ImageWidget. Will always be a ``GridPlot``.
+        ``GridPlot`` instance within the `ImageWidget`.
         """
-        return self._plot
+        return self._gridplot
 
     @property
     def data(self) -> List[np.ndarray]:
@@ -467,10 +467,10 @@ class ImageWidget:
         if grid_plot_kwargs is None:
             grid_plot_kwargs = {"controllers": "sync"}
 
-        self._plot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs)
+        self._gridplot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs)
 
         self.image_graphics = list()
-        for data_ix, (d, subplot) in enumerate(zip(self.data, self.plot)):
+        for data_ix, (d, subplot) in enumerate(zip(self.data, self.gridplot)):
             minmax = quick_min_max(self.data[data_ix])
 
             if self._names is not None:
@@ -501,21 +501,21 @@ class ImageWidget:
 
                 self.vmin_vmax_sliders.append(minmax_slider)
 
-            if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
-                _kwargs = deepcopy(kwargs)
-                _kwargs["vmin"], _kwargs["vmax"] = minmax
-            else:
-                _kwargs = kwargs
+            # if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
+            #     _kwargs = deepcopy(kwargs)
+            #     _kwargs["vmin"], _kwargs["vmax"] = minmax
+            # else:
+            #     _kwargs = kwargs
 
             frame = self._process_indices(d, slice_indices=self._current_index)
             frame = self._process_frame_apply(frame, data_ix)
-            ig = ImageGraphic(frame, name="image", **_kwargs)
+            ig = ImageGraphic(frame, name="image", **kwargs)
             subplot.add_graphic(ig)
             subplot.name = name
             subplot.set_title(name)
             self.image_graphics.append(ig)
 
-        self.plot.renderer.add_event_handler(self._set_slider_layout, "resize")
+        self.gridplot.renderer.add_event_handler(self._set_slider_layout, "resize")
 
         for sdm in self.slider_dims:
             if sdm == "z":
@@ -766,7 +766,7 @@ class ImageWidget:
         self.image_graphics[data_ix].vmax = vmax
 
     def _set_slider_layout(self, *args):
-        w, h = self.plot.renderer.logical_size
+        w, h = self.gridplot.renderer.logical_size
         for hs in self._horizontal_sliders:
             hs.layout = Layout(width=f"{w}px")
 
@@ -819,7 +819,7 @@ class ImageWidget:
 
                 self.vmin_vmax_sliders[i].set_state(state)
             else:
-                ig.min, ig.max = mm
+                ig.vmin, ig.vmax = mm
 
     def set_data(
             self,
@@ -852,45 +852,32 @@ class ImageWidget:
         # set slider max according to new data
         max_lengths = {"t": np.inf, "z": np.inf}
 
-        # single plot
-        if isinstance(new_data, np.ndarray) and isinstance(self.plot, Plot):
-            if new_data.ndim != self._data[0].ndim:
-                raise ValueError(
-                    f"new data ndim {new_data.ndim} does not equal current data ndim {self._data[0].ndim}"
-                )
-            self._data[0] = new_data
+        if isinstance(new_data, np.ndarray):
+            new_data = [new_data]
 
-            if new_data.ndim > 2:
+        if len(self._data) != len(new_data):
+            raise ValueError(
+                f"number of new data arrays {len(new_data)} must match"
+                f" current number of data arrays {len(self._data)}"
+            )
+        # check all arrays
+        for i, (new_array, current_array) in enumerate(zip(new_data, self._data)):
+            if new_array.ndim != current_array.ndim:
+                raise ValueError(
+                    f"new data ndim {new_array.ndim} at index {i} "
+                    f"does not equal current data ndim {current_array.ndim}"
+                )
+
+        # if checks pass, update with new data
+        for i, (new_array, current_array, subplot) in enumerate(zip(new_data, self._data, self.gridplot)):
+            self._data[i] = new_array
+
+            if new_array.ndim > 2:
                 # to set max of time slider, txy or tzxy
-                max_lengths["t"] = min(max_lengths["t"], new_data.shape[0] - 1)
+                max_lengths["t"] = min(max_lengths["t"], new_array.shape[0] - 1)
 
-            if new_data.ndim > 3:  # tzxy
-                max_lengths["z"] = min(max_lengths["z"], new_data.shape[1] - 1)
-
-        else:  # gridplot
-            if len(self._data) != len(new_data):
-                raise ValueError(
-                    f"number of new data arrays {len(new_data)} must match"
-                    f" current number of data arrays {len(self._data)}"
-                )
-            # check all arrays
-            for i, (new_array, current_array) in enumerate(zip(new_data, self._data)):
-                if new_array.ndim != current_array.ndim:
-                    raise ValueError(
-                        f"new data ndim {new_array.ndim} at index {i} "
-                        f"does not equal current data ndim {current_array.ndim}"
-                    )
-
-            # if checks pass, update with new data
-            for i, (new_array, current_array, subplot) in enumerate(zip(new_data, self._data, self.plot)):
-                self._data[i] = new_array
-
-                if new_array.ndim > 2:
-                    # to set max of time slider, txy or tzxy
-                    max_lengths["t"] = min(max_lengths["t"], new_array.shape[0] - 1)
-
-                if new_array.ndim > 3:  # tzxy
-                    max_lengths["z"] = min(max_lengths["z"], new_array.shape[1] - 1)
+            if new_array.ndim > 3:  # tzxy
+                max_lengths["z"] = min(max_lengths["z"], new_array.shape[1] - 1)
 
         # set slider maxes
         # TODO: maybe make this stuff a property, like ndims, n_frames etc. and have it set the sliders
@@ -914,19 +901,19 @@ class ImageWidget:
             ``ipywidgets.VBox`` stacking the plotter and sliders in a vertical layout
         """
 
-        if not isinstance(self.plot.canvas, JupyterWgpuCanvas):
+        if not isinstance(self.gridplot.canvas, JupyterWgpuCanvas):
             raise TypeError("ImageWidget is currently not supported outside of Jupyter")
 
         # check if in jupyter notebook, or if toolbar is False
-        if (not isinstance(self.plot.canvas, JupyterWgpuCanvas)) or (not toolbar):
-            return VBox([self.plot.show(toolbar=False), self._vbox_sliders])
+        if (not isinstance(self.gridplot.canvas, JupyterWgpuCanvas)) or (not toolbar):
+            return VBox([self.gridplot.show(toolbar=False), self._vbox_sliders])
 
         if self.toolbar is None:
             self.toolbar = ImageWidgetToolbar(self)
 
         return VBox(
             [
-                self.plot.show(toolbar=True),
+                self.gridplot.show(toolbar=True),
                 self.toolbar.widget,
                 self._vbox_sliders,
             ]
@@ -944,7 +931,7 @@ class ImageWidgetToolbar:
         plot:
         """
         self.iw = iw
-        self.plot = iw.plot
+        self.plot = iw.gridplot
 
         self.reset_vminvmax_button = Button(value=False, disabled=False, icon='adjust',
                                             layout=Layout(width='auto'), tooltip='reset vmin/vmax')
