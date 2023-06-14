@@ -34,6 +34,7 @@ jobs:
           PYGFX_EXPECT_LAVAPIPE: true
         run: |
           pip install pytest imageio scipy
+          # regenerate screenshots
           REGENERATE_SCREENSHOTS=1 pytest -v examples
       - uses: actions/upload-artifact@v3
         if: always()
