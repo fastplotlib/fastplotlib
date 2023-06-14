@@ -60,7 +60,7 @@ jobs:
       if: ${{ failure() }}
       with:
         name: screenshot-diffs
-        path: examples/screenshots/diffs
+        path: examples/screenshots
     - name: Setup tmate session
       if: ${{ failure() }}
       uses: mxschmitt/action-tmate@v3

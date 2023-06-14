@@ -109,8 +109,8 @@ def update_diffs(module, is_similar, img, stored_img):
 
     # split into an rgb and an alpha diff
     diffs = {
-        diffs_dir / f"{module}-rgb.png": slice(0, 3),
-        diffs_dir / f"{module}-alpha.png": 3,
+        diffs_dir / f"diff-{module}-rgb.png": slice(0, 3),
+        diffs_dir / f"diff-{module}-alpha.png": 3,
     }
 
     for path, slicer in diffs.items():
