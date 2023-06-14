@@ -24,6 +24,9 @@ jobs:
           - name: Test py311
             pyversion: '3.11'
     steps:
+    - name: Install git-lfs
+      run: |
+        sudo apt install --no-install-recommends -y  git-lfs
     - uses: actions/checkout@v3
     - name: Set up Python
       uses: actions/setup-python@v3

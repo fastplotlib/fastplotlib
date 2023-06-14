@@ -10,6 +10,9 @@ jobs:
     name: Regenerate
     runs-on: 'ubuntu-latest'
     steps:
+      - name: Install git-lfs
+        run: |
+          sudo apt install --no-install-recommends -y  git-lfs
       - uses: actions/checkout@v3
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
@@ -18,7 +21,7 @@ jobs:
       - name: Install llvmpipe and lavapipe for offscreen canvas
         run: |
           sudo apt-get update -y -qq
-          sudo apt-get install --no-install-recommends -y libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
+          sudo apt-get install --no-install-recommends -y libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
       - name: Install dev dependencies
         run: |
           python -m pip install --upgrade pip
