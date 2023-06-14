@@ -1,4 +1,5 @@
 # fastplotlib
+[![CI](https://github.com/kushalkolar/fastplotlib/actions/workflows/ci.yml/badge.svg)](https://github.com/kushalkolar/fastplotlib/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/fastplotlib.svg)](https://badge.fury.io/py/fastplotlib)
 [![Documentation Status](https://readthedocs.org/projects/fastplotlib/badge/?version=latest)](https://fastplotlib.readthedocs.io/en/latest/?badge=latest)
 [![Gitter](https://badges.gitter.im/fastplotlib/community.svg)](https://gitter.im/fastplotlib/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
@@ -19,14 +20,24 @@ Questions, ideas? Post an issue or [chat on gitter](https://gitter.im/fastplotli
 
 # Examples
 
-**See the examples directory. Start out with `simple.ipynb`.**
+**Note: the examples on the `master` branch may require 
 
-**IMPORTANT NOTE: If you install `fastplotlib` and `pygfx` from `pypi` (i.e. pip install pygfx), you will need to use the examples from this commit until `pygfx` publishes a new release to `pypi`: https://github.com/kushalkolar/fastplotlib/tree/f872155eb687b18e3cc9b3b720eb9e241a9f974c/examples .** 
-The current examples will work if you installed `fastplotlib` and `pygfx` directly from github.
+Clone or download the repo to try the examples
 
-### Neuroscience usecase demonstrating some of fastplotlib's capabilities
+```bash
+# clone the repo
+git clone https://github.com/kushalkolar/fastplotlib.git
 
-https://user-images.githubusercontent.com/9403332/210304485-e554b648-50b4-4243-b292-a9ed30514a2d.mp4
+# IMPORTANT: if you are using a specific version from pip, checkout that version to get the examples which work for that version
+# example:
+# git checkout git checkout v0.1.0.a9 # replace "v0.1.0.a9" with the version you have
+
+# cd into notebooks and launch jupyter lab
+cd fastplotlib/notebooks
+jupyter lab
+```
+
+**Start out with `simple.ipynb`.**
 
 ### Simple image plot
 ```python
@@ -42,7 +53,7 @@ plot.show()
 ```
 ![image](https://user-images.githubusercontent.com/9403332/209422734-4f983b42-e126-40a7-a681-3b8e22dbd797.png)
 
-### Fast image updates
+### Fast animations
 ```python
 from fastplotlib import Plot
 import numpy as np
@@ -80,25 +91,20 @@ Interactive visualization of large imaging datasets in the notebook.
 
 Install using `pip`.
 
+### Notebook
 ```bash
-pip install fastplotlib
+pip install "fastplotlib[notebook]"
 ```
 
-**Installing `simplejpeg` is recommended for faster plotting in notebooks using remote frame buffer. You will need C compilers to install it:**
+**Optional: install `simplejpeg` for faster notebook visualization, you will need C compilers to install it:**
 
 ```bash
 pip install simplejpeg
 ```
 
-Clone or download the repo to try the examples
-
+### Minimal, use with your own `Qt` or `glfw` applications
 ```bash
-# clone the repo
-git clone https://github.com/kushalkolar/fastplotlib.git
-
-# cd into examples and launch jupyter lab
-cd fastplotlib/examples
-jupyter lab
+pip install fastplotlib
 ```
 
 **Note:** `fastplotlib` and `pygfx` are fast evolving projects, the version available through pip might be outdated, you will need to follow the "For Development" instructions below if you want the latest features. You can find the release history on pypi here: https://pypi.org/project/fastplotlib/#history 
@@ -108,8 +114,7 @@ jupyter lab
 ```bash
 git clone https://github.com/kushalkolar/fastplotlib.git
 cd fastplotlib
-pip install -r requirements.txt
-pip install -e .
+pip install -e ".[notebook,docs,tests]
 
 # try the examples
 cd examples
@@ -118,12 +123,14 @@ jupyter lab
 
 ## Graphics drivers
 
-You will need a relatively modern GPU (newer integrated GPUs in CPUs are usually fine). Generally if your GPU is from 2017 or later it should support Vulkan.
+You will need a relatively modern GPU (newer integrated GPUs in CPUs are usually fine). Generally if your GPU is from 2017 or later it should be fine.
 
 For more information see: https://wgpu-py.readthedocs.io/en/stable/start.html#platform-requirements
 
 ### Windows:
-Vulkan should be installed by default on Windows 11, but you will need to install your GPU manufacturer's driver package (Nvidia or AMD). If you have an integrated GPU within your CPU, you might still need to install a driver package too, check your CPU manufacturer's info. We recommend installing C compilers so that you can install `simplejpeg` which improves remote frame buffer performance in notebooks.
+Vulkan drivers should be installed by default on Windows 11, but you will need to install your GPU manufacturer's driver package (Nvidia or AMD). If you have an integrated GPU within your CPU, you might still need to install a driver package too, check your CPU manufacturer's info.
+
+We also recommend installing C compilers so that you can install `simplejpeg` which improves remote frame buffer performance in notebooks.
 
 ### Linux:
 Debian based distros:
