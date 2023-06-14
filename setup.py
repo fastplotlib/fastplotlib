@@ -30,8 +30,7 @@ extras_require = {
         "imageio-ffmpeg>=0.4.7",
         "jupyterlab",
         "jupyter-rfb",
-        "opencv-python-headless",
-        "scikit-image"
+        "Pillow",
     ]
 }
 
