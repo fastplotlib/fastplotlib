@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+
+  test-build:
+    name: Test examples
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Test py39
+            pyversion: '3.9'
+          - name: Test py310
+            pyversion: '3.10'
+          - name: Test py311
+            pyversion: '3.11'
+    steps:
+    - name: Install git-lfs
+      run: |
+        sudo apt install --no-install-recommends -y  git-lfs
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.pyversion }}
+    - name: Install llvmpipe and lavapipe for offscreen canvas
+      run: |
+        sudo apt-get update -y -qq
+        sudo apt-get install --no-install-recommends -y libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
+    - name: Install dev dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # remove pygfx from requirements, we install a specific commit of pygfx since both fpl and pygfx are fast evolving
+        sed -i "/pygfx/d" ./setup.py
+        pip install git+https://github.com/pygfx/pygfx.git@b63f22a1aa61993c32cd96895316cb8248a81e4d
+        pip install -e ".["tests"]"
+    - name: Show wgpu backend
+      run:
+        python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
+    - name: fetch git lfs files
+      run: |
+        git lfs fetch --all
+        git lfs pull
+    - name: Test examples
+      env:
+        PYGFX_EXPECT_LAVAPIPE: true
+      run: |
+        pytest -v examples
+        pytest --nbmake notebooks/
+    - uses: actions/upload-artifact@v3
+      if: ${{ failure() }}
+      with:
+        name: screenshot-diffs
+        path: examples/diffs
