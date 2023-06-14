@@ -819,7 +819,7 @@ class ImageWidget:
 
                 self.vmin_vmax_sliders[i].set_state(state)
             else:
-                ig.vmin, ig.vmax = mm
+                ig.vmin, ig.vmax = mm[0]
 
     def set_data(
             self,
