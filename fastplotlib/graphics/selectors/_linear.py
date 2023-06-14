@@ -92,7 +92,7 @@ class LinearSelector(Graphic, BaseSelector):
             parent: Graphic = None,
             end_points: Tuple[int, int] = None,
             arrow_keys_modifier: str = "Shift",
-            ipywidget_slider: ipywidgets.IntSlider = None,
+            ipywidget_slider = None,
             thickness: float = 2.5,
             color: Any = "w",
             name: str = None,
