@@ -48,7 +48,7 @@ jobs:
         PYGFX_EXPECT_LAVAPIPE: true
       run: |
         pip install pytest imageio nbmake scipy
-        REGENERATE_SCREENSHOTS=1 pytest -v examples
+        pytest -v examples
         pytest --nbmake notebooks/
     - uses: actions/upload-artifact@v3
       if: ${{ failure() }}
