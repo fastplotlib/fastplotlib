@@ -44,7 +44,7 @@ plot.show()
 
 sinc_graphic.present = False
 
-plot.center_scene()
+plot.canvas.set_logical_size(800, 800)
 
 plot.auto_scale()
 

@@ -61,7 +61,9 @@ sinc_graphic.colors[key] = "Red"
 key2 = np.array([True, False, True, False, True, True, True, True])
 cosine_graphic.colors[key2] = "Green"
 
-plot.center_scene()
+plot.canvas.set_logical_size(800, 800)
+
+plot.auto_scale()
 
 img = np.asarray(plot.renderer.target.draw())
 

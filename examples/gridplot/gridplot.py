@@ -30,8 +30,10 @@ plot[1, 1].add_image(data=im4)
 
 plot.show()
 
+plot.canvas.set_logical_size(800, 800)
+
 for subplot in plot:
-    subplot.center_scene()
+    subplot.auto_scale()
 
 img = np.asarray(plot.renderer.target.draw())
 

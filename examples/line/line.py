@@ -42,7 +42,9 @@ sinc_graphic = plot.add_line(data=sinc, thickness=5, colors=colors)
 
 plot.show()
 
-plot.center_scene()
+plot.canvas.set_logical_size(800, 800)
+
+plot.auto_scale()
 
 img = np.asarray(plot.renderer.target.draw())
 

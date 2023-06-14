@@ -31,7 +31,9 @@ scatter_graphic2 = plot.add_scatter(data=data[:, 1:], sizes=6, alpha=0.7, colors
 
 plot.show()
 
-plot.center_scene()
+plot.canvas.set_logical_size(800, 800)
+
+plot.auto_scale()
 
 scatter_graphic.present = False
 

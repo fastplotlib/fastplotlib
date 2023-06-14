@@ -50,7 +50,9 @@ cosine_graphic.data[0] = np.array([[-10, 0, 0]])
 key2 = np.array([True, False, True, False, True, True, True, True])
 sinc_graphic.data[key2] = np.array([[5, 1, 2]])
 
-plot.center_scene()
+plot.canvas.set_logical_size(800, 800)
+
+plot.auto_scale()
 
 img = np.asarray(plot.renderer.target.draw())
 

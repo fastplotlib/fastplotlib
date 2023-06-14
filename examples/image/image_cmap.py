@@ -17,12 +17,16 @@ renderer = WgpuRenderer(canvas)
 
 plot = Plot(canvas=canvas, renderer=renderer)
 
-im = iio.imread("imageio:astronaut.png")
+im = iio.imread("imageio:camera.png")
 
 # plot the image data
 image_graphic = plot.add_image(data=im, name="random-image")
 
 plot.show()
+
+plot.canvas.set_logical_size(800, 800)
+
+plot.auto_scale()
 
 image_graphic.cmap = "viridis"
 

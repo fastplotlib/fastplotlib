@@ -24,6 +24,10 @@ image_graphic = plot.add_image(data=im, name="iio astronaut")
 
 plot.show()
 
+plot.canvas.set_logical_size(800, 800)
+
+plot.auto_scale()
+
 img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":

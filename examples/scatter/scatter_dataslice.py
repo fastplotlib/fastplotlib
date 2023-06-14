@@ -28,7 +28,9 @@ scatter_graphic = plot.add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors
 
 plot.show()
 
-plot.center_scene()
+plot.canvas.set_logical_size(800, 800)
+
+plot.auto_scale()
 
 scatter_graphic.data[0] = np.array([[5, 3, 1.5]])
 scatter_graphic.data[1] = np.array([[4.3, 3.2, 1.3]])

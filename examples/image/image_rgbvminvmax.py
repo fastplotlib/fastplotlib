@@ -24,6 +24,10 @@ image_graphic = plot.add_image(data=im, name="iio astronaut")
 
 plot.show()
 
+plot.canvas.set_logical_size(800, 800)
+
+plot.auto_scale()
+
 image_graphic.vmin = 0.5
 image_graphic.vmax = 0.75
 
