@@ -131,6 +131,3 @@ dmypy.json
 # Pycharm
 .idea/
 
-# Binary files for testing
-examples/screenshots
-
