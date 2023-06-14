@@ -61,6 +61,3 @@ jobs:
       with:
         name: screenshot-diffs
         path: examples/diffs
-    - name: Setup tmate session
-      if: ${{ failure() }}
-      uses: mxschmitt/action-tmate@v3
