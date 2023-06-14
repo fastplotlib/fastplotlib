@@ -25,7 +25,7 @@ jobs:
           # remove pygfx from requirements, we install a specific commit of pygfx since both fpl and pygfx are fast evolving
           sed -i "/pygfx/d" ./setup.py
           pip install git+https://github.com/pygfx/pygfx.git@b63f22a1aa61993c32cd96895316cb8248a81e4d
-          pip install -e .
+          pip install -e ".["tests"]"
       - name: Show wgpu backend
         run:
           python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
@@ -33,7 +33,6 @@ jobs:
         env:
           PYGFX_EXPECT_LAVAPIPE: true
         run: |
-          pip install pytest imageio scipy
           # regenerate screenshots
           REGENERATE_SCREENSHOTS=1 pytest -v examples
       - uses: actions/upload-artifact@v3
