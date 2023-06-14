@@ -4,9 +4,7 @@ from pathlib import Path
 
 install_requires = [
     'numpy',
-    'pygfx>=0.1.10',
-    'jupyterlab',
-    'jupyter-rfb',
+    'pygfx>=0.1.13',
 ]
 
 
@@ -16,7 +14,25 @@ extras_require = {
         "pydata-sphinx-theme<0.10.0",
         "glfw"
     ],
+
+    "notebook":
+    [
+        'jupyterlab',
+        'jupyter-rfb',
+    ],
+
+    "tests":
+    [
+        "pytest",
+        "nbmake",
+        "scipy",
+        "imageio",
+        "imageio-ffmpeg>=0.4.7",
+        "jupyterlab",
+        "jupyter-rfb",
+    ]
 }
+
 
 with open(Path(__file__).parent.joinpath("README.md")) as f:
     readme = f.read()
