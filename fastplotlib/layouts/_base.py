@@ -241,7 +241,6 @@ class PlotArea:
     ):
         """
         Insert graphic into scene at given position (index) in stored graphics.
-        Replaces graphic at current index if it exists.
 
         Parameters
         ----------
