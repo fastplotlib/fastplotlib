@@ -240,26 +240,25 @@ class PlotArea:
             z_position: int = None
     ):
         """
-        Insert graphic into scene at given position (index) in stored graphics.
+        Insert graphic into scene at given position ``index`` in stored graphics.
 
         Parameters
         ----------
         graphic: Graphic or GraphicCollection
             Add a Graphic or a GraphicCollection to the plot area at a given position.
-            Note: this must be a real Graphic instance and not a proxy
+            Note: must be a real Graphic instance, not a weakref proxy to a Graphic
 
         center: bool, default True
             Center the camera on the newly added Graphic
 
         index: int, default 0
-            Index to insert graphic. Will default replace graphic at index 0. If position is `IndexOutOfBounds`,
-            will place at last possible position.
+            Index to insert graphic. 
 
         z_position: int, default None
-            z-level to place graphic. Will default place the graphic at the 'index' argument.
+            z axis position to place Graphic. If ``None``, uses value of `index` argument
 
         """
-        if index >= len(self._graphics):
+        if index > len(self._graphics):
             raise IndexError(f"Position {index} is out of bounds for number of graphics currently "
                              f"in the PlotArea: {len(self._graphics)}\n"
                              f"Call `add_graphic` method to insert graphic in the last position of the stored graphics")
