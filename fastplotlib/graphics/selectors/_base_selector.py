@@ -76,6 +76,10 @@ class BaseSelector:
 
         self._move_info: MoveInfo = None
 
+        # used to disable fill area events if the edge is being actively hovered
+        # otherwise annoying and requires too much accuracy to move just an edge
+        self._edge_hovered: bool = False
+
     def get_selected_index(self):
         raise NotImplementedError
 
@@ -136,6 +140,10 @@ class BaseSelector:
         self._plot_area.add_animations(self._key_hold)
 
     def _check_fill_pointer_event(self, event_source: WorldObject, ev):
+        if self._edge_hovered:
+            # if edge is hovered, prefer edge events, disable fill moves
+            return
+
         world_pos = self._plot_area.map_screen_to_world(ev)
         # outside viewport, ignore
         # this shouldn't be possible since the event handler is registered to the fill mesh world object
@@ -258,6 +266,9 @@ class BaseSelector:
         if wo not in self._hover_responsive:
             return
 
+        if wo in self._edges:
+            self._edge_hovered = True
+
         wo.material.color = "magenta"
 
     def _pointer_leave(self, ev):
@@ -267,6 +278,8 @@ class BaseSelector:
         # reset colors
         for wo in self._hover_responsive:
             wo.material.color = self._original_colors[wo]
+
+        self._edge_hovered = False
 
     def _toggle_arrow_key_moveable(self, ev):
         self.arrow_key_events_enabled = not self.arrow_key_events_enabled
