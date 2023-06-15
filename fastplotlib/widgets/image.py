@@ -501,11 +501,6 @@ class ImageWidget:
 
                 self.vmin_vmax_sliders.append(minmax_slider)
 
-            # if ("vmin" not in kwargs.keys()) or ("vmax" not in kwargs.keys()):
-            #     _kwargs = deepcopy(kwargs)
-            #     _kwargs["vmin"], _kwargs["vmax"] = minmax
-            # else:
-            #     _kwargs = kwargs
 
             frame = self._process_indices(d, slice_indices=self._current_index)
             frame = self._process_frame_apply(frame, data_ix)
