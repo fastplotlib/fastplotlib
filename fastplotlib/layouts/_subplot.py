@@ -27,7 +27,7 @@ except ImportError:
 try:
     from wgpu.gui.glfw import GlfwWgpuCanvas
 except ImportError:
-    QWgpuCanvas = False
+    GlfwWgpuCanvas = False
 
 
 CANVAS_OPTIONS = ["jupyter", "glfw", "qt"]
