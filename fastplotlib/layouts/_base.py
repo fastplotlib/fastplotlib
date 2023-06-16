@@ -12,7 +12,6 @@ from wgpu.gui.auto import WgpuCanvas
 from ..graphics._base import Graphic, GraphicCollection
 from ..graphics.selectors._base_selector import BaseSelector
 
-
 # dict to store Graphic instances
 # this is the only place where the real references to Graphics are stored in a Python session
 # {hex id str: Graphic}
@@ -229,6 +228,56 @@ class PlotArea:
             Center the camera on the newly added Graphic
 
         """
+        self._add_or_insert_graphic(graphic=graphic, center=center, action="add")
+
+        graphic.position_z = len(self._graphics)
+
+    def insert_graphic(
+            self,
+            graphic: Graphic,
+            center: bool = True,
+            index: int = 0,
+            z_position: int = None
+    ):
+        """
+        Insert graphic into scene at given position ``index`` in stored graphics.
+
+        Parameters
+        ----------
+        graphic: Graphic or GraphicCollection
+            Add a Graphic or a GraphicCollection to the plot area at a given position.
+            Note: must be a real Graphic instance, not a weakref proxy to a Graphic
+
+        center: bool, default True
+            Center the camera on the newly added Graphic
+
+        index: int, default 0
+            Index to insert graphic. 
+
+        z_position: int, default None
+            z axis position to place Graphic. If ``None``, uses value of `index` argument
+
+        """
+        if index > len(self._graphics):
+            raise IndexError(f"Position {index} is out of bounds for number of graphics currently "
+                             f"in the PlotArea: {len(self._graphics)}\n"
+                             f"Call `add_graphic` method to insert graphic in the last position of the stored graphics")
+
+        self._add_or_insert_graphic(graphic=graphic, center=center, action="insert", index=index)
+
+        if z_position is None:
+            graphic.position_z = index
+        else:
+            graphic.position_z = z_position
+
+    def _add_or_insert_graphic(
+            self,
+            graphic: Graphic,
+            center: bool = True,
+            action: str = Union["insert", "add"],
+            index: int = 0
+    ):
+        """Private method to handle inserting or adding a graphic to a PlotArea."""
         if not isinstance(graphic, Graphic):
             raise TypeError(
                 f"Can only add Graphic types to a PlotArea, you have passed a: {type(graphic)}"
@@ -240,13 +289,21 @@ class PlotArea:
         if isinstance(graphic, BaseSelector):
             # store in SELECTORS dict
             loc = graphic.loc
-            SELECTORS[loc] = graphic
-            self._selectors.append(loc)  # don't manage garbage collection of LineSliders for now
+            SELECTORS[loc] = graphic # add hex id string for referencing this graphic instance
+            # don't manage garbage collection of LineSliders for now
+            if action == "insert":
+                self._selectors.insert(index, loc)
+            else:
+                self._selectors.append(loc)
         else:
             # store in GRAPHICS dict
             loc = graphic.loc
-            GRAPHICS[loc] = graphic
-            self._graphics.append(loc)  # add hex id string for referencing this graphic instance
+            GRAPHICS[loc] = graphic # add hex id string for referencing this graphic instance
+
+            if action == "insert":
+                self._graphics.insert(index, loc)
+            else:
+                self._graphics.append(loc)
 
         # add world object to scene
         self.scene.add(graphic.world_object)

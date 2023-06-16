@@ -267,11 +267,6 @@ class Subplot(PlotArea):
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
-    def add_graphic(self, graphic, center: bool = True):
-        """Adds a Graphic to the subplot."""
-        graphic.position_z = len(self._graphics)
-        super(Subplot, self).add_graphic(graphic, center)
-
     def set_axes_visibility(self, visible: bool):
         """Toggles axes visibility."""
         if visible:
