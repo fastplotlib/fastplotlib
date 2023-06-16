@@ -4,9 +4,20 @@
 [![Documentation Status](https://readthedocs.org/projects/fastplotlib/badge/?version=latest)](https://fastplotlib.readthedocs.io/en/latest/?badge=latest)
 [![Gitter](https://badges.gitter.im/fastplotlib/community.svg)](https://gitter.im/fastplotlib/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-[**Installation**](https://github.com/kushalkolar/fastplotlib#installation) | [**GPU Drivers**](https://github.com/kushalkolar/fastplotlib#install-vulkan-drivers) | [**Examples**](https://github.com/kushalkolar/fastplotlib#examples)
+[**Installation**](https://github.com/kushalkolar/fastplotlib#installation) | [**GPU Drivers**](https://github.com/kushalkolar/fastplotlib#install-vulkan-drivers) | [**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | **Contributing**
 
-A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine utilizing [Vulkan](https://en.wikipedia.org/wiki/Vulkan) via WGPU, so it is very fast! `fastplotlib` is focussed on very fast interactive plotting in the notebook using an expressive API. It also works within desktop applications using `glfw` or `Qt`.
+A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine utilizing [Vulkan](https://en.wikipedia.org/wiki/Vulkan) via WGPU, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
+
+`fastplotlib` will work where that `pygfx` works, so that includes:
+- `Jupyter lab`, using [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb)
+- `PyQt` and `PySide`
+- `glfw`
+- `wxPython`
+
+Notes:
+- It does not work in collab, for a detailed discussion see: https://github.com/vispy/jupyter_rfb/issues/57
+- We do not officially support `jupyter notebook` through `jupyter_rfb`, there are weird issues. We recommend using `jupyter lab` until `jupyter notebook` switches to the `jupyter lab` backend in v7.
+- You can use a non-blocking `glfw` canvas from a notebook, as long as you're working locally or have a way to forward the remote graphical desktop (such as X11 forwarding).
 
 `fastplotlib` is currently in the **early alpha stage with breaking changes every ~week**, but you're welcome to try it out or contribute! See our [Roadmap for 2023](https://github.com/kushalkolar/fastplotlib/issues/55).
 
@@ -17,6 +28,29 @@ The docs are not entirely thorough, we recommend the example notebooks to get st
 Questions, ideas? Post an issue or [chat on gitter](https://gitter.im/fastplotlib/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link).
 
 ![epic](https://user-images.githubusercontent.com/9403332/210304473-f36f2aaf-319e-435b-bcc8-0e8d3e1ef282.gif)
+
+# Installation
+
+Install using `pip`.
+
+### Minimal, use with your own `Qt` or `glfw` applications
+```bash
+pip install fastplotlib
+```
+
+### Notebook
+```bash
+pip install "fastplotlib[notebook]"
+```
+
+**Optional: install `simplejpeg` for much faster notebook visualization, you will need C compilers and [libjpeg-turbo](https://libjpeg-turbo.org/) to install it:**
+
+```bash
+pip install simplejpeg
+```
+
+**Note:** `fastplotlib` and `pygfx` are fast evolving projects, the version available through pip might be outdated, you will need to follow the "For Development" instructions below if you want the latest features. You can find the release history on pypi here: https://pypi.org/project/fastplotlib/#history 
+
 
 # Examples
 
@@ -86,41 +120,6 @@ Interactive visualization of large imaging datasets in the notebook.
 
 ![zfish](https://user-images.githubusercontent.com/9403332/209711810-abdb7d1d-81ce-4874-80f5-082efa2c421d.gif)
 
-
-# Installation
-
-Install using `pip`.
-
-### Notebook
-```bash
-pip install "fastplotlib[notebook]"
-```
-
-**Optional: install `simplejpeg` for faster notebook visualization, you will need C compilers to install it:**
-
-```bash
-pip install simplejpeg
-```
-
-### Minimal, use with your own `Qt` or `glfw` applications
-```bash
-pip install fastplotlib
-```
-
-**Note:** `fastplotlib` and `pygfx` are fast evolving projects, the version available through pip might be outdated, you will need to follow the "For Development" instructions below if you want the latest features. You can find the release history on pypi here: https://pypi.org/project/fastplotlib/#history 
-
-### For Development
-
-```bash
-git clone https://github.com/kushalkolar/fastplotlib.git
-cd fastplotlib
-pip install -e ".[notebook,docs,tests]
-
-# try the examples
-cd examples
-jupyter lab
-```
-
 ## Graphics drivers
 
 You will need a relatively modern GPU (newer integrated GPUs in CPUs are usually fine). Generally if your GPU is from 2017 or later it should be fine.
@@ -152,4 +151,15 @@ sudo apt install llvm-dev libturbojpeg* libgl1-mesa-dev libgl1-mesa-glx libglapi
 ```
 
 ### Mac OSX:
-As far as I know, WGPU uses Metal instead of Vulkan on Mac. I think you will need at least Mac OSX 10.13.
+As far as I know, WGPU uses Metal instead of Vulkan on Mac. You will need at least Mac OSX 10.13.
+
+# Contributing
+
+### Installation for developers
+```bash
+git clone https://github.com/kushalkolar/fastplotlib.git
+cd fastplotlib
+
+# install all extras in place
+pip install -e ".[notebook,docs,tests]
+```
