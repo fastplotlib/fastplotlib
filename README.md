@@ -6,7 +6,7 @@
 
 [**Installation**](https://github.com/kushalkolar/fastplotlib#installation) | [**GPU Drivers**](https://github.com/kushalkolar/fastplotlib#install-vulkan-drivers) | [**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | [**Contributing**](https://github.com/kushalkolar/fastplotlib#contributing)
 
-A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine utilizing [Vulkan](https://en.wikipedia.org/wiki/Vulkan) via WGPU, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
+A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine utilizing [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
 
 `fastplotlib` will work where that `pygfx` works, so that includes:
 - `Jupyter lab`, using [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb)
