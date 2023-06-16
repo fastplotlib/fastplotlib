@@ -264,9 +264,25 @@ class GridPlot(RecordMixin):
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
-    def show(self, toolbar: bool = True):
+    def show(
+            self,
+            autoscale: bool = True,
+            maintain_aspect: bool = True,
+            toolbar: bool = True
+    ):
         """
-        begins the rendering event loop and returns the canvas
+        Begins the rendering event loop and returns the canvas
+
+        Parameters
+        ----------
+        autoscale: bool, default ``True``
+            autoscale the Scene
+
+        maintain_aspect: bool, default ``True``
+            maintain aspect ratio
+
+        toolbar: bool, default True
+            show toolbar
 
         Returns
         -------
@@ -276,10 +292,11 @@ class GridPlot(RecordMixin):
         """
         self.canvas.request_draw(self.render)
 
-        for subplot in self:
-            subplot.auto_scale(maintain_aspect=True, zoom=0.95)
-
         self.canvas.set_logical_size(*self._starting_size)
+
+        if autoscale:
+            for subplot in self:
+                subplot.auto_scale(maintain_aspect=maintain_aspect, zoom=0.95)
 
         # check if in jupyter notebook, or if toolbar is False
         if (not isinstance(self.canvas, JupyterWgpuCanvas)) or (not toolbar):
@@ -287,6 +304,7 @@ class GridPlot(RecordMixin):
 
         if self.toolbar is None:
             self.toolbar = GridPlotToolBar(self)
+            self.toolbar.maintain_aspect_button.value = self[0, 0].camera.maintain_aspect
 
         return VBox([self.canvas, self.toolbar.widget])
 

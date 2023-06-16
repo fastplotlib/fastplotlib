@@ -103,9 +103,25 @@ class Plot(Subplot, RecordMixin):
         self.renderer.flush()
         self.canvas.request_draw()
 
-    def show(self, autoscale: bool = True, toolbar: bool = True):
+    def show(
+            self,
+            autoscale: bool = True,
+            maintain_aspect: bool = None,
+            toolbar: bool = True
+    ):
         """
-        begins the rendering event loop and returns the canvas
+        Begins the rendering event loop and returns the canvas
+
+        Parameters
+        ----------
+        autoscale: bool, default ``True``
+            autoscale the Scene
+
+        maintain_aspect: bool, default ``None``
+            maintain aspect ratio, uses ``camera.maintain_aspect`` if ``None``
+
+        toolbar: bool, default True
+            show toolbar
 
         Returns
         -------
@@ -114,10 +130,14 @@ class Plot(Subplot, RecordMixin):
 
         """
         self.canvas.request_draw(self.render)
-        if autoscale:
-            self.auto_scale(maintain_aspect=True, zoom=0.95)
             
         self.canvas.set_logical_size(*self._starting_size)
+
+        if maintain_aspect is None:
+            maintain_aspect = self.camera.maintain_aspect
+
+        if autoscale:
+            self.auto_scale(maintain_aspect=maintain_aspect, zoom=0.95)
 
         # check if in jupyter notebook, or if toolbar is False
         if (not isinstance(self.canvas, JupyterWgpuCanvas)) or (not toolbar):
@@ -125,6 +145,7 @@ class Plot(Subplot, RecordMixin):
 
         if self.toolbar is None:
             self.toolbar = ToolBar(self)
+            self.toolbar.maintain_aspect_button.value = maintain_aspect
 
         return VBox([self.canvas, self.toolbar.widget])
 
