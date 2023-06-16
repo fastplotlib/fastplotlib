@@ -26,7 +26,13 @@ class LinearRegionSelectionFeature(GraphicFeature):
     | "selected_indices" | ``numpy.ndarray`` or ``None`` | selected graphic data indices                                                        |
     | "selected_data"    | ``numpy.ndarray`` or ``None`` | selected graphic data                                                                |
     | "new_data"         | ``(float, float)``            | current bounds in world coordinates, NOT necessarily the same as "selected_indices". |
-    | "move_info"        | ``Move_Info``                 | last position and event source 
+    | "move_info"        | ``Move_Info``                 | last position and event source (fill, mesh, or edge line)                            |
+    | "collection_index" | ``int``                       | index of collection                                                                  |
+    | "graphic"          | ``Graphic``                   | the selection graphic                                                                |
+    | "delta"            | ``numpy.ndarray``             | the delta vector of the graphic in NDC                                               |
+    | "world_object"     | ``pygfx.WorldObject``         | pygfx World Object                                                                   |
+    | "index"            | ``None``                      | not used in this feature                                                             |
+    | "pygfx_event"      | ``pygfx.Event``               | pygfx Event                                                                          |         
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
 
     """
