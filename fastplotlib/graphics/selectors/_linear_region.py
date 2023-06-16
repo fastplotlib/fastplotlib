@@ -10,7 +10,7 @@ from ._base_selector import BaseSelector
 from ._mesh_positions import x_right, x_left, y_top, y_bottom
 
 
-class LinearBoundsFeature(GraphicFeature):
+class LinearRegionSelectionFeature(GraphicFeature):
     feature_events = (
         "data",
     )
@@ -26,16 +26,17 @@ class LinearBoundsFeature(GraphicFeature):
     | "selected_indices" | ``numpy.ndarray`` or ``None`` | selected graphic data indices                                                        |
     | "selected_data"    | ``numpy.ndarray`` or ``None`` | selected graphic data                                                                |
     | "new_data"         | ``(float, float)``            | current bounds in world coordinates, NOT necessarily the same as "selected_indices". |
+    | "move_info"        | ``Move_Info``                 | last position and event source 
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
 
     """
-    def __init__(self, parent, bounds: Tuple[int, int], axis: str, limits: Tuple[int, int]):
-        super(LinearBoundsFeature, self).__init__(parent, data=bounds)
+    def __init__(self, parent, selection: Tuple[int, int], axis: str, limits: Tuple[int, int]):
+        super(LinearRegionSelectionFeature, self).__init__(parent, data=selection)
 
         self._axis = axis
         self.limits = limits
 
-        self._set(bounds)
+        self._set(selection)
 
     @property
     def axis(self) -> str:
@@ -109,13 +110,21 @@ class LinearBoundsFeature(GraphicFeature):
             selected_ixs = None
             selected_data = None
 
+        # get pygfx event and reset it
+        pygfx_ev = self._parent._pygfx_event
+        self._parent._pygfx_event = None
+
         pick_info = {
             "index": None,
             "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
             "new_data": new_data,
             "selected_indices": selected_ixs,
-            "selected_data": selected_data
+            "selected_data": selected_data,
+            "graphic": self._parent,
+            "delta": self._parent.delta,
+            "pygfx_event": pygfx_ev,
+            "move_info": self._parent._move_info
         }
 
         event_data = FeatureEvent(type="bounds", pick_info=pick_info)
@@ -298,7 +307,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
             self.world_object.add(edge)
 
         # set the initial bounds of the selector
-        self._bounds = LinearBoundsFeature(self, bounds, axis=axis, limits=limits)
+        self._bounds = LinearRegionSelectionFeature(self, bounds, axis=axis, limits=limits)
         # self._bounds: LinearBoundsFeature = bounds
 
         BaseSelector.__init__(
@@ -311,7 +320,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
         )
 
     @property
-    def bounds(self) -> LinearBoundsFeature:
+    def bounds(self) -> LinearRegionSelectionFeature:
         """
         The current bounds of the selection in world space. These bounds will NOT necessarily correspond to the
         indices of the data that are under the selection. Use ``get_selected_indices()`` which maps from
