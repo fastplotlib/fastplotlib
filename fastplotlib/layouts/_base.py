@@ -294,7 +294,7 @@ class PlotArea:
             if action == "insert":
                 self._selectors.insert(index, loc)
             else:
-                self._graphics.append(loc)
+                self._selectors.append(loc)
         else:
             # store in GRAPHICS dict
             loc = graphic.loc
