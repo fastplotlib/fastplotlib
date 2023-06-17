@@ -8,7 +8,7 @@ import pygfx
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
-from ..utils import make_colors, get_cmap, normalize_min_max
+from ..utils import make_colors, get_cmap, qual_cmaps, normalize_min_max
 
 
 class LineCollection(GraphicCollection, Interaction):
@@ -187,8 +187,17 @@ class LineCollection(GraphicCollection, Interaction):
 
                     n_colors = colormap.shape[0] - 1
 
-                    # scale between 0 - n_colors so we can just index the colormap as a LUT
-                    norm_cmap_values = (normalize_min_max(cmap_values) * n_colors).astype(int)
+                    if cmap in qual_cmaps:
+                        if max(cmap_values) > n_colors:
+                            raise IndexError(
+                                f"You have chosen the qualitative colormap <'{cmap}'> which only has "
+                                f"<{n_colors}> colors, which is lower than the max value of your `cmap_values`."
+                                f"Choose a cmap with more colors, or a non-quantitative colormap."
+                            )
+                        norm_cmap_values = cmap_values
+                    else:
+                        # scale between 0 - n_colors so we can just index the colormap as a LUT
+                        norm_cmap_values = (normalize_min_max(cmap_values) * n_colors).astype(int)
 
                     # use colormap as LUT to map the cmap_values to the colormap index
                     colors = np.vstack([colormap[val] for val in norm_cmap_values])
