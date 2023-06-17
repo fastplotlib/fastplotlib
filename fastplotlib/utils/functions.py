@@ -10,7 +10,7 @@ qual_cmaps = ['Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1',
               'Set2', 'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c']
 
 
-def _get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
+def get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
     cmap_path = Path(__file__).absolute().parent.joinpath('colormaps', name)
     if cmap_path.is_file():
         cmap = np.loadtxt(cmap_path)
@@ -53,7 +53,7 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
 
     """
     name = cmap
-    cmap = _get_cmap(name, alpha)
+    cmap = get_cmap(name, alpha)
 
     if name in qual_cmaps:
         max_colors = cmap.shape[0]
@@ -67,7 +67,7 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
 
 
 def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
-    cmap = _get_cmap(name)
+    cmap = get_cmap(name)
     return Texture(cmap, dim=1)
 
 
@@ -166,3 +166,8 @@ def calculate_gridshape(n_subplots: int) -> Tuple[int, int]:
         int(np.round(sr)),
         int(np.ceil(sr))
     )
+
+
+def normalize_min_max(a):
+    """normalize an array between 0 - 1"""
+    return (a - np.min(a)) / (np.max(a - np.min(a)))

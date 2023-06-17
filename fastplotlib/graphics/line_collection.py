@@ -8,7 +8,7 @@ import pygfx
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
-from ..utils import make_colors
+from ..utils import make_colors, get_cmap, normalize_min_max
 
 
 class LineCollection(GraphicCollection, Interaction):
@@ -29,6 +29,7 @@ class LineCollection(GraphicCollection, Interaction):
             colors: Union[List[np.ndarray], np.ndarray] = "w",
             alpha: float = 1.0,
             cmap: Union[List[str], str] = None,
+            cmap_values: Union[np.ndarray, List] = None,
             name: str = None,
             metadata: Union[list, tuple, np.ndarray] = None,
             *args,
@@ -152,7 +153,7 @@ class LineCollection(GraphicCollection, Interaction):
             if len(data) != len(z_position):
                 raise ValueError("z_position must be a single float or an iterable with same length as data")
 
-        if not isinstance(thickness, float):
+        if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
                 raise ValueError("args must be a single float or an iterable with same length as data")
 
@@ -167,9 +168,33 @@ class LineCollection(GraphicCollection, Interaction):
         if cmap is not None:
             # cmap across lines
             if isinstance(cmap, str):
-                colors = make_colors(len(data), cmap)
-                single_color = False
-                cmap = None
+                if cmap_values is None:
+                    # use the cmap values linearly just along the collection indices
+                    # for example, if len(data) = 10 and the cmap is "jet", then it will
+                    # linearly go from blue to red from data[0] to data[-1]
+                    colors = make_colors(len(data), cmap)
+                    single_color = False
+                    cmap = None
+                else:
+                    # use the values within cmap_values to set the color of the corresponding data
+                    # each individual data[i] has its color based on the "relative cmap_value intensity"
+                    if len(cmap_values) != len(data):
+                        raise ValueError(
+                            "len(cmap_values) != len(data)"
+                        )
+
+                    colormap = get_cmap(cmap)
+
+                    n_colors = colormap.shape[0] - 1
+
+                    # scale between 0 - n_colors so we can just index the colormap as a LUT
+                    norm_cmap_values = (normalize_min_max(cmap_values) * n_colors).astype(int)
+
+                    # use colormap as LUT to map the cmap_values to the colormap index
+                    colors = np.vstack([colormap[val] for val in norm_cmap_values])
+                    single_color = False
+                    cmap = None
+
             elif isinstance(cmap, (tuple, list)):
                 if len(cmap) != len(data):
                     raise ValueError("cmap argument must be a single cmap or a list of cmaps "
