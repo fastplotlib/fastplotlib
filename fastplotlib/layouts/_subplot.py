@@ -6,9 +6,10 @@ import weakref
 from inspect import signature, getfullargspec
 from warnings import warn
 import traceback
+from pathlib import Path
 
 from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitController, \
-    AxesHelper, GridHelper, WgpuRenderer, Texture
+    AxesHelper, GridHelper, WgpuRenderer, Texture, SvgRenderer
 from wgpu.gui.auto import WgpuCanvas
 from wgpu.gui.base import WgpuCanvasBase
 
@@ -326,6 +327,31 @@ class Subplot(PlotArea):
             self.scene.add(self._grid)
         else:
             self.scene.remove(self._grid)
+
+    def export_svg(self, path: [str, Path], overwrite: bool = False):
+        """
+        CURRENTLY BUGGY. Export the plot area to an svg file.
+
+        Parameters
+        ----------
+        path: str
+            path to save svg file
+
+        overwrite: bool, default False
+            overwrite file if exists
+
+        """
+
+        if not overwrite and Path(path).exists():
+            raise FileExistsError(
+                f"The file at the specific path exists: {path}\n"
+                f"provide a path to a new file or use `overwrite=True`"
+            )
+
+        w, h = map(int, self.canvas.get_logical_size())
+
+        renderer = SvgRenderer(w, h, str(path))
+        renderer.render(self.scene, self.camera)
 
 
 class _DockedViewport(PlotArea):
