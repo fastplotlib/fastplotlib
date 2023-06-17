@@ -27,7 +27,7 @@ for center in product(range(0, spatial_dims[0], 15), range(0, spatial_dims[1], 1
 
 pos_xy = np.vstack(circles)
 
-# this makes 16 circles, so we can create 49 cmap values, so it will use these values to set the
+# this makes 16 circles, so we can create 16 cmap values, so it will use these values to set the
 # color of the line based by using the cmap as a LUT with the corresponding cmap_value
 
 # qualitative colormap used for mapping 16 cmap values for each line
@@ -41,7 +41,12 @@ cmap_values = [
 
 plot = fpl.Plot()
 
-plot.add_line_collection(circles, cmap="tab10", cmap_values=cmap_values, thickness=10)
+plot.add_line_collection(
+    circles,
+    cmap="tab10",
+    cmap_values=cmap_values,
+    thickness=10
+)
 
 plot.show()
 
