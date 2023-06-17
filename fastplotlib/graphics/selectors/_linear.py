@@ -23,14 +23,17 @@ class LinearSelectionFeature(GraphicFeature):
 
     **event pick info**
 
-     ================== ================================================================
-      key                selection
-     ================== ================================================================
-      "graphic"          the selection graphic
-      "selected_index"   the graphic data index that corresponds to the slider position
-      "new_data"         the new slider position in world coordinates
-      "delta"            the delta vector of the graphic in NDC
-     ================== ================================================================
+     ===================  ================================================================
+      key                  selection
+     ===================  ================================================================
+      "graphic"            the selection graphic
+      "selected_index"     the graphic data index that corresponds to the slider position
+      "new_data"           the new slider position in world coordinates
+      "delta"              the delta vector of the graphic in NDC
+      "collection_index"   the index of the collection
+      "pygfx_event"        pygfx World Object
+      "world_object"       pygfx Event
+     ===================  ================================================================
 
     """
     def __init__(self, parent, axis: str, value: float, limits: Tuple[int, int]):
@@ -65,7 +68,6 @@ class LinearSelectionFeature(GraphicFeature):
         self._parent._pygfx_event = None
 
         pick_info = {
-            "index": None,
             "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
             "new_data": new_data,
@@ -203,7 +205,7 @@ class LinearSelector(Graphic, BaseSelector):
         else:
             self.position_y = selection
 
-        self.selection = LinearSelectionFeature(self, axis=axis, value=selection, limits=limits)
+        self._selection = LinearSelectionFeature(self, axis=axis, value=selection, limits=limits)
 
         self.ipywidget_slider = ipywidget_slider
 
@@ -227,11 +229,19 @@ class LinearSelector(Graphic, BaseSelector):
             axis=axis,
         )
 
+    @property
+    def selection(self) -> LinearSelectionFeature:
+        """
+        The current selection in world space. These bounds will NOT necessarily correspond to the
+        indices of the data that are under the selection.
+        """
+        return self._selection
+
     def _setup_ipywidget_slider(self, widget):
         # setup ipywidget slider with callbacks to this LinearSelector
-        widget.value = int(self.selection())
+        widget.value = int(self._selection())
         widget.observe(self._ipywidget_callback, "value")
-        self.selection.add_event_handler(self._update_ipywidget)
+        self._selection.add_event_handler(self._update_ipywidget)
         self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
 
     def _update_ipywidget(self, ev):
@@ -245,7 +255,7 @@ class LinearSelector(Graphic, BaseSelector):
         if self._block_ipywidget_call:
             return
 
-        self.selection = change["new"]
+        self._selection = change["new"]
 
     def _set_slider_layout(self, *args):
         w, h = self._plot_area.renderer.logical_size
@@ -278,9 +288,9 @@ class LinearSelector(Graphic, BaseSelector):
         cls = getattr(ipywidgets, kind)
 
         slider = cls(
-            min=self.selection.limits[0],
-            max=self.selection.limits[1],
-            value=int(self.selection()),
+            min=self._selection.limits[0],
+            max=self._selection.limits[1],
+            value=int(self._selection()),
             step=1,
             **kwargs
         )
@@ -328,7 +338,7 @@ class LinearSelector(Graphic, BaseSelector):
 
         if "Line" in graphic.__class__.__name__:
             # we want to find the index of the geometry position that is closest to the slider's geometry position
-            find_value = self.selection() - offset
+            find_value = self._selection() - offset
 
             # get closest data index to the world space position of the slider
             idx = np.searchsorted(geo_positions, find_value, side="left")
@@ -340,7 +350,7 @@ class LinearSelector(Graphic, BaseSelector):
 
         if "Heatmap" in graphic.__class__.__name__ or "Image" in graphic.__class__.__name__:
             # indices map directly to grid geometry for image data buffer
-            index = self.selection() - offset
+            index = self._selection() - offset
             return int(index)
 
     def _move_graphic(self, delta: np.ndarray):
@@ -355,6 +365,6 @@ class LinearSelector(Graphic, BaseSelector):
         """
 
         if self.axis == "x":
-            self.selection = self.selection() + delta[0]
+            self._selection = self._selection() + delta[0]
         else:
-            self.selection = self.selection() + delta[1]
+            self._selection = self._selection() + delta[1]
