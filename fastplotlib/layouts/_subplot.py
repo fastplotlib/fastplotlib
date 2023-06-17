@@ -10,7 +10,6 @@ import traceback
 from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitController, \
     AxesHelper, GridHelper, WgpuRenderer, Texture
 from wgpu.gui.auto import WgpuCanvas
-from wgpu.gui.base import WgpuCanvasBase
 
 
 # TODO: this determination can be better
@@ -37,6 +36,7 @@ CANVAS_OPTIONS_AVAILABLE = {
     "qt": QWgpuCanvas
 }
 
+from ._utils import make_canvas_and_renderer
 from ._base import PlotArea
 from .. import graphics
 from ..graphics import TextGraphic
@@ -80,29 +80,8 @@ class Subplot(PlotArea):
         name: str, optional
             name of the subplot, will appear as ``TextGraphic`` above the subplot
         """
-        if canvas is None:
-            canvas = WgpuCanvas()
 
-        elif isinstance(canvas, str):
-            if canvas not in CANVAS_OPTIONS:
-                raise ValueError(
-                    f"str canvas argument must be one of: {CANVAS_OPTIONS}"
-                )
-            elif not CANVAS_OPTIONS_AVAILABLE[canvas]:
-                raise ImportError(
-                    f"The {canvas} framework is not installed for using this canvas"
-                )
-            else:
-                canvas = CANVAS_OPTIONS_AVAILABLE[canvas]()
-
-        elif not isinstance(canvas, (WgpuCanvasBase, Texture)):
-            raise ValueError(
-                f"canvas option must either be a valid WgpuCanvas implementation, a pygfx Texture"
-                f" or a str from the following options: {CANVAS_OPTIONS}"
-            )
-
-        if renderer is None:
-            renderer = WgpuRenderer(canvas)
+        canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
         if position is None:
             position = (0, 0)
