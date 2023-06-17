@@ -77,7 +77,7 @@ class LinearSelectionFeature(GraphicFeature):
             "pygfx_event": pygfx_ev
         }
 
-        event_data = FeatureEvent(type="slider", pick_info=pick_info)
+        event_data = FeatureEvent(type="selection", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
 

@@ -131,7 +131,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
             "move_info": self._parent._move_info
         }
 
-        event_data = FeatureEvent(type="bounds", pick_info=pick_info)
+        event_data = FeatureEvent(type="selection", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
 
