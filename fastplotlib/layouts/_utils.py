@@ -35,14 +35,10 @@ CANVAS_OPTIONS_AVAILABLE = {
 def make_canvas_and_renderer(
         canvas: Union[str, WgpuCanvas, Texture, None],
         renderer: [WgpuRenderer, None]
-) -> Tuple[Union[JupyterWgpuCanvas, GlfwWgpuCanvas, QWgpuCanvas], WgpuRenderer]:
+):
     """
-    Parses arguments and returns the appropriate canvas and renderer instances
-
-    Returns
-    -------
-    Tuple[JupyterWgpuCanvas | GlfwWgpuCanvas| QWgpuCanvas, WgpuRenderer]
-        a usable canvas and renderer instance
+    Parses arguments and returns the appropriate canvas and renderer instances 
+    as a tuple (canvas, renderer)
     """
 
     if canvas is None:
