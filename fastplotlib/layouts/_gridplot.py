@@ -5,12 +5,17 @@ import numpy as np
 from typing import *
 from inspect import getfullargspec
 from warnings import warn
+
 import pygfx
+
 from wgpu.gui.auto import WgpuCanvas
+from wgpu.gui.jupyter import JupyterWgpuCanvas
+
+from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
+
+from ._utils import make_canvas_and_renderer
 from ._defaults import create_controller
 from ._subplot import Subplot
-from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
-from wgpu.gui.jupyter import JupyterWgpuCanvas
 from ._record_mixin import RecordMixin
 
 
@@ -33,7 +38,7 @@ class GridPlot(RecordMixin):
             shape: Tuple[int, int],
             cameras: Union[np.ndarray, str] = '2d',
             controllers: Union[np.ndarray, str] = None,
-            canvas: WgpuCanvas = None,
+            canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
             renderer: pygfx.Renderer = None,
             size: Tuple[int, int] = (500, 300),
             **kwargs
@@ -74,6 +79,8 @@ class GridPlot(RecordMixin):
         """
         self.shape = shape
         self.toolbar = None
+
+        canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
         if isinstance(cameras, str):
             if cameras not in valid_cameras:
@@ -267,7 +274,7 @@ class GridPlot(RecordMixin):
     def show(
             self,
             autoscale: bool = True,
-            maintain_aspect: bool = True,
+            maintain_aspect: bool = None,
             toolbar: bool = True
     ):
         """
@@ -296,7 +303,11 @@ class GridPlot(RecordMixin):
 
         if autoscale:
             for subplot in self:
-                subplot.auto_scale(maintain_aspect=maintain_aspect, zoom=0.95)
+                if maintain_aspect is None:
+                    _maintain_aspect = subplot.camera.maintain_aspect
+                else:
+                    _maintain_aspect = maintain_aspect
+                subplot.auto_scale(maintain_aspect=_maintain_aspect, zoom=0.95)
 
         # check if in jupyter notebook, or if toolbar is False
         if (not isinstance(self.canvas, JupyterWgpuCanvas)) or (not toolbar):
