@@ -1,6 +1,7 @@
 from typing import *
 from copy import deepcopy
 import weakref
+import traceback
 
 import numpy as np
 import pygfx
@@ -167,11 +168,14 @@ class LineCollection(GraphicCollection, Interaction):
                     f"{len(metadata)} != {len(data)}"
                 )
 
+        self._cmap_values = cmap_values
+        self._cmap_str = cmap
+
         # cmap takes priority over colors
         if cmap is not None:
             # cmap across lines
             if isinstance(cmap, str):
-                if cmap_values is None:
+                if self._cmap_values is None:
                     # use the cmap values linearly just along the collection indices
                     # for example, if len(data) = 10 and the cmap is "jet", then it will
                     # linearly go from blue to red from data[0] to data[-1]
@@ -181,7 +185,7 @@ class LineCollection(GraphicCollection, Interaction):
                 else:
                     # use the values within cmap_values to set the color of the corresponding data
                     # each individual data[i] has its color based on the "relative cmap_value intensity"
-                    if len(cmap_values) != len(data):
+                    if len(self._cmap_values) != len(data):
                         raise ValueError(
                             "len(cmap_values) != len(data)"
                         )
@@ -191,16 +195,16 @@ class LineCollection(GraphicCollection, Interaction):
                     n_colors = colormap.shape[0] - 1
 
                     if cmap in qual_cmaps:
-                        if max(cmap_values) > n_colors:
+                        if max(self._cmap_values) > n_colors:
                             raise IndexError(
                                 f"You have chosen the qualitative colormap <'{cmap}'> which only has "
                                 f"<{n_colors}> colors, which is lower than the max value of your `cmap_values`."
                                 f"Choose a cmap with more colors, or a non-quantitative colormap."
                             )
-                        norm_cmap_values = cmap_values
+                        norm_cmap_values = self._cmap_values
                     else:
                         # scale between 0 - n_colors so we can just index the colormap as a LUT
-                        norm_cmap_values = (normalize_min_max(cmap_values) * n_colors).astype(int)
+                        norm_cmap_values = (normalize_min_max(self._cmap_values) * n_colors).astype(int)
 
                     # use colormap as LUT to map the cmap_values to the colormap index
                     colors = np.vstack([colormap[val] for val in norm_cmap_values])
@@ -297,6 +301,69 @@ class LineCollection(GraphicCollection, Interaction):
             )
 
             self.add_graphic(lg, reset_index=False)
+
+    @property
+    def cmap(self) -> str:
+        return self._cmap_str
+
+    @cmap.setter
+    def cmap(self, cmap: str):
+        # just to make sure the cmap exists
+        get_cmap(cmap)
+
+        previous_cmap = self._cmap_str
+        self._cmap_str = cmap
+
+        try:
+            if self.cmap_values is None:
+                # use the cmap values linearly just along the collection indices
+                # for example, if len(data) = 10 and the cmap is "jet", then it will
+                # linearly go from blue to red from data[0] to data[-1]
+                colors = make_colors(len(self), cmap)
+
+                for i, g in enumerate(self.graphics):
+                    g.colors = colors[i]
+
+            else:
+                self.cmap_values = self._cmap_values
+        except Exception as e:
+            self._cmap_str = previous_cmap
+            raise Exception(traceback.format_exc())
+
+    @property
+    def cmap_values(self) -> np.ndarray:
+        return self._cmap_values
+
+    @cmap_values.setter
+    def cmap_values(self, values: Union[np.ndarray, list]):
+        # use the values within cmap_values to set the color of the corresponding data
+        # each individual data[i] has its color based on the "relative cmap_value intensity"
+        if len(values) != len(self):
+            raise ValueError(
+                "len(cmap_values) != len(data)"
+            )
+
+        colormap = get_cmap(self.cmap)
+
+        n_colors = colormap.shape[0] - 1
+
+        if self.cmap in qual_cmaps:
+            if max(values) > n_colors:
+                raise IndexError(
+                    f"You have chosen the qualitative colormap <'{self.cmap}'> which only has "
+                    f"<{n_colors}> colors, which is lower than the max value of your `cmap_values`."
+                    f"Choose a cmap with more colors, or a non-quantitative colormap."
+                )
+            norm_cmap_values = values
+        else:
+            # scale between 0 - n_colors so we can just index the colormap as a LUT
+            norm_cmap_values = (normalize_min_max(values) * n_colors).astype(int)
+
+        # use colormap as LUT to map the cmap_values to the colormap index
+        colors = np.vstack([colormap[val] for val in norm_cmap_values])
+
+        for i, g in enumerate(self.graphics):
+            g.colors = colors[i]
 
     def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
         """
