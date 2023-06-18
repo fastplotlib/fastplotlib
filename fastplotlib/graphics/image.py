@@ -227,6 +227,7 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
             Control the presence of the Graphic in the scene
 
 
+
         Examples
         --------
         .. code-block:: python
@@ -279,38 +280,15 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
 
         self._set_world_object(world_object)
 
+        self.cmap.vmin = vmin
+        self.cmap.vmax = vmax
+
         self.data = ImageDataFeature(self, data)
         # TODO: we need to organize and do this better
         if isolated_buffer:
             # if the buffer was initialized with zeros
             # set it with the actual data
             self.data = data
-
-    @property
-    def vmin(self) -> float:
-        """Minimum contrast limit."""
-        return self.world_object.material.clim[0]
-
-    @vmin.setter
-    def vmin(self, value: float):
-        """Minimum contrast limit."""
-        self.world_object.material.clim = (
-            value,
-            self.world_object.material.clim[1]
-        )
-
-    @property
-    def vmax(self) -> float:
-        """Maximum contrast limit."""
-        return self.world_object.material.clim[1]
-
-    @vmax.setter
-    def vmax(self, value: float):
-        """Maximum contrast limit."""
-        self.world_object.material.clim = (
-            self.world_object.material.clim[0],
-            value
-        )
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
