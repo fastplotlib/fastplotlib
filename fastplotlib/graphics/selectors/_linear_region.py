@@ -10,7 +10,7 @@ from ._base_selector import BaseSelector
 from ._mesh_positions import x_right, x_left, y_top, y_bottom
 
 
-class LinearBoundsFeature(GraphicFeature):
+class LinearRegionSelectionFeature(GraphicFeature):
     feature_events = (
         "data",
     )
@@ -24,18 +24,23 @@ class LinearBoundsFeature(GraphicFeature):
     | key                | type                          | description                                                                          |
     +====================+===============================+======================================================================================+
     | "selected_indices" | ``numpy.ndarray`` or ``None`` | selected graphic data indices                                                        |
-    | "selected_data"    | ``numpy.ndarray`` or ``None`` | selected graphic data                                                                |
+    | "world_object"     | ``pygfx.WorldObject``         | pygfx World Object                                                                   |
     | "new_data"         | ``(float, float)``            | current bounds in world coordinates, NOT necessarily the same as "selected_indices". |
+    | "graphic"          | ``Graphic``                   | the selection graphic                                                                |
+    | "delta"            | ``numpy.ndarray``             | the delta vector of the graphic in NDC                                               |
+    | "pygfx_event"      | ``pygfx.Event``               | pygfx Event                                                                          |    
+    | "selected_data"    | ``numpy.ndarray`` or ``None`` | selected graphic data                                                                |
+    | "move_info"        | ``MoveInfo``                  | last position and event source (pygfx.Mesh or pygfx.Line)                            |     
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
 
     """
-    def __init__(self, parent, bounds: Tuple[int, int], axis: str, limits: Tuple[int, int]):
-        super(LinearBoundsFeature, self).__init__(parent, data=bounds)
+    def __init__(self, parent, selection: Tuple[int, int], axis: str, limits: Tuple[int, int]):
+        super(LinearRegionSelectionFeature, self).__init__(parent, data=selection)
 
         self._axis = axis
         self.limits = limits
 
-        self._set(bounds)
+        self._set(selection)
 
     @property
     def axis(self) -> str:
@@ -109,16 +114,22 @@ class LinearBoundsFeature(GraphicFeature):
             selected_ixs = None
             selected_data = None
 
+        # get pygfx event and reset it
+        pygfx_ev = self._parent._pygfx_event
+        self._parent._pygfx_event = None
+
         pick_info = {
-            "index": None,
-            "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
             "new_data": new_data,
             "selected_indices": selected_ixs,
-            "selected_data": selected_data
+            "selected_data": selected_data,
+            "graphic": self._parent,
+            "delta": self._parent.delta,
+            "pygfx_event": pygfx_ev,
+            "move_info": self._parent._move_info
         }
 
-        event_data = FeatureEvent(type="bounds", pick_info=pick_info)
+        event_data = FeatureEvent(type="selection", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
 
@@ -298,7 +309,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
             self.world_object.add(edge)
 
         # set the initial bounds of the selector
-        self._bounds = LinearBoundsFeature(self, bounds, axis=axis, limits=limits)
+        self.selection = LinearRegionSelectionFeature(self, bounds, axis=axis, limits=limits)
         # self._bounds: LinearBoundsFeature = bounds
 
         BaseSelector.__init__(
@@ -309,15 +320,6 @@ class LinearRegionSelector(Graphic, BaseSelector):
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
         )
-
-    @property
-    def bounds(self) -> LinearBoundsFeature:
-        """
-        The current bounds of the selection in world space. These bounds will NOT necessarily correspond to the
-        indices of the data that are under the selection. Use ``get_selected_indices()`` which maps from
-        world space to data indices.
-        """
-        return self._bounds
 
     def get_selected_data(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray], None]:
         """
@@ -398,13 +400,13 @@ class LinearRegionSelector(Graphic, BaseSelector):
         source = self._get_source(graphic)
 
         # if the graphic position is not at (0, 0) then the bounds must be offset
-        offset = getattr(source, f"position_{self.bounds.axis}")
-        offset_bounds = tuple(v - offset for v in self.bounds())
+        offset = getattr(source, f"position_{self.selection.axis}")
+        offset_bounds = tuple(v - offset for v in self.selection())
 
         # need them to be int to use as indices
         offset_bounds = tuple(map(int, offset_bounds))
 
-        if self.bounds.axis == "x":
+        if self.selection.axis == "x":
             dim = 0
         else:
             dim = 1
@@ -430,14 +432,14 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         if "Heatmap" in source.__class__.__name__ or "Image" in source.__class__.__name__:
             # indices map directly to grid geometry for image data buffer
-            ixs = np.arange(*self.bounds(), dtype=int)
+            ixs = np.arange(*self.selection(), dtype=int)
             return ixs
 
     def _move_graphic(self, delta: np.ndarray):
         # add delta to current bounds to get new positions
-        if self.bounds.axis == "x":
+        if self.selection.axis == "x":
             # min and max of current bounds, i.e. the edges
-            xmin, xmax = self.bounds()
+            xmin, xmax = self.selection()
 
             # new left bound position
             bound0_new = xmin + delta[0]
@@ -446,7 +448,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
             bound1_new = xmax + delta[0]
         else:
             # min and max of current bounds, i.e. the edges
-            ymin, ymax = self.bounds()
+            ymin, ymax = self.selection()
 
             # new bottom bound position
             bound0_new = ymin + delta[1]
@@ -457,7 +459,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
         # move entire selector if source was fill
         if self._move_info.source == self.fill:
             # set the new bounds
-            self.bounds = (bound0_new, bound1_new)
+            self.selection = (bound0_new, bound1_new)
             return
 
         # if selector is not resizable do nothing
@@ -467,10 +469,10 @@ class LinearRegionSelector(Graphic, BaseSelector):
         # if resizable, move edges
         if self._move_info.source == self.edges[0]:
             # change only left or bottom bound
-            self.bounds = (bound0_new, self.bounds()[1])
+            self.selection = (bound0_new, self.selection()[1])
 
         elif self._move_info.source == self.edges[1]:
             # change only right or top bound
-            self.bounds = (self.bounds()[0], bound1_new)
+            self.selection = (self.selection()[0], bound1_new)
         else:
             return

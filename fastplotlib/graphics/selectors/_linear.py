@@ -23,14 +23,16 @@ class LinearSelectionFeature(GraphicFeature):
 
     **event pick info**
 
-     ================== ================================================================
-      key                selection
-     ================== ================================================================
-      "graphic"          the selection graphic
-      "selected_index"   the graphic data index that corresponds to the slider position
-      "new_data"         the new slider position in world coordinates
-      "delta"            the delta vector of the graphic in NDC
-     ================== ================================================================
+     ===================  ===============================  =================================================================================================
+      key                  type                             selection
+     ===================  ===============================  =================================================================================================
+      "selected_index"     ``int``                          the graphic data index that corresponds to the selector position
+      "world_object"       ``pygfx.WorldObject``            pygfx WorldObject
+      "new_data"           ``numpy.ndarray`` or ``None``    the new selector position in world coordinates, not necessarily the same as "selected_index"
+      "graphic"            ``Graphic``                      the selector graphic
+      "delta"              ``numpy.ndarray``                the delta vector of the graphic in NDC
+      "pygfx_event"        ``pygfx.Event``                  pygfx Event
+     ===================  ===============================  =================================================================================================
 
     """
     def __init__(self, parent, axis: str, value: float, limits: Tuple[int, int]):
@@ -65,17 +67,15 @@ class LinearSelectionFeature(GraphicFeature):
         self._parent._pygfx_event = None
 
         pick_info = {
-            "index": None,
-            "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
             "new_data": new_data,
             "selected_index": g_ix,
             "graphic": self._parent,
+            "pygfx_event": pygfx_ev,
             "delta": self._parent.delta,
-            "pygfx_event": pygfx_ev
         }
 
-        event_data = FeatureEvent(type="slider", pick_info=pick_info)
+        event_data = FeatureEvent(type="selection", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
 
@@ -140,7 +140,7 @@ class LinearSelector(Graphic, BaseSelector):
         selection: :class:`LinearSelectionFeature`
             ``selection()`` returns the current slider position in world coordinates
             use ``selection.add_event_handler()`` to add callback functions that are
-            called when the LinearSelector selection changes. See feaure class for event pick_info table
+            called when the LinearSelector selection changes. See feature class for event pick_info table
 
         """
         if len(limits) != 2:
@@ -211,7 +211,6 @@ class LinearSelector(Graphic, BaseSelector):
             self._setup_ipywidget_slider(ipywidget_slider)
 
         self._move_info: dict = None
-        self.delta = None
         self._pygfx_event = None
 
         self.parent = parent
