@@ -6,7 +6,7 @@ from pathlib import Path
 # some funcs adapted from mesmerize
 
 
-qual_cmaps = ['Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1',
+QUALITATIVE_CMAPS = ['Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1',
               'Set2', 'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c']
 
 
@@ -55,7 +55,7 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
     name = cmap
     cmap = get_cmap(name, alpha)
 
-    if name in qual_cmaps:
+    if name in QUALITATIVE_CMAPS:
         max_colors = cmap.shape[0]
         if n_colors > cmap.shape[0]:
             raise ValueError(f"You have requested <{n_colors}> but only <{max_colors} existing for the "

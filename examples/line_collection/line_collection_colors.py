@@ -38,3 +38,6 @@ plot.add_line_collection(circles, colors=colors, thickness=10)
 plot.show()
 
 plot.canvas.set_logical_size(800, 800)
+
+if __name__ == "__main__":
+    fpl.run()

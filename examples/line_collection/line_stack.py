@@ -25,3 +25,6 @@ plot.add_line_stack(data, cmap="jet")
 plot.show(maintain_aspect=False)
 
 plot.canvas.set_logical_size(900, 600)
+
+if __name__ == "__main__":
+    fpl.run()

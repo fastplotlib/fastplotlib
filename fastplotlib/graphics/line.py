@@ -7,7 +7,7 @@ import pygfx
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
 from .selectors import LinearRegionSelector, LinearSelector
-from ..utils import make_colors, qual_cmaps, get_cmap, normalize_min_max
+from ..utils import make_colors, QUALITATIVE_CMAPS, get_cmap, normalize_min_max
 
 
 class LineGraphic(Graphic, Interaction):
@@ -104,7 +104,7 @@ class LineGraphic(Graphic, Interaction):
 
                 n_colors = colormap.shape[0] - 1
 
-                if cmap in qual_cmaps:
+                if cmap in QUALITATIVE_CMAPS:
                     if max(cmap_values) > n_colors:
                         raise IndexError(
                             f"You have chosen the qualitative colormap <'{cmap}'> which only has "
