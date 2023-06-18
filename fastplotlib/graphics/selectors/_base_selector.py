@@ -80,9 +80,9 @@ class BaseSelector:
         # otherwise annoying and requires too much accuracy to move just an edge
         self._edge_hovered: bool = False
 
-    @property
-    def selection(self):
-        pass
+    # @property
+    # def selection(self):
+    #     pass
 
     def get_selected_index(self):
         raise NotImplementedError
