@@ -2,6 +2,7 @@ from typing import *
 from warnings import warn
 from functools import partial
 from copy import deepcopy
+import weakref
 
 import numpy as np
 from ipywidgets.widgets import IntSlider, VBox, HBox, Layout, FloatRangeSlider, Button, BoundedIntText, Play, jslink
@@ -86,6 +87,14 @@ class ImageWidget:
         return self._gridplot
 
     @property
+    def managed_graphics(self):
+        """List of ``ImageWidget`` managed graphics."""
+        iw_managed = list()
+        for subplot in self.gridplot:
+            iw_managed.append(subplot["image_widget_managed"])
+        return iw_managed
+
+    @property
     def data(self) -> List[np.ndarray]:
         """data currently displayed in the widget"""
         return self._data
@@ -151,7 +160,7 @@ class ImageWidget:
             self.sliders[k].value = index[k]
         self.block_sliders = False
 
-        for i, (ig, data) in enumerate(zip(self.image_graphics, self.data)):
+        for i, (ig, data) in enumerate(zip(self.managed_graphics, self.data)):
             frame = self._process_indices(data, self._current_index)
             frame = self._process_frame_apply(frame, i)
             ig.data = frame
@@ -501,14 +510,13 @@ class ImageWidget:
 
                 self.vmin_vmax_sliders.append(minmax_slider)
 
-
             frame = self._process_indices(d, slice_indices=self._current_index)
             frame = self._process_frame_apply(frame, data_ix)
-            ig = ImageGraphic(frame, name="image", **kwargs)
+            ig = ImageGraphic(frame, name="image_widget_managed", **kwargs)
             subplot.add_graphic(ig)
             subplot.name = name
             subplot.set_title(name)
-            self.image_graphics.append(ig)
+            # self.image_graphics.append(ig)
 
         self.gridplot.renderer.add_event_handler(self._set_slider_layout, "resize")
 
@@ -865,7 +873,18 @@ class ImageWidget:
 
         # if checks pass, update with new data
         for i, (new_array, current_array, subplot) in enumerate(zip(new_data, self._data, self.gridplot)):
+            # check last two dims (x and y) to see if data shape is changing
+            old_data_shape = self._data[i].shape[-2:]
             self._data[i] = new_array
+
+            if old_data_shape != new_array.shape[-2:]:
+                # delete graphics at index zero
+                subplot.delete_graphic(graphic=subplot["image_widget_managed"])
+                # insert new graphic at index zero
+                frame = self._process_indices(new_array, slice_indices=self._current_index)
+                frame = self._process_frame_apply(frame, i)
+                new_graphic = ImageGraphic(data=frame, name="image_widget_managed")
+                subplot.insert_graphic(graphic=new_graphic)
 
             if new_array.ndim > 2:
                 # to set max of time slider, txy or tzxy
