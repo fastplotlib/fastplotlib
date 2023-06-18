@@ -6,6 +6,7 @@ import numpy as np
 import pygfx
 
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
+from .features import GraphicFeature
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 from ..utils import make_colors
@@ -411,31 +412,33 @@ class LineCollection(GraphicCollection, Interaction):
             if feature in self._previous_data.keys():
                 # for now assume same index won't be changed with diff data
                 # I can't think of a usecase where we'd have to check the data too
-                # so unless there is bug we keep it like this
+                # so unless there is a bug we keep it like this
                 if self._previous_data[feature].indices == indices:
-                    return  # nothing to change, and this allows bidirectional linking without infinite recusion
+                    return  # nothing to change, and this allows bidirectional linking without infinite recursion
 
             self._reset_feature(feature)
 
-        coll_feature = getattr(self[indices], feature)
+        # coll_feature = getattr(self[indices], feature)
 
         data = list()
-        for fea in coll_feature._feature_instances:
-            data.append(fea._data)
+
+        for graphic in self.graphics[indices]:
+            feature: GraphicFeature = getattr(graphic, feature)
+            data.append(feature())
 
         # later we can think about multi-index events
-        previous = deepcopy(data[0])
+        previous_data = deepcopy(data[0])
 
         if feature in self._previous_data.keys():
-            self._previous_data[feature].data = previous
+            self._previous_data[feature].data = previous_data
             self._previous_data[feature].indices = indices
         else:
-            self._previous_data[feature] = PreviouslyModifiedData(data=previous, indices=indices)
+            self._previous_data[feature] = PreviouslyModifiedData(data=previous_data, indices=indices)
 
         # finally set the new data
         # this MUST occur after setting the previous data attribute to prevent recursion
         # since calling `feature._set()` triggers all the feature callbacks
-        coll_feature._set(new_data)
+        feature._set(new_data)
 
     def _reset_feature(self, feature: str):
         if feature not in self._previous_data.keys():

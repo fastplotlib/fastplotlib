@@ -330,8 +330,9 @@ class GraphicFeatureIndexable(GraphicFeature):
 
         # TODO: See how efficient this is with large indexing
         elif isinstance(key, np.ndarray):
-            for ix in key:
-                self.buffer.update_range(int(ix), size=1)
+            self.buffer.update_range()
+            # for ix in key:
+            #     self.buffer.update_range(int(ix), size=1)
 
         else:
             raise TypeError("must pass int or slice to update range")
