@@ -757,8 +757,8 @@ class ImageWidget:
             change: dict
     ):
         vmin, vmax = change["new"]
-        self.image_graphics[data_ix].vmin = vmin
-        self.image_graphics[data_ix].vmax = vmax
+        self.image_graphics[data_ix].cmap.vmin = vmin
+        self.image_graphics[data_ix].cmap.vmax = vmax
 
     def _set_slider_layout(self, *args):
         w, h = self.gridplot.renderer.logical_size
@@ -814,7 +814,7 @@ class ImageWidget:
 
                 self.vmin_vmax_sliders[i].set_state(state)
             else:
-                ig.vmin, ig.vmax = mm[0]
+                ig.cmap.vmin, ig.cmap.vmax = mm[0]
 
     def set_data(
             self,

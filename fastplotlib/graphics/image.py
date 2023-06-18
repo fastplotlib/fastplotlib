@@ -264,13 +264,14 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
 
         geometry = pygfx.Geometry(grid=texture)
 
-        # if data is RGB
-        if data.ndim == 3:
-            self.cmap = None
+        self.cmap = ImageCmapFeature(self, cmap)
+
+        # if data is RGB or RGBA
+        if data.ndim > 2:
+
             material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map_interpolation=filter)
         # if data is just 2D without color information, use colormap LUT
         else:
-            self.cmap = ImageCmapFeature(self, cmap)
             material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter)
 
         world_object = pygfx.Image(

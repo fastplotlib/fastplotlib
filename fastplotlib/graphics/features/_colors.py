@@ -269,8 +269,10 @@ class ImageCmapFeature(GraphicFeature):
         super(ImageCmapFeature, self).__init__(parent, cmap_texture_view)
         self.name = cmap
 
-
     def _set(self, cmap_name: str):
+        if self._parent.data().ndim > 2:
+            return
+
         self._parent.world_object.material.map.data[:] = make_colors(256, cmap_name)
         self._parent.world_object.material.map.update_range((0, 0, 0), size=(256, 1, 1))
         self.name = cmap_name
