@@ -24,13 +24,13 @@ class LinearRegionSelectionFeature(GraphicFeature):
     | key                | type                          | description                                                                          |
     +====================+===============================+======================================================================================+
     | "selected_indices" | ``numpy.ndarray`` or ``None`` | selected graphic data indices                                                        |
-    | "selected_data"    | ``numpy.ndarray`` or ``None`` | selected graphic data                                                                |
+    | "world_object"     | ``pygfx.WorldObject``         | pygfx World Object                                                                   |
     | "new_data"         | ``(float, float)``            | current bounds in world coordinates, NOT necessarily the same as "selected_indices". |
-    | "move_info"        | ``MoveInfo``                  | last position and event source (pygfx.Mesh or pygfx.Line)                            |
     | "graphic"          | ``Graphic``                   | the selection graphic                                                                |
     | "delta"            | ``numpy.ndarray``             | the delta vector of the graphic in NDC                                               |
-    | "world_object"     | ``pygfx.WorldObject``         | pygfx World Object                                                                   |
-    | "pygfx_event"      | ``pygfx.Event``               | pygfx Event                                                                          |         
+    | "pygfx_event"      | ``pygfx.Event``               | pygfx Event                                                                          |    
+    | "selected_data"    | ``numpy.ndarray`` or ``None`` | selected graphic data                                                                |
+    | "move_info"        | ``MoveInfo``                  | last position and event source (pygfx.Mesh or pygfx.Line)                            |     
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
 
     """

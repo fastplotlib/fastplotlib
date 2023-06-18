@@ -26,12 +26,12 @@ class LinearSelectionFeature(GraphicFeature):
      ===================  ===============================  =================================================================================================
       key                  type                             selection
      ===================  ===============================  =================================================================================================
-      "graphic"            ``Graphic``                      the selector graphic
       "selected_index"     ``int``                          the graphic data index that corresponds to the selector position
+      "world_object"       ``pygfx.WorldObject``            pygfx WorldObject
       "new_data"           ``numpy.ndarray`` or ``None``    the new selector position in world coordinates, not necessarily the same as "selected_index"
+      "graphic"            ``Graphic``                      the selector graphic
       "delta"              ``numpy.ndarray``                the delta vector of the graphic in NDC
       "pygfx_event"        ``pygfx.Event``                  pygfx Event
-      "world_object"       ``pygfx.WorldObject``            pygfx WorldObject
      ===================  ===============================  =================================================================================================
 
     """
