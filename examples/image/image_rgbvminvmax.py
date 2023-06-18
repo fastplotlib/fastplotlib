@@ -28,8 +28,8 @@ plot.canvas.set_logical_size(800, 800)
 
 plot.auto_scale()
 
-image_graphic.vmin = 0.5
-image_graphic.vmax = 0.75
+image_graphic.cmap.vmin = 0.5
+image_graphic.cmap.vmax = 0.75
 
 img = np.asarray(plot.renderer.target.draw())
 

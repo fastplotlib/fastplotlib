@@ -227,6 +227,7 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
             Control the presence of the Graphic in the scene
 
 
+
         Examples
         --------
         .. code-block:: python
@@ -263,13 +264,14 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
 
         geometry = pygfx.Geometry(grid=texture)
 
-        # if data is RGB
-        if data.ndim == 3:
-            self.cmap = None
+        self.cmap = ImageCmapFeature(self, cmap)
+
+        # if data is RGB or RGBA
+        if data.ndim > 2:
+
             material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map_interpolation=filter)
         # if data is just 2D without color information, use colormap LUT
         else:
-            self.cmap = ImageCmapFeature(self, cmap)
             material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter)
 
         world_object = pygfx.Image(
@@ -279,38 +281,15 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
 
         self._set_world_object(world_object)
 
+        self.cmap.vmin = vmin
+        self.cmap.vmax = vmax
+
         self.data = ImageDataFeature(self, data)
         # TODO: we need to organize and do this better
         if isolated_buffer:
             # if the buffer was initialized with zeros
             # set it with the actual data
             self.data = data
-
-    @property
-    def vmin(self) -> float:
-        """Minimum contrast limit."""
-        return self.world_object.material.clim[0]
-
-    @vmin.setter
-    def vmin(self, value: float):
-        """Minimum contrast limit."""
-        self.world_object.material.clim = (
-            value,
-            self.world_object.material.clim[1]
-        )
-
-    @property
-    def vmax(self) -> float:
-        """Maximum contrast limit."""
-        return self.world_object.material.clim[1]
-
-    @vmax.setter
-    def vmax(self, value: float):
-        """Maximum contrast limit."""
-        self.world_object.material.clim = (
-            self.world_object.material.clim[0],
-            value
-        )
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass

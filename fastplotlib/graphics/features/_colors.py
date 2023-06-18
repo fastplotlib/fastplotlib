@@ -256,8 +256,10 @@ class ImageCmapFeature(GraphicFeature):
       key              type                description
      ================ =================== ===============
       "index"          ``None``            not used
-      "new_data"       ``str``             colormap name
+      "name"           ``str``             colormap name
       "world_object"   pygfx.WorldObject   world object
+      "vmin"           ``float``           minimum value
+      "vmax"           ``float``           maximum value
      ================ =================== ===============
 
 
@@ -268,11 +270,42 @@ class ImageCmapFeature(GraphicFeature):
         self.name = cmap
 
     def _set(self, cmap_name: str):
+        if self._parent.data().ndim > 2:
+            return
+
         self._parent.world_object.material.map.data[:] = make_colors(256, cmap_name)
         self._parent.world_object.material.map.update_range((0, 0, 0), size=(256, 1, 1))
         self.name = cmap_name
 
         self._feature_changed(key=None, new_data=self.name)
+
+    @property
+    def vmin(self) -> float:
+        """Minimum contrast limit."""
+        return self._parent.world_object.material.clim[0]
+
+    @vmin.setter
+    def vmin(self, value: float):
+        """Minimum contrast limit."""
+        self._parent.world_object.material.clim = (
+            value,
+            self._parent.world_object.material.clim[1]
+        )
+        self._feature_changed(key=None, new_data=None)
+
+    @property
+    def vmax(self) -> float:
+        """Maximum contrast limit."""
+        return self._parent.world_object.material.clim[1]
+
+    @vmax.setter
+    def vmax(self, value: float):
+        """Maximum contrast limit."""
+        self._parent.world_object.material.clim = (
+            self._parent.world_object.material.clim[0],
+            value
+        )
+        self._feature_changed(key=None, new_data=None)
 
     def _feature_changed(self, key, new_data):
         # this is a non-indexable feature so key=None
@@ -280,7 +313,9 @@ class ImageCmapFeature(GraphicFeature):
         pick_info = {
             "index": None,
             "world_object": self._parent.world_object,
-            "new_data": new_data
+            "name": self.name,
+            "vmin": self.vmin,
+            "vmax": self.vmax
         }
 
         event_data = FeatureEvent(type="cmap", pick_info=pick_info)
