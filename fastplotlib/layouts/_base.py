@@ -12,6 +12,8 @@ from wgpu.gui.auto import WgpuCanvas
 from ..graphics._base import Graphic, GraphicCollection
 from ..graphics.selectors._base_selector import BaseSelector
 
+from ..utils import GraphicMethods
+
 # dict to store Graphic instances
 # this is the only place where the real references to Graphics are stored in a Python session
 # {hex id str: Graphic}
@@ -19,7 +21,7 @@ GRAPHICS: Dict[str, Graphic] = dict()
 SELECTORS: Dict[str, BaseSelector] = dict()
 
 
-class PlotArea:
+class PlotArea(GraphicMethods):
     def __init__(
             self,
             parent,
@@ -57,6 +59,8 @@ class PlotArea:
         name: str, optional
             name of ``subplot`` or ``plot`` subclass being instantiated
         """
+        super(GraphicMethods, self).__init__()
+
         self._parent: PlotArea = parent
         self._position = position
 
