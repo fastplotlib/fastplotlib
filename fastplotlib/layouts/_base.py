@@ -320,6 +320,9 @@ class PlotArea:
         for g in self.graphics:
             graphic_names.append(g.name)
 
+        for s in self.selectors:
+            graphic_names.append(s.name)
+
         if name in graphic_names:
             raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
 
@@ -467,9 +470,15 @@ class PlotArea:
             if graphic.name == name:
                 return graphic
 
+        for selector in self.selectors:
+            if selector.name == name:
+                return selector
+
         graphic_names = list()
         for g in self.graphics:
             graphic_names.append(g.name)
+        for s in self.selectors:
+            graphic_names.append(s.name)
         raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
 
     def __str__(self):
