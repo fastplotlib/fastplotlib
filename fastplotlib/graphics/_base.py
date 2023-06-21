@@ -50,7 +50,8 @@ class Graphic(BaseGraphic):
     def __init__(
             self,
             name: str = None,
-            metadata: Any = None
+            metadata: Any = None,
+            collection_index: int = None,
     ):
         """
 
@@ -66,6 +67,7 @@ class Graphic(BaseGraphic):
 
         self.name = name
         self.metadata = metadata
+        self.collection_index = collection_index
         self.registered_callbacks = dict()
         self.present = PresentFeature(parent=self)
 
@@ -341,13 +343,21 @@ class GraphicCollection(Graphic):
         super(GraphicCollection, self).__init__(name)
         self._graphics: List[str] = list()
 
-    @property
-    def graphics(self) -> Tuple[Graphic]:
-        """The Graphics within this collection. Always returns a proxy to the Graphics."""
-        proxies = [weakref.proxy(COLLECTION_GRAPHICS[loc]) for loc in self._graphics]
-        return tuple(proxies)
+        self._graphics_changed: bool = True
+        self._graphics_array: np.ndarray[Graphic] = None
 
-    def add_graphic(self, graphic: Graphic, reset_index: True):
+    @property
+    def graphics(self) -> np.ndarray[Graphic]:
+        """The Graphics within this collection. Always returns a proxy to the Graphics."""
+        if self._graphics_changed:
+            proxies = [weakref.proxy(COLLECTION_GRAPHICS[loc]) for loc in self._graphics]
+            self._graphics_array = np.array(proxies)
+            self._graphics_array.flags["WRITEABLE"] = False
+            self._graphics_changed = False
+
+        return self._graphics_array
+
+    def add_graphic(self, graphic: Graphic, reset_index: False):
         """Add a graphic to the collection"""
         if not isinstance(graphic, self.child_type):
             raise TypeError(
@@ -360,9 +370,15 @@ class GraphicCollection(Graphic):
         COLLECTION_GRAPHICS[loc] = graphic
 
         self._graphics.append(loc)
+
         if reset_index:
             self._reset_index()
+        elif graphic.collection_index is None:
+            graphic.collection_index = len(self)
+
         self.world_object.add(graphic.world_object)
+
+        self._graphics_changed = True
 
     def remove_graphic(self, graphic: Graphic, reset_index: True):
         """Remove a graphic from the collection"""
@@ -372,6 +388,15 @@ class GraphicCollection(Graphic):
             self._reset_index()
 
         self.world_object.remove(graphic.world_object)
+
+        self._graphics_changed = True
+
+    def __getitem__(self, key):
+        return CollectionIndexer(
+            parent=self,
+            selection=self.graphics[key],
+            # selection_indices=key
+        )
             
     def __del__(self):
         self.world_object.clear()
@@ -384,42 +409,6 @@ class GraphicCollection(Graphic):
     def _reset_index(self):
         for new_index, graphic in enumerate(self._graphics):
             graphic.collection_index = new_index
-
-    def __getitem__(self, key):
-        if isinstance(key, (int, np.integer)):
-            # single graphic indexed
-            # !! IMPORTANT: this must return a CollectionIndexer even though it's only one graphic!!
-            # otherwise it doesn't work properly with events that except collections
-            key = [key]
-
-        if isinstance(key, slice):
-            key = cleanup_slice(key, upper_bound=len(self))
-            selection_indices = range(key.start, key.stop, key.step)
-            selection = self.graphics[key]
-
-        # fancy-ish indexing
-        elif isinstance(key, (tuple, list, np.ndarray)):
-            if isinstance(key, np.ndarray):
-                if not key.ndim == 1:
-                    raise TypeError(f"{self.__class__.__name__} indexing supports "
-                                    f"1D numpy arrays, int, slice, tuple or list of integers, "
-                                    f"your numpy arrays has <{key.ndim}> dimensions.")
-            selection = list()
-
-            for ix in key:
-                selection.append(self.graphics[ix])
-
-            selection_indices = key
-        else:
-            raise TypeError(f"{self.__class__.__name__} indexing supports "
-                            f"1D numpy arrays, int, slice, tuple or list of integers, "
-                            f"you have passed a <{type(key)}>")
-
-        return CollectionIndexer(
-            parent=self,
-            selection=selection,
-            selection_indices=selection_indices
-        )
 
     def __len__(self):
         return len(self._graphics)
@@ -435,7 +424,7 @@ class CollectionIndexer:
             self,
             parent: GraphicCollection,
             selection: List[Graphic],
-            selection_indices: Union[list, range],
+            # selection_indices: Union[list, range],
     ):
         """
 
@@ -443,14 +432,17 @@ class CollectionIndexer:
         ----------
         parent: GraphicCollection
             the GraphicCollection object that is being indexed
+
         selection: list of Graphics
             a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
+
         selection_indices: Union[list, range]
             the corresponding indices from the parent GraphicCollection that were selected
         """
+
         self._parent = weakref.proxy(parent)
         self._selection = selection
-        self._selection_indices = selection_indices
+        # self._selection_indices = selection_indices
 
         # we use parent.graphics[0] instead of selection[0]
         # because the selection can be empty
@@ -460,7 +452,7 @@ class CollectionIndexer:
                 collection_feature = CollectionFeature(
                     parent,
                     self._selection,
-                    selection_indices=self._selection_indices,
+                    # selection_indices=self._selection_indices,
                     feature=attr_name
                 )
                 collection_feature.__doc__ = f"indexable <{attr_name}> feature for collection"
@@ -494,7 +486,7 @@ class CollectionFeature:
             self,
             parent: GraphicCollection,
             selection: List[Graphic],
-            selection_indices,
+            # selection_indices,
             feature: str
     ):
         """
@@ -508,7 +500,7 @@ class CollectionFeature:
             feature of Graphics in the GraphicCollection being indexed
         """
         self._selection = selection
-        self._selection_indices = selection_indices
+        # self._selection_indices = selection_indices
         self._feature = feature
 
         self._feature_instances: List[GraphicFeature] = list()
@@ -558,3 +550,4 @@ class CollectionFeature:
 
     def __repr__(self):
         return f"Collection feature for: <{self._feature}>"
+
