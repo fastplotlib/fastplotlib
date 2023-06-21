@@ -18,7 +18,7 @@ example_globs = [
     "image/*.py",
     "scatter/*.py",
     "line/*.py",
-    "line_collection/*.py"
+    "line_collection/*.py",
     "gridplot/*.py"
 ]
 
