@@ -5,7 +5,7 @@ import pygfx
 
 from ._base import Graphic
 from .features import PointsDataFeature, ColorFeature, CmapFeature
-from ..utils import make_colors
+from ..utils import make_colors, parse_cmap_values
 
 
 class ScatterGraphic(Graphic):
@@ -16,6 +16,7 @@ class ScatterGraphic(Graphic):
             colors: np.ndarray = "w",
             alpha: float = 1.0,
             cmap: str = None,
+            cmap_values: Union[np.ndarray, List] = None,
             z_position: float = 0.0,
             *args,
             **kwargs
@@ -38,6 +39,9 @@ class ScatterGraphic(Graphic):
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
             overrides any argument passed to "colors"
+
+        cmap_values: 1D array-like or list of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
 
         alpha: float, optional, default 1.0
             alpha value for the colors
@@ -67,12 +71,22 @@ class ScatterGraphic(Graphic):
 
         """
         self.data = PointsDataFeature(self, data)
+        n_datapoints = self.data().shape[0]
 
         if cmap is not None:
-            colors = make_colors(n_colors=self.data().shape[0], cmap=cmap, alpha=alpha)
+            colors = parse_cmap_values(
+                n_colors=n_datapoints,
+                cmap_name=cmap,
+                cmap_values=cmap_values
+            )
 
-        self.colors = ColorFeature(self, colors, n_colors=self.data().shape[0], alpha=alpha)
-        self.cmap = CmapFeature(self, self.colors())
+        self.colors = ColorFeature(self, colors, n_colors=n_datapoints, alpha=alpha)
+        self.cmap = CmapFeature(
+            self,
+            self.colors(),
+            cmap_name=cmap,
+            cmap_values=cmap_values
+        )
 
         if isinstance(sizes, int):
             sizes = np.full(self.data().shape[0], sizes, dtype=np.float32)
