@@ -1,217 +1,15 @@
 from typing import *
-
 import numpy
-
-from fastplotlib.graphics import *
-
-
-class GraphicMethods:
-    def __init__(self):
-        pass
-
-    def add_image(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest',
-                  isolated_buffer: bool = True, *args, **kwargs):
-        """
-	    Create an Image Graphic
-
-        Parameters
-        ----------
-        data: array-like
-            array-like, usually numpy.ndarray, must support ``memoryview()``
-            Tensorflow Tensors also work **probably**, but not thoroughly tested
-            | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
-        cmap: str, optional, default "plasma"
-            colormap to use to display the image data, ignored if data is RGB
-        filter: str, optional, default "nearest"
-            interpolation filter, one of "nearest" or "linear"
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer.
-        args:
-            additional arguments passed to Graphic
-        kwargs:
-            additional keyword arguments passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the data buffer displayed in the ImageGraphic
-
-        **cmap**: :class:`.ImageCmapFeature`
-            Manages the colormap
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene
+from ..graphics import *
+import weakref
 
 
+class GraphicMethodsMixin:
+	def __init__(self):
+		pass
 
-        Examples
-        --------
-        .. code-block:: python
-
-            from fastplotlib import Plot
-            # create a `Plot` instance
-            plot = Plot()
-            # make some random 2D image data
-            data = np.random.rand(512, 512)
-            # plot the image data
-            plot.add_image(data=data)
-            # show the plot
-            plot.show()
-        
+	def add_heatmap(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest', chunk_size: int = 8192, isolated_buffer: bool = True, *args, **kwargs) -> weakref.proxy(HeatmapGraphic):
 		"""
-        g = ImageGraphic(*args, **kwargs)
-        self.add_graphic(g)
-
-    def add_scatter(self, data: numpy.ndarray, sizes: Union[int, numpy.ndarray, list] = 1, colors: numpy.ndarray = 'w',
-                    alpha: float = 1.0, cmap: str = None, z_position: float = 0.0, *args, **kwargs):
-        """
-
-        Create a Scatter Graphic, 2d or 3d
-
-        Parameters
-        ----------
-        data: array-like
-            Scatter data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
-
-        sizes: float or iterable of float, optional, default 1.0
-            size of the scatter points
-
-        colors: str, array, or iterable, default "w"
-            specify colors as a single human readable string, a single RGBA array,
-            or an iterable of strings or RGBA arrays
-
-        cmap: str, optional
-            apply a colormap to the scatter instead of assigning colors manually, this
-            overrides any argument passed to "colors"
-
-        alpha: float, optional, default 1.0
-            alpha value for the colors
-
-        z_position: float, optional
-            z-axis position for placing the graphic
-
-        args
-            passed to Graphic
-
-        kwargs
-            passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the scatter [x, y, z] positions data buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 0] = 5```, ``scatter.data[xs > 5] = 3``
-
-        **colors**: :class:`.ColorFeature`
-            Manages the color buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 1] = 0.5``, ``scatter.colors[xs > 5] = "cyan"``
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
-
-
-        """
-        g = ScatterGraphic(*args, **kwargs)
-        self.add_graphic(g)
-
-    def add_line(self, data: Any, thickness: float = 2.0, colors: Union[str, numpy.ndarray, Iterable] = 'w',
-                 alpha: float = 1.0, cmap: str = None, z_position: float = None, collection_index: int = None, *args,
-                 **kwargs):
-        """
-	
-        Create a line Graphic, 2d or 3d
-
-        Parameters
-        ----------
-        data: array-like
-            Line data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
-
-        thickness: float, optional, default 2.0
-            thickness of the line
-
-        colors: str, array, or iterable, default "w"
-            specify colors as a single human-readable string, a single RGBA array,
-            or an iterable of strings or RGBA arrays
-
-        cmap: str, optional
-            apply a colormap to the line instead of assigning colors manually, this
-            overrides any argument passed to "colors"
-
-        alpha: float, optional, default 1.0
-            alpha value for the colors
-
-        z_position: float, optional
-            z-axis position for placing the graphic
-
-        args
-            passed to Graphic
-
-        kwargs
-            passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 0] = 5```, ``scatter.data[xs > 5] = 3``
-
-        **colors**: :class:`.ColorFeature`
-            Manages the color buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 1] = 0.5``, ``scatter.colors[xs > 5] = "cyan"``
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
-
-        
-		"""
-        g = LineGraphic(*args, **kwargs)
-        self.add_graphic(g)
-
-    def add_histogram(self, data: numpy.ndarray = None, bins: Union[int, str] = 'auto',
-                      pre_computed: Dict[str, numpy.ndarray] = None, colors: numpy.ndarray = 'w',
-                      draw_scale_factor: float = 100.0, draw_bin_width_scale: float = 1.0, **kwargs):
-        """
-	
-        Create a Histogram Graphic
-
-        Parameters
-        ----------
-        data: np.ndarray or None, optional
-            data to create a histogram from, can be ``None`` if pre-computed values are provided to ``pre_computed``
-
-        bins: int or str, default is "auto", optional
-            this is directly just passed to ``numpy.histogram``
-
-        pre_computed: dict in the form {"hist": vals, "bin_edges" : vals}, optional
-            pre-computed histogram values
-
-        colors: np.ndarray, optional
-
-        draw_scale_factor: float, default ``100.0``, optional
-            scale the drawing of the entire Graphic
-
-        draw_bin_width_scale: float, default ``1.0``
-            scale the drawing of the bin widths
-
-        kwargs
-            passed to Graphic
-        
-		"""
-        g = HistogramGraphic(*args, **kwargs)
-        self.add_graphic(g)
-
-    def add_heatmap(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest',
-                    chunk_size: int = 8192, isolated_buffer: bool = True, *args, **kwargs):
-        """
 	
         Create an Image Graphic
 
@@ -272,15 +70,108 @@ class GraphicMethods:
             plot.show()
         
 		"""
-        g = HeatmapGraphic(*args, **kwargs)
-        self.add_graphic(g)
+		g = HeatmapGraphic(*args, **kwargs)
+		self.add_graphic(g)
 
-    def add_line_collection(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None,
-                            thickness: Union[float, List[float]] = 2.0,
-                            colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', alpha: float = 1.0,
-                            cmap: Union[List[str], str] = None, name: str = None,
-                            metadata: Union[list, tuple, numpy.ndarray] = None, *args, **kwargs):
-        """
+		return weakref.proxy(g)
+
+	def add_histogram(self, data: numpy.ndarray = None, bins: Union[int, str] = 'auto', pre_computed: Dict[str, numpy.ndarray] = None, colors: numpy.ndarray = 'w', draw_scale_factor: float = 100.0, draw_bin_width_scale: float = 1.0, **kwargs) -> weakref.proxy(HistogramGraphic):
+		"""
+	
+        Create a Histogram Graphic
+
+        Parameters
+        ----------
+        data: np.ndarray or None, optional
+            data to create a histogram from, can be ``None`` if pre-computed values are provided to ``pre_computed``
+
+        bins: int or str, default is "auto", optional
+            this is directly just passed to ``numpy.histogram``
+
+        pre_computed: dict in the form {"hist": vals, "bin_edges" : vals}, optional
+            pre-computed histogram values
+
+        colors: np.ndarray, optional
+
+        draw_scale_factor: float, default ``100.0``, optional
+            scale the drawing of the entire Graphic
+
+        draw_bin_width_scale: float, default ``1.0``
+            scale the drawing of the bin widths
+
+        kwargs
+            passed to Graphic
+        
+		"""
+		g = HistogramGraphic(*args, **kwargs)
+		self.add_graphic(g)
+
+		return weakref.proxy(g)
+
+	def add_image(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest', isolated_buffer: bool = True, *args, **kwargs) -> weakref.proxy(ImageGraphic):
+		"""
+	
+        Create an Image Graphic
+
+        Parameters
+        ----------
+        data: array-like
+            array-like, usually numpy.ndarray, must support ``memoryview()``
+            Tensorflow Tensors also work **probably**, but not thoroughly tested
+            | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
+        vmin: int, optional
+            minimum value for color scaling, calculated from data if not provided
+        vmax: int, optional
+            maximum value for color scaling, calculated from data if not provided
+        cmap: str, optional, default "plasma"
+            colormap to use to display the image data, ignored if data is RGB
+        filter: str, optional, default "nearest"
+            interpolation filter, one of "nearest" or "linear"
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then
+            set the data, useful if the data arrays are ready-only such as memmaps.
+            If False, the input array is itself used as the buffer.
+        args:
+            additional arguments passed to Graphic
+        kwargs:
+            additional keyword arguments passed to Graphic
+
+        Features
+        --------
+
+        **data**: :class:`.ImageDataFeature`
+            Manages the data buffer displayed in the ImageGraphic
+
+        **cmap**: :class:`.ImageCmapFeature`
+            Manages the colormap
+
+        **present**: :class:`.PresentFeature`
+            Control the presence of the Graphic in the scene
+
+
+
+        Examples
+        --------
+        .. code-block:: python
+
+            from fastplotlib import Plot
+            # create a `Plot` instance
+            plot = Plot()
+            # make some random 2D image data
+            data = np.random.rand(512, 512)
+            # plot the image data
+            plot.add_image(data=data)
+            # show the plot
+            plot.show()
+        
+		"""
+		g = ImageGraphic(*args, **kwargs)
+		self.add_graphic(g)
+
+		return weakref.proxy(g)
+
+	def add_line_collection(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', alpha: float = 1.0, cmap: Union[List[str], str] = None, name: str = None, metadata: Union[list, tuple, numpy.ndarray] = None, *args, **kwargs) -> weakref.proxy(LineCollection):
+		"""
 	
         Create a Line Collection
 
@@ -393,14 +284,67 @@ class GraphicMethods:
 
         
 		"""
-        g = LineCollection(*args, **kwargs)
-        self.add_graphic(g)
+		g = LineCollection(*args, **kwargs)
+		self.add_graphic(g)
 
-    def add_line_stack(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None,
-                       thickness: Union[float, List[float]] = 2.0,
-                       colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', cmap: Union[List[str], str] = None,
-                       separation: float = 10, separation_axis: str = 'y', name: str = None, *args, **kwargs):
-        """
+		return weakref.proxy(g)
+
+	def add_line(self, data: Any, thickness: float = 2.0, colors: Union[str, numpy.ndarray, Iterable] = 'w', alpha: float = 1.0, cmap: str = None, z_position: float = None, collection_index: int = None, *args, **kwargs) -> weakref.proxy(LineGraphic):
+		"""
+	
+        Create a line Graphic, 2d or 3d
+
+        Parameters
+        ----------
+        data: array-like
+            Line data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
+
+        thickness: float, optional, default 2.0
+            thickness of the line
+
+        colors: str, array, or iterable, default "w"
+            specify colors as a single human-readable string, a single RGBA array,
+            or an iterable of strings or RGBA arrays
+
+        cmap: str, optional
+            apply a colormap to the line instead of assigning colors manually, this
+            overrides any argument passed to "colors"
+
+        alpha: float, optional, default 1.0
+            alpha value for the colors
+
+        z_position: float, optional
+            z-axis position for placing the graphic
+
+        args
+            passed to Graphic
+
+        kwargs
+            passed to Graphic
+
+        Features
+        --------
+
+        **data**: :class:`.ImageDataFeature`
+            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
+            ex: ``scatter.data[:, 0] = 5```, ``scatter.data[xs > 5] = 3``
+
+        **colors**: :class:`.ColorFeature`
+            Manages the color buffer, allows regular and fancy indexing.
+            ex: ``scatter.data[:, 1] = 0.5``, ``scatter.colors[xs > 5] = "cyan"``
+
+        **present**: :class:`.PresentFeature`
+            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
+
+        
+		"""
+		g = LineGraphic(*args, **kwargs)
+		self.add_graphic(g)
+
+		return weakref.proxy(g)
+
+	def add_line_stack(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', cmap: Union[List[str], str] = None, separation: float = 10, separation_axis: str = 'y', name: str = None, *args, **kwargs) -> weakref.proxy(LineStack):
+		"""
 	
         Create a line stack
 
@@ -505,13 +449,67 @@ class GraphicMethods:
 
         
 		"""
-        g = LineStack(*args, **kwargs)
-        self.add_graphic(g)
+		g = LineStack(*args, **kwargs)
+		self.add_graphic(g)
 
-    def add_text(self, text: str, position: Tuple[int] = (0, 0, 0), size: int = 10,
-                 face_color: Union[str, numpy.ndarray] = 'w', outline_color: Union[str, numpy.ndarray] = 'w',
-                 outline_thickness=0, name: str = None):
-        """
+		return weakref.proxy(g)
+
+	def add_scatter(self, data: numpy.ndarray, sizes: Union[int, numpy.ndarray, list] = 1, colors: numpy.ndarray = 'w', alpha: float = 1.0, cmap: str = None, z_position: float = 0.0, *args, **kwargs) -> weakref.proxy(ScatterGraphic):
+		"""
+	
+        Create a Scatter Graphic, 2d or 3d
+
+        Parameters
+        ----------
+        data: array-like
+            Scatter data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
+
+        sizes: float or iterable of float, optional, default 1.0
+            size of the scatter points
+
+        colors: str, array, or iterable, default "w"
+            specify colors as a single human readable string, a single RGBA array,
+            or an iterable of strings or RGBA arrays
+
+        cmap: str, optional
+            apply a colormap to the scatter instead of assigning colors manually, this
+            overrides any argument passed to "colors"
+
+        alpha: float, optional, default 1.0
+            alpha value for the colors
+
+        z_position: float, optional
+            z-axis position for placing the graphic
+
+        args
+            passed to Graphic
+
+        kwargs
+            passed to Graphic
+
+        Features
+        --------
+
+        **data**: :class:`.ImageDataFeature`
+            Manages the scatter [x, y, z] positions data buffer, allows regular and fancy indexing.
+            ex: ``scatter.data[:, 0] = 5```, ``scatter.data[xs > 5] = 3``
+
+        **colors**: :class:`.ColorFeature`
+            Manages the color buffer, allows regular and fancy indexing.
+            ex: ``scatter.data[:, 1] = 0.5``, ``scatter.colors[xs > 5] = "cyan"``
+
+        **present**: :class:`.PresentFeature`
+            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
+
+        
+		"""
+		g = ScatterGraphic(*args, **kwargs)
+		self.add_graphic(g)
+
+		return weakref.proxy(g)
+
+	def add_text(self, text: str, position: Tuple[int] = (0, 0, 0), size: int = 10, face_color: Union[str, numpy.ndarray] = 'w', outline_color: Union[str, numpy.ndarray] = 'w', outline_thickness=0, name: str = None) -> weakref.proxy(TextGraphic):
+		"""
 	
         Create a text Graphic
 
@@ -533,5 +531,8 @@ class GraphicMethods:
             name of graphic, passed to Graphic
         
 		"""
-        g = TextGraphic(*args, **kwargs)
-        self.add_graphic(g)
+		g = TextGraphic(*args, **kwargs)
+		self.add_graphic(g)
+
+		return weakref.proxy(g)
+

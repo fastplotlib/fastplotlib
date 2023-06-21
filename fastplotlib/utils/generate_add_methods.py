@@ -1,37 +1,43 @@
 import inspect
-import fastplotlib
-from fastplotlib.graphics import *
 import sys
+from fastplotlib.graphics import *
+modules = list()
 
-modules = dict(inspect.getmembers(fastplotlib.graphics))['__all__']
-
+for name, obj in inspect.getmembers(sys.modules[__name__]):
+    if inspect.isclass(obj):
+        modules.append(obj)
 
 def generate_add_graphics_methods():
     # clear file and regenerate from scratch
-    open('add_graphics.py', 'w').close()
+    open('_add_graphic_mixin.py', 'w').close()
 
-    sys.stdout = open('add_graphics.py', 'w')
+    f = open('_add_graphic_mixin.py', 'w')
 
-    print('from typing import *\n')
-    print('import numpy\n')
-    print('from fastplotlib.graphics import *\n')
+    f.write('from typing import *\n')
+    f.write('import numpy\n')
+    f.write('from ..graphics import *\n')
+    f.write('import weakref\n\n')
 
-    print("\nclass GraphicMethods:")
-    print("\tdef __init__(self):")
-    print("\t\tpass\n")
+    f.write("\nclass GraphicMethodsMixin:\n")
+    f.write("\tdef __init__(self):\n")
+    f.write("\t\tpass\n\n")
 
     for m in modules:
-        class_name = getattr(sys.modules[__name__], m)
+        class_name = m
         method_name = class_name.type
 
-        print(f"\tdef add_{method_name}{inspect.signature(class_name.__init__)}:")
-        print('\t\t"""')
-        print(f'\t{class_name.__init__.__doc__}')
-        print('\t\t"""')
-        print(f"\t\tg = {class_name.__name__}(*args, **kwargs)")
-        print(f'\t\tself.add_graphic(g)\n')
+        f.write(f"\tdef add_{method_name}{inspect.signature(class_name.__init__)} -> weakref.proxy({class_name.__name__}):\n")
+        f.write('\t\t"""\n')
+        f.write(f'\t{class_name.__init__.__doc__}\n')
+        f.write('\t\t"""\n')
+        f.write(f"\t\tg = {class_name.__name__}(*args, **kwargs)\n")
+        f.write(f'\t\tself.add_graphic(g)\n\n')
 
-    sys.stdout.close()
+        f.write(f'\t\treturn weakref.proxy(g)\n\n')
+
+    f.close()
+
+    return
 
 
 if __name__ == '__main__':

@@ -1,2 +1,2 @@
 from .functions import *
-from .add_graphics import GraphicMethods
+#from ._add_graphic_mixin import GraphicMethodsMixin

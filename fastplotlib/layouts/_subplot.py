@@ -38,9 +38,9 @@ CANVAS_OPTIONS_AVAILABLE = {
 
 from ._utils import make_canvas_and_renderer
 from ._base import PlotArea
-from .. import graphics
 from ..graphics import TextGraphic
 from ._defaults import create_camera, create_controller
+# from ..utils import GraphicMethodsMixin
 
 
 class Subplot(PlotArea):
@@ -80,6 +80,8 @@ class Subplot(PlotArea):
         name: str, optional
             name of the subplot, will appear as ``TextGraphic`` above the subplot
         """
+
+        # super(GraphicMethodsMixin, self).__init__()
 
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
