@@ -27,10 +27,9 @@ extras_require = {
         "nbmake",
         "scipy",
         "imageio",
-        "imageio-ffmpeg>=0.4.7",
         "jupyterlab",
         "jupyter-rfb",
-        "Pillow",
+        "scikit-learn",
     ]
 }
 

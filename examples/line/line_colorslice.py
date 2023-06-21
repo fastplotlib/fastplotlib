@@ -9,13 +9,8 @@ Example showing color slicing with cosine, sine, sinc lines.
 from fastplotlib import Plot
 import numpy as np
 
-from wgpu.gui.offscreen import WgpuCanvas
-from pygfx import WgpuRenderer
 
-canvas = WgpuCanvas()
-renderer = WgpuRenderer(canvas)
-
-plot = Plot(canvas=canvas, renderer=renderer)
+plot = Plot()
 
 xs = np.linspace(-10, 10, 100)
 # sine wave

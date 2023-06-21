@@ -6,25 +6,30 @@ Example showing cmap change for scatter plot.
 
 # test_example = true
 
-from fastplotlib import Plot
+from fastplotlib import Plot, run
 import numpy as np
 from pathlib import Path
+from sklearn.cluster import AgglomerativeClustering
 
-from wgpu.gui.offscreen import WgpuCanvas
-from pygfx import WgpuRenderer
 
-canvas = WgpuCanvas()
-renderer = WgpuRenderer(canvas)
-
-plot = Plot(canvas=canvas, renderer=renderer)
+plot = Plot()
 
 data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
 data = np.load(data_path)
 
-n_points = 50
-colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
-scatter_graphic = plot.add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
+agg = AgglomerativeClustering(n_clusters=3)
+
+agg.fit_predict(data)
+
+
+scatter_graphic = plot.add_scatter(
+    data=data[:, :-1],
+    sizes=15,
+    alpha=0.7,
+    cmap="Set1",
+    cmap_values=agg.labels_
+)
 
 plot.show()
 
@@ -32,9 +37,10 @@ plot.canvas.set_logical_size(800, 800)
 
 plot.auto_scale()
 
-scatter_graphic.cmap = "viridis"
+scatter_graphic.cmap = "tab10"
 
-img = np.asarray(plot.renderer.target.draw())
+# img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)
+    run()
