@@ -171,3 +171,7 @@ sudo apt install llvm-dev libturbojpeg* libgl1-mesa-dev libgl1-mesa-glx libglapi
 As far as I know, WGPU uses Metal instead of Vulkan on Mac. You will need at least Mac OSX 10.13.
 
 # :heart: Contributing
+
+We welcome contributions! See the contributing guide: https://github.com/kushalkolar/fastplotlib/blob/master/CONTRIBUTING.md
+
+You can also take a look at our [**Roadmap for 2023**](https://github.com/kushalkolar/fastplotlib/issues/55) and [**Issues**](https://github.com/kushalkolar/fastplotlib/issues) for ideas on how to contribute!
