@@ -49,4 +49,4 @@ git commit -m "my new feature"
 git push origin my-new-feature-branch
 ```
 
-4. Finally make a PR against the `master` branch, the PR will also run tests using our CI pipeline. We will get back to your with any further suggestions!
+4. Finally make a **draft** PR against the `master` branch. When you think the PR is ready, mark it for review to trigger tests using our CI pipeline. If you need to make changes, please set the PR to a draft when pushing further commits until it's ready for review scion. We will get back to your with any further suggestions!
