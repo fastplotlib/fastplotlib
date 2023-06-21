@@ -1,7 +1,7 @@
 import numpy as np
 
 from ._base import GraphicFeature, GraphicFeatureIndexable, cleanup_slice, FeatureEvent, cleanup_array_slice
-from ...utils import make_colors, get_cmap_texture, make_pygfx_colors
+from ...utils import make_colors, get_cmap_texture, make_pygfx_colors, parse_cmap_values
 from pygfx import Color
 
 
@@ -226,10 +226,13 @@ class CmapFeature(ColorFeature):
 
     Same event pick info as :class:`ColorFeature`
     """
-    def __init__(self, parent, colors):
+    def __init__(self, parent, colors, cmap_name: str, cmap_values: np.ndarray):
         super(ColorFeature, self).__init__(parent, colors)
 
-    def __setitem__(self, key, value):
+        self._cmap_name = cmap_name
+        self._cmap_values = cmap_values
+
+    def __setitem__(self, key, cmap_name):
         key = cleanup_slice(key, self._upper_bound)
         if not isinstance(key, (slice, np.ndarray)):
             raise TypeError("Cannot set cmap on single indices, must pass a slice object, "
@@ -242,8 +245,33 @@ class CmapFeature(ColorFeature):
             # numpy array
             n_colors = key.size
 
-        colors = make_colors(n_colors, cmap=value).astype(self._data.dtype)
+        colors = parse_cmap_values(
+            n_colors=n_colors,
+            cmap_name=cmap_name,
+            cmap_values=self._cmap_values
+        )
+
+        self._cmap_name = cmap_name
         super(CmapFeature, self).__setitem__(key, colors)
+
+    @property
+    def values(self) -> np.ndarray:
+        return self._cmap_values
+
+    @values.setter
+    def values(self, values: np.ndarray):
+        if not isinstance(values, np.ndarray):
+            values = np.array(values)
+
+        colors = parse_cmap_values(
+            n_colors=self().shape[0],
+            cmap_name=self._cmap_name,
+            cmap_values=values
+        )
+
+        self._cmap_values = values
+
+        super(CmapFeature, self).__setitem__(slice(None), colors)
 
 
 class ImageCmapFeature(GraphicFeature):

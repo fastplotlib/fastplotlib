@@ -9,75 +9,7 @@ import pygfx
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
-from ..utils import make_colors, get_cmap, QUALITATIVE_CMAPS, normalize_min_max
-
-
-def _parse_cmap_values(
-        n_graphics: int,
-        cmap_name: str,
-        cmap_values: Union[np.ndarray, List[Union[int, float]]] = None
-) -> np.ndarray:
-    """
-
-    Parameters
-    ----------
-    n_graphics: int
-        number of graphics in collection
-
-    cmap_name: str
-        colormap name
-
-    cmap_values: np.ndarray | List[int | float], optional
-        cmap values
-    Returns
-    -------
-
-    """
-    if cmap_values is None:
-        # use the cmap values linearly just along the collection indices
-        # for example, if len(data) = 10 and the cmap is "jet", then it will
-        # linearly go from blue to red from data[0] to data[-1]
-        colors = make_colors(n_graphics, cmap_name)
-        return colors
-
-    else:
-        if not isinstance(cmap_values, np.ndarray):
-            cmap_values = np.array(cmap_values)
-
-        # use the values within cmap_values to set the color of the corresponding data
-        # each individual data[i] has its color based on the "relative cmap_value intensity"
-        if len(cmap_values) != n_graphics:
-            raise ValueError(
-                "len(cmap_values) != len(data)"
-            )
-
-        colormap = get_cmap(cmap_name)
-
-        n_colors = colormap.shape[0] - 1
-
-        if cmap_name in QUALITATIVE_CMAPS:
-            # check that cmap_values are <int> and within the number of colors `n_colors`
-            # do not scale, use directly
-            if not np.issubdtype(cmap_values.dtype, np.integer):
-                raise TypeError(
-                    f"<int> cmap_values should be used with qualitative colormaps, the dtype you "
-                    f"have passed is {cmap_values.dtype}"
-                )
-            if max(cmap_values) > n_colors:
-                raise IndexError(
-                    f"You have chosen the qualitative colormap <'{cmap_name}'> which only has "
-                    f"<{n_colors}> colors, which is lower than the max value of your `cmap_values`."
-                    f"Choose a cmap with more colors, or a non-quantitative colormap."
-                )
-            norm_cmap_values = cmap_values
-        else:
-            # scale between 0 - n_colors so we can just index the colormap as a LUT
-            norm_cmap_values = (normalize_min_max(cmap_values) * n_colors).astype(int)
-
-        # use colormap as LUT to map the cmap_values to the colormap index
-        colors = np.vstack([colormap[val] for val in norm_cmap_values])
-
-        return colors
+from ..utils import make_colors, get_cmap, QUALITATIVE_CMAPS, normalize_min_max, parse_cmap_values
 
 
 class LineCollection(GraphicCollection, Interaction):
@@ -243,8 +175,8 @@ class LineCollection(GraphicCollection, Interaction):
         if cmap is not None:
             # cmap across lines
             if isinstance(cmap, str):
-                colors = _parse_cmap_values(
-                    n_graphics=len(data),
+                colors = parse_cmap_values(
+                    n_colors=len(data),
                     cmap_name=cmap,
                     cmap_values=cmap_values
                 )
@@ -348,8 +280,8 @@ class LineCollection(GraphicCollection, Interaction):
 
     @cmap.setter
     def cmap(self, cmap: str):
-        colors = _parse_cmap_values(
-            n_graphics=len(self),
+        colors = parse_cmap_values(
+            n_colors=len(self),
             cmap_name=cmap,
             cmap_values=self.cmap_values
         )
@@ -363,8 +295,8 @@ class LineCollection(GraphicCollection, Interaction):
 
     @cmap_values.setter
     def cmap_values(self, values: Union[np.ndarray, list]):
-        colors = _parse_cmap_values(
-            n_graphics=len(self),
+        colors = parse_cmap_values(
+            n_colors=len(self),
             cmap_name=self.cmap,
             cmap_values=values
 

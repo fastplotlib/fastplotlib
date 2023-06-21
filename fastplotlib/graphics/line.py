@@ -7,7 +7,7 @@ import pygfx
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
 from .selectors import LinearRegionSelector, LinearSelector
-from ..utils import make_colors, QUALITATIVE_CMAPS, get_cmap, normalize_min_max
+from ..utils import parse_cmap_values
 
 
 class LineGraphic(Graphic, Interaction):
@@ -87,37 +87,11 @@ class LineGraphic(Graphic, Interaction):
         if cmap is not None:
             n_datapoints = self.data().shape[0]
 
-            if cmap_values is None:
-                # use the cmap values linearly just along the collection indices
-                # for example, if len(data) = 10 and the cmap is "jet", then it will
-                # linearly go from blue to red from data[0] to data[-1]
-                colors = make_colors(n_datapoints, cmap)
-            else:
-                # use the values within cmap_values to set the color of the corresponding data
-                # each individual data[i] has its color based on the "relative cmap_value intensity"
-                if len(cmap_values) != n_datapoints:
-                    raise ValueError(
-                        "len(cmap_values) != len(data)"
-                    )
-
-                colormap = get_cmap(cmap)
-
-                n_colors = colormap.shape[0] - 1
-
-                if cmap in QUALITATIVE_CMAPS:
-                    if max(cmap_values) > n_colors:
-                        raise IndexError(
-                            f"You have chosen the qualitative colormap <'{cmap}'> which only has "
-                            f"<{n_colors}> colors, which is lower than the max value of your `cmap_values`."
-                            f"Choose a cmap with more colors, or a non-quantitative colormap."
-                        )
-                    norm_cmap_values = cmap_values
-                else:
-                    # scale between 0 - n_colors so we can just index the colormap as a LUT
-                    norm_cmap_values = (normalize_min_max(cmap_values) * n_colors).astype(int)
-
-                # use colormap as LUT to map the cmap_values to the colormap index
-                colors = np.vstack([colormap[val] for val in norm_cmap_values])
+            colors = parse_cmap_values(
+                n_colors=n_datapoints,
+                cmap_name=cmap,
+                cmap_values=cmap_values
+            )
 
         self.colors = ColorFeature(
             self,
@@ -127,7 +101,12 @@ class LineGraphic(Graphic, Interaction):
             collection_index=collection_index
         )
 
-        self.cmap = CmapFeature(self, self.colors())
+        self.cmap = CmapFeature(
+            self,
+            self.colors(),
+            cmap_name=cmap,
+            cmap_values=cmap_values
+        )
 
         super(LineGraphic, self).__init__(*args, **kwargs)
 
