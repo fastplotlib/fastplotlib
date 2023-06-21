@@ -450,6 +450,9 @@ class LineCollection(GraphicCollection, Interaction):
         self._plot_area = plot_area
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
+        # if single value force to be an array of size 1
+        if isinstance(indices, (np.integer, int)):
+            indices = np.array([indices])
         if not hasattr(self, "_previous_data"):
             self._previous_data = dict()
         elif hasattr(self, "_previous_data"):
@@ -467,8 +470,8 @@ class LineCollection(GraphicCollection, Interaction):
         data = list()
 
         for graphic in self.graphics[indices]:
-            feature: GraphicFeature = getattr(graphic, feature)
-            data.append(feature())
+            feature_instance: GraphicFeature = getattr(graphic, feature)
+            data.append(feature_instance())
 
         # later we can think about multi-index events
         previous_data = deepcopy(data[0])
@@ -482,7 +485,7 @@ class LineCollection(GraphicCollection, Interaction):
         # finally set the new data
         # this MUST occur after setting the previous data attribute to prevent recursion
         # since calling `feature._set()` triggers all the feature callbacks
-        feature._set(new_data)
+        feature_instance._set(new_data)
 
     def _reset_feature(self, feature: str):
         if feature not in self._previous_data.keys():
