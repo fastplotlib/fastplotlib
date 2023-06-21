@@ -7,12 +7,18 @@ on:
   pull_request:
     branches:
       - master
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 jobs:
 
   test-build:
     name: Test examples
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
       matrix:

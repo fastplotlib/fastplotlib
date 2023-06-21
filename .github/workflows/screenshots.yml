@@ -9,6 +9,7 @@ jobs:
   screenshots:
     name: Regenerate
     runs-on: 'ubuntu-latest'
+    if: ${{ !github.event.pull_request.draft }}
     steps:
       - name: Install git-lfs
         run: |
