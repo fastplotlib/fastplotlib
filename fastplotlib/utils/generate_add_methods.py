@@ -1,6 +1,7 @@
 import inspect
 import sys
 from fastplotlib.graphics import *
+#from ..graphics import *
 modules = list()
 
 for name, obj in inspect.getmembers(sys.modules[__name__]):
@@ -9,9 +10,9 @@ for name, obj in inspect.getmembers(sys.modules[__name__]):
 
 def generate_add_graphics_methods():
     # clear file and regenerate from scratch
-    open('_add_graphic_mixin.py', 'w').close()
+    open('../layouts/_add_graphic_mixin.py', 'w').close()
 
-    f = open('_add_graphic_mixin.py', 'w')
+    f = open('../layouts/_add_graphic_mixin.py', 'w')
 
     f.write('from typing import *\n')
     f.write('import numpy\n')

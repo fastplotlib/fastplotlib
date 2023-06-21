@@ -40,10 +40,10 @@ from ._utils import make_canvas_and_renderer
 from ._base import PlotArea
 from ..graphics import TextGraphic
 from ._defaults import create_camera, create_controller
-# from ..utils import GraphicMethodsMixin
+from ._add_graphic_mixin import GraphicMethodsMixin
 
 
-class Subplot(PlotArea):
+class Subplot(PlotArea, GraphicMethodsMixin):
     def __init__(
             self,
             position: Tuple[int, int] = None,
@@ -81,7 +81,7 @@ class Subplot(PlotArea):
             name of the subplot, will appear as ``TextGraphic`` above the subplot
         """
 
-        # super(GraphicMethodsMixin, self).__init__()
+        super(GraphicMethodsMixin, self).__init__()
 
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
