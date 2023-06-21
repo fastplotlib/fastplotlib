@@ -8,6 +8,10 @@
 
 A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine utilizing [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
 
+![fpl_neuro_demo](https://github.com/kushalkolar/fastplotlib/assets/9403332/0bebe2fe-3c45-4da4-a026-9505751a4087)
+
+Higher resolution demo: [https://github.com/kushalkolar/fastplotlib/assets/9403332/1df06d4d-9a7e-4f0d-aad8-8d2e9b387647](https://github.com/kushalkolar/fastplotlib/assets/9403332/1df06d4d-9a7e-4f0d-aad8-8d2e9b387647)
+
 # Supported frameworks
 
 `fastplotlib` can run on anything that [`pygfx`](https://github.com/pygfx/pygfx) can also run, this includes:
@@ -17,7 +21,7 @@ A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx
 :heavy_check_mark: `glfw`\
 :heavy_check_mark: `wxPython`
 
-Notes:\
+**Notes:**\
 :heavy_check_mark: You can use a non-blocking `glfw` canvas from a notebook, as long as you're working locally or have a way to forward the remote graphical desktop (such as X11 forwarding).\
 :grey_exclamation: We do not officially support `jupyter notebook` through `jupyter_rfb`, this may change with notebook v7\
 :disappointed: [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb) does not work in collab, for a detailed discussion see: https://github.com/vispy/jupyter_rfb/issues/57 
@@ -71,7 +75,9 @@ pip install -e ".[notebook,docs,tests]
 
 # Examples
 
-**Note: the examples on the `master` branch may require 
+> **Note**
+> 
+> `fastplotlib` and `pygfx` are fast evolving, you may require the latest `pygfx` and `fastplotlib` from github to use the examples in the master branch.
 
 Clone or download the repo to try the examples
 
@@ -124,12 +130,6 @@ plot.show()
 ```
 
 ![out](https://user-images.githubusercontent.com/9403332/209422871-6b2153f3-81ca-4f62-9200-8206a81eaf0d.gif)
-
-### Interactivity
-
-![interact](https://user-images.githubusercontent.com/9403332/210027199-6e4ac193-6096-4d18-80d5-a41591ea4d4f.gif)
-
-This is all in the notebook and non-blocking!
 
 ### Image widget
 
