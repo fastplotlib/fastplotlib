@@ -7,7 +7,7 @@ import pygfx
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
 from .selectors import LinearRegionSelector, LinearSelector
-from ..utils import make_colors
+from ..utils import parse_cmap_values
 
 
 class LineGraphic(Graphic, Interaction):
@@ -26,6 +26,7 @@ class LineGraphic(Graphic, Interaction):
             colors: Union[str, np.ndarray, Iterable] = "w",
             alpha: float = 1.0,
             cmap: str = None,
+            cmap_values: Union[np.ndarray, List] = None,
             z_position: float = None,
             collection_index: int = None,
             *args,
@@ -49,6 +50,9 @@ class LineGraphic(Graphic, Interaction):
         cmap: str, optional
             apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors"
+            
+        cmap_values: 1D array-like or list of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
 
         alpha: float, optional, default 1.0
             alpha value for the colors
@@ -81,7 +85,13 @@ class LineGraphic(Graphic, Interaction):
         self.data = PointsDataFeature(self, data, collection_index=collection_index)
 
         if cmap is not None:
-            colors = make_colors(n_colors=self.data().shape[0], cmap=cmap, alpha=alpha)
+            n_datapoints = self.data().shape[0]
+
+            colors = parse_cmap_values(
+                n_colors=n_datapoints,
+                cmap_name=cmap,
+                cmap_values=cmap_values
+            )
 
         self.colors = ColorFeature(
             self,
@@ -91,7 +101,12 @@ class LineGraphic(Graphic, Interaction):
             collection_index=collection_index
         )
 
-        self.cmap = CmapFeature(self, self.colors())
+        self.cmap = CmapFeature(
+            self,
+            self.colors(),
+            cmap_name=cmap,
+            cmap_values=cmap_values
+        )
 
         super(LineGraphic, self).__init__(*args, **kwargs)
 

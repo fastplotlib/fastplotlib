@@ -1,6 +1,7 @@
 from typing import *
 from copy import deepcopy
 import weakref
+import traceback
 
 import numpy as np
 import pygfx
@@ -8,7 +9,7 @@ import pygfx
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
-from ..utils import make_colors
+from ..utils import make_colors, get_cmap, QUALITATIVE_CMAPS, normalize_min_max, parse_cmap_values
 
 
 class LineCollection(GraphicCollection, Interaction):
@@ -29,6 +30,7 @@ class LineCollection(GraphicCollection, Interaction):
             colors: Union[List[np.ndarray], np.ndarray] = "w",
             alpha: float = 1.0,
             cmap: Union[List[str], str] = None,
+            cmap_values: Union[np.ndarray, List] = None,
             name: str = None,
             metadata: Union[list, tuple, np.ndarray] = None,
             *args,
@@ -62,6 +64,9 @@ class LineCollection(GraphicCollection, Interaction):
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
             **Note:** ``cmap`` overrides any arguments passed to ``colors``
+
+        cmap_values: 1D array-like or list of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
 
         name: str, optional
             name of the line collection
@@ -152,7 +157,7 @@ class LineCollection(GraphicCollection, Interaction):
             if len(data) != len(z_position):
                 raise ValueError("z_position must be a single float or an iterable with same length as data")
 
-        if not isinstance(thickness, float):
+        if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
                 raise ValueError("args must be a single float or an iterable with same length as data")
 
@@ -163,13 +168,21 @@ class LineCollection(GraphicCollection, Interaction):
                     f"{len(metadata)} != {len(data)}"
                 )
 
+        self._cmap_values = cmap_values
+        self._cmap_str = cmap
+
         # cmap takes priority over colors
         if cmap is not None:
             # cmap across lines
             if isinstance(cmap, str):
-                colors = make_colors(len(data), cmap)
+                colors = parse_cmap_values(
+                    n_colors=len(data),
+                    cmap_name=cmap,
+                    cmap_values=cmap_values
+                )
                 single_color = False
                 cmap = None
+
             elif isinstance(cmap, (tuple, list)):
                 if len(cmap) != len(data):
                     raise ValueError("cmap argument must be a single cmap or a list of cmaps "
@@ -260,6 +273,37 @@ class LineCollection(GraphicCollection, Interaction):
             )
 
             self.add_graphic(lg, reset_index=False)
+
+    @property
+    def cmap(self) -> str:
+        return self._cmap_str
+
+    @cmap.setter
+    def cmap(self, cmap: str):
+        colors = parse_cmap_values(
+            n_colors=len(self),
+            cmap_name=cmap,
+            cmap_values=self.cmap_values
+        )
+
+        for i, g in enumerate(self.graphics):
+            g.colors = colors[i]
+
+    @property
+    def cmap_values(self) -> np.ndarray:
+        return self._cmap_values
+
+    @cmap_values.setter
+    def cmap_values(self, values: Union[np.ndarray, list]):
+        colors = parse_cmap_values(
+            n_colors=len(self),
+            cmap_name=self.cmap,
+            cmap_values=values
+
+        )
+
+        for i, g in enumerate(self.graphics):
+            g.colors = colors[i]
 
     def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
         """
