@@ -8,9 +8,10 @@ from warnings import warn
 
 import pygfx
 
-from wgpu.gui.auto import WgpuCanvas
+from wgpu.gui.auto import WgpuCanvas, is_jupyter
 
-from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
+if is_jupyter():
+    from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
 
 from ._utils import make_canvas_and_renderer
 from ._defaults import create_controller

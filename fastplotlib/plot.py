@@ -1,11 +1,15 @@
 from typing import *
-import pygfx
-from wgpu.gui.auto import WgpuCanvas
-from .layouts._subplot import Subplot
-from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
-from .layouts._record_mixin import RecordMixin
 from datetime import datetime
 import traceback
+
+import pygfx
+from wgpu.gui.auto import WgpuCanvas, is_jupyter
+
+if is_jupyter():
+    from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
+
+from .layouts._subplot import Subplot
+from .layouts._record_mixin import RecordMixin
 
 
 class Plot(Subplot, RecordMixin):
