@@ -478,7 +478,6 @@ class ImageWidget:
 
         self._gridplot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs)
 
-        self.image_graphics = list()
         for data_ix, (d, subplot) in enumerate(zip(self.data, self.gridplot)):
             minmax = quick_min_max(self.data[data_ix])
 
@@ -516,7 +515,6 @@ class ImageWidget:
             subplot.add_graphic(ig)
             subplot.name = name
             subplot.set_title(name)
-            # self.image_graphics.append(ig)
 
         self.gridplot.renderer.add_event_handler(self._set_slider_layout, "resize")
 
@@ -765,8 +763,8 @@ class ImageWidget:
             change: dict
     ):
         vmin, vmax = change["new"]
-        self.image_graphics[data_ix].cmap.vmin = vmin
-        self.image_graphics[data_ix].cmap.vmax = vmax
+        self.managed_graphics[data_ix].cmap.vmin = vmin
+        self.managed_graphics[data_ix].cmap.vmax = vmax
 
     def _set_slider_layout(self, *args):
         w, h = self.gridplot.renderer.logical_size
@@ -809,7 +807,7 @@ class ImageWidget:
         """
         Reset the vmin and vmax w.r.t. the currently displayed image(s)
         """
-        for i, ig in enumerate(self.image_graphics):
+        for i, ig in enumerate(self.managed_graphics):
             mm = self._get_vmin_vmax_range(ig.data())
 
             if len(self.vmin_vmax_sliders) != 0:
