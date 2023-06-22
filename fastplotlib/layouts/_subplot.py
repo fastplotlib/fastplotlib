@@ -40,7 +40,7 @@ from ._utils import make_canvas_and_renderer
 from ._base import PlotArea
 from ..graphics import TextGraphic
 from ._defaults import create_camera, create_controller
-from ._add_graphic_mixin import GraphicMethodsMixin
+from .graphic_methods_mixin import GraphicMethodsMixin
 
 
 class Subplot(PlotArea, GraphicMethodsMixin):
@@ -125,17 +125,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             dv.name = pos
             self.docked_viewports[pos] = dv
             self.children.append(dv)
-
-        # # attach all the add_<graphic_name> methods
-        # for graphic_cls_name in graphics.__all__:
-        #     cls = getattr(graphics, graphic_cls_name)
-        #
-        #     pfunc = partial(self._create_graphic, cls)
-        #     pfunc.__signature__ = signature(cls)
-        #     pfunc.__doc__ = cls.__init__.__doc__
-        #
-        #     # cls.type is defined in Graphic.__init_subclass__
-        #     setattr(self, f"add_{cls.type}", pfunc)
 
         self._title_graphic: TextGraphic = None
         if self.name is not None:

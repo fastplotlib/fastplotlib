@@ -5,12 +5,12 @@ import weakref
 
 
 class GraphicMethodsMixin:
-	def __init__(self):
-		pass
+    def __init__(self):
+        pass
 
-	def add_heatmap(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest', chunk_size: int = 8192, isolated_buffer: bool = True, *args, **kwargs) -> weakref.proxy(HeatmapGraphic):
-		"""
-	
+    def add_heatmap(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest', chunk_size: int = 8192, isolated_buffer: bool = True, *args, **kwargs) -> weakref.proxy(HeatmapGraphic):
+        """
+        
         Create an Image Graphic
 
         Parameters
@@ -69,15 +69,15 @@ class GraphicMethodsMixin:
             # show the plot
             plot.show()
         
-		"""
-		g = HeatmapGraphic(*args, **kwargs)
-		self.add_graphic(g)
+        """
+        g = HeatmapGraphic(*args, **kwargs)
+        self.add_graphic(g)
 
-		return weakref.proxy(g)
+        return weakref.proxy(g)
 
-	def add_histogram(self, data: numpy.ndarray = None, bins: Union[int, str] = 'auto', pre_computed: Dict[str, numpy.ndarray] = None, colors: numpy.ndarray = 'w', draw_scale_factor: float = 100.0, draw_bin_width_scale: float = 1.0, **kwargs) -> weakref.proxy(HistogramGraphic):
-		"""
-	
+    def add_histogram(self, data: numpy.ndarray = None, bins: Union[int, str] = 'auto', pre_computed: Dict[str, numpy.ndarray] = None, colors: numpy.ndarray = 'w', draw_scale_factor: float = 100.0, draw_bin_width_scale: float = 1.0, **kwargs) -> weakref.proxy(HistogramGraphic):
+        """
+        
         Create a Histogram Graphic
 
         Parameters
@@ -102,15 +102,15 @@ class GraphicMethodsMixin:
         kwargs
             passed to Graphic
         
-		"""
-		g = HistogramGraphic(*args, **kwargs)
-		self.add_graphic(g)
+        """
+        g = HistogramGraphic(*args, **kwargs)
+        self.add_graphic(g)
 
-		return weakref.proxy(g)
+        return weakref.proxy(g)
 
-	def add_image(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest', isolated_buffer: bool = True, *args, **kwargs) -> weakref.proxy(ImageGraphic):
-		"""
-	
+    def add_image(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest', isolated_buffer: bool = True, *args, **kwargs) -> weakref.proxy(ImageGraphic):
+        """
+        
         Create an Image Graphic
 
         Parameters
@@ -164,15 +164,17 @@ class GraphicMethodsMixin:
             # show the plot
             plot.show()
         
-		"""
-		g = ImageGraphic(*args, **kwargs)
-		self.add_graphic(g)
+        """
+        print(args)
+        print(kwargs)
+        g = ImageGraphic(*args, **kwargs)
+        self.add_graphic(g)
 
-		return weakref.proxy(g)
+        return weakref.proxy(g)
 
-	def add_line_collection(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', alpha: float = 1.0, cmap: Union[List[str], str] = None, name: str = None, metadata: Union[list, tuple, numpy.ndarray] = None, *args, **kwargs) -> weakref.proxy(LineCollection):
-		"""
-	
+    def add_line_collection(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', alpha: float = 1.0, cmap: Union[List[str], str] = None, name: str = None, metadata: Union[list, tuple, numpy.ndarray] = None, *args, **kwargs) -> weakref.proxy(LineCollection):
+        """
+        
         Create a Line Collection
 
         Parameters
@@ -283,15 +285,15 @@ class GraphicMethodsMixin:
             line_collection[1:].colors[35:70] = "magenta"
 
         
-		"""
-		g = LineCollection(*args, **kwargs)
-		self.add_graphic(g)
+        """
+        g = LineCollection(*args, **kwargs)
+        self.add_graphic(g)
 
-		return weakref.proxy(g)
+        return weakref.proxy(g)
 
-	def add_line(self, data: Any, thickness: float = 2.0, colors: Union[str, numpy.ndarray, Iterable] = 'w', alpha: float = 1.0, cmap: str = None, z_position: float = None, collection_index: int = None, *args, **kwargs) -> weakref.proxy(LineGraphic):
-		"""
-	
+    def add_line(self, data: Any, thickness: float = 2.0, colors: Union[str, numpy.ndarray, Iterable] = 'w', alpha: float = 1.0, cmap: str = None, z_position: float = None, collection_index: int = None, *args, **kwargs) -> weakref.proxy(LineGraphic):
+        """
+        
         Create a line Graphic, 2d or 3d
 
         Parameters
@@ -337,15 +339,15 @@ class GraphicMethodsMixin:
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
         
-		"""
-		g = LineGraphic(*args, **kwargs)
-		self.add_graphic(g)
+        """
+        g = LineGraphic(*args, **kwargs)
+        self.add_graphic(g)
 
-		return weakref.proxy(g)
+        return weakref.proxy(g)
 
-	def add_line_stack(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', cmap: Union[List[str], str] = None, separation: float = 10, separation_axis: str = 'y', name: str = None, *args, **kwargs) -> weakref.proxy(LineStack):
-		"""
-	
+    def add_line_stack(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', cmap: Union[List[str], str] = None, separation: float = 10, separation_axis: str = 'y', name: str = None, *args, **kwargs) -> weakref.proxy(LineStack):
+        """
+        
         Create a line stack
 
         Parameters
@@ -448,15 +450,15 @@ class GraphicMethodsMixin:
             line_stack[0].colors[35:70] = "magenta"
 
         
-		"""
-		g = LineStack(*args, **kwargs)
-		self.add_graphic(g)
+        """
+        g = LineStack(*args, **kwargs)
+        self.add_graphic(g)
 
-		return weakref.proxy(g)
+        return weakref.proxy(g)
 
-	def add_scatter(self, data: numpy.ndarray, sizes: Union[int, numpy.ndarray, list] = 1, colors: numpy.ndarray = 'w', alpha: float = 1.0, cmap: str = None, z_position: float = 0.0, *args, **kwargs) -> weakref.proxy(ScatterGraphic):
-		"""
-	
+    def add_scatter(self, data: numpy.ndarray, sizes: Union[int, numpy.ndarray, list] = 1, colors: numpy.ndarray = 'w', alpha: float = 1.0, cmap: str = None, z_position: float = 0.0, *args, **kwargs) -> weakref.proxy(ScatterGraphic):
+        """
+        
         Create a Scatter Graphic, 2d or 3d
 
         Parameters
@@ -502,15 +504,15 @@ class GraphicMethodsMixin:
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
         
-		"""
-		g = ScatterGraphic(*args, **kwargs)
-		self.add_graphic(g)
+        """
+        g = ScatterGraphic(*args, **kwargs)
+        self.add_graphic(g)
 
-		return weakref.proxy(g)
+        return weakref.proxy(g)
 
-	def add_text(self, text: str, position: Tuple[int] = (0, 0, 0), size: int = 10, face_color: Union[str, numpy.ndarray] = 'w', outline_color: Union[str, numpy.ndarray] = 'w', outline_thickness=0, name: str = None) -> weakref.proxy(TextGraphic):
-		"""
-	
+    def add_text(self, text: str, position: Tuple[int] = (0, 0, 0), size: int = 10, face_color: Union[str, numpy.ndarray] = 'w', outline_color: Union[str, numpy.ndarray] = 'w', outline_thickness=0, name: str = None) -> weakref.proxy(TextGraphic):
+        """
+        
         Create a text Graphic
 
         Parameters
@@ -530,9 +532,9 @@ class GraphicMethodsMixin:
         name: str, optional
             name of graphic, passed to Graphic
         
-		"""
-		g = TextGraphic(*args, **kwargs)
-		self.add_graphic(g)
+        """
+        g = TextGraphic(*args, **kwargs)
+        self.add_graphic(g)
 
-		return weakref.proxy(g)
+        return weakref.proxy(g)
 
