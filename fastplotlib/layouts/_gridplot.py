@@ -10,13 +10,6 @@ import pygfx
 
 from wgpu.gui.auto import WgpuCanvas
 
-try:
-    from wgpu.gui.jupyter import JupyterWgpuCanvas
-except (ImportError, ModuleNotFoundError):
-    HAS_JUPYTER_CANVAS = False
-else:
-    HAS_JUPYTER_CANVAS = True
-
 from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
 
 from ._utils import make_canvas_and_renderer
@@ -315,12 +308,8 @@ class GridPlot(RecordMixin):
                     _maintain_aspect = maintain_aspect
                 subplot.auto_scale(maintain_aspect=_maintain_aspect, zoom=0.95)
 
-        # if jupyter_rfb is installed
-        if HAS_JUPYTER_CANVAS:
-            # check if in jupyter notebook, or if toolbar is False
-            if (not isinstance(self.canvas, JupyterWgpuCanvas)) or (not toolbar):
-                return self.canvas
-        else:
+        # check if in jupyter notebook, or if toolbar is False
+        if (self.canvas.__class__.__name__ != "JupyterWgpuCanvas") or (not toolbar):
             return self.canvas
 
         if self.toolbar is None:
