@@ -68,7 +68,7 @@ git clone https://github.com/kushalkolar/fastplotlib.git
 cd fastplotlib
 
 # install all extras in place
-pip install -e ".[notebook,docs,tests]
+pip install -e ".[notebook,docs,tests]"
 ```
 
 # Examples
