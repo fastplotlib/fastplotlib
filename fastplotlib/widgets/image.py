@@ -1,15 +1,13 @@
 from typing import *
 from warnings import warn
 from functools import partial
-from copy import deepcopy
-import weakref
 
 import numpy as np
-from ipywidgets.widgets import IntSlider, VBox, HBox, Layout, FloatRangeSlider, Button, BoundedIntText, Play, jslink
 
-from wgpu.gui.jupyter import JupyterWgpuCanvas
+from wgpu.gui.auto import is_jupyter
+if is_jupyter():
+    from ipywidgets.widgets import IntSlider, VBox, HBox, Layout, FloatRangeSlider, Button, BoundedIntText, Play, jslink
 
-from ..plot import Plot
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
 from ..utils import quick_min_max, calculate_gridshape
@@ -242,6 +240,11 @@ class ImageWidget:
         kwargs: Any
             passed to fastplotlib.graphics.Image
         """
+        if not is_jupyter():
+            raise EnvironmentError(
+                "ImageWidget is currently not supported outside of jupyter"
+            )
+
         self._names = None
         self.toolbar = None
 
@@ -913,11 +916,8 @@ class ImageWidget:
             ``ipywidgets.VBox`` stacking the plotter and sliders in a vertical layout
         """
 
-        if not isinstance(self.gridplot.canvas, JupyterWgpuCanvas):
-            raise TypeError("ImageWidget is currently not supported outside of Jupyter")
-
-        # check if in jupyter notebook, or if toolbar is False
-        if (not isinstance(self.gridplot.canvas, JupyterWgpuCanvas)) or (not toolbar):
+        # don't need to check for jupyter since ImageWidget is only supported within jupyter anyways
+        if not toolbar:
             return VBox([self.gridplot.show(toolbar=False), self._vbox_sliders])
 
         if self.toolbar is None:
