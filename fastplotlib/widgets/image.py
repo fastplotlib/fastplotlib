@@ -4,6 +4,7 @@ from functools import partial
 
 import numpy as np
 
+from wgpu.gui.auto import is_jupyter
 from ipywidgets.widgets import IntSlider, VBox, HBox, Layout, FloatRangeSlider, Button, BoundedIntText, Play, jslink
 
 from ..layouts import GridPlot
