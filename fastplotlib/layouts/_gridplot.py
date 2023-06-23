@@ -8,10 +8,10 @@ from warnings import warn
 
 import pygfx
 
-from wgpu.gui.auto import WgpuCanvas
-from wgpu.gui.jupyter import JupyterWgpuCanvas
+from wgpu.gui.auto import WgpuCanvas, is_jupyter
 
-from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
+if is_jupyter():
+    from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
 
 from ._utils import make_canvas_and_renderer
 from ._defaults import create_controller
@@ -310,7 +310,7 @@ class GridPlot(RecordMixin):
                 subplot.auto_scale(maintain_aspect=_maintain_aspect, zoom=0.95)
 
         # check if in jupyter notebook, or if toolbar is False
-        if (not isinstance(self.canvas, JupyterWgpuCanvas)) or (not toolbar):
+        if (self.canvas.__class__.__name__ != "JupyterWgpuCanvas") or (not toolbar):
             return self.canvas
 
         if self.toolbar is None:
