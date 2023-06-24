@@ -8,16 +8,15 @@ import numpy as np
 import pygfx
 
 from ..utils import quick_min_max
-from ._base import Graphic, Interaction, PreviouslyModifiedData
+from ._base import Graphic, Interaction
 from .selectors import LinearSelector, LinearRegionSelector
-from .features import (
+from ._features import (
     ImageCmapFeature,
     ImageDataFeature,
     HeatmapDataFeature,
     HeatmapCmapFeature,
-    PresentFeature,
+    to_gpu_supported_dtype,
 )
-from .features._base import to_gpu_supported_dtype
 
 
 class _ImageHeatmapSelectorsMixin:

@@ -8,7 +8,7 @@ import pygfx
 
 from ..utils import parse_cmap_values
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
-from .features import GraphicFeature
+from ._features import GraphicFeature
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 
@@ -427,8 +427,8 @@ class LineCollection(GraphicCollection, Interaction):
         bounds = (b[:, 0].min(), b[:, 1].max())
 
         # set the limits using the extents of the collection
-        l = np.vstack(limits)
-        limits = (l[:, 0].min(), l[:, 1].max())
+        limits = np.vstack(limits)
+        limits = (limits[:, 0].min(), limits[:, 1].max())
 
         # stack endpoints
         end_points = np.vstack(end_points)

@@ -8,7 +8,7 @@ import numpy as np
 
 from pygfx import WorldObject
 
-from .features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
+from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects

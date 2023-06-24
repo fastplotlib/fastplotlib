@@ -7,7 +7,7 @@ import pygfx
 
 from ..utils import parse_cmap_values
 from ._base import Graphic, Interaction, PreviouslyModifiedData
-from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
+from ._features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
 from .selectors import LinearRegionSelector, LinearSelector
 
 

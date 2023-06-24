@@ -4,7 +4,7 @@ import numpy as np
 import pygfx
 
 from .._base import Graphic
-from ..features._base import GraphicFeature
+from .._features import GraphicFeature
 from ._base_selector import BaseSelector
 from ._mesh_positions import x_right, x_left, y_top, y_bottom
 

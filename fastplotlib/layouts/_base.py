@@ -16,7 +16,7 @@ from pygfx import (
 from pylinalg import vec_transform, vec_unproject
 from wgpu.gui.auto import WgpuCanvas
 
-from ..graphics._base import Graphic, GraphicCollection
+from ..graphics._base import Graphic
 from ..graphics.selectors._base_selector import BaseSelector
 
 # dict to store Graphic instances
@@ -234,7 +234,7 @@ class PlotArea:
 
         Parameters
         ----------
-        graphic: Graphic or GraphicCollection
+        graphic: Graphic or `:ref:GraphicCollection`
             Add a Graphic or a GraphicCollection to the plot area.
             Note: this must be a real Graphic instance and not a proxy
 
@@ -258,8 +258,8 @@ class PlotArea:
 
         Parameters
         ----------
-        graphic: Graphic or GraphicCollection
-            Add a Graphic or a GraphicCollection to the plot area at a given position.
+        graphic: Graphic
+            Add a Graphic to the plot area at a given position.
             Note: must be a real Graphic instance, not a weakref proxy to a Graphic
 
         center: bool, default True
@@ -356,7 +356,7 @@ class PlotArea:
 
         Parameters
         ----------
-        graphic: Graphic or GraphicCollection
+        graphic: Graphic
             The graphic instance to center on
 
         zoom: float, default 1.3
@@ -414,9 +414,9 @@ class PlotArea:
         self.camera.maintain_aspect = maintain_aspect
 
         if len(self.scene.children) > 0:
-            width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)
+            width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)  # noqa
         else:
-            width, height, depth = (1, 1, 1)
+            width, height, depth = (1, 1, 1)  # noqa
 
         for selector in self.selectors:
             self.scene.add(selector.world_object)
@@ -434,7 +434,7 @@ class PlotArea:
 
         Parameters
         ----------
-        graphic: Graphic or GraphicCollection
+        graphic: Graphic
             The graphic to remove from the scene
 
         """
@@ -447,7 +447,7 @@ class PlotArea:
 
         Parameters
         ----------
-        graphic: Graphic or GraphicCollection
+        graphic: Graphic
             The graphic to delete
 
         """

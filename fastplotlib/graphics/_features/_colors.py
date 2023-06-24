@@ -26,7 +26,6 @@ class ColorFeature(GraphicFeatureIndexable):
       "world_object"       pygfx.WorldObject               world object
      ==================== =============================== =========================================================================
 
-
     """
 
     @property

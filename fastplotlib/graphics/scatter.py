@@ -5,7 +5,7 @@ import pygfx
 
 from ..utils import parse_cmap_values
 from ._base import Graphic
-from .features import PointsDataFeature, ColorFeature, CmapFeature
+from ._features import PointsDataFeature, ColorFeature, CmapFeature
 
 
 class ScatterGraphic(Graphic):

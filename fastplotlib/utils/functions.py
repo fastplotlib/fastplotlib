@@ -35,10 +35,10 @@ def get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
             from .generate_colormaps import make_cmap
 
             cmap = make_cmap(name, alpha)
-        except ModuleNotFoundError as e:
+        except (ImportError, ModuleNotFoundError):
             raise ModuleNotFoundError(
                 "Couldn't find colormap files, matplotlib is required to generate them "
-                "if they aren't found. Please install `matplotlib`."
+                "if they aren't found. Please install `matplotlib`"
             )
 
     cmap[:, -1] = alpha

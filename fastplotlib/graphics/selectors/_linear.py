@@ -9,11 +9,11 @@ try:
     import ipywidgets
 
     HAS_IPYWIDGETS = True
-except:
+except (ImportError, ModuleNotFoundError):
     HAS_IPYWIDGETS = False
 
 from .._base import Graphic, GraphicFeature, GraphicCollection
-from ..features._base import FeatureEvent
+from .._features import FeatureEvent
 from ._base_selector import BaseSelector
 
 

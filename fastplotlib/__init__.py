@@ -5,7 +5,7 @@ from .layouts import Plot, GridPlot
 from wgpu.gui.auto import run
 
 try:
-    import ipywidgets
+    import ipywidgets  # noqa
 except (ModuleNotFoundError, ImportError):
     pass
 else:
@@ -14,3 +14,10 @@ else:
 
 with open(Path(__file__).parent.joinpath("VERSION"), "r") as f:
     __version__ = f.read().split("\n")[0]
+
+__all__ = [
+    "Plot",
+    "GridPlot",
+    "run",
+    "ImageWidget"
+]
