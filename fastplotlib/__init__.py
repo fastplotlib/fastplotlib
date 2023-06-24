@@ -1,9 +1,8 @@
 from pathlib import Path
 
-from wgpu.gui.auto import run
+from .layouts import Plot, GridPlot
 
-from .plot import Plot
-from .layouts import GridPlot
+from wgpu.gui.auto import run
 
 try:
     import ipywidgets

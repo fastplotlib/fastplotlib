@@ -8,8 +8,8 @@ from wgpu.gui.auto import WgpuCanvas, is_jupyter
 if is_jupyter():
     from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
 
-from .layouts._subplot import Subplot
-from .layouts._record_mixin import RecordMixin
+from ._subplot import Subplot
+from ._record_mixin import RecordMixin
 
 
 class Plot(Subplot, RecordMixin):
