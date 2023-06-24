@@ -3,10 +3,9 @@ import numpy as np
 
 import pygfx
 
-from .._base import Graphic, GraphicCollection
-from ..features._base import GraphicFeature, FeatureEvent
+from .._base import Graphic
+from ..features._base import GraphicFeature
 from ._base_selector import BaseSelector
-
 from ._mesh_positions import x_right, x_left, y_top, y_bottom
 
 
@@ -14,8 +13,7 @@ class RectangleBoundsFeature(GraphicFeature):
     """
     Feature for a linearly bounding region
 
-    Pick Info
-    ---------
+    **event pick info**
 
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
     | key                | type                          | description                                                                          |

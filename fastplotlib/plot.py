@@ -16,7 +16,7 @@ class Plot(Subplot, RecordMixin):
     def __init__(
             self,
             canvas: WgpuCanvas = None,
-            renderer: pygfx.Renderer = None,
+            renderer: pygfx.WgpuRenderer = None,
             camera: str = '2d',
             controller: Union[pygfx.PanZoomController, pygfx.OrbitController] = None,
             size: Tuple[int, int] = (500, 300),

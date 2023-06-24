@@ -1,16 +1,16 @@
 from typing import *
 from copy import deepcopy
 import weakref
-import traceback
 
 import numpy as np
+
 import pygfx
 
+from ..utils import parse_cmap_values
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
 from .features import GraphicFeature
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
-from ..utils import make_colors, get_cmap, QUALITATIVE_CMAPS, normalize_min_max, parse_cmap_values
 
 
 class LineCollection(GraphicCollection, Interaction):
@@ -82,7 +82,6 @@ class LineCollection(GraphicCollection, Interaction):
         kwargs
             passed to GraphicCollection
 
-
         Features
         --------
 
@@ -99,7 +98,6 @@ class LineCollection(GraphicCollection, Interaction):
             # the data feature also works like this
 
         See :class:`LineGraphic` details on the features.
-
 
         Examples
         --------

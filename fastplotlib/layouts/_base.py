@@ -39,24 +39,33 @@ class PlotArea:
         ----------
         parent: PlotArea
             parent class of subclasses will be a ``PlotArea`` instance
+
         position: Any
             typical use will be for ``subplots`` in a ``gridplot``, position would correspond to the ``[row, column]``
             location of the ``subplot`` in its ``gridplot``
+
         camera: pygfx OrthographicCamera or pygfx PerspectiveCamera
             ``OrthographicCamera`` type is used to visualize 2D content and ``PerspectiveCamera`` type is used to view
             3D content, used to view the scene
+
         controller: pygfx PanZoomController or pygfx OrbitController
             ``PanZoomController`` type is used for 2D pan-zoom camera control and ``OrbitController`` type is used for
             rotating the camera around a center position, used to control the camera
+
         scene: pygfx Scene
             represents the root of a scene graph, will be viewed by the given ``camera``
+
         canvas: WgpuCanvas
             provides surface on which a scene will be rendered
+
         renderer: WgpuRenderer
             object used to render scenes using wgpu
+
         name: str, optional
             name of ``subplot`` or ``plot`` subclass being instantiated
+
         """
+
         self._parent: PlotArea = parent
         self._position = position
 

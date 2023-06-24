@@ -2,12 +2,13 @@ from typing import *
 import weakref
 
 import numpy as np
+
 import pygfx
 
+from ..utils import parse_cmap_values
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
 from .selectors import LinearRegionSelector, LinearSelector
-from ..utils import parse_cmap_values
 
 
 class LineGraphic(Graphic, Interaction):

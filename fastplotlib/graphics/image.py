@@ -4,13 +4,14 @@ from itertools import product
 import weakref
 
 import numpy as np
+
 import pygfx
 
+from ..utils import quick_min_max
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .selectors import LinearSelector, LinearRegionSelector
 from .features import ImageCmapFeature, ImageDataFeature, HeatmapDataFeature, HeatmapCmapFeature, PresentFeature
 from .features._base import to_gpu_supported_dtype
-from ..utils import quick_min_max
 
 
 class _ImageHeatmapSelectorsMixin:
@@ -26,7 +27,7 @@ class _ImageHeatmapSelectorsMixin:
         padding: float, optional
             pad the length of the selector
 
-        kwargs
+        kwargs:
             passed to :class:`.LinearSelector`
 
         Returns
@@ -72,7 +73,7 @@ class _ImageHeatmapSelectorsMixin:
         padding: float, optional
             Extends the linear selector along the y-axis to make it easier to interact with.
 
-        kwargs, optional
+        kwargs: optional
             passed to ``LinearRegionSelector``
 
         Returns
@@ -197,20 +198,27 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
             array-like, usually numpy.ndarray, must support ``memoryview()``
             Tensorflow Tensors also work **probably**, but not thoroughly tested
             | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
+
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
+
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
+
         cmap: str, optional, default "plasma"
             colormap to use to display the image data, ignored if data is RGB
+
         filter: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
+
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
             set the data, useful if the data arrays are ready-only such as memmaps.
             If False, the input array is itself used as the buffer.
+
         args:
             additional arguments passed to Graphic
+
         kwargs:
             additional keyword arguments passed to Graphic
 
@@ -226,8 +234,6 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene
 
-
-
         Examples
         --------
         .. code-block:: python
@@ -241,6 +247,7 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
             plot.add_image(data=data)
             # show the plot
             plot.show()
+
         """
 
         super().__init__(*args, **kwargs)
@@ -357,25 +364,32 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
             array-like, usually numpy.ndarray, must support ``memoryview()``
             Tensorflow Tensors also work **probably**, but not thoroughly tested
             | shape must be ``[x_dim, y_dim]``
+
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
+
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
+
         cmap: str, optional, default "plasma"
             colormap to use to display the data
+
         filter: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
+
         chunk_size: int, default 8192, max 8192
             chunk size for each tile used to make up the heatmap texture
+
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
             set the data, useful if the data arrays are ready-only such as memmaps.
             If False, the input array is itself used as the buffer.
+
         args:
             additional arguments passed to Graphic
+
         kwargs:
             additional keyword arguments passed to Graphic
-
 
         Features
         --------
@@ -388,7 +402,6 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
 
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene
-
 
         Examples
         --------
@@ -406,6 +419,7 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
 
             # show the plot
             plot.show()
+
         """
 
         super().__init__(*args, **kwargs)

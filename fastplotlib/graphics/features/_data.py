@@ -1,6 +1,7 @@
 from typing import *
 
 import numpy as np
+
 from pygfx import Buffer, Texture
 
 from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent, to_gpu_supported_dtype, cleanup_array_slice

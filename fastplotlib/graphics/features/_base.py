@@ -3,9 +3,9 @@ from inspect import getfullargspec
 from warnings import warn
 from typing import *
 import weakref
-from dataclasses import dataclass
 
 import numpy as np
+
 from pygfx import Buffer, Texture
 
 
@@ -71,6 +71,7 @@ class FeatureEvent:
 class GraphicFeature(ABC):
     def __init__(self, parent, data: Any, collection_index: int = None):
         # not shown as a docstring so it doesn't show up in the docs
+        #
         # Parameters
         # ----------
         # parent
@@ -79,6 +80,7 @@ class GraphicFeature(ABC):
         #
         # collection_index: int
         #     if part of a collection, index of this graphic within the collection
+
         self._parent = weakref.proxy(parent)
 
         self._data = to_gpu_supported_dtype(data)
@@ -192,9 +194,6 @@ def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
     if isinstance(key, np.ndarray):
         return cleanup_array_slice(key, upper_bound)
 
-    # if isinstance(key, np.integer):
-    #     return int(key)
-
     if isinstance(key, tuple):
         # if tuple of slice we only need the first obj
         # since the first obj is the datapoint indices
@@ -229,7 +228,6 @@ def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
         step = 1
 
     return slice(start, stop, step)
-    # return slice(int(start), int(stop), int(step))
 
 
 def cleanup_array_slice(key: np.ndarray, upper_bound) -> Union[np.ndarray, None]:
@@ -331,8 +329,6 @@ class GraphicFeatureIndexable(GraphicFeature):
         # TODO: See how efficient this is with large indexing
         elif isinstance(key, np.ndarray):
             self.buffer.update_range()
-            # for ix in key:
-            #     self.buffer.update_range(int(ix), size=1)
 
         else:
             raise TypeError("must pass int or slice to update range")

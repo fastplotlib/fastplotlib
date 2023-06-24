@@ -32,6 +32,8 @@ key_bind_direction = {
 
 # Selector base class
 class BaseSelector:
+    feature_events = ("selection",)
+
     def __init__(
             self,
             edges: Tuple[Line, ...] = None,

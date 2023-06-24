@@ -1,8 +1,8 @@
 import numpy as np
-
-from ._base import GraphicFeature, GraphicFeatureIndexable, cleanup_slice, FeatureEvent, cleanup_array_slice
-from ...utils import make_colors, get_cmap_texture, make_pygfx_colors, parse_cmap_values
 from pygfx import Color
+
+from ...utils import make_colors, get_cmap_texture, make_pygfx_colors, parse_cmap_values
+from ._base import GraphicFeature, GraphicFeatureIndexable, cleanup_slice, FeatureEvent, cleanup_array_slice
 
 
 class ColorFeature(GraphicFeatureIndexable):
@@ -290,8 +290,8 @@ class ImageCmapFeature(GraphicFeature):
       "vmax"           ``float``           maximum value
      ================ =================== ===============
 
-
     """
+
     def __init__(self, parent, cmap: str):
         cmap_texture_view = get_cmap_texture(cmap)
         super(ImageCmapFeature, self).__init__(parent, cmap_texture_view)

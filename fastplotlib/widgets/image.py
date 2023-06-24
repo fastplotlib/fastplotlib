@@ -133,7 +133,9 @@ class ImageWidget:
             | example: if you have sliders for dims "t" and "z", you can pass either ``{"t": 10}`` to index to position
             10 on dimension "t" or ``{"t": 5, "z": 20}`` to index to position 5 on dimension "t" and position 20 on
             dimension "z" simultaneously.
+
         """
+
         if not set(index.keys()).issubset(set(self._current_index.keys())):
             raise KeyError(
                 f"All dimension keys for setting `current_index` must be present in the widget sliders. "
@@ -238,7 +240,9 @@ class ImageWidget:
 
         kwargs: Any
             passed to fastplotlib.graphics.Image
+
         """
+
         if not is_jupyter():
             raise EnvironmentError(
                 "ImageWidget is currently not supported outside of jupyter"
@@ -461,8 +465,6 @@ class ImageWidget:
         self.window_funcs = window_funcs
 
         self._sliders: Dict[str, IntSlider] = dict()
-        self._vertical_sliders = list()
-        self._horizontal_sliders = list()
 
         # current_index stores {dimension_index: slice_index} for every dimension
         self._current_index: Dict[str, int] = {sax: 0 for sax in self.slider_dims}
@@ -521,20 +523,13 @@ class ImageWidget:
         self.gridplot.renderer.add_event_handler(self._set_slider_layout, "resize")
 
         for sdm in self.slider_dims:
-            if sdm == "z":
-                # TODO: once ipywidgets plays nicely with HBox and jupyter-rfb, use vertical
-                # orientation = "vertical"
-                orientation = "horizontal"
-            else:
-                orientation = "horizontal"
-
             slider = IntSlider(
                 min=0,
                 max=self._dims_max_bounds[sdm] - 1,
                 step=1,
                 value=0,
                 description=f"dimension: {sdm}",
-                orientation=orientation
+                orientation="horizontal"
             )
 
             slider.observe(
@@ -543,10 +538,6 @@ class ImageWidget:
             )
 
             self._sliders[sdm] = slider
-            if orientation == "horizontal":
-                self._horizontal_sliders.append(slider)
-            elif orientation == "vertical":
-                self._vertical_sliders.append(slider)
 
         # will change later
         # prevent the slider callback if value is self.current_index is changed programmatically
@@ -557,22 +548,6 @@ class ImageWidget:
             *list(self._sliders.values()),
             *self.vmin_vmax_sliders
         ])
-
-        # TODO: there is currently an issue with ipywidgets or jupyter-rfb and HBox doesn't work with RFB canvas
-        # self.widget = None
-        # hbox = None
-        # if len(self.vertical_sliders) > 0:
-        #     hbox = HBox(self.vertical_sliders)
-        #
-        # if len(self.horizontal_sliders) > 0:
-        #     if hbox is not None:
-        #         self.widget = VBox([
-        #             HBox([self.plot.canvas, hbox]),
-        #             *self.horizontal_sliders,
-        #         ])
-        #
-        #     else:
-        #         self.widget = VBox([self.plot.canvas, *self.horizontal_sliders])
 
     @property
     def window_funcs(self) -> Dict[str, _WindowFunctions]:
@@ -770,11 +745,8 @@ class ImageWidget:
 
     def _set_slider_layout(self, *args):
         w, h = self.gridplot.renderer.logical_size
-        for hs in self._horizontal_sliders:
-            hs.layout = Layout(width=f"{w}px")
-
-        for vs in self._vertical_sliders:
-            vs.layout = Layout(height=f"{h}px")
+        for k, v in self.sliders.items():
+            v.layout = Layout(width=f"{w}px")
 
         for mm in self.vmin_vmax_sliders:
             mm.layout = Layout(width=f"{w}px")

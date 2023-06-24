@@ -1,45 +1,19 @@
 from typing import *
-import numpy as np
-from math import copysign
 from functools import partial
 import weakref
 from inspect import signature, getfullargspec
 from warnings import warn
-import traceback
+
+import numpy as np
 
 from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitController, \
     AxesHelper, GridHelper, WgpuRenderer, Texture
 from wgpu.gui.auto import WgpuCanvas
 
-
-# TODO: this determination can be better
-try:
-    from wgpu.gui.jupyter import JupyterWgpuCanvas
-except ImportError:
-    JupyterWgpuCanvas = False
-
-try:
-    from wgpu.gui.qt import QWgpuCanvas
-except ImportError:
-    QWgpuCanvas = False
-
-try:
-    from wgpu.gui.glfw import GlfwWgpuCanvas
-except ImportError:
-    GlfwWgpuCanvas = False
-
-
-CANVAS_OPTIONS = ["jupyter", "glfw", "qt"]
-CANVAS_OPTIONS_AVAILABLE = {
-    "jupyter": JupyterWgpuCanvas,
-    "glfw": GlfwWgpuCanvas,
-    "qt": QWgpuCanvas
-}
-
-from ._utils import make_canvas_and_renderer
-from ._base import PlotArea
 from .. import graphics
 from ..graphics import TextGraphic
+from ._utils import make_canvas_and_renderer
+from ._base import PlotArea
 from ._defaults import create_camera, create_controller
 
 
@@ -63,22 +37,29 @@ class Subplot(PlotArea):
         ----------
         position: int tuple, optional
             corresponds to the [row, column] position of the subplot within a ``Gridplot``
+
         parent_dims: int tuple, optional
             dimensions of the parent ``GridPlot``
+
         camera: str, default '2d'
             indicates the kind of pygfx camera that will be instantiated, '2d' uses pygfx ``OrthographicCamera`` and
             '3d' uses pygfx ``PerspectiveCamera``
+
         controller: PanZoomController or OrbitOrthoController, optional
             ``PanZoomController`` type is used for 2D pan-zoom camera control and ``OrbitController`` type is used for
             rotating the camera around a center position, used to control the camera
+
         canvas: WgpuCanvas, Texture, or one of "jupyter", "glfw", "qt", optional
             Provides surface on which a scene will be rendered. Can optionally provide a WgpuCanvas instance or a str
             to force the PlotArea to use a specific canvas from one of the following options: "jupyter", "glfw", "qt".
             Can also provide a pygfx Texture to render to.
+
         renderer: WgpuRenderer, optional
             object used to render scenes using wgpu
+
         name: str, optional
             name of the subplot, will appear as ``TextGraphic`` above the subplot
+
         """
 
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
@@ -335,10 +316,6 @@ class _DockedViewport(PlotArea):
             canvas=parent.canvas,
             renderer=parent.renderer
         )
-
-        # self.scene.add(
-        #     Background(None, BackgroundMaterial((0.2, 0.0, 0, 1), (0, 0.0, 0.2, 1)))
-        # )
 
     @property
     def size(self) -> int:

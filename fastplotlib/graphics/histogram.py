@@ -2,6 +2,7 @@ from warnings import warn
 from typing import Union, Dict
 
 import numpy as np
+
 import pygfx
 
 from ._base import Graphic

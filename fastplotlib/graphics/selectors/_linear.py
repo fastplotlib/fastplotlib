@@ -19,7 +19,7 @@ from ._base_selector import BaseSelector
 class LinearSelectionFeature(GraphicFeature):
     # A bit much to have a class for this but this allows it to integrate with the fastplotlib callback system
     """
-    Manages the slider selection and callbacks
+    Manages the linear selection and callbacks
 
     **event pick info**
 
@@ -81,8 +81,6 @@ class LinearSelectionFeature(GraphicFeature):
 
 
 class LinearSelector(Graphic, BaseSelector):
-    feature_events = ("selection",)
-
     # TODO: make `selection` arg in graphics data space not world space
     def __init__(
             self,
@@ -166,7 +164,6 @@ class LinearSelector(Graphic, BaseSelector):
 
         line_data = line_data.astype(np.float32)
 
-        # super(LinearSelector, self).__init__(name=name)
         # init Graphic
         Graphic.__init__(self, name=name)
 

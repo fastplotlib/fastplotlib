@@ -1,17 +1,14 @@
 from typing import *
 import weakref
 from warnings import warn
-
-import numpy as np
-
-from .features._base import cleanup_slice
-
-from pygfx import WorldObject, Group
-from .features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+import numpy as np
+
+from pygfx import WorldObject
+
+from .features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
@@ -192,14 +189,18 @@ class Interaction(ABC):
             or appropriate feature event (ex. colors, data, etc.) associated with the graphic (can use
             ``graphic_instance.feature_events`` to get a tuple of the valid feature events for the
             graphic)
+
         target: Any
             graphic to be linked to
+
         feature: str
             feature (ex. colors, data, etc.) of the target graphic that will change following
             the event
+
         new_data: Any
             appropriate data that will be changed in the feature of the target graphic after
             the event occurs
+
         callback: callable, optional
             user-specified callable that will handle event,
             the callable must take the following four arguments
@@ -207,9 +208,11 @@ class Interaction(ABC):
             | ''target'' - the graphic to be changed following the event
             | ''event'' - the ''pygfx event'' or ''feature event'' that occurs
             | ''new_data'' - the appropriate data of the ''target'' that will be changed
+
         bidirectional: bool, default False
             if True, the target graphic is also linked back to this graphic instance using the
             same arguments
+
             For example:
             .. code-block::python
 
@@ -395,7 +398,6 @@ class GraphicCollection(Graphic):
         return CollectionIndexer(
             parent=self,
             selection=self.graphics[key],
-            # selection_indices=key
         )
             
     def __del__(self):
@@ -424,7 +426,6 @@ class CollectionIndexer:
             self,
             parent: GraphicCollection,
             selection: List[Graphic],
-            # selection_indices: Union[list, range],
     ):
         """
 
@@ -436,13 +437,10 @@ class CollectionIndexer:
         selection: list of Graphics
             a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
 
-        selection_indices: Union[list, range]
-            the corresponding indices from the parent GraphicCollection that were selected
         """
 
         self._parent = weakref.proxy(parent)
         self._selection = selection
-        # self._selection_indices = selection_indices
 
         # we use parent.graphics[0] instead of selection[0]
         # because the selection can be empty
@@ -450,9 +448,7 @@ class CollectionIndexer:
             attr = getattr(self._parent.graphics[0], attr_name)
             if isinstance(attr, GraphicFeature):
                 collection_feature = CollectionFeature(
-                    parent,
                     self._selection,
-                    # selection_indices=self._selection_indices,
                     feature=attr_name
                 )
                 collection_feature.__doc__ = f"indexable <{attr_name}> feature for collection"
@@ -484,23 +480,19 @@ class CollectionFeature:
     """Collection Feature"""
     def __init__(
             self,
-            parent: GraphicCollection,
             selection: List[Graphic],
-            # selection_indices,
             feature: str
     ):
         """
-        parent: GraphicCollection
-            GraphicCollection feature instance that is being indexed
         selection: list of Graphics
             a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
-        selection_indices: Union[list, range]
-            the corresponding indices from the parent GraphicCollection that were selected
+
         feature: str
             feature of Graphics in the GraphicCollection being indexed
+
         """
+
         self._selection = selection
-        # self._selection_indices = selection_indices
         self._feature = feature
 
         self._feature_instances: List[GraphicFeature] = list()
@@ -550,4 +542,3 @@ class CollectionFeature:
 
     def __repr__(self):
         return f"Collection feature for: <{self._feature}>"
-

@@ -39,7 +39,7 @@ class GridPlot(RecordMixin):
             cameras: Union[np.ndarray, str] = '2d',
             controllers: Union[np.ndarray, str] = None,
             canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
-            renderer: pygfx.Renderer = None,
+            renderer: pygfx.WgpuRenderer = None,
             size: Tuple[int, int] = (500, 300),
             **kwargs
     ):
@@ -145,11 +145,6 @@ class GridPlot(RecordMixin):
         nrows, ncols = self.shape
 
         self._subplots: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
-        # self.viewports: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
-
-        # self._controllers: List[pygfx.PanZoomController] = [
-        #     pygfx.PanZoomController() for i in range(np.unique(controllers).size)
-        # ]
 
         for i, j in self._get_iterator():
             position = (i, j)

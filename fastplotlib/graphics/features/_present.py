@@ -1,5 +1,6 @@
-from ._base import GraphicFeature, FeatureEvent
 from pygfx import Scene, Group
+
+from ._base import GraphicFeature, FeatureEvent
 
 
 class PresentFeature(GraphicFeature):

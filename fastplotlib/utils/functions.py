@@ -1,10 +1,10 @@
-from typing import Union, List
-
-import numpy as np
-from pygfx import Texture, Color
 from collections import OrderedDict
 from typing import *
 from pathlib import Path
+
+import numpy as np
+
+from pygfx import Texture, Color
 # some funcs adapted from mesmerize
 
 

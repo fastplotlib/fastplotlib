@@ -3,9 +3,9 @@ from typing import *
 import numpy as np
 import pygfx
 
+from ..utils import parse_cmap_values
 from ._base import Graphic
 from .features import PointsDataFeature, ColorFeature, CmapFeature
-from ..utils import make_colors, parse_cmap_values
 
 
 class ScatterGraphic(Graphic):

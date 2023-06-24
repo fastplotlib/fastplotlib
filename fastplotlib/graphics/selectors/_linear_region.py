@@ -6,19 +6,14 @@ import pygfx
 from .._base import Graphic, GraphicCollection
 from ..features._base import GraphicFeature, FeatureEvent
 from ._base_selector import BaseSelector
-
 from ._mesh_positions import x_right, x_left, y_top, y_bottom
 
 
 class LinearRegionSelectionFeature(GraphicFeature):
-    feature_events = (
-        "data",
-    )
     """
     Feature for a linearly bounding region
 
-    Pick Info
-    ---------
+    **event pick info**
 
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
     | key                | type                          | description                                                                          |
@@ -34,6 +29,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
 
     """
+
     def __init__(self, parent, selection: Tuple[int, int], axis: str, limits: Tuple[int, int]):
         super(LinearRegionSelectionFeature, self).__init__(parent, data=selection)
 
@@ -310,7 +306,6 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         # set the initial bounds of the selector
         self.selection = LinearRegionSelectionFeature(self, bounds, axis=axis, limits=limits)
-        # self._bounds: LinearBoundsFeature = bounds
 
         BaseSelector.__init__(
             self,
