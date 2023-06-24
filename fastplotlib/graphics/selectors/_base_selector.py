@@ -35,13 +35,13 @@ class BaseSelector:
     feature_events = ("selection",)
 
     def __init__(
-            self,
-            edges: Tuple[Line, ...] = None,
-            fill: Tuple[Mesh, ...] = None,
-            vertices: Tuple[Points, ...] = None,
-            hover_responsive: Tuple[WorldObject, ...] = None,
-            arrow_keys_modifier: str = None,
-            axis: str = None
+        self,
+        edges: Tuple[Line, ...] = None,
+        fill: Tuple[Mesh, ...] = None,
+        vertices: Tuple[Points, ...] = None,
+        hover_responsive: Tuple[WorldObject, ...] = None,
+        arrow_keys_modifier: str = None,
+        axis: str = None,
     ):
         if edges is None:
             edges = tuple()
@@ -56,7 +56,9 @@ class BaseSelector:
         self._fill: Tuple[Mesh, ...] = fill
         self._vertices: Tuple[Points, ...] = vertices
 
-        self._world_objects: Tuple[WorldObject, ...] = self._edges + self._fill + self._vertices
+        self._world_objects: Tuple[WorldObject, ...] = (
+            self._edges + self._fill + self._vertices
+        )
 
         self._hover_responsive: Tuple[WorldObject, ...] = hover_responsive
 
@@ -183,10 +185,7 @@ class BaseSelector:
         """
         last_position = self._plot_area.map_screen_to_world(ev)
 
-        self._move_info = MoveInfo(
-            last_position=last_position,
-            source=event_source
-        )
+        self._move_info = MoveInfo(last_position=last_position, source=event_source)
 
     def _move(self, ev):
         """
@@ -252,10 +251,14 @@ class BaseSelector:
 
         # use fill by default as the source, such as in region selectors
         if len(self._fill) > 0:
-            self._move_info = MoveInfo(last_position=current_position, source=self._fill[0])
+            self._move_info = MoveInfo(
+                last_position=current_position, source=self._fill[0]
+            )
         # else use an edge, such as for linear selector
         else:
-            self._move_info = MoveInfo(last_position=current_position, source=self._edges[0])
+            self._move_info = MoveInfo(
+                last_position=current_position, source=self._edges[0]
+            )
 
         self._move_graphic(self.delta)
         self._move_info = None
@@ -307,7 +310,10 @@ class BaseSelector:
     def _key_down(self, ev):
         # key bind modifier must be set and must be used for the event
         # for example. if "Shift" is set as a modifier, then "Shift" must be used as a modifier during this event
-        if self.arrow_keys_modifier is not None and self.arrow_keys_modifier not in ev.modifiers:
+        if (
+            self.arrow_keys_modifier is not None
+            and self.arrow_keys_modifier not in ev.modifiers
+        ):
             return
 
         # ignore if non-arrow key is pressed

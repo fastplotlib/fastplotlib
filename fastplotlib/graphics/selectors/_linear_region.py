@@ -23,14 +23,16 @@ class LinearRegionSelectionFeature(GraphicFeature):
     | "new_data"         | ``(float, float)``            | current bounds in world coordinates, NOT necessarily the same as "selected_indices". |
     | "graphic"          | ``Graphic``                   | the selection graphic                                                                |
     | "delta"            | ``numpy.ndarray``             | the delta vector of the graphic in NDC                                               |
-    | "pygfx_event"      | ``pygfx.Event``               | pygfx Event                                                                          |    
+    | "pygfx_event"      | ``pygfx.Event``               | pygfx Event                                                                          |
     | "selected_data"    | ``numpy.ndarray`` or ``None`` | selected graphic data                                                                |
-    | "move_info"        | ``MoveInfo``                  | last position and event source (pygfx.Mesh or pygfx.Line)                            |     
+    | "move_info"        | ``MoveInfo``                  | last position and event source (pygfx.Mesh or pygfx.Line)                            |
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
 
     """
 
-    def __init__(self, parent, selection: Tuple[int, int], axis: str, limits: Tuple[int, int]):
+    def __init__(
+        self, parent, selection: Tuple[int, int], axis: str, limits: Tuple[int, int]
+    ):
         super(LinearRegionSelectionFeature, self).__init__(parent, data=selection)
 
         self._axis = axis
@@ -88,7 +90,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
             # change y position of the top edge line
             self._parent.edges[1].geometry.positions.data[:, 1] = value[1]
 
-        self._data = value#(value[0], value[1])
+        self._data = value  # (value[0], value[1])
 
         # send changes to GPU
         self._parent.fill.geometry.positions.update_range()
@@ -122,7 +124,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
             "graphic": self._parent,
             "delta": self._parent.delta,
             "pygfx_event": pygfx_ev,
-            "move_info": self._parent._move_info
+            "move_info": self._parent._move_info,
         }
 
         event_data = FeatureEvent(type="selection", pick_info=pick_info)
@@ -132,18 +134,18 @@ class LinearRegionSelectionFeature(GraphicFeature):
 
 class LinearRegionSelector(Graphic, BaseSelector):
     def __init__(
-            self,
-            bounds: Tuple[int, int],
-            limits: Tuple[int, int],
-            size: int,
-            origin: Tuple[int, int],
-            axis: str = "x",
-            parent: Graphic = None,
-            resizable: bool = True,
-            fill_color=(0, 0, 0.35),
-            edge_color=(0.8, 0.8, 0),
-            arrow_keys_modifier: str = "Shift",
-            name: str = None
+        self,
+        bounds: Tuple[int, int],
+        limits: Tuple[int, int],
+        size: int,
+        origin: Tuple[int, int],
+        axis: str = "x",
+        parent: Graphic = None,
+        resizable: bool = True,
+        fill_color=(0, 0, 0.35),
+        edge_color=(0.8, 0.8, 0),
+        arrow_keys_modifier: str = "Shift",
+        name: str = None,
     ):
         """
         Create a LinearRegionSelector graphic which can be moved only along either the x-axis or y-axis.
@@ -225,14 +227,14 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         if axis == "x":
             mesh = pygfx.Mesh(
-            pygfx.box_geometry(1, size, 1),
-            pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color))
+                pygfx.box_geometry(1, size, 1),
+                pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color)),
             )
 
         elif axis == "y":
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(size, 1, 1),
-                pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color))
+                pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color)),
             )
         else:
             raise ValueError("`axis` must be one of 'x' or 'y'")
@@ -248,50 +250,57 @@ class LinearRegionSelector(Graphic, BaseSelector):
         if axis == "x":
             # position data for the left edge line
             left_line_data = np.array(
-                [[origin[0], (-size / 2) + origin[1], 0.5],
-                 [origin[0], (size / 2) + origin[1], 0.5]]
+                [
+                    [origin[0], (-size / 2) + origin[1], 0.5],
+                    [origin[0], (size / 2) + origin[1], 0.5],
+                ]
             ).astype(np.float32)
 
             left_line = pygfx.Line(
                 pygfx.Geometry(positions=left_line_data),
-                pygfx.LineMaterial(thickness=3, color=edge_color)
+                pygfx.LineMaterial(thickness=3, color=edge_color),
             )
 
             # position data for the right edge line
             right_line_data = np.array(
-                [[bounds[1], (-size / 2) + origin[1], 0.5],
-                 [bounds[1], (size / 2) + origin[1], 0.5]]
+                [
+                    [bounds[1], (-size / 2) + origin[1], 0.5],
+                    [bounds[1], (size / 2) + origin[1], 0.5],
+                ]
             ).astype(np.float32)
 
             right_line = pygfx.Line(
                 pygfx.Geometry(positions=right_line_data),
-                pygfx.LineMaterial(thickness=3, color=edge_color)
+                pygfx.LineMaterial(thickness=3, color=edge_color),
             )
 
             self.edges: Tuple[pygfx.Line, pygfx.Line] = (left_line, right_line)
 
         elif axis == "y":
             # position data for the left edge line
-            bottom_line_data = \
-                np.array(
-                    [[(-size / 2) + origin[0], origin[1], 0.5],
-                     [(size / 2) + origin[0], origin[1], 0.5]]
-                ).astype(np.float32)
+            bottom_line_data = np.array(
+                [
+                    [(-size / 2) + origin[0], origin[1], 0.5],
+                    [(size / 2) + origin[0], origin[1], 0.5],
+                ]
+            ).astype(np.float32)
 
             bottom_line = pygfx.Line(
                 pygfx.Geometry(positions=bottom_line_data),
-                pygfx.LineMaterial(thickness=3, color=edge_color)
+                pygfx.LineMaterial(thickness=3, color=edge_color),
             )
 
             # position data for the right edge line
             top_line_data = np.array(
-                [[(-size / 2) + origin[0], bounds[1], 0.5],
-                 [(size / 2) + origin[0], bounds[1], 0.5]]
+                [
+                    [(-size / 2) + origin[0], bounds[1], 0.5],
+                    [(size / 2) + origin[0], bounds[1], 0.5],
+                ]
             ).astype(np.float32)
 
             top_line = pygfx.Line(
                 pygfx.Geometry(positions=top_line_data),
-                pygfx.LineMaterial(thickness=3, color=edge_color)
+                pygfx.LineMaterial(thickness=3, color=edge_color),
             )
 
             self.edges: Tuple[pygfx.Line, pygfx.Line] = (bottom_line, top_line)
@@ -305,7 +314,9 @@ class LinearRegionSelector(Graphic, BaseSelector):
             self.world_object.add(edge)
 
         # set the initial bounds of the selector
-        self.selection = LinearRegionSelectionFeature(self, bounds, axis=axis, limits=limits)
+        self.selection = LinearRegionSelectionFeature(
+            self, bounds, axis=axis, limits=limits
+        )
 
         BaseSelector.__init__(
             self,
@@ -316,7 +327,9 @@ class LinearRegionSelector(Graphic, BaseSelector):
             axis=axis,
         )
 
-    def get_selected_data(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray], None]:
+    def get_selected_data(
+        self, graphic: Graphic = None
+    ) -> Union[np.ndarray, List[np.ndarray], None]:
         """
         Get the ``Graphic`` data bounded by the current selection.
         Returns a view of the full data array.
@@ -365,14 +378,19 @@ class LinearRegionSelector(Graphic, BaseSelector):
                 s = slice(ixs[0], ixs[-1])
                 return source.data.buffer.data[s]
 
-        if "Heatmap" in source.__class__.__name__ or "Image" in source.__class__.__name__:
+        if (
+            "Heatmap" in source.__class__.__name__
+            or "Image" in source.__class__.__name__
+        ):
             s = slice(ixs[0], ixs[-1])
             if self.axis == "x":
                 return source.data()[:, s]
             elif self.axis == "y":
                 return source.data()[s]
 
-    def get_selected_indices(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
+    def get_selected_indices(
+        self, graphic: Graphic = None
+    ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Returns the indices of the ``Graphic`` data bounded by the current selection.
         This is useful because the ``bounds`` min and max are not necessarily the same
@@ -414,18 +432,23 @@ class LinearRegionSelector(Graphic, BaseSelector):
                 for g in source.graphics:
                     # map for each graphic in the collection
                     g_ixs = np.where(
-                        (g.data()[:, dim] >= offset_bounds[0]) & (g.data()[:, dim] <= offset_bounds[1])
+                        (g.data()[:, dim] >= offset_bounds[0])
+                        & (g.data()[:, dim] <= offset_bounds[1])
                     )[0]
                     ixs.append(g_ixs)
             else:
                 # map this only this graphic
                 ixs = np.where(
-                    (source.data()[:, dim] >= offset_bounds[0]) & (source.data()[:, dim] <= offset_bounds[1])
+                    (source.data()[:, dim] >= offset_bounds[0])
+                    & (source.data()[:, dim] <= offset_bounds[1])
                 )[0]
 
             return ixs
 
-        if "Heatmap" in source.__class__.__name__ or "Image" in source.__class__.__name__:
+        if (
+            "Heatmap" in source.__class__.__name__
+            or "Image" in source.__class__.__name__
+        ):
             # indices map directly to grid geometry for image data buffer
             ixs = np.arange(*self.selection(), dtype=int)
             return ixs

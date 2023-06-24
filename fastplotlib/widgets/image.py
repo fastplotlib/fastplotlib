@@ -5,20 +5,29 @@ from functools import partial
 import numpy as np
 
 from wgpu.gui.auto import is_jupyter
-from ipywidgets.widgets import IntSlider, VBox, HBox, Layout, FloatRangeSlider, Button, BoundedIntText, Play, jslink
+from ipywidgets.widgets import (
+    IntSlider,
+    VBox,
+    HBox,
+    Layout,
+    FloatRangeSlider,
+    Button,
+    BoundedIntText,
+    Play,
+    jslink,
+)
 
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
 from ..utils import quick_min_max, calculate_gridshape
 
 
-DEFAULT_DIMS_ORDER = \
-    {
-        2: "xy",
-        3: "txy",
-        4: "tzxy",
-        5: "tzcxy",
-    }
+DEFAULT_DIMS_ORDER = {
+    2: "xy",
+    3: "txy",
+    4: "tzxy",
+    5: "tzcxy",
+}
 
 
 def _is_arraylike(obj) -> bool:
@@ -26,11 +35,7 @@ def _is_arraylike(obj) -> bool:
     Checks if the object is array-like.
     For now just checks if obj has `__getitem__()`
     """
-    for attr in [
-        "__getitem__",
-        "shape",
-        "ndim"
-    ]:
+    for attr in ["__getitem__", "shape", "ndim"]:
         if not hasattr(obj, attr):
             return False
 
@@ -148,8 +153,10 @@ class ImageWidget:
             if val < 0:
                 raise IndexError("negative indexing is not supported for ImageWidget")
             if val > self._dims_max_bounds[k]:
-                raise IndexError(f"index {val} is out of bounds for dimension '{k}' "
-                                 f"which has a max bound of: {self._dims_max_bounds[k]}")
+                raise IndexError(
+                    f"index {val} is out of bounds for dimension '{k}' "
+                    f"which has a max bound of: {self._dims_max_bounds[k]}"
+                )
 
         self._current_index.update(index)
 
@@ -165,17 +172,17 @@ class ImageWidget:
             ig.data = frame
 
     def __init__(
-            self,
-            data: Union[np.ndarray, List[np.ndarray]],
-            dims_order: Union[str, Dict[int, str]] = None,
-            slider_dims: Union[str, int, List[Union[str, int]]] = None,
-            window_funcs: Union[int, Dict[str, int]] = None,
-            frame_apply: Union[callable, Dict[int, callable]] = None,
-            vmin_vmax_sliders: bool = False,
-            grid_shape: Tuple[int, int] = None,
-            names: List[str] = None,
-            grid_plot_kwargs: dict = None,
-            **kwargs
+        self,
+        data: Union[np.ndarray, List[np.ndarray]],
+        dims_order: Union[str, Dict[int, str]] = None,
+        slider_dims: Union[str, int, List[Union[str, int]]] = None,
+        window_funcs: Union[int, Dict[str, int]] = None,
+        frame_apply: Union[callable, Dict[int, callable]] = None,
+        vmin_vmax_sliders: bool = False,
+        grid_shape: Tuple[int, int] = None,
+        names: List[str] = None,
+        grid_plot_kwargs: dict = None,
+        **kwargs,
     ):
         """
         A high level widget for displaying n-dimensional image data in conjunction with automatically generated
@@ -260,7 +267,9 @@ class ImageWidget:
                 # verify that user-specified grid shape is large enough for the number of image arrays passed
                 elif grid_shape[0] * grid_shape[1] < len(data):
                     grid_shape = calculate_gridshape(len(data))
-                    warn(f"Invalid `grid_shape` passed, setting grid shape to: {grid_shape}")
+                    warn(
+                        f"Invalid `grid_shape` passed, setting grid shape to: {grid_shape}"
+                    )
 
                 _ndim = [d.ndim for d in data]
 
@@ -276,7 +285,9 @@ class ImageWidget:
 
                 if names is not None:
                     if not all([isinstance(n, str) for n in names]):
-                        raise TypeError("optinal argument `names` must be a list of str")
+                        raise TypeError(
+                            "optinal argument `names` must be a list of str"
+                        )
 
                     if len(names) != len(self.data):
                         raise ValueError(
@@ -318,7 +329,9 @@ class ImageWidget:
                     )
                 self._dims_order: List[str] = [dims_order] * len(self.data)
             elif isinstance(dims_order, dict):
-                self._dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
+                self._dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(
+                    self.data
+                )
 
                 # dict of {array_ix: dims_order_str}
                 for data_ix in list(dims_order.keys()):
@@ -346,7 +359,8 @@ class ImageWidget:
                         )
             else:
                 raise TypeError(
-                    f"`dims_order` must be a <str> or <Dict[int: str]>, you have passed a: <{type(dims_order)}>")
+                    f"`dims_order` must be a <str> or <Dict[int: str]>, you have passed a: <{type(dims_order)}>"
+                )
 
         if not len(self.dims_order[0]) == self.ndim:
             raise ValueError(
@@ -435,7 +449,9 @@ class ImageWidget:
                     )
 
         else:
-            raise TypeError(f"`slider_dims` must a <int>, <str> or <list>, you have passed a: {type(slider_dims)}")
+            raise TypeError(
+                f"`slider_dims` must a <int>, <str> or <list>, you have passed a: {type(slider_dims)}"
+            )
 
         self.frame_apply: Dict[int, callable] = dict()
 
@@ -444,7 +460,9 @@ class ImageWidget:
                 self.frame_apply = {0: frame_apply}
 
             elif isinstance(frame_apply, dict):
-                self.frame_apply: Dict[int, callable] = dict.fromkeys(list(range(len(self.data))))
+                self.frame_apply: Dict[int, callable] = dict.fromkeys(
+                    list(range(len(self.data)))
+                )
 
                 # dict of {array: dims_order_str}
                 for data_ix in list(frame_apply.keys()):
@@ -459,7 +477,8 @@ class ImageWidget:
             else:
                 raise TypeError(
                     f"`frame_apply` must be a callable or <Dict[int: callable]>, "
-                    f"you have passed a: <{type(frame_apply)}>")
+                    f"you have passed a: <{type(frame_apply)}>"
+                )
 
         self._window_funcs = None
         self.window_funcs = window_funcs
@@ -475,7 +494,9 @@ class ImageWidget:
         self._dims_max_bounds: Dict[str, int] = {k: np.inf for k in self.slider_dims}
         for _dim in list(self._dims_max_bounds.keys()):
             for array, order in zip(self.data, self.dims_order):
-                self._dims_max_bounds[_dim] = min(self._dims_max_bounds[_dim], array.shape[order.index(_dim)])
+                self._dims_max_bounds[_dim] = min(
+                    self._dims_max_bounds[_dim], array.shape[order.index(_dim)]
+                )
 
         if grid_plot_kwargs is None:
             grid_plot_kwargs = {"controllers": "sync"}
@@ -503,12 +524,11 @@ class ImageWidget:
                     step=data_range / 150,
                     description=f"mm: {name_slider}",
                     readout=True,
-                    readout_format='.3f',
+                    readout_format=".3f",
                 )
 
                 minmax_slider.observe(
-                    partial(self._vmin_vmax_slider_changed, data_ix),
-                    names="value"
+                    partial(self._vmin_vmax_slider_changed, data_ix), names="value"
                 )
 
                 self.vmin_vmax_sliders.append(minmax_slider)
@@ -529,13 +549,10 @@ class ImageWidget:
                 step=1,
                 value=0,
                 description=f"dimension: {sdm}",
-                orientation="horizontal"
+                orientation="horizontal",
             )
 
-            slider.observe(
-                partial(self._slider_value_changed, sdm),
-                names="value"
-            )
+            slider.observe(partial(self._slider_value_changed, sdm), names="value")
 
             self._sliders[sdm] = slider
 
@@ -544,10 +561,9 @@ class ImageWidget:
         self.block_sliders: bool = False
 
         # TODO: So just stack everything vertically for now
-        self._vbox_sliders = VBox([
-            *list(self._sliders.values()),
-            *self.vmin_vmax_sliders
-        ])
+        self._vbox_sliders = VBox(
+            [*list(self._sliders.values()), *self.vmin_vmax_sliders]
+        )
 
     @property
     def window_funcs(self) -> Dict[str, _WindowFunctions]:
@@ -576,7 +592,9 @@ class ImageWidget:
 
         # for multiple dims
         elif isinstance(sa, dict):
-            if not all([isinstance(_sa, tuple) or (_sa is None) for _sa in sa.values()]):
+            if not all(
+                [isinstance(_sa, tuple) or (_sa is None) for _sa in sa.values()]
+            ):
                 raise TypeError(
                     "dict argument to `window_funcs` must be in the form of: "
                     "`{dimension: (func, window_size)}`. "
@@ -584,7 +602,9 @@ class ImageWidget:
                 )
             for v in sa.values():
                 if v is not None:
-                    if not callable(v[0]) or not (isinstance(v[1], int) or v[1] is None):
+                    if not callable(v[0]) or not (
+                        isinstance(v[1], int) or v[1] is None
+                    ):
                         raise TypeError(
                             "dict argument to `window_funcs` must be in the form of: "
                             "`{dimension: (func, window_size)}`. "
@@ -607,9 +627,7 @@ class ImageWidget:
             )
 
     def _process_indices(
-            self,
-            array: np.ndarray,
-            slice_indices: Dict[Union[int, str], int]
+        self, array: np.ndarray, slice_indices: Dict[Union[int, str], int]
     ) -> np.ndarray:
         """
         Get the 2D array from the given slice indices. If not returning a 2D slice (such as due to window_funcs)
@@ -643,9 +661,7 @@ class ImageWidget:
                         data_ix = i
                         break
                 if data_ix is None:
-                    raise ValueError(
-                        f"Given `array` not found in `self.data`"
-                    )
+                    raise ValueError(f"Given `array` not found in `self.data`")
                 # get axes order for that specific array
                 numerical_dim = self.dims_order[data_ix].index(dim)
             else:
@@ -710,7 +726,9 @@ class ImageWidget:
             half_window = int((window_size - 1) / 2)  # half-window size
             # get the max bound for that dimension
             max_bound = self._dims_max_bounds[dim_str]
-            indices_dim = range(max(0, ix - half_window), min(max_bound, ix + half_window))
+            indices_dim = range(
+                max(0, ix - half_window), min(max_bound, ix + half_window)
+            )
             return indices_dim
 
     def _process_frame_apply(self, array, data_ix) -> np.ndarray:
@@ -725,20 +743,12 @@ class ImageWidget:
 
         return array
 
-    def _slider_value_changed(
-            self,
-            dimension: str,
-            change: dict
-    ):
+    def _slider_value_changed(self, dimension: str, change: dict):
         if self.block_sliders:
             return
         self.current_index = {dimension: change["new"]}
 
-    def _vmin_vmax_slider_changed(
-            self,
-            data_ix: int,
-            change: dict
-    ):
+    def _vmin_vmax_slider_changed(self, data_ix: int, change: dict):
         vmin, vmax = change["new"]
         self.managed_graphics[data_ix].cmap.vmin = vmin
         self.managed_graphics[data_ix].cmap.vmax = vmax
@@ -772,7 +782,7 @@ class ImageWidget:
             minmax,
             data_range,
             minmax[0] - data_range_40p,
-            minmax[1] + data_range_40p
+            minmax[1] + data_range_40p,
         )
 
         return _range
@@ -789,7 +799,7 @@ class ImageWidget:
                     "value": mm[0],
                     "step": mm[1] / 150,
                     "min": mm[2],
-                    "max": mm[3]
+                    "max": mm[3],
                 }
 
                 self.vmin_vmax_sliders[i].set_state(state)
@@ -797,10 +807,10 @@ class ImageWidget:
                 ig.cmap.vmin, ig.cmap.vmax = mm[0]
 
     def set_data(
-            self,
-            new_data: Union[np.ndarray, List[np.ndarray]],
-            reset_vmin_vmax: bool = True,
-            reset_indices: bool = True
+        self,
+        new_data: Union[np.ndarray, List[np.ndarray]],
+        reset_vmin_vmax: bool = True,
+        reset_indices: bool = True,
     ):
         """
         Change data of widget. Note: sliders max currently update only for ``txy`` and ``tzxy`` data.
@@ -844,7 +854,9 @@ class ImageWidget:
                 )
 
         # if checks pass, update with new data
-        for i, (new_array, current_array, subplot) in enumerate(zip(new_data, self._data, self.gridplot)):
+        for i, (new_array, current_array, subplot) in enumerate(
+            zip(new_data, self._data, self.gridplot)
+        ):
             # check last two dims (x and y) to see if data shape is changing
             old_data_shape = self._data[i].shape[-2:]
             self._data[i] = new_array
@@ -853,7 +865,9 @@ class ImageWidget:
                 # delete graphics at index zero
                 subplot.delete_graphic(graphic=subplot["image_widget_managed"])
                 # insert new graphic at index zero
-                frame = self._process_indices(new_array, slice_indices=self._current_index)
+                frame = self._process_indices(
+                    new_array, slice_indices=self._current_index
+                )
                 frame = self._process_frame_apply(frame, i)
                 new_graphic = ImageGraphic(data=frame, name="image_widget_managed")
                 subplot.insert_graphic(graphic=new_graphic)
@@ -904,8 +918,7 @@ class ImageWidget:
 
 
 class ImageWidgetToolbar:
-    def __init__(self,
-                 iw: ImageWidget):
+    def __init__(self, iw: ImageWidget):
         """
         Basic toolbar for a ImageWidget instance.
 
@@ -916,25 +929,40 @@ class ImageWidgetToolbar:
         self.iw = iw
         self.plot = iw.gridplot
 
-        self.reset_vminvmax_button = Button(value=False, disabled=False, icon='adjust',
-                                            layout=Layout(width='auto'), tooltip='reset vmin/vmax')
+        self.reset_vminvmax_button = Button(
+            value=False,
+            disabled=False,
+            icon="adjust",
+            layout=Layout(width="auto"),
+            tooltip="reset vmin/vmax",
+        )
 
-        self.step_size_setter = BoundedIntText(value=1, min=1, max=self.iw.sliders['t'].max, step=1,
-                                               description='Step Size:', disabled=False,
-                                               description_tooltip='set slider step', layout=Layout(width='150px'))
+        self.step_size_setter = BoundedIntText(
+            value=1,
+            min=1,
+            max=self.iw.sliders["t"].max,
+            step=1,
+            description="Step Size:",
+            disabled=False,
+            description_tooltip="set slider step",
+            layout=Layout(width="150px"),
+        )
         self.play_button = Play(
             value=0,
             min=iw.sliders["t"].min,
             max=iw.sliders["t"].max,
             step=iw.sliders["t"].step,
             description="play/pause",
-            disabled=False)
+            disabled=False,
+        )
 
-        self.widget = HBox([self.reset_vminvmax_button, self.play_button, self.step_size_setter])
+        self.widget = HBox(
+            [self.reset_vminvmax_button, self.play_button, self.step_size_setter]
+        )
 
         self.reset_vminvmax_button.on_click(self.reset_vminvmax)
-        self.step_size_setter.observe(self.change_stepsize, 'value')
-        jslink((self.play_button, 'value'), (self.iw.sliders["t"], 'value'))
+        self.step_size_setter.observe(self.change_stepsize, "value")
+        jslink((self.play_button, "value"), (self.iw.sliders["t"], "value"))
         jslink((self.play_button, "max"), (self.iw.sliders["t"], "max"))
 
     def reset_vminvmax(self, obj):
@@ -942,4 +970,4 @@ class ImageWidgetToolbar:
             self.iw.reset_vmin_vmax()
 
     def change_stepsize(self, obj):
-        self.iw.sliders['t'].step = self.step_size_setter.value
+        self.iw.sliders["t"].step = self.step_size_setter.value

@@ -13,16 +13,17 @@ else:
 
 class VideoWriterAV(Process):
     """Video writer, uses PyAV in an external process to write frames to disk"""
+
     def __init__(
-            self,
-            path: Union[Path, str],
-            queue: Queue,
-            fps: int,
-            width: int,
-            height: int,
-            codec: str,
-            pixel_format: str,
-            options: dict = None
+        self,
+        path: Union[Path, str],
+        queue: Queue,
+        fps: int,
+        width: int,
+        height: int,
+        codec: str,
+        pixel_format: str,
+        options: dict = None,
     ):
         super().__init__()
         self.queue = queue
@@ -56,8 +57,10 @@ class VideoWriterAV(Process):
                 break
 
             frame = av.VideoFrame.from_ndarray(
-                frame[:self.stream.height, :self.stream.width],  # trim if necessary because of x264
-                format="rgb24"
+                frame[
+                    : self.stream.height, : self.stream.width
+                ],  # trim if necessary because of x264
+                format="rgb24",
             )
 
             for packet in self.stream.encode(frame):
@@ -104,12 +107,12 @@ class RecordMixin:
             self._video_writer_queue.put(ss.data[..., :-1])
 
     def record_start(
-            self,
-            path: Union[str, Path],
-            fps: int = 25,
-            codec: str = "mpeg4",
-            pixel_format: str = "yuv420p",
-            options: dict = None
+        self,
+        path: Union[str, Path],
+        fps: int = 25,
+        codec: str = "mpeg4",
+        pixel_format: str = "yuv420p",
+        options: dict = None,
     ):
         """
         Start a recording, experimental. Call ``record_end()`` to end a recording.
@@ -198,7 +201,7 @@ class RecordMixin:
             height=ss.height,
             codec=codec,
             pixel_format=pixel_format,
-            options=options
+            options=options,
         )
 
         # start writer process

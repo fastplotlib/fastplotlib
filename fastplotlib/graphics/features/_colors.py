@@ -2,7 +2,13 @@ import numpy as np
 from pygfx import Color
 
 from ...utils import make_colors, get_cmap_texture, make_pygfx_colors, parse_cmap_values
-from ._base import GraphicFeature, GraphicFeatureIndexable, cleanup_slice, FeatureEvent, cleanup_array_slice
+from ._base import (
+    GraphicFeature,
+    GraphicFeatureIndexable,
+    cleanup_slice,
+    FeatureEvent,
+    cleanup_array_slice,
+)
 
 
 class ColorFeature(GraphicFeatureIndexable):
@@ -22,6 +28,7 @@ class ColorFeature(GraphicFeatureIndexable):
 
 
     """
+
     @property
     def buffer(self):
         return self._parent.world_object.geometry.colors
@@ -29,7 +36,14 @@ class ColorFeature(GraphicFeatureIndexable):
     def __getitem__(self, item):
         return self.buffer.data[item]
 
-    def __init__(self, parent, colors, n_colors: int, alpha: float = 1.0, collection_index: int = None):
+    def __init__(
+        self,
+        parent,
+        colors,
+        n_colors: int,
+        alpha: float = 1.0,
+        collection_index: int = None,
+    ):
         """
         ColorFeature
 
@@ -55,11 +69,7 @@ class ColorFeature(GraphicFeatureIndexable):
         # if the color is provided as a numpy array
         if isinstance(colors, np.ndarray):
             if colors.shape == (4,):  # single RGBA array
-                data = np.repeat(
-                    np.array([colors]),
-                    n_colors,
-                    axis=0
-                )
+                data = np.repeat(np.array([colors]), n_colors, axis=0)
             # else assume it's already a stack of RGBA arrays, keep this directly as the data
             elif colors.ndim == 2:
                 if colors.shape[1] != 4 and colors.shape[0] != n_colors:
@@ -109,7 +119,9 @@ class ColorFeature(GraphicFeatureIndexable):
         if alpha != 1.0:
             data[:, -1] = alpha
 
-        super(ColorFeature, self).__init__(parent, data, collection_index=collection_index)
+        super(ColorFeature, self).__init__(
+            parent, data, collection_index=collection_index
+        )
 
     def __setitem__(self, key, value):
         # parse numerical slice indices
@@ -130,7 +142,9 @@ class ColorFeature(GraphicFeatureIndexable):
                 )
 
             if len(key) != 2:
-                raise ValueError("fancy indexing for colors must be 2-dimension, i.e. [n_datapoints, RGBA]")
+                raise ValueError(
+                    "fancy indexing for colors must be 2-dimension, i.e. [n_datapoints, RGBA]"
+                )
 
             # set the user passed data directly
             self.buffer.data[key] = value
@@ -151,7 +165,9 @@ class ColorFeature(GraphicFeatureIndexable):
             indices = key
 
         else:
-            raise TypeError("Graphic features only support integer and numerical fancy indexing")
+            raise TypeError(
+                "Graphic features only support integer and numerical fancy indexing"
+            )
 
         new_data_size = len(indices)
 
@@ -159,9 +175,7 @@ class ColorFeature(GraphicFeatureIndexable):
             color = np.array(Color(value))  # pygfx color parser
             # make it of shape [n_colors_modify, 4]
             new_colors = np.repeat(
-                np.array([color]).astype(np.float32),
-                new_data_size,
-                axis=0
+                np.array([color]).astype(np.float32), new_data_size, axis=0
             )
 
         # if already a numpy array
@@ -172,14 +186,14 @@ class ColorFeature(GraphicFeatureIndexable):
                 # if there are more than 1 datapoint color to modify
                 if new_data_size > 1:
                     new_colors = np.repeat(
-                        np.array([new_colors]).astype(np.float32),
-                        new_data_size,
-                        axis=0
+                        np.array([new_colors]).astype(np.float32), new_data_size, axis=0
                     )
 
             elif value.ndim == 2:
                 if value.shape[1] != 4 and value.shape[0] != new_data_size:
-                    raise ValueError("numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)")
+                    raise ValueError(
+                        "numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)"
+                    )
                 # if there is a single datapoint to change color of but user has provided shape [1, 4]
                 if new_data_size == 1:
                     new_colors = value.ravel().astype(np.float32)
@@ -187,7 +201,9 @@ class ColorFeature(GraphicFeatureIndexable):
                     new_colors = value.astype(np.float32)
 
             else:
-                raise ValueError("numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)")
+                raise ValueError(
+                    "numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)"
+                )
 
         self.buffer.data[key] = new_colors
 
@@ -226,6 +242,7 @@ class CmapFeature(ColorFeature):
 
     Same event pick info as :class:`ColorFeature`
     """
+
     def __init__(self, parent, colors, cmap_name: str, cmap_values: np.ndarray):
         super(ColorFeature, self).__init__(parent, colors)
 
@@ -235,8 +252,10 @@ class CmapFeature(ColorFeature):
     def __setitem__(self, key, cmap_name):
         key = cleanup_slice(key, self._upper_bound)
         if not isinstance(key, (slice, np.ndarray)):
-            raise TypeError("Cannot set cmap on single indices, must pass a slice object, "
-                            "numpy.ndarray or set it on the entire data.")
+            raise TypeError(
+                "Cannot set cmap on single indices, must pass a slice object, "
+                "numpy.ndarray or set it on the entire data."
+            )
 
         if isinstance(key, slice):
             n_colors = len(range(key.start, key.stop, key.step))
@@ -246,9 +265,7 @@ class CmapFeature(ColorFeature):
             n_colors = key.size
 
         colors = parse_cmap_values(
-            n_colors=n_colors,
-            cmap_name=cmap_name,
-            cmap_values=self._cmap_values
+            n_colors=n_colors, cmap_name=cmap_name, cmap_values=self._cmap_values
         )
 
         self._cmap_name = cmap_name
@@ -264,9 +281,7 @@ class CmapFeature(ColorFeature):
             values = np.array(values)
 
         colors = parse_cmap_values(
-            n_colors=self().shape[0],
-            cmap_name=self._cmap_name,
-            cmap_values=values
+            n_colors=self().shape[0], cmap_name=self._cmap_name, cmap_values=values
         )
 
         self._cmap_values = values
@@ -317,7 +332,7 @@ class ImageCmapFeature(GraphicFeature):
         """Minimum contrast limit."""
         self._parent.world_object.material.clim = (
             value,
-            self._parent.world_object.material.clim[1]
+            self._parent.world_object.material.clim[1],
         )
         self._feature_changed(key=None, new_data=None)
 
@@ -331,7 +346,7 @@ class ImageCmapFeature(GraphicFeature):
         """Maximum contrast limit."""
         self._parent.world_object.material.clim = (
             self._parent.world_object.material.clim[0],
-            value
+            value,
         )
         self._feature_changed(key=None, new_data=None)
 
@@ -343,7 +358,7 @@ class ImageCmapFeature(GraphicFeature):
             "world_object": self._parent.world_object,
             "name": self.name,
             "vmin": self.vmin,
-            "vmax": self.vmax
+            "vmax": self.vmax,
         }
 
         event_data = FeatureEvent(type="cmap", pick_info=pick_info)

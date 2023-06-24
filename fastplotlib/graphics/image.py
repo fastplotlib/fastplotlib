@@ -10,12 +10,20 @@ import pygfx
 from ..utils import quick_min_max
 from ._base import Graphic, Interaction, PreviouslyModifiedData
 from .selectors import LinearSelector, LinearRegionSelector
-from .features import ImageCmapFeature, ImageDataFeature, HeatmapDataFeature, HeatmapCmapFeature, PresentFeature
+from .features import (
+    ImageCmapFeature,
+    ImageDataFeature,
+    HeatmapDataFeature,
+    HeatmapCmapFeature,
+    PresentFeature,
+)
 from .features._base import to_gpu_supported_dtype
 
 
 class _ImageHeatmapSelectorsMixin:
-    def add_linear_selector(self, selection: int = None, padding: float = None, **kwargs) -> LinearSelector:
+    def add_linear_selector(
+        self, selection: int = None, padding: float = None, **kwargs
+    ) -> LinearSelector:
         """
         Adds a linear selector.
 
@@ -42,20 +50,29 @@ class _ImageHeatmapSelectorsMixin:
         else:
             axis = "x"
 
-        bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+        (
+            bounds_init,
+            limits,
+            size,
+            origin,
+            axis,
+            end_points,
+        ) = self._get_linear_selector_init_args(padding, **kwargs)
 
         if selection is None:
             selection = limits[0]
 
         if selection < limits[0] or selection > limits[1]:
-            raise ValueError(f"the passed selection: {selection} is beyond the limits: {limits}")
+            raise ValueError(
+                f"the passed selection: {selection} is beyond the limits: {limits}"
+            )
 
         selector = LinearSelector(
             selection=selection,
             limits=limits,
             end_points=end_points,
             parent=weakref.proxy(self),
-            **kwargs
+            **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
@@ -63,7 +80,9 @@ class _ImageHeatmapSelectorsMixin:
 
         return weakref.proxy(selector)
 
-    def add_linear_region_selector(self, padding: float = None, **kwargs) -> LinearRegionSelector:
+    def add_linear_region_selector(
+        self, padding: float = None, **kwargs
+    ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
         remove, or delete them from a plot area just like any other ``Graphic``.
@@ -83,7 +102,14 @@ class _ImageHeatmapSelectorsMixin:
 
         """
 
-        bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+        (
+            bounds_init,
+            limits,
+            size,
+            origin,
+            axis,
+            end_points,
+        ) = self._get_linear_selector_init_args(padding, **kwargs)
 
         # create selector
         selector = LinearRegionSelector(
@@ -93,7 +119,7 @@ class _ImageHeatmapSelectorsMixin:
             origin=origin,
             parent=weakref.proxy(self),
             fill_color=(0, 0, 0.35, 0.2),
-            **kwargs
+            **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
@@ -172,22 +198,18 @@ class _ImageHeatmapSelectorsMixin:
 
 
 class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
-    feature_events = (
-        "data",
-        "cmap",
-        "present"
-    )
+    feature_events = ("data", "cmap", "present")
 
     def __init__(
-            self,
-            data: Any,
-            vmin: int = None,
-            vmax: int = None,
-            cmap: str = 'plasma',
-            filter: str = "nearest",
-            isolated_buffer: bool = True,
-            *args,
-            **kwargs
+        self,
+        data: Any,
+        vmin: int = None,
+        vmax: int = None,
+        cmap: str = "plasma",
+        filter: str = "nearest",
+        isolated_buffer: bool = True,
+        *args,
+        **kwargs,
     ):
         """
         Create an Image Graphic
@@ -275,16 +297,16 @@ class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
 
         # if data is RGB or RGBA
         if data.ndim > 2:
-
-            material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map_interpolation=filter)
+            material = pygfx.ImageBasicMaterial(
+                clim=(vmin, vmax), map_interpolation=filter
+            )
         # if data is just 2D without color information, use colormap LUT
         else:
-            material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter)
+            material = pygfx.ImageBasicMaterial(
+                clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter
+            )
 
-        world_object = pygfx.Image(
-            geometry,
-            material
-        )
+        world_object = pygfx.Image(geometry, material)
 
         self._set_world_object(world_object)
 
@@ -310,6 +332,7 @@ class _ImageTile(pygfx.Image):
     Similar to pygfx.Image, only difference is that it contains a few properties to keep track of
     row chunk index, column chunk index
     """
+
     def _wgpu_get_pick_info(self, pick_value):
         pick_info = super()._wgpu_get_pick_info(pick_value)
 
@@ -317,7 +340,7 @@ class _ImageTile(pygfx.Image):
         return {
             **pick_info,
             "row_chunk_index": self.row_chunk_index,
-            "col_chunk_index": self.col_chunk_index
+            "col_chunk_index": self.col_chunk_index,
         }
 
     @property
@@ -344,16 +367,16 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
     )
 
     def __init__(
-            self,
-            data: Any,
-            vmin: int = None,
-            vmax: int = None,
-            cmap: str = 'plasma',
-            filter: str = "nearest",
-            chunk_size: int = 8192,
-            isolated_buffer: bool = True,
-            *args,
-            **kwargs
+        self,
+        data: Any,
+        vmin: int = None,
+        vmax: int = None,
+        cmap: str = "plasma",
+        filter: str = "nearest",
+        chunk_size: int = 8192,
+        isolated_buffer: bool = True,
+        *args,
+        **kwargs,
     ):
         """
         Create an Image Graphic
@@ -455,7 +478,9 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
             vmin, vmax = quick_min_max(data)
 
         self.cmap = HeatmapCmapFeature(self, cmap)
-        self._material = pygfx.ImageBasicMaterial(clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter)
+        self._material = pygfx.ImageBasicMaterial(
+            clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter
+        )
 
         for start, stop, chunk in zip(start_ixs, stop_ixs, chunks):
             row_start, col_start = start
@@ -464,7 +489,9 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
             # x and y positions of the Tile in world space coordinates
             y_pos, x_pos = row_start, col_start
 
-            texture = pygfx.Texture(buffer_init[row_start:row_stop, col_start:col_stop], dim=2)
+            texture = pygfx.Texture(
+                buffer_init[row_start:row_stop, col_start:col_stop], dim=2
+            )
             geometry = pygfx.Geometry(grid=texture)
             # material = pygfx.ImageBasicMaterial(clim=(0, 1), map=self.cmap())
 
@@ -494,10 +521,7 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
     @vmin.setter
     def vmin(self, value: float):
         """Minimum contrast limit."""
-        self._material.clim = (
-            value,
-            self._material.clim[1]
-        )
+        self._material.clim = (value, self._material.clim[1])
 
     @property
     def vmax(self) -> float:
@@ -507,10 +531,7 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
     @vmax.setter
     def vmax(self, value: float):
         """Maximum contrast limit."""
-        self._material.clim = (
-            self._material.clim[0],
-            value
-        )
+        self._material.clim = (self._material.clim[0], value)
 
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass

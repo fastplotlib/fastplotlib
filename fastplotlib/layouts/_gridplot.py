@@ -34,14 +34,14 @@ valid_cameras = ["2d", "2d-big", "3d", "3d-big"]
 
 class GridPlot(RecordMixin):
     def __init__(
-            self,
-            shape: Tuple[int, int],
-            cameras: Union[np.ndarray, str] = '2d',
-            controllers: Union[np.ndarray, str] = None,
-            canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
-            renderer: pygfx.WgpuRenderer = None,
-            size: Tuple[int, int] = (500, 300),
-            **kwargs
+        self,
+        shape: Tuple[int, int],
+        cameras: Union[np.ndarray, str] = "2d",
+        controllers: Union[np.ndarray, str] = None,
+        canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
+        renderer: pygfx.WgpuRenderer = None,
+        size: Tuple[int, int] = (500, 300),
+        **kwargs,
     ):
         """
         A grid of subplots.
@@ -84,13 +84,19 @@ class GridPlot(RecordMixin):
 
         if isinstance(cameras, str):
             if cameras not in valid_cameras:
-                raise ValueError(f"If passing a str, `cameras` must be one of: {valid_cameras}")
+                raise ValueError(
+                    f"If passing a str, `cameras` must be one of: {valid_cameras}"
+                )
             # create the array representing the views for each subplot in the grid
-            cameras = np.array([cameras] * self.shape[0] * self.shape[1]).reshape(self.shape)
+            cameras = np.array([cameras] * self.shape[0] * self.shape[1]).reshape(
+                self.shape
+            )
 
         if isinstance(controllers, str):
             if controllers == "sync":
-                controllers = np.zeros(self.shape[0] * self.shape[1], dtype=int).reshape(self.shape)
+                controllers = np.zeros(
+                    self.shape[0] * self.shape[1], dtype=int
+                ).reshape(self.shape)
 
         if controllers is None:
             controllers = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
@@ -109,20 +115,26 @@ class GridPlot(RecordMixin):
 
         # create controllers if the arguments were integers
         if np.issubdtype(controllers.dtype, np.integer):
-            if not np.all(np.sort(np.unique(controllers)) == np.arange(np.unique(controllers).size)):
+            if not np.all(
+                np.sort(np.unique(controllers))
+                == np.arange(np.unique(controllers).size)
+            ):
                 raise ValueError("controllers must be consecutive integers")
 
             for controller in np.unique(controllers):
                 cam = np.unique(cameras[controllers == controller])
                 if cam.size > 1:
                     raise ValueError(
-                        f"Controller id: {controller} has been assigned to multiple different camera types")
+                        f"Controller id: {controller} has been assigned to multiple different camera types"
+                    )
 
                 self._controllers[controllers == controller] = create_controller(cam[0])
         # else assume it's a single pygfx.Controller instance or a list of controllers
         else:
             if isinstance(controllers, pygfx.Controller):
-                self._controllers = np.array([controllers] * shape[0] * shape[1]).reshape(shape)
+                self._controllers = np.array(
+                    [controllers] * shape[0] * shape[1]
+                ).reshape(shape)
             else:
                 self._controllers = np.array(controllers).reshape(shape)
 
@@ -144,7 +156,9 @@ class GridPlot(RecordMixin):
 
         nrows, ncols = self.shape
 
-        self._subplots: np.ndarray[Subplot] = np.ndarray(shape=(nrows, ncols), dtype=object)
+        self._subplots: np.ndarray[Subplot] = np.ndarray(
+            shape=(nrows, ncols), dtype=object
+        )
 
         for i, j in self._get_iterator():
             position = (i, j)
@@ -163,7 +177,7 @@ class GridPlot(RecordMixin):
                 controller=controller,
                 canvas=canvas,
                 renderer=renderer,
-                name=name
+                name=name,
             )
 
         self._animate_funcs_pre: List[callable] = list()
@@ -212,10 +226,10 @@ class GridPlot(RecordMixin):
                 fn()
 
     def add_animations(
-            self,
-            *funcs: Iterable[callable],
-            pre_render: bool = True,
-            post_render: bool = False
+        self,
+        *funcs: Iterable[callable],
+        pre_render: bool = True,
+        post_render: bool = False,
     ):
         """
         Add function(s) that are called on every render cycle.
@@ -267,10 +281,7 @@ class GridPlot(RecordMixin):
             self._animate_funcs_post.remove(func)
 
     def show(
-            self,
-            autoscale: bool = True,
-            maintain_aspect: bool = None,
-            toolbar: bool = True
+        self, autoscale: bool = True, maintain_aspect: bool = None, toolbar: bool = True
     ):
         """
         Begins the rendering event loop and returns the canvas
@@ -290,7 +301,7 @@ class GridPlot(RecordMixin):
         -------
         WgpuCanvas
             the canvas
-            
+
         """
         self.canvas.request_draw(self.render)
 
@@ -310,7 +321,9 @@ class GridPlot(RecordMixin):
 
         if self.toolbar is None:
             self.toolbar = GridPlotToolBar(self)
-            self.toolbar.maintain_aspect_button.value = self[0, 0].camera.maintain_aspect
+            self.toolbar.maintain_aspect_button.value = self[
+                0, 0
+            ].camera.maintain_aspect
 
         return VBox([self.canvas, self.toolbar.widget])
 
@@ -342,8 +355,7 @@ class GridPlot(RecordMixin):
 
 
 class GridPlotToolBar:
-    def __init__(self,
-                 plot: GridPlot):
+    def __init__(self, plot: GridPlot):
         """
         Basic toolbar for a GridPlot instance.
 
@@ -353,20 +365,50 @@ class GridPlotToolBar:
         """
         self.plot = plot
 
-        self.autoscale_button = Button(value=False, disabled=False, icon='expand-arrows-alt',
-                                       layout=Layout(width='auto'), tooltip='auto-scale scene')
-        self.center_scene_button = Button(value=False, disabled=False, icon='align-center',
-                                          layout=Layout(width='auto'), tooltip='auto-center scene')
-        self.panzoom_controller_button = ToggleButton(value=True, disabled=False, icon='hand-pointer',
-                                                      layout=Layout(width='auto'), tooltip='panzoom controller')
-        self.maintain_aspect_button = ToggleButton(value=True, disabled=False, description="1:1",
-                                                   layout=Layout(width='auto'), tooltip='maintain aspect')
+        self.autoscale_button = Button(
+            value=False,
+            disabled=False,
+            icon="expand-arrows-alt",
+            layout=Layout(width="auto"),
+            tooltip="auto-scale scene",
+        )
+        self.center_scene_button = Button(
+            value=False,
+            disabled=False,
+            icon="align-center",
+            layout=Layout(width="auto"),
+            tooltip="auto-center scene",
+        )
+        self.panzoom_controller_button = ToggleButton(
+            value=True,
+            disabled=False,
+            icon="hand-pointer",
+            layout=Layout(width="auto"),
+            tooltip="panzoom controller",
+        )
+        self.maintain_aspect_button = ToggleButton(
+            value=True,
+            disabled=False,
+            description="1:1",
+            layout=Layout(width="auto"),
+            tooltip="maintain aspect",
+        )
         self.maintain_aspect_button.style.font_weight = "bold"
-        self.flip_camera_button = Button(value=False, disabled=False, icon='arrows-v',
-                                         layout=Layout(width='auto'), tooltip='flip')
+        self.flip_camera_button = Button(
+            value=False,
+            disabled=False,
+            icon="arrows-v",
+            layout=Layout(width="auto"),
+            tooltip="flip",
+        )
 
-        self.record_button = ToggleButton(value=False, disabled=False, icon='video',
-                                          layout=Layout(width='auto'), tooltip='record')
+        self.record_button = ToggleButton(
+            value=False,
+            disabled=False,
+            icon="video",
+            layout=Layout(width="auto"),
+            tooltip="record",
+        )
 
         positions = list(product(range(self.plot.shape[0]), range(self.plot.shape[1])))
         values = list()
@@ -375,23 +417,31 @@ class GridPlotToolBar:
                 values.append(self.plot[pos].name)
             else:
                 values.append(str(pos))
-        self.dropdown = Dropdown(options=values, disabled=False, description='Subplots:',
-                                 layout=Layout(width='200px'))
+        self.dropdown = Dropdown(
+            options=values,
+            disabled=False,
+            description="Subplots:",
+            layout=Layout(width="200px"),
+        )
 
-        self.widget = HBox([self.autoscale_button,
-                            self.center_scene_button,
-                            self.panzoom_controller_button,
-                            self.maintain_aspect_button,
-                            self.flip_camera_button,
-                            self.record_button,
-                            self.dropdown])
+        self.widget = HBox(
+            [
+                self.autoscale_button,
+                self.center_scene_button,
+                self.panzoom_controller_button,
+                self.maintain_aspect_button,
+                self.flip_camera_button,
+                self.record_button,
+                self.dropdown,
+            ]
+        )
 
-        self.panzoom_controller_button.observe(self.panzoom_control, 'value')
+        self.panzoom_controller_button.observe(self.panzoom_control, "value")
         self.autoscale_button.on_click(self.auto_scale)
         self.center_scene_button.on_click(self.center_scene)
-        self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
+        self.maintain_aspect_button.observe(self.maintain_aspect, "value")
         self.flip_camera_button.on_click(self.flip_camera)
-        self.record_button.observe(self.record_plot, 'value')
+        self.record_button.observe(self.record_plot, "value")
 
         self.plot.renderer.add_event_handler(self.update_current_subplot, "click")
 
@@ -439,7 +489,9 @@ class GridPlotToolBar:
     def record_plot(self, obj):
         if self.record_button.value:
             try:
-                self.plot.record_start(f"./{datetime.now().isoformat(timespec='seconds').replace(':', '_')}.mp4")
+                self.plot.record_start(
+                    f"./{datetime.now().isoformat(timespec='seconds').replace(':', '_')}.mp4"
+                )
             except Exception:
                 traceback.print_exc()
                 self.record_button.value = False

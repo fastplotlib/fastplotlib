@@ -7,14 +7,14 @@ from ._base import Graphic
 
 class TextGraphic(Graphic):
     def __init__(
-            self,
-            text: str,
-            position: Tuple[int] = (0, 0, 0),
-            size: int = 10,
-            face_color: Union[str, np.ndarray] = "w",
-            outline_color: Union[str, np.ndarray] = "w",
-            outline_thickness=0,
-            name: str = None,
+        self,
+        text: str,
+        position: Tuple[int] = (0, 0, 0),
+        size: int = 10,
+        face_color: Union[str, np.ndarray] = "w",
+        outline_color: Union[str, np.ndarray] = "w",
+        outline_thickness=0,
+        name: str = None,
     ):
         """
         Create a text Graphic
@@ -48,7 +48,11 @@ class TextGraphic(Graphic):
 
         world_object = pygfx.Text(
             pygfx.TextGeometry(text=str(text), font_size=size, screen_space=False),
-            pygfx.TextMaterial(color=face_color, outline_color=outline_color, outline_thickness=outline_thickness)
+            pygfx.TextMaterial(
+                color=face_color,
+                outline_color=outline_color,
+                outline_thickness=outline_thickness,
+            ),
         )
 
         self._set_world_object(world_object)

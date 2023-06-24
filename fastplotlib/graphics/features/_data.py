@@ -4,7 +4,13 @@ import numpy as np
 
 from pygfx import Buffer, Texture
 
-from ._base import GraphicFeatureIndexable, cleanup_slice, FeatureEvent, to_gpu_supported_dtype, cleanup_array_slice
+from ._base import (
+    GraphicFeatureIndexable,
+    cleanup_slice,
+    FeatureEvent,
+    to_gpu_supported_dtype,
+    cleanup_array_slice,
+)
 
 
 class PointsDataFeature(GraphicFeatureIndexable):
@@ -12,9 +18,12 @@ class PointsDataFeature(GraphicFeatureIndexable):
     Access to the vertex buffer data shown in the graphic.
     Supports fancy indexing if the data array also supports it.
     """
+
     def __init__(self, parent, data: Any, collection_index: int = None):
         data = self._fix_data(data, parent)
-        super(PointsDataFeature, self).__init__(parent, data, collection_index=collection_index)
+        super(PointsDataFeature, self).__init__(
+            parent, data, collection_index=collection_index
+        )
 
     @property
     def buffer(self) -> Buffer:
@@ -84,7 +93,7 @@ class PointsDataFeature(GraphicFeatureIndexable):
             "index": indices,
             "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
-            "new_data": new_data
+            "new_data": new_data,
         }
 
         event_data = FeatureEvent(type="data", pick_info=pick_info)
@@ -148,7 +157,7 @@ class ImageDataFeature(GraphicFeatureIndexable):
         pick_info = {
             "index": indices,
             "world_object": self._parent.world_object,
-            "new_data": new_data
+            "new_data": new_data,
         }
 
         event_data = FeatureEvent(type="data", pick_info=pick_info)
@@ -196,7 +205,7 @@ class HeatmapDataFeature(ImageDataFeature):
         pick_info = {
             "index": indices,
             "world_object": self._parent.world_object,
-            "new_data": new_data
+            "new_data": new_data,
         }
 
         event_data = FeatureEvent(type="data", pick_info=pick_info)

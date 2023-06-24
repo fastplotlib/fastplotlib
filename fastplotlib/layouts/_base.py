@@ -4,8 +4,15 @@ import weakref
 import numpy as np
 
 import pygfx
-from pygfx import Scene, OrthographicCamera, PerspectiveCamera, PanZoomController, OrbitController, \
-    Viewport, WgpuRenderer
+from pygfx import (
+    Scene,
+    OrthographicCamera,
+    PerspectiveCamera,
+    PanZoomController,
+    OrbitController,
+    Viewport,
+    WgpuRenderer,
+)
 from pylinalg import vec_transform, vec_unproject
 from wgpu.gui.auto import WgpuCanvas
 
@@ -21,15 +28,15 @@ SELECTORS: Dict[str, BaseSelector] = dict()
 
 class PlotArea:
     def __init__(
-            self,
-            parent,
-            position: Any,
-            camera: Union[OrthographicCamera, PerspectiveCamera],
-            controller: Union[PanZoomController, OrbitController],
-            scene: Scene,
-            canvas: WgpuCanvas,
-            renderer: WgpuRenderer,
-            name: str = None,
+        self,
+        parent,
+        position: Any,
+        camera: Union[OrthographicCamera, PerspectiveCamera],
+        controller: Union[PanZoomController, OrbitController],
+        scene: Scene,
+        canvas: WgpuCanvas,
+        renderer: WgpuRenderer,
+        name: str = None,
     ):
         """
         Base class for plot creation and management. ``PlotArea`` is not intended to be instantiated by users
@@ -175,7 +182,9 @@ class PlotArea:
         """allows setting the region occupied by the viewport w.r.t. the parent"""
         raise NotImplementedError("Must be implemented in subclass")
 
-    def map_screen_to_world(self, pos: Union[Tuple[float, float], pygfx.PointerEvent]) -> np.ndarray:
+    def map_screen_to_world(
+        self, pos: Union[Tuple[float, float], pygfx.PointerEvent]
+    ) -> np.ndarray:
         """
         Map screen position to world position
 
@@ -200,11 +209,7 @@ class PlotArea:
         )
 
         # convert screen position to NDC
-        pos_ndc = (
-            pos_rel[0] / vs[0] * 2 - 1,
-            -(pos_rel[1] / vs[1] * 2 - 1),
-            0
-        )
+        pos_ndc = (pos_rel[0] / vs[0] * 2 - 1, -(pos_rel[1] / vs[1] * 2 - 1), 0)
 
         # get world position
         pos_ndc += vec_transform(self.camera.world.position, self.camera.camera_matrix)
@@ -242,11 +247,11 @@ class PlotArea:
         graphic.position_z = len(self._graphics)
 
     def insert_graphic(
-            self,
-            graphic: Graphic,
-            center: bool = True,
-            index: int = 0,
-            z_position: int = None
+        self,
+        graphic: Graphic,
+        center: bool = True,
+        index: int = 0,
+        z_position: int = None,
     ):
         """
         Insert graphic into scene at given position ``index`` in stored graphics.
@@ -261,18 +266,22 @@ class PlotArea:
             Center the camera on the newly added Graphic
 
         index: int, default 0
-            Index to insert graphic. 
+            Index to insert graphic.
 
         z_position: int, default None
             z axis position to place Graphic. If ``None``, uses value of `index` argument
 
         """
         if index > len(self._graphics):
-            raise IndexError(f"Position {index} is out of bounds for number of graphics currently "
-                             f"in the PlotArea: {len(self._graphics)}\n"
-                             f"Call `add_graphic` method to insert graphic in the last position of the stored graphics")
+            raise IndexError(
+                f"Position {index} is out of bounds for number of graphics currently "
+                f"in the PlotArea: {len(self._graphics)}\n"
+                f"Call `add_graphic` method to insert graphic in the last position of the stored graphics"
+            )
 
-        self._add_or_insert_graphic(graphic=graphic, center=center, action="insert", index=index)
+        self._add_or_insert_graphic(
+            graphic=graphic, center=center, action="insert", index=index
+        )
 
         if z_position is None:
             graphic.position_z = index
@@ -280,11 +289,11 @@ class PlotArea:
             graphic.position_z = z_position
 
     def _add_or_insert_graphic(
-            self,
-            graphic: Graphic,
-            center: bool = True,
-            action: str = Union["insert", "add"],
-            index: int = 0
+        self,
+        graphic: Graphic,
+        center: bool = True,
+        action: str = Union["insert", "add"],
+        index: int = 0,
     ):
         """Private method to handle inserting or adding a graphic to a PlotArea."""
         if not isinstance(graphic, Graphic):
@@ -298,7 +307,9 @@ class PlotArea:
         if isinstance(graphic, BaseSelector):
             # store in SELECTORS dict
             loc = graphic.loc
-            SELECTORS[loc] = graphic # add hex id string for referencing this graphic instance
+            SELECTORS[
+                loc
+            ] = graphic  # add hex id string for referencing this graphic instance
             # don't manage garbage collection of LineSliders for now
             if action == "insert":
                 self._selectors.insert(index, loc)
@@ -307,7 +318,9 @@ class PlotArea:
         else:
             # store in GRAPHICS dict
             loc = graphic.loc
-            GRAPHICS[loc] = graphic # add hex id string for referencing this graphic instance
+            GRAPHICS[
+                loc
+            ] = graphic  # add hex id string for referencing this graphic instance
 
             if action == "insert":
                 self._graphics.insert(index, loc)
@@ -333,7 +346,9 @@ class PlotArea:
             graphic_names.append(s.name)
 
         if name in graphic_names:
-            raise ValueError(f"graphics must have unique names, current graphic names are:\n {graphic_names}")
+            raise ValueError(
+                f"graphics must have unique names, current graphic names are:\n {graphic_names}"
+            )
 
     def center_graphic(self, graphic: Graphic, zoom: float = 1.35):
         """
@@ -449,7 +464,9 @@ class PlotArea:
             kind = "selector"
             glist = self._selectors
         else:
-            raise KeyError(f"Graphic with following address not found in plot area: {loc}")
+            raise KeyError(
+                f"Graphic with following address not found in plot area: {loc}"
+            )
 
         # remove from scene if necessary
         if graphic.world_object in self.scene.children:
@@ -488,7 +505,9 @@ class PlotArea:
             graphic_names.append(g.name)
         for s in self.selectors:
             graphic_names.append(s.name)
-        raise IndexError(f"no graphic of given name, the current graphics are:\n {graphic_names}")
+        raise IndexError(
+            f"no graphic of given name, the current graphics are:\n {graphic_names}"
+        )
 
     def __str__(self):
         if self.name is None:
@@ -501,8 +520,10 @@ class PlotArea:
     def __repr__(self):
         newline = "\n\t"
 
-        return f"{self}\n" \
-               f"  parent: {self.parent}\n" \
-               f"  Graphics:\n" \
-               f"\t{newline.join(graphic.__repr__() for graphic in self.graphics)}" \
-               f"\n"
+        return (
+            f"{self}\n"
+            f"  parent: {self.parent}\n"
+            f"  Graphics:\n"
+            f"\t{newline.join(graphic.__repr__() for graphic in self.graphics)}"
+            f"\n"
+        )

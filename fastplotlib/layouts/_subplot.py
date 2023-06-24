@@ -6,8 +6,16 @@ from warnings import warn
 
 import numpy as np
 
-from pygfx import Scene, OrthographicCamera, PanZoomController, OrbitController, \
-    AxesHelper, GridHelper, WgpuRenderer, Texture
+from pygfx import (
+    Scene,
+    OrthographicCamera,
+    PanZoomController,
+    OrbitController,
+    AxesHelper,
+    GridHelper,
+    WgpuRenderer,
+    Texture,
+)
 from wgpu.gui.auto import WgpuCanvas
 
 from .. import graphics
@@ -19,15 +27,15 @@ from ._defaults import create_camera, create_controller
 
 class Subplot(PlotArea):
     def __init__(
-            self,
-            position: Tuple[int, int] = None,
-            parent_dims: Tuple[int, int] = None,
-            camera: str = '2d',
-            controller: Union[PanZoomController, OrbitController] = None,
-            canvas: Union[str, WgpuCanvas, Texture] = None,
-            renderer: WgpuRenderer = None,
-            name: str = None,
-            **kwargs
+        self,
+        position: Tuple[int, int] = None,
+        parent_dims: Tuple[int, int] = None,
+        camera: str = "2d",
+        controller: Union[PanZoomController, OrbitController] = None,
+        canvas: Union[str, WgpuCanvas, Texture] = None,
+        renderer: WgpuRenderer = None,
+        name: str = None,
+        **kwargs,
     ):
         """
         General plot object that composes a ``Gridplot``. Each ``Gridplot`` instance will have [n rows, n columns]
@@ -96,7 +104,7 @@ class Subplot(PlotArea):
             scene=Scene(),
             canvas=canvas,
             renderer=renderer,
-            name=name
+            name=name,
         )
 
         for pos in ["left", "top", "right", "bottom"]:
@@ -175,17 +183,16 @@ class Subplot(PlotArea):
         row_ix, col_ix = self.position
         width_canvas, height_canvas = self.renderer.logical_size
 
-        x_pos = ((width_canvas / self.ncols) + ((col_ix - 1) * (width_canvas / self.ncols))) + self.spacing
-        y_pos = ((height_canvas / self.nrows) + ((row_ix - 1) * (height_canvas / self.nrows))) + self.spacing
+        x_pos = (
+            (width_canvas / self.ncols) + ((col_ix - 1) * (width_canvas / self.ncols))
+        ) + self.spacing
+        y_pos = (
+            (height_canvas / self.nrows) + ((row_ix - 1) * (height_canvas / self.nrows))
+        ) + self.spacing
         width_subplot = (width_canvas / self.ncols) - self.spacing
         height_subplot = (height_canvas / self.nrows) - self.spacing
 
-        rect = np.array([
-            x_pos,
-            y_pos,
-            width_subplot,
-            height_subplot
-        ])
+        rect = np.array([x_pos, y_pos, width_subplot, height_subplot])
 
         for dv in self.docked_viewports.values():
             rect = rect + dv.get_parent_rect_adjust()
@@ -219,10 +226,10 @@ class Subplot(PlotArea):
                 fn()
 
     def add_animations(
-            self,
-            *funcs: Iterable[callable],
-            pre_render: bool = True,
-            post_render: bool = False
+        self,
+        *funcs: Iterable[callable],
+        pre_render: bool = True,
+        post_render: bool = False,
     ):
         """
         Add function(s) that are called on every render cycle.
@@ -289,21 +296,18 @@ class Subplot(PlotArea):
 
 
 class _DockedViewport(PlotArea):
-    _valid_positions = [
-        "right",
-        "left",
-        "top",
-        "bottom"
-    ]
+    _valid_positions = ["right", "left", "top", "bottom"]
 
     def __init__(
-            self,
-            parent: Subplot,
-            position: str,
-            size: int,
+        self,
+        parent: Subplot,
+        position: str,
+        size: int,
     ):
         if position not in self._valid_positions:
-            raise ValueError(f"the `position` of an AnchoredViewport must be one of: {self._valid_positions}")
+            raise ValueError(
+                f"the `position` of an AnchoredViewport must be one of: {self._valid_positions}"
+            )
 
         self._size = size
 
@@ -314,7 +318,7 @@ class _DockedViewport(PlotArea):
             controller=PanZoomController(),
             scene=Scene(),
             canvas=parent.canvas,
-            renderer=parent.renderer
+            renderer=parent.renderer,
         )
 
     @property
@@ -338,28 +342,59 @@ class _DockedViewport(PlotArea):
         spacing = 2  # spacing in pixels
 
         if self.position == "right":
-                x_pos = (width_canvas / self.parent.ncols) + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols)) + (width_canvas / self.parent.ncols) - self.size
-                y_pos = ((height_canvas / self.parent.nrows) + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))) + spacing
-                width_viewport = self.size
-                height_viewport = (height_canvas / self.parent.nrows) - spacing
+            x_pos = (
+                (width_canvas / self.parent.ncols)
+                + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
+                + (width_canvas / self.parent.ncols)
+                - self.size
+            )
+            y_pos = (
+                (height_canvas / self.parent.nrows)
+                + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+            ) + spacing
+            width_viewport = self.size
+            height_viewport = (height_canvas / self.parent.nrows) - spacing
 
         elif self.position == "left":
-                x_pos = (width_canvas / self.parent.ncols) + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
-                y_pos = ((height_canvas / self.parent.nrows) + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))) + spacing
-                width_viewport = self.size
-                height_viewport = (height_canvas / self.parent.nrows) - spacing
+            x_pos = (width_canvas / self.parent.ncols) + (
+                (col_ix_parent - 1) * (width_canvas / self.parent.ncols)
+            )
+            y_pos = (
+                (height_canvas / self.parent.nrows)
+                + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+            ) + spacing
+            width_viewport = self.size
+            height_viewport = (height_canvas / self.parent.nrows) - spacing
 
         elif self.position == "top":
-                x_pos = (width_canvas / self.parent.ncols) + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols)) + spacing
-                y_pos = ((height_canvas / self.parent.nrows) + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))) + spacing
-                width_viewport = (width_canvas / self.parent.ncols) - spacing
-                height_viewport = self.size
+            x_pos = (
+                (width_canvas / self.parent.ncols)
+                + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
+                + spacing
+            )
+            y_pos = (
+                (height_canvas / self.parent.nrows)
+                + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+            ) + spacing
+            width_viewport = (width_canvas / self.parent.ncols) - spacing
+            height_viewport = self.size
 
         elif self.position == "bottom":
-                x_pos = (width_canvas / self.parent.ncols) + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols)) + spacing
-                y_pos = ((height_canvas / self.parent.nrows) + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))) + (height_canvas / self.parent.nrows) - self.size
-                width_viewport = (width_canvas / self.parent.ncols) - spacing
-                height_viewport = self.size
+            x_pos = (
+                (width_canvas / self.parent.ncols)
+                + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
+                + spacing
+            )
+            y_pos = (
+                (
+                    (height_canvas / self.parent.nrows)
+                    + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+                )
+                + (height_canvas / self.parent.nrows)
+                - self.size
+            )
+            width_viewport = (width_canvas / self.parent.ncols) - spacing
+            height_viewport = self.size
         else:
             raise ValueError("invalid position")
 
@@ -367,36 +402,44 @@ class _DockedViewport(PlotArea):
 
     def get_parent_rect_adjust(self):
         if self.position == "right":
-            return np.array([
-                0,  # parent subplot x-position is same
-                0,
-                -self.size,  # width of parent subplot is `self.size` smaller
-                0
-            ])
+            return np.array(
+                [
+                    0,  # parent subplot x-position is same
+                    0,
+                    -self.size,  # width of parent subplot is `self.size` smaller
+                    0,
+                ]
+            )
 
         elif self.position == "left":
-            return np.array([
-                self.size,  # `self.size` added to parent subplot x-position
-                0,
-                -self.size,  # width of parent subplot is `self.size` smaller
-                0
-            ])
+            return np.array(
+                [
+                    self.size,  # `self.size` added to parent subplot x-position
+                    0,
+                    -self.size,  # width of parent subplot is `self.size` smaller
+                    0,
+                ]
+            )
 
         elif self.position == "top":
-            return np.array([
-                0,
-                self.size,  # `self.size` added to parent subplot y-position
-                0,
-                -self.size,  # height of parent subplot is `self.size` smaller
-            ])
+            return np.array(
+                [
+                    0,
+                    self.size,  # `self.size` added to parent subplot y-position
+                    0,
+                    -self.size,  # height of parent subplot is `self.size` smaller
+                ]
+            )
 
         elif self.position == "bottom":
-            return np.array([
-                0,
-                0,  # parent subplot y-position is same,
-                0,
-                -self.size,  # height of parent subplot is `self.size` smaller
-            ])
+            return np.array(
+                [
+                    0,
+                    0,  # parent subplot y-position is same,
+                    0,
+                    -self.size,  # height of parent subplot is `self.size` smaller
+                ]
+            )
 
     def render(self):
         if self.size == 0:

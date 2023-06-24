@@ -15,27 +15,21 @@ from .selectors import LinearRegionSelector, LinearSelector
 
 class LineCollection(GraphicCollection, Interaction):
     child_type = LineGraphic
-    feature_events = (
-        "data",
-        "colors",
-        "cmap",
-        "thickness",
-        "present"
-    )
+    feature_events = ("data", "colors", "cmap", "thickness", "present")
 
     def __init__(
-            self,
-            data: List[np.ndarray],
-            z_position: Union[List[float], float] = None,
-            thickness: Union[float, List[float]] = 2.0,
-            colors: Union[List[np.ndarray], np.ndarray] = "w",
-            alpha: float = 1.0,
-            cmap: Union[List[str], str] = None,
-            cmap_values: Union[np.ndarray, List] = None,
-            name: str = None,
-            metadata: Union[list, tuple, np.ndarray] = None,
-            *args,
-            **kwargs
+        self,
+        data: List[np.ndarray],
+        z_position: Union[List[float], float] = None,
+        thickness: Union[float, List[float]] = 2.0,
+        colors: Union[List[np.ndarray], np.ndarray] = "w",
+        alpha: float = 1.0,
+        cmap: Union[List[str], str] = None,
+        cmap_values: Union[np.ndarray, List] = None,
+        name: str = None,
+        metadata: Union[list, tuple, np.ndarray] = None,
+        *args,
+        **kwargs,
     ):
         """
         Create a Line Collection
@@ -154,17 +148,20 @@ class LineCollection(GraphicCollection, Interaction):
 
         if not isinstance(z_position, float) and z_position is not None:
             if len(data) != len(z_position):
-                raise ValueError("z_position must be a single float or an iterable with same length as data")
+                raise ValueError(
+                    "z_position must be a single float or an iterable with same length as data"
+                )
 
         if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
-                raise ValueError("args must be a single float or an iterable with same length as data")
+                raise ValueError(
+                    "args must be a single float or an iterable with same length as data"
+                )
 
         if metadata is not None:
             if len(metadata) != len(data):
                 raise ValueError(
-                    f"len(metadata) != len(data)\n"
-                    f"{len(metadata)} != {len(data)}"
+                    f"len(metadata) != len(data)\n" f"{len(metadata)} != {len(data)}"
                 )
 
         self._cmap_values = cmap_values
@@ -175,21 +172,23 @@ class LineCollection(GraphicCollection, Interaction):
             # cmap across lines
             if isinstance(cmap, str):
                 colors = parse_cmap_values(
-                    n_colors=len(data),
-                    cmap_name=cmap,
-                    cmap_values=cmap_values
+                    n_colors=len(data), cmap_name=cmap, cmap_values=cmap_values
                 )
                 single_color = False
                 cmap = None
 
             elif isinstance(cmap, (tuple, list)):
                 if len(cmap) != len(data):
-                    raise ValueError("cmap argument must be a single cmap or a list of cmaps "
-                                     "with the same length as the data")
+                    raise ValueError(
+                        "cmap argument must be a single cmap or a list of cmaps "
+                        "with the same length as the data"
+                    )
                 single_color = False
             else:
-                raise ValueError("cmap argument must be a single cmap or a list of cmaps "
-                                 "with the same length as the data")
+                raise ValueError(
+                    "cmap argument must be a single cmap or a list of cmaps "
+                    "with the same length as the data"
+                )
         else:
             if isinstance(colors, np.ndarray):
                 # single color for all lines in the collection as RGBA
@@ -268,7 +267,7 @@ class LineCollection(GraphicCollection, Interaction):
                 z_position=_z,
                 cmap=_cmap,
                 collection_index=i,
-                metadata=_m
+                metadata=_m,
             )
 
             self.add_graphic(lg, reset_index=False)
@@ -280,9 +279,7 @@ class LineCollection(GraphicCollection, Interaction):
     @cmap.setter
     def cmap(self, cmap: str):
         colors = parse_cmap_values(
-            n_colors=len(self),
-            cmap_name=cmap,
-            cmap_values=self.cmap_values
+            n_colors=len(self), cmap_name=cmap, cmap_values=self.cmap_values
         )
 
         for i, g in enumerate(self.graphics):
@@ -295,16 +292,15 @@ class LineCollection(GraphicCollection, Interaction):
     @cmap_values.setter
     def cmap_values(self, values: Union[np.ndarray, list]):
         colors = parse_cmap_values(
-            n_colors=len(self),
-            cmap_name=self.cmap,
-            cmap_values=values
-
+            n_colors=len(self), cmap_name=self.cmap, cmap_values=values
         )
 
         for i, g in enumerate(self.graphics):
             g.colors = colors[i]
 
-    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
+    def add_linear_selector(
+        self, selection: int = None, padding: float = 50, **kwargs
+    ) -> LinearSelector:
         """
         Adds a :class:`.LinearSelector` .
         Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a plot area just like
@@ -327,20 +323,29 @@ class LineCollection(GraphicCollection, Interaction):
 
         """
 
-        bounds, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+        (
+            bounds,
+            limits,
+            size,
+            origin,
+            axis,
+            end_points,
+        ) = self._get_linear_selector_init_args(padding, **kwargs)
 
         if selection is None:
             selection = limits[0]
 
         if selection < limits[0] or selection > limits[1]:
-            raise ValueError(f"the passed selection: {selection} is beyond the limits: {limits}")
+            raise ValueError(
+                f"the passed selection: {selection} is beyond the limits: {limits}"
+            )
 
         selector = LinearSelector(
             selection=selection,
             limits=limits,
             end_points=end_points,
             parent=self,
-            **kwargs
+            **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
@@ -348,7 +353,9 @@ class LineCollection(GraphicCollection, Interaction):
 
         return weakref.proxy(selector)
 
-    def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
+    def add_linear_region_selector(
+        self, padding: float = 100.0, **kwargs
+    ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`
         Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a plot area just like
@@ -369,7 +376,14 @@ class LineCollection(GraphicCollection, Interaction):
 
         """
 
-        bounds, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+        (
+            bounds,
+            limits,
+            size,
+            origin,
+            axis,
+            end_points,
+        ) = self._get_linear_selector_init_args(padding, **kwargs)
 
         selector = LinearRegionSelector(
             bounds=bounds,
@@ -377,7 +391,7 @@ class LineCollection(GraphicCollection, Interaction):
             size=size,
             origin=origin,
             parent=self,
-            **kwargs
+            **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
@@ -393,8 +407,14 @@ class LineCollection(GraphicCollection, Interaction):
         end_points = list()
 
         for g in self.graphics:
-            _bounds_init, _limits, _size, _origin, axis, _end_points = \
-                g._get_linear_selector_init_args(padding=0, **kwargs)
+            (
+                _bounds_init,
+                _limits,
+                _size,
+                _origin,
+                axis,
+                _end_points,
+            ) = g._get_linear_selector_init_args(padding=0, **kwargs)
 
             bounds_init.append(_bounds_init)
             limits.append(_limits)
@@ -413,7 +433,10 @@ class LineCollection(GraphicCollection, Interaction):
         # stack endpoints
         end_points = np.vstack(end_points)
         # use the min endpoint for index 0, highest endpoint for index 1
-        end_points = [end_points[:, 0].min() - padding, end_points[:, 1].max() + padding]
+        end_points = [
+            end_points[:, 0].min() - padding,
+            end_points[:, 1].max() + padding,
+        ]
 
         # TODO: refactor this to use `LineStack.graphics[-1].position.y`
         if isinstance(self, LineStack):
@@ -425,7 +448,11 @@ class LineCollection(GraphicCollection, Interaction):
 
             # a better way to get the max y value?
             # graphics y-position + data y-max + padding
-            end_points[1] = self.graphics[-1].position_y + self.graphics[-1].data()[:, 1].max() + padding
+            end_points[1] = (
+                self.graphics[-1].position_y
+                + self.graphics[-1].data()[:, 1].max()
+                + padding
+            )
 
         else:
             # just the biggest one if not stacked
@@ -478,7 +505,9 @@ class LineCollection(GraphicCollection, Interaction):
             self._previous_data[feature].data = previous_data
             self._previous_data[feature].indices = indices
         else:
-            self._previous_data[feature] = PreviouslyModifiedData(data=previous_data, indices=indices)
+            self._previous_data[feature] = PreviouslyModifiedData(
+                data=previous_data, indices=indices
+            )
 
         # finally set the new data
         # this MUST occur after setting the previous data attribute to prevent recursion
@@ -498,26 +527,22 @@ class LineCollection(GraphicCollection, Interaction):
         coll_feature.block_events(False)
 
 
-axes = {
-    "x": 0,
-    "y": 1,
-    "z": 2
-}
+axes = {"x": 0, "y": 1, "z": 2}
 
 
 class LineStack(LineCollection):
     def __init__(
-            self,
-            data: List[np.ndarray],
-            z_position: Union[List[float], float] = None,
-            thickness: Union[float, List[float]] = 2.0,
-            colors: Union[List[np.ndarray], np.ndarray] = "w",
-            cmap: Union[List[str], str] = None,
-            separation: float = 10,
-            separation_axis: str = "y",
-            name: str = None,
-            *args,
-            **kwargs
+        self,
+        data: List[np.ndarray],
+        z_position: Union[List[float], float] = None,
+        thickness: Union[float, List[float]] = 2.0,
+        colors: Union[List[np.ndarray], np.ndarray] = "w",
+        cmap: Union[List[str], str] = None,
+        separation: float = 10,
+        separation_axis: str = "y",
+        name: str = None,
+        *args,
+        **kwargs,
     ):
         """
         Create a line stack
@@ -629,7 +654,7 @@ class LineStack(LineCollection):
             colors=colors,
             cmap=cmap,
             name=name,
-            **kwargs
+            **kwargs,
         )
 
         axis_zero = 0
@@ -639,6 +664,8 @@ class LineStack(LineCollection):
             elif separation_axis == "y":
                 line.position_y = axis_zero
 
-            axis_zero = axis_zero + line.data()[:, axes[separation_axis]].max() + separation
+            axis_zero = (
+                axis_zero + line.data()[:, axes[separation_axis]].max() + separation
+            )
 
         self.separation = separation
