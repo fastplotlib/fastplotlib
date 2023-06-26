@@ -31,6 +31,7 @@ extras_require = {
         "jupyterlab",
         "jupyter-rfb",
         "scikit-learn",
+        "tqdm"
     ]
 }
 
