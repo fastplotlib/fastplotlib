@@ -7,19 +7,20 @@ import pygfx
 
 try:
     import ipywidgets
+
     HAS_IPYWIDGETS = True
-except:
+except (ImportError, ModuleNotFoundError):
     HAS_IPYWIDGETS = False
 
 from .._base import Graphic, GraphicFeature, GraphicCollection
-from ..features._base import FeatureEvent
+from .._features import FeatureEvent
 from ._base_selector import BaseSelector
 
 
 class LinearSelectionFeature(GraphicFeature):
     # A bit much to have a class for this but this allows it to integrate with the fastplotlib callback system
     """
-    Manages the slider selection and callbacks
+    Manages the linear selection and callbacks
 
     **event pick info**
 
@@ -35,6 +36,7 @@ class LinearSelectionFeature(GraphicFeature):
      ===================  ===============================  =================================================================================================
 
     """
+
     def __init__(self, parent, axis: str, value: float, limits: Tuple[int, int]):
         super(LinearSelectionFeature, self).__init__(parent, data=value)
 
@@ -81,21 +83,19 @@ class LinearSelectionFeature(GraphicFeature):
 
 
 class LinearSelector(Graphic, BaseSelector):
-    feature_events = ("selection",)
-
     # TODO: make `selection` arg in graphics data space not world space
     def __init__(
-            self,
-            selection: int,
-            limits: Tuple[int, int],
-            axis: str = "x",
-            parent: Graphic = None,
-            end_points: Tuple[int, int] = None,
-            arrow_keys_modifier: str = "Shift",
-            ipywidget_slider = None,
-            thickness: float = 2.5,
-            color: Any = "w",
-            name: str = None,
+        self,
+        selection: int,
+        limits: Tuple[int, int],
+        axis: str = "x",
+        parent: Graphic = None,
+        end_points: Tuple[int, int] = None,
+        arrow_keys_modifier: str = "Shift",
+        ipywidget_slider=None,
+        thickness: float = 2.5,
+        color: Any = "w",
+        name: str = None,
     ):
         """
         Create a horizontal or vertical line slider that is synced to an ipywidget IntSlider
@@ -166,7 +166,6 @@ class LinearSelector(Graphic, BaseSelector):
 
         line_data = line_data.astype(np.float32)
 
-        # super(LinearSelector, self).__init__(name=name)
         # init Graphic
         Graphic.__init__(self, name=name)
 
@@ -180,12 +179,12 @@ class LinearSelector(Graphic, BaseSelector):
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=line_data),
-            material=material(thickness=thickness, color=color)
+            material=material(thickness=thickness, color=color),
         )
 
         self.line_outer = pygfx.Line(
             geometry=pygfx.Geometry(positions=line_data),
-            material=material(thickness=thickness + 6, color=self.colors_outer)
+            material=material(thickness=thickness + 6, color=self.colors_outer),
         )
 
         line_inner.world.z = self.line_outer.world.z + 1
@@ -203,7 +202,9 @@ class LinearSelector(Graphic, BaseSelector):
         else:
             self.position_y = selection
 
-        self.selection = LinearSelectionFeature(self, axis=axis, value=selection, limits=limits)
+        self.selection = LinearSelectionFeature(
+            self, axis=axis, value=selection, limits=limits
+        )
 
         self.ipywidget_slider = ipywidget_slider
 
@@ -272,7 +273,9 @@ class LinearSelector(Graphic, BaseSelector):
             raise AttributeError("Already has ipywidget slider")
 
         if not HAS_IPYWIDGETS:
-            raise ImportError("Must installed `ipywidgets` to use `make_ipywidget_slider()`")
+            raise ImportError(
+                "Must installed `ipywidgets` to use `make_ipywidget_slider()`"
+            )
 
         cls = getattr(ipywidgets, kind)
 
@@ -281,7 +284,7 @@ class LinearSelector(Graphic, BaseSelector):
             max=self.selection.limits[1],
             value=int(self.selection()),
             step=1,
-            **kwargs
+            **kwargs,
         )
         self.ipywidget_slider = slider
         self._setup_ipywidget_slider(slider)
@@ -332,12 +335,19 @@ class LinearSelector(Graphic, BaseSelector):
             # get closest data index to the world space position of the slider
             idx = np.searchsorted(geo_positions, find_value, side="left")
 
-            if idx > 0 and (idx == len(geo_positions) or math.fabs(find_value - geo_positions[idx - 1]) < math.fabs(find_value - geo_positions[idx])):
+            if idx > 0 and (
+                idx == len(geo_positions)
+                or math.fabs(find_value - geo_positions[idx - 1])
+                < math.fabs(find_value - geo_positions[idx])
+            ):
                 return int(idx - 1)
             else:
                 return int(idx)
 
-        if "Heatmap" in graphic.__class__.__name__ or "Image" in graphic.__class__.__name__:
+        if (
+            "Heatmap" in graphic.__class__.__name__
+            or "Image" in graphic.__class__.__name__
+        ):
             # indices map directly to grid geometry for image data buffer
             index = self.selection() - offset
             return int(index)

@@ -1,5 +1,6 @@
-from ._base import GraphicFeature, FeatureEvent
 from pygfx import Scene, Group
+
+from ._base import GraphicFeature, FeatureEvent
 
 
 class PresentFeature(GraphicFeature):
@@ -19,6 +20,7 @@ class PresentFeature(GraphicFeature):
       "world_object"       pygfx.WorldObject        world object
      ==================== ======================== ========================================================================
     """
+
     def __init__(self, parent, present: bool = True, collection_index: int = False):
         self._scene = None
         super(PresentFeature, self).__init__(parent, present, collection_index)
@@ -58,7 +60,7 @@ class PresentFeature(GraphicFeature):
             "index": None,
             "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
-            "new_data": new_data
+            "new_data": new_data,
         }
 
         event_data = FeatureEvent(type="present", pick_info=pick_info)

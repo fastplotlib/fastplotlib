@@ -8,19 +8,19 @@ from wgpu.gui.auto import WgpuCanvas, is_jupyter
 if is_jupyter():
     from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
 
-from .layouts._subplot import Subplot
-from .layouts._record_mixin import RecordMixin
+from ._subplot import Subplot
+from ._record_mixin import RecordMixin
 
 
 class Plot(Subplot, RecordMixin):
     def __init__(
-            self,
-            canvas: WgpuCanvas = None,
-            renderer: pygfx.Renderer = None,
-            camera: str = '2d',
-            controller: Union[pygfx.PanZoomController, pygfx.OrbitController] = None,
-            size: Tuple[int, int] = (500, 300),
-            **kwargs
+        self,
+        canvas: WgpuCanvas = None,
+        renderer: pygfx.WgpuRenderer = None,
+        camera: str = "2d",
+        controller: Union[pygfx.PanZoomController, pygfx.OrbitController] = None,
+        size: Tuple[int, int] = (500, 300),
+        **kwargs,
     ):
         """
         Simple Plot object.
@@ -92,7 +92,7 @@ class Plot(Subplot, RecordMixin):
             renderer=renderer,
             camera=camera,
             controller=controller,
-            **kwargs
+            **kwargs,
         )
         RecordMixin.__init__(self)
 
@@ -107,10 +107,7 @@ class Plot(Subplot, RecordMixin):
         self.canvas.request_draw()
 
     def show(
-            self,
-            autoscale: bool = True,
-            maintain_aspect: bool = None,
-            toolbar: bool = True
+        self, autoscale: bool = True, maintain_aspect: bool = None, toolbar: bool = True
     ):
         """
         Begins the rendering event loop and returns the canvas
@@ -133,7 +130,7 @@ class Plot(Subplot, RecordMixin):
 
         """
         self.canvas.request_draw(self.render)
-            
+
         self.canvas.set_logical_size(*self._starting_size)
 
         if maintain_aspect is None:
@@ -161,8 +158,7 @@ class Plot(Subplot, RecordMixin):
 
 
 class ToolBar:
-    def __init__(self,
-                 plot: Plot):
+    def __init__(self, plot: Plot):
         """
         Basic toolbar for a Plot instance.
 
@@ -172,34 +168,67 @@ class ToolBar:
         """
         self.plot = plot
 
-        self.autoscale_button = Button(value=False, disabled=False, icon='expand-arrows-alt',
-                                       layout=Layout(width='auto'), tooltip='auto-scale scene')
-        self.center_scene_button = Button(value=False, disabled=False, icon='align-center',
-                                          layout=Layout(width='auto'), tooltip='auto-center scene')
-        self.panzoom_controller_button = ToggleButton(value=True, disabled=False, icon='hand-pointer',
-                                                      layout=Layout(width='auto'), tooltip='panzoom controller')
-        self.maintain_aspect_button = ToggleButton(value=True, disabled=False, description="1:1",
-                                                   layout=Layout(width='auto'),
-                                                   tooltip='maintain aspect')
+        self.autoscale_button = Button(
+            value=False,
+            disabled=False,
+            icon="expand-arrows-alt",
+            layout=Layout(width="auto"),
+            tooltip="auto-scale scene",
+        )
+        self.center_scene_button = Button(
+            value=False,
+            disabled=False,
+            icon="align-center",
+            layout=Layout(width="auto"),
+            tooltip="auto-center scene",
+        )
+        self.panzoom_controller_button = ToggleButton(
+            value=True,
+            disabled=False,
+            icon="hand-pointer",
+            layout=Layout(width="auto"),
+            tooltip="panzoom controller",
+        )
+        self.maintain_aspect_button = ToggleButton(
+            value=True,
+            disabled=False,
+            description="1:1",
+            layout=Layout(width="auto"),
+            tooltip="maintain aspect",
+        )
         self.maintain_aspect_button.style.font_weight = "bold"
-        self.flip_camera_button = Button(value=False, disabled=False, icon='arrows-v',
-                                         layout=Layout(width='auto'), tooltip='flip')
-        self.record_button = ToggleButton(value=False, disabled=False, icon='video',
-                                          layout=Layout(width='auto'), tooltip='record')
+        self.flip_camera_button = Button(
+            value=False,
+            disabled=False,
+            icon="arrows-v",
+            layout=Layout(width="auto"),
+            tooltip="flip",
+        )
+        self.record_button = ToggleButton(
+            value=False,
+            disabled=False,
+            icon="video",
+            layout=Layout(width="auto"),
+            tooltip="record",
+        )
 
-        self.widget = HBox([self.autoscale_button,
-                            self.center_scene_button,
-                            self.panzoom_controller_button,
-                            self.maintain_aspect_button,
-                            self.flip_camera_button,
-                            self.record_button])
+        self.widget = HBox(
+            [
+                self.autoscale_button,
+                self.center_scene_button,
+                self.panzoom_controller_button,
+                self.maintain_aspect_button,
+                self.flip_camera_button,
+                self.record_button,
+            ]
+        )
 
-        self.panzoom_controller_button.observe(self.panzoom_control, 'value')
+        self.panzoom_controller_button.observe(self.panzoom_control, "value")
         self.autoscale_button.on_click(self.auto_scale)
         self.center_scene_button.on_click(self.center_scene)
-        self.maintain_aspect_button.observe(self.maintain_aspect, 'value')
+        self.maintain_aspect_button.observe(self.maintain_aspect, "value")
         self.flip_camera_button.on_click(self.flip_camera)
-        self.record_button.observe(self.record_plot, 'value')
+        self.record_button.observe(self.record_plot, "value")
 
     def auto_scale(self, obj):
         self.plot.auto_scale(maintain_aspect=self.plot.camera.maintain_aspect)
@@ -219,7 +248,9 @@ class ToolBar:
     def record_plot(self, obj):
         if self.record_button.value:
             try:
-                self.plot.record_start(f"./{datetime.now().isoformat(timespec='seconds').replace(':', '_')}.mp4")
+                self.plot.record_start(
+                    f"./{datetime.now().isoformat(timespec='seconds').replace(':', '_')}.mp4"
+                )
             except Exception:
                 traceback.print_exc()
                 self.record_button.value = False

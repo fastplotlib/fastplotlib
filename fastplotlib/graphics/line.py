@@ -2,35 +2,30 @@ from typing import *
 import weakref
 
 import numpy as np
+
 import pygfx
 
-from ._base import Graphic, Interaction, PreviouslyModifiedData
-from .features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
-from .selectors import LinearRegionSelector, LinearSelector
 from ..utils import parse_cmap_values
+from ._base import Graphic, Interaction, PreviouslyModifiedData
+from ._features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
+from .selectors import LinearRegionSelector, LinearSelector
 
 
 class LineGraphic(Graphic, Interaction):
-    feature_events = (
-        "data",
-        "colors",
-        "cmap",
-        "thickness",
-        "present"
-    )
+    feature_events = ("data", "colors", "cmap", "thickness", "present")
 
     def __init__(
-            self,
-            data: Any,
-            thickness: float = 2.0,
-            colors: Union[str, np.ndarray, Iterable] = "w",
-            alpha: float = 1.0,
-            cmap: str = None,
-            cmap_values: Union[np.ndarray, List] = None,
-            z_position: float = None,
-            collection_index: int = None,
-            *args,
-            **kwargs
+        self,
+        data: Any,
+        thickness: float = 2.0,
+        colors: Union[str, np.ndarray, Iterable] = "w",
+        alpha: float = 1.0,
+        cmap: str = None,
+        cmap_values: Union[np.ndarray, List] = None,
+        z_position: float = None,
+        collection_index: int = None,
+        *args,
+        **kwargs,
     ):
         """
         Create a line Graphic, 2d or 3d
@@ -50,7 +45,7 @@ class LineGraphic(Graphic, Interaction):
         cmap: str, optional
             apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors"
-            
+
         cmap_values: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
@@ -88,9 +83,7 @@ class LineGraphic(Graphic, Interaction):
             n_datapoints = self.data().shape[0]
 
             colors = parse_cmap_values(
-                n_colors=n_datapoints,
-                cmap_name=cmap,
-                cmap_values=cmap_values
+                n_colors=n_datapoints, cmap_name=cmap, cmap_values=cmap_values
             )
 
         self.colors = ColorFeature(
@@ -98,14 +91,11 @@ class LineGraphic(Graphic, Interaction):
             colors,
             n_colors=self.data().shape[0],
             alpha=alpha,
-            collection_index=collection_index
+            collection_index=collection_index,
         )
 
         self.cmap = CmapFeature(
-            self,
-            self.colors(),
-            cmap_name=cmap,
-            cmap_values=cmap_values
+            self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
         )
 
         super(LineGraphic, self).__init__(*args, **kwargs)
@@ -120,7 +110,7 @@ class LineGraphic(Graphic, Interaction):
         world_object: pygfx.Line = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=self.data(), colors=self.colors()),
-            material=material(thickness=self.thickness(), vertex_colors=True)
+            material=material(thickness=self.thickness(), vertex_colors=True),
         )
 
         self._set_world_object(world_object)
@@ -128,7 +118,9 @@ class LineGraphic(Graphic, Interaction):
         if z_position is not None:
             self.position_z = z_position
 
-    def add_linear_selector(self, selection: int = None, padding: float = 50, **kwargs) -> LinearSelector:
+    def add_linear_selector(
+        self, selection: int = None, padding: float = 50, **kwargs
+    ) -> LinearSelector:
         """
         Adds a linear selector.
 
@@ -149,20 +141,29 @@ class LineGraphic(Graphic, Interaction):
 
         """
 
-        bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+        (
+            bounds_init,
+            limits,
+            size,
+            origin,
+            axis,
+            end_points,
+        ) = self._get_linear_selector_init_args(padding, **kwargs)
 
         if selection is None:
             selection = limits[0]
 
         if selection < limits[0] or selection > limits[1]:
-            raise ValueError(f"the passed selection: {selection} is beyond the limits: {limits}")
+            raise ValueError(
+                f"the passed selection: {selection} is beyond the limits: {limits}"
+            )
 
         selector = LinearSelector(
             selection=selection,
             limits=limits,
             end_points=end_points,
             parent=self,
-            **kwargs
+            **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
@@ -170,7 +171,9 @@ class LineGraphic(Graphic, Interaction):
 
         return weakref.proxy(selector)
 
-    def add_linear_region_selector(self, padding: float = 100.0, **kwargs) -> LinearRegionSelector:
+    def add_linear_region_selector(
+        self, padding: float = 100.0, **kwargs
+    ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
         remove, or delete them from a plot area just like any other ``Graphic``.
@@ -190,7 +193,14 @@ class LineGraphic(Graphic, Interaction):
 
         """
 
-        bounds_init, limits, size, origin, axis, end_points = self._get_linear_selector_init_args(padding, **kwargs)
+        (
+            bounds_init,
+            limits,
+            size,
+            origin,
+            axis,
+            end_points,
+        ) = self._get_linear_selector_init_args(padding, **kwargs)
 
         # create selector
         selector = LinearRegionSelector(
@@ -199,7 +209,7 @@ class LineGraphic(Graphic, Interaction):
             size=size,
             origin=origin,
             parent=self,
-            **kwargs
+            **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
@@ -236,7 +246,10 @@ class LineGraphic(Graphic, Interaction):
 
             # endpoints of the data range
             # used by linear selector but not linear region
-            end_points = (self.data()[:, 1].min() - padding, self.data()[:, 1].max() + padding)
+            end_points = (
+                self.data()[:, 1].min() - padding,
+                self.data()[:, 1].max() + padding,
+            )
         else:
             offset = self.position_y
             # y limits
@@ -251,7 +264,10 @@ class LineGraphic(Graphic, Interaction):
             # need x offset too for this
             origin = (position_x + self.position_x, limits[0] - offset)
 
-            end_points = (self.data()[:, 0].min() - padding, self.data()[:, 0].max() + padding)
+            end_points = (
+                self.data()[:, 0].min() - padding,
+                self.data()[:, 0].max() + padding,
+            )
 
         # initial bounds are 20% of the limits range
         bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
@@ -278,7 +294,9 @@ class LineGraphic(Graphic, Interaction):
             self._previous_data[feature].data = previous
             self._previous_data[feature].indices = indices
         else:
-            self._previous_data[feature] = PreviouslyModifiedData(data=previous, indices=indices)
+            self._previous_data[feature] = PreviouslyModifiedData(
+                data=previous, indices=indices
+            )
 
     def _reset_feature(self, feature: str):
         if feature not in self._previous_data.keys():

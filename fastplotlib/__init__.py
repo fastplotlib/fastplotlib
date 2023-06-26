@@ -1,9 +1,8 @@
 from pathlib import Path
 
-from wgpu.gui.auto import run
+from .layouts import Plot, GridPlot
 
-from .plot import Plot
-from .layouts import GridPlot
+from wgpu.gui.auto import run
 
 try:
     import ipywidgets
@@ -15,3 +14,10 @@ else:
 
 with open(Path(__file__).parent.joinpath("VERSION"), "r") as f:
     __version__ = f.read().split("\n")[0]
+
+__all__ = [
+    "Plot",
+    "GridPlot",
+    "run",
+    "ImageWidget"
+]

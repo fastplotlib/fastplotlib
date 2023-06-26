@@ -1,30 +1,44 @@
-from typing import Union, List
-
-import numpy as np
-from pygfx import Texture, Color
 from collections import OrderedDict
 from typing import *
 from pathlib import Path
+
+import numpy as np
+
+from pygfx import Texture, Color
+
 # some funcs adapted from mesmerize
 
 
-QUALITATIVE_CMAPS = ['Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2', 'Set1',
-              'Set2', 'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c']
+QUALITATIVE_CMAPS = [
+    "Pastel1",
+    "Pastel2",
+    "Paired",
+    "Accent",
+    "Dark2",
+    "Set1",
+    "Set2",
+    "Set3",
+    "tab10",
+    "tab20",
+    "tab20b",
+    "tab20c",
+]
 
 
 def get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
-    cmap_path = Path(__file__).absolute().parent.joinpath('colormaps', name)
+    cmap_path = Path(__file__).absolute().parent.joinpath("colormaps", name)
     if cmap_path.is_file():
         cmap = np.loadtxt(cmap_path)
 
     else:
         try:
             from .generate_colormaps import make_cmap
+
             cmap = make_cmap(name, alpha)
-        except ModuleNotFoundError as e:
+        except (ImportError, ModuleNotFoundError):
             raise ModuleNotFoundError(
                 "Couldn't find colormap files, matplotlib is required to generate them "
-                "if they aren't found. Please install `matplotlib`."
+                "if they aren't found. Please install `matplotlib`"
             )
 
     cmap[:, -1] = alpha
@@ -60,8 +74,10 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
     if name in QUALITATIVE_CMAPS:
         max_colors = cmap.shape[0]
         if n_colors > cmap.shape[0]:
-            raise ValueError(f"You have requested <{n_colors}> but only <{max_colors} existing for the "
-                             f"chosen cmap: <{cmap}>")
+            raise ValueError(
+                f"You have requested <{n_colors}> but only <{max_colors} existing for the "
+                f"chosen cmap: <{cmap}>"
+            )
         return cmap[:n_colors]
 
     cm_ixs = np.linspace(0, 255, n_colors, dtype=int)
@@ -139,7 +155,9 @@ def quick_min_max(data: np.ndarray) -> Tuple[float, float]:
 
     if hasattr(data, "min") and hasattr(data, "max"):
         # if value is pre-computed
-        if isinstance(data.min, (float, int, np.number)) and isinstance(data.max, (float, int, np.number)):
+        if isinstance(data.min, (float, int, np.number)) and isinstance(
+            data.max, (float, int, np.number)
+        ):
             return data.min, data.max
 
     while data.size > 1e6:
@@ -164,10 +182,7 @@ def calculate_gridshape(n_subplots: int) -> Tuple[int, int]:
     """
     sr = np.sqrt(n_subplots)
 
-    return (
-        int(np.round(sr)),
-        int(np.ceil(sr))
-    )
+    return (int(np.round(sr)), int(np.ceil(sr)))
 
 
 def normalize_min_max(a):
@@ -176,9 +191,9 @@ def normalize_min_max(a):
 
 
 def parse_cmap_values(
-        n_colors: int,
-        cmap_name: str,
-        cmap_values: Union[np.ndarray, List[Union[int, float]]] = None
+    n_colors: int,
+    cmap_name: str,
+    cmap_values: Union[np.ndarray, List[Union[int, float]]] = None,
 ) -> np.ndarray:
     """
 

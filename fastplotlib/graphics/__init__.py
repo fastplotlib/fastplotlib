@@ -13,5 +13,5 @@ __all__ = [
     "HeatmapGraphic",
     "LineCollection",
     "LineStack",
-    "TextGraphic"
+    "TextGraphic",
 ]

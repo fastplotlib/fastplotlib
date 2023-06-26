@@ -16,6 +16,7 @@ class ThicknessFeature(GraphicFeature):
       "world_object"       pygfx.WorldObject        world object
      ==================== ======================== ========================================================================
     """
+
     def __init__(self, parent, thickness: float):
         self._scene = None
         super(ThicknessFeature, self).__init__(parent, thickness)
@@ -33,7 +34,7 @@ class ThicknessFeature(GraphicFeature):
             "index": None,
             "collection-index": self._collection_index,
             "world_object": self._parent.world_object,
-            "new_data": new_data
+            "new_data": new_data,
         }
 
         event_data = FeatureEvent(type="thickness", pick_info=pick_info)

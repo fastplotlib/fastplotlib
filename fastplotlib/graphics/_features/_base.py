@@ -3,9 +3,9 @@ from inspect import getfullargspec
 from warnings import warn
 from typing import *
 import weakref
-from dataclasses import dataclass
 
 import numpy as np
+
 from pygfx import Buffer, Texture
 
 
@@ -17,7 +17,7 @@ supported_dtypes = [
     np.int16,
     np.int32,
     np.float16,
-    np.float32
+    np.float32,
 ]
 
 
@@ -34,7 +34,9 @@ def to_gpu_supported_dtype(array):
                 warn(f"converting {array.dtype} array to float32")
                 return array.astype(np.float32, copy=False)
             else:
-                raise TypeError("Unsupported type, supported array types must be int or float dtypes")
+                raise TypeError(
+                    "Unsupported type, supported array types must be int or float dtypes"
+                )
 
     return array
 
@@ -58,19 +60,23 @@ class FeatureEvent:
         ============== =============================================================================
 
     """
+
     def __init__(self, type: str, pick_info: dict):
         self.type = type
         self.pick_info = pick_info
 
     def __repr__(self):
-        return f"{self.__class__.__name__} @ {hex(id(self))}\n" \
-               f"type: {self.type}\n" \
-               f"pick_info: {self.pick_info}\n"
+        return (
+            f"{self.__class__.__name__} @ {hex(id(self))}\n"
+            f"type: {self.type}\n"
+            f"pick_info: {self.pick_info}\n"
+        )
 
 
 class GraphicFeature(ABC):
     def __init__(self, parent, data: Any, collection_index: int = None):
         # not shown as a docstring so it doesn't show up in the docs
+        #
         # Parameters
         # ----------
         # parent
@@ -79,6 +85,7 @@ class GraphicFeature(ABC):
         #
         # collection_index: int
         #     if part of a collection, index of this graphic within the collection
+
         self._parent = weakref.proxy(parent)
 
         self._data = to_gpu_supported_dtype(data)
@@ -143,7 +150,7 @@ class GraphicFeature(ABC):
     def clear_event_handlers(self):
         self._event_handlers.clear()
 
-    #TODO: maybe this can be implemented right here in the base class
+    # TODO: maybe this can be implemented right here in the base class
     @abstractmethod
     def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
         """Called whenever a feature changes, and it calls all funcs in self._event_handlers"""
@@ -165,7 +172,9 @@ class GraphicFeature(ABC):
                 else:
                     func()
             except TypeError:
-                warn(f"Event handler {func} has an unresolvable argspec, calling it without arguments")
+                warn(
+                    f"Event handler {func} has an unresolvable argspec, calling it without arguments"
+                )
                 func()
 
 
@@ -191,9 +200,6 @@ def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
 
     if isinstance(key, np.ndarray):
         return cleanup_array_slice(key, upper_bound)
-
-    # if isinstance(key, np.integer):
-    #     return int(key)
 
     if isinstance(key, tuple):
         # if tuple of slice we only need the first obj
@@ -222,14 +228,15 @@ def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
         stop = upper_bound
 
     elif stop > upper_bound:
-        raise IndexError(f"Index: `{stop}` out of bounds for feature array of size: `{upper_bound}`")
+        raise IndexError(
+            f"Index: `{stop}` out of bounds for feature array of size: `{upper_bound}`"
+        )
 
     step = key.step
     if step is None:
         step = 1
 
     return slice(start, stop, step)
-    # return slice(int(start), int(stop), int(step))
 
 
 def cleanup_array_slice(key: np.ndarray, upper_bound) -> Union[np.ndarray, None]:
@@ -253,9 +260,7 @@ def cleanup_array_slice(key: np.ndarray, upper_bound) -> Union[np.ndarray, None]
     """
 
     if key.ndim > 1:
-        raise TypeError(
-            f"Can only use 1D boolean or integer arrays for fancy indexing"
-        )
+        raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing")
 
     # if boolean array convert to integer array of indices
     if key.dtype == bool:
@@ -266,15 +271,15 @@ def cleanup_array_slice(key: np.ndarray, upper_bound) -> Union[np.ndarray, None]
 
     # make sure indices within bounds of feature buffer range
     if key[-1] > upper_bound:
-        raise IndexError(f"Index: `{key[-1]}` out of bounds for feature array of size: `{upper_bound}`")
+        raise IndexError(
+            f"Index: `{key[-1]}` out of bounds for feature array of size: `{upper_bound}`"
+        )
 
     # make sure indices are integers
     if np.issubdtype(key.dtype, np.integer):
         return key
 
-    raise TypeError(
-        f"Can only use 1D boolean or integer arrays for fancy indexing"
-    )
+    raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing")
 
 
 class GraphicFeatureIndexable(GraphicFeature):
@@ -331,9 +336,6 @@ class GraphicFeatureIndexable(GraphicFeature):
         # TODO: See how efficient this is with large indexing
         elif isinstance(key, np.ndarray):
             self.buffer.update_range()
-            # for ix in key:
-            #     self.buffer.update_range(int(ix), size=1)
 
         else:
             raise TypeError("must pass int or slice to update range")
-
