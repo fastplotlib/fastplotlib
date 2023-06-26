@@ -414,9 +414,9 @@ class PlotArea:
         self.camera.maintain_aspect = maintain_aspect
 
         if len(self.scene.children) > 0:
-            width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)  # noqa
+            width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)
         else:
-            width, height, depth = (1, 1, 1)  # noqa
+            width, height, depth = (1, 1, 1)
 
         for selector in self.selectors:
             self.scene.add(selector.world_object)

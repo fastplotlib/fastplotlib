@@ -5,7 +5,7 @@ from .layouts import Plot, GridPlot
 from wgpu.gui.auto import run
 
 try:
-    import ipywidgets  # noqa
+    import ipywidgets
 except (ModuleNotFoundError, ImportError):
     pass
 else:
