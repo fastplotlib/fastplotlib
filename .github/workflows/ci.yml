@@ -7,12 +7,18 @@ on:
   pull_request:
     branches:
       - master
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 jobs:
 
   test-build:
     name: Test examples
     runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
       matrix:
@@ -55,9 +61,9 @@ jobs:
         PYGFX_EXPECT_LAVAPIPE: true
       run: |
         pytest -v examples
-        pytest --nbmake notebooks/
+        pytest --nbmake examples/notebooks/
     - uses: actions/upload-artifact@v3
       if: ${{ failure() }}
       with:
         name: screenshot-diffs
-        path: examples/diffs
+        path: examples/desktop/diffs

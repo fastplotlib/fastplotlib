@@ -28,16 +28,15 @@ CANVAS_OPTIONS = ["jupyter", "glfw", "qt"]
 CANVAS_OPTIONS_AVAILABLE = {
     "jupyter": JupyterWgpuCanvas,
     "glfw": GlfwWgpuCanvas,
-    "qt": QWgpuCanvas
+    "qt": QWgpuCanvas,
 }
 
 
 def make_canvas_and_renderer(
-        canvas: Union[str, WgpuCanvas, Texture, None],
-        renderer: [WgpuRenderer, None]
+    canvas: Union[str, WgpuCanvas, Texture, None], renderer: [WgpuRenderer, None]
 ):
     """
-    Parses arguments and returns the appropriate canvas and renderer instances 
+    Parses arguments and returns the appropriate canvas and renderer instances
     as a tuple (canvas, renderer)
     """
 
@@ -46,9 +45,7 @@ def make_canvas_and_renderer(
 
     elif isinstance(canvas, str):
         if canvas not in CANVAS_OPTIONS:
-            raise ValueError(
-                f"str canvas argument must be one of: {CANVAS_OPTIONS}"
-            )
+            raise ValueError(f"str canvas argument must be one of: {CANVAS_OPTIONS}")
         elif not CANVAS_OPTIONS_AVAILABLE[canvas]:
             raise ImportError(
                 f"The {canvas} framework is not installed for using this canvas"

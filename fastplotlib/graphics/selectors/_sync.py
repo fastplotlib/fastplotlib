@@ -1,5 +1,3 @@
-from typing import *
-
 from . import LinearSelector
 
 
