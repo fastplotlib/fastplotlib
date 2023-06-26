@@ -77,18 +77,26 @@ pip install -e ".[notebook,docs,tests]"
 > 
 > `fastplotlib` and `pygfx` are fast evolving, you may require the latest `pygfx` and `fastplotlib` from github to use the examples in the master branch.
 
-Clone or download the repo to try the examples
+First clone or download the repo to try the examples
 
 ```bash
-# clone the repo
 git clone https://github.com/kushalkolar/fastplotlib.git
+```
 
-# IMPORTANT: if you are using a specific version from pip, checkout that version to get the examples which work for that version
-# example:
-# git checkout git checkout v0.1.0.a9 # replace "v0.1.0.a9" with the version you have
+### Desktop examples using `glfw` or `Qt`
 
-# cd into notebooks and launch jupyter lab
-cd fastplotlib/notebooks
+```bash
+# most dirs within examples contain example code
+cd examples/desktop
+
+# simplest example
+python image/image_simple.py
+```
+
+### Notebook examples
+
+```bash
+cd examples/notebooks
 jupyter lab
 ```
 
@@ -96,10 +104,10 @@ jupyter lab
 
 ### Simple image plot
 ```python
-from fastplotlib import Plot
+import fastplotlib as fpl
 import numpy as np
 
-plot = Plot()
+plot = fpl.Plot()
 
 data = np.random.rand(512, 512)
 plot.add_image(data=data)
@@ -110,10 +118,10 @@ plot.show()
 
 ### Fast animations
 ```python
-from fastplotlib import Plot
+import fastplotlib as fpl
 import numpy as np
 
-plot = Plot()
+plot = fpl.Plot()
 
 data = np.random.rand(512, 512)
 image = plot.image(data=data)
