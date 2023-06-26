@@ -48,4 +48,4 @@ jobs:
         if: always()
         with:
           name: screenshots
-          path: examples/screenshots/
+          path: examples/desktop/screenshots/

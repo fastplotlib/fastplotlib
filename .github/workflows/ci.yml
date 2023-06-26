@@ -66,4 +66,4 @@ jobs:
       if: ${{ failure() }}
       with:
         name: screenshot-diffs
-        path: examples/diffs
+        path: examples/desktop/diffs
