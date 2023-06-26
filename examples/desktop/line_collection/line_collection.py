@@ -28,6 +28,8 @@ for center in product(range(0, spatial_dims[0], 15), range(0, spatial_dims[1], 1
 pos_xy = np.vstack(circles)
 
 plot = fpl.Plot()
+# to force a specific framework such as glfw:
+# plot = fpl.Plot(canvas="glfw")
 
 plot.add_line_collection(circles, cmap="jet", thickness=5)
 
@@ -36,4 +38,5 @@ plot.show()
 plot.canvas.set_logical_size(800, 800)
 
 if __name__ == "__main__":
+    print(__doc__)
     fpl.run()

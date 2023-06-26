@@ -5,17 +5,13 @@ Example showing the simple plot creation with 512 x 512 2D RGB image.
 """
 # test_example = true
 
-from fastplotlib import Plot
-import numpy as np
+import fastplotlib as fpl
 import imageio.v3 as iio
 
-from wgpu.gui.offscreen import WgpuCanvas
-from pygfx import WgpuRenderer
 
-canvas = WgpuCanvas()
-renderer = WgpuRenderer(canvas)
-
-plot = Plot(canvas=canvas, renderer=renderer)
+plot = fpl.Plot()
+# to force a specific framework such as glfw:
+# plot = fpl.Plot(canvas="glfw")
 
 im = iio.imread("imageio:astronaut.png")
 
@@ -28,7 +24,7 @@ plot.canvas.set_logical_size(800, 800)
 
 plot.auto_scale()
 
-img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)
+    fpl.run()

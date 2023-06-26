@@ -5,18 +5,13 @@ Example showing the simple plot creation followed by changing the vmin/vmax with
 """
 # test_example = true
 
-from fastplotlib import Plot
-import numpy as np
-from pathlib import Path
+import fastplotlib as fpl
 import imageio.v3 as iio
 
-from wgpu.gui.offscreen import WgpuCanvas
-from pygfx import WgpuRenderer
 
-canvas = WgpuCanvas()
-renderer = WgpuRenderer(canvas)
-
-plot = Plot(canvas=canvas, renderer=renderer)
+plot = fpl.Plot()
+# to force a specific framework such as glfw:
+# plot = fpl.Plot(canvas="glfw")
 
 data = iio.imread("imageio:astronaut.png")
 
@@ -32,7 +27,7 @@ plot.auto_scale()
 image_graphic.cmap.vmin = 0.5
 image_graphic.cmap.vmax = 0.75
 
-img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)
+    fpl.run()

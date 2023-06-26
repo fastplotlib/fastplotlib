@@ -11,6 +11,8 @@ import numpy as np
 
 
 plot = fpl.Plot()
+# to force a specific framework such as glfw:
+# plot = fpl.Plot(canvas="glfw")
 
 xs = np.linspace(-10, 10, 100)
 # sine wave
@@ -43,4 +45,5 @@ plot.show()
 plot.canvas.set_logical_size(800, 800)
 
 if __name__ == "__main__":
+    print(__doc__)
     fpl.run()

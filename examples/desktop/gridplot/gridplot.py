@@ -6,17 +6,13 @@ Example showing simple 2x2 GridPlot with Standard images from imageio.
 
 # test_example = true
 
-from fastplotlib import GridPlot
-import numpy as np
+import fastplotlib as fpl
 import imageio.v3 as iio
 
-from wgpu.gui.offscreen import WgpuCanvas
-from pygfx import WgpuRenderer
 
-canvas = WgpuCanvas()
-renderer = WgpuRenderer(canvas)
-
-plot = GridPlot(shape=(2,2), canvas=canvas, renderer=renderer)
+plot = fpl.GridPlot(shape=(2, 2))
+# to force a specific framework such as glfw:
+# plot = fpl.GridPlot(canvas="glfw")
 
 im = iio.imread("imageio:clock.png")
 im2 = iio.imread("imageio:astronaut.png")
@@ -35,7 +31,6 @@ plot.canvas.set_logical_size(800, 800)
 for subplot in plot:
     subplot.auto_scale()
 
-img = np.asarray(plot.renderer.target.draw())
-
 if __name__ == "__main__":
     print(__doc__)
+    fpl.run()

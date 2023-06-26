@@ -32,6 +32,8 @@ pos_xy = np.vstack(circles)
 colors = ["blue"] * 4 + ["red"] * 4 + ["yellow"] * 4 + ["w"] * 4
 
 plot = fpl.Plot()
+# to force a specific framework such as glfw:
+# plot = fpl.Plot(canvas="glfw")
 
 plot.add_line_collection(circles, colors=colors, thickness=10)
 
@@ -40,4 +42,5 @@ plot.show()
 plot.canvas.set_logical_size(800, 800)
 
 if __name__ == "__main__":
+    print(__doc__)
     fpl.run()

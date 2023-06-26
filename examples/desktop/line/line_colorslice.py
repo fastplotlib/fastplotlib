@@ -1,16 +1,18 @@
 """
 Line Plot
 ============
-Example showing data slicing with cosine, sine, sinc lines.
+Example showing color slicing with cosine, sine, sinc lines.
 """
 
 # test_example = true
 
-from fastplotlib import Plot
+import fastplotlib as fpl
 import numpy as np
 
 
-plot = Plot()
+plot = fpl.Plot()
+# to force a specific framework such as glfw:
+# plot = fpl.Plot(canvas="glfw")
 
 xs = np.linspace(-10, 10, 100)
 # sine wave
@@ -37,13 +39,24 @@ sinc_graphic = plot.add_line(data=sinc, thickness=5, colors=colors)
 
 plot.show()
 
-cosine_graphic.data[10:50:5, :2] = sine[10:50:5]
-cosine_graphic.data[90:, 1] = 7
-cosine_graphic.data[0] = np.array([[-10, 0, 0]])
+# indexing of colors
+cosine_graphic.colors[:15] = "magenta"
+cosine_graphic.colors[90:] = "red"
+cosine_graphic.colors[60] = "w"
+
+# indexing to assign colormaps to entire lines or segments
+sinc_graphic.cmap[10:50] = "gray"
+sine_graphic.cmap = "seismic"
+
+# more complex indexing, set the blue value directly from an array
+cosine_graphic.colors[65:90, 0] = np.linspace(0, 1, 90-65)
 
 # additional fancy indexing using numpy
+key = np.array([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 67, 19])
+sinc_graphic.colors[key] = "Red"
+
 key2 = np.array([True, False, True, False, True, True, True, True])
-sinc_graphic.data[key2] = np.array([[5, 1, 2]])
+cosine_graphic.colors[key2] = "Green"
 
 plot.canvas.set_logical_size(800, 800)
 
@@ -53,3 +66,4 @@ img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)
+    fpl.run()

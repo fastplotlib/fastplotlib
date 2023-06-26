@@ -34,6 +34,8 @@ pos_xy = np.vstack(circles)
 cmap_values = [10] * 4 + [0] * 4 + [7] * 4 + [5] * 4
 
 plot = fpl.Plot()
+# to force a specific framework such as glfw:
+# plot = fpl.Plot(canvas="glfw")
 
 plot.add_line_collection(
     circles,
@@ -47,4 +49,5 @@ plot.show()
 plot.canvas.set_logical_size(800, 800)
 
 if __name__ == "__main__":
+    print(__doc__)
     fpl.run()
