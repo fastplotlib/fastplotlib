@@ -6,11 +6,13 @@ Example showing present and scaling feature for lines.
 
 # test_example = true
 
-from fastplotlib import Plot
+import fastplotlib as fpl
 import numpy as np
 
 
-plot = Plot()
+plot = fpl.Plot()
+# to force a specific framework such as glfw:
+# plot = fpl.Plot(canvas="glfw")
 
 xs = np.linspace(-10, 10, 100)
 # sine wave
@@ -47,4 +49,4 @@ img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)
-
+    fpl.run()

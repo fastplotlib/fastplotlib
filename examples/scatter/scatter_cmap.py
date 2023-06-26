@@ -6,13 +6,15 @@ Example showing cmap change for scatter plot.
 
 # test_example = true
 
-from fastplotlib import Plot, run
+import fastplotlib as fpl
 import numpy as np
 from pathlib import Path
 from sklearn.cluster import AgglomerativeClustering
 
 
-plot = Plot()
+plot = fpl.Plot()
+# to force a specific framework such as glfw:
+# plot = fpl.Plot(canvas="glfw")
 
 data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
 data = np.load(data_path)
@@ -43,4 +45,4 @@ scatter_graphic.cmap = "tab10"
 
 if __name__ == "__main__":
     print(__doc__)
-    run()
+    fpl.run()

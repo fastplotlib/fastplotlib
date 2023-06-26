@@ -6,17 +6,12 @@ Example showing present feature for scatter plot.
 
 # test_example = true
 
-from fastplotlib import Plot
+import fastplotlib as fpl
 import numpy as np
 from pathlib import Path
 
-from wgpu.gui.offscreen import WgpuCanvas
-from pygfx import WgpuRenderer
 
-canvas = WgpuCanvas()
-renderer = WgpuRenderer(canvas)
-
-plot = Plot(canvas=canvas, renderer=renderer)
+plot = fpl.Plot()
 
 data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
 data = np.load(data_path)
@@ -41,3 +36,4 @@ img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)
+    fpl.run()
