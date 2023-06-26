@@ -36,7 +36,7 @@ def generate_add_graphics_methods():
         f.write('        """\n')
         f.write(f'        {class_name.__init__.__doc__}\n')
         f.write('        """\n')
-        f.write(f"        g = {class_name.__name__}(data=data, *args, **kwargs)\n")
+        f.write(f"        g = {class_name.__name__}(*args, **kwargs)\n")
         f.write(f'        self.add_graphic(g)\n\n')
 
         f.write(f'        return weakref.proxy(g)\n\n')
