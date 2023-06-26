@@ -1,7 +1,9 @@
 from typing import *
+
 import numpy
-from ..graphics import *
 import weakref
+
+from ..graphics import *
 
 
 class GraphicMethodsMixin:
@@ -70,7 +72,7 @@ class GraphicMethodsMixin:
             plot.show()
         
         """
-        g = HeatmapGraphic(*args, **kwargs)
+        g = HeatmapGraphic(data=data, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -103,7 +105,7 @@ class GraphicMethodsMixin:
             passed to Graphic
         
         """
-        g = HistogramGraphic(*args, **kwargs)
+        g = HistogramGraphic(data=data, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -165,9 +167,7 @@ class GraphicMethodsMixin:
             plot.show()
         
         """
-        print(args)
-        print(kwargs)
-        g = ImageGraphic(*args, **kwargs)
+        g = ImageGraphic(data=data, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -286,7 +286,7 @@ class GraphicMethodsMixin:
 
         
         """
-        g = LineCollection(*args, **kwargs)
+        g = LineCollection(data=data, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -340,7 +340,7 @@ class GraphicMethodsMixin:
 
         
         """
-        g = LineGraphic(*args, **kwargs)
+        g = LineGraphic(data=data, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -451,7 +451,7 @@ class GraphicMethodsMixin:
 
         
         """
-        g = LineStack(*args, **kwargs)
+        g = LineStack(data=data, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -505,7 +505,7 @@ class GraphicMethodsMixin:
 
         
         """
-        g = ScatterGraphic(*args, **kwargs)
+        g = ScatterGraphic(data=data, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -533,7 +533,7 @@ class GraphicMethodsMixin:
             name of graphic, passed to Graphic
         
         """
-        g = TextGraphic(*args, **kwargs)
+        g = TextGraphic(text=text, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)

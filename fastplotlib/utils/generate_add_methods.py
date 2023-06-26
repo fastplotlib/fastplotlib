@@ -1,7 +1,10 @@
 import inspect
 import sys
-from fastplotlib.graphics import *
 import pathlib
+
+from fastplotlib.graphics import *
+
+
 modules = list()
 
 for name, obj in inspect.getmembers(sys.modules[__name__]):
@@ -16,10 +19,10 @@ def generate_add_graphics_methods():
 
     f = open(current_module.joinpath('layouts/graphic_methods_mixin.py'), 'w')
 
-    f.write('from typing import *\n')
+    f.write('from typing import *\n\n')
     f.write('import numpy\n')
-    f.write('from ..graphics import *\n')
     f.write('import weakref\n\n')
+    f.write('from ..graphics import *\n\n')
 
     f.write("\nclass GraphicMethodsMixin:\n")
     f.write("    def __init__(self):\n")
@@ -33,7 +36,7 @@ def generate_add_graphics_methods():
         f.write('        """\n')
         f.write(f'        {class_name.__init__.__doc__}\n')
         f.write('        """\n')
-        f.write(f"        g = {class_name.__name__}(*args, **kwargs)\n")
+        f.write(f"        g = {class_name.__name__}(data=data, *args, **kwargs)\n")
         f.write(f'        self.add_graphic(g)\n\n')
 
         f.write(f'        return weakref.proxy(g)\n\n')
