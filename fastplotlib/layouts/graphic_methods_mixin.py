@@ -21,25 +21,32 @@ class GraphicMethodsMixin:
             array-like, usually numpy.ndarray, must support ``memoryview()``
             Tensorflow Tensors also work **probably**, but not thoroughly tested
             | shape must be ``[x_dim, y_dim]``
+
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
+
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
+
         cmap: str, optional, default "plasma"
             colormap to use to display the data
+
         filter: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
+
         chunk_size: int, default 8192, max 8192
             chunk size for each tile used to make up the heatmap texture
+
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
             set the data, useful if the data arrays are ready-only such as memmaps.
             If False, the input array is itself used as the buffer.
+
         args:
             additional arguments passed to Graphic
+
         kwargs:
             additional keyword arguments passed to Graphic
-
 
         Features
         --------
@@ -52,7 +59,6 @@ class GraphicMethodsMixin:
 
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene
-
 
         Examples
         --------
@@ -70,6 +76,7 @@ class GraphicMethodsMixin:
 
             # show the plot
             plot.show()
+
         
         """
         g = HeatmapGraphic(data, vmin, vmax, cmap, filter, chunk_size, isolated_buffer, *args, **kwargs)
@@ -121,20 +128,27 @@ class GraphicMethodsMixin:
             array-like, usually numpy.ndarray, must support ``memoryview()``
             Tensorflow Tensors also work **probably**, but not thoroughly tested
             | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
+
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
+
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
+
         cmap: str, optional, default "plasma"
             colormap to use to display the image data, ignored if data is RGB
+
         filter: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
+
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
             set the data, useful if the data arrays are ready-only such as memmaps.
             If False, the input array is itself used as the buffer.
+
         args:
             additional arguments passed to Graphic
+
         kwargs:
             additional keyword arguments passed to Graphic
 
@@ -150,8 +164,6 @@ class GraphicMethodsMixin:
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene
 
-
-
         Examples
         --------
         .. code-block:: python
@@ -165,6 +177,7 @@ class GraphicMethodsMixin:
             plot.add_image(data=data)
             # show the plot
             plot.show()
+
         
         """
         g = ImageGraphic(data, vmin, vmax, cmap, filter, isolated_buffer, *args, **kwargs)
@@ -172,7 +185,7 @@ class GraphicMethodsMixin:
 
         return weakref.proxy(g)
 
-    def add_line_collection(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', alpha: float = 1.0, cmap: Union[List[str], str] = None, name: str = None, metadata: Union[list, tuple, numpy.ndarray] = None, *args, **kwargs) -> weakref.proxy(LineCollection):
+    def add_line_collection(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', alpha: float = 1.0, cmap: Union[List[str], str] = None, cmap_values: Union[numpy.ndarray, List] = None, name: str = None, metadata: Union[list, tuple, numpy.ndarray] = None, *args, **kwargs) -> weakref.proxy(LineCollection):
         """
         
         Create a Line Collection
@@ -203,6 +216,9 @@ class GraphicMethodsMixin:
             | if ``list`` of ``str``, each cmap will apply to the individual lines
             **Note:** ``cmap`` overrides any arguments passed to ``colors``
 
+        cmap_values: 1D array-like or list of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
         name: str, optional
             name of the line collection
 
@@ -215,7 +231,6 @@ class GraphicMethodsMixin:
 
         kwargs
             passed to GraphicCollection
-
 
         Features
         --------
@@ -233,7 +248,6 @@ class GraphicMethodsMixin:
             # the data feature also works like this
 
         See :class:`LineGraphic` details on the features.
-
 
         Examples
         --------
@@ -286,12 +300,12 @@ class GraphicMethodsMixin:
 
         
         """
-        g = LineCollection(data, z_position, thickness, colors, alpha, cmap, name, metadata, *args, **kwargs)
+        g = LineCollection(data, z_position, thickness, colors, alpha, cmap, cmap_values, name, metadata, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
 
-    def add_line(self, data: Any, thickness: float = 2.0, colors: Union[str, numpy.ndarray, Iterable] = 'w', alpha: float = 1.0, cmap: str = None, z_position: float = None, collection_index: int = None, *args, **kwargs) -> weakref.proxy(LineGraphic):
+    def add_line(self, data: Any, thickness: float = 2.0, colors: Union[str, numpy.ndarray, Iterable] = 'w', alpha: float = 1.0, cmap: str = None, cmap_values: Union[numpy.ndarray, List] = None, z_position: float = None, collection_index: int = None, *args, **kwargs) -> weakref.proxy(LineGraphic):
         """
         
         Create a line Graphic, 2d or 3d
@@ -311,6 +325,9 @@ class GraphicMethodsMixin:
         cmap: str, optional
             apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors"
+
+        cmap_values: 1D array-like or list of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
 
         alpha: float, optional, default 1.0
             alpha value for the colors
@@ -340,7 +357,7 @@ class GraphicMethodsMixin:
 
         
         """
-        g = LineGraphic(data, thickness, colors, alpha, cmap, z_position, collection_index, *args, **kwargs)
+        g = LineGraphic(data, thickness, colors, alpha, cmap, cmap_values, z_position, collection_index, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -456,7 +473,7 @@ class GraphicMethodsMixin:
 
         return weakref.proxy(g)
 
-    def add_scatter(self, data: numpy.ndarray, sizes: Union[int, numpy.ndarray, list] = 1, colors: numpy.ndarray = 'w', alpha: float = 1.0, cmap: str = None, z_position: float = 0.0, *args, **kwargs) -> weakref.proxy(ScatterGraphic):
+    def add_scatter(self, data: numpy.ndarray, sizes: Union[int, numpy.ndarray, list] = 1, colors: numpy.ndarray = 'w', alpha: float = 1.0, cmap: str = None, cmap_values: Union[numpy.ndarray, List] = None, z_position: float = 0.0, *args, **kwargs) -> weakref.proxy(ScatterGraphic):
         """
         
         Create a Scatter Graphic, 2d or 3d
@@ -476,6 +493,9 @@ class GraphicMethodsMixin:
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
             overrides any argument passed to "colors"
+
+        cmap_values: 1D array-like or list of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
 
         alpha: float, optional, default 1.0
             alpha value for the colors
@@ -505,7 +525,7 @@ class GraphicMethodsMixin:
 
         
         """
-        g = ScatterGraphic(data, sizes, colors, alpha, cmap, z_position, *args, **kwargs)
+        g = ScatterGraphic(data, sizes, colors, alpha, cmap, cmap_values, z_position, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -519,18 +539,25 @@ class GraphicMethodsMixin:
         ----------
         text: str
             display text
+
         position: int tuple, default (0, 0, 0)
             int tuple indicating location of text in scene
+
         size: int, default 10
             text size
+
         face_color: str or array, default "w"
             str or RGBA array to set the color of the text
+
         outline_color: str or array, default "w"
             str or RGBA array to set the outline color of the text
+
         outline_thickness: int, default 0
             text outline thickness
+
         name: str, optional
             name of graphic, passed to Graphic
+
         
         """
         g = TextGraphic(text, position, size, face_color, outline_color, outline_thickness, name, *args, **kwargs)
