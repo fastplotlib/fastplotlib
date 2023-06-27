@@ -72,7 +72,7 @@ class GraphicMethodsMixin:
             plot.show()
         
         """
-        g = HeatmapGraphic(*args, **kwargs)
+        g = HeatmapGraphic(data, vmin, vmax, cmap, filter, chunk_size, isolated_buffer, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -105,7 +105,7 @@ class GraphicMethodsMixin:
             passed to Graphic
         
         """
-        g = HistogramGraphic(*args, **kwargs)
+        g = HistogramGraphic(data, bins, pre_computed, colors, draw_scale_factor, draw_bin_width_scale, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -167,14 +167,7 @@ class GraphicMethodsMixin:
             plot.show()
         
         """
-        print(list(locals().keys()))
-        print(locals())
-
-        l = locals()
-        del l["self"]
-        del l["args"]
-
-        g = ImageGraphic(**l)
+        g = ImageGraphic(data, vmin, vmax, cmap, filter, isolated_buffer, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -293,7 +286,7 @@ class GraphicMethodsMixin:
 
         
         """
-        g = LineCollection(*args, **kwargs)
+        g = LineCollection(data, z_position, thickness, colors, alpha, cmap, name, metadata, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -347,7 +340,7 @@ class GraphicMethodsMixin:
 
         
         """
-        g = LineGraphic(*args, **kwargs)
+        g = LineGraphic(data, thickness, colors, alpha, cmap, z_position, collection_index, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -458,7 +451,7 @@ class GraphicMethodsMixin:
 
         
         """
-        g = LineStack(*args, **kwargs)
+        g = LineStack(data, z_position, thickness, colors, cmap, separation, separation_axis, name, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -512,7 +505,7 @@ class GraphicMethodsMixin:
 
         
         """
-        g = ScatterGraphic(*args, **kwargs)
+        g = ScatterGraphic(data, sizes, colors, alpha, cmap, z_position, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)
@@ -540,7 +533,7 @@ class GraphicMethodsMixin:
             name of graphic, passed to Graphic
         
         """
-        g = TextGraphic(*args, **kwargs)
+        g = TextGraphic(text, position, size, face_color, outline_color, outline_thickness, name, *args, **kwargs)
         self.add_graphic(g)
 
         return weakref.proxy(g)

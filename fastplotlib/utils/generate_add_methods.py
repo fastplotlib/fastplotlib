@@ -32,11 +32,17 @@ def generate_add_graphics_methods():
         class_name = m
         method_name = class_name.type
 
+        class_args = inspect.getfullargspec(class_name)[0][1:]
+        class_args = [arg + ', ' for arg in class_args]
+        s = ""
+        for a in class_args:
+            s += a
+
         f.write(f"    def add_{method_name}{inspect.signature(class_name.__init__)} -> weakref.proxy({class_name.__name__}):\n")
         f.write('        """\n')
         f.write(f'        {class_name.__init__.__doc__}\n')
         f.write('        """\n')
-        f.write(f"        g = {class_name.__name__}(*args, **kwargs)\n")
+        f.write(f"        g = {class_name.__name__}({s}*args, **kwargs)\n")
         f.write(f'        self.add_graphic(g)\n\n')
 
         f.write(f'        return weakref.proxy(g)\n\n')
