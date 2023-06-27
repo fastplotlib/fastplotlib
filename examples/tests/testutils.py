@@ -9,12 +9,18 @@ from itertools import chain
 
 
 ROOT = Path(__file__).parents[2]  # repo root
-examples_dir = ROOT / "examples"
+examples_dir = ROOT / "examples" / "desktop"
 screenshots_dir = examples_dir / "screenshots"
 diffs_dir = examples_dir / "diffs"
 
 # examples live in themed sub-folders
-example_globs = ["image/*.py", "scatter/*.py", "line/*.py", "gridplot/*.py"]
+example_globs = [
+    "image/*.py",
+    "scatter/*.py",
+    "line/*.py",
+    "line_collection/*.py",
+    "gridplot/*.py"
+]
 
 
 def get_wgpu_backend():

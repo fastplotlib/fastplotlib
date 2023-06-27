@@ -2,19 +2,21 @@ import pygfx
 from typing import *
 
 camera_types = {
-    '2d': pygfx.OrthographicCamera,
-    '3d': pygfx.PerspectiveCamera,
+    "2d": pygfx.OrthographicCamera,
+    "3d": pygfx.PerspectiveCamera,
 }
 
 controller_types = {
-    '2d': pygfx.PanZoomController,
-    '3d': pygfx.OrbitController,
+    "2d": pygfx.PanZoomController,
+    "3d": pygfx.OrbitController,
     pygfx.OrthographicCamera: pygfx.PanZoomController,
     pygfx.PerspectiveCamera: pygfx.OrbitController,
 }
 
 
-def create_camera(camera_type: str, big_camera: bool = False) -> Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera]:
+def create_camera(
+    camera_type: str, big_camera: bool = False
+) -> Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera]:
     camera_type = camera_type.split("-")
 
     # kinda messy but works for now

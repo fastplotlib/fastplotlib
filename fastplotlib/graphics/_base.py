@@ -1,17 +1,14 @@
 from typing import *
 import weakref
 from warnings import warn
-
-import numpy as np
-
-from .features._base import cleanup_slice
-
-from pygfx import WorldObject, Group
-from .features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
-
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+import numpy as np
+
+from pygfx import WorldObject
+
+from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
@@ -37,20 +34,22 @@ PYGFX_EVENTS = [
 class BaseGraphic:
     def __init_subclass__(cls, **kwargs):
         """set the type of the graphic in lower case like "image", "line_collection", etc."""
-        cls.type = cls.__name__\
-            .lower()\
-            .replace("graphic", "")\
-            .replace("collection", "_collection")\
+        cls.type = (
+            cls.__name__.lower()
+            .replace("graphic", "")
+            .replace("collection", "_collection")
             .replace("stack", "_stack")
+        )
 
         super().__init_subclass__(**kwargs)
 
 
 class Graphic(BaseGraphic):
     def __init__(
-            self,
-            name: str = None,
-            metadata: Any = None
+        self,
+        name: str = None,
+        metadata: Any = None,
+        collection_index: int = None,
     ):
         """
 
@@ -66,6 +65,7 @@ class Graphic(BaseGraphic):
 
         self.name = name
         self.metadata = metadata
+        self.collection_index = collection_index
         self.registered_callbacks = dict()
         self.present = PresentFeature(parent=self)
 
@@ -161,6 +161,7 @@ class Graphic(BaseGraphic):
 
 class Interaction(ABC):
     """Mixin class that makes graphics interactive"""
+
     @abstractmethod
     def _set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
@@ -170,13 +171,13 @@ class Interaction(ABC):
         pass
 
     def link(
-            self,
-            event_type: str,
-            target: Any,
-            feature: str,
-            new_data: Any,
-            callback: callable = None,
-            bidirectional: bool = False
+        self,
+        event_type: str,
+        target: Any,
+        feature: str,
+        new_data: Any,
+        callback: callable = None,
+        bidirectional: bool = False,
     ):
         """
         Link this graphic to another graphic upon an ``event_type`` to change the ``feature``
@@ -190,14 +191,18 @@ class Interaction(ABC):
             or appropriate feature event (ex. colors, data, etc.) associated with the graphic (can use
             ``graphic_instance.feature_events`` to get a tuple of the valid feature events for the
             graphic)
+
         target: Any
             graphic to be linked to
+
         feature: str
             feature (ex. colors, data, etc.) of the target graphic that will change following
             the event
+
         new_data: Any
             appropriate data that will be changed in the feature of the target graphic after
             the event occurs
+
         callback: callable, optional
             user-specified callable that will handle event,
             the callable must take the following four arguments
@@ -205,9 +210,11 @@ class Interaction(ABC):
             | ''target'' - the graphic to be changed following the event
             | ''event'' - the ''pygfx event'' or ''feature event'' that occurs
             | ''new_data'' - the appropriate data of the ''target'' that will be changed
+
         bidirectional: bool, default False
             if True, the target graphic is also linked back to this graphic instance using the
             same arguments
+
             For example:
             .. code-block::python
 
@@ -229,21 +236,32 @@ class Interaction(ABC):
             feature_instance.add_event_handler(self._event_handler)
 
         else:
-            raise ValueError(f"Invalid event, valid events are: {PYGFX_EVENTS + self.feature_events}")
+            raise ValueError(
+                f"Invalid event, valid events are: {PYGFX_EVENTS + self.feature_events}"
+            )
 
         # make sure target feature is valid
         if feature is not None:
             if feature not in target.feature_events:
-                raise ValueError(f"Invalid feature for target, valid features are: {target.feature_events}")
+                raise ValueError(
+                    f"Invalid feature for target, valid features are: {target.feature_events}"
+                )
 
         if event_type not in self.registered_callbacks.keys():
             self.registered_callbacks[event_type] = list()
 
-        callback_data = CallbackData(target=target, feature=feature, new_data=new_data, callback_function=callback)
+        callback_data = CallbackData(
+            target=target,
+            feature=feature,
+            new_data=new_data,
+            callback_function=callback,
+        )
 
         for existing_callback_data in self.registered_callbacks[event_type]:
             if existing_callback_data == callback_data:
-                warn("linkage already exists for given event, target, and data, skipping")
+                warn(
+                    "linkage already exists for given event, target, and data, skipping"
+                )
                 return
 
         self.registered_callbacks[event_type].append(callback_data)
@@ -252,7 +270,7 @@ class Interaction(ABC):
             if event_type in PYGFX_EVENTS:
                 warn("cannot use bidirectional link for pygfx events")
                 return
-            
+
             target.link(
                 event_type=event_type,
                 target=self,
@@ -260,7 +278,7 @@ class Interaction(ABC):
                 new_data=new_data,
                 callback=callback,
                 bidirectional=False  # else infinite recursion, otherwise target will call
-                                     # this instance .link(), and then it will happen again etc.
+                # this instance .link(), and then it will happen again etc.
             )
 
     def _event_handler(self, event):
@@ -269,7 +287,12 @@ class Interaction(ABC):
             for target_info in self.registered_callbacks[event.type]:
                 if target_info.callback_function is not None:
                     # if callback_function is not None, then callback function should handle the entire event
-                    target_info.callback_function(source=self, target=target_info.target, event=event, new_data=target_info.new_data)
+                    target_info.callback_function(
+                        source=self,
+                        target=target_info.target,
+                        event=event,
+                        new_data=target_info.new_data,
+                    )
 
                 elif isinstance(self, GraphicCollection):
                     # if target is a GraphicCollection, then indices will be stored in collection_index
@@ -286,16 +309,24 @@ class Interaction(ABC):
                             # the real world object in the pick_info and not the proxy
                             if wo is event.pick_info["world_object"]:
                                 indices = i
-                    target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data, indices=indices)
+                    target_info.target._set_feature(
+                        feature=target_info.feature,
+                        new_data=target_info.new_data,
+                        indices=indices,
+                    )
                 else:
                     # if target is a single graphic, then indices do not matter
-                    target_info.target._set_feature(feature=target_info.feature, new_data=target_info.new_data,
-                                                    indices=None)
+                    target_info.target._set_feature(
+                        feature=target_info.feature,
+                        new_data=target_info.new_data,
+                        indices=None,
+                    )
 
 
 @dataclass
 class CallbackData:
     """Class for keeping track of the info necessary for interactivity after event occurs."""
+
     target: Any
     feature: str
     new_data: Any
@@ -327,6 +358,7 @@ class CallbackData:
 @dataclass
 class PreviouslyModifiedData:
     """Class for keeping track of previously modified data at indices"""
+
     data: Any
     indices: Any
 
@@ -341,13 +373,23 @@ class GraphicCollection(Graphic):
         super(GraphicCollection, self).__init__(name)
         self._graphics: List[str] = list()
 
-    @property
-    def graphics(self) -> Tuple[Graphic]:
-        """The Graphics within this collection. Always returns a proxy to the Graphics."""
-        proxies = [weakref.proxy(COLLECTION_GRAPHICS[loc]) for loc in self._graphics]
-        return tuple(proxies)
+        self._graphics_changed: bool = True
+        self._graphics_array: np.ndarray[Graphic] = None
 
-    def add_graphic(self, graphic: Graphic, reset_index: True):
+    @property
+    def graphics(self) -> np.ndarray[Graphic]:
+        """The Graphics within this collection. Always returns a proxy to the Graphics."""
+        if self._graphics_changed:
+            proxies = [
+                weakref.proxy(COLLECTION_GRAPHICS[loc]) for loc in self._graphics
+            ]
+            self._graphics_array = np.array(proxies)
+            self._graphics_array.flags["WRITEABLE"] = False
+            self._graphics_changed = False
+
+        return self._graphics_array
+
+    def add_graphic(self, graphic: Graphic, reset_index: False):
         """Add a graphic to the collection"""
         if not isinstance(graphic, self.child_type):
             raise TypeError(
@@ -360,9 +402,15 @@ class GraphicCollection(Graphic):
         COLLECTION_GRAPHICS[loc] = graphic
 
         self._graphics.append(loc)
+
         if reset_index:
             self._reset_index()
+        elif graphic.collection_index is None:
+            graphic.collection_index = len(self)
+
         self.world_object.add(graphic.world_object)
+
+        self._graphics_changed = True
 
     def remove_graphic(self, graphic: Graphic, reset_index: True):
         """Remove a graphic from the collection"""
@@ -372,54 +420,26 @@ class GraphicCollection(Graphic):
             self._reset_index()
 
         self.world_object.remove(graphic.world_object)
-            
+
+        self._graphics_changed = True
+
+    def __getitem__(self, key):
+        return CollectionIndexer(
+            parent=self,
+            selection=self.graphics[key],
+        )
+
     def __del__(self):
         self.world_object.clear()
 
         for loc in self._graphics:
             del COLLECTION_GRAPHICS[loc]
-            
+
         super().__del__()
 
     def _reset_index(self):
         for new_index, graphic in enumerate(self._graphics):
             graphic.collection_index = new_index
-
-    def __getitem__(self, key):
-        if isinstance(key, (int, np.integer)):
-            # single graphic indexed
-            # !! IMPORTANT: this must return a CollectionIndexer even though it's only one graphic!!
-            # otherwise it doesn't work properly with events that except collections
-            key = [key]
-
-        if isinstance(key, slice):
-            key = cleanup_slice(key, upper_bound=len(self))
-            selection_indices = range(key.start, key.stop, key.step)
-            selection = self.graphics[key]
-
-        # fancy-ish indexing
-        elif isinstance(key, (tuple, list, np.ndarray)):
-            if isinstance(key, np.ndarray):
-                if not key.ndim == 1:
-                    raise TypeError(f"{self.__class__.__name__} indexing supports "
-                                    f"1D numpy arrays, int, slice, tuple or list of integers, "
-                                    f"your numpy arrays has <{key.ndim}> dimensions.")
-            selection = list()
-
-            for ix in key:
-                selection.append(self.graphics[ix])
-
-            selection_indices = key
-        else:
-            raise TypeError(f"{self.__class__.__name__} indexing supports "
-                            f"1D numpy arrays, int, slice, tuple or list of integers, "
-                            f"you have passed a <{type(key)}>")
-
-        return CollectionIndexer(
-            parent=self,
-            selection=selection,
-            selection_indices=selection_indices
-        )
 
     def __len__(self):
         return len(self._graphics)
@@ -431,11 +451,11 @@ class GraphicCollection(Graphic):
 
 class CollectionIndexer:
     """Collection Indexer"""
+
     def __init__(
-            self,
-            parent: GraphicCollection,
-            selection: List[Graphic],
-            selection_indices: Union[list, range],
+        self,
+        parent: GraphicCollection,
+        selection: List[Graphic],
     ):
         """
 
@@ -443,14 +463,14 @@ class CollectionIndexer:
         ----------
         parent: GraphicCollection
             the GraphicCollection object that is being indexed
+
         selection: list of Graphics
             a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
-        selection_indices: Union[list, range]
-            the corresponding indices from the parent GraphicCollection that were selected
+
         """
+
         self._parent = weakref.proxy(parent)
         self._selection = selection
-        self._selection_indices = selection_indices
 
         # we use parent.graphics[0] instead of selection[0]
         # because the selection can be empty
@@ -458,12 +478,11 @@ class CollectionIndexer:
             attr = getattr(self._parent.graphics[0], attr_name)
             if isinstance(attr, GraphicFeature):
                 collection_feature = CollectionFeature(
-                    parent,
-                    self._selection,
-                    selection_indices=self._selection_indices,
-                    feature=attr_name
+                    self._selection, feature=attr_name
                 )
-                collection_feature.__doc__ = f"indexable <{attr_name}> feature for collection"
+                collection_feature.__doc__ = (
+                    f"indexable <{attr_name}> feature for collection"
+                )
                 setattr(self, attr_name, collection_feature)
 
     @property
@@ -484,31 +503,26 @@ class CollectionIndexer:
         return len(self._selection)
 
     def __repr__(self):
-        return f"{self.__class__.__name__} @ {hex(id(self))}\n" \
-               f"Selection of <{len(self._selection)}> {self._selection[0].__class__.__name__}"
+        return (
+            f"{self.__class__.__name__} @ {hex(id(self))}\n"
+            f"Selection of <{len(self._selection)}> {self._selection[0].__class__.__name__}"
+        )
 
 
 class CollectionFeature:
     """Collection Feature"""
-    def __init__(
-            self,
-            parent: GraphicCollection,
-            selection: List[Graphic],
-            selection_indices,
-            feature: str
-    ):
+
+    def __init__(self, selection: List[Graphic], feature: str):
         """
-        parent: GraphicCollection
-            GraphicCollection feature instance that is being indexed
         selection: list of Graphics
             a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
-        selection_indices: Union[list, range]
-            the corresponding indices from the parent GraphicCollection that were selected
+
         feature: str
             feature of Graphics in the GraphicCollection being indexed
+
         """
+
         self._selection = selection
-        self._selection_indices = selection_indices
         self._feature = feature
 
         self._feature_instances: List[GraphicFeature] = list()

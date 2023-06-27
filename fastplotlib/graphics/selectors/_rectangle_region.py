@@ -3,10 +3,9 @@ import numpy as np
 
 import pygfx
 
-from .._base import Graphic, GraphicCollection
-from ..features._base import GraphicFeature, FeatureEvent
+from .._base import Graphic
+from .._features import GraphicFeature
 from ._base_selector import BaseSelector
-
 from ._mesh_positions import x_right, x_left, y_top, y_bottom
 
 
@@ -14,8 +13,7 @@ class RectangleBoundsFeature(GraphicFeature):
     """
     Feature for a linearly bounding region
 
-    Pick Info
-    ---------
+    **event pick info**
 
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
     | key                | type                          | description                                                                          |
@@ -26,7 +24,10 @@ class RectangleBoundsFeature(GraphicFeature):
     +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
 
     """
-    def __init__(self, parent, bounds: Tuple[int, int], axis: str, limits: Tuple[int, int]):
+
+    def __init__(
+        self, parent, bounds: Tuple[int, int], axis: str, limits: Tuple[int, int]
+    ):
         super(RectangleBoundsFeature, self).__init__(parent, data=bounds)
 
         self._axis = axis
@@ -78,37 +79,25 @@ class RectangleBoundsFeature(GraphicFeature):
         # left line
         z = self._parent.edges[0].geometry.positions.data[:, -1][0]
         self._parent.edges[0].geometry.positions.data[:] = np.array(
-            [
-                [xmin, ymin, z],
-                [xmin, ymax, z]
-            ]
+            [[xmin, ymin, z], [xmin, ymax, z]]
         )
 
         # right line
         self._parent.edges[1].geometry.positions.data[:] = np.array(
-            [
-                [xmax, ymin, z],
-                [xmax, ymax, z]
-            ]
+            [[xmax, ymin, z], [xmax, ymax, z]]
         )
 
         # bottom line
         self._parent.edges[2].geometry.positions.data[:] = np.array(
-            [
-                [xmin, ymin, z],
-                [xmax, ymin, z]
-            ]
+            [[xmin, ymin, z], [xmax, ymin, z]]
         )
 
         # top line
         self._parent.edges[3].geometry.positions.data[:] = np.array(
-            [
-                [xmin, ymax, z],
-                [xmax, ymax, z]
-            ]
+            [[xmin, ymax, z], [xmax, ymax, z]]
         )
 
-        self._data = value#(value[0], value[1])
+        self._data = value  # (value[0], value[1])
 
         # send changes to GPU
         self._parent.fill.geometry.positions.update_range()
@@ -150,22 +139,20 @@ class RectangleBoundsFeature(GraphicFeature):
 
 
 class RectangleRegionSelector(Graphic, BaseSelector):
-    feature_events = (
-        "bounds"
-    )
+    feature_events = "bounds"
 
     def __init__(
-            self,
-            bounds: Tuple[int, int, int, int],
-            limits: Tuple[int, int],
-            origin: Tuple[int, int],
-            axis: str = "x",
-            parent: Graphic = None,
-            resizable: bool = True,
-            fill_color=(0, 0, 0.35),
-            edge_color=(0.8, 0.8, 0),
-            arrow_keys_modifier: str = "Shift",
-            name: str = None
+        self,
+        bounds: Tuple[int, int, int, int],
+        limits: Tuple[int, int],
+        origin: Tuple[int, int],
+        axis: str = "x",
+        parent: Graphic = None,
+        resizable: bool = True,
+        fill_color=(0, 0, 0.35),
+        edge_color=(0.8, 0.8, 0),
+        arrow_keys_modifier: str = "Shift",
+        name: str = None,
     ):
         """
         Create a LinearRegionSelector graphic which can be moved only along either the x-axis or y-axis.
@@ -227,7 +214,7 @@ class RectangleRegionSelector(Graphic, BaseSelector):
 
         self.fill = pygfx.Mesh(
             pygfx.box_geometry(width, height, 1),
-            pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color))
+            pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color)),
         )
 
         self.fill.position.set(*origin, -2)
@@ -235,51 +222,61 @@ class RectangleRegionSelector(Graphic, BaseSelector):
 
         # position data for the left edge line
         left_line_data = np.array(
-            [[origin[0], (-height / 2) + origin[1], 0.5],
-             [origin[0], (height / 2) + origin[1], 0.5]]
+            [
+                [origin[0], (-height / 2) + origin[1], 0.5],
+                [origin[0], (height / 2) + origin[1], 0.5],
+            ]
         ).astype(np.float32)
 
         left_line = pygfx.Line(
             pygfx.Geometry(positions=left_line_data),
-            pygfx.LineMaterial(thickness=3, color=edge_color)
+            pygfx.LineMaterial(thickness=3, color=edge_color),
         )
 
         # position data for the right edge line
         right_line_data = np.array(
-            [[bounds[1], (-height / 2) + origin[1], 0.5],
-             [bounds[1], (height / 2) + origin[1], 0.5]]
+            [
+                [bounds[1], (-height / 2) + origin[1], 0.5],
+                [bounds[1], (height / 2) + origin[1], 0.5],
+            ]
         ).astype(np.float32)
 
         right_line = pygfx.Line(
             pygfx.Geometry(positions=right_line_data),
-            pygfx.LineMaterial(thickness=3, color=edge_color)
+            pygfx.LineMaterial(thickness=3, color=edge_color),
         )
 
         # position data for the left edge line
-        bottom_line_data = \
-            np.array(
-                [[(-width / 2) + origin[0], origin[1], 0.5],
-                 [(width / 2) + origin[0], origin[1], 0.5]]
-            ).astype(np.float32)
+        bottom_line_data = np.array(
+            [
+                [(-width / 2) + origin[0], origin[1], 0.5],
+                [(width / 2) + origin[0], origin[1], 0.5],
+            ]
+        ).astype(np.float32)
 
         bottom_line = pygfx.Line(
             pygfx.Geometry(positions=bottom_line_data),
-            pygfx.LineMaterial(thickness=3, color=edge_color)
+            pygfx.LineMaterial(thickness=3, color=edge_color),
         )
 
         # position data for the right edge line
         top_line_data = np.array(
-            [[(-width / 2) + origin[0], bounds[1], 0.5],
-             [(width / 2) + origin[0], bounds[1], 0.5]]
+            [
+                [(-width / 2) + origin[0], bounds[1], 0.5],
+                [(width / 2) + origin[0], bounds[1], 0.5],
+            ]
         ).astype(np.float32)
 
         top_line = pygfx.Line(
             pygfx.Geometry(positions=top_line_data),
-            pygfx.LineMaterial(thickness=3, color=edge_color)
+            pygfx.LineMaterial(thickness=3, color=edge_color),
         )
 
         self.edges: Tuple[pygfx.Line, ...] = (
-            left_line, right_line, bottom_line, top_line
+            left_line,
+            right_line,
+            bottom_line,
+            top_line,
         )  # left line, right line, bottom line, top line
 
         # add the edge lines

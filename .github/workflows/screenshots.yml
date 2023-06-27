@@ -4,11 +4,17 @@ on:
   pull_request:
     branches:
       - master
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
 
 jobs:
   screenshots:
     name: Regenerate
     runs-on: 'ubuntu-latest'
+    if: ${{ !github.event.pull_request.draft }}
     steps:
       - name: Install git-lfs
         run: |
@@ -42,4 +48,4 @@ jobs:
         if: always()
         with:
           name: screenshots
-          path: examples/screenshots/
+          path: examples/desktop/screenshots/

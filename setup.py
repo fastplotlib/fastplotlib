@@ -12,7 +12,8 @@ extras_require = {
     "docs": [
         "sphinx",
         "pydata-sphinx-theme<0.10.0",
-        "glfw"
+        "glfw",
+        "jupyter_rfb"  # required so ImageWidget docs show up
     ],
 
     "notebook":
@@ -27,10 +28,10 @@ extras_require = {
         "nbmake",
         "scipy",
         "imageio",
-        "imageio-ffmpeg>=0.4.7",
         "jupyterlab",
         "jupyter-rfb",
-        "Pillow",
+        "scikit-learn",
+        "tqdm"
     ]
 }
 
