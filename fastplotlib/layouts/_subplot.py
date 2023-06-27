@@ -121,21 +121,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         if self.name is not None:
             self.set_title(self.name)
 
-    def _create_graphic(self, graphic_class, *args, **kwargs) -> weakref.proxy:
-        if "center" in kwargs.keys():
-            center = kwargs.pop("center")
-        else:
-            center = False
-
-        if "name" in kwargs.keys():
-            self._check_graphic_name_exists(kwargs["name"])
-
-        graphic = graphic_class(*args, **kwargs)
-        self.add_graphic(graphic, center=center)
-
-        # only return a proxy to the real graphic
-        return weakref.proxy(graphic)
-
     @property
     def name(self) -> Any:
         return self._name
