@@ -167,13 +167,17 @@ class GraphicMethodsMixin:
             plot.show()
         
         """
-        print(args, kwargs)
+        print(list(locals().keys()))
+        print(locals())
 
-        return None
-        # g = ImageGraphic(*args, **kwargs)
-        # self.add_graphic(g)
-        #
-        # return weakref.proxy(g)
+        l = locals()
+        del l["self"]
+        del l["args"]
+
+        g = ImageGraphic(**l)
+        self.add_graphic(g)
+
+        return weakref.proxy(g)
 
     def add_line_collection(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', alpha: float = 1.0, cmap: Union[List[str], str] = None, name: str = None, metadata: Union[list, tuple, numpy.ndarray] = None, *args, **kwargs) -> weakref.proxy(LineCollection):
         """
