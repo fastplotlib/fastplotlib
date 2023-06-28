@@ -19,10 +19,13 @@ def generate_add_graphics_methods():
 
     f = open(current_module.joinpath('layouts/graphic_methods_mixin.py'), 'w')
 
+    f.write('# This is an auto-generated file and should not be modified directly\n\n')
+
     f.write('from typing import *\n\n')
     f.write('import numpy\n')
     f.write('import weakref\n\n')
-    f.write('from ..graphics import *\n\n')
+    f.write('from ..graphics import *\n')
+    f.write('from ..graphics._base import Graphic\n\n')
 
     f.write("\nclass GraphicMethodsMixin:\n")
     f.write("    def __init__(self):\n")
