@@ -1,3 +1,4 @@
+import weakref
 from typing import *
 from warnings import warn
 from functools import partial
@@ -89,11 +90,13 @@ class ImageWidget:
         return self._gridplot
 
     @property
-    def managed_graphics(self):
+    def managed_graphics(self) -> List[weakref.proxy]:
         """List of ``ImageWidget`` managed graphics."""
         iw_managed = list()
         for subplot in self.gridplot:
-            iw_managed.append(subplot["image_widget_managed"])
+            # empty subplots will not have any image widget data
+            if len(subplot.graphics) > 0:
+                iw_managed.append(subplot["image_widget_managed"])
         return iw_managed
 
     @property
