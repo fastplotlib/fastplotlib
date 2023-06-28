@@ -940,8 +940,10 @@ class ImageWidgetToolbar:
             tooltip="reset vmin/vmax",
         )
 
+        # only for xy data, no time point slider needed
         if self.iw.ndim == 2:
             self.widget = HBox([self.reset_vminvmax_button])
+        # for txy, tzxy, etc. data
         else:
 
             self.step_size_setter = BoundedIntText(
