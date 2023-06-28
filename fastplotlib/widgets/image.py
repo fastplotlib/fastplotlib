@@ -940,33 +940,38 @@ class ImageWidgetToolbar:
             tooltip="reset vmin/vmax",
         )
 
-        self.step_size_setter = BoundedIntText(
-            value=1,
-            min=1,
-            max=self.iw.sliders["t"].max,
-            step=1,
-            description="Step Size:",
-            disabled=False,
-            description_tooltip="set slider step",
-            layout=Layout(width="150px"),
-        )
-        self.play_button = Play(
-            value=0,
-            min=iw.sliders["t"].min,
-            max=iw.sliders["t"].max,
-            step=iw.sliders["t"].step,
-            description="play/pause",
-            disabled=False,
-        )
+        if self.iw.ndim == 2:
+            self.widget = HBox([self.reset_vminvmax_button])
+        else:
 
-        self.widget = HBox(
-            [self.reset_vminvmax_button, self.play_button, self.step_size_setter]
-        )
+            self.step_size_setter = BoundedIntText(
+                value=1,
+                min=1,
+                max=self.iw.sliders["t"].max,
+                step=1,
+                description="Step Size:",
+                disabled=False,
+                description_tooltip="set slider step",
+                layout=Layout(width="150px"),
+            )
+            self.play_button = Play(
+                value=0,
+                min=iw.sliders["t"].min,
+                max=iw.sliders["t"].max,
+                step=iw.sliders["t"].step,
+                description="play/pause",
+                disabled=False,
+            )
+
+            self.widget = HBox(
+                [self.reset_vminvmax_button, self.play_button, self.step_size_setter]
+            )
+
+            self.step_size_setter.observe(self.change_stepsize, "value")
+            jslink((self.play_button, "value"), (self.iw.sliders["t"], "value"))
+            jslink((self.play_button, "max"), (self.iw.sliders["t"], "max"))
 
         self.reset_vminvmax_button.on_click(self.reset_vminvmax)
-        self.step_size_setter.observe(self.change_stepsize, "value")
-        jslink((self.play_button, "value"), (self.iw.sliders["t"], "value"))
-        jslink((self.play_button, "max"), (self.iw.sliders["t"], "max"))
 
     def reset_vminvmax(self, obj):
         if len(self.iw.vmin_vmax_sliders) != 0:
