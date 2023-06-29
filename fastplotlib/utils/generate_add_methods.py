@@ -31,7 +31,7 @@ def generate_add_graphics_methods():
     f.write("    def __init__(self):\n")
     f.write("        pass\n\n")
 
-    f.write("    def _create_graphic(self, graphic_class, *args, **kwargs) -> weakref.proxy:\n")
+    f.write("    def _create_graphic(self, graphic_class, *args, **kwargs) -> Graphic:\n")
     f.write("        if 'center' in kwargs.keys():\n")
     f.write("            center = kwargs.pop('center')\n")
     f.write("        else:\n")
@@ -54,7 +54,7 @@ def generate_add_graphics_methods():
         for a in class_args:
             s += a
 
-        f.write(f"    def add_{method_name}{inspect.signature(class_name.__init__)} -> weakref.proxy:\n")
+        f.write(f"    def add_{method_name}{inspect.signature(class_name.__init__)} -> {class_name.__name__}:\n")
         f.write('        """\n')
         f.write(f'        {class_name.__init__.__doc__}\n')
         f.write('        """\n')
