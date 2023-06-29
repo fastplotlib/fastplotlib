@@ -90,7 +90,7 @@ class ImageWidget:
         return self._gridplot
 
     @property
-    def managed_graphics(self) -> List[weakref.proxy]:
+    def managed_graphics(self) -> List[ImageGraphic]:
         """List of ``ImageWidget`` managed graphics."""
         iw_managed = list()
         for subplot in self.gridplot:
