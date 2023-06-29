@@ -945,7 +945,6 @@ class ImageWidgetToolbar:
             self.widget = HBox([self.reset_vminvmax_button])
         # for txy, tzxy, etc. data
         else:
-
             self.step_size_setter = BoundedIntText(
                 value=1,
                 min=1,
@@ -956,6 +955,16 @@ class ImageWidgetToolbar:
                 description_tooltip="set slider step",
                 layout=Layout(width="150px"),
             )
+            self.speed_text = BoundedIntText(
+                value=100,
+                min=1,
+                max=1_000,
+                step=50,
+                description="Speed",
+                disabled=False,
+                description_tooltip="Playback speed, this is NOT framerate.\nArbitrary units between 1 - 1,000",
+                layout=Layout(width="150px"),
+            )
             self.play_button = Play(
                 value=0,
                 min=iw.sliders["t"].min,
@@ -964,20 +973,26 @@ class ImageWidgetToolbar:
                 description="play/pause",
                 disabled=False,
             )
-
             self.widget = HBox(
-                [self.reset_vminvmax_button, self.play_button, self.step_size_setter]
+                [self.reset_vminvmax_button, self.play_button, self.step_size_setter, self.speed_text]
             )
 
-            self.step_size_setter.observe(self.change_stepsize, "value")
+            self.play_button.interval = 10
+
+            self.step_size_setter.observe(self._change_stepsize, "value")
+            self.speed_text.observe(self._change_framerate, "value")
             jslink((self.play_button, "value"), (self.iw.sliders["t"], "value"))
             jslink((self.play_button, "max"), (self.iw.sliders["t"], "max"))
 
-        self.reset_vminvmax_button.on_click(self.reset_vminvmax)
+        self.reset_vminvmax_button.on_click(self._reset_vminvmax)
 
-    def reset_vminvmax(self, obj):
+    def _reset_vminvmax(self, obj):
         if len(self.iw.vmin_vmax_sliders) != 0:
             self.iw.reset_vmin_vmax()
 
-    def change_stepsize(self, obj):
+    def _change_stepsize(self, obj):
         self.iw.sliders["t"].step = self.step_size_setter.value
+
+    def _change_framerate(self, change):
+        interval = int(1000 / change["new"])
+        self.play_button.interval = interval
