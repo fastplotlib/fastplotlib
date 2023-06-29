@@ -92,11 +92,34 @@ class GridPlot(RecordMixin):
                 self.shape
             )
 
+        if "names" in kwargs.keys():
+            self.names = to_array(kwargs["names"])
+            print(self.names)
+            if self.names.shape != self.shape:
+                raise ValueError
+        else:
+            self.names = None
+
         if isinstance(controllers, str):
             if controllers == "sync":
                 controllers = np.zeros(
                     self.shape[0] * self.shape[1], dtype=int
                 ).reshape(self.shape)
+
+        if (self.names is not None) & all(isinstance(item, str) for item in controllers[0]):
+            idx_async_cont = np.shape(controllers)[0]
+            c = to_array(controllers)
+            controllers = np.zeros(
+                self.shape[0] * self.shape[1], dtype=int
+            ).reshape(self.shape)
+            for i in range(self.shape[0]):
+                for j in range(self.shape[1]):
+                    item = np.argwhere(c == self.names[i][j])
+                    if len(item) != 0:
+                        controllers[i, j] = item[0][0]
+                    else:
+                        controllers[i, j] = idx_async_cont
+                        idx_async_cont += 1
 
         if controllers is None:
             controllers = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
@@ -143,13 +166,6 @@ class GridPlot(RecordMixin):
 
         if renderer is None:
             renderer = pygfx.renderers.WgpuRenderer(canvas)
-
-        if "names" in kwargs.keys():
-            self.names = to_array(kwargs["names"])
-            if self.names.shape != self.shape:
-                raise ValueError
-        else:
-            self.names = None
 
         self.canvas = canvas
         self.renderer = renderer
