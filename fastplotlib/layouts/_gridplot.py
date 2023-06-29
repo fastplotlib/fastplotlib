@@ -34,14 +34,14 @@ valid_cameras = ["2d", "2d-big", "3d", "3d-big"]
 
 class GridPlot(RecordMixin):
     def __init__(
-        self,
-        shape: Tuple[int, int],
-        cameras: Union[np.ndarray, str] = "2d",
-        controllers: Union[np.ndarray, str] = None,
-        canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
-        renderer: pygfx.WgpuRenderer = None,
-        size: Tuple[int, int] = (500, 300),
-        **kwargs,
+            self,
+            shape: Tuple[int, int],
+            cameras: Union[np.ndarray, str] = "2d",
+            controllers: Union[np.ndarray, str] = None,
+            canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
+            renderer: pygfx.WgpuRenderer = None,
+            size: Tuple[int, int] = (500, 300),
+            **kwargs,
     ):
         """
         A grid of subplots.
@@ -94,9 +94,8 @@ class GridPlot(RecordMixin):
 
         if "names" in kwargs.keys():
             self.names = to_array(kwargs["names"])
-            print(self.names)
             if self.names.shape != self.shape:
-                raise ValueError
+                raise ValueError(f"subplot names: {self.names} must be in gridplot shape: {self.shape}")
         else:
             self.names = None
 
@@ -106,20 +105,22 @@ class GridPlot(RecordMixin):
                     self.shape[0] * self.shape[1], dtype=int
                 ).reshape(self.shape)
 
-        if (self.names is not None) & all(isinstance(item, str) for item in controllers[0]):
-            idx_async_cont = np.shape(controllers)[0]
-            c = to_array(controllers)
-            controllers = np.zeros(
-                self.shape[0] * self.shape[1], dtype=int
-            ).reshape(self.shape)
-            for i in range(self.shape[0]):
-                for j in range(self.shape[1]):
-                    item = np.argwhere(c == self.names[i][j])
-                    if len(item) != 0:
-                        controllers[i, j] = item[0][0]
-                    else:
-                        controllers[i, j] = idx_async_cont
-                        idx_async_cont += 1
+        # Check if 'names' and 'controllers' both have values, and if the first row values of controller are strings
+        if self.names and controllers is not None:
+            if all(isinstance(item, str) for item in controllers[0]):
+                idx_async_cont = np.shape(controllers)[0]
+                c = to_array(controllers)
+                controllers = np.zeros(
+                    self.shape[0] * self.shape[1], dtype=int
+                ).reshape(self.shape)
+                for i in range(self.shape[0]):
+                    for j in range(self.shape[1]):
+                        item = np.argwhere(c == self.names[i][j])
+                        if len(item) != 0:
+                            controllers[i, j] = item[0][0]
+                        else:
+                            controllers[i, j] = idx_async_cont
+                            idx_async_cont += 1
 
         if controllers is None:
             controllers = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
@@ -139,8 +140,8 @@ class GridPlot(RecordMixin):
         # create controllers if the arguments were integers
         if np.issubdtype(controllers.dtype, np.integer):
             if not np.all(
-                np.sort(np.unique(controllers))
-                == np.arange(np.unique(controllers).size)
+                    np.sort(np.unique(controllers))
+                    == np.arange(np.unique(controllers).size)
             ):
                 raise ValueError("controllers must be consecutive integers")
 
@@ -242,10 +243,10 @@ class GridPlot(RecordMixin):
                 fn()
 
     def add_animations(
-        self,
-        *funcs: Iterable[callable],
-        pre_render: bool = True,
-        post_render: bool = False,
+            self,
+            *funcs: Iterable[callable],
+            pre_render: bool = True,
+            post_render: bool = False,
     ):
         """
         Add function(s) that are called on every render cycle.
@@ -297,7 +298,7 @@ class GridPlot(RecordMixin):
             self._animate_funcs_post.remove(func)
 
     def show(
-        self, autoscale: bool = True, maintain_aspect: bool = None, toolbar: bool = True
+            self, autoscale: bool = True, maintain_aspect: bool = None, toolbar: bool = True
     ):
         """
         Begins the rendering event loop and returns the canvas
