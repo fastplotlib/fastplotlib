@@ -500,8 +500,8 @@ class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
             img.row_chunk_index = chunk[0]
             img.col_chunk_index = chunk[1]
 
-            img.position_x = x_pos
-            img.position_y = y_pos
+            img.world.position.x = x_pos
+            img.world.position.y = y_pos
 
             self.world_object.add(img)
 
