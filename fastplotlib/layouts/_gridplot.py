@@ -105,22 +105,21 @@ class GridPlot(RecordMixin):
                     self.shape[0] * self.shape[1], dtype=int
                 ).reshape(self.shape)
 
-        # Check if 'names' and 'controllers' both have values, and if the first row values of controller are strings
-        if self.names and controllers is not None:
-            if all(isinstance(item, str) for item in controllers[0]):
-                idx_async_cont = np.shape(controllers)[0]
-                c = to_array(controllers)
+        # Check if 'names' and 'controllers' both have values; check if values in controller array are strings
+        if (self.names is not None) and (controllers is not None):
+            c = to_array(controllers)
+            if isinstance(c[0, 0], str):
+                idx_async_controllers = np.shape(c)[0]
                 controllers = np.zeros(
                     self.shape[0] * self.shape[1], dtype=int
                 ).reshape(self.shape)
-                for i in range(self.shape[0]):
-                    for j in range(self.shape[1]):
-                        item = np.argwhere(c == self.names[i][j])
-                        if len(item) != 0:
-                            controllers[i, j] = item[0][0]
-                        else:
-                            controllers[i, j] = idx_async_cont
-                            idx_async_cont += 1
+                for positions in product(range(self.shape[0]), range(self.shape[1])):
+                    item = np.argwhere(c == self.names[positions])
+                    if len(item) != 0:
+                        controllers[positions] = item[0][0]
+                    else:
+                        controllers[positions] = idx_async_controllers
+                        idx_async_controllers += 1
 
         if controllers is None:
             controllers = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
