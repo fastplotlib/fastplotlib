@@ -3,8 +3,8 @@ from pathlib import Path
 
 
 install_requires = [
-    'numpy',
-    'pygfx>=0.1.13',
+    "numpy>=1.23.0",
+    "pygfx>=0.1.13",
 ]
 
 
@@ -13,13 +13,15 @@ extras_require = {
         "sphinx",
         "pydata-sphinx-theme<0.10.0",
         "glfw",
-        "jupyter_rfb"  # required so ImageWidget docs show up
+        "jupyter-rfb>=0.4.1"  # required so ImageWidget docs show up
+        "ipywidgets>=8.0.0,<9"
     ],
 
     "notebook":
     [
-        'jupyterlab',
-        'jupyter-rfb',
+        "jupyterlab",
+        "jupyter-rfb>=0.4.1",
+        "ipywidgets>=8.0.0,<9"
     ],
 
     "tests":
@@ -29,7 +31,8 @@ extras_require = {
         "scipy",
         "imageio",
         "jupyterlab",
-        "jupyter-rfb",
+        "jupyter-rfb>=0.4.1",
+        "ipywidgets>=8.0.0,<9",
         "scikit-learn",
         "tqdm"
     ]
