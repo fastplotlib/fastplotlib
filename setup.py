@@ -13,7 +13,7 @@ extras_require = {
         "sphinx",
         "pydata-sphinx-theme<0.10.0",
         "glfw",
-        "jupyter-rfb>=0.4.1"  # required so ImageWidget docs show up
+        "jupyter-rfb>=0.4.1",  # required so ImageWidget docs show up
         "ipywidgets>=8.0.0,<9"
     ],
 
