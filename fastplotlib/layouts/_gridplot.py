@@ -34,14 +34,14 @@ valid_cameras = ["2d", "2d-big", "3d", "3d-big"]
 
 class GridPlot(RecordMixin):
     def __init__(
-            self,
-            shape: Tuple[int, int],
-            cameras: Union[np.ndarray, str] = "2d",
-            controllers: Union[np.ndarray, str] = None,
-            canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
-            renderer: pygfx.WgpuRenderer = None,
-            size: Tuple[int, int] = (500, 300),
-            **kwargs,
+        self,
+        shape: Tuple[int, int],
+        cameras: Union[np.ndarray, str] = "2d",
+        controllers: Union[np.ndarray, str] = None,
+        canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
+        renderer: pygfx.WgpuRenderer = None,
+        size: Tuple[int, int] = (500, 300),
+        **kwargs,
     ):
         """
         A grid of subplots.
@@ -139,8 +139,8 @@ class GridPlot(RecordMixin):
         # create controllers if the arguments were integers
         if np.issubdtype(controllers.dtype, np.integer):
             if not np.all(
-                    np.sort(np.unique(controllers))
-                    == np.arange(np.unique(controllers).size)
+                np.sort(np.unique(controllers))
+                == np.arange(np.unique(controllers).size)
             ):
                 raise ValueError("controllers must be consecutive integers")
 
@@ -242,10 +242,10 @@ class GridPlot(RecordMixin):
                 fn()
 
     def add_animations(
-            self,
-            *funcs: Iterable[callable],
-            pre_render: bool = True,
-            post_render: bool = False,
+        self,
+        *funcs: Iterable[callable],
+        pre_render: bool = True,
+        post_render: bool = False,
     ):
         """
         Add function(s) that are called on every render cycle.
@@ -297,7 +297,7 @@ class GridPlot(RecordMixin):
             self._animate_funcs_post.remove(func)
 
     def show(
-            self, autoscale: bool = True, maintain_aspect: bool = None, toolbar: bool = True
+        self, autoscale: bool = True, maintain_aspect: bool = None, toolbar: bool = True
     ):
         """
         Begins the rendering event loop and returns the canvas
