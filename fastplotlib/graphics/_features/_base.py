@@ -6,7 +6,7 @@ import weakref
 
 import numpy as np
 
-from pygfx import Buffer, Texture
+import pygfx
 
 
 supported_dtypes = [
@@ -303,7 +303,7 @@ class GraphicFeatureIndexable(GraphicFeature):
 
     @property
     @abstractmethod
-    def buffer(self) -> Union[Buffer, Texture]:
+    def buffer(self) -> Union[pygfx.Buffer, pygfx.Texture]:
         """Underlying buffer for this feature"""
         pass
 

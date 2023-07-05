@@ -1,5 +1,5 @@
 import numpy as np
-from pygfx import Color
+import pygfx
 
 from ...utils import make_colors, get_cmap_texture, make_pygfx_colors, parse_cmap_values
 from ._base import (
@@ -29,7 +29,7 @@ class ColorFeature(GraphicFeatureIndexable):
     """
 
     @property
-    def buffer(self):
+    def buffer(self) -> pygfx.Buffer:
         return self._parent.world_object.geometry.colors
 
     def __getitem__(self, item):
@@ -93,11 +93,11 @@ class ColorFeature(GraphicFeatureIndexable):
                         f"where the length of the iterable is the same as the number of datapoints."
                     )
 
-                data = np.vstack([np.array(Color(c)) for c in colors])
+                data = np.vstack([np.array(pygfx.Color(c)) for c in colors])
 
             # if it's a single RGBA array as a tuple/list
             elif len(colors) == 4:
-                c = Color(colors)
+                c = pygfx.Color(colors)
                 data = np.repeat(np.array([c]), n_colors, axis=0)
 
             else:
@@ -171,7 +171,7 @@ class ColorFeature(GraphicFeatureIndexable):
         new_data_size = len(indices)
 
         if not isinstance(value, np.ndarray):
-            color = np.array(Color(value))  # pygfx color parser
+            color = np.array(pygfx.Color(value))  # pygfx color parser
             # make it of shape [n_colors_modify, 4]
             new_colors = np.repeat(
                 np.array([color]).astype(np.float32), new_data_size, axis=0

@@ -2,7 +2,7 @@ from typing import *
 
 import numpy as np
 
-from pygfx import Buffer, Texture
+import pygfx
 
 from ._base import (
     GraphicFeatureIndexable,
@@ -26,7 +26,7 @@ class PointsDataFeature(GraphicFeatureIndexable):
         )
 
     @property
-    def buffer(self) -> Buffer:
+    def buffer(self) -> pygfx.Buffer:
         return self._parent.world_object.geometry.positions
 
     def __getitem__(self, item):
@@ -116,7 +116,7 @@ class ImageDataFeature(GraphicFeatureIndexable):
         super(ImageDataFeature, self).__init__(parent, data)
 
     @property
-    def buffer(self) -> Texture:
+    def buffer(self) -> pygfx.Texture:
         """Texture buffer for the image data"""
         return self._parent.world_object.geometry.grid
 
@@ -167,7 +167,7 @@ class ImageDataFeature(GraphicFeatureIndexable):
 
 class HeatmapDataFeature(ImageDataFeature):
     @property
-    def buffer(self) -> List[Texture]:
+    def buffer(self) -> List[pygfx.Texture]:
         """list of Texture buffer for the image data"""
         return [img.geometry.grid for img in self._parent.world_object.children]
 

@@ -4,132 +4,8 @@ import numpy as np
 import pygfx
 
 from .._base import Graphic, GraphicCollection
-from .._features import GraphicFeature, FeatureEvent
 from ._base_selector import BaseSelector
-from ._mesh_positions import x_right, x_left, y_top, y_bottom
-
-
-class LinearRegionSelectionFeature(GraphicFeature):
-    """
-    Feature for a linearly bounding region
-
-    **event pick info**
-
-    +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
-    | key                | type                          | description                                                                          |
-    +====================+===============================+======================================================================================+
-    | "selected_indices" | ``numpy.ndarray`` or ``None`` | selected graphic data indices                                                        |
-    | "world_object"     | ``pygfx.WorldObject``         | pygfx World Object                                                                   |
-    | "new_data"         | ``(float, float)``            | current bounds in world coordinates, NOT necessarily the same as "selected_indices". |
-    | "graphic"          | ``Graphic``                   | the selection graphic                                                                |
-    | "delta"            | ``numpy.ndarray``             | the delta vector of the graphic in NDC                                               |
-    | "pygfx_event"      | ``pygfx.Event``               | pygfx Event                                                                          |
-    | "selected_data"    | ``numpy.ndarray`` or ``None`` | selected graphic data                                                                |
-    | "move_info"        | ``MoveInfo``                  | last position and event source (pygfx.Mesh or pygfx.Line)                            |
-    +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
-
-    """
-
-    def __init__(
-        self, parent, selection: Tuple[int, int], axis: str, limits: Tuple[int, int]
-    ):
-        super(LinearRegionSelectionFeature, self).__init__(parent, data=selection)
-
-        self._axis = axis
-        self.limits = limits
-
-        self._set(selection)
-
-    @property
-    def axis(self) -> str:
-        """one of "x" | "y" """
-        return self._axis
-
-    def _set(self, value: Tuple[float, float]):
-        # sets new bounds
-        if not isinstance(value, tuple):
-            raise TypeError(
-                "Bounds must be a tuple in the form of `(min_bound, max_bound)`, "
-                "where `min_bound` and `max_bound` are numeric values."
-            )
-
-        # make sure bounds not exceeded
-        for v in value:
-            if not (self.limits[0] <= v <= self.limits[1]):
-                return
-
-        # make sure `selector width >= 2`, left edge must not move past right edge!
-        # or bottom edge must not move past top edge!
-        # has to be at least 2 otherwise can't join datapoints for lines
-        if not (value[1] - value[0]) >= 2:
-            return
-
-        if self.axis == "x":
-            # change left x position of the fill mesh
-            self._parent.fill.geometry.positions.data[x_left, 0] = value[0]
-
-            # change right x position of the fill mesh
-            self._parent.fill.geometry.positions.data[x_right, 0] = value[1]
-
-            # change x position of the left edge line
-            self._parent.edges[0].geometry.positions.data[:, 0] = value[0]
-
-            # change x position of the right edge line
-            self._parent.edges[1].geometry.positions.data[:, 0] = value[1]
-
-        elif self.axis == "y":
-            # change bottom y position of the fill mesh
-            self._parent.fill.geometry.positions.data[y_bottom, 1] = value[0]
-
-            # change top position of the fill mesh
-            self._parent.fill.geometry.positions.data[y_top, 1] = value[1]
-
-            # change y position of the bottom edge line
-            self._parent.edges[0].geometry.positions.data[:, 1] = value[0]
-
-            # change y position of the top edge line
-            self._parent.edges[1].geometry.positions.data[:, 1] = value[1]
-
-        self._data = value  # (value[0], value[1])
-
-        # send changes to GPU
-        self._parent.fill.geometry.positions.update_range()
-
-        self._parent.edges[0].geometry.positions.update_range()
-        self._parent.edges[1].geometry.positions.update_range()
-
-        # calls any events
-        self._feature_changed(key=None, new_data=value)
-
-    def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
-        if len(self._event_handlers) < 1:
-            return
-
-        if self._parent.parent is not None:
-            selected_ixs = self._parent.get_selected_indices()
-            selected_data = self._parent.get_selected_data()
-        else:
-            selected_ixs = None
-            selected_data = None
-
-        # get pygfx event and reset it
-        pygfx_ev = self._parent._pygfx_event
-        self._parent._pygfx_event = None
-
-        pick_info = {
-            "world_object": self._parent.world_object,
-            "new_data": new_data,
-            "selected_indices": selected_ixs,
-            "selected_data": selected_data,
-            "graphic": self._parent,
-            "delta": self._parent.delta,
-            "pygfx_event": pygfx_ev,
-            "move_info": self._parent._move_info,
-        }
-
-        event_data = FeatureEvent(type="selection", pick_info=pick_info)
-
-        self._call_event_handlers(event_data)
+from .._features._selection_features import LinearRegionSelectionFeature
 
 
 class LinearRegionSelector(Graphic, BaseSelector):
@@ -191,6 +67,18 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         name: str
             name for this selector graphic
+
+        Features
+        --------
+
+        selection: :class:`.LinearRegionSelectionFeature`
+            ``selection()`` returns the current selector bounds in world coordinates.
+            Use ``get_selected_indices()`` to return the selected indices in data
+            space, and ``get_selected_data()`` to return the selected data.
+            Use ``selection.add_event_handler()`` to add callback functions that are
+            called when the LinearSelector selection changes. See feature class for
+            event pick_info table.
+
         """
 
         # lots of very close to zero values etc. so round them
