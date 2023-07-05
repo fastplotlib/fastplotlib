@@ -39,6 +39,8 @@ napoleon_custom_sections = ['Features']
 html_theme = "furo"
 
 html_static_path = ['_static']
+html_logo = "_static/logo.png"
+html_title = f"v{release}"
 
 autodoc_member_order = 'groupwise'
 autoclass_content = "both"
@@ -57,6 +59,3 @@ html_theme_options = {
     "source_branch": "master",
     "source_directory": "docs/",
 }
-
-html_logo = "_static/logo.png"
-html_title = f"v{release}"
