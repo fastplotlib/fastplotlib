@@ -7,20 +7,30 @@ Welcome to fastplotlib's documentation!
 =======================================
 
 .. toctree::
+    :caption: Quick Start Guide {octicon}`rocket`
+    
+    quickstart
+
+API
+---
+
+.. toctree::
    :maxdepth: 1
-   :caption: Contents:
+   :caption: API
    
    Plot <api/layouts/plot>
    Gridplot <api/layouts/gridplot>
    Graphics <api/graphics/index>
-   Graphic Features <api/graphic_features>
-   Selectors <api/selectors>
-   Widgets <api/widgets>
+   Graphic Features <api/graphic_features/index>
+   Selectors <api/selectors/index>
+   Widgets <api/widgets/index>
 
 Summary
 =======
 
 ``fastplotlib`` is a fast plotting library built using ``pygfx`` render engine utilizing `Vulkan <https://en.wikipedia.org/wiki/Vulkan>`_ via WGPU. We are focused on fast interactive plotting in the notebook using an expressive API. It also works within desktop application using ``glfw`` or ``Qt``.
+
+
 
 Installation
 ============
@@ -32,7 +42,9 @@ https://github.com/kushalkolar/fastplotlib
 Contributing
 ============
 
-We're open to contributions! If you think there is any useful functionality that can be added, post an issue on the repo with your idea. Also, take a look at the `Roadmap 2023 <https://github.com/kushalkolar/fastplotlib/issues/55>`_ for future plans or ways in which you could contribute.
+Contributions are welcome! See the contribuging guide on GitHub: https://github.com/kushalkolar/fastplotlib/blob/master/CONTRIBUTING.md.
+
+Also take a look at the `Roadmap 2023 <https://github.com/kushalkolar/fastplotlib/issues/55>`_ for future plans or ways in which you could contribute.
 
 Indices and tables
 ==================

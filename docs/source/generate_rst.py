@@ -6,7 +6,8 @@ import os
 import fastplotlib
 from fastplotlib.layouts._subplot import Subplot
 from fastplotlib import graphics
-from fastplotlib.graphics import _features
+from fastplotlib.graphics import _features, selectors
+from fastplotlib import widgets
 
 current_dir = Path(__file__).parent.resolve()
 
@@ -115,7 +116,7 @@ def generate_page(
     page_name_underline = "*" * len(page_name)
     with open(source_path, "w") as f:
         f.write(
-            f".. _api.{page_name}:"
+            f".. _api.{page_name}:\n"
             f"\n"
             f"{page_name}\n"
             f"{page_name_underline}\n"
@@ -141,6 +142,8 @@ def main():
         modules=["fastplotlib", "fastplotlib.layouts._subplot"],
         source_path=LAYOUTS_DIR.joinpath("gridplot.rst")
     )
+
+    # the rest of this is a mess and can be refactored later
 
     graphic_classes = [
         getattr(graphics, g) for g in graphics.__all__
@@ -169,6 +172,93 @@ def main():
             classes=[graphic_cls],
             modules=["fastplotlib"],
             source_path=GRAPHICS_DIR.joinpath(f"{graphic_cls.__name__}.rst")
+        )
+    ##############################################################################
+
+    feature_classes = [
+        getattr(_features, f) for f in _features.__all__
+    ]
+
+    feature_class_names = [
+        f.__name__ for f in feature_classes
+    ]
+
+    feature_class_names_str = "\n    ".join([""] + feature_class_names)
+
+    with open(GRAPHIC_FEATURES_DIR.joinpath("index.rst"), "w") as f:
+        f.write(
+            f"Graphic Features\n"
+            f"****************\n"
+            f"\n"
+            f".. toctree::\n"
+            f"    :maxdepth: 1\n"
+            f"{feature_class_names_str}\n"
+        )
+
+    for feature_cls in feature_classes:
+        generate_page(
+            page_name=feature_cls.__name__,
+            classes=[feature_cls],
+            modules=["fastplotlib.graphics._features"],
+            source_path=GRAPHIC_FEATURES_DIR.joinpath(f"{feature_cls.__name__}.rst")
+        )
+    ##############################################################################
+
+    selector_classes = [
+        getattr(selectors, s) for s in selectors.__all__
+    ]
+
+    selector_class_names = [
+        s.__name__ for s in selector_classes
+    ]
+
+    selector_class_names_str = "\n    ".join([""] + selector_class_names)
+
+    with open(SELECTORS_DIR.joinpath("index.rst"), "w") as f:
+        f.write(
+            f"Selectors\n"
+            f"*********\n"
+            f"\n"
+            f".. toctree::\n"
+            f"    :maxdepth: 1\n"
+            f"{selector_class_names_str}\n"
+        )
+
+    for selector_cls in selector_classes:
+        generate_page(
+            page_name=selector_cls.__name__,
+            classes=[selector_cls],
+            modules=["fastplotlib"],
+            source_path=SELECTORS_DIR.joinpath(f"{selector_cls.__name__}.rst")
+        )
+    ##############################################################################
+
+    widget_classes = [
+        getattr(widgets, w) for w in widgets.__all__
+    ]
+
+    widget_class_names = [
+        w.__name__ for w in widget_classes
+    ]
+
+    widget_class_names_str = "\n    ".join([""] + widget_class_names)
+
+    with open(WIDGETS_DIR.joinpath("index.rst"), "w") as f:
+        f.write(
+            f"Widgets\n"
+            f"*******\n"
+            f"\n"
+            f".. toctree::\n"
+            f"    :maxdepth: 1\n"
+            f"{widget_class_names_str}\n"
+        )
+
+    for widget_cls in widget_classes:
+        generate_page(
+            page_name=widget_cls.__name__,
+            classes=[widget_cls],
+            modules=["fastplotlib"],
+            source_path=WIDGETS_DIR.joinpath(f"{widget_cls.__name__}.rst")
         )
 
 
