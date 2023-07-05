@@ -2,8 +2,8 @@
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
-from bs4 import BeautifulSoup
-from typing import *
+import os
+import fastplotlib
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -11,12 +11,18 @@ from typing import *
 project = 'fastplotlib'
 copyright = '2022, Kushal Kolar, Caitlin Lewis'
 author = 'Kushal Kolar, Caitlin Lewis'
-release = 'v0.1.0.a6'
+release = fastplotlib.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ["sphinx.ext.napoleon", "sphinx.ext.autodoc"]
+extensions = [
+    "sphinx.ext.napoleon",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary"
+]
+
+autosummary_generate = True
 
 templates_path = ['_templates']
 exclude_patterns = []
@@ -27,7 +33,7 @@ napoleon_custom_sections = ['Features']
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = 'pydata_sphinx_theme'
-html_theme_options = {"page_sidebar_items": ["class_page_toc"]}
+# html_theme_options = {"page_sidebar_items": ["class_page_toc"]}
 
 html_static_path = ['_static']
 
@@ -37,47 +43,35 @@ autoclass_content = "both"
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented_params"
 
-def _setup_navbar_side_toctree(app: Any):
 
-    def add_class_toctree_function(app: Any, pagename: Any, templatename: Any, context: Any, doctree: Any):
-        def get_class_toc() -> Any:
-            soup = BeautifulSoup(context["body"], "html.parser")
-
-            matches = soup.find_all('dl')
-            if matches is None or len(matches) == 0:
-                return ""
-            items = []
-            deeper_depth = matches[0].find('dt').get('id').count(".")
-            for match in matches:
-                match_dt = match.find('dt')
-                if match_dt is not None and match_dt.get('id') is not None:
-                    current_title = match_dt.get('id')
-                    current_depth = match_dt.get('id').count(".")
-                    current_link = match.find(class_="headerlink")
-                    if current_link is not None:
-                        if deeper_depth > current_depth:
-                            deeper_depth = current_depth
-                        if deeper_depth == current_depth:
-                            items.append({
-                                "title": current_title.split('.')[-1],
-                                "link": current_link["href"],
-                                "attributes_and_methods": []
-                            })
-                        if deeper_depth < current_depth:
-                            items[-1]["attributes_and_methods"].append(
-                                {
-                                    "title": current_title.split('.')[-1],
-                                    "link": current_link["href"],
-                                }
-                            )
-            return items
-        context["get_class_toc"] = get_class_toc
-
-    app.connect("html-page-context", add_class_toctree_function)
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'numpy': ('https://numpy.org/doc/stable/', None),
+    'pygfx': ('https://pygfx.readthedocs.io/en/latest', None)
+}
 
 
-def setup(app: Any):
-    for setup_function in [
-        _setup_navbar_side_toctree,
-    ]:
-        setup_function(app)
+html_theme_options = {
+    "show_toc_level": 3,
+    "github_url": "https://github.com/kushalkolar/fastplotlib",
+    "navbar_end": ["theme-switcher", "navbar-icon-links"],
+    "secondary_sidebar_items": ["page-toc"]
+}
+
+if os.getenv("BUILD_DASH_DOCSET"):
+    html_theme_options |= {
+        'secondary_sidebar_items': [],
+        "show_prev_next": False,
+        "collapse_navigation": True,
+    }
+
+# Custom sidebar templates, maps document names to template names.
+if os.getenv("BUILD_DASH_DOCSET"):  # used for building dash docsets
+    html_sidebars = {
+        "**": []
+    }
+else:
+    html_sidebars = {
+        "**": ["sidebar-nav-bs.html"],
+        'index': []  # don't show sidebar on main landing page
+    }
