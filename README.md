@@ -34,7 +34,9 @@ Higher resolution demo: [https://github.com/kushalkolar/fastplotlib/assets/94033
 
 http://fastplotlib.readthedocs.io/ 
 
-The docs are not entirely thorough, we recommend the example notebooks to get started.
+The Quickstart guide is not interactive. We recommend cloning/downloading the repo and trying out the `desktop` or `notebook` examples: https://github.com/kushalkolar/fastplotlib/tree/master/examples 
+
+If someone wants to integrate `pyodide` with `pygfx` we would be able to have live interactive examples! :smiley:
 
 Questions, ideas? Post an issue or [chat on gitter](https://gitter.im/fastplotlib/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link).
 
