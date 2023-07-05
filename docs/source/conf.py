@@ -58,5 +58,5 @@ html_theme_options = {
     "source_directory": "docs/",
 }
 
-html_logo = "logo.png"
+html_logo = "_static/logo.png"
 html_title = f"v{release}"
