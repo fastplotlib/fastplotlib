@@ -26,7 +26,7 @@ def to_array(a) -> np.ndarray:
     if not isinstance(a, list):
         raise TypeError("must pass list or numpy array")
 
-    return np.array(a)
+    return np.array(a, dtype=object)
 
 
 valid_cameras = ["2d", "2d-big", "3d", "3d-big"]
@@ -38,6 +38,7 @@ class GridPlot(RecordMixin):
         shape: Tuple[int, int],
         cameras: Union[np.ndarray, str] = "2d",
         controllers: Union[np.ndarray, str] = None,
+        names: Union[np.ndarray, str] = None,
         canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
         renderer: pygfx.WgpuRenderer = None,
         size: Tuple[int, int] = (500, 300),
@@ -92,34 +93,41 @@ class GridPlot(RecordMixin):
                 self.shape
             )
 
-        if "names" in kwargs.keys():
-            self.names = to_array(kwargs["names"])
+        if names is not None:
+            self.names = to_array(names)
             if self.names.shape != self.shape:
                 raise ValueError(f"subplot names: {self.names} must be in gridplot shape: {self.shape}")
+            if not all(isinstance(self.names[i], str) for i in product(range(self.shape[0]), range(self.shape[1]))):
+                raise ValueError(f"subplot names: {self.names} must all be strings")
         else:
             self.names = None
 
-        if isinstance(controllers, str):
-            if controllers == "sync":
-                controllers = np.zeros(
-                    self.shape[0] * self.shape[1], dtype=int
-                ).reshape(self.shape)
-
-        # Check if 'names' and 'controllers' both have values; check if values in controller array are strings
-        if (self.names is not None) and (controllers is not None):
-            c = to_array(controllers)
-            if isinstance(c[0, 0], str):
-                idx_async_controllers = np.shape(c)[0]
-                controllers = np.zeros(
-                    self.shape[0] * self.shape[1], dtype=int
-                ).reshape(self.shape)
-                for positions in product(range(self.shape[0]), range(self.shape[1])):
-                    item = np.argwhere(c == self.names[positions])
-                    if len(item) != 0:
-                        controllers[positions] = item[0][0]
-                    else:
-                        controllers[positions] = idx_async_controllers
-                        idx_async_controllers += 1
+        if controllers is not None:
+            if isinstance(controllers, str):
+                if controllers == "sync":
+                    controllers = np.zeros(
+                        self.shape[0] * self.shape[1], dtype=int
+                    ).reshape(self.shape)
+            else:
+                c = to_array(controllers)
+                if (c.shape[0]*c.shape[1]) != (self.shape[0]*self.shape[1]):
+                    raise ValueError(f"number of controllers: {controllers} must be the same as number of elements "
+                                     f"in gridplot shape {self.shape}")
+                if any(isinstance(c[i], str) for i in product(range(c.shape[0]), range(c.shape[1]))) and \
+                        any(not isinstance(c[i], str) for i in product(range(c.shape[0]), range(c.shape[1]))):
+                    raise ValueError(f"controllers: {controllers} must all be the same type")
+                if self.names is not None:
+                    if all(isinstance(c[i], str) for i in product(range(c.shape[0]), range(c.shape[1]))):
+                        controllers = np.zeros(
+                            self.shape[0] * self.shape[1], dtype=int
+                        ).reshape(self.shape)
+                        for positions in product(range(self.shape[0]), range(self.shape[1])):
+                            controller_idx = np.argwhere(c == self.names[positions])
+                            if len(controller_idx) != 0:
+                                controllers[positions] = controller_idx[0][0]
+                            else:
+                                raise ValueError(f"string names in controllers: {c} must be the same as "
+                                                 f"string names in names: {self.names}")
 
         if controllers is None:
             controllers = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
