@@ -17,7 +17,7 @@ extras_require = {
         "ipywidgets>=8.0.0,<9",
         "sphinx-copybutton",
         "sphinx-design",
-        "nbspinx",
+        "nbsphinx",
         "pandoc",
         "jupyterlab"
     ],
