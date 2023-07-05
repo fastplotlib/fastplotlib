@@ -14,6 +14,7 @@ from .selectors import LinearRegionSelector, LinearSelector
 
 
 class LineCollection(GraphicCollection, Interaction):
+    child_type = LineGraphic.__name__
     feature_events = ("data", "colors", "cmap", "thickness", "present")
 
     def __init__(
