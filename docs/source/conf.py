@@ -37,7 +37,6 @@ napoleon_custom_sections = ['Features']
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
-# html_theme_options = {"page_sidebar_items": ["class_page_toc"]}
 
 html_static_path = ['_static']
 
@@ -47,24 +46,17 @@ autoclass_content = "both"
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented_params"
 
-
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/doc/stable/', None),
     'pygfx': ('https://pygfx.readthedocs.io/en/latest', None)
 }
 
+html_theme_options = {
+    "source_repository": "https://github.com/kushalkolar/fastplotlib",
+    "source_branch": "master",
+    "source_directory": "docs/",
+}
 
-# html_theme_options = {
-    # "show_toc_level": 3,
-    # "github_url": "https://github.com/kushalkolar/fastplotlib",
-    # "navbar_end": ["theme-switcher", "navbar-icon-links"],
-    # "secondary_sidebar_items": ["page-toc"]
-# }
-
-#
-# html_sidebars = {
-#     "**": ["sidebar-nav-bs.html"],
-#     'index': []  # don't show sidebar on main landing page
-# }
-#
+html_logo = "logo.png"
+html_title = f"v{release}"

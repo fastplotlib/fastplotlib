@@ -7,12 +7,10 @@ Welcome to fastplotlib's documentation!
 =======================================
 
 .. toctree::
-    :caption: Quick Start Guide {octicon}`rocket`
+    :caption: Quick Start
+    :maxdepth: 2
     
     quickstart
-
-API
----
 
 .. toctree::
    :maxdepth: 1
@@ -28,21 +26,21 @@ API
 Summary
 =======
 
-``fastplotlib`` is a fast plotting library built using ``pygfx`` render engine utilizing `Vulkan <https://en.wikipedia.org/wiki/Vulkan>`_ via WGPU. We are focused on fast interactive plotting in the notebook using an expressive API. It also works within desktop application using ``glfw`` or ``Qt``.
+A fast plotting library built using the `pygfx <https://github.com/pygfx/pygfx>`_ render engine utilizing `Vulkan <https://en.wikipedia.org/wiki/Vulkan>`_, `DX12 <https://en.wikipedia.org/wiki/DirectX#DirectX_12>`_, or `Metal <https://developer.apple.com/metal/>`_ via `WGPU <https://github.com/gfx-rs/wgpu-native>`_, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization. `fastplotlib` will run on any framework that ``pygfx`` runs on, this includes ``glfw``, ``Qt`` and ``jupyter lab``
 
 
 
 Installation
 ============
 
-For installation please see the instruction on the README on GitHub:
+For installation please see the instructions on GitHub:
 
-https://github.com/kushalkolar/fastplotlib
+https://github.com/kushalkolar/fastplotlib#installation
 
 Contributing
 ============
 
-Contributions are welcome! See the contribuging guide on GitHub: https://github.com/kushalkolar/fastplotlib/blob/master/CONTRIBUTING.md.
+Contributions are welcome! See the contributing guide on GitHub: https://github.com/kushalkolar/fastplotlib/blob/master/CONTRIBUTING.md.
 
 Also take a look at the `Roadmap 2023 <https://github.com/kushalkolar/fastplotlib/issues/55>`_ for future plans or ways in which you could contribute.
 
