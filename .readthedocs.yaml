@@ -10,6 +10,7 @@ build:
     - libxcb-xfixes0-dev
     - mesa-vulkan-drivers
     - libglfw3
+    - pandoc
   jobs:
     pre_install:
       - pip install git+https://github.com/pygfx/pygfx.git@main

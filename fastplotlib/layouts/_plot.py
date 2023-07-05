@@ -1,6 +1,7 @@
 from typing import *
 from datetime import datetime
 import traceback
+import os
 
 import pygfx
 from wgpu.gui.auto import WgpuCanvas, is_jupyter
@@ -138,6 +139,11 @@ class Plot(Subplot, RecordMixin):
 
         if autoscale:
             self.auto_scale(maintain_aspect=maintain_aspect, zoom=0.95)
+
+        if "NB_SNAPSHOT" in os.environ.keys():
+            # used for docs
+            if os.environ["NB_SNAPSHOT"] == "1":
+                return self.canvas.snapshot()
 
         # check if in jupyter notebook, or if toolbar is False
         if (self.canvas.__class__.__name__ != "JupyterWgpuCanvas") or (not toolbar):

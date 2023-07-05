@@ -18,7 +18,7 @@ class PresentFeature(GraphicFeature):
       "new_data"           ``bool``                 new data, ``True`` or ``False``
       "collection-index"   int                      the index of the graphic within the collection that triggered the event
       "world_object"       pygfx.WorldObject        world object
-     ==================== ======================== ========================================================================
+     ==================== ======================== =========================================================================
     """
 
     def __init__(self, parent, present: bool = True, collection_index: int = False):

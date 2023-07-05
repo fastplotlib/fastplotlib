@@ -1,6 +1,8 @@
 from pathlib import Path
 
 from .layouts import Plot, GridPlot
+from .graphics import *
+from .graphics.selectors import *
 
 from wgpu.gui.auto import run
 

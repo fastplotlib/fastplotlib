@@ -391,7 +391,7 @@ class GraphicCollection(Graphic):
 
     def add_graphic(self, graphic: Graphic, reset_index: False):
         """Add a graphic to the collection"""
-        if not isinstance(graphic, self.child_type):
+        if not type(graphic).__name__ == self.child_type:
             raise TypeError(
                 f"Can only add graphics of the same type to a collection, "
                 f"You can only add {self.child_type} to a {self.__class__.__name__}, "

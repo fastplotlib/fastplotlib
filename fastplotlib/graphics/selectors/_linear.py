@@ -12,74 +12,9 @@ try:
 except (ImportError, ModuleNotFoundError):
     HAS_IPYWIDGETS = False
 
-from .._base import Graphic, GraphicFeature, GraphicCollection
-from .._features import FeatureEvent
+from .._base import Graphic, GraphicCollection
+from .._features._selection_features import LinearSelectionFeature
 from ._base_selector import BaseSelector
-
-
-class LinearSelectionFeature(GraphicFeature):
-    # A bit much to have a class for this but this allows it to integrate with the fastplotlib callback system
-    """
-    Manages the linear selection and callbacks
-
-    **event pick info**
-
-     ===================  ===============================  =================================================================================================
-      key                  type                             selection
-     ===================  ===============================  =================================================================================================
-      "selected_index"     ``int``                          the graphic data index that corresponds to the selector position
-      "world_object"       ``pygfx.WorldObject``            pygfx WorldObject
-      "new_data"           ``numpy.ndarray`` or ``None``    the new selector position in world coordinates, not necessarily the same as "selected_index"
-      "graphic"            ``Graphic``                      the selector graphic
-      "delta"              ``numpy.ndarray``                the delta vector of the graphic in NDC
-      "pygfx_event"        ``pygfx.Event``                  pygfx Event
-     ===================  ===============================  =================================================================================================
-
-    """
-
-    def __init__(self, parent, axis: str, value: float, limits: Tuple[int, int]):
-        super(LinearSelectionFeature, self).__init__(parent, data=value)
-
-        self.axis = axis
-        self.limits = limits
-
-    def _set(self, value: float):
-        if not (self.limits[0] <= value <= self.limits[1]):
-            return
-
-        if self.axis == "x":
-            self._parent.position_x = value
-        else:
-            self._parent.position_y = value
-
-        self._data = value
-        self._feature_changed(key=None, new_data=value)
-
-    def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
-        if len(self._event_handlers) < 1:
-            return
-
-        if self._parent.parent is not None:
-            g_ix = self._parent.get_selected_index()
-        else:
-            g_ix = None
-
-        # get pygfx event and reset it
-        pygfx_ev = self._parent._pygfx_event
-        self._parent._pygfx_event = None
-
-        pick_info = {
-            "world_object": self._parent.world_object,
-            "new_data": new_data,
-            "selected_index": g_ix,
-            "graphic": self._parent,
-            "pygfx_event": pygfx_ev,
-            "delta": self._parent.delta,
-        }
-
-        event_data = FeatureEvent(type="selection", pick_info=pick_info)
-
-        self._call_event_handlers(event_data)
 
 
 class LinearSelector(Graphic, BaseSelector):
@@ -137,10 +72,13 @@ class LinearSelector(Graphic, BaseSelector):
         Features
         --------
 
-        selection: :class:`LinearSelectionFeature`
-            ``selection()`` returns the current slider position in world coordinates
-            use ``selection.add_event_handler()`` to add callback functions that are
-            called when the LinearSelector selection changes. See feature class for event pick_info table
+        selection: :class:`.LinearSelectionFeature`
+            ``selection()`` returns the current selector position in world coordinates.
+            Use ``get_selected_index()`` to get the currently selected index in data
+            space.
+            Use ``selection.add_event_handler()`` to add callback functions that are
+            called when the LinearSelector selection changes. See feature class for
+            event pick_info table
 
         """
         if len(limits) != 2:

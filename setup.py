@@ -11,10 +11,15 @@ install_requires = [
 extras_require = {
     "docs": [
         "sphinx",
-        "pydata-sphinx-theme<0.10.0",
+        "furo",
         "glfw",
         "jupyter-rfb>=0.4.1",  # required so ImageWidget docs show up
-        "ipywidgets>=8.0.0,<9"
+        "ipywidgets>=8.0.0,<9",
+        "sphinx-copybutton",
+        "sphinx-design",
+        "nbsphinx",
+        "pandoc",
+        "jupyterlab"
     ],
 
     "notebook":

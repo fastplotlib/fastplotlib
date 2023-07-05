@@ -5,6 +5,7 @@ import numpy as np
 from typing import *
 from inspect import getfullargspec
 from warnings import warn
+import os
 
 import pygfx
 
@@ -77,6 +78,7 @@ class GridPlot(RecordMixin):
             starting size of canvas, default (500, 300)
 
         """
+
         self.shape = shape
         self.toolbar = None
 
@@ -314,6 +316,11 @@ class GridPlot(RecordMixin):
                 else:
                     _maintain_aspect = maintain_aspect
                 subplot.auto_scale(maintain_aspect=_maintain_aspect, zoom=0.95)
+
+        if "NB_SNAPSHOT" in os.environ.keys():
+            # used for docs
+            if os.environ["NB_SNAPSHOT"] == "1":
+                return self.canvas.snapshot()
 
         # check if in jupyter notebook, or if toolbar is False
         if (self.canvas.__class__.__name__ != "JupyterWgpuCanvas") or (not toolbar):
