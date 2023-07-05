@@ -18,14 +18,16 @@ from pygfx import (
 )
 from wgpu.gui.auto import WgpuCanvas
 
-from .. import graphics
+from ._utils import make_canvas_and_renderer
+from ._base import PlotArea
 from ..graphics import TextGraphic
 from ._utils import make_canvas_and_renderer
 from ._base import PlotArea
 from ._defaults import create_camera, create_controller
+from .graphic_methods_mixin import GraphicMethodsMixin
 
 
-class Subplot(PlotArea):
+class Subplot(PlotArea, GraphicMethodsMixin):
     def __init__(
         self,
         position: Tuple[int, int] = None,
@@ -70,6 +72,8 @@ class Subplot(PlotArea):
 
         """
 
+        super(GraphicMethodsMixin, self).__init__()
+
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
         if position is None:
@@ -113,35 +117,9 @@ class Subplot(PlotArea):
             self.docked_viewports[pos] = dv
             self.children.append(dv)
 
-        # attach all the add_<graphic_name> methods
-        for graphic_cls_name in graphics.__all__:
-            cls = getattr(graphics, graphic_cls_name)
-
-            pfunc = partial(self._create_graphic, cls)
-            pfunc.__signature__ = signature(cls)
-            pfunc.__doc__ = cls.__init__.__doc__
-
-            # cls.type is defined in Graphic.__init_subclass__
-            setattr(self, f"add_{cls.type}", pfunc)
-
         self._title_graphic: TextGraphic = None
         if self.name is not None:
             self.set_title(self.name)
-
-    def _create_graphic(self, graphic_class, *args, **kwargs) -> weakref.proxy:
-        if "center" in kwargs.keys():
-            center = kwargs.pop("center")
-        else:
-            center = False
-
-        if "name" in kwargs.keys():
-            self._check_graphic_name_exists(kwargs["name"])
-
-        graphic = graphic_class(*args, **kwargs)
-        self.add_graphic(graphic, center=center)
-
-        # only return a proxy to the real graphic
-        return weakref.proxy(graphic)
 
     @property
     def name(self) -> Any:
