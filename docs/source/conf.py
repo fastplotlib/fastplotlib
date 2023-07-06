@@ -44,6 +44,7 @@ html_title = f"v{release}"
 
 autodoc_member_order = 'groupwise'
 autoclass_content = "both"
+add_module_names = False
 
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented_params"
