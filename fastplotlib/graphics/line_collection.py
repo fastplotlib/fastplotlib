@@ -32,7 +32,7 @@ class LineCollection(GraphicCollection, Interaction):
         **kwargs,
     ):
         """
-        Create a Line Collection
+        Create a collection of :class:`.LineGraphic`
 
         Parameters
         ----------
@@ -303,8 +303,6 @@ class LineCollection(GraphicCollection, Interaction):
     ) -> LinearSelector:
         """
         Adds a :class:`.LinearSelector` .
-        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a plot area just like
-        any other ``Graphic``.
 
         Parameters
         ----------
@@ -358,8 +356,6 @@ class LineCollection(GraphicCollection, Interaction):
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`
-        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a plot area just like
-        any other ``Graphic``.
 
         Parameters
         ----------
@@ -545,7 +541,7 @@ class LineStack(LineCollection):
         **kwargs,
     ):
         """
-        Create a line stack
+        Create a stack of :class:`.LineGraphic` that are separated along the "x" or "y" axis.
 
         Parameters
         ----------

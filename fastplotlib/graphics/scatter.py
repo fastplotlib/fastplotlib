@@ -9,6 +9,8 @@ from ._features import PointsDataFeature, ColorFeature, CmapFeature
 
 
 class ScatterGraphic(Graphic):
+    feature_events = ("data", "colors", "cmap", "present")
+
     def __init__(
         self,
         data: np.ndarray,
@@ -59,12 +61,13 @@ class ScatterGraphic(Graphic):
         --------
 
         **data**: :class:`.ImageDataFeature`
-            Manages the scatter [x, y, z] positions data buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 0] = 5```, ``scatter.data[xs > 5] = 3``
+            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
 
         **colors**: :class:`.ColorFeature`
             Manages the color buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 1] = 0.5``, ``scatter.colors[xs > 5] = "cyan"``
+
+        **cmap**: :class:`.CmapFeature`
+            Manages the cmap, wraps :class:`.ColorFeature` to add additional functionality relevant to cmaps.
 
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``

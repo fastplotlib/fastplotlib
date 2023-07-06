@@ -19,12 +19,12 @@ from ._features import (
 )
 
 
-class _ImageHeatmapSelectorsMixin:
+class _AddSelectorsMixin:
     def add_linear_selector(
         self, selection: int = None, padding: float = None, **kwargs
     ) -> LinearSelector:
         """
-        Adds a linear selector.
+        Adds a :class:`.LinearSelector`.
 
         Parameters
         ----------
@@ -83,8 +83,7 @@ class _ImageHeatmapSelectorsMixin:
         self, padding: float = None, **kwargs
     ) -> LinearRegionSelector:
         """
-        Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
-        remove, or delete them from a plot area just like any other ``Graphic``.
+        Add a :class:`.LinearRegionSelector`.
 
         Parameters
         ----------
@@ -196,7 +195,7 @@ class _ImageHeatmapSelectorsMixin:
         self._plot_area = plot_area
 
 
-class ImageGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
+class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
     feature_events = ("data", "cmap", "present")
 
     def __init__(
@@ -359,7 +358,7 @@ class _ImageTile(pygfx.Image):
         self._col_chunk_index = index
 
 
-class HeatmapGraphic(Graphic, Interaction, _ImageHeatmapSelectorsMixin):
+class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
     feature_events = (
         "data",
         "cmap",
