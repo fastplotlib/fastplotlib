@@ -44,8 +44,11 @@ jobs:
         run: |
           # regenerate screenshots
           REGENERATE_SCREENSHOTS=1 pytest -v examples
+          REGENERATE_SCREENSHOTS=1 pytest --nbmake examples/notebooks/
       - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: screenshots
-          path: examples/desktop/screenshots/
+          path: |
+            examples/desktop/screenshots/
+            examples/notebooks/screenshots/
