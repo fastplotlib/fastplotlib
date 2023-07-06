@@ -44,14 +44,26 @@ def _is_arraylike(obj) -> bool:
 
 
 class _WindowFunctions:
+    """Stores window function and window size"""
     def __init__(self, func: callable, window_size: int):
+        self._func = None
         self.func = func
 
         self._window_size = 0
         self.window_size = window_size
 
     @property
+    def func(self) -> callable:
+        """Get or set the function"""
+        return self._func
+
+    @func.setter
+    def func(self, func: callable):
+        self._func = func
+
+    @property
     def window_size(self) -> int:
+        """Get or set window size"""
         return self._window_size
 
     @window_size.setter
@@ -126,15 +138,11 @@ class ImageWidget:
 
     @property
     def current_index(self) -> Dict[str, int]:
-        return self._current_index
-
-    @current_index.setter
-    def current_index(self, index: Dict[str, int]):
         """
-        Set the current index
+        Get or set the current index
 
-        Parameters
-        ----------
+        Returns
+        -------
         index: Dict[str, int]
             | ``dict`` for indexing each dimension, provide a ``dict`` with indices for all dimensions used by sliders
             or only a subset of dimensions used by the sliders.
@@ -143,7 +151,10 @@ class ImageWidget:
             dimension "z" simultaneously.
 
         """
+        return self._current_index
 
+    @current_index.setter
+    def current_index(self, index: Dict[str, int]):
         if not set(index.keys()).issubset(set(self._current_index.keys())):
             raise KeyError(
                 f"All dimension keys for setting `current_index` must be present in the widget sliders. "
@@ -570,6 +581,14 @@ class ImageWidget:
 
     @property
     def window_funcs(self) -> Dict[str, _WindowFunctions]:
+        """
+        Get or set the window functions
+
+        Returns
+        -------
+        Dict[str, _WindowFunctions]
+
+        """
         return self._window_funcs
 
     @window_funcs.setter
