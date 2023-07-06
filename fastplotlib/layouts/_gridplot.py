@@ -54,16 +54,16 @@ class GridPlot(RecordMixin):
 
         cameras: np.ndarray or str, optional
             | One of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
-
             | OR
-
-            | Array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot:
+            | Array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot
 
         controllers: np.ndarray or str, optional
             | If `None` a unique controller is created for each subplot
             | If "sync" all the subplots use the same controller
             | If ``numpy.array``, its shape must be the same as ``grid_shape``.
+
             This allows custom assignment of controllers
+
             | Example:
             | unique controllers for a 2x2 gridplot: np.array([[0, 1], [2, 3]])
             | same controllers for first 2 plots and last 2 plots: np.array([[0, 0, 1], [2, 3, 3]])

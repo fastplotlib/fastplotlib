@@ -23,6 +23,7 @@ Properties
     Plot.camera
     Plot.canvas
     Plot.controller
+    Plot.docks
     Plot.graphics
     Plot.name
     Plot.parent
@@ -40,7 +41,6 @@ Methods
     Plot.add_animations
     Plot.add_graphic
     Plot.add_heatmap
-    Plot.add_histogram
     Plot.add_image
     Plot.add_line
     Plot.add_line_collection

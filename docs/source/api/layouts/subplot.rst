@@ -23,6 +23,7 @@ Properties
     Subplot.camera
     Subplot.canvas
     Subplot.controller
+    Subplot.docks
     Subplot.graphics
     Subplot.name
     Subplot.parent
@@ -40,7 +41,6 @@ Methods
     Subplot.add_animations
     Subplot.add_graphic
     Subplot.add_heatmap
-    Subplot.add_histogram
     Subplot.add_image
     Subplot.add_line
     Subplot.add_line_collection

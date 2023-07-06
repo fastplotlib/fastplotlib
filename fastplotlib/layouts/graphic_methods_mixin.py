@@ -193,7 +193,9 @@ class GraphicMethodsMixin:
         cmap: list of str or str, optional
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
-            **Note:** ``cmap`` overrides any arguments passed to ``colors``
+
+            .. note::
+                ``cmap`` overrides any arguments passed to ``colors``
 
         cmap_values: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
@@ -367,7 +369,9 @@ class GraphicMethodsMixin:
         cmap: list of str or str, optional
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
-            **Note:** ``cmap`` overrides any arguments passed to ``colors``
+
+            .. note::
+                ``cmap`` overrides any arguments passed to ``colors``
 
         name: str, optional
             name of the line stack
