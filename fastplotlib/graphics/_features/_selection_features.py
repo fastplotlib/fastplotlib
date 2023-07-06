@@ -127,7 +127,6 @@ y_bottom = np.array(
 )
 
 
-
 class LinearSelectionFeature(GraphicFeature):
     # A bit much to have a class for this but this allows it to integrate with the fastplotlib callback system
     """
