@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
-from traceback import format_exc
 
-import pytest
 import imageio.v3 as iio
 import numpy as np
 
@@ -81,8 +79,8 @@ def update_diffs(name, is_similar, img, ground_truth):
             path.unlink()
 
 
-def notebook_finished(notebook_name: str):
+def notebook_finished():
     if len(FAILURES) > 0:
         raise AssertionError(
-            f"Failures for notebook: <{notebook_name}>:\n{FAILURES}"
+            f"Failures for plots:\n{FAILURES}"
         )
