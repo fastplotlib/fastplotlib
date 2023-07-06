@@ -10,7 +10,6 @@ build:
     - libxcb-xfixes0-dev
     - mesa-vulkan-drivers
     - libglfw3
-    - pandoc
   jobs:
     post_checkout:
       # Download and uncompress the binary
@@ -27,6 +26,9 @@ build:
       - ./git-lfs fetch
       # Make local files to have the real content on them
       - ./git-lfs checkout
+      # install newer pandoc else nbsphinx complains
+      - wget https://github.com/jgm/pandoc/releases/download/3.1.4/pandoc-3.1.4-1-amd64.deb
+      - sudo apt-get install pandoc-3.1.4-1-amd64.deb
     pre_install:
       - pip install git+https://github.com/pygfx/pygfx.git@main
 
