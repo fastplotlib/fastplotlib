@@ -1,6 +1,6 @@
 """
-Line Plot
-============
+Line Plot Color Slice
+=====================
 Example showing color slicing with cosine, sine, sinc lines.
 """
 

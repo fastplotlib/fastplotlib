@@ -1,6 +1,6 @@
 """
-Simple Plot
-============
+RGB Image
+=========
 Example showing the simple plot creation with 512 x 512 2D RGB image.
 """
 # test_example = true

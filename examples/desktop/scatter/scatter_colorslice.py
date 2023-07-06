@@ -1,6 +1,6 @@
 """
-Scatter Plot
-============
+Scatter Plot Color Slice
+========================
 Example showing color slice for scatter plot.
 """
 

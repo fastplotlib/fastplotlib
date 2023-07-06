@@ -1,6 +1,6 @@
 """
-Line Plot
-============
+Line Plot Present & Scaling
+===========================
 Example showing present and scaling feature for lines.
 """
 

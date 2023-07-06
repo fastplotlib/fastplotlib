@@ -1,6 +1,6 @@
 """
-Line Plot
-============
+Line Collection Colors
+======================
 Example showing how to plot line collections
 """
 

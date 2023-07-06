@@ -1,6 +1,7 @@
 """
-Simple Plot
-============
+Simple Image Cmap
+=================
+
 Example showing simple plot creation and subsequent cmap change with Standard image from imageio.
 """
 # test_example = true

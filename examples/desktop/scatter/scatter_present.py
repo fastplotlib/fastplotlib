@@ -1,6 +1,6 @@
 """
-Scatter Plot
-============
+Scatter Plot Present
+====================
 Example showing present feature for scatter plot.
 """
 

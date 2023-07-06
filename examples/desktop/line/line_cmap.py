@@ -1,6 +1,6 @@
 """
-Line Plot
-============
+Line Plot Cmap
+==============
 Example showing cosine, sine, sinc lines.
 """
 

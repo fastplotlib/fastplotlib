@@ -1,6 +1,6 @@
 """
 Line Plot
-============
+=========
 Example showing cosine, sine, sinc lines.
 """
 

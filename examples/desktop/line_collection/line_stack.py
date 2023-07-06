@@ -1,6 +1,6 @@
 """
-Line Plot
-============
+Line Stack
+==========
 Example showing how to plot line collections
 """
 

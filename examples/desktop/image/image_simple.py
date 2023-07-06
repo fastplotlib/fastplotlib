@@ -1,5 +1,5 @@
 """
-Simple Plot
+Simple Image
 ============
 Example showing the simple plot creation with Standard imageio image.
 """

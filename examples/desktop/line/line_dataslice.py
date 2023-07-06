@@ -1,6 +1,6 @@
 """
-Line Plot
-============
+Line Plot Data Slice
+====================
 Example showing data slicing with cosine, sine, sinc lines.
 """
 

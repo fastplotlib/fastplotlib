@@ -1,6 +1,6 @@
 """
-Scatter Plot
-============
+Scatter Plot Data Slice
+=======================
 Example showing data slice for scatter plot.
 """
 

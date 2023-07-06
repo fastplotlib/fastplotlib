@@ -65,8 +65,6 @@ html_theme_options = {
 
 sphinx_gallery_conf = {
     # exclude anything in data from ever being executed
-    'filename_pattern': 'r"^((?![\\/]data[\\/]).)*$',
-    'ignore_pattern': r'__init__\.py',
     'examples_dirs': '../../examples/desktop',
     'subsection_order': ExplicitOrder(
         [
@@ -78,9 +76,8 @@ sphinx_gallery_conf = {
         ]),
     "gallery_dirs": "_gallery",
     "backreferences_dir": "_gallery/backreferences",
-    'line_numbers': True,
     'remove_config_comments': True,
     "doc_module": ("fastplotlib",),
-    "pypandoc": True
+    'run_stale_examples': True
   #  "image_scrapers": ("fastplotlib",),
 }

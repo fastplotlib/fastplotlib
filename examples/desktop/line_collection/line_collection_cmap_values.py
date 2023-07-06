@@ -1,6 +1,6 @@
 """
-Line Plot
-============
+Line Collection Cmap
+====================
 Example showing how to plot line collections
 """
 

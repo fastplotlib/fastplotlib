@@ -1,6 +1,6 @@
 """
-Scatter Plot
-============
+Scatter Plot Cmap
+=================
 Example showing cmap change for scatter plot.
 """
 
