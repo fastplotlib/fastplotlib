@@ -66,11 +66,15 @@ class LineGraphic(Graphic, Interaction):
 
         **data**: :class:`.ImageDataFeature`
             Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 0] = 5```, ``scatter.data[xs > 5] = 3``
 
         **colors**: :class:`.ColorFeature`
             Manages the color buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 1] = 0.5``, ``scatter.colors[xs > 5] = "cyan"``
+
+        **cmap**: :class:`.CmapFeature`
+            Manages the cmap, wraps :class:`.ColorFeature` to add additional functionality relevant to cmaps.
+
+        **thickness**: :class:`.ThicknessFeature`
+            Manages the thickness feature of the lines.
 
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``

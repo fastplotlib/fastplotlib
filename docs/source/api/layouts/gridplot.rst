@@ -20,6 +20,8 @@ Properties
 .. autosummary::
     :toctree: GridPlot_api
 
+    GridPlot.canvas
+    GridPlot.renderer
 
 Methods
 ~~~~~~~

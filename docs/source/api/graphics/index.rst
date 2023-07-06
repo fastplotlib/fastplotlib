@@ -7,7 +7,6 @@ Graphics
     ImageGraphic
     ScatterGraphic
     LineGraphic
-    HistogramGraphic
     HeatmapGraphic
     LineCollection
     LineStack

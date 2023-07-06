@@ -49,7 +49,7 @@ class FeatureEvent:
     ----------
     type: str, example "colors"
 
-    pick_info: dict in the form:
+    pick_info: dict:
 
         ============== =============================================================================
         key             value
@@ -58,6 +58,9 @@ class FeatureEvent:
         "world_object"  world object the feature belongs to
         "new_data:      the new data for this feature
         ============== =============================================================================
+
+        .. note::
+            pick info varies between features, this is just the general structure
 
     """
 
@@ -97,8 +100,17 @@ class GraphicFeature(ABC):
     def __call__(self, *args, **kwargs):
         return self._data
 
-    def block_events(self, b: bool):
-        self._block_events = b
+    def block_events(self, val: bool):
+        """
+        Block all events from this feature
+
+        Parameters
+        ----------
+        val: bool
+            ``True`` or ``False``
+
+        """
+        self._block_events = val
 
     @abstractmethod
     def _set(self, value):
@@ -113,9 +125,10 @@ class GraphicFeature(ABC):
     def add_event_handler(self, handler: callable):
         """
         Add an event handler. All added event handlers are called when this feature changes.
-        The `handler` can optionally accept ``FeatureEvent`` as the first and only argument.
+        The ``handler`` can optionally accept a :class:`.FeatureEvent` as the first and only argument.
         The ``FeatureEvent`` only has two attributes, ``type`` which denotes the type of event
-        as a ``str`` in the form of "<feature_name>", such as "color".
+        as a ``str`` in the form of "<feature_name>", such as "color". And ``pick_info`` which contains
+        information about the event and Graphic that triggered it.
 
         Parameters
         ----------
@@ -134,7 +147,7 @@ class GraphicFeature(ABC):
 
     def remove_event_handler(self, handler: callable):
         """
-        Remove a registered event handler
+        Remove a registered event ``handler``.
 
         Parameters
         ----------
@@ -148,6 +161,7 @@ class GraphicFeature(ABC):
         self._event_handlers.remove(handler)
 
     def clear_event_handlers(self):
+        """Clear all event handlers"""
         self._event_handlers.clear()
 
     # TODO: maybe this can be implemented right here in the base class

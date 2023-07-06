@@ -54,16 +54,16 @@ class GridPlot(RecordMixin):
 
         cameras: np.ndarray or str, optional
             | One of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
-
             | OR
-
-            | Array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot:
+            | Array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot
 
         controllers: np.ndarray or str, optional
             | If `None` a unique controller is created for each subplot
             | If "sync" all the subplots use the same controller
             | If ``numpy.array``, its shape must be the same as ``grid_shape``.
+
             This allows custom assignment of controllers
+
             | Example:
             | unique controllers for a 2x2 gridplot: np.array([[0, 1], [2, 3]])
             | same controllers for first 2 plots and last 2 plots: np.array([[0, 0, 1], [2, 3, 3]])
@@ -153,8 +153,8 @@ class GridPlot(RecordMixin):
         else:
             self.names = None
 
-        self.canvas = canvas
-        self.renderer = renderer
+        self._canvas = canvas
+        self._renderer = renderer
 
         nrows, ncols = self.shape
 
@@ -173,6 +173,7 @@ class GridPlot(RecordMixin):
                 name = None
 
             self._subplots[i, j] = Subplot(
+                parent=self,
                 position=position,
                 parent_dims=(nrows, ncols),
                 camera=camera,
@@ -190,6 +191,16 @@ class GridPlot(RecordMixin):
         self._starting_size = size
 
         RecordMixin.__init__(self)
+
+    @property
+    def canvas(self) -> WgpuCanvas:
+        """The canvas associated to this GridPlot"""
+        return self._canvas
+
+    @property
+    def renderer(self) -> pygfx.WgpuRenderer:
+        """The renderer associated to this GridPlot"""
+        return self._renderer
 
     def __getitem__(self, index: Union[Tuple[int, int], str]) -> Subplot:
         if isinstance(index, str):

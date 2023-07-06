@@ -99,36 +99,6 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(HeatmapGraphic, data, vmin, vmax, cmap, filter, chunk_size, isolated_buffer, *args, **kwargs)
 
-    def add_histogram(self, data: numpy.ndarray = None, bins: Union[int, str] = 'auto', pre_computed: Dict[str, numpy.ndarray] = None, colors: numpy.ndarray = 'w', draw_scale_factor: float = 100.0, draw_bin_width_scale: float = 1.0, **kwargs) -> HistogramGraphic:
-        """
-        
-        Create a Histogram Graphic
-
-        Parameters
-        ----------
-        data: np.ndarray or None, optional
-            data to create a histogram from, can be ``None`` if pre-computed values are provided to ``pre_computed``
-
-        bins: int or str, default is "auto", optional
-            this is directly just passed to ``numpy.histogram``
-
-        pre_computed: dict in the form {"hist": vals, "bin_edges" : vals}, optional
-            pre-computed histogram values
-
-        colors: np.ndarray, optional
-
-        draw_scale_factor: float, default ``100.0``, optional
-            scale the drawing of the entire Graphic
-
-        draw_bin_width_scale: float, default ``1.0``
-            scale the drawing of the bin widths
-
-        kwargs
-            passed to Graphic
-        
-        """
-        return self._create_graphic(HistogramGraphic, data, bins, pre_computed, colors, draw_scale_factor, draw_bin_width_scale, *args, **kwargs)
-
     def add_image(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest', isolated_buffer: bool = True, *args, **kwargs) -> ImageGraphic:
         """
         
@@ -197,7 +167,7 @@ class GraphicMethodsMixin:
     def add_line_collection(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', alpha: float = 1.0, cmap: Union[List[str], str] = None, cmap_values: Union[numpy.ndarray, List] = None, name: str = None, metadata: Union[list, tuple, numpy.ndarray] = None, *args, **kwargs) -> LineCollection:
         """
         
-        Create a Line Collection
+        Create a collection of :class:`.LineGraphic`
 
         Parameters
         ----------
@@ -223,7 +193,9 @@ class GraphicMethodsMixin:
         cmap: list of str or str, optional
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
-            **Note:** ``cmap`` overrides any arguments passed to ``colors``
+
+            .. note::
+                ``cmap`` overrides any arguments passed to ``colors``
 
         cmap_values: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
@@ -352,11 +324,15 @@ class GraphicMethodsMixin:
 
         **data**: :class:`.ImageDataFeature`
             Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 0] = 5```, ``scatter.data[xs > 5] = 3``
 
         **colors**: :class:`.ColorFeature`
             Manages the color buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 1] = 0.5``, ``scatter.colors[xs > 5] = "cyan"``
+
+        **cmap**: :class:`.CmapFeature`
+            Manages the cmap, wraps :class:`.ColorFeature` to add additional functionality relevant to cmaps.
+
+        **thickness**: :class:`.ThicknessFeature`
+            Manages the thickness feature of the lines.
 
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``
@@ -368,7 +344,7 @@ class GraphicMethodsMixin:
     def add_line_stack(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', cmap: Union[List[str], str] = None, separation: float = 10, separation_axis: str = 'y', name: str = None, *args, **kwargs) -> LineStack:
         """
         
-        Create a line stack
+        Create a stack of :class:`.LineGraphic` that are separated along the "x" or "y" axis.
 
         Parameters
         ----------
@@ -393,7 +369,9 @@ class GraphicMethodsMixin:
         cmap: list of str or str, optional
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
-            **Note:** ``cmap`` overrides any arguments passed to ``colors``
+
+            .. note::
+                ``cmap`` overrides any arguments passed to ``colors``
 
         name: str, optional
             name of the line stack
@@ -513,12 +491,13 @@ class GraphicMethodsMixin:
         --------
 
         **data**: :class:`.ImageDataFeature`
-            Manages the scatter [x, y, z] positions data buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 0] = 5```, ``scatter.data[xs > 5] = 3``
+            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
 
         **colors**: :class:`.ColorFeature`
             Manages the color buffer, allows regular and fancy indexing.
-            ex: ``scatter.data[:, 1] = 0.5``, ``scatter.colors[xs > 5] = "cyan"``
+
+        **cmap**: :class:`.CmapFeature`
+            Manages the cmap, wraps :class:`.ColorFeature` to add additional functionality relevant to cmaps.
 
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``

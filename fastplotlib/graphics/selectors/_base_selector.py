@@ -85,12 +85,15 @@ class BaseSelector:
         self._edge_hovered: bool = False
 
     def get_selected_index(self):
+        """Not implemented for this selector"""
         raise NotImplementedError
 
     def get_selected_indices(self):
+        """Not implemented for this selector"""
         raise NotImplementedError
 
     def get_selected_data(self):
+        """Not implemented for this selector"""
         raise NotImplementedError
 
     def _get_source(self, graphic):

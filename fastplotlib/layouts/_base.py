@@ -117,12 +117,12 @@ class PlotArea:
 
     @property
     def position(self) -> Union[Tuple[int, int], Any]:
-        """Used by subclass to manage its own referencing system"""
+        """Position of this plot area within a larger layout (such as GridPlot) if relevant"""
         return self._position
 
     @property
     def scene(self) -> Scene:
-        """The Scene where Graphics live"""
+        """The Scene where Graphics lie in this plot area"""
         return self._scene
 
     @property
@@ -137,6 +137,7 @@ class PlotArea:
 
     @property
     def viewport(self) -> Viewport:
+        """The rectangular area of the renderer associated to this plot area"""
         return self._viewport
 
     @property
@@ -172,6 +173,7 @@ class PlotArea:
 
     @property
     def name(self) -> Any:
+        """The name of this plot area"""
         return self._name
 
     @name.setter

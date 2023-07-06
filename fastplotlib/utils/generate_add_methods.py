@@ -1,21 +1,28 @@
 import inspect
-import sys
 import pathlib
 
-from fastplotlib.graphics import *
+# if there is an existing mixin class, replace it with an empty class
+# so that fastplotlib will import
+# hacky but it works
+current_module = pathlib.Path(__file__).parent.parent.resolve()
+with open(current_module.joinpath('layouts/graphic_methods_mixin.py'), 'w') as f:
+    f.write(
+        f"class GraphicMethodsMixin:\n"
+        f"    pass"
+    )
+
+from fastplotlib import graphics
 
 
 modules = list()
 
-for name, obj in inspect.getmembers(sys.modules[__name__]):
+for name, obj in inspect.getmembers(graphics):
     if inspect.isclass(obj):
         modules.append(obj)
 
+
 def generate_add_graphics_methods():
     # clear file and regenerate from scratch
-    current_module = pathlib.Path(__file__).parent.parent.resolve()
-
-    open(current_module.joinpath('layouts/graphic_methods_mixin.py'), 'w').close()
 
     f = open(current_module.joinpath('layouts/graphic_methods_mixin.py'), 'w')
 
@@ -43,7 +50,6 @@ def generate_add_graphics_methods():
     f.write("        # only return a proxy to the real graphic\n")
     f.write("        return weakref.proxy(graphic)\n\n")
 
-
     for m in modules:
         class_name = m
         method_name = class_name.type
@@ -62,9 +68,6 @@ def generate_add_graphics_methods():
 
     f.close()
 
-    return
-
 
 if __name__ == '__main__':
     generate_add_graphics_methods()
-

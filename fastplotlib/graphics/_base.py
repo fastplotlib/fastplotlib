@@ -75,6 +75,7 @@ class Graphic(BaseGraphic):
     @property
     def world_object(self) -> WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
+        # We use weakref to simplify garbage collection
         return weakref.proxy(WORLD_OBJECTS[hex(id(self))])
 
     def _set_world_object(self, wo: WorldObject):
@@ -82,20 +83,22 @@ class Graphic(BaseGraphic):
 
     @property
     def position(self) -> np.ndarray:
-        """The position of the graphic. You can access or change
-        using position.x, position.y, etc."""
+        """position of the graphic, [x, y, z]"""
         return self.world_object.world.position
 
     @property
     def position_x(self) -> float:
+        """x-axis position of the graphic"""
         return self.world_object.world.x
 
     @property
     def position_y(self) -> float:
+        """y-axis position of the graphic"""
         return self.world_object.world.y
 
     @property
     def position_z(self) -> float:
+        """z-axis position of the graphic"""
         return self.world_object.world.z
 
     @position.setter
@@ -390,7 +393,19 @@ class GraphicCollection(Graphic):
         return self._graphics_array
 
     def add_graphic(self, graphic: Graphic, reset_index: False):
-        """Add a graphic to the collection"""
+        """
+        Add a graphic to the collection.
+
+        Parameters
+        ----------
+        graphic: Graphic
+            graphic to add, must be a real ``Graphic`` not a proxy
+
+        reset_index: bool, default ``False``
+            reset the collection index
+
+        """
+
         if not type(graphic).__name__ == self.child_type:
             raise TypeError(
                 f"Can only add graphics of the same type to a collection, "
@@ -413,7 +428,19 @@ class GraphicCollection(Graphic):
         self._graphics_changed = True
 
     def remove_graphic(self, graphic: Graphic, reset_index: True):
-        """Remove a graphic from the collection"""
+        """
+        Remove a graphic from the collection.
+
+        Parameters
+        ----------
+        graphic: Graphic
+            graphic to remove
+
+        reset_index: bool, default ``False``
+            reset the collection index
+
+        """
+
         self._graphics.remove(graphic.loc)
 
         if reset_index:
@@ -486,8 +513,8 @@ class CollectionIndexer:
                 setattr(self, attr_name, collection_feature)
 
     @property
-    def graphics(self) -> Tuple[Graphic]:
-        """Returns a tuple of the selected graphics."""
+    def graphics(self) -> np.ndarray[Graphic]:
+        """Returns an array of the selected graphics. Always returns a proxy to the Graphic"""
         return tuple(self._selection)
 
     def __setattr__(self, key, value):

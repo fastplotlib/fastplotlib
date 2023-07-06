@@ -15,6 +15,37 @@ on:
 
 jobs:
 
+  docs-build:
+    name: Docs
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+    - name: Install llvmpipe and lavapipe for offscreen canvas, and git lfs
+      run: |
+        sudo apt-get update -y -qq
+        sudo apt-get install --no-install-recommends -y libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
+    - name: Install pandoc v3.14, nbsphinx complains about older pandoc versions
+      run: |
+        wget https://github.com/jgm/pandoc/releases/download/3.1.4/pandoc-3.1.4-1-amd64.deb
+        sudo apt-get install ./pandoc-3.1.4-1-amd64.deb
+    - name: Install dev dependencies
+      run: |
+        python -m pip install --upgrade pip
+        # remove pygfx from requirements, we install a specific commit of pygfx since both fpl and pygfx are fast evolving
+        sed -i "/pygfx/d" ./setup.py
+        pip install git+https://github.com/pygfx/pygfx.git@cf1da6c32223ba3cf7256982ce9b89c81b593076
+        pip install -e ".[notebook,docs,tests]"
+    - name: Build docs
+      run: |
+        cd docs
+        make html SPHINXOPTS="-W --keep-going"
+
   test-build:
     name: Test examples
     runs-on: ubuntu-latest
@@ -47,7 +78,7 @@ jobs:
         python -m pip install --upgrade pip
         # remove pygfx from requirements, we install a specific commit of pygfx since both fpl and pygfx are fast evolving
         sed -i "/pygfx/d" ./setup.py
-        pip install git+https://github.com/pygfx/pygfx.git@b63f22a1aa61993c32cd96895316cb8248a81e4d
+        pip install git+https://github.com/pygfx/pygfx.git@cf1da6c32223ba3cf7256982ce9b89c81b593076
         pip install -e ".["tests"]"
     - name: Show wgpu backend
       run:
