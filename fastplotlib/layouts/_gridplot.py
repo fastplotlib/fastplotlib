@@ -95,14 +95,17 @@ class GridPlot(RecordMixin):
 
         if names is not None:
             self.names = to_array(names)
+            # Check if shape of names kwarg is same as gridplot shape
             if self.names.shape != self.shape:
                 raise ValueError(f"subplot names: {self.names} must be in gridplot shape: {self.shape}")
+            # Check if all elements in names array are strings
             if not all(isinstance(self.names[i], str) for i in product(range(self.shape[0]), range(self.shape[1]))):
                 raise ValueError(f"subplot names: {self.names} must all be strings")
         else:
             self.names = None
 
         if controllers is not None:
+            # If value in controllers is 'sync', set all subplots to same controller
             if isinstance(controllers, str):
                 if controllers == "sync":
                     controllers = np.zeros(
@@ -110,19 +113,24 @@ class GridPlot(RecordMixin):
                     ).reshape(self.shape)
             else:
                 c = to_array(controllers)
+                # Confirm number of elements in controller array is same as number in gridplot shape
                 if (c.shape[0]*c.shape[1]) != (self.shape[0]*self.shape[1]):
-                    raise ValueError(f"number of controllers: {controllers} must be the same as number of elements "
-                                     f"in gridplot shape {self.shape}")
+                    raise ValueError(f"number of controllers: {len(controllers)} must be the same as number of elements"
+                                     f" in gridplot shape {self.shape}")
+                # Confirm controllers array doesn't have multiple dtypes
                 if any(isinstance(c[i], str) for i in product(range(c.shape[0]), range(c.shape[1]))) and \
                         any(not isinstance(c[i], str) for i in product(range(c.shape[0]), range(c.shape[1]))):
                     raise ValueError(f"controllers: {controllers} must all be the same type")
+                # Check if names kwarg is given, and if all elements in controller array are strings
                 if self.names is not None:
                     if all(isinstance(c[i], str) for i in product(range(c.shape[0]), range(c.shape[1]))):
                         controllers = np.zeros(
                             self.shape[0] * self.shape[1], dtype=int
                         ).reshape(self.shape)
+                        # For each value in names array, find corresponding index in controller array
                         for positions in product(range(self.shape[0]), range(self.shape[1])):
                             controller_idx = np.argwhere(c == self.names[positions])
+                            # If name exists in controller array, set controller for item to the row number
                             if len(controller_idx) != 0:
                                 controllers[positions] = controller_idx[0][0]
                             else:
