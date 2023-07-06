@@ -32,7 +32,7 @@ def plot_test(name, plot: PlotArea):
     try:
         assert_screenshot_equal(name, snapshot.data)
     except AssertionError:
-        FAILURES.append((name, format_exc()))
+        FAILURES.append(name)
 
 
 def regenerate_screenshot(name, data):
@@ -81,7 +81,8 @@ def update_diffs(name, is_similar, img, ground_truth):
             path.unlink()
 
 
-@pytest.fixture(scope="session", autouse=True)
-def check_failures(request):
+def notebook_finished(notebook_name: str):
     if len(FAILURES) > 0:
-        raise AssertionError(FAILURES)
+        raise AssertionError(
+            f"Failures for notebook: <{notebook_name}>:\n{FAILURES}"
+        )
