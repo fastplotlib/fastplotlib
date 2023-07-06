@@ -1,7 +1,7 @@
 import numpy as np
 import pygfx
 
-from ...utils import make_colors, get_cmap_texture, make_pygfx_colors, parse_cmap_values
+from ...utils import make_colors, get_cmap_texture, make_pygfx_colors, parse_cmap_values, quick_min_max
 from ._base import (
     GraphicFeature,
     GraphicFeatureIndexable,
@@ -348,6 +348,10 @@ class ImageCmapFeature(GraphicFeature):
             value,
         )
         self._feature_changed(key=None, new_data=None)
+
+    def reset_vmin_vmax(self):
+        """Reset vmin vmax values based on current data"""
+        self.vmin, self.vmax = quick_min_max(self._parent.data())
 
     def _feature_changed(self, key, new_data):
         # this is a non-indexable feature so key=None
