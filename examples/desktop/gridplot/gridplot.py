@@ -1,6 +1,7 @@
 """
 GridPlot Simple
-============
+===============
+
 Example showing simple 2x2 GridPlot with Standard images from imageio.
 """
 
