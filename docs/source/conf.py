@@ -3,6 +3,7 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 import fastplotlib
+from sphinx_gallery.sorting import ExplicitOrder
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -24,6 +25,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_design",
     "nbsphinx",
+    "sphinx_gallery.gen_gallery"
 ]
 
 autosummary_generate = True
@@ -59,4 +61,26 @@ html_theme_options = {
     "source_repository": "https://github.com/kushalkolar/fastplotlib",
     "source_branch": "master",
     "source_directory": "docs/",
+}
+
+sphinx_gallery_conf = {
+    # exclude anything in data from ever being executed
+    'filename_pattern': 'r"^((?![\\/]data[\\/]).)*$',
+    'ignore_pattern': r'__init__\.py',
+    'examples_dirs': '../../examples/desktop',
+    'subsection_order': ExplicitOrder(
+        [
+            '../../examples/desktop/image/',
+            '../../examples/desktop/gridplot/',
+            '../../examples/desktop/line/',
+            '../../examples/desktop/line_collection/',
+            '../../examples/desktop/scatter/'
+        ]),
+    "gallery_dirs": "_gallery",
+    "backreferences_dir": "_gallery/backreferences",
+    'line_numbers': True,
+    'remove_config_comments': True,
+    "doc_module": ("fastplotlib",),
+    "pypandoc": True
+  #  "image_scrapers": ("fastplotlib",),
 }

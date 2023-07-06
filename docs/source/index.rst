@@ -11,6 +11,7 @@ Welcome to fastplotlib's documentation!
     :maxdepth: 2
     
     quickstart
+    Gallery <_gallery/index.rst>
 
 .. toctree::
    :maxdepth: 1

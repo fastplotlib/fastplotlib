@@ -16,6 +16,7 @@ extras_require = {
         "jupyter-rfb>=0.4.1",  # required so ImageWidget docs show up
         "ipywidgets>=8.0.0,<9",
         "sphinx-copybutton",
+        "sphinx-gallery",
         "sphinx-design",
         "nbsphinx",
         "pandoc",
