@@ -149,9 +149,19 @@ def make_colors_dict(labels: iter, cmap: str, **kwargs) -> OrderedDict:
 
 
 def quick_min_max(data: np.ndarray) -> Tuple[float, float]:
-    # adapted from pyqtgraph.ImageView
-    # Estimate the min/max values of *data* by subsampling.
-    # Returns [(min, max), ...] with one item per channel
+    """
+    Adapted from pyqtgraph.ImageView.
+    Estimate the min/max values of *data* by subsampling.
+
+    Parameters
+    ----------
+    data: np.ndarray or array-like with `min` and `max` attributes
+
+    Returns
+    -------
+    (float, float)
+        (min, max)
+    """
 
     if hasattr(data, "min") and hasattr(data, "max"):
         # if value is pre-computed
@@ -170,9 +180,26 @@ def quick_min_max(data: np.ndarray) -> Tuple[float, float]:
 
 
 def make_pygfx_colors(colors, n_colors):
-    """parse and make colors array using pyfx.Color"""
+    """
+    Parse and make colors array using pyfx.Color
+
+    Parameters
+    ----------
+    colors: str, list, tuple, or np.ndarray
+        pygfx parseable color
+
+    n_colors: int
+        number of repeats of the color
+
+    Returns
+    -------
+    np.ndarray
+        shape is [n_colors, 4], i.e. [n_colors, RGBA]
+    """
+
     c = Color(colors)
     colors_array = np.repeat(np.array([c]), n_colors, axis=0)
+
     return colors_array
 
 

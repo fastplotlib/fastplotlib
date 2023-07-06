@@ -8,6 +8,8 @@ from fastplotlib.layouts._subplot import Subplot
 from fastplotlib import graphics
 from fastplotlib.graphics import _features, selectors
 from fastplotlib import widgets
+from fastplotlib import utils
+
 
 current_dir = Path(__file__).parent.resolve()
 
@@ -107,6 +109,20 @@ def generate_class(
     return out
 
 
+def generate_functions_module(module, name: str):
+    underline = "*" * len(name)
+    out = (
+        f"{name}\n"
+        f"{underline}\n"
+        f"\n"
+        f".. currentmodule:: {name}\n"
+        f".. automodule:: {module.__name__}\n"
+        f"    :members:\n"
+    )
+
+    return out
+
+
 def generate_page(
     page_name: str,
     modules: List[str],
@@ -138,9 +154,16 @@ def main():
 
     generate_page(
         page_name="GridPlot",
-        classes=[fastplotlib.GridPlot, Subplot],
-        modules=["fastplotlib", "fastplotlib.layouts._subplot"],
+        classes=[fastplotlib.GridPlot],
+        modules=["fastplotlib"],
         source_path=LAYOUTS_DIR.joinpath("gridplot.rst")
+    )
+
+    generate_page(
+        page_name="Subplot",
+        classes=[Subplot],
+        modules=["fastplotlib.layouts._subplot"],
+        source_path=LAYOUTS_DIR.joinpath("subplot.rst")
     )
 
     # the rest of this is a mess and can be refactored later
@@ -260,6 +283,12 @@ def main():
             modules=["fastplotlib"],
             source_path=WIDGETS_DIR.joinpath(f"{widget_cls.__name__}.rst")
         )
+    ##############################################################################
+
+    utils_str = generate_functions_module(utils.functions, "fastplotlib.utils")
+
+    with open(API_DIR.joinpath("utils.rst"), "w") as f:
+        f.write(utils_str)
 
 
 if __name__ == "__main__":

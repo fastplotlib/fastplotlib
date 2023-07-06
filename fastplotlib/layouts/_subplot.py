@@ -43,6 +43,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         General plot object that composes a ``Gridplot``. Each ``Gridplot`` instance will have [n rows, n columns]
         of subplots.
 
+        .. important::
+            ``Subplot`` is not meant to be constructed directly, it only exists as part of a ``GridPlot``
+
         Parameters
         ----------
         position: int tuple, optional

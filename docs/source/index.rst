@@ -18,10 +18,12 @@ Welcome to fastplotlib's documentation!
    
    Plot <api/layouts/plot>
    Gridplot <api/layouts/gridplot>
+   Subplot <api/layouts/subplot>
    Graphics <api/graphics/index>
    Graphic Features <api/graphic_features/index>
    Selectors <api/selectors/index>
    Widgets <api/widgets/index>
+   Utils <api/utils>
 
 Summary
 =======
