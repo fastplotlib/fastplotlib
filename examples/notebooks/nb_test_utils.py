@@ -1,10 +1,11 @@
+from typing import *
 import os
 from pathlib import Path
 
 import imageio.v3 as iio
 import numpy as np
 
-from fastplotlib.layouts._base import PlotArea
+from fastplotlib import Plot, GridPlot
 
 # make dirs for screenshots and diffs
 current_dir = Path(__file__).parent
@@ -20,7 +21,7 @@ os.makedirs(DIFFS_DIR, exist_ok=True)
 FAILURES = list()
 
 
-def plot_test(name, plot: PlotArea):
+def plot_test(name, plot: Union[Plot, GridPlot]):
     snapshot = plot.canvas.snapshot()
 
     if "REGENERATE_SCREENSHOTS" in os.environ.keys():
