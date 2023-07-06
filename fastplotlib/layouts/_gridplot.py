@@ -153,8 +153,8 @@ class GridPlot(RecordMixin):
         else:
             self.names = None
 
-        self.canvas = canvas
-        self.renderer = renderer
+        self._canvas = canvas
+        self._renderer = renderer
 
         nrows, ncols = self.shape
 
@@ -173,6 +173,7 @@ class GridPlot(RecordMixin):
                 name = None
 
             self._subplots[i, j] = Subplot(
+                parent=self,
                 position=position,
                 parent_dims=(nrows, ncols),
                 camera=camera,
@@ -190,6 +191,16 @@ class GridPlot(RecordMixin):
         self._starting_size = size
 
         RecordMixin.__init__(self)
+
+    @property
+    def canvas(self) -> WgpuCanvas:
+        """The canvas associated to this GridPlot"""
+        return self._canvas
+
+    @property
+    def renderer(self) -> pygfx.WgpuRenderer:
+        """The renderer associated to this GridPlot"""
+        return self._renderer
 
     def __getitem__(self, index: Union[Tuple[int, int], str]) -> Subplot:
         if isinstance(index, str):

@@ -87,6 +87,7 @@ class Plot(Subplot, RecordMixin):
 
         """
         super(Plot, self).__init__(
+            parent=None,
             position=(0, 0),
             parent_dims=(1, 1),
             canvas=canvas,

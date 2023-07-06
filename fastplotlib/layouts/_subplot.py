@@ -1,7 +1,5 @@
 from typing import *
-from functools import partial
-import weakref
-from inspect import signature, getfullargspec
+from inspect import getfullargspec
 from warnings import warn
 
 import numpy as np
@@ -18,8 +16,6 @@ from pygfx import (
 )
 from wgpu.gui.auto import WgpuCanvas
 
-from ._utils import make_canvas_and_renderer
-from ._base import PlotArea
 from ..graphics import TextGraphic
 from ._utils import make_canvas_and_renderer
 from ._base import PlotArea
@@ -30,6 +26,7 @@ from .graphic_methods_mixin import GraphicMethodsMixin
 class Subplot(PlotArea, GraphicMethodsMixin):
     def __init__(
         self,
+        parent: Any = None,
         position: Tuple[int, int] = None,
         parent_dims: Tuple[int, int] = None,
         camera: str = "2d",
@@ -90,7 +87,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         if controller is None:
             controller = create_controller(camera)
 
-        self.docked_viewports = dict()
+        self._docks = dict()
 
         self.spacing = 2
 
@@ -104,7 +101,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._animate_funcs_post = list()
 
         super(Subplot, self).__init__(
-            parent=None,
+            parent=parent,
             position=position,
             camera=create_camera(camera),
             controller=controller,
@@ -115,9 +112,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         )
 
         for pos in ["left", "top", "right", "bottom"]:
-            dv = _DockedViewport(self, pos, size=0)
+            dv = Dock(self, pos, size=0)
             dv.name = pos
-            self.docked_viewports[pos] = dv
+            self.docks[pos] = dv
             self.children.append(dv)
 
         self._title_graphic: TextGraphic = None
@@ -133,8 +130,23 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._name = name
         self.set_title(name)
 
+    @property
+    def docks(self) -> dict:
+        """
+        The docks of this plot area. Each ``dock`` is basically just a PlotArea too.
+
+        The docks are: ["left", "top", "right", "bottom"]
+
+        Returns
+        -------
+        Dict[str, Dock]
+            {dock_name: Dock}
+
+        """
+        return self._docks
+
     def set_title(self, text: Any):
-        """Sets the name of a subplot to 'top' viewport if defined."""
+        """Sets the plot title, stored as a ``TextGraphic`` in the "top" dock area"""
         if text is None:
             return
 
@@ -145,8 +157,8 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             tg = TextGraphic(text)
             self._title_graphic = tg
 
-            self.docked_viewports["top"].size = 35
-            self.docked_viewports["top"].add_graphic(tg)
+            self.docks["top"].size = 35
+            self.docks["top"].add_graphic(tg)
 
             self.center_title()
 
@@ -156,7 +168,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             raise AttributeError("No title graphic is set")
 
         self._title_graphic.world_object.position = (0, 0, 0)
-        self.docked_viewports["top"].center_graphic(self._title_graphic, zoom=1.5)
+        self.docks["top"].center_graphic(self._title_graphic, zoom=1.5)
         self._title_graphic.world_object.position_y = -3.5
 
     def get_rect(self):
@@ -175,7 +187,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         rect = np.array([x_pos, y_pos, width_subplot, height_subplot])
 
-        for dv in self.docked_viewports.values():
+        for dv in self.docks.values():
             rect = rect + dv.get_parent_rect_adjust()
 
         return rect
@@ -276,7 +288,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             self.scene.remove(self._grid)
 
 
-class _DockedViewport(PlotArea):
+class Dock(PlotArea):
     _valid_positions = ["right", "left", "top", "bottom"]
 
     def __init__(
@@ -292,7 +304,7 @@ class _DockedViewport(PlotArea):
 
         self._size = size
 
-        super(_DockedViewport, self).__init__(
+        super(Dock, self).__init__(
             parent=parent,
             position=position,
             camera=OrthographicCamera(),
@@ -304,6 +316,7 @@ class _DockedViewport(PlotArea):
 
     @property
     def size(self) -> int:
+        """Get or set the size of this dock"""
         return self._size
 
     @size.setter
@@ -426,4 +439,4 @@ class _DockedViewport(PlotArea):
         if self.size == 0:
             return
 
-        super(_DockedViewport, self).render()
+        super(Dock, self).render()
