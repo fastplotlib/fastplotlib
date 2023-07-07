@@ -87,7 +87,6 @@ class PlotArea:
         self._camera = camera
         self._controller = controller
 
-        self.controller.add_camera(self.camera)
         self.controller.register_events(
             self.viewport,
         )

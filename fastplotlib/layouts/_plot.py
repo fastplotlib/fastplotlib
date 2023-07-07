@@ -19,7 +19,7 @@ class Plot(Subplot, RecordMixin):
         canvas: WgpuCanvas = None,
         renderer: pygfx.WgpuRenderer = None,
         camera: str = "2d",
-        controller: Union[pygfx.PanZoomController, pygfx.OrbitController] = None,
+        controller: Union[pygfx.Controller, str] = None,
         size: Tuple[int, int] = (500, 300),
         **kwargs,
     ):

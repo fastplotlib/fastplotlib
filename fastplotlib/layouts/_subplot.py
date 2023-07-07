@@ -4,6 +4,7 @@ from warnings import warn
 
 import numpy as np
 
+import pygfx
 from pygfx import (
     Scene,
     OrthographicCamera,
@@ -30,7 +31,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         position: Tuple[int, int] = None,
         parent_dims: Tuple[int, int] = None,
         camera: str = "2d",
-        controller: Union[PanZoomController, OrbitController] = None,
+        controller: Union[pygfx.Controller] = None,
         canvas: Union[str, WgpuCanvas, Texture] = None,
         renderer: WgpuRenderer = None,
         name: str = None,
@@ -84,8 +85,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self.nrows, self.ncols = parent_dims
 
-        if controller is None:
-            controller = create_controller(camera)
+        # parse camera and controller
+        camera = create_camera(camera)
+        controller = create_controller(camera, controller)
 
         self._docks = dict()
 

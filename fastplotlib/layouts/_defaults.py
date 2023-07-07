@@ -6,17 +6,14 @@ camera_types = {
     "3d": pygfx.PerspectiveCamera,
 }
 
-controller_types = {
-    "2d": pygfx.PanZoomController,
-    "3d": pygfx.OrbitController,
-    pygfx.OrthographicCamera: pygfx.PanZoomController,
-    pygfx.PerspectiveCamera: pygfx.OrbitController,
-}
-
 
 def create_camera(
-    camera_type: str, big_camera: bool = False
+    camera_type: Union[pygfx.Camera, str],
+    big_camera: bool = False
 ) -> Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera]:
+    if isinstance(camera_type, (pygfx.OrthographicCamera, pygfx.PerspectiveCamera)):
+        return camera_type
+
     camera_type = camera_type.split("-")
 
     # kinda messy but works for now
@@ -40,7 +37,36 @@ def create_camera(
         return cls()
 
 
-def create_controller(controller_type: str):
-    controller_type = controller_type.split("-")[0]
+def create_controller(
+    camera: Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera],
+    controller: Union[pygfx.Controller, None, str],
+) -> pygfx.Controller:
+    if isinstance(controller, pygfx.Controller):
+        return controller
 
-    return controller_types[controller_type]()
+    if controller is None:
+        # default controllers
+        if isinstance(camera, pygfx.OrthographicCamera):
+            return pygfx.PanZoomController(camera)
+
+        elif isinstance(camera, pygfx.PerspectiveCamera):
+            return pygfx.FlyController(camera)
+
+    # controller specified
+    if controller == "fly":
+        return pygfx.FlyController(camera)
+
+    elif controller == "panzoom":
+        return pygfx.PanZoomController(camera)
+
+    elif controller == "trackball":
+        return pygfx.TrackballController(camera)
+
+    elif controller == "orbit":
+        return pygfx.OrbitController(camera)
+
+    else:
+        raise ValueError(
+            f"Invalid controller type, valid controllers are instances of `pygfx.Controller` or one of:\n"
+            f"'panzoom', 'fly', 'trackball', or 'oribit'"
+        )
