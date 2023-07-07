@@ -4,6 +4,7 @@ Simple Image Vmin Vmax
 Example showing the simple plot creation followed by changing the vmin/vmax with Standard imageio image.
 """
 # test_example = true
+# sphinx_gallery_fastplotlib_render = True
 
 import fastplotlib as fpl
 import imageio.v3 as iio

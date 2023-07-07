@@ -5,6 +5,7 @@ Simple Image Cmap
 Example showing simple plot creation and subsequent cmap change with Standard image from imageio.
 """
 # test_example = true
+# sphinx_gallery_fastplotlib_render = True
 
 import fastplotlib as fpl
 import imageio.v3 as iio

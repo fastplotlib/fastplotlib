@@ -5,6 +5,7 @@ Example showing data slice for scatter plot.
 """
 
 # test_example = true
+# sphinx_gallery_fastplotlib_render = True
 
 import fastplotlib as fpl
 import numpy as np

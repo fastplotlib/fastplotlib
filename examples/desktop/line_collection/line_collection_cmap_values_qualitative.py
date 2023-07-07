@@ -5,6 +5,7 @@ Example showing how to plot line collections
 """
 
 # test_example = true
+# sphinx_gallery_fastplotlib_render = True
 
 from itertools import product
 import numpy as np

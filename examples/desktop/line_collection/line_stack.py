@@ -5,6 +5,7 @@ Example showing how to plot line collections
 """
 
 # test_example = true
+# sphinx_gallery_fastplotlib_render = True
 
 import numpy as np
 import fastplotlib as fpl

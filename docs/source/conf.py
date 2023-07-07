@@ -78,6 +78,6 @@ sphinx_gallery_conf = {
     "backreferences_dir": "_gallery/backreferences",
     'remove_config_comments': True,
     "doc_module": ("fastplotlib",),
-    'run_stale_examples': True
-  #  "image_scrapers": ("fastplotlib",),
+    'run_stale_examples': True,
+    "image_scrapers": ("fastplotlib",)
 }

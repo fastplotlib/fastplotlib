@@ -4,6 +4,7 @@ RGB Image Vmin Vmax
 Example showing the simple plot followed by changing the vmin/vmax with 512 x 512 2D RGB image.
 """
 # test_example = true
+# sphinx_gallery_fastplotlib_render = True
 
 import fastplotlib as fpl
 import imageio.v3 as iio

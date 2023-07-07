@@ -5,6 +5,7 @@ Example showing color slicing with cosine, sine, sinc lines.
 """
 
 # test_example = true
+# sphinx_gallery_fastplotlib_render = True
 
 import fastplotlib as fpl
 import numpy as np
