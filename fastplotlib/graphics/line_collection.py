@@ -95,55 +95,6 @@ class LineCollection(GraphicCollection, Interaction):
 
         See :class:`LineGraphic` details on the features.
 
-        Examples
-        --------
-        .. code-block:: python
-
-            from fastplotlib import Plot
-            from fastplotlib.graphics import LineCollection
-
-            # creating data for sine and cosine waves
-            xs = np.linspace(-10, 10, 100)
-            ys = np.sin(xs)
-
-            sine = np.dstack([xs, ys])[0]
-
-            ys = np.sin(xs) + 10
-            sine2 = np.dstack([xs, ys])[0]
-
-            ys = np.cos(xs) + 5
-            cosine = np.dstack([xs, ys])[0]
-
-            # creating plot
-            plot = Plot()
-
-            # creating a line collection using the sine and cosine wave data
-            line_collection = LineCollection(data=[sine, cosine, sine2], cmap=["Oranges", "Blues", "Reds"], thickness=20.0)
-
-            # add graphic to plot
-            plot.add_graphic(line_collection)
-
-            # show plot
-            plot.show()
-
-            # change the color of the sine wave to white
-            line_collection[0].colors = "w"
-
-            # change certain color indexes of the cosine data to red
-            line_collection[1].colors[0:15] = "r"
-
-            # toggle presence of sine2 and rescale graphics
-            line_collection[2].present = False
-
-            plot.autoscale()
-
-            line_collection[2].present = True
-
-            plot.autoscale()
-
-            # can also do slicing
-            line_collection[1:].colors[35:70] = "magenta"
-
         """
 
         super(LineCollection, self).__init__(name)

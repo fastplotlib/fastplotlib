@@ -47,44 +47,6 @@ class Plot(Subplot, RecordMixin):
         kwargs
             passed to Subplot, for example ``name``
 
-        Examples
-        --------
-
-        Simple example
-
-        .. code-block:: python
-
-            from fastplotlib import Plot
-
-            # create a `Plot` instance
-            plot1 = Plot()
-
-            # make some random 2D image data
-            data = np.random.rand(512, 512)
-
-            # plot the image data
-            plot1.add_image(data=data)
-
-            # show the plot
-            plot1.show()
-
-        Sharing controllers, start from the previous example and create a new jupyter cell
-
-        .. code-block:: python
-
-            # use the controller from the previous plot
-            # this will sync the pan & zoom controller
-            plot2 = Plot(controller=plot1.controller)
-
-            # make some random 2D image data
-            data = np.random.rand(512, 512)
-
-            # plot the image data
-            plot2.add_image(data=data)
-
-            # show the plot
-            plot2.show()
-
         """
         super(Plot, self).__init__(
             parent=None,
