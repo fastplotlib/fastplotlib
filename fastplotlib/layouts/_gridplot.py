@@ -15,7 +15,7 @@ if is_jupyter():
     from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
 
 from ._utils import make_canvas_and_renderer
-from ._defaults import create_controller
+from ._defaults import create_camera, create_controller
 from ._subplot import Subplot
 from ._record_mixin import RecordMixin
 
@@ -108,7 +108,7 @@ class GridPlot(RecordMixin):
         if controllers.shape != self.shape:
             raise ValueError
 
-        cameras = to_array(cameras)
+        cameras = to_array(cameras).astype(object)
 
         self._controllers = np.empty(shape=cameras.shape, dtype=object)
 
@@ -130,7 +130,10 @@ class GridPlot(RecordMixin):
                         f"Controller id: {controller} has been assigned to multiple different camera types"
                     )
 
-                self._controllers[controllers == controller] = create_controller(cam[0])
+                _cam = create_camera(cam[0])
+                cameras[controllers == controller] = _cam
+                self._controllers[controllers == controller] = create_controller(_cam, controller=None)
+
         # else assume it's a single pygfx.Controller instance or a list of controllers
         else:
             if isinstance(controllers, pygfx.Controller):

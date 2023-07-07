@@ -56,9 +56,10 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             indicates the kind of pygfx camera that will be instantiated, '2d' uses pygfx ``OrthographicCamera`` and
             '3d' uses pygfx ``PerspectiveCamera``
 
-        controller: PanZoomController or OrbitOrthoController, optional
-            ``PanZoomController`` type is used for 2D pan-zoom camera control and ``OrbitController`` type is used for
-            rotating the camera around a center position, used to control the camera
+        controller: None, str, or a pygfx controller
+            | if ``None``, uses a PanZoomController for "2d" camera or FlyController for "3d" camera.
+            | if ``str``, must be one of: `"panzoom", "fly", "trackball", or "orbit"`.
+            | also accepts a pygfx.Controller instance
 
         canvas: WgpuCanvas, Texture, or one of "jupyter", "glfw", "qt", optional
             Provides surface on which a scene will be rendered. Can optionally provide a WgpuCanvas instance or a str

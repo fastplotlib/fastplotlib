@@ -46,10 +46,10 @@ def create_controller(
 
     if controller is None:
         # default controllers
-        if isinstance(camera, pygfx.OrthographicCamera):
+        if camera == "2d" or isinstance(camera, pygfx.OrthographicCamera):
             return pygfx.PanZoomController(camera)
 
-        elif isinstance(camera, pygfx.PerspectiveCamera):
+        elif camera == "3d" or isinstance(camera, pygfx.PerspectiveCamera):
             return pygfx.FlyController(camera)
 
     # controller specified
@@ -68,5 +68,5 @@ def create_controller(
     else:
         raise ValueError(
             f"Invalid controller type, valid controllers are instances of `pygfx.Controller` or one of:\n"
-            f"'panzoom', 'fly', 'trackball', or 'oribit'"
+            f"'panzoom', 'fly', 'trackball', or 'orbit'. You have passed: {type(controller)}"
         )
