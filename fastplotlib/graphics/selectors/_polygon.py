@@ -118,8 +118,6 @@ class PolygonSelector(Graphic, BaseSelector):
             self.world_object.children[0].geometry.positions.data[0]
         ])
 
-        print(data)
-
         new_line = pygfx.Line(
             geometry=pygfx.Geometry(positions=data.astype(np.float32)),
             material=pygfx.LineMaterial(thickness=self.edge_width, color=pygfx.Color(self.edge_color))
