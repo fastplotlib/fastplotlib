@@ -11,6 +11,7 @@ if is_jupyter():
 
 from ._subplot import Subplot
 from ._record_mixin import RecordMixin
+from ..graphics.selectors import PolygonSelector
 
 
 class Plot(Subplot, RecordMixin):
@@ -211,6 +212,15 @@ class ToolBar:
             layout=Layout(width="auto"),
             tooltip="flip",
         )
+
+        self.add_polygon_button = Button(
+            value=False,
+            disabled=False,
+            icon="draw-polygon",
+            layout=Layout(width="auto"),
+            tooltip="add PolygonSelector"
+        )
+
         self.record_button = ToggleButton(
             value=False,
             disabled=False,
@@ -226,6 +236,7 @@ class ToolBar:
                 self.panzoom_controller_button,
                 self.maintain_aspect_button,
                 self.flip_camera_button,
+                self.add_polygon_button,
                 self.record_button,
             ]
         )
@@ -235,6 +246,7 @@ class ToolBar:
         self.center_scene_button.on_click(self.center_scene)
         self.maintain_aspect_button.observe(self.maintain_aspect, "value")
         self.flip_camera_button.on_click(self.flip_camera)
+        self.add_polygon_button.on_click(self.add_polygon)
         self.record_button.observe(self.record_plot, "value")
 
     def auto_scale(self, obj):
@@ -251,6 +263,11 @@ class ToolBar:
 
     def flip_camera(self, obj):
         self.plot.camera.world.scale_y *= -1
+
+    def add_polygon(self, obj):
+        ps = PolygonSelector(edge_width=3, edge_color="magenta")
+
+        self.plot.add_graphic(ps, center=False)
 
     def record_plot(self, obj):
         if self.record_button.value:
