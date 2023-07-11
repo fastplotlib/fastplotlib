@@ -83,16 +83,6 @@ class LineCollection(GraphicCollection, Interaction):
 
         Collections support the same features as the underlying graphic. You just have to slice the selection.
 
-        .. code-block:: python
-
-            # slice only the collection
-            line_collection[10:20].colors = "blue"
-
-            # slice the collection and a feature
-            line_collection[20:30].colors[10:30] = "red"
-
-            # the data feature also works like this
-
         See :class:`LineGraphic` details on the features.
 
         """
@@ -547,55 +537,7 @@ class LineStack(LineCollection):
 
         Collections support the same features as the underlying graphic. You just have to slice the selection.
 
-        .. code-block:: python
-
-            # slice only the collection
-            line_collection[10:20].colors = "blue"
-
-            # slice the collection and a feature
-            line_collection[20:30].colors[10:30] = "red"
-
-            # the data feature also works like this
-
         See :class:`LineGraphic` details on the features.
-
-
-        Examples
-        --------
-        .. code-block:: python
-
-            from fastplotlib import Plot
-            from fastplotlib.graphics import LineStack
-
-            # create plot
-            plot = Plot()
-
-            # create line data
-            xs = np.linspace(-10, 10, 100)
-            ys = np.sin(xs)
-
-            sine = np.dstack([xs, ys])[0]
-
-            ys = np.sin(xs)
-            cosine = np.dstack([xs, ys])[0]
-
-            # create line stack
-            line_stack = LineStack(data=[sine, cosine], cmap=["Oranges", "Blues"], thickness=20.0, separation=5.0)
-
-            # add graphic to plot
-            plot.add_graphic(line_stack)
-
-            # show plot
-            plot.show()
-
-            # change the color of the sine wave to white
-            line_stack[0].colors = "w"
-
-            # change certain color indexes of the cosine data to red
-            line_stack[1].colors[0:15] = "r"
-
-            # more slicing
-            line_stack[0].colors[35:70] = "magenta"
 
         """
         super(LineStack, self).__init__(
