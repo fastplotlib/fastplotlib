@@ -246,7 +246,7 @@ class PlotArea:
         """
         self._add_or_insert_graphic(graphic=graphic, center=center, action="add")
 
-        graphic.position_z = len(self._graphics)
+        graphic.position_z = len(self)
 
     def insert_graphic(
         self,
@@ -505,10 +505,15 @@ class PlotArea:
         graphic_names = list()
         for g in self.graphics:
             graphic_names.append(g.name)
+
+        selector_names = list()
         for s in self.selectors:
-            graphic_names.append(s.name)
+            selector_names.append(s.name)
+
         raise IndexError(
-            f"no graphic of given name, the current graphics are:\n {graphic_names}"
+            f"No graphic or selector of given name.\n"
+            f"The current graphics are:\n {graphic_names}\n"
+            f"The current selectors are:\n {selector_names}"
         )
 
     def __str__(self):
@@ -529,3 +534,6 @@ class PlotArea:
             f"\t{newline.join(graphic.__repr__() for graphic in self.graphics)}"
             f"\n"
         )
+
+    def __len__(self) -> int:
+        return len(self._graphics) + len(self.selectors)
