@@ -228,6 +228,8 @@ class LineCollection(GraphicCollection, Interaction):
         for i, g in enumerate(self.graphics):
             g.colors = colors[i]
 
+        self._cmap_str = cmap
+
     @property
     def cmap_values(self) -> np.ndarray:
         return self._cmap_values
