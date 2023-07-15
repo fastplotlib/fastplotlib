@@ -16,7 +16,7 @@ grid_shape = (2,1)
 # same controller ID
 controllers = [
     [0],
-    [1]
+    [0]
 ]
 
 
@@ -30,7 +30,8 @@ names = [
 plot = fpl.GridPlot(
     shape=grid_shape,
     controllers=controllers,
-    names=names
+    names=names,
+    size=(1000, 1000)
 )
 
 # get y_values using sin function
