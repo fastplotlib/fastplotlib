@@ -48,6 +48,9 @@ class PointsSizesFeature(GraphicFeatureIndexable):
 
         sizes = to_gpu_supported_dtype(sizes)
 
+        if any(s < 0 for s in sizes):
+            raise ValueError("All sizes must be positive numbers greater than or equal to 0.0.")
+
         if sizes.ndim == 1:
             if graphic_type == "ScatterGraphic":
                 sizes = np.array(sizes)
