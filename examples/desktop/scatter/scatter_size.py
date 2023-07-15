@@ -35,8 +35,11 @@ plot = fpl.GridPlot(
 )
 
 # get y_values using sin function
-y_values = 30*np.sin(np.arange(0, 20*np.pi+0.001, np.pi / 20)) # 1 thousand points
-data = np.array([[x, y] for x, y in enumerate(y_values)], dtype=np.float32)
+angles = np.arange(0, 20*np.pi+0.001, np.pi / 20)
+y_values = 30*np.sin(angles) # 1 thousand points
+x_values = np.array([x for x in range(len(y_values))], dtype=np.float32)
+
+data = np.column_stack([x_values, y_values])
 
 plot["scalar_size"].add_scatter(data=data, sizes=5, colors="blue") # add a set of scalar sizes
 

@@ -36,7 +36,7 @@ class PointsSizesFeature(GraphicFeatureIndexable):
         graphic_type = parent.__class__.__name__
         
         n_datapoints = parent.data().shape[0]
-        if not GraphicFeatureIndexable.is_sequence(sizes):
+        if not isinstance(sizes, (list, tuple, np.ndarray)):
             sizes = np.full(n_datapoints, sizes, dtype=np.float32) # force it into a float to avoid weird gpu errors
         elif not isinstance(sizes, np.ndarray): # if it's not a ndarray already, make it one
             sizes = np.array(sizes, dtype=np.float32) # read it in as a numpy.float32
@@ -70,6 +70,10 @@ class PointsSizesFeature(GraphicFeatureIndexable):
             value = self._fix_sizes(value, self._parent)
         # otherwise assume that they have the right shape
         # numpy will throw errors if it can't broadcast
+
+        if value.size != self.buffer.data[key].size:
+            raise ValueError(f"{value.size} is not equal to buffer size {self.buffer.data[key].size}.\
+                             If you want to set size to a non-scalar value, make sure it's the right length!")
 
         self.buffer.data[key] = value
         self._update_range(key)

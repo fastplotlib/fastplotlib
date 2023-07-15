@@ -299,20 +299,6 @@ def cleanup_array_slice(key: np.ndarray, upper_bound) -> Union[np.ndarray, None]
 class GraphicFeatureIndexable(GraphicFeature):
     """An indexable Graphic Feature, colors, data, sizes etc."""
 
-    @staticmethod
-    def is_sequence(seq):
-        """Check if a given value is a sequence. 
-        
-        Credit to numpy, since this just reimplements np.distutils.misc_utils.is_sequence().
-        Reimplemented here due to that function's pending deprecation."""
-        if isinstance(seq, str):
-            return False
-        try:
-            len(seq)
-        except Exception:
-            return False
-        return True
-
     def _set(self, value):
         value = self._parse_set_value(value)
         self[:] = value
