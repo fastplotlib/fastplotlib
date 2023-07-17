@@ -45,7 +45,6 @@ plot.canvas.set_logical_size(800, 800)
 
 plot.auto_scale()
 
-img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)
