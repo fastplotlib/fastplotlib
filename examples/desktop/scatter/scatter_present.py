@@ -32,7 +32,6 @@ plot.auto_scale()
 
 scatter_graphic.present = False
 
-img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)

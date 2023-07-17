@@ -41,7 +41,6 @@ plot.auto_scale()
 
 scatter_graphic.cmap = "tab10"
 
-# img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)

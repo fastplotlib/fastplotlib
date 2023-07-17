@@ -36,7 +36,6 @@ scatter_graphic.data[2] = np.array([[5.2, 2.7, 1.7]])
 scatter_graphic.data[10:15] = scatter_graphic.data[0:5] + np.array([1, 1, 1])
 scatter_graphic.data[50:100:2] = scatter_graphic.data[100:150:2] + np.array([1,1,0])
 
-img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)

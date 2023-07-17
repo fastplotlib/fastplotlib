@@ -33,7 +33,6 @@ scatter_graphic.colors[0:75] = "red"
 scatter_graphic.colors[75:150] = "white"
 scatter_graphic.colors[::2] = "blue"
 
-img = np.asarray(plot.renderer.target.draw())
 
 if __name__ == "__main__":
     print(__doc__)
