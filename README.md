@@ -4,13 +4,19 @@
 [![Documentation Status](https://readthedocs.org/projects/fastplotlib/badge/?version=latest)](https://fastplotlib.readthedocs.io/en/latest/?badge=latest)
 [![Gitter](https://badges.gitter.im/fastplotlib/community.svg)](https://gitter.im/fastplotlib/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
-[**Installation**](https://github.com/kushalkolar/fastplotlib#installation) | [**GPU Drivers**](https://github.com/kushalkolar/fastplotlib#graphics-drivers) | [**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | [**Contributing**](https://github.com/kushalkolar/fastplotlib#heart-contributing)
+[**Installation**](https://github.com/kushalkolar/fastplotlib#installation) | 
+[**GPU Drivers**](https://github.com/kushalkolar/fastplotlib#graphics-drivers) | 
+[**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | 
+[**Contributing**](https://github.com/kushalkolar/fastplotlib#heart-contributing)
 
 A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine utilizing [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
 
-![fpl_neuro_demo](https://github.com/kushalkolar/fastplotlib/assets/9403332/0bebe2fe-3c45-4da4-a026-9505751a4087)
+![scipy-fpl](https://github.com/fastplotlib/fastplotlib/assets/9403332/b981a54c-05f9-443f-a8e4-52cd01cd802a)
 
-Higher resolution demo: [https://github.com/kushalkolar/fastplotlib/assets/9403332/1df06d4d-9a7e-4f0d-aad8-8d2e9b387647](https://github.com/kushalkolar/fastplotlib/assets/9403332/1df06d4d-9a7e-4f0d-aad8-8d2e9b387647)
+### SciPy Talk
+
+[![fpl_thumbnail](http://i3.ytimg.com/vi/Q-UJpAqljsU/hqdefault.jpg)](https://www.youtube.com/watch?v=Q-UJpAqljsU)
+
 
 # Supported frameworks
 
@@ -138,12 +144,6 @@ plot.show()
 ```
 
 ![out](https://user-images.githubusercontent.com/9403332/209422871-6b2153f3-81ca-4f62-9200-8206a81eaf0d.gif)
-
-### Image widget
-
-Interactive visualization of large imaging datasets in the notebook.
-
-![zfish](https://user-images.githubusercontent.com/9403332/209711810-abdb7d1d-81ce-4874-80f5-082efa2c421d.gif)
 
 ## Graphics drivers
 
