@@ -196,7 +196,7 @@ class LinearSelector(Graphic, BaseSelector):
 
     def _ipywidget_callback(self, change):
         # update the LinearSelector if the ipywidget value changes
-        if self._block_ipywidget_call:
+        if self._block_ipywidget_call or self._moving:
             return
 
         self.selection = change["new"]
