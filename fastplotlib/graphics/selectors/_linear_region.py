@@ -1,4 +1,13 @@
 from typing import *
+from numbers import Real
+
+try:
+    import ipywidgets
+
+    HAS_IPYWIDGETS = True
+except (ImportError, ModuleNotFoundError):
+    HAS_IPYWIDGETS = False
+
 import numpy as np
 
 import pygfx
@@ -9,6 +18,19 @@ from .._features._selection_features import LinearRegionSelectionFeature
 
 
 class LinearRegionSelector(Graphic, BaseSelector):
+    @property
+    def limits(self) -> Tuple[float, float]:
+        return self._limits
+
+    @limits.setter
+    def limits(self, values: Tuple[float, float]):
+        if len(values) != 2 or not all(map(lambda v: isinstance(v, Real), values)):
+            raise TypeError(
+                "limits must be an iterable of two numeric values"
+            )
+        self._limits = tuple(map(round, values))  # if values are close to zero things get weird so round them
+        self.selection._limits = self._limits
+
     def __init__(
         self,
         bounds: Tuple[int, int],
@@ -81,9 +103,9 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         """
 
-        # lots of very close to zero values etc. so round them
+        # lots of very close to zero values etc. so round them, otherwise things get weird
         bounds = tuple(map(round, bounds))
-        limits = tuple(map(round, limits))
+        self._limits = tuple(map(round, limits))
         origin = tuple(map(round, origin))
 
         # TODO: sanity checks, we recommend users to add LinearSelection using the add_linear_selector() methods
@@ -203,8 +225,12 @@ class LinearRegionSelector(Graphic, BaseSelector):
 
         # set the initial bounds of the selector
         self.selection = LinearRegionSelectionFeature(
-            self, bounds, axis=axis, limits=limits
+            self, bounds, axis=axis, limits=self._limits
         )
+
+        self._handled_widgets = list()
+        self._block_ipywidget_call = False
+        self._pygfx_event = None
 
         BaseSelector.__init__(
             self,
@@ -340,6 +366,130 @@ class LinearRegionSelector(Graphic, BaseSelector):
             # indices map directly to grid geometry for image data buffer
             ixs = np.arange(*self.selection(), dtype=int)
             return ixs
+
+    def make_ipywidget_slider(self, kind: str = "IntRangeSlider", **kwargs):
+        """
+        Makes and returns an ipywidget slider that is associated to this LinearSelector
+
+        Parameters
+        ----------
+        kind: str
+            "IntRangeSlider" or "FloatRangeSlider"
+
+        kwargs
+            passed to the ipywidget slider constructor
+
+        Returns
+        -------
+        ipywidgets.Intslider or ipywidgets.FloatSlider
+
+        """
+
+        if not HAS_IPYWIDGETS:
+            raise ImportError(
+                "Must installed `ipywidgets` to use `make_ipywidget_slider()`"
+            )
+
+        if kind not in ["IntRangeSlider", "FloatRangeSlider"]:
+            raise TypeError(
+                f"`kind` must be one of: 'IntRangeSlider', or 'FloatRangeSlider'\n"
+                f"You have passed: '{kind}'"
+            )
+
+        cls = getattr(ipywidgets, kind)
+
+        value = self.selection()
+        if "Int" in kind:
+            value = tuple(map(int, self.selection()))
+
+        slider = cls(
+            min=self.limits[0],
+            max=self.limits[1],
+            value=value,
+            **kwargs,
+        )
+        self.add_ipywidget_handler(slider)
+
+        return slider
+
+    def add_ipywidget_handler(
+            self,
+            widget,
+            step: Union[int, float] = None
+    ):
+        """
+        Bidirectionally connect events with a ipywidget slider
+
+        Parameters
+        ----------
+        widget: ipywidgets.IntRangeSlider or ipywidgets.FloatRangeSlider
+            ipywidget slider to connect to
+
+        step: int or float, default ``None``
+            step size, if ``None`` 100 steps are created
+
+        """
+        if not isinstance(widget, (ipywidgets.IntRangeSlider, ipywidgets.FloatRangeSlider)):
+            raise TypeError(
+                f"`widget` must be one of: ipywidgets.IntRangeSlider or ipywidgets.FloatRangeSlider\n"
+                f"You have passed a: <{type(widget)}"
+            )
+
+        if step is None:
+            step = (self.limits[1] - self.limits[0]) / 100
+
+        if isinstance(widget, ipywidgets.IntSlider):
+            step = int(step)
+
+        widget.step = step
+
+        self._setup_ipywidget_slider(widget)
+
+    def _setup_ipywidget_slider(self, widget):
+        # setup an ipywidget slider with bidirectional callbacks to this LinearSelector
+        value = self.selection()
+
+        if isinstance(widget, ipywidgets.IntSlider):
+            value = tuple(map(int, value))
+
+        widget.value = value
+
+        # user changes widget -> linear selection changes
+        widget.observe(self._ipywidget_callback, "value")
+
+        # user changes linear selection -> widget changes
+        self.selection.add_event_handler(self._update_ipywidgets)
+
+        self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
+
+        self._handled_widgets.append(widget)
+
+    def _update_ipywidgets(self, ev):
+        # update the ipywidget sliders when LinearSelector value changes
+        self._block_ipywidget_call = True  # prevent infinite recursion
+
+        value = ev.pick_info["new_data"]
+        # update all the handled slider widgets
+        for widget in self._handled_widgets:
+            if isinstance(widget, ipywidgets.IntSlider):
+                widget.value = tuple(map(int, value))
+            else:
+                widget.value = value
+
+        self._block_ipywidget_call = False
+
+    def _ipywidget_callback(self, change):
+        # update the LinearSelector if the ipywidget value changes
+        if self._block_ipywidget_call or self._moving:
+            return
+
+        self.selection = change["new"]
+
+    def _set_slider_layout(self, *args):
+        w, h = self._plot_area.renderer.logical_size
+
+        for widget in self._handled_widgets:
+            widget.layout = ipywidgets.Layout(width=f"{w}px")
 
     def _move_graphic(self, delta: np.ndarray):
         # add delta to current bounds to get new positions

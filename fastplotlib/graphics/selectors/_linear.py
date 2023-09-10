@@ -1,5 +1,6 @@
 from typing import *
 import math
+from numbers import Real
 
 import numpy as np
 
@@ -18,6 +19,19 @@ from ._base_selector import BaseSelector
 
 
 class LinearSelector(Graphic, BaseSelector):
+    @property
+    def limits(self) -> Tuple[float, float]:
+        return self._limits
+
+    @limits.setter
+    def limits(self, values: Tuple[float, float]):
+        if len(values) != 2 or not all(map(lambda v: isinstance(v, Real), values)):
+            raise TypeError(
+                "limits must be an iterable of two numeric values"
+            )
+        self._limits = tuple(map(round, values))  # if values are close to zero things get weird so round them
+        self.selection._limits = self._limits
+
     # TODO: make `selection` arg in graphics data space not world space
     def __init__(
         self,
@@ -80,9 +94,7 @@ class LinearSelector(Graphic, BaseSelector):
         if len(limits) != 2:
             raise ValueError("limits must be a tuple of 2 integers, i.e. (int, int)")
 
-        limits = tuple(map(round, limits))
-
-        self.limits = limits
+        self._limits = tuple(map(round, limits))
 
         selection = round(selection)
 
@@ -140,7 +152,7 @@ class LinearSelector(Graphic, BaseSelector):
             self.position_y = selection
 
         self.selection = LinearSelectionFeature(
-            self, axis=axis, value=selection, limits=limits
+            self, axis=axis, value=selection, limits=self._limits
         )
 
         self._move_info: dict = None
@@ -166,7 +178,7 @@ class LinearSelector(Graphic, BaseSelector):
         value = self.selection()
 
         if isinstance(widget, ipywidgets.IntSlider):
-            value = int(self.selection())
+            value = int(value)
 
         widget.value = value
 
@@ -230,13 +242,22 @@ class LinearSelector(Graphic, BaseSelector):
                 "Must installed `ipywidgets` to use `make_ipywidget_slider()`"
             )
 
+        if kind not in ["IntSlider", "FloatSlider", "FloatLogSlider"]:
+            raise TypeError(
+                f"`kind` must be one of: 'IntSlider', 'FloatSlider' or 'FloatLogSlider'\n"
+                f"You have passed: '{kind}'"
+            )
+
         cls = getattr(ipywidgets, kind)
 
+        value = self.selection()
+        if "Int" in kind:
+            value = int(self.selection())
+
         slider = cls(
-            min=self.selection.limits[0],
-            max=self.selection.limits[1],
-            value=int(self.selection()),
-            step=1,
+            min=self.limits[0],
+            max=self.limits[1],
+            value=value,
             **kwargs,
         )
         self.add_ipywidget_handler(slider)
@@ -245,7 +266,7 @@ class LinearSelector(Graphic, BaseSelector):
 
     def add_ipywidget_handler(
             self,
-            widget: Union[ipywidgets.IntSlider, ipywidgets.FloatSlider, ipywidgets.FloatLogSlider],
+            widget,
             step: Union[int, float] = None
     ):
         """
@@ -263,7 +284,8 @@ class LinearSelector(Graphic, BaseSelector):
 
         if not isinstance(widget, (ipywidgets.IntSlider, ipywidgets.FloatSlider, ipywidgets.FloatLogSlider)):
             raise TypeError(
-                "`widget` must be one of: ipywidgets.IntSlider, ipywidgets.FloatSlider, or ipywidgets.FloatLogSlider"
+                f"`widget` must be one of: ipywidgets.IntSlider, ipywidgets.FloatSlider, or ipywidgets.FloatLogSlider\n"
+                f"You have passed a: <{type(widget)}"
             )
 
         if step is None:
