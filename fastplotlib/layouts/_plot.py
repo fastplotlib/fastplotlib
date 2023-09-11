@@ -4,10 +4,12 @@ import traceback
 import os
 
 import pygfx
+from IPython.display import display
 from wgpu.gui.auto import WgpuCanvas, is_jupyter
 
 if is_jupyter():
     from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
+    from sidecar import Sidecar
 
 from ._subplot import Subplot
 from ._record_mixin import RecordMixin
@@ -64,6 +66,7 @@ class Plot(Subplot, RecordMixin):
         self._starting_size = size
 
         self.toolbar = None
+        self.sidecar = None
 
     def render(self):
         super(Plot, self).render()
@@ -72,7 +75,12 @@ class Plot(Subplot, RecordMixin):
         self.canvas.request_draw()
 
     def show(
-        self, autoscale: bool = True, maintain_aspect: bool = None, toolbar: bool = True
+        self,
+        autoscale: bool = True,
+        maintain_aspect: bool = None,
+        toolbar: bool = True,
+        sidecar: bool = True,
+        sidecar_kwargs: dict = None
     ):
         """
         Begins the rendering event loop and returns the canvas
@@ -87,6 +95,13 @@ class Plot(Subplot, RecordMixin):
 
         toolbar: bool, default True
             show toolbar
+
+        sidecar: bool, default True
+            display the plot in a ``jupyterlab-sidecar``
+
+        sidecar: dict, default None
+            kwargs for sidecar instance to display plot
+            i.e. title, layout
 
         Returns
         -------
@@ -117,7 +132,18 @@ class Plot(Subplot, RecordMixin):
             self.toolbar = ToolBar(self)
             self.toolbar.maintain_aspect_button.value = maintain_aspect
 
-        return VBox([self.canvas, self.toolbar.widget])
+        if not sidecar:
+            return VBox([self.canvas, self.toolbar.widget])
+
+        if self.sidecar is None:
+            # sidecar doesn't like unpacking when kwargs are `None`
+            if sidecar_kwargs is not None:
+                self.sidecar = Sidecar(**sidecar_kwargs)
+            else:
+                self.sidecar = Sidecar()
+
+        with self.sidecar:
+            return display(VBox([self.canvas, self.toolbar.widget]))
 
     def close(self):
         """Close Plot"""
@@ -125,6 +151,9 @@ class Plot(Subplot, RecordMixin):
 
         if self.toolbar is not None:
             self.toolbar.widget.close()
+
+        if self.sidecar is not None:
+            self.sidecar.close()
 
 
 class ToolBar:
