@@ -25,6 +25,8 @@ class LinearSelector(Graphic, BaseSelector):
 
     @limits.setter
     def limits(self, values: Tuple[float, float]):
+        # check that `values` is an iterable of two real numbers
+        # using `Real` here allows it to work with builtin `int` and `float` types, and numpy scaler types
         if len(values) != 2 or not all(map(lambda v: isinstance(v, Real), values)):
             raise TypeError(
                 "limits must be an iterable of two numeric values"
