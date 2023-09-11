@@ -150,14 +150,14 @@ class LinearSelectionFeature(GraphicFeature):
     def __init__(self, parent, axis: str, value: float, limits: Tuple[int, int]):
         super(LinearSelectionFeature, self).__init__(parent, data=value)
 
-        self.axis = axis
-        self.limits = limits
+        self._axis = axis
+        self._limits = limits
 
     def _set(self, value: float):
-        if not (self.limits[0] <= value <= self.limits[1]):
+        if not (self._limits[0] <= value <= self._limits[1]):
             return
 
-        if self.axis == "x":
+        if self._axis == "x":
             self._parent.position_x = value
         else:
             self._parent.position_y = value
@@ -219,7 +219,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
         super(LinearRegionSelectionFeature, self).__init__(parent, data=selection)
 
         self._axis = axis
-        self.limits = limits
+        self._limits = limits
 
         self._set(selection)
 
@@ -238,7 +238,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
 
         # make sure bounds not exceeded
         for v in value:
-            if not (self.limits[0] <= v <= self.limits[1]):
+            if not (self._limits[0] <= v <= self._limits[1]):
                 return
 
         # make sure `selector width >= 2`, left edge must not move past right edge!
