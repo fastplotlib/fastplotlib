@@ -4,16 +4,18 @@ import traceback
 import os
 
 import pygfx
-from IPython.display import display
 from wgpu.gui.auto import WgpuCanvas, is_jupyter
 
 if is_jupyter():
     from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
     from sidecar import Sidecar
+    from IPython.display import display
 
 from ._subplot import Subplot
 from ._record_mixin import RecordMixin
 from ..graphics.selectors import PolygonSelector
+
+PLOT_OPEN = False
 
 
 class Plot(Subplot, RecordMixin):
@@ -99,7 +101,7 @@ class Plot(Subplot, RecordMixin):
         sidecar: bool, default True
             display the plot in a ``jupyterlab-sidecar``
 
-        sidecar: dict, default None
+        sidecar_kwargs: dict, default None
             kwargs for sidecar instance to display plot
             i.e. title, layout
 
@@ -109,6 +111,9 @@ class Plot(Subplot, RecordMixin):
             the canvas
 
         """
+        # define global PLOT_OPEN to use from outer scope
+        global PLOT_OPEN
+
         self.canvas.request_draw(self.render)
 
         self.canvas.set_logical_size(*self._starting_size)
@@ -135,12 +140,19 @@ class Plot(Subplot, RecordMixin):
         if not sidecar:
             return VBox([self.canvas, self.toolbar.widget])
 
+        # used when plot.show() is being called again but sidecar has been closed via "x" button
+        # need to force new sidecar instance
+        # couldn't figure out how to get access to "close" button in order to add observe method on click
+        if PLOT_OPEN:
+            self.sidecar = None
+
         if self.sidecar is None:
-            # sidecar doesn't like unpacking when kwargs are `None`
             if sidecar_kwargs is not None:
                 self.sidecar = Sidecar(**sidecar_kwargs)
+                PLOT_OPEN = True
             else:
                 self.sidecar = Sidecar()
+                PLOT_OPEN = True
 
         with self.sidecar:
             return display(VBox([self.canvas, self.toolbar.widget]))
