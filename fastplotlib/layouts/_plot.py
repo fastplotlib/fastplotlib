@@ -95,13 +95,13 @@ class Plot(Subplot, RecordMixin):
         maintain_aspect: bool, default ``None``
             maintain aspect ratio, uses ``camera.maintain_aspect`` if ``None``
 
-        toolbar: bool, default True
+        toolbar: bool, default ``True``
             show toolbar
 
-        sidecar: bool, default True
+        sidecar: bool, default ``True``
             display the plot in a ``jupyterlab-sidecar``
 
-        sidecar_kwargs: dict, default None
+        sidecar_kwargs: dict, default ``None``
             kwargs for sidecar instance to display plot
             i.e. title, layout
 
