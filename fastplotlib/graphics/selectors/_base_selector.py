@@ -80,6 +80,9 @@ class BaseSelector:
 
         self._move_info: MoveInfo = None
 
+        # sets to `True` on "pointer_down", sets to `False` on "pointer_up"
+        self._moving = False  #: indicates if the selector is currently being moved
+
         # used to disable fill area events if the edge is being actively hovered
         # otherwise annoying and requires too much accuracy to move just an edge
         self._edge_hovered: bool = False
@@ -189,6 +192,7 @@ class BaseSelector:
         last_position = self._plot_area.map_screen_to_world(ev)
 
         self._move_info = MoveInfo(last_position=last_position, source=event_source)
+        self._moving = True
 
     def _move(self, ev):
         """
@@ -231,6 +235,7 @@ class BaseSelector:
 
     def _move_end(self, ev):
         self._move_info = None
+        self._moving = False
         self._plot_area.controller.enabled = True
 
     def _move_to_pointer(self, ev):
