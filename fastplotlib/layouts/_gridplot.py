@@ -21,8 +21,6 @@ from ._defaults import create_controller
 from ._subplot import Subplot
 from ._record_mixin import RecordMixin
 
-PLOT_OPEN = False
-
 
 def to_array(a) -> np.ndarray:
     if isinstance(a, np.ndarray):
@@ -86,6 +84,7 @@ class GridPlot(RecordMixin):
         self.shape = shape
         self.toolbar = None
         self.sidecar = None
+        self.plot_open = False
 
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
@@ -333,7 +332,6 @@ class GridPlot(RecordMixin):
             the canvas
 
         """
-        global PLOT_OPEN
 
         self.canvas.request_draw(self.render)
 
@@ -368,16 +366,16 @@ class GridPlot(RecordMixin):
         # used when plot.show() is being called again but sidecar has been closed via "x" button
         # need to force new sidecar instance
         # couldn't figure out how to get access to "close" button in order to add observe method on click
-        if PLOT_OPEN:
+        if self.plot_open:
             self.sidecar = None
 
         if self.sidecar is None:
             if sidecar_kwargs is not None:
                 self.sidecar = Sidecar(**sidecar_kwargs)
-                PLOT_OPEN = True
+                self.plot_open = True
             else:
                 self.sidecar = Sidecar()
-                PLOT_OPEN = True
+                self.plot_open = True
 
         with self.sidecar:
             return display(VBox([self.canvas, self.toolbar.widget]))
@@ -391,6 +389,8 @@ class GridPlot(RecordMixin):
 
         if self.sidecar is not None:
             self.sidecar.close()
+
+        self.plot_open = False
 
     def clear(self):
         """Clear all Subplots"""

@@ -15,8 +15,6 @@ from ._subplot import Subplot
 from ._record_mixin import RecordMixin
 from ..graphics.selectors import PolygonSelector
 
-PLOT_OPEN = False
-
 
 class Plot(Subplot, RecordMixin):
     def __init__(
@@ -69,6 +67,7 @@ class Plot(Subplot, RecordMixin):
 
         self.toolbar = None
         self.sidecar = None
+        self.plot_open = False
 
     def render(self):
         super(Plot, self).render()
@@ -111,8 +110,6 @@ class Plot(Subplot, RecordMixin):
             the canvas
 
         """
-        # define global PLOT_OPEN to use from outer scope
-        global PLOT_OPEN
 
         self.canvas.request_draw(self.render)
 
@@ -143,16 +140,16 @@ class Plot(Subplot, RecordMixin):
         # used when plot.show() is being called again but sidecar has been closed via "x" button
         # need to force new sidecar instance
         # couldn't figure out how to get access to "close" button in order to add observe method on click
-        if PLOT_OPEN:
+        if self.plot_open:
             self.sidecar = None
 
         if self.sidecar is None:
             if sidecar_kwargs is not None:
                 self.sidecar = Sidecar(**sidecar_kwargs)
-                PLOT_OPEN = True
+                self.plot_open = True
             else:
                 self.sidecar = Sidecar()
-                PLOT_OPEN = True
+                self.plot_open = True
 
         with self.sidecar:
             return display(VBox([self.canvas, self.toolbar.widget]))
@@ -166,6 +163,8 @@ class Plot(Subplot, RecordMixin):
 
         if self.sidecar is not None:
             self.sidecar.close()
+
+        self.plot_open = False
 
 
 class ToolBar:
