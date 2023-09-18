@@ -107,8 +107,8 @@ class LinearSelector(Graphic, BaseSelector):
 
             line_data = np.column_stack([xs, ys, zs])
         elif axis == "y":
-            xs = np.zeros(end_points)
-            ys = np.array(2)
+            xs = np.array(end_points)
+            ys = np.zeros(2)
             zs = np.zeros(2)
 
             line_data = np.column_stack([xs, ys, zs])
@@ -158,7 +158,6 @@ class LinearSelector(Graphic, BaseSelector):
         )
 
         self._move_info: dict = None
-        self._pygfx_event = None
 
         self.parent = parent
 
@@ -349,9 +348,9 @@ class LinearSelector(Graphic, BaseSelector):
                 or math.fabs(find_value - geo_positions[idx - 1])
                 < math.fabs(find_value - geo_positions[idx])
             ):
-                return int(idx - 1)
+                return round(idx - 1)
             else:
-                return int(idx)
+                return round(idx)
 
         if (
             "Heatmap" in graphic.__class__.__name__
@@ -359,7 +358,7 @@ class LinearSelector(Graphic, BaseSelector):
         ):
             # indices map directly to grid geometry for image data buffer
             index = self.selection() - offset
-            return int(index)
+            return round(index)
 
     def _move_graphic(self, delta: np.ndarray):
         """
