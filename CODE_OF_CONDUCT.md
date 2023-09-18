@@ -108,7 +108,7 @@ You can report issues to the fastplotlib core team:
 [Caitlin Lewis](https://github.com/clewis7)
 
 If your report involves any members of the fastplotlib core team, or if they feel they have
-a conflict of interest in handling it, then they will recuse themselves from
+a conflict of interest in handling it, then they will recurse themselves from
 considering your report.
 
 # Incident reporting resolution & Code of Conduct enforcement
