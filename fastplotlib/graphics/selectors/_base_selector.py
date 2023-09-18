@@ -84,6 +84,8 @@ class BaseSelector:
         # otherwise annoying and requires too much accuracy to move just an edge
         self._edge_hovered: bool = False
 
+        self._pygfx_event = None
+
     def get_selected_index(self):
         """Not implemented for this selector"""
         raise NotImplementedError
