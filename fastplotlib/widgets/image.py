@@ -300,7 +300,7 @@ class ImageWidget:
                 if names is not None:
                     if not all([isinstance(n, str) for n in names]):
                         raise TypeError(
-                            "optinal argument `names` must be a list of str"
+                            "optional argument `names` must be a list of str"
                         )
 
                     if len(names) != len(self.data):
@@ -350,7 +350,7 @@ class ImageWidget:
                 # dict of {array_ix: dims_order_str}
                 for data_ix in list(dims_order.keys()):
                     if not isinstance(data_ix, int):
-                        raise TypeError("`dims_oder` dict keys must be <int>")
+                        raise TypeError("`dims_order` dict keys must be <int>")
                     if len(dims_order[data_ix]) != self.ndim:
                         raise ValueError(
                             f"number of dims '{len(dims_order)} passed to `dims_order` "

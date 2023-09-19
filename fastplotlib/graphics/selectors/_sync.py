@@ -75,7 +75,7 @@ class Synchronizer:
         for s in self.selectors:
             # must use == and not is to compare Graphics because they are weakref proxies!
             if s == source:
-                # if it's the source, since it has already movied
+                # if it's the source, since it has already moved
                 continue
 
             s._move_graphic(delta)
