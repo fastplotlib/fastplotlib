@@ -224,7 +224,7 @@ class ToolBar:
         self.plot.camera.maintain_aspect = self.maintain_aspect_button.value
 
     def flip_camera(self, obj):
-        self.plot.camera.world.scale_y *= -1
+        self.plot.camera.local.scale_y *= -1
 
     def add_polygon(self, obj):
         ps = PolygonSelector(edge_width=3, edge_color="magenta")

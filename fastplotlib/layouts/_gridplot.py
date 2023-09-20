@@ -490,7 +490,7 @@ class GridPlotToolBar:
 
     def flip_camera(self, obj):
         current = self.current_subplot
-        current.camera.world.scale_y *= -1
+        current.camera.local.scale_y *= -1
 
     def update_current_subplot(self, ev):
         for subplot in self.plot:
