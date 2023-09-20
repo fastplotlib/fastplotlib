@@ -304,10 +304,10 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
             # set it with the actual data
             self.data = data
 
-    def _set_feature(self, feature: str, new_data: Any, indices: Any):
+    def set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
 
-    def _reset_feature(self, feature: str):
+    def reset_feature(self, feature: str):
         pass
 
 
@@ -500,8 +500,8 @@ class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
         """Maximum contrast limit."""
         self._material.clim = (self._material.clim[0], value)
 
-    def _set_feature(self, feature: str, new_data: Any, indices: Any):
+    def set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
 
-    def _reset_feature(self, feature: str):
+    def reset_feature(self, feature: str):
         pass

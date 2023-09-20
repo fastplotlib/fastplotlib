@@ -281,11 +281,11 @@ class LineGraphic(Graphic, Interaction):
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
-    def _set_feature(self, feature: str, new_data: Any, indices: Any = None):
+    def set_feature(self, feature: str, new_data: Any, indices: Any = None):
         if not hasattr(self, "_previous_data"):
             self._previous_data = dict()
         elif hasattr(self, "_previous_data"):
-            self._reset_feature(feature)
+            self.reset_feature(feature)
 
         feature_instance = getattr(self, feature)
         if indices is not None:
@@ -302,7 +302,7 @@ class LineGraphic(Graphic, Interaction):
                 data=previous, indices=indices
             )
 
-    def _reset_feature(self, feature: str):
+    def reset_feature(self, feature: str):
         if feature not in self._previous_data.keys():
             return
 
