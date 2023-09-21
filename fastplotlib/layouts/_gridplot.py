@@ -417,7 +417,7 @@ class GridPlotToolBar:
             disabled=False,
             icon="arrow-up",
             layout=Layout(width="auto"),
-            tooltip="flip",
+            tooltip="y-axis direction",
         )
 
         self.record_button = ToggleButton(
