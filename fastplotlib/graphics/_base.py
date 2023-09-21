@@ -166,11 +166,11 @@ class Interaction(ABC):
     """Mixin class that makes graphics interactive"""
 
     @abstractmethod
-    def _set_feature(self, feature: str, new_data: Any, indices: Any):
+    def set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
 
     @abstractmethod
-    def _reset_feature(self, feature: str):
+    def reset_feature(self, feature: str):
         pass
 
     def link(
@@ -312,14 +312,14 @@ class Interaction(ABC):
                             # the real world object in the pick_info and not the proxy
                             if wo is event.pick_info["world_object"]:
                                 indices = i
-                    target_info.target._set_feature(
+                    target_info.target.set_feature(
                         feature=target_info.feature,
                         new_data=target_info.new_data,
                         indices=indices,
                     )
                 else:
                     # if target is a single graphic, then indices do not matter
-                    target_info.target._set_feature(
+                    target_info.target.set_feature(
                         feature=target_info.feature,
                         new_data=target_info.new_data,
                         indices=None,
