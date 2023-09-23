@@ -415,7 +415,7 @@ class LineCollection(GraphicCollection, Interaction):
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
-    def _set_feature(self, feature: str, new_data: Any, indices: Any):
+    def set_feature(self, feature: str, new_data: Any, indices: Any):
         # if single value force to be an array of size 1
         if isinstance(indices, (np.integer, int)):
             indices = np.array([indices])
@@ -429,7 +429,7 @@ class LineCollection(GraphicCollection, Interaction):
                 if self._previous_data[feature].indices == indices:
                     return  # nothing to change, and this allows bidirectional linking without infinite recursion
 
-            self._reset_feature(feature)
+            self.reset_feature(feature)
 
         # coll_feature = getattr(self[indices], feature)
 
@@ -455,7 +455,7 @@ class LineCollection(GraphicCollection, Interaction):
         # since calling `feature._set()` triggers all the feature callbacks
         feature_instance._set(new_data)
 
-    def _reset_feature(self, feature: str):
+    def reset_feature(self, feature: str):
         if feature not in self._previous_data.keys():
             return
 

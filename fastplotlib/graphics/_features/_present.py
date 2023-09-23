@@ -38,7 +38,7 @@ class PresentFeature(GraphicFeature):
 
             if i > 100:
                 raise RecursionError(
-                    "Exceded scene graph depth threshold, cannot find Scene associated with"
+                    "Exceeded scene graph depth threshold, cannot find Scene associated with"
                     "this graphic."
                 )
 

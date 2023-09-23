@@ -476,9 +476,9 @@ class GridPlotToolBar:
         self.flip_camera_button = Button(
             value=False,
             disabled=False,
-            icon="arrows-v",
+            icon="arrow-up",
             layout=Layout(width="auto"),
-            tooltip="flip",
+            tooltip="y-axis direction",
         )
 
         self.record_button = ToggleButton(
@@ -551,7 +551,11 @@ class GridPlotToolBar:
 
     def flip_camera(self, obj):
         current = self.current_subplot
-        current.camera.world.scale_y *= -1
+        current.camera.local.scale_y *= -1
+        if current.camera.local.scale_y == -1:
+            self.flip_camera_button.icon = "arrow-down"
+        else:
+            self.flip_camera_button.icon = "arrow-up"
 
     def update_current_subplot(self, ev):
         for subplot in self.plot:

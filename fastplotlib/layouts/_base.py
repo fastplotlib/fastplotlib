@@ -40,7 +40,7 @@ class PlotArea:
     ):
         """
         Base class for plot creation and management. ``PlotArea`` is not intended to be instantiated by users
-        but rather to provide functionallity for ``subplot`` in ``gridplot`` and single ``plot``.
+        but rather to provide functionality for ``subplot`` in ``gridplot`` and single ``plot``.
 
         Parameters
         ----------
