@@ -12,7 +12,7 @@ import pygfx
 from wgpu.gui.auto import WgpuCanvas, is_jupyter
 
 if is_jupyter():
-    from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
+    from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown, Widget
     from sidecar import Sidecar
     from IPython.display import display
 
@@ -84,6 +84,7 @@ class GridPlot(RecordMixin):
         self.shape = shape
         self.toolbar = None
         self.sidecar = None
+        self.vbox = None
         self.plot_open = False
 
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
@@ -303,7 +304,8 @@ class GridPlot(RecordMixin):
         maintain_aspect: bool = None,
         toolbar: bool = True,
         sidecar: bool = True,
-        sidecar_kwargs: dict = None
+        sidecar_kwargs: dict = None,
+        vbox: list = None
     ):
         """
         Begins the rendering event loop and returns the canvas
@@ -325,6 +327,9 @@ class GridPlot(RecordMixin):
         sidecar_kwargs: dict, default ``None``
             kwargs for sidecar instance to display plot
             i.e. title, layout
+
+        vbox: list, default ``None``
+            list of ipywidgets to be displayed with plot
 
         Returns
         -------
@@ -360,8 +365,18 @@ class GridPlot(RecordMixin):
                 0, 0
             ].camera.maintain_aspect
 
+        # validate vbox if not None
+        if vbox is not None:
+            for widget in vbox:
+                if not isinstance(widget, Widget):
+                    raise ValueError(f"Items in vbox must be ipywidgets. Item: {widget} is of type: {type(widget)}")
+            self.vbox = VBox(vbox)
+
         if not sidecar:
-            return VBox([self.canvas, self.toolbar.widget])
+            if self.vbox is not None:
+                return VBox([self.canvas, self.toolbar.widget, self.vbox])
+            else:
+                return VBox([self.canvas, self.toolbar.widget])
 
         # used when plot.show() is being called again but sidecar has been closed via "x" button
         # need to force new sidecar instance
@@ -378,7 +393,10 @@ class GridPlot(RecordMixin):
                 self.plot_open = True
 
         with self.sidecar:
-            return display(VBox([self.canvas, self.toolbar.widget]))
+            if self.vbox is not None:
+                return display(VBox([self.canvas, self.toolbar.widget, self.vbox]))
+            else:
+                return display(VBox([self.canvas, self.toolbar.widget]))
 
     def close(self):
         """Close the GridPlot"""
@@ -389,6 +407,9 @@ class GridPlot(RecordMixin):
 
         if self.sidecar is not None:
             self.sidecar.close()
+
+        if self.vbox is not None:
+            self.vbox.close()
 
         self.plot_open = False
 
