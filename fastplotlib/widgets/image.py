@@ -17,6 +17,8 @@ from ipywidgets.widgets import (
     Play,
     jslink,
 )
+from sidecar import Sidecar
+from IPython.display import display
 
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
@@ -271,6 +273,8 @@ class ImageWidget:
 
         self._names = None
         self.toolbar = None
+        self.sidecar = None
+        self.plot_open = False
 
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
@@ -913,7 +917,7 @@ class ImageWidget:
         if reset_vmin_vmax:
             self.reset_vmin_vmax()
 
-    def show(self, toolbar: bool = True):
+    def show(self, toolbar: bool = True, sidecar: bool = True, sidecar_kwargs: dict = None):
         """
         Show the widget
 
@@ -930,13 +934,50 @@ class ImageWidget:
         if self.toolbar is None:
             self.toolbar = ImageWidgetToolbar(self)
 
-        return VBox(
-            [
-                self.gridplot.show(toolbar=True),
-                self.toolbar.widget,
-                self._vbox_sliders,
-            ]
-        )
+        if not sidecar:
+            return VBox(
+                [
+                    self.gridplot.show(toolbar=True, sidecar=False, sidecar_kwargs=None),
+                    self.toolbar.widget,
+                    self._vbox_sliders,
+                ]
+            )
+
+        if self.plot_open:
+            self.sidecar = None
+
+        if self.sidecar is None:
+            if sidecar_kwargs is not None:
+                self.sidecar = Sidecar(**sidecar_kwargs)
+                self.plot_open = True
+            else:
+                self.sidecar = Sidecar()
+                self.plot_open = True
+
+        with self.sidecar:
+            return display(VBox(
+                            [
+                                self.gridplot.show(toolbar=True, sidecar=False, sidecar_kwargs=None),
+                                self.toolbar.widget,
+                                self._vbox_sliders
+                            ]
+                        )
+                    )
+
+    def close(self):
+        """Close Widget"""
+        self.gridplot.canvas.close()
+
+        self._vbox_sliders.close()
+
+        if self.toolbar is not None:
+            self.toolbar.widget.close()
+            self.gridplot.toolbar.widget.close()
+
+        if self.sidecar is not None:
+            self.sidecar.close()
+
+        self.plot_open = False
 
 
 class ImageWidgetToolbar:

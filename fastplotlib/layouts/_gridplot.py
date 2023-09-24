@@ -12,7 +12,9 @@ import pygfx
 from wgpu.gui.auto import WgpuCanvas, is_jupyter
 
 if is_jupyter():
-    from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown
+    from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Dropdown, Widget
+    from sidecar import Sidecar
+    from IPython.display import display
 
 from ._utils import make_canvas_and_renderer
 from ._defaults import create_controller
@@ -81,6 +83,9 @@ class GridPlot(RecordMixin):
 
         self.shape = shape
         self.toolbar = None
+        self.sidecar = None
+        self.vbox = None
+        self.plot_open = False
 
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
@@ -294,7 +299,13 @@ class GridPlot(RecordMixin):
             self._animate_funcs_post.remove(func)
 
     def show(
-        self, autoscale: bool = True, maintain_aspect: bool = None, toolbar: bool = True
+        self,
+        autoscale: bool = True,
+        maintain_aspect: bool = None,
+        toolbar: bool = True,
+        sidecar: bool = True,
+        sidecar_kwargs: dict = None,
+        vbox: list = None
     ):
         """
         Begins the rendering event loop and returns the canvas
@@ -307,8 +318,18 @@ class GridPlot(RecordMixin):
         maintain_aspect: bool, default ``True``
             maintain aspect ratio
 
-        toolbar: bool, default True
+        toolbar: bool, default ``True``
             show toolbar
+
+        sidecar: bool, default ``True``
+            display plot in a ``jupyterlab-sidecar``
+
+        sidecar_kwargs: dict, default ``None``
+            kwargs for sidecar instance to display plot
+            i.e. title, layout
+
+        vbox: list, default ``None``
+            list of ipywidgets to be displayed with plot
 
         Returns
         -------
@@ -316,6 +337,7 @@ class GridPlot(RecordMixin):
             the canvas
 
         """
+
         self.canvas.request_draw(self.render)
 
         self.canvas.set_logical_size(*self._starting_size)
@@ -343,7 +365,38 @@ class GridPlot(RecordMixin):
                 0, 0
             ].camera.maintain_aspect
 
-        return VBox([self.canvas, self.toolbar.widget])
+        # validate vbox if not None
+        if vbox is not None:
+            for widget in vbox:
+                if not isinstance(widget, Widget):
+                    raise ValueError(f"Items in vbox must be ipywidgets. Item: {widget} is of type: {type(widget)}")
+            self.vbox = VBox(vbox)
+
+        if not sidecar:
+            if self.vbox is not None:
+                return VBox([self.canvas, self.toolbar.widget, self.vbox])
+            else:
+                return VBox([self.canvas, self.toolbar.widget])
+
+        # used when plot.show() is being called again but sidecar has been closed via "x" button
+        # need to force new sidecar instance
+        # couldn't figure out how to get access to "close" button in order to add observe method on click
+        if self.plot_open:
+            self.sidecar = None
+
+        if self.sidecar is None:
+            if sidecar_kwargs is not None:
+                self.sidecar = Sidecar(**sidecar_kwargs)
+                self.plot_open = True
+            else:
+                self.sidecar = Sidecar()
+                self.plot_open = True
+
+        with self.sidecar:
+            if self.vbox is not None:
+                return display(VBox([self.canvas, self.toolbar.widget, self.vbox]))
+            else:
+                return display(VBox([self.canvas, self.toolbar.widget]))
 
     def close(self):
         """Close the GridPlot"""
@@ -351,6 +404,14 @@ class GridPlot(RecordMixin):
 
         if self.toolbar is not None:
             self.toolbar.widget.close()
+
+        if self.sidecar is not None:
+            self.sidecar.close()
+
+        if self.vbox is not None:
+            self.vbox.close()
+
+        self.plot_open = False
 
     def clear(self):
         """Clear all Subplots"""

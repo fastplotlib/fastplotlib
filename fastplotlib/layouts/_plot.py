@@ -3,11 +3,14 @@ from datetime import datetime
 import traceback
 import os
 
+import ipywidgets
 import pygfx
 from wgpu.gui.auto import WgpuCanvas, is_jupyter
 
 if is_jupyter():
-    from ipywidgets import HBox, Layout, Button, ToggleButton, VBox
+    from ipywidgets import HBox, Layout, Button, ToggleButton, VBox, Widget
+    from sidecar import Sidecar
+    from IPython.display import display
 
 from ._subplot import Subplot
 from ._record_mixin import RecordMixin
@@ -64,6 +67,9 @@ class Plot(Subplot, RecordMixin):
         self._starting_size = size
 
         self.toolbar = None
+        self.sidecar = None
+        self.vbox = None
+        self.plot_open = False
 
     def render(self):
         super(Plot, self).render()
@@ -72,7 +78,13 @@ class Plot(Subplot, RecordMixin):
         self.canvas.request_draw()
 
     def show(
-        self, autoscale: bool = True, maintain_aspect: bool = None, toolbar: bool = True
+        self,
+        autoscale: bool = True,
+        maintain_aspect: bool = None,
+        toolbar: bool = True,
+        sidecar: bool = True,
+        sidecar_kwargs: dict = None,
+        vbox: list = None
     ):
         """
         Begins the rendering event loop and returns the canvas
@@ -85,8 +97,18 @@ class Plot(Subplot, RecordMixin):
         maintain_aspect: bool, default ``None``
             maintain aspect ratio, uses ``camera.maintain_aspect`` if ``None``
 
-        toolbar: bool, default True
+        toolbar: bool, default ``True``
             show toolbar
+
+        sidecar: bool, default ``True``
+            display the plot in a ``jupyterlab-sidecar``
+
+        sidecar_kwargs: dict, default ``None``
+            kwargs for sidecar instance to display plot
+            i.e. title, layout
+
+        vbox: list,  default ``None``
+            list of ipywidgets to be displayed with plot
 
         Returns
         -------
@@ -94,6 +116,7 @@ class Plot(Subplot, RecordMixin):
             the canvas
 
         """
+
         self.canvas.request_draw(self.render)
 
         self.canvas.set_logical_size(*self._starting_size)
@@ -117,7 +140,38 @@ class Plot(Subplot, RecordMixin):
             self.toolbar = ToolBar(self)
             self.toolbar.maintain_aspect_button.value = maintain_aspect
 
-        return VBox([self.canvas, self.toolbar.widget])
+        # validate vbox if not None
+        if vbox is not None:
+            for widget in vbox:
+                if not isinstance(widget, Widget):
+                    raise ValueError(f"Items in vbox must be ipywidgets. Item: {widget} is of type: {type(widget)}")
+            self.vbox = VBox(vbox)
+
+        if not sidecar:
+            if self.vbox is not None:
+                return VBox([self.canvas, self.toolbar.widget, self.vbox])
+            else:
+                return VBox([self.canvas, self.toolbar.widget])
+
+        # used when plot.show() is being called again but sidecar has been closed via "x" button
+        # need to force new sidecar instance
+        # couldn't figure out how to get access to "close" button in order to add observe method on click
+        if self.plot_open:
+            self.sidecar = None
+
+        if self.sidecar is None:
+            if sidecar_kwargs is not None:
+                self.sidecar = Sidecar(**sidecar_kwargs)
+                self.plot_open = True
+            else:
+                self.sidecar = Sidecar()
+                self.plot_open = True
+
+        with self.sidecar:
+            if self.vbox is not None:
+                return display(VBox([self.canvas, self.toolbar.widget, self.vbox]))
+            else:
+                return display(VBox([self.canvas, self.toolbar.widget]))
 
     def close(self):
         """Close Plot"""
@@ -125,6 +179,14 @@ class Plot(Subplot, RecordMixin):
 
         if self.toolbar is not None:
             self.toolbar.widget.close()
+
+        if self.sidecar is not None:
+            self.sidecar.close()
+
+        if self.vbox is not None:
+            self.vbox.close()
+
+        self.plot_open = False
 
 
 class ToolBar:
