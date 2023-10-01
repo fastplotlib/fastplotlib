@@ -19,7 +19,8 @@ extras_require = {
         "sphinx-design",
         "nbsphinx",
         "pandoc",
-        "jupyterlab"
+        "jupyterlab",
+        "sidecar"
     ],
 
     "notebook":
