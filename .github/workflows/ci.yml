@@ -39,7 +39,7 @@ jobs:
         python -m pip install --upgrade pip
         # remove pygfx from requirements, we install a specific commit of pygfx since both fpl and pygfx are fast evolving
         sed -i "/pygfx/d" ./setup.py
-        pip install git+https://github.com/pygfx/pygfx.git@cf1da6c32223ba3cf7256982ce9b89c81b593076
+        pip install git+https://github.com/pygfx/pygfx.git@main
         pip install -e ".[notebook,docs,tests]"
     - name: Build docs
       run: |
@@ -78,7 +78,7 @@ jobs:
         python -m pip install --upgrade pip
         # remove pygfx from requirements, we install a specific commit of pygfx since both fpl and pygfx are fast evolving
         sed -i "/pygfx/d" ./setup.py
-        pip install git+https://github.com/pygfx/pygfx.git@cf1da6c32223ba3cf7256982ce9b89c81b593076
+        pip install git+https://github.com/pygfx/pygfx.git@main
         pip install -e ".["tests"]"
     - name: Show wgpu backend
       run:
