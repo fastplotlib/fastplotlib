@@ -43,6 +43,15 @@ extras_require = {
         "scikit-learn",
         "tqdm",
         "sidecar"
+    ],
+
+    "tests-desktop":
+    [
+        "pytest",
+        "scipy",
+        "imageio",
+        "scikit-learn",
+        "tqdm",
     ]
 }
 
