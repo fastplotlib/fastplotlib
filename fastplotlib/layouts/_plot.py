@@ -3,7 +3,6 @@ from datetime import datetime
 import traceback
 import os
 
-import ipywidgets
 import pygfx
 from wgpu.gui.auto import WgpuCanvas, is_jupyter
 

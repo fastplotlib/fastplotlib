@@ -4,7 +4,7 @@ from pathlib import Path
 
 install_requires = [
     "numpy>=1.23.0",
-    "pygfx>=0.1.13",
+    "pygfx>=0.1.14",
 ]
 
 
@@ -43,6 +43,15 @@ extras_require = {
         "scikit-learn",
         "tqdm",
         "sidecar"
+    ],
+
+    "tests-desktop":
+    [
+        "pytest",
+        "scipy",
+        "imageio",
+        "scikit-learn",
+        "tqdm",
     ]
 }
 
