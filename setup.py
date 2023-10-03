@@ -81,7 +81,7 @@ setup(
     license='Apache 2.0',
     author='Kushal Kolar',
     author_email='',
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     install_requires=install_requires,
     extras_require=extras_require,
     include_package_data=True,
