@@ -85,65 +85,37 @@ pip install -e ".[notebook,docs,tests]"
 > 
 > `fastplotlib` and `pygfx` are fast evolving, you may require the latest `pygfx` and `fastplotlib` from github to use the examples in the master branch.
 
-First clone or download the repo to try the examples
-
-```bash
-git clone https://github.com/kushalkolar/fastplotlib.git
-```
+Note that `fastplotlib` code is basically identical between desktop and notebook usage. The differences are:
+- Running in `Qt` or `glfw` require a `fastplotlib.run()` call (which is really just a `wgpu` `run()` call)
+- Notebooks plots have ipywidget-based toolbars and widgets 😄
 
 ### Desktop examples using `glfw` or `Qt`
 
-```bash
-# most dirs within examples contain example code
-cd examples/desktop
+Desktop examples are here:
 
-# simplest example
-python image/image_simple.py
+https://github.com/fastplotlib/fastplotlib/tree/master/examples/desktop
+
+Some of the examples require imageio:
+```
+pip install imageio
 ```
 
 ### Notebook examples
 
-```bash
-cd examples/notebooks
-jupyter lab
+Notebook examples are here:
+
+https://github.com/fastplotlib/fastplotlib/tree/master/examples/notebooks
+
+**Start with `simple.ipynb`.**
+
+Some of the examples require imageio:
+```
+pip install imageio
 ```
 
-**Start out with `simple.ipynb`.**
+### Video
 
-### Simple image plot
-```python
-import fastplotlib as fpl
-import numpy as np
-
-plot = fpl.Plot()
-
-data = np.random.rand(512, 512)
-plot.add_image(data=data)
-
-plot.show()
-```
-![image](https://user-images.githubusercontent.com/9403332/209422734-4f983b42-e126-40a7-a681-3b8e22dbd797.png)
-
-### Fast animations
-```python
-import fastplotlib as fpl
-import numpy as np
-
-plot = fpl.Plot()
-
-data = np.random.rand(512, 512)
-image = plot.image(data=data)
-
-def update_data():
-    new_data = np.random.rand(512, 512)
-    image.data = new_data
-
-plot.add_animations(update_data)
-
-plot.show()
-```
-
-![out](https://user-images.githubusercontent.com/9403332/209422871-6b2153f3-81ca-4f62-9200-8206a81eaf0d.gif)
+You can watch our SciPy 2023 talk if you prefer watching demos: https://github.com/fastplotlib/fastplotlib#scipy-talk
 
 ## Graphics drivers
 
