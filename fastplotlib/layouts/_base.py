@@ -420,6 +420,12 @@ class PlotArea:
         else:
             width, height, depth = (1, 1, 1)
 
+        # make sure width and height are non-zero
+        if width < 0.01:
+            width = 1
+        if height < 0.01:
+            height = 1
+
         for selector in self.selectors:
             self.scene.add(selector.world_object)
 
