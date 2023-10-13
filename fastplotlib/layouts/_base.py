@@ -329,12 +329,16 @@ class PlotArea:
             else:
                 self._graphics.append(loc)
 
+        # now that it's in the dict, just use the weakref
+        graphic = weakref.proxy(graphic)
+
         # add world object to scene
         self.scene.add(graphic.world_object)
 
         if center:
             self.center_graphic(graphic)
 
+        # if we don't use the weakref above, then the object lingers if a plot hook is used!
         if hasattr(graphic, "_add_plot_area_hook"):
             graphic._add_plot_area_hook(self)
 
@@ -482,6 +486,9 @@ class PlotArea:
 
         # remove from list of addresses
         glist.remove(loc)
+
+        # cleanup
+        graphic._cleanup()
 
         if kind == "graphic":
             del GRAPHICS[loc]

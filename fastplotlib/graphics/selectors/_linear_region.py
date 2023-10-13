@@ -17,7 +17,7 @@ from ._base_selector import BaseSelector
 from .._features._selection_features import LinearRegionSelectionFeature
 
 
-class LinearRegionSelector(Graphic, BaseSelector):
+class LinearRegionSelector(BaseSelector):
     @property
     def limits(self) -> Tuple[float, float]:
         return self._limits
@@ -126,8 +126,6 @@ class LinearRegionSelector(Graphic, BaseSelector):
         #             f"limits[0] != position[1] != bounds[0]\n"
         #             f"{limits[0]} != {origin[1]} != {bounds[0]}"
         #         )
-
-        Graphic.__init__(self, name=name)
 
         self.parent = parent
 
@@ -241,6 +239,7 @@ class LinearRegionSelector(Graphic, BaseSelector):
             hover_responsive=self.edges,
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
+            name=name
         )
 
     def get_selected_data(

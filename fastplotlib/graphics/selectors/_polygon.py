@@ -8,7 +8,7 @@ from ._base_selector import BaseSelector, MoveInfo
 from .._base import Graphic
 
 
-class PolygonSelector(Graphic, BaseSelector):
+class PolygonSelector(BaseSelector):
     def __init__(
         self,
         edge_color="magenta",
@@ -16,7 +16,6 @@ class PolygonSelector(Graphic, BaseSelector):
         parent: Graphic = None,
         name: str = None,
     ):
-        Graphic.__init__(self, name=name)
 
         self.parent = parent
 
@@ -30,6 +29,8 @@ class PolygonSelector(Graphic, BaseSelector):
         self._move_info: MoveInfo = None
 
         self._current_mode = None
+
+        BaseSelector.__init__(self, name=name)
 
     def get_vertices(self) -> np.ndarray:
         """Get the vertices for the polygon"""

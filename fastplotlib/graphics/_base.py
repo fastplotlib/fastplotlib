@@ -158,6 +158,15 @@ class Graphic(BaseGraphic):
 
         return False
 
+    def _cleanup(self):
+        """
+        Cleans up the graphic in preparation for __del__(), such as removing event handlers from
+        plot renderer, feature event handlers, etc.
+
+        Optionally implemented in subclasses
+        """
+        pass
+
     def __del__(self):
         del WORLD_OBJECTS[self.loc]
 
