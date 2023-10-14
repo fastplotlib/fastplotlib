@@ -1,11 +1,9 @@
-import weakref
 from typing import *
 from warnings import warn
 from functools import partial
 
 import numpy as np
 
-from wgpu.gui.auto import is_jupyter
 from ipywidgets.widgets import (
     IntSlider,
     VBox,
@@ -293,11 +291,6 @@ class ImageWidget:
             passed to fastplotlib.graphics.Image
 
         """
-
-        if not is_jupyter():
-            raise EnvironmentError(
-                "ImageWidget is currently not supported outside of jupyter"
-            )
 
         self._names = None
         self.toolbar = None
