@@ -522,6 +522,28 @@ class PlotArea:
             f"The current selectors are:\n {selector_names}"
         )
 
+    def __contains__(self, item: Union[str, Graphic]):
+        to_check = [*self.graphics, *self.selectors]
+
+        if isinstance(item, Graphic):
+            if item in to_check:
+                return True
+            else:
+                return False
+
+        elif isinstance(item, str):
+            for graphic in to_check:
+                # only check named graphics
+                if graphic.name is None:
+                    continue
+
+                if graphic.name == item:
+                    return True
+
+            return False
+
+        raise TypeError("PlotArea `in` operator accepts only `Graphic` or `str` types")
+    
     def __str__(self):
         if self.name is None:
             name = "unnamed"
