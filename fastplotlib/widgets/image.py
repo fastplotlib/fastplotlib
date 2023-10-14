@@ -114,6 +114,34 @@ class ImageWidget:
         return iw_managed
 
     @property
+    def cmap(self) -> List[str]:
+        cmaps = list()
+        for g in self.managed_graphics:
+            cmaps.append(g.cmap.name)
+
+        return cmaps
+
+    @cmap.setter
+    def cmap(self, names: Union[str, List[str]]):
+        if isinstance(names, list):
+            if not all([isinstance(n, str) for n in names]):
+                raise TypeError(f"Must pass cmap name as a `str` of list of `str`, you have passed:\n{names}")
+
+            if not len(names) == len(self.managed_graphics):
+                raise IndexError(
+                    f"If passing a list of cmap names, the length of the list must be the same as the number of "
+                    f"image widget subplots. You have passed: {len(names)} cmap names and have "
+                    f"{len(self.managed_graphics)} image widget subplots"
+                )
+
+            for name, g in zip(names, self.managed_graphics):
+                g.cmap = name
+
+        elif isinstance(names, str):
+            for g in self.managed_graphics:
+                g.cmap = names
+
+    @property
     def data(self) -> List[np.ndarray]:
         """data currently displayed in the widget"""
         return self._data
