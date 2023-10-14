@@ -243,6 +243,8 @@ class LineCollection(GraphicCollection, Interaction):
         for i, g in enumerate(self.graphics):
             g.colors = colors[i]
 
+        self._cmap_values = values
+
     def add_linear_selector(
         self, selection: int = None, padding: float = 50, **kwargs
     ) -> LinearSelector:
