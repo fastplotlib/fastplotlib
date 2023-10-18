@@ -40,7 +40,7 @@ A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx
 
 http://fastplotlib.readthedocs.io/ 
 
-The Quickstart guide is not interactive. We recommend cloning/downloading the repo and trying out the `desktop` or `notebook` examples: https://github.com/kushalkolar/fastplotlib/tree/master/examples 
+The Quickstart guide is not interactive. We recommend cloning/downloading the repo and trying out the `desktop` or `notebook` examples: https://github.com/kushalkolar/fastplotlib/tree/main/examples
 
 If someone wants to integrate `pyodide` with `pygfx` we would be able to have live interactive examples! :smiley:
 
@@ -83,7 +83,7 @@ pip install -e ".[notebook,docs,tests]"
 
 > **Note**
 > 
-> `fastplotlib` and `pygfx` are fast evolving, you may require the latest `pygfx` and `fastplotlib` from github to use the examples in the master branch.
+> `fastplotlib` and `pygfx` are fast evolving, you may require the latest `pygfx` and `fastplotlib` from github to use the examples in the main branch.
 
 Note that `fastplotlib` code is basically identical between desktop and notebook usage. The differences are:
 - Running in `Qt` or `glfw` require a `fastplotlib.run()` call (which is really just a `wgpu` `run()` call)
@@ -93,7 +93,7 @@ Note that `fastplotlib` code is basically identical between desktop and notebook
 
 Desktop examples are here:
 
-https://github.com/fastplotlib/fastplotlib/tree/master/examples/desktop
+https://github.com/fastplotlib/fastplotlib/tree/main/examples/desktop
 
 Some of the examples require imageio:
 ```
@@ -104,7 +104,7 @@ pip install imageio
 
 Notebook examples are here:
 
-https://github.com/fastplotlib/fastplotlib/tree/master/examples/notebooks
+https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks
 
 **Start with `simple.ipynb`.**
 
@@ -152,6 +152,6 @@ As far as I know, WGPU uses Metal instead of Vulkan on Mac. You will need at lea
 
 # :heart: Contributing
 
-We welcome contributions! See the contributing guide: https://github.com/kushalkolar/fastplotlib/blob/master/CONTRIBUTING.md
+We welcome contributions! See the contributing guide: https://github.com/kushalkolar/fastplotlib/blob/main/CONTRIBUTING.md
 
 You can also take a look at our [**Roadmap for 2023**](https://github.com/kushalkolar/fastplotlib/issues/55) and [**Issues**](https://github.com/kushalkolar/fastplotlib/issues) for ideas on how to contribute!
