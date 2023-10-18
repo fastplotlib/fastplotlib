@@ -57,6 +57,6 @@ intersphinx_mapping = {
 
 html_theme_options = {
     "source_repository": "https://github.com/kushalkolar/fastplotlib",
-    "source_branch": "master",
+    "source_branch": "main",
     "source_directory": "docs/",
 }

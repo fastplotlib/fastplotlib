@@ -1,6 +1,6 @@
 # Contribution guide
 
-Contributions are welcome!
+Contributions are welcome! :smile: 
 
 ## Instructions
 
@@ -18,18 +18,18 @@ cd fastplotlib
 pip install -e ".[notebook,docs,tests]
 ```
 
-3. Checkout the `master` branch, and then checkout your feature or bug fix branch, and run tests:
+3. Checkout the `main` branch, and then checkout your feature or bug fix branch, and run tests:
 
 > **Warning**
 > Do not commit or add any changes from `examples/screenshots` or `examples/diffs`. 
-> If you are creating new test examples that generate or change screenshots please post an issue on the repo and we will help you. 
+> If you are creating new test examples that generate or change screenshots please post an issue on the repo and we will help you. The screenshots will be generated on github actions servers, which you can then copy into the screenshots dir. :) 
 
 ```bash
 cd fastplotlib
 
-git checkout master
+git checkout main
 
-# checkout your new branch from master
+# checkout your new branch from main
 git checkout -b my-new-feature-branch
 
 # make your changes
@@ -49,4 +49,4 @@ git commit -m "my new feature"
 git push origin my-new-feature-branch
 ```
 
-4. Finally make a **draft** PR against the `master` branch. When you think the PR is ready, mark it for review to trigger tests using our CI pipeline. If you need to make changes, please set the PR to a draft when pushing further commits until it's ready for review scion. We will get back to your with any further suggestions!
+4. Finally make a **draft** PR against the `main` branch. When you think the PR is ready, mark it for review to trigger tests using our CI pipeline. If you need to make changes, please set the PR to a draft when pushing further commits until it's ready for review scion. We will get back to your with any further suggestions!
