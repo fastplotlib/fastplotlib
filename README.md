@@ -9,7 +9,7 @@
 [**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | 
 [**Contributing**](https://github.com/kushalkolar/fastplotlib#heart-contributing)
 
-A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) render engine utilizing [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
+A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that can utilize [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
 
 ![scipy-fpl](https://github.com/fastplotlib/fastplotlib/assets/9403332/b981a54c-05f9-443f-a8e4-52cd01cd802a)
 
@@ -30,11 +30,11 @@ A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx
 **Notes:**\
 :heavy_check_mark: You can use a non-blocking `glfw` canvas from a notebook, as long as you're working locally or have a way to forward the remote graphical desktop (such as X11 forwarding).\
 :grey_exclamation: We do not officially support `jupyter notebook` through `jupyter_rfb`, this may change with notebook v7\
-:disappointed: [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb) does not work in collab, for a detailed discussion see: https://github.com/vispy/jupyter_rfb/issues/57 
+:disappointed: [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb) does not work in collab yet, see https://github.com/vispy/jupyter_rfb/pull/77 
 
 > **Note**
 > 
-> `fastplotlib` is currently in the **early alpha stage with breaking changes every ~week**, but you're welcome to try it out or contribute! See our [Roadmap for 2023](https://github.com/kushalkolar/fastplotlib/issues/55).
+> `fastplotlib` is currently in the **alpha stage with breaking changes every ~month**, but you're welcome to try it out or contribute! See our [Roadmap for 2023](https://github.com/kushalkolar/fastplotlib/issues/55). See this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121 
 
 # Documentation
 
@@ -44,7 +44,7 @@ The Quickstart guide is not interactive. We recommend cloning/downloading the re
 
 If someone wants to integrate `pyodide` with `pygfx` we would be able to have live interactive examples! :smiley:
 
-Questions, ideas? Post an issue or [chat on gitter](https://gitter.im/fastplotlib/community?utm_source=share-link&utm_medium=link&utm_campaign=share-link).
+Questions, issues, ideas? Post an [issue](https://github.com/fastplotlib/fastplotlib/issues) or post on the [discussion forum](https://github.com/fastplotlib/fastplotlib/discussions)!
 
 # Installation
 
@@ -54,6 +54,8 @@ Install using `pip`.
 ```bash
 pip install fastplotlib
 ```
+
+**This does not give you `Qt` or `glfw`, you will have to install one of them yourself depending on your preference**.
 
 ### Notebook
 ```bash
@@ -148,7 +150,7 @@ sudo apt install llvm-dev libturbojpeg* libgl1-mesa-dev libgl1-mesa-glx libglapi
 ```
 
 ### Mac OSX:
-As far as I know, WGPU uses Metal instead of Vulkan on Mac. You will need at least Mac OSX 10.13.
+WGPU uses Metal instead of Vulkan on Mac. You will need at least Mac OSX 10.13. The OS should come with Metal pre-installed so you should be good to go!
 
 # :heart: Contributing
 

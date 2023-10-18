@@ -67,7 +67,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Visualization",
     "License :: OSI Approved :: Apache Software License",
-
+    "Intended Audience :: Science/Research",
 ]
 
 
@@ -77,9 +77,9 @@ setup(
     long_description=readme,
     long_description_content_type='text/markdown',
     packages=find_packages(),
-    url='https://github.com/kushalkolar/fastplotlib',
+    url='https://github.com/fastplotlib/fastplotlib',
     license='Apache 2.0',
-    author='Kushal Kolar',
+    author='Kushal Kolar, Caitlin Lewis',
     author_email='',
     python_requires='>=3.9',
     install_requires=install_requires,
@@ -87,3 +87,4 @@ setup(
     include_package_data=True,
     description='A fast plotting library built using the pygfx render engine'
 )
+
