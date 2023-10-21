@@ -1,0 +1,3 @@
+ignore:
+  - "fastplotlib/utils/generate_add_methods.py"
+  - "fastplotlib/utils/generate_colormaps.py"
