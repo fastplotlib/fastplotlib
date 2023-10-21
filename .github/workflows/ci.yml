@@ -82,6 +82,7 @@ jobs:
         sed -i "/pygfx/d" ./setup.py
         pip install git+https://github.com/pygfx/pygfx.git@main
         pip install -e ".["tests"]"
+        pip install pytest-cov
     - name: Show wgpu backend
       run:
         python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
@@ -89,15 +90,11 @@ jobs:
       run: |
         git lfs fetch --all
         git lfs pull
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v3
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     - name: Test examples
       env:
         PYGFX_EXPECT_LAVAPIPE: true
       run: |
-        pytest -v examples
+        pytest --cov -v examples
         pytest --nbmake examples/notebooks/
     - uses: actions/upload-artifact@v3
       if: ${{ failure() }}
@@ -106,6 +103,11 @@ jobs:
         path: |
           examples/desktop/diffs
           examples/notebooks/diffs
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
 
   test-build-desktop:
     name: Test examples, env with only glfw
