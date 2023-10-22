@@ -13,9 +13,11 @@ A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx
 
 ![scipy-fpl](https://github.com/fastplotlib/fastplotlib/assets/9403332/b981a54c-05f9-443f-a8e4-52cd01cd802a)
 
-### SciPy Talk
+### SciPy 2023 Talk
 
 [![fpl_thumbnail](http://i3.ytimg.com/vi/Q-UJpAqljsU/hqdefault.jpg)](https://www.youtube.com/watch?v=Q-UJpAqljsU)
+
+Notebooks from talk: https://github.com/fastplotlib/fastplotlib-scipy2023 
 
 
 # Supported frameworks
@@ -34,7 +36,7 @@ A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx
 
 > **Note**
 > 
-> `fastplotlib` is currently in the **alpha stage with breaking changes every ~month**, but you're welcome to try it out or contribute! See our [Roadmap for 2023](https://github.com/kushalkolar/fastplotlib/issues/55). See this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121 
+> `fastplotlib` is currently in the **alpha stage with breaking changes every ~month**, but you're welcome to try it out or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). See this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121 
 
 # Documentation
 
