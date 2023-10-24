@@ -275,6 +275,10 @@ class CmapFeature(ColorFeature):
         super(CmapFeature, self).__setitem__(key, colors)
 
     @property
+    def name(self) -> str:
+        return self._cmap_name
+
+    @property
     def values(self) -> np.ndarray:
         return self._cmap_values
 
@@ -292,7 +296,7 @@ class CmapFeature(ColorFeature):
         super(CmapFeature, self).__setitem__(slice(None), colors)
 
     def __repr__(self) -> str:
-        s = f"CmapFeature for {self._parent}, name: {self._cmap_name}"
+        s = f"CmapFeature for {self._parent}, to get name or values: `<graphic>.cmap.name`, `<graphic>.cmap.values`"
         return s
 
 
