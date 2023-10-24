@@ -66,3 +66,7 @@ class PresentFeature(GraphicFeature):
         event_data = FeatureEvent(type="present", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
+
+    def __repr__(self) -> str:
+        s = f"PresentFeature for {self._parent}, call `<graphic>.present()` to get values"
+        return s

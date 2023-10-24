@@ -106,3 +106,7 @@ class PointsSizesFeature(GraphicFeatureIndexable):
         event_data = FeatureEvent(type="sizes", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
+
+    def __repr__(self) -> str:
+        s = f"PointsSizesFeature for {self._parent}, call `<graphic>.sizes()` to get values"
+        return s

@@ -191,6 +191,10 @@ class LinearSelectionFeature(GraphicFeature):
 
         self._call_event_handlers(event_data)
 
+    def __repr__(self) -> str:
+        s = f"LinearSelectionFeature for {self._parent}"
+        return s
+
 
 class LinearRegionSelectionFeature(GraphicFeature):
     """
@@ -313,3 +317,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
         event_data = FeatureEvent(type="selection", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
+
+    def __repr__(self) -> str:
+        s = f"LinearRegionSelectionFeature for {self._parent}"
+        return s

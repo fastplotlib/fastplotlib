@@ -40,3 +40,7 @@ class ThicknessFeature(GraphicFeature):
         event_data = FeatureEvent(type="thickness", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
+
+    def __repr__(self) -> str:
+        s = f"ThicknessFeature for {self._parent}, call `<graphic>.thickness()` to get value"
+        return s
