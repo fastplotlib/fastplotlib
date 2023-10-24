@@ -191,6 +191,10 @@ class GraphicFeature(ABC):
                 )
                 func()
 
+    @abstractmethod
+    def __repr__(self) -> str:
+        pass
+
 
 def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
     """

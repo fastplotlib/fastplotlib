@@ -234,6 +234,10 @@ class ColorFeature(GraphicFeatureIndexable):
 
         self._call_event_handlers(event_data)
 
+    def __repr__(self) -> str:
+        s = f"ColorsFeature for {self._parent}. Call `<graphic>.colors()` to get values."
+        return s
+
 
 class CmapFeature(ColorFeature):
     """
@@ -287,10 +291,18 @@ class CmapFeature(ColorFeature):
 
         super(CmapFeature, self).__setitem__(slice(None), colors)
 
+    def __repr__(self) -> str:
+        s = f"CmapFeature for {self._parent}, name: {self._cmap_name}"
+        return s
+
 
 class ImageCmapFeature(GraphicFeature):
     """
-    Colormap for :class:`ImageGraphic`
+    Colormap for :class:`ImageGraphic`.
+
+    <graphic>.cmap() returns the Texture buffer for the cmap.
+
+    <graphic>.cmap.name returns the cmap name as a str.
 
     **event pick info:**
 
@@ -309,7 +321,7 @@ class ImageCmapFeature(GraphicFeature):
     def __init__(self, parent, cmap: str):
         cmap_texture_view = get_cmap_texture(cmap)
         super(ImageCmapFeature, self).__init__(parent, cmap_texture_view)
-        self.name = cmap
+        self._name = cmap
 
     def _set(self, cmap_name: str):
         if self._parent.data().ndim > 2:
@@ -317,9 +329,13 @@ class ImageCmapFeature(GraphicFeature):
 
         self._parent.world_object.material.map.data[:] = make_colors(256, cmap_name)
         self._parent.world_object.material.map.update_range((0, 0, 0), size=(256, 1, 1))
-        self.name = cmap_name
+        self._name = cmap_name
 
-        self._feature_changed(key=None, new_data=self.name)
+        self._feature_changed(key=None, new_data=self._name)
+
+    @property
+    def name(self) -> str:
+        return self._name
 
     @property
     def vmin(self) -> float:
@@ -359,7 +375,7 @@ class ImageCmapFeature(GraphicFeature):
         pick_info = {
             "index": None,
             "world_object": self._parent.world_object,
-            "name": self.name,
+            "name": self._name,
             "vmin": self.vmin,
             "vmax": self.vmax,
         }
@@ -367,6 +383,10 @@ class ImageCmapFeature(GraphicFeature):
         event_data = FeatureEvent(type="cmap", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
+
+    def __repr__(self) -> str:
+        s = f"ImageCmapFeature for {self._parent}. Use `<graphic>.cmap.name` to get str name of cmap."
+        return s
 
 
 class HeatmapCmapFeature(ImageCmapFeature):

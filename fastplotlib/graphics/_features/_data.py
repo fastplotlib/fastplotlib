@@ -100,6 +100,10 @@ class PointsDataFeature(GraphicFeatureIndexable):
 
         self._call_event_handlers(event_data)
 
+    def __repr__(self) -> str:
+        s = f"PointsDataFeature for {self._parent}, call `<graphic>.data()` to get values"
+        return s
+
 
 class ImageDataFeature(GraphicFeatureIndexable):
     """
@@ -163,6 +167,10 @@ class ImageDataFeature(GraphicFeatureIndexable):
         event_data = FeatureEvent(type="data", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
+
+    def __repr__(self) -> str:
+        s = f"ImageDataFeature for {self._parent}, call `<graphic>.data()` to get values"
+        return s
 
 
 class HeatmapDataFeature(ImageDataFeature):
