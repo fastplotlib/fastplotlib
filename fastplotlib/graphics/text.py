@@ -10,11 +10,12 @@ class TextGraphic(Graphic):
         self,
         text: str,
         position: Tuple[int] = (0, 0, 0),
-        size: int = 10,
+        size: int = 14,
         face_color: Union[str, np.ndarray] = "w",
         outline_color: Union[str, np.ndarray] = "w",
         outline_thickness=0,
-        name: str = None,
+        *args,
+        **kwargs
     ):
         """
         Create a text Graphic
@@ -43,11 +44,16 @@ class TextGraphic(Graphic):
             name of graphic, passed to Graphic
 
         """
+        super(TextGraphic, self).__init__(*args, **kwargs)
 
-        super(TextGraphic, self).__init__(name=name)
+        self._text = text
 
         world_object = pygfx.Text(
-            pygfx.TextGeometry(text=str(text), font_size=size, screen_space=False),
+            pygfx.TextGeometry(text=str(text),
+                               font_size=size,
+                               screen_space=True,
+                               anchor="middle-center"
+                               ),
             pygfx.TextMaterial(
                 color=face_color,
                 outline_color=outline_color,
@@ -59,22 +65,78 @@ class TextGraphic(Graphic):
 
         self.world_object.position = position
 
-        self.name = None
+    @property
+    def text(self):
+        """Returns the text of this graphic."""
+        return self._text
 
-    def update_text(self, text: str):
-        self.world_object.geometry.set_text(text)
+    @text.setter
+    def text(self, text: str):
+        """Set the text of this graphic."""
+        if not isinstance(text, str):
+            raise ValueError("Text must be of type str.")
 
-    def update_size(self, size: int):
+        self._text = text
+        self.world_object.geometry.set_text(self._text)
+
+    @property
+    def text_size(self):
+        """Returns the text size of this graphic."""
+        return self.world_object.geometry.font_size
+
+    @text_size.setter
+    def text_size(self, size: Union[int, float]):
+        """Set the text size of this graphic."""
+        if not (isinstance(size, int) or isinstance(size, float)):
+            raise ValueError("Text size must be of type int or float")
+
         self.world_object.geometry.font_size = size
 
-    def update_face_color(self, color: Union[str, np.ndarray]):
+    @property
+    def face_color(self):
+        """Returns the face color of this graphic."""
+        return self.world_object.material.color
+
+    @face_color.setter
+    def face_color(self, color: Union[str, np.ndarray]):
+        """Set the face color of this graphic."""
+        if not (isinstance(color, str) or isinstance(color, np.ndarray)):
+            raise ValueError("Face color must be of type str or np.ndarray")
+
         self.world_object.material.color = color
 
-    def update_outline_size(self, size: int):
+    @property
+    def outline_size(self):
+        """Returns the outline size of this graphic."""
+        return self.world_object.material.outline_thickness
+
+    @outline_size.setter
+    def outline_size(self, size: Union[int, float]):
+        """Set the outline size of this text graphic."""
+        if not (isinstance(size, int) or isinstance(size, float)):
+            raise ValueError("Outline size must be of type int or float")
+
         self.world_object.material.outline_thickness = size
 
-    def update_outline_color(self, color: Union[str, np.ndarray]):
+    @property
+    def outline_color(self):
+        """Returns the outline color of this graphic."""
+        return self.world_object.material.outline_color
+
+    @outline_color.setter
+    def outline_color(self, color: Union[str, np.ndarray]):
+        """Set the outline color of this graphic"""
+        if not (isinstance(color, str) or isinstance(color, np.ndarray)):
+            raise ValueError("Outline color must be of type str or np.ndarray")
+
         self.world_object.material.outline_color = color
 
-    def update_position(self, pos: Tuple[int, int, int]):
-        self.world_object.position.set(*pos)
+    @property
+    def text_position(self):
+        """Returns the position of this graphic."""
+        return self.world_object.local.position
+
+    @text_position.setter
+    def text_position(self, pos: Tuple[int, int, int]):
+        """Set the position of this graphic."""
+        self.world_object.local.position = pos

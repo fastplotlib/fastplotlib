@@ -152,7 +152,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         text = str(text)
         if self._title_graphic is not None:
-            self._title_graphic.update_text(text)
+            self._title_graphic.text = text
         else:
             tg = TextGraphic(text)
             self._title_graphic = tg
