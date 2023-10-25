@@ -20,7 +20,7 @@ from ._utils import make_canvas_and_renderer
 from ._defaults import create_controller
 from ._subplot import Subplot
 from ._record_mixin import RecordMixin
-
+from ..graphics.selectors import PolygonSelector
 
 def to_array(a) -> np.ndarray:
     if isinstance(a, np.ndarray):
@@ -481,6 +481,14 @@ class GridPlotToolBar:
             tooltip="y-axis direction",
         )
 
+        self.add_polygon_button = Button(
+            value=False,
+            disabled=False,
+            icon="draw-polygon",
+            layout=Layout(width="auto"),
+            tooltip="add PolygonSelector"
+        )
+
         self.record_button = ToggleButton(
             value=False,
             disabled=False,
@@ -510,6 +518,7 @@ class GridPlotToolBar:
                 self.panzoom_controller_button,
                 self.maintain_aspect_button,
                 self.flip_camera_button,
+                self.add_polygon_button,
                 self.record_button,
                 self.dropdown,
             ]
@@ -580,3 +589,8 @@ class GridPlotToolBar:
                 self.record_button.value = False
         else:
             self.plot.record_stop()
+
+    def add_polygon(self, obj):
+        ps = PolygonSelector(edge_width=3, edge_color="magenta")
+
+        self.current_subplot.add_graphic(ps, center=False)
