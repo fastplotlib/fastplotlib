@@ -94,8 +94,9 @@ class PolygonSelector(Graphic, BaseSelector):
     def get_vertices(self) -> np.ndarray:
         """Get the vertices for the polygon"""
         vertices = list()
-        for child in self.world_object.children:
-            vertices.append(child.geometry.positions.data[:, :2])
+        for segment in self._segments:
+            # only add the first point because the second point will be in the next segment
+            vertices.append(segment.endpoints[0])
 
         return np.vstack(vertices)
 
