@@ -1,4 +1,9 @@
-# fastplotlib
+<p align="center">
+<img src="https://github.com/fastplotlib/fastplotlib/blob/main/docs/source/_static/logo.png" height="200" alt="logo">
+</p>
+
+---
+
 [![CI](https://github.com/kushalkolar/fastplotlib/actions/workflows/ci.yml/badge.svg)](https://github.com/kushalkolar/fastplotlib/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/fastplotlib.svg)](https://badge.fury.io/py/fastplotlib)
 [![Documentation Status](https://readthedocs.org/projects/fastplotlib/badge/?version=latest)](https://fastplotlib.readthedocs.io/en/latest/?badge=latest)
