@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/fastplotlib/fastplotlib/blob/main/docs/source/_static/logo.png" height="200" alt="logo">
+<img src="https://github.com/fastplotlib/fastplotlib/blob/main/docs/source/fastplotlib_logo.svg" height="220" alt="logo">
 </p>
 
 ---
