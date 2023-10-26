@@ -529,6 +529,7 @@ class GridPlotToolBar:
         self.center_scene_button.on_click(self.center_scene)
         self.maintain_aspect_button.observe(self.maintain_aspect, "value")
         self.flip_camera_button.on_click(self.flip_camera)
+        self.add_polygon_button.on_click(self.add_polygon)
         self.record_button.observe(self.record_plot, "value")
 
         self.plot.renderer.add_event_handler(self.update_current_subplot, "click")
