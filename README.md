@@ -95,9 +95,13 @@ Note that `fastplotlib` code is basically identical between desktop and notebook
 
 ### Desktop examples using `glfw` or `Qt`
 
-Desktop examples are here:
+GLFW examples are here. GLFW is a "minimal" desktop framework.
 
 https://github.com/fastplotlib/fastplotlib/tree/main/examples/desktop
+
+Qt examples are here:
+
+https://github.com/fastplotlib/fastplotlib/tree/main/examples/qt
 
 Some of the examples require imageio:
 ```
