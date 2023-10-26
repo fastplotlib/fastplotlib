@@ -6,6 +6,8 @@ import numpy as np
 
 from pygfx import WorldObject, Line, Mesh, Points
 
+from .._base import Graphic
+
 
 @dataclass
 class MoveInfo:
@@ -31,7 +33,7 @@ key_bind_direction = {
 
 
 # Selector base class
-class BaseSelector:
+class BaseSelector(Graphic):
     feature_events = ("selection",)
 
     def __init__(
@@ -42,6 +44,7 @@ class BaseSelector:
         hover_responsive: Tuple[WorldObject, ...] = None,
         arrow_keys_modifier: str = None,
         axis: str = None,
+        name: str = None
     ):
         if edges is None:
             edges = tuple()
@@ -88,6 +91,8 @@ class BaseSelector:
         self._edge_hovered: bool = False
 
         self._pygfx_event = None
+
+        Graphic.__init__(self, name=name)
 
     def get_selected_index(self):
         """Not implemented for this selector"""
@@ -341,12 +346,10 @@ class BaseSelector:
 
         self._move_info = None
 
-    def __del__(self):
-        # clear wo event handlers
-        for wo in self._world_objects:
-            wo._event_handlers.clear()
-
-        # remove renderer event handlers
+    def _cleanup(self):
+        """
+        Cleanup plot renderer event handlers etc.
+        """
         self._plot_area.renderer.remove_event_handler(self._move, "pointer_move")
         self._plot_area.renderer.remove_event_handler(self._move_end, "pointer_up")
         self._plot_area.renderer.remove_event_handler(self._move_to_pointer, "click")
@@ -356,6 +359,10 @@ class BaseSelector:
 
         # remove animation func
         self._plot_area.remove_animation(self._key_hold)
+
+        # clear wo event handlers
+        for wo in self._world_objects:
+            wo._event_handlers.clear()
 
         if hasattr(self, "feature_events"):
             feature_names = getattr(self, "feature_events")

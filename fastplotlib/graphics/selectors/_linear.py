@@ -18,7 +18,7 @@ from .._features._selection_features import LinearSelectionFeature
 from ._base_selector import BaseSelector
 
 
-class LinearSelector(Graphic, BaseSelector):
+class LinearSelector(BaseSelector):
     @property
     def limits(self) -> Tuple[float, float]:
         return self._limits
@@ -117,9 +117,6 @@ class LinearSelector(Graphic, BaseSelector):
 
         line_data = line_data.astype(np.float32)
 
-        # init Graphic
-        Graphic.__init__(self, name=name)
-
         if thickness < 1.1:
             material = pygfx.LineThinMaterial
         else:
@@ -172,6 +169,7 @@ class LinearSelector(Graphic, BaseSelector):
             hover_responsive=(line_inner, self.line_outer),
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
+            name=name,
         )
 
     def _setup_ipywidget_slider(self, widget):
@@ -188,8 +186,6 @@ class LinearSelector(Graphic, BaseSelector):
 
         # user changes linear selection -> widget changes
         self.selection.add_event_handler(self._update_ipywidgets)
-
-        self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
 
         self._handled_widgets.append(widget)
 
@@ -213,6 +209,12 @@ class LinearSelector(Graphic, BaseSelector):
             return
 
         self.selection = change["new"]
+
+    def _add_plot_area_hook(self, plot_area):
+        super()._add_plot_area_hook(plot_area=plot_area)
+
+        # resize the slider widgets when the canvas is resized
+        self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
 
     def _set_slider_layout(self, *args):
         w, h = self._plot_area.renderer.logical_size
@@ -375,3 +377,11 @@ class LinearSelector(Graphic, BaseSelector):
             self.selection = self.selection() + delta[0]
         else:
             self.selection = self.selection() + delta[1]
+
+    def _cleanup(self):
+        super()._cleanup()
+
+        for widget in self._handled_widgets:
+            widget.unobserve(self._ipywidget_callback, "value")
+
+        self._plot_area.renderer.remove_event_handler(self._set_slider_layout, "resize")

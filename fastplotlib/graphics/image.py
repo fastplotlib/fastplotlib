@@ -149,7 +149,7 @@ class _AddSelectorsMixin:
         if axis == "x":
             offset = self.position_x
             # x limits, number of columns
-            limits = (offset, data.shape[1])
+            limits = (offset, data.shape[1] - 1)
 
             # size is number of rows + padding
             # used by LinearRegionSelector but not LinearSelector
@@ -169,7 +169,7 @@ class _AddSelectorsMixin:
         else:
             offset = self.position_y
             # y limits
-            limits = (offset, data.shape[0])
+            limits = (offset, data.shape[0] - 1)
 
             # width + padding
             # used by LinearRegionSelector but not LinearSelector

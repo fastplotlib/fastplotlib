@@ -39,8 +39,12 @@ class Synchronizer:
 
     def remove(self, selector):
         """remove a selector"""
-        self._selectors.remove(selector)
         selector.selection.remove_event_handler(self._handle_event)
+        self._selectors.remove(selector)
+
+    def clear(self):
+        for i in range(len(self.selectors)):
+            self.remove(self.selectors[0])
 
     def _handle_event(self, ev):
         if self.block_event:
@@ -81,7 +85,4 @@ class Synchronizer:
             s._move_graphic(delta)
 
     def __del__(self):
-        for s in self.selectors:
-            self.remove(s)
-
-        self.selectors.clear()
+        self.clear()
