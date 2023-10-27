@@ -41,4 +41,6 @@ Methods
     LineCollection.add_linear_selector
     LineCollection.link
     LineCollection.remove_graphic
+    LineCollection.reset_feature
+    LineCollection.set_feature
 

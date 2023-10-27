@@ -21,6 +21,7 @@ Properties
     :toctree: LinearSelector_api
 
     LinearSelector.children
+    LinearSelector.limits
     LinearSelector.position
     LinearSelector.position_x
     LinearSelector.position_y
@@ -33,6 +34,7 @@ Methods
 .. autosummary::
     :toctree: LinearSelector_api
 
+    LinearSelector.add_ipywidget_handler
     LinearSelector.get_selected_data
     LinearSelector.get_selected_index
     LinearSelector.get_selected_indices

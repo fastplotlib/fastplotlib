@@ -9,6 +9,7 @@ Graphic Features
     ImageCmapFeature
     HeatmapCmapFeature
     PointsDataFeature
+    PointsSizesFeature
     ImageDataFeature
     HeatmapDataFeature
     PresentFeature

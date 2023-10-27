@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: ImageWidget_api
 
+    ImageWidget.cmap
     ImageWidget.current_index
     ImageWidget.data
     ImageWidget.dims_order
@@ -35,6 +36,7 @@ Methods
 .. autosummary::
     :toctree: ImageWidget_api
 
+    ImageWidget.close
     ImageWidget.reset_vmin_vmax
     ImageWidget.set_data
     ImageWidget.show

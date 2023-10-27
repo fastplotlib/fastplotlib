@@ -38,4 +38,6 @@ Methods
     HeatmapGraphic.add_linear_region_selector
     HeatmapGraphic.add_linear_selector
     HeatmapGraphic.link
+    HeatmapGraphic.reset_feature
+    HeatmapGraphic.set_feature
 

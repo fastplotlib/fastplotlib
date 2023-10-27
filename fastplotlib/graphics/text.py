@@ -10,11 +10,14 @@ class TextGraphic(Graphic):
         self,
         text: str,
         position: Tuple[int] = (0, 0, 0),
-        size: int = 10,
+        size: int = 14,
         face_color: Union[str, np.ndarray] = "w",
         outline_color: Union[str, np.ndarray] = "w",
         outline_thickness=0,
-        name: str = None,
+        screen_space: bool = True,
+        anchor: str = "middle-center",
+        *args,
+        **kwargs
     ):
         """
         Create a text Graphic
@@ -39,15 +42,30 @@ class TextGraphic(Graphic):
         outline_thickness: int, default 0
             text outline thickness
 
+        screen_space: bool = True
+            whether the text is rendered in screen space, in contrast to world space
+
         name: str, optional
             name of graphic, passed to Graphic
 
-        """
+        anchor: str, default "middle-center"
+            position of the origin of the text
+            a string representing the vertical and horizontal anchors, separated by a dash
 
-        super(TextGraphic, self).__init__(name=name)
+            * Vertical values: "top", "middle", "baseline", "bottom"
+            * Horizontal values: "left", "center", "right"
+        """
+        super(TextGraphic, self).__init__(*args, **kwargs)
+
+        self._text = text
 
         world_object = pygfx.Text(
-            pygfx.TextGeometry(text=str(text), font_size=size, screen_space=False),
+            pygfx.TextGeometry(
+                text=str(text),
+                font_size=size,
+                screen_space=screen_space,
+                anchor=anchor,
+            ),
             pygfx.TextMaterial(
                 color=face_color,
                 outline_color=outline_color,
@@ -59,22 +77,71 @@ class TextGraphic(Graphic):
 
         self.world_object.position = position
 
-        self.name = None
+    @property
+    def text(self):
+        """Returns the text of this graphic."""
+        return self._text
 
-    def update_text(self, text: str):
-        self.world_object.geometry.set_text(text)
+    @text.setter
+    def text(self, text: str):
+        """Set the text of this graphic."""
+        if not isinstance(text, str):
+            raise ValueError("Text must be of type str.")
 
-    def update_size(self, size: int):
+        self._text = text
+        self.world_object.geometry.set_text(self._text)
+
+    @property
+    def text_size(self):
+        """Returns the text size of this graphic."""
+        return self.world_object.geometry.font_size
+
+    @text_size.setter
+    def text_size(self, size: Union[int, float]):
+        """Set the text size of this graphic."""
+        if not (isinstance(size, int) or isinstance(size, float)):
+            raise ValueError("Text size must be of type int or float")
+
         self.world_object.geometry.font_size = size
 
-    def update_face_color(self, color: Union[str, np.ndarray]):
+    @property
+    def face_color(self):
+        """Returns the face color of this graphic."""
+        return self.world_object.material.color
+
+    @face_color.setter
+    def face_color(self, color: Union[str, np.ndarray]):
+        """Set the face color of this graphic."""
+        if not (isinstance(color, str) or isinstance(color, np.ndarray)):
+            raise ValueError("Face color must be of type str or np.ndarray")
+
+        color = pygfx.Color(color)
+
         self.world_object.material.color = color
 
-    def update_outline_size(self, size: int):
+    @property
+    def outline_size(self):
+        """Returns the outline size of this graphic."""
+        return self.world_object.material.outline_thickness
+
+    @outline_size.setter
+    def outline_size(self, size: Union[int, float]):
+        """Set the outline size of this text graphic."""
+        if not (isinstance(size, int) or isinstance(size, float)):
+            raise ValueError("Outline size must be of type int or float")
+
         self.world_object.material.outline_thickness = size
 
-    def update_outline_color(self, color: Union[str, np.ndarray]):
+    @property
+    def outline_color(self):
+        """Returns the outline color of this graphic."""
+        return self.world_object.material.outline_color
+
+    @outline_color.setter
+    def outline_color(self, color: Union[str, np.ndarray]):
+        """Set the outline color of this graphic"""
+        if not (isinstance(color, str) or isinstance(color, np.ndarray)):
+            raise ValueError("Outline color must be of type str or np.ndarray")
+
         self.world_object.material.outline_color = color
 
-    def update_position(self, pos: Tuple[int, int, int]):
-        self.world_object.position.set(*pos)

@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: ImageCmapFeature_api
 
+    ImageCmapFeature.name
     ImageCmapFeature.vmax
     ImageCmapFeature.vmin
 
@@ -32,4 +33,5 @@ Methods
     ImageCmapFeature.block_events
     ImageCmapFeature.clear_event_handlers
     ImageCmapFeature.remove_event_handler
+    ImageCmapFeature.reset_vmin_vmax
 

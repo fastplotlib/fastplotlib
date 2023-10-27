@@ -36,4 +36,6 @@ Methods
     LineGraphic.add_linear_region_selector
     LineGraphic.add_linear_selector
     LineGraphic.link
+    LineGraphic.reset_feature
+    LineGraphic.set_feature
 

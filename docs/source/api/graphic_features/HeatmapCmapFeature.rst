@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: HeatmapCmapFeature_api
 
+    HeatmapCmapFeature.name
     HeatmapCmapFeature.vmax
     HeatmapCmapFeature.vmin
 
@@ -32,4 +33,5 @@ Methods
     HeatmapCmapFeature.block_events
     HeatmapCmapFeature.clear_event_handlers
     HeatmapCmapFeature.remove_event_handler
+    HeatmapCmapFeature.reset_vmin_vmax
 
