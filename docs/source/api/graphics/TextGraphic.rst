@@ -29,7 +29,6 @@ Properties
     TextGraphic.position_y
     TextGraphic.position_z
     TextGraphic.text
-    TextGraphic.text_position
     TextGraphic.text_size
     TextGraphic.visible
     TextGraphic.world_object
