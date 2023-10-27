@@ -145,12 +145,3 @@ class TextGraphic(Graphic):
 
         self.world_object.material.outline_color = color
 
-    @property
-    def text_position(self):
-        """Returns the position of this graphic."""
-        return self.world_object.local.position
-
-    @text_position.setter
-    def text_position(self, pos: Tuple[int, int, int]):
-        """Set the position of this graphic."""
-        self.world_object.local.position = pos

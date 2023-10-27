@@ -313,7 +313,7 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(LineStack, data, z_position, thickness, colors, cmap, separation, separation_axis, name, *args, **kwargs)
 
-    def add_scatter(self, data: numpy.ndarray, sizes: Union[int, numpy.ndarray, list] = 1, colors: numpy.ndarray = 'w', alpha: float = 1.0, cmap: str = None, cmap_values: Union[numpy.ndarray, List] = None, z_position: float = 0.0, *args, **kwargs) -> ScatterGraphic:
+    def add_scatter(self, data: numpy.ndarray, sizes: Union[int, float, numpy.ndarray, list] = 1, colors: numpy.ndarray = 'w', alpha: float = 1.0, cmap: str = None, cmap_values: Union[numpy.ndarray, List] = None, z_position: float = 0.0, *args, **kwargs) -> ScatterGraphic:
         """
         
         Create a Scatter Graphic, 2d or 3d
@@ -368,7 +368,7 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(ScatterGraphic, data, sizes, colors, alpha, cmap, cmap_values, z_position, *args, **kwargs)
 
-    def add_text(self, text: str, position: Tuple[int] = (0, 0, 0), size: int = 10, face_color: Union[str, numpy.ndarray] = 'w', outline_color: Union[str, numpy.ndarray] = 'w', outline_thickness=0, name: str = None) -> TextGraphic:
+    def add_text(self, text: str, position: Tuple[int] = (0, 0, 0), size: int = 14, face_color: Union[str, numpy.ndarray] = 'w', outline_color: Union[str, numpy.ndarray] = 'w', outline_thickness=0, screen_space: bool = True, anchor: str = 'middle-center', *args, **kwargs) -> TextGraphic:
         """
         
         Create a text Graphic
@@ -393,10 +393,19 @@ class GraphicMethodsMixin:
         outline_thickness: int, default 0
             text outline thickness
 
+        screen_space: bool = True
+            whether the text is rendered in screen space, in contrast to world space
+
         name: str, optional
             name of graphic, passed to Graphic
 
+        anchor: str, default "middle-center"
+            position of the origin of the text
+            a string representing the vertical and horizontal anchors, separated by a dash
+
+            * Vertical values: "top", "middle", "baseline", "bottom"
+            * Horizontal values: "left", "center", "right"
         
         """
-        return self._create_graphic(TextGraphic, text, position, size, face_color, outline_color, outline_thickness, name, *args, **kwargs)
+        return self._create_graphic(TextGraphic, text, position, size, face_color, outline_color, outline_thickness, screen_space, anchor, *args, **kwargs)
 
