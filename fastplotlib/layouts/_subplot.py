@@ -1,6 +1,4 @@
 from typing import *
-from inspect import getfullargspec
-from warnings import warn
 
 import numpy as np
 
@@ -97,9 +95,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self._grid: GridHelper = GridHelper(size=100, thickness=1)
 
-        self._animate_funcs_pre = list()
-        self._animate_funcs_post = list()
-
         super(Subplot, self).__init__(
             parent=parent,
             position=position,
@@ -191,87 +186,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             rect = rect + dv.get_parent_rect_adjust()
 
         return rect
-
-    def render(self):
-        self._call_animate_functions(self._animate_funcs_pre)
-
-        super(Subplot, self).render()
-
-        self._call_animate_functions(self._animate_funcs_post)
-
-    def _call_animate_functions(self, funcs: Iterable[callable]):
-        for fn in funcs:
-            try:
-                args = getfullargspec(fn).args
-
-                if len(args) > 0:
-                    if args[0] == "self" and not len(args) > 1:
-                        fn()
-                    else:
-                        fn(self)
-                else:
-                    fn()
-            except (ValueError, TypeError):
-                warn(
-                    f"Could not resolve argspec of {self.__class__.__name__} animation function: {fn}, "
-                    f"calling it without arguments."
-                )
-                fn()
-
-    def add_animations(
-        self,
-        *funcs: Iterable[callable],
-        pre_render: bool = True,
-        post_render: bool = False,
-    ):
-        """
-        Add function(s) that are called on every render cycle.
-        These are called at the Subplot level.
-
-        Parameters
-        ----------
-        *funcs: callable or iterable of callable
-            function(s) that are called on each render cycle
-
-        pre_render: bool, default ``True``, optional keyword-only argument
-            if true, these function(s) are called before a render cycle
-
-        post_render: bool, default ``False``, optional keyword-only argument
-            if true, these function(s) are called after a render cycle
-
-        """
-        for f in funcs:
-            if not callable(f):
-                raise TypeError(
-                    f"all positional arguments to add_animations() must be callable types, you have passed a: {type(f)}"
-                )
-            if pre_render:
-                self._animate_funcs_pre += funcs
-            if post_render:
-                self._animate_funcs_post += funcs
-
-    def remove_animation(self, func):
-        """
-        Removes the passed animation function from both pre and post render.
-
-        Parameters
-        ----------
-        func: callable
-            The function to remove, raises a error if it's not registered as a pre or post animation function.
-
-        """
-        if func not in self._animate_funcs_pre and func not in self._animate_funcs_post:
-            raise KeyError(
-                f"The passed function: {func} is not registered as an animation function. These are the animation "
-                f" functions that are currently registered:\n"
-                f"pre: {self._animate_funcs_pre}\n\npost: {self._animate_funcs_post}"
-            )
-
-        if func in self._animate_funcs_pre:
-            self._animate_funcs_pre.remove(func)
-
-        if func in self._animate_funcs_post:
-            self._animate_funcs_post.remove(func)
 
     def set_axes_visibility(self, visible: bool):
         """Toggles axes visibility."""
