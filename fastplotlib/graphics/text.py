@@ -14,6 +14,8 @@ class TextGraphic(Graphic):
         face_color: Union[str, np.ndarray] = "w",
         outline_color: Union[str, np.ndarray] = "w",
         outline_thickness=0,
+        screen_space: bool = True,
+        anchor: str = "middle-center",
         *args,
         **kwargs
     ):
@@ -40,20 +42,30 @@ class TextGraphic(Graphic):
         outline_thickness: int, default 0
             text outline thickness
 
+        screen_space: bool = True
+            whether the text is rendered in screen space, in contrast to world space
+
         name: str, optional
             name of graphic, passed to Graphic
 
+        anchor: str, default "middle-center"
+            position of the origin of the text
+            a string representing the vertical and horizontal anchors, separated by a dash
+
+            * Vertical values: "top", "middle", "baseline", "bottom"
+            * Horizontal values: "left", "center", "right"
         """
         super(TextGraphic, self).__init__(*args, **kwargs)
 
         self._text = text
 
         world_object = pygfx.Text(
-            pygfx.TextGeometry(text=str(text),
-                               font_size=size,
-                               screen_space=True,
-                               anchor="middle-center"
-                               ),
+            pygfx.TextGeometry(
+                text=str(text),
+                font_size=size,
+                screen_space=screen_space,
+                anchor=anchor,
+            ),
             pygfx.TextMaterial(
                 color=face_color,
                 outline_color=outline_color,
@@ -102,6 +114,8 @@ class TextGraphic(Graphic):
         """Set the face color of this graphic."""
         if not (isinstance(color, str) or isinstance(color, np.ndarray)):
             raise ValueError("Face color must be of type str or np.ndarray")
+
+        color = pygfx.Color(color)
 
         self.world_object.material.color = color
 

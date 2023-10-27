@@ -21,6 +21,7 @@ Properties
     :toctree: CmapFeature_api
 
     CmapFeature.buffer
+    CmapFeature.name
     CmapFeature.values
 
 Methods

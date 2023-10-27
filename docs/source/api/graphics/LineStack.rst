@@ -41,4 +41,6 @@ Methods
     LineStack.add_linear_selector
     LineStack.link
     LineStack.remove_graphic
+    LineStack.reset_feature
+    LineStack.set_feature
 

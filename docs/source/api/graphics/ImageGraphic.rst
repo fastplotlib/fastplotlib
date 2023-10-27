@@ -36,4 +36,6 @@ Methods
     ImageGraphic.add_linear_region_selector
     ImageGraphic.add_linear_selector
     ImageGraphic.link
+    ImageGraphic.reset_feature
+    ImageGraphic.set_feature
 
