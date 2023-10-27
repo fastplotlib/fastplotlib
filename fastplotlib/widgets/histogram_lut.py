@@ -38,6 +38,7 @@ class HistogramLUT(Graphic):
             size=size,
             origin=origin,
             axis="y",
+            edge_thickness=8
         )
 
         widget_wo = Group()
@@ -50,6 +51,8 @@ class HistogramLUT(Graphic):
         self.linear_region.selection.add_event_handler(
             self._set_vmin_vmax
         )
+
+        self.image_graphic.cmap.add_event_handler(self._set_selection_from_cmap)
 
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
@@ -97,8 +100,22 @@ class HistogramLUT(Graphic):
 
     def _set_vmin_vmax(self, ev):
         selected = self.linear_region.get_selected_data(self.line)[:, 1]
+
+        self.image_graphic.cmap.block_events(True)
+
         self.image_graphic.cmap.vmin = selected[0]
         self.image_graphic.cmap.vmax = selected[-1]
+
+        self.image_graphic.cmap.block_events(False)
+
+    def _set_selection_from_cmap(self, ev):
+        vmin, vmax = ev.pick_info["vmin"], ev.pick_info["vmax"]
+
+        self.linear_region.selection.block_events(True)
+
+        self.linear_region.selection = (vmin, vmax)
+
+        self.linear_region.selection.block_events(False)
 
     def set_data(self, data):
         hist, edges, hist_scaled, edges_flanked = self._calculate_histogram(data)

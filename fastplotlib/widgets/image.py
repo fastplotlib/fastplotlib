@@ -838,20 +838,8 @@ class ImageWidget:
         """
         Reset the vmin and vmax w.r.t. the currently displayed image(s)
         """
-        for i, ig in enumerate(self.managed_graphics):
-            mm = self._get_vmin_vmax_range(ig.data())
-
-            if len(self.vmin_vmax_sliders) != 0:
-                state = {
-                    "value": mm[0],
-                    "step": mm[1] / 150,
-                    "min": mm[2],
-                    "max": mm[3],
-                }
-
-                self.vmin_vmax_sliders[i].set_state(state)
-            else:
-                ig.cmap.vmin, ig.cmap.vmax = mm[0]
+        for ig in self.managed_graphics:
+            ig.cmap.reset_vmin_vmax()
 
     def set_data(
         self,
@@ -1068,8 +1056,7 @@ class ImageWidgetToolbar:
         self.reset_vminvmax_button.on_click(self._reset_vminvmax)
 
     def _reset_vminvmax(self, obj):
-        if len(self.iw.vmin_vmax_sliders) != 0:
-            self.iw.reset_vmin_vmax()
+        self.iw.reset_vmin_vmax()
 
     def _change_stepsize(self, obj):
         self.iw.sliders["t"].step = self.step_size_setter.value
