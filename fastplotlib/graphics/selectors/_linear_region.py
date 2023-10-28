@@ -44,6 +44,7 @@ class LinearRegionSelector(BaseSelector):
         resizable: bool = True,
         fill_color=(0, 0, 0.35),
         edge_color=(0.8, 0.8, 0),
+        edge_thickness: int = 3,
         arrow_keys_modifier: str = "Shift",
         name: str = None,
     ):
@@ -55,6 +56,9 @@ class LinearRegionSelector(BaseSelector):
 
         Holding the right mouse button while dragging an edge will force the entire region selector to move. This is
         a when using transparent fill areas due to ``pygfx`` picking limitations.
+
+        **Note:** Events get very weird if the values of bounds, limits and origin are close to zero. If you need
+        a linear selector with small data, we recommend scaling the data and then using the selector.
 
         Parameters
         ----------
@@ -168,7 +172,7 @@ class LinearRegionSelector(BaseSelector):
 
             left_line = pygfx.Line(
                 pygfx.Geometry(positions=left_line_data),
-                pygfx.LineMaterial(thickness=3, color=edge_color),
+                pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
             )
 
             # position data for the right edge line
@@ -181,7 +185,7 @@ class LinearRegionSelector(BaseSelector):
 
             right_line = pygfx.Line(
                 pygfx.Geometry(positions=right_line_data),
-                pygfx.LineMaterial(thickness=3, color=edge_color),
+                pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
             )
 
             self.edges: Tuple[pygfx.Line, pygfx.Line] = (left_line, right_line)
@@ -197,7 +201,7 @@ class LinearRegionSelector(BaseSelector):
 
             bottom_line = pygfx.Line(
                 pygfx.Geometry(positions=bottom_line_data),
-                pygfx.LineMaterial(thickness=3, color=edge_color),
+                pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
             )
 
             # position data for the right edge line
@@ -210,7 +214,7 @@ class LinearRegionSelector(BaseSelector):
 
             top_line = pygfx.Line(
                 pygfx.Geometry(positions=top_line_data),
-                pygfx.LineMaterial(thickness=3, color=edge_color),
+                pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
             )
 
             self.edges: Tuple[pygfx.Line, pygfx.Line] = (bottom_line, top_line)

@@ -86,6 +86,8 @@ class BaseSelector(Graphic):
         # sets to `True` on "pointer_down", sets to `False` on "pointer_up"
         self._moving = False  #: indicates if the selector is currently being moved
 
+        self._initial_controller_state: bool = None
+
         # used to disable fill area events if the edge is being actively hovered
         # otherwise annoying and requires too much accuracy to move just an edge
         self._edge_hovered: bool = False
@@ -201,6 +203,8 @@ class BaseSelector(Graphic):
         self._move_info = MoveInfo(last_position=last_position, source=event_source)
         self._moving = True
 
+        self._initial_controller_state = self._plot_area.controller.enabled
+
     def _move(self, ev):
         """
         Called on pointer move events
@@ -235,7 +239,9 @@ class BaseSelector(Graphic):
         # update last position
         self._move_info.last_position = world_pos
 
-        self._plot_area.controller.enabled = True
+        # restore the initial controller state
+        # if it was disabled, keep it disabled
+        self._plot_area.controller.enabled = self._initial_controller_state
 
     def _move_graphic(self, delta: np.ndarray):
         raise NotImplementedError("Must be implemented in subclass")
@@ -243,7 +249,10 @@ class BaseSelector(Graphic):
     def _move_end(self, ev):
         self._move_info = None
         self._moving = False
-        self._plot_area.controller.enabled = True
+
+        # restore the initial controller state
+        # if it was disabled, keep it disabled
+        self._plot_area.controller.enabled = self._initial_controller_state
 
     def _move_to_pointer(self, ev):
         """

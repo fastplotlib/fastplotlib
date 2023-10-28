@@ -9,7 +9,6 @@ from ipywidgets.widgets import (
     VBox,
     HBox,
     Layout,
-    FloatRangeSlider,
     Button,
     BoundedIntText,
     Play,
@@ -21,6 +20,7 @@ from IPython.display import display
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
 from ..utils import quick_min_max, calculate_gridshape
+from .histogram_lut import HistogramLUT
 
 
 DEFAULT_DIMS_ORDER = {
@@ -220,7 +220,6 @@ class ImageWidget:
         slider_dims: Union[str, int, List[Union[str, int]]] = None,
         window_funcs: Union[int, Dict[str, int]] = None,
         frame_apply: Union[callable, Dict[int, callable]] = None,
-        vmin_vmax_sliders: bool = False,
         grid_shape: Tuple[int, int] = None,
         names: List[str] = None,
         grid_plot_kwargs: dict = None,
@@ -527,8 +526,6 @@ class ImageWidget:
         # current_index stores {dimension_index: slice_index} for every dimension
         self._current_index: Dict[str, int] = {sax: 0 for sax in self.slider_dims}
 
-        self.vmin_vmax_sliders: List[FloatRangeSlider] = list()
-
         # get max bound for all data arrays for all dimensions
         self._dims_max_bounds: Dict[str, int] = {k: np.inf for k in self.slider_dims}
         for _dim in list(self._dims_max_bounds.keys()):
@@ -543,34 +540,10 @@ class ImageWidget:
         self._gridplot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs)
 
         for data_ix, (d, subplot) in enumerate(zip(self.data, self.gridplot)):
-            minmax = quick_min_max(self.data[data_ix])
-
             if self._names is not None:
                 name = self._names[data_ix]
-                name_slider = name
             else:
                 name = None
-                name_slider = ""
-
-            if vmin_vmax_sliders:
-                data_range = np.ptp(minmax)
-                data_range_40p = np.ptp(minmax) * 0.4
-
-                minmax_slider = FloatRangeSlider(
-                    value=minmax,
-                    min=minmax[0] - data_range_40p,
-                    max=minmax[1] + data_range_40p,
-                    step=data_range / 150,
-                    description=f"mm: {name_slider}",
-                    readout=True,
-                    readout_format=".3f",
-                )
-
-                minmax_slider.observe(
-                    partial(self._vmin_vmax_slider_changed, data_ix), names="value"
-                )
-
-                self.vmin_vmax_sliders.append(minmax_slider)
 
             frame = self._process_indices(d, slice_indices=self._current_index)
             frame = self._process_frame_apply(frame, data_ix)
@@ -578,6 +551,17 @@ class ImageWidget:
             subplot.add_graphic(ig)
             subplot.name = name
             subplot.set_title(name)
+
+            hlut = HistogramLUT(
+                data=d,
+                image_graphic=ig,
+                name="histogram_lut"
+            )
+
+            subplot.docks["right"].add_graphic(hlut)
+            subplot.docks["right"].size = 50
+            subplot.docks["right"].auto_scale(maintain_aspect=False)
+            subplot.docks["right"].controller.enabled = False
 
         self.gridplot.renderer.add_event_handler(self._set_slider_layout, "resize")
 
@@ -601,7 +585,7 @@ class ImageWidget:
 
         # TODO: So just stack everything vertically for now
         self._vbox_sliders = VBox(
-            [*list(self._sliders.values()), *self.vmin_vmax_sliders]
+            [*list(self._sliders.values())]
         )
 
     @property
@@ -795,63 +779,17 @@ class ImageWidget:
             return
         self.current_index = {dimension: change["new"]}
 
-    def _vmin_vmax_slider_changed(self, data_ix: int, change: dict):
-        vmin, vmax = change["new"]
-        self.managed_graphics[data_ix].cmap.vmin = vmin
-        self.managed_graphics[data_ix].cmap.vmax = vmax
-
     def _set_slider_layout(self, *args):
         w, h = self.gridplot.renderer.logical_size
         for k, v in self.sliders.items():
             v.layout = Layout(width=f"{w}px")
 
-        for mm in self.vmin_vmax_sliders:
-            mm.layout = Layout(width=f"{w}px")
-
-    def _get_vmin_vmax_range(self, data: np.ndarray) -> tuple:
-        """
-        Parameters
-        ----------
-        data
-
-        Returns
-        -------
-        Tuple[Tuple[float, float], float, float, float]
-            (min, max), data_range, min - (data_range * 0.4), max + (data_range * 0.4)
-        """
-
-        minmax = quick_min_max(data)
-
-        data_range = np.ptp(minmax)
-        data_range_40p = data_range * 0.4
-
-        _range = (
-            minmax,
-            data_range,
-            minmax[0] - data_range_40p,
-            minmax[1] + data_range_40p,
-        )
-
-        return _range
-
     def reset_vmin_vmax(self):
         """
         Reset the vmin and vmax w.r.t. the currently displayed image(s)
         """
-        for i, ig in enumerate(self.managed_graphics):
-            mm = self._get_vmin_vmax_range(ig.data())
-
-            if len(self.vmin_vmax_sliders) != 0:
-                state = {
-                    "value": mm[0],
-                    "step": mm[1] / 150,
-                    "min": mm[2],
-                    "max": mm[3],
-                }
-
-                self.vmin_vmax_sliders[i].set_state(state)
-            else:
-                ig.cmap.vmin, ig.cmap.vmax = mm[0]
+        for ig in self.managed_graphics:
+            ig.cmap.reset_vmin_vmax()
 
     def set_data(
         self,
@@ -926,6 +864,9 @@ class ImageWidget:
             if new_array.ndim > 3:  # tzxy
                 max_lengths["z"] = min(max_lengths["z"], new_array.shape[1] - 1)
 
+            # set histogram widget
+            subplot.docks["right"]["histogram_lut"].set_data(new_array, reset_vmin_vmax=reset_vmin_vmax)
+
         # set slider maxes
         # TODO: maybe make this stuff a property, like ndims, n_frames etc. and have it set the sliders
         for key in self.sliders.keys():
@@ -935,8 +876,8 @@ class ImageWidget:
         # force graphics to update
         self.current_index = self.current_index
 
-        if reset_vmin_vmax:
-            self.reset_vmin_vmax()
+        # if reset_vmin_vmax:
+        #     self.reset_vmin_vmax()
 
     def show(self, toolbar: bool = True, sidecar: bool = True, sidecar_kwargs: dict = None):
         """
@@ -1068,8 +1009,7 @@ class ImageWidgetToolbar:
         self.reset_vminvmax_button.on_click(self._reset_vminvmax)
 
     def _reset_vminvmax(self, obj):
-        if len(self.iw.vmin_vmax_sliders) != 0:
-            self.iw.reset_vmin_vmax()
+        self.iw.reset_vmin_vmax()
 
     def _change_stepsize(self, obj):
         self.iw.sliders["t"].step = self.step_size_setter.value
