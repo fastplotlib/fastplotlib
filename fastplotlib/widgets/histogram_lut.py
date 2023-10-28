@@ -1,10 +1,11 @@
+from typing import *
 import weakref
 
 import numpy as np
 
 from pygfx import Group
 
-from ..graphics import LineGraphic, ImageGraphic
+from ..graphics import LineGraphic, ImageGraphic, TextGraphic
 from ..graphics._base import Graphic
 from ..graphics.selectors import LinearRegionSelector
 
@@ -66,18 +67,62 @@ class HistogramLUT(Graphic):
         self._vmin = self.image_graphic.cmap.vmin
         self._vmax = self.image_graphic.cmap.vmax
 
+        vmin_str, vmax_str = self._get_vmin_vmax_str()
+
+        self._text_vmin = TextGraphic(
+            text=vmin_str,
+            size=16,
+            position=(0, 0),
+            anchor="top-left",
+            outline_color="black",
+            outline_thickness=1,
+        )
+
+        self._text_vmax = TextGraphic(
+            text=vmax_str,
+            size=16,
+            position=(0, 0),
+            anchor="bottom-left",
+            outline_color="black",
+            outline_thickness=1,
+        )
+
         widget_wo = Group()
-        widget_wo.add(self.line.world_object, self.linear_region.world_object)
+        widget_wo.add(
+            self.line.world_object,
+            self.linear_region.world_object,
+            self._text_vmin.world_object,
+            self._text_vmax.world_object,
+        )
 
         self._set_world_object(widget_wo)
 
         self.world_object.local.scale_x *= -1
+
+        self._text_vmin.position_x = -120
+        self._text_vmin.position_y = self.linear_region.selection()[0]
+
+        self._text_vmax.position_x = -120
+        self._text_vmax.position_y = self.linear_region.selection()[1]
 
         self.linear_region.selection.add_event_handler(
             self._linear_region_handler
         )
 
         self.image_graphic.cmap.add_event_handler(self._image_cmap_handler)
+
+    def _get_vmin_vmax_str(self) -> Tuple[str, str]:
+        if self.vmin < 0.001 or self.vmin > 99_999:
+            vmin_str = f"{self.vmin:.2e}"
+        else:
+            vmin_str = f"{self.vmin:.2f}"
+
+        if self.vmax < 0.001 or self.vmax > 99_999:
+            vmax_str = f"{self.vmax:.2e}"
+        else:
+            vmax_str = f"{self.vmax:.2f}"
+
+        return vmin_str, vmax_str
 
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
@@ -168,6 +213,10 @@ class HistogramLUT(Graphic):
 
         self._vmin = value
 
+        vmin_str, vmax_str = self._get_vmin_vmax_str()
+        self._text_vmin.position_y = self.linear_region.selection()[0]
+        self._text_vmin.text = vmin_str
+
     @property
     def vmax(self) -> float:
         return self._vmax
@@ -184,6 +233,10 @@ class HistogramLUT(Graphic):
         self._block_events(False)
 
         self._vmax = value
+
+        vmin_str, vmax_str = self._get_vmin_vmax_str()
+        self._text_vmax.position_y = self.linear_region.selection()[1]
+        self._text_vmax.text = vmax_str
 
     def set_data(self, data, reset_vmin_vmax: bool = True):
         hist, edges, hist_scaled, edges_flanked = self._calculate_histogram(data)

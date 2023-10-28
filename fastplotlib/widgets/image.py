@@ -559,7 +559,7 @@ class ImageWidget:
             )
 
             subplot.docks["right"].add_graphic(hlut)
-            subplot.docks["right"].size = 50
+            subplot.docks["right"].size = 80
             subplot.docks["right"].auto_scale(maintain_aspect=False)
             subplot.docks["right"].controller.enabled = False
 
