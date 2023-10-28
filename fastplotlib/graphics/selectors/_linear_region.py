@@ -57,6 +57,9 @@ class LinearRegionSelector(BaseSelector):
         Holding the right mouse button while dragging an edge will force the entire region selector to move. This is
         a when using transparent fill areas due to ``pygfx`` picking limitations.
 
+        **Note:** Events get very weird if the values of bounds, limits and origin are close to zero. If you need
+        a linear selector with small data, we recommend scaling the data and then using the selector.
+
         Parameters
         ----------
         bounds: (int, int)
