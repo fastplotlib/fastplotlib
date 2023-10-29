@@ -1,9 +1,12 @@
 from fastplotlib.layouts._subplot import Subplot
+from fastplotlib.layouts._frame._toolbar import ToolBar
 
 
-class ToolBar:
+class QtToolbar(ToolBar):
     def __init__(self, plot):
         self.plot = plot
+
+        super().__init__(plot)
 
     def _get_subplot_dropdown_value(self) -> str:
         raise NotImplemented
@@ -38,7 +41,4 @@ class ToolBar:
         raise NotImplemented
 
     def record_handler(self, ev):
-        raise NotImplemented
-
-    def add_polygon(self, ev):
         raise NotImplemented
