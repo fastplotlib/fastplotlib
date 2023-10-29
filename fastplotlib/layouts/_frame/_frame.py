@@ -4,20 +4,33 @@ from ._toolbar import ToolBar
 
 from .._utils import CANVAS_OPTIONS_AVAILABLE
 
+
 class UnavailableOutputContext:
-    def __init__(self, *arg, **kwargs):
-        raise ModuleNotFoundError("Unavailable output context")
+    def __init__(self, context_name, msg):
+        self.context_name = context_name
+        self.msg = msg
+
+    def __call__(self, *args, **kwargs):
+        raise ModuleNotFoundError(
+            f"The following output context is not available: {self.context_name}\n{self.msg}"
+        )
 
 
 if CANVAS_OPTIONS_AVAILABLE["jupyter"]:
     from ._jupyter_output import JupyterOutput
 else:
-    JupyterOutput = UnavailableOutputContext
+    JupyterOutput = UnavailableOutputContext(
+        "Jupyter",
+        "You must install `jupyter_rfb` to use this output context"
+    )
 
 if CANVAS_OPTIONS_AVAILABLE["qt"]:
     from ._qt_output import QtOutput
 else:
-    JupyterOutput = UnavailableOutputContext
+    QtOutput = UnavailableOutputContext(
+        "Qt",
+        "You must install `PyQt6` to use this output context"
+    )
 
 
 # Single class for PlotFrame to avoid determining inheritance at runtime
@@ -94,6 +107,9 @@ class Frame:
         if self._output is not None:
             return self._output
 
+        if sidecar_kwargs is None:
+            sidecar_kwargs = dict()
+
         self.canvas.request_draw(self.render)
         self.canvas.set_logical_size(*self._starting_size)
 
@@ -106,7 +122,7 @@ class Frame:
                 return self.canvas.snapshot()
 
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
-            return JupyterOutput(
+            self._output = JupyterOutput(
                 frame=self,
                 make_toolbar=toolbar,
                 use_sidecar=sidecar,
@@ -118,6 +134,8 @@ class Frame:
                 frame=self,
                 make_toolbar=toolbar,
             )
+
+        return self._output
 
     def close(self):
         self._output.close()

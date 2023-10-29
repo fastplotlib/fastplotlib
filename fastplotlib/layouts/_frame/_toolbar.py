@@ -15,7 +15,7 @@ class ToolBar:
             current = self._get_subplot_dropdown_value()
             if current[0] == "(":
                 # str representation of int tuple to tuple of int
-                current = (int(i) for i in current.strip("()").split(","))
+                current = tuple(int(i) for i in current.strip("()").split(","))
                 return self.plot[current]
             else:
                 return self.plot[current]

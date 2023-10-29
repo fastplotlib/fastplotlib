@@ -19,22 +19,22 @@ class JupyterOutput:
 
         self.use_sidecar = use_sidecar
 
-        if not make_toolbar and not use_sidecar:
+        if not make_toolbar:
             self.output = frame.canvas
 
         if make_toolbar:
             self.toolbar = IpywidgetToolBar(frame)
-            self.output = VBox([frame.canvas, frame.toolbar])
+            self.output = VBox([frame.canvas, self.toolbar])
 
         if use_sidecar:
             self.sidecar = Sidecar(**sidecar_kwargs)
 
-    def __repr__(self):
+    def _repr_mimebundle_(self, *args, **kwargs):
         if self.use_sidecar:
             with self.sidecar:
                 return display(self.output)
         else:
-            return self.output
+            return self.output._repr_mimebundle_(*args, **kwargs)
 
     def close(self):
         self.frame.canvas.close()

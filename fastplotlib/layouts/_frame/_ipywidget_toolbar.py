@@ -8,7 +8,7 @@ from ...graphics.selectors import PolygonSelector
 from ._toolbar import ToolBar
 
 
-class IpywidgetToolBar(ToolBar):
+class IpywidgetToolBar(HBox, ToolBar):
     def __init__(self, plot):
         """
         Basic toolbar for a GridPlot instance.
@@ -17,7 +17,7 @@ class IpywidgetToolBar(ToolBar):
         ----------
         plot:
         """
-        super().__init__(plot)
+        ToolBar.__init__(self, plot)
 
         self._auto_scale_button = Button(
             value=False,
@@ -102,7 +102,7 @@ class IpywidgetToolBar(ToolBar):
 
             widgets.append(self._dropdown)
 
-        self.widget = HBox(widgets)
+        # self.widget = HBox(widgets)
 
         self._panzoom_controller_button.observe(self.panzoom_handler, "value")
         self._auto_scale_button.on_click(self.auto_scale_handler)
@@ -113,6 +113,8 @@ class IpywidgetToolBar(ToolBar):
         self._record_button.observe(self.record_plot, "value")
 
         self._maintain_aspect_button.value = self.current_subplot.camera.maintain_aspect
+
+        HBox.__init__(self, widgets)
 
     def _get_subplot_dropdown_value(self) -> str:
         return self._dropdown.value
@@ -127,7 +129,7 @@ class IpywidgetToolBar(ToolBar):
         self.current_subplot.controller.enabled = self._panzoom_controller_button.value
 
     def maintain_aspect(self, obj):
-        for camera in self.plot.controller.cameras:
+        for camera in self.current_subplot.controller.cameras:
             camera.maintain_aspect = self._maintain_aspect_button.value
 
     def y_direction_handler(self, obj):
@@ -164,11 +166,7 @@ class IpywidgetToolBar(ToolBar):
 
     def add_polygon(self, obj):
         ps = PolygonSelector(edge_width=3, edge_color="magenta")
-
         self.current_subplot.add_graphic(ps, center=False)
 
-    def close(self):
-        self.widget.close()
-
-    def __repr__(self):
-        return self.widget
+    def _repr_mimebundle(self, *args, **kwargs):
+        super()._repr_mimebundle(*args, **kwargs)
