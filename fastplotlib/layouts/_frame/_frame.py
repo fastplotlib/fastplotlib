@@ -2,6 +2,8 @@ import os
 
 from ._toolbar import ToolBar
 
+from ...graphics import ImageGraphic
+
 from .._utils import CANVAS_OPTIONS_AVAILABLE
 
 
@@ -52,7 +54,7 @@ class Frame:
     def toolbar(self) -> ToolBar:
         return self._output.toolbar
 
-    def render(self):
+    def _render_step(self):
         raise NotImplemented
 
     def _autoscale_init(self, maintain_aspect: bool):
@@ -69,6 +71,10 @@ class Frame:
                 maintain_aspect = self.camera.maintain_aspect
             self.auto_scale(maintain_aspect=maintain_aspect, zoom=0.95)
 
+    def start_render(self):
+        self.canvas.request_draw(self.render)
+        self.canvas.set_logical_size(*self._starting_size)
+
     def show(
             self,
             autoscale: bool = True,
@@ -76,6 +82,7 @@ class Frame:
             toolbar: bool = True,
             sidecar: bool = False,
             sidecar_kwargs: dict = None,
+            add_widgets: list = None,
     ):
         """
         Begins the rendering event loop and returns the canvas
@@ -104,14 +111,21 @@ class Frame:
             the canvas
 
         """
+
+        # show was already called, return existing output context
         if self._output is not None:
             return self._output
+
+        self.start_render()
 
         if sidecar_kwargs is None:
             sidecar_kwargs = dict()
 
-        self.canvas.request_draw(self.render)
-        self.canvas.set_logical_size(*self._starting_size)
+        # flip y axis if ImageGraphics are present
+        for g in self.graphics:
+            if isinstance(g, ImageGraphic):
+                self.camera.local.scale_y = -1
+                break
 
         if autoscale:
             self._autoscale_init(maintain_aspect)
@@ -126,7 +140,8 @@ class Frame:
                 frame=self,
                 make_toolbar=toolbar,
                 use_sidecar=sidecar,
-                sidecar_kwargs=sidecar_kwargs
+                sidecar_kwargs=sidecar_kwargs,
+                add_widgets=add_widgets,
             )
 
         elif self.canvas.__class__.__name__ == "QWgpuCanvas":

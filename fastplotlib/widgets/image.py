@@ -14,12 +14,10 @@ from ipywidgets.widgets import (
     Play,
     jslink,
 )
-from sidecar import Sidecar
-from IPython.display import display
 
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
-from ..utils import quick_min_max, calculate_gridshape
+from ..utils import calculate_gridshape
 from .histogram_lut import HistogramLUT
 
 
@@ -879,70 +877,28 @@ class ImageWidget:
         # if reset_vmin_vmax:
         #     self.reset_vmin_vmax()
 
-    def show(self, toolbar: bool = True, sidecar: bool = True, sidecar_kwargs: dict = None):
+    def show(self, toolbar: bool = True, sidecar: bool = False, sidecar_kwargs: dict = None):
         """
         Show the widget
 
         Returns
         -------
-        VBox
-            ``ipywidgets.VBox`` stacking the plotter and sliders in a vertical layout
+        OutputContext
         """
 
-        # don't need to check for jupyter since ImageWidget is only supported within jupyter anyways
-        if not toolbar:
-            return VBox([self.gridplot.show(toolbar=False), self._vbox_sliders])
-
-        if self.toolbar is None:
-            self.toolbar = ImageWidgetToolbar(self)
-
-        if not sidecar:
-            return VBox(
-                [
-                    self.gridplot.show(toolbar=True, sidecar=False, sidecar_kwargs=None),
-                    self.toolbar.widget,
-                    self._vbox_sliders,
-                ]
-            )
-
-        if self.plot_open:
-            self.sidecar = None
-
-        if self.sidecar is None:
-            if sidecar_kwargs is not None:
-                self.sidecar = Sidecar(**sidecar_kwargs)
-                self.plot_open = True
-            else:
-                self.sidecar = Sidecar()
-                self.plot_open = True
-
-        with self.sidecar:
-            return display(VBox(
-                            [
-                                self.gridplot.show(toolbar=True, sidecar=False, sidecar_kwargs=None),
-                                self.toolbar.widget,
-                                self._vbox_sliders
-                            ]
-                        )
-                    )
+        return self.gridplot.show(
+            toolbar=toolbar,
+            sidecar=sidecar,
+            sidecar_kwargs=sidecar_kwargs,
+            add_widgets=[ImageWidgetToolbar(self), *list(self.sliders.values())]
+        )
 
     def close(self):
         """Close Widget"""
-        self.gridplot.canvas.close()
-
-        self._vbox_sliders.close()
-
-        if self.toolbar is not None:
-            self.toolbar.widget.close()
-            self.gridplot.toolbar.widget.close()
-
-        if self.sidecar is not None:
-            self.sidecar.close()
-
-        self.plot_open = False
+        self.gridplot.close()
 
 
-class ImageWidgetToolbar:
+class ImageWidgetToolbar(HBox):
     def __init__(self, iw: ImageWidget):
         """
         Basic toolbar for a ImageWidget instance.
@@ -964,7 +920,7 @@ class ImageWidgetToolbar:
 
         # only for xy data, no time point slider needed
         if self.iw.ndim == 2:
-            self.widget = HBox([self.reset_vminvmax_button])
+            widgets = [self.reset_vminvmax_button]
         # for txy, tzxy, etc. data
         else:
             self.step_size_setter = BoundedIntText(
@@ -995,9 +951,7 @@ class ImageWidgetToolbar:
                 description="play/pause",
                 disabled=False,
             )
-            self.widget = HBox(
-                [self.reset_vminvmax_button, self.play_button, self.step_size_setter, self.speed_text]
-            )
+            widgets = [self.reset_vminvmax_button, self.play_button, self.step_size_setter, self.speed_text]
 
             self.play_button.interval = 10
 
@@ -1007,6 +961,8 @@ class ImageWidgetToolbar:
             jslink((self.play_button, "max"), (self.iw.sliders["t"], "max"))
 
         self.reset_vminvmax_button.on_click(self._reset_vminvmax)
+
+        HBox.__init__(self, widgets)
 
     def _reset_vminvmax(self, obj):
         self.iw.reset_vmin_vmax()

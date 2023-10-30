@@ -48,6 +48,7 @@ class IpywidgetToolBar(HBox, ToolBar):
             tooltip="maintain aspect",
         )
         self._maintain_aspect_button.style.font_weight = "bold"
+
         self._y_direction_button = Button(
             value=False,
             disabled=False,
@@ -102,8 +103,6 @@ class IpywidgetToolBar(HBox, ToolBar):
 
             widgets.append(self._dropdown)
 
-        # self.widget = HBox(widgets)
-
         self._panzoom_controller_button.observe(self.panzoom_handler, "value")
         self._auto_scale_button.on_click(self.auto_scale_handler)
         self._center_scene_button.on_click(self.center_scene_handler)
@@ -112,7 +111,13 @@ class IpywidgetToolBar(HBox, ToolBar):
         self._add_polygon_button.on_click(self.add_polygon)
         self._record_button.observe(self.record_plot, "value")
 
+        # set initial values for some buttons
         self._maintain_aspect_button.value = self.current_subplot.camera.maintain_aspect
+
+        if self.current_subplot.camera.local.scale_y == -1:
+            self._y_direction_button.icon = "arrow-down"
+        else:
+            self._y_direction_button.icon = "arrow-up"
 
         HBox.__init__(self, widgets)
 
@@ -167,6 +172,3 @@ class IpywidgetToolBar(HBox, ToolBar):
     def add_polygon(self, obj):
         ps = PolygonSelector(edge_width=3, edge_color="magenta")
         self.current_subplot.add_graphic(ps, center=False)
-
-    def _repr_mimebundle(self, *args, **kwargs):
-        super()._repr_mimebundle(*args, **kwargs)
