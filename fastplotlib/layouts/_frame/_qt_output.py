@@ -23,6 +23,7 @@ class QOutputContext(QtWidgets.QWidget):
 
         if add_widgets is not None:
             for w in add_widgets:
+                w.setParent(self)
                 self.vlayout.addWidget(w)
 
         self.setLayout(self.vlayout)

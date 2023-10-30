@@ -51,11 +51,9 @@ def auto_determine_canvas():
         elif CANVAS_OPTIONS_AVAILABLE["glfw"]:
             return GlfwWgpuCanvas
 
-    raise ModuleNotFoundError(
-        "Could not find any framework to create a canvas. You must install either `glfw`, "
-        "`PyQt6` or the jupyter requirements: 'fastplotlib[notebook]'."
-    )
-
+    # We go with the wgpu auto guess
+    # for example, offscreen canvas etc.
+    return WgpuCanvas
 
 
 def make_canvas_and_renderer(
