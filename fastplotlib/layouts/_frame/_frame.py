@@ -122,10 +122,17 @@ class Frame:
             sidecar_kwargs = dict()
 
         # flip y axis if ImageGraphics are present
-        for g in self.graphics:
-            if isinstance(g, ImageGraphic):
-                self.camera.local.scale_y = -1
-                break
+        if hasattr(self, "_subplots"):
+            for subplot in self:
+                for g in subplot:
+                    if isinstance(g, ImageGraphic):
+                        subplot.camera.local.scale_y = -1
+                        break
+        else:
+            for g in self.graphics:
+                if isinstance(g, ImageGraphic):
+                    self.camera.local.scale_y = -1
+                    break
 
         if autoscale:
             self._autoscale_init(maintain_aspect)
