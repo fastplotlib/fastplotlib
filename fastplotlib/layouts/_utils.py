@@ -14,6 +14,7 @@ except ImportError:
     JupyterWgpuCanvas = False
 
 try:
+    import PyQt6
     from wgpu.gui.qt import QWgpuCanvas
 except ImportError:
     QWgpuCanvas = False
@@ -32,6 +33,31 @@ CANVAS_OPTIONS_AVAILABLE = {
 }
 
 
+def auto_determine_canvas():
+    try:
+        ip = get_ipython()
+        if ip.has_trait("kernel"):
+            if hasattr(ip.kernel, "app"):
+                if ip.kernel.app.__class__.__name__ == "QApplication":
+                    return QWgpuCanvas
+            else:
+                return JupyterWgpuCanvas
+    except NameError:
+        pass
+
+    else:
+        if CANVAS_OPTIONS_AVAILABLE["qt"]:
+            return QWgpuCanvas
+        elif CANVAS_OPTIONS_AVAILABLE["glfw"]:
+            return GlfwWgpuCanvas
+
+    raise ModuleNotFoundError(
+        "Could not find any framework to create a canvas. You must install either `glfw`, "
+        "`PyQt6` or the jupyter requirements: 'fastplotlib[notebook]'."
+    )
+
+
+
 def make_canvas_and_renderer(
     canvas: Union[str, WgpuCanvas, Texture, None], renderer: [WgpuRenderer, None]
 ):
@@ -41,7 +67,8 @@ def make_canvas_and_renderer(
     """
 
     if canvas is None:
-        canvas = WgpuCanvas()
+        Canvas = auto_determine_canvas()
+        canvas = Canvas()
 
     elif isinstance(canvas, str):
         if canvas not in CANVAS_OPTIONS:

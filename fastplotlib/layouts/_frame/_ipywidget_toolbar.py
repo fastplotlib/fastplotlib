@@ -1,6 +1,7 @@
 import traceback
 from datetime import datetime
 from itertools import product
+from math import copysign
 
 from ipywidgets import Button, Layout, ToggleButton, Dropdown, HBox
 
@@ -106,7 +107,7 @@ class IpywidgetToolBar(HBox, ToolBar):
         self._panzoom_controller_button.observe(self.panzoom_handler, "value")
         self._auto_scale_button.on_click(self.auto_scale_handler)
         self._center_scene_button.on_click(self.center_scene_handler)
-        self._maintain_aspect_button.observe(self.maintain_aspect, "value")
+        self._maintain_aspect_button.observe(self.maintain_aspect_handler, "value")
         self._y_direction_button.on_click(self.y_direction_handler)
         self._add_polygon_button.on_click(self.add_polygon)
         self._record_button.observe(self.record_plot, "value")
@@ -114,7 +115,7 @@ class IpywidgetToolBar(HBox, ToolBar):
         # set initial values for some buttons
         self._maintain_aspect_button.value = self.current_subplot.camera.maintain_aspect
 
-        if self.current_subplot.camera.local.scale_y == -1:
+        if copysign(1, self.current_subplot.camera.local.scale_y) == -1:
             self._y_direction_button.icon = "arrow-down"
         else:
             self._y_direction_button.icon = "arrow-up"
@@ -133,14 +134,15 @@ class IpywidgetToolBar(HBox, ToolBar):
     def panzoom_handler(self, obj):
         self.current_subplot.controller.enabled = self._panzoom_controller_button.value
 
-    def maintain_aspect(self, obj):
+    def maintain_aspect_handler(self, obj):
         for camera in self.current_subplot.controller.cameras:
-            camera.maintain_aspect = self._maintain_aspect_button.value
+            camera.maintain_aspect_handler = self._maintain_aspect_button.value
 
     def y_direction_handler(self, obj):
         # TODO: What if the user has set different y_scales for cameras under the same controller?
         self.current_subplot.camera.local.scale_y *= -1
-        if self.current_subplot.camera.local.scale_y == -1:
+
+        if copysign(1, self.current_subplot.camera.local.scale_y) == -1:
             self._y_direction_button.icon = "arrow-down"
         else:
             self._y_direction_button.icon = "arrow-up"

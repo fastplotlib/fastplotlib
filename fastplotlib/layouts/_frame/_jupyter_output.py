@@ -5,7 +5,7 @@ from IPython.display import display
 from ._ipywidget_toolbar import IpywidgetToolBar
 
 
-class JupyterOutput(VBox):
+class JupyterOutputContext(VBox):
     def __init__(
             self,
             frame,

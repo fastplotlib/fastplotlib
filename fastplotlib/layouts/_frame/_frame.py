@@ -19,15 +19,16 @@ class UnavailableOutputContext:
 
 
 if CANVAS_OPTIONS_AVAILABLE["jupyter"]:
-    from ._jupyter_output import JupyterOutput
+    from ._jupyter_output import JupyterOutputContext
 else:
-    JupyterOutput = UnavailableOutputContext(
+    JupyterOutputContext = UnavailableOutputContext(
         "Jupyter",
-        "You must install `jupyter_rfb` to use this output context"
+        "You must install fastplotlib using the `'notebook'` option to use this context:\n"
+        'pip install "fastplotlib[notebook]"'
     )
 
 if CANVAS_OPTIONS_AVAILABLE["qt"]:
-    from ._qt_output import QtOutput
+    from ._qt_output import QOutputContext
 else:
     QtOutput = UnavailableOutputContext(
         "Qt",
@@ -54,7 +55,12 @@ class Frame:
     def toolbar(self) -> ToolBar:
         return self._output.toolbar
 
-    def _render_step(self):
+    @property
+    def widget(self):
+        """ipywidget or QWidget that contains this plot"""
+        return self._output
+
+    def render(self):
         raise NotImplemented
 
     def _autoscale_init(self, maintain_aspect: bool):
@@ -105,6 +111,9 @@ class Frame:
             kwargs for sidecar instance to display plot
             i.e. title, layout
 
+        add_widgets: list of widgets
+            a list of ipywidgets or QWidget that are vertically stacked below the plot
+
         Returns
         -------
         WgpuCanvas
@@ -143,7 +152,7 @@ class Frame:
                 return self.canvas.snapshot()
 
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
-            self._output = JupyterOutput(
+            self._output = JupyterOutputContext(
                 frame=self,
                 make_toolbar=toolbar,
                 use_sidecar=sidecar,
@@ -152,9 +161,10 @@ class Frame:
             )
 
         elif self.canvas.__class__.__name__ == "QWgpuCanvas":
-            QtOutput(
+            self._output = QOutputContext(
                 frame=self,
                 make_toolbar=toolbar,
+                add_widgets=add_widgets
             )
 
         return self._output
