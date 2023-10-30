@@ -124,7 +124,7 @@ class Frame:
         # flip y axis if ImageGraphics are present
         if hasattr(self, "_subplots"):
             for subplot in self:
-                for g in subplot:
+                for g in subplot.graphics:
                     if isinstance(g, ImageGraphic):
                         subplot.camera.local.scale_y = -1
                         break
