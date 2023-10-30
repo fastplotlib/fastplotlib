@@ -72,6 +72,11 @@ class QToolbar(ToolBar, QtWidgets.QWidget):  # inheritance order MUST be Toolbar
                 self.ui.panzoom_button.setChecked(subplot.controller.enabled)
                 self.ui.maintain_aspect_button.setChecked(subplot.camera.maintain_aspect)
 
+                if copysign(1, subplot.camera.local.scale_y) == -1:
+                    self.ui.y_direction_button.setText("v")
+                else:
+                    self.ui.y_direction_button.setText("^")
+
     def _get_subplot_dropdown_value(self) -> str:
         return self.ui.current_subplot.text()
 
@@ -91,7 +96,7 @@ class QToolbar(ToolBar, QtWidgets.QWidget):  # inheritance order MUST be Toolbar
     def y_direction_handler(self, *args):
         # TODO: What if the user has set different y_scales for cameras under the same controller?
         self.current_subplot.camera.local.scale_y *= -1
-        if self.current_subplot.camera.local.scale_y == -1:
+        if copysign(1, self.current_subplot.camera.local.scale_y) == -1:
             self.ui.y_direction_button.setText("v")
         else:
             self.ui.y_direction_button.setText("^")

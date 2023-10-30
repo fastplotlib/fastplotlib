@@ -173,6 +173,11 @@ class IpywidgetToolBar(HBox, ToolBar):
                 self._panzoom_controller_button.value = subplot.controller.enabled
                 self._maintain_aspect_button.value = subplot.camera.maintain_aspect
 
+                if copysign(1, subplot.camera.local.scale_y) == -1:
+                    self._y_direction_button.icon = "arrow-down"
+                else:
+                    self._y_direction_button.icon = "arrow-up"
+
     def record_plot(self, obj):
         if self._record_button.value:
             try:
