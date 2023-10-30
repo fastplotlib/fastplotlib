@@ -10,8 +10,9 @@ class ToolBar:
 
     @property
     def current_subplot(self) -> Subplot:
+        """Returns current subplot"""
         if hasattr(self.plot, "_subplots"):
-            # parses dropdown value as plot name or position
+            # parses dropdown or label value as plot name or position
             current = self._get_subplot_dropdown_value()
             if current[0] == "(":
                 # str representation of int tuple to tuple of int

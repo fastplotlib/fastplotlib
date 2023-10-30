@@ -1,5 +1,4 @@
 from typing import *
-import os
 
 import pygfx
 from wgpu.gui.auto import WgpuCanvas
@@ -60,6 +59,7 @@ class Plot(Subplot, Frame, RecordMixin):
         self._starting_size = size
 
     def render(self):
+        """performs a single render of the plot, not for the user"""
         super(Plot, self).render()
 
         self.renderer.flush()

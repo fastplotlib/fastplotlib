@@ -8,6 +8,8 @@ from .._utils import CANVAS_OPTIONS_AVAILABLE
 
 
 class UnavailableOutputContext:
+    # called when a requested output context is not available
+    # ex: if trying to force jupyter_rfb canvas but jupyter_rfb is not installed
     def __init__(self, context_name, msg):
         self.context_name = context_name
         self.msg = msg
@@ -18,6 +20,7 @@ class UnavailableOutputContext:
         )
 
 
+# TODO: potentially put all output context and toolbars in their own module and have this determination done at import
 if CANVAS_OPTIONS_AVAILABLE["jupyter"]:
     from ._jupyter_output import JupyterOutputContext
 else:
@@ -36,31 +39,28 @@ else:
     )
 
 
-# Single class for PlotFrame to avoid determining inheritance at runtime
 class Frame:
-    """Mixin class for Plot and GridPlot that gives them the toolbar"""
-    def __init__(self):
-        """
+    """
+    Mixin class for Plot and GridPlot that "frames" the plot.
 
-        Parameters
-        ----------
-        plot:
-            `Plot` or `GridPlot`
-        toolbar
-        """
-        self._plot_type = self.__class__.__name__
+    Gives them their `show()` call that returns the appropriate output context.
+    """
+    def __init__(self):
         self._output = None
 
     @property
     def toolbar(self) -> ToolBar:
+        """ipywidget or QToolbar instance"""
         return self._output.toolbar
 
     @property
     def widget(self):
         """ipywidget or QWidget that contains this plot"""
+        # @caitlin: this is the same as the output context, but I figure widget is a simpler public name
         return self._output
 
     def render(self):
+        """render call implemented in subclass"""
         raise NotImplemented
 
     def _autoscale_init(self, maintain_aspect: bool):
@@ -78,6 +78,7 @@ class Frame:
             self.auto_scale(maintain_aspect=maintain_aspect, zoom=0.95)
 
     def start_render(self):
+        """start render cycle"""
         self.canvas.request_draw(self.render)
         self.canvas.set_logical_size(*self._starting_size)
 
@@ -91,7 +92,7 @@ class Frame:
             add_widgets: list = None,
     ):
         """
-        Begins the rendering event loop and returns the canvas
+        Begins the rendering event loop and shows the plot in the desired output context (jupyter, qt or glfw).
 
         Parameters
         ----------
@@ -105,7 +106,7 @@ class Frame:
             show toolbar
 
         sidecar: bool, default ``True``
-            display plot in a ``jupyterlab-sidecar``
+            display plot in a ``jupyterlab-sidecar``, only for jupyter output context
 
         sidecar_kwargs: dict, default ``None``
             kwargs for sidecar instance to display plot
@@ -116,9 +117,10 @@ class Frame:
 
         Returns
         -------
-        WgpuCanvas
-            the canvas
+        OutputContext
+            In jupyter, it will display the plot in the output cell or sidecar
 
+            In Qt, it will display the Plot, toolbar, etc. as stacked widget, use `Plot.widget` to access it.
         """
 
         # show was already called, return existing output context
@@ -129,6 +131,9 @@ class Frame:
 
         if sidecar_kwargs is None:
             sidecar_kwargs = dict()
+
+        if add_widgets is None:
+            add_widgets = list()
 
         # flip y axis if ImageGraphics are present
         if hasattr(self, "_subplots"):
@@ -146,11 +151,12 @@ class Frame:
         if autoscale:
             self._autoscale_init(maintain_aspect)
 
+        # used for generating images in docs using nbsphinx
         if "NB_SNAPSHOT" in os.environ.keys():
-            # used for docs
             if os.environ["NB_SNAPSHOT"] == "1":
                 return self.canvas.snapshot()
 
+        # return the appropriate OutputContext based on the current canvas
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
             self._output = JupyterOutputContext(
                 frame=self,
@@ -167,7 +173,12 @@ class Frame:
                 add_widgets=add_widgets
             )
 
+        else:  # assume GLFW, the output context is just the canvas
+            self._output = self.canvas
+
+        # return the output context, this call is required for jupyter but not for Qt
         return self._output
 
     def close(self):
+        """Close the output context"""
         self._output.close()
