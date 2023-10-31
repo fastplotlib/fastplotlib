@@ -225,6 +225,7 @@ class ImageWidget:
         grid_shape: Tuple[int, int] = None,
         names: List[str] = None,
         grid_plot_kwargs: dict = None,
+        histogram_widget: bool = False,
         **kwargs,
     ):
         """
@@ -287,6 +288,9 @@ class ImageWidget:
 
         names: Optional[str]
             gives names to the subplots
+
+        histogram_widget: bool, default False
+            determines whether each subplot is rendered with a Histogram LUT widget
 
         kwargs: Any
             passed to fastplotlib.graphics.Image
@@ -556,16 +560,17 @@ class ImageWidget:
             subplot.name = name
             subplot.set_title(name)
 
-            hlut = HistogramLUT(
-                data=d,
-                image_graphic=ig,
-                name="histogram_lut"
-            )
+            if histogram_widget:
+                hlut = HistogramLUT(
+                    data=d,
+                    image_graphic=ig,
+                    name="histogram_lut"
+                )
 
-            subplot.docks["right"].add_graphic(hlut)
-            subplot.docks["right"].size = 80
-            subplot.docks["right"].auto_scale(maintain_aspect=False)
-            subplot.docks["right"].controller.enabled = False
+                subplot.docks["right"].add_graphic(hlut)
+                subplot.docks["right"].size = 80
+                subplot.docks["right"].auto_scale(maintain_aspect=False)
+                subplot.docks["right"].controller.enabled = False
 
         self.block_sliders = False
         self._image_widget_toolbar = None
