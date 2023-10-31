@@ -212,9 +212,9 @@ class IpywidgetImageWidgetToolbar(VBox):
         self.reset_vminvmax_frame_button = Button(
             value=False,
             icon="adjust",
-            description="frame",
+            description="reset",
             layout=Layout(width="auto"),
-            tooltip="reset vmin/vmax w.r.t. current frame only"
+            tooltip="reset vmin/vmax and reset histogram using current frame"
         )
 
         self.sliders: Dict[str, IntSlider] = dict()
@@ -266,7 +266,13 @@ class IpywidgetImageWidgetToolbar(VBox):
                 description="play/pause",
                 disabled=False,
             )
-            widgets = [self.reset_vminvmax_button, self.play_button, self.step_size_setter, self.speed_text]
+            widgets = [
+                self.reset_vminvmax_button,
+                self.reset_vminvmax_frame_button,
+                self.play_button,
+                self.step_size_setter,
+                self.speed_text
+            ]
 
             self.play_button.interval = 10
 
