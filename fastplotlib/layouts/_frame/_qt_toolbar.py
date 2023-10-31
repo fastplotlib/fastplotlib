@@ -46,7 +46,7 @@ class QToolbar(ToolBar, QtWidgets.QWidget):  # inheritance order MUST be Toolbar
             # update the subplot label when a subplot is clicked into
             self.plot.renderer.add_event_handler(self.update_current_subplot, "click")
 
-        self.setMaximumHeight(40)
+        self.setMaximumHeight(35)
 
         # set the initial values for buttons
         self.ui.maintain_aspect_button.setChecked(self.current_subplot.camera.maintain_aspect)
@@ -230,6 +230,6 @@ class QToolbarImageWidget(QtWidgets.QWidget):
                 # add to sliders dict for easier access to users
                 self.sliders[dim] = SliderInterface(slider)
 
-        max_height = 30 + (30 * len(self.sliders.keys()))
+        max_height = 35 + (35 * len(self.sliders.keys()))
 
         self.setMaximumHeight(max_height)
