@@ -97,6 +97,13 @@ class ImageWidget:
         return self._gridplot
 
     @property
+    def widget(self):
+        """
+        Output context, either an ipywidget or QWidget
+        """
+        return self.gridplot.widget
+
+    @property
     def managed_graphics(self) -> List[ImageGraphic]:
         """List of ``ImageWidget`` managed graphics."""
         iw_managed = list()
@@ -526,10 +533,15 @@ class ImageWidget:
                     self._dims_max_bounds[_dim], array.shape[order.index(_dim)]
                 )
 
+        grid_plot_kwargs_default = {"controllers": "sync"}
         if grid_plot_kwargs is None:
-            grid_plot_kwargs = {"controllers": "sync"}
+            grid_plot_kwargs = dict()
 
-        self._gridplot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs)
+        # update the default kwargs with any user-specified kwargs
+        # user specified kwargs will overwrite the defaults
+        grid_plot_kwargs_default.update(grid_plot_kwargs)
+
+        self._gridplot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs_default)
 
         for data_ix, (d, subplot) in enumerate(zip(self.data, self.gridplot)):
             if self._names is not None:
