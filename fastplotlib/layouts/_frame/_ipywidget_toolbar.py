@@ -209,7 +209,7 @@ class IpywidgetImageWidgetToolbar(VBox):
             tooltip="reset vmin/vmax",
         )
 
-        self.reset_vminvmax_frame_button = Button(
+        self.reset_vminvmax_hlut_button = Button(
             value=False,
             icon="adjust",
             description="reset",
@@ -268,7 +268,7 @@ class IpywidgetImageWidgetToolbar(VBox):
             )
             widgets = [
                 self.reset_vminvmax_button,
-                self.reset_vminvmax_frame_button,
+                self.reset_vminvmax_hlut_button,
                 self.play_button,
                 self.step_size_setter,
                 self.speed_text
@@ -282,7 +282,7 @@ class IpywidgetImageWidgetToolbar(VBox):
             jslink((self.play_button, "max"), (self.sliders["t"], "max"))
 
         self.reset_vminvmax_button.on_click(self._reset_vminvmax)
-        self.reset_vminvmax_frame_button.on_click(self._reset_vminvmax_frame)
+        self.reset_vminvmax_hlut_button.on_click(self._reset_vminvmax_frame)
 
         self.iw.gridplot.renderer.add_event_handler(self._set_slider_layout, "resize")
 

@@ -167,10 +167,19 @@ class QToolbarImageWidget(QtWidgets.QWidget):
 
         self.image_widget = image_widget
 
+        hlayout_buttons = QtWidgets.QHBoxLayout()
+
         self.reset_vmin_vmax_button = QtWidgets.QPushButton(self)
         self.reset_vmin_vmax_button.setText("auto-contrast")
         self.reset_vmin_vmax_button.clicked.connect(self.image_widget.reset_vmin_vmax)
-        self.vlayout.addWidget(self.reset_vmin_vmax_button)
+        hlayout_buttons.addWidget(self.reset_vmin_vmax_button)
+
+        self.reset_vmin_vmax_hlut_button = QtWidgets.QPushButton(self)
+        self.reset_vmin_vmax_hlut_button.setText("reset histogram-lut")
+        self.reset_vmin_vmax_hlut_button.clicked.connect(self.image_widget.reset_vmin_vmax_frame)
+        hlayout_buttons.addWidget(self.reset_vmin_vmax_hlut_button)
+
+        self.vlayout.addLayout(hlayout_buttons)
 
         self.sliders: Dict[str, SliderInterface] = dict()
 
@@ -221,6 +230,6 @@ class QToolbarImageWidget(QtWidgets.QWidget):
                 # add to sliders dict for easier access to users
                 self.sliders[dim] = SliderInterface(slider)
 
-        max_height = 40 + (40 * len(self.sliders.keys()))
+        max_height = 30 + (30 * len(self.sliders.keys()))
 
         self.setMaximumHeight(max_height)
