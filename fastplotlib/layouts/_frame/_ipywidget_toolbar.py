@@ -24,14 +24,8 @@ from ._toolbar import ToolBar
 
 
 class IpywidgetToolBar(HBox, ToolBar):
+    """Basic toolbar using ipywidgets"""
     def __init__(self, plot):
-        """
-        Basic toolbar for a GridPlot instance.
-
-        Parameters
-        ----------
-        plot:
-        """
         ToolBar.__init__(self, plot)
 
         self._auto_scale_button = Button(
@@ -134,7 +128,7 @@ class IpywidgetToolBar(HBox, ToolBar):
         else:
             self._y_direction_button.icon = "arrow-up"
 
-        HBox.__init__(self, widgets)
+        super().__init__(widgets)
 
     def _get_subplot_dropdown_value(self) -> str:
         return self._dropdown.value
@@ -153,8 +147,9 @@ class IpywidgetToolBar(HBox, ToolBar):
             camera.maintain_aspect = self._maintain_aspect_button.value
 
     def y_direction_handler(self, obj):
-        # TODO: What if the user has set different y_scales for cameras under the same controller?
-        self.current_subplot.camera.local.scale_y *= -1
+        # flip every camera under the same controller
+        for camera in self.current_subplot.controller.cameras:
+            camera.local.scale_y *= -1
 
         if copysign(1, self.current_subplot.camera.local.scale_y) == -1:
             self._y_direction_button.icon = "arrow-down"
@@ -212,6 +207,14 @@ class IpywidgetImageWidgetToolbar(VBox):
             icon="adjust",
             layout=Layout(width="auto"),
             tooltip="reset vmin/vmax",
+        )
+
+        self.reset_vminvmax_frame_button = Button(
+            value=False,
+            icon="adjust",
+            description="frame",
+            layout=Layout(width="auto"),
+            tooltip="reset vmin/vmax w.r.t. current frame only"
         )
 
         self.sliders: Dict[str, IntSlider] = dict()
@@ -273,16 +276,20 @@ class IpywidgetImageWidgetToolbar(VBox):
             jslink((self.play_button, "max"), (self.sliders["t"], "max"))
 
         self.reset_vminvmax_button.on_click(self._reset_vminvmax)
+        self.reset_vminvmax_frame_button.on_click(self._reset_vminvmax_frame)
 
         self.iw.gridplot.renderer.add_event_handler(self._set_slider_layout, "resize")
 
         # the buttons
         self.hbox = HBox(widgets)
 
-        VBox.__init__(self, (self.hbox, *list(self.sliders.values())))
+        super().__init__((self.hbox, *list(self.sliders.values())))
 
     def _reset_vminvmax(self, obj):
         self.iw.reset_vmin_vmax()
+
+    def _reset_vminvmax_frame(self, obj):
+        self.iw.reset_vmin_vmax_frame()
 
     def _change_stepsize(self, obj):
         self.sliders["t"].step = self.step_size_setter.value

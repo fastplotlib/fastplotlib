@@ -94,8 +94,10 @@ class QToolbar(ToolBar, QtWidgets.QWidget):  # inheritance order MUST be Toolbar
             camera.maintain_aspect = value
 
     def y_direction_handler(self, *args):
-        # TODO: What if the user has set different y_scales for cameras under the same controller?
-        self.current_subplot.camera.local.scale_y *= -1
+        # flip every camera under the same controller
+        for camera in self.current_subplot.controller.cameras:
+            camera.local.scale_y *= -1
+
         if copysign(1, self.current_subplot.camera.local.scale_y) == -1:
             self.ui.y_direction_button.setText("v")
         else:

@@ -755,10 +755,22 @@ class ImageWidget:
 
     def reset_vmin_vmax(self):
         """
-        Reset the vmin and vmax w.r.t. the currently displayed image(s)
+        Reset the vmin and vmax w.r.t. the full data
         """
         for ig in self.managed_graphics:
             ig.cmap.reset_vmin_vmax()
+
+    def reset_vmin_vmax_frame(self):
+        """
+        Resets the vmin vmax and HistogramLUT widgets w.r.t. the current data shown in the
+        ImageGraphic instead of the data in the full data array. For example, if a post-processing
+        function is used, the range of values in the ImageGraphic can be very different from the
+        range of values in the full data array.
+        """
+        for subplot in self.gridplot:
+            hlut = subplot.docks["right"]["histogram_lut"]
+            # set the data using the current image graphic data
+            hlut.set_data(subplot["image_widget_managed"].data)
 
     def set_data(
         self,

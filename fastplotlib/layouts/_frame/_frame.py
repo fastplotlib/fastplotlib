@@ -140,12 +140,12 @@ class Frame:
             for subplot in self:
                 for g in subplot.graphics:
                     if isinstance(g, ImageGraphic):
-                        subplot.camera.local.scale_y = -1
+                        subplot.camera.local.scale_y *= -1
                         break
         else:
             for g in self.graphics:
                 if isinstance(g, ImageGraphic):
-                    self.camera.local.scale_y = -1
+                    self.camera.local.scale_y *= -1
                     break
 
         if autoscale:
