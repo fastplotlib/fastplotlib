@@ -472,11 +472,14 @@ class PlotArea:
         if not len(self.scene.children) > 0:
             return
 
-        self.camera.show_object(self.scene)
+        # scale all cameras associated with this controller
+        # else it looks wonky
+        for camera in self.controller.cameras:
+            camera.show_object(self.scene)
 
-        # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
-        # probably because camera.show_object uses bounding sphere
-        self.camera.zoom = zoom
+            # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
+            # probably because camera.show_object uses bounding sphere
+            camera.zoom = zoom
 
     def auto_scale(self, maintain_aspect: bool = False, zoom: float = 0.8):
         """
@@ -500,7 +503,10 @@ class PlotArea:
         self.center_scene()
         if not isinstance(maintain_aspect, bool):
             maintain_aspect = False  # assume False
-        self.camera.maintain_aspect = maintain_aspect
+
+        # scale all cameras associated with this controller else it looks wonky
+        for camera in self.controller.cameras:
+            camera.maintain_aspect = maintain_aspect
 
         if len(self.scene.children) > 0:
             width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)
@@ -516,10 +522,12 @@ class PlotArea:
         for selector in self.selectors:
             self.scene.add(selector.world_object)
 
-        self.camera.width = width
-        self.camera.height = height
+        # scale all cameras associated with this controller else it looks wonky
+        for camera in self.controller.cameras:
+            camera.width = width
+            camera.height = height
 
-        self.camera.zoom = zoom
+            camera.zoom = zoom
 
     def remove_graphic(self, graphic: Graphic):
         """

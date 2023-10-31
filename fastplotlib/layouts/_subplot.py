@@ -16,7 +16,7 @@ from wgpu.gui.auto import WgpuCanvas
 
 from ..graphics import TextGraphic
 from ._utils import make_canvas_and_renderer
-from ._base import PlotArea
+from ._plot_area import PlotArea
 from ._defaults import create_camera, create_controller
 from .graphic_methods_mixin import GraphicMethodsMixin
 

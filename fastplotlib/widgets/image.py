@@ -1,26 +1,21 @@
 from typing import *
 from warnings import warn
-from functools import partial
 
 import numpy as np
 
-from ipywidgets.widgets import (
-    IntSlider,
-    VBox,
-    HBox,
-    Layout,
-    Button,
-    BoundedIntText,
-    Play,
-    jslink,
-)
-from sidecar import Sidecar
-from IPython.display import display
 
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
-from ..utils import quick_min_max, calculate_gridshape
+from ..utils import calculate_gridshape
 from .histogram_lut import HistogramLUT
+from ..layouts._utils import CANVAS_OPTIONS_AVAILABLE
+
+
+if CANVAS_OPTIONS_AVAILABLE["jupyter"]:
+    from ..layouts._frame._ipywidget_toolbar import IpywidgetImageWidgetToolbar
+
+if CANVAS_OPTIONS_AVAILABLE["qt"]:
+    from ..layouts._frame._qt_toolbar import QToolbarImageWidget
 
 
 DEFAULT_DIMS_ORDER = {
@@ -102,6 +97,13 @@ class ImageWidget:
         return self._gridplot
 
     @property
+    def widget(self):
+        """
+        Output context, either an ipywidget or QWidget
+        """
+        return self.gridplot.widget
+
+    @property
     def managed_graphics(self) -> List[ImageGraphic]:
         """List of ``ImageWidget`` managed graphics."""
         iw_managed = list()
@@ -155,9 +157,9 @@ class ImageWidget:
         return self._dims_order
 
     @property
-    def sliders(self) -> Dict[str, IntSlider]:
-        """the slider instances used by the widget for indexing the desired dimensions"""
-        return self._sliders
+    def sliders(self) -> Dict[str, Any]:
+        """the ipywidget IntSlider or QSlider instances used by the widget for indexing the desired dimensions"""
+        return self._image_widget_toolbar.sliders
 
     @property
     def slider_dims(self) -> List[str]:
@@ -292,9 +294,6 @@ class ImageWidget:
         """
 
         self._names = None
-        self.toolbar = None
-        self.sidecar = None
-        self.plot_open = False
 
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
@@ -521,7 +520,7 @@ class ImageWidget:
         self._window_funcs = None
         self.window_funcs = window_funcs
 
-        self._sliders: Dict[str, IntSlider] = dict()
+        self._sliders: Dict[str, Any] = dict()
 
         # current_index stores {dimension_index: slice_index} for every dimension
         self._current_index: Dict[str, int] = {sax: 0 for sax in self.slider_dims}
@@ -534,10 +533,15 @@ class ImageWidget:
                     self._dims_max_bounds[_dim], array.shape[order.index(_dim)]
                 )
 
+        grid_plot_kwargs_default = {"controllers": "sync"}
         if grid_plot_kwargs is None:
-            grid_plot_kwargs = {"controllers": "sync"}
+            grid_plot_kwargs = dict()
 
-        self._gridplot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs)
+        # update the default kwargs with any user-specified kwargs
+        # user specified kwargs will overwrite the defaults
+        grid_plot_kwargs_default.update(grid_plot_kwargs)
+
+        self._gridplot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs_default)
 
         for data_ix, (d, subplot) in enumerate(zip(self.data, self.gridplot)):
             if self._names is not None:
@@ -563,30 +567,8 @@ class ImageWidget:
             subplot.docks["right"].auto_scale(maintain_aspect=False)
             subplot.docks["right"].controller.enabled = False
 
-        self.gridplot.renderer.add_event_handler(self._set_slider_layout, "resize")
-
-        for sdm in self.slider_dims:
-            slider = IntSlider(
-                min=0,
-                max=self._dims_max_bounds[sdm] - 1,
-                step=1,
-                value=0,
-                description=f"dimension: {sdm}",
-                orientation="horizontal",
-            )
-
-            slider.observe(partial(self._slider_value_changed, sdm), names="value")
-
-            self._sliders[sdm] = slider
-
-        # will change later
-        # prevent the slider callback if value is self.current_index is changed programmatically
-        self.block_sliders: bool = False
-
-        # TODO: So just stack everything vertically for now
-        self._vbox_sliders = VBox(
-            [*list(self._sliders.values())]
-        )
+        self.block_sliders = False
+        self._image_widget_toolbar = None
 
     @property
     def window_funcs(self) -> Dict[str, _WindowFunctions]:
@@ -774,22 +756,33 @@ class ImageWidget:
 
         return array
 
-    def _slider_value_changed(self, dimension: str, change: dict):
+    def _slider_value_changed(self, dimension: str, change: Union[dict, int]):
         if self.block_sliders:
             return
-        self.current_index = {dimension: change["new"]}
-
-    def _set_slider_layout(self, *args):
-        w, h = self.gridplot.renderer.logical_size
-        for k, v in self.sliders.items():
-            v.layout = Layout(width=f"{w}px")
+        if isinstance(change, dict):
+            value = change["new"]
+        else:
+            value = change
+        self.current_index = {dimension: value}
 
     def reset_vmin_vmax(self):
         """
-        Reset the vmin and vmax w.r.t. the currently displayed image(s)
+        Reset the vmin and vmax w.r.t. the full data
         """
         for ig in self.managed_graphics:
             ig.cmap.reset_vmin_vmax()
+
+    def reset_vmin_vmax_frame(self):
+        """
+        Resets the vmin vmax and HistogramLUT widgets w.r.t. the current data shown in the
+        ImageGraphic instead of the data in the full data array. For example, if a post-processing
+        function is used, the range of values in the ImageGraphic can be very different from the
+        range of values in the full data array.
+        """
+        for subplot in self.gridplot:
+            hlut = subplot.docks["right"]["histogram_lut"]
+            # set the data using the current image graphic data
+            hlut.set_data(subplot["image_widget_managed"].data())
 
     def set_data(
         self,
@@ -879,141 +872,27 @@ class ImageWidget:
         # if reset_vmin_vmax:
         #     self.reset_vmin_vmax()
 
-    def show(self, toolbar: bool = True, sidecar: bool = True, sidecar_kwargs: dict = None):
+    def show(self, toolbar: bool = True, sidecar: bool = False, sidecar_kwargs: dict = None):
         """
         Show the widget
 
         Returns
         -------
-        VBox
-            ``ipywidgets.VBox`` stacking the plotter and sliders in a vertical layout
+        OutputContext
         """
+        if self.gridplot.canvas.__class__.__name__ == "JupyterWgpuCanvas":
+            self._image_widget_toolbar = IpywidgetImageWidgetToolbar(self)
 
-        # don't need to check for jupyter since ImageWidget is only supported within jupyter anyways
-        if not toolbar:
-            return VBox([self.gridplot.show(toolbar=False), self._vbox_sliders])
+        elif self.gridplot.canvas.__class__.__name__ == "QWgpuCanvas":
+            self._image_widget_toolbar = QToolbarImageWidget(self)
 
-        if self.toolbar is None:
-            self.toolbar = ImageWidgetToolbar(self)
-
-        if not sidecar:
-            return VBox(
-                [
-                    self.gridplot.show(toolbar=True, sidecar=False, sidecar_kwargs=None),
-                    self.toolbar.widget,
-                    self._vbox_sliders,
-                ]
-            )
-
-        if self.plot_open:
-            self.sidecar = None
-
-        if self.sidecar is None:
-            if sidecar_kwargs is not None:
-                self.sidecar = Sidecar(**sidecar_kwargs)
-                self.plot_open = True
-            else:
-                self.sidecar = Sidecar()
-                self.plot_open = True
-
-        with self.sidecar:
-            return display(VBox(
-                            [
-                                self.gridplot.show(toolbar=True, sidecar=False, sidecar_kwargs=None),
-                                self.toolbar.widget,
-                                self._vbox_sliders
-                            ]
-                        )
-                    )
+        return self.gridplot.show(
+            toolbar=toolbar,
+            sidecar=sidecar,
+            sidecar_kwargs=sidecar_kwargs,
+            add_widgets=[self._image_widget_toolbar]
+        )
 
     def close(self):
         """Close Widget"""
-        self.gridplot.canvas.close()
-
-        self._vbox_sliders.close()
-
-        if self.toolbar is not None:
-            self.toolbar.widget.close()
-            self.gridplot.toolbar.widget.close()
-
-        if self.sidecar is not None:
-            self.sidecar.close()
-
-        self.plot_open = False
-
-
-class ImageWidgetToolbar:
-    def __init__(self, iw: ImageWidget):
-        """
-        Basic toolbar for a ImageWidget instance.
-
-        Parameters
-        ----------
-        plot:
-        """
-        self.iw = iw
-        self.plot = iw.gridplot
-
-        self.reset_vminvmax_button = Button(
-            value=False,
-            disabled=False,
-            icon="adjust",
-            layout=Layout(width="auto"),
-            tooltip="reset vmin/vmax",
-        )
-
-        # only for xy data, no time point slider needed
-        if self.iw.ndim == 2:
-            self.widget = HBox([self.reset_vminvmax_button])
-        # for txy, tzxy, etc. data
-        else:
-            self.step_size_setter = BoundedIntText(
-                value=1,
-                min=1,
-                max=self.iw.sliders["t"].max,
-                step=1,
-                description="Step Size:",
-                disabled=False,
-                description_tooltip="set slider step",
-                layout=Layout(width="150px"),
-            )
-            self.speed_text = BoundedIntText(
-                value=100,
-                min=1,
-                max=1_000,
-                step=50,
-                description="Speed",
-                disabled=False,
-                description_tooltip="Playback speed, this is NOT framerate.\nArbitrary units between 1 - 1,000",
-                layout=Layout(width="150px"),
-            )
-            self.play_button = Play(
-                value=0,
-                min=iw.sliders["t"].min,
-                max=iw.sliders["t"].max,
-                step=iw.sliders["t"].step,
-                description="play/pause",
-                disabled=False,
-            )
-            self.widget = HBox(
-                [self.reset_vminvmax_button, self.play_button, self.step_size_setter, self.speed_text]
-            )
-
-            self.play_button.interval = 10
-
-            self.step_size_setter.observe(self._change_stepsize, "value")
-            self.speed_text.observe(self._change_framerate, "value")
-            jslink((self.play_button, "value"), (self.iw.sliders["t"], "value"))
-            jslink((self.play_button, "max"), (self.iw.sliders["t"], "max"))
-
-        self.reset_vminvmax_button.on_click(self._reset_vminvmax)
-
-    def _reset_vminvmax(self, obj):
-        self.iw.reset_vmin_vmax()
-
-    def _change_stepsize(self, obj):
-        self.iw.sliders["t"].step = self.step_size_setter.value
-
-    def _change_framerate(self, change):
-        interval = int(1000 / change["new"])
-        self.play_button.interval = interval
+        self.gridplot.close()

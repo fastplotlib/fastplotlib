@@ -129,6 +129,8 @@ class HistogramLUT(Graphic):
         self.linear_region._add_plot_area_hook(plot_area)
         self.line._add_plot_area_hook(plot_area)
 
+        self._plot_area.auto_scale()
+
     def _calculate_histogram(self, data):
         if data.ndim > 2:
             # subsample to max of 500 x 100 x 100,
@@ -261,6 +263,9 @@ class HistogramLUT(Graphic):
             self._block_events(False)
 
         self._data = weakref.proxy(data)
+
+        # reset plotarea dims
+        self._plot_area.auto_scale()
 
     @property
     def image_graphic(self) -> ImageGraphic:
