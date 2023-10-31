@@ -770,7 +770,7 @@ class ImageWidget:
         for subplot in self.gridplot:
             hlut = subplot.docks["right"]["histogram_lut"]
             # set the data using the current image graphic data
-            hlut.set_data(subplot["image_widget_managed"].data)
+            hlut.set_data(subplot["image_widget_managed"].data())
 
     def set_data(
         self,
