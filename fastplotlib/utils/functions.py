@@ -214,6 +214,9 @@ def calculate_gridshape(n_subplots: int) -> Tuple[int, int]:
 
 def normalize_min_max(a):
     """normalize an array between 0 - 1"""
+    if np.unique(a).size == 1:
+        return np.zeros(a.size)
+
     return (a - np.min(a)) / (np.max(a - np.min(a)))
 
 
