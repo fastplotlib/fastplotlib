@@ -225,7 +225,7 @@ class ImageWidget:
         grid_shape: Tuple[int, int] = None,
         names: List[str] = None,
         grid_plot_kwargs: dict = None,
-        histogram_widget: bool = False,
+        histogram_widget: bool = True,
         **kwargs,
     ):
         """
@@ -290,7 +290,7 @@ class ImageWidget:
             gives names to the subplots
 
         histogram_widget: bool, default False
-            determines whether each subplot is rendered with a Histogram LUT widget
+            make histogram LUT widget for each subplot
 
         kwargs: Any
             passed to fastplotlib.graphics.Image
