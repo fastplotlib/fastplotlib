@@ -252,7 +252,8 @@ class BaseSelector(Graphic):
 
         # restore the initial controller state
         # if it was disabled, keep it disabled
-        self._plot_area.controller.enabled = self._initial_controller_state
+        if self._initial_controller_state is not None:
+            self._plot_area.controller.enabled = self._initial_controller_state
 
     def _move_to_pointer(self, ev):
         """
