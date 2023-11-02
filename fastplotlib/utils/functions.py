@@ -26,6 +26,23 @@ QUALITATIVE_CMAPS = [
 
 
 def get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
+    """
+    Get a colormap as numpy array
+
+    Parameters
+    ----------
+    name: str
+        name of colormap
+    alpha: float
+        alpha, 0.0 - 1.0
+
+    Returns
+    -------
+    np.ndarray
+        [n_colors, 4], i.e. [n_colors, RGBA]
+
+    """
+
     cmap_path = Path(__file__).absolute().parent.joinpath("colormaps", name)
     if cmap_path.is_file():
         cmap = np.loadtxt(cmap_path)
@@ -214,6 +231,9 @@ def calculate_gridshape(n_subplots: int) -> Tuple[int, int]:
 
 def normalize_min_max(a):
     """normalize an array between 0 - 1"""
+    if np.unique(a).size == 1:
+        return np.zeros(a.size)
+
     return (a - np.min(a)) / (np.max(a - np.min(a)))
 
 
