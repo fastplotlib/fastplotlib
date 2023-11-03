@@ -869,9 +869,6 @@ class ImageWidget:
         # force graphics to update
         self.current_index = self.current_index
 
-        # if reset_vmin_vmax:
-        #     self.reset_vmin_vmax()
-
     def show(self, toolbar: bool = True, sidecar: bool = False, sidecar_kwargs: dict = None):
         """
         Show the widget
