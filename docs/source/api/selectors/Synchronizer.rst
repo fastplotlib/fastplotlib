@@ -28,5 +28,6 @@ Methods
     :toctree: Synchronizer_api
 
     Synchronizer.add
+    Synchronizer.clear
     Synchronizer.remove
 

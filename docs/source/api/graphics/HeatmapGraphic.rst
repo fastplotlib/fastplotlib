@@ -26,8 +26,6 @@ Properties
     HeatmapGraphic.position_y
     HeatmapGraphic.position_z
     HeatmapGraphic.visible
-    HeatmapGraphic.vmax
-    HeatmapGraphic.vmin
     HeatmapGraphic.world_object
 
 Methods

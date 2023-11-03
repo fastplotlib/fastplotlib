@@ -22,6 +22,8 @@ Properties
 
     GridPlot.canvas
     GridPlot.renderer
+    GridPlot.toolbar
+    GridPlot.widget
 
 Methods
 ~~~~~~~
@@ -36,4 +38,5 @@ Methods
     GridPlot.remove_animation
     GridPlot.render
     GridPlot.show
+    GridPlot.start_render
 
