@@ -13,7 +13,7 @@ plot = fpl.Plot()
 # to force a specific framework such as glfw:
 # plot = fpl.Plot(canvas="glfw")
 
-xs = np.linspace(0, 1_000, 20_000)
+xs = np.linspace(0, 1_000, 10_000)
 
 sine = np.sin(xs)
 cosine = np.cos(xs)
