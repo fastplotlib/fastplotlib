@@ -17,9 +17,7 @@ jobs:
 
   docs-build:
     name: Docs
-    runs-on:
-      group: paid
-      labels: bigmem
+    runs-on: bigmem
     strategy:
       fail-fast: false
     steps:
@@ -50,9 +48,7 @@ jobs:
 
   test-build-full:
     name: Test examples, env with notebook and glfw
-    runs-on:
-      group: paid
-      labels: bigmem
+    runs-on: bigmem
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
@@ -109,9 +105,7 @@ jobs:
 
   test-build-desktop:
     name: Test examples, env with only glfw
-    runs-on:
-      group: paid
-      labels: bigmem
+    runs-on: bigmem
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
