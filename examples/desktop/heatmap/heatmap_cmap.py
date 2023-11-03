@@ -13,13 +13,13 @@ plot = fpl.Plot()
 # to force a specific framework such as glfw:
 # plot = fpl.Plot(canvas="glfw")
 
-xs = np.linspace(0, 1_000, 20_000)
+xs = np.linspace(0, 1_000, 10_000)
 
 sine = np.sin(xs)
 cosine = np.cos(xs)
 
 # alternating sines and cosines
-data = np.zeros((10_000, 20_000), dtype=np.float32)
+data = np.zeros((10_000, 10_000), dtype=np.float32)
 data[::2] = sine
 data[1::2] = cosine
 
