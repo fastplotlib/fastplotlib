@@ -29,6 +29,7 @@ Properties
     ImageWidget.ndim
     ImageWidget.slider_dims
     ImageWidget.sliders
+    ImageWidget.widget
     ImageWidget.window_funcs
 
 Methods
@@ -38,6 +39,7 @@ Methods
 
     ImageWidget.close
     ImageWidget.reset_vmin_vmax
+    ImageWidget.reset_vmin_vmax_frame
     ImageWidget.set_data
     ImageWidget.show
 

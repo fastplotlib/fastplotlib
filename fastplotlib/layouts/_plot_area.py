@@ -495,7 +495,9 @@ class PlotArea:
             zoom value for the camera after auto-scaling, if zoom = 1.0 then the graphics
             in the scene will fill the entire canvas.
         """
-        # hacky workaround for now until we decided if we want to put selectors in their own scene
+        if not len(self.scene.children) > 0:
+            return
+        # hacky workaround for now until we decide if we want to put selectors in their own scene
         # remove all selectors from a scene to calculate scene bbox
         for selector in self.selectors:
             self.scene.remove(selector.world_object)

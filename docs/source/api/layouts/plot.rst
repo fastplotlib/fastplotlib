@@ -31,7 +31,9 @@ Properties
     Plot.renderer
     Plot.scene
     Plot.selectors
+    Plot.toolbar
     Plot.viewport
+    Plot.widget
 
 Methods
 ~~~~~~~
@@ -67,4 +69,5 @@ Methods
     Plot.set_title
     Plot.set_viewport_rect
     Plot.show
+    Plot.start_render
 

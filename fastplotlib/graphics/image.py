@@ -480,26 +480,6 @@ class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
             # set it with the actual data
             self.data = data
 
-    @property
-    def vmin(self) -> float:
-        """Minimum contrast limit."""
-        return self._material.clim[0]
-
-    @vmin.setter
-    def vmin(self, value: float):
-        """Minimum contrast limit."""
-        self._material.clim = (value, self._material.clim[1])
-
-    @property
-    def vmax(self) -> float:
-        """Maximum contrast limit."""
-        return self._material.clim[1]
-
-    @vmax.setter
-    def vmax(self, value: float):
-        """Maximum contrast limit."""
-        self._material.clim = (self._material.clim[0], value)
-
     def set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
 

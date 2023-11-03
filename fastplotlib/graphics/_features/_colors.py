@@ -401,8 +401,29 @@ class HeatmapCmapFeature(ImageCmapFeature):
     """
 
     def _set(self, cmap_name: str):
+        # in heatmap we use one material for all ImageTiles
         self._parent._material.map.data[:] = make_colors(256, cmap_name)
         self._parent._material.map.update_range((0, 0, 0), size=(256, 1, 1))
-        self.name = cmap_name
+        self._name = cmap_name
 
         self._feature_changed(key=None, new_data=self.name)
+
+    @property
+    def vmin(self) -> float:
+        """Minimum contrast limit."""
+        return self._parent._material.clim[0]
+
+    @vmin.setter
+    def vmin(self, value: float):
+        """Minimum contrast limit."""
+        self._parent._material.clim = (value, self._parent._material.clim[1])
+
+    @property
+    def vmax(self) -> float:
+        """Maximum contrast limit."""
+        return self._parent._material.clim[1]
+
+    @vmax.setter
+    def vmax(self, value: float):
+        """Maximum contrast limit."""
+        self._parent._material.clim = (self._parent._material.clim[0], value)
