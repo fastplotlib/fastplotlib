@@ -17,7 +17,7 @@ jobs:
 
   docs-build:
     name: Docs
-    runs-on: ubuntu-latest
+    runs-on: bigmem
     strategy:
       fail-fast: false
     steps:
@@ -48,7 +48,7 @@ jobs:
 
   test-build-full:
     name: Test examples, env with notebook and glfw
-    runs-on: ubuntu-latest
+    runs-on: bigmem
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
@@ -105,7 +105,7 @@ jobs:
 
   test-build-desktop:
     name: Test examples, env with only glfw
-    runs-on: ubuntu-latest
+    runs-on: bigmem
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
