@@ -459,7 +459,7 @@ class PlotArea:
         # probably because camera.show_object uses bounding sphere
         self.camera.zoom = zoom
 
-    def center_scene(self, zoom: float = 1.35):
+    def center_scene(self, *, zoom: float = 1.35):
         """
         Auto-center the scene, does not scale.
 
@@ -481,15 +481,20 @@ class PlotArea:
             # probably because camera.show_object uses bounding sphere
             camera.zoom = zoom
 
-    def auto_scale(self, maintain_aspect: bool = False, zoom: float = 0.8):
+    def auto_scale(
+            self,
+            *,  # since this is often used as an event handler, don't want to coerce maintain_aspect = True
+            maintain_aspect: Union[None, bool] = None,
+            zoom: float = 0.8
+    ):
         """
         Auto-scale the camera w.r.t to the scene
 
         Parameters
         ----------
-        maintain_aspect: bool, default ``False``
-            maintain the camera aspect ratio for all dimensions, if ``False`` the camera
-            is scaled according to the bounds in each dimension.
+        maintain_aspect: ``None`` or bool, default ``None``
+            Maintain the camera aspect ratio for all dimensions. If ``None``, the aspect is left unchanged.
+            if ``False`` the camera is scaled to the bounding box of the current scene.
 
         zoom: float, default 0.8
             zoom value for the camera after auto-scaling, if zoom = 1.0 then the graphics
@@ -503,8 +508,9 @@ class PlotArea:
             self.scene.remove(selector.world_object)
 
         self.center_scene()
-        if not isinstance(maintain_aspect, bool):
-            maintain_aspect = False  # assume False
+
+        if maintain_aspect is None:  # if not provided keep current setting
+            maintain_aspect = self.camera.maintain_aspect
 
         # scale all cameras associated with this controller else it looks wonky
         for camera in self.controller.cameras:
