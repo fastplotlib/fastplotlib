@@ -66,7 +66,7 @@ def make_canvas_and_renderer(
 
     if canvas is None:
         Canvas = auto_determine_canvas()
-        canvas = Canvas()
+        canvas = Canvas(max_fps=60)
 
     elif isinstance(canvas, str):
         if canvas not in CANVAS_OPTIONS:
@@ -76,7 +76,7 @@ def make_canvas_and_renderer(
                 f"The {canvas} framework is not installed for using this canvas"
             )
         else:
-            canvas = CANVAS_OPTIONS_AVAILABLE[canvas]()
+            canvas = CANVAS_OPTIONS_AVAILABLE[canvas](max_fps=60)
 
     elif not isinstance(canvas, (WgpuCanvasBase, Texture)):
         raise ValueError(
