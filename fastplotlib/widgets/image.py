@@ -40,7 +40,8 @@ def _is_arraylike(obj) -> bool:
 
 class _WindowFunctions:
     """Stores window function and window size"""
-    def __init__(self, func: callable, window_size: int):
+    def __init__(self, image_widget, func: callable, window_size: int):
+        self._image_widget = image_widget
         self._func = None
         self.func = func
 
@@ -55,6 +56,9 @@ class _WindowFunctions:
     @func.setter
     def func(self, func: callable):
         self._func = func
+
+        # force update
+        self._image_widget.current_index = self._image_widget.current_index
 
     @property
     def window_size(self) -> int:
@@ -84,6 +88,8 @@ class _WindowFunctions:
 
         self._window_size = ws
 
+        self._image_widget.current_index = self._image_widget.current_index
+
     def __repr__(self):
         return f"func: {self.func}, window_size: {self.window_size}"
 
@@ -101,7 +107,7 @@ class ImageWidget:
         """
         Output context, either an ipywidget or QWidget
         """
-        return self.gridplot.widget
+        return self._output
 
     @property
     def managed_graphics(self) -> List[ImageGraphic]:
@@ -185,6 +191,10 @@ class ImageWidget:
 
     @current_index.setter
     def current_index(self, index: Dict[str, int]):
+        # ignore if output context has not been created yet
+        if self.widget is None:
+            return
+
         if not set(index.keys()).issubset(set(self._current_index.keys())):
             raise KeyError(
                 f"All dimension keys for setting `current_index` must be present in the widget sliders. "
@@ -298,6 +308,9 @@ class ImageWidget:
         """
 
         self._names = None
+
+        # output context
+        self._output = None
 
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
@@ -494,14 +507,14 @@ class ImageWidget:
                 f"`slider_dims` must a <int>, <str> or <list>, you have passed a: {type(slider_dims)}"
             )
 
-        self.frame_apply: Dict[int, callable] = dict()
+        self._frame_apply: Dict[int, callable] = dict()
 
         if frame_apply is not None:
             if callable(frame_apply):
-                self.frame_apply = {0: frame_apply}
+                self._frame_apply = {0: frame_apply}
 
             elif isinstance(frame_apply, dict):
-                self.frame_apply: Dict[int, callable] = dict.fromkeys(
+                self._frame_apply: Dict[int, callable] = dict.fromkeys(
                     list(range(len(self.data)))
                 )
 
@@ -510,7 +523,7 @@ class ImageWidget:
                     if not isinstance(data_ix, int):
                         raise TypeError("`frame_apply` dict keys must be <int>")
                     try:
-                        self.frame_apply[data_ix] = frame_apply[data_ix]
+                        self._frame_apply[data_ix] = frame_apply[data_ix]
                     except Exception:
                         raise IndexError(
                             f"key index {data_ix} out of bounds for `frame_apply`, the bounds are 0 - {len(self.data)}"
@@ -521,13 +534,13 @@ class ImageWidget:
                     f"you have passed a: <{type(frame_apply)}>"
                 )
 
+        # current_index stores {dimension_index: slice_index} for every dimension
+        self._current_index: Dict[str, int] = {sax: 0 for sax in self.slider_dims}
+
         self._window_funcs = None
         self.window_funcs = window_funcs
 
         self._sliders: Dict[str, Any] = dict()
-
-        # current_index stores {dimension_index: slice_index} for every dimension
-        self._current_index: Dict[str, int] = {sax: 0 for sax in self.slider_dims}
 
         # get max bound for all data arrays for all dimensions
         self._dims_max_bounds: Dict[str, int] = {k: np.inf for k in self.slider_dims}
@@ -576,6 +589,19 @@ class ImageWidget:
         self._image_widget_toolbar = None
 
     @property
+    def frame_apply(self) -> Union[dict, None]:
+        return self._frame_apply
+
+    @frame_apply.setter
+    def frame_apply(self, frame_apply: Dict[int, callable]):
+        if frame_apply is None:
+            frame_apply = dict()
+            
+        self._frame_apply = frame_apply
+        # force update image graphic
+        self.current_index = self.current_index
+
+    @property
     def window_funcs(self) -> Dict[str, _WindowFunctions]:
         """
         Get or set the window functions
@@ -591,6 +617,8 @@ class ImageWidget:
     def window_funcs(self, sa: Union[int, Dict[str, int]]):
         if sa is None:
             self._window_funcs = None
+            # force frame to update
+            self.current_index = self.current_index
             return
 
         # for a single dim
@@ -606,7 +634,7 @@ class ImageWidget:
 
             dim_str = self.slider_dims[0]
             self._window_funcs = dict()
-            self._window_funcs[dim_str] = _WindowFunctions(*sa)
+            self._window_funcs[dim_str] = _WindowFunctions(self, *sa)
 
         # for multiple dims
         elif isinstance(sa, dict):
@@ -636,13 +664,16 @@ class ImageWidget:
                 if sa[k] is None:
                     self._window_funcs[k] = None
                 else:
-                    self._window_funcs[k] = _WindowFunctions(*sa[k])
+                    self._window_funcs[k] = _WindowFunctions(self, *sa[k])
 
         else:
             raise TypeError(
                 f"`window_funcs` must be of type `int` if using a single slider or a dict if using multiple sliders. "
                 f"You have passed a {type(sa)}. See the docstring."
             )
+
+        # force frame to update
+        self.current_index = self.current_index
 
     def _process_indices(
         self, array: np.ndarray, slice_indices: Dict[Union[int, str], int]
@@ -750,14 +781,14 @@ class ImageWidget:
             return indices_dim
 
     def _process_frame_apply(self, array, data_ix) -> np.ndarray:
-        if callable(self.frame_apply):
-            return self.frame_apply(array)
+        if callable(self._frame_apply):
+            return self._frame_apply(array)
 
-        if data_ix not in self.frame_apply.keys():
+        if data_ix not in self._frame_apply.keys():
             return array
 
-        elif self.frame_apply[data_ix] is not None:
-            return self.frame_apply[data_ix](array)
+        elif self._frame_apply[data_ix] is not None:
+            return self._frame_apply[data_ix](array)
 
         return array
 
@@ -876,11 +907,12 @@ class ImageWidget:
 
     def show(self, toolbar: bool = True, sidecar: bool = False, sidecar_kwargs: dict = None):
         """
-        Show the widget
+        Show the widget.
 
         Returns
         -------
         OutputContext
+            ImageWidget just uses the Gridplot output context
         """
         if self.gridplot.canvas.__class__.__name__ == "JupyterWgpuCanvas":
             self._image_widget_toolbar = IpywidgetImageWidgetToolbar(self)
@@ -888,12 +920,14 @@ class ImageWidget:
         elif self.gridplot.canvas.__class__.__name__ == "QWgpuCanvas":
             self._image_widget_toolbar = QToolbarImageWidget(self)
 
-        return self.gridplot.show(
+        self._output = self.gridplot.show(
             toolbar=toolbar,
             sidecar=sidecar,
             sidecar_kwargs=sidecar_kwargs,
             add_widgets=[self._image_widget_toolbar]
         )
+
+        return self._output
 
     def close(self):
         """Close Widget"""

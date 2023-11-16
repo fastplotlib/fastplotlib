@@ -36,7 +36,7 @@ extras_require = {
         "pytest",
         "nbmake",
         "scipy",
-        "imageio",
+        "imageio[pyav]",
         "jupyterlab",
         "jupyter-rfb>=0.4.1",
         "ipywidgets>=8.0.0,<9",
