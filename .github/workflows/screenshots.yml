@@ -38,6 +38,10 @@ jobs:
       - name: Show wgpu backend
         run:
           python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
+      - name: fetch git lfs files
+        run: |
+          git lfs fetch --all
+          git lfs pull
       - name: Test examples
         env:
           PYGFX_EXPECT_LAVAPIPE: true
