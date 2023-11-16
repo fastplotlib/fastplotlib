@@ -180,7 +180,8 @@ class HistogramLUT(Graphic):
         hist_scaled = hist_flanked / (hist_flanked.max() / 100)
 
         if edges_flanked.size > hist_scaled.size:
-            edges_flanked = edges_flanked[:-1]
+            # we don't care about accuracy here so if it's off by 1-2 bins that's fine
+            edges_flanked = edges_flanked[:hist_scaled.size]
 
         return hist, edges, hist_scaled, edges_flanked
 
