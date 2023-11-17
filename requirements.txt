@@ -1,5 +1,0 @@
-numpy
-jupyterlab
-jupyter_rfb
-pygfx>=0.1.10
-imageio
