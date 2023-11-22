@@ -167,4 +167,4 @@ WGPU uses Metal instead of Vulkan on Mac. You will need at least Mac OSX 10.13. 
 
 We welcome contributions! See the contributing guide: https://github.com/kushalkolar/fastplotlib/blob/main/CONTRIBUTING.md
 
-You can also take a look at our [**Roadmap for 2023**](https://github.com/kushalkolar/fastplotlib/issues/55) and [**Issues**](https://github.com/kushalkolar/fastplotlib/issues) for ideas on how to contribute!
+You can also take a look at our [**Roadmap for 2024**](https://github.com/kushalkolar/fastplotlib/issues/55) and [**Issues**](https://github.com/kushalkolar/fastplotlib/issues) for ideas on how to contribute!
