@@ -11,6 +11,7 @@
 
 [**Installation**](https://github.com/kushalkolar/fastplotlib#installation) | 
 [**GPU Drivers**](https://github.com/kushalkolar/fastplotlib#graphics-drivers) | 
+[**Documentation**](https://github.com/fastplotlib/fastplotlib#documentation) | 
 [**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | 
 [**Contributing**](https://github.com/kushalkolar/fastplotlib#heart-contributing)
 
