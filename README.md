@@ -35,7 +35,7 @@ Notebooks from talk: https://github.com/fastplotlib/fastplotlib-scipy2023
 :heavy_check_mark: `wxPython`
 
 **Notes:**\
-:heavy_check_mark: You can use a non-blocking `glfw` canvas from a notebook, as long as you're working locally or have a way to forward the remote graphical desktop (such as X11 forwarding).\
+:heavy_check_mark: Non-blocking Qt output is supported in ipython and notebooks by using [`%gui qt`](https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-gui) before creating plots. This hook only supports pyqt6 at the moment.\
 :grey_exclamation: We do not officially support `jupyter notebook` through `jupyter_rfb`, this may change with notebook v7\
 :disappointed: [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb) does not work in collab yet, see https://github.com/vispy/jupyter_rfb/pull/77 
 
