@@ -814,8 +814,14 @@ class ImageWidget:
         ImageGraphic instead of the data in the full data array. For example, if a post-processing
         function is used, the range of values in the ImageGraphic can be very different from the
         range of values in the full data array.
+
+        TODO: We could think of applying the frame_apply funcs to a subsample of the entire array to get a better estimate of vmin vmax?
         """
+
         for subplot in self.gridplot:
+            if "histogram_lut" not in subplot.docks["right"]:
+                continue
+
             hlut = subplot.docks["right"]["histogram_lut"]
             # set the data using the current image graphic data
             hlut.set_data(subplot["image_widget_managed"].data())
