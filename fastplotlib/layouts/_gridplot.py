@@ -36,7 +36,6 @@ class GridPlot(Frame, RecordMixin):
         renderer: pygfx.WgpuRenderer = None,
         size: Tuple[int, int] = (500, 300),
         names: Union[list, np.ndarray] = None,
-        **kwargs,
     ):
         """
         A grid of subplots.

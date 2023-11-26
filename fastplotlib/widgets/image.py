@@ -550,7 +550,7 @@ class ImageWidget:
                     self._dims_max_bounds[_dim], array.shape[order.index(_dim)]
                 )
 
-        grid_plot_kwargs_default = {"controllers": "sync"}
+        grid_plot_kwargs_default = {"controller_ids": "sync"}
         if grid_plot_kwargs is None:
             grid_plot_kwargs = dict()
 
@@ -885,6 +885,7 @@ class ImageWidget:
                 frame = self._process_frame_apply(frame, i)
                 new_graphic = ImageGraphic(data=frame, name="image_widget_managed")
                 subplot.insert_graphic(graphic=new_graphic)
+                subplot.docks["right"]["histogram_lut"].image_graphic = new_graphic
 
             if new_array.ndim > 2:
                 # to set max of time slider, txy or tzxy
