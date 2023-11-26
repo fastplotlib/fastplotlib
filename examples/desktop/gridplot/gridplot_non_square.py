@@ -10,7 +10,7 @@ import fastplotlib as fpl
 import imageio.v3 as iio
 
 
-plot = fpl.GridPlot(shape=(2, 2), controllers="sync")
+plot = fpl.GridPlot(shape=(2, 2), controller_ids="sync")
 # to force a specific framework such as glfw:
 # plot = fpl.GridPlot(canvas="glfw")
 
