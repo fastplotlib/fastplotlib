@@ -167,14 +167,21 @@ class PlotArea:
             self._controller.remove_camera(camera)
             cameras_list.append(camera)
 
-        del self._controller
-
         # add the associated cameras to the new controller
         for camera in cameras_list:
-            if camera is self._camera:
-                # skip, already added in create_controller
-                continue
             new_controller.add_camera(camera)
+
+        new_controller.register_events(
+            self.viewport
+        )
+
+        # monkeypatch until we figure out a better way
+        if self.parent is not None:
+            if self.parent.__class__.__name__ == "GridPlot":
+                for subplot in self.parent:
+                    if subplot.camera in cameras_list:
+                        new_controller.register_events(subplot.viewport)
+                        subplot._controller = new_controller
 
         self._controller = new_controller
 
@@ -685,7 +692,7 @@ class PlotArea:
 
         return (
             f"{self}\n"
-            f"  parent: {self.parent}\n"
+            f"  parent: {self.parent.__str__()}\n"
             f"  Graphics:\n"
             f"\t{newline.join(graphic.__repr__() for graphic in self.graphics)}"
             f"\n"

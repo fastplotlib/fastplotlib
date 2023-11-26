@@ -83,12 +83,12 @@ class GridPlot(Frame, RecordMixin):
         self.shape = shape
 
         if names is not None:
+            if len(list(chain(*names))) != self.shape[0] * self.shape[1]:
+                raise ValueError("must provide same number of subplot `names` as specified by gridplot shape")
+
             self.names = to_array(names).reshape(self.shape)
         else:
             self.names = None
-
-        if self.names.shape != self.shape:
-            raise ValueError("must provide same number of subplot `names` as specified by gridplot shape")
 
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
@@ -162,16 +162,19 @@ class GridPlot(Frame, RecordMixin):
 
         if controller_types is None:
             # `create_controller()` will auto-determine controller for each subplot based on defaults
-            controller_types = np.array([None] * self.shape[0] * self.shape[1]).reshape(self.shape)
+            controller_types = np.array(["default"] * self.shape[0] * self.shape[1]).reshape(self.shape)
 
         # validate controller types
         flat = list(chain(*controller_types))
         # str controller_type or pygfx instances
-        valid_str = list(valid_controller_types.keys())
+        valid_str = list(valid_controller_types.keys()) + ["default"]
         valid_instances = tuple(valid_controller_types.values())
 
         # make sure each controller type is valid
         for controller_type in flat:
+            if controller_type is None:
+                continue
+
             if (controller_type not in valid_str) and (not isinstance(controller_type, valid_instances)):
                 raise ValueError(
                     f"You have passed an invalid controller type, valid controller_types arguments are:\n"
@@ -183,24 +186,29 @@ class GridPlot(Frame, RecordMixin):
         # make the real controllers for each subplot
         self._controllers = np.empty(shape=self.shape, dtype=object)
         for cid in np.unique(controller_ids):
-            _cont_type = controller_types[controller_ids == cid]
-            if np.unique(_cont_type).size > 1:
+            cont_type = controller_types[controller_ids == cid]
+            if np.unique(cont_type).size > 1:
                 raise ValueError(
                     "Multiple controller types have been assigned to the same controller id. "
                     "All controllers with the same id must use the same type of controller."
                 )
 
-            # get all the cameras that use this controller
-            _cams = self._cameras[controller_ids == cid].ravel()
+            cont_type = cont_type[0]
 
-            _controller = create_controller(controller_type=_cont_type, camera=_cams[0])
+            # get all the cameras that use this controller
+            cams = self._cameras[controller_ids == cid].ravel()
+
+            if cont_type == "default":
+                # hacky fix for now because of hwo `create_controller()` works
+                cont_type = None
+            _controller = create_controller(controller_type=cont_type, camera=cams[0])
 
             self._controllers[controller_ids == cid] = _controller
 
             # add the other cameras that go with this controller
-            if _cams.size > 1:
-                for _cam in _cams[1:]:
-                    _controller.add_camera(_cam)
+            if cams.size > 1:
+                for cam in cams[1:]:
+                    _controller.add_camera(cam)
 
         if canvas is None:
             canvas = WgpuCanvas()
@@ -365,12 +373,15 @@ class GridPlot(Frame, RecordMixin):
         pos = self._current_iter.__next__()
         return self._subplots[pos]
 
+    def __str__(self):
+        return f"{self.__class__.__name__} @ {hex(id(self))}"
+
     def __repr__(self):
         newline = "\n\t"
 
         return (
             f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n"
             f"  Subplots:\n"
-            f"\t{newline.join(subplot.__repr__() for subplot in self)}"
+            f"\t{newline.join(subplot.__str__() for subplot in self)}"
             f"\n"
         )

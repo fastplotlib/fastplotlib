@@ -13,8 +13,8 @@ class Plot(Subplot, Frame, RecordMixin):
         self,
         canvas: WgpuCanvas = None,
         renderer: pygfx.WgpuRenderer = None,
-        camera: str = "2d",
-        controller: Union[pygfx.PanZoomController, pygfx.OrbitController] = None,
+        camera: Union[str, pygfx.Camera] = "2d",
+        controller: Union[str, pygfx.Controller] = None,
         size: Tuple[int, int] = (500, 300),
         **kwargs,
     ):
@@ -29,12 +29,14 @@ class Plot(Subplot, Frame, RecordMixin):
         renderer: pygfx.Renderer, optional
             pygfx renderer instance
 
-        camera:str, optional
+        camera: str or pygfx.Camera, optional
             | One of ``"2d"`` or ``"3d"`` indicating 2D or 3D camera
 
-        controller: None, PanZoomController or OrbitOrthoController, optional
+        controller: str or pygfx.Controller, optional
             Usually ``None``, you can pass an existing controller from another
-            ``Plot`` or ``Subplot`` within a ``GridPlot`` to synchronize them.
+            ``Plot`` or ``Subplot`` to synchronize them.
+
+            You can also pass str arguments of valid controller names, see Subplot docstring for valid names
 
         size: (int, int)
             starting size of canvas, default (500, 300)
