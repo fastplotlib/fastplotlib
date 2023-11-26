@@ -128,7 +128,8 @@ def create_controller(
     Creates the controllers and adds the camera to it.
     """
     if isinstance(controller_type, pygfx.Controller):
-        controller_type.add_camera(camera)
+        if camera not in controller_type.cameras:
+            controller_type.add_camera(camera)
         return controller_type
 
     if controller_type is None:

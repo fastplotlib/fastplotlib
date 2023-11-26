@@ -9,7 +9,8 @@ import pygfx
 from wgpu.gui.auto import WgpuCanvas
 
 from ._frame import Frame
-from ._utils import make_canvas_and_renderer, create_controller
+from ._utils import make_canvas_and_renderer, create_controller, create_camera
+from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._record_mixin import RecordMixin
 
@@ -103,6 +104,11 @@ class GridPlot(Frame, RecordMixin):
         if cameras.shape != self.shape:
             raise ValueError("Number of cameras does not match the number of subplots")
 
+        # create the cameras
+        self._cameras = np.empty(self.shape, dtype=object)
+        for i, j in product(range(self.shape[0]), range(self.shape[1])):
+            self._cameras[i, j] = create_camera(camera_type=cameras[i, j])
+
         if controller_ids is None:
             # individual controller for each subplot
             controller_ids = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
@@ -112,7 +118,7 @@ class GridPlot(Frame, RecordMixin):
                 controller_ids = np.zeros(self.shape, dtype=int)
 
         # list controller_ids
-        elif isinstance(controller_ids, list):
+        elif isinstance(controller_ids, (list, np.ndarray)):
             flat = list(chain(*controller_ids))
 
             # list of str of subplot names, convert this to integer ids
@@ -151,46 +157,50 @@ class GridPlot(Frame, RecordMixin):
                     f"you have passed: {controller_ids}"
                 )
 
-        controller_ids = to_array(controller_ids).reshape(self.shape)
-
         if controller_ids.shape != self.shape:
             raise ValueError("Number of controller_ids does not match the number of subplots")
 
         if controller_types is None:
-            # create_controller will auto-determine controller for each subplot based on defaults
+            # `create_controller()` will auto-determine controller for each subplot based on defaults
             controller_types = np.array([None] * self.shape[0] * self.shape[1]).reshape(self.shape)
 
-        # the controllers in this gridplot instance
-        self._controllers = np.empty(shape=cameras.shape, dtype=object)
+        # validate controller types
+        flat = list(chain(*controller_types))
+        # str controller_type or pygfx instances
+        valid_str = list(valid_controller_types.keys())
+        valid_instances = tuple(valid_controller_types.values())
 
-        if np.issubdtype(controller_ids.dtype, np.integer):
-            # create controllers if the arguments were integers
-            # if not np.all(
-            #     np.sort(np.unique(controller_ids))
-            #     == np.arange(np.unique(controller_ids).size)
-            # ):
-            #     raise ValueError("numeric controllers_ids must be consecutive integers")
-
-            for controller in np.unique(controllers):
-                # get the camera index for this controller
-                cam = np.unique(cameras[controllers == controller])
-                if cam.size > 1:
-                    # make sure that this controller is only for either a 2d or 3d camera
-                    raise ValueError(
-                        f"Controller id: {controller} has been assigned to multiple different camera types: {cam}"
-                    )
-
-                self._controllers[controllers == controller] = create_controller(
-                    controller_type=controller, camera=cam[0]
+        # make sure each controller type is valid
+        for controller_type in flat:
+            if (controller_type not in valid_str) and (not isinstance(controller_type, valid_instances)):
+                raise ValueError(
+                    f"You have passed an invalid controller type, valid controller_types arguments are:\n"
+                    f"{valid_str} or instances of {[c.__name__ for c in valid_instances]}"
                 )
-        # else assume it's a single pygfx.Controller instance or a list of controllers
-        else:
-            if isinstance(controllers, pygfx.Controller):
-                self._controllers = np.array(
-                    [controllers] * shape[0] * shape[1]
-                ).reshape(shape)
-            else:
-                self._controllers = np.array(controllers).reshape(shape)
+
+        controller_types = to_array(controller_types).reshape(self.shape)
+
+        # make the real controllers for each subplot
+        self._controllers = np.empty(shape=self.shape, dtype=object)
+        for cid in np.unique(controller_ids):
+            _cont_type = controller_types[controller_ids == cid]
+            if np.unique(_cont_type).size > 1:
+                raise ValueError(
+                    "Multiple controller types have been assigned to the same controller id. "
+                    "All controllers with the same id must use the same type of controller."
+                )
+
+            # get all the cameras that use this controller
+            _cams = self._cameras[controller_ids == cid].ravel()
+
+            _controller = create_controller(controller_type=_cont_type, camera=_cams[0])
+
+            self._controllers[controller_ids == cid] = _controller
+
+            # add the other cameras that go with this controller
+            if _cams.size > 1:
+                for _cam in _cams[1:]:
+                    _controller.add_camera(_cam)
 
         if canvas is None:
             canvas = WgpuCanvas()
@@ -209,7 +219,7 @@ class GridPlot(Frame, RecordMixin):
 
         for i, j in self._get_iterator():
             position = (i, j)
-            camera = cameras[i, j]
+            camera = self._cameras[i, j]
             controller = self._controllers[i, j]
 
             if self.names is not None:
