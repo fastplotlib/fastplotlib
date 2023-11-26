@@ -11,7 +11,7 @@ from ._record_mixin import RecordMixin
 class Plot(Subplot, Frame, RecordMixin):
     def __init__(
         self,
-        canvas: WgpuCanvas = None,
+        canvas: Union[str, WgpuCanvas] = None,
         renderer: pygfx.WgpuRenderer = None,
         camera: Union[str, pygfx.Camera] = "2d",
         controller: Union[str, pygfx.Controller] = None,
