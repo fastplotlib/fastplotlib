@@ -75,8 +75,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         camera = create_camera(camera)
 
-        if controller is None:
-            controller = create_controller(controller_type=controller, camera=camera)
+        controller = create_controller(controller_type=controller, camera=camera)
 
         self._docks = dict()
 
