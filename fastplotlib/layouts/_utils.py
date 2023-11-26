@@ -1,5 +1,6 @@
 from typing import *
 
+import pygfx
 from pygfx import WgpuRenderer, Texture
 
 # default auto-determined canvas
@@ -88,3 +89,60 @@ def make_canvas_and_renderer(
         renderer = WgpuRenderer(canvas)
 
     return canvas, renderer
+
+
+camera_types = {
+    "2d": pygfx.OrthographicCamera,
+    "3d": pygfx.PerspectiveCamera,
+}
+
+
+def create_camera(
+    camera_type: Union[pygfx.Camera, str],
+) -> Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera]:
+    if isinstance(camera_type, (pygfx.OrthographicCamera, pygfx.PerspectiveCamera)):
+        return camera_type
+
+    if camera_type not in camera_types.keys():
+        raise KeyError(
+            f"camera must be a valid pygfx.Camera or one of: "
+            f"{list(camera_types.keys())}, you have passed: {camera_type}"
+        )
+
+    return camera_types[camera_type]()
+
+
+controller_types = {
+    "fly": pygfx.FlyController,
+    "panzoom": pygfx.PanZoomController,
+    "trackball": pygfx.TrackballController,
+    "orbit": pygfx.OrbitController,
+}
+
+
+def create_controller(
+    controller_type: Union[pygfx.Controller, None, str],
+    camera: Union[pygfx.Camera],
+) -> pygfx.Controller:
+    """
+    Creates the controllers and adds the camera to it.
+    """
+    if isinstance(controller_type, pygfx.Controller):
+        controller_type.add_camera(camera)
+        return controller_type
+
+    if controller_type is None:
+        # default controllers
+        if camera == "2d" or isinstance(camera, pygfx.OrthographicCamera):
+            return pygfx.PanZoomController(camera)
+
+        elif camera == "3d" or isinstance(camera, pygfx.PerspectiveCamera):
+            return pygfx.FlyController(camera)
+
+    if controller_type not in controller_types.keys():
+        raise KeyError(
+            f"controller must be a valid pygfx.Controller or one of: "
+            f"{list(controller_types.keys())}, you have passed: {controller_type}"
+        )
+
+    return controller_types[controller_type]()

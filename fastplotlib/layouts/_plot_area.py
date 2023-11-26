@@ -6,18 +6,10 @@ from warnings import warn
 import numpy as np
 
 import pygfx
-from pygfx import (
-    Scene,
-    OrthographicCamera,
-    PerspectiveCamera,
-    PanZoomController,
-    OrbitController,
-    Viewport,
-    WgpuRenderer,
-)
 from pylinalg import vec_transform, vec_unproject
 from wgpu.gui.auto import WgpuCanvas
 
+from ._utils import create_camera, create_controller
 from ..graphics._base import Graphic
 from ..graphics.selectors._base_selector import BaseSelector
 
@@ -33,11 +25,11 @@ class PlotArea:
         self,
         parent,
         position: Any,
-        camera: Union[OrthographicCamera, PerspectiveCamera],
-        controller: Union[PanZoomController, OrbitController],
-        scene: Scene,
+        camera: Union[pygfx.Camera],
+        controller: Union[pygfx.Controller],
+        scene: pygfx.Scene,
         canvas: WgpuCanvas,
-        renderer: WgpuRenderer,
+        renderer: pygfx.WgpuRenderer,
         name: str = None,
     ):
         """
@@ -53,25 +45,23 @@ class PlotArea:
             typical use will be for ``subplots`` in a ``gridplot``, position would correspond to the ``[row, column]``
             location of the ``subplot`` in its ``gridplot``
 
-        camera: pygfx OrthographicCamera or pygfx PerspectiveCamera
-            ``OrthographicCamera`` type is used to visualize 2D content and ``PerspectiveCamera`` type is used to view
-            3D content, used to view the scene
+        camera: pygfx.Camera
+            ``pygfx.OrthographicCamera`` is used for 2D scenes ``pygfx.PerspectiveCamera`` is used to view 3D scenes
 
-        controller: pygfx PanZoomController or pygfx OrbitController
-            ``PanZoomController`` type is used for 2D pan-zoom camera control and ``OrbitController`` type is used for
-            rotating the camera around a center position, used to control the camera
+        controller: pygfx.Controller
+            One of the pygfx controllers, panzoom, fly, orbit, or trackball
 
-        scene: pygfx Scene
+        scene: pygfx.Scene
             represents the root of a scene graph, will be viewed by the given ``camera``
 
         canvas: WgpuCanvas
             provides surface on which a scene will be rendered
 
-        renderer: WgpuRenderer
-            object used to render scenes using wgpu
+        renderer: pygfx.WgpuRenderer
+            renders the scene onto the canvas
 
         name: str, optional
-            name of ``subplot`` or ``plot`` subclass being instantiated
+            name this ``subplot`` or ``plot``
 
         """
 
@@ -82,14 +72,13 @@ class PlotArea:
         self._canvas = canvas
         self._renderer = renderer
         if parent is None:
-            self._viewport: Viewport = Viewport(renderer)
+            self._viewport: pygfx.Viewport = pygfx.Viewport(renderer)
         else:
-            self._viewport = Viewport(parent.renderer)
+            self._viewport = pygfx.Viewport(parent.renderer)
 
         self._camera = camera
         self._controller = controller
 
-        self.controller.add_camera(self.camera)
         self.controller.register_events(
             self.viewport,
         )
@@ -126,7 +115,7 @@ class PlotArea:
         return self._position
 
     @property
-    def scene(self) -> Scene:
+    def scene(self) -> pygfx.Scene:
         """The Scene where Graphics lie in this plot area"""
         return self._scene
 
@@ -136,25 +125,58 @@ class PlotArea:
         return self._canvas
 
     @property
-    def renderer(self) -> WgpuRenderer:
+    def renderer(self) -> pygfx.WgpuRenderer:
         """Renderer associated to the plot area"""
         return self._renderer
 
     @property
-    def viewport(self) -> Viewport:
+    def viewport(self) -> pygfx.Viewport:
         """The rectangular area of the renderer associated to this plot area"""
         return self._viewport
 
     @property
-    def camera(self) -> Union[OrthographicCamera, PerspectiveCamera]:
+    def camera(self) -> pygfx.Camera:
         """camera used to view the scene"""
         return self._camera
 
+    @camera.setter
+    def camera(self, new_camera: Union[str, pygfx.Camera]):
+        new_camera = create_camera(new_camera)
+
+        # remove current camera from controller
+        self.controller.remove_camera(self._camera)
+        # add new camera to controller
+        self.controller.add_camera(new_camera)
+
+        self._camera = new_camera
+
     # in the future we can think about how to allow changing the controller
     @property
-    def controller(self) -> Union[PanZoomController, OrbitController]:
-        """controller used to control camera"""
+    def controller(self) -> pygfx.Controller:
+        """controller used to control the camera"""
         return self._controller
+
+    @controller.setter
+    def controller(self, new_controller: Union[str, pygfx.Controller]):
+        new_controller = create_controller(new_controller, self._camera)
+
+        cameras_list = list()
+
+        # remove all the cameras associated to this controller
+        for camera in self._controller.cameras:
+            self._controller.remove_camera(camera)
+            cameras_list.append(camera)
+
+        del self._controller
+
+        # add the associated cameras to the new controller
+        for camera in cameras_list:
+            if camera is self._camera:
+                # skip, already added in create_controller
+                continue
+            new_controller.add_camera(camera)
+
+        self._controller = new_controller
 
     @property
     def graphics(self) -> Tuple[Graphic, ...]:
