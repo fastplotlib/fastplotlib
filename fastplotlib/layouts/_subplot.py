@@ -18,7 +18,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         parent: Any = None,
         position: Tuple[int, int] = None,
         parent_dims: Tuple[int, int] = None,
-        camera: Union[str, pygfx.Camera] = "2d",
+        camera: Union[str, pygfx.PerspectiveCamera] = "2d",
         controller: Union[str, pygfx.Controller] = None,
         canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
         renderer: pygfx.WgpuRenderer = None,
@@ -33,15 +33,18 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         Parameters
         ----------
+        parent: Any
+            parent GridPlot instance
+
         position: (int, int), optional
             corresponds to the [row, column] position of the subplot within a ``Gridplot``
 
         parent_dims: (int, int), optional
             dimensions of the parent ``GridPlot``
 
-        camera: str or pygfx.Camera, default '2d'
-            indicates the kind of pygfx camera that will be instantiated, '2d' uses pygfx ``OrthographicCamera`` and
-            '3d' uses pygfx ``PerspectiveCamera``
+        camera: str or pygfx.PerspectiveCamera, default '2d'
+            indicates the FOV for the camera, '2d' sets ``fov = 0``, '3d' sets ``fov = 50``.
+            ``fov`` can be changed at any time.
 
         controller: str or pygfx.Controller, optional
             | if ``None``, uses a PanZoomController for "2d" camera or FlyController for "3d" camera.

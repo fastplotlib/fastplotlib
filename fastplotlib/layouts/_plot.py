@@ -13,7 +13,7 @@ class Plot(Subplot, Frame, RecordMixin):
         self,
         canvas: Union[str, WgpuCanvas] = None,
         renderer: pygfx.WgpuRenderer = None,
-        camera: Union[str, pygfx.Camera] = "2d",
+        camera: Union[str, pygfx.PerspectiveCamera] = "2d",
         controller: Union[str, pygfx.Controller] = None,
         size: Tuple[int, int] = (500, 300),
         **kwargs,
@@ -29,7 +29,7 @@ class Plot(Subplot, Frame, RecordMixin):
         renderer: pygfx.Renderer, optional
             pygfx renderer instance
 
-        camera: str or pygfx.Camera, optional
+        camera: str or pygfx.PerspectiveCamera, optional
             | One of ``"2d"`` or ``"3d"`` indicating 2D or 3D camera
 
         controller: str or pygfx.Controller, optional

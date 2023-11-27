@@ -25,7 +25,7 @@ class PlotArea:
         self,
         parent,
         position: Any,
-        camera: Union[pygfx.Camera],
+        camera: Union[pygfx.PerspectiveCamera],
         controller: Union[pygfx.Controller],
         scene: pygfx.Scene,
         canvas: WgpuCanvas,
@@ -45,8 +45,8 @@ class PlotArea:
             typical use will be for ``subplots`` in a ``gridplot``, position would correspond to the ``[row, column]``
             location of the ``subplot`` in its ``gridplot``
 
-        camera: pygfx.Camera
-            ``pygfx.OrthographicCamera`` is used for 2D scenes ``pygfx.PerspectiveCamera`` is used to view 3D scenes
+        camera: pygfx.PerspectiveCamera
+            Use perspective camera for both perspective and orthographic views. Set fov = 0 for orthographic mode.
 
         controller: pygfx.Controller
             One of the pygfx controllers, panzoom, fly, orbit, or trackball
@@ -136,20 +136,35 @@ class PlotArea:
         return self._viewport
 
     @property
-    def camera(self) -> pygfx.Camera:
+    def camera(self) -> pygfx.PerspectiveCamera:
         """camera used to view the scene"""
         return self._camera
 
     @camera.setter
-    def camera(self, new_camera: Union[str, pygfx.Camera]):
-        new_camera = create_camera(new_camera)
+    def camera(self, new_camera: Union[str, pygfx.PerspectiveCamera]):
+        # user wants to set completely new camera, remove current camera from controller
+        if isinstance(new_camera, pygfx.PerspectiveCamera):
+            self.controller.remove_camera(self._camera)
+            # add new camera to controller
+            self.controller.add_camera(new_camera)
 
-        # remove current camera from controller
-        self.controller.remove_camera(self._camera)
-        # add new camera to controller
-        self.controller.add_camera(new_camera)
+            self._camera = new_camera
 
-        self._camera = new_camera
+        # modify FOV if necessary
+        elif isinstance(new_camera, str):
+            if new_camera == "2d":
+                self._camera.fov = 0
+
+            elif new_camera == "3d":
+                # orthographic -> perspective only if fov = 0, i.e. if camera is in ortho mode
+                # otherwise keep same FOV
+                if self._camera.fov == 0:
+                    self._camera.fov = 50
+
+            else:
+                raise ValueError("camera must be one of '2d', '3d' or a pygfx.PerspectiveCamera instance")
+        else:
+            raise ValueError("camera must be one of '2d', '3d' or a pygfx.PerspectiveCamera instance")
 
     # in the future we can think about how to allow changing the controller
     @property
@@ -176,7 +191,8 @@ class PlotArea:
             self.viewport
         )
 
-        # monkeypatch until we figure out a better way
+        # TODO: monkeypatch until we figure out a better
+        #  pygfx plans on refactoring viewports anyways
         if self.parent is not None:
             if self.parent.__class__.__name__ == "GridPlot":
                 for subplot in self.parent:

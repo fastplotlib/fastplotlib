@@ -47,11 +47,12 @@ class GridPlot(Frame, RecordMixin):
 
         cameras: str, list, or np.ndarray, optional
             | One of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
-            | OR
             | list/array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot
+            | list/array of pygfx.PerspectiveCamera instances
 
         controller_types: str, list or np.ndarray, optional
-            list or array that specifies the controller type for each subplot.
+            list or array that specifies the controller type for each subplot, or list/array of
+            pygfx.Controller instances
 
         controller_ids: str, list or np.ndarray of int or str ids, optional
             | If `None` a unique controller is created for each subplot

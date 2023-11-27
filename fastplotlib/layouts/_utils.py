@@ -91,25 +91,23 @@ def make_canvas_and_renderer(
     return canvas, renderer
 
 
-camera_types = {
-    "2d": pygfx.OrthographicCamera,
-    "3d": pygfx.PerspectiveCamera,
-}
-
-
 def create_camera(
-    camera_type: Union[pygfx.Camera, str],
-) -> Union[pygfx.OrthographicCamera, pygfx.PerspectiveCamera]:
-    if isinstance(camera_type, (pygfx.OrthographicCamera, pygfx.PerspectiveCamera)):
+    camera_type: Union[pygfx.PerspectiveCamera, str],
+) -> pygfx.PerspectiveCamera:
+    if isinstance(camera_type, pygfx.PerspectiveCamera):
         return camera_type
 
-    if camera_type not in camera_types.keys():
-        raise KeyError(
-            f"camera must be a valid pygfx.Camera or one of: "
-            f"{list(camera_types.keys())}, you have passed: {camera_type}"
-        )
+    elif camera_type == "2d":
+        # use perspective for orthographic, makes it easier to then switch to controllers that make sense with fov > 0
+        return pygfx.PerspectiveCamera(fov=0)
 
-    return camera_types[camera_type]()
+    elif camera_type == "3d":
+        return pygfx.PerspectiveCamera()
+
+    else:
+        raise ValueError(
+            "camera must be one of: '2d', '3d' or an instance of pygfx.PerspectiveCamera"
+        )
 
 
 controller_types = {
@@ -122,7 +120,7 @@ controller_types = {
 
 def create_controller(
     controller_type: Union[pygfx.Controller, None, str],
-    camera: Union[pygfx.Camera],
+    camera: pygfx.PerspectiveCamera,
 ) -> pygfx.Controller:
     """
     Creates the controllers and adds the camera to it.
@@ -133,10 +131,10 @@ def create_controller(
 
     if controller_type is None:
         # default controllers
-        if camera == "2d" or isinstance(camera, pygfx.OrthographicCamera):
+        if camera.fov == 0:
+            # default for orthographic
             return pygfx.PanZoomController(camera)
-
-        elif camera == "3d" or isinstance(camera, pygfx.PerspectiveCamera):
+        else:
             return pygfx.FlyController(camera)
 
     if controller_type not in controller_types.keys():
