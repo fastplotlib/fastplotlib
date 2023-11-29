@@ -124,20 +124,20 @@ class GridPlot(Frame, RecordMixin):
 
         # list controller_ids
         elif isinstance(controller_ids, (list, np.ndarray)):
-            flat = list(chain(*controller_ids))
+            ids_flat = list(chain(*controller_ids))
 
             # list of str of subplot names, convert this to integer ids
-            if all([isinstance(item, str) for item in flat]):
+            if all([isinstance(item, str) for item in ids_flat]):
                 if self.names is None:
                     raise ValueError("must specify subplot `names` to use list of str for `controller_ids`")
 
                 # make sure each controller_id str is a subplot name
-                if not all([n in self.names for n in flat]):
+                if not all([n in self.names for n in ids_flat]):
                     raise KeyError(
                         f"all `controller_ids` strings must be one of the subplot names"
                     )
 
-                if len(flat) > len(set(flat)):
+                if len(ids_flat) > len(set(ids_flat)):
                     raise ValueError(
                         "id strings must not appear twice in `controller_ids`"
                     )
@@ -153,7 +153,7 @@ class GridPlot(Frame, RecordMixin):
                 controller_ids = ids_init
 
             # integer ids
-            elif all([isinstance(item, (int, np.integer)) for item in flat]):
+            elif all([isinstance(item, (int, np.integer)) for item in ids_flat]):
                 controller_ids = to_array(controller_ids).reshape(self.shape)
 
             else:
@@ -170,13 +170,13 @@ class GridPlot(Frame, RecordMixin):
             controller_types = np.array(["default"] * self.shape[0] * self.shape[1]).reshape(self.shape)
 
         # validate controller types
-        flat = list(chain(*controller_types))
+        types_flat = list(chain(*controller_types))
         # str controller_type or pygfx instances
         valid_str = list(valid_controller_types.keys()) + ["default"]
         valid_instances = tuple(valid_controller_types.values())
 
         # make sure each controller type is valid
-        for controller_type in flat:
+        for controller_type in types_flat:
             if controller_type is None:
                 continue
 
