@@ -199,7 +199,7 @@ class GridPlot(Frame, RecordMixin):
             cams = self._cameras[controller_ids == cid].ravel()
 
             if cont_type == "default":
-                # hacky fix for now because of hwo `create_controller()` works
+                # hacky fix for now because of how `create_controller()` works
                 cont_type = None
             _controller = create_controller(controller_type=cont_type, camera=cams[0])
 
