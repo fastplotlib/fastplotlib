@@ -116,6 +116,11 @@ class GridPlot(Frame, RecordMixin):
         elif isinstance(controller_ids, str):
             if controller_ids == "sync":
                 controller_ids = np.zeros(self.shape, dtype=int)
+            else:
+                raise ValueError(
+                    f"`controller_ids` must be one of 'sync', an array/list of subplot names, or an array/list of "
+                    f"integer ids. See the docstring for more details."
+                )
 
         # list controller_ids
         elif isinstance(controller_ids, (list, np.ndarray)):
