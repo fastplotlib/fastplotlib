@@ -65,7 +65,7 @@ class GridPlot(Frame, RecordMixin):
             | sync first 2 plots, and sync last 2 plots: [[0, 0, 1], [2, 3, 3]]
             | Example with str subplot names:
             | list of lists of subplot names, each sublist is synced: [[subplot_a, subplot_b], [subplot_f, subplot_c]]
-            | this syncs subplot_a and subplot_b together; syncs subplot_e and subplot_c together
+            | this syncs subplot_a and subplot_b together; syncs subplot_f and subplot_c together
 
         canvas: WgpuCanvas, optional
             Canvas for drawing
