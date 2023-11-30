@@ -2,22 +2,13 @@ from typing import *
 
 import numpy as np
 
-from pygfx import (
-    Scene,
-    OrthographicCamera,
-    PanZoomController,
-    OrbitController,
-    AxesHelper,
-    GridHelper,
-    WgpuRenderer,
-    Texture,
-)
+import pygfx
+
 from wgpu.gui.auto import WgpuCanvas
 
 from ..graphics import TextGraphic
-from ._utils import make_canvas_and_renderer
+from ._utils import make_canvas_and_renderer, create_camera, create_controller
 from ._plot_area import PlotArea
-from ._defaults import create_camera, create_controller
 from .graphic_methods_mixin import GraphicMethodsMixin
 
 
@@ -27,12 +18,11 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         parent: Any = None,
         position: Tuple[int, int] = None,
         parent_dims: Tuple[int, int] = None,
-        camera: str = "2d",
-        controller: Union[PanZoomController, OrbitController] = None,
-        canvas: Union[str, WgpuCanvas, Texture] = None,
-        renderer: WgpuRenderer = None,
+        camera: Union[str, pygfx.PerspectiveCamera] = "2d",
+        controller: Union[str, pygfx.Controller] = None,
+        canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
+        renderer: pygfx.WgpuRenderer = None,
         name: str = None,
-        **kwargs,
     ):
         """
         General plot object that composes a ``Gridplot``. Each ``Gridplot`` instance will have [n rows, n columns]
@@ -43,21 +33,25 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         Parameters
         ----------
-        position: int tuple, optional
+        parent: Any
+            parent GridPlot instance
+
+        position: (int, int), optional
             corresponds to the [row, column] position of the subplot within a ``Gridplot``
 
-        parent_dims: int tuple, optional
+        parent_dims: (int, int), optional
             dimensions of the parent ``GridPlot``
 
-        camera: str, default '2d'
-            indicates the kind of pygfx camera that will be instantiated, '2d' uses pygfx ``OrthographicCamera`` and
-            '3d' uses pygfx ``PerspectiveCamera``
+        camera: str or pygfx.PerspectiveCamera, default '2d'
+            indicates the FOV for the camera, '2d' sets ``fov = 0``, '3d' sets ``fov = 50``.
+            ``fov`` can be changed at any time.
 
-        controller: PanZoomController or OrbitOrthoController, optional
-            ``PanZoomController`` type is used for 2D pan-zoom camera control and ``OrbitController`` type is used for
-            rotating the camera around a center position, used to control the camera
+        controller: str or pygfx.Controller, optional
+            | if ``None``, uses a PanZoomController for "2d" camera or FlyController for "3d" camera.
+            | if ``str``, must be one of: `"panzoom", "fly", "trackball", or "orbit"`.
+            | also accepts a pygfx.Controller instance
 
-        canvas: WgpuCanvas, Texture, or one of "jupyter", "glfw", "qt", optional
+        canvas: one of "jupyter", "glfw", "qt", WgpuCanvas, or pygfx.Texture, optional
             Provides surface on which a scene will be rendered. Can optionally provide a WgpuCanvas instance or a str
             to force the PlotArea to use a specific canvas from one of the following options: "jupyter", "glfw", "qt".
             Can also provide a pygfx Texture to render to.
@@ -82,25 +76,26 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self.nrows, self.ncols = parent_dims
 
-        if controller is None:
-            controller = create_controller(camera)
+        camera = create_camera(camera)
+
+        controller = create_controller(controller_type=controller, camera=camera)
 
         self._docks = dict()
 
         self.spacing = 2
 
-        self._axes: AxesHelper = AxesHelper(size=100)
+        self._axes: pygfx.AxesHelper = pygfx.AxesHelper(size=100)
         for arrow in self._axes.children:
             self._axes.remove(arrow)
 
-        self._grid: GridHelper = GridHelper(size=100, thickness=1)
+        self._grid: pygfx.GridHelper = pygfx.GridHelper(size=100, thickness=1)
 
         super(Subplot, self).__init__(
             parent=parent,
             position=position,
-            camera=create_camera(camera),
+            camera=camera,
             controller=controller,
-            scene=Scene(),
+            scene=pygfx.Scene(),
             canvas=canvas,
             renderer=renderer,
             name=name,
@@ -221,9 +216,9 @@ class Dock(PlotArea):
         super(Dock, self).__init__(
             parent=parent,
             position=position,
-            camera=OrthographicCamera(),
-            controller=PanZoomController(),
-            scene=Scene(),
+            camera=pygfx.OrthographicCamera(),
+            controller=pygfx.PanZoomController(),
+            scene=pygfx.Scene(),
             canvas=parent.canvas,
             renderer=parent.renderer,
         )

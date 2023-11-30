@@ -9,16 +9,7 @@ import numpy as np
 import fastplotlib as fpl
 
 # grid with 2 rows and 3 columns
-grid_shape = (2,1)
-
-# pan-zoom controllers for each view
-# views are synced if they have the 
-# same controller ID
-controllers = [
-    [0],
-    [0]
-]
-
+grid_shape = (2, 1)
 
 # you can give string names for each subplot within the gridplot
 names = [
@@ -29,7 +20,6 @@ names = [
 # Create the grid plot
 plot = fpl.GridPlot(
     shape=grid_shape,
-    controllers=controllers,
     names=names,
     size=(1000, 1000)
 )
