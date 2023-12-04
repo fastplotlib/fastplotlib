@@ -131,3 +131,4 @@ dmypy.json
 # Pycharm
 .idea/
 
+examples/desktop/diffs/*.png
