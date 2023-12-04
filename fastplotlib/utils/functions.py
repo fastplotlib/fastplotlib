@@ -222,7 +222,7 @@ def parse_cmap_values(
 
         cm = Colormap(cmap_name)
         colormap = np.asarray(cm.color_stops, dtype=np.float32)[:, 1:]
-        n_colors = len(cm.color_stops)
+        n_colors = colormap.shape[0] - 1
 
         if Colormap(cmap_name).interpolation == "nearest":
             # check that cmap_values are <int> and within the number of colors `n_colors`
