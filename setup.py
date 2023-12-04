@@ -5,6 +5,7 @@ from pathlib import Path
 install_requires = [
     "numpy>=1.23.0",
     "pygfx>=0.1.14",
+    "cmap>=0.1.3",
 ]
 
 
