@@ -17,6 +17,8 @@ def get_cmap(name: str, alpha: float = 1.0, gamma: float = 1.0) -> np.ndarray:
         name of colormap
     alpha: float
         alpha, 0.0 - 1.0
+    gamma: float
+        gamma, 0.0 - 1.0
 
     Returns
     -------
