@@ -43,7 +43,8 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
             )
         return np.asarray(cm.color_stops, dtype=np.float32)[:n_colors, 1:]
 
-    return cm.lut(n_colors).astype(np.float32)
+    cm_ixs = np.linspace(0, 255, n_colors, dtype=int)
+    return cm(cm_ixs).astype(np.float32)
 
 
 def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
@@ -202,6 +203,7 @@ def parse_cmap_values(
     -------
 
     """
+    breakpoint()
     if cmap_values is None:
         # use the cmap values linearly just along the collection indices
         # for example, if len(data) = 10 and the cmap is "jet", then it will
@@ -224,7 +226,7 @@ def parse_cmap_values(
         colormap = np.asarray(cm.color_stops, dtype=np.float32)[:, 1:]
         n_colors = colormap.shape[0] - 1
 
-        if Colormap(cmap_name).interpolation == "nearest":
+        if cm.interpolation == "nearest":
             # check that cmap_values are <int> and within the number of colors `n_colors`
             # do not scale, use directly
             if not np.issubdtype(cmap_values.dtype, np.integer):
@@ -245,5 +247,4 @@ def parse_cmap_values(
 
         # use colormap as LUT to map the cmap_values to the colormap index
         colors = np.vstack([colormap[val] for val in norm_cmap_values])
-
         return colors
