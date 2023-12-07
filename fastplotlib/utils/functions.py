@@ -269,4 +269,5 @@ def parse_cmap_values(
 
         # use colormap as LUT to map the cmap_values to the colormap index
         colors = np.vstack([colormap[val] for val in norm_cmap_values])
+
         return colors
