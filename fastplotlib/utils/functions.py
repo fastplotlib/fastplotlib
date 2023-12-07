@@ -7,6 +7,28 @@ from cmap import Colormap
 from pygfx import Texture, Color
 
 
+def get_cmap(name: str, alpha: float = 1.0, gamma: float = 1.0) -> np.ndarray:
+    """
+    Get a colormap as numpy array
+
+    Parameters
+    ----------
+    name: str
+        name of colormap
+    alpha: float
+        alpha, 0.0 - 1.0
+
+    Returns
+    -------
+    np.ndarray
+        [n_colors, 4], i.e. [n_colors, RGBA]
+
+    """
+    cmap = Colormap(name).lut(256, gamma=gamma)
+    cmap[:, -1] = alpha
+    return cmap.astype(np.float32)
+
+
 def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
     """
     Get colors from a colormap. The returned colors are uniformly spaced, except
@@ -221,11 +243,12 @@ def parse_cmap_values(
                 f"len(cmap_values) != len(data): {len(cmap_values)} != {n_colors}"
             )
 
-        cm = Colormap(cmap_name)
-        colormap = np.asarray(cm.color_stops, dtype=np.float32)[:, 1:]
+        colormap = get_cmap(cmap_name)
+
         n_colors = colormap.shape[0] - 1
 
-        if cm.interpolation == "nearest":
+        # can also use cm.category == "qualitative"
+        if Colormap(cmap_name).interpolation == "nearest":
             # check that cmap_values are <int> and within the number of colors `n_colors`
             # do not scale, use directly
             if not np.issubdtype(cmap_values.dtype, np.integer):
