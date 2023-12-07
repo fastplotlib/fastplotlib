@@ -203,7 +203,6 @@ def parse_cmap_values(
     -------
 
     """
-    breakpoint()
     if cmap_values is None:
         # use the cmap values linearly just along the collection indices
         # for example, if len(data) = 10 and the cmap is "jet", then it will
