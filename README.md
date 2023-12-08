@@ -15,7 +15,7 @@
 [**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | 
 [**Contributing**](https://github.com/kushalkolar/fastplotlib#heart-contributing)
 
-A fast plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that can utilize [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
+Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that can utilize [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
 
 ![scipy-fpl](https://github.com/fastplotlib/fastplotlib/assets/9403332/b981a54c-05f9-443f-a8e4-52cd01cd802a)
 
@@ -70,7 +70,7 @@ pip install fastplotlib
 pip install "fastplotlib[notebook]"
 ```
 
-**Optional: install `simplejpeg` for much faster notebook visualization, you will need C compilers and [libjpeg-turbo](https://libjpeg-turbo.org/) to install it:**
+**Recommended: install `simplejpeg` for much faster notebook visualization, this requires you to first install [libjpeg-turbo](https://libjpeg-turbo.org/)**
 
 ```bash
 pip install simplejpeg
@@ -96,7 +96,8 @@ pip install -e ".[notebook,docs,tests]"
 > `fastplotlib` and `pygfx` are fast evolving, you may require the latest `pygfx` and `fastplotlib` from github to use the examples in the main branch.
 
 Note that `fastplotlib` code is basically identical between desktop and notebook usage. The differences are:
-- Running in `Qt` or `glfw` require a `fastplotlib.run()` call (which is really just a `wgpu` `run()` call)
+- Running in `glfw` requires a `fastplotlib.run()` call (which is really just a `wgpu` `run()` call)
+- To use it in `Qt` you must encapsulate it within a `QApplication`, see `examples/qt`
 - Notebooks plots have ipywidget-based toolbars and widgets 😄
 
 ### Desktop examples using `glfw` or `Qt`
@@ -129,7 +130,7 @@ pip install imageio
 
 ### Video
 
-You can watch our SciPy 2023 talk if you prefer watching demos: https://github.com/fastplotlib/fastplotlib#scipy-talk
+Our SciPy 2023 talk walks through numerous demos: https://github.com/fastplotlib/fastplotlib#scipy-talk
 
 ## Graphics drivers
 
@@ -140,9 +141,9 @@ For more information see: https://wgpu-py.readthedocs.io/en/stable/start.html#pl
 ### Windows:
 Vulkan drivers should be installed by default on Windows 11, but you will need to install your GPU manufacturer's driver package (Nvidia or AMD). If you have an integrated GPU within your CPU, you might still need to install a driver package too, check your CPU manufacturer's info.
 
-We also recommend installing C compilers so that you can install `simplejpeg` which improves remote frame buffer performance in notebooks.
-
 ### Linux:
+You will generally need a linux distro that is from ~2020 or newer (ex. Ubuntu 18.04 won't work), this is due to the `glibc` requirements of the `wgpu-native` binary.
+
 Debian based distros:
 
 ```bash
