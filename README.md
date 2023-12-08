@@ -70,7 +70,7 @@ pip install fastplotlib
 pip install "fastplotlib[notebook]"
 ```
 
-**Optional: install `simplejpeg` for much faster notebook visualization**
+**Recommended: install `simplejpeg` for much faster notebook visualization, this requires you to first install [libjpeg-turbo](https://libjpeg-turbo.org/)**
 
 ```bash
 pip install simplejpeg
