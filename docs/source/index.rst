@@ -39,12 +39,23 @@ For installation please see the instructions on GitHub:
 
 https://github.com/kushalkolar/fastplotlib#installation
 
+FAQ
+===
+
+1. Axes, axis, ticks, labels, legends
+
+A: They are on the `roadmap <https://github.com/fastplotlib/fastplotlib/issues/55>`_ and expected by summer 2024 :)
+
+2. Why the parrot logo?
+
+A: The logo is a `swift parrot <https://en.wikipedia.org/wiki/Swift_parrot>`_, they are the fastest species of parrot and they are colorful like fastplotlib visualizations :D 
+
 Contributing
 ============
 
 Contributions are welcome! See the contributing guide on GitHub: https://github.com/kushalkolar/fastplotlib/blob/master/CONTRIBUTING.md.
 
-Also take a look at the `Roadmap 2023 <https://github.com/kushalkolar/fastplotlib/issues/55>`_ for future plans or ways in which you could contribute.
+Also take a look at the `Roadmap 2025 <https://github.com/kushalkolar/fastplotlib/issues/55>`_ for future plans or ways in which you could contribute.
 
 Indices and tables
 ==================
