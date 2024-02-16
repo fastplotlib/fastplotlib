@@ -204,7 +204,8 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
         vmin: int = None,
         vmax: int = None,
         cmap: str = "plasma",
-        filter: str = "nearest",
+        interpolation: str = "nearest",
+        map_interpolation: str = "linear",
         isolated_buffer: bool = True,
         *args,
         **kwargs,
@@ -228,8 +229,11 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
         cmap: str, optional, default "plasma"
             colormap to use to display the image data, ignored if data is RGB
 
-        filter: str, optional, default "nearest"
-            interpolation filter, one of "nearest" or "linear"
+        interpolation: str, optional, default "nearest"
+            interpolation of the data, one of "nearest" or "linear"
+
+        map_interpolation: str, optional, default "nearest"
+            interpolation of the cmap, one of "nearest" or "linear"
 
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
@@ -282,12 +286,16 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
         # if data is RGB or RGBA
         if data.ndim > 2:
             material = pygfx.ImageBasicMaterial(
-                clim=(vmin, vmax), map_interpolation=filter
+                clim=(vmin, vmax),
+                interpolation=interpolation,
+                map_interpolation=map_interpolation
             )
         # if data is just 2D without color information, use colormap LUT
         else:
             material = pygfx.ImageBasicMaterial(
-                clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter
+                clim=(vmin, vmax), map=self.cmap(),
+                interpolation=interpolation,
+                map_interpolation=map_interpolation
             )
 
         world_object = pygfx.Image(geometry, material)
@@ -356,7 +364,8 @@ class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
         vmin: int = None,
         vmax: int = None,
         cmap: str = "plasma",
-        filter: str = "nearest",
+        interpolation: str = "nearest",
+        map_interpolation: str = "linear",
         chunk_size: int = 8192,
         isolated_buffer: bool = True,
         *args,
@@ -381,8 +390,11 @@ class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
         cmap: str, optional, default "plasma"
             colormap to use to display the data
 
-        filter: str, optional, default "nearest"
-            interpolation filter, one of "nearest" or "linear"
+        interpolation: str, optional, default "nearest"
+            interpolation of the data, one of "nearest" or "linear"
+
+        map_interpolation: str, optional, default "nearest"
+            interpolation of the cmap, one of "nearest" or "linear"
 
         chunk_size: int, default 8192, max 8192
             chunk size for each tile used to make up the heatmap texture
@@ -446,7 +458,10 @@ class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
 
         self.cmap = HeatmapCmapFeature(self, cmap)
         self._material = pygfx.ImageBasicMaterial(
-            clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter
+            clim=(vmin, vmax),
+            map=self.cmap(),
+            interpolation=interpolation,
+            map_interpolation=map_interpolation,
         )
 
         for start, stop, chunk in zip(start_ixs, stop_ixs, chunks):
@@ -478,6 +493,123 @@ class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
         if isolated_buffer:
             # if the buffer was initialized with zeros
             # set it with the actual data
+            self.data = data
+
+    def set_feature(self, feature: str, new_data: Any, indices: Any):
+        pass
+
+    def reset_feature(self, feature: str):
+        pass
+
+
+class VolumeGraphic(Graphic, Interaction):
+    feature_events = ("data", "cmap", "present")
+
+    def __init__(
+            self,
+            data: Any,
+            vmin: float = None,
+            vmax: float = None,
+            cmap: str = "plasma",
+            interpolation: str = "nearest",
+            map_interpolation: str = "linear",
+            isolated_buffer: bool = True,
+            *args,
+            **kwargs,
+    ):
+        """
+        Create an Image Volume Graphic
+
+        Parameters
+        ----------
+        data: array-like
+            array-like, usually numpy.ndarray, must support ``memoryview()``
+            Tensorflow Tensors also work **probably**, but not thoroughly tested
+            | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
+
+        vmin: int, optional
+            minimum value for color scaling, calculated from data if not provided
+
+        vmax: int, optional
+            maximum value for color scaling, calculated from data if not provided
+
+        cmap: str, optional, default "plasma"
+            colormap to use to display the image data, ignored if data is RGB
+
+        interpolation: str, optional, default "nearest"
+            interpolation of the data, one of "nearest" or "linear"
+
+        map_interpolation: str, optional, default "nearest"
+            interpolation of the cmap, one of "nearest" or "linear"
+
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then
+            set the data, useful if the data arrays are ready-only such as memmaps.
+            If False, the input array is itself used as the buffer.
+
+        args:
+            additional arguments passed to Graphic
+
+        kwargs:
+            additional keyword arguments passed to Graphic
+
+        Features
+        --------
+
+        **data**: :class:`.ImageDataFeature`
+            Manages the data buffer displayed in the ImageGraphic
+
+        **cmap**: :class:`.ImageCmapFeature`
+            Manages the colormap
+
+        **present**: :class:`.PresentFeature`
+            Control the presence of the Graphic in the scene
+
+        """
+
+        super().__init__(*args, **kwargs)
+
+        data = to_gpu_supported_dtype(data)
+
+        # TODO: we need to organize and do this better
+        if isolated_buffer:
+            # initialize a buffer with the same shape as the input data
+            # we do not directly use the input data array as the buffer
+            # because if the input array is a read-only type, such as
+            # numpy memmaps, we would not be able to change the image data
+            buffer_init = np.zeros(shape=data.shape, dtype=data.dtype)
+        else:
+            buffer_init = data
+
+        if (vmin is None) or (vmax is None):
+            vmin, vmax = quick_min_max(data)
+
+        texture = pygfx.Texture(buffer_init, dim=3)
+
+        geometry = pygfx.Geometry(grid=texture)
+
+        self.cmap = ImageCmapFeature(self, cmap)
+
+        material = pygfx.VolumeRayMaterial(
+            clim=(vmin, vmax),
+            map=self.cmap(),
+            interpolation=interpolation,
+            map_interpolation=map_interpolation
+        )
+
+        world_object = pygfx.Volume(
+            geometry,
+            material
+        )
+
+        self._set_world_object(world_object)
+
+        self.cmap.vmin = vmin
+        self.cmap.vmax = vmax
+
+        self.data = ImageDataFeature(self, data)
+
+        if isolated_buffer:
             self.data = data
 
     def set_feature(self, feature: str, new_data: Any, indices: Any):
