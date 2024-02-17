@@ -100,7 +100,7 @@ Anyone (absolutely anyone, not just the leadership team members) who feels that 
 
 #### Until February 28, 2025
 
-During early stages of fastplotlib development, changes to the governance document may be made directly through unanimous approval by the original maintainers, Kushal Kolar & Caitlin Lewis, without contacting the neutral moderator.
+During early stages of fastplotlib development, changes to the governance document may be made directly through unanimous approval by the original maintainers, Kushal Kolar & Caitlin Lewis, without contacting the neutral moderator or consulting with the advisory committee. They (Kushal & Caitlin) may also add new members to the advisory committee through unanimous approval.
 
 #### After February 28, 2025
 
