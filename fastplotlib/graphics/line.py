@@ -12,7 +12,7 @@ from .selectors import LinearRegionSelector, LinearSelector
 
 
 class LineGraphic(Graphic, Interaction):
-    feature_events = ("data", "colors", "cmap", "thickness", "present")
+    feature_events = {"data", "colors", "cmap", "thickness", "present"}
 
     def __init__(
         self,
