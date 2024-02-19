@@ -373,6 +373,12 @@ class PlotArea:
             Center the camera on the newly added Graphic
 
         """
+
+        if graphic in self:
+            # graphic is already in this plot but was removed from the scene, add it back
+            self.scene.add(graphic.world_object)
+            return
+
         self._add_or_insert_graphic(graphic=graphic, center=center, action="add")
 
         graphic.position_z = len(self)
