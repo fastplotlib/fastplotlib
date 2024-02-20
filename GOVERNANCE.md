@@ -1,12 +1,12 @@
 # fastplotlib governance
 
-The governance of fastplotlib applies to all fastplotlib related activities. This includes the fastplotlib github organization, all repositories under the fastplotlib github organization, as well as any events or workshops organized by members of the fastplotlib Leadership Team.
+The governance of fastplotlib applies to all fastplotlib related activities. This includes the fastplotlib GitHub organization, all repositories under the fastplotlib GitHub organization, as well as any events or workshops organized by members of the fastplotlib Leadership Team.
 
 ## Mission
 
 Leverage new graphics APIs and modern GPU hardware to create fast and interactive scientific visualizations using an expressive and elegant API.
 
-## Leadership team
+## Leadership Team
 
 ### Maintainers
 
@@ -18,7 +18,7 @@ The maintainers are the core developers of fastplotlib and together have a compl
 
 ### Advisory Committee 
 
-The advisory committee hold a significant stake in fastplotlib as determined by the **Maintainers**. The responsibilities of the **Advisory Committee** are to 1) attend a yearly roadmap meeting, 2) be available for conflict resolution.
+The Advisory Committee hold a significant stake in fastplotlib as determined by the **Maintainers**. The responsibilities of the **Advisory Committee** are to 1) attend a yearly Roadmap meeting, 2) be available for conflict resolution.
 
 1. Eric Thomson
 1. Guillaume Viejo
@@ -27,7 +27,7 @@ The advisory committee hold a significant stake in fastplotlib as determined by 
 
 ### Neutral moderator
 
-No voting power, has no stake in the fastplotlib project 
+No voting power, has no stake in the fastplotlib project.
 
 * Reagan Bullins
 
@@ -43,8 +43,8 @@ Note that currently the voting power is primarily held by the maintainers - Kush
 
 ### Voting Process
 
-1. For the purpose of conflict resolution the leadership team must be convened by the neutral moderator. In all other situations the leadership team may be convened by one of the maintainers.
-1. Once the leadership committee is convened and discussions have occurred, voting must conclude within 1 hour.
+1. For the purpose of conflict resolution the Leadership Team must be convened by the neutral moderator. In all other situations the Leadership Team may be convened by one of the maintainers.
+1. Once the Leadership Team is convened and discussions have occurred, voting must conclude within 1 hour.
 1. Voting is performed anonymously and handled solely by the neutral moderator in the case of conflict resolution, or by one of the maintainers.
 1. After voting has finished, any maintainer may invoke a veto vote. If the veto succeeds, then the same item may not be voted on for 100 days.
 
@@ -104,15 +104,15 @@ During early stages of fastplotlib development, changes to the governance docume
 
 #### After February 28, 2025
 
-Any member of the leadership team can propose changes to the governance document. Approving the changes requires a 75% vote within the maintainers and a 75% vote within the advisory committee.
+Any member of the Leadership Team can propose changes to the governance document. Approving the changes requires a 75% vote within the maintainers and a 75% vote within the advisory committee.
 
 ## Reasons for invoking a vote
 
 Things that can be voted on include but aren’t limited to:
-1. Nominating a member to the leadership team
-1. Adding a nominee to the leadership team
-1. Removing a member from the leadership team
-1. Banning any person (not just leadership team members) or organization from interacting with the fastplotlib github repository and/or fastplotlib github organization.
+1. Nominating a member to the Leadership Team
+1. Adding a nominee to the Leadership Team
+1. Removing a member from the Leadership Team
+1. Banning any person (not just Leadership Team members) or organization from interacting with the fastplotlib GitHub repository and/or fastplotlib GitHub organization.
 1. Appeal to un-ban a previously banned person or organization.
     * Can only occur 3 months after the initial ban
     * Person must contact the neutral moderator directly to start an appeal
