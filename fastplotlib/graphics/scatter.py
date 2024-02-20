@@ -9,7 +9,7 @@ from ._features import PointsDataFeature, ColorFeature, CmapFeature, PointsSizes
 
 
 class ScatterGraphic(Graphic):
-    feature_events = ("data", "sizes", "colors", "cmap", "present")
+    feature_events = {"data", "sizes", "colors", "cmap", "present"}
 
     def __init__(
         self,

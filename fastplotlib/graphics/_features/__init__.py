@@ -5,6 +5,7 @@ from ._present import PresentFeature
 from ._thickness import ThicknessFeature
 from ._base import GraphicFeature, GraphicFeatureIndexable, FeatureEvent, to_gpu_supported_dtype
 from ._selection_features import LinearSelectionFeature, LinearRegionSelectionFeature
+from ._deleted import Deleted
 
 __all__ = [
     "ColorFeature",
@@ -23,4 +24,5 @@ __all__ = [
     "to_gpu_supported_dtype",
     "LinearSelectionFeature",
     "LinearRegionSelectionFeature",
+    "Deleted",
 ]
