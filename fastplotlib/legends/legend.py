@@ -5,39 +5,10 @@ from typing import *
 import numpy as np
 import pygfx
 
-from fastplotlib.graphics._base import Graphic
-from fastplotlib.graphics._features._base import FeatureEvent
-from fastplotlib.graphics import LineGraphic, ScatterGraphic, ImageGraphic
-
-
-y_bottom = np.array(
-    [
-        True,
-        False,
-        True,
-        False,
-        True,
-        False,
-        True,
-        False,
-        False,
-        False,
-        False,
-        False,
-        True,
-        True,
-        True,
-        True,
-        True,
-        True,
-        False,
-        False,
-        True,
-        True,
-        False,
-        False,
-    ]
-)
+from ..graphics._base import Graphic
+from ..graphics._features._base import FeatureEvent
+from ..graphics import LineGraphic, ScatterGraphic, ImageGraphic
+from ..utils import mesh_masks
 
 
 class LegendItem:
@@ -112,7 +83,7 @@ class LineLegendItem(LegendItem):
             material=material(thickness=graphic.thickness(), color=pygfx.Color(color))
         )
 
-        self._line_world_object.world.x = -20 + position[0]
+        self._line_world_object.world.x = self._line_world_object.world.x + position[0]
         self._line_world_object.world.y = self._line_world_object.world.y + position[1]
 
         self._label_world_object = pygfx.Text(
@@ -128,7 +99,9 @@ class LineLegendItem(LegendItem):
                 outline_thickness=0,
             )
         )
-        self._label_world_object.world.x = self._label_world_object.world.x - 10 + position[0]
+
+        # add 10 to x to account for space for the line
+        self._label_world_object.world.x = self._label_world_object.world.x + position[0] + 10
         self._label_world_object.world.y = self._label_world_object.world.y + position[1]
 
         self.world_object = pygfx.Group()
@@ -172,6 +145,7 @@ class Legend(Graphic):
         super().__init__(**kwargs)
 
         group = pygfx.Group()
+        self._legend_items_group = pygfx.Group()
         self._set_world_object(group)
 
         self._mesh = pygfx.Mesh(
@@ -180,6 +154,7 @@ class Legend(Graphic):
         )
 
         self.world_object.add(self._mesh)
+        self.world_object.add(self._legend_items_group)
 
         plot_area.add_graphic(self)
 
@@ -191,16 +166,26 @@ class Legend(Graphic):
             y_pos = len(self._items) * -10
             legend_item = LineLegendItem(graphic, label, position=(0, y_pos))
 
-            self._mesh.geometry.positions.data[y_bottom, 1] += y_pos
-            self._mesh.geometry.positions.update_range()
+            self._legend_items_group.add(legend_item.world_object)
 
-            self.world_object.add(legend_item.world_object)
+            self._reset_mesh_dims()
 
         else:
             raise ValueError("Legend only supported for LineGraphic and ScatterGraphic")
 
         self._items[graphic.loc] = legend_item
         graphic.deleted.add_event_handler(partial(self.remove_graphic, graphic))
+
+    def _reset_mesh_dims(self):
+        bbox = self._legend_items_group.get_world_bounding_box()
+
+        width, height, _ = bbox.ptp(axis=0)
+
+        self._mesh.geometry.positions.data[mesh_masks.x_right] = width + 7
+        self._mesh.geometry.positions.data[mesh_masks.x_left] = -5
+        self._mesh.geometry.positions.data[mesh_masks.y_bottom] = 0
+        self._mesh.geometry.positions.data[mesh_masks.y_bottom] = -height - 3
+        self._mesh.geometry.positions.update_range()
 
     def remove_graphic(self, graphic: Graphic):
         self._graphics.remove(graphic)
