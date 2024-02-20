@@ -39,64 +39,6 @@ y_bottom = np.array(
     ]
 )
 
-class Legend(Graphic):
-    def __init__(self, plot_area, *args, **kwargs):
-        """
-
-        Parameters
-        ----------
-        plot_area: Union[Plot, Subplot, Dock]
-            plot area to put the legend in
-
-        """
-        self._graphics: List[Graphic] = list()
-
-        # hex id of Graphic, i.e. graphic.loc are the keys
-        self._items: OrderedDict[str: LegendItem] = OrderedDict()
-
-        super().__init__(**kwargs)
-
-        group = pygfx.Group()
-        self._set_world_object(group)
-
-        self._mesh = pygfx.Mesh(
-            pygfx.box_geometry(50, 10, 1),
-            pygfx.MeshBasicMaterial(color=pygfx.Color([0.1, 0.1, 0.1, 1]), wireframe_thickness=10)
-        )
-
-        self.world_object.add(self._mesh)
-
-        plot_area.add_graphic(self)
-
-    def graphics(self) -> Tuple[Graphic, ...]:
-        return tuple(self._graphics)
-
-    def add_graphic(self, graphic: Graphic, label: str = None):
-        if isinstance(graphic, LineGraphic):
-            y_pos = len(self._items) * -10
-            legend_item = LineLegendItem(graphic, label, position=(0, y_pos))
-
-            self._mesh.geometry.positions.data[y_bottom, 1] += y_pos
-            self._mesh.geometry.positions.update_range()
-
-            self.world_object.add(legend_item.world_object)
-
-        else:
-            raise ValueError("Legend only supported for LineGraphic and ScatterGraphic")
-
-        self._items[graphic.loc] = legend_item
-        graphic.deleted.add_event_handler(partial(self.remove_graphic, graphic))
-
-    def remove_graphic(self, graphic: Graphic):
-        self._graphics.remove(graphic)
-        legend_item = self._items.pop(graphic.loc)
-        self.world_object.remove(legend_item.world_object)
-
-        # figure out logic of removing items and re-ordering
-        # for i, (graphic_loc, legend_item) in enumerate(self._items.items()):
-        #     pass
-
-
 
 class LegendItem:
     def __init__(
@@ -203,7 +145,77 @@ class LineLegendItem(LegendItem):
 
     def _update_color(self, ev: FeatureEvent):
         new_color = ev.pick_info["new_data"]
-        self._line_world_object.material.color = pygfx.Color(new_color)
+        if np.unique(new_color, axis=0).shape[0] > 1:
+            raise ValueError("LegendError: LineGraphic colors no longer appropriate for legend")
+
+        self._line_world_object.material.color = pygfx.Color(new_color[0])
 
     def _update_thickness(self, ev: FeatureEvent):
         self._line_world_object.material.thickness = ev.pick_info["new_data"]
+
+
+class Legend(Graphic):
+    def __init__(self, plot_area, *args, **kwargs):
+        """
+
+        Parameters
+        ----------
+        plot_area: Union[Plot, Subplot, Dock]
+            plot area to put the legend in
+
+        """
+        self._graphics: List[Graphic] = list()
+
+        # hex id of Graphic, i.e. graphic.loc are the keys
+        self._items: OrderedDict[str: LegendItem] = OrderedDict()
+
+        super().__init__(**kwargs)
+
+        group = pygfx.Group()
+        self._set_world_object(group)
+
+        self._mesh = pygfx.Mesh(
+            pygfx.box_geometry(50, 10, 1),
+            pygfx.MeshBasicMaterial(color=pygfx.Color([0.1, 0.1, 0.1, 1]), wireframe_thickness=10)
+        )
+
+        self.world_object.add(self._mesh)
+
+        plot_area.add_graphic(self)
+
+    def graphics(self) -> Tuple[Graphic, ...]:
+        return tuple(self._graphics)
+
+    def add_graphic(self, graphic: Graphic, label: str = None):
+        if isinstance(graphic, LineGraphic):
+            y_pos = len(self._items) * -10
+            legend_item = LineLegendItem(graphic, label, position=(0, y_pos))
+
+            self._mesh.geometry.positions.data[y_bottom, 1] += y_pos
+            self._mesh.geometry.positions.update_range()
+
+            self.world_object.add(legend_item.world_object)
+
+        else:
+            raise ValueError("Legend only supported for LineGraphic and ScatterGraphic")
+
+        self._items[graphic.loc] = legend_item
+        graphic.deleted.add_event_handler(partial(self.remove_graphic, graphic))
+
+    def remove_graphic(self, graphic: Graphic):
+        self._graphics.remove(graphic)
+        legend_item = self._items.pop(graphic.loc)
+        self.world_object.remove(legend_item.world_object)
+
+        # figure out logic of removing items and re-ordering
+        # for i, (graphic_loc, legend_item) in enumerate(self._items.items()):
+        #     pass
+
+    def __getitem__(self, graphic: Graphic) -> LegendItem:
+        if not isinstance(graphic, Graphic):
+            raise TypeError("Must index Legend with Graphics")
+
+        if graphic.loc not in self._items.keys():
+            raise KeyError("Graphic not in legend")
+
+        return self._items[graphic.loc]
