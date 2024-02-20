@@ -1,4 +1,5 @@
 from functools import partial
+from collections import OrderedDict
 from typing import *
 
 import numpy as np
@@ -51,7 +52,7 @@ class Legend(Graphic):
         self._graphics: List[Graphic] = list()
 
         # hex id of Graphic, i.e. graphic.loc are the keys
-        self._items: Dict[str: LegendItem] = dict()
+        self._items: OrderedDict[str: LegendItem] = OrderedDict()
 
         super().__init__(**kwargs)
 
@@ -90,6 +91,11 @@ class Legend(Graphic):
         self._graphics.remove(graphic)
         legend_item = self._items.pop(graphic.loc)
         self.world_object.remove(legend_item.world_object)
+
+        # figure out logic of removing items and re-ordering
+        # for i, (graphic_loc, legend_item) in enumerate(self._items.items()):
+        #     pass
+
 
 
 class LegendItem:
