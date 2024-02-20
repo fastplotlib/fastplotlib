@@ -8,7 +8,7 @@ import numpy as np
 
 from pygfx import WorldObject
 
-from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable
+from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable, Deleted
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
@@ -45,6 +45,12 @@ class BaseGraphic:
 
 
 class Graphic(BaseGraphic):
+    feature_events = {}
+
+    def __init_subclass__(cls, **kwargs):
+        # all graphics give off a feature event when deleted
+        cls.feature_events = {*cls.feature_events, "deleted"}
+
     def __init__(
         self,
         name: str = None,
@@ -71,6 +77,8 @@ class Graphic(BaseGraphic):
 
         # store hex id str of Graphic instance mem location
         self.loc: str = hex(id(self))
+
+        self.deleted = Deleted(self, False)
 
     @property
     def world_object(self) -> WorldObject:
@@ -168,6 +176,7 @@ class Graphic(BaseGraphic):
         pass
 
     def __del__(self):
+        self.deleted = True
         del WORLD_OBJECTS[self.loc]
 
 

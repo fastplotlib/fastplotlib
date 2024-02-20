@@ -196,7 +196,7 @@ class _AddSelectorsMixin:
 
 
 class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
-    feature_events = ("data", "cmap", "present")
+    feature_events = {"data", "cmap", "present"}
 
     def __init__(
         self,
@@ -345,10 +345,11 @@ class _ImageTile(pygfx.Image):
 
 
 class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
-    feature_events = (
+    feature_events = {
         "data",
         "cmap",
-    )
+        "present"
+    }
 
     def __init__(
         self,
