@@ -3,6 +3,7 @@ from pathlib import Path
 from .layouts import Plot, GridPlot
 from .graphics import *
 from .graphics.selectors import *
+from .legends import *
 
 from wgpu.gui.auto import run
 
@@ -21,5 +22,6 @@ __all__ = [
     "Plot",
     "GridPlot",
     "run",
-    "ImageWidget"
+    "ImageWidget",
+    "Legend",
 ]

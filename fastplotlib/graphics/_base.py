@@ -48,6 +48,7 @@ class Graphic(BaseGraphic):
     feature_events = {}
 
     def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
         # all graphics give off a feature event when deleted
         cls.feature_events = {*cls.feature_events, "deleted"}
 
