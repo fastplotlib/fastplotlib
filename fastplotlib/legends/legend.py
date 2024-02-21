@@ -83,8 +83,7 @@ class LineLegendItem(LegendItem):
             material=material(thickness=graphic.thickness(), color=pygfx.Color(color))
         )
 
-        self._line_world_object.world.x = self._line_world_object.world.x + position[0]
-        self._line_world_object.world.y = self._line_world_object.world.y + position[1]
+        # self._line_world_object.world.x = position[0]
 
         self._label_world_object = pygfx.Text(
             geometry=pygfx.TextGeometry(
@@ -100,12 +99,14 @@ class LineLegendItem(LegendItem):
             )
         )
 
-        # add 10 to x to account for space for the line
-        self._label_world_object.world.x = self._label_world_object.world.x + position[0] + 10
-        self._label_world_object.world.y = self._label_world_object.world.y + position[1]
-
         self.world_object = pygfx.Group()
         self.world_object.add(self._line_world_object, self._label_world_object)
+
+        self.world_object.world.x = position[0]
+        # add 10 to x to account for space for the line
+        self._label_world_object.world.x = position[0] + 10
+
+        self.world_object.world.y = position[1]
         self.world_object.world.z = 2
 
     @property
@@ -162,6 +163,11 @@ class Legend(Graphic):
         return tuple(self._graphics)
 
     def add_graphic(self, graphic: Graphic, label: str = None):
+        if graphic in self._graphics:
+            raise KeyError(
+                f"Graphic already exists in legend with label: '{self._items[graphic.loc].label}'"
+            )
+
         if isinstance(graphic, LineGraphic):
             y_pos = len(self._items) * -10
             legend_item = LineLegendItem(graphic, label, position=(0, y_pos))
@@ -173,6 +179,7 @@ class Legend(Graphic):
         else:
             raise ValueError("Legend only supported for LineGraphic and ScatterGraphic")
 
+        self._graphics.append(graphic)
         self._items[graphic.loc] = legend_item
         graphic.deleted.add_event_handler(partial(self.remove_graphic, graphic))
 
@@ -190,11 +197,32 @@ class Legend(Graphic):
     def remove_graphic(self, graphic: Graphic):
         self._graphics.remove(graphic)
         legend_item = self._items.pop(graphic.loc)
-        self.world_object.remove(legend_item.world_object)
+        self._legend_items_group.remove(legend_item.world_object)
+        self._reset_item_positions()
 
-        # figure out logic of removing items and re-ordering
-        # for i, (graphic_loc, legend_item) in enumerate(self._items.items()):
-        #     pass
+    def _reset_item_positions(self):
+        for i, (graphic_loc, legend_item) in enumerate(self._items.items()):
+            y_pos = i * -10
+            legend_item.world_object.world.y = y_pos
+
+        self._reset_mesh_dims()
+
+    def reorder(self, labels: Iterable[str]):
+        all_labels = [legend_item.label for legend_item in self._items.values()]
+
+        if not set(labels) == set(all_labels):
+            raise ValueError("Must pass all existing legend labels")
+
+        new_items = OrderedDict()
+
+        for label in labels:
+            for graphic_loc, legend_item in self._items.items():
+                if label == legend_item.label:
+                    new_items[graphic_loc] = self._items.pop(graphic_loc)
+                    break
+
+        self._items = new_items
+        self._reset_item_positions()
 
     def __getitem__(self, graphic: Graphic) -> LegendItem:
         if not isinstance(graphic, Graphic):
