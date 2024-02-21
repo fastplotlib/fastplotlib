@@ -32,6 +32,7 @@ class LegendItem:
 class LineLegendItem(LegendItem):
     def __init__(
             self,
+            parent,
             graphic: LineGraphic,
             label: str,
             position: Tuple[int, int]
@@ -60,6 +61,8 @@ class LineLegendItem(LegendItem):
             raise ValueError("Use colorbars for multi-colored lines, not legends")
 
         color = pygfx.Color(np.unique(graphic.colors(), axis=0).ravel())
+
+        self._parent = parent
 
         super().__init__(label, color)
 
@@ -115,6 +118,7 @@ class LineLegendItem(LegendItem):
 
     @label.setter
     def label(self, text: str):
+        self._parent._check_label_unique(text)
         self._label_world_object.geometry.set_text(text)
 
     def _update_color(self, ev: FeatureEvent):
@@ -162,15 +166,25 @@ class Legend(Graphic):
     def graphics(self) -> Tuple[Graphic, ...]:
         return tuple(self._graphics)
 
+    def _check_label_unique(self, label):
+        for legend_item in self._items.values():
+            if legend_item.label == label:
+                raise ValueError(
+                    f"You have passed the label '{label}' which is already used for another legend item. "
+                    f"All labels within a legend must be unique."
+                )
+
     def add_graphic(self, graphic: Graphic, label: str = None):
         if graphic in self._graphics:
             raise KeyError(
                 f"Graphic already exists in legend with label: '{self._items[graphic.loc].label}'"
             )
 
+        self._check_label_unique(label)
+
         if isinstance(graphic, LineGraphic):
             y_pos = len(self._items) * -10
-            legend_item = LineLegendItem(graphic, label, position=(0, y_pos))
+            legend_item = LineLegendItem(self, graphic, label, position=(0, y_pos))
 
             self._legend_items_group.add(legend_item.world_object)
 
