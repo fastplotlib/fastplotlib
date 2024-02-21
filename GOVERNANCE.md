@@ -2,6 +2,8 @@
 
 The governance of fastplotlib applies to all fastplotlib related activities. This includes the fastplotlib GitHub organization, all repositories under the fastplotlib GitHub organization, as well as any events or workshops organized by members of the fastplotlib Leadership Team.
 
+The purpose of this document is to formalize the governance process used by the fastplotlib project, to clarify how decisions are made and how the various elements of our community interact.
+
 ## Mission
 
 Leverage new graphics APIs and modern GPU hardware to create fast and interactive scientific visualizations using an expressive and elegant API.
