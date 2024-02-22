@@ -67,7 +67,6 @@ class LineLegendItem(LegendItem):
         super().__init__(label, color)
 
         graphic.colors.add_event_handler(self._update_color)
-        graphic.thickness.add_event_handler(self._update_thickness)
 
         # construct Line WorldObject
         data = np.array(
@@ -76,14 +75,11 @@ class LineLegendItem(LegendItem):
             dtype=np.float32
         )
 
-        if graphic.thickness() < 1.1:
-            material = pygfx.LineThinMaterial
-        else:
-            material = pygfx.LineMaterial
+        material = pygfx.LineMaterial
 
         self._line_world_object = pygfx.Line(
             geometry=pygfx.Geometry(positions=data),
-            material=material(thickness=graphic.thickness(), color=pygfx.Color(color))
+            material=material(thickness=8, color=self._color)
         )
 
         # self._line_world_object.world.x = position[0]
@@ -112,6 +108,8 @@ class LineLegendItem(LegendItem):
         self.world_object.world.y = position[1]
         self.world_object.world.z = 2
 
+        self.world_object.add_event_handler(partial(self._highlight_graphic, graphic), "click")
+
     @property
     def label(self) -> str:
         return self._label
@@ -126,20 +124,38 @@ class LineLegendItem(LegendItem):
         if np.unique(new_color, axis=0).shape[0] > 1:
             raise ValueError("LegendError: LineGraphic colors no longer appropriate for legend")
 
-        self._line_world_object.material.color = pygfx.Color(new_color[0])
+        self._color = new_color[0]
+        self._line_world_object.material.color = pygfx.Color(self._color)
 
-    def _update_thickness(self, ev: FeatureEvent):
-        self._line_world_object.material.thickness = ev.pick_info["new_data"]
+    def _highlight_graphic(self, graphic, ev):
+        graphic_color = pygfx.Color(np.unique(graphic.colors(), axis=0).ravel())
+
+        if graphic_color == self._parent.highlight_color:
+            graphic.colors = self._color
+        else:
+            # hacky but fine for now
+            orig_color = pygfx.Color(self._color)
+            graphic.colors = self._parent.highlight_color
+            self._color = orig_color
 
 
 class Legend(Graphic):
-    def __init__(self, plot_area, *args, **kwargs):
+    def __init__(
+            self,
+            plot_area,
+            highlight_color: Union[str, tuple, np.ndarray] = "w",
+            *args,
+            **kwargs
+    ):
         """
 
         Parameters
         ----------
         plot_area: Union[Plot, Subplot, Dock]
             plot area to put the legend in
+
+        highlight_color: Union[str, tuple, np.ndarray], default "w"
+            highlight color
 
         """
         self._graphics: List[Graphic] = list()
@@ -160,6 +176,8 @@ class Legend(Graphic):
 
         self.world_object.add(self._mesh)
         self.world_object.add(self._legend_items_group)
+
+        self.highlight_color = pygfx.Color(highlight_color)
 
         plot_area.add_graphic(self)
 
