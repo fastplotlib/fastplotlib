@@ -179,7 +179,16 @@ class Legend(Graphic):
 
         self.highlight_color = pygfx.Color(highlight_color)
 
-        plot_area.add_graphic(self)
+        self._plot_area = plot_area
+        self._plot_area.add_graphic(self)
+
+        # TODO: refactor with "moveable graphic" base class once that's done
+        self._mesh.add_event_handler(self._pointer_down, "pointer_down")
+        self._plot_area.renderer.add_event_handler(self._pointer_move, "pointer_move")
+        self._plot_area.renderer.add_event_handler(self._pointer_up, "pointer_up")
+
+        self._last_position = None
+        self._initial_controller_state = self._plot_area.controller.enabled
 
     def graphics(self) -> Tuple[Graphic, ...]:
         return tuple(self._graphics)
@@ -255,6 +264,36 @@ class Legend(Graphic):
 
         self._items = new_items
         self._reset_item_positions()
+
+    def _pointer_down(self, ev):
+        self._last_position = self._plot_area.map_screen_to_world(ev)
+        self._initial_controller_state = self._plot_area.controller.enabled
+
+    def _pointer_move(self, ev):
+        if self._last_position is None:
+            return
+
+        self._plot_area.controller.enabled = False
+
+        world_pos = self._plot_area.map_screen_to_world(ev)
+
+        # outside viewport
+        if world_pos is None:
+            return
+
+        delta = world_pos - self._last_position
+
+        self.world_object.world.x = self.world_object.world.x + delta[0]
+        self.world_object.world.y = self.world_object.world.y + delta[1]
+
+        self._last_position = world_pos
+
+        self._plot_area.controller.enabled = self._initial_controller_state
+
+    def _pointer_up(self, ev):
+        self._last_position = None
+        if self._initial_controller_state is not None:
+            self._plot_area.controller.enabled = self._initial_controller_state
 
     def __getitem__(self, graphic: Graphic) -> LegendItem:
         if not isinstance(graphic, Graphic):
