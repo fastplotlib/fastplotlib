@@ -63,10 +63,7 @@ class PlotArea:
 
         name: str, optional
             name this ``subplot`` or ``plot``
-￼￼￼￼1:1
-￼￼￼
-
-
+            
         """
 
         self._parent: PlotArea = parent
