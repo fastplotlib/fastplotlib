@@ -12,6 +12,7 @@ from wgpu.gui.auto import WgpuCanvas
 from ._utils import create_camera, create_controller
 from ..graphics._base import Graphic
 from ..graphics.selectors._base_selector import BaseSelector
+from ..legends import Legend
 
 # dict to store Graphic instances
 # this is the only place where the real references to Graphics are stored in a Python session
@@ -62,6 +63,9 @@ class PlotArea:
 
         name: str, optional
             name this ``subplot`` or ``plot``
+￼￼￼￼1:1
+￼￼￼
+
 
         """
 
@@ -208,6 +212,8 @@ class PlotArea:
         proxies = list()
         for loc in self._graphics:
             p = weakref.proxy(GRAPHICS[loc])
+            if p.__class__.__name__ == "Legend":
+                continue
             proxies.append(p)
 
         return tuple(proxies)
@@ -219,6 +225,17 @@ class PlotArea:
         for loc in self._selectors:
             p = weakref.proxy(SELECTORS[loc])
             proxies.append(p)
+
+        return tuple(proxies)
+
+    @property
+    def legends(self) -> Tuple[Legend, ...]:
+        """Legends in the plot area."""
+        proxies = list()
+        for loc in self._graphics:
+            p = weakref.proxy(GRAPHICS[loc])
+            if p.__class__.__name__ == "Legend":
+                proxies.append(p)
 
         return tuple(proxies)
 
@@ -486,6 +503,9 @@ class PlotArea:
         for s in self.selectors:
             graphic_names.append(s.name)
 
+        for l in self.legends:
+            graphic_names.append(l.name)
+
         if name in graphic_names:
             raise ValueError(
                 f"graphics must have unique names, current graphic names are:\n {graphic_names}"
@@ -666,6 +686,10 @@ class PlotArea:
             if selector.name == name:
                 return selector
 
+        for legend in self.legends:
+            if legend.name == name:
+                return legend
+
         graphic_names = list()
         for g in self.graphics:
             graphic_names.append(g.name)
@@ -681,7 +705,7 @@ class PlotArea:
         )
 
     def __contains__(self, item: Union[str, Graphic]):
-        to_check = [*self.graphics, *self.selectors]
+        to_check = [*self.graphics, *self.selectors, *self.legends]
 
         if isinstance(item, Graphic):
             if item in to_check:
