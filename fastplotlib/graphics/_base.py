@@ -63,14 +63,16 @@ class Graphic(BaseGraphic):
         Parameters
         ----------
         name: str, optional
-            name this graphic, makes it indexable within plots
+            name this graphic to use it as a key to access from the plot
 
         metadata: Any, optional
             metadata attached to this Graphic, this is for the user to manage
 
         """
+        if (name is not None) and (not isinstance(name, str)):
+            raise TypeError("Graphic `name` must be of type <str>")
 
-        self.name = name
+        self._name = name
         self.metadata = metadata
         self.collection_index = collection_index
         self.registered_callbacks = dict()
@@ -80,6 +82,20 @@ class Graphic(BaseGraphic):
         self.loc: str = hex(id(self))
 
         self.deleted = Deleted(self, False)
+
+        self._plot_area = None
+
+    @property
+    def name(self) -> Union[str, None]:
+        """str name reference for this item"""
+        return self._name
+
+    @name.setter
+    def name(self, name: str):
+        if not isinstance(name, str):
+            raise TypeError("`Graphic` name must be of type <str>")
+        if self._plot_area is not None:
+            self._plot_area._check_graphic_name_exists(name)
 
     @property
     def world_object(self) -> WorldObject:
