@@ -82,7 +82,7 @@ pip install simplejpeg
 
 ### For developers
 ```bash
-git clone https://github.com/kushalkolar/fastplotlib.git
+git clone https://github.com/fastplotlib/fastplotlib.git
 cd fastplotlib
 
 # install all extras in place
