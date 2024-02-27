@@ -144,7 +144,7 @@ class Legend(Graphic):
             self,
             plot_area,
             highlight_color: Union[str, tuple, np.ndarray] = "w",
-            max_rows: int = None,
+            max_rows: int = 5,
             max_cols: int = None,
             *args,
             **kwargs
@@ -204,8 +204,8 @@ class Legend(Graphic):
         self._max_rows = max_rows
         self._max_cols = max_cols
 
-        self._current_row_ix = 0
-        self._current_col_ix = 0
+        self._row_counter = 0
+        self._col_counter = 0
 
     def graphics(self) -> Tuple[Graphic, ...]:
         return tuple(self._graphics)
@@ -226,42 +226,47 @@ class Legend(Graphic):
 
         self._check_label_unique(label)
 
-        new_col_ix = self._current_col_ix
-        new_row_ix = self._current_row_ix
+        new_col_ix = self._col_counter
+        new_row_ix = self._row_counter
 
         x_pos = 0
         y_pos = 0
 
         if self._max_cols is None:
-            if self._current_row_ix == self._max_rows:
+            if self._row_counter == self._max_rows:
+                # set counters
+                new_col_ix = self._col_counter + 1
+
                 # get x position offset
                 # get largest x_val from bbox of previous column bboxes
-                new_col_ix = self._current_col_ix + 1
                 prev_column_items: List[LegendItem] = list(self._items.values())[-self._max_rows:]
                 x_pos = prev_column_items[-1].world_object.world.x
+                max_width = 0
                 for item in prev_column_items:
                     bbox = item.world_object.get_world_bounding_box()
                     width, height, depth = bbox.ptp(axis=0)
-                    x_pos = max(x_pos, width)
+                    max_width = max(max_width, width)
+                x_pos = x_pos + max_width + 15  # add 15 for spacing
 
-                new_row_ix = 0
+                # rest row index for next iteration
+                new_row_ix = 1
             else:
-                y_pos = self._current_row_ix * -10
-                new_row_ix = self._current_row_ix + 1
+                if len(self._items) > 0:
+                    x_pos = list(self._items.values())[-1].world_object.world.x
+
+                y_pos = new_row_ix * -10
+                new_row_ix = self._row_counter + 1
 
             # print(new_row_ix)
             print(new_col_ix)
 
         elif self._max_rows is None:
-            if self._current_col_ix == self._max_cols:
-                # set height for now, move down by 10
-                y_pos = self._current_row_ix * -10
-                new_row_ix = self._current_row_ix + 1
+            raise NotImplemented
 
         if isinstance(graphic, LineGraphic):
             legend_item = LineLegendItem(self, graphic, label, position=(x_pos, y_pos))
         else:
-            raise ValueError("Legend only supported for LineGraphic and ScatterGraphic")
+            raise ValueError("Legend only supported for LineGraphic for now.")
 
         self._legend_items_group.add(legend_item.world_object)
         self._reset_mesh_dims()
@@ -270,8 +275,8 @@ class Legend(Graphic):
         self._items[graphic.loc] = legend_item
         graphic.deleted.add_event_handler(partial(self.remove_graphic, graphic))
 
-        self._current_col_ix = new_col_ix
-        self._current_row_ix = new_row_ix
+        self._col_counter = new_col_ix
+        self._row_counter = new_row_ix
 
     def _reset_mesh_dims(self):
         bbox = self._legend_items_group.get_world_bounding_box()
