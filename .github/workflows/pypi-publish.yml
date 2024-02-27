@@ -21,7 +21,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Install git-lfs
+      run: |
+        sudo apt install --no-install-recommends -y  git-lfs
     - uses: actions/checkout@v3
+    - name: fetch git lfs files
+      run: |
+        git lfs fetch --all
+        git lfs pull
     - name: Set up Python
       uses: actions/setup-python@v3
       with:
