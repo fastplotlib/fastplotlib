@@ -3,6 +3,7 @@ from datetime import datetime
 from itertools import product
 from math import copysign
 from functools import partial
+from pathlib import Path
 from typing import *
 
 
@@ -17,10 +18,12 @@ from ipywidgets.widgets import (
     BoundedIntText,
     Play,
     jslink,
+    Image,
 )
 
 from ...graphics.selectors import PolygonSelector
 from ._toolbar import ToolBar
+from ...utils import config
 
 
 class IpywidgetToolBar(HBox, ToolBar):
@@ -91,6 +94,19 @@ class IpywidgetToolBar(HBox, ToolBar):
             self._add_polygon_button,
             self._record_button,
         ]
+
+        if config.party_parrot:
+            gif_path = Path(__file__).parent.parent.parent.joinpath("assets", "egg.gif")
+            with open(gif_path, "rb") as f:
+                gif = f.read()
+
+            image = Image(
+                value=gif,
+                format="png",
+                width=35,
+                height=25,
+            )
+            widgets.append(image)
 
         if hasattr(self.plot, "_subplots"):
             positions = list(product(range(self.plot.shape[0]), range(self.plot.shape[1])))

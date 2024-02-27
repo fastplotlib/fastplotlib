@@ -86,7 +86,7 @@ def make_canvas_and_renderer(
         )
 
     if renderer is None:
-        renderer = WgpuRenderer(canvas)
+        renderer = WgpuRenderer(canvas, pixel_ratio=2)
 
     return canvas, renderer
 
