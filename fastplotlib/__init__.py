@@ -23,8 +23,6 @@ if len(adapters) < 1:
         "No WGPU adapters found, fastplotlib will not work."
     )
 
-_notebook_print_banner()
-
 with open(Path(__file__).parent.joinpath("VERSION"), "r") as f:
     __version__ = f.read().split("\n")[0]
 
