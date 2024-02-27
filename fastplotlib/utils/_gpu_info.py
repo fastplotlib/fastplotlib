@@ -4,23 +4,21 @@ from wgpu.backends.wgpu_native import enumerate_adapters
 from wgpu.utils import get_default_device
 
 try:
-    from wgpu.gui.jupyter import JupyterWgpuCanvas
-except ImportError:
-    JupyterWgpuCanvas = False
-
-try:
-    from IPython.display import display
+    ip = get_ipython()
     from ipywidgets import Image
-except NameError:
-    pass
+    from wgpu.gui.jupyter import JupyterWgpuCanvas
+except (NameError, ModuleNotFoundError, ImportError):
+    NOTEBOOK = False
+else:
+    from IPython.display import display
+    if ip.has_trait("kernel") and (JupyterWgpuCanvas is not False):
+        NOTEBOOK = True
+    else:
+        NOTEBOOK = False
 
 
-def print_adapter_info():
-    try:
-        ip = get_ipython()
-        if not (ip.has_trait("kernel") and JupyterWgpuCanvas is not False):
-            return
-    except NameError:
+def _notebook_print_banner():
+    if NOTEBOOK is False:
         return
 
     logo_path = Path(__file__).parent.parent.joinpath("assets", "fastplotlib_face_logo.png")

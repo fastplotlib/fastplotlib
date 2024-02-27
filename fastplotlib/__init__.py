@@ -3,7 +3,7 @@ from pathlib import Path
 from .layouts import Plot, GridPlot
 from .graphics import *
 from .graphics.selectors import *
-from .utils import print_adapter_info
+from .utils import _notebook_print_banner, config
 
 from wgpu.gui.auto import run
 
@@ -23,7 +23,7 @@ if len(adapters) < 1:
         "No WGPU adapters found, fastplotlib will not work."
     )
 
-print_adapter_info()
+_notebook_print_banner()
 
 with open(Path(__file__).parent.joinpath("VERSION"), "r") as f:
     __version__ = f.read().split("\n")[0]
