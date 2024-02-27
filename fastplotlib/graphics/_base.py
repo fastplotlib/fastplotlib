@@ -8,7 +8,7 @@ import numpy as np
 
 from pygfx import WorldObject
 
-from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable, Deleted
+from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable, Deleted, DragFeature
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
@@ -45,17 +45,18 @@ class BaseGraphic:
 
 
 class Graphic(BaseGraphic):
-    feature_events = {}
+    feature_events = {"deleted", "drag"}
 
     def __init_subclass__(cls, **kwargs):
         # all graphics give off a feature event when deleted
-        cls.feature_events = {*cls.feature_events, "deleted"}
+        cls.feature_events = {*cls.feature_events}
 
     def __init__(
         self,
         name: str = None,
         metadata: Any = None,
         collection_index: int = None,
+        draggable: bool = False,
     ):
         """
 
@@ -66,6 +67,12 @@ class Graphic(BaseGraphic):
 
         metadata: Any, optional
             metadata attached to this Graphic, this is for the user to manage
+            
+        collection_index: int
+            if relevant, the sub-index of this Graphic within the GraphicCollection
+
+        draggable: bool, default ``False``
+            if the ``Graphic`` is draggable via mouse events
 
         """
 
@@ -79,6 +86,9 @@ class Graphic(BaseGraphic):
         self.loc: str = hex(id(self))
 
         self.deleted = Deleted(self, False)
+
+        self._draggable = draggable
+        self.drag = DragFeature(self)
 
     @property
     def world_object(self) -> WorldObject:
@@ -139,6 +149,17 @@ class Graphic(BaseGraphic):
     def children(self) -> List[WorldObject]:
         """Return the children of the WorldObject."""
         return self.world_object.children
+
+    @property
+    def draggable(self) -> bool:
+        return self._draggable
+
+    @draggable.setter
+    def draggable(self, value: bool):
+        if not isinstance(value, bool):
+            raise TypeError("draggable must be a <bool>")
+
+        self._draggable = value
 
     def __setattr__(self, key, value):
         if hasattr(self, key):
