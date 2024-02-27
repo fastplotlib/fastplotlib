@@ -145,7 +145,6 @@ class Legend(Graphic):
             plot_area,
             highlight_color: Union[str, tuple, np.ndarray] = "w",
             max_rows: int = 5,
-            max_cols: int = None,
             *args,
             **kwargs
     ):
@@ -159,11 +158,8 @@ class Legend(Graphic):
         highlight_color: Union[str, tuple, np.ndarray], default "w"
             highlight color
 
-        max_rows: int, default None
-            maximum number of rows allowed in the legend, specify either ``max_rows`` or ``max_cols``
-
-        max_cols: int, default ``1``
-            maximum number of columns allowed in the legend, specify either ``max_rows`` or ``max_cols``
+        max_rows: int, default 5
+            maximum number of rows allowed in the legend
 
         """
         self._graphics: List[Graphic] = list()
@@ -171,7 +167,7 @@ class Legend(Graphic):
         # hex id of Graphic, i.e. graphic.loc are the keys
         self._items: OrderedDict[str: LegendItem] = OrderedDict()
 
-        super().__init__(**kwargs)
+        super().__init__(*args, **kwargs)
 
         group = pygfx.Group()
         self._legend_items_group = pygfx.Group()
@@ -198,11 +194,7 @@ class Legend(Graphic):
         self._last_position = None
         self._initial_controller_state = self._plot_area.controller.enabled
 
-        if max_cols is None and max_rows is None:
-            max_cols = 1
-
         self._max_rows = max_rows
-        self._max_cols = max_cols
 
         self._row_counter = 0
         self._col_counter = 0
@@ -232,36 +224,29 @@ class Legend(Graphic):
         x_pos = 0
         y_pos = 0
 
-        if self._max_cols is None:
-            if self._row_counter == self._max_rows:
-                # set counters
-                new_col_ix = self._col_counter + 1
+        if self._row_counter == self._max_rows:
+            # set counters
+            new_col_ix = self._col_counter + 1
 
-                # get x position offset
-                # get largest x_val from bbox of previous column bboxes
-                prev_column_items: List[LegendItem] = list(self._items.values())[-self._max_rows:]
-                x_pos = prev_column_items[-1].world_object.world.x
-                max_width = 0
-                for item in prev_column_items:
-                    bbox = item.world_object.get_world_bounding_box()
-                    width, height, depth = bbox.ptp(axis=0)
-                    max_width = max(max_width, width)
-                x_pos = x_pos + max_width + 15  # add 15 for spacing
+            # get x position offset
+            # get largest x_val from bbox of previous column bboxes
+            prev_column_items: List[LegendItem] = list(self._items.values())[-self._max_rows:]
+            x_pos = prev_column_items[-1].world_object.world.x
+            max_width = 0
+            for item in prev_column_items:
+                bbox = item.world_object.get_world_bounding_box()
+                width, height, depth = bbox.ptp(axis=0)
+                max_width = max(max_width, width)
+            x_pos = x_pos + max_width + 15  # add 15 for spacing
 
-                # rest row index for next iteration
-                new_row_ix = 1
-            else:
-                if len(self._items) > 0:
-                    x_pos = list(self._items.values())[-1].world_object.world.x
+            # rest row index for next iteration
+            new_row_ix = 1
+        else:
+            if len(self._items) > 0:
+                x_pos = list(self._items.values())[-1].world_object.world.x
 
-                y_pos = new_row_ix * -10
-                new_row_ix = self._row_counter + 1
-
-            # print(new_row_ix)
-            print(new_col_ix)
-
-        elif self._max_rows is None:
-            raise NotImplemented
+            y_pos = new_row_ix * -10
+            new_row_ix = self._row_counter + 1
 
         if isinstance(graphic, LineGraphic):
             legend_item = LineLegendItem(self, graphic, label, position=(x_pos, y_pos))
