@@ -13,6 +13,12 @@ Welcome to fastplotlib's documentation!
     quickstart
 
 .. toctree::
+   :caption: User Guide
+   :maxdepth:  1
+
+   GPU Info <user_guide/gpu>
+
+.. toctree::
    :maxdepth: 1
    :caption: API
    
