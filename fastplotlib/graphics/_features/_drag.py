@@ -12,60 +12,60 @@ class DragFeature(GraphicFeature):
     def __init__(
             self,
             parent,
-            multiplier: Tuple[float, float, float] = None,
-            limits: Tuple[float, float, float] = None,
+            multiplier: np.ndarray = None,
+            clamp: np.ndarray = None,
     ):
         super(DragFeature, self).__init__(parent, data=None)
         self._multiplier = None
-        self._limits = None
+        self._clamp = None
 
         self.multiplier = multiplier
-        self.limits = limits
+        self.clamp = clamp
 
     @property
-    def multiplier(self) -> Tuple[float, float, float]:
+    def multiplier(self) -> np.ndarray:
         return self._multiplier
 
     @multiplier.setter
-    def multiplier(self, value: Tuple[float, float, float]):
+    def multiplier(self, value: np.ndarray):
         if value is None:
-            self._multiplier = (1, 1, 1)
-        else:
-            if not all(np.issubdtype(type(v), np.number) for v in value):
-                raise TypeError(
-                    "multiplier must be in the form [x_mult, y_mult, z_mult] where each "
-                    "axis multiplier is numeric"
-                )
+            self._multiplier = np.array([1., 1., 1.])
+
+        self._multiplier = np.array(value)
 
     @property
-    def limits(self) -> Tuple[float, float, float]:
-        return self._limits
+    def clamp(self) -> np.ndarray:
+        """
+        Returns
+        -------
+        np.ndarray
+            [[xmin, ymin, zmin], [xmax, ymax, zmax]]
 
-    @limits.setter
-    def limits(self, limits: Tuple[float, float, float]):
-        if limits is None:
-            limits = (None, None, None)
+        """
+        return self._clamp
 
-        # make sure limits are numeric
-        for l in limits:
-            if l is None:
-                continue
-            if not np.issubdtype(type(l), np.number):
-                raise TypeError(
-                    "limits must be in the form [x_limit, y_limit, z_limit] where "
-                    "each axis limit is either numeric or None"
+    @clamp.setter
+    def clamp(self, clamp: np.ndarray):
+        if clamp is None:
+            clamp = np.zeros(shape=(2, 3), dtype=np.float32)
+            clamp[:] = np.inf
+
+        elif isinstance(clamp, np.ndarray):
+            if clamp.shape not in [(2, 2), (2, 3)]:
+                raise ValueError(
+                    "clamp must be array of shape (2, 2) or (2, 3), see the docstring"
                 )
+            if clamp.shape == (2, 2):
+                # add z with inf clamp
+                clamp = np.column_stack([clamp, np.array([[np.inf], [np.inf]])])
+        else:
+            raise ValueError(
+                "clamp must be array of shape (2, 2) or (2, 3), see the docstring"
+            )
 
-        _limits = [None, None, None]
-        for i in range(3):
-            if limits[i] is not None:
-                _limits[i] = limits[i]
+        self._clamp = clamp
 
-        limits = tuple(_limits)
-
-        self._limits = limits
-
-    def _set(self, delta: Tuple[float, float, float]):
+    def _set(self, delta: np.ndarray):
         """
 
         Parameters
@@ -74,12 +74,10 @@ class DragFeature(GraphicFeature):
             drag vector
 
         """
-        delta = np.array(delta)
+        delta = np.array(delta) * self.multiplier
 
-        for i in range(3):
-            delta[i] *= self.multiplier[i]
-
-        self._parent.position = self._parent.position + delta
+        # add delta vector and clamp
+        self._parent.position = (self._parent.position + delta).clip(self.clamp[0], self.clamp[1]).astype(np.float32)
 
     def _feature_changed(self, key, new_data: np.ndarray):
         if len(self._event_handlers) < 1:
