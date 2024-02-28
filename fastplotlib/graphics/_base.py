@@ -90,6 +90,8 @@ class Graphic(BaseGraphic):
         self._draggable = draggable
         self.drag = DragFeature(self)
 
+        self._plot_area = None
+
     @property
     def world_object(self) -> WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
@@ -160,6 +162,47 @@ class Graphic(BaseGraphic):
             raise TypeError("draggable must be a <bool>")
 
         self._draggable = value
+
+    def _pointer_down(self, ev):
+        if not self.draggable:
+            return
+
+
+        self.drag._last_position = self._plot_area.map_screen_to_world(ev)
+        self.drag._initial_controller_state = self._plot_area.controller.enabled
+
+    def _pointer_move(self, ev):
+        if self.drag._last_position is None:
+            return
+
+        # disable controller so mouse events don't move the scene and only move the Graphic
+        self._plot_area.controller.enabled = False
+
+        world_pos = self._plot_area.map_screen_to_world(ev)
+
+        # check if outside viewport
+        if world_pos is None:
+            return
+
+        delta = world_pos - self.drag._last_position
+
+        self.drag = delta
+
+        self.drag._last_position = world_pos
+
+        self._plot_area.controller.enabled = self.drag._initial_controller_state
+
+    def _pointer_up(self, ev):
+        self.drag._last_position = None
+        if self.drag._initial_controller_state is not None:
+            self._plot_area.controller.enabled = self.drag._initial_controller_state
+
+    def _add_plot_area_hook(self, plot_area):
+        self._plot_area = plot_area
+
+        self.world_object.add_event_handler(self._pointer_down, "pointer_down")
+        self._plot_area.renderer.add_event_handler(self._pointer_move, "pointer_move")
+        self._plot_area.renderer.add_event_handler(self._pointer_up, "pointer_up")
 
     def __setattr__(self, key, value):
         if hasattr(self, key):

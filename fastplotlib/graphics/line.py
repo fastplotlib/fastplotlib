@@ -278,9 +278,6 @@ class LineGraphic(Graphic, Interaction):
 
         return bounds_init, limits, size, origin, axis, end_points
 
-    def _add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
-
     def set_feature(self, feature: str, new_data: Any, indices: Any = None):
         if not hasattr(self, "_previous_data"):
             self._previous_data = dict()

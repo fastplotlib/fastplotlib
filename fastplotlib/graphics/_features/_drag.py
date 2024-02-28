@@ -16,11 +16,11 @@ class DragFeature(GraphicFeature):
             clamp: np.ndarray = None,
     ):
         super(DragFeature, self).__init__(parent, data=None)
-        self._multiplier = None
-        self._clamp = None
-
         self.multiplier = multiplier
         self.clamp = clamp
+
+        self._last_position = None
+        self._initial_controller_state: bool = None
 
     @property
     def multiplier(self) -> np.ndarray:
@@ -30,8 +30,8 @@ class DragFeature(GraphicFeature):
     def multiplier(self, value: np.ndarray):
         if value is None:
             self._multiplier = np.array([1., 1., 1.])
-
-        self._multiplier = np.array(value)
+        else:
+            self._multiplier = np.array(value)
 
     @property
     def clamp(self) -> np.ndarray:
@@ -39,7 +39,8 @@ class DragFeature(GraphicFeature):
         Returns
         -------
         np.ndarray
-            [[xmin, ymin, zmin], [xmax, ymax, zmax]]
+            [[xmin, ymin, zmin],
+             [xmax, ymax, zmax]]
 
         """
         return self._clamp
@@ -48,7 +49,8 @@ class DragFeature(GraphicFeature):
     def clamp(self, clamp: np.ndarray):
         if clamp is None:
             clamp = np.zeros(shape=(2, 3), dtype=np.float32)
-            clamp[:] = np.inf
+            clamp[0] = -np.inf
+            clamp[1] = np.inf
 
         elif isinstance(clamp, np.ndarray):
             if clamp.shape not in [(2, 2), (2, 3)]:
