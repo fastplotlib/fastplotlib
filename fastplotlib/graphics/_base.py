@@ -37,7 +37,7 @@ class BaseGraphic:
         cls.type = (
             cls.__name__.lower()
             .replace("graphic", "")
-            .replace("collection", "_collection")
+            .replace("collection", "_collection")  # TODO: auto convert camel case to snake case here
             .replace("stack", "_stack")
         )
 
@@ -45,12 +45,12 @@ class BaseGraphic:
 
 
 class Graphic(BaseGraphic):
-    feature_events = {"deleted", "drag"}
+    feature_events = {}
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         # all graphics give off a feature event when deleted
-        cls.feature_events = {*cls.feature_events}
+        cls.feature_events = {"deleted", "drag", *cls.feature_events}
 
     def __init__(
         self,
@@ -190,9 +190,13 @@ class Graphic(BaseGraphic):
 
         self.drag._last_position = world_pos
 
+        # put controller back in initial state
         self._plot_area.controller.enabled = self.drag._initial_controller_state
 
     def _pointer_up(self, ev):
+        if self.drag._last_position is None:
+            return
+
         self.drag._last_position = None
         if self.drag._initial_controller_state is not None:
             self._plot_area.controller.enabled = self.drag._initial_controller_state
