@@ -57,6 +57,7 @@ class LineLegendItem(LegendItem):
         else:
             raise ValueError("Must specify `label` or Graphic must have a `name` to auto-use as the label")
 
+        # for now only support lines with a single color
         if np.unique(graphic.colors(), axis=0).shape[0] > 1:
             raise ValueError("Use colorbars for multi-colored lines, not legends")
 
@@ -186,6 +187,10 @@ class Legend(Graphic):
         self._plot_area = plot_area
         self._plot_area.add_graphic(self)
 
+        if self._plot_area.__class__.__name__ == "Dock":
+            if self._plot_area.size < 1:
+                self._plot_area.size = 100
+
         # TODO: refactor with "moveable graphic" base class once that's done
         self._mesh.add_event_handler(self._pointer_down, "pointer_down")
         self._plot_area.renderer.add_event_handler(self._pointer_move, "pointer_move")
@@ -228,15 +233,19 @@ class Legend(Graphic):
             # set counters
             new_col_ix = self._col_counter + 1
 
-            # get x position offset
-            # get largest x_val from bbox of previous column bboxes
+            # get x position offset for this new column of LegendItems
+            # start by getting the LegendItems in the previous column
             prev_column_items: List[LegendItem] = list(self._items.values())[-self._max_rows:]
+            # x position of LegendItems in previous column
             x_pos = prev_column_items[-1].world_object.world.x
             max_width = 0
+            # get width of widest LegendItem in previous column to add to x_pos offset for this column
             for item in prev_column_items:
                 bbox = item.world_object.get_world_bounding_box()
                 width, height, depth = bbox.ptp(axis=0)
                 max_width = max(max_width, width)
+
+            # x position offset for this new column
             x_pos = x_pos + max_width + 15  # add 15 for spacing
 
             # rest row index for next iteration
@@ -258,6 +267,7 @@ class Legend(Graphic):
 
         self._graphics.append(graphic)
         self._items[graphic.loc] = legend_item
+        
         graphic.deleted.add_event_handler(partial(self.remove_graphic, graphic))
 
         self._col_counter = new_col_ix
