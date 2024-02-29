@@ -48,6 +48,7 @@ class Graphic(BaseGraphic):
     feature_events = {"deleted", "drag"}
 
     def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
         # all graphics give off a feature event when deleted
         cls.feature_events = {*cls.feature_events}
 
@@ -87,7 +88,7 @@ class Graphic(BaseGraphic):
 
         self.deleted = Deleted(self, False)
 
-        self._draggable = draggable
+        self.draggable = draggable
         self.drag = DragFeature(self)
 
         self._plot_area = None
@@ -166,7 +167,6 @@ class Graphic(BaseGraphic):
     def _pointer_down(self, ev):
         if not self.draggable:
             return
-
 
         self.drag._last_position = self._plot_area.map_screen_to_world(ev)
         self.drag._initial_controller_state = self._plot_area.controller.enabled
