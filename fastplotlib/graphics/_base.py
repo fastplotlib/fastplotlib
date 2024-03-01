@@ -6,13 +6,13 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from pygfx import WorldObject
+import pygfx
 
 from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable, Deleted, DragFeature
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
-WORLD_OBJECTS: Dict[str, WorldObject] = dict()  #: {hex id str: WorldObject}
+WORLD_OBJECTS: Dict[str, pygfx.WorldObject] = dict()  #: {hex id str: WorldObject}
 
 
 PYGFX_EVENTS = [
@@ -29,6 +29,15 @@ PYGFX_EVENTS = [
     "close",
     "resize",
 ]
+
+
+# key bindings that can move a Graphic
+key_bind_direction = {
+    "ArrowRight": np.array([1, 0, 0]),
+    "ArrowLeft": np.array([-1, 0, 0]),
+    "ArrowUp": np.array([0, 1, 0]),
+    "ArrowDown": np.array([0, -1, 0]),
+}
 
 
 class BaseGraphic:
@@ -57,7 +66,7 @@ class Graphic(BaseGraphic):
         name: str = None,
         metadata: Any = None,
         collection_index: int = None,
-        draggable: bool = False,
+        draggable: Union[str, None] = None,
     ):
         """
 
@@ -72,8 +81,9 @@ class Graphic(BaseGraphic):
         collection_index: int
             if relevant, the sub-index of this Graphic within the GraphicCollection
 
-        draggable: bool, default ``False``
-            if the ``Graphic`` is draggable via mouse events
+        draggable: one of ``None``, ``"mouse"``, ``"kb"``, or ``"mouse+kb"``, default ``None``
+            if the ``Graphic`` is draggable via "mouse", "kb", or "mouse+kb". "kb" is keyboard arrow keys. If ``None``
+            then the Graphic is stationary.
 
         """
 
@@ -94,12 +104,12 @@ class Graphic(BaseGraphic):
         self._plot_area = None
 
     @property
-    def world_object(self) -> WorldObject:
+    def world_object(self) -> pygfx.WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
         # We use weakref to simplify garbage collection
         return weakref.proxy(WORLD_OBJECTS[hex(id(self))])
 
-    def _set_world_object(self, wo: WorldObject):
+    def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[hex(id(self))] = wo
 
     @property
@@ -149,29 +159,41 @@ class Graphic(BaseGraphic):
         self.world_object.visible = v
 
     @property
-    def children(self) -> List[WorldObject]:
+    def children(self) -> List[pygfx.WorldObject]:
         """Return the children of the WorldObject."""
         return self.world_object.children
 
     @property
-    def draggable(self) -> bool:
+    def draggable(self) -> Union[str, None]:
+        """allow Graphic to be draggable, can be set to 'mouse', 'kb', 'mouse+kb' or None"""
         return self._draggable
 
     @draggable.setter
-    def draggable(self, value: bool):
-        if not isinstance(value, bool):
-            raise TypeError("draggable must be a <bool>")
+    def draggable(self, value: Union[str, None]):
+        if value not in ["mouse", "kb", "mouse+kb", None]:
+            raise TypeError("draggable must be one of: 'mouse', 'kb', 'mouse+kb' or None")
 
         self._draggable = value
 
     def _pointer_down(self, ev):
-        if not self.draggable:
+        if self.draggable not in ["mouse", "mouse+kb"]:
+            return
+
+        if not isinstance(ev, pygfx.PointerEvent):
             return
 
         self.drag._last_position = self._plot_area.map_screen_to_world(ev)
         self.drag._initial_controller_state = self._plot_area.controller.enabled
 
+        self.drag._event_type = "mouse"
+
     def _pointer_move(self, ev):
+        if self.draggable not in ["mouse", "mouse+kb"]:
+            return
+
+        if not self.drag._event_type == "mouse":
+            return
+
         if self.drag._last_position is None:
             return
 
@@ -194,6 +216,12 @@ class Graphic(BaseGraphic):
         self._plot_area.controller.enabled = self.drag._initial_controller_state
 
     def _pointer_up(self, ev):
+        if self.draggable not in ["mouse", "mouse+kb"]:
+            return
+
+        if not isinstance(ev, pygfx.PointerEvent):
+            return
+
         if self.drag._last_position is None:
             return
 
@@ -201,12 +229,46 @@ class Graphic(BaseGraphic):
         if self.drag._initial_controller_state is not None:
             self._plot_area.controller.enabled = self.drag._initial_controller_state
 
+        self.drag._event_type = None
+
+    def _key_down(self, ev):
+        if self.draggable not in ["kb", "mouse+kb"]:
+            return
+
+        if not isinstance(ev, pygfx.KeyboardEvent):
+            return
+
+        if ev.key not in key_bind_direction.keys():
+            return
+
+        self.drag._last_position = self.position
+
+        delta = key_bind_direction[ev.key]
+
+        self.drag = delta
+
+        self.drag._event_type = "kb"
+
+    def _key_up(self, ev):
+        if not isinstance(ev, pygfx.KeyboardEvent):
+            return
+
+        if ev.key not in key_bind_direction.keys():
+            return
+
+        self.drag._last_position = None
+
+        self.drag._event_type = None
+
     def _add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
         self.world_object.add_event_handler(self._pointer_down, "pointer_down")
         self._plot_area.renderer.add_event_handler(self._pointer_move, "pointer_move")
         self._plot_area.renderer.add_event_handler(self._pointer_up, "pointer_up")
+
+        self._plot_area.renderer.add_event_handler(self._key_down, "key_down")
+        self._plot_area.renderer.add_event_handler(self._key_up, "key_up")
 
     def __setattr__(self, key, value):
         if hasattr(self, key):
@@ -238,10 +300,14 @@ class Graphic(BaseGraphic):
         """
         Cleans up the graphic in preparation for __del__(), such as removing event handlers from
         plot renderer, feature event handlers, etc.
-
-        Optionally implemented in subclasses
         """
-        pass
+
+        self.world_object.remove_event_handler(self._pointer_down, "pointer_down")
+        self._plot_area.renderer.remove_event_handler(self._pointer_move, "pointer_move")
+        self._plot_area.renderer.remove_event_handler(self._pointer_up, "pointer_up")
+
+        self._plot_area.renderer.remove_event_handler(self._key_down, "key_down")
+        self._plot_area.renderer.remove_event_handler(self._key_up, "key_up")
 
     def __del__(self):
         self.deleted = True
