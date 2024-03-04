@@ -10,6 +10,4 @@ class _Config:
     party_parrot: bool
 
 
-config = _Config(
-    party_parrot=False
-)
+config = _Config(party_parrot=False)

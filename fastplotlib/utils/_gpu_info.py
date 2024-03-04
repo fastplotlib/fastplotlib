@@ -11,6 +11,7 @@ except (NameError, ModuleNotFoundError, ImportError):
     NOTEBOOK = False
 else:
     from IPython.display import display
+
     if ip.has_trait("kernel") and (JupyterWgpuCanvas is not False):
         NOTEBOOK = True
     else:
@@ -21,17 +22,14 @@ def _notebook_print_banner():
     if NOTEBOOK is False:
         return
 
-    logo_path = Path(__file__).parent.parent.joinpath("assets", "fastplotlib_face_logo.png")
+    logo_path = Path(__file__).parent.parent.joinpath(
+        "assets", "fastplotlib_face_logo.png"
+    )
 
     with open(logo_path, "rb") as f:
         logo_data = f.read()
 
-    image = Image(
-        value=logo_data,
-        format="png",
-        width=300,
-        height=55
-    )
+    image = Image(value=logo_data, format="png", width=300, height=55)
 
     display(image)
 
@@ -39,7 +37,9 @@ def _notebook_print_banner():
     adapters = [a for a in enumerate_adapters()]
     adapters_info = [a.request_adapter_info() for a in adapters]
 
-    ix_default = adapters_info.index(get_default_device().adapter.request_adapter_info())
+    ix_default = adapters_info.index(
+        get_default_device().adapter.request_adapter_info()
+    )
 
     if len(adapters) > 0:
         print("Available devices:")

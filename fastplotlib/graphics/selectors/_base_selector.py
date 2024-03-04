@@ -44,7 +44,7 @@ class BaseSelector(Graphic):
         hover_responsive: Tuple[WorldObject, ...] = None,
         arrow_keys_modifier: str = None,
         axis: str = None,
-        name: str = None
+        name: str = None,
     ):
         if edges is None:
             edges = tuple()

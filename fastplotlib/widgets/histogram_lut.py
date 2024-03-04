@@ -13,12 +13,12 @@ from ..graphics.selectors import LinearRegionSelector
 # TODO: This is a widget, we can think about a BaseWidget class later if necessary
 class HistogramLUT(Graphic):
     def __init__(
-            self,
-            data: np.ndarray,
-            image_graphic: ImageGraphic,
-            nbins: int = 100,
-            flank_divisor: float = 5.0,
-            **kwargs
+        self,
+        data: np.ndarray,
+        image_graphic: ImageGraphic,
+        nbins: int = 100,
+        flank_divisor: float = 5.0,
+        **kwargs,
     ):
         """
 
@@ -58,11 +58,14 @@ class HistogramLUT(Graphic):
             size=size,
             origin=origin,
             axis="y",
-            edge_thickness=8
+            edge_thickness=8,
         )
 
         # there will be a small difference with the histogram edges so this makes them both line up exactly
-        self.linear_region.selection = (image_graphic.cmap.vmin, image_graphic.cmap.vmax)
+        self.linear_region.selection = (
+            image_graphic.cmap.vmin,
+            image_graphic.cmap.vmax,
+        )
 
         self._vmin = self.image_graphic.cmap.vmin
         self._vmax = self.image_graphic.cmap.vmax
@@ -105,9 +108,7 @@ class HistogramLUT(Graphic):
         self._text_vmax.position_x = -120
         self._text_vmax.position_y = self.linear_region.selection()[1]
 
-        self.linear_region.selection.add_event_handler(
-            self._linear_region_handler
-        )
+        self.linear_region.selection.add_event_handler(self._linear_region_handler)
 
         self.image_graphic.cmap.add_event_handler(self._image_cmap_handler)
 
@@ -168,12 +169,16 @@ class HistogramLUT(Graphic):
         flank_size = flank_nbins * bin_width
 
         flank_left = np.arange(edges[0] - flank_size, edges[0], bin_width)
-        flank_right = np.arange(edges[-1] + bin_width, edges[-1] + flank_size, bin_width)
+        flank_right = np.arange(
+            edges[-1] + bin_width, edges[-1] + flank_size, bin_width
+        )
 
         edges_flanked = np.concatenate((flank_left, edges, flank_right))
         np.unique(np.diff(edges_flanked))
 
-        hist_flanked = np.concatenate((np.zeros(flank_nbins), hist, np.zeros(flank_nbins)))
+        hist_flanked = np.concatenate(
+            (np.zeros(flank_nbins), hist, np.zeros(flank_nbins))
+        )
 
         # scale 0-100 to make it easier to see
         # float32 data can produce unnecessarily high values
@@ -181,7 +186,7 @@ class HistogramLUT(Graphic):
 
         if edges_flanked.size > hist_scaled.size:
             # we don't care about accuracy here so if it's off by 1-2 bins that's fine
-            edges_flanked = edges_flanked[:hist_scaled.size]
+            edges_flanked = edges_flanked[: hist_scaled.size]
 
         return hist, edges, hist_scaled, edges_flanked
 
@@ -209,7 +214,10 @@ class HistogramLUT(Graphic):
 
         # must use world coordinate values directly from selection()
         # otherwise the linear region bounds jump to the closest bin edges
-        self.linear_region.selection = (value * self._scale_factor, self.linear_region.selection()[1])
+        self.linear_region.selection = (
+            value * self._scale_factor,
+            self.linear_region.selection()[1],
+        )
         self.image_graphic.cmap.vmin = value
 
         self._block_events(False)
@@ -230,7 +238,10 @@ class HistogramLUT(Graphic):
 
         # must use world coordinate values directly from selection()
         # otherwise the linear region bounds jump to the closest bin edges
-        self.linear_region.selection = (self.linear_region.selection()[0], value * self._scale_factor)
+        self.linear_region.selection = (
+            self.linear_region.selection()[0],
+            value * self._scale_factor,
+        )
         self.image_graphic.cmap.vmax = value
 
         self._block_events(False)
@@ -280,9 +291,7 @@ class HistogramLUT(Graphic):
             )
 
         # cleanup events from current image graphic
-        self._image_graphic.cmap.remove_event_handler(
-            self._image_cmap_handler
-        )
+        self._image_graphic.cmap.remove_event_handler(self._image_cmap_handler)
 
         self._image_graphic = graphic
 

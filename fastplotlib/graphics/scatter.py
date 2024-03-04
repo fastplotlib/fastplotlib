@@ -90,7 +90,9 @@ class ScatterGraphic(Graphic):
         super(ScatterGraphic, self).__init__(*args, **kwargs)
 
         world_object = pygfx.Points(
-            pygfx.Geometry(positions=self.data(), sizes=self.sizes(), colors=self.colors()),
+            pygfx.Geometry(
+                positions=self.data(), sizes=self.sizes(), colors=self.colors()
+            ),
             material=pygfx.PointsMaterial(color_mode="vertex", vertex_sizes=True),
         )
 

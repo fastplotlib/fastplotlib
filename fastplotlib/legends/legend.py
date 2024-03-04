@@ -13,9 +13,9 @@ from ..utils import mesh_masks
 
 class LegendItem:
     def __init__(
-            self,
-            label: str,
-            color: pygfx.Color,
+        self,
+        label: str,
+        color: pygfx.Color,
     ):
         """
 
@@ -31,11 +31,7 @@ class LegendItem:
 
 class LineLegendItem(LegendItem):
     def __init__(
-            self,
-            parent,
-            graphic: LineGraphic,
-            label: str,
-            position: Tuple[int, int]
+        self, parent, graphic: LineGraphic, label: str, position: Tuple[int, int]
     ):
         """
 
@@ -55,7 +51,9 @@ class LineLegendItem(LegendItem):
             pass
 
         else:
-            raise ValueError("Must specify `label` or Graphic must have a `name` to auto-use as the label")
+            raise ValueError(
+                "Must specify `label` or Graphic must have a `name` to auto-use as the label"
+            )
 
         # for now only support lines with a single color
         if np.unique(graphic.colors(), axis=0).shape[0] > 1:
@@ -70,17 +68,13 @@ class LineLegendItem(LegendItem):
         graphic.colors.add_event_handler(self._update_color)
 
         # construct Line WorldObject
-        data = np.array(
-            [[0, 0, 0],
-             [3, 0, 0]],
-            dtype=np.float32
-        )
+        data = np.array([[0, 0, 0], [3, 0, 0]], dtype=np.float32)
 
         material = pygfx.LineMaterial
 
         self._line_world_object = pygfx.Line(
             geometry=pygfx.Geometry(positions=data),
-            material=material(thickness=8, color=self._color)
+            material=material(thickness=8, color=self._color),
         )
 
         # self._line_world_object.world.x = position[0]
@@ -96,7 +90,7 @@ class LineLegendItem(LegendItem):
                 color="w",
                 outline_color="w",
                 outline_thickness=0,
-            )
+            ),
         )
 
         self.world_object = pygfx.Group()
@@ -109,7 +103,9 @@ class LineLegendItem(LegendItem):
         self.world_object.world.y = position[1]
         self.world_object.world.z = 2
 
-        self.world_object.add_event_handler(partial(self._highlight_graphic, graphic), "click")
+        self.world_object.add_event_handler(
+            partial(self._highlight_graphic, graphic), "click"
+        )
 
     @property
     def label(self) -> str:
@@ -123,7 +119,9 @@ class LineLegendItem(LegendItem):
     def _update_color(self, ev: FeatureEvent):
         new_color = ev.pick_info["new_data"]
         if np.unique(new_color, axis=0).shape[0] > 1:
-            raise ValueError("LegendError: LineGraphic colors no longer appropriate for legend")
+            raise ValueError(
+                "LegendError: LineGraphic colors no longer appropriate for legend"
+            )
 
         self._color = new_color[0]
         self._line_world_object.material.color = pygfx.Color(self._color)
@@ -142,12 +140,12 @@ class LineLegendItem(LegendItem):
 
 class Legend(Graphic):
     def __init__(
-            self,
-            plot_area,
-            highlight_color: Union[str, tuple, np.ndarray] = "w",
-            max_rows: int = 5,
-            *args,
-            **kwargs
+        self,
+        plot_area,
+        highlight_color: Union[str, tuple, np.ndarray] = "w",
+        max_rows: int = 5,
+        *args,
+        **kwargs,
     ):
         """
 
@@ -166,7 +164,7 @@ class Legend(Graphic):
         self._graphics: List[Graphic] = list()
 
         # hex id of Graphic, i.e. graphic.loc are the keys
-        self._items: OrderedDict[str: LegendItem] = OrderedDict()
+        self._items: OrderedDict[str:LegendItem] = OrderedDict()
 
         super().__init__(*args, **kwargs)
 
@@ -176,7 +174,9 @@ class Legend(Graphic):
 
         self._mesh = pygfx.Mesh(
             pygfx.box_geometry(50, 10, 1),
-            pygfx.MeshBasicMaterial(color=pygfx.Color([0.1, 0.1, 0.1, 1]), wireframe_thickness=10)
+            pygfx.MeshBasicMaterial(
+                color=pygfx.Color([0.1, 0.1, 0.1, 1]), wireframe_thickness=10
+            ),
         )
 
         self.world_object.add(self._mesh)
@@ -235,7 +235,9 @@ class Legend(Graphic):
 
             # get x position offset for this new column of LegendItems
             # start by getting the LegendItems in the previous column
-            prev_column_items: List[LegendItem] = list(self._items.values())[-self._max_rows:]
+            prev_column_items: List[LegendItem] = list(self._items.values())[
+                -self._max_rows :
+            ]
             # x position of LegendItems in previous column
             x_pos = prev_column_items[-1].world_object.world.x
             max_width = 0
@@ -267,7 +269,7 @@ class Legend(Graphic):
 
         self._graphics.append(graphic)
         self._items[graphic.loc] = legend_item
-        
+
         graphic.deleted.add_event_handler(partial(self.remove_graphic, graphic))
 
         self._col_counter = new_col_ix

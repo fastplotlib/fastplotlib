@@ -28,6 +28,7 @@ from ...utils import config
 
 class IpywidgetToolBar(HBox, ToolBar):
     """Basic toolbar using ipywidgets"""
+
     def __init__(self, plot):
         ToolBar.__init__(self, plot)
 
@@ -82,7 +83,7 @@ class IpywidgetToolBar(HBox, ToolBar):
             disabled=False,
             icon="draw-polygon",
             layout=Layout(width="auto"),
-            tooltip="add PolygonSelector"
+            tooltip="add PolygonSelector",
         )
 
         widgets = [
@@ -109,7 +110,9 @@ class IpywidgetToolBar(HBox, ToolBar):
             widgets.append(image)
 
         if hasattr(self.plot, "_subplots"):
-            positions = list(product(range(self.plot.shape[0]), range(self.plot.shape[1])))
+            positions = list(
+                product(range(self.plot.shape[0]), range(self.plot.shape[1]))
+            )
             values = list()
             for pos in positions:
                 if self.plot[pos].name is not None:
@@ -150,7 +153,9 @@ class IpywidgetToolBar(HBox, ToolBar):
         return self._dropdown.value
 
     def auto_scale_handler(self, obj):
-        self.current_subplot.auto_scale(maintain_aspect=self.current_subplot.camera.maintain_aspect)
+        self.current_subplot.auto_scale(
+            maintain_aspect=self.current_subplot.camera.maintain_aspect
+        )
 
     def center_scene_handler(self, obj):
         self.current_subplot.center_scene()
@@ -230,7 +235,7 @@ class IpywidgetImageWidgetToolbar(VBox):
             icon="adjust",
             description="reset",
             layout=Layout(width="auto"),
-            tooltip="reset vmin/vmax and reset histogram using current frame"
+            tooltip="reset vmin/vmax and reset histogram using current frame",
         )
 
         self.sliders: Dict[str, IntSlider] = dict()
@@ -250,7 +255,9 @@ class IpywidgetImageWidgetToolbar(VBox):
                     orientation="horizontal",
                 )
 
-                slider.observe(partial(self.iw._slider_value_changed, dim), names="value")
+                slider.observe(
+                    partial(self.iw._slider_value_changed, dim), names="value"
+                )
 
                 self.sliders[dim] = slider
 
@@ -287,7 +294,7 @@ class IpywidgetImageWidgetToolbar(VBox):
                 self.reset_vminvmax_hlut_button,
                 self.play_button,
                 self.step_size_setter,
-                self.speed_text
+                self.speed_text,
             ]
 
             self.play_button.interval = 10

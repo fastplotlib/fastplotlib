@@ -16,7 +16,6 @@ class PolygonSelector(BaseSelector):
         parent: Graphic = None,
         name: str = None,
     ):
-
         self.parent = parent
 
         group = pygfx.Group()
@@ -47,7 +46,9 @@ class PolygonSelector(BaseSelector):
         self._plot_area.renderer.add_event_handler(self._add_segment, "click")
 
         # pointer move to change endpoint of segment
-        self._plot_area.renderer.add_event_handler(self._move_segment_endpoint, "pointer_move")
+        self._plot_area.renderer.add_event_handler(
+            self._move_segment_endpoint, "pointer_move"
+        )
 
         # click to finish existing segment
         self._plot_area.renderer.add_event_handler(self._finish_segment, "click")
@@ -69,7 +70,9 @@ class PolygonSelector(BaseSelector):
 
         new_line = pygfx.Line(
             geometry=pygfx.Geometry(positions=data.astype(np.float32)),
-            material=pygfx.LineMaterial(thickness=self.edge_width, color=pygfx.Color(self.edge_color))
+            material=pygfx.LineMaterial(
+                thickness=self.edge_width, color=pygfx.Color(self.edge_color)
+            ),
         )
 
         self.world_object.add(new_line)
@@ -86,7 +89,9 @@ class PolygonSelector(BaseSelector):
             return
 
         # change endpoint
-        self.world_object.children[-1].geometry.positions.data[1] = np.array([world_pos]).astype(np.float32)
+        self.world_object.children[-1].geometry.positions.data[1] = np.array(
+            [world_pos]
+        ).astype(np.float32)
         self.world_object.children[-1].geometry.positions.update_range()
 
     def _finish_segment(self, ev):
@@ -114,14 +119,15 @@ class PolygonSelector(BaseSelector):
             return
 
         # make new line to connect first and last vertices
-        data = np.vstack([
-            world_pos,
-            self.world_object.children[0].geometry.positions.data[0]
-        ])
+        data = np.vstack(
+            [world_pos, self.world_object.children[0].geometry.positions.data[0]]
+        )
 
         new_line = pygfx.Line(
             geometry=pygfx.Geometry(positions=data.astype(np.float32)),
-            material=pygfx.LineMaterial(thickness=self.edge_width, color=pygfx.Color(self.edge_color))
+            material=pygfx.LineMaterial(
+                thickness=self.edge_width, color=pygfx.Color(self.edge_color)
+            ),
         )
 
         self.world_object.add(new_line)
@@ -130,7 +136,7 @@ class PolygonSelector(BaseSelector):
             self._add_segment: "click",
             self._move_segment_endpoint: "pointer_move",
             self._finish_segment: "click",
-            self._finish_polygon: "double_click"
+            self._finish_polygon: "double_click",
         }
 
         for handler, event in handlers.items():

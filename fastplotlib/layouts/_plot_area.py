@@ -63,7 +63,7 @@ class PlotArea:
 
         name: str, optional
             name this ``subplot`` or ``plot``
-            
+
         """
 
         self._parent: PlotArea = parent
@@ -163,9 +163,13 @@ class PlotArea:
                     self._camera.fov = 50
 
             else:
-                raise ValueError("camera must be one of '2d', '3d' or a pygfx.PerspectiveCamera instance")
+                raise ValueError(
+                    "camera must be one of '2d', '3d' or a pygfx.PerspectiveCamera instance"
+                )
         else:
-            raise ValueError("camera must be one of '2d', '3d' or a pygfx.PerspectiveCamera instance")
+            raise ValueError(
+                "camera must be one of '2d', '3d' or a pygfx.PerspectiveCamera instance"
+            )
 
     # in the future we can think about how to allow changing the controller
     @property
@@ -188,9 +192,7 @@ class PlotArea:
         for camera in cameras_list:
             new_controller.add_camera(camera)
 
-        new_controller.register_events(
-            self.viewport
-        )
+        new_controller.register_events(self.viewport)
 
         # TODO: monkeypatch until we figure out a better
         #  pygfx plans on refactoring viewports anyways
@@ -246,7 +248,7 @@ class PlotArea:
         if name is None:
             self._name = None
             return
-        
+
         if not isinstance(name, str):
             raise TypeError("PlotArea `name` must be of type <str>")
         self._name = name
@@ -473,9 +475,9 @@ class PlotArea:
         if isinstance(graphic, BaseSelector):
             # store in SELECTORS dict
             loc = graphic.loc
-            SELECTORS[
-                loc
-            ] = graphic  # add hex id string for referencing this graphic instance
+            SELECTORS[loc] = (
+                graphic  # add hex id string for referencing this graphic instance
+            )
             # don't manage garbage collection of LineSliders for now
             if action == "insert":
                 self._selectors.insert(index, loc)
@@ -484,9 +486,9 @@ class PlotArea:
         else:
             # store in GRAPHICS dict
             loc = graphic.loc
-            GRAPHICS[
-                loc
-            ] = graphic  # add hex id string for referencing this graphic instance
+            GRAPHICS[loc] = (
+                graphic  # add hex id string for referencing this graphic instance
+            )
 
             if action == "insert":
                 self._graphics.insert(index, loc)
@@ -566,10 +568,10 @@ class PlotArea:
             camera.zoom = zoom
 
     def auto_scale(
-            self,
-            *,  # since this is often used as an event handler, don't want to coerce maintain_aspect = True
-            maintain_aspect: Union[None, bool] = None,
-            zoom: float = 0.8
+        self,
+        *,  # since this is often used as an event handler, don't want to coerce maintain_aspect = True
+        maintain_aspect: Union[None, bool] = None,
+        zoom: float = 0.8,
     ):
         """
         Auto-scale the camera w.r.t to the scene
@@ -737,7 +739,7 @@ class PlotArea:
             return False
 
         raise TypeError("PlotArea `in` operator accepts only `Graphic` or `str` types")
-    
+
     def __str__(self):
         if self.name is None:
             name = "unnamed"

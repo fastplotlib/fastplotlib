@@ -84,7 +84,9 @@ class GridPlot(Frame, RecordMixin):
 
         if names is not None:
             if len(list(chain(*names))) != self.shape[0] * self.shape[1]:
-                raise ValueError("must provide same number of subplot `names` as specified by gridplot shape")
+                raise ValueError(
+                    "must provide same number of subplot `names` as specified by gridplot shape"
+                )
 
             self.names = to_array(names).reshape(self.shape)
         else:
@@ -111,7 +113,9 @@ class GridPlot(Frame, RecordMixin):
 
         if controller_ids is None:
             # individual controller for each subplot
-            controller_ids = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
+            controller_ids = np.arange(self.shape[0] * self.shape[1]).reshape(
+                self.shape
+            )
 
         elif isinstance(controller_ids, str):
             if controller_ids == "sync":
@@ -129,7 +133,9 @@ class GridPlot(Frame, RecordMixin):
             # list of str of subplot names, convert this to integer ids
             if all([isinstance(item, str) for item in ids_flat]):
                 if self.names is None:
-                    raise ValueError("must specify subplot `names` to use list of str for `controller_ids`")
+                    raise ValueError(
+                        "must specify subplot `names` to use list of str for `controller_ids`"
+                    )
 
                 # make sure each controller_id str is a subplot name
                 if not all([n in self.names for n in ids_flat]):
@@ -148,7 +154,9 @@ class GridPlot(Frame, RecordMixin):
                 # set id based on subplot position for each synced sublist
                 for i, sublist in enumerate(controller_ids):
                     for name in sublist:
-                        ids_init[self.names == name] = -(i + 1)  # use negative numbers because why not
+                        ids_init[self.names == name] = -(
+                            i + 1
+                        )  # use negative numbers because why not
 
                 controller_ids = ids_init
 
@@ -163,11 +171,15 @@ class GridPlot(Frame, RecordMixin):
                 )
 
         if controller_ids.shape != self.shape:
-            raise ValueError("Number of controller_ids does not match the number of subplots")
+            raise ValueError(
+                "Number of controller_ids does not match the number of subplots"
+            )
 
         if controller_types is None:
             # `create_controller()` will auto-determine controller for each subplot based on defaults
-            controller_types = np.array(["default"] * self.shape[0] * self.shape[1]).reshape(self.shape)
+            controller_types = np.array(
+                ["default"] * self.shape[0] * self.shape[1]
+            ).reshape(self.shape)
 
         # validate controller types
         types_flat = list(chain(*controller_types))
@@ -180,7 +192,9 @@ class GridPlot(Frame, RecordMixin):
             if controller_type is None:
                 continue
 
-            if (controller_type not in valid_str) and (not isinstance(controller_type, valid_instances)):
+            if (controller_type not in valid_str) and (
+                not isinstance(controller_type, valid_instances)
+            ):
                 raise ValueError(
                     f"You have passed an invalid controller type, valid controller_types arguments are:\n"
                     f"{valid_str} or instances of {[c.__name__ for c in valid_instances]}"
