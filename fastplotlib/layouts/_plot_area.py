@@ -108,7 +108,7 @@ class PlotArea:
     # several read-only properties
     @property
     def parent(self):
-        """The parent PlotArea"""
+        """A parent if relevant, used by individual Subplots in GridPlot"""
         return self._parent
 
     @property
@@ -237,16 +237,31 @@ class PlotArea:
         return tuple(proxies)
 
     @property
-    def name(self) -> Any:
+    def name(self) -> str:
         """The name of this plot area"""
         return self._name
 
     @name.setter
-    def name(self, name: Any):
+    def name(self, name: str):
+        if name is None:
+            self._name = None
+            return
+        
+        if not isinstance(name, str):
+            raise TypeError("PlotArea `name` must be of type <str>")
         self._name = name
 
     def get_rect(self) -> Tuple[float, float, float, float]:
-        """allows setting the region occupied by the viewport w.r.t. the parent"""
+        """
+        Returns the viewport rect to define the rectangle
+        occupied by the viewport w.r.t. the Canvas.
+
+        If this is a subplot within a GridPlot, it returns the rectangle
+        for only this subplot w.r.t. the parent canvas.
+
+        Must return: [x_pos, y_pos, width_viewport, height_viewport]
+
+        """
         raise NotImplementedError("Must be implemented in subclass")
 
     def map_screen_to_world(

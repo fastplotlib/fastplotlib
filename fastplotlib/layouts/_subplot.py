@@ -90,6 +90,8 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self._grid: pygfx.GridHelper = pygfx.GridHelper(size=100, thickness=1)
 
+        self._title_graphic: TextGraphic = None
+
         super(Subplot, self).__init__(
             parent=parent,
             position=position,
@@ -107,7 +109,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             self.docks[pos] = dv
             self.children.append(dv)
 
-        self._title_graphic: TextGraphic = None
         if self.name is not None:
             self.set_title(self.name)
 
