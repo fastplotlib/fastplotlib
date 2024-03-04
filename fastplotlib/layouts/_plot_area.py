@@ -98,6 +98,7 @@ class PlotArea:
         # managed similar to GRAPHICS for garbage collection etc.
         self._selectors: List[str] = list()
 
+        self._name = None
         self.name = name
 
         # need to think about how to deal with children better
@@ -243,6 +244,10 @@ class PlotArea:
 
     @name.setter
     def name(self, name: str):
+        if name is None:
+            self._name = None
+            return
+        
         if not isinstance(name, str):
             raise TypeError("PlotArea `name` must be of type <str>")
         self._name = name
