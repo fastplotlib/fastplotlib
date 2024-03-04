@@ -11,8 +11,11 @@ from ._toolbar import ToolBar
 from ._qtoolbar_template import Ui_QToolbar
 
 
-class QToolbar(ToolBar, QtWidgets.QWidget):  # inheritance order MUST be Toolbar first, QWidget second! Else breaks
+class QToolbar(
+    ToolBar, QtWidgets.QWidget
+):  # inheritance order MUST be Toolbar first, QWidget second! Else breaks
     """Toolbar for Qt context"""
+
     def __init__(self, output_context, plot):
         QtWidgets.QWidget.__init__(self, parent=output_context)
         ToolBar.__init__(self, plot)
@@ -49,7 +52,9 @@ class QToolbar(ToolBar, QtWidgets.QWidget):  # inheritance order MUST be Toolbar
         self.setMaximumHeight(35)
 
         # set the initial values for buttons
-        self.ui.maintain_aspect_button.setChecked(self.current_subplot.camera.maintain_aspect)
+        self.ui.maintain_aspect_button.setChecked(
+            self.current_subplot.camera.maintain_aspect
+        )
         self.ui.panzoom_button.setChecked(self.current_subplot.controller.enabled)
 
         if copysign(1, self.current_subplot.camera.local.scale_y) == -1:
@@ -70,7 +75,9 @@ class QToolbar(ToolBar, QtWidgets.QWidget):  # inheritance order MUST be Toolbar
 
                 # set buttons w.r.t. current subplot
                 self.ui.panzoom_button.setChecked(subplot.controller.enabled)
-                self.ui.maintain_aspect_button.setChecked(subplot.camera.maintain_aspect)
+                self.ui.maintain_aspect_button.setChecked(
+                    subplot.camera.maintain_aspect
+                )
 
                 if copysign(1, subplot.camera.local.scale_y) == -1:
                     self.ui.y_direction_button.setText("v")
@@ -81,7 +88,9 @@ class QToolbar(ToolBar, QtWidgets.QWidget):  # inheritance order MUST be Toolbar
         return self.ui.current_subplot.text()
 
     def auto_scale_handler(self, *args):
-        self.current_subplot.auto_scale(maintain_aspect=self.current_subplot.camera.maintain_aspect)
+        self.current_subplot.auto_scale(
+            maintain_aspect=self.current_subplot.camera.maintain_aspect
+        )
 
     def center_scene_handler(self, *args):
         self.current_subplot.center_scene()
@@ -128,6 +137,7 @@ class SliderInterface:
 
     This interface makes a QSlider behave somewhat like a ipywidget IntSlider, enough for ImageWidget to function.
     """
+
     def __init__(self, qslider):
         self.qslider = qslider
 
@@ -176,7 +186,9 @@ class QToolbarImageWidget(QtWidgets.QWidget):
 
         self.reset_vmin_vmax_hlut_button = QtWidgets.QPushButton(self)
         self.reset_vmin_vmax_hlut_button.setText("reset histogram-lut")
-        self.reset_vmin_vmax_hlut_button.clicked.connect(self.image_widget.reset_vmin_vmax_frame)
+        self.reset_vmin_vmax_hlut_button.clicked.connect(
+            self.image_widget.reset_vmin_vmax_frame
+        )
         hlayout_buttons.addWidget(self.reset_vmin_vmax_hlut_button)
 
         self.vlayout.addLayout(hlayout_buttons)
@@ -187,7 +199,9 @@ class QToolbarImageWidget(QtWidgets.QWidget):
         if self.image_widget.ndim > 2:
             # create a slider, spinbox and dimension label for each dimension in the ImageWidget
             for dim in self.image_widget.slider_dims:
-                hlayout = QtWidgets.QHBoxLayout()  # horizontal stack for label, slider, spinbox
+                hlayout = (
+                    QtWidgets.QHBoxLayout()
+                )  # horizontal stack for label, slider, spinbox
 
                 # max value for current dimension
                 max_val = self.image_widget._dims_max_bounds[dim] - 1
@@ -213,7 +227,9 @@ class QToolbarImageWidget(QtWidgets.QWidget):
                 spinbox.valueChanged.connect(slider.setValue)
 
                 # connect slider to change the index within the dimension
-                slider.valueChanged.connect(partial(self.image_widget._slider_value_changed, dim))
+                slider.valueChanged.connect(
+                    partial(self.image_widget._slider_value_changed, dim)
+                )
 
                 # slider dimension label
                 slider_label = QtWidgets.QLabel(self)

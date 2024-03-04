@@ -27,10 +27,10 @@ class LinearRegionSelector(BaseSelector):
         # check that `values` is an iterable of two real numbers
         # using `Real` here allows it to work with builtin `int` and `float` types, and numpy scaler types
         if len(values) != 2 or not all(map(lambda v: isinstance(v, Real), values)):
-            raise TypeError(
-                "limits must be an iterable of two numeric values"
-            )
-        self._limits = tuple(map(round, values))  # if values are close to zero things get weird so round them
+            raise TypeError("limits must be an iterable of two numeric values")
+        self._limits = tuple(
+            map(round, values)
+        )  # if values are close to zero things get weird so round them
         self.selection._limits = self._limits
 
     def __init__(
@@ -243,7 +243,7 @@ class LinearRegionSelector(BaseSelector):
             hover_responsive=self.edges,
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
-            name=name
+            name=name,
         )
 
     def get_selected_data(
@@ -417,11 +417,7 @@ class LinearRegionSelector(BaseSelector):
 
         return slider
 
-    def add_ipywidget_handler(
-            self,
-            widget,
-            step: Union[int, float] = None
-    ):
+    def add_ipywidget_handler(self, widget, step: Union[int, float] = None):
         """
         Bidirectionally connect events with a ipywidget slider
 
@@ -434,7 +430,9 @@ class LinearRegionSelector(BaseSelector):
             step size, if ``None`` 100 steps are created
 
         """
-        if not isinstance(widget, (ipywidgets.IntRangeSlider, ipywidgets.FloatRangeSlider)):
+        if not isinstance(
+            widget, (ipywidgets.IntRangeSlider, ipywidgets.FloatRangeSlider)
+        ):
             raise TypeError(
                 f"`widget` must be one of: ipywidgets.IntRangeSlider or ipywidgets.FloatRangeSlider\n"
                 f"You have passed a: <{type(widget)}"

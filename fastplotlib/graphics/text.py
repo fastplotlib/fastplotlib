@@ -17,7 +17,7 @@ class TextGraphic(Graphic):
         screen_space: bool = True,
         anchor: str = "middle-center",
         *args,
-        **kwargs
+        **kwargs,
     ):
         """
         Create a text Graphic
@@ -144,4 +144,3 @@ class TextGraphic(Graphic):
             raise ValueError("Outline color must be of type str or np.ndarray")
 
         self.world_object.material.outline_color = color
-

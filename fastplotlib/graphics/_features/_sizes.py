@@ -34,12 +34,16 @@ class PointsSizesFeature(GraphicFeatureIndexable):
 
     def _fix_sizes(self, sizes, parent):
         graphic_type = parent.__class__.__name__
-        
+
         n_datapoints = parent.data().shape[0]
         if not isinstance(sizes, (list, tuple, np.ndarray)):
-            sizes = np.full(n_datapoints, sizes, dtype=np.float32) # force it into a float to avoid weird gpu errors
-        elif not isinstance(sizes, np.ndarray): # if it's not a ndarray already, make it one
-            sizes = np.array(sizes, dtype=np.float32) # read it in as a numpy.float32
+            sizes = np.full(
+                n_datapoints, sizes, dtype=np.float32
+            )  # force it into a float to avoid weird gpu errors
+        elif not isinstance(
+            sizes, np.ndarray
+        ):  # if it's not a ndarray already, make it one
+            sizes = np.array(sizes, dtype=np.float32)  # read it in as a numpy.float32
             if (sizes.ndim != 1) or (sizes.size != parent.data().shape[0]):
                 raise ValueError(
                     f"sequence of `sizes` must be 1 dimensional with "
@@ -49,7 +53,9 @@ class PointsSizesFeature(GraphicFeatureIndexable):
         sizes = to_gpu_supported_dtype(sizes)
 
         if any(s < 0 for s in sizes):
-            raise ValueError("All sizes must be positive numbers greater than or equal to 0.0.")
+            raise ValueError(
+                "All sizes must be positive numbers greater than or equal to 0.0."
+            )
 
         if sizes.ndim == 1:
             if graphic_type == "ScatterGraphic":

@@ -9,11 +9,12 @@ class QOutputContext(QtWidgets.QWidget):
 
     Basically vstacks plot canvas, toolbar, and other widgets.
     """
+
     def __init__(
-            self,
-            frame,
-            make_toolbar,
-            add_widgets,
+        self,
+        frame,
+        make_toolbar,
+        add_widgets,
     ):
         """
 

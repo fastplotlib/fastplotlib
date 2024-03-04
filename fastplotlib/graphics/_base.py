@@ -315,7 +315,7 @@ class Interaction(ABC):
                 feature=feature,
                 new_data=new_data,
                 callback=callback,
-                bidirectional=False  # else infinite recursion, otherwise target will call
+                bidirectional=False,  # else infinite recursion, otherwise target will call
                 # this instance .link(), and then it will happen again etc.
             )
 

@@ -27,15 +27,14 @@ else:
     JupyterOutputContext = UnavailableOutputContext(
         "Jupyter",
         "You must install fastplotlib using the `'notebook'` option to use this context:\n"
-        'pip install "fastplotlib[notebook]"'
+        'pip install "fastplotlib[notebook]"',
     )
 
 if CANVAS_OPTIONS_AVAILABLE["qt"]:
     from ._qt_output import QOutputContext
 else:
     QtOutput = UnavailableOutputContext(
-        "Qt",
-        "You must install `PyQt6` to use this output context"
+        "Qt", "You must install `PyQt6` to use this output context"
     )
 
 
@@ -45,6 +44,7 @@ class Frame:
 
     Gives them their `show()` call that returns the appropriate output context.
     """
+
     def __init__(self):
         self._output = None
 
@@ -83,13 +83,13 @@ class Frame:
         self.canvas.set_logical_size(*self._starting_size)
 
     def show(
-            self,
-            autoscale: bool = True,
-            maintain_aspect: bool = None,
-            toolbar: bool = True,
-            sidecar: bool = False,
-            sidecar_kwargs: dict = None,
-            add_widgets: list = None,
+        self,
+        autoscale: bool = True,
+        maintain_aspect: bool = None,
+        toolbar: bool = True,
+        sidecar: bool = False,
+        sidecar_kwargs: dict = None,
+        add_widgets: list = None,
     ):
         """
         Begins the rendering event loop and shows the plot in the desired output context (jupyter, qt or glfw).
@@ -168,9 +168,7 @@ class Frame:
 
         elif self.canvas.__class__.__name__ == "QWgpuCanvas":
             self._output = QOutputContext(
-                frame=self,
-                make_toolbar=toolbar,
-                add_widgets=add_widgets
+                frame=self, make_toolbar=toolbar, add_widgets=add_widgets
             )
 
         else:  # assume GLFW, the output context is just the canvas

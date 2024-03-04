@@ -1,7 +1,13 @@
 import numpy as np
 import pygfx
 
-from ...utils import make_colors, get_cmap_texture, make_pygfx_colors, parse_cmap_values, quick_min_max
+from ...utils import (
+    make_colors,
+    get_cmap_texture,
+    make_pygfx_colors,
+    parse_cmap_values,
+    quick_min_max,
+)
 from ._base import (
     GraphicFeature,
     GraphicFeatureIndexable,

@@ -28,10 +28,10 @@ class LinearSelector(BaseSelector):
         # check that `values` is an iterable of two real numbers
         # using `Real` here allows it to work with builtin `int` and `float` types, and numpy scaler types
         if len(values) != 2 or not all(map(lambda v: isinstance(v, Real), values)):
-            raise TypeError(
-                "limits must be an iterable of two numeric values"
-            )
-        self._limits = tuple(map(round, values))  # if values are close to zero things get weird so round them
+            raise TypeError("limits must be an iterable of two numeric values")
+        self._limits = tuple(
+            map(round, values)
+        )  # if values are close to zero things get weird so round them
         self.selection._limits = self._limits
 
     # TODO: make `selection` arg in graphics data space not world space
@@ -267,11 +267,7 @@ class LinearSelector(BaseSelector):
 
         return slider
 
-    def add_ipywidget_handler(
-            self,
-            widget,
-            step: Union[int, float] = None
-    ):
+    def add_ipywidget_handler(self, widget, step: Union[int, float] = None):
         """
         Bidirectionally connect events with a ipywidget slider
 
@@ -285,7 +281,10 @@ class LinearSelector(BaseSelector):
 
         """
 
-        if not isinstance(widget, (ipywidgets.IntSlider, ipywidgets.FloatSlider, ipywidgets.FloatLogSlider)):
+        if not isinstance(
+            widget,
+            (ipywidgets.IntSlider, ipywidgets.FloatSlider, ipywidgets.FloatLogSlider),
+        ):
             raise TypeError(
                 f"`widget` must be one of: ipywidgets.IntSlider, ipywidgets.FloatSlider, or ipywidgets.FloatLogSlider\n"
                 f"You have passed a: <{type(widget)}"

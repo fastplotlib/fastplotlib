@@ -40,6 +40,7 @@ def _is_arraylike(obj) -> bool:
 
 class _WindowFunctions:
     """Stores window function and window size"""
+
     def __init__(self, image_widget, func: callable, window_size: int):
         self._image_widget = image_widget
         self._func = None
@@ -131,7 +132,9 @@ class ImageWidget:
     def cmap(self, names: Union[str, List[str]]):
         if isinstance(names, list):
             if not all([isinstance(n, str) for n in names]):
-                raise TypeError(f"Must pass cmap name as a `str` of list of `str`, you have passed:\n{names}")
+                raise TypeError(
+                    f"Must pass cmap name as a `str` of list of `str`, you have passed:\n{names}"
+                )
 
             if not len(names) == len(self.managed_graphics):
                 raise IndexError(
@@ -558,7 +561,9 @@ class ImageWidget:
         # user specified kwargs will overwrite the defaults
         grid_plot_kwargs_default.update(grid_plot_kwargs)
 
-        self._gridplot: GridPlot = GridPlot(shape=grid_shape, **grid_plot_kwargs_default)
+        self._gridplot: GridPlot = GridPlot(
+            shape=grid_shape, **grid_plot_kwargs_default
+        )
 
         for data_ix, (d, subplot) in enumerate(zip(self.data, self.gridplot)):
             if self._names is not None:
@@ -574,11 +579,7 @@ class ImageWidget:
             subplot.set_title(name)
 
             if histogram_widget:
-                hlut = HistogramLUT(
-                    data=d,
-                    image_graphic=ig,
-                    name="histogram_lut"
-                )
+                hlut = HistogramLUT(data=d, image_graphic=ig, name="histogram_lut")
 
                 subplot.docks["right"].add_graphic(hlut)
                 subplot.docks["right"].size = 80
@@ -596,7 +597,7 @@ class ImageWidget:
     def frame_apply(self, frame_apply: Dict[int, callable]):
         if frame_apply is None:
             frame_apply = dict()
-            
+
         self._frame_apply = frame_apply
         # force update image graphic
         self.current_index = self.current_index
@@ -901,7 +902,9 @@ class ImageWidget:
                 max_lengths["z"] = min(max_lengths["z"], new_array.shape[1] - 1)
 
             # set histogram widget
-            subplot.docks["right"]["histogram_lut"].set_data(new_array, reset_vmin_vmax=reset_vmin_vmax)
+            subplot.docks["right"]["histogram_lut"].set_data(
+                new_array, reset_vmin_vmax=reset_vmin_vmax
+            )
 
         # set slider maxes
         # TODO: maybe make this stuff a property, like ndims, n_frames etc. and have it set the sliders
@@ -912,7 +915,9 @@ class ImageWidget:
         # force graphics to update
         self.current_index = self.current_index
 
-    def show(self, toolbar: bool = True, sidecar: bool = False, sidecar_kwargs: dict = None):
+    def show(
+        self, toolbar: bool = True, sidecar: bool = False, sidecar_kwargs: dict = None
+    ):
         """
         Show the widget.
 
@@ -931,7 +936,7 @@ class ImageWidget:
             toolbar=toolbar,
             sidecar=sidecar,
             sidecar_kwargs=sidecar_kwargs,
-            add_widgets=[self._image_widget_toolbar]
+            add_widgets=[self._image_widget_toolbar],
         )
 
         return self._output

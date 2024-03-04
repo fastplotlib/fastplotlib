@@ -3,7 +3,9 @@ from typing import *
 
 
 class Synchronizer:
-    def __init__(self, *selectors: LinearSelector, key_bind: Union[str, None] = "Shift"):
+    def __init__(
+        self, *selectors: LinearSelector, key_bind: Union[str, None] = "Shift"
+    ):
         """
         Synchronize the movement of `Selectors`. Selectors will move in sync only when the selected `"key_bind"` is
         used during the mouse movement event. Valid key binds are: ``"Control"``, ``"Shift"`` and ``"Alt"``.

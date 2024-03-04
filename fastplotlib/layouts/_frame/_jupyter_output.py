@@ -13,13 +13,14 @@ class JupyterOutputContext(VBox):
 
     Basically vstacks plot canvas, toolbar, and other widgets. Uses sidecar if desired.
     """
+
     def __init__(
-            self,
-            frame,
-            make_toolbar: bool,
-            use_sidecar: bool,
-            sidecar_kwargs: dict,
-            add_widgets: List[Widget],
+        self,
+        frame,
+        make_toolbar: bool,
+        use_sidecar: bool,
+        sidecar_kwargs: dict,
+        add_widgets: List[Widget],
     ):
         """
 
