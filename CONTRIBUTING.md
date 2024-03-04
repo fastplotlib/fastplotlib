@@ -68,31 +68,34 @@ then add *Graphics* to that layout, such as an `ImageGraphic`, `LineGraphic`, et
 
 A `Graphic` is something that can be added to a `PlotArea` (described in detail in a later section). All the various 
 fastplotlib graphics, such as `ImageGraphic`, `ScatterGraphic`, etc. inherit from the `Graphic` base class in 
-fastplotlib/graphics/_base. It has a few properties that mostly wrap `pygfx` `WorldObject` properties and transforms. 
+`fastplotlib/graphics/_base.py`. It has a few properties that mostly wrap `pygfx` `WorldObject` properties and transforms. 
 These might change in the future (ex. `Graphic.position_x` etc.).
 
 All graphics can be given a string name for the user's convenience. This allows graphics to be easily accessed from 
 plots, ex: `plot["some_image"]`.
 
 All graphics contain a `world_object` property which is just the `pygfx.WorldObject` that this graphic uses. Fastplotlib 
-keeps a global dictionary of all `WorldObject` instances and users are only given a weakref proxy to this world object. 
+keeps a *private* global dictionary of all `WorldObject` instances and users are only given a weakref proxy to this world object. 
 This is due to garbage collection. This may be quite complicated for beginners, for more details see this PR: https://github.com/fastplotlib/fastplotlib/pull/160 . 
 If you are curious or have more questions on garbage collection in fastplotlib you're welcome to post an issue :D. 
 
 #### Graphic Features
 
 There is one important thing that `fastplotlib` uses which we call "graphic features". 
-The "graphic features" subpackage can be found at fastplotlib/graphics/_features. As we can see this 
+The "graphic features" subpackage can be found at `fastplotlib/graphics/_features`. As we can see this 
 is a private subpackage and never meant to be accessible to users. In `fastplotlib` "graphic features" are the various 
-aspects of a graphic that the user can change. Users can also run callbacks whenever a `graphic feature` changes.
+aspects of a graphic that the user can change. Users can also run callbacks whenever a graphic feature changes.
 
-For example let's look at `LineGraphic` in fastplotlib/graphics/line.py. Every graphic has a class variable called 
+##### LineGraphic
+
+For example let's look at `LineGraphic` in `fastplotlib/graphics/line.py`. Every graphic has a class variable called 
 `feature_events` which is a set of all graphic features. It has the following graphic features: "data", "colors", "cmap", "thickness", "present".
 
-Now look at the constructor for `LineGraphic`, it first create an instance of `PointsDataFeature`. This is basically a 
+Now look at the constructor for `LineGraphic`, it first creates an instance of `PointsDataFeature`. This is basically a 
 class that wraps the positions buffer, the vertex positions that define the line, and provides additional useful functionality. 
-Every time that the `data` is changed event handlers will be called (if any event handlers are registered). `ColorFeature` 
-behaves similarly, but it has additional parsing code that can create the colors buffer. For example if a user runs: 
+For example, every time that the `data` is changed event handlers will be called (if any event handlers are registered). 
+
+`ColorFeature`behaves similarly, but it can perform additional parsing that can create the colors buffer from different forms of user input. For example if a user runs: 
 `line_graphic.colors = "blue"`, then `ColorFeature.__setitem__()` will create a buffer that corresponds to what `pygfx.Color` thinks is "blue". 
 Users can also take advantage of fancy indexing, ex: `line_graphics.colors[bool_array] = "red"` :smile: 
 
@@ -112,7 +115,7 @@ Selectors are a fairly new subpackage at `fastplotlib/graphics/selectors` which 
 after https://github.com/pygfx/pygfx/pull/665 . This subpackage contains selection tools, such as line selectors
 (horizontal or vertical lines that can be moved), linear region selectors, and a primitive polygon drawing selection tool. 
 All selector tools inherit from `BaseSelector` in `graphics/selectors/_base_selector.py` but this is likely to change 
-after the aforementioned Input class PR in `pygfx` and after https://github.com/fastplotlib/fastplotlib/pull/413 .
+after the aforementioned `Input` class PR in `pygfx` and after https://github.com/fastplotlib/fastplotlib/pull/413 .
 
 ### Layouts
 
@@ -130,8 +133,9 @@ This is the main base class within layouts. Every kind of "plot area", whether i
 * camera - instance of `pygfx.PerspectiveCamera`, we always just use `PerspectiveCamera` and just set `camera.fov = 0` for orthographic projections
 * controller - instance of `pygfx.Controller`
 
-Abstact method that must be implemented in subclasses:
-* get_rect - 
+Abstract method that must be implemented in subclasses:
+
+* get_rect - musut return [x, y, width, height] that defines the viewport rect for this `PlotArea`
 
 Properties specifically used by subplots in a gridplot:
 
@@ -140,7 +144,7 @@ Properties specifically used by subplots in a gridplot:
 
 Other important properties:
 
-* graphics - a tuple of weakref proxies to all `Graphics` within this `PlotArea`
+* graphics - a tuple of weakref proxies to all `Graphics` within this `PlotArea`, users are only given weakref proxies to `Graphic` objects, all `Graphic` objects are stored in a private global dict.
 * selectors - a tuple of weakref proxies to all selectors within this `PlotArea`
 * legend - a tuple of weakref proxies to all legend graphics within this `PlotArea`
 * name - plot areas are allowed to have names that the user can use for their convenience
