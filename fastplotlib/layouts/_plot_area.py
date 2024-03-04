@@ -98,8 +98,7 @@ class PlotArea:
         # managed similar to GRAPHICS for garbage collection etc.
         self._selectors: List[str] = list()
 
-        self._name = None
-        self.name = name
+        self._name = name
 
         # need to think about how to deal with children better
         self.children = list()
