@@ -33,7 +33,7 @@ extras_require = {
 
     "tests":
     [
-        "pytest",
+        "pytest<8.0.0",
         "nbmake",
         "scipy",
         "imageio[pyav]",
@@ -47,7 +47,7 @@ extras_require = {
 
     "tests-desktop":
     [
-        "pytest",
+        "pytest<8.0.0",
         "scipy",
         "imageio",
         "scikit-learn",
