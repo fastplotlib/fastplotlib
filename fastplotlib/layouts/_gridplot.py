@@ -15,16 +15,6 @@ from ._subplot import Subplot
 from ._record_mixin import RecordMixin
 
 
-def to_array(a) -> np.ndarray:
-    if isinstance(a, np.ndarray):
-        return a
-
-    if not isinstance(a, list):
-        raise TypeError("must pass list or numpy array")
-
-    return np.array(a)
-
-
 class GridPlot(Frame, RecordMixin):
     def __init__(
         self,
@@ -88,7 +78,7 @@ class GridPlot(Frame, RecordMixin):
                     "must provide same number of subplot `names` as specified by gridplot shape"
                 )
 
-            self.names = to_array(names).reshape(self.shape)
+            self.names = np.asarray(names).reshape(self.shape)
         else:
             self.names = None
 
@@ -101,7 +91,7 @@ class GridPlot(Frame, RecordMixin):
             )
 
         # list -> array if necessary
-        cameras = to_array(cameras).reshape(self.shape)
+        cameras = np.asarray(cameras).reshape(self.shape)
 
         if cameras.shape != self.shape:
             raise ValueError("Number of cameras does not match the number of subplots")
@@ -162,7 +152,7 @@ class GridPlot(Frame, RecordMixin):
 
             # integer ids
             elif all([isinstance(item, (int, np.integer)) for item in ids_flat]):
-                controller_ids = to_array(controller_ids).reshape(self.shape)
+                controller_ids = np.asarray(controller_ids).reshape(self.shape)
 
             else:
                 raise TypeError(
@@ -200,7 +190,7 @@ class GridPlot(Frame, RecordMixin):
                     f"{valid_str} or instances of {[c.__name__ for c in valid_instances]}"
                 )
 
-        controller_types = to_array(controller_types).reshape(self.shape)
+        controller_types = np.asarray(controller_types).reshape(self.shape)
 
         # make the real controllers for each subplot
         self._controllers = np.empty(shape=self.shape, dtype=object)
