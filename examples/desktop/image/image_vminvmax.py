@@ -3,6 +3,7 @@ Simple Plot
 ============
 Example showing the simple plot creation followed by changing the vmin/vmax with Standard imageio image.
 """
+
 # test_example = true
 
 import fastplotlib as fpl

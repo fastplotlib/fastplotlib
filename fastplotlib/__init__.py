@@ -4,18 +4,12 @@ from .layouts import Plot, GridPlot
 from .graphics import *
 from .graphics.selectors import *
 from .legends import *
+from .widgets import ImageWidget
 from .utils import _notebook_print_banner, config
 
 from wgpu.gui.auto import run
-
-try:
-    import ipywidgets
-except (ModuleNotFoundError, ImportError):
-    pass
-else:
-    from .widgets import ImageWidget
-
 from wgpu.backends.wgpu_native import enumerate_adapters
+
 
 with open(Path(__file__).parent.joinpath("VERSION"), "r") as f:
     __version__ = f.read().split("\n")[0]
