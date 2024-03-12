@@ -4,17 +4,11 @@ from .layouts import Plot, GridPlot
 from .graphics import *
 from .graphics.selectors import *
 from .legends import *
+from .widgets import ImageWidget
 
 from wgpu.gui.auto import run
-
-try:
-    import ipywidgets
-except (ModuleNotFoundError, ImportError):
-    pass
-else:
-    from .widgets import ImageWidget
-
 from wgpu.backends.wgpu_native import enumerate_adapters
+
 
 adapters = [a.request_adapter_info() for a in enumerate_adapters()]
 
