@@ -132,10 +132,10 @@ class LinearRegionSelectionFeature(GraphicFeature):
 
         if self.axis == "x":
             # change left x position of the fill mesh
-            self._parent.fill.geometry.positions.data[mesh_masks.x_left, 0] = value[0]
+            self._parent.fill.geometry.positions.data[mesh_masks.x_left] = value[0]
 
             # change right x position of the fill mesh
-            self._parent.fill.geometry.positions.data[mesh_masks.x_right, 0] = value[1]
+            self._parent.fill.geometry.positions.data[mesh_masks.x_right] = value[1]
 
             # change x position of the left edge line
             self._parent.edges[0].geometry.positions.data[:, 0] = value[0]
@@ -145,10 +145,10 @@ class LinearRegionSelectionFeature(GraphicFeature):
 
         elif self.axis == "y":
             # change bottom y position of the fill mesh
-            self._parent.fill.geometry.positions.data[mesh_masks.y_bottom, 1] = value[0]
+            self._parent.fill.geometry.positions.data[mesh_masks.y_bottom] = value[0]
 
             # change top position of the fill mesh
-            self._parent.fill.geometry.positions.data[mesh_masks.y_top, 1] = value[1]
+            self._parent.fill.geometry.positions.data[mesh_masks.y_top] = value[1]
 
             # change y position of the bottom edge line
             self._parent.edges[0].geometry.positions.data[:, 1] = value[0]

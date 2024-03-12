@@ -58,16 +58,16 @@ class RectangleBoundsFeature(GraphicFeature):
 
         # change fill mesh
         # change left x position of the fill mesh
-        self._parent.fill.geometry.positions.data[mesh_masks.x_left, 0] = xmin
+        self._parent.fill.geometry.positions.data[mesh_masks.x_left] = xmin
 
         # change right x position of the fill mesh
-        self._parent.fill.geometry.positions.data[mesh_masks.x_right, 0] = xmax
+        self._parent.fill.geometry.positions.data[mesh_masks.x_right] = xmax
 
         # change bottom y position of the fill mesh
-        self._parent.fill.geometry.positions.data[mesh_masks.y_bottom, 1] = ymin
+        self._parent.fill.geometry.positions.data[mesh_masks.y_bottom] = ymin
 
         # change top position of the fill mesh
-        self._parent.fill.geometry.positions.data[mesh_masks.y_top, 1] = ymax
+        self._parent.fill.geometry.positions.data[mesh_masks.y_top] = ymax
 
         # change the edge lines
 
