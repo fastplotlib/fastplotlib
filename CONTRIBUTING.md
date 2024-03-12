@@ -15,7 +15,7 @@ git clone https://github.com/YOUR_ACCOUNT/fastplotlib.git
 cd fastplotlib
 
 # install all extras in place
-pip install -e ".[notebook,docs,tests]
+pip install -e ".[notebook,docs,tests]"
 ```
 
 > If you cloned before installing `git-lfs`, you can run `git lfs pull` at any
