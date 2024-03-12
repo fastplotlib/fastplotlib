@@ -2,6 +2,7 @@
 Image widget
 ============
 Example showing the image widget in action.
+When run in a notebook, or with the Qt GUI backend, sliders are also shown.
 """
 
 import numpy as np
