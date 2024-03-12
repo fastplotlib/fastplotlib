@@ -2,129 +2,8 @@ from typing import Tuple, Union, Any
 
 import numpy as np
 
+from ...utils import mesh_masks
 from ._base import GraphicFeature, FeatureEvent
-
-
-"""
-positions for indexing the BoxGeometry to set the "width" and "size" of the box
-hacky, but I don't think we can morph meshes in pygfx yet: https://github.com/pygfx/pygfx/issues/346
-"""
-
-x_right = np.array(
-    [
-        True,
-        True,
-        True,
-        True,
-        False,
-        False,
-        False,
-        False,
-        False,
-        True,
-        False,
-        True,
-        True,
-        False,
-        True,
-        False,
-        False,
-        True,
-        False,
-        True,
-        True,
-        False,
-        True,
-        False,
-    ]
-)
-
-x_left = np.array(
-    [
-        False,
-        False,
-        False,
-        False,
-        True,
-        True,
-        True,
-        True,
-        True,
-        False,
-        True,
-        False,
-        False,
-        True,
-        False,
-        True,
-        True,
-        False,
-        True,
-        False,
-        False,
-        True,
-        False,
-        True,
-    ]
-)
-
-y_top = np.array(
-    [
-        False,
-        True,
-        False,
-        True,
-        False,
-        True,
-        False,
-        True,
-        True,
-        True,
-        True,
-        True,
-        False,
-        False,
-        False,
-        False,
-        False,
-        False,
-        True,
-        True,
-        False,
-        False,
-        True,
-        True,
-    ]
-)
-
-y_bottom = np.array(
-    [
-        True,
-        False,
-        True,
-        False,
-        True,
-        False,
-        True,
-        False,
-        False,
-        False,
-        False,
-        False,
-        True,
-        True,
-        True,
-        True,
-        True,
-        True,
-        False,
-        False,
-        True,
-        True,
-        False,
-        False,
-    ]
-)
 
 
 class LinearSelectionFeature(GraphicFeature):
@@ -253,10 +132,10 @@ class LinearRegionSelectionFeature(GraphicFeature):
 
         if self.axis == "x":
             # change left x position of the fill mesh
-            self._parent.fill.geometry.positions.data[x_left, 0] = value[0]
+            self._parent.fill.geometry.positions.data[mesh_masks.x_left, 0] = value[0]
 
             # change right x position of the fill mesh
-            self._parent.fill.geometry.positions.data[x_right, 0] = value[1]
+            self._parent.fill.geometry.positions.data[mesh_masks.x_right, 0] = value[1]
 
             # change x position of the left edge line
             self._parent.edges[0].geometry.positions.data[:, 0] = value[0]
@@ -266,10 +145,10 @@ class LinearRegionSelectionFeature(GraphicFeature):
 
         elif self.axis == "y":
             # change bottom y position of the fill mesh
-            self._parent.fill.geometry.positions.data[y_bottom, 1] = value[0]
+            self._parent.fill.geometry.positions.data[mesh_masks.y_bottom, 1] = value[0]
 
             # change top position of the fill mesh
-            self._parent.fill.geometry.positions.data[y_top, 1] = value[1]
+            self._parent.fill.geometry.positions.data[mesh_masks.y_top, 1] = value[1]
 
             # change y position of the bottom edge line
             self._parent.edges[0].geometry.positions.data[:, 1] = value[0]

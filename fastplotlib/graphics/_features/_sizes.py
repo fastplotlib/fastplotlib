@@ -61,8 +61,10 @@ class PointsSizesFeature(GraphicFeatureIndexable):
             if graphic_type == "ScatterGraphic":
                 sizes = np.array(sizes)
         else:
-            raise ValueError(f"Sizes must be an array of shape (n,) where n == the number of data points provided.\
-                             Received shape={sizes.shape}.")
+            raise ValueError(
+                f"Sizes must be an array of shape (n,) where n == the number of data points provided.\
+                             Received shape={sizes.shape}."
+            )
 
         return np.array(sizes)
 
@@ -78,8 +80,10 @@ class PointsSizesFeature(GraphicFeatureIndexable):
         # numpy will throw errors if it can't broadcast
 
         if value.size != self.buffer.data[key].size:
-            raise ValueError(f"{value.size} is not equal to buffer size {self.buffer.data[key].size}.\
-                             If you want to set size to a non-scalar value, make sure it's the right length!")
+            raise ValueError(
+                f"{value.size} is not equal to buffer size {self.buffer.data[key].size}.\
+                             If you want to set size to a non-scalar value, make sure it's the right length!"
+            )
 
         self.buffer.data[key] = value
         self._update_range(key)
