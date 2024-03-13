@@ -49,6 +49,8 @@ if GUI_BACKEND == "qt":
     _qt_app = get_app()
 
     # Import submodules of PySide6/PyQt6/PySid2/PyQt5
+    # For the way that fpl uses Qt, the supported Qt libs seems compatible enough.
+    # If necessary we can do some qtpy-like monkey-patching here.
     QtCore = importlib.import_module(".QtCore", libname)
     QtGui = importlib.import_module(".QtGui", libname)
     QtWidgets = importlib.import_module(".QtWidgets", libname)
