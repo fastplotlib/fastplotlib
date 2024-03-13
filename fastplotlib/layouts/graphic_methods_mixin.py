@@ -82,7 +82,7 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(HeatmapGraphic, data, vmin, vmax, cmap, filter, chunk_size, isolated_buffer, *args, **kwargs)
 
-    def add_image(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest', isolated_buffer: bool = True, *args, **kwargs) -> ImageGraphic:
+    def add_image(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', interpolation: str = 'nearest', map_interpolation: str = 'linear', isolated_buffer: bool = True, *args, **kwargs) -> ImageGraphic:
         """
         
         Create an Image Graphic
@@ -103,8 +103,11 @@ class GraphicMethodsMixin:
         cmap: str, optional, default "plasma"
             colormap to use to display the image data, ignored if data is RGB
 
-        filter: str, optional, default "nearest"
-            interpolation filter, one of "nearest" or "linear"
+        interpolation: str, optional, default "nearest"
+            interpolation of the data, one of "nearest" or "linear"
+
+        map_interpolation: str, optional, default "nearest"
+            interpolation of the cmap, one of "nearest" or "linear"
 
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
@@ -131,7 +134,7 @@ class GraphicMethodsMixin:
 
         
         """
-        return self._create_graphic(ImageGraphic, data, vmin, vmax, cmap, filter, isolated_buffer, *args, **kwargs)
+        return self._create_graphic(ImageGraphic, data, vmin, vmax, cmap, interpolation, map_interpolation, isolated_buffer, *args, **kwargs)
 
     def add_line_collection(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', alpha: float = 1.0, cmap: Union[List[str], str] = None, cmap_values: Union[numpy.ndarray, List] = None, name: str = None, metadata: Union[list, tuple, numpy.ndarray] = None, *args, **kwargs) -> LineCollection:
         """
@@ -408,4 +411,58 @@ class GraphicMethodsMixin:
         
         """
         return self._create_graphic(TextGraphic, text, position, size, face_color, outline_color, outline_thickness, screen_space, anchor, *args, **kwargs)
+
+    def add_volume(self, data: Any, vmin: float = None, vmax: float = None, cmap: str = 'plasma', interpolation: str = 'nearest', map_interpolation: str = 'linear', isolated_buffer: bool = True, *args, **kwargs) -> VolumeGraphic:
+        """
+        
+        Create an Image Volume Graphic
+
+        Parameters
+        ----------
+        data: array-like
+            array-like, usually numpy.ndarray, must support ``memoryview()``
+            Tensorflow Tensors also work **probably**, but not thoroughly tested
+            | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
+
+        vmin: int, optional
+            minimum value for color scaling, calculated from data if not provided
+
+        vmax: int, optional
+            maximum value for color scaling, calculated from data if not provided
+
+        cmap: str, optional, default "plasma"
+            colormap to use to display the image data, ignored if data is RGB
+
+        interpolation: str, optional, default "nearest"
+            interpolation of the data, one of "nearest" or "linear"
+
+        map_interpolation: str, optional, default "nearest"
+            interpolation of the cmap, one of "nearest" or "linear"
+
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then
+            set the data, useful if the data arrays are ready-only such as memmaps.
+            If False, the input array is itself used as the buffer.
+
+        args:
+            additional arguments passed to Graphic
+
+        kwargs:
+            additional keyword arguments passed to Graphic
+
+        Features
+        --------
+
+        **data**: :class:`.ImageDataFeature`
+            Manages the data buffer displayed in the ImageGraphic
+
+        **cmap**: :class:`.ImageCmapFeature`
+            Manages the colormap
+
+        **present**: :class:`.PresentFeature`
+            Control the presence of the Graphic in the scene
+
+        
+        """
+        return self._create_graphic(VolumeGraphic, data, vmin, vmax, cmap, interpolation, map_interpolation, isolated_buffer, *args, **kwargs)
 
