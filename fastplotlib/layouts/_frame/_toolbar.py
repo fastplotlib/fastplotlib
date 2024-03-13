@@ -1,4 +1,4 @@
-from fastplotlib.layouts._subplot import Subplot
+from .._subplot import Subplot
 
 
 class ToolBar:

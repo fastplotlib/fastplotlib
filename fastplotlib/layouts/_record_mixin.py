@@ -3,12 +3,17 @@ from pathlib import Path
 from multiprocessing import Queue, Process
 from time import time
 
-try:
-    import av
-except ImportError:
-    HAS_AV = False
-else:
-    HAS_AV = True
+
+def _get_av():
+    try:
+        import av
+    except ImportError:
+        raise ModuleNotFoundError(
+            "Recording to video file requires `av`:\n"
+            "https://github.com/PyAV-Org/PyAV"
+        ) from None
+    else:
+        return av
 
 
 class VideoWriterAV(Process):
@@ -28,6 +33,7 @@ class VideoWriterAV(Process):
         super().__init__()
         self.queue = queue
 
+        av = _get_av()
         self.container = av.open(path, mode="w")
 
         self.stream = self.container.add_stream(codec, rate=fps, options=options)
@@ -45,6 +51,7 @@ class VideoWriterAV(Process):
         self.stream.pix_fmt = pixel_format
 
     def run(self):
+        av = _get_av()
         while True:
             if self.queue.empty():  # no frame to write
                 continue
@@ -176,12 +183,6 @@ class RecordMixin:
             plot.record_end()
 
         """
-
-        if not HAS_AV:
-            raise ModuleNotFoundError(
-                "Recording to video file requires `av`:\n"
-                "https://github.com/PyAV-Org/PyAV"
-            )
 
         if Path(path).exists():
             raise FileExistsError(f"File already exists at given path: {path}")
