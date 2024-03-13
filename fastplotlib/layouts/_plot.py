@@ -1,7 +1,7 @@
 from typing import *
 
 import pygfx
-from wgpu.gui.auto import WgpuCanvas
+from wgpu.gui import WgpuCanvasBase
 
 from ._subplot import Subplot
 from ._frame import Frame
@@ -11,7 +11,7 @@ from ._record_mixin import RecordMixin
 class Plot(Subplot, Frame, RecordMixin):
     def __init__(
         self,
-        canvas: Union[str, WgpuCanvas] = None,
+        canvas: Union[str, WgpuCanvasBase] = None,
         renderer: pygfx.WgpuRenderer = None,
         camera: Union[str, pygfx.PerspectiveCamera] = "2d",
         controller: Union[str, pygfx.Controller] = None,
