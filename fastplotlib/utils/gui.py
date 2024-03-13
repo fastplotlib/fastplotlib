@@ -25,7 +25,7 @@ IS_JUPYTER = _is_jupyter()
 # respective lib has been imported and then prefer the corresponding backend.
 
 # A list of wgpu GUI backend libs, in the order preferred by fpl
-gui_backend_libs = ["PyQt6", "PySide6", "PyQt6", "PySide2", "PyQt5", "glfw"]
+gui_backend_libs = ["PySide6", "PyQt6", "PySide2", "PyQt5", "glfw"]
 
 already_imported = [libname for libname in gui_backend_libs if libname in sys.modules]
 if not IS_JUPYTER and not already_imported:
@@ -43,7 +43,12 @@ from wgpu.gui.auto import WgpuCanvas, run
 GUI_BACKEND = WgpuCanvas.__module__.split(".")[-1]
 
 if GUI_BACKEND == "qt":
-    # create and store ref to qt app
-    from wgpu.gui.qt import get_app
+    from wgpu.gui.qt import get_app, libname
 
+    # create and store ref to qt app
     _qt_app = get_app()
+
+    # Import submodules of PySide6/PyQt6/PySid2/PyQt5
+    QtCore = importlib.import_module(".QtCore", libname)
+    QtGui = importlib.import_module(".QtGui", libname)
+    QtWidgets = importlib.import_module(".QtWidgets", libname)
