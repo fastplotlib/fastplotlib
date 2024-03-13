@@ -1,11 +1,15 @@
 import inspect
 import pathlib
 
+import black
+
+root = pathlib.Path(__file__).parent.parent.resolve()
+filename = root.joinpath("layouts/graphic_methods_mixin.py")
+
 # if there is an existing mixin class, replace it with an empty class
 # so that fastplotlib will import
 # hacky but it works
-current_module = pathlib.Path(__file__).parent.parent.resolve()
-with open(current_module.joinpath("layouts/graphic_methods_mixin.py"), "w") as f:
+with open(filename, "w") as f:
     f.write(f"class GraphicMethodsMixin:\n" f"    pass")
 
 from fastplotlib import graphics
@@ -20,8 +24,7 @@ for name, obj in inspect.getmembers(graphics):
 
 def generate_add_graphics_methods():
     # clear file and regenerate from scratch
-
-    f = open(current_module.joinpath("layouts/graphic_methods_mixin.py"), "w")
+    f = open(filename, "w", encoding="utf-8")
 
     f.write("# This is an auto-generated file and should not be modified directly\n\n")
 
@@ -72,5 +75,17 @@ def generate_add_graphics_methods():
     f.close()
 
 
+def blacken():
+    with open(filename, "r", encoding="utf-8") as f:
+        text = f.read()
+
+    mode = black.FileMode(line_length=88)
+    text = black.format_str(text, mode=mode)
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(text)
+
+
 if __name__ == "__main__":
     generate_add_graphics_methods()
+    blacken()
