@@ -7,9 +7,9 @@ import fastplotlib
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'fastplotlib'
-copyright = '2023, Kushal Kolar, Caitlin Lewis'
-author = 'Kushal Kolar, Caitlin Lewis'
+project = "fastplotlib"
+copyright = "2023, Kushal Kolar, Caitlin Lewis"
+author = "Kushal Kolar, Caitlin Lewis"
 release = fastplotlib.__version__
 
 # -- General configuration ---------------------------------------------------
@@ -28,21 +28,21 @@ extensions = [
 
 autosummary_generate = True
 
-templates_path = ['_templates']
+templates_path = ["_templates"]
 exclude_patterns = []
 
-napoleon_custom_sections = ['Features']
+napoleon_custom_sections = ["Features"]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
 
-html_static_path = ['_static']
+html_static_path = ["_static"]
 html_logo = "_static/logo.png"
 html_title = f"v{release}"
 
-autodoc_member_order = 'groupwise'
+autodoc_member_order = "groupwise"
 autoclass_content = "both"
 add_module_names = False
 
@@ -50,9 +50,9 @@ autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented_params"
 
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://numpy.org/doc/stable/', None),
-    'pygfx': ('https://pygfx.readthedocs.io/en/latest', None)
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pygfx": ("https://pygfx.readthedocs.io/en/latest", None),
 }
 
 html_theme_options = {
