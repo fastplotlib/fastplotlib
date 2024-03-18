@@ -31,6 +31,7 @@ extras_require = {
     "tests": [
         "pytest<8.0.0",
         "nbmake",
+        "black",
         "scipy",
         "imageio[pyav]",
         "jupyterlab",
