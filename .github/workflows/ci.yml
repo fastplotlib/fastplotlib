@@ -15,7 +15,8 @@ on:
 
 jobs:
   black-check:
-    - name: Black Code Formatter
+    name: black
+    steps:
     - uses: lgeiger/black-action@v1.0.1
 
   docs-build:
