@@ -21,6 +21,9 @@ extras_require = {
         "pandoc",
         "jupyterlab",
         "sidecar",
+        "sphinx-gallery",
+        "imageio",
+        "matplotlib"
     ],
     "notebook": [
         "jupyterlab",

@@ -5,6 +5,7 @@ Example showing simple 2x2 GridPlot with Standard images from imageio.
 """
 
 # test_example = true
+# sphinx_gallery_fpl_render = True
 
 import fastplotlib as fpl
 import imageio.v3 as iio
