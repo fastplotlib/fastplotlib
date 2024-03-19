@@ -206,6 +206,15 @@ class Graphic(BaseGraphic):
         del WORLD_OBJECTS[self.loc]
 
     def rotate(self, alpha: float, axis: Literal["x", "y", "z"] = "y"):
+        """Rotate the Graphic with respect to the world.
+
+        Parameters
+        ----------
+        alpha :
+            Rotation angle in radiants.
+        axis :
+            Rotation axis label.
+        """
         if axis == "x":
             rot = la.quat_from_euler((alpha, 0), order="XY")
         elif axis == "y":
