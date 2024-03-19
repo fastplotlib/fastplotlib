@@ -14,11 +14,6 @@ on:
       - ready_for_review
 
 jobs:
-  black-check:
-    name: black
-    steps:
-    - uses: lgeiger/black-action@v1.0.1
-
   docs-build:
     name: Docs
     runs-on: bigmem
