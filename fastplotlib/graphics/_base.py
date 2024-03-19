@@ -205,13 +205,13 @@ class Graphic(BaseGraphic):
         self.deleted = True
         del WORLD_OBJECTS[self.loc]
 
-    def rotate(self, alpha: float, axis: Literal["x", "y", "z"] = "z"):
+    def rotate(self, alpha: float, axis: Literal["x", "y", "z"] = "y"):
         if axis == "x":
             rot = la.quat_from_euler((alpha, 0), order="XY")
         elif axis == "y":
-            rot = la.quat_from_euler((0, alpha), order="XZ")
-        elif axis == "z":
             rot = la.quat_from_euler((0, alpha), order="XY")
+        elif axis == "z":
+            rot = la.quat_from_euler((0, alpha), order="XZ")
         else:
             raise ValueError(f"`axis` must be either `x`, `y`, or `z`. `{axis}` provided instead!")
         self.rotation = la.quat_mul(rot, self.rotation)
