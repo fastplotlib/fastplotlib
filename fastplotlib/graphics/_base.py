@@ -143,6 +143,14 @@ class Graphic(BaseGraphic):
         self.world_object.world.z = val
 
     @property
+    def rotation(self):
+        return self.world_object.world.rotation
+
+    @rotation.setter
+    def rotation(self, val):
+        self.world_object.world.rotation = val
+
+    @property
     def visible(self) -> bool:
         """Access or change the visibility."""
         return self.world_object.visible
