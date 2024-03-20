@@ -14,7 +14,6 @@ on:
       - ready_for_review
 
 jobs:
-
   docs-build:
     name: Docs
     runs-on: bigmem
