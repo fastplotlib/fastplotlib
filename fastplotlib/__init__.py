@@ -21,6 +21,16 @@ if len(adapters) < 1:
 
 _notebook_print_banner()
 
+
+def _get_sg_image_scraper():
+    import sphinx_gallery.scrapers
+    from .utils.gallery_scraper import fpl_scraper
+    # add webp as supported extension
+    sphinx_gallery.scrapers._KNOWN_IMG_EXTS += ("webp",)
+
+    return fpl_scraper
+
+
 __all__ = [
     "Plot",
     "GridPlot",

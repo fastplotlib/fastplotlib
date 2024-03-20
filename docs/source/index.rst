@@ -17,6 +17,7 @@ Welcome to fastplotlib's documentation!
    :maxdepth:  1
 
    GPU Info <user_guide/gpu>
+   Gallery <_gallery/index.rst>
 
 .. toctree::
    :maxdepth: 1
