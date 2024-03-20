@@ -16,7 +16,7 @@ on:
 jobs:
   test-build-full-mac:
     name: Test examples mac
-    runs-on: ubuntu-latest
+    runs-on: macos-14
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
