@@ -27,7 +27,6 @@ jobs:
           - name: Test py312
             pyversion: '3.12'
     steps:
-    - name: checkout
     - uses: actions/checkout@v3
       with:
         lfs: true
