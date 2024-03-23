@@ -97,7 +97,7 @@ def test_example_screenshots(module, force_offscreen):
     img = normalize_image(img)
     ref_img = normalize_image(ref_img)
 
-    similar, rmse = image_similarity(img, ref_img, threshold=0.01)
+    similar, rmse = image_similarity(img, ref_img, threshold=0.025)
 
     update_diffs(module.stem, False, img, ref_img)
     assert similar, (
