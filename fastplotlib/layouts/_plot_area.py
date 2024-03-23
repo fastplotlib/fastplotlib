@@ -264,7 +264,7 @@ class PlotArea:
             self._background_material.color_top_left,
             self._background_material.color_top_right,
             self._background_material.color_bottom_right,
-            self._background_material.color_bottom_left
+            self._background_material.color_bottom_left,
         )
 
     @background_color.setter
@@ -494,9 +494,9 @@ class PlotArea:
         if isinstance(graphic, BaseSelector):
             # store in SELECTORS dict
             loc = graphic.loc
-            SELECTORS[loc] = (
-                graphic  # add hex id string for referencing this graphic instance
-            )
+            SELECTORS[
+                loc
+            ] = graphic  # add hex id string for referencing this graphic instance
             # don't manage garbage collection of LineSliders for now
             if action == "insert":
                 self._selectors.insert(index, loc)
@@ -505,9 +505,9 @@ class PlotArea:
         else:
             # store in GRAPHICS dict
             loc = graphic.loc
-            GRAPHICS[loc] = (
-                graphic  # add hex id string for referencing this graphic instance
-            )
+            GRAPHICS[
+                loc
+            ] = graphic  # add hex id string for referencing this graphic instance
 
             if action == "insert":
                 self._graphics.insert(index, loc)
