@@ -197,7 +197,7 @@ jobs:
           examples/notebooks/diffs
 
   test-build-glfw-mac:
-    name: Test Mac, notebook + glfw
+    name: Test Mac, glfw
     runs-on: macos-14
     if: ${{ !github.event.pull_request.draft }}
     strategy:
