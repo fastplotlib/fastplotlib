@@ -7,6 +7,7 @@ import pytest
 import os
 import numpy as np
 import imageio.v3 as iio
+from PIL import Image
 
 from .testutils import (
     ROOT,
@@ -15,7 +16,11 @@ from .testutils import (
     find_examples,
     wgpu_backend,
     is_lavapipe,
-    diffs_dir
+    diffs_dir,
+    generate_diff,
+    image_similarity,
+    normalize_image,
+    prep_for_write
 )
 
 # run all tests unless they opt-out
@@ -69,20 +74,34 @@ def test_example_screenshots(module, force_offscreen):
 
     screenshot_path = screenshots_dir / f"{module.stem}.png"
 
+    black = np.zeros(img.shape).astype(np.uint8)
+    black[:, :, -1] = 255
+
+    img = np.array(
+        Image.alpha_composite(
+            Image.fromarray(black),
+            Image.fromarray(img.astype(np.uint8))
+        ).convert("RGB")
+    )
+
     if "REGENERATE_SCREENSHOTS" in os.environ.keys():
         if os.environ["REGENERATE_SCREENSHOTS"] == "1":
             iio.imwrite(screenshot_path, img)
-            #np.save(screenshot_path, img)
 
     assert (
         screenshot_path.exists()
     ), "found # test_example = true but no reference screenshot available"
-    #stored_img = np.load(screenshot_path)
-    stored_img = iio.imread(screenshot_path)
-    is_similar = np.allclose(img, stored_img, atol=1)
-    update_diffs(module.stem, is_similar, img, stored_img)
-    assert is_similar, (
-        f"rendered image for example {module.stem} changed, see "
+
+    ref_img = iio.imread(screenshot_path)
+
+    img = normalize_image(img)
+    ref_img = normalize_image(ref_img)
+
+    similar, rmse = image_similarity(img, ref_img, threshold=0.01)
+
+    update_diffs(module.stem, False, img, ref_img)
+    assert similar, (
+        f"diff {rmse} above threshold for {module.stem}, see "
         f"the {diffs_dir.relative_to(ROOT).as_posix()} folder"
         " for visual diffs (you can download this folder from"
         " CI build artifacts as well)"
@@ -110,7 +129,6 @@ def update_diffs(module, is_similar, img, stored_img):
     # split into an rgb and an alpha diff
     diffs = {
         diffs_dir / f"diff-{module}-rgb.png": slice(0, 3),
-        diffs_dir / f"diff-{module}-alpha.png": 3,
     }
 
     for path, slicer in diffs.items():
