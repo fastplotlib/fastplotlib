@@ -211,7 +211,7 @@ class Graphic(BaseGraphic):
         Parameters
         ----------
         alpha :
-            Rotation angle in radiants.
+            Rotation angle in radians.
         axis :
             Rotation axis label.
         """
