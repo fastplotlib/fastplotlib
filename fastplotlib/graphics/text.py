@@ -55,7 +55,7 @@ class TextGraphic(Graphic):
             * Vertical values: "top", "middle", "baseline", "bottom"
             * Horizontal values: "left", "center", "right"
         """
-        super(TextGraphic, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self._text = text
 

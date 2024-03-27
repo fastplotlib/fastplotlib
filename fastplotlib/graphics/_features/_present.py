@@ -23,7 +23,7 @@ class PresentFeature(GraphicFeature):
 
     def __init__(self, parent, present: bool = True, collection_index: int = False):
         self._scene = None
-        super(PresentFeature, self).__init__(parent, present, collection_index)
+        super().__init__(parent, present, collection_index)
 
     def _set(self, present: bool):
         present = self._parse_set_value(present)

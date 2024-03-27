@@ -102,7 +102,7 @@ class LineGraphic(Graphic, Interaction):
             self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
         )
 
-        super(LineGraphic, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         if thickness < 1.1:
             material = pygfx.LineThinMaterial
