@@ -26,11 +26,7 @@ agg.fit_predict(data)
 
 
 scatter_graphic = plot.add_scatter(
-    data=data[:, :-1],
-    sizes=15,
-    alpha=0.7,
-    cmap="Set1",
-    cmap_values=agg.labels_
+    data=data[:, :-1], sizes=15, alpha=0.7, cmap="Set1", cmap_values=agg.labels_
 )
 
 plot.show()
