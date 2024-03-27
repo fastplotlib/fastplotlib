@@ -145,11 +145,11 @@ class Graphic(BaseGraphic):
 
     @property
     def rotation(self):
-        return self.world_object.world.rotation
+        return self.world_object.local.rotation
 
     @rotation.setter
     def rotation(self, val):
-        self.world_object.world.rotation = val
+        self.world_object.local.rotation = val
 
     @property
     def visible(self) -> bool:
