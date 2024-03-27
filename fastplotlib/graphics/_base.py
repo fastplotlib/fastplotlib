@@ -222,7 +222,9 @@ class Graphic(BaseGraphic):
         elif axis == "z":
             rot = la.quat_from_euler((0, alpha), order="XZ")
         else:
-            raise ValueError(f"`axis` must be either `x`, `y`, or `z`. `{axis}` provided instead!")
+            raise ValueError(
+                f"`axis` must be either `x`, `y`, or `z`. `{axis}` provided instead!"
+            )
         self.rotation = la.quat_mul(rot, self.rotation)
 
 
