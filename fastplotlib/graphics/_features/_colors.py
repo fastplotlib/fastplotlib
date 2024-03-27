@@ -251,7 +251,8 @@ class CmapFeature(ColorFeature):
     """
 
     def __init__(self, parent, colors, cmap_name: str, cmap_values: np.ndarray):
-        super().__init__(parent, colors)
+        # Skip the ColorFeature's __init__
+        super(ColorFeature, self).__init__(self, parent, colors)
 
         self._cmap_name = cmap_name
         self._cmap_values = cmap_values
