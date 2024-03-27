@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 import numpy as np
+import pylinalg as la
 
 from pygfx import WorldObject
 
@@ -143,6 +144,14 @@ class Graphic(BaseGraphic):
         self.world_object.world.z = val
 
     @property
+    def rotation(self):
+        return self.world_object.local.rotation
+
+    @rotation.setter
+    def rotation(self, val):
+        self.world_object.local.rotation = val
+
+    @property
     def visible(self) -> bool:
         """Access or change the visibility."""
         return self.world_object.visible
@@ -195,6 +204,28 @@ class Graphic(BaseGraphic):
     def __del__(self):
         self.deleted = True
         del WORLD_OBJECTS[self.loc]
+
+    def rotate(self, alpha: float, axis: Literal["x", "y", "z"] = "y"):
+        """Rotate the Graphic with respect to the world.
+
+        Parameters
+        ----------
+        alpha :
+            Rotation angle in radians.
+        axis :
+            Rotation axis label.
+        """
+        if axis == "x":
+            rot = la.quat_from_euler((alpha, 0), order="XY")
+        elif axis == "y":
+            rot = la.quat_from_euler((0, alpha), order="XY")
+        elif axis == "z":
+            rot = la.quat_from_euler((0, alpha), order="XZ")
+        else:
+            raise ValueError(
+                f"`axis` must be either `x`, `y`, or `z`. `{axis}` provided instead!"
+            )
+        self.rotation = la.quat_mul(rot, self.rotation)
 
 
 class Interaction(ABC):
