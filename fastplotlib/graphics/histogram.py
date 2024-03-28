@@ -10,7 +10,7 @@ from ._base import Graphic
 
 class _HistogramBin(pygfx.Mesh):
     def __int__(self, *args, **kwargs):
-        super(_HistogramBin, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.bin_center: float = None
         self.frequency: Union[int, float] = None
 
@@ -93,9 +93,7 @@ class HistogramGraphic(Graphic):
 
         data = np.vstack([x_positions_bins, self.hist])
 
-        super(HistogramGraphic, self).__init__(
-            data=data, colors=colors, n_colors=n_bins, **kwargs
-        )
+        super().__init__(data=data, colors=colors, n_colors=n_bins, **kwargs)
 
         self._world_object: pygfx.Group = pygfx.Group()
 

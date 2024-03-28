@@ -27,7 +27,7 @@ class LinearSelectionFeature(GraphicFeature):
     """
 
     def __init__(self, parent, axis: str, value: float, limits: Tuple[int, int]):
-        super(LinearSelectionFeature, self).__init__(parent, data=value)
+        super().__init__(parent, data=value)
 
         self._axis = axis
         self._limits = limits
@@ -99,7 +99,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
     def __init__(
         self, parent, selection: Tuple[int, int], axis: str, limits: Tuple[int, int]
     ):
-        super(LinearRegionSelectionFeature, self).__init__(parent, data=selection)
+        super().__init__(parent, data=selection)
 
         self._axis = axis
         self._limits = limits

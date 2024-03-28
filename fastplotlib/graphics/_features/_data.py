@@ -21,9 +21,7 @@ class PointsDataFeature(GraphicFeatureIndexable):
 
     def __init__(self, parent, data: Any, collection_index: int = None):
         data = self._fix_data(data, parent)
-        super(PointsDataFeature, self).__init__(
-            parent, data, collection_index=collection_index
-        )
+        super().__init__(parent, data, collection_index=collection_index)
 
     @property
     def buffer(self) -> pygfx.Buffer:
@@ -117,7 +115,7 @@ class ImageDataFeature(GraphicFeatureIndexable):
                 "``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``"
             )
 
-        super(ImageDataFeature, self).__init__(parent, data)
+        super().__init__(parent, data)
 
     @property
     def buffer(self) -> pygfx.Texture:

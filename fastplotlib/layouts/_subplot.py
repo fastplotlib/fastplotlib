@@ -214,7 +214,7 @@ class Dock(PlotArea):
 
         self._size = size
 
-        super(Dock, self).__init__(
+        super().__init__(
             parent=parent,
             position=position,
             camera=pygfx.OrthographicCamera(),
@@ -349,4 +349,4 @@ class Dock(PlotArea):
         if self.size == 0:
             return
 
-        super(Dock, self).render()
+        super().render()

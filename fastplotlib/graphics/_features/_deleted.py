@@ -16,7 +16,7 @@ class Deleted(GraphicFeature):
     """
 
     def __init__(self, parent, value: bool):
-        super(Deleted, self).__init__(parent, value)
+        super().__init__(parent, value)
 
     def _set(self, value: bool):
         value = self._parse_set_value(value)

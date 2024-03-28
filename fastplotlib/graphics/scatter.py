@@ -87,7 +87,7 @@ class ScatterGraphic(Graphic):
         )
 
         self.sizes = PointsSizesFeature(self, sizes)
-        super(ScatterGraphic, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         world_object = pygfx.Points(
             pygfx.Geometry(

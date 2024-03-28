@@ -124,9 +124,7 @@ class ColorFeature(GraphicFeatureIndexable):
         if alpha != 1.0:
             data[:, -1] = alpha
 
-        super(ColorFeature, self).__init__(
-            parent, data, collection_index=collection_index
-        )
+        super().__init__(parent, data, collection_index=collection_index)
 
     def __setitem__(self, key, value):
         # parse numerical slice indices
@@ -253,6 +251,7 @@ class CmapFeature(ColorFeature):
     """
 
     def __init__(self, parent, colors, cmap_name: str, cmap_values: np.ndarray):
+        # Skip the ColorFeature's __init__
         super(ColorFeature, self).__init__(parent, colors)
 
         self._cmap_name = cmap_name
@@ -278,7 +277,7 @@ class CmapFeature(ColorFeature):
         )
 
         self._cmap_name = cmap_name
-        super(CmapFeature, self).__setitem__(key, colors)
+        super().__setitem__(key, colors)
 
     @property
     def name(self) -> str:
@@ -299,7 +298,7 @@ class CmapFeature(ColorFeature):
 
         self._cmap_values = values
 
-        super(CmapFeature, self).__setitem__(slice(None), colors)
+        super().__setitem__(slice(None), colors)
 
     def __repr__(self) -> str:
         s = f"CmapFeature for {self._parent}, to get name or values: `<graphic>.cmap.name`, `<graphic>.cmap.values`"
@@ -330,7 +329,7 @@ class ImageCmapFeature(GraphicFeature):
 
     def __init__(self, parent, cmap: str):
         cmap_texture_view = get_cmap_texture(cmap)
-        super(ImageCmapFeature, self).__init__(parent, cmap_texture_view)
+        super().__init__(parent, cmap_texture_view)
         self._name = cmap
 
     def _set(self, cmap_name: str):
