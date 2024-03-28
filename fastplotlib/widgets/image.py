@@ -25,6 +25,8 @@ DEFAULT_DIMS_ORDER = {
     5: "tzcxy",
 }
 
+DEFAULT_SLIDER_DIMS = {0: "t", 1: "z", 2: "c"}
+
 
 def _is_arraylike(obj) -> bool:
     """
@@ -231,8 +233,6 @@ class ImageWidget:
     def __init__(
         self,
         data: Union[np.ndarray, List[np.ndarray]],
-        dims_order: Union[str, Dict[int, str]] = None,
-        slider_dims: Union[str, int, List[Union[str, int]]] = None,
         window_funcs: Union[int, Dict[str, int]] = None,
         frame_apply: Union[callable, Dict[int, callable]] = None,
         grid_shape: Tuple[int, int] = None,
@@ -247,7 +247,7 @@ class ImageWidget:
 
         Can display a single n-dimensional image array or a grid of n-dimensional images.
 
-        Default dimension orders:
+        Standard dimension orders:
 
         ======= ==========
         n_dims  dims order
@@ -261,20 +261,6 @@ class ImageWidget:
         ----------
         data: Union[np.ndarray, List[np.ndarray]
             array-like or a list of array-like
-
-        dims_order: Optional[Union[str, Dict[np.ndarray, str]]]
-            | ``str`` or a dict mapping to indicate dimension order
-            | a single ``str`` if ``data`` is a single array, or a list of arrays with the same dimension order
-            | examples: ``"xyt"``, ``"tzxy"``
-            | ``dict`` mapping of ``{array_index: axis_order}`` if specific arrays have a non-default axes order.
-            | "array_index" is the position of the corresponding array in the data list.
-            | examples: ``{array_index: "tzxy", another_array_index: "xytz"}``
-
-        slider_dims: Optional[Union[str, int, List[Union[str, int]]]]
-            | The dimensions for which to create a slider
-            | can be a single ``str`` such as **"t"**, **"z"** or a numerical ``int`` that indexes the desired dimension
-            | can also be a list of ``str`` or ``int`` if multiple sliders are desired for multiple dimensions
-            | examples: ``"t"``, ``["t", "z"]``
 
         window_funcs: Dict[Union[int, str], int]
             | average one or more dimensions using a given window
@@ -309,7 +295,6 @@ class ImageWidget:
             passed to fastplotlib.graphics.Image
 
         """
-
         self._names = None
 
         # output context
@@ -372,52 +357,7 @@ class ImageWidget:
                 f"You have passed the following type {type(data)}"
             )
 
-        # default dims order if not passed
-        # updated later if passed
         self._dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
-
-        if dims_order is not None:
-            if isinstance(dims_order, str):
-                dims_order = dims_order.lower()
-                if len(dims_order) != self.ndim:
-                    raise ValueError(
-                        f"number of dims '{len(dims_order)} passed to `dims_order` "
-                        f"does not match ndim '{self.ndim}' of data"
-                    )
-                self._dims_order: List[str] = [dims_order] * len(self.data)
-            elif isinstance(dims_order, dict):
-                self._dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(
-                    self.data
-                )
-
-                # dict of {array_ix: dims_order_str}
-                for data_ix in list(dims_order.keys()):
-                    if not isinstance(data_ix, int):
-                        raise TypeError("`dims_order` dict keys must be <int>")
-                    if len(dims_order[data_ix]) != self.ndim:
-                        raise ValueError(
-                            f"number of dims '{len(dims_order)} passed to `dims_order` "
-                            f"does not match ndim '{self.ndim}' of data"
-                        )
-                    _do = dims_order[data_ix].lower()
-                    # make sure the same dims are present
-                    if not set(_do) == set(DEFAULT_DIMS_ORDER[self.ndim]):
-                        raise ValueError(
-                            f"Invalid `dims_order` passed for one of your arrays, "
-                            f"valid `dims_order` for given number of dimensions "
-                            f"can only contain the following characters: "
-                            f"{DEFAULT_DIMS_ORDER[self.ndim]}"
-                        )
-                    try:
-                        self.dims_order[data_ix] = _do
-                    except Exception:
-                        raise IndexError(
-                            f"index {data_ix} out of bounds for `dims_order`, the bounds are 0 - {len(self.data)}"
-                        )
-            else:
-                raise TypeError(
-                    f"`dims_order` must be a <str> or <Dict[int: str]>, you have passed a: <{type(dims_order)}>"
-                )
 
         if not len(self.dims_order[0]) == self.ndim:
             raise ValueError(
@@ -425,90 +365,13 @@ class ImageWidget:
                 f" match number of dimensions in the `data`: {self.ndim}"
             )
 
-        ao = np.array([sorted(v) for v in self.dims_order])
-
-        if not np.all(ao == ao[0]):
-            raise ValueError(
-                f"`dims_order` for all arrays must contain the same combination of dimensions, your `dims_order` are: "
-                f"{self.dims_order}"
-            )
-
-        # if slider_dims not provided
-        if slider_dims is None:
-            # by default sliders are made for all dimensions except the last 2
-            default_dim_names = {0: "t", 1: "z", 2: "c"}
-            slider_dims = list()
-            for dim in range(self.ndim - 2):
-                if dim in default_dim_names.keys():
-                    slider_dims.append(default_dim_names[dim])
-                else:
-                    slider_dims.append(f"{dim}")
-
-        # slider for only one of the dimensions
-        if isinstance(slider_dims, (int, str)):
-            # if numerical dimension is specified
-            if isinstance(slider_dims, int):
-                ao = np.array([v for v in self.dims_order])
-                if not np.all(ao == ao[0]):
-                    raise ValueError(
-                        f"`dims_order` for all arrays must be identical if passing in a <int> `slider_dims` argument. "
-                        f"Pass in a <str> argument if the `dims_order` are different for each array."
-                    )
-                self._slider_dims: List[str] = [self.dims_order[0][slider_dims]]
-
-            # if dimension specified by str
-            elif isinstance(slider_dims, str):
-                if slider_dims not in self.dims_order[0]:
-                    raise ValueError(
-                        f"if `slider_dims` is a <str>, it must be a character found in `dims_order`. "
-                        f"Your `dims_order` characters are: {set(self.dims_order[0])}."
-                    )
-                self._slider_dims: List[str] = [slider_dims]
-
-        # multiple sliders, one for each dimension
-        elif isinstance(slider_dims, list):
-            self._slider_dims: List[str] = list()
-
-            # make sure window_funcs and frame_apply are dicts if multiple sliders are desired
-            if (not isinstance(window_funcs, dict)) and (window_funcs is not None):
-                raise TypeError(
-                    f"`window_funcs` must be a <dict> if multiple `slider_dims` are provided. You must specify the "
-                    f"window for each dimension."
-                )
-            if (not isinstance(frame_apply, dict)) and (frame_apply is not None):
-                raise TypeError(
-                    f"`frame_apply` must be a <dict> if multiple `slider_dims` are provided. You must specify a "
-                    f"function for each dimension."
-                )
-
-            for sdm in slider_dims:
-                if isinstance(sdm, int):
-                    ao = np.array([v for v in self.dims_order])
-                    if not np.all(ao == ao[0]):
-                        raise ValueError(
-                            f"`dims_order` for all arrays must be identical if passing in a <int> `slider_dims` argument. "
-                            f"Pass in a <str> argument if the `dims_order` are different for each array."
-                        )
-                    # parse int to a str
-                    self.slider_dims.append(self.dims_order[0][sdm])
-
-                elif isinstance(sdm, str):
-                    if sdm not in self.dims_order[0]:
-                        raise ValueError(
-                            f"if `slider_dims` is a <str>, it must be a character found in `dims_order`. "
-                            f"Your `dims_order` characters are: {set(self.dims_order[0])}."
-                        )
-                    self.slider_dims.append(sdm)
-
-                else:
-                    raise TypeError(
-                        "If passing a list for `slider_dims` each element must be either an <int> or <str>"
-                    )
-
-        else:
-            raise TypeError(
-                f"`slider_dims` must a <int>, <str> or <list>, you have passed a: {type(slider_dims)}"
-            )
+        # Sliders are made for all dimensions except the last 2
+        self._slider_dims = list()
+        for dim in range(self.ndim - 2):
+            if dim in DEFAULT_SLIDER_DIMS.keys():
+                self.slider_dims.append(DEFAULT_SLIDER_DIMS[dim])
+            else:
+                self.slider_dims.append(f"{dim}")
 
         self._frame_apply: Dict[int, callable] = dict()
 
