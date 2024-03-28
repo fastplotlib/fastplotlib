@@ -1,41 +1,7 @@
 import os
 
-from ._toolbar import ToolBar
-
 from ...graphics import ImageGraphic
-
-from .._utils import CANVAS_OPTIONS_AVAILABLE
-
-
-class UnavailableOutputContext:
-    # called when a requested output context is not available
-    # ex: if trying to force jupyter_rfb canvas but jupyter_rfb is not installed
-    def __init__(self, context_name, msg):
-        self.context_name = context_name
-        self.msg = msg
-
-    def __call__(self, *args, **kwargs):
-        raise ModuleNotFoundError(
-            f"The following output context is not available: {self.context_name}\n{self.msg}"
-        )
-
-
-# TODO: potentially put all output context and toolbars in their own module and have this determination done at import
-if CANVAS_OPTIONS_AVAILABLE["jupyter"]:
-    from ._jupyter_output import JupyterOutputContext
-else:
-    JupyterOutputContext = UnavailableOutputContext(
-        "Jupyter",
-        "You must install fastplotlib using the `'notebook'` option to use this context:\n"
-        'pip install "fastplotlib[notebook]"',
-    )
-
-if CANVAS_OPTIONS_AVAILABLE["qt"]:
-    from ._qt_output import QOutputContext
-else:
-    QtOutput = UnavailableOutputContext(
-        "Qt", "You must install `PyQt6` to use this output context"
-    )
+from ._toolbar import ToolBar
 
 
 class Frame:
@@ -158,6 +124,8 @@ class Frame:
 
         # return the appropriate OutputContext based on the current canvas
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
+            from ._jupyter_output import JupyterOutputContext  # noqa - inline import
+
             self._output = JupyterOutputContext(
                 frame=self,
                 make_toolbar=toolbar,
@@ -167,6 +135,8 @@ class Frame:
             )
 
         elif self.canvas.__class__.__name__ == "QWgpuCanvas":
+            from ._qt_output import QOutputContext  # noqa - inline import
+
             self._output = QOutputContext(
                 frame=self, make_toolbar=toolbar, add_widgets=add_widgets
             )

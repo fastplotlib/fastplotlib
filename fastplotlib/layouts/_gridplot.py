@@ -6,7 +6,7 @@ from warnings import warn
 
 import pygfx
 
-from wgpu.gui.auto import WgpuCanvas
+from wgpu.gui import WgpuCanvasBase
 
 from ._frame import Frame
 from ._utils import make_canvas_and_renderer, create_controller, create_camera
@@ -22,7 +22,7 @@ class GridPlot(Frame, RecordMixin):
         cameras: Union[str, list, np.ndarray] = "2d",
         controller_types: Union[str, list, np.ndarray] = None,
         controller_ids: Union[str, list, np.ndarray] = None,
-        canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
+        canvas: Union[str, WgpuCanvasBase, pygfx.Texture] = None,
         renderer: pygfx.WgpuRenderer = None,
         size: Tuple[int, int] = (500, 300),
         names: Union[list, np.ndarray] = None,
@@ -219,12 +219,6 @@ class GridPlot(Frame, RecordMixin):
                 for cam in cams[1:]:
                     _controller.add_camera(cam)
 
-        if canvas is None:
-            canvas = WgpuCanvas()
-
-        if renderer is None:
-            renderer = pygfx.renderers.WgpuRenderer(canvas)
-
         self._canvas = canvas
         self._renderer = renderer
 
@@ -266,7 +260,7 @@ class GridPlot(Frame, RecordMixin):
         Frame.__init__(self)
 
     @property
-    def canvas(self) -> WgpuCanvas:
+    def canvas(self) -> WgpuCanvasBase:
         """The canvas associated to this GridPlot"""
         return self._canvas
 

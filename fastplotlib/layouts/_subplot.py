@@ -4,7 +4,7 @@ import numpy as np
 
 import pygfx
 
-from wgpu.gui.auto import WgpuCanvas
+from wgpu.gui import WgpuCanvasBase
 
 from ..graphics import TextGraphic
 from ._utils import make_canvas_and_renderer, create_camera, create_controller
@@ -20,7 +20,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         parent_dims: Tuple[int, int] = None,
         camera: Union[str, pygfx.PerspectiveCamera] = "2d",
         controller: Union[str, pygfx.Controller] = None,
-        canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
+        canvas: Union[str, WgpuCanvasBase, pygfx.Texture] = None,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
     ):

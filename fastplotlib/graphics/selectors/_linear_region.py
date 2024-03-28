@@ -1,20 +1,18 @@
 from typing import *
 from numbers import Real
 
-try:
-    import ipywidgets
-
-    HAS_IPYWIDGETS = True
-except (ImportError, ModuleNotFoundError):
-    HAS_IPYWIDGETS = False
-
 import numpy as np
-
 import pygfx
 
+from ...utils.gui import IS_JUPYTER
 from .._base import Graphic, GraphicCollection
-from ._base_selector import BaseSelector
 from .._features._selection_features import LinearRegionSelectionFeature
+from ._base_selector import BaseSelector
+
+
+if IS_JUPYTER:
+    # If using the jupyter backend, user has jupyter_rfb, and thus also ipywidgets
+    import ipywidgets
 
 
 class LinearRegionSelector(BaseSelector):
@@ -390,7 +388,7 @@ class LinearRegionSelector(BaseSelector):
 
         """
 
-        if not HAS_IPYWIDGETS:
+        if not IS_JUPYTER:
             raise ImportError(
                 "Must installed `ipywidgets` to use `make_ipywidget_slider()`"
             )

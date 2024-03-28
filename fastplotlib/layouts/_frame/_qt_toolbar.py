@@ -4,8 +4,7 @@ from math import copysign
 import traceback
 from typing import *
 
-from PyQt6 import QtWidgets, QtCore
-
+from ...utils.gui import QtCore, QtWidgets
 from ...graphics.selectors import PolygonSelector
 from ._toolbar import ToolBar
 from ._qtoolbar_template import Ui_QToolbar

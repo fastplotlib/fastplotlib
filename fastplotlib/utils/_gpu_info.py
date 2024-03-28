@@ -3,19 +3,15 @@ from pathlib import Path
 from wgpu.backends.wgpu_native import enumerate_adapters
 from wgpu.utils import get_default_device
 
-try:
-    ip = get_ipython()
+from .gui import IS_JUPYTER
+
+
+NOTEBOOK = False
+if IS_JUPYTER:
     from ipywidgets import Image
-    from wgpu.gui.jupyter import JupyterWgpuCanvas
-except (NameError, ModuleNotFoundError, ImportError):
-    NOTEBOOK = False
-else:
     from IPython.display import display
 
-    if ip.has_trait("kernel") and (JupyterWgpuCanvas is not False):
-        NOTEBOOK = True
-    else:
-        NOTEBOOK = False
+    NOTEBOOK = get_ipython().has_trait("kernel")
 
 
 def _notebook_print_banner():
