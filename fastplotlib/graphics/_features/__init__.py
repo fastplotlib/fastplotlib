@@ -11,6 +11,7 @@ from ._base import (
 )
 from ._selection_features import LinearSelectionFeature, LinearRegionSelectionFeature
 from ._deleted import Deleted
+from ._drag import DragFeature
 
 __all__ = [
     "ColorFeature",
@@ -30,4 +31,5 @@ __all__ = [
     "LinearSelectionFeature",
     "LinearRegionSelectionFeature",
     "Deleted",
+    "DragFeature",
 ]
