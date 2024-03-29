@@ -22,10 +22,9 @@ DEFAULT_DIMS_ORDER = {
     2: "xy",
     3: "txy",
     4: "tzxy",
-    5: "tzcxy",
 }
 
-DEFAULT_SLIDER_DIMS = {0: "t", 1: "z", 2: "c"}
+DEFAULT_SLIDER_DIMS = {0: "t", 1: "z"}
 
 
 def _is_arraylike(obj) -> bool:
@@ -357,6 +356,8 @@ class ImageWidget:
                 f"You have passed the following type {type(data)}"
             )
 
+        if self.ndim not in DEFAULT_DIMS_ORDER.keys():
+            raise ValueError(f"{self.ndim} dimensions not supported")
         self._dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
 
         if not len(self.dims_order[0]) == self.ndim:
