@@ -63,6 +63,9 @@ def _notebook_print_banner():
     adapters = [a for a in wgpu.gpu.enumerate_adapters()]
     adapters_info = [a.request_adapter_info() for a in adapters]
 
+    default_adapter_info = wgpu.gpu.request_adapter().request_adapter_info()
+    default_ix = adapters_info.index(default_adapter_info)
+
     if len(adapters) > 0:
         print("Available devices:")
 
@@ -79,7 +82,7 @@ def _notebook_print_banner():
         else:
             charactor = chr(0x2757)
 
-        if ix == 0:
+        if ix == default_ix:
             default = " (default) "
         else:
             default = " "
