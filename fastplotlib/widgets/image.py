@@ -567,14 +567,16 @@ class ImageWidget:
         indexer = [slice(None)] * self.ndim
 
         numerical_dims = list()
+
+        data_ix = None
+        for i in range(len(self.data)):
+            if self.data[i] is array:
+                data_ix = i
+                break
+        if data_ix is None:
+            raise ValueError(f"Given `array` not found in `self.data`")
+
         for dim in list(slice_indices.keys()):
-            data_ix = None
-            for i in range(len(self.data)):
-                if self.data[i] is array:
-                    data_ix = i
-                    break
-            if data_ix is None:
-                raise ValueError(f"Given `array` not found in `self.data`")
             # get axes order for that specific array
             numerical_dim = self.dims_order[data_ix].index(dim)
 
@@ -606,7 +608,6 @@ class ImageWidget:
                     func = self.window_funcs[dim_str].func
                     window = a[tuple(_indexer)]
                     a = func(window, axis=dim)
-                    # a = np.mean(a[tuple(_indexer)], axis=dim)
             return a
         else:
             return array[tuple(indexer)]
