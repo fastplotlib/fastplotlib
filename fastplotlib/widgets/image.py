@@ -262,7 +262,7 @@ class ImageWidget:
             array-like or a list of array-like
 
         window_funcs: Dict[Union[int, str], int]
-            | average one or more dimensions using a given window
+            | run an arbitrary callable on one dimension at a time using a given window
             | if a slider exists for only one dimension this can be an ``int``.
             | if multiple sliders exist, then it must be a `dict`` mapping in the form of: ``{dimension: window_size}``
             | dimension/axes can be specified using ``str`` such as "t", "z" etc. or ``int`` that indexes the dimension
@@ -556,7 +556,7 @@ class ImageWidget:
             dict in form of {dimension_index: slice_index}
             For example if an array has shape [1000, 30, 512, 512] corresponding to [t, z, x, y]:
                 To get the 100th timepoint and 3rd z-plane pass:
-                    {"t": 100, "z": 3}, or {0: 100, 1: 3}
+                    {"t": 100, "z": 3}
 
         Returns
         -------
@@ -568,22 +568,19 @@ class ImageWidget:
 
         numerical_dims = list()
         for dim in list(slice_indices.keys()):
-            if isinstance(dim, str):
-                data_ix = None
-                for i in range(len(self.data)):
-                    if self.data[i] is array:
-                        data_ix = i
-                        break
-                if data_ix is None:
-                    raise ValueError(f"Given `array` not found in `self.data`")
-                # get axes order for that specific array
-                numerical_dim = self.dims_order[data_ix].index(dim)
-            else:
-                numerical_dim = dim
+            data_ix = None
+            for i in range(len(self.data)):
+                if self.data[i] is array:
+                    data_ix = i
+                    break
+            if data_ix is None:
+                raise ValueError(f"Given `array` not found in `self.data`")
+            # get axes order for that specific array
+            numerical_dim = self.dims_order[data_ix].index(dim)
 
             indices_dim = slice_indices[dim]
 
-            # takes care of averaging if it was specified
+            # takes care of index selection for this specific axis
             indices_dim = self._get_window_indices(data_ix, numerical_dim, indices_dim)
 
             # set the indices for this dimension
