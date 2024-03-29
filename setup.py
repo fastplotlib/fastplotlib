@@ -20,21 +20,18 @@ extras_require = {
         "nbsphinx",
         "pandoc",
         "jupyterlab",
-        "sidecar"
+        "sidecar",
     ],
-
-    "notebook":
-    [
+    "notebook": [
         "jupyterlab",
         "jupyter-rfb>=0.4.1",
         "ipywidgets>=8.0.0,<9",
-        "sidecar"
+        "sidecar",
     ],
-
-    "tests":
-    [
+    "tests": [
         "pytest<8.0.0",
         "nbmake",
+        "black",
         "scipy",
         "imageio[pyav]",
         "jupyterlab",
@@ -42,17 +39,15 @@ extras_require = {
         "ipywidgets>=8.0.0,<9",
         "scikit-learn",
         "tqdm",
-        "sidecar"
+        "sidecar",
     ],
-
-    "tests-desktop":
-    [
+    "tests-desktop": [
         "pytest<8.0.0",
         "scipy",
         "imageio",
         "scikit-learn",
         "tqdm",
-    ]
+    ],
 }
 
 
@@ -72,19 +67,18 @@ classifiers = [
 
 
 setup(
-    name='fastplotlib',
+    name="fastplotlib",
     version=ver,
     long_description=readme,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     packages=find_packages(),
-    url='https://github.com/fastplotlib/fastplotlib',
-    license='Apache 2.0',
-    author='Kushal Kolar, Caitlin Lewis',
-    author_email='',
-    python_requires='>=3.9',
+    url="https://github.com/fastplotlib/fastplotlib",
+    license="Apache 2.0",
+    author="Kushal Kolar, Caitlin Lewis",
+    author_email="",
+    python_requires=">=3.9",
     install_requires=install_requires,
     extras_require=extras_require,
     include_package_data=True,
-    description='A fast plotting library built using the pygfx render engine'
+    description="A fast plotting library built using the pygfx render engine",
 )
-

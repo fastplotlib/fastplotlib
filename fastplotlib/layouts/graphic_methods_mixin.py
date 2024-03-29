@@ -14,13 +14,13 @@ class GraphicMethodsMixin:
         pass
 
     def _create_graphic(self, graphic_class, *args, **kwargs) -> Graphic:
-        if 'center' in kwargs.keys():
-            center = kwargs.pop('center')
+        if "center" in kwargs.keys():
+            center = kwargs.pop("center")
         else:
             center = False
 
-        if 'name' in kwargs.keys():
-            self._check_graphic_name_exists(kwargs['name'])
+        if "name" in kwargs.keys():
+            self._check_graphic_name_exists(kwargs["name"])
 
         graphic = graphic_class(*args, **kwargs)
         self.add_graphic(graphic, center=center)
@@ -28,9 +28,20 @@ class GraphicMethodsMixin:
         # only return a proxy to the real graphic
         return weakref.proxy(graphic)
 
-    def add_heatmap(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest', chunk_size: int = 8192, isolated_buffer: bool = True, *args, **kwargs) -> HeatmapGraphic:
+    def add_heatmap(
+        self,
+        data: Any,
+        vmin: int = None,
+        vmax: int = None,
+        cmap: str = "plasma",
+        filter: str = "nearest",
+        chunk_size: int = 8192,
+        isolated_buffer: bool = True,
+        *args,
+        **kwargs
+    ) -> HeatmapGraphic:
         """
-        
+
         Create an Image Graphic
 
         Parameters
@@ -78,13 +89,34 @@ class GraphicMethodsMixin:
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene
 
-        
-        """
-        return self._create_graphic(HeatmapGraphic, data, vmin, vmax, cmap, filter, chunk_size, isolated_buffer, *args, **kwargs)
 
-    def add_image(self, data: Any, vmin: int = None, vmax: int = None, cmap: str = 'plasma', filter: str = 'nearest', isolated_buffer: bool = True, *args, **kwargs) -> ImageGraphic:
         """
-        
+        return self._create_graphic(
+            HeatmapGraphic,
+            data,
+            vmin,
+            vmax,
+            cmap,
+            filter,
+            chunk_size,
+            isolated_buffer,
+            *args,
+            **kwargs
+        )
+
+    def add_image(
+        self,
+        data: Any,
+        vmin: int = None,
+        vmax: int = None,
+        cmap: str = "plasma",
+        filter: str = "nearest",
+        isolated_buffer: bool = True,
+        *args,
+        **kwargs
+    ) -> ImageGraphic:
+        """
+
         Create an Image Graphic
 
         Parameters
@@ -129,13 +161,36 @@ class GraphicMethodsMixin:
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene
 
-        
-        """
-        return self._create_graphic(ImageGraphic, data, vmin, vmax, cmap, filter, isolated_buffer, *args, **kwargs)
 
-    def add_line_collection(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', alpha: float = 1.0, cmap: Union[List[str], str] = None, cmap_values: Union[numpy.ndarray, List] = None, name: str = None, metadata: Union[list, tuple, numpy.ndarray] = None, *args, **kwargs) -> LineCollection:
         """
-        
+        return self._create_graphic(
+            ImageGraphic,
+            data,
+            vmin,
+            vmax,
+            cmap,
+            filter,
+            isolated_buffer,
+            *args,
+            **kwargs
+        )
+
+    def add_line_collection(
+        self,
+        data: List[numpy.ndarray],
+        z_position: Union[List[float], float] = None,
+        thickness: Union[float, List[float]] = 2.0,
+        colors: Union[List[numpy.ndarray], numpy.ndarray] = "w",
+        alpha: float = 1.0,
+        cmap: Union[List[str], str] = None,
+        cmap_values: Union[numpy.ndarray, List] = None,
+        name: str = None,
+        metadata: Union[list, tuple, numpy.ndarray] = None,
+        *args,
+        **kwargs
+    ) -> LineCollection:
+        """
+
         Create a collection of :class:`.LineGraphic`
 
         Parameters
@@ -189,13 +244,38 @@ class GraphicMethodsMixin:
 
         See :class:`LineGraphic` details on the features.
 
-        
-        """
-        return self._create_graphic(LineCollection, data, z_position, thickness, colors, alpha, cmap, cmap_values, name, metadata, *args, **kwargs)
 
-    def add_line(self, data: Any, thickness: float = 2.0, colors: Union[str, numpy.ndarray, Iterable] = 'w', alpha: float = 1.0, cmap: str = None, cmap_values: Union[numpy.ndarray, List] = None, z_position: float = None, collection_index: int = None, *args, **kwargs) -> LineGraphic:
         """
-        
+        return self._create_graphic(
+            LineCollection,
+            data,
+            z_position,
+            thickness,
+            colors,
+            alpha,
+            cmap,
+            cmap_values,
+            name,
+            metadata,
+            *args,
+            **kwargs
+        )
+
+    def add_line(
+        self,
+        data: Any,
+        thickness: float = 2.0,
+        colors: Union[str, numpy.ndarray, Iterable] = "w",
+        alpha: float = 1.0,
+        cmap: str = None,
+        cmap_values: Union[numpy.ndarray, List] = None,
+        z_position: float = None,
+        collection_index: int = None,
+        *args,
+        **kwargs
+    ) -> LineGraphic:
+        """
+
         Create a line Graphic, 2d or 3d
 
         Parameters
@@ -247,13 +327,37 @@ class GraphicMethodsMixin:
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
-        
-        """
-        return self._create_graphic(LineGraphic, data, thickness, colors, alpha, cmap, cmap_values, z_position, collection_index, *args, **kwargs)
 
-    def add_line_stack(self, data: List[numpy.ndarray], z_position: Union[List[float], float] = None, thickness: Union[float, List[float]] = 2.0, colors: Union[List[numpy.ndarray], numpy.ndarray] = 'w', cmap: Union[List[str], str] = None, separation: float = 10, separation_axis: str = 'y', name: str = None, *args, **kwargs) -> LineStack:
         """
-        
+        return self._create_graphic(
+            LineGraphic,
+            data,
+            thickness,
+            colors,
+            alpha,
+            cmap,
+            cmap_values,
+            z_position,
+            collection_index,
+            *args,
+            **kwargs
+        )
+
+    def add_line_stack(
+        self,
+        data: List[numpy.ndarray],
+        z_position: Union[List[float], float] = None,
+        thickness: Union[float, List[float]] = 2.0,
+        colors: Union[List[numpy.ndarray], numpy.ndarray] = "w",
+        cmap: Union[List[str], str] = None,
+        separation: float = 10,
+        separation_axis: str = "y",
+        name: str = None,
+        *args,
+        **kwargs
+    ) -> LineStack:
+        """
+
         Create a stack of :class:`.LineGraphic` that are separated along the "x" or "y" axis.
 
         Parameters
@@ -309,13 +413,36 @@ class GraphicMethodsMixin:
 
         See :class:`LineGraphic` details on the features.
 
-        
-        """
-        return self._create_graphic(LineStack, data, z_position, thickness, colors, cmap, separation, separation_axis, name, *args, **kwargs)
 
-    def add_scatter(self, data: numpy.ndarray, sizes: Union[int, float, numpy.ndarray, list] = 1, colors: numpy.ndarray = 'w', alpha: float = 1.0, cmap: str = None, cmap_values: Union[numpy.ndarray, List] = None, z_position: float = 0.0, *args, **kwargs) -> ScatterGraphic:
         """
-        
+        return self._create_graphic(
+            LineStack,
+            data,
+            z_position,
+            thickness,
+            colors,
+            cmap,
+            separation,
+            separation_axis,
+            name,
+            *args,
+            **kwargs
+        )
+
+    def add_scatter(
+        self,
+        data: numpy.ndarray,
+        sizes: Union[int, float, numpy.ndarray, list] = 1,
+        colors: numpy.ndarray = "w",
+        alpha: float = 1.0,
+        cmap: str = None,
+        cmap_values: Union[numpy.ndarray, List] = None,
+        z_position: float = 0.0,
+        *args,
+        **kwargs
+    ) -> ScatterGraphic:
+        """
+
         Create a Scatter Graphic, 2d or 3d
 
         Parameters
@@ -364,13 +491,36 @@ class GraphicMethodsMixin:
         **present**: :class:`.PresentFeature`
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
-        
-        """
-        return self._create_graphic(ScatterGraphic, data, sizes, colors, alpha, cmap, cmap_values, z_position, *args, **kwargs)
 
-    def add_text(self, text: str, position: Tuple[int] = (0, 0, 0), size: int = 14, face_color: Union[str, numpy.ndarray] = 'w', outline_color: Union[str, numpy.ndarray] = 'w', outline_thickness=0, screen_space: bool = True, anchor: str = 'middle-center', *args, **kwargs) -> TextGraphic:
         """
-        
+        return self._create_graphic(
+            ScatterGraphic,
+            data,
+            sizes,
+            colors,
+            alpha,
+            cmap,
+            cmap_values,
+            z_position,
+            *args,
+            **kwargs
+        )
+
+    def add_text(
+        self,
+        text: str,
+        position: Tuple[int] = (0, 0, 0),
+        size: int = 14,
+        face_color: Union[str, numpy.ndarray] = "w",
+        outline_color: Union[str, numpy.ndarray] = "w",
+        outline_thickness=0,
+        screen_space: bool = True,
+        anchor: str = "middle-center",
+        *args,
+        **kwargs
+    ) -> TextGraphic:
+        """
+
         Create a text Graphic
 
         Parameters
@@ -405,7 +555,18 @@ class GraphicMethodsMixin:
 
             * Vertical values: "top", "middle", "baseline", "bottom"
             * Horizontal values: "left", "center", "right"
-        
-        """
-        return self._create_graphic(TextGraphic, text, position, size, face_color, outline_color, outline_thickness, screen_space, anchor, *args, **kwargs)
 
+        """
+        return self._create_graphic(
+            TextGraphic,
+            text,
+            position,
+            size,
+            face_color,
+            outline_color,
+            outline_thickness,
+            screen_space,
+            anchor,
+            *args,
+            **kwargs
+        )

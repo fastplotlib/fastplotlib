@@ -26,7 +26,7 @@ doc_sources = [
     GRAPHICS_DIR,
     GRAPHIC_FEATURES_DIR,
     SELECTORS_DIR,
-    WIDGETS_DIR
+    WIDGETS_DIR,
 ]
 
 for source_dir in doc_sources:
@@ -66,13 +66,9 @@ def generate_class(
 ):
     name = cls.__name__
     methods, properties = get_public_members(cls)
-    methods = [
-        f"{name}.{m}" for m in methods
-    ]
+    methods = [f"{name}.{m}" for m in methods]
 
-    properties = [
-        f"{name}.{p}" for p in properties
-    ]
+    properties = [f"{name}.{p}" for p in properties]
 
     underline = "=" * len(name)
 
@@ -149,32 +145,28 @@ def main():
         page_name="Plot",
         classes=[fastplotlib.Plot],
         modules=["fastplotlib"],
-        source_path=LAYOUTS_DIR.joinpath("plot.rst")
+        source_path=LAYOUTS_DIR.joinpath("plot.rst"),
     )
 
     generate_page(
         page_name="GridPlot",
         classes=[fastplotlib.GridPlot],
         modules=["fastplotlib"],
-        source_path=LAYOUTS_DIR.joinpath("gridplot.rst")
+        source_path=LAYOUTS_DIR.joinpath("gridplot.rst"),
     )
 
     generate_page(
         page_name="Subplot",
         classes=[Subplot],
         modules=["fastplotlib.layouts._subplot"],
-        source_path=LAYOUTS_DIR.joinpath("subplot.rst")
+        source_path=LAYOUTS_DIR.joinpath("subplot.rst"),
     )
 
     # the rest of this is a mess and can be refactored later
 
-    graphic_classes = [
-        getattr(graphics, g) for g in graphics.__all__
-    ]
+    graphic_classes = [getattr(graphics, g) for g in graphics.__all__]
 
-    graphic_class_names = [
-        g.__name__ for g in graphic_classes
-    ]
+    graphic_class_names = [g.__name__ for g in graphic_classes]
 
     graphic_class_names_str = "\n    ".join([""] + graphic_class_names)
 
@@ -194,17 +186,13 @@ def main():
             page_name=graphic_cls.__name__,
             classes=[graphic_cls],
             modules=["fastplotlib"],
-            source_path=GRAPHICS_DIR.joinpath(f"{graphic_cls.__name__}.rst")
+            source_path=GRAPHICS_DIR.joinpath(f"{graphic_cls.__name__}.rst"),
         )
     ##############################################################################
 
-    feature_classes = [
-        getattr(_features, f) for f in _features.__all__
-    ]
+    feature_classes = [getattr(_features, f) for f in _features.__all__]
 
-    feature_class_names = [
-        f.__name__ for f in feature_classes
-    ]
+    feature_class_names = [f.__name__ for f in feature_classes]
 
     feature_class_names_str = "\n    ".join([""] + feature_class_names)
 
@@ -223,17 +211,13 @@ def main():
             page_name=feature_cls.__name__,
             classes=[feature_cls],
             modules=["fastplotlib.graphics._features"],
-            source_path=GRAPHIC_FEATURES_DIR.joinpath(f"{feature_cls.__name__}.rst")
+            source_path=GRAPHIC_FEATURES_DIR.joinpath(f"{feature_cls.__name__}.rst"),
         )
     ##############################################################################
 
-    selector_classes = [
-        getattr(selectors, s) for s in selectors.__all__
-    ]
+    selector_classes = [getattr(selectors, s) for s in selectors.__all__]
 
-    selector_class_names = [
-        s.__name__ for s in selector_classes
-    ]
+    selector_class_names = [s.__name__ for s in selector_classes]
 
     selector_class_names_str = "\n    ".join([""] + selector_class_names)
 
@@ -252,17 +236,13 @@ def main():
             page_name=selector_cls.__name__,
             classes=[selector_cls],
             modules=["fastplotlib"],
-            source_path=SELECTORS_DIR.joinpath(f"{selector_cls.__name__}.rst")
+            source_path=SELECTORS_DIR.joinpath(f"{selector_cls.__name__}.rst"),
         )
     ##############################################################################
 
-    widget_classes = [
-        getattr(widgets, w) for w in widgets.__all__
-    ]
+    widget_classes = [getattr(widgets, w) for w in widgets.__all__]
 
-    widget_class_names = [
-        w.__name__ for w in widget_classes
-    ]
+    widget_class_names = [w.__name__ for w in widget_classes]
 
     widget_class_names_str = "\n    ".join([""] + widget_class_names)
 
@@ -281,7 +261,7 @@ def main():
             page_name=widget_cls.__name__,
             classes=[widget_cls],
             modules=["fastplotlib"],
-            source_path=WIDGETS_DIR.joinpath(f"{widget_cls.__name__}.rst")
+            source_path=WIDGETS_DIR.joinpath(f"{widget_cls.__name__}.rst"),
         )
     ##############################################################################
 
