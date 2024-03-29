@@ -26,6 +26,8 @@ DEFAULT_DIMS_ORDER = {
 
 DEFAULT_SLIDER_DIMS = {0: "t", 1: "z"}
 
+ALLOWED_WINDOW_KEYS = {"t", "z"}
+
 
 def _is_arraylike(obj) -> bool:
     """
@@ -262,16 +264,18 @@ class ImageWidget:
             array-like or a list of array-like
 
         window_funcs: Dict[Union[int, str], int]
-            | run an arbitrary callable on one dimension at a time using a given window
-            | if a slider exists for only one dimension this can be an ``int``.
-            | if multiple sliders exist, then it must be a `dict`` mapping in the form of: ``{dimension: window_size}``
-            | dimension/axes can be specified using ``str`` such as "t", "z" etc. or ``int`` that indexes the dimension
-            | if window_size is not an odd number, adds 1
-            | use ``None`` to disable averaging for a dimension, example: ``{"t": 5, "z": None}``
+            | You may want to apply functions along certain axes of your data before displaying.
+            | This parameter allows you pass in a dictionary; each key is an axis (allowed axes: "t" and "z").
+            | The value is a tuple: (Callable, window_size). Every callable must take "axis" as an input.
+            | A typical signature might be def my_func(img: np.ndarray, axis=0) -> np.ndarray:
+            | To use window_funcs, you do something like: window_funcs = {"t": (t_callable, window_size_t),
+            | "z": (z_callable, window_size_z)}. So at time index "50", if window_size_t is 10, we look ed at frames
+            | (50 - 5, 50 + 5), etc.
 
         frame_apply: Union[callable, Dict[int, callable]]
-            | apply a function to slices of the array before displaying the frame
-            | pass a single function or a dict of functions to apply to each array individually
+            | apply a function to frames of data along the "t" and "z" axes before displaying a single image
+            | (think time-averaging in local windows, etc.).
+            | Pass a single function or a dict of functions to apply to each array individually
             | examples: ``{array_index: to_grayscale}``, ``{0: to_grayscale, 2: threshold_img}``
             | "array_index" is the position of the corresponding array in the data list.
             | if `window_funcs` is used, then this function is applied after `window_funcs`
@@ -479,32 +483,19 @@ class ImageWidget:
         return self._window_funcs
 
     @window_funcs.setter
-    def window_funcs(self, sa: Union[int, Dict[str, int]]):
+    def window_funcs(self, sa: Dict[str, int]):
         if sa is None:
             self._window_funcs = None
             # force frame to update
             self.current_index = self.current_index
             return
 
-        # for a single dim
-        elif isinstance(sa, tuple):
-            if len(self.slider_dims) > 1:
-                raise TypeError(
-                    "Must pass dict argument to window_funcs if using multiple sliders. See the docstring."
-                )
-            if not callable(sa[0]) or not isinstance(sa[1], int):
-                raise TypeError(
-                    "Tuple argument to `window_funcs` must be in the form of (func, window_size). See the docstring."
-                )
-
-            dim_str = self.slider_dims[0]
-            self._window_funcs = dict()
-            self._window_funcs[dim_str] = _WindowFunctions(self, *sa)
-
-        # for multiple dims
         elif isinstance(sa, dict):
+            if not set(sa.keys()).issubset(ALLOWED_WINDOW_KEYS):
+                raise ValueError(f"The only allowed keys to window funcs are {list(ALLOWED_WINDOW_KEYS)} " 
+                                 f"Your window func passed in these keys: {list(sa.keys())}")
             if not all(
-                [isinstance(_sa, tuple) or (_sa is None) for _sa in sa.values()]
+                [isinstance(_sa, tuple) for _sa in sa.values()]
             ):
                 raise TypeError(
                     "dict argument to `window_funcs` must be in the form of: "
@@ -512,28 +503,22 @@ class ImageWidget:
                     "See the docstring."
                 )
             for v in sa.values():
-                if v is not None:
-                    if not callable(v[0]) or not (
-                        isinstance(v[1], int) or v[1] is None
-                    ):
-                        raise TypeError(
-                            "dict argument to `window_funcs` must be in the form of: "
-                            "`{dimension: (func, window_size)}`. "
-                            "See the docstring."
-                        )
+                if not callable(v[0]):
+                    raise TypeError(
+                        "dict argument to `window_funcs` must be in the form of: "
+                        "`{dimension: (func, window_size)}`. "
+                        "See the docstring."
+                    )
 
             if not isinstance(self._window_funcs, dict):
                 self._window_funcs = dict()
 
             for k in list(sa.keys()):
-                if sa[k] is None:
-                    self._window_funcs[k] = None
-                else:
-                    self._window_funcs[k] = _WindowFunctions(self, *sa[k])
+                self._window_funcs[k] = _WindowFunctions(self, *sa[k])
 
         else:
             raise TypeError(
-                f"`window_funcs` must be of type `int` if using a single slider or a dict if using multiple sliders. "
+                f"`window_funcs` must be either Nonetype or dict."
                 f"You have passed a {type(sa)}. See the docstring."
             )
 
