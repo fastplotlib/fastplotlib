@@ -378,7 +378,7 @@ class ImageWidget:
 
         if frame_apply is not None:
             if callable(frame_apply):
-                self._frame_apply = {0: frame_apply}
+                self._frame_apply = frame_apply
 
             elif isinstance(frame_apply, dict):
                 self._frame_apply: Dict[int, callable] = dict.fromkeys(
