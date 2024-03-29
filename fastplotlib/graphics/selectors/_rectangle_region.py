@@ -28,7 +28,7 @@ class RectangleBoundsFeature(GraphicFeature):
     def __init__(
         self, parent, bounds: Tuple[int, int], axis: str, limits: Tuple[int, int]
     ):
-        super(RectangleBoundsFeature, self).__init__(parent, data=bounds)
+        super().__init__(parent, data=bounds)
 
         self._axis = axis
         self.limits = limits

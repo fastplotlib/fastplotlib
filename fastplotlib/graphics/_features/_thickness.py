@@ -19,7 +19,7 @@ class ThicknessFeature(GraphicFeature):
 
     def __init__(self, parent, thickness: float):
         self._scene = None
-        super(ThicknessFeature, self).__init__(parent, thickness)
+        super().__init__(parent, thickness)
 
     def _set(self, value: float):
         value = self._parse_set_value(value)

@@ -45,7 +45,7 @@ class Plot(Subplot, Frame, RecordMixin):
             passed to Subplot, for example ``name``
 
         """
-        super(Plot, self).__init__(
+        super().__init__(
             parent=None,
             position=(0, 0),
             parent_dims=(1, 1),
@@ -62,7 +62,7 @@ class Plot(Subplot, Frame, RecordMixin):
 
     def render(self):
         """performs a single render of the plot, not for the user"""
-        super(Plot, self).render()
+        super().render()
 
         self.renderer.flush()
         self.canvas.request_draw()

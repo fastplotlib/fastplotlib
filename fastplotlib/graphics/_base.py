@@ -439,7 +439,7 @@ class GraphicCollection(Graphic):
     """Graphic Collection base class"""
 
     def __init__(self, name: str = None):
-        super(GraphicCollection, self).__init__(name)
+        super().__init__(name)
         self._graphics: List[str] = list()
 
         self._graphics_changed: bool = True

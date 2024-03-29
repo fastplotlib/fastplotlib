@@ -87,7 +87,7 @@ class LineCollection(GraphicCollection, Interaction):
 
         """
 
-        super(LineCollection, self).__init__(name)
+        super().__init__(name)
 
         if not isinstance(z_position, float) and z_position is not None:
             if len(data) != len(z_position):
@@ -544,7 +544,7 @@ class LineStack(LineCollection):
         See :class:`LineGraphic` details on the features.
 
         """
-        super(LineStack, self).__init__(
+        super().__init__(
             data=data,
             z_position=z_position,
             thickness=thickness,
