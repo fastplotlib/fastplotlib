@@ -1,48 +1,45 @@
 import sys
 import importlib
+from pathlib import Path
 
+import wgpu
 
-def _is_jupyter():
-    """Determine whether the user is executing in a Jupyter Notebook / Lab."""
-    try:
-        ip = get_ipython()
-        if ip.has_trait("kernel"):
-            return True
-        else:
-            return False
-    except NameError:
-        return False
+from . import _notebook_print_banner
 
-
-IS_JUPYTER = _is_jupyter()
 
 # Triage. Ultimately, we let wgpu-py decide, but we can prime things a bit to
-# create our own preferred order. If we're in Jupyter, wgpu will prefer and
-# select Jupyter, so no no action needed. If one of the GUI backends is already
-# imported, this is likely because the user want to use that one, so we should
-# honor that. Otherwise, we try importing the GUI backends in the order that
-# fastplotlib prefers. When wgpu-py loads the gui.auto, it will see that the
-# respective lib has been imported and then prefer the corresponding backend.
+# create our own preferred order, by importing a Qt lib. But we only do this
+# if no GUI has been imported yet.
 
-# A list of wgpu GUI backend libs, in the order preferred by fpl
-gui_backend_libs = ["PySide6", "PyQt6", "PySide2", "PyQt5", "glfw"]
+# Qt libs that we will try to import
+qt_libs = ["PySide6", "PyQt6", "PySide2", "PyQt5"]
 
-already_imported = [libname for libname in gui_backend_libs if libname in sys.modules]
-if not IS_JUPYTER and not already_imported:
-    for libname in gui_backend_libs:
+# Other known libs that, if imported, we should probably not try to force qt
+other_libs = ["glfw", "wx", "ipykernel"]
+
+already_imported = [name for name in (qt_libs + other_libs) if name in sys.modules]
+if not already_imported:
+    for name in qt_libs:
         try:
-            importlib.import_module(libname)
+            importlib.import_module(name)
         except Exception:
             pass
         else:
             break
 
+# Let wgpu do the auto gui selection
 from wgpu.gui.auto import WgpuCanvas, run
 
 # Get the name of the backend ('qt', 'glfw', 'jupyter')
 GUI_BACKEND = WgpuCanvas.__module__.split(".")[-1]
 
-if GUI_BACKEND == "qt":
+IS_JUPYTER = False
+
+if GUI_BACKEND == "jupyter":
+    IS_JUPYTER = True
+    _notebook_print_banner()
+
+elif GUI_BACKEND == "qt":
     from wgpu.gui.qt import get_app, libname
 
     # create and store ref to qt app
@@ -54,3 +51,48 @@ if GUI_BACKEND == "qt":
     QtCore = importlib.import_module(".QtCore", libname)
     QtGui = importlib.import_module(".QtGui", libname)
     QtWidgets = importlib.import_module(".QtWidgets", libname)
+
+
+def _notebook_print_banner():
+
+    from ipywidgets import Image
+    from IPython.display import display
+
+    logo_path = Path(__file__).parent.parent.joinpath(
+        "assets", "fastplotlib_face_logo.png"
+    )
+
+    with open(logo_path, "rb") as f:
+        logo_data = f.read()
+
+    image = Image(value=logo_data, format="png", width=300, height=55)
+
+    display(image)
+
+    # print logo and adapter info
+    adapters = [a for a in wgpu.gui.enumerate_adapters()]
+    adapters_info = [a.request_adapter_info() for a in adapters]
+
+    if len(adapters) > 0:
+        print("Available devices:")
+
+    for ix, adapter in enumerate(adapters_info):
+        atype = adapter["adapter_type"]
+        backend = adapter["backend_type"]
+        driver = adapter["description"]
+        device = adapter["device"]
+
+        if atype == "DiscreteGPU" and backend != "OpenGL":
+            charactor = chr(0x2705)
+        elif atype == "IntegratedGPU" and backend != "OpenGL":
+            charactor = chr(0x0001FBC4)
+        else:
+            charactor = chr(0x2757)
+
+        if ix == 0:
+            default = " (default) "
+        else:
+            default = " "
+
+        output_str = f"{charactor}{default}| {device} | {atype} | {backend} | {driver}"
+        print(output_str)
