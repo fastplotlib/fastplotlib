@@ -24,9 +24,9 @@ DEFAULT_DIMS_ORDER = {
     4: "tzxy",
 }
 
-DEFAULT_SLIDER_DIMS = {0: "t", 1: "z"}
+ALLOWED_SLIDER_DIMS = {0: "t", 1: "z"}
 
-ALLOWED_WINDOW_KEYS = {"t", "z"}
+ALLOWED_WINDOW_DIMS = {"t", "z"}
 
 
 def _is_arraylike(obj) -> bool:
@@ -243,12 +243,11 @@ class ImageWidget:
         **kwargs,
     ):
         """
-        A high level widget for displaying n-dimensional image data in conjunction with automatically generated
-        sliders for navigating through 1-2 selected dimensions within image data.
+        This widget facilitates high-level navigation through image stacks, which are arrays containing one or more
+        images. It includes sliders for key dimensions such as "t" (time) and "z", enabling users to smoothly navigate
+        through one or multiple image stacks simultaneously.
 
-        Can display a single n-dimensional image array or a grid of n-dimensional images.
-
-        Standard dimension orders:
+        Allowed dimensions orders for each image stack:
 
         ======= ==========
         n_dims  dims order
@@ -264,13 +263,12 @@ class ImageWidget:
             array-like or a list of array-like
 
         window_funcs: Dict[Union[int, str], int]
-            | You may want to apply functions along certain axes of your data before displaying.
-            | This parameter allows you pass in a dictionary; each key is an axis (allowed axes: "t" and "z").
-            | The value is a tuple: (Callable, window_size). Every callable must take "axis" as an input.
-            | A typical signature might be def my_func(img: np.ndarray, axis=0) -> np.ndarray:
-            | To use window_funcs, you do something like: window_funcs = {"t": (t_callable, window_size_t),
-            | "z": (z_callable, window_size_z)}. So at time index "50", if window_size_t is 10, we look ed at frames
-            | (50 - 5, 50 + 5), etc.
+            | Apply function(s) with rolling windows along "t" and/or "z" dimensions of the `data` arrays.
+            | Pass a dict in the form: {dimension: (func, window_size)}, `func` must take a slice of the data array as the
+            | first argument and must take `axis` as a kwarg.
+            | Ex: mean along "t" dimension: {"t": (np.mean, 11)}, if `current_index` of "t" is 50, it will pass frames
+            | 45 to 55 to `np.mean` with `axis = 0`.
+            | Ex2: max along z dim: {"z": (np.max, 3)}, passes current, previous and next frame to `np.max` with `axis = 1`
 
         frame_apply: Union[callable, Dict[int, callable]]
             | apply a function to frames of data along the "t" and "z" axes before displaying a single image
@@ -373,8 +371,8 @@ class ImageWidget:
         # Sliders are made for all dimensions except the last 2
         self._slider_dims = list()
         for dim in range(self.ndim - 2):
-            if dim in DEFAULT_SLIDER_DIMS.keys():
-                self.slider_dims.append(DEFAULT_SLIDER_DIMS[dim])
+            if dim in ALLOWED_SLIDER_DIMS.keys():
+                self.slider_dims.append(ALLOWED_SLIDER_DIMS[dim])
             else:
                 self.slider_dims.append(f"{dim}")
 
@@ -491,9 +489,9 @@ class ImageWidget:
             return
 
         elif isinstance(sa, dict):
-            if not set(sa.keys()).issubset(ALLOWED_WINDOW_KEYS):
+            if not set(sa.keys()).issubset(ALLOWED_WINDOW_DIMS):
                 raise ValueError(
-                    f"The only allowed keys to window funcs are {list(ALLOWED_WINDOW_KEYS)} "
+                    f"The only allowed keys to window funcs are {list(ALLOWED_WINDOW_DIMS)} "
                     f"Your window func passed in these keys: {list(sa.keys())}"
                 )
             if not all([isinstance(_sa, tuple) for _sa in sa.values()]):
