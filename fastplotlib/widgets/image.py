@@ -492,11 +492,11 @@ class ImageWidget:
 
         elif isinstance(sa, dict):
             if not set(sa.keys()).issubset(ALLOWED_WINDOW_KEYS):
-                raise ValueError(f"The only allowed keys to window funcs are {list(ALLOWED_WINDOW_KEYS)} " 
-                                 f"Your window func passed in these keys: {list(sa.keys())}")
-            if not all(
-                [isinstance(_sa, tuple) for _sa in sa.values()]
-            ):
+                raise ValueError(
+                    f"The only allowed keys to window funcs are {list(ALLOWED_WINDOW_KEYS)} "
+                    f"Your window func passed in these keys: {list(sa.keys())}"
+                )
+            if not all([isinstance(_sa, tuple) for _sa in sa.values()]):
                 raise TypeError(
                     "dict argument to `window_funcs` must be in the form of: "
                     "`{dimension: (func, window_size)}`. "
