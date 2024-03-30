@@ -21,7 +21,19 @@ os.makedirs(DIFFS_DIR, exist_ok=True)
 FAILURES = list()
 
 
+def _run_tests():
+    if "FASTPLOTLIB_NB_TESTS" not in os.environ.keys():
+        return False
+
+    if os.environ["FASTPLOTLIB_NB_TESTS"] == "1":
+        return True
+
+    return False
+
+
 def plot_test(name, plot: Union[Plot, GridPlot]):
+    if not _run_tests():
+        return
     snapshot = plot.canvas.snapshot()
 
     if "REGENERATE_SCREENSHOTS" in os.environ.keys():
@@ -81,6 +93,9 @@ def update_diffs(name, is_similar, img, ground_truth):
 
 
 def notebook_finished():
+    if not _run_tests():
+        return
+
     if len(FAILURES) > 0:
         raise AssertionError(
             f"Failures for plots:\n{FAILURES}"
