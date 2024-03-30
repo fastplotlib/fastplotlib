@@ -46,12 +46,12 @@ class BaseGraphic:
 
 
 class Graphic(BaseGraphic):
-    feature_events = {}
+    features = {}
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         # all graphics give off a feature event when deleted
-        cls.feature_events = {*cls.feature_events, "deleted"}
+        cls.features = {*cls.features, "deleted"}
 
     def __init__(
         self,
@@ -227,6 +227,19 @@ class Graphic(BaseGraphic):
             )
         self.rotation = la.quat_mul(rot, self.rotation)
 
+    def to_dict(self) -> dict:
+        d = dict()
+
+        for feature_name in self.features:
+            feature = getattr(self, feature_name)
+            d[feature_name] = feature
+
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict):
+        return cls(**d)
+
 
 class Interaction(ABC):
     """Mixin class that makes graphics interactive"""
@@ -311,9 +324,9 @@ class Interaction(ABC):
 
         # make sure target feature is valid
         if feature is not None:
-            if feature not in target.feature_events:
+            if feature not in target.features:
                 raise ValueError(
-                    f"Invalid feature for target, valid features are: {target.feature_events}"
+                    f"Invalid feature for target, valid features are: {target.features}"
                 )
 
         if event_type not in self.registered_callbacks.keys():
@@ -365,7 +378,7 @@ class Interaction(ABC):
 
                 elif isinstance(self, GraphicCollection):
                     # if target is a GraphicCollection, then indices will be stored in collection_index
-                    if event.type in self.feature_events:
+                    if event.type in self.features:
                         indices = event.pick_info["collection-index"]
 
                     # for now we only have line collections so this works

@@ -34,7 +34,7 @@ key_bind_direction = {
 
 # Selector base class
 class BaseSelector(Graphic):
-    feature_events = ("selection",)
+    features = {"selection"}
 
     def __init__(
         self,
