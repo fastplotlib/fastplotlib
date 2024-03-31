@@ -103,10 +103,7 @@ def plot_test(name, plot: Union[Plot, GridPlot]):
         if os.environ["REGENERATE_SCREENSHOTS"] == "1":
             regenerate_screenshot(name, rgb_img)
 
-    try:
-        assert_screenshot_equal(name, rgb_img)
-    except AssertionError:
-        FAILURES.append(name)
+    assert_screenshot_equal(name, rgb_img)
 
 
 def regenerate_screenshot(name, data):
@@ -123,9 +120,10 @@ def assert_screenshot_equal(name, data):
 
     update_diffs(name, similar, data, ground_truth)
 
-    assert similar, (
-        f"notebook snapshot for {name} has changed"
-    )
+    if not similar:
+        FAILURES.append(
+            (name, rmse)
+        )
 
 
 def update_diffs(name, is_similar, img, ground_truth):

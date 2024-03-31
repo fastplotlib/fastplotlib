@@ -106,7 +106,7 @@ def test_example_screenshots(module, force_offscreen):
 
     similar, rmse = image_similarity(rgb, ref_img, threshold=0.025)
 
-    update_diffs(module.stem, False, rgb, ref_img)
+    update_diffs(module.stem, similar, rgb, ref_img)
     assert similar, (
         f"diff {rmse} above threshold for {module.stem}, see "
         f"the {diffs_dir.relative_to(ROOT).as_posix()} folder"
