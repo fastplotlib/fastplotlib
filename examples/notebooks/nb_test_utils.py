@@ -16,6 +16,7 @@ DIFFS_DIR = current_dir.joinpath("diffs")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 os.makedirs(DIFFS_DIR, exist_ok=True)
 
+TOLERANCE = 0.025
 
 # store all the failures to allow the nb to proceed to test other examples
 FAILURES = list()
@@ -116,7 +117,7 @@ def assert_screenshot_equal(name, data):
     img = normalize_image(data)
     ref_img = normalize_image(ground_truth)
 
-    similar, rmse = image_similarity(img, ref_img, threshold=0.025)
+    similar, rmse = image_similarity(img, ref_img, threshold=TOLERANCE)
 
     update_diffs(name, similar, data, ground_truth)
 
