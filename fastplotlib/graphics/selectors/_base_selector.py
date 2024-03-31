@@ -123,7 +123,7 @@ class BaseSelector(Graphic):
 
         return source
 
-    def _add_plot_area_hook(self, plot_area):
+    def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
         # when the pointer is pressed on a fill, edge or vertex
@@ -356,7 +356,7 @@ class BaseSelector(Graphic):
 
         self._move_info = None
 
-    def _cleanup(self):
+    def _fpl_cleanup(self):
         """
         Cleanup plot renderer event handlers etc.
         """

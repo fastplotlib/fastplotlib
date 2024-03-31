@@ -39,7 +39,7 @@ class PolygonSelector(BaseSelector):
 
         return np.vstack(vertices)
 
-    def _add_plot_area_hook(self, plot_area):
+    def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
         # click to add new segment

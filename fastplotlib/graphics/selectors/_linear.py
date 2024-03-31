@@ -208,8 +208,8 @@ class LinearSelector(BaseSelector):
 
         self.selection = change["new"]
 
-    def _add_plot_area_hook(self, plot_area):
-        super()._add_plot_area_hook(plot_area=plot_area)
+    def _fpl_add_plot_area_hook(self, plot_area):
+        super()._fpl_add_plot_area_hook(plot_area=plot_area)
 
         # resize the slider widgets when the canvas is resized
         self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
@@ -375,8 +375,8 @@ class LinearSelector(BaseSelector):
         else:
             self.selection = self.selection() + delta[1]
 
-    def _cleanup(self):
-        super()._cleanup()
+    def _fpl_cleanup(self):
+        super()._fpl_cleanup()
 
         for widget in self._handled_widgets:
             widget.unobserve(self._ipywidget_callback, "value")

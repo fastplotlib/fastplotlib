@@ -124,10 +124,10 @@ class HistogramLUT(Graphic):
 
         return vmin_str, vmax_str
 
-    def _add_plot_area_hook(self, plot_area):
+    def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
-        self.linear_region._add_plot_area_hook(plot_area)
-        self.line._add_plot_area_hook(plot_area)
+        self.linear_region._fpl_add_plot_area_hook(plot_area)
+        self.line._fpl_add_plot_area_hook(plot_area)
 
         self._plot_area.auto_scale()
 
@@ -296,7 +296,7 @@ class HistogramLUT(Graphic):
 
         self.image_graphic.cmap.add_event_handler(self._image_cmap_handler)
 
-    def _cleanup(self):
-        self.linear_region._cleanup()
+    def _fpl_cleanup(self):
+        self.linear_region._fpl_cleanup()
         del self.line
         del self.linear_region

@@ -166,6 +166,9 @@ class Graphic(BaseGraphic):
         """Return the children of the WorldObject."""
         return self.world_object.children
 
+    def _fpl_add_plot_area_hook(self, plot_area):
+        self._plot_area = plot_area
+
     def __setattr__(self, key, value):
         if hasattr(self, key):
             attr = getattr(self, key)
@@ -192,7 +195,7 @@ class Graphic(BaseGraphic):
 
         return False
 
-    def _cleanup(self):
+    def _fpl_cleanup(self):
         """
         Cleans up the graphic in preparation for __del__(), such as removing event handlers from
         plot renderer, feature event handlers, etc.
