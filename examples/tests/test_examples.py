@@ -1,13 +1,14 @@
 """
 Test that examples run without error.
 """
+
 import importlib
 import runpy
 import pytest
 import os
 import numpy as np
 import imageio.v3 as iio
-from PIL import Image
+
 
 from .testutils import (
     ROOT,
@@ -20,7 +21,7 @@ from .testutils import (
     generate_diff,
     image_similarity,
     normalize_image,
-    prep_for_write
+    prep_for_write,
 )
 
 # run all tests unless they opt-out
@@ -57,7 +58,12 @@ def test_that_we_are_on_lavapipe():
 def test_example_screenshots(module, force_offscreen):
     """Make sure that every example marked outputs the expected."""
     # (relative) module name from project root
-    module_name = module.relative_to(ROOT/"examples").with_suffix("").as_posix().replace("/", ".")
+    module_name = (
+        module.relative_to(ROOT / "examples")
+        .with_suffix("")
+        .as_posix()
+        .replace("/", ".")
+    )
 
     # import the example module
     example = importlib.import_module(module_name)
@@ -77,16 +83,17 @@ def test_example_screenshots(module, force_offscreen):
     black = np.zeros(img.shape).astype(np.uint8)
     black[:, :, -1] = 255
 
-    img = np.array(
-        Image.alpha_composite(
-            Image.fromarray(black),
-            Image.fromarray(img.astype(np.uint8))
-        ).convert("RGB")
-    )
+    img_alpha = img[..., -1] / 255
+
+    rgb = img[..., :-1] * img_alpha[..., None] + black[..., :-1] * np.ones(
+        img_alpha.shape
+    )[..., None] * (1 - img_alpha[..., None])
+
+    rgb = rgb.round().astype(np.uint8)
 
     if "REGENERATE_SCREENSHOTS" in os.environ.keys():
         if os.environ["REGENERATE_SCREENSHOTS"] == "1":
-            iio.imwrite(screenshot_path, img)
+            iio.imwrite(screenshot_path, rgb)
 
     assert (
         screenshot_path.exists()
@@ -94,12 +101,12 @@ def test_example_screenshots(module, force_offscreen):
 
     ref_img = iio.imread(screenshot_path)
 
-    img = normalize_image(img)
+    rgb = normalize_image(rgb)
     ref_img = normalize_image(ref_img)
 
-    similar, rmse = image_similarity(img, ref_img, threshold=0.025)
+    similar, rmse = image_similarity(rgb, ref_img, threshold=0.025)
 
-    update_diffs(module.stem, False, img, ref_img)
+    update_diffs(module.stem, False, rgb, ref_img)
     assert similar, (
         f"diff {rmse} above threshold for {module.stem}, see "
         f"the {diffs_dir.relative_to(ROOT).as_posix()} folder"
