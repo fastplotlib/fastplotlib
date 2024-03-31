@@ -1,6 +1,7 @@
 from typing import *
 from dataclasses import dataclass
 from functools import partial
+import weakref
 
 import numpy as np
 
@@ -136,8 +137,8 @@ class BaseSelector(Graphic):
 
         for fill in self._fill:
             if fill.material.color_is_transparent:
-                pfunc_fill = partial(self._check_fill_pointer_event, fill)
-                self._plot_area.renderer.add_event_handler(pfunc_fill, "pointer_down")
+                self._pfunc_fill = partial(self._check_fill_pointer_event, fill)
+                self._plot_area.renderer.add_event_handler(self._pfunc_fill, "pointer_down")
 
         # when the pointer moves
         self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
@@ -355,27 +356,3 @@ class BaseSelector(Graphic):
             self._key_move_value = False
 
         self._move_info = None
-
-    def _fpl_cleanup(self):
-        """
-        Cleanup plot renderer event handlers etc.
-        """
-        self._plot_area.renderer.remove_event_handler(self._move, "pointer_move")
-        self._plot_area.renderer.remove_event_handler(self._move_end, "pointer_up")
-        self._plot_area.renderer.remove_event_handler(self._move_to_pointer, "click")
-
-        self._plot_area.renderer.remove_event_handler(self._key_down, "key_down")
-        self._plot_area.renderer.remove_event_handler(self._key_up, "key_up")
-
-        # remove animation func
-        self._plot_area.remove_animation(self._key_hold)
-
-        # clear wo event handlers
-        for wo in self._world_objects:
-            wo._event_handlers.clear()
-
-        if hasattr(self, "feature_events"):
-            feature_names = getattr(self, "feature_events")
-            for n in feature_names:
-                fea = getattr(self, n)
-                fea.clear_event_handlers()

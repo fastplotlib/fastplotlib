@@ -211,7 +211,36 @@ class Graphic(BaseGraphic):
 
         Optionally implemented in subclasses
         """
-        pass
+        # clear any attached event handlers and animation functions
+        for attr in dir(self):
+            try:
+                method = getattr(self, attr)
+            except:
+                continue
+
+            if not callable(method):
+                continue
+
+            for ev_type in PYGFX_EVENTS:
+                try:
+                    self._plot_area.renderer.remove_event_handler(method, ev_type)
+                except (KeyError, TypeError):
+                    pass
+
+            try:
+                self._plot_area.remove_animation(method)
+            except KeyError:
+                pass
+
+        for child in self.world_object.children:
+            child._event_handlers.clear()
+
+        self.world_object._event_handlers.clear()
+
+        feature_names = getattr(self, "feature_events")
+        for n in feature_names:
+            fea = getattr(self, n)
+            fea.clear_event_handlers()
 
     def __del__(self):
         self.deleted = True
