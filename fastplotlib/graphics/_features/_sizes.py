@@ -21,9 +21,7 @@ class PointsSizesFeature(GraphicFeatureIndexable):
 
     def __init__(self, parent, sizes: Any, collection_index: int = None):
         sizes = self._fix_sizes(sizes, parent)
-        super(PointsSizesFeature, self).__init__(
-            parent, sizes, collection_index=collection_index
-        )
+        super().__init__(parent, sizes, collection_index=collection_index)
 
     @property
     def buffer(self) -> pygfx.Buffer:

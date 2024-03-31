@@ -33,39 +33,18 @@ View available GPU
 
 You can view all GPUs that are available to ``WGPU`` like this::
 
-    from wgpu.backends.wgpu_native import enumerate_adapters
-    from pprint import pprint
+    import wgpu
 
-    for adapter in enumerate_adapters():
-        pprint(adapter.request_adapter_info())
+    for adapter in wgpu.gpu.enumerate_adapters():
+        print(adapter.summary)
 
 For example, on a Thinkpad AMD laptop with a dedicated nvidia GPU this returns::
 
-    {'adapter_type': 'IntegratedGPU',
-     'architecture': '',
-     'backend_type': 'Vulkan',
-     'description': 'Mesa 22.3.6',
-     'device': 'AMD Radeon Graphics (RADV REMBRANDT)',
-     'vendor': 'radv'}
-    {'adapter_type': 'DiscreteGPU',
-     'architecture': '',
-     'backend_type': 'Vulkan',
-     'description': '535.129.03',
-     'device': 'NVIDIA T1200 Laptop GPU',
-     'vendor': 'NVIDIA'}
-    {'adapter_type': 'CPU',
-     'architecture': '',
-     'backend_type': 'Vulkan',
-     'description': 'Mesa 22.3.6 (LLVM 15.0.6)',
-     'device': 'llvmpipe (LLVM 15.0.6, 256 bits)',
-     'vendor': 'llvmpipe'}
-    {'adapter_type': 'Unknown',
-     'architecture': '',
-     'backend_type': 'OpenGL',
-     'description': '',
-     'device': 'AMD Radeon Graphics (rembrandt, LLVM 15.0.6, DRM 3.52, '
-               '6.4.0-0.deb12.2-amd64)',
-     'vendor': ''}
+    AMD Radeon Graphics (RADV REMBRANDT) (IntegratedGPU) on Vulkan
+    NVIDIA T1200 Laptop GPU (DiscreteGPU) on Vulkan
+    llvmpipe (LLVM 15.0.6, 256 bits) (CPU) on Vulkan
+    AMD Radeon Graphics (rembrandt, LLVM 15.0.6, DRM 3.52, 6.4.0-0.deb12.2-amd64) (Unknown) on OpenGL
+
 
 GPU currently in use
 --------------------
@@ -78,5 +57,5 @@ If you want to know the GPU that a current plot is using you can check the adapt
     plot.show()
 
     # GPU that is currently in use by the renderer
-    plot.renderer.device.adapter.request_adapter_info()
+    print(plot.renderer.device.adapter.summary)
 

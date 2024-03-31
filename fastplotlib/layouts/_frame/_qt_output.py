@@ -1,5 +1,4 @@
-from PyQt6 import QtWidgets
-
+from ...utils.gui import QtWidgets
 from ._qt_toolbar import QToolbar
 
 
