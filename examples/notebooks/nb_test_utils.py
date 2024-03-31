@@ -21,15 +21,29 @@ os.makedirs(DIFFS_DIR, exist_ok=True)
 FAILURES = list()
 
 
+def rgba_to_rgb(img: np.ndarray) -> np.ndarray:
+    black = np.zeros(img.shape).astype(np.uint8)
+    black[:, :, -1] = 255
+
+    img_alpha = img[..., -1] / 255
+
+    rgb = img[..., :-1] * img_alpha[..., None] + black[..., :-1] * np.ones(
+        img_alpha.shape
+    )[..., None] * (1 - img_alpha[..., None])
+
+    return rgb.round().astype(np.uint8)
+
+
 def plot_test(name, plot: Union[Plot, GridPlot]):
     snapshot = plot.canvas.snapshot()
+    rgb_img = rgba_to_rgb(snapshot.data)
 
     if "REGENERATE_SCREENSHOTS" in os.environ.keys():
         if os.environ["REGENERATE_SCREENSHOTS"] == "1":
-            regenerate_screenshot(name, snapshot.data)
+            regenerate_screenshot(name, rgb_img)
 
     try:
-        assert_screenshot_equal(name, snapshot.data)
+        assert_screenshot_equal(name, rgb_img)
     except AssertionError:
         FAILURES.append(name)
 
