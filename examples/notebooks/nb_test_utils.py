@@ -83,7 +83,6 @@ def update_diffs(name, is_similar, img, ground_truth):
     # split into an rgb and an alpha diff
     diffs = {
         DIFFS_DIR.joinpath(f"nb-diff-{name}-rgb.png"): slice(0, 3),
-        DIFFS_DIR.joinpath(f"nb-diff-{name}-alpha.png"): 3,
     }
 
     for path, slicer in diffs.items():
