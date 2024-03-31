@@ -8,14 +8,6 @@ from ..layouts import GridPlot
 from ..graphics import ImageGraphic
 from ..utils import calculate_gridshape
 from .histogram_lut import HistogramLUT
-from ..layouts._utils import CANVAS_OPTIONS_AVAILABLE
-
-
-if CANVAS_OPTIONS_AVAILABLE["jupyter"]:
-    from ..layouts._frame._ipywidget_toolbar import IpywidgetImageWidgetToolbar
-
-if CANVAS_OPTIONS_AVAILABLE["qt"]:
-    from ..layouts._frame._qt_toolbar import QToolbarImageWidget
 
 
 DEFAULT_DIMS_ORDER = {
@@ -927,9 +919,17 @@ class ImageWidget:
             ImageWidget just uses the Gridplot output context
         """
         if self.gridplot.canvas.__class__.__name__ == "JupyterWgpuCanvas":
+            from ..layouts._frame._ipywidget_toolbar import (
+                IpywidgetImageWidgetToolbar,
+            )  # noqa - inline import
+
             self._image_widget_toolbar = IpywidgetImageWidgetToolbar(self)
 
         elif self.gridplot.canvas.__class__.__name__ == "QWgpuCanvas":
+            from ..layouts._frame._qt_toolbar import (
+                QToolbarImageWidget,
+            )  # noqa - inline import
+
             self._image_widget_toolbar = QToolbarImageWidget(self)
 
         self._output = self.gridplot.show(

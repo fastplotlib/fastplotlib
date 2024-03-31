@@ -91,7 +91,7 @@ jobs:
         PYGFX_EXPECT_LAVAPIPE: true
       run: |
         pytest -v examples
-        pytest --nbmake examples/notebooks/
+        FASTPLOTLIB_NB_TESTS=1 pytest --nbmake examples/notebooks/
     - uses: actions/upload-artifact@v3
       if: ${{ failure() }}
       with:
