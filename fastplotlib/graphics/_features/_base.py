@@ -97,6 +97,20 @@ class GraphicFeature(ABC):
         self._event_handlers = list()
         self._block_events = False
 
+    def to_dict(self) -> dict:
+        d = {
+            "data": self._data,
+            "collection_index": self._collection_index,
+        }
+
+        return d
+
+    @classmethod
+    def from_dict(cls, parent, d: dict):
+        data = d["data"]
+        collection_index = d["collection_index"]
+        return cls(parent, data=data, collection_index=collection_index)
+
     def __call__(self, *args, **kwargs):
         return self._data
 
