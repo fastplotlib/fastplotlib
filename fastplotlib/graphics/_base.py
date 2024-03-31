@@ -96,10 +96,16 @@ class Graphic(BaseGraphic):
 
     @name.setter
     def name(self, name: str):
+        if self.name == name:
+            return
+
         if not isinstance(name, str):
             raise TypeError("`Graphic` name must be of type <str>")
+
         if self._plot_area is not None:
             self._plot_area._check_graphic_name_exists(name)
+
+        self._name = name
 
     @property
     def world_object(self) -> WorldObject:
