@@ -1,4 +1,4 @@
-from typing import *
+from typing import Any, Literal
 import weakref
 from warnings import warn
 from abc import ABC, abstractmethod
@@ -13,7 +13,7 @@ from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable, 
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
-WORLD_OBJECTS: Dict[str, WorldObject] = dict()  #: {hex id str: WorldObject}
+WORLD_OBJECTS: dict[str, WorldObject] = dict()  #: {hex id str: WorldObject}
 
 
 PYGFX_EVENTS = [
@@ -87,7 +87,7 @@ class Graphic(BaseGraphic):
         self._plot_area = None
 
     @property
-    def name(self) -> Union[str, None]:
+    def name(self) -> str | None:
         """str name reference for this item"""
         return self._name
 
@@ -162,7 +162,7 @@ class Graphic(BaseGraphic):
         self.world_object.visible = v
 
     @property
-    def children(self) -> List[WorldObject]:
+    def children(self) -> list[WorldObject]:
         """Return the children of the WorldObject."""
         return self.world_object.children
 
@@ -432,7 +432,7 @@ class PreviouslyModifiedData:
     indices: Any
 
 
-COLLECTION_GRAPHICS: Dict[str, Graphic] = dict()
+COLLECTION_GRAPHICS: dict[str, Graphic] = dict()
 
 
 class GraphicCollection(Graphic):
@@ -440,7 +440,7 @@ class GraphicCollection(Graphic):
 
     def __init__(self, name: str = None):
         super().__init__(name)
-        self._graphics: List[str] = list()
+        self._graphics: list[str] = list()
 
         self._graphics_changed: bool = True
         self._graphics_array: np.ndarray[Graphic] = None
@@ -548,7 +548,7 @@ class CollectionIndexer:
     def __init__(
         self,
         parent: GraphicCollection,
-        selection: List[Graphic],
+        selection: list[Graphic],
     ):
         """
 
@@ -605,7 +605,7 @@ class CollectionIndexer:
 class CollectionFeature:
     """Collection Feature"""
 
-    def __init__(self, selection: List[Graphic], feature: str):
+    def __init__(self, selection: list[Graphic], feature: str):
         """
         selection: list of Graphics
             a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
@@ -618,7 +618,7 @@ class CollectionFeature:
         self._selection = selection
         self._feature = feature
 
-        self._feature_instances: List[GraphicFeature] = list()
+        self._feature_instances: list[GraphicFeature] = list()
 
         if len(self._selection) > 0:
             for graphic in self._selection:

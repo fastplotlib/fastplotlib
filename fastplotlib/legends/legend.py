@@ -1,6 +1,6 @@
 from functools import partial
 from collections import OrderedDict
-from typing import *
+from typing import Iterable
 
 import numpy as np
 import pygfx
@@ -31,7 +31,7 @@ class LegendItem:
 
 class LineLegendItem(LegendItem):
     def __init__(
-        self, parent, graphic: LineGraphic, label: str, position: Tuple[int, int]
+        self, parent, graphic: LineGraphic, label: str, position: tuple[int, int]
     ):
         """
 
@@ -142,7 +142,7 @@ class Legend(Graphic):
     def __init__(
         self,
         plot_area,
-        highlight_color: Union[str, tuple, np.ndarray] = "w",
+        highlight_color: str | tuple | np.ndarray = "w",
         max_rows: int = 5,
         *args,
         **kwargs,
@@ -161,7 +161,7 @@ class Legend(Graphic):
             maximum number of rows allowed in the legend
 
         """
-        self._graphics: List[Graphic] = list()
+        self._graphics: list[Graphic] = list()
 
         # hex id of Graphic, i.e. graphic.loc are the keys
         self._items: OrderedDict[str:LegendItem] = OrderedDict()
@@ -204,7 +204,7 @@ class Legend(Graphic):
         self._row_counter = 0
         self._col_counter = 0
 
-    def graphics(self) -> Tuple[Graphic, ...]:
+    def graphics(self) -> tuple[Graphic, ...]:
         return tuple(self._graphics)
 
     def _check_label_unique(self, label):
@@ -235,7 +235,7 @@ class Legend(Graphic):
 
             # get x position offset for this new column of LegendItems
             # start by getting the LegendItems in the previous column
-            prev_column_items: List[LegendItem] = list(self._items.values())[
+            prev_column_items: list[LegendItem] = list(self._items.values())[
                 -self._max_rows :
             ]
             # x position of LegendItems in previous column

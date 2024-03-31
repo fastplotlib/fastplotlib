@@ -1,6 +1,6 @@
 from itertools import product, chain
 import numpy as np
-from typing import *
+from typing import Literal
 from inspect import getfullargspec
 from warnings import warn
 
@@ -18,14 +18,23 @@ from ._record_mixin import RecordMixin
 class GridPlot(Frame, RecordMixin):
     def __init__(
         self,
-        shape: Tuple[int, int],
-        cameras: Union[str, list, np.ndarray] = "2d",
-        controller_types: Union[str, list, np.ndarray] = None,
-        controller_ids: Union[str, list, np.ndarray] = None,
-        canvas: Union[str, WgpuCanvasBase, pygfx.Texture] = None,
+        shape: tuple[int, int],
+        cameras: (
+            Literal["2d", "3d"]
+            | list[Literal["2d", "3d"]]
+            | list[pygfx.PerspectiveCamera]
+            | np.ndarray
+        ) = "2d",
+        controller_types: (
+            Literal["panzoom", "fly", "trackball", "orbit"]
+            | list[Literal["panzoom", "fly", "trackball", "orbit"]]
+            | np.ndarray
+        ) = None,
+        controller_ids: str | list[int] | np.ndarray | list[list[str]] = None,
+        canvas: str | WgpuCanvasBase | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
-        size: Tuple[int, int] = (500, 300),
-        names: Union[list, np.ndarray] = None,
+        size: tuple[int, int] = (500, 300),
+        names: list | np.ndarray = None,
     ):
         """
         A grid of subplots.
@@ -35,27 +44,31 @@ class GridPlot(Frame, RecordMixin):
         shape: (int, int)
             (n_rows, n_cols)
 
-        cameras: str, list, or np.ndarray, optional
-            | One of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
+        cameras: "2d", "3", list of "2d" | "3d", list of camera instances, or np.ndarray of "2d" | "3d", optional
+            | if str, one of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
             | list/array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot
             | list/array of pygfx.PerspectiveCamera instances
 
         controller_types: str, list or np.ndarray, optional
             list or array that specifies the controller type for each subplot, or list/array of
-            pygfx.Controller instances
+            pygfx.Controller instances. Valid controller types: "panzoom", "fly", "trackball", "orbit".
+            If not specified a default controller is chosen based on the camera type.
+            Orthographic projections, i.e. "2d" cameras, use a "panzoom" controller by default.
+            Perspective projections with a FOV > 0, i.e. "3d" cameras, use a "fly" controller by default.
 
-        controller_ids: str, list or np.ndarray of int or str ids, optional
+
+        controller_ids: str, list of int, np.ndarray of int, or list with sublists of subplot str names, optional
             | If `None` a unique controller is created for each subplot
             | If "sync" all the subplots use the same controller
-            | If ``numpy.array``, its shape must be the same as ``grid_shape``.
+            | If array/list it must be reshapeable to ``grid_shape``.
 
             This allows custom assignment of controllers
 
             | Example with integers:
             | sync first 2 plots, and sync last 2 plots: [[0, 0, 1], [2, 3, 3]]
             | Example with str subplot names:
-            | list of lists of subplot names, each sublist is synced: [[subplot_a, subplot_b], [subplot_f, subplot_c]]
-            | this syncs subplot_a and subplot_b together; syncs subplot_f and subplot_c together
+            | list of lists of subplot names, each sublist is synced: [[subplot_a, subplot_b, subplot_e], [subplot_c, subplot_d]]
+            | this syncs subplot_a, subplot_b and subplot_e together; syncs subplot_c and subplot_d together
 
         canvas: WgpuCanvas, optional
             Canvas for drawing
@@ -249,8 +262,8 @@ class GridPlot(Frame, RecordMixin):
                 name=name,
             )
 
-        self._animate_funcs_pre: List[callable] = list()
-        self._animate_funcs_post: List[callable] = list()
+        self._animate_funcs_pre: list[callable] = list()
+        self._animate_funcs_post: list[callable] = list()
 
         self._current_iter = None
 
@@ -269,12 +282,12 @@ class GridPlot(Frame, RecordMixin):
         """The renderer associated to this GridPlot"""
         return self._renderer
 
-    def __getitem__(self, index: Union[Tuple[int, int], str]) -> Subplot:
+    def __getitem__(self, index: tuple[int, int] | str) -> Subplot:
         if isinstance(index, str):
             for subplot in self._subplots.ravel():
                 if subplot.name == index:
                     return subplot
-            raise IndexError("no subplot with given name")
+            raise IndexError(f"no subplot with given name: {index}")
         else:
             return self._subplots[index[0], index[1]]
 
@@ -291,7 +304,7 @@ class GridPlot(Frame, RecordMixin):
         # call post-render animate functions
         self._call_animate_functions(self._animate_funcs_post)
 
-    def _call_animate_functions(self, funcs: Iterable[callable]):
+    def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:
             try:
                 if len(getfullargspec(fn).args) > 0:
@@ -307,7 +320,7 @@ class GridPlot(Frame, RecordMixin):
 
     def add_animations(
         self,
-        *funcs: Iterable[callable],
+        *funcs: callable,
         pre_render: bool = True,
         post_render: bool = False,
     ):
@@ -317,7 +330,7 @@ class GridPlot(Frame, RecordMixin):
 
         Parameters
         ----------
-        *funcs: callable or iterable of callable
+        *funcs: callable(s)
             function(s) that are called on each render cycle
 
         pre_render: bool, default ``True``, optional keyword-only argument

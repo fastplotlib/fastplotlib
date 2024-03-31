@@ -1,15 +1,14 @@
-from typing import *
 import importlib
 
 import pygfx
-from pygfx import WgpuRenderer, Texture
+from pygfx import WgpuRenderer, Texture, Renderer
 from wgpu.gui import WgpuCanvasBase
 
 from ..utils import gui
 
 
 def make_canvas_and_renderer(
-    canvas: Union[str, WgpuCanvasBase, Texture, None], renderer: [WgpuRenderer, None]
+    canvas: str | WgpuCanvasBase | Texture | None, renderer: Renderer | None
 ):
     """
     Parses arguments and returns the appropriate canvas and renderer instances
@@ -22,19 +21,23 @@ def make_canvas_and_renderer(
         m = importlib.import_module("wgpu.gui." + canvas)
         canvas = m.WgpuCanvas(max_fps=60)
     elif not isinstance(canvas, (WgpuCanvasBase, Texture)):
-        raise ValueError(
+        raise TypeError(
             f"canvas option must either be a valid WgpuCanvas implementation, a pygfx Texture"
             f" or a str with the wgpu gui backend name."
         )
 
     if renderer is None:
         renderer = WgpuRenderer(canvas, pixel_ratio=2)
+    elif not isinstance(renderer, Renderer):
+        raise TypeError(
+            f"renderer option must be a pygfx.Renderer instance such as pygfx.WgpuRenderer"
+        )
 
     return canvas, renderer
 
 
 def create_camera(
-    camera_type: Union[pygfx.PerspectiveCamera, str],
+    camera_type: pygfx.PerspectiveCamera | str,
 ) -> pygfx.PerspectiveCamera:
     if isinstance(camera_type, pygfx.PerspectiveCamera):
         return camera_type
@@ -61,7 +64,7 @@ controller_types = {
 
 
 def create_controller(
-    controller_type: Union[pygfx.Controller, None, str],
+    controller_type: pygfx.Controller | None | str,
     camera: pygfx.PerspectiveCamera,
 ) -> pygfx.Controller:
     """
