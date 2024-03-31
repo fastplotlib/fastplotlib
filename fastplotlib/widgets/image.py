@@ -271,8 +271,8 @@ class ImageWidget:
             | Ex2: max along z dim: {"z": (np.max, 3)}, passes current, previous and next frame to `np.max` with `axis = 1`
 
         frame_apply: Union[callable, Dict[int, callable]]
-            | apply a function to frames of data along the "t" and "z" axes before displaying a single image
-            | (think time-averaging in local windows, etc.).
+            | Apply function(s) to `data` arrays before to generate final 2D image that is displayed.
+            | Ex: apply a spatial Gaussian filter, image rescaling
             | Pass a single function or a dict of functions to apply to each array individually
             | examples: ``{array_index: to_grayscale}``, ``{0: to_grayscale, 2: threshold_img}``
             | "array_index" is the position of the corresponding array in the data list.
@@ -359,7 +359,10 @@ class ImageWidget:
             )
 
         if self.ndim not in DEFAULT_DIMS_ORDER.keys():
-            raise ValueError(f"{self.ndim} dimensions not supported")
+            raise ValueError(
+                f"{self.ndim} dimensions not supported "
+                f"only xy, txy, and tzxy data with or without RGB(A) is supported"
+            )
         self._dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
 
         if not len(self.dims_order[0]) == self.ndim:
