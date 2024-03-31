@@ -1,5 +1,5 @@
 from inspect import getfullargspec
-from typing import *
+from typing import TypeAlias, Literal, Union
 import weakref
 from warnings import warn
 
@@ -9,7 +9,7 @@ import pygfx
 from pylinalg import vec_transform, vec_unproject
 from wgpu.gui import WgpuCanvasBase
 
-from ._utils import create_camera, create_controller
+from ._utils import create_controller
 from ..graphics._base import Graphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ..legends import Legend
@@ -17,17 +17,18 @@ from ..legends import Legend
 # dict to store Graphic instances
 # this is the only place where the real references to Graphics are stored in a Python session
 # {hex id str: Graphic}
-GRAPHICS: Dict[str, Graphic] = dict()
-SELECTORS: Dict[str, BaseSelector] = dict()
+HexStr: TypeAlias = str
+GRAPHICS: dict[HexStr, Graphic] = dict()
+SELECTORS: dict[HexStr, BaseSelector] = dict()
 
 
 class PlotArea:
     def __init__(
         self,
-        parent,
-        position: Any,
-        camera: Union[pygfx.PerspectiveCamera],
-        controller: Union[pygfx.Controller],
+        parent: Union["PlotArea", "GridPlot"],
+        position: tuple[int, int] | str,
+        camera: pygfx.PerspectiveCamera,
+        controller: pygfx.Controller,
         scene: pygfx.Scene,
         canvas: WgpuCanvasBase,
         renderer: pygfx.WgpuRenderer,
@@ -39,18 +40,18 @@ class PlotArea:
 
         Parameters
         ----------
-        parent: PlotArea
-            parent class of subclasses will be a ``PlotArea`` instance
+        parent: PlotArea or GridPlot
+            parent object
 
         position: Any
-            typical use will be for ``subplots`` in a ``gridplot``, position would correspond to the ``[row, column]``
-            location of the ``subplot`` in its ``gridplot``
+            position of the plot area. In a ``subplot`` position would correspond to the ``[row, column]``
+            index of the ``subplot``. In docks this would correspond to a str name, "top", "right", "bottom" or "left"
 
         camera: pygfx.PerspectiveCamera
-            Use perspective camera for both perspective and orthographic views. Set fov = 0 for orthographic mode.
+            Use perspective camera for both perspective and orthographic views. Set fov = 0 for orthographic projection
 
         controller: pygfx.Controller
-            One of the pygfx controllers, panzoom, fly, orbit, or trackball
+            One of the pygfx controllers: "panzoom", "fly", "trackball", "orbit"
 
         scene: pygfx.Scene
             represents the root of a scene graph, will be viewed by the given ``camera``
@@ -62,20 +63,17 @@ class PlotArea:
             renders the scene onto the canvas
 
         name: str, optional
-            name this ``subplot`` or ``plot``
+            name this plot area
 
         """
 
-        self._parent: PlotArea = parent
+        self._parent = parent
         self._position = position
 
         self._scene = scene
         self._canvas = canvas
         self._renderer = renderer
-        if parent is None:
-            self._viewport: pygfx.Viewport = pygfx.Viewport(renderer)
-        else:
-            self._viewport = pygfx.Viewport(parent.renderer)
+        self._viewport: pygfx.Viewport = pygfx.Viewport(renderer)
 
         self._camera = camera
         self._controller = controller
@@ -85,18 +83,18 @@ class PlotArea:
             self.viewport,
         )
 
-        self._animate_funcs_pre = list()
-        self._animate_funcs_post = list()
+        self._animate_funcs_pre: list[callable] = list()
+        self._animate_funcs_post: list[callable] = list()
 
         self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
         # list of hex id strings for all graphics managed by this PlotArea
         # the real Graphic instances are stored in the ``GRAPHICS`` dict
-        self._graphics: List[str] = list()
+        self._graphics: list[str] = list()
 
         # selectors are in their own list so they can be excluded from scene bbox calculations
         # managed similar to GRAPHICS for garbage collection etc.
-        self._selectors: List[str] = list()
+        self._selectors: list[str] = list()
 
         self._name = name
 
@@ -108,11 +106,11 @@ class PlotArea:
     # several read-only properties
     @property
     def parent(self):
-        """A parent if relevant, used by individual Subplots in GridPlot"""
+        """A parent if relevant"""
         return self._parent
 
     @property
-    def position(self) -> Union[Tuple[int, int], Any]:
+    def position(self) -> tuple[int, int] | str:
         """Position of this plot area within a larger layout (such as GridPlot) if relevant"""
         return self._position
 
@@ -142,7 +140,7 @@ class PlotArea:
         return self._camera
 
     @camera.setter
-    def camera(self, new_camera: Union[str, pygfx.PerspectiveCamera]):
+    def camera(self, new_camera: str | pygfx.PerspectiveCamera):
         # user wants to set completely new camera, remove current camera from controller
         if isinstance(new_camera, pygfx.PerspectiveCamera):
             self.controller.remove_camera(self._camera)
@@ -178,7 +176,7 @@ class PlotArea:
         return self._controller
 
     @controller.setter
-    def controller(self, new_controller: Union[str, pygfx.Controller]):
+    def controller(self, new_controller: str | pygfx.Controller):
         new_controller = create_controller(new_controller, self._camera)
 
         cameras_list = list()
@@ -206,7 +204,7 @@ class PlotArea:
         self._controller = new_controller
 
     @property
-    def graphics(self) -> Tuple[Graphic, ...]:
+    def graphics(self) -> tuple[Graphic, ...]:
         """Graphics in the plot area. Always returns a proxy to the Graphic instances."""
         proxies = list()
         for loc in self._graphics:
@@ -218,7 +216,7 @@ class PlotArea:
         return tuple(proxies)
 
     @property
-    def selectors(self) -> Tuple[BaseSelector, ...]:
+    def selectors(self) -> tuple[BaseSelector, ...]:
         """Selectors in the plot area. Always returns a proxy to the Graphic instances."""
         proxies = list()
         for loc in self._selectors:
@@ -228,7 +226,7 @@ class PlotArea:
         return tuple(proxies)
 
     @property
-    def legends(self) -> Tuple[Legend, ...]:
+    def legends(self) -> tuple[Legend, ...]:
         """Legends in the plot area."""
         proxies = list()
         for loc in self._graphics:
@@ -253,7 +251,7 @@ class PlotArea:
             raise TypeError("PlotArea `name` must be of type <str>")
         self._name = name
 
-    def get_rect(self) -> Tuple[float, float, float, float]:
+    def get_rect(self) -> tuple[float, float, float, float]:
         """
         Returns the viewport rect to define the rectangle
         occupied by the viewport w.r.t. the Canvas.
@@ -267,7 +265,7 @@ class PlotArea:
         raise NotImplementedError("Must be implemented in subclass")
 
     def map_screen_to_world(
-        self, pos: Union[Tuple[float, float], pygfx.PointerEvent]
+        self, pos: tuple[float, float] | pygfx.PointerEvent
     ) -> np.ndarray:
         """
         Map screen position to world position
@@ -316,7 +314,7 @@ class PlotArea:
 
         self._call_animate_functions(self._animate_funcs_post)
 
-    def _call_animate_functions(self, funcs: Iterable[callable]):
+    def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:
             try:
                 args = getfullargspec(fn).args
@@ -337,7 +335,7 @@ class PlotArea:
 
     def add_animations(
         self,
-        *funcs: Iterable[callable],
+        *funcs: callable,
         pre_render: bool = True,
         post_render: bool = False,
     ):
@@ -347,7 +345,7 @@ class PlotArea:
 
         Parameters
         ----------
-        *funcs: callable or iterable of callable
+        *funcs: callable(s)
             function(s) that are called on each render cycle
 
         pre_render: bool, default ``True``, optional keyword-only argument
@@ -460,7 +458,7 @@ class PlotArea:
         self,
         graphic: Graphic,
         center: bool = True,
-        action: str = Union["insert", "add"],
+        action: str = Literal["insert", "add"],
         index: int = 0,
     ):
         """Private method to handle inserting or adding a graphic to a PlotArea."""
@@ -570,7 +568,7 @@ class PlotArea:
     def auto_scale(
         self,
         *,  # since this is often used as an event handler, don't want to coerce maintain_aspect = True
-        maintain_aspect: Union[None, bool] = None,
+        maintain_aspect: None | bool = None,
         zoom: float = 0.8,
     ):
         """
@@ -650,6 +648,7 @@ class PlotArea:
         """
         # TODO: proper gc of selectors, RAM is freed for regular graphics but not selectors
         # TODO: references to selectors must be lingering somewhere
+        # TODO: update March 2024, I think selectors are gc properly, should check
         # get location
         loc = graphic.loc
 
@@ -718,7 +717,7 @@ class PlotArea:
             f"The current selectors are:\n {selector_names}"
         )
 
-    def __contains__(self, item: Union[str, Graphic]):
+    def __contains__(self, item: str | Graphic):
         to_check = [*self.graphics, *self.selectors, *self.legends]
 
         if isinstance(item, Graphic):

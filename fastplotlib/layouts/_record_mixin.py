@@ -1,4 +1,3 @@
-from typing import *
 from pathlib import Path
 from multiprocessing import Queue, Process
 from time import time
@@ -21,7 +20,7 @@ class VideoWriterAV(Process):
 
     def __init__(
         self,
-        path: Union[Path, str],
+        path: Path | str,
         queue: Queue,
         fps: int,
         width: int,
@@ -115,7 +114,7 @@ class RecordMixin:
 
     def record_start(
         self,
-        path: Union[str, Path],
+        path: str | Path,
         fps: int = 25,
         codec: str = "mpeg4",
         pixel_format: str = "yuv420p",

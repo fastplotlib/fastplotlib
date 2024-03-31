@@ -18,10 +18,10 @@ class LineGraphic(Graphic, Interaction):
         self,
         data: Any,
         thickness: float = 2.0,
-        colors: Union[str, np.ndarray, Iterable] = "w",
+        colors: str | np.ndarray | Iterable = "w",
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: Union[np.ndarray, List] = None,
+        cmap_values: np.ndarray | Iterable = None,
         z_position: float = None,
         collection_index: int = None,
         *args,
@@ -46,7 +46,7 @@ class LineGraphic(Graphic, Interaction):
             apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors"
 
-        cmap_values: 1D array-like or list of numerical values, optional
+        cmap_values: 1D array-like or Iterable of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         alpha: float, optional, default 1.0

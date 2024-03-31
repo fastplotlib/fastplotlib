@@ -1,5 +1,3 @@
-from typing import *
-
 from ipywidgets import VBox, Widget
 from sidecar import Sidecar
 from IPython.display import display
@@ -20,7 +18,7 @@ class JupyterOutputContext(VBox):
         make_toolbar: bool,
         use_sidecar: bool,
         sidecar_kwargs: dict,
-        add_widgets: List[Widget],
+        add_widgets: list[Widget],
     ):
         """
 

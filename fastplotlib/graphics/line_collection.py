@@ -20,14 +20,14 @@ class LineCollection(GraphicCollection, Interaction):
     def __init__(
         self,
         data: List[np.ndarray],
-        z_position: Union[List[float], float] = None,
-        thickness: Union[float, List[float]] = 2.0,
-        colors: Union[List[np.ndarray], np.ndarray] = "w",
+        z_position: Iterable[float] | float = None,
+        thickness: float | Iterable[float] = 2.0,
+        colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
         alpha: float = 1.0,
-        cmap: Union[List[str], str] = None,
-        cmap_values: Union[np.ndarray, List] = None,
+        cmap: Iterable[str] | str = None,
+        cmap_values: np.ndarray | List = None,
         name: str = None,
-        metadata: Union[list, tuple, np.ndarray] = None,
+        metadata: Iterable[Any] | np.ndarray = None,
         *args,
         **kwargs,
     ):
@@ -36,39 +36,41 @@ class LineCollection(GraphicCollection, Interaction):
 
         Parameters
         ----------
-
         data: list of array-like or array
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
 
-        z_position: list of float or float, optional
+        z_position: Iterable of float or float, optional
             | if ``float``, single position will be used for all lines
             | if ``list`` of ``float``, each value will apply to the individual lines
 
-        thickness: float or list of float, default 2.0
+        thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
             | if ``list`` of ``float``, each value will apply to the individual lines
 
-        colors: str, RGBA array, list of RGBA array, or list of str, default "w"
+        colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
             | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
-        cmap: list of str or str, optional
+        alpha: float, optional
+            alpha value for colors, if colors is a ``str``
+
+        cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
 
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
-        cmap_values: 1D array-like or list of numerical values, optional
+        cmap_values: 1D array-like or Iterable of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         name: str, optional
             name of the line collection
 
-        metadata: list, tuple, or array
+        metadata: Iterable or array
             metadata associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
@@ -235,7 +237,7 @@ class LineCollection(GraphicCollection, Interaction):
         return self._cmap_values
 
     @cmap_values.setter
-    def cmap_values(self, values: Union[np.ndarray, list]):
+    def cmap_values(self, values: np.ndarray | Iterable):
         colors = parse_cmap_values(
             n_colors=len(self), cmap_name=self.cmap, cmap_values=values
         )
@@ -477,13 +479,16 @@ class LineStack(LineCollection):
     def __init__(
         self,
         data: List[np.ndarray],
-        z_position: Union[List[float], float] = None,
-        thickness: Union[float, List[float]] = 2.0,
-        colors: Union[List[np.ndarray], np.ndarray] = "w",
-        cmap: Union[List[str], str] = None,
-        separation: float = 10,
-        separation_axis: str = "y",
+        z_position: Iterable[float] | float = None,
+        thickness: float | Iterable[float] = 2.0,
+        colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
+        alpha: float = 1.0,
+        cmap: Iterable[str] | str = None,
+        cmap_values: np.ndarray | List = None,
         name: str = None,
+        metadata: Iterable[Any] | np.ndarray = None,
+        separation: float = 10.0,
+        separation_axis: str = "y",
         *args,
         **kwargs,
     ):
@@ -492,33 +497,37 @@ class LineStack(LineCollection):
 
         Parameters
         ----------
-        data: list of array-like
+        data: list of array-like or array
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
 
-        z_position: list of float or float, optional
+        z_position: Iterable of float or float, optional
             | if ``float``, single position will be used for all lines
-            | if ``list`` of ``float``, each value will apply to individual lines
+            | if ``list`` of ``float``, each value will apply to the individual lines
 
-        thickness: float or list of float, default 2.0
+        thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
             | if ``list`` of ``float``, each value will apply to the individual lines
 
-        colors: str, RGBA array, list of RGBA array, or list of str, default "w"
+        colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
             | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
-            | is ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
-            | if ``list`` of ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
+            | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
+            | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
-        cmap: list of str or str, optional
+        cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
 
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
-        name: str, optional
-            name of the line stack
+        cmap_values: 1D array-like or Iterable of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        metadata: Iterable or array
+            metadata associated with this collection, this is for the user to manage.
+            ``len(metadata)`` must be same as ``len(data)``
 
         separation: float, default 10
             space in between each line graphic in the stack
@@ -529,12 +538,8 @@ class LineStack(LineCollection):
         name: str, optional
             name of the line stack
 
-        args
-            passed to LineCollection
-
         kwargs
             passed to LineCollection
-
 
         Features
         --------
@@ -549,8 +554,12 @@ class LineStack(LineCollection):
             z_position=z_position,
             thickness=thickness,
             colors=colors,
+            alpha=alpha,
             cmap=cmap,
+            cmap_values=cmap_values,
+            metadata=metadata,
             name=name,
+            *args,
             **kwargs,
         )
 

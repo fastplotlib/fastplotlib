@@ -1,4 +1,3 @@
-from typing import *
 import weakref
 
 import numpy as np
@@ -112,7 +111,7 @@ class HistogramLUT(Graphic):
 
         self.image_graphic.cmap.add_event_handler(self._image_cmap_handler)
 
-    def _get_vmin_vmax_str(self) -> Tuple[str, str]:
+    def _get_vmin_vmax_str(self) -> tuple[str, str]:
         if self.vmin < 0.001 or self.vmin > 99_999:
             vmin_str = f"{self.vmin:.2e}"
         else:
