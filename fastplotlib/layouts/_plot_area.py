@@ -1,4 +1,5 @@
 from inspect import getfullargspec
+from sys import getrefcount
 from typing import TypeAlias, Literal, Union
 import weakref
 from warnings import warn
@@ -70,11 +71,23 @@ class References:
 
         return tuple(proxies)
 
+    def get_refcounts(self) -> dict[HexStr: int]:
+        counts = dict()
+
+        for item in (self._graphics, self._selectors, self._legends):
+            for k in item.keys():
+                counts[(k, item[k].name, item[k].__class__.__name__)] = getrefcount(item[k])
+
+        return counts
+
 
 REFERENCES = References()
 
 
 class PlotArea:
+    def get_refcounts(self):
+        return REFERENCES.get_refcounts()
+
     def __init__(
         self,
         parent: Union["PlotArea", "GridPlot"],
