@@ -373,11 +373,9 @@ class ImageWidget:
 
         # Sliders are made for all dimensions except the last 2
         self._slider_dims = list()
-        for dim in range(self.ndim - 2):
+        for dim in range(self.ndim):
             if dim in ALLOWED_SLIDER_DIMS.keys():
                 self.slider_dims.append(ALLOWED_SLIDER_DIMS[dim])
-            else:
-                self.slider_dims.append(f"{dim}")
 
         self._frame_apply: Dict[int, callable] = dict()
 
@@ -509,6 +507,12 @@ class ImageWidget:
                         "dict argument to `window_funcs` must be in the form of: "
                         "`{dimension: (func, window_size)}`. "
                         "See the docstring."
+                    )
+                if not isinstance(v[1], int):
+                    raise TypeError(
+                        f"dict argument to `window_funcs` must be in the form of: "
+                        "`{dimension: (func, window_size)}`. "
+                        f"where window_size is integer. you passed in {v[1]} for window_size"
                     )
 
             if not isinstance(self._window_funcs, dict):
