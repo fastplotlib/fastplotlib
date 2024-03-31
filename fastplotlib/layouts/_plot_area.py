@@ -22,6 +22,7 @@ class References:
     """
     This is the only place where the real graphic objects are stored. Everywhere else gets a proxy.
     """
+
     _graphics: dict[HexStr, Graphic] = dict()
     _selectors: dict[HexStr, BaseSelector] = dict()
     _legends: dict[HexStr, Legend] = dict()
@@ -50,9 +51,7 @@ class References:
         elif address in self._legends.keys():
             del self._legends[address]
         else:
-            raise KeyError(
-                f"graphic with address not found: {address}"
-            )
+            raise KeyError(f"graphic with address not found: {address}")
 
     def get_proxies(self, refs: list[HexStr]) -> tuple[weakref.proxy]:
         proxies = list()
@@ -67,9 +66,7 @@ class References:
                 proxies.append(weakref.proxy(self._legends[key]))
 
             else:
-                raise KeyError(
-                    f"graphic object with address not found: {key}"
-                )
+                raise KeyError(f"graphic object with address not found: {key}")
 
         return tuple(proxies)
 
@@ -686,9 +683,7 @@ class PlotArea:
         address = graphic._fpl_address
 
         if graphic not in self:
-            raise KeyError(
-                f"Graphic not found in plot area: {graphic}"
-            )
+            raise KeyError(f"Graphic not found in plot area: {graphic}")
 
         # check which type it is
         for l in [self._graphics, self._selectors, self._legends]:
@@ -717,9 +712,7 @@ class PlotArea:
             if graphic.name == name:
                 return graphic
 
-        raise IndexError(
-            f"No graphic or selector of given name in plot area.\n"
-        )
+        raise IndexError(f"No graphic or selector of given name in plot area.\n")
 
     def __contains__(self, item: str | Graphic):
         if isinstance(item, Graphic):
