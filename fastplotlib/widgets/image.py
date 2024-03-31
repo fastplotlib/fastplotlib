@@ -482,26 +482,31 @@ class ImageWidget:
         return self._window_funcs
 
     @window_funcs.setter
-    def window_funcs(self, sa: Dict[str, int]):
-        if sa is None:
+    def window_funcs(self, callable_dict: Dict[str, int]):
+        if callable_dict is None:
             self._window_funcs = None
             # force frame to update
             self.current_index = self.current_index
             return
 
-        elif isinstance(sa, dict):
-            if not set(sa.keys()).issubset(ALLOWED_WINDOW_DIMS):
+        elif isinstance(callable_dict, dict):
+            if not set(callable_dict.keys()).issubset(ALLOWED_WINDOW_DIMS):
                 raise ValueError(
                     f"The only allowed keys to window funcs are {list(ALLOWED_WINDOW_DIMS)} "
-                    f"Your window func passed in these keys: {list(sa.keys())}"
+                    f"Your window func passed in these keys: {list(callable_dict.keys())}"
                 )
-            if not all([isinstance(_sa, tuple) for _sa in sa.values()]):
+            if not all(
+                [
+                    isinstance(_callable_dict, tuple)
+                    for _callable_dict in callable_dict.values()
+                ]
+            ):
                 raise TypeError(
                     "dict argument to `window_funcs` must be in the form of: "
                     "`{dimension: (func, window_size)}`. "
                     "See the docstring."
                 )
-            for v in sa.values():
+            for v in callable_dict.values():
                 if not callable(v[0]):
                     raise TypeError(
                         "dict argument to `window_funcs` must be in the form of: "
@@ -518,13 +523,13 @@ class ImageWidget:
             if not isinstance(self._window_funcs, dict):
                 self._window_funcs = dict()
 
-            for k in list(sa.keys()):
-                self._window_funcs[k] = _WindowFunctions(self, *sa[k])
+            for k in list(callable_dict.keys()):
+                self._window_funcs[k] = _WindowFunctions(self, *callable_dict[k])
 
         else:
             raise TypeError(
                 f"`window_funcs` must be either Nonetype or dict."
-                f"You have passed a {type(sa)}. See the docstring."
+                f"You have passed a {type(callable_dict)}. See the docstring."
             )
 
         # force frame to update
@@ -563,8 +568,6 @@ class ImageWidget:
             if self.data[i] is array:
                 data_ix = i
                 break
-        if data_ix is None:
-            raise ValueError(f"Given `array` not found in `self.data`")
 
         for dim in list(slice_indices.keys()):
             # get axes order for that specific array
@@ -572,7 +575,7 @@ class ImageWidget:
 
             indices_dim = slice_indices[dim]
 
-            # takes care of index selection for this specific axis
+            # takes care of index selection (window slicing) for this specific axis
             indices_dim = self._get_window_indices(data_ix, numerical_dim, indices_dim)
 
             # set the indices for this dimension
