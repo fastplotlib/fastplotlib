@@ -27,7 +27,7 @@ def make_canvas_and_renderer(
         )
 
     if renderer is None:
-        renderer = WgpuRenderer(canvas, pixel_ratio=2)
+        renderer = WgpuRenderer(canvas)
     elif not isinstance(renderer, Renderer):
         raise TypeError(
             f"renderer option must be a pygfx.Renderer instance such as pygfx.WgpuRenderer"
