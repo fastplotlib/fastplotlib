@@ -163,7 +163,7 @@ class Legend(Graphic):
         """
         self._graphics: list[Graphic] = list()
 
-        # hex id of Graphic, i.e. graphic.loc are the keys
+        # hex id of Graphic, i.e. graphic._fpl_address are the keys
         self._items: OrderedDict[str:LegendItem] = OrderedDict()
 
         super().__init__(*args, **kwargs)
@@ -218,7 +218,7 @@ class Legend(Graphic):
     def add_graphic(self, graphic: Graphic, label: str = None):
         if graphic in self._graphics:
             raise KeyError(
-                f"Graphic already exists in legend with label: '{self._items[graphic.loc].label}'"
+                f"Graphic already exists in legend with label: '{self._items[graphic._fpl_address].label}'"
             )
 
         self._check_label_unique(label)
@@ -268,7 +268,7 @@ class Legend(Graphic):
         self._reset_mesh_dims()
 
         self._graphics.append(graphic)
-        self._items[graphic.loc] = legend_item
+        self._items[graphic._fpl_address] = legend_item
 
         graphic.deleted.add_event_handler(partial(self.remove_graphic, graphic))
 
@@ -288,7 +288,7 @@ class Legend(Graphic):
 
     def remove_graphic(self, graphic: Graphic):
         self._graphics.remove(graphic)
-        legend_item = self._items.pop(graphic.loc)
+        legend_item = self._items.pop(graphic._fpl_address)
         self._legend_items_group.remove(legend_item.world_object)
         self._reset_item_positions()
 
@@ -350,7 +350,7 @@ class Legend(Graphic):
         if not isinstance(graphic, Graphic):
             raise TypeError("Must index Legend with Graphics")
 
-        if graphic.loc not in self._items.keys():
+        if graphic._fpl_address not in self._items.keys():
             raise KeyError("Graphic not in legend")
 
-        return self._items[graphic.loc]
+        return self._items[graphic._fpl_address]

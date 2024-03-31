@@ -28,16 +28,16 @@ class References:
 
     def add(self, graphic: Graphic | BaseSelector | Legend):
         """Adds the real graphic to the dict"""
-        loc = graphic.loc
+        addr = graphic._fpl_address
 
         if isinstance(graphic, BaseSelector):
-            self._selectors[loc] = graphic
+            self._selectors[addr] = graphic
 
         elif isinstance(graphic, Legend):
-            self._legends[loc] = graphic
+            self._legends[addr] = graphic
 
         elif isinstance(graphic, Graphic):
-            self._graphics[loc] = graphic
+            self._graphics[addr] = graphic
 
         else:
             raise TypeError("Can only add Graphic, Selector or Legend types")
@@ -277,6 +277,10 @@ class PlotArea:
         return REFERENCES.get_proxies(self._legends)
 
     @property
+    def objects(self) -> tuple[Graphic | BaseSelector | Legend, ...]:
+        return *self.graphics, *self.selectors, *self.legends
+
+    @property
     def name(self) -> str:
         """The name of this plot area"""
         return self._name
@@ -510,24 +514,24 @@ class PlotArea:
         if graphic.name is not None:  # skip for those that have no name
             self._check_graphic_name_exists(graphic.name)
 
-        loc = graphic.loc
+        addr = graphic._fpl_address
 
         if isinstance(graphic, BaseSelector):
-            loc_list = getattr(self, "_selectors")
+            addr_list = self._selectors
 
         elif isinstance(graphic, Legend):
-            loc_list = getattr(self, "_legends")
+            addr_list = self._legends
 
         elif isinstance(graphic, Graphic):
-            loc_list = getattr(self, "_graphics")
+            addr_list = self._graphics
 
         else:
             raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
 
         if action == "insert":
-            loc_list.insert(index, loc)
+            addr_list.insert(index, addr)
         elif action == "add":
-            loc_list.append(loc)
+            addr_list.append(addr)
         else:
             raise ValueError("valid actions are 'insert' | 'add'")
 
@@ -679,19 +683,18 @@ class PlotArea:
         # TODO: references to selectors must be lingering somewhere
         # TODO: update March 2024, I think selectors are gc properly, should check
         # get memory address
-        address = graphic.loc
+        address = graphic._fpl_address
 
-        # check which dict it's in
-        if address in self._graphics:
-            self._graphics.remove(address)
-        elif address in self._selectors:
-            self._selectors.remove(address)
-        elif address in self._legends:
-            self._legends.remove(address)
-        else:
+        if graphic not in self:
             raise KeyError(
-                f"Graphic with following address not found in plot area: {address}"
+                f"Graphic not found in plot area: {graphic}"
             )
+
+        # check which type it is
+        for l in [self._graphics, self._selectors, self._legends]:
+            if address in l:
+                l.remove(address)
+                break
 
         # remove from scene if necessary
         if graphic.world_object in self.scene.children:
@@ -706,51 +709,27 @@ class PlotArea:
         """
         Clear the Plot or Subplot. Also performs garbage collection, i.e. runs ``delete_graphic`` on all graphics.
         """
-
-        for g in self.graphics:
+        for g in self.objects:
             self.delete_graphic(g)
 
-        for s in self.selectors:
-            self.delete_graphic(s)
-
     def __getitem__(self, name: str):
-        for graphic in self.graphics:
+        for graphic in self.objects:
             if graphic.name == name:
                 return graphic
 
-        for selector in self.selectors:
-            if selector.name == name:
-                return selector
-
-        for legend in self.legends:
-            if legend.name == name:
-                return legend
-
-        graphic_names = list()
-        for g in self.graphics:
-            graphic_names.append(g.name)
-
-        selector_names = list()
-        for s in self.selectors:
-            selector_names.append(s.name)
-
         raise IndexError(
-            f"No graphic or selector of given name.\n"
-            f"The current graphics are:\n {graphic_names}\n"
-            f"The current selectors are:\n {selector_names}"
+            f"No graphic or selector of given name in plot area.\n"
         )
 
     def __contains__(self, item: str | Graphic):
-        to_check = [*self.graphics, *self.selectors, *self.legends]
-
         if isinstance(item, Graphic):
-            if item in to_check:
+            if item in self.objects:
                 return True
             else:
                 return False
 
         elif isinstance(item, str):
-            for graphic in to_check:
+            for graphic in self.objects:
                 # only check named graphics
                 if graphic.name is None:
                     continue
