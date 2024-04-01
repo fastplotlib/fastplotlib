@@ -71,12 +71,14 @@ class References:
 
         return tuple(proxies)
 
-    def get_refcounts(self) -> dict[HexStr: int]:
+    def get_refcounts(self) -> dict[HexStr:int]:
         counts = dict()
 
         for item in (self._graphics, self._selectors, self._legends):
             for k in item.keys():
-                counts[(k, item[k].name, item[k].__class__.__name__)] = getrefcount(item[k])
+                counts[(k, item[k].name, item[k].__class__.__name__)] = getrefcount(
+                    item[k]
+                )
 
         return counts
 

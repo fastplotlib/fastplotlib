@@ -107,7 +107,9 @@ class HistogramLUT(Graphic):
         self._text_vmax.position_x = -120
         self._text_vmax.position_y = self._linear_region_selector.selection()[1]
 
-        self._linear_region_selector.selection.add_event_handler(self._linear_region_handler)
+        self._linear_region_selector.selection.add_event_handler(
+            self._linear_region_handler
+        )
 
         self.image_graphic.cmap.add_event_handler(self._image_cmap_handler)
 

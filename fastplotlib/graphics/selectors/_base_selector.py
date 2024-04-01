@@ -138,7 +138,9 @@ class BaseSelector(Graphic):
         for fill in self._fill:
             if fill.material.color_is_transparent:
                 self._pfunc_fill = partial(self._check_fill_pointer_event, fill)
-                self._plot_area.renderer.add_event_handler(self._pfunc_fill, "pointer_down")
+                self._plot_area.renderer.add_event_handler(
+                    self._pfunc_fill, "pointer_down"
+                )
 
         # when the pointer moves
         self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
@@ -359,6 +361,8 @@ class BaseSelector(Graphic):
 
     def _fpl_cleanup(self):
         if hasattr(self, "_pfunc_fill"):
-            self._plot_area.renderer.remove_event_handler(self._pfunc_fill, "pointer_down")
+            self._plot_area.renderer.remove_event_handler(
+                self._pfunc_fill, "pointer_down"
+            )
             del self._pfunc_fill
         super()._fpl_cleanup()
