@@ -356,3 +356,9 @@ class BaseSelector(Graphic):
             self._key_move_value = False
 
         self._move_info = None
+
+    def _fpl_cleanup(self):
+        if hasattr(self, "_pfunc_fill"):
+            self._plot_area.renderer.remove_event_handler(self._pfunc_fill, "pointer_down")
+            del self._pfunc_fill
+        super()._fpl_cleanup()

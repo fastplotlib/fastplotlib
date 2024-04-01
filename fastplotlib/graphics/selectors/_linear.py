@@ -372,9 +372,7 @@ class LinearSelector(BaseSelector):
             self.selection = self.selection() + delta[1]
 
     def _fpl_cleanup(self):
-        super()._fpl_cleanup()
-
         for widget in self._handled_widgets:
             widget.unobserve(self._ipywidget_callback, "value")
 
-        self._plot_area.renderer.remove_event_handler(self._set_slider_layout, "resize")
+        super()._fpl_cleanup()
