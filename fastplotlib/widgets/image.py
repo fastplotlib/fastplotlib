@@ -3,13 +3,11 @@ from warnings import warn
 
 import numpy as np
 
-
 from ..layouts import GridPlot
 from ..graphics import ImageGraphic
 from ..utils import calculate_gridshape
 from .histogram_lut import HistogramLUT
 from ..layouts._utils import CANVAS_OPTIONS_AVAILABLE
-
 
 if CANVAS_OPTIONS_AVAILABLE["jupyter"]:
     from ..layouts._frame._ipywidget_toolbar import IpywidgetImageWidgetToolbar
@@ -17,11 +15,16 @@ if CANVAS_OPTIONS_AVAILABLE["jupyter"]:
 if CANVAS_OPTIONS_AVAILABLE["qt"]:
     from ..layouts._frame._qt_toolbar import QToolbarImageWidget
 
+# How many dimensions to display a single image
+NUM_IMAGE_DIMS = {"gray": 2, "rgb": 3}
 
-DEFAULT_DIMS_ORDER = {
-    2: "xy",
-    3: "txy",
-    4: "tzxy",
+DEFAULT_IMAGE_FORMAT = "gray"
+
+# How many dimensions can we scroll over
+SCROLLABLE_DIMS_ORDER = {
+    0: "",
+    1: "t",
+    2: "tz",
 }
 
 ALLOWED_SLIDER_DIMS = {0: "t", 1: "z"}
@@ -160,13 +163,16 @@ class ImageWidget:
 
     @property
     def ndim(self) -> int:
-        """number of dimensions in the image data displayed in the widget"""
+        """Number of dimensions of grayscale data displayed in the widget (it will be 1 more for RGB(A) data)"""
         return self._ndim
 
     @property
-    def dims_order(self) -> List[str]:
-        """dimension order of the data displayed in the widget"""
-        return self._dims_order
+    def dims_partition(self) -> List[tuple[int, int]]:
+        """Returns a List containing 1 tuple for each array displayed in the widget. Each tuple contains 2 integers.
+        First integer tell us how many scrollable dims the array has and second tells us how many dims are used to
+        display a single image; this will either be 2 or 3 (grayscale or RGB(A)) Ex: [(2, 3), (2, 2)] means first
+        image has 2 ("tz") scrollable dims and shows 3D (RGB(A)) images"""
+        return self._dims_partition
 
     @property
     def sliders(self) -> Dict[str, Any]:
@@ -194,6 +200,81 @@ class ImageWidget:
 
         """
         return self._current_index
+
+    @property
+    def color_scheme(self) -> Dict[int, str]:
+        """
+        Return the color scheme of each `array` in the imagewidget. Each `array` can be displayed in either RGB or
+        grayscale form; the default is grayscale.
+
+        Returns:
+        -------
+        full_color_schemes: Dict[int, str]
+            | ``dict`` whose keys are indices (0, 1, 2, ...) for each array and values are "gray" or "rgb" depending on
+            how we want to display the images from this array
+        """
+        return self._color_scheme
+
+    def _initialize_full_color_scheme(
+        self, color_scheme: Dict[int, str], data: list[np.ndarray]
+    ) -> Dict[int, str]:
+        """
+        Initializes the color scheme dictionary, populating it with a color scheme for each `array` which the
+        ImageWidget displays.
+
+        Returns:
+        -------
+        full_color_schemes: Dict[int, str]
+            | ``dict`` whose keys are indices (0, 1, 2, ...) for each array and values are "gray" or "rgb" depending on
+            how we want to display the images from this array
+        """
+        full_color_scheme = dict()
+        for k in range(len(data)):
+            if k not in color_scheme.keys():
+                full_color_scheme[k] = DEFAULT_IMAGE_FORMAT
+            elif k in color_scheme.keys():
+                curr_scheme = color_scheme[k].lower()
+                if curr_scheme not in NUM_IMAGE_DIMS.keys():
+                    raise ValueError(
+                        f"Color Schemes can only be one of {list(NUM_IMAGE_DIMS.keys())} "
+                        f"You passed in {color_scheme[k]} for one of the keys"
+                    )
+                else:
+                    full_color_scheme[k] = curr_scheme
+        return full_color_scheme
+
+    def _compute_and_validate_formats(self) -> list[tuple[int, int]]:
+
+        dim_partitions = []
+        for k in range(len(self._data)):
+            curr_arr = self._data[k]
+
+            num_img_dims = NUM_IMAGE_DIMS[self.color_scheme[k]]
+
+            # Make sure each image stack at least ``num_img_dims`` dimensions
+            if len(curr_arr.shape) < num_img_dims:
+                raise ValueError(
+                    f"Your array has shape {curr_arr.shape} "
+                    f"but you specified that each image in your array is {num_img_dims}D "
+                )
+
+            # If RGB(A), last dim must be 3 or 4
+            if num_img_dims == 3:
+                if not (curr_arr.shape[-1] == 3 or curr_arr.shape[-1] == 4):
+                    raise ValueError(
+                        "RGB(A) was specified but the last dimension of the array is neither 3 nor 4"
+                    )
+
+            num_scrollable_dims = len(curr_arr.shape) - num_img_dims
+
+            if num_scrollable_dims not in SCROLLABLE_DIMS_ORDER.keys():
+                raise ValueError(
+                    f"At array {k}, One array had shape {curr_arr.shape} which is not supported"
+                )
+
+            dim_partitions.append((num_scrollable_dims, num_img_dims))
+
+        return dim_partitions
 
     @current_index.setter
     def current_index(self, index: Dict[str, int]):
@@ -240,6 +321,7 @@ class ImageWidget:
         names: List[str] = None,
         grid_plot_kwargs: dict = None,
         histogram_widget: bool = True,
+        color_scheme: dict = None,
         **kwargs,
     ):
         """
@@ -247,14 +329,15 @@ class ImageWidget:
         images. It includes sliders for key dimensions such as "t" (time) and "z", enabling users to smoothly navigate
         through one or multiple image stacks simultaneously.
 
-        Allowed dimensions orders for each image stack:
+        Allowed dimensions orders for each image stack: Note that each has a an optional (c) channel which refers to
+        RGB(A) a channel. So this channel should be either 3 or 4.
 
         ======= ==========
         n_dims  dims order
         ======= ==========
-        2       "xy"
-        3       "txy"
-        4       "tzxy"
+        2       "xy(c)"
+        3       "txy(c)"
+        4       "tzxy(c)"
         ======= ==========
 
         Parameters
@@ -272,7 +355,7 @@ class ImageWidget:
 
         frame_apply: Union[callable, Dict[int, callable]]
             | Apply function(s) to `data` arrays before to generate final 2D image that is displayed.
-            | Ex: apply a spatial Gaussian filter, image rescaling
+            | Ex: apply a spatial Gaussian filter
             | Pass a single function or a dict of functions to apply to each array individually
             | examples: ``{array_index: to_grayscale}``, ``{0: to_grayscale, 2: threshold_img}``
             | "array_index" is the position of the corresponding array in the data list.
@@ -292,6 +375,10 @@ class ImageWidget:
         histogram_widget: bool, default False
             make histogram LUT widget for each subplot
 
+        color_scheme: dict, default None
+            Keys are integer indices referring to `arrays` displayed in ImageWidget. Values are either "grey" or "rgb",
+                indicating how we to display the images from the array. If "rgb", the last dim must be 3 or 4
+
         kwargs: Any
             passed to fastplotlib.graphics.Image
 
@@ -301,9 +388,14 @@ class ImageWidget:
         # output context
         self._output = None
 
+        if _is_arraylike(data):
+            data = [data]
+
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
             if all([_is_arraylike(d) for d in data]):
+
+                # Grid computations
                 if grid_shape is None:
                     grid_shape = calculate_gridshape(len(data))
 
@@ -314,17 +406,25 @@ class ImageWidget:
                         f"Invalid `grid_shape` passed, setting grid shape to: {grid_shape}"
                     )
 
-                _ndim = [d.ndim for d in data]
-
-                # verify that all image arrays have same number of dimensions
-                # sliders get messy otherwise
-                if not len(set(_ndim)) == 1:
-                    raise ValueError(
-                        f"Number of dimensions of all data arrays must match, your ndims are: {_ndim}"
-                    )
-
+                # Initialize the color scheme, validate data, dim partition (between scrollable and image dimensions)
+                if color_scheme is None:
+                    color_scheme = dict()
+                self._color_scheme = self._initialize_full_color_scheme(
+                    color_scheme, data
+                )
                 self._data: List[np.ndarray] = data
-                self._ndim = self.data[0].ndim  # all ndim must be same
+                self._dims_partition = self._compute_and_validate_formats()
+
+                # Compute the largest dimension
+                self._ndim = (
+                    max(
+                        [
+                            self.dims_partition[i][0]
+                            for i in range(len(self.dims_partition))
+                        ]
+                    )
+                    + NUM_IMAGE_DIMS[DEFAULT_IMAGE_FORMAT]
+                )
 
                 if names is not None:
                     if not all([isinstance(n, str) for n in names]):
@@ -345,12 +445,6 @@ class ImageWidget:
                     f"You have passed the following types:\n"
                     f"{[type(a) for a in data]}"
                 )
-
-        elif _is_arraylike(data):
-            self._data = [data]
-            self._ndim = self.data[0].ndim
-
-            grid_shape = calculate_gridshape(len(self._data))
         else:
             raise TypeError(
                 f"`data` must be an array-like type representing an n-dimensional image "
@@ -358,22 +452,12 @@ class ImageWidget:
                 f"You have passed the following type {type(data)}"
             )
 
-        if self.ndim not in DEFAULT_DIMS_ORDER.keys():
-            raise ValueError(
-                f"{self.ndim} dimensions not supported "
-                f"only xy, txy, and tzxy data with or without RGB(A) is supported"
-            )
-        self._dims_order: List[str] = [DEFAULT_DIMS_ORDER[self.ndim]] * len(self.data)
-
-        if not len(self.dims_order[0]) == self.ndim:
-            raise ValueError(
-                f"Number of dims specified by `dims_order`: {len(self.dims_order[0])} does not"
-                f" match number of dimensions in the `data`: {self.ndim}"
-            )
-
-        # Sliders are made for all dimensions except the last 2
+        # Sliders are made for all dimensions except the image dimensions
         self._slider_dims = list()
-        for dim in range(self.ndim):
+        num_scrollable = max(
+            [self.dims_partition[i][0] for i in range(len(self.dims_partition))]
+        )
+        for dim in range(num_scrollable):
             if dim in ALLOWED_SLIDER_DIMS.keys():
                 self.slider_dims.append(ALLOWED_SLIDER_DIMS[dim])
 
@@ -412,13 +496,19 @@ class ImageWidget:
 
         self._sliders: Dict[str, Any] = dict()
 
-        # get max bound for all data arrays for all dimensions
-        self._dims_max_bounds: Dict[str, int] = {k: np.inf for k in self.slider_dims}
-        for _dim in list(self._dims_max_bounds.keys()):
-            for array, order in zip(self.data, self.dims_order):
-                self._dims_max_bounds[_dim] = min(
-                    self._dims_max_bounds[_dim], array.shape[order.index(_dim)]
-                )
+        # get max bound for all data arrays for all slider dimensions and ensure compatibility across slider dims
+        self._dims_max_bounds: Dict[str, int] = {k: 0 for k in self.slider_dims}
+        for i, _dim in enumerate(list(self._dims_max_bounds.keys())):
+            for array, partition in zip(self.data, self.dims_partition):
+                if partition[0] <= i:
+                    continue
+                else:
+                    if 0 < self._dims_max_bounds[_dim] != array.shape[i]:
+                        raise ValueError(f"Two arrays differ along dimension {_dim}")
+                    else:
+                        self._dims_max_bounds[_dim] = max(
+                            self._dims_max_bounds[_dim], array.shape[i]
+                        )
 
         grid_plot_kwargs_default = {"controller_ids": "sync"}
         if grid_plot_kwargs is None:
@@ -559,9 +649,6 @@ class ImageWidget:
             array-like, 2D slice
 
         """
-        indexer = [slice(None)] * self.ndim
-
-        numerical_dims = list()
 
         data_ix = None
         for i in range(len(self.data)):
@@ -569,9 +656,15 @@ class ImageWidget:
                 data_ix = i
                 break
 
+        numerical_dims = list()
+        curr_ndim = self.data[data_ix].ndim
+        indexer = [slice(None)] * curr_ndim
+        curr_scrollable_format = SCROLLABLE_DIMS_ORDER[self.dims_partition[data_ix][0]]
         for dim in list(slice_indices.keys()):
+            if dim not in curr_scrollable_format:
+                continue
             # get axes order for that specific array
-            numerical_dim = self.dims_order[data_ix].index(dim)
+            numerical_dim = curr_scrollable_format.index(dim)
 
             indices_dim = slice_indices[dim]
 
@@ -588,9 +681,9 @@ class ImageWidget:
         if self.window_funcs is not None:
             a = array
             for i, dim in enumerate(sorted(numerical_dims)):
-                dim_str = self.dims_order[data_ix][dim]
+                dim_str = curr_scrollable_format[dim]
                 dim = dim - i  # since we loose a dimension every iteration
-                _indexer = [slice(None)] * (self.ndim - i)
+                _indexer = [slice(None)] * (curr_ndim - i)
                 _indexer[dim] = indexer[dim + i]
 
                 # if the indexer is an int, this dim has no window func
@@ -612,7 +705,7 @@ class ImageWidget:
         else:
             ix = indices_dim
 
-            dim_str = self.dims_order[data_ix][dim]
+            dim_str = SCROLLABLE_DIMS_ORDER[self.dims_partition[data_ix][0]][dim]
 
             # if no window stuff specified for this dim
             if dim_str not in self.window_funcs.keys():
