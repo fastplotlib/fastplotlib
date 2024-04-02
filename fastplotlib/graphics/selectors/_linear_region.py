@@ -135,7 +135,6 @@ class LinearRegionSelector(BaseSelector):
         # basic mesh for the fill area of the selector
         # line for each edge of the selector
         group = pygfx.Group()
-        self._set_world_object(group)
 
         if axis == "x":
             mesh = pygfx.Mesh(
@@ -155,7 +154,7 @@ class LinearRegionSelector(BaseSelector):
         self.fill = mesh
         self.fill.world.position = (*origin, -2)
 
-        self.world_object.add(self.fill)
+        group.add(self.fill)
 
         self._resizable = resizable
 
@@ -223,7 +222,7 @@ class LinearRegionSelector(BaseSelector):
         # add the edge lines
         for edge in self.edges:
             edge.world.z = -1
-            self.world_object.add(edge)
+            group.add(edge)
 
         # set the initial bounds of the selector
         self.selection = LinearRegionSelectionFeature(
@@ -243,6 +242,8 @@ class LinearRegionSelector(BaseSelector):
             axis=axis,
             name=name,
         )
+
+        self._set_world_object(group)
 
     def get_selected_data(
         self, graphic: Graphic = None

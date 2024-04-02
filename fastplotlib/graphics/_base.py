@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 import weakref
 from warnings import warn
 from abc import ABC, abstractmethod
@@ -11,9 +11,12 @@ from pygfx import WorldObject
 
 from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable, Deleted
 
+
+HexStr: TypeAlias = str
+
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
-WORLD_OBJECTS: dict[str, WorldObject] = dict()  #: {hex id str: WorldObject}
+WORLD_OBJECTS: dict[HexStr, WorldObject] = dict()  #: {hex id str: WorldObject}
 
 
 PYGFX_EVENTS = [
@@ -80,7 +83,7 @@ class Graphic(BaseGraphic):
         self.present = PresentFeature(parent=self)
 
         # store hex id str of Graphic instance mem location
-        self.loc: str = hex(id(self))
+        self._fpl_address: HexStr = hex(id(self))
 
         self.deleted = Deleted(self, False)
 
@@ -93,19 +96,25 @@ class Graphic(BaseGraphic):
 
     @name.setter
     def name(self, name: str):
+        if self.name == name:
+            return
+
         if not isinstance(name, str):
             raise TypeError("`Graphic` name must be of type <str>")
+
         if self._plot_area is not None:
             self._plot_area._check_graphic_name_exists(name)
+
+        self._name = name
 
     @property
     def world_object(self) -> WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
         # We use weakref to simplify garbage collection
-        return weakref.proxy(WORLD_OBJECTS[hex(id(self))])
+        return weakref.proxy(WORLD_OBJECTS[self._fpl_address])
 
     def _set_world_object(self, wo: WorldObject):
-        WORLD_OBJECTS[hex(id(self))] = wo
+        WORLD_OBJECTS[self._fpl_address] = wo
 
     @property
     def position(self) -> np.ndarray:
@@ -166,6 +175,9 @@ class Graphic(BaseGraphic):
         """Return the children of the WorldObject."""
         return self.world_object.children
 
+    def _fpl_add_plot_area_hook(self, plot_area):
+        self._plot_area = plot_area
+
     def __setattr__(self, key, value):
         if hasattr(self, key):
             attr = getattr(self, key)
@@ -187,23 +199,52 @@ class Graphic(BaseGraphic):
         if not isinstance(other, Graphic):
             raise TypeError("`==` operator is only valid between two Graphics")
 
-        if self.loc == other.loc:
+        if self._fpl_address == other._fpl_address:
             return True
 
         return False
 
-    def _cleanup(self):
+    def _fpl_cleanup(self):
         """
         Cleans up the graphic in preparation for __del__(), such as removing event handlers from
         plot renderer, feature event handlers, etc.
 
         Optionally implemented in subclasses
         """
-        pass
+        # clear any attached event handlers and animation functions
+        for attr in dir(self):
+            try:
+                method = getattr(self, attr)
+            except:
+                continue
+
+            if not callable(method):
+                continue
+
+            for ev_type in PYGFX_EVENTS:
+                try:
+                    self._plot_area.renderer.remove_event_handler(method, ev_type)
+                except (KeyError, TypeError):
+                    pass
+
+            try:
+                self._plot_area.remove_animation(method)
+            except KeyError:
+                pass
+
+        for child in self.world_object.children:
+            child._event_handlers.clear()
+
+        self.world_object._event_handlers.clear()
+
+        feature_names = getattr(self, "feature_events")
+        for n in feature_names:
+            fea = getattr(self, n)
+            fea.clear_event_handlers()
 
     def __del__(self):
         self.deleted = True
-        del WORLD_OBJECTS[self.loc]
+        del WORLD_OBJECTS[self._fpl_address]
 
     def rotate(self, alpha: float, axis: Literal["x", "y", "z"] = "y"):
         """Rotate the Graphic with respect to the world.
@@ -372,7 +413,7 @@ class Interaction(ABC):
                     else:
                         # get index of world object that made this event
                         for i, item in enumerate(self.graphics):
-                            wo = WORLD_OBJECTS[item.loc]
+                            wo = WORLD_OBJECTS[item._fpl_address]
                             # we only store hex id of worldobject, but worldobject `pick_info` is always the real object
                             # so if pygfx worldobject triggers an event by itself, such as `click`, etc., this will be
                             # the real world object in the pick_info and not the proxy
@@ -432,7 +473,8 @@ class PreviouslyModifiedData:
     indices: Any
 
 
-COLLECTION_GRAPHICS: dict[str, Graphic] = dict()
+# Dict that holds all collection graphics in one python instance
+COLLECTION_GRAPHICS: dict[HexStr, Graphic] = dict()
 
 
 class GraphicCollection(Graphic):
@@ -450,7 +492,7 @@ class GraphicCollection(Graphic):
         """The Graphics within this collection. Always returns a proxy to the Graphics."""
         if self._graphics_changed:
             proxies = [
-                weakref.proxy(COLLECTION_GRAPHICS[loc]) for loc in self._graphics
+                weakref.proxy(COLLECTION_GRAPHICS[addr]) for addr in self._graphics
             ]
             self._graphics_array = np.array(proxies)
             self._graphics_array.flags["WRITEABLE"] = False
@@ -479,10 +521,10 @@ class GraphicCollection(Graphic):
                 f"you are trying to add a {graphic.__class__.__name__}."
             )
 
-        loc = hex(id(graphic))
-        COLLECTION_GRAPHICS[loc] = graphic
+        addr = graphic._fpl_address
+        COLLECTION_GRAPHICS[addr] = graphic
 
-        self._graphics.append(loc)
+        self._graphics.append(addr)
 
         if reset_index:
             self._reset_index()
@@ -507,7 +549,7 @@ class GraphicCollection(Graphic):
 
         """
 
-        self._graphics.remove(graphic.loc)
+        self._graphics.remove(graphic._fpl_address)
 
         if reset_index:
             self._reset_index()
@@ -525,8 +567,8 @@ class GraphicCollection(Graphic):
     def __del__(self):
         self.world_object.clear()
 
-        for loc in self._graphics:
-            del COLLECTION_GRAPHICS[loc]
+        for addr in self._graphics:
+            del COLLECTION_GRAPHICS[addr]
 
         super().__del__()
 

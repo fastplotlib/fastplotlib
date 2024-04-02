@@ -140,18 +140,6 @@ class LinearSelector(BaseSelector):
         world_object.add(self.line_outer)
         world_object.add(line_inner)
 
-        self._set_world_object(world_object)
-
-        # set x or y position
-        if axis == "x":
-            self.position_x = selection
-        else:
-            self.position_y = selection
-
-        self.selection = LinearSelectionFeature(
-            self, axis=axis, value=selection, limits=self._limits
-        )
-
         self._move_info: dict = None
 
         self.parent = parent
@@ -169,6 +157,14 @@ class LinearSelector(BaseSelector):
             axis=axis,
             name=name,
         )
+
+        self._set_world_object(world_object)
+
+        self.selection = LinearSelectionFeature(
+            self, axis=axis, value=selection, limits=self._limits
+        )
+
+        self.selection = selection
 
     def _setup_ipywidget_slider(self, widget):
         # setup an ipywidget slider with bidirectional callbacks to this LinearSelector
@@ -208,8 +204,8 @@ class LinearSelector(BaseSelector):
 
         self.selection = change["new"]
 
-    def _add_plot_area_hook(self, plot_area):
-        super()._add_plot_area_hook(plot_area=plot_area)
+    def _fpl_add_plot_area_hook(self, plot_area):
+        super()._fpl_add_plot_area_hook(plot_area=plot_area)
 
         # resize the slider widgets when the canvas is resized
         self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
@@ -375,10 +371,8 @@ class LinearSelector(BaseSelector):
         else:
             self.selection = self.selection() + delta[1]
 
-    def _cleanup(self):
-        super()._cleanup()
-
+    def _fpl_cleanup(self):
         for widget in self._handled_widgets:
             widget.unobserve(self._ipywidget_callback, "value")
 
-        self._plot_area.renderer.remove_event_handler(self._set_slider_layout, "resize")
+        super()._fpl_cleanup()

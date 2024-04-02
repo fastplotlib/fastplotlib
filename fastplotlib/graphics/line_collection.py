@@ -15,7 +15,6 @@ from .selectors import LinearRegionSelector, LinearSelector
 
 class LineCollection(GraphicCollection, Interaction):
     child_type = LineGraphic.__name__
-    feature_events = {"data", "colors", "cmap", "thickness", "present"}
 
     def __init__(
         self,
@@ -416,7 +415,7 @@ class LineCollection(GraphicCollection, Interaction):
 
         return bounds, limits, size, origin, axis, end_points
 
-    def _add_plot_area_hook(self, plot_area):
+    def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
     def set_feature(self, feature: str, new_data: Any, indices: Any):

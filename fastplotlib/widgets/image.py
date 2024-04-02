@@ -875,16 +875,22 @@ class ImageWidget:
             self._data[i] = new_array
 
             if old_data_shape != new_array.shape[-2:]:
-                # delete graphics at index zero
-                subplot.delete_graphic(graphic=subplot["image_widget_managed"])
-                # insert new graphic at index zero
+                # make a new graphic with the new xy dims
                 frame = self._process_indices(
                     new_array, slice_indices=self._current_index
                 )
                 frame = self._process_frame_apply(frame, i)
+
+                # make new graphic first
                 new_graphic = ImageGraphic(data=frame, name="image_widget_managed")
-                subplot.insert_graphic(graphic=new_graphic)
+
+                # set hlut tool to use new graphic
                 subplot.docks["right"]["histogram_lut"].image_graphic = new_graphic
+
+                # delete old graphic after setting hlut tool to new graphic
+                # this ensures gc
+                subplot.delete_graphic(graphic=subplot["image_widget_managed"])
+                subplot.insert_graphic(graphic=new_graphic)
 
             if new_array.ndim > 2:
                 # to set max of time slider, txy or tzxy

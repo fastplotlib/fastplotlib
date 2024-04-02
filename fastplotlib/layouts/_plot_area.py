@@ -1,4 +1,5 @@
 from inspect import getfullargspec
+from sys import getrefcount
 from typing import TypeAlias, Literal, Union
 import weakref
 from warnings import warn
@@ -14,15 +15,81 @@ from ..graphics._base import Graphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ..legends import Legend
 
-# dict to store Graphic instances
-# this is the only place where the real references to Graphics are stored in a Python session
-# {hex id str: Graphic}
+
 HexStr: TypeAlias = str
-GRAPHICS: dict[HexStr, Graphic] = dict()
-SELECTORS: dict[HexStr, BaseSelector] = dict()
+
+
+class References:
+    """
+    This is the only place where the real graphic objects are stored. Everywhere else gets a proxy.
+    """
+
+    _graphics: dict[HexStr, Graphic] = dict()
+    _selectors: dict[HexStr, BaseSelector] = dict()
+    _legends: dict[HexStr, Legend] = dict()
+
+    def add(self, graphic: Graphic | BaseSelector | Legend):
+        """Adds the real graphic to the dict"""
+        addr = graphic._fpl_address
+
+        if isinstance(graphic, BaseSelector):
+            self._selectors[addr] = graphic
+
+        elif isinstance(graphic, Legend):
+            self._legends[addr] = graphic
+
+        elif isinstance(graphic, Graphic):
+            self._graphics[addr] = graphic
+
+        else:
+            raise TypeError("Can only add Graphic, Selector or Legend types")
+
+    def remove(self, address):
+        if address in self._graphics.keys():
+            del self._graphics[address]
+        elif address in self._selectors.keys():
+            del self._selectors[address]
+        elif address in self._legends.keys():
+            del self._legends[address]
+        else:
+            raise KeyError(f"graphic with address not found: {address}")
+
+    def get_proxies(self, refs: list[HexStr]) -> tuple[weakref.proxy]:
+        proxies = list()
+        for key in refs:
+            if key in self._graphics.keys():
+                proxies.append(weakref.proxy(self._graphics[key]))
+
+            elif key in self._selectors.keys():
+                proxies.append(weakref.proxy(self._selectors[key]))
+
+            elif key in self._legends.keys():
+                proxies.append(weakref.proxy(self._legends[key]))
+
+            else:
+                raise KeyError(f"graphic object with address not found: {key}")
+
+        return tuple(proxies)
+
+    def get_refcounts(self) -> dict[HexStr:int]:
+        counts = dict()
+
+        for item in (self._graphics, self._selectors, self._legends):
+            for k in item.keys():
+                counts[(k, item[k].name, item[k].__class__.__name__)] = getrefcount(
+                    item[k]
+                )
+
+        return counts
+
+
+REFERENCES = References()
 
 
 class PlotArea:
+    def get_refcounts(self):
+        return REFERENCES.get_refcounts()
+
     def __init__(
         self,
         parent: Union["PlotArea", "GridPlot"],
@@ -89,12 +156,15 @@ class PlotArea:
         self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
         # list of hex id strings for all graphics managed by this PlotArea
-        # the real Graphic instances are stored in the ``GRAPHICS`` dict
-        self._graphics: list[str] = list()
+        # the real Graphic instances are managed by REFERENCES
+        self._graphics: list[HexStr] = list()
 
         # selectors are in their own list so they can be excluded from scene bbox calculations
         # managed similar to GRAPHICS for garbage collection etc.
-        self._selectors: list[str] = list()
+        self._selectors: list[HexStr] = list()
+
+        # legends, managed just like other graphics as explained above
+        self._legends: list[HexStr] = list()
 
         self._name = name
 
@@ -206,35 +276,21 @@ class PlotArea:
     @property
     def graphics(self) -> tuple[Graphic, ...]:
         """Graphics in the plot area. Always returns a proxy to the Graphic instances."""
-        proxies = list()
-        for loc in self._graphics:
-            p = weakref.proxy(GRAPHICS[loc])
-            if p.__class__.__name__ == "Legend":
-                continue
-            proxies.append(p)
-
-        return tuple(proxies)
+        return REFERENCES.get_proxies(self._graphics)
 
     @property
     def selectors(self) -> tuple[BaseSelector, ...]:
         """Selectors in the plot area. Always returns a proxy to the Graphic instances."""
-        proxies = list()
-        for loc in self._selectors:
-            p = weakref.proxy(SELECTORS[loc])
-            proxies.append(p)
-
-        return tuple(proxies)
+        return REFERENCES.get_proxies(self._selectors)
 
     @property
     def legends(self) -> tuple[Legend, ...]:
         """Legends in the plot area."""
-        proxies = list()
-        for loc in self._graphics:
-            p = weakref.proxy(GRAPHICS[loc])
-            if p.__class__.__name__ == "Legend":
-                proxies.append(p)
+        return REFERENCES.get_proxies(self._legends)
 
-        return tuple(proxies)
+    @property
+    def objects(self) -> tuple[Graphic | BaseSelector | Legend, ...]:
+        return *self.graphics, *self.selectors, *self.legends
 
     @property
     def name(self) -> str:
@@ -470,28 +526,28 @@ class PlotArea:
         if graphic.name is not None:  # skip for those that have no name
             self._check_graphic_name_exists(graphic.name)
 
-        if isinstance(graphic, BaseSelector):
-            # store in SELECTORS dict
-            loc = graphic.loc
-            SELECTORS[loc] = (
-                graphic  # add hex id string for referencing this graphic instance
-            )
-            # don't manage garbage collection of LineSliders for now
-            if action == "insert":
-                self._selectors.insert(index, loc)
-            else:
-                self._selectors.append(loc)
-        else:
-            # store in GRAPHICS dict
-            loc = graphic.loc
-            GRAPHICS[loc] = (
-                graphic  # add hex id string for referencing this graphic instance
-            )
+        addr = graphic._fpl_address
 
-            if action == "insert":
-                self._graphics.insert(index, loc)
-            else:
-                self._graphics.append(loc)
+        if isinstance(graphic, BaseSelector):
+            addr_list = self._selectors
+
+        elif isinstance(graphic, Legend):
+            addr_list = self._legends
+
+        elif isinstance(graphic, Graphic):
+            addr_list = self._graphics
+
+        else:
+            raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
+
+        if action == "insert":
+            addr_list.insert(index, addr)
+        elif action == "add":
+            addr_list.append(addr)
+        else:
+            raise ValueError("valid actions are 'insert' | 'add'")
+
+        REFERENCES.add(graphic)
 
         # now that it's in the dict, just use the weakref
         graphic = weakref.proxy(graphic)
@@ -503,24 +559,13 @@ class PlotArea:
             self.center_graphic(graphic)
 
         # if we don't use the weakref above, then the object lingers if a plot hook is used!
-        if hasattr(graphic, "_add_plot_area_hook"):
-            graphic._add_plot_area_hook(self)
+        graphic._fpl_add_plot_area_hook(self)
 
     def _check_graphic_name_exists(self, name):
-        graphic_names = list()
-
-        for g in self.graphics:
-            graphic_names.append(g.name)
-
-        for s in self.selectors:
-            graphic_names.append(s.name)
-
-        for l in self.legends:
-            graphic_names.append(l.name)
-
-        if name in graphic_names:
+        if name in self:
             raise ValueError(
-                f"graphics must have unique names, current graphic names are:\n {graphic_names}"
+                f"Graphic with given name already exists in subplot or plot area. "
+                f"All graphics within a subplot or plot area must have a unique name."
             )
 
     def center_graphic(self, graphic: Graphic, zoom: float = 1.35):
@@ -649,85 +694,50 @@ class PlotArea:
         # TODO: proper gc of selectors, RAM is freed for regular graphics but not selectors
         # TODO: references to selectors must be lingering somewhere
         # TODO: update March 2024, I think selectors are gc properly, should check
-        # get location
-        loc = graphic.loc
+        # get memory address
+        address = graphic._fpl_address
 
-        # check which dict it's in
-        if loc in self._graphics:
-            glist = self._graphics
-            kind = "graphic"
-        elif loc in self._selectors:
-            kind = "selector"
-            glist = self._selectors
-        else:
-            raise KeyError(
-                f"Graphic with following address not found in plot area: {loc}"
-            )
+        if graphic not in self:
+            raise KeyError(f"Graphic not found in plot area: {graphic}")
+
+        # check which type it is
+        for l in [self._graphics, self._selectors, self._legends]:
+            if address in l:
+                l.remove(address)
+                break
 
         # remove from scene if necessary
         if graphic.world_object in self.scene.children:
             self.scene.remove(graphic.world_object)
 
-        # remove from list of addresses
-        glist.remove(loc)
-
         # cleanup
-        graphic._cleanup()
+        graphic._fpl_cleanup()
 
-        if kind == "graphic":
-            del GRAPHICS[loc]
-        elif kind == "selector":
-            del SELECTORS[loc]
+        REFERENCES.remove(address)
 
     def clear(self):
         """
         Clear the Plot or Subplot. Also performs garbage collection, i.e. runs ``delete_graphic`` on all graphics.
         """
-
-        for g in self.graphics:
+        for g in self.objects:
             self.delete_graphic(g)
 
-        for s in self.selectors:
-            self.delete_graphic(s)
-
     def __getitem__(self, name: str):
-        for graphic in self.graphics:
+        for graphic in self.objects:
             if graphic.name == name:
                 return graphic
 
-        for selector in self.selectors:
-            if selector.name == name:
-                return selector
-
-        for legend in self.legends:
-            if legend.name == name:
-                return legend
-
-        graphic_names = list()
-        for g in self.graphics:
-            graphic_names.append(g.name)
-
-        selector_names = list()
-        for s in self.selectors:
-            selector_names.append(s.name)
-
-        raise IndexError(
-            f"No graphic or selector of given name.\n"
-            f"The current graphics are:\n {graphic_names}\n"
-            f"The current selectors are:\n {selector_names}"
-        )
+        raise IndexError(f"No graphic or selector of given name in plot area.\n")
 
     def __contains__(self, item: str | Graphic):
-        to_check = [*self.graphics, *self.selectors, *self.legends]
-
         if isinstance(item, Graphic):
-            if item in to_check:
+            if item in self.objects:
                 return True
             else:
                 return False
 
         elif isinstance(item, str):
-            for graphic in to_check:
+            for graphic in self.objects:
                 # only check named graphics
                 if graphic.name is None:
                     continue
