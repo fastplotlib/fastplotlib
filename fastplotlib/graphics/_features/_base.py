@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from inspect import getfullargspec
 from warnings import warn
-from typing import *
-import weakref
+from typing import Any, Literal
 
 import numpy as np
+from numpy.typing import NDArray
 
 import pygfx
 
@@ -76,29 +76,14 @@ class FeatureEvent:
         )
 
 
-class GraphicFeature(ABC):
-    def __init__(self, parent, data: Any, collection_index: int = None):
-        # not shown as a docstring so it doesn't show up in the docs
-        #
-        # Parameters
-        # ----------
-        # parent
-        #
-        # data: Any
-        #
-        # collection_index: int
-        #     if part of a collection, index of this graphic within the collection
-
-        self._parent = weakref.proxy(parent)
-
-        self._data = to_gpu_supported_dtype(data)
-
-        self._collection_index = collection_index
+class GraphicFeature:
+    def __init__(self, **kwargs):
         self._event_handlers = list()
         self._block_events = False
 
-    def __call__(self, *args, **kwargs):
-        return self._data
+    @property
+    def data(self) -> Any:
+        raise NotImplemented
 
     def block_events(self, val: bool):
         """
@@ -112,21 +97,12 @@ class GraphicFeature(ABC):
         """
         self._block_events = val
 
-    @abstractmethod
-    def _set(self, value):
-        pass
-
-    def _parse_set_value(self, value):
-        if isinstance(value, GraphicFeature):
-            return value()
-
-        return value
-
     def add_event_handler(self, handler: callable):
         """
         Add an event handler. All added event handlers are called when this feature changes.
+
         The ``handler`` can optionally accept a :class:`.FeatureEvent` as the first and only argument.
-        The ``FeatureEvent`` only has two attributes, ``type`` which denotes the type of event
+        The ``FeatureEvent`` only has 2 attributes, ``type`` which denotes the type of event
         as a ``str`` in the form of "<feature_name>", such as "color". And ``pick_info`` which contains
         information about the event and Graphic that triggered it.
 
@@ -166,7 +142,7 @@ class GraphicFeature(ABC):
 
     # TODO: maybe this can be implemented right here in the base class
     @abstractmethod
-    def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
+    def _feature_changed(self,new_data: Any, key: int | slice | tuple[slice] | None = None):
         """Called whenever a feature changes, and it calls all funcs in self._event_handlers"""
         pass
 
@@ -191,12 +167,116 @@ class GraphicFeature(ABC):
                 )
                 func()
 
-    @abstractmethod
     def __repr__(self) -> str:
-        pass
+        raise NotImplementedError
 
 
-def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
+class BufferManager(GraphicFeature):
+    """Smaller wrapper for pygfx.Buffer"""
+
+    def __init__(
+            self,
+            data: NDArray,
+            buffer_type: Literal["buffer", "texture"] = "buffer",
+            isolated_buffer: bool = True,
+            texture_dim: int = 2,
+            **kwargs
+    ):
+        super().__init__()
+        if isolated_buffer:
+            # useful if data is read-only, example: memmaps
+            bdata = np.zeros(data.shape)
+            bdata[:] = data[:]
+        else:
+            # user's input array is used as the buffer
+            bdata = data
+
+        if buffer_type == "buffer":
+            self._buffer = pygfx.Buffer(bdata)
+        elif buffer_type == "texture":
+            self._buffer = pygfx.Texture(bdata, dim=texture_dim)
+        else:
+            raise ValueError("`buffer_type` must be one of: 'buffer' or 'texture'")
+
+        self._event_handlers: list[callable] = list()
+
+    @property
+    def data(self) -> NDArray:
+        return self.buffer.data
+
+    @property
+    def buffer(self) -> pygfx.Buffer | pygfx.Texture:
+        return self._buffer
+
+    def __getitem__(self, item):
+        return self.buffer.data[item]
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError
+
+    def _update_range(self, offset, size):
+        self.buffer.update_range(offset=offset, size=size)
+
+    def __repr__(self):
+        return f"{self.__class__.__name__} buffer data:\n" \
+               f"{self.data.__repr__()}"
+
+
+def parse_colors(value, n):
+    """parse colors using pygfx and return RGBA array for each vertex"""
+    if isinstance(value, str):
+        return np.array([pygfx.Color(value)] * n)
+
+    return value
+
+
+def parse_colors(key, value, n_colors, max_n_colors):
+    """
+
+    Parameters
+    ----------
+    key: slice
+
+    value
+
+    n_colors
+
+    max_n_colors: basically data.shape[0]
+
+    Returns
+    -------
+
+    """
+    pass
+
+
+class ColorFeature(BufferManager):
+    """Manage color buffer for positions type objects"""
+
+    def __init__(self, data: str | np.ndarray, n_colors: int, isolated_buffer: bool):
+        if not isinstance(data, np.ndarray):
+            # isolated buffer is only useful when data is a numpy array
+            isolated_buffer = False
+
+        colors = parse_colors(data, n_colors)
+
+        super().__init__(colors, isolated_buffer)
+
+    def __setitem__(self, key, value):
+        if isinstance(value, BufferManager):
+            # trying to set feature from another feature instance
+            value = value.data
+
+        key = self.cleanup_slice(key)
+
+        colors = parse_colors(value, len(key))
+
+        self.buffer.data[key] = colors
+
+        self._update_range(key.start, key.stop - key.start)
+
+
+def cleanup_slice(key: int | slice, upper_bound) -> slice | int:
     """
 
     If the key in an `int`, it just returns it. Otherwise,
@@ -257,7 +337,7 @@ def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
     return slice(start, stop, step)
 
 
-def cleanup_array_slice(key: np.ndarray, upper_bound) -> Union[np.ndarray, None]:
+def cleanup_array_slice(key: np.ndarray, upper_bound) -> np.darray | None:
     """
     Cleanup numpy array used for fancy indexing, make sure key[-1] <= upper_bound.
 
@@ -321,7 +401,7 @@ class GraphicFeatureIndexable(GraphicFeature):
 
     @property
     @abstractmethod
-    def buffer(self) -> Union[pygfx.Buffer, pygfx.Texture]:
+    def buffer(self) -> pygfx.Buffer | pygfx.Texture:
         """Underlying buffer for this feature"""
         pass
 
