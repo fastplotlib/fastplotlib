@@ -167,12 +167,10 @@ class ImageWidget:
         return self._ndim
 
     @property
-    def dims_partition(self) -> List[tuple[int, int]]:
-        """Returns a List containing 1 tuple for each array displayed in the widget. Each tuple contains 2 integers.
-        First integer tell us how many scrollable dims the array has and second tells us how many dims are used to
-        display a single image; this will either be 2 or 3 (grayscale or RGB(A)) Ex: [(2, 3), (2, 2)] means first
-        image has 2 ("tz") scrollable dims and shows 3D (RGB(A)) images"""
-        return self._dims_partition
+    def num_scrollable_dims(self) -> List[int]:
+        """Returns a List describing, for each array, how many of the first dimensions are "scrollable".
+        All other dimensions are used for displaying images"""
+        return self._num_scrollable_dims
 
     @property
     def sliders(self) -> Dict[str, Any]:
@@ -272,7 +270,7 @@ class ImageWidget:
                     f"At array {k}, One array had shape {curr_arr.shape} which is not supported"
                 )
 
-            dim_partitions.append((num_scrollable_dims, num_img_dims))
+            dim_partitions.append(num_scrollable_dims)
 
         return dim_partitions
 
@@ -413,14 +411,14 @@ class ImageWidget:
                     color_scheme, data
                 )
                 self._data: List[np.ndarray] = data
-                self._dims_partition = self._compute_and_validate_formats()
+                self._num_scrollable_dims = self._compute_and_validate_formats()
 
                 # Compute the largest dimension
                 self._ndim = (
                     max(
                         [
-                            self.dims_partition[i][0]
-                            for i in range(len(self.dims_partition))
+                            self.num_scrollable_dims[i]
+                            for i in range(len(self.num_scrollable_dims))
                         ]
                     )
                     + NUM_IMAGE_DIMS[DEFAULT_IMAGE_FORMAT]
@@ -455,7 +453,7 @@ class ImageWidget:
         # Sliders are made for all dimensions except the image dimensions
         self._slider_dims = list()
         num_scrollable = max(
-            [self.dims_partition[i][0] for i in range(len(self.dims_partition))]
+            [self.num_scrollable_dims[i] for i in range(len(self.num_scrollable_dims))]
         )
         for dim in range(num_scrollable):
             if dim in ALLOWED_SLIDER_DIMS.keys():
@@ -499,8 +497,8 @@ class ImageWidget:
         # get max bound for all data arrays for all slider dimensions and ensure compatibility across slider dims
         self._dims_max_bounds: Dict[str, int] = {k: 0 for k in self.slider_dims}
         for i, _dim in enumerate(list(self._dims_max_bounds.keys())):
-            for array, partition in zip(self.data, self.dims_partition):
-                if partition[0] <= i:
+            for array, partition in zip(self.data, self.num_scrollable_dims):
+                if partition <= i:
                     continue
                 else:
                     if 0 < self._dims_max_bounds[_dim] != array.shape[i]:
@@ -659,7 +657,9 @@ class ImageWidget:
         numerical_dims = list()
         curr_ndim = self.data[data_ix].ndim
         indexer = [slice(None)] * curr_ndim
-        curr_scrollable_format = SCROLLABLE_DIMS_ORDER[self.dims_partition[data_ix][0]]
+        curr_scrollable_format = SCROLLABLE_DIMS_ORDER[
+            self.num_scrollable_dims[data_ix]
+        ]
         for dim in list(slice_indices.keys()):
             if dim not in curr_scrollable_format:
                 continue
@@ -705,7 +705,7 @@ class ImageWidget:
         else:
             ix = indices_dim
 
-            dim_str = SCROLLABLE_DIMS_ORDER[self.dims_partition[data_ix][0]][dim]
+            dim_str = SCROLLABLE_DIMS_ORDER[self.num_scrollable_dims[data_ix]][dim]
 
             # if no window stuff specified for this dim
             if dim_str not in self.window_funcs.keys():
