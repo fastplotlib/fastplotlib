@@ -16,7 +16,8 @@ if CANVAS_OPTIONS_AVAILABLE["qt"]:
     from ..layouts._frame._qt_toolbar import QToolbarImageWidget
 
 # How many dimensions to display a single image
-NUM_IMAGE_DIMS = {"gray": 2, "rgb": 3}
+# If key is 0 this means no RGB (so each image is 2 dims). If key is 1, it's 3
+RGB_DIM_MAP = {0: 2, 1: 3}
 
 DEFAULT_IMAGE_FORMAT = "gray"
 
@@ -173,6 +174,11 @@ class ImageWidget:
         return self._num_scrollable_dims
 
     @property
+    def num_img_dims(self) -> List[int]:
+        """Returns a List describing, for each array, how many of the last dimensions are used to display a single img."""
+        return self._num_img_dims
+
+    @property
     def sliders(self) -> Dict[str, Any]:
         """the ipywidget IntSlider or QSlider instances used by the widget for indexing the desired dimensions"""
         return self._image_widget_toolbar.sliders
@@ -200,18 +206,16 @@ class ImageWidget:
         return self._current_index
 
     @property
-    def color_scheme(self) -> Dict[int, str]:
+    def num_img_dims(self) -> list[int]:
         """
-        Return the color scheme of each `array` in the imagewidget. Each `array` can be displayed in either RGB or
-        grayscale form; the default is grayscale.
 
         Returns:
         -------
-        full_color_schemes: Dict[int, str]
-            | ``dict`` whose keys are indices (0, 1, 2, ...) for each array and values are "gray" or "rgb" depending on
-            how we want to display the images from this array
+        num_img_dims: list[int]
+            | ``list`` describing, for each array, how many dimensions are used to display a single image.
+        Can be either 2 or 3. Depending on whether the image is grayscale or RGB(A).
         """
-        return self._color_scheme
+        return self._num_img_dims
 
     def _initialize_full_color_scheme(
         self, color_scheme: Dict[int, str], data: list[np.ndarray]
@@ -232,47 +236,45 @@ class ImageWidget:
                 full_color_scheme[k] = DEFAULT_IMAGE_FORMAT
             elif k in color_scheme.keys():
                 curr_scheme = color_scheme[k].lower()
-                if curr_scheme not in NUM_IMAGE_DIMS.keys():
+                if curr_scheme not in RGB_DIM_MAP.keys():
                     raise ValueError(
-                        f"Color Schemes can only be one of {list(NUM_IMAGE_DIMS.keys())} "
+                        f"Color Schemes can only be one of {list(RGB_DIM_MAP.keys())} "
                         f"You passed in {color_scheme[k]} for one of the keys"
                     )
                 else:
                     full_color_scheme[k] = curr_scheme
         return full_color_scheme
 
-    def _compute_and_validate_formats(self) -> list[tuple[int, int]]:
+    def _compute_and_validate_formats(self) -> list[int]:
 
-        dim_partitions = []
+        num_scrollable_dims_list = []
         for k in range(len(self._data)):
             curr_arr = self._data[k]
 
-            num_img_dims = NUM_IMAGE_DIMS[self.color_scheme[k]]
-
             # Make sure each image stack at least ``num_img_dims`` dimensions
-            if len(curr_arr.shape) < num_img_dims:
+            if len(curr_arr.shape) < self.num_img_dims[k]:
                 raise ValueError(
                     f"Your array has shape {curr_arr.shape} "
-                    f"but you specified that each image in your array is {num_img_dims}D "
+                    f"but you specified that each image in your array is {self.num_img_dims[k]}D "
                 )
 
             # If RGB(A), last dim must be 3 or 4
-            if num_img_dims == 3:
+            if self.num_img_dims == 3:
                 if not (curr_arr.shape[-1] == 3 or curr_arr.shape[-1] == 4):
                     raise ValueError(
                         "RGB(A) was specified but the last dimension of the array is neither 3 nor 4"
                     )
 
-            num_scrollable_dims = len(curr_arr.shape) - num_img_dims
+            num_scrollable_dims = len(curr_arr.shape) - self.num_img_dims[k]
 
             if num_scrollable_dims not in SCROLLABLE_DIMS_ORDER.keys():
                 raise ValueError(
-                    f"At array {k}, One array had shape {curr_arr.shape} which is not supported"
+                    f"Array {k} had shape {curr_arr.shape} which is not supported"
                 )
 
-            dim_partitions.append(num_scrollable_dims)
+            num_scrollable_dims_list.append(num_scrollable_dims)
 
-        return dim_partitions
+        return num_scrollable_dims_list
 
     @current_index.setter
     def current_index(self, index: Dict[str, int]):
@@ -319,7 +321,7 @@ class ImageWidget:
         names: List[str] = None,
         grid_plot_kwargs: dict = None,
         histogram_widget: bool = True,
-        color_scheme: dict = None,
+        rgb_disp: list = None,
         **kwargs,
     ):
         """
@@ -373,9 +375,8 @@ class ImageWidget:
         histogram_widget: bool, default False
             make histogram LUT widget for each subplot
 
-        color_scheme: dict, default None
-            Keys are integer indices referring to `arrays` displayed in ImageWidget. Values are either "grey" or "rgb",
-                indicating how we to display the images from the array. If "rgb", the last dim must be 3 or 4
+        rgb_disp: list, default None
+            Indicates which indices are to be displayed as RGB. If "rgb", the last dim must be 3 or 4
 
         kwargs: Any
             passed to fastplotlib.graphics.Image
@@ -404,13 +405,20 @@ class ImageWidget:
                         f"Invalid `grid_shape` passed, setting grid shape to: {grid_shape}"
                     )
 
-                # Initialize the color scheme, validate data, dim partition (between scrollable and image dimensions)
-                if color_scheme is None:
-                    color_scheme = dict()
-                self._color_scheme = self._initialize_full_color_scheme(
-                    color_scheme, data
-                )
                 self._data: List[np.ndarray] = data
+
+                # Establish number of image dimensions and number of scrollable dimensions for each array
+                if rgb_disp is None:
+                    rgb_disp = []
+                if not isinstance(rgb_disp, list):
+                    raise TypeError(
+                        f"rgb_disp parameter must be a list, a {type(rgb_disp)} was provided"
+                    )
+                self._num_img_dims = [RGB_DIM_MAP[0] for i in range(len(data))]
+                for i in rgb_disp:
+                    if 0 <= i < len(data):
+                        self._num_img_dims[i] = RGB_DIM_MAP[1]
+
                 self._num_scrollable_dims = self._compute_and_validate_formats()
 
                 # Compute the largest dimension
@@ -421,7 +429,7 @@ class ImageWidget:
                             for i in range(len(self.num_scrollable_dims))
                         ]
                     )
-                    + NUM_IMAGE_DIMS[DEFAULT_IMAGE_FORMAT]
+                    + RGB_DIM_MAP[0]
                 )
 
                 if names is not None:
