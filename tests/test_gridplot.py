@@ -1,15 +1,8 @@
-import os
-
 import numpy as np
 import pytest
 
 import fastplotlib as fpl
 import pygfx
-
-
-@pytest.fixture(scope="session", autouse=True)
-def set_env():
-    os.environ["WGPU_FORCE_OFFSCREEN"] = "true"
 
 
 def test_cameras_controller_properties():
@@ -26,8 +19,11 @@ def test_cameras_controller_properties():
     gp = fpl.GridPlot(
         shape=(2, 3),
         cameras=cameras,
-        controller_types=controller_types
+        controller_types=controller_types,
+        canvas="offscreen"
     )
+
+    print(gp.canvas)
 
     subplot_cameras = [subplot.camera for subplot in gp]
     subplot_controllers = [subplot.controller for subplot in gp]
@@ -77,7 +73,7 @@ def test_gridplot_controller_ids_int():
         [4, 1, 2]
     ]
 
-    gp = fpl.GridPlot(shape=(3, 3), controller_ids=ids)
+    gp = fpl.GridPlot(shape=(3, 3), controller_ids=ids, canvas="offscreen")
 
     assert gp[0, 0].controller is gp[1, 0].controller
     assert gp[0, 1].controller is gp[0, 2].controller is gp[2, 1].controller
@@ -97,7 +93,7 @@ def test_gridplot_controller_ids_int_change_controllers():
         ["3d", "3d", "3d"]
     ]
 
-    gp = fpl.GridPlot(shape=(3, 3), cameras=cameras, controller_ids=ids)
+    gp = fpl.GridPlot(shape=(3, 3), cameras=cameras, controller_ids=ids, canvas="offscreen")
 
     assert isinstance(gp[0, 1].controller, pygfx.FlyController)
 
@@ -125,7 +121,7 @@ def test_gridplot_controller_ids_str():
         ["b", "d", "e"]
     ]
 
-    gp = fpl.GridPlot(shape=(2, 3), controller_ids=controller_ids, names=names)
+    gp = fpl.GridPlot(shape=(2, 3), controller_ids=controller_ids, names=names, canvas="offscreen")
 
     assert gp[0, 0].controller is gp[1, 2].controller is gp["a"].controller is gp["f"].controller
     assert gp[0, 1].controller is gp[1, 0].controller is gp[1, 1].controller is gp["b"].controller is gp["d"].controller is gp["e"].controller
@@ -136,12 +132,12 @@ def test_gridplot_controller_ids_str():
 
 
 def test_set_gridplot_controllers_from_existing_controllers():
-    gp = fpl.GridPlot(shape=(3, 3))
-    gp2 = fpl.GridPlot(shape=gp.shape, controllers=gp.controllers)
+    gp = fpl.GridPlot(shape=(3, 3), canvas="offscreen")
+    gp2 = fpl.GridPlot(shape=gp.shape, controllers=gp.controllers, canvas="offscreen")
 
     assert gp.controllers[:-1].size == 6
     with pytest.raises(ValueError):
-        gp3 = fpl.GridPlot(shape=gp.shape, controllers=gp.controllers[:-1])
+        gp3 = fpl.GridPlot(shape=gp.shape, controllers=gp.controllers[:-1], canvas="offscreen")
 
     for sp_gp, sp_gp2 in zip(gp, gp2):
         assert sp_gp.controller is sp_gp2.controller
@@ -156,7 +152,7 @@ def test_set_gridplot_controllers_from_existing_controllers():
         [pygfx.OrbitController(), pygfx.PanZoomController()]
     ]
 
-    gp = fpl.GridPlot(shape=(2, 2), cameras=cameras, controllers=controllers)
+    gp = fpl.GridPlot(shape=(2, 2), cameras=cameras, controllers=controllers, canvas="offscreen")
 
     assert gp[0, 0].controller is controllers[0][0]
     assert gp[0, 1].controller is controllers[0][1]
