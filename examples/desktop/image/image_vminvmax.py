@@ -10,20 +10,18 @@ import fastplotlib as fpl
 import imageio.v3 as iio
 
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+fig = fpl.Figure()
 
 data = iio.imread("imageio:astronaut.png")
 
 # plot the image data
-image_graphic = plot.add_image(data=data, name="iio astronaut")
+image_graphic = fig[0, 0].add_image(data=data, name="iio astronaut")
 
-plot.show()
+fig.show()
 
-plot.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(800, 800)
 
-plot.auto_scale()
+fig[0, 0].auto_scale()
 
 image_graphic.cmap.vmin = 0.5
 image_graphic.cmap.vmax = 0.75

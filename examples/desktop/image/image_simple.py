@@ -10,20 +10,18 @@ import fastplotlib as fpl
 import imageio.v3 as iio
 
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+fig = fpl.Figure()
 
 data = iio.imread("imageio:camera.png")
 
 # plot the image data
-image_graphic = plot.add_image(data=data, name="iio camera")
+image_graphic = fig[0, 0].add_image(data=data, name="iio camera")
 
-plot.show()
+fig.show()
 
-plot.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(800, 800)
 
-plot.auto_scale()
+fig[0, 0].auto_scale()
 
 if __name__ == "__main__":
     print(__doc__)

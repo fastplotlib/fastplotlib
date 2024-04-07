@@ -33,20 +33,18 @@ pos_xy = np.vstack(circles)
 # highest values, lowest values, mid-high values, mid values
 cmap_values = [10] * 4 + [0] * 4 + [7] * 4 + [5] * 4
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+fig = fpl.Figure()
 
-plot.add_line_collection(
+fig[0, 0].add_line_collection(
     circles,
     cmap="bwr",
     cmap_values=cmap_values,
     thickness=10
 )
 
-plot.show()
+fig.show()
 
-plot.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(800, 800)
 
 if __name__ == "__main__":
     print(__doc__)

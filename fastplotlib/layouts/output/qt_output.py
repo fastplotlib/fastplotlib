@@ -37,7 +37,7 @@ class QOutputContext(QtWidgets.QWidget):
         self.vlayout.addWidget(self.frame.canvas)
 
         if make_toolbar:  # make toolbar and add to layout
-            self.toolbar = QToolbar(output_context=self, plot=frame)
+            self.toolbar = QToolbar(output_context=self, figure=frame)
             self.vlayout.addWidget(self.toolbar)
 
         for w in add_widgets:  # add any additional widgets to layout
