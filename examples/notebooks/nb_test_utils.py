@@ -5,7 +5,7 @@ from pathlib import Path
 import imageio.v3 as iio
 import numpy as np
 
-from fastplotlib import Plot, GridPlot
+import fastplotlib as fpl
 
 # make dirs for screenshots and diffs
 current_dir = Path(__file__).parent
@@ -93,11 +93,11 @@ def _run_tests():
     return False
 
 
-def plot_test(name, plot: Union[Plot, GridPlot]):
+def plot_test(name, fig: fpl.Figure):
     if not _run_tests():
         return
 
-    snapshot = plot.canvas.snapshot()
+    snapshot = fig.canvas.snapshot()
     rgb_img = rgba_to_rgb(snapshot.data)
 
     if "REGENERATE_SCREENSHOTS" in os.environ.keys():
