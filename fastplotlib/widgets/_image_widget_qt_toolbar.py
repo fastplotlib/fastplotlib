@@ -3,6 +3,7 @@ from typing import Dict
 
 from fastplotlib.utils.gui import QtWidgets, QtCore
 
+
 # TODO: There must be a better way to do this
 # TODO: Check if an interface exists between ipywidgets and Qt
 # TODO: Or we won't need it anyways once we have UI in pygfx

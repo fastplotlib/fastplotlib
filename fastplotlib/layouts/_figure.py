@@ -490,7 +490,9 @@ class Figure:
 
         # return the appropriate OutputContext based on the current canvas
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
-            from .output.jupyter_output import JupyterOutputContext  # noqa - inline import
+            from .output.jupyter_output import (
+                JupyterOutputContext,
+            )  # noqa - inline import
 
             self._output = JupyterOutputContext(
                 frame=self,
