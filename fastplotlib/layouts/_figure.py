@@ -102,7 +102,7 @@ class Figure:
         if names is not None:
             if len(list(chain(*names))) != len(self):
                 raise ValueError(
-                    "must provide same number of subplot `names` as specified by gridplot shape"
+                    "must provide same number of subplot `names` as specified by Figure shape"
                 )
 
             subplot_names = np.asarray(names).reshape(self.shape)
@@ -355,12 +355,12 @@ class Figure:
 
     @property
     def canvas(self) -> WgpuCanvasBase:
-        """The canvas associated to this GridPlot"""
+        """The canvas associated to this Figure"""
         return self._canvas
 
     @property
     def renderer(self) -> pygfx.WgpuRenderer:
-        """The renderer associated to this GridPlot"""
+        """The renderer associated to this Figure"""
         return self._renderer
 
     @property
@@ -540,7 +540,7 @@ class Figure:
     ):
         """
         Add function(s) that are called on every render cycle.
-        These are called at the GridPlot level.
+        These are called at the Figure level.
 
         Parameters
         ----------
@@ -695,29 +695,25 @@ class FigureRecorder:
 
         .. code-block:: python
 
-            # create a plot or gridplot etc
-
             # start recording video
-            plot.record_start("./video.mp4", options={"q:v": "20"}
+            figure.recorder.start("./video.mp4", options={"q:v": "20"}
 
             # do stuff like interacting with the plot, change things, etc.
 
             # end recording
-            plot.record_end()
+            figure.recorder.stop()
 
         With ``"libx264"``
 
         .. code-block:: python
 
-            # create a plot or gridplot etc
-
             # start recording video
-            plot.record_start("./vid_x264.mp4", codec="libx264", options={"crf": "25"})
+            figure.recorder.start("./vid_x264.mp4", codec="libx264", options={"crf": "25"})
 
             # do stuff like interacting with the plot, change things, etc.
 
             # end recording
-            plot.record_end()
+            figure.recorder.stop()
 
         """
 

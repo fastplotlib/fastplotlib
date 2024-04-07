@@ -15,7 +15,7 @@ from ._graphic_methods_mixin import GraphicMethodsMixin
 class Subplot(PlotArea, GraphicMethodsMixin):
     def __init__(
         self,
-        parent: Union["GridPlot", None] = None,
+        parent: Union["Figure", None] = None,
         position: tuple[int, int] = None,
         parent_dims: tuple[int, int] = None,
         camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera = "2d",
@@ -29,22 +29,22 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         name: str = None,
     ):
         """
-        General plot object that composes a ``Gridplot``. Each ``Gridplot`` instance will have [n rows, n columns]
+        General plot object is found within a ``Figure``. Each ``Figure`` instance will have [n rows, n columns]
         of subplots.
 
         .. important::
-            ``Subplot`` is not meant to be constructed directly, it only exists as part of a ``GridPlot``
+            ``Subplot`` is not meant to be constructed directly, it only exists as part of a ``Figure``
 
         Parameters
         ----------
-        parent: 'GridPlot' | None
-            parent GridPlot instance
+        parent: 'Figure' | None
+            parent Figure instance
 
         position: (int, int), optional
-            corresponds to the [row, column] position of the subplot within a ``Gridplot``
+            corresponds to the [row, column] position of the subplot within a ``Figure``
 
         parent_dims: (int, int), optional
-            dimensions of the parent ``GridPlot``
+            dimensions of the parent ``Figure``
 
         camera: str or pygfx.PerspectiveCamera, default '2d'
             indicates the FOV for the camera, '2d' sets ``fov = 0``, '3d' sets ``fov = 50``.

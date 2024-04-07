@@ -92,7 +92,7 @@ class PlotArea:
 
     def __init__(
         self,
-        parent: Union["PlotArea", "GridPlot"],
+        parent: Union["PlotArea", "Figure"],
         position: tuple[int, int] | str,
         camera: pygfx.PerspectiveCamera,
         controller: pygfx.Controller,
@@ -103,11 +103,11 @@ class PlotArea:
     ):
         """
         Base class for plot creation and management. ``PlotArea`` is not intended to be instantiated by users
-        but rather to provide functionality for ``subplot`` in ``gridplot`` and single ``plot``.
+        but rather to provide functionality for ``subplots`` in a user ``Figure``
 
         Parameters
         ----------
-        parent: PlotArea or GridPlot
+        parent: PlotArea or Figure
             parent object
 
         position: Any
@@ -181,7 +181,7 @@ class PlotArea:
 
     @property
     def position(self) -> tuple[int, int] | str:
-        """Position of this plot area within a larger layout (such as GridPlot) if relevant"""
+        """Position of this plot area within a larger layout (such as a Figure) if relevant"""
         return self._position
 
     @property
@@ -265,7 +265,7 @@ class PlotArea:
         # TODO: monkeypatch until we figure out a better
         #  pygfx plans on refactoring viewports anyways
         if self.parent is not None:
-            if self.parent.__class__.__name__ == "GridPlot":
+            if self.parent.__class__.__name__ == "Figure":
                 for subplot in self.parent:
                     if subplot.camera in cameras_list:
                         new_controller.register_events(subplot.viewport)
@@ -312,7 +312,7 @@ class PlotArea:
         Returns the viewport rect to define the rectangle
         occupied by the viewport w.r.t. the Canvas.
 
-        If this is a subplot within a GridPlot, it returns the rectangle
+        If this is a subplot within a Figure, it returns the rectangle
         for only this subplot w.r.t. the parent canvas.
 
         Must return: [x_pos, y_pos, width_viewport, height_viewport]
