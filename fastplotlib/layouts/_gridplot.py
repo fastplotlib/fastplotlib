@@ -29,7 +29,12 @@ class GridPlot(Frame, RecordMixin):
             Iterable[Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]]
             | Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]
         ) = None,
-        controller_ids: Literal["sync"] | Iterable[int] | Iterable[Iterable[int]] | Iterable[Iterable[str]] = None,
+        controller_ids: (
+            Literal["sync"]
+            | Iterable[int]
+            | Iterable[Iterable[int]]
+            | Iterable[Iterable[str]]
+        ) = None,
         controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
         canvas: str | WgpuCanvasBase | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
@@ -103,9 +108,7 @@ class GridPlot(Frame, RecordMixin):
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
-            cameras = np.array([cameras] * len(self)).reshape(
-                self.shape
-            )
+            cameras = np.array([cameras] * len(self)).reshape(self.shape)
 
         # list -> array if necessary
         cameras = np.asarray(cameras).reshape(self.shape)
@@ -150,7 +153,9 @@ class GridPlot(Frame, RecordMixin):
                     f"by shape: {self.shape}. You have passed: <{controllers.size}> controllers"
                 ) from None
 
-            subplot_controllers: np.ndarray[pygfx.Controller] = np.empty(self.shape, dtype=object)
+            subplot_controllers: np.ndarray[pygfx.Controller] = np.empty(
+                self.shape, dtype=object
+            )
 
             for i, j in product(range(self.shape[0]), range(self.shape[1])):
                 subplot_controllers[i, j] = controllers[i, j]
@@ -160,9 +165,7 @@ class GridPlot(Frame, RecordMixin):
         else:
             if controller_ids is None:
                 # individual controller for each subplot
-                controller_ids = np.arange(len(self)).reshape(
-                    self.shape
-                )
+                controller_ids = np.arange(len(self)).reshape(self.shape)
 
             elif isinstance(controller_ids, str):
                 if controller_ids == "sync":
@@ -225,9 +228,7 @@ class GridPlot(Frame, RecordMixin):
 
             if controller_types is None:
                 # `create_controller()` will auto-determine controller for each subplot based on defaults
-                controller_types = np.array(
-                    ["default"] * len(self)
-                ).reshape(self.shape)
+                controller_types = np.array(["default"] * len(self)).reshape(self.shape)
 
             elif isinstance(controller_types, str):
                 if controller_types not in valid_controller_types.keys():
@@ -255,7 +256,9 @@ class GridPlot(Frame, RecordMixin):
                         f"{valid_str} or instances of {[c.__name__ for c in valid_instances]}"
                     )
 
-            controller_types: np.ndarray[pygfx.Controller] = np.asarray(controller_types).reshape(self.shape)
+            controller_types: np.ndarray[pygfx.Controller] = np.asarray(
+                controller_types
+            ).reshape(self.shape)
 
             # make the real controllers for each subplot
             subplot_controllers = np.empty(shape=self.shape, dtype=object)
@@ -275,7 +278,9 @@ class GridPlot(Frame, RecordMixin):
                 if cont_type == "default":
                     # hacky fix for now because of how `create_controller()` works
                     cont_type = None
-                _controller = create_controller(controller_type=cont_type, camera=cams[0])
+                _controller = create_controller(
+                    controller_type=cont_type, camera=cams[0]
+                )
 
                 subplot_controllers[controller_ids == cid] = _controller
 
@@ -342,14 +347,18 @@ class GridPlot(Frame, RecordMixin):
     @property
     def controllers(self) -> np.ndarray[pygfx.Controller]:
         """controllers, read-only array, access individual subplots to change a controller"""
-        controllers = np.asarray([subplot.controller for subplot in self], dtype=object).reshape(self.shape)
+        controllers = np.asarray(
+            [subplot.controller for subplot in self], dtype=object
+        ).reshape(self.shape)
         controllers.flags.writeable = False
         return controllers
 
     @property
     def cameras(self) -> np.ndarray[pygfx.Camera]:
         """cameras, read-only array, access individual subplots to change a camera"""
-        cameras = np.asarray([subplot.camera for subplot in self], dtype=object).reshape(self.shape)
+        cameras = np.asarray(
+            [subplot.camera for subplot in self], dtype=object
+        ).reshape(self.shape)
         cameras.flags.writeable = False
         return cameras
 
