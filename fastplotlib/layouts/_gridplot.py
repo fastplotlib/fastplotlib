@@ -1,6 +1,6 @@
 from itertools import product, chain
 import numpy as np
-from typing import Literal
+from typing import Literal, Iterable
 from inspect import getfullargspec
 from warnings import warn
 
@@ -21,16 +21,21 @@ class GridPlot(Frame, RecordMixin):
         shape: tuple[int, int],
         cameras: (
             Literal["2d", "3d"]
-            | list[Literal["2d", "3d"]]
-            | list[pygfx.PerspectiveCamera]
-            | np.ndarray
+            | Iterable[Iterable[Literal["2d", "3d"]]]
+            | pygfx.PerspectiveCamera
+            | Iterable[Iterable[pygfx.PerspectiveCamera]]
         ) = "2d",
         controller_types: (
-            Literal["panzoom", "fly", "trackball", "orbit"]
-            | list[Literal["panzoom", "fly", "trackball", "orbit"]]
-            | np.ndarray
+            Iterable[Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]]
+            | Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]
         ) = None,
-        controller_ids: str | list[int] | np.ndarray | list[list[str]] = None,
+        controller_ids: (
+            Literal["sync"]
+            | Iterable[int]
+            | Iterable[Iterable[int]]
+            | Iterable[Iterable[str]]
+        ) = None,
+        controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
         canvas: str | WgpuCanvasBase | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
         size: tuple[int, int] = (500, 300),
@@ -44,18 +49,17 @@ class GridPlot(Frame, RecordMixin):
         shape: (int, int)
             (n_rows, n_cols)
 
-        cameras: "2d", "3", list of "2d" | "3d", list of camera instances, or np.ndarray of "2d" | "3d", optional
+        cameras: "2d", "3", list of "2d" | "3d", Iterable of camera instances, or Iterable of "2d" | "3d", optional
             | if str, one of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
-            | list/array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot
-            | list/array of pygfx.PerspectiveCamera instances
+            | Iterable/list/array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot
+            | Iterable/list/array of pygfx.PerspectiveCamera instances
 
-        controller_types: str, list or np.ndarray, optional
-            list or array that specifies the controller type for each subplot, or list/array of
-            pygfx.Controller instances. Valid controller types: "panzoom", "fly", "trackball", "orbit".
+        controller_types: str, Iterable, optional
+            list/array that specifies the controller type for each subplot.
+            Valid controller types: "panzoom", "fly", "trackball", "orbit".
             If not specified a default controller is chosen based on the camera type.
             Orthographic projections, i.e. "2d" cameras, use a "panzoom" controller by default.
             Perspective projections with a FOV > 0, i.e. "3d" cameras, use a "fly" controller by default.
-
 
         controller_ids: str, list of int, np.ndarray of int, or list with sublists of subplot str names, optional
             | If `None` a unique controller is created for each subplot
@@ -70,6 +74,11 @@ class GridPlot(Frame, RecordMixin):
             | list of lists of subplot names, each sublist is synced: [[subplot_a, subplot_b, subplot_e], [subplot_c, subplot_d]]
             | this syncs subplot_a, subplot_b and subplot_e together; syncs subplot_c and subplot_d together
 
+        controllers: pygfx.Controller | list[pygfx.Controller] | np.ndarray[pygfx.Controller], optional
+            directly provide pygfx.Controller instances(s). Useful if you want to use a controller from an existing
+            plot/subplot. Other controller kwargs, i.e. ``controller_Types`` and ``controller_ids`` are ignored if
+            ``controllers`` are provided.
+
         canvas: WgpuCanvas, optional
             Canvas for drawing
 
@@ -83,25 +92,23 @@ class GridPlot(Frame, RecordMixin):
             subplot names
         """
 
-        self.shape = shape
+        self._shape = shape
 
         if names is not None:
-            if len(list(chain(*names))) != self.shape[0] * self.shape[1]:
+            if len(list(chain(*names))) != len(self):
                 raise ValueError(
                     "must provide same number of subplot `names` as specified by gridplot shape"
                 )
 
-            self.names = np.asarray(names).reshape(self.shape)
+            subplot_names = np.asarray(names).reshape(self.shape)
         else:
-            self.names = None
+            subplot_names = None
 
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
-            cameras = np.array([cameras] * self.shape[0] * self.shape[1]).reshape(
-                self.shape
-            )
+            cameras = np.array([cameras] * len(self)).reshape(self.shape)
 
         # list -> array if necessary
         cameras = np.asarray(cameras).reshape(self.shape)
@@ -110,127 +117,177 @@ class GridPlot(Frame, RecordMixin):
             raise ValueError("Number of cameras does not match the number of subplots")
 
         # create the cameras
-        self._cameras = np.empty(self.shape, dtype=object)
+        subplot_cameras = np.empty(self.shape, dtype=object)
         for i, j in product(range(self.shape[0]), range(self.shape[1])):
-            self._cameras[i, j] = create_camera(camera_type=cameras[i, j])
+            subplot_cameras[i, j] = create_camera(camera_type=cameras[i, j])
 
-        if controller_ids is None:
-            # individual controller for each subplot
-            controller_ids = np.arange(self.shape[0] * self.shape[1]).reshape(
-                self.shape
-            )
+        # if controller instances have been specified for each subplot
+        if controllers is not None:
 
-        elif isinstance(controller_ids, str):
-            if controller_ids == "sync":
-                controller_ids = np.zeros(self.shape, dtype=int)
+            # one controller for all subplots
+            if isinstance(controllers, pygfx.Controller):
+                controllers = [controllers] * len(self)
+                # subplot_controllers[:] = controllers
+                # # subplot_controllers = np.asarray([controllers] * len(self), dtype=object)
+
+            # individual controller instance specified for each subplot
             else:
+                # I found that this is better than list(*chain(<list/array>)) because chain doesn't give the right
+                # result we want for arrays
+                for item in controllers:
+                    if isinstance(item, pygfx.Controller):
+                        pass
+                    elif all(isinstance(c, pygfx.Controller) for c in item):
+                        pass
+                    else:
+                        raise TypeError(
+                            "controllers argument must be a single pygfx.Controller instance of a Iterable of "
+                            "pygfx.Controller instances"
+                        )
+
+            try:
+                controllers = np.asarray(controllers).reshape(shape)
+            except ValueError:
                 raise ValueError(
-                    f"`controller_ids` must be one of 'sync', an array/list of subplot names, or an array/list of "
-                    f"integer ids. See the docstring for more details."
-                )
+                    f"number of controllers passed must be the same as the number of subplots specified "
+                    f"by shape: {self.shape}. You have passed: <{controllers.size}> controllers"
+                ) from None
 
-        # list controller_ids
-        elif isinstance(controller_ids, (list, np.ndarray)):
-            ids_flat = list(chain(*controller_ids))
-
-            # list of str of subplot names, convert this to integer ids
-            if all([isinstance(item, str) for item in ids_flat]):
-                if self.names is None:
-                    raise ValueError(
-                        "must specify subplot `names` to use list of str for `controller_ids`"
-                    )
-
-                # make sure each controller_id str is a subplot name
-                if not all([n in self.names for n in ids_flat]):
-                    raise KeyError(
-                        f"all `controller_ids` strings must be one of the subplot names"
-                    )
-
-                if len(ids_flat) > len(set(ids_flat)):
-                    raise ValueError(
-                        "id strings must not appear twice in `controller_ids`"
-                    )
-
-                # initialize controller_ids array
-                ids_init = np.arange(self.shape[0] * self.shape[1]).reshape(self.shape)
-
-                # set id based on subplot position for each synced sublist
-                for i, sublist in enumerate(controller_ids):
-                    for name in sublist:
-                        ids_init[self.names == name] = -(
-                            i + 1
-                        )  # use negative numbers because why not
-
-                controller_ids = ids_init
-
-            # integer ids
-            elif all([isinstance(item, (int, np.integer)) for item in ids_flat]):
-                controller_ids = np.asarray(controller_ids).reshape(self.shape)
-
-            else:
-                raise TypeError(
-                    f"list argument to `controller_ids` must be a list of `str` or `int`, "
-                    f"you have passed: {controller_ids}"
-                )
-
-        if controller_ids.shape != self.shape:
-            raise ValueError(
-                "Number of controller_ids does not match the number of subplots"
+            subplot_controllers: np.ndarray[pygfx.Controller] = np.empty(
+                self.shape, dtype=object
             )
 
-        if controller_types is None:
-            # `create_controller()` will auto-determine controller for each subplot based on defaults
-            controller_types = np.array(
-                ["default"] * self.shape[0] * self.shape[1]
+            for i, j in product(range(self.shape[0]), range(self.shape[1])):
+                subplot_controllers[i, j] = controllers[i, j]
+                subplot_controllers[i, j].add_camera(subplot_cameras[i, j])
+
+        # parse controller_ids and controller_types to make desired controller for each supblot
+        else:
+            if controller_ids is None:
+                # individual controller for each subplot
+                controller_ids = np.arange(len(self)).reshape(self.shape)
+
+            elif isinstance(controller_ids, str):
+                if controller_ids == "sync":
+                    # this will eventually make one controller for all subplots
+                    controller_ids = np.zeros(self.shape, dtype=int)
+                else:
+                    raise ValueError(
+                        f"`controller_ids` must be one of 'sync', an array/list of subplot names, or an array/list of "
+                        f"integer ids. See the docstring for more details."
+                    )
+
+            # list controller_ids
+            elif isinstance(controller_ids, (list, np.ndarray)):
+                ids_flat = list(chain(*controller_ids))
+
+                # list of str of subplot names, convert this to integer ids
+                if all([isinstance(item, str) for item in ids_flat]):
+                    if subplot_names is None:
+                        raise ValueError(
+                            "must specify subplot `names` to use list of str for `controller_ids`"
+                        )
+
+                    # make sure each controller_id str is a subplot name
+                    if not all([n in subplot_names for n in ids_flat]):
+                        raise KeyError(
+                            f"all `controller_ids` strings must be one of the subplot names"
+                        )
+
+                    if len(ids_flat) > len(set(ids_flat)):
+                        raise ValueError(
+                            "id strings must not appear twice in `controller_ids`"
+                        )
+
+                    # initialize controller_ids array
+                    ids_init = np.arange(len(self)).reshape(self.shape)
+
+                    # set id based on subplot position for each synced sublist
+                    for i, sublist in enumerate(controller_ids):
+                        for name in sublist:
+                            ids_init[subplot_names == name] = -(
+                                i + 1
+                            )  # use negative numbers because why not
+
+                    controller_ids = ids_init
+
+                # integer ids
+                elif all([isinstance(item, (int, np.integer)) for item in ids_flat]):
+                    controller_ids = np.asarray(controller_ids).reshape(self.shape)
+
+                else:
+                    raise TypeError(
+                        f"list argument to `controller_ids` must be a list of `str` or `int`, "
+                        f"you have passed: {controller_ids}"
+                    )
+
+            if controller_ids.shape != self.shape:
+                raise ValueError(
+                    "Number of controller_ids does not match the number of subplots"
+                )
+
+            if controller_types is None:
+                # `create_controller()` will auto-determine controller for each subplot based on defaults
+                controller_types = np.array(["default"] * len(self)).reshape(self.shape)
+
+            elif isinstance(controller_types, str):
+                if controller_types not in valid_controller_types.keys():
+                    raise ValueError(
+                        f"invalid controller_types argument, you may pass either a single controller type as a str, or an"
+                        f"iterable of controller types from the selection: {valid_controller_types.keys()}"
+                    )
+
+            # valid controller types
+            types_flat = list(chain(*controller_types))
+            # str controller_type or pygfx instances
+            valid_str = list(valid_controller_types.keys()) + ["default"]
+            valid_instances = tuple(valid_controller_types.values())
+
+            # make sure each controller type is valid
+            for controller_type in types_flat:
+                if controller_type is None:
+                    continue
+
+                if (controller_type not in valid_str) and (
+                    not isinstance(controller_type, valid_instances)
+                ):
+                    raise ValueError(
+                        f"You have passed an invalid controller type, valid controller_types arguments are:\n"
+                        f"{valid_str} or instances of {[c.__name__ for c in valid_instances]}"
+                    )
+
+            controller_types: np.ndarray[pygfx.Controller] = np.asarray(
+                controller_types
             ).reshape(self.shape)
 
-        # validate controller types
-        types_flat = list(chain(*controller_types))
-        # str controller_type or pygfx instances
-        valid_str = list(valid_controller_types.keys()) + ["default"]
-        valid_instances = tuple(valid_controller_types.values())
+            # make the real controllers for each subplot
+            subplot_controllers = np.empty(shape=self.shape, dtype=object)
+            for cid in np.unique(controller_ids):
+                cont_type = controller_types[controller_ids == cid]
+                if np.unique(cont_type).size > 1:
+                    raise ValueError(
+                        "Multiple controller types have been assigned to the same controller id. "
+                        "All controllers with the same id must use the same type of controller."
+                    )
 
-        # make sure each controller type is valid
-        for controller_type in types_flat:
-            if controller_type is None:
-                continue
+                cont_type = cont_type[0]
 
-            if (controller_type not in valid_str) and (
-                not isinstance(controller_type, valid_instances)
-            ):
-                raise ValueError(
-                    f"You have passed an invalid controller type, valid controller_types arguments are:\n"
-                    f"{valid_str} or instances of {[c.__name__ for c in valid_instances]}"
+                # get all the cameras that use this controller
+                cams = subplot_cameras[controller_ids == cid].ravel()
+
+                if cont_type == "default":
+                    # hacky fix for now because of how `create_controller()` works
+                    cont_type = None
+                _controller = create_controller(
+                    controller_type=cont_type, camera=cams[0]
                 )
 
-        controller_types = np.asarray(controller_types).reshape(self.shape)
+                subplot_controllers[controller_ids == cid] = _controller
 
-        # make the real controllers for each subplot
-        self._controllers = np.empty(shape=self.shape, dtype=object)
-        for cid in np.unique(controller_ids):
-            cont_type = controller_types[controller_ids == cid]
-            if np.unique(cont_type).size > 1:
-                raise ValueError(
-                    "Multiple controller types have been assigned to the same controller id. "
-                    "All controllers with the same id must use the same type of controller."
-                )
-
-            cont_type = cont_type[0]
-
-            # get all the cameras that use this controller
-            cams = self._cameras[controller_ids == cid].ravel()
-
-            if cont_type == "default":
-                # hacky fix for now because of how `create_controller()` works
-                cont_type = None
-            _controller = create_controller(controller_type=cont_type, camera=cams[0])
-
-            self._controllers[controller_ids == cid] = _controller
-
-            # add the other cameras that go with this controller
-            if cams.size > 1:
-                for cam in cams[1:]:
-                    _controller.add_camera(cam)
+                # add the other cameras that go with this controller
+                if cams.size > 1:
+                    for cam in cams[1:]:
+                        _controller.add_camera(cam)
 
         self._canvas = canvas
         self._renderer = renderer
@@ -243,11 +300,11 @@ class GridPlot(Frame, RecordMixin):
 
         for i, j in self._get_iterator():
             position = (i, j)
-            camera = self._cameras[i, j]
-            controller = self._controllers[i, j]
+            camera = subplot_cameras[i, j]
+            controller = subplot_controllers[i, j]
 
-            if self.names is not None:
-                name = self.names[i, j]
+            if subplot_names is not None:
+                name = subplot_names[i, j]
             else:
                 name = None
 
@@ -273,6 +330,11 @@ class GridPlot(Frame, RecordMixin):
         Frame.__init__(self)
 
     @property
+    def shape(self) -> tuple[int, int]:
+        """[n_rows, n_cols]"""
+        return self._shape
+
+    @property
     def canvas(self) -> WgpuCanvasBase:
         """The canvas associated to this GridPlot"""
         return self._canvas
@@ -281,6 +343,31 @@ class GridPlot(Frame, RecordMixin):
     def renderer(self) -> pygfx.WgpuRenderer:
         """The renderer associated to this GridPlot"""
         return self._renderer
+
+    @property
+    def controllers(self) -> np.ndarray[pygfx.Controller]:
+        """controllers, read-only array, access individual subplots to change a controller"""
+        controllers = np.asarray(
+            [subplot.controller for subplot in self], dtype=object
+        ).reshape(self.shape)
+        controllers.flags.writeable = False
+        return controllers
+
+    @property
+    def cameras(self) -> np.ndarray[pygfx.Camera]:
+        """cameras, read-only array, access individual subplots to change a camera"""
+        cameras = np.asarray(
+            [subplot.camera for subplot in self], dtype=object
+        ).reshape(self.shape)
+        cameras.flags.writeable = False
+        return cameras
+
+    @property
+    def names(self) -> np.ndarray[str]:
+        """subplot names, read-only array, access individual subplots to change a name"""
+        names = np.asarray([subplot.name for subplot in self]).reshape(self.shape)
+        names.flags.writeable = False
+        return names
 
     def __getitem__(self, index: tuple[int, int] | str) -> Subplot:
         if isinstance(index, str):
@@ -388,6 +475,10 @@ class GridPlot(Frame, RecordMixin):
     def __next__(self) -> Subplot:
         pos = self._current_iter.__next__()
         return self._subplots[pos]
+
+    def __len__(self):
+        """number of subplots"""
+        return self.shape[0] * self.shape[1]
 
     def __str__(self):
         return f"{self.__class__.__name__} @ {hex(id(self))}"
