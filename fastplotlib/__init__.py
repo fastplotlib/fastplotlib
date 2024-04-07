@@ -5,6 +5,7 @@ from .graphics import *
 from .graphics.selectors import *
 from .legends import *
 from .layouts import Figure
+
 # from .widgets import ImageWidget
 from .utils import config
 

@@ -1,6 +1,15 @@
 from functools import partial
 
-from ipywidgets import VBox, Button, Layout, IntSlider, BoundedIntText, Play, jslink, HBox
+from ipywidgets import (
+    VBox,
+    Button,
+    Layout,
+    IntSlider,
+    BoundedIntText,
+    Play,
+    jslink,
+    HBox,
+)
 
 
 class IpywidgetImageWidgetToolbar(VBox):
