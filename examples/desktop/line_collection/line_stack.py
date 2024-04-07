@@ -17,16 +17,14 @@ ys = np.sin(xs) * 20
 # make 25 lines
 data = np.vstack([ys] * 25)
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+fig = fpl.Figure()
 
 # line stack takes all the same arguments as line collection and behaves similarly
-plot.add_line_stack(data, cmap="jet")
+fig[0, 0].add_line_stack(data, cmap="jet")
 
-plot.show(maintain_aspect=False)
+fig.show(maintain_aspect=False)
 
-plot.canvas.set_logical_size(900, 600)
+fig.canvas.set_logical_size(900, 600)
 
 if __name__ == "__main__":
     print(__doc__)

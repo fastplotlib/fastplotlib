@@ -896,16 +896,12 @@ class ImageWidget:
             ImageWidget just uses the Gridplot output context
         """
         if self.gridplot.canvas.__class__.__name__ == "JupyterWgpuCanvas":
-            from ..layouts._frame._ipywidget_toolbar import (
-                IpywidgetImageWidgetToolbar,
-            )  # noqa - inline import
+            from ._image_widget_ipywidget_toolbar import IpywidgetImageWidgetToolbar
 
             self._image_widget_toolbar = IpywidgetImageWidgetToolbar(self)
 
         elif self.gridplot.canvas.__class__.__name__ == "QWgpuCanvas":
-            from ..layouts._frame._qt_toolbar import (
-                QToolbarImageWidget,
-            )  # noqa - inline import
+            from ._image_widget_qt_toolbar import QToolbarImageWidget
 
             self._image_widget_toolbar = QToolbarImageWidget(self)
 

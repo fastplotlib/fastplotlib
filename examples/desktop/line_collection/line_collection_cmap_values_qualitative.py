@@ -39,20 +39,18 @@ cmap_values = [
     1, 1, 1, 5
 ]
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+fig = fpl.Figure()
 
-plot.add_line_collection(
+fig[0, 0].add_line_collection(
     circles,
     cmap="tab10",
     cmap_values=cmap_values,
     thickness=10
 )
 
-plot.show()
+fig.show()
 
-plot.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(800, 800)
 
 if __name__ == "__main__":
     print(__doc__)

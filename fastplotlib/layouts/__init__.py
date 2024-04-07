@@ -1,4 +1,3 @@
-from ._gridplot import GridPlot
-from ._plot import Plot
+from ._figure import Figure
 
-__all__ = ["Plot", "GridPlot"]
+__all__ = ["Figure"]
