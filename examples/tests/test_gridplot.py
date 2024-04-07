@@ -4,8 +4,6 @@ import pytest
 import fastplotlib as fpl
 import pygfx
 
-data = np.arange(10)
-
 
 def test_cameras_controller_properties():
     cameras = [
@@ -107,6 +105,27 @@ def test_gridplot_controller_ids_int_change_controllers():
     assert isinstance(gp[0, 1].controller, pygfx.OrbitController)
     assert gp[0, 1].controller is gp[0, 2].controller is gp[2, 1].controller
     assert set(gp[0, 1].controller.cameras) == {gp[0, 1].camera, gp[0, 2].camera, gp[2, 1].camera}
+
+
+def test_gridplot_controller_ids_str():
+    names = [
+        ["a", "b", "c"],
+        ["d", "e", "f"]
+    ]
+
+    controller_ids = [
+        ["a", "f"],
+        ["b", "d", "e"]
+    ]
+
+    gp = fpl.GridPlot(shape=(2, 3), controller_ids=controller_ids, names=names)
+
+    assert gp[0, 0].controller is gp[1, 2].controller is gp["a"].controller is gp["f"].controller
+    assert gp[0, 1].controller is gp[1, 0].controller is gp[1, 1].controller is gp["b"].controller is gp["d"].controller is gp["e"].controller
+
+    # make sure subplot c is unique
+    exclude_c = [gp[n].controller for n in ["a", "b", "d", "e", "f"]]
+    assert gp["c"] not in exclude_c
 
 
 def test_set_gridplot_controllers_from_existing_controllers():
