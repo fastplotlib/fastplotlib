@@ -90,7 +90,7 @@ jobs:
       env:
         PYGFX_EXPECT_LAVAPIPE: true
       run: |
-        pytest -v tests/
+        WGPU_FORCE_OFFSCREEN=1 pytest -v tests/
         pytest -v examples
         FASTPLOTLIB_NB_TESTS=1 pytest --nbmake examples/notebooks/
     - uses: actions/upload-artifact@v3
@@ -146,7 +146,7 @@ jobs:
       env:
         PYGFX_EXPECT_LAVAPIPE: true
       run: |
-        pytest -v tests/
+        WGPU_FORCE_OFFSCREEN=1 pytest -v tests/
         pytest -v examples
     - uses: actions/upload-artifact@v3
       if: ${{ failure() }}
