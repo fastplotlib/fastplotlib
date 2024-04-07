@@ -1,8 +1,15 @@
+import os
+
 import numpy as np
 import pytest
 
 import fastplotlib as fpl
 import pygfx
+
+
+@pytest.fixture(scope="session", autouse=True)
+def set_env():
+    os.environ["WGPU_FORCE_OFFSCREEN"] = "true"
 
 
 def test_cameras_controller_properties():
