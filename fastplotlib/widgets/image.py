@@ -207,6 +207,20 @@ class ImageWidget:
         Can be either 2 or 3, depending on whether the image is grayscale or RGB(A)."""
         return self._n_img_dims
 
+    @property
+    def rgb(self) -> list[bool]:
+        """
+        Returns ``list`` of booleans, one for each ``array`` in the ImageWidget. True if the ``array`` is RGB,
+        False for grayscale
+        """
+        return self._rgb
+
+
+    @property
+    def histogram_widget(self) -> bool:
+        """Returns whether we display the histogram widget"""
+        return self._histogram_widget
+
     def _get_n_scrollable_dims(self, curr_arr: np.ndarray, rgb: bool) -> list[int]:
         """
         For a given ``array`` displayed in the ImageWidget, this function infers how many of the dimensions are
@@ -394,9 +408,11 @@ class ImageWidget:
                         f"rgb had length {len(rgb)} but there are {len(self.data)} data arrays; these must be equal"
                     )
 
-                self._n_img_dims = [IMAGE_DIM_COUNTS[RGB_BOOL_MAP[rgb[i]]] for i in range(len(self.data))]
+                self._rgb = rgb
 
-                self._n_scrollable_dims = [self._get_n_scrollable_dims(self.data[i], rgb[i]) for
+                self._n_img_dims = [IMAGE_DIM_COUNTS[RGB_BOOL_MAP[self.rgb[i]]] for i in range(len(self.data))]
+
+                self._n_scrollable_dims = [self._get_n_scrollable_dims(self.data[i], self.rgb[i]) for
                                            i in range(len(self.data))]
 
                 # Define ndim of ImageWidget instance as largest number of scrollable dims + 2 (grayscale dimensions)
@@ -506,6 +522,7 @@ class ImageWidget:
             shape=grid_shape, **grid_plot_kwargs_default
         )
 
+        self._histogram_widget = histogram_widget
         for data_ix, (d, subplot) in enumerate(zip(self.data, self.gridplot)):
             if self._names is not None:
                 name = self._names[data_ix]
@@ -519,7 +536,7 @@ class ImageWidget:
             subplot.name = name
             subplot.set_title(name)
 
-            if histogram_widget:
+            if self.histogram_widget:
                 hlut = HistogramLUT(data=d, image_graphic=ig, name="histogram_lut")
 
                 subplot.docks["right"].add_graphic(hlut)
@@ -796,9 +813,11 @@ class ImageWidget:
                 self.sliders[key].value = 0
 
         # set slider max according to new data
-        max_lengths = {"t": np.inf, "z": np.inf}
+        max_lengths = dict()
+        for scroll_dim in self.slider_dims:
+            max_lengths[scroll_dim] = np.inf
 
-        if isinstance(new_data, np.ndarray):
+        if _is_arraylike(new_data):
             new_data = [new_data]
 
         if len(self._data) != len(new_data):
@@ -814,15 +833,21 @@ class ImageWidget:
                     f"does not equal current data ndim {current_array.ndim}"
                 )
 
+            #Computes the number of scrollable dims and also validates new_array
+            new_scrollable_dims = self._get_n_scrollable_dims(new_array, self.rgb[i])
+
+            if self.n_scrollable_dims[i] != new_scrollable_dims:
+                raise ValueError(f"Scrollable dims do not match")
+
         # if checks pass, update with new data
         for i, (new_array, current_array, subplot) in enumerate(
                 zip(new_data, self._data, self.gridplot)
         ):
             # check last two dims (x and y) to see if data shape is changing
-            old_data_shape = self._data[i].shape[-2:]
+            old_data_shape = self._data[i].shape[-self.n_scrollable_dims[i]:]
             self._data[i] = new_array
 
-            if old_data_shape != new_array.shape[-2:]:
+            if old_data_shape != new_array.shape[-self.n_scrollable_dims[i]:]:
                 # delete graphics at index zero
                 subplot.delete_graphic(graphic=subplot["image_widget_managed"])
                 # insert new graphic at index zero
@@ -834,17 +859,22 @@ class ImageWidget:
                 subplot.insert_graphic(graphic=new_graphic)
                 subplot.docks["right"]["histogram_lut"].image_graphic = new_graphic
 
-            if new_array.ndim > 2:
-                # to set max of time slider, txy or tzxy
-                max_lengths["t"] = min(max_lengths["t"], new_array.shape[0] - 1)
+            # Returns "", "t", or "tz"
+            curr_scrollable_format = SCROLLABLE_DIMS_ORDER[self.n_scrollable_dims[i]]
 
-            if new_array.ndim > 3:  # tzxy
-                max_lengths["z"] = min(max_lengths["z"], new_array.shape[1] - 1)
+            for scroll_dim in self.slider_dims:
+                if scroll_dim in curr_scrollable_format:
+                    current_length = current_array.shape[curr_scrollable_format.index(scroll_dim)]
+                    if max_lengths[scroll_dim] == np.inf:
+                        max_lengths[scroll_dim] = current_length
+                    elif max_lengths[scroll_dim] != current_length:
+                        raise ValueError(f"New arrays have differing values along dim {scroll_dim}")
 
             # set histogram widget
-            subplot.docks["right"]["histogram_lut"].set_data(
-                new_array, reset_vmin_vmax=reset_vmin_vmax
-            )
+            if self.histogram_widget:
+                subplot.docks["right"]["histogram_lut"].set_data(
+                    new_array, reset_vmin_vmax=reset_vmin_vmax
+                )
 
         # set slider maxes
         # TODO: maybe make this stuff a property, like ndims, n_frames etc. and have it set the sliders
