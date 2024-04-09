@@ -207,17 +207,26 @@ class ImageWidget:
         Can be either 2 or 3, depending on whether the image is grayscale or RGB(A)."""
         return self._n_img_dims
 
-    def _compute_and_validate_formats(self) -> list[int]:
+    def _get_n_scrollable_dims(self) -> list[int]:
+        """
+        For each ``array`` displayed in the ImageWidget, this function infers how many of the dimensions are
+        supported by sliders (aka scrollable). Ex: "xy" data has 0 scrollable dims, "txy" has 1, "tzxy" has 2.
+
+        Returns
+        -------
+        list[int]
+            Number of scrollable dimensions for each ``array`` in the dataset.
+        """
 
         scrollable_dims = []
-        for k in range(len(self._data)):
-            curr_arr = self._data[k]
+        for array_ix in range(len(self._data)):
+            curr_arr = self._data[array_ix]
 
-            # Make sure each image stack at least ``num_img_dims`` dimensions
-            if len(curr_arr.shape) < self.n_img_dims[k]:
+            # Make sure each image stack at least ``n_img_dims`` dimensions
+            if len(curr_arr.shape) < self.n_img_dims[array_ix]:
                 raise ValueError(
                     f"Your array has shape {curr_arr.shape} "
-                    f"but you specified that each image in your array is {self.n_img_dims[k]}D "
+                    f"but you specified that each image in your array is {self.n_img_dims[array_ix]}D "
                 )
 
             # If RGB(A), last dim must be 3 or 4
@@ -227,11 +236,11 @@ class ImageWidget:
                         "RGB(A) was specified but the last dimension of the array is neither 3 nor 4"
                     )
 
-            n_scrollable_dims = len(curr_arr.shape) - self.n_img_dims[k]
+            n_scrollable_dims = len(curr_arr.shape) - self.n_img_dims[array_ix]
 
             if n_scrollable_dims not in SCROLLABLE_DIMS_ORDER.keys():
                 raise ValueError(
-                    f"Array {k} had shape {curr_arr.shape} which is not supported"
+                    f"Array {array_ix} had shape {curr_arr.shape} which is not supported"
                 )
 
             scrollable_dims.append(n_scrollable_dims)
@@ -384,9 +393,9 @@ class ImageWidget:
 
                 self._n_img_dims = [IMAGE_DIM_COUNTS[RGB_BOOL_MAP[rgb[i]]] for i in range(len(self.data))]
 
-                self._n_scrollable_dims = self._compute_and_validate_formats()
+                self._n_scrollable_dims = self._get_n_scrollable_dims()
 
-                # Compute the largest dimension
+                # Define ndim of ImageWidget instance as largest number of scrollable dims + 2 (grayscale dimensions)
                 self._ndim = (
                         max(
                             [
@@ -628,8 +637,14 @@ class ImageWidget:
                 break
 
         numerical_dims = list()
+
+        # Totally number of dimensions for this specific array
         curr_ndim = self.data[data_ix].ndim
+
+        # Initialize slices for each dimension of array
         indexer = [slice(None)] * curr_ndim
+
+        # Maps from n_scrollable_dims to one of "", "t", "tz", etc.
         curr_scrollable_format = SCROLLABLE_DIMS_ORDER[
             self.n_scrollable_dims[data_ix]
         ]
