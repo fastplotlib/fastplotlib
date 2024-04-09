@@ -17,7 +17,10 @@ if CANVAS_OPTIONS_AVAILABLE["qt"]:
 
 # How many dimensions to display a single image
 # If key is 0 this means no RGB (so each image is 2 dims). If key is 1, it's 3
-RGB_DIM_MAP = {0: 2, 1: 3}
+IMAGE_DIM_COUNTS = {"gray": 2, "rgb": 3}
+
+# Map boolean (indicating whether we use RGB or grayscale) to the string. Used to index RGB_DIM_MAP
+RGB_BOOL_MAP = {False: "gray", True: "rgb"}
 
 # How many dimensions can we scroll over
 SCROLLABLE_DIMS_ORDER = {
@@ -166,15 +169,10 @@ class ImageWidget:
         return self._ndim
 
     @property
-    def num_scrollable_dims(self) -> List[int]:
+    def n_scrollable_dims(self) -> List[int]:
         """Returns a List describing, for each array, how many of the first dimensions are "scrollable".
         All other dimensions are used for displaying images"""
-        return self._num_scrollable_dims
-
-    @property
-    def num_img_dims(self) -> List[int]:
-        """Returns a List describing, for each array, how many of the last dimensions are used to display a single img."""
-        return self._num_img_dims
+        return self._n_scrollable_dims
 
     @property
     def sliders(self) -> Dict[str, Any]:
@@ -204,47 +202,41 @@ class ImageWidget:
         return self._current_index
 
     @property
-    def num_img_dims(self) -> list[int]:
-        """
-
-        Returns:
-        -------
-        num_img_dims: list[int]
-            | ``list`` describing, for each array, how many dimensions are used to display a single image.
-        Can be either 2 or 3. Depending on whether the image is grayscale or RGB(A).
-        """
-        return self._num_img_dims
+    def n_img_dims(self) -> list[int]:
+        """Returns ``list`` of ints describing, for each array, how many dimensions are used to display a single image.
+        Can be either 2 or 3, depending on whether the image is grayscale or RGB(A)."""
+        return self._n_img_dims
 
     def _compute_and_validate_formats(self) -> list[int]:
 
-        num_scrollable_dims_list = []
+        scrollable_dims = []
         for k in range(len(self._data)):
             curr_arr = self._data[k]
 
             # Make sure each image stack at least ``num_img_dims`` dimensions
-            if len(curr_arr.shape) < self.num_img_dims[k]:
+            if len(curr_arr.shape) < self.n_img_dims[k]:
                 raise ValueError(
                     f"Your array has shape {curr_arr.shape} "
-                    f"but you specified that each image in your array is {self.num_img_dims[k]}D "
+                    f"but you specified that each image in your array is {self.n_img_dims[k]}D "
                 )
 
             # If RGB(A), last dim must be 3 or 4
-            if self.num_img_dims == 3:
+            if self.n_img_dims == 3:
                 if not (curr_arr.shape[-1] == 3 or curr_arr.shape[-1] == 4):
                     raise ValueError(
                         "RGB(A) was specified but the last dimension of the array is neither 3 nor 4"
                     )
 
-            num_scrollable_dims = len(curr_arr.shape) - self.num_img_dims[k]
+            n_scrollable_dims = len(curr_arr.shape) - self.n_img_dims[k]
 
-            if num_scrollable_dims not in SCROLLABLE_DIMS_ORDER.keys():
+            if n_scrollable_dims not in SCROLLABLE_DIMS_ORDER.keys():
                 raise ValueError(
                     f"Array {k} had shape {curr_arr.shape} which is not supported"
                 )
 
-            num_scrollable_dims_list.append(num_scrollable_dims)
+            scrollable_dims.append(n_scrollable_dims)
 
-        return num_scrollable_dims_list
+        return scrollable_dims
 
     @current_index.setter
     def current_index(self, index: Dict[str, int]):
@@ -291,7 +283,7 @@ class ImageWidget:
         names: List[str] = None,
         grid_plot_kwargs: dict = None,
         histogram_widget: bool = True,
-        rgb_disp: list = None,
+        rgb: list[bool] = None,
         **kwargs,
     ):
         """
@@ -345,8 +337,9 @@ class ImageWidget:
         histogram_widget: bool, default False
             make histogram LUT widget for each subplot
 
-        rgb_disp: list, default None
-            Indicates which indices are to be displayed as RGB. If "rgb", the last dim must be 3 or 4
+        rgb: list[bool], default None
+            Includes a True or False for each ``array`` in the ImageWidget, indicating whether images are displayed as
+            grayscale or RGB(A).
 
         kwargs: Any
             passed to fastplotlib.graphics.Image
@@ -378,28 +371,26 @@ class ImageWidget:
                 self._data: List[np.ndarray] = data
 
                 # Establish number of image dimensions and number of scrollable dimensions for each array
-                if rgb_disp is None:
-                    rgb_disp = []
-                if not isinstance(rgb_disp, list):
+                if rgb is None:
+                    rgb = [False] * len(self.data)
+                if not isinstance(rgb, list):
                     raise TypeError(
-                        f"rgb_disp parameter must be a list, a {type(rgb_disp)} was provided"
+                        f"rgb_disp parameter must be a list, a {type(rgb)} was provided"
                     )
-                self._num_img_dims = [RGB_DIM_MAP[0] for i in range(len(data))]
-                for i in rgb_disp:
-                    if 0 <= i < len(data):
-                        self._num_img_dims[i] = RGB_DIM_MAP[1]
 
-                self._num_scrollable_dims = self._compute_and_validate_formats()
+                self._n_img_dims = [IMAGE_DIM_COUNTS[RGB_BOOL_MAP[rgb[i]]] for i in range(len(self.data))]
+
+                self._n_scrollable_dims = self._compute_and_validate_formats()
 
                 # Compute the largest dimension
                 self._ndim = (
-                    max(
+                        max(
                         [
-                            self.num_scrollable_dims[i]
-                            for i in range(len(self.num_scrollable_dims))
+                            self.n_scrollable_dims[i]
+                            for i in range(len(self.n_scrollable_dims))
                         ]
                     )
-                    + RGB_DIM_MAP[0]
+                        + IMAGE_DIM_COUNTS[RGB_BOOL_MAP[False]]
                 )
 
                 if names is not None:
@@ -430,10 +421,10 @@ class ImageWidget:
 
         # Sliders are made for all dimensions except the image dimensions
         self._slider_dims = list()
-        num_scrollable = max(
-            [self.num_scrollable_dims[i] for i in range(len(self.num_scrollable_dims))]
+        max_scrollable = max(
+            [self.n_scrollable_dims[i] for i in range(len(self.n_scrollable_dims))]
         )
-        for dim in range(num_scrollable):
+        for dim in range(max_scrollable):
             if dim in ALLOWED_SLIDER_DIMS.keys():
                 self.slider_dims.append(ALLOWED_SLIDER_DIMS[dim])
 
@@ -475,7 +466,7 @@ class ImageWidget:
         # get max bound for all data arrays for all slider dimensions and ensure compatibility across slider dims
         self._dims_max_bounds: Dict[str, int] = {k: 0 for k in self.slider_dims}
         for i, _dim in enumerate(list(self._dims_max_bounds.keys())):
-            for array, partition in zip(self.data, self.num_scrollable_dims):
+            for array, partition in zip(self.data, self.n_scrollable_dims):
                 if partition <= i:
                     continue
                 else:
@@ -636,7 +627,7 @@ class ImageWidget:
         curr_ndim = self.data[data_ix].ndim
         indexer = [slice(None)] * curr_ndim
         curr_scrollable_format = SCROLLABLE_DIMS_ORDER[
-            self.num_scrollable_dims[data_ix]
+            self.n_scrollable_dims[data_ix]
         ]
         for dim in list(slice_indices.keys()):
             if dim not in curr_scrollable_format:
@@ -683,7 +674,7 @@ class ImageWidget:
         else:
             ix = indices_dim
 
-            dim_str = SCROLLABLE_DIMS_ORDER[self.num_scrollable_dims[data_ix]][dim]
+            dim_str = SCROLLABLE_DIMS_ORDER[self.n_scrollable_dims[data_ix]][dim]
 
             # if no window stuff specified for this dim
             if dim_str not in self.window_funcs.keys():
