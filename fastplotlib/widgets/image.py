@@ -215,7 +215,6 @@ class ImageWidget:
         """
         return self._rgb
 
-
     @property
     def histogram_widget(self) -> bool:
         """Returns whether we display the histogram widget"""
@@ -258,9 +257,7 @@ class ImageWidget:
         n_scrollable_dims = len(curr_arr.shape) - n_img_dims
 
         if n_scrollable_dims not in SCROLLABLE_DIMS_ORDER.keys():
-            raise ValueError(
-                f"Array had shape {curr_arr.shape} which is not supported"
-            )
+            raise ValueError(f"Array had shape {curr_arr.shape} which is not supported")
 
         return n_scrollable_dims
 
@@ -301,16 +298,16 @@ class ImageWidget:
             ig.data = frame
 
     def __init__(
-            self,
-            data: Union[np.ndarray, List[np.ndarray]],
-            window_funcs: Union[int, Dict[str, int]] = None,
-            frame_apply: Union[callable, Dict[int, callable]] = None,
-            grid_shape: Tuple[int, int] = None,
-            names: List[str] = None,
-            grid_plot_kwargs: dict = None,
-            histogram_widget: bool = True,
-            rgb: list[bool] = None,
-            **kwargs,
+        self,
+        data: Union[np.ndarray, List[np.ndarray]],
+        window_funcs: Union[int, Dict[str, int]] = None,
+        frame_apply: Union[callable, Dict[int, callable]] = None,
+        grid_shape: Tuple[int, int] = None,
+        names: List[str] = None,
+        grid_plot_kwargs: dict = None,
+        histogram_widget: bool = True,
+        rgb: list[bool] = None,
+        **kwargs,
     ):
         """
         This widget facilitates high-level navigation through image stacks, which are arrays containing one or more
@@ -410,20 +407,25 @@ class ImageWidget:
 
                 self._rgb = rgb
 
-                self._n_img_dims = [IMAGE_DIM_COUNTS[RGB_BOOL_MAP[self.rgb[i]]] for i in range(len(self.data))]
+                self._n_img_dims = [
+                    IMAGE_DIM_COUNTS[RGB_BOOL_MAP[self.rgb[i]]]
+                    for i in range(len(self.data))
+                ]
 
-                self._n_scrollable_dims = [self._get_n_scrollable_dims(self.data[i], self.rgb[i]) for
-                                           i in range(len(self.data))]
+                self._n_scrollable_dims = [
+                    self._get_n_scrollable_dims(self.data[i], self.rgb[i])
+                    for i in range(len(self.data))
+                ]
 
                 # Define ndim of ImageWidget instance as largest number of scrollable dims + 2 (grayscale dimensions)
                 self._ndim = (
-                        max(
-                            [
-                                self.n_scrollable_dims[i]
-                                for i in range(len(self.n_scrollable_dims))
-                            ]
-                        )
-                        + IMAGE_DIM_COUNTS[RGB_BOOL_MAP[False]]
+                    max(
+                        [
+                            self.n_scrollable_dims[i]
+                            for i in range(len(self.n_scrollable_dims))
+                        ]
+                    )
+                    + IMAGE_DIM_COUNTS[RGB_BOOL_MAP[False]]
                 )
 
                 if names is not None:
@@ -587,10 +589,10 @@ class ImageWidget:
                     f"Your window func passed in these keys: {list(callable_dict.keys())}"
                 )
             if not all(
-                    [
-                        isinstance(_callable_dict, tuple)
-                        for _callable_dict in callable_dict.values()
-                    ]
+                [
+                    isinstance(_callable_dict, tuple)
+                    for _callable_dict in callable_dict.values()
+                ]
             ):
                 raise TypeError(
                     "dict argument to `window_funcs` must be in the form of: "
@@ -627,7 +629,7 @@ class ImageWidget:
         self.current_index = self.current_index
 
     def _process_indices(
-            self, array: np.ndarray, slice_indices: Dict[Union[int, str], int]
+        self, array: np.ndarray, slice_indices: Dict[Union[int, str], int]
     ) -> np.ndarray:
         """
         Get the 2D array from the given slice indices. If not returning a 2D slice (such as due to window_funcs)
@@ -666,9 +668,7 @@ class ImageWidget:
         indexer = [slice(None)] * curr_ndim
 
         # Maps from n_scrollable_dims to one of "", "t", "tz", etc.
-        curr_scrollable_format = SCROLLABLE_DIMS_ORDER[
-            self.n_scrollable_dims[data_ix]
-        ]
+        curr_scrollable_format = SCROLLABLE_DIMS_ORDER[self.n_scrollable_dims[data_ix]]
         for dim in list(slice_indices.keys()):
             if dim not in curr_scrollable_format:
                 continue
@@ -785,10 +785,10 @@ class ImageWidget:
             hlut.set_data(subplot["image_widget_managed"].data())
 
     def set_data(
-            self,
-            new_data: Union[np.ndarray, List[np.ndarray]],
-            reset_vmin_vmax: bool = True,
-            reset_indices: bool = True,
+        self,
+        new_data: Union[np.ndarray, List[np.ndarray]],
+        reset_vmin_vmax: bool = True,
+        reset_indices: bool = True,
     ):
         """
         Change data of widget. Note: sliders max currently update only for ``txy`` and ``tzxy`` data.
@@ -833,7 +833,7 @@ class ImageWidget:
                     f"does not equal current data ndim {current_array.ndim}"
                 )
 
-            #Computes the number of scrollable dims and also validates new_array
+            # Computes the number of scrollable dims and also validates new_array
             new_scrollable_dims = self._get_n_scrollable_dims(new_array, self.rgb[i])
 
             if self.n_scrollable_dims[i] != new_scrollable_dims:
@@ -841,13 +841,13 @@ class ImageWidget:
 
         # if checks pass, update with new data
         for i, (new_array, current_array, subplot) in enumerate(
-                zip(new_data, self._data, self.gridplot)
+            zip(new_data, self._data, self.gridplot)
         ):
             # check last two dims (x and y) to see if data shape is changing
-            old_data_shape = self._data[i].shape[-self.n_scrollable_dims[i]:]
+            old_data_shape = self._data[i].shape[-self.n_scrollable_dims[i] :]
             self._data[i] = new_array
 
-            if old_data_shape != new_array.shape[-self.n_scrollable_dims[i]:]:
+            if old_data_shape != new_array.shape[-self.n_scrollable_dims[i] :]:
                 # delete graphics at index zero
                 subplot.delete_graphic(graphic=subplot["image_widget_managed"])
                 # insert new graphic at index zero
@@ -864,11 +864,15 @@ class ImageWidget:
 
             for scroll_dim in self.slider_dims:
                 if scroll_dim in curr_scrollable_format:
-                    current_length = current_array.shape[curr_scrollable_format.index(scroll_dim)]
+                    new_length = new_array.shape[
+                        curr_scrollable_format.index(scroll_dim)
+                    ]
                     if max_lengths[scroll_dim] == np.inf:
-                        max_lengths[scroll_dim] = current_length
-                    elif max_lengths[scroll_dim] != current_length:
-                        raise ValueError(f"New arrays have differing values along dim {scroll_dim}")
+                        max_lengths[scroll_dim] = new_length
+                    elif max_lengths[scroll_dim] != new_length:
+                        raise ValueError(
+                            f"New arrays have differing values along dim {scroll_dim}"
+                        )
 
             # set histogram widget
             if self.histogram_widget:
@@ -879,6 +883,8 @@ class ImageWidget:
         # set slider maxes
         # TODO: maybe make this stuff a property, like ndims, n_frames etc. and have it set the sliders
         for key in self.sliders.keys():
+            print("key is {}".format(key))
+            print("curr max is {}".format(max_lengths[key]))
             self.sliders[key].max = max_lengths[key]
             self._dims_max_bounds[key] = max_lengths[key]
 
@@ -886,7 +892,7 @@ class ImageWidget:
         self.current_index = self.current_index
 
     def show(
-            self, toolbar: bool = True, sidecar: bool = False, sidecar_kwargs: dict = None
+        self, toolbar: bool = True, sidecar: bool = False, sidecar_kwargs: dict = None
     ):
         """
         Show the widget.
