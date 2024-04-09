@@ -19,8 +19,6 @@ if CANVAS_OPTIONS_AVAILABLE["qt"]:
 # If key is 0 this means no RGB (so each image is 2 dims). If key is 1, it's 3
 RGB_DIM_MAP = {0: 2, 1: 3}
 
-DEFAULT_IMAGE_FORMAT = "gray"
-
 # How many dimensions can we scroll over
 SCROLLABLE_DIMS_ORDER = {
     0: "",
@@ -216,34 +214,6 @@ class ImageWidget:
         Can be either 2 or 3. Depending on whether the image is grayscale or RGB(A).
         """
         return self._num_img_dims
-
-    def _initialize_full_color_scheme(
-        self, color_scheme: Dict[int, str], data: list[np.ndarray]
-    ) -> Dict[int, str]:
-        """
-        Initializes the color scheme dictionary, populating it with a color scheme for each `array` which the
-        ImageWidget displays.
-
-        Returns:
-        -------
-        full_color_schemes: Dict[int, str]
-            | ``dict`` whose keys are indices (0, 1, 2, ...) for each array and values are "gray" or "rgb" depending on
-            how we want to display the images from this array
-        """
-        full_color_scheme = dict()
-        for k in range(len(data)):
-            if k not in color_scheme.keys():
-                full_color_scheme[k] = DEFAULT_IMAGE_FORMAT
-            elif k in color_scheme.keys():
-                curr_scheme = color_scheme[k].lower()
-                if curr_scheme not in RGB_DIM_MAP.keys():
-                    raise ValueError(
-                        f"Color Schemes can only be one of {list(RGB_DIM_MAP.keys())} "
-                        f"You passed in {color_scheme[k]} for one of the keys"
-                    )
-                else:
-                    full_color_scheme[k] = curr_scheme
-        return full_color_scheme
 
     def _compute_and_validate_formats(self) -> list[int]:
 
