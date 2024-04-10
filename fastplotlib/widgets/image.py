@@ -15,14 +15,14 @@ if CANVAS_OPTIONS_AVAILABLE["jupyter"]:
 if CANVAS_OPTIONS_AVAILABLE["qt"]:
     from ..layouts._frame._qt_toolbar import QToolbarImageWidget
 
-# How many dimensions to display a single image
-# If key is 0 this means no RGB (so each image is 2 dims). If key is 1, it's 3
+# Number of dimensions that represent one image/one frame. For grayscale shape will be [x, y], i.e. 2 dims, for RGB(A)
+# shape will be [x, y, c] where c is of size 3 (RGB) or 4 (RGBA)
 IMAGE_DIM_COUNTS = {"gray": 2, "rgb": 3}
 
 # Map boolean (indicating whether we use RGB or grayscale) to the string. Used to index RGB_DIM_MAP
 RGB_BOOL_MAP = {False: "gray", True: "rgb"}
 
-# How many dimensions can we scroll over
+# Dimensions that can be scrolled from a given data array
 SCROLLABLE_DIMS_ORDER = {
     0: "",
     1: "t",
@@ -170,8 +170,10 @@ class ImageWidget:
 
     @property
     def n_scrollable_dims(self) -> List[int]:
-        """Returns a List describing, for each array, how many of the first dimensions are "scrollable".
-        All other dimensions are used for displaying images"""
+        """
+        list indicating the number of dimenensions that are scrollable for each data array
+        All other dimensions are frame/image data, i.e. [x, y] or [x, y, c]
+        """
         return self._n_scrollable_dims
 
     @property
@@ -203,22 +205,12 @@ class ImageWidget:
 
     @property
     def n_img_dims(self) -> list[int]:
-        """Returns ``list`` of ints describing, for each array, how many dimensions are used to display a single image.
-        Can be either 2 or 3, depending on whether the image is grayscale or RGB(A)."""
+        """
+        list indicating the number of dimensions that contain image/single frame data for each data array.
+        if 2: data are grayscale, i.e. [x, y] dims, if 3: data are [x, y, c] where c is RGB or RGBA,
+        this is the complement of `n_scrollable_dims`
+        """
         return self._n_img_dims
-
-    @property
-    def rgb(self) -> list[bool]:
-        """
-        Returns ``list`` of booleans, one for each ``array`` in the ImageWidget. True if the ``array`` is RGB,
-        False for grayscale
-        """
-        return self._rgb
-
-    @property
-    def histogram_widget(self) -> bool:
-        """Returns whether we display the histogram widget"""
-        return self._histogram_widget
 
     def _get_n_scrollable_dims(self, curr_arr: np.ndarray, rgb: bool) -> list[int]:
         """
@@ -360,7 +352,7 @@ class ImageWidget:
         histogram_widget: bool, default False
             make histogram LUT widget for each subplot
 
-        rgb: list[bool], default None
+        rgb: bool | list[bool], default None
             Includes a True or False for each ``array`` in the ImageWidget, indicating whether images are displayed as
             grayscale or RGB(A).
 
@@ -396,6 +388,8 @@ class ImageWidget:
                 # Establish number of image dimensions and number of scrollable dimensions for each array
                 if rgb is None:
                     rgb = [False] * len(self.data)
+                if rgb is bool:
+                    rgb = [rgb]
                 if not isinstance(rgb, list):
                     raise TypeError(
                         f"rgb_disp parameter must be a list, a {type(rgb)} was provided"
@@ -408,12 +402,12 @@ class ImageWidget:
                 self._rgb = rgb
 
                 self._n_img_dims = [
-                    IMAGE_DIM_COUNTS[RGB_BOOL_MAP[self.rgb[i]]]
+                    IMAGE_DIM_COUNTS[RGB_BOOL_MAP[self._rgb[i]]]
                     for i in range(len(self.data))
                 ]
 
                 self._n_scrollable_dims = [
-                    self._get_n_scrollable_dims(self.data[i], self.rgb[i])
+                    self._get_n_scrollable_dims(self.data[i], self._rgb[i])
                     for i in range(len(self.data))
                 ]
 
@@ -538,7 +532,7 @@ class ImageWidget:
             subplot.name = name
             subplot.set_title(name)
 
-            if self.histogram_widget:
+            if self._histogram_widget:
                 hlut = HistogramLUT(data=d, image_graphic=ig, name="histogram_lut")
 
                 subplot.docks["right"].add_graphic(hlut)
@@ -834,10 +828,13 @@ class ImageWidget:
                 )
 
             # Computes the number of scrollable dims and also validates new_array
-            new_scrollable_dims = self._get_n_scrollable_dims(new_array, self.rgb[i])
+            new_scrollable_dims = self._get_n_scrollable_dims(new_array, self._rgb[i])
 
             if self.n_scrollable_dims[i] != new_scrollable_dims:
-                raise ValueError(f"Scrollable dims do not match")
+                raise ValueError(
+                    f"number of dimensions of data arrays must match number of dimensions of "
+                    f"existing data arrays"
+                )
 
         # if checks pass, update with new data
         for i, (new_array, current_array, subplot) in enumerate(
@@ -875,7 +872,7 @@ class ImageWidget:
                         )
 
             # set histogram widget
-            if self.histogram_widget:
+            if self._histogram_widget:
                 subplot.docks["right"]["histogram_lut"].set_data(
                     new_array, reset_vmin_vmax=reset_vmin_vmax
                 )
@@ -883,8 +880,6 @@ class ImageWidget:
         # set slider maxes
         # TODO: maybe make this stuff a property, like ndims, n_frames etc. and have it set the sliders
         for key in self.sliders.keys():
-            print("key is {}".format(key))
-            print("curr max is {}".format(max_lengths[key]))
             self.sliders[key].max = max_lengths[key]
             self._dims_max_bounds[key] = max_lengths[key]
 
