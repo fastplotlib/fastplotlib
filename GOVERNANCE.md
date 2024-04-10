@@ -6,26 +6,44 @@ The purpose of this document is to formalize the governance process used by the 
 
 ## Mission
 
-Leverage new graphics APIs and modern GPU hardware to create fast and interactive scientific visualizations using an expressive and elegant API.
+The mission of `fastplotlib` is to leverage new graphics APIs and modern GPU hardware to create fast and interactive scientific visualizations using an expressive and elegant API.
 
 ## Leadership Team
 
 ### Maintainers
 
-The maintainers are the core developers of fastplotlib and together have a complete understanding of the codebase.
+The maintainers are the core developers of fastplotlib and together have a complete understanding of the codebase. They are also known as code-owners.
+
+The current maintainers are:
 
 1. [Kushal Kolar](https://github.com/kushalkolar)
 1. [Caitlin Lewis](https://github.com/clewis7)
 
+Responsibilities:
+
+* Carry out the `fastplotlib` mission.
+* Work towards completion of the roadmap.
+* Timely responses to issues and pull requests.
+* Code review.
+* Attend a yearly Roadmap meeting.
+* Be available for conflict resolution.
 
 ### Advisory Committee 
 
-The Advisory Committee hold a significant stake in fastplotlib as determined by the **Maintainers**. The responsibilities of the **Advisory Committee** are to 1) attend a yearly Roadmap meeting, 2) be available for conflict resolution.
+The Advisory Committee holds a significant interest in fastplotlib as determined solely by the **Maintainers**. The responsibilities of the **Advisory Committee** are to 1) attend a yearly Roadmap meeting, 2) be available for conflict resolution.
 
+1. Amol Pasarkar
 1. Eric Thomson
 1. Guillaume Viejo
 1. Andrea Giovannucci
 1. John Pearson
+
+Responsibilities:
+
+* Help carry out the `fastplotlib` mission.
+* Provide strategic guidance.
+* Attend a yearly Roadmap meeting.
+* Be available for conflict resolution.
 
 ### Neutral moderator
 
@@ -33,89 +51,62 @@ No voting power, has no stake in the fastplotlib project.
 
 * Reagan Bullins
 
-### Voting power distribution
+Responsibilities:
 
-Maintainers: 50%
+* Facilitate conflict resolution without voting power.
 
-Advisory Committee: 50%
+## Adding a member to the advisory committee
+1. Only individuals, not organizations, may be added to the leadership team. A candidate individual must be nominated by a current member of the leadership team.
+2. A candidate must:
+  * Be committed to the fastplotlib mission.
+  * Have demonstrated contibutions to `fastplotlib` through one of:
+    * Significant contributions to the codebase.
+    * Significant application of fastplotlib in a dependent package.
+    * Significant technical guidance or feedback on the development of `fastplotlib`.
 
-Veto: Any vote can be vetoed by a unanimous vote within the maintainers.
+## Adding a maintainer
 
-Note that currently the voting power is primarily held by the maintainers - Kushal Kolar & Caitlin Lewis. This is intentional since the library is in an early stage. Knowledge of the codebase and its inner workings are predominantly held by Kushal & Caitlin, and nobody else.
+Candidate maintainers must have demonstrated prolonged and significant contributions to the codebase over a long period of time. A candidate can be nominated by any current maintainer. The candidate may then be added as a maintainer through a unanimous vote within the current maintainers.
 
-### Voting Process
+## Decision making
 
-1. For the purpose of conflict resolution the Leadership Team must be convened by the neutral moderator. In all other situations the Leadership Team may be convened by one of the maintainers.
-1. Once the Leadership Team is convened and discussions have occurred, voting must conclude within 1 hour.
-1. Voting is performed anonymously and handled solely by the neutral moderator in the case of conflict resolution, or by one of the maintainers.
-1. After voting has finished, any maintainer may invoke a veto vote. If the veto succeeds, then the same item may not be voted on for 100 days.
+Decisions about the future of the project are made through discussion with all members of the community. All non-sensitive project management discussion takes place on the issue tracker. Occasionally, sensitive discussions may occur on a private core developer medium.
 
-## Adding members to the Leadership Team
+Decisions should be made in accordance with the mission and code of conduct of the `fastplotlib` project.
 
-### Confirming Maintainers
+We use a “consensus seeking” process for making decisions. The Leadership Team tries to find a resolution that has no open objections among Leadership Team members. Leadership Team members are expected to distinguish between fundamental objections to a proposal and minor perceived flaws that they can live with, and not hold up the decision-making process for the latter. If no option can be found without objections, the decision is escalated to the maintainers who have ultimate authority.
 
-* Given to individuals on merit basis after they have demonstrated strong expertise of the library through contributions, reviews and discussions.
-* Adding a maintainer requires one of:
-  * a unanimous vote by current maintainers
-  * 75% vote within the advisory committee
-* For continued membership in the maintainer group the individual has to demonstrate strong and continued alignment with the fastplotlib mission. The individual must also actively commit to the repo, respond to issues, and review pull requests.
-* The membership is for an individual, not a company or organization.
-* There must always be a minimum of 2 maintainers.
-* A maintainer may be removed by one of:
-  * 60% vote within the maintainers
-  * 75% vote within the advisory committee
+Decisions are made according to the following rules:
 
-### Confirming an advisory committee member
+Minor documentation changes, such as typo fixes, or addition / correction of a sentence, require approval by a maintainer and no disagreement or requested changes by other maintainers on the issue or pull request page via lazy consensus. Pull-request authors are expected to give “reasonable time” to others to give their opinion on the pull request if they’re not confident others would agree.
 
-* A candidate advisory committee member may only be nominated by a current maintainer or advisory committee member.
-* Candidate must have used fastplotlib in their own work or library, or made contributions to fastplotlib.
-* Candidate must be committed to the mission and demonstrate, with examples, how their role on the advisory committee would further the mission.
-* If the Individual fulfills the above criteria they may be considered. The Leadership Team then requires an overall 80% vote to add the candidate as an advisory member.
-* The membership is for an individual, not a company or organization.
-  * 60% vote within the maintainers
-  * 75% vote within the advisory committee
+Code changes and major documentation changes require agreement by one maintainer and no disagreement or requested changes by other maintainers on the issue or pull-request page (lazy consensus). For all changes of this type, maintainers are expected to give “reasonable time” after approval and before merging for others to weigh in on the pull request in its final state.
 
-## Invoking a vote from the leadership team 
+Changes to the API principles require a dedicated issue on our issue tracker and follow the decision-making process outlined above.
 
-### Conflict
+Changes to this governance model or our mission, vision, and values require a dedicated issue on our issue tracker and follow the decision-making process outlined above.
+
+If an objection is raised on a lazy consensus, the proposer can appeal to the Leadership Team and the change can be approved or rejected by escalating to the maintainers.
+
+## Conflict Resolution
 
 Anyone (absolutely anyone, not just the leadership team members) who feels that the code of conduct or governance document has been breached may invoke a vote by contacting the neutral moderator.
 
-#### Process
+### Process
 
 1. Contact the neutral moderator with a description of the conflict, max of 250 words.
 2. Neutral moderator must schedule a vote within 15 days. If that is not possible then within the next 45 days.
-3. If there is a special case that requires urgency, such as upcoming events, workshops, etc., the neutral moderator may try to schedule a vote ASAP. Exercising this urgency is solely at the discretion of the neutral moderator.
-4. The individual who has invoked the conflict vote can choose to present their case, or they may choose to let the neutral moderator represent them.
+3. The individual who has invoked the conflict vote can choose to present their case, or they may choose to let the neutral moderator represent them.
     * Every individual involved in the conflict is given a maximum of 15 minutes to be represented. This time limit may be expanded at the discretion of the neutral moderator if a justifiable reason is provided.
-5. The Leadership Team votes on one of the actions from “Enforcement Guidelines”: https://www.contributor-covenant.org/version/2/1/code_of_conduct/. It is advised that the first offense leads to action (1) “Correction” and then go down the list for repeated conflicts from the same individual/organization. Very bad behavior, as determined by the leadership team, can justify a first offense resulting in (3) “Temporary Ban” or (4) “Permanent Ban”.
-6. Voting is performed as described in the section **Voting Process**.
+4. The maintainers vote on one of the actions from “Enforcement Guidelines”: https://www.contributor-covenant.org/version/2/1/code_of_conduct/. It is advised that the first offense leads to action (1) “Correction”. Repeated or serious offenses from the same individual/organization may lead to escalating levels of actions. Very bad behavior, as determined by the leadership team, can justify a first offense resulting in (3) “Temporary Ban” or (4) “Permanent Ban”.
+5. The advisory committee members may advise on the actions, but the ultimate decision is voted on by the maintainers.
 
-### Adding a member to the leadership team
-1. A current maintainer or advisory committee member may nominate a candidate and then contact the neutral moderator with a written summary, of no more than 100 words, with reasons for adding the candidate to the Leadership Team.
-1. The nominator should specify whether the candidate should be a maintainer or advisory committee member.
-1. The neutral moderator must then schedule a vote within 100 days.
-1. The nominator and candidate may then speak for no more than 10 minutes each on why the candidate should be added to the leadership team.
-1. Voting is performed as described in the section **Voting Process**.
+## Transparency
+
+Governance decisions, meeting minutes, and voting outcomes are publicly documented and accessible. We aim for transparency to allow the broader community to understand and trust the governance process.
 
 ## Changes to this governance document
 
-#### Until February 28, 2025
+### Until February 28, 2025
 
 During early stages of fastplotlib development, changes to the governance document may be made directly through unanimous approval by the original maintainers, Kushal Kolar & Caitlin Lewis, without contacting the neutral moderator or consulting with the advisory committee. They (Kushal & Caitlin) may also add new members to the advisory committee through unanimous approval.
-
-#### After February 28, 2025
-
-Any member of the Leadership Team can propose changes to the governance document. Approving the changes requires a 75% vote within the maintainers and a 75% vote within the advisory committee.
-
-## Reasons for invoking a vote
-
-Things that can be voted on include but aren’t limited to:
-1. Nominating a member to the Leadership Team
-1. Adding a nominee to the Leadership Team
-1. Removing a member from the Leadership Team
-1. Banning any person (not just Leadership Team members) or organization from interacting with the fastplotlib GitHub repository and/or fastplotlib GitHub organization.
-1. Appeal to un-ban a previously banned person or organization.
-    * Can only occur 3 months after the initial ban
-    * Person must contact the neutral moderator directly to start an appeal
-    * Maximum of 3 appeal attempts are allowed
