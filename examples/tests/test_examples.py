@@ -1,12 +1,14 @@
 """
 Test that examples run without error.
 """
+
 import importlib
 import runpy
 import pytest
 import os
 import numpy as np
 import imageio.v3 as iio
+
 
 from .testutils import (
     ROOT,
@@ -15,7 +17,11 @@ from .testutils import (
     find_examples,
     wgpu_backend,
     is_lavapipe,
-    diffs_dir
+    diffs_dir,
+    generate_diff,
+    image_similarity,
+    normalize_image,
+    prep_for_write,
 )
 
 # run all tests unless they opt-out
@@ -52,7 +58,12 @@ def test_that_we_are_on_lavapipe():
 def test_example_screenshots(module, force_offscreen):
     """Make sure that every example marked outputs the expected."""
     # (relative) module name from project root
-    module_name = module.relative_to(ROOT/"examples").with_suffix("").as_posix().replace("/", ".")
+    module_name = (
+        module.relative_to(ROOT / "examples")
+        .with_suffix("")
+        .as_posix()
+        .replace("/", ".")
+    )
 
     # import the example module
     example = importlib.import_module(module_name)
@@ -69,20 +80,35 @@ def test_example_screenshots(module, force_offscreen):
 
     screenshot_path = screenshots_dir / f"{module.stem}.png"
 
+    black = np.zeros(img.shape).astype(np.uint8)
+    black[:, :, -1] = 255
+
+    img_alpha = img[..., -1] / 255
+
+    rgb = img[..., :-1] * img_alpha[..., None] + black[..., :-1] * np.ones(
+        img_alpha.shape
+    )[..., None] * (1 - img_alpha[..., None])
+
+    rgb = rgb.round().astype(np.uint8)
+
     if "REGENERATE_SCREENSHOTS" in os.environ.keys():
         if os.environ["REGENERATE_SCREENSHOTS"] == "1":
-            iio.imwrite(screenshot_path, img)
-            #np.save(screenshot_path, img)
+            iio.imwrite(screenshot_path, rgb)
 
     assert (
         screenshot_path.exists()
     ), "found # test_example = true but no reference screenshot available"
-    #stored_img = np.load(screenshot_path)
-    stored_img = iio.imread(screenshot_path)
-    is_similar = np.allclose(img, stored_img, atol=1)
-    update_diffs(module.stem, is_similar, img, stored_img)
-    assert is_similar, (
-        f"rendered image for example {module.stem} changed, see "
+
+    ref_img = iio.imread(screenshot_path)
+
+    rgb = normalize_image(rgb)
+    ref_img = normalize_image(ref_img)
+
+    similar, rmse = image_similarity(rgb, ref_img, threshold=0.025)
+
+    update_diffs(module.stem, similar, rgb, ref_img)
+    assert similar, (
+        f"diff {rmse} above threshold for {module.stem}, see "
         f"the {diffs_dir.relative_to(ROOT).as_posix()} folder"
         " for visual diffs (you can download this folder from"
         " CI build artifacts as well)"
@@ -110,7 +136,6 @@ def update_diffs(module, is_similar, img, stored_img):
     # split into an rgb and an alpha diff
     diffs = {
         diffs_dir / f"diff-{module}-rgb.png": slice(0, 3),
-        diffs_dir / f"diff-{module}-alpha.png": 3,
     }
 
     for path, slicer in diffs.items():

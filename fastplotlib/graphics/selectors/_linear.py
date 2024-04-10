@@ -3,19 +3,17 @@ import math
 from numbers import Real
 
 import numpy as np
-
 import pygfx
 
-try:
-    import ipywidgets
-
-    HAS_IPYWIDGETS = True
-except (ImportError, ModuleNotFoundError):
-    HAS_IPYWIDGETS = False
-
+from ...utils.gui import IS_JUPYTER
 from .._base import Graphic, GraphicCollection
 from .._features._selection_features import LinearSelectionFeature
 from ._base_selector import BaseSelector
+
+
+if IS_JUPYTER:
+    # If using the jupyter backend, user has jupyter_rfb, and thus also ipywidgets
+    import ipywidgets
 
 
 class LinearSelector(BaseSelector):
@@ -142,18 +140,6 @@ class LinearSelector(BaseSelector):
         world_object.add(self.line_outer)
         world_object.add(line_inner)
 
-        self._set_world_object(world_object)
-
-        # set x or y position
-        if axis == "x":
-            self.position_x = selection
-        else:
-            self.position_y = selection
-
-        self.selection = LinearSelectionFeature(
-            self, axis=axis, value=selection, limits=self._limits
-        )
-
         self._move_info: dict = None
 
         self.parent = parent
@@ -171,6 +157,14 @@ class LinearSelector(BaseSelector):
             axis=axis,
             name=name,
         )
+
+        self._set_world_object(world_object)
+
+        self.selection = LinearSelectionFeature(
+            self, axis=axis, value=selection, limits=self._limits
+        )
+
+        self.selection = selection
 
     def _setup_ipywidget_slider(self, widget):
         # setup an ipywidget slider with bidirectional callbacks to this LinearSelector
@@ -210,8 +204,8 @@ class LinearSelector(BaseSelector):
 
         self.selection = change["new"]
 
-    def _add_plot_area_hook(self, plot_area):
-        super()._add_plot_area_hook(plot_area=plot_area)
+    def _fpl_add_plot_area_hook(self, plot_area):
+        super()._fpl_add_plot_area_hook(plot_area=plot_area)
 
         # resize the slider widgets when the canvas is resized
         self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
@@ -240,7 +234,7 @@ class LinearSelector(BaseSelector):
 
         """
 
-        if not HAS_IPYWIDGETS:
+        if not IS_JUPYTER:
             raise ImportError(
                 "Must installed `ipywidgets` to use `make_ipywidget_slider()`"
             )
@@ -377,10 +371,8 @@ class LinearSelector(BaseSelector):
         else:
             self.selection = self.selection() + delta[1]
 
-    def _cleanup(self):
-        super()._cleanup()
-
+    def _fpl_cleanup(self):
         for widget in self._handled_widgets:
             widget.unobserve(self._ipywidget_callback, "value")
 
-        self._plot_area.renderer.remove_event_handler(self._set_slider_layout, "resize")
+        super()._fpl_cleanup()

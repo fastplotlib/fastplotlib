@@ -1,5 +1,6 @@
 from inspect import getfullargspec
-from typing import *
+from sys import getrefcount
+from typing import TypeAlias, Literal, Union
 import weakref
 from warnings import warn
 
@@ -7,29 +8,96 @@ import numpy as np
 
 import pygfx
 from pylinalg import vec_transform, vec_unproject
-from wgpu.gui.auto import WgpuCanvas
+from wgpu.gui import WgpuCanvasBase
 
-from ._utils import create_camera, create_controller
+from ._utils import create_controller
 from ..graphics._base import Graphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ..legends import Legend
 
-# dict to store Graphic instances
-# this is the only place where the real references to Graphics are stored in a Python session
-# {hex id str: Graphic}
-GRAPHICS: Dict[str, Graphic] = dict()
-SELECTORS: Dict[str, BaseSelector] = dict()
+
+HexStr: TypeAlias = str
+
+
+class References:
+    """
+    This is the only place where the real graphic objects are stored. Everywhere else gets a proxy.
+    """
+
+    _graphics: dict[HexStr, Graphic] = dict()
+    _selectors: dict[HexStr, BaseSelector] = dict()
+    _legends: dict[HexStr, Legend] = dict()
+
+    def add(self, graphic: Graphic | BaseSelector | Legend):
+        """Adds the real graphic to the dict"""
+        addr = graphic._fpl_address
+
+        if isinstance(graphic, BaseSelector):
+            self._selectors[addr] = graphic
+
+        elif isinstance(graphic, Legend):
+            self._legends[addr] = graphic
+
+        elif isinstance(graphic, Graphic):
+            self._graphics[addr] = graphic
+
+        else:
+            raise TypeError("Can only add Graphic, Selector or Legend types")
+
+    def remove(self, address):
+        if address in self._graphics.keys():
+            del self._graphics[address]
+        elif address in self._selectors.keys():
+            del self._selectors[address]
+        elif address in self._legends.keys():
+            del self._legends[address]
+        else:
+            raise KeyError(f"graphic with address not found: {address}")
+
+    def get_proxies(self, refs: list[HexStr]) -> tuple[weakref.proxy]:
+        proxies = list()
+        for key in refs:
+            if key in self._graphics.keys():
+                proxies.append(weakref.proxy(self._graphics[key]))
+
+            elif key in self._selectors.keys():
+                proxies.append(weakref.proxy(self._selectors[key]))
+
+            elif key in self._legends.keys():
+                proxies.append(weakref.proxy(self._legends[key]))
+
+            else:
+                raise KeyError(f"graphic object with address not found: {key}")
+
+        return tuple(proxies)
+
+    def get_refcounts(self) -> dict[HexStr:int]:
+        counts = dict()
+
+        for item in (self._graphics, self._selectors, self._legends):
+            for k in item.keys():
+                counts[(k, item[k].name, item[k].__class__.__name__)] = getrefcount(
+                    item[k]
+                )
+
+        return counts
+
+
+REFERENCES = References()
 
 
 class PlotArea:
+    def get_refcounts(self):
+        return REFERENCES.get_refcounts()
+
     def __init__(
         self,
-        parent,
-        position: Any,
-        camera: Union[pygfx.PerspectiveCamera],
-        controller: Union[pygfx.Controller],
+        parent: Union["PlotArea", "GridPlot"],
+        position: tuple[int, int] | str,
+        camera: pygfx.PerspectiveCamera,
+        controller: pygfx.Controller,
         scene: pygfx.Scene,
-        canvas: WgpuCanvas,
+        canvas: WgpuCanvasBase,
         renderer: pygfx.WgpuRenderer,
         name: str = None,
     ):
@@ -39,18 +107,18 @@ class PlotArea:
 
         Parameters
         ----------
-        parent: PlotArea
-            parent class of subclasses will be a ``PlotArea`` instance
+        parent: PlotArea or GridPlot
+            parent object
 
         position: Any
-            typical use will be for ``subplots`` in a ``gridplot``, position would correspond to the ``[row, column]``
-            location of the ``subplot`` in its ``gridplot``
+            position of the plot area. In a ``subplot`` position would correspond to the ``[row, column]``
+            index of the ``subplot``. In docks this would correspond to a str name, "top", "right", "bottom" or "left"
 
         camera: pygfx.PerspectiveCamera
-            Use perspective camera for both perspective and orthographic views. Set fov = 0 for orthographic mode.
+            Use perspective camera for both perspective and orthographic views. Set fov = 0 for orthographic projection
 
         controller: pygfx.Controller
-            One of the pygfx controllers, panzoom, fly, orbit, or trackball
+            One of the pygfx controllers: "panzoom", "fly", "trackball", "orbit"
 
         scene: pygfx.Scene
             represents the root of a scene graph, will be viewed by the given ``camera``
@@ -62,20 +130,17 @@ class PlotArea:
             renders the scene onto the canvas
 
         name: str, optional
-            name this ``subplot`` or ``plot``
+            name this plot area
 
         """
 
-        self._parent: PlotArea = parent
+        self._parent = parent
         self._position = position
 
         self._scene = scene
         self._canvas = canvas
         self._renderer = renderer
-        if parent is None:
-            self._viewport: pygfx.Viewport = pygfx.Viewport(renderer)
-        else:
-            self._viewport = pygfx.Viewport(parent.renderer)
+        self._viewport: pygfx.Viewport = pygfx.Viewport(renderer)
 
         self._camera = camera
         self._controller = controller
@@ -85,18 +150,21 @@ class PlotArea:
             self.viewport,
         )
 
-        self._animate_funcs_pre = list()
-        self._animate_funcs_post = list()
+        self._animate_funcs_pre: list[callable] = list()
+        self._animate_funcs_post: list[callable] = list()
 
         self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
         # list of hex id strings for all graphics managed by this PlotArea
-        # the real Graphic instances are stored in the ``GRAPHICS`` dict
-        self._graphics: List[str] = list()
+        # the real Graphic instances are managed by REFERENCES
+        self._graphics: list[HexStr] = list()
 
         # selectors are in their own list so they can be excluded from scene bbox calculations
         # managed similar to GRAPHICS for garbage collection etc.
-        self._selectors: List[str] = list()
+        self._selectors: list[HexStr] = list()
+
+        # legends, managed just like other graphics as explained above
+        self._legends: list[HexStr] = list()
 
         self._name = name
 
@@ -108,11 +176,11 @@ class PlotArea:
     # several read-only properties
     @property
     def parent(self):
-        """A parent if relevant, used by individual Subplots in GridPlot"""
+        """A parent if relevant"""
         return self._parent
 
     @property
-    def position(self) -> Union[Tuple[int, int], Any]:
+    def position(self) -> tuple[int, int] | str:
         """Position of this plot area within a larger layout (such as GridPlot) if relevant"""
         return self._position
 
@@ -122,7 +190,7 @@ class PlotArea:
         return self._scene
 
     @property
-    def canvas(self) -> WgpuCanvas:
+    def canvas(self) -> WgpuCanvasBase:
         """Canvas associated to the plot area"""
         return self._canvas
 
@@ -142,7 +210,7 @@ class PlotArea:
         return self._camera
 
     @camera.setter
-    def camera(self, new_camera: Union[str, pygfx.PerspectiveCamera]):
+    def camera(self, new_camera: str | pygfx.PerspectiveCamera):
         # user wants to set completely new camera, remove current camera from controller
         if isinstance(new_camera, pygfx.PerspectiveCamera):
             self.controller.remove_camera(self._camera)
@@ -178,7 +246,7 @@ class PlotArea:
         return self._controller
 
     @controller.setter
-    def controller(self, new_controller: Union[str, pygfx.Controller]):
+    def controller(self, new_controller: str | pygfx.Controller):
         new_controller = create_controller(new_controller, self._camera)
 
         cameras_list = list()
@@ -206,37 +274,23 @@ class PlotArea:
         self._controller = new_controller
 
     @property
-    def graphics(self) -> Tuple[Graphic, ...]:
+    def graphics(self) -> tuple[Graphic, ...]:
         """Graphics in the plot area. Always returns a proxy to the Graphic instances."""
-        proxies = list()
-        for loc in self._graphics:
-            p = weakref.proxy(GRAPHICS[loc])
-            if p.__class__.__name__ == "Legend":
-                continue
-            proxies.append(p)
-
-        return tuple(proxies)
+        return REFERENCES.get_proxies(self._graphics)
 
     @property
-    def selectors(self) -> Tuple[BaseSelector, ...]:
+    def selectors(self) -> tuple[BaseSelector, ...]:
         """Selectors in the plot area. Always returns a proxy to the Graphic instances."""
-        proxies = list()
-        for loc in self._selectors:
-            p = weakref.proxy(SELECTORS[loc])
-            proxies.append(p)
-
-        return tuple(proxies)
+        return REFERENCES.get_proxies(self._selectors)
 
     @property
-    def legends(self) -> Tuple[Legend, ...]:
+    def legends(self) -> tuple[Legend, ...]:
         """Legends in the plot area."""
-        proxies = list()
-        for loc in self._graphics:
-            p = weakref.proxy(GRAPHICS[loc])
-            if p.__class__.__name__ == "Legend":
-                proxies.append(p)
+        return REFERENCES.get_proxies(self._legends)
 
-        return tuple(proxies)
+    @property
+    def objects(self) -> tuple[Graphic | BaseSelector | Legend, ...]:
+        return *self.graphics, *self.selectors, *self.legends
 
     @property
     def name(self) -> str:
@@ -253,7 +307,7 @@ class PlotArea:
             raise TypeError("PlotArea `name` must be of type <str>")
         self._name = name
 
-    def get_rect(self) -> Tuple[float, float, float, float]:
+    def get_rect(self) -> tuple[float, float, float, float]:
         """
         Returns the viewport rect to define the rectangle
         occupied by the viewport w.r.t. the Canvas.
@@ -267,7 +321,7 @@ class PlotArea:
         raise NotImplementedError("Must be implemented in subclass")
 
     def map_screen_to_world(
-        self, pos: Union[Tuple[float, float], pygfx.PointerEvent]
+        self, pos: tuple[float, float] | pygfx.PointerEvent
     ) -> np.ndarray:
         """
         Map screen position to world position
@@ -316,7 +370,7 @@ class PlotArea:
 
         self._call_animate_functions(self._animate_funcs_post)
 
-    def _call_animate_functions(self, funcs: Iterable[callable]):
+    def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:
             try:
                 args = getfullargspec(fn).args
@@ -337,7 +391,7 @@ class PlotArea:
 
     def add_animations(
         self,
-        *funcs: Iterable[callable],
+        *funcs: callable,
         pre_render: bool = True,
         post_render: bool = False,
     ):
@@ -347,7 +401,7 @@ class PlotArea:
 
         Parameters
         ----------
-        *funcs: callable or iterable of callable
+        *funcs: callable(s)
             function(s) that are called on each render cycle
 
         pre_render: bool, default ``True``, optional keyword-only argument
@@ -460,7 +514,7 @@ class PlotArea:
         self,
         graphic: Graphic,
         center: bool = True,
-        action: str = Union["insert", "add"],
+        action: str = Literal["insert", "add"],
         index: int = 0,
     ):
         """Private method to handle inserting or adding a graphic to a PlotArea."""
@@ -472,28 +526,28 @@ class PlotArea:
         if graphic.name is not None:  # skip for those that have no name
             self._check_graphic_name_exists(graphic.name)
 
-        if isinstance(graphic, BaseSelector):
-            # store in SELECTORS dict
-            loc = graphic.loc
-            SELECTORS[loc] = (
-                graphic  # add hex id string for referencing this graphic instance
-            )
-            # don't manage garbage collection of LineSliders for now
-            if action == "insert":
-                self._selectors.insert(index, loc)
-            else:
-                self._selectors.append(loc)
-        else:
-            # store in GRAPHICS dict
-            loc = graphic.loc
-            GRAPHICS[loc] = (
-                graphic  # add hex id string for referencing this graphic instance
-            )
+        addr = graphic._fpl_address
 
-            if action == "insert":
-                self._graphics.insert(index, loc)
-            else:
-                self._graphics.append(loc)
+        if isinstance(graphic, BaseSelector):
+            addr_list = self._selectors
+
+        elif isinstance(graphic, Legend):
+            addr_list = self._legends
+
+        elif isinstance(graphic, Graphic):
+            addr_list = self._graphics
+
+        else:
+            raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
+
+        if action == "insert":
+            addr_list.insert(index, addr)
+        elif action == "add":
+            addr_list.append(addr)
+        else:
+            raise ValueError("valid actions are 'insert' | 'add'")
+
+        REFERENCES.add(graphic)
 
         # now that it's in the dict, just use the weakref
         graphic = weakref.proxy(graphic)
@@ -505,24 +559,13 @@ class PlotArea:
             self.center_graphic(graphic)
 
         # if we don't use the weakref above, then the object lingers if a plot hook is used!
-        if hasattr(graphic, "_add_plot_area_hook"):
-            graphic._add_plot_area_hook(self)
+        graphic._fpl_add_plot_area_hook(self)
 
     def _check_graphic_name_exists(self, name):
-        graphic_names = list()
-
-        for g in self.graphics:
-            graphic_names.append(g.name)
-
-        for s in self.selectors:
-            graphic_names.append(s.name)
-
-        for l in self.legends:
-            graphic_names.append(l.name)
-
-        if name in graphic_names:
+        if name in self:
             raise ValueError(
-                f"graphics must have unique names, current graphic names are:\n {graphic_names}"
+                f"Graphic with given name already exists in subplot or plot area. "
+                f"All graphics within a subplot or plot area must have a unique name."
             )
 
     def center_graphic(self, graphic: Graphic, zoom: float = 1.35):
@@ -570,7 +613,7 @@ class PlotArea:
     def auto_scale(
         self,
         *,  # since this is often used as an event handler, don't want to coerce maintain_aspect = True
-        maintain_aspect: Union[None, bool] = None,
+        maintain_aspect: None | bool = None,
         zoom: float = 0.8,
     ):
         """
@@ -650,85 +693,51 @@ class PlotArea:
         """
         # TODO: proper gc of selectors, RAM is freed for regular graphics but not selectors
         # TODO: references to selectors must be lingering somewhere
-        # get location
-        loc = graphic.loc
+        # TODO: update March 2024, I think selectors are gc properly, should check
+        # get memory address
+        address = graphic._fpl_address
 
-        # check which dict it's in
-        if loc in self._graphics:
-            glist = self._graphics
-            kind = "graphic"
-        elif loc in self._selectors:
-            kind = "selector"
-            glist = self._selectors
-        else:
-            raise KeyError(
-                f"Graphic with following address not found in plot area: {loc}"
-            )
+        if graphic not in self:
+            raise KeyError(f"Graphic not found in plot area: {graphic}")
+
+        # check which type it is
+        for l in [self._graphics, self._selectors, self._legends]:
+            if address in l:
+                l.remove(address)
+                break
 
         # remove from scene if necessary
         if graphic.world_object in self.scene.children:
             self.scene.remove(graphic.world_object)
 
-        # remove from list of addresses
-        glist.remove(loc)
-
         # cleanup
-        graphic._cleanup()
+        graphic._fpl_cleanup()
 
-        if kind == "graphic":
-            del GRAPHICS[loc]
-        elif kind == "selector":
-            del SELECTORS[loc]
+        REFERENCES.remove(address)
 
     def clear(self):
         """
         Clear the Plot or Subplot. Also performs garbage collection, i.e. runs ``delete_graphic`` on all graphics.
         """
-
-        for g in self.graphics:
+        for g in self.objects:
             self.delete_graphic(g)
 
-        for s in self.selectors:
-            self.delete_graphic(s)
-
     def __getitem__(self, name: str):
-        for graphic in self.graphics:
+        for graphic in self.objects:
             if graphic.name == name:
                 return graphic
 
-        for selector in self.selectors:
-            if selector.name == name:
-                return selector
+        raise IndexError(f"No graphic or selector of given name in plot area.\n")
 
-        for legend in self.legends:
-            if legend.name == name:
-                return legend
-
-        graphic_names = list()
-        for g in self.graphics:
-            graphic_names.append(g.name)
-
-        selector_names = list()
-        for s in self.selectors:
-            selector_names.append(s.name)
-
-        raise IndexError(
-            f"No graphic or selector of given name.\n"
-            f"The current graphics are:\n {graphic_names}\n"
-            f"The current selectors are:\n {selector_names}"
-        )
-
-    def __contains__(self, item: Union[str, Graphic]):
-        to_check = [*self.graphics, *self.selectors, *self.legends]
-
+    def __contains__(self, item: str | Graphic):
         if isinstance(item, Graphic):
-            if item in to_check:
+            if item in self.objects:
                 return True
             else:
                 return False
 
         elif isinstance(item, str):
-            for graphic in to_check:
+            for graphic in self.objects:
                 # only check named graphics
                 if graphic.name is None:
                     continue

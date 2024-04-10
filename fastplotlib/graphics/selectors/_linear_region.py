@@ -1,20 +1,18 @@
 from typing import *
 from numbers import Real
 
-try:
-    import ipywidgets
-
-    HAS_IPYWIDGETS = True
-except (ImportError, ModuleNotFoundError):
-    HAS_IPYWIDGETS = False
-
 import numpy as np
-
 import pygfx
 
+from ...utils.gui import IS_JUPYTER
 from .._base import Graphic, GraphicCollection
-from ._base_selector import BaseSelector
 from .._features._selection_features import LinearRegionSelectionFeature
+from ._base_selector import BaseSelector
+
+
+if IS_JUPYTER:
+    # If using the jupyter backend, user has jupyter_rfb, and thus also ipywidgets
+    import ipywidgets
 
 
 class LinearRegionSelector(BaseSelector):
@@ -137,7 +135,6 @@ class LinearRegionSelector(BaseSelector):
         # basic mesh for the fill area of the selector
         # line for each edge of the selector
         group = pygfx.Group()
-        self._set_world_object(group)
 
         if axis == "x":
             mesh = pygfx.Mesh(
@@ -157,7 +154,7 @@ class LinearRegionSelector(BaseSelector):
         self.fill = mesh
         self.fill.world.position = (*origin, -2)
 
-        self.world_object.add(self.fill)
+        group.add(self.fill)
 
         self._resizable = resizable
 
@@ -225,7 +222,7 @@ class LinearRegionSelector(BaseSelector):
         # add the edge lines
         for edge in self.edges:
             edge.world.z = -1
-            self.world_object.add(edge)
+            group.add(edge)
 
         # set the initial bounds of the selector
         self.selection = LinearRegionSelectionFeature(
@@ -245,6 +242,8 @@ class LinearRegionSelector(BaseSelector):
             axis=axis,
             name=name,
         )
+
+        self._set_world_object(group)
 
     def get_selected_data(
         self, graphic: Graphic = None
@@ -390,7 +389,7 @@ class LinearRegionSelector(BaseSelector):
 
         """
 
-        if not HAS_IPYWIDGETS:
+        if not IS_JUPYTER:
             raise ImportError(
                 "Must installed `ipywidgets` to use `make_ipywidget_slider()`"
             )

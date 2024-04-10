@@ -4,8 +4,6 @@ from itertools import product
 from math import copysign
 from functools import partial
 from pathlib import Path
-from typing import *
-
 
 from ipywidgets.widgets import (
     IntSlider,
@@ -238,7 +236,7 @@ class IpywidgetImageWidgetToolbar(VBox):
             tooltip="reset vmin/vmax and reset histogram using current frame",
         )
 
-        self.sliders: Dict[str, IntSlider] = dict()
+        self.sliders: dict[str, IntSlider] = dict()
 
         # only for xy data, no time point slider needed
         if self.iw.ndim == 2:

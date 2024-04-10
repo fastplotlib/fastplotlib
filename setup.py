@@ -4,6 +4,7 @@ from pathlib import Path
 
 install_requires = [
     "numpy>=1.23.0",
+    "wgpu>=0.15.1",
     "pygfx>=0.1.14",
 ]
 
@@ -76,7 +77,7 @@ setup(
     license="Apache 2.0",
     author="Kushal Kolar, Caitlin Lewis",
     author_email="",
-    python_requires=">=3.9",
+    python_requires=">=3.10",
     install_requires=install_requires,
     extras_require=extras_require,
     include_package_data=True,

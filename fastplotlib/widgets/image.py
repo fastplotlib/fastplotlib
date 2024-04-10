@@ -7,13 +7,7 @@ from ..layouts import GridPlot
 from ..graphics import ImageGraphic
 from ..utils import calculate_gridshape
 from .histogram_lut import HistogramLUT
-from ..layouts._utils import CANVAS_OPTIONS_AVAILABLE
 
-if CANVAS_OPTIONS_AVAILABLE["jupyter"]:
-    from ..layouts._frame._ipywidget_toolbar import IpywidgetImageWidgetToolbar
-
-if CANVAS_OPTIONS_AVAILABLE["qt"]:
-    from ..layouts._frame._qt_toolbar import QToolbarImageWidget
 
 # Number of dimensions that represent one image/one frame. For grayscale shape will be [x, y], i.e. 2 dims, for RGB(A)
 # shape will be [x, y, c] where c is of size 3 (RGB) or 4 (RGBA)
@@ -841,20 +835,24 @@ class ImageWidget:
             zip(new_data, self._data, self.gridplot)
         ):
             # check last two dims (x and y) to see if data shape is changing
-            old_data_shape = self._data[i].shape[-self.n_scrollable_dims[i] :]
+            old_data_shape = self._data[i].shape[-self.n_img_dims[i], :]
             self._data[i] = new_array
 
-            if old_data_shape != new_array.shape[-self.n_scrollable_dims[i] :]:
-                # delete graphics at index zero
-                subplot.delete_graphic(graphic=subplot["image_widget_managed"])
-                # insert new graphic at index zero
+            if old_data_shape != new_array.shape[-self.n_img_dims[i], :]:
                 frame = self._process_indices(
                     new_array, slice_indices=self._current_index
                 )
                 frame = self._process_frame_apply(frame, i)
+
+                # make new graphic first
                 new_graphic = ImageGraphic(data=frame, name="image_widget_managed")
-                subplot.insert_graphic(graphic=new_graphic)
+
+                # set hlut tool to use new graphic
                 subplot.docks["right"]["histogram_lut"].image_graphic = new_graphic
+                # delete old graphic after setting hlut tool to new graphic
+                # this ensures gc
+                subplot.delete_graphic(graphic=subplot["image_widget_managed"])
+                subplot.insert_graphic(graphic=new_graphic)
 
             # Returns "", "t", or "tz"
             curr_scrollable_format = SCROLLABLE_DIMS_ORDER[self.n_scrollable_dims[i]]
@@ -870,6 +868,7 @@ class ImageWidget:
                         raise ValueError(
                             f"New arrays have differing values along dim {scroll_dim}"
                         )
+
 
             # set histogram widget
             if self._histogram_widget:
@@ -898,9 +897,17 @@ class ImageWidget:
             ImageWidget just uses the Gridplot output context
         """
         if self.gridplot.canvas.__class__.__name__ == "JupyterWgpuCanvas":
+            from ..layouts._frame._ipywidget_toolbar import (
+                IpywidgetImageWidgetToolbar,
+            )  # noqa - inline import
+
             self._image_widget_toolbar = IpywidgetImageWidgetToolbar(self)
 
         elif self.gridplot.canvas.__class__.__name__ == "QWgpuCanvas":
+            from ..layouts._frame._qt_toolbar import (
+                QToolbarImageWidget,
+            )  # noqa - inline import
+
             self._image_widget_toolbar = QToolbarImageWidget(self)
 
         self._output = self.gridplot.show(

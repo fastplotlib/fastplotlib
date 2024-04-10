@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from typing import *
 from pathlib import Path
 
 import numpy as np
@@ -165,7 +164,7 @@ def make_colors_dict(labels: iter, cmap: str, **kwargs) -> OrderedDict:
     return OrderedDict(zip(labels, colors))
 
 
-def quick_min_max(data: np.ndarray) -> Tuple[float, float]:
+def quick_min_max(data: np.ndarray) -> tuple[float, float]:
     """
     Adapted from pyqtgraph.ImageView.
     Estimate the min/max values of *data* by subsampling.
@@ -220,7 +219,7 @@ def make_pygfx_colors(colors, n_colors):
     return colors_array
 
 
-def calculate_gridshape(n_subplots: int) -> Tuple[int, int]:
+def calculate_gridshape(n_subplots: int) -> tuple[int, int]:
     """
     Returns ``(n_rows, n_cols)`` from given number of subplots ``n_subplots``
     """
@@ -240,7 +239,7 @@ def normalize_min_max(a):
 def parse_cmap_values(
     n_colors: int,
     cmap_name: str,
-    cmap_values: Union[np.ndarray, List[Union[int, float]]] = None,
+    cmap_values: np.ndarray | list[int | float] = None,
 ) -> np.ndarray:
     """
 

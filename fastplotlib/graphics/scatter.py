@@ -14,11 +14,11 @@ class ScatterGraphic(Graphic):
     def __init__(
         self,
         data: np.ndarray,
-        sizes: Union[int, float, np.ndarray, list] = 1,
-        colors: np.ndarray = "w",
+        sizes: float | np.ndarray | Iterable[float] = 1,
+        colors: str | np.ndarray | Iterable[str] = "w",
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: Union[np.ndarray, List] = None,
+        cmap_values: np.ndarray | List = None,
         z_position: float = 0.0,
         *args,
         **kwargs,
@@ -87,7 +87,7 @@ class ScatterGraphic(Graphic):
         )
 
         self.sizes = PointsSizesFeature(self, sizes)
-        super(ScatterGraphic, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         world_object = pygfx.Points(
             pygfx.Geometry(

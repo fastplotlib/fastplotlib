@@ -1,26 +1,30 @@
-from typing import *
+from typing import Literal, Union
 
 import numpy as np
 
 import pygfx
 
-from wgpu.gui.auto import WgpuCanvas
+from wgpu.gui import WgpuCanvasBase
 
 from ..graphics import TextGraphic
 from ._utils import make_canvas_and_renderer, create_camera, create_controller
 from ._plot_area import PlotArea
-from .graphic_methods_mixin import GraphicMethodsMixin
+from ._graphic_methods_mixin import GraphicMethodsMixin
 
 
 class Subplot(PlotArea, GraphicMethodsMixin):
     def __init__(
         self,
-        parent: Any = None,
-        position: Tuple[int, int] = None,
-        parent_dims: Tuple[int, int] = None,
-        camera: Union[str, pygfx.PerspectiveCamera] = "2d",
-        controller: Union[str, pygfx.Controller] = None,
-        canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
+        parent: Union["GridPlot", None] = None,
+        position: tuple[int, int] = None,
+        parent_dims: tuple[int, int] = None,
+        camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera = "2d",
+        controller: (
+            Literal["panzoom", "fly", "trackball", "orbit"] | pygfx.Controller
+        ) = None,
+        canvas: (
+            Literal["glfw", "jupyter", "qt", "wx"] | WgpuCanvasBase | pygfx.Texture
+        ) = None,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
     ):
@@ -33,7 +37,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         Parameters
         ----------
-        parent: Any
+        parent: 'GridPlot' | None
             parent GridPlot instance
 
         position: (int, int), optional
@@ -51,7 +55,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             | if ``str``, must be one of: `"panzoom", "fly", "trackball", or "orbit"`.
             | also accepts a pygfx.Controller instance
 
-        canvas: one of "jupyter", "glfw", "qt", WgpuCanvas, or pygfx.Texture, optional
+        canvas: one of "jupyter", "glfw", "qt", "ex, a WgpuCanvas, or a pygfx.Texture, optional
             Provides surface on which a scene will be rendered. Can optionally provide a WgpuCanvas instance or a str
             to force the PlotArea to use a specific canvas from one of the following options: "jupyter", "glfw", "qt".
             Can also provide a pygfx Texture to render to.
@@ -113,11 +117,11 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             self.set_title(self.name)
 
     @property
-    def name(self) -> Any:
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, name: Any):
+    def name(self, name: str):
         self._name = name
         self.set_title(name)
 
@@ -136,7 +140,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         """
         return self._docks
 
-    def set_title(self, text: Any):
+    def set_title(self, text: str):
         """Sets the plot title, stored as a ``TextGraphic`` in the "top" dock area"""
         if text is None:
             return
@@ -214,7 +218,7 @@ class Dock(PlotArea):
 
         self._size = size
 
-        super(Dock, self).__init__(
+        super().__init__(
             parent=parent,
             position=position,
             camera=pygfx.OrthographicCamera(),
@@ -349,4 +353,4 @@ class Dock(PlotArea):
         if self.size == 0:
             return
 
-        super(Dock, self).render()
+        super().render()

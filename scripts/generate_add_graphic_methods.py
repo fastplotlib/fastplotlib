@@ -4,7 +4,7 @@ import pathlib
 import black
 
 root = pathlib.Path(__file__).parent.parent.resolve()
-filename = root.joinpath("layouts/graphic_methods_mixin.py")
+filename = root.joinpath("fastplotlib", "layouts", "_graphic_methods_mixin.py")
 
 # if there is an existing mixin class, replace it with an empty class
 # so that fastplotlib will import

@@ -1,7 +1,7 @@
 from typing import *
 
 import pygfx
-from wgpu.gui.auto import WgpuCanvas
+from wgpu.gui import WgpuCanvasBase
 
 from ._subplot import Subplot
 from ._frame import Frame
@@ -11,7 +11,7 @@ from ._record_mixin import RecordMixin
 class Plot(Subplot, Frame, RecordMixin):
     def __init__(
         self,
-        canvas: Union[str, WgpuCanvas] = None,
+        canvas: Union[str, WgpuCanvasBase] = None,
         renderer: pygfx.WgpuRenderer = None,
         camera: Union[str, pygfx.PerspectiveCamera] = "2d",
         controller: Union[str, pygfx.Controller] = None,
@@ -45,7 +45,7 @@ class Plot(Subplot, Frame, RecordMixin):
             passed to Subplot, for example ``name``
 
         """
-        super(Plot, self).__init__(
+        super().__init__(
             parent=None,
             position=(0, 0),
             parent_dims=(1, 1),
@@ -62,7 +62,7 @@ class Plot(Subplot, Frame, RecordMixin):
 
     def render(self):
         """performs a single render of the plot, not for the user"""
-        super(Plot, self).render()
+        super().render()
 
         self.renderer.flush()
         self.canvas.request_draw()
