@@ -835,10 +835,10 @@ class ImageWidget:
             zip(new_data, self._data, self.gridplot)
         ):
             # check last two dims (x and y) to see if data shape is changing
-            old_data_shape = self._data[i].shape[-self.n_img_dims[i], :]
+            old_data_shape = self._data[i].shape[-self.n_img_dims[i]:]
             self._data[i] = new_array
 
-            if old_data_shape != new_array.shape[-self.n_img_dims[i], :]:
+            if old_data_shape != new_array.shape[-self.n_img_dims[i]:]:
                 frame = self._process_indices(
                     new_array, slice_indices=self._current_index
                 )
