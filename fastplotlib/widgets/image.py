@@ -869,7 +869,6 @@ class ImageWidget:
                             f"New arrays have differing values along dim {scroll_dim}"
                         )
 
-
             # set histogram widget
             if self._histogram_widget:
                 subplot.docks["right"]["histogram_lut"].set_data(
