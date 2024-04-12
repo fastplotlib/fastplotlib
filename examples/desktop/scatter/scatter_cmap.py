@@ -12,28 +12,23 @@ from pathlib import Path
 from sklearn.cluster import AgglomerativeClustering
 
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+fig = fpl.Figure()
 
 data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
 data = np.load(data_path)
 
-
 agg = AgglomerativeClustering(n_clusters=3)
-
 agg.fit_predict(data)
 
-
-scatter_graphic = plot.add_scatter(
+scatter_graphic = fig[0, 0].add_scatter(
     data=data[:, :-1], sizes=15, alpha=0.7, cmap="Set1", cmap_values=agg.labels_
 )
 
-plot.show()
+fig.show()
 
-plot.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(800, 800)
 
-plot.auto_scale()
+fig[0, 0].auto_scale()
 
 scatter_graphic.cmap = "tab10"
 

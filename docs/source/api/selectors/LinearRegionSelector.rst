@@ -22,10 +22,12 @@ Properties
 
     LinearRegionSelector.children
     LinearRegionSelector.limits
+    LinearRegionSelector.name
     LinearRegionSelector.position
     LinearRegionSelector.position_x
     LinearRegionSelector.position_y
     LinearRegionSelector.position_z
+    LinearRegionSelector.rotation
     LinearRegionSelector.visible
     LinearRegionSelector.world_object
 
@@ -39,4 +41,5 @@ Methods
     LinearRegionSelector.get_selected_index
     LinearRegionSelector.get_selected_indices
     LinearRegionSelector.make_ipywidget_slider
+    LinearRegionSelector.rotate
 

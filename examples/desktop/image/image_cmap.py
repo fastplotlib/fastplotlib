@@ -9,21 +9,18 @@ Example showing simple plot creation and subsequent cmap change with Standard im
 import fastplotlib as fpl
 import imageio.v3 as iio
 
-
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
-
 im = iio.imread("imageio:camera.png")
 
+fig = fpl.Figure()
+
 # plot the image data
-image_graphic = plot.add_image(data=im, name="random-image")
+image_graphic = fig[0, 0].add_image(data=im, name="random-image")
 
-plot.show()
+fig.show()
 
-plot.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(800, 800)
 
-plot.auto_scale()
+fig[0, 0].auto_scale()
 
 image_graphic.cmap = "viridis"
 

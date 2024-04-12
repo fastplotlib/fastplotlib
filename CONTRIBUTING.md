@@ -58,9 +58,9 @@ Fastplotlib uses the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine 
 plotting library. Some degree of familiarity with [`pygfx`](https://github.com/pygfx/pygfx) or rendering engines may 
 be useful depending on the type of contribution you're working on. 
 
-There are currently 2 major subpackages within `fastplotlib`, `layouts` and `graphics`. The two user-facing public 
-classes within `layouts` are `Plot` and `GridPlot`. A user is intended to create either a `Plot` or `GridPlot`, and 
-then add *Graphics* to that layout, such as an `ImageGraphic`, `LineGraphic`, etc. 
+There are currently 2 major subpackages within `fastplotlib`, `layouts` and `graphics`. The user-facing public 
+class within `layouts` is `Figure`. A user is intended to create a `Figure`, and 
+then add *Graphics* to subplots within that `Figure`. 
 
 ### Graphics
 
@@ -70,7 +70,7 @@ fastplotlib graphics, such as `ImageGraphic`, `ScatterGraphic`, etc. inherit fro
 These might change in the future (ex. `Graphic.position_x` etc.).
 
 All graphics can be given a string name for the user's convenience. This allows graphics to be easily accessed from 
-plots, ex: `plot["some_image"]`.
+plots, ex: `subplot["some_image"]`.
 
 All graphics contain a `world_object` property which is just the `pygfx.WorldObject` that this graphic uses. Fastplotlib 
 keeps a *private* global dictionary of all `WorldObject` instances and users are only given a weakref proxy to this world object. 
@@ -119,8 +119,8 @@ after the aforementioned `Input` class PR in `pygfx` and after https://github.co
 
 #### PlotArea
 
-This is the main base class within layouts. Every kind of "plot area", whether it's a single `Plot`, subplots within a 
-`GridPlot`, or `Dock` area, use `PlotArea` in some way.
+This is the main base class within layouts. Subplots within a `Figure` and `Dock` areas within a `Subplot`, 
+inherit from `PlotArea`.
 
 `PlotArea` has the following key properties that allow it to be a "plot area" that can be used to view graphical objects:
 
@@ -135,10 +135,10 @@ Abstract method that must be implemented in subclasses:
 
 * get_rect - musut return [x, y, width, height] that defines the viewport rect for this `PlotArea`
 
-Properties specifically used by subplots in a gridplot:
+Properties specifically used by subplots in a Figure:
 
-* parent - A parent if relevant, used by individual `Subplots` in `GridPlot`, and by `Dock` which are "docked" subplots at the edges of a subplot.
-* position - if a subplot within a gridplot, it is the position of this subplot within the `GridPlot`
+* parent - A parent if relevant, used by individual `Subplots` in `Figure`, and by `Dock` which are "docked" subplots at the edges of a subplot.
+* position - if a subplot within a Figure, it is the position of this subplot within the `Figure`
 
 Other important properties:
 
@@ -182,18 +182,13 @@ Subplot has one property that is not in `PlotArea`:
 
 The key method in `Subplot` is an implementation of `get_rect` that returns the viewport rect for this subplot.
 
-#### Plot, GridPlot, and Frame
+#### Figure
 
-Now that we have understood `PlotArea` and `Subplot` we need a way for the user to create either single plots or gridplots 
-and display them!
+Now that we have understood `PlotArea` and `Subplot` we need a way for the user to create them!
 
-There's one more class to talk about, `Frame`. This is a class that "frames" a `Plot` or `GridPlot`. Depending on 
-whether the plot's `Canvas` is a Qt or jupyter canvas, `Frame.show()` will create a plot toolbar and place this toolbar 
-below the `Canvas`. If using a glfw canvas it just returns the canvas.
-
-`Plot` and `GridPlot` both inherit from `Frame` which gives them `show()`. `Plot` is just a single `Subplot` with the 
-addition of `Frame`. `GridPlot.__init__` basically does a lot of parsing of user arguments to determine how to create 
-the subplots. All subplots within a `GridPlot` share the same canvas and use different viewports to create the subplots.
+A `Figure` contains a grid of subplot and has methods such as `show()` to output the figure.
+`Figure.__init__` basically does a lot of parsing of user arguments to determine how to create 
+the subplots. All subplots within a `Figure` share the same canvas and use different viewports to create the subplots.
 
 ## Tests in detail
 
@@ -216,6 +211,9 @@ ground-truth image are within that tolerance the test will pass.
 To run tests:
 
 ```bash
+# tests basic backend functionality
+WGPU_FORCE_OFFSCREEN=1 pytest -v -s tests/
+
 # desktop examples
 pytest -v examples
 

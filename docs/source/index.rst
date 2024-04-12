@@ -22,8 +22,7 @@ Welcome to fastplotlib's documentation!
    :maxdepth: 1
    :caption: API
    
-   Plot <api/layouts/plot>
-   Gridplot <api/layouts/gridplot>
+   Figure <api/layouts/figure>
    Subplot <api/layouts/subplot>
    Graphics <api/graphics/index>
    Graphic Features <api/graphic_features/index>

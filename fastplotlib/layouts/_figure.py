@@ -1,4 +1,9 @@
+import os
 from itertools import product, chain
+from multiprocessing import Queue
+from pathlib import Path
+from time import time
+
 import numpy as np
 from typing import Literal, Iterable
 from inspect import getfullargspec
@@ -8,17 +13,17 @@ import pygfx
 
 from wgpu.gui import WgpuCanvasBase
 
-from ._frame import Frame
+from ._video_writer import VideoWriterAV
 from ._utils import make_canvas_and_renderer, create_controller, create_camera
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
-from ._record_mixin import RecordMixin
+from .. import ImageGraphic
 
 
-class GridPlot(Frame, RecordMixin):
+class Figure:
     def __init__(
         self,
-        shape: tuple[int, int],
+        shape: tuple[int, int] = (1, 1),
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
@@ -46,7 +51,7 @@ class GridPlot(Frame, RecordMixin):
 
         Parameters
         ----------
-        shape: (int, int)
+        shape: (int, int), default (1, 1)
             (n_rows, n_cols)
 
         cameras: "2d", "3", list of "2d" | "3d", Iterable of camera instances, or Iterable of "2d" | "3d", optional
@@ -76,7 +81,7 @@ class GridPlot(Frame, RecordMixin):
 
         controllers: pygfx.Controller | list[pygfx.Controller] | np.ndarray[pygfx.Controller], optional
             directly provide pygfx.Controller instances(s). Useful if you want to use a controller from an existing
-            plot/subplot. Other controller kwargs, i.e. ``controller_Types`` and ``controller_ids`` are ignored if
+            plot/subplot. Other controller kwargs, i.e. ``controller_types`` and ``controller_ids`` are ignored if
             ``controllers`` are provided.
 
         canvas: WgpuCanvas, optional
@@ -97,7 +102,7 @@ class GridPlot(Frame, RecordMixin):
         if names is not None:
             if len(list(chain(*names))) != len(self):
                 raise ValueError(
-                    "must provide same number of subplot `names` as specified by gridplot shape"
+                    "must provide same number of subplot `names` as specified by Figure `shape`"
                 )
 
             subplot_names = np.asarray(names).reshape(self.shape)
@@ -141,7 +146,7 @@ class GridPlot(Frame, RecordMixin):
                         pass
                     else:
                         raise TypeError(
-                            "controllers argument must be a single pygfx.Controller instance of a Iterable of "
+                            "controllers argument must be a single pygfx.Controller instance, or a Iterable of "
                             "pygfx.Controller instances"
                         )
 
@@ -326,8 +331,22 @@ class GridPlot(Frame, RecordMixin):
 
         self._starting_size = size
 
-        RecordMixin.__init__(self)
-        Frame.__init__(self)
+        self._output = None
+
+        if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
+            self.recorder = FigureRecorder(self)
+        else:
+            self.recorder = None
+
+    @property
+    def toolbar(self):
+        """ipywidget or QToolbar instance"""
+        return self._output.toolbar
+
+    @property
+    def output(self):
+        """ipywidget or QWidget that contains this plot"""
+        return self._output
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -336,12 +355,12 @@ class GridPlot(Frame, RecordMixin):
 
     @property
     def canvas(self) -> WgpuCanvasBase:
-        """The canvas associated to this GridPlot"""
+        """The canvas associated to this Figure"""
         return self._canvas
 
     @property
     def renderer(self) -> pygfx.WgpuRenderer:
-        """The renderer associated to this GridPlot"""
+        """The renderer associated to this Figure"""
         return self._renderer
 
     @property
@@ -391,6 +410,114 @@ class GridPlot(Frame, RecordMixin):
         # call post-render animate functions
         self._call_animate_functions(self._animate_funcs_post)
 
+    def start_render(self):
+        """start render cycle"""
+        self.canvas.request_draw(self.render)
+        self.canvas.set_logical_size(*self._starting_size)
+
+    def show(
+        self,
+        autoscale: bool = True,
+        maintain_aspect: bool = None,
+        toolbar: bool = True,
+        sidecar: bool = False,
+        sidecar_kwargs: dict = None,
+        add_widgets: list = None,
+    ):
+        """
+        Begins the rendering event loop and shows the plot in the desired output context (jupyter, qt or glfw).
+
+        Parameters
+        ----------
+        autoscale: bool, default ``True``
+            autoscale the Scene
+
+        maintain_aspect: bool, default ``True``
+            maintain aspect ratio
+
+        toolbar: bool, default ``True``
+            show toolbar
+
+        sidecar: bool, default ``True``
+            display plot in a ``jupyterlab-sidecar``, only for jupyter output context
+
+        sidecar_kwargs: dict, default ``None``
+            kwargs for sidecar instance to display plot
+            i.e. title, layout
+
+        add_widgets: list of widgets
+            a list of ipywidgets or QWidget that are vertically stacked below the plot
+
+        Returns
+        -------
+        OutputContext
+            In jupyter, it will display the plot in the output cell or sidecar
+
+            In Qt, it will display the Plot, toolbar, etc. as stacked widget, use `Plot.widget` to access it.
+        """
+
+        # show was already called, return existing output context
+        if self._output is not None:
+            return self._output
+
+        self.start_render()
+
+        if sidecar_kwargs is None:
+            sidecar_kwargs = dict()
+
+        if add_widgets is None:
+            add_widgets = list()
+
+        # flip y-axis if ImageGraphics are present
+        for subplot in self:
+            for g in subplot.graphics:
+                if isinstance(g, ImageGraphic):
+                    subplot.camera.local.scale_y *= -1
+                    break
+
+        if autoscale:
+            for subplot in self:
+                if maintain_aspect is None:
+                    _maintain_aspect = subplot.camera.maintain_aspect
+                else:
+                    _maintain_aspect = maintain_aspect
+                subplot.auto_scale(maintain_aspect=_maintain_aspect, zoom=0.95)
+
+        # used for generating images in docs using nbsphinx
+        if "NB_SNAPSHOT" in os.environ.keys():
+            if os.environ["NB_SNAPSHOT"] == "1":
+                return self.canvas.snapshot()
+
+        # return the appropriate OutputContext based on the current canvas
+        if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
+            from .output.jupyter_output import (
+                JupyterOutputContext,
+            )  # noqa - inline import
+
+            self._output = JupyterOutputContext(
+                frame=self,
+                make_toolbar=toolbar,
+                use_sidecar=sidecar,
+                sidecar_kwargs=sidecar_kwargs,
+                add_widgets=add_widgets,
+            )
+
+        elif self.canvas.__class__.__name__ == "QWgpuCanvas":
+            from .output.qt_output import QOutputContext  # noqa - inline import
+
+            self._output = QOutputContext(
+                frame=self, make_toolbar=toolbar, add_widgets=add_widgets
+            )
+
+        else:  # assume GLFW, the output context is just the canvas
+            self._output = self.canvas
+
+        # return the output context, this call is required for jupyter but not for Qt
+        return self._output
+
+    def close(self):
+        self.output.close()
+
     def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:
             try:
@@ -413,7 +540,7 @@ class GridPlot(Frame, RecordMixin):
     ):
         """
         Add function(s) that are called on every render cycle.
-        These are called at the GridPlot level.
+        These are called at the Figure level.
 
         Parameters
         ----------
@@ -492,3 +619,157 @@ class GridPlot(Frame, RecordMixin):
             f"\t{newline.join(subplot.__str__() for subplot in self)}"
             f"\n"
         )
+
+
+class FigureRecorder:
+    def __init__(self, figure: Figure):
+        self._figure = figure
+        self._video_writer: VideoWriterAV = None
+        self._video_writer_queue = Queue()
+        self._record_fps = 25
+        self._record_timer = 0
+        self._record_start_time = 0
+
+    def _record(self):
+        """
+        Sends frame to VideoWriter through video writer queue
+        """
+        # current time
+        t = time()
+
+        # put frame in queue only if enough time as passed according to the desired framerate
+        # otherwise it tries to record EVERY frame on every rendering cycle, which just blocks the rendering
+        if t - self._record_timer < (1 / self._record_fps):
+            return
+
+        # reset timer
+        self._record_timer = t
+
+        if self._video_writer is not None:
+            ss = self._figure.canvas.snapshot()
+            # exclude alpha channel
+            self._video_writer_queue.put(ss.data[..., :-1])
+
+    def start(
+        self,
+        path: str | Path,
+        fps: int = 25,
+        codec: str = "mpeg4",
+        pixel_format: str = "yuv420p",
+        options: dict = None,
+    ):
+        """
+        Start a recording, experimental. Call ``record_end()`` to end a recording.
+        Note: playback duration does not exactly match recording duration.
+
+        Requires PyAV: https://github.com/PyAV-Org/PyAV
+
+        **Do not resize canvas during a recording, the width and height must remain constant!**
+
+        Parameters
+        ----------
+        path: str or Path
+            path to save the recording
+
+        fps: int, default ``25``
+            framerate, do not use > 25 within jupyter
+
+        codec: str, default "mpeg4"
+            codec to use, see ``ffmpeg`` list: https://www.ffmpeg.org/ffmpeg-codecs.html .
+            In general, ``"mpeg4"`` should work on most systems. ``"libx264"`` is a
+            better option if you have it installed.
+
+        pixel_format: str, default "yuv420p"
+            pixel format
+
+        options: dict, optional
+            Codec options. For example, if using ``"mpeg4"`` you can use ``{"q:v": "20"}`` to set the quality between
+            1-31, where "1" is highest and "31" is lowest. If using ``"libx264"``` you can use ``{"crf": "30"}`` where
+            the "crf" value is between "0" (highest quality) and "50" (lowest quality). See ``ffmpeg`` docs for more
+            info on codec options
+
+        Examples
+        --------
+
+        With ``"mpeg4"``
+
+        .. code-block:: python
+
+            # start recording video
+            figure.recorder.start("./video.mp4", options={"q:v": "20"}
+
+            # do stuff like interacting with the plot, change things, etc.
+
+            # end recording
+            figure.recorder.stop()
+
+        With ``"libx264"``
+
+        .. code-block:: python
+
+            # start recording video
+            figure.recorder.start("./vid_x264.mp4", codec="libx264", options={"crf": "25"})
+
+            # do stuff like interacting with the plot, change things, etc.
+
+            # end recording
+            figure.recorder.stop()
+
+        """
+
+        if Path(path).exists():
+            raise FileExistsError(f"File already exists at given path: {path}")
+
+        # queue for sending frames to VideoWriterAV process
+        self._video_writer_queue = Queue()
+
+        # snapshot to get canvas width height
+        ss = self._figure.canvas.snapshot()
+
+        # writer process
+        self._video_writer = VideoWriterAV(
+            path=str(path),
+            queue=self._video_writer_queue,
+            fps=int(fps),
+            width=ss.width,
+            height=ss.height,
+            codec=codec,
+            pixel_format=pixel_format,
+            options=options,
+        )
+
+        # start writer process
+        self._video_writer.start()
+
+        # 1.3 seems to work well to reduce that difference between playback time and recording time
+        # will properly investigate later
+        self._record_fps = fps * 1.3
+        self._record_start_time = time()
+
+        # record timer used to maintain desired framerate
+        self._record_timer = time()
+
+        self._figure.add_animations(self._record)
+
+    def stop(self) -> float:
+        """
+        End a current recording. Returns the real duration of the recording
+
+        Returns
+        -------
+        float
+            recording duration
+        """
+
+        # tell video writer that recording has finished
+        self._video_writer_queue.put(None)
+
+        # wait for writer to finish
+        self._video_writer.join(timeout=5)
+
+        self._video_writer = None
+
+        # so self._record() is no longer called on every render cycle
+        self._figure.remove_animation(self._record)
+
+        return time() - self._record_start_time

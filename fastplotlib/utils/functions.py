@@ -219,7 +219,7 @@ def make_pygfx_colors(colors, n_colors):
     return colors_array
 
 
-def calculate_gridshape(n_subplots: int) -> tuple[int, int]:
+def calculate_figure_shape(n_subplots: int) -> tuple[int, int]:
     """
     Returns ``(n_rows, n_cols)`` from given number of subplots ``n_subplots``
     """

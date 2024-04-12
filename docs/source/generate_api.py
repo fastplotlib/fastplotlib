@@ -142,17 +142,10 @@ def generate_page(
 
 def main():
     generate_page(
-        page_name="Plot",
-        classes=[fastplotlib.Plot],
+        page_name="Figure",
+        classes=[fastplotlib.Figure],
         modules=["fastplotlib"],
-        source_path=LAYOUTS_DIR.joinpath("plot.rst"),
-    )
-
-    generate_page(
-        page_name="GridPlot",
-        classes=[fastplotlib.GridPlot],
-        modules=["fastplotlib"],
-        source_path=LAYOUTS_DIR.joinpath("gridplot.rst"),
+        source_path=LAYOUTS_DIR.joinpath("figure.rst"),
     )
 
     generate_page(

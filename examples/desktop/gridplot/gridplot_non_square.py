@@ -10,23 +10,21 @@ import fastplotlib as fpl
 import imageio.v3 as iio
 
 
-plot = fpl.GridPlot(shape=(2, 2), controller_ids="sync")
-# to force a specific framework such as glfw:
-# plot = fpl.GridPlot(canvas="glfw")
+fig = fpl.Figure(shape=(2, 2), controller_ids="sync")
 
 im = iio.imread("imageio:clock.png")
 im2 = iio.imread("imageio:astronaut.png")
 im3 = iio.imread("imageio:coffee.png")
 
-plot[0, 0].add_image(data=im)
-plot[0, 1].add_image(data=im2)
-plot[1, 0].add_image(data=im3)
+fig[0, 0].add_image(data=im)
+fig[0, 1].add_image(data=im2)
+fig[1, 0].add_image(data=im3)
 
-plot.show()
+fig.show()
 
-plot.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(800, 800)
 
-for subplot in plot:
+for subplot in fig:
     subplot.auto_scale()
 
 if __name__ == "__main__":

@@ -22,10 +22,12 @@ Properties
 
     LinearSelector.children
     LinearSelector.limits
+    LinearSelector.name
     LinearSelector.position
     LinearSelector.position_x
     LinearSelector.position_y
     LinearSelector.position_z
+    LinearSelector.rotation
     LinearSelector.visible
     LinearSelector.world_object
 
@@ -39,4 +41,5 @@ Methods
     LinearSelector.get_selected_index
     LinearSelector.get_selected_indices
     LinearSelector.make_ipywidget_slider
+    LinearSelector.rotate
 

@@ -9,9 +9,8 @@ Change the cmap of a heatmap
 import fastplotlib as fpl
 import numpy as np
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+
+fig = fpl.Figure()
 
 xs = np.linspace(0, 1_000, 10_000)
 
@@ -24,13 +23,13 @@ data[::2] = sine
 data[1::2] = cosine
 
 # plot the image data
-heatmap_graphic = plot.add_heatmap(data=data, name="heatmap")
+heatmap_graphic = fig[0, 0].add_heatmap(data=data, name="heatmap")
 
-plot.show()
+fig.show()
 
-plot.canvas.set_logical_size(1500, 1500)
+fig.canvas.set_logical_size(1500, 1500)
 
-plot.auto_scale()
+fig[0, 0].auto_scale()
 
 heatmap_graphic.cmap = "viridis"
 

@@ -31,15 +31,13 @@ pos_xy = np.vstack(circles)
 # this will produce 16 circles so we will define 16 colors
 colors = ["blue"] * 4 + ["red"] * 4 + ["yellow"] * 4 + ["w"] * 4
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+fig = fpl.Figure()
 
-plot.add_line_collection(circles, colors=colors, thickness=10)
+fig[0, 0].add_line_collection(circles, colors=colors, thickness=10)
 
-plot.show()
+fig.show()
 
-plot.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(800, 800)
 
 if __name__ == "__main__":
     print(__doc__)
