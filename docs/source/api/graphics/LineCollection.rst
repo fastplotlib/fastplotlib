@@ -24,10 +24,12 @@ Properties
     LineCollection.cmap
     LineCollection.cmap_values
     LineCollection.graphics
+    LineCollection.name
     LineCollection.position
     LineCollection.position_x
     LineCollection.position_y
     LineCollection.position_z
+    LineCollection.rotation
     LineCollection.visible
     LineCollection.world_object
 
@@ -42,5 +44,6 @@ Methods
     LineCollection.link
     LineCollection.remove_graphic
     LineCollection.reset_feature
+    LineCollection.rotate
     LineCollection.set_feature
 

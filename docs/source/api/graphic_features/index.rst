@@ -20,3 +20,4 @@ Graphic Features
     to_gpu_supported_dtype
     LinearSelectionFeature
     LinearRegionSelectionFeature
+    Deleted

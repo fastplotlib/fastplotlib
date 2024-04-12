@@ -24,10 +24,12 @@ Properties
     LineStack.cmap
     LineStack.cmap_values
     LineStack.graphics
+    LineStack.name
     LineStack.position
     LineStack.position_x
     LineStack.position_y
     LineStack.position_z
+    LineStack.rotation
     LineStack.visible
     LineStack.world_object
 
@@ -42,5 +44,6 @@ Methods
     LineStack.link
     LineStack.remove_graphic
     LineStack.reset_feature
+    LineStack.rotate
     LineStack.set_feature
 

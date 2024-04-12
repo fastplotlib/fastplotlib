@@ -21,10 +21,12 @@ Properties
     :toctree: LineGraphic_api
 
     LineGraphic.children
+    LineGraphic.name
     LineGraphic.position
     LineGraphic.position_x
     LineGraphic.position_y
     LineGraphic.position_z
+    LineGraphic.rotation
     LineGraphic.visible
     LineGraphic.world_object
 
@@ -37,5 +39,6 @@ Methods
     LineGraphic.add_linear_selector
     LineGraphic.link
     LineGraphic.reset_feature
+    LineGraphic.rotate
     LineGraphic.set_feature
 

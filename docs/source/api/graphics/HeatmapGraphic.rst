@@ -21,10 +21,12 @@ Properties
     :toctree: HeatmapGraphic_api
 
     HeatmapGraphic.children
+    HeatmapGraphic.name
     HeatmapGraphic.position
     HeatmapGraphic.position_x
     HeatmapGraphic.position_y
     HeatmapGraphic.position_z
+    HeatmapGraphic.rotation
     HeatmapGraphic.visible
     HeatmapGraphic.world_object
 
@@ -37,5 +39,6 @@ Methods
     HeatmapGraphic.add_linear_selector
     HeatmapGraphic.link
     HeatmapGraphic.reset_feature
+    HeatmapGraphic.rotate
     HeatmapGraphic.set_feature
 

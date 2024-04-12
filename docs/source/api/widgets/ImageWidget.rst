@@ -23,8 +23,8 @@ Properties
     ImageWidget.cmap
     ImageWidget.current_index
     ImageWidget.data
+    ImageWidget.figure
     ImageWidget.frame_apply
-    ImageWidget.gridplot
     ImageWidget.managed_graphics
     ImageWidget.n_img_dims
     ImageWidget.n_scrollable_dims
