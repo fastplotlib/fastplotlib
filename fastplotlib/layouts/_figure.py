@@ -81,7 +81,7 @@ class Figure:
 
         controllers: pygfx.Controller | list[pygfx.Controller] | np.ndarray[pygfx.Controller], optional
             directly provide pygfx.Controller instances(s). Useful if you want to use a controller from an existing
-            plot/subplot. Other controller kwargs, i.e. ``controller_Types`` and ``controller_ids`` are ignored if
+            plot/subplot. Other controller kwargs, i.e. ``controller_types`` and ``controller_ids`` are ignored if
             ``controllers`` are provided.
 
         canvas: WgpuCanvas, optional
@@ -146,7 +146,7 @@ class Figure:
                         pass
                     else:
                         raise TypeError(
-                            "controllers argument must be a single pygfx.Controller instance of a Iterable of "
+                            "controllers argument must be a single pygfx.Controller instance, or a Iterable of "
                             "pygfx.Controller instances"
                         )
 
