@@ -282,12 +282,15 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
         # if data is RGB or RGBA
         if data.ndim > 2:
             material = pygfx.ImageBasicMaterial(
-                clim=(vmin, vmax), map_interpolation=filter
+                clim=(vmin, vmax), map_interpolation=filter, pick_write=True
             )
         # if data is just 2D without color information, use colormap LUT
         else:
             material = pygfx.ImageBasicMaterial(
-                clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter
+                clim=(vmin, vmax),
+                map=self.cmap(),
+                map_interpolation=filter,
+                pick_write=True,
             )
 
         world_object = pygfx.Image(geometry, material)
@@ -443,7 +446,10 @@ class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
 
         self.cmap = HeatmapCmapFeature(self, cmap)
         self._material = pygfx.ImageBasicMaterial(
-            clim=(vmin, vmax), map=self.cmap(), map_interpolation=filter
+            clim=(vmin, vmax),
+            map=self.cmap(),
+            map_interpolation=filter,
+            pick_write=True,
         )
 
         for start, stop, chunk in zip(start_ixs, stop_ixs, chunks):

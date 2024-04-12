@@ -80,6 +80,8 @@ class HistogramLUT(Graphic):
             outline_thickness=1,
         )
 
+        self._text_vmin.world_object.material.pick_write = False
+
         self._text_vmax = TextGraphic(
             text=vmax_str,
             size=16,
@@ -88,6 +90,8 @@ class HistogramLUT(Graphic):
             outline_color="black",
             outline_thickness=1,
         )
+
+        self._text_vmax.world_object.material.pick_write = False
 
         widget_wo = Group()
         widget_wo.add(
