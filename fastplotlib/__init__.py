@@ -24,6 +24,6 @@ if len(adapters) < 1:
 __all__ = [
     "Figure",
     "run",
-    "ImageWidget",
+    # "ImageWidget",
     "Legend",
 ]

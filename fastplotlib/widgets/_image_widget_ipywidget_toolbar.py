@@ -130,5 +130,6 @@ class IpywidgetImageWidgetToolbar(VBox):
 
     def _set_slider_layout(self, *args):
         w, h = self.iw.figure.renderer.logical_size
+
         for k, v in self.sliders.items():
             v.layout = Layout(width=f"{w}px")

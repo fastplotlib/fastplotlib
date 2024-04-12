@@ -102,7 +102,7 @@ class Figure:
         if names is not None:
             if len(list(chain(*names))) != len(self):
                 raise ValueError(
-                    "must provide same number of subplot `names` as specified by Figure shape"
+                    "must provide same number of subplot `names` as specified by Figure `shape`"
                 )
 
             subplot_names = np.asarray(names).reshape(self.shape)
