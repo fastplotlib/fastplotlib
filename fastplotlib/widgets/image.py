@@ -221,7 +221,7 @@ class ImageWidget:
 
         Returns
         -------
-        list[int]
+        int
             Number of scrollable dimensions for each ``array`` in the dataset.
         """
 
@@ -237,7 +237,7 @@ class ImageWidget:
         if n_img_dims == 3:
             if not (curr_arr.shape[-1] == 3 or curr_arr.shape[-1] == 4):
                 raise ValueError(
-                    "RGB(A) was specified but the last dimension of the array is neither 3 nor 4"
+                    f"Expected size 3 or 4 for last dimension of RGB(A) array, got: {curr_arr.shape[-1]}."
                 )
 
         n_scrollable_dims = len(curr_arr.shape) - n_img_dims
