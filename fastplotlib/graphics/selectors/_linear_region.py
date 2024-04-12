@@ -139,13 +139,13 @@ class LinearRegionSelector(BaseSelector):
         if axis == "x":
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(1, size, 1),
-                pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color)),
+                pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
             )
 
         elif axis == "y":
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(size, 1, 1),
-                pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color)),
+                pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
             )
         else:
             raise ValueError("`axis` must be one of 'x' or 'y'")
@@ -169,7 +169,9 @@ class LinearRegionSelector(BaseSelector):
 
             left_line = pygfx.Line(
                 pygfx.Geometry(positions=left_line_data),
-                pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
+                pygfx.LineMaterial(
+                    thickness=edge_thickness, color=edge_color, pick_write=True
+                ),
             )
 
             # position data for the right edge line
@@ -182,7 +184,9 @@ class LinearRegionSelector(BaseSelector):
 
             right_line = pygfx.Line(
                 pygfx.Geometry(positions=right_line_data),
-                pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
+                pygfx.LineMaterial(
+                    thickness=edge_thickness, color=edge_color, pick_write=True
+                ),
             )
 
             self.edges: Tuple[pygfx.Line, pygfx.Line] = (left_line, right_line)
@@ -198,7 +202,9 @@ class LinearRegionSelector(BaseSelector):
 
             bottom_line = pygfx.Line(
                 pygfx.Geometry(positions=bottom_line_data),
-                pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
+                pygfx.LineMaterial(
+                    thickness=edge_thickness, color=edge_color, pick_write=True
+                ),
             )
 
             # position data for the right edge line
@@ -211,7 +217,9 @@ class LinearRegionSelector(BaseSelector):
 
             top_line = pygfx.Line(
                 pygfx.Geometry(positions=top_line_data),
-                pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
+                pygfx.LineMaterial(
+                    thickness=edge_thickness, color=edge_color, pick_write=True
+                ),
             )
 
             self.edges: Tuple[pygfx.Line, pygfx.Line] = (bottom_line, top_line)

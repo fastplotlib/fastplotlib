@@ -71,7 +71,9 @@ class PolygonSelector(BaseSelector):
         new_line = pygfx.Line(
             geometry=pygfx.Geometry(positions=data.astype(np.float32)),
             material=pygfx.LineMaterial(
-                thickness=self.edge_width, color=pygfx.Color(self.edge_color)
+                thickness=self.edge_width,
+                color=pygfx.Color(self.edge_color),
+                pick_write=True,
             ),
         )
 
@@ -126,7 +128,9 @@ class PolygonSelector(BaseSelector):
         new_line = pygfx.Line(
             geometry=pygfx.Geometry(positions=data.astype(np.float32)),
             material=pygfx.LineMaterial(
-                thickness=self.edge_width, color=pygfx.Color(self.edge_color)
+                thickness=self.edge_width,
+                color=pygfx.Color(self.edge_color),
+                pick_write=True,
             ),
         )
 

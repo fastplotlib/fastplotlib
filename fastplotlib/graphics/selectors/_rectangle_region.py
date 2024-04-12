@@ -214,7 +214,7 @@ class RectangleRegionSelector(Graphic, BaseSelector):
 
         self.fill = pygfx.Mesh(
             pygfx.box_geometry(width, height, 1),
-            pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color)),
+            pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
         )
 
         self.fill.position.set(*origin, -2)

@@ -114,7 +114,9 @@ class LineGraphic(Graphic, Interaction):
         world_object: pygfx.Line = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=self.data(), colors=self.colors()),
-            material=material(thickness=self.thickness(), color_mode="vertex"),
+            material=material(
+                thickness=self.thickness(), color_mode="vertex", pick_write=True
+            ),
         )
 
         self._set_world_object(world_object)

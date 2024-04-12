@@ -70,6 +70,7 @@ class TextGraphic(Graphic):
                 color=face_color,
                 outline_color=outline_color,
                 outline_thickness=outline_thickness,
+                pick_write=True,
             ),
         )
 
