@@ -1,4 +1,4 @@
-from typing import *
+from typing import Any, Literal, Callable
 from warnings import warn
 
 import numpy as np
@@ -113,7 +113,7 @@ class ImageWidget:
         return self._output
 
     @property
-    def managed_graphics(self) -> List[ImageGraphic]:
+    def managed_graphics(self) -> list[ImageGraphic]:
         """List of ``ImageWidget`` managed graphics."""
         iw_managed = list()
         for subplot in self.figure:
@@ -123,7 +123,7 @@ class ImageWidget:
         return iw_managed
 
     @property
-    def cmap(self) -> List[str]:
+    def cmap(self) -> list[str]:
         cmaps = list()
         for g in self.managed_graphics:
             cmaps.append(g.cmap.name)
@@ -131,7 +131,7 @@ class ImageWidget:
         return cmaps
 
     @cmap.setter
-    def cmap(self, names: Union[str, List[str]]):
+    def cmap(self, names: str | list[str]):
         if isinstance(names, list):
             if not all([isinstance(n, str) for n in names]):
                 raise TypeError(
@@ -153,7 +153,7 @@ class ImageWidget:
                 g.cmap = names
 
     @property
-    def data(self) -> List[np.ndarray]:
+    def data(self) -> list[np.ndarray]:
         """data currently displayed in the widget"""
         return self._data
 
@@ -163,7 +163,7 @@ class ImageWidget:
         return self._ndim
 
     @property
-    def n_scrollable_dims(self) -> List[int]:
+    def n_scrollable_dims(self) -> list[int]:
         """
         list indicating the number of dimenensions that are scrollable for each data array
         All other dimensions are frame/image data, i.e. [x, y] or [x, y, c]
@@ -171,17 +171,17 @@ class ImageWidget:
         return self._n_scrollable_dims
 
     @property
-    def sliders(self) -> Dict[str, Any]:
+    def sliders(self) -> dict[str, Any]:
         """the ipywidget IntSlider or QSlider instances used by the widget for indexing the desired dimensions"""
         return self._image_widget_toolbar.sliders
 
     @property
-    def slider_dims(self) -> List[str]:
+    def slider_dims(self) -> list[str]:
         """the dimensions that the sliders index"""
         return self._slider_dims
 
     @property
-    def current_index(self) -> Dict[str, int]:
+    def current_index(self) -> dict[str, int]:
         """
         Get or set the current index
 
@@ -248,7 +248,7 @@ class ImageWidget:
         return n_scrollable_dims
 
     @current_index.setter
-    def current_index(self, index: Dict[str, int]):
+    def current_index(self, index: dict[str, int]):
         # ignore if output context has not been created yet
         if self.widget is None:
             return
@@ -285,11 +285,11 @@ class ImageWidget:
 
     def __init__(
         self,
-        data: Union[np.ndarray, List[np.ndarray]],
-        window_funcs: Union[int, Dict[str, int]] = None,
-        frame_apply: Union[callable, Dict[int, callable]] = None,
-        figure_shape: Tuple[int, int] = None,
-        names: List[str] = None,
+        data: np.ndarray | list[np.ndarray],
+        window_funcs: dict[str, tuple[Callable, int]] = None,
+        frame_apply: Callable | dict[int, Callable] = None,
+        figure_shape: tuple[int, int] = None,
+        names: list[str] = None,
         figure_kwargs: dict = None,
         histogram_widget: bool = True,
         rgb: list[bool] = None,
@@ -317,17 +317,17 @@ class ImageWidget:
         data: Union[np.ndarray, List[np.ndarray]
             array-like or a list of array-like
 
-        window_funcs: Dict[Union[int, str], int]
+        window_funcs: dict[str, tuple[Callable, int]], i.e. {"t" or "z": (callable, int)}
             | Apply function(s) with rolling windows along "t" and/or "z" dimensions of the `data` arrays.
-            | Pass a dict in the form: {dimension: (func, window_size)}, `func` must take a slice of the data array as the
-            | first argument and must take `axis` as a kwarg.
+            | Pass a dict in the form: {dimension: (func, window_size)}, `func` must take a slice of the data array as
+            | the first argument and must take `axis` as a kwarg.
             | Ex: mean along "t" dimension: {"t": (np.mean, 11)}, if `current_index` of "t" is 50, it will pass frames
-            | 45 to 55 to `np.mean` with `axis = 0`.
-            | Ex2: max along z dim: {"z": (np.max, 3)}, passes current, previous and next frame to `np.max` with `axis = 1`
+            | 45 to 55 to `np.mean` with `axis=0`.
+            | Ex: max along z dim: {"z": (np.max, 3)}, passes current, previous & next frame to `np.max` with `axis=1`
 
         frame_apply: Union[callable, Dict[int, callable]]
             | Apply function(s) to `data` arrays before to generate final 2D image that is displayed.
-            | Ex: apply a spatial Gaussian filter
+            | Ex: apply a spatial gaussian filter
             | Pass a single function or a dict of functions to apply to each array individually
             | examples: ``{array_index: to_grayscale}``, ``{0: to_grayscale, 2: threshold_img}``
             | "array_index" is the position of the corresponding array in the data list.
@@ -378,7 +378,7 @@ class ImageWidget:
                         f"Invalid `figure_shape` passed, setting figure shape to: {figure_shape}"
                     )
 
-                self._data: List[np.ndarray] = data
+                self._data: list[np.ndarray] = data
 
                 # Establish number of image dimensions and number of scrollable dimensions for each array
                 if rgb is None:
@@ -451,14 +451,14 @@ class ImageWidget:
             if dim in ALLOWED_SLIDER_DIMS.keys():
                 self.slider_dims.append(ALLOWED_SLIDER_DIMS[dim])
 
-        self._frame_apply: Dict[int, callable] = dict()
+        self._frame_apply: dict[int, callable] = dict()
 
         if frame_apply is not None:
             if callable(frame_apply):
                 self._frame_apply = frame_apply
 
             elif isinstance(frame_apply, dict):
-                self._frame_apply: Dict[int, callable] = dict.fromkeys(
+                self._frame_apply: dict[int, callable] = dict.fromkeys(
                     list(range(len(self.data)))
                 )
 
@@ -479,15 +479,15 @@ class ImageWidget:
                 )
 
         # current_index stores {dimension_index: slice_index} for every dimension
-        self._current_index: Dict[str, int] = {sax: 0 for sax in self.slider_dims}
+        self._current_index: dict[str, int] = {sax: 0 for sax in self.slider_dims}
 
         self._window_funcs = None
         self.window_funcs = window_funcs
 
-        self._sliders: Dict[str, Any] = dict()
+        self._sliders: dict[str, Any] = dict()
 
         # get max bound for all data arrays for all slider dimensions and ensure compatibility across slider dims
-        self._dims_max_bounds: Dict[str, int] = {k: 0 for k in self.slider_dims}
+        self._dims_max_bounds: dict[str, int] = {k: 0 for k in self.slider_dims}
         for i, _dim in enumerate(list(self._dims_max_bounds.keys())):
             for array, partition in zip(self.data, self.n_scrollable_dims):
                 if partition <= i:
@@ -541,11 +541,11 @@ class ImageWidget:
         self._image_widget_toolbar = None
 
     @property
-    def frame_apply(self) -> Union[dict, None]:
+    def frame_apply(self) -> dict | None:
         return self._frame_apply
 
     @frame_apply.setter
-    def frame_apply(self, frame_apply: Dict[int, callable]):
+    def frame_apply(self, frame_apply: dict[int, callable]):
         if frame_apply is None:
             frame_apply = dict()
 
@@ -554,7 +554,7 @@ class ImageWidget:
         self.current_index = self.current_index
 
     @property
-    def window_funcs(self) -> Dict[str, _WindowFunctions]:
+    def window_funcs(self) -> dict[str, _WindowFunctions]:
         """
         Get or set the window functions
 
@@ -566,7 +566,7 @@ class ImageWidget:
         return self._window_funcs
 
     @window_funcs.setter
-    def window_funcs(self, callable_dict: Dict[str, int]):
+    def window_funcs(self, callable_dict: dict[str, int]):
         if callable_dict is None:
             self._window_funcs = None
             # force frame to update
@@ -620,7 +620,7 @@ class ImageWidget:
         self.current_index = self.current_index
 
     def _process_indices(
-        self, array: np.ndarray, slice_indices: Dict[Union[int, str], int]
+        self, array: np.ndarray, slice_indices: dict[str, int]
     ) -> np.ndarray:
         """
         Get the 2D array from the given slice indices. If not returning a 2D slice (such as due to window_funcs)
@@ -631,8 +631,8 @@ class ImageWidget:
         array: np.ndarray
             array-like to get a 2D slice from
 
-        slice_indices: Dict[int, int]
-            dict in form of {dimension_index: slice_index}
+        slice_indices: Dict[str, int]
+            dict in form of {dimension_index: current_index}
             For example if an array has shape [1000, 30, 512, 512] corresponding to [t, z, x, y]:
                 To get the 100th timepoint and 3rd z-plane pass:
                     {"t": 100, "z": 3}
@@ -741,7 +741,7 @@ class ImageWidget:
 
         return array
 
-    def _slider_value_changed(self, dimension: str, change: Union[dict, int]):
+    def _slider_value_changed(self, dimension: str, change: dict | int):
         if self.block_sliders:
             return
         if isinstance(change, dict):
@@ -777,7 +777,7 @@ class ImageWidget:
 
     def set_data(
         self,
-        new_data: Union[np.ndarray, List[np.ndarray]],
+        new_data: np.ndarray | list[np.ndarray],
         reset_vmin_vmax: bool = True,
         reset_indices: bool = True,
     ):
