@@ -293,6 +293,7 @@ class ImageWidget:
         figure_kwargs: dict = None,
         histogram_widget: bool = True,
         rgb: list[bool] = None,
+        cmap: str = None,
         graphic_kwargs: dict = None,
     ):
         """
@@ -509,6 +510,8 @@ class ImageWidget:
 
         if graphic_kwargs is None:
             graphic_kwargs = dict()
+
+        graphic_kwargs.update({"cmap": cmap})
 
         self._figure: Figure = Figure(shape=figure_shape, **figure_kwargs_default)
 
