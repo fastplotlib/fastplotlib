@@ -510,9 +510,7 @@ class ImageWidget:
         if graphic_kwargs is None:
             graphic_kwargs = dict()
 
-        self._figure: Figure = Figure(
-            shape=figure_shape, **figure_kwargs_default
-        )
+        self._figure: Figure = Figure(shape=figure_shape, **figure_kwargs_default)
 
         self._histogram_widget = histogram_widget
         for data_ix, (d, subplot) in enumerate(zip(self.data, self.figure)):
