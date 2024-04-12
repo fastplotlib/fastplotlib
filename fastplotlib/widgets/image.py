@@ -3,9 +3,9 @@ from warnings import warn
 
 import numpy as np
 
-from ..layouts import GridPlot
+from ..layouts import Figure
 from ..graphics import ImageGraphic
-from ..utils import calculate_gridshape
+from ..utils import calculate_figure_shape
 from .histogram_lut import HistogramLUT
 
 
@@ -99,11 +99,11 @@ class _WindowFunctions:
 
 class ImageWidget:
     @property
-    def gridplot(self) -> GridPlot:
+    def figure(self) -> Figure:
         """
-        ``GridPlot`` instance within the `ImageWidget`.
+        ``Figure`` used by `ImageWidget`.
         """
-        return self._gridplot
+        return self._figure
 
     @property
     def widget(self):
@@ -116,7 +116,7 @@ class ImageWidget:
     def managed_graphics(self) -> List[ImageGraphic]:
         """List of ``ImageWidget`` managed graphics."""
         iw_managed = list()
-        for subplot in self.gridplot:
+        for subplot in self.figure:
             # empty subplots will not have any image widget data
             if len(subplot.graphics) > 0:
                 iw_managed.append(subplot["image_widget_managed"])
@@ -288,12 +288,12 @@ class ImageWidget:
         data: Union[np.ndarray, List[np.ndarray]],
         window_funcs: Union[int, Dict[str, int]] = None,
         frame_apply: Union[callable, Dict[int, callable]] = None,
-        grid_shape: Tuple[int, int] = None,
+        figure_shape: Tuple[int, int] = None,
         names: List[str] = None,
-        grid_plot_kwargs: dict = None,
+        figure_kwargs: dict = None,
         histogram_widget: bool = True,
         rgb: list[bool] = None,
-        **kwargs,
+        graphic_kwargs: dict = None,
     ):
         """
         This widget facilitates high-level navigation through image stacks, which are arrays containing one or more
@@ -334,10 +334,10 @@ class ImageWidget:
             | this function must be a callable that returns a 2D array
             | example use case: converting an RGB frame from video to a 2D grayscale frame
 
-        grid_shape: Optional[Tuple[int, int]]
-            manually provide the shape for a gridplot, otherwise a square gridplot is approximated.
+        figure_shape: Optional[Tuple[int, int]]
+            manually provide the shape for the Figure, otherwise the number of rows and columns is estimated
 
-        grid_plot_kwargs: dict, optional
+        figure_kwargs: dict, optional
             passed to `GridPlot`
 
         names: Optional[str]
@@ -350,8 +350,8 @@ class ImageWidget:
             Includes a True or False for each ``array`` in the ImageWidget, indicating whether images are displayed as
             grayscale or RGB(A).
 
-        kwargs: Any
-            passed to fastplotlib.graphics.Image
+        graphic_kwargs: Any
+            passed to each ImageGraphic in the ImageWidget figure subplots
 
         """
         self._names = None
@@ -367,14 +367,14 @@ class ImageWidget:
             if all([_is_arraylike(d) for d in data]):
 
                 # Grid computations
-                if grid_shape is None:
-                    grid_shape = calculate_gridshape(len(data))
+                if figure_shape is None:
+                    figure_shape = calculate_figure_shape(len(data))
 
-                # verify that user-specified grid shape is large enough for the number of image arrays passed
-                elif grid_shape[0] * grid_shape[1] < len(data):
-                    grid_shape = calculate_gridshape(len(data))
+                # verify that user-specified figure shape is large enough for the number of image arrays passed
+                elif figure_shape[0] * figure_shape[1] < len(data):
+                    figure_shape = calculate_figure_shape(len(data))
                     warn(
-                        f"Invalid `grid_shape` passed, setting grid shape to: {grid_shape}"
+                        f"Invalid `figure_shape` passed, setting figure shape to: {figure_shape}"
                     )
 
                 self._data: List[np.ndarray] = data
@@ -437,8 +437,7 @@ class ImageWidget:
                 )
         else:
             raise TypeError(
-                f"`data` must be an array-like type representing an n-dimensional image "
-                f"or a list of array-like representing a grid of n-dimensional images. "
+                f"`data` must be an array-like type or a list of array-like."
                 f"You have passed the following type {type(data)}"
             )
 
@@ -500,20 +499,23 @@ class ImageWidget:
                             self._dims_max_bounds[_dim], array.shape[i]
                         )
 
-        grid_plot_kwargs_default = {"controller_ids": "sync"}
-        if grid_plot_kwargs is None:
-            grid_plot_kwargs = dict()
+        figure_kwargs_default = {"controller_ids": "sync"}
+        if figure_kwargs is None:
+            figure_kwargs = dict()
 
         # update the default kwargs with any user-specified kwargs
         # user specified kwargs will overwrite the defaults
-        grid_plot_kwargs_default.update(grid_plot_kwargs)
+        figure_kwargs_default.update(figure_kwargs)
 
-        self._gridplot: GridPlot = GridPlot(
-            shape=grid_shape, **grid_plot_kwargs_default
+        if graphic_kwargs is None:
+            graphic_kwargs = dict()
+
+        self._figure: Figure = Figure(
+            shape=figure_shape, **figure_kwargs_default
         )
 
         self._histogram_widget = histogram_widget
-        for data_ix, (d, subplot) in enumerate(zip(self.data, self.gridplot)):
+        for data_ix, (d, subplot) in enumerate(zip(self.data, self.figure)):
             if self._names is not None:
                 name = self._names[data_ix]
             else:
@@ -521,7 +523,7 @@ class ImageWidget:
 
             frame = self._process_indices(d, slice_indices=self._current_index)
             frame = self._process_frame_apply(frame, data_ix)
-            ig = ImageGraphic(frame, name="image_widget_managed", **kwargs)
+            ig = ImageGraphic(frame, name="image_widget_managed", **graphic_kwargs)
             subplot.add_graphic(ig)
             subplot.name = name
             subplot.set_title(name)
@@ -764,7 +766,7 @@ class ImageWidget:
         TODO: We could think of applying the frame_apply funcs to a subsample of the entire array to get a better estimate of vmin vmax?
         """
 
-        for subplot in self.gridplot:
+        for subplot in self.figure:
             if "histogram_lut" not in subplot.docks["right"]:
                 continue
 
@@ -832,7 +834,7 @@ class ImageWidget:
 
         # if checks pass, update with new data
         for i, (new_array, current_array, subplot) in enumerate(
-            zip(new_data, self._data, self.gridplot)
+            zip(new_data, self._data, self.figure)
         ):
             # check last two dims (x and y) to see if data shape is changing
             old_data_shape = self._data[i].shape[-self.n_img_dims[i] :]
@@ -895,17 +897,17 @@ class ImageWidget:
         OutputContext
             ImageWidget just uses the Gridplot output context
         """
-        if self.gridplot.canvas.__class__.__name__ == "JupyterWgpuCanvas":
+        if self.figure.canvas.__class__.__name__ == "JupyterWgpuCanvas":
             from ._image_widget_ipywidget_toolbar import IpywidgetImageWidgetToolbar
 
             self._image_widget_toolbar = IpywidgetImageWidgetToolbar(self)
 
-        elif self.gridplot.canvas.__class__.__name__ == "QWgpuCanvas":
+        elif self.figure.canvas.__class__.__name__ == "QWgpuCanvas":
             from ._image_widget_qt_toolbar import QToolbarImageWidget
 
             self._image_widget_toolbar = QToolbarImageWidget(self)
 
-        self._output = self.gridplot.show(
+        self._output = self.figure.show(
             toolbar=toolbar,
             sidecar=sidecar,
             sidecar_kwargs=sidecar_kwargs,
@@ -916,4 +918,4 @@ class ImageWidget:
 
     def close(self):
         """Close Widget"""
-        self.gridplot.close()
+        self.figure.close()

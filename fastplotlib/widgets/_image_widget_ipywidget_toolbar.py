@@ -108,7 +108,7 @@ class IpywidgetImageWidgetToolbar(VBox):
         self.reset_vminvmax_button.on_click(self._reset_vminvmax)
         self.reset_vminvmax_hlut_button.on_click(self._reset_vminvmax_frame)
 
-        self.iw.gridplot.renderer.add_event_handler(self._set_slider_layout, "resize")
+        self.iw.figure.renderer.add_event_handler(self._set_slider_layout, "resize")
 
         # the buttons
         self.hbox = HBox(widgets)
@@ -129,6 +129,6 @@ class IpywidgetImageWidgetToolbar(VBox):
         self.play_button.interval = interval
 
     def _set_slider_layout(self, *args):
-        w, h = self.iw.gridplot.renderer.logical_size
+        w, h = self.iw.figure.renderer.logical_size
         for k, v in self.sliders.items():
             v.layout = Layout(width=f"{w}px")

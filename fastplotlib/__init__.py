@@ -6,7 +6,7 @@ from .graphics.selectors import *
 from .legends import *
 from .layouts import Figure
 
-# from .widgets import ImageWidget
+from .widgets import ImageWidget
 from .utils import config
 
 import wgpu
@@ -24,6 +24,6 @@ if len(adapters) < 1:
 __all__ = [
     "Figure",
     "run",
-    # "ImageWidget",
+    "ImageWidget",
     "Legend",
 ]
