@@ -7,7 +7,6 @@
 [![CI](https://github.com/kushalkolar/fastplotlib/actions/workflows/ci.yml/badge.svg)](https://github.com/kushalkolar/fastplotlib/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/fastplotlib.svg)](https://badge.fury.io/py/fastplotlib)
 [![Documentation Status](https://readthedocs.org/projects/fastplotlib/badge/?version=latest)](https://fastplotlib.readthedocs.io/en/latest/?badge=latest)
-[![Gitter](https://badges.gitter.im/fastplotlib/community.svg)](https://gitter.im/fastplotlib/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge)
 
 [**Installation**](https://github.com/kushalkolar/fastplotlib#installation) | 
 [**GPU Drivers**](https://github.com/kushalkolar/fastplotlib#graphics-drivers) | 
@@ -15,7 +14,7 @@
 [**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | 
 [**Contributing**](https://github.com/kushalkolar/fastplotlib#heart-contributing)
 
-Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that can utilize [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
+Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that can utilize [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! `fastplotlib` also aims to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
 
 ![scipy-fpl](https://github.com/fastplotlib/fastplotlib/assets/9403332/b981a54c-05f9-443f-a8e4-52cd01cd802a)
 
@@ -23,8 +22,8 @@ Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pyg
 
 [![fpl_thumbnail](http://i3.ytimg.com/vi/Q-UJpAqljsU/hqdefault.jpg)](https://www.youtube.com/watch?v=Q-UJpAqljsU)
 
-Notebooks from talk: https://github.com/fastplotlib/fastplotlib-scipy2023 
-
+Note that the API is currently evolving quickly. We recommend using the latest notebooks from the repo but the general 
+concepts are similar to those from the API shown in the video.
 
 # Supported frameworks
 
@@ -36,9 +35,9 @@ Notebooks from talk: https://github.com/fastplotlib/fastplotlib-scipy2023
 :heavy_check_mark: `wxPython`
 
 **Notes:**\
-:heavy_check_mark: Non-blocking Qt output is supported in ipython and notebooks by using [`%gui qt`](https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-gui) before creating plots. This hook only supports pyqt6 at the moment.\
+:heavy_check_mark: Non-blocking Qt/PySide output is supported in ipython and notebooks by using [`%gui qt`](https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-gui). This **must** be called *before* importing `fastplotlib`!
 :grey_exclamation: We do not officially support `jupyter notebook` through `jupyter_rfb`, this may change with notebook v7\
-:disappointed: [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb) does not work in collab yet, see https://github.com/vispy/jupyter_rfb/pull/77 
+:disappointed: [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb) does not work in collab, see https://github.com/vispy/jupyter_rfb/pull/77 
 
 > **Note**
 > 
@@ -169,4 +168,4 @@ WGPU uses Metal instead of Vulkan on Mac. You will need at least Mac OSX 10.13. 
 
 We welcome contributions! See the contributing guide: https://github.com/kushalkolar/fastplotlib/blob/main/CONTRIBUTING.md
 
-You can also take a look at our [**Roadmap for 2024**](https://github.com/kushalkolar/fastplotlib/issues/55) and [**Issues**](https://github.com/kushalkolar/fastplotlib/issues) for ideas on how to contribute!
+You can also take a look at our [**Roadmap for 2025**](https://github.com/kushalkolar/fastplotlib/issues/55) and [**Issues**](https://github.com/kushalkolar/fastplotlib/issues) for ideas on how to contribute!
