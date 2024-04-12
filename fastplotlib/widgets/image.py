@@ -293,7 +293,7 @@ class ImageWidget:
         figure_kwargs: dict = None,
         histogram_widget: bool = True,
         rgb: list[bool] = None,
-        cmap: str = None,
+        cmap: str = "plasma",
         graphic_kwargs: dict = None,
     ):
         """
