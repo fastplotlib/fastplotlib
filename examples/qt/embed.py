@@ -5,28 +5,22 @@ from PyQt6 import QtWidgets, QtCore
 import fastplotlib as fpl
 import imageio.v3 as iio
 
-# Qt app MUST be instantiated before creating any fpl objects, or any other Qt objects
-app = QtWidgets.QApplication([])
 
 video = iio.imread("imageio:cockatoo.mp4")
 
-# force qt canvas, wgpu will sometimes pick glfw by default even if Qt is present
-plot = fpl.Plot(canvas="qt")
+# fastplotlib and wgpu will auto-detect if Qt is imported and then use the Qt canvas and output context
+fig = fpl.Figure()
 
-plot.add_image(video[0], name="video")
-plot.camera.local.scale *= -1
+fig[0, 0].add_image(video[0], name="video")
 
 
 def update_frame(ix):
-    plot["video"].data = video[ix]
-    # you can also do plot.graphics[0].data = video[ix]
+    fig[0, 0]["video"].data = video[ix]
+    # you can also do fig[0, 0].graphics[0].data = video[ix]
 
 
-# create a QMainWindow, set the plot canvas as the main widget
-# The canvas does not have to be in a QMainWindow and it does
-# not have to be the central widget, it will work like any QWidget
+# create a QMainWindow
 main_window = QtWidgets.QMainWindow()
-main_window.setCentralWidget(plot.canvas)
 
 # Create a QSlider for updating frames
 slider = QtWidgets.QSlider(QtCore.Qt.Orientation.Horizontal)
@@ -44,8 +38,11 @@ main_window.addDockWidget(
     dock
 )
 
-# calling plot.show() is required to start the rendering loop
-plot.show()
+# calling fig.show() is required to start the rendering loop
+qwidget = fig.show()
+
+# set the qwidget as the central widget
+main_window.setCentralWidget(qwidget)
 
 # set window size from width and height of video
 main_window.resize(video.shape[2], video.shape[1])
@@ -54,4 +51,4 @@ main_window.resize(video.shape[2], video.shape[1])
 main_window.show()
 
 # execute Qt app
-app.exec()
+fpl.run()
