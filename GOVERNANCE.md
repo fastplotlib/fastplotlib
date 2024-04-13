@@ -34,7 +34,6 @@ The Advisory Committee holds a significant interest in fastplotlib as determined
 
 1. Amol Pasarkar
 1. Eric Thomson
-1. Guillaume Viejo
 1. Andrea Giovannucci
 1. John Pearson
 
