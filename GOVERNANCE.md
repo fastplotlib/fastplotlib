@@ -30,7 +30,7 @@ Responsibilities:
 
 ### Advisory Committee 
 
-The Advisory Committee holds a significant interest in fastplotlib as determined solely by the **Maintainers**. The responsibilities of the **Advisory Committee** are to 1) attend a yearly Roadmap meeting, 2) be available for conflict resolution.
+The Advisory Committee holds a significant interest in fastplotlib as determined solely by the **Maintainers**.
 
 1. Amol Pasarkar
 1. Eric Thomson
@@ -108,4 +108,4 @@ Governance decisions, meeting minutes, and voting outcomes are publicly document
 
 ### Until February 28, 2025
 
-During early stages of fastplotlib development, changes to the governance document may be made directly through unanimous approval by the original maintainers, Kushal Kolar & Caitlin Lewis, without contacting the neutral moderator or consulting with the advisory committee. They (Kushal & Caitlin) may also add new members to the advisory committee through unanimous approval.
+During early stages of fastplotlib development, changes to the governance document may be made directly through unanimous approval by the original maintainers, Kushal Kolar & Caitlin Lewis. They (Kushal & Caitlin) may also add new members to the advisory committee through unanimous approval.
