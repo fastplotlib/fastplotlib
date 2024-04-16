@@ -271,6 +271,9 @@ to ``fpl.select_adapter()``::
     chosen_gpu = fpl.enumerate_adapters()[2]
     fpl.select_adapter(chosen_gpu)
 
+**You must select an adapter before creating a ``Figure``, otherwise the default adapter will be selected. Once a
+``Figure`` is created the adapter cannot be changed.**
+
 Note that using this function reduces the portability of your code, because
 it's highly specific for your current machine/environment.
 
