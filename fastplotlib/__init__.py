@@ -19,11 +19,3 @@ adapters = [a.summary for a in wgpu.gpu.enumerate_adapters()]
 
 if len(adapters) < 1:
     raise IndexError("No WGPU adapters found, fastplotlib will not work.")
-
-
-__all__ = [
-    "Figure",
-    "run",
-    # "ImageWidget",
-    "Legend",
-]
