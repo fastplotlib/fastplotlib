@@ -53,6 +53,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "pygfx": ("https://pygfx.readthedocs.io/en/latest", None),
+    "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
 }
 
 html_theme_options = {
