@@ -41,7 +41,10 @@ You can get a summary of all adapters that are available to ``WGPU`` like this::
 
     import fastplotlib as fpl
 
-    print([a.summary for a in fpl.enumerate_adapters()])
+    adapters = fpl.enumerate_adapters()
+
+    for a in adapters:
+        print(a.summary)
 
 For example, on a Thinkpad AMD laptop with a dedicated nvidia GPU this returns::
 
@@ -54,7 +57,9 @@ In jupyter all the available adapters are also listed when ``fastplotlib`` is im
 
 You can get more detailed info on each adapter like this::
 
-    print([a.request_adapter_info() for a in fpl.enumerate_adapters()])
+    import pprint
+    for a in fpl.enumerate_adapters():
+        pprint.pprint(a.request_adapter_info())
 
 General description of the fields:
     * vendor: GPU manufacturer
