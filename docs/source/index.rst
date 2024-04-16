@@ -1,8 +1,3 @@
-.. fastplotlib documentation master file, created by
-   sphinx-quickstart on Wed Dec 28 12:46:56 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 Welcome to fastplotlib's documentation!
 =======================================
 
@@ -14,7 +9,7 @@ Welcome to fastplotlib's documentation!
 
 .. toctree::
    :caption: User Guide
-   :maxdepth:  1
+   :maxdepth:  2
 
    GPU Info <user_guide/gpu>
 
@@ -29,12 +24,12 @@ Welcome to fastplotlib's documentation!
    Selectors <api/selectors/index>
    Widgets <api/widgets/index>
    Utils <api/utils>
+   GPU <api/gpu>
 
 Summary
 =======
 
 A fast plotting library built using the `pygfx <https://github.com/pygfx/pygfx>`_ render engine utilizing `Vulkan <https://en.wikipedia.org/wiki/Vulkan>`_, `DX12 <https://en.wikipedia.org/wiki/DirectX#DirectX_12>`_, or `Metal <https://developer.apple.com/metal/>`_ via `WGPU <https://github.com/gfx-rs/wgpu-native>`_, so it is very fast! We also aim to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization. `fastplotlib` will run on any framework that ``pygfx`` runs on, this includes ``glfw``, ``Qt`` and ``jupyter lab``
-
 
 
 Installation
