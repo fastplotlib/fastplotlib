@@ -8,11 +8,20 @@ The purpose of this document is to formalize the governance process used by the 
 
 The mission of `fastplotlib` is to leverage new graphics APIs and modern GPU hardware to create fast and interactive scientific visualizations using an expressive and elegant API.
 
+`fastplotlib` aims to provide a library that allows for the following:
+- Rapid prototyping and algorithm development
+- Realtime analysis and visualization 
+- Efficient rendering of thousands of objects 
+- Compatibility with lazy-loading and lazy-compute objects
+- Shipping dependent packages as a distributable (ex: PyInstaller)
+
+Ultimately, `fastplotlib` is, and will always be, a free and open-source project that belongs to the community. Our end goal is to aid in the advancement of science, and as a result, we will guide the project in a direction that best serves our community in achieving this purpose.  
+
 ## Leadership Team
 
 ### Maintainers
 
-The maintainers are the core developers of fastplotlib and together have a complete understanding of the codebase. They are also known as code-owners.
+The maintainers are the core developers of fastplotlib and together have a complete understanding of the codebase. They are also known as code-owners. At any given time, there must be a minimum of two maintainers.
 
 The current maintainers are:
 
