@@ -55,21 +55,19 @@ Questions, issues, ideas? Post an [issue](https://github.com/fastplotlib/fastplo
 
 # Installation
 
-Install using `pip`.
-
 ### Minimal, use with your own `Qt` or `glfw` applications
 ```bash
 pip install fastplotlib
 ```
 
-**This does not give you `Qt` or `glfw`, you will have to install one of them yourself depending on your preference**.
+**This does not give you `PyQt`/`PySide` or `glfw`, you will have to install your preferred GUI framework separately**.
 
 ### Notebook
 ```bash
 pip install "fastplotlib[notebook]"
 ```
 
-**Recommended: install `simplejpeg` for much faster notebook visualization, this requires you to first install [libjpeg-turbo](https://libjpeg-turbo.org/)**
+**Strongly recommended: install `simplejpeg` for much faster notebook visualization, this requires you to first install [libjpeg-turbo](https://libjpeg-turbo.org/)**
 
 ```bash
 pip install simplejpeg
@@ -77,9 +75,12 @@ pip install simplejpeg
 
 > **Note**
 >
-> `fastplotlib` and `pygfx` are fast evolving projects, the version available through pip might be outdated, you will need to follow the "For developers" instructions below if you want the latest features. You can find the release history on pypi here: https://pypi.org/project/fastplotlib/#history
+> `fastplotlib` and `pygfx` are fast evolving projects, the version available through pip might be outdated, you will need to follow the "For developers" instructions below if you want the latest features. You can find the release history here: https://github.com/fastplotlib/fastplotlib/releases
 
 ### For developers
+
+Make sure you have [git-lfs](https://github.com/git-lfs/git-lfs#installing) installed.
+
 ```bash
 git clone https://github.com/fastplotlib/fastplotlib.git
 cd fastplotlib
@@ -88,16 +89,20 @@ cd fastplotlib
 pip install -e ".[notebook,docs,tests]"
 ```
 
+Se [Contributing](https://github.com/fastplotlib/fastplotlib?tab=readme-ov-file#heart-contributing) for more details on development
+
 # Examples
 
-> **Note**
-> 
-> `fastplotlib` and `pygfx` are fast evolving, you may require the latest `pygfx` and `fastplotlib` from github to use the examples in the main branch.
+> **Note:** `fastplotlib` and `pygfx` are fast evolving, you will probably require the latest `pygfx` and `fastplotlib` from github to use the examples in the main branch.
 
-Note that `fastplotlib` code is basically identical between desktop and notebook usage. The differences are:
+`fastplotlib` code is identical across notebook (`jupyter`), and desktop use with `Qt`/`PySide` or `glfw`. 
+
+Even if you do not intend to use notebooks with `fastplotlib`, the `quickstart.ipynb` notebook is currently the best way to get familiar with the API: https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks/quickstart.ipynb
+
+The specifics for running `fastplotlib` in different GUI frameworks are:
 - Running in `glfw` requires a `fastplotlib.run()` call (which is really just a `wgpu` `run()` call)
-- To use it in `Qt` you must encapsulate it within a `QApplication`, see `examples/qt`
-- Notebooks plots have ipywidget-based toolbars and widgets 😄
+- With `Qt` you can encapsulate it within a `QApplication`, see `examples/qt`
+- Notebooks plots have ipywidget-based toolbars and widgets. There are plans to move toward an identical in-canvas toolbar with UI elements across all supported frameworks 😄
 
 ### Desktop examples using `glfw` or `Qt`
 
@@ -120,7 +125,7 @@ Notebook examples are here:
 
 https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks
 
-**Start with `simple.ipynb`.**
+**Start with `quickstart.ipynb`.**
 
 Some of the examples require imageio:
 ```
@@ -135,7 +140,9 @@ Our SciPy 2023 talk walks through numerous demos: https://github.com/fastplotlib
 
 You will need a relatively modern GPU (newer integrated GPUs in CPUs are usually fine). Generally if your GPU is from 2017 or later it should be fine.
 
-For more information see: https://wgpu-py.readthedocs.io/en/stable/start.html#platform-requirements
+For more detailed information, such as use on cloud computing infrastructure, see: https://wgpu-py.readthedocs.io/en/stable/start.html#platform-requirements
+
+Some more information on GPUs is here: https://fastplotlib.readthedocs.io/en/latest/user_guide/gpu.html
 
 ### Windows:
 Vulkan drivers should be installed by default on Windows 11, but you will need to install your GPU manufacturer's driver package (Nvidia or AMD). If you have an integrated GPU within your CPU, you might still need to install a driver package too, check your CPU manufacturer's info.
@@ -162,7 +169,7 @@ sudo apt install llvm-dev libturbojpeg* libgl1-mesa-dev libgl1-mesa-glx libglapi
 ```
 
 ### Mac OSX:
-WGPU uses Metal instead of Vulkan on Mac. You will need at least Mac OSX 10.13. The OS should come with Metal pre-installed so you should be good to go!
+WGPU uses Metal instead of Vulkan on Mac. You will need at least Mac OSX 10.13. The OS should come with Metal pre-installed, so you should be good to go!
 
 # :heart: Contributing
 
