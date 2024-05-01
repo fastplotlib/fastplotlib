@@ -466,7 +466,10 @@ class PlotArea:
 
         self._add_or_insert_graphic(graphic=graphic, center=center, action="add")
 
-        graphic.position_z = len(self)
+        if self.camera.fov == 0:
+            # for orthographic positions stack objects along the z-axis
+            # for perspective projections we assume the user wants full 3D control
+            graphic.position_z = len(self)
 
     def insert_graphic(
         self,
@@ -505,10 +508,13 @@ class PlotArea:
             graphic=graphic, center=center, action="insert", index=index
         )
 
-        if z_position is None:
-            graphic.position_z = index
-        else:
-            graphic.position_z = z_position
+        if self.camera.fov == 0:
+            # for orthographic positions stack objects along the z-axis
+            # for perspective projections we assume the user wants full 3D control
+            if z_position is None:
+                graphic.position_z = index
+            else:
+                graphic.position_z = z_position
 
     def _add_or_insert_graphic(
         self,

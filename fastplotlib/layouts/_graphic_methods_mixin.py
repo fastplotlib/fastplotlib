@@ -178,7 +178,7 @@ class GraphicMethodsMixin:
     def add_line_collection(
         self,
         data: List[numpy.ndarray],
-        z_position: Union[Iterable[float], float] = None,
+        z_offset: Union[Iterable[float], float] = None,
         thickness: Union[float, Iterable[float]] = 2.0,
         colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
         alpha: float = 1.0,
@@ -199,8 +199,8 @@ class GraphicMethodsMixin:
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
 
-        z_position: Iterable of float or float, optional
-            | if ``float``, single position will be used for all lines
+        z_offset: Iterable of float or float, optional
+            | if ``float``, single offset will be used for all lines
             | if ``list`` of ``float``, each value will apply to the individual lines
 
         thickness: float or Iterable of float, default 2.0
@@ -251,7 +251,7 @@ class GraphicMethodsMixin:
         return self._create_graphic(
             LineCollection,
             data,
-            z_position,
+            z_offset,
             thickness,
             colors,
             alpha,
@@ -348,7 +348,7 @@ class GraphicMethodsMixin:
     def add_line_stack(
         self,
         data: List[numpy.ndarray],
-        z_position: Union[Iterable[float], float] = None,
+        z_offset: Union[Iterable[float], float] = None,
         thickness: Union[float, Iterable[float]] = 2.0,
         colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
         alpha: float = 1.0,
@@ -371,8 +371,8 @@ class GraphicMethodsMixin:
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
 
-        z_position: Iterable of float or float, optional
-            | if ``float``, single position will be used for all lines
+        z_offset: Iterable of float or float, optional
+            | if ``float``, single offset will be used for all lines
             | if ``list`` of ``float``, each value will apply to the individual lines
 
         thickness: float or Iterable of float, default 2.0
@@ -423,7 +423,7 @@ class GraphicMethodsMixin:
         return self._create_graphic(
             LineStack,
             data,
-            z_position,
+            z_offset,
             thickness,
             colors,
             alpha,
