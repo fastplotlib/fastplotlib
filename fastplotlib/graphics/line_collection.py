@@ -19,7 +19,7 @@ class LineCollection(GraphicCollection, Interaction):
     def __init__(
         self,
         data: List[np.ndarray],
-        z_position: Iterable[float] | float = None,
+        z_offset: Iterable[float | int] | float | int= None,
         thickness: float | Iterable[float] = 2.0,
         colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
         alpha: float = 1.0,
@@ -39,9 +39,9 @@ class LineCollection(GraphicCollection, Interaction):
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
 
-        z_position: Iterable of float or float, optional
-            | if ``float``, single position will be used for all lines
-            | if ``list`` of ``float``, each value will apply to the individual lines
+        z_offset: Iterable of float or float, optional
+            | if ``float`` | ``int``, single offset will be used for all lines
+            | if ``list`` of ``float`` | ``int``, each value will apply to the individual lines
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -90,8 +90,8 @@ class LineCollection(GraphicCollection, Interaction):
 
         super().__init__(name)
 
-        if not isinstance(z_position, float) and z_position is not None:
-            if len(data) != len(z_position):
+        if not isinstance(z_offset, (float, int)) and z_offset is not None:
+            if len(data) != len(z_offset):
                 raise ValueError(
                     "z_position must be a single float or an iterable with same length as data"
                 )
@@ -178,10 +178,10 @@ class LineCollection(GraphicCollection, Interaction):
         self._set_world_object(pygfx.Group())
 
         for i, d in enumerate(data):
-            if isinstance(z_position, list):
-                _z = z_position[i]
+            if isinstance(z_offset, list):
+                _z = z_offset[i]
             else:
-                _z = 1.0
+                _z = z_offset
 
             if isinstance(thickness, list):
                 _s = thickness[i]
@@ -478,7 +478,7 @@ class LineStack(LineCollection):
     def __init__(
         self,
         data: List[np.ndarray],
-        z_position: Iterable[float] | float = None,
+        z_offset: Iterable[float] | float = None,
         thickness: float | Iterable[float] = 2.0,
         colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
         alpha: float = 1.0,
@@ -500,8 +500,8 @@ class LineStack(LineCollection):
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
 
-        z_position: Iterable of float or float, optional
-            | if ``float``, single position will be used for all lines
+        z_offset: Iterable of float or float, optional
+            | if ``float``, single offset will be used for all lines
             | if ``list`` of ``float``, each value will apply to the individual lines
 
         thickness: float or Iterable of float, default 2.0
@@ -550,7 +550,7 @@ class LineStack(LineCollection):
         """
         super().__init__(
             data=data,
-            z_position=z_position,
+            z_offset=z_offset,
             thickness=thickness,
             colors=colors,
             alpha=alpha,
