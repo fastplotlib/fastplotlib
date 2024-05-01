@@ -19,7 +19,7 @@ class LineCollection(GraphicCollection, Interaction):
     def __init__(
         self,
         data: List[np.ndarray],
-        z_offset: Iterable[float | int] | float | int= None,
+        z_offset: Iterable[float | int] | float | int = None,
         thickness: float | Iterable[float] = 2.0,
         colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
         alpha: float = 1.0,
