@@ -235,30 +235,23 @@ class Figure:
                 # `create_controller()` will auto-determine controller for each subplot based on defaults
                 controller_types = np.array(["default"] * len(self)).reshape(self.shape)
 
-            elif isinstance(controller_types, str):
-                if controller_types not in valid_controller_types.keys():
-                    raise ValueError(
-                        f"invalid controller_types argument, you may pass either a single controller type as a str, or an"
-                        f"iterable of controller types from the selection: {valid_controller_types.keys()}"
-                    )
-
             # valid controller types
+            if isinstance(controller_types, str):
+                controller_types = [[controller_types]]
+
             types_flat = list(chain(*controller_types))
             # str controller_type or pygfx instances
             valid_str = list(valid_controller_types.keys()) + ["default"]
-            valid_instances = tuple(valid_controller_types.values())
 
             # make sure each controller type is valid
             for controller_type in types_flat:
                 if controller_type is None:
                     continue
 
-                if (controller_type not in valid_str) and (
-                    not isinstance(controller_type, valid_instances)
-                ):
+                if controller_type not in valid_str:
                     raise ValueError(
-                        f"You have passed an invalid controller type, valid controller_types arguments are:\n"
-                        f"{valid_str} or instances of {[c.__name__ for c in valid_instances]}"
+                        f"You have passed the invalid `controller_type`: {controller_type}. "
+                        f"Valid `controller_types` arguments are:\n {valid_str}"
                     )
 
             controller_types: np.ndarray[pygfx.Controller] = np.asarray(
