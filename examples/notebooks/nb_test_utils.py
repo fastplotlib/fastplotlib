@@ -21,6 +21,13 @@ TOLERANCE = 0.025
 # store all the failures to allow the nb to proceed to test other examples
 FAILURES = list()
 
+if "FASTPLOTLIB_NB_TESTS" not in os.environ.keys():
+    TESTING = False
+
+else:
+    if os.environ["FASTPLOTLIB_NB_TESTS"] == "1":
+        TESTING = True
+
 
 # TODO: consolidate testing functions into one module so we don't have this separate one for notebooks
 
@@ -83,18 +90,8 @@ def normalize_image(img):
     return img
 
 
-def _run_tests():
-    if "FASTPLOTLIB_NB_TESTS" not in os.environ.keys():
-        return False
-
-    if os.environ["FASTPLOTLIB_NB_TESTS"] == "1":
-        return True
-
-    return False
-
-
 def plot_test(name, fig: fpl.Figure):
-    if not _run_tests():
+    if not TESTING:
         return
 
     snapshot = fig.canvas.snapshot()
@@ -157,7 +154,7 @@ def update_diffs(name, is_similar, img, ground_truth):
 
 
 def notebook_finished():
-    if not _run_tests():
+    if not TESTING:
         return
 
     if len(FAILURES) > 0:
