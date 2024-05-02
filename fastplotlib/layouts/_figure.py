@@ -12,6 +12,7 @@ from warnings import warn
 import pygfx
 
 from wgpu.gui import WgpuCanvasBase
+from wgpu.gui.base import log_exception
 
 from ._video_writer import VideoWriterAV
 from ._utils import make_canvas_and_renderer, create_controller, create_camera
@@ -514,16 +515,24 @@ class Figure:
     def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:
             try:
-                if len(getfullargspec(fn).args) > 0:
-                    fn(self)
-                else:
-                    fn()
+                args = getfullargspec(fn).args
             except (ValueError, TypeError):
                 warn(
                     f"Could not resolve argspec of {self.__class__.__name__} animation function: {fn}, "
                     f"calling it without arguments."
                 )
-                fn()
+                args = []
+
+            if len(args) > 0:
+                if args[0] == "self" and not len(args) > 1:
+                    with log_exception(f"Animation Error in {fn}"):
+                        fn()
+                else:
+                    with log_exception(f"Animation Error in {fn}"):
+                        fn(self)
+            else:
+                with log_exception(f"Animation Error in {fn}"):
+                    fn()
 
     def add_animations(
         self,

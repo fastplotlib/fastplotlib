@@ -8,7 +8,9 @@ import numpy as np
 
 import pygfx
 from pylinalg import vec_transform, vec_unproject
+
 from wgpu.gui import WgpuCanvasBase
+from wgpu.gui.base import log_exception
 
 from ._utils import create_controller
 from ..graphics._base import Graphic
@@ -374,20 +376,23 @@ class PlotArea:
         for fn in funcs:
             try:
                 args = getfullargspec(fn).args
-
-                if len(args) > 0:
-                    if args[0] == "self" and not len(args) > 1:
-                        fn()
-                    else:
-                        fn(self)
-                else:
-                    fn()
             except (ValueError, TypeError):
                 warn(
                     f"Could not resolve argspec of {self.__class__.__name__} animation function: {fn}, "
                     f"calling it without arguments."
                 )
-                fn()
+                args = []
+
+            if len(args) > 0:
+                if args[0] == "self" and not len(args) > 1:
+                    with log_exception(f"Animation Error in {fn}"):
+                        fn()
+                else:
+                    with log_exception(f"Animation Error in {fn}"):
+                        fn(self)
+            else:
+                with log_exception(f"Animation Error in {fn}"):
+                    fn()
 
     def add_animations(
         self,
