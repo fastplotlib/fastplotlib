@@ -39,6 +39,7 @@ class ColorFeature(BufferManager):
         colors,
         n_colors: int,
         alpha: float = None,
+        isolated_buffer: bool = True,
     ):
         """
         ColorFeature
@@ -118,17 +119,11 @@ class ColorFeature(BufferManager):
         super().__init__(parent, data, collection_index=collection_index)
 
     def __setitem__(self, key, value):
-        # parse numerical slice indices
-        if isinstance(key, slice):
-            _key = cleanup_slice(key, self._upper_bound)
-            indices = range(_key.start, _key.stop, _key.step)
-
-        # or single numerical index
-        elif isinstance(key, (int, np.integer)):
-            key = cleanup_slice(key, self._upper_bound)
-            indices = [key]
+        if isinstance(key, (int, np.ndarray, tuple, slice, range)):
+            key = self.cleanup_key(key)
 
         elif isinstance(key, tuple):
+            # directly setting RGBA values on every datapoint
             if not isinstance(value, (float, int, np.ndarray)):
                 raise ValueError(
                     "If using multiple-fancy indexing for color, you can only set numerical"
@@ -144,26 +139,20 @@ class ColorFeature(BufferManager):
             self.buffer.data[key] = value
 
             # update range
-            # first slice obj is going to be the indexing so use key[0]
+            # first slice obj is going to be the datapoints to modify so use key[0]
             # key[1] is going to be RGBA so get rid of it to pass to _update_range
-            # _key = cleanup_slice(key[0], self._upper_bound)
+            key = self.cleanup_key(key[0])
             self._update_range(key)
+
             self._feature_changed(key, value)
             return
-
-        elif isinstance(key, np.ndarray):
-            key = cleanup_array_slice(key, self._upper_bound)
-            if key is None:
-                return
-
-            indices = key
 
         else:
             raise TypeError(
                 "Graphic features only support integer and numerical fancy indexing"
             )
 
-        new_data_size = len(indices)
+        new_data_size = len(key)
 
         if not isinstance(value, np.ndarray):
             color = np.array(pygfx.Color(value))  # pygfx color parser
@@ -199,13 +188,13 @@ class ColorFeature(BufferManager):
                     "numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)"
                 )
 
+        else:
+            raise TypeError
+
         self.buffer.data[key] = new_colors
 
         self._update_range(key)
         self._feature_changed(key, new_colors)
-
-    def _update_range(self, key):
-        self._update_range_indices(key)
 
     def _feature_changed(self, key, new_data):
         key = cleanup_slice(key, self._upper_bound)

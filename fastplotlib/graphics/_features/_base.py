@@ -209,13 +209,88 @@ class BufferManager(GraphicFeature):
     def buffer(self) -> pygfx.Buffer | pygfx.Texture:
         return self._buffer
 
+    def cleanup_key(self, key: int | np.ndarray[int, bool] | slice | tuple[slice, ...]) -> int | np.ndarray | range:
+        """
+        Cleanup slice indices for setitem, returns positive indices. Converts negative indices to positive if necessary.
+
+        Returns a cleaned up key corresponding to only the first dimension.
+        """
+        upper_bound = self.value.shape[0]
+
+        if isinstance(key, int):
+            if abs(key) > upper_bound:  # absolute value in case negative index
+                raise IndexError(f"key value: {key} out of range for dimension with size: {upper_bound}")
+            return [key]
+
+        elif isinstance(key, np.ndarray):
+            if key.ndim > 1:
+                raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing")
+
+            # if boolean array convert to integer array of indices
+            if key.dtype == bool:
+                key = np.nonzero(key)[0]
+
+            if key.size < 1:
+                return None
+
+            # make sure indices within bounds of feature buffer range
+            if key[-1] > upper_bound:
+                raise IndexError(
+                    f"Index: `{key[-1]}` out of bounds for feature array of size: `{upper_bound}`"
+                )
+
+            # make sure indices are integers
+            if np.issubdtype(key.dtype, np.integer):
+                return key
+
+            raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing graphic features")
+
+        elif isinstance(key, tuple):
+            if isinstance(key[0], slice):
+                key = key[0]
+            else:
+                raise TypeError
+
+        if not isinstance(key, (slice, range)):
+            raise TypeError("Must pass slice or int object")
+
+        start = key.start if key.start is not None else 0
+        stop = key.stop if key.stop is not None else self.value.shape[0]
+        # absolute value of the step in case it's negative
+        # since we convert start and stop to be positive below it is fine for step to be converted to positive
+        step = abs(key.step) if key.step is not None else 1
+
+        # modulus in case of negative indices
+        start %= upper_bound
+        stop %= upper_bound
+
+        if start > stop:
+            raise ValueError("start index greater than stop index")
+
+        return range(start, stop, step)
+
     def __getitem__(self, item):
         return self.buffer.data[item]
 
     def __setitem__(self, key, value):
         raise NotImplementedError
 
-    def _update_range(self, offset, size):
+    def _update_range(self, key):
+        # assumes key is already cleaned up
+        if isinstance(key, range):
+            offset = key.start
+            size = key.stop - key.start
+
+        elif isinstance(key, np.ndarray):
+            offset = key.min()
+            size = key.max() - offset
+
+        elif isinstance(key, int):
+            offset = key
+            size = 1
+        else:
+            raise TypeError
+
         self.buffer.update_range(offset=offset, size=size)
 
     def __repr__(self):
@@ -224,7 +299,7 @@ class BufferManager(GraphicFeature):
 
 
 class GraphicProperty:
-    def __init__(self, name, collection_index: int = None):
+    def __init__(self, name):
         self.name = name
 
     def _get_feature(self, instance):
@@ -238,33 +313,6 @@ class GraphicProperty:
         feature = self._get_feature(obj)
         feature[:] = value
 
-
-def parse_colors(value, n):
-    """parse colors using pygfx and return RGBA array for each vertex"""
-    if isinstance(value, str):
-        return np.array([pygfx.Color(value)] * n)
-
-    return value
-
-
-def parse_colors(key, value, n_colors, max_n_colors):
-    """
-
-    Parameters
-    ----------
-    key: slice
-
-    value
-
-    n_colors
-
-    max_n_colors: basically data.shape[0]
-
-    Returns
-    -------
-
-    """
-    pass
 
 
 class ColorFeature(BufferManager):
@@ -291,166 +339,3 @@ class ColorFeature(BufferManager):
         self.buffer.data[key] = colors
 
         self._update_range(key.start, key.stop - key.start)
-
-
-def cleanup_slice(key: int | slice, upper_bound) -> slice | int:
-    """
-
-    If the key in an `int`, it just returns it. Otherwise,
-    it parses it and removes the `None` vals and replaces
-    them with corresponding values that can be used to
-    create a `range`, get `len` etc.
-
-    Parameters
-    ----------
-    key
-    upper_bound
-
-    Returns
-    -------
-
-    """
-    if isinstance(key, int):
-        return key
-
-    if isinstance(key, np.ndarray):
-        return cleanup_array_slice(key, upper_bound)
-
-    if isinstance(key, tuple):
-        # if tuple of slice we only need the first obj
-        # since the first obj is the datapoint indices
-        if isinstance(key[0], slice):
-            key = key[0]
-        else:
-            raise TypeError("Tuple slicing must have slice object in first position")
-
-    if not isinstance(key, slice):
-        raise TypeError("Must pass slice or int object")
-
-    start = key.start
-    stop = key.stop
-    step = key.step
-    for attr in [start, stop, step]:
-        if attr is None:
-            continue
-        if attr < 0:
-            raise IndexError("Negative indexing not supported.")
-
-    if start is None:
-        start = 0
-
-    if stop is None:
-        stop = upper_bound
-
-    elif stop > upper_bound:
-        raise IndexError(
-            f"Index: `{stop}` out of bounds for feature array of size: `{upper_bound}`"
-        )
-
-    step = key.step
-    if step is None:
-        step = 1
-
-    return slice(start, stop, step)
-
-
-def cleanup_array_slice(key: np.ndarray, upper_bound) -> np.darray | None:
-    """
-    Cleanup numpy array used for fancy indexing, make sure key[-1] <= upper_bound.
-
-    Returns None if nothing to change.
-
-    Parameters
-    ----------
-    key: np.ndarray
-        integer or boolean array
-
-    upper_bound
-
-    Returns
-    -------
-    np.ndarray
-        integer indexing array
-
-    """
-
-    if key.ndim > 1:
-        raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing")
-
-    # if boolean array convert to integer array of indices
-    if key.dtype == bool:
-        key = np.nonzero(key)[0]
-
-    if key.size < 1:
-        return None
-
-    # make sure indices within bounds of feature buffer range
-    if key[-1] > upper_bound:
-        raise IndexError(
-            f"Index: `{key[-1]}` out of bounds for feature array of size: `{upper_bound}`"
-        )
-
-    # make sure indices are integers
-    if np.issubdtype(key.dtype, np.integer):
-        return key
-
-    raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing")
-
-
-class GraphicFeatureIndexable(GraphicFeature):
-    """An indexable Graphic Feature, colors, data, sizes etc."""
-
-    def _set(self, value):
-        value = self._parse_set_value(value)
-        self[:] = value
-
-    @abstractmethod
-    def __getitem__(self, item):
-        pass
-
-    @abstractmethod
-    def __setitem__(self, key, value):
-        pass
-
-    @abstractmethod
-    def _update_range(self, key):
-        pass
-
-    @property
-    @abstractmethod
-    def buffer(self) -> pygfx.Buffer | pygfx.Texture:
-        """Underlying buffer for this feature"""
-        pass
-
-    @property
-    def _upper_bound(self) -> int:
-        return self._data.shape[0]
-
-    def _update_range_indices(self, key):
-        """Currently used by colors and positions data"""
-        if not isinstance(key, np.ndarray):
-            key = cleanup_slice(key, self._upper_bound)
-
-        if isinstance(key, int):
-            self.buffer.update_range(key, size=1)
-            return
-
-        # else if it's a slice obj
-        if isinstance(key, slice):
-            if key.step == 1:  # we cleaned up the slice obj so step of None becomes 1
-                # update range according to size using the offset
-                self.buffer.update_range(offset=key.start, size=key.stop - key.start)
-
-            else:
-                step = key.step
-                # convert slice to indices
-                ixs = range(key.start, key.stop, step)
-                for ix in ixs:
-                    self.buffer.update_range(ix, size=1)
-
-        # TODO: See how efficient this is with large indexing
-        elif isinstance(key, np.ndarray):
-            self.buffer.update_range()
-
-        else:
-            raise TypeError("must pass int or slice to update range")
