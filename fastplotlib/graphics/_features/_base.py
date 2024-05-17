@@ -80,9 +80,10 @@ class GraphicFeature:
     def __init__(self, **kwargs):
         self._event_handlers = list()
         self._block_events = False
+        self.collection_index: int = None
 
     @property
-    def data(self) -> Any:
+    def value(self) -> Any:
         raise NotImplemented
 
     def block_events(self, val: bool):
@@ -99,7 +100,7 @@ class GraphicFeature:
 
     def add_event_handler(self, handler: callable):
         """
-        Add an event handler. All added event handlers are called when this feature changes.
+        Add an event handler. All added event handlers are calledcollection_ind when this feature changes.
 
         The ``handler`` can optionally accept a :class:`.FeatureEvent` as the first and only argument.
         The ``FeatureEvent`` only has 2 attributes, ``type`` which denotes the type of event
@@ -201,7 +202,7 @@ class BufferManager(GraphicFeature):
         self._event_handlers: list[callable] = list()
 
     @property
-    def data(self) -> NDArray:
+    def value(self) -> NDArray:
         return self.buffer.data
 
     @property
@@ -219,7 +220,23 @@ class BufferManager(GraphicFeature):
 
     def __repr__(self):
         return f"{self.__class__.__name__} buffer data:\n" \
-               f"{self.data.__repr__()}"
+               f"{self.value.__repr__()}"
+
+
+class GraphicProperty:
+    def __init__(self, name, collection_index: int = None):
+        self.name = name
+
+    def _get_feature(self, instance):
+        feature: GraphicFeature = getattr(instance, f"_{self.name}")
+        return feature
+
+    def __get__(self, instance, owner):
+        return self._get_feature(instance)
+
+    def __set__(self, obj, value):
+        feature = self._get_feature(obj)
+        feature[:] = value
 
 
 def parse_colors(value, n):
@@ -265,7 +282,7 @@ class ColorFeature(BufferManager):
     def __setitem__(self, key, value):
         if isinstance(value, BufferManager):
             # trying to set feature from another feature instance
-            value = value.data
+            value = value.value
 
         key = self.cleanup_slice(key)
 

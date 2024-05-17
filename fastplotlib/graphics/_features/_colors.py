@@ -10,14 +10,14 @@ from ...utils import (
 )
 from ._base import (
     GraphicFeature,
-    GraphicFeatureIndexable,
+    BufferManager,
     cleanup_slice,
     FeatureEvent,
     cleanup_array_slice,
 )
 
 
-class ColorFeature(GraphicFeatureIndexable):
+class ColorFeature(BufferManager):
     """
     Manages the color buffer for :class:`LineGraphic` or :class:`ScatterGraphic`
 
@@ -34,20 +34,11 @@ class ColorFeature(GraphicFeatureIndexable):
 
     """
 
-    @property
-    def buffer(self) -> pygfx.Buffer:
-        return self._parent.world_object.geometry.colors
-
-    def __getitem__(self, item):
-        return self.buffer.data[item]
-
     def __init__(
         self,
-        parent,
         colors,
         n_colors: int,
-        alpha: float = 1.0,
-        collection_index: int = None,
+        alpha: float = None,
     ):
         """
         ColorFeature
