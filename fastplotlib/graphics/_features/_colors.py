@@ -4,17 +4,15 @@ import pygfx
 from ...utils import (
     make_colors,
     get_cmap_texture,
-    make_pygfx_colors,
     parse_cmap_values,
     quick_min_max,
 )
 from ._base import (
     GraphicFeature,
     BufferManager,
-    cleanup_slice,
     FeatureEvent,
-    cleanup_array_slice,
 )
+from .utils import parse_colors
 
 
 class ColorFeature(BufferManager):
@@ -59,64 +57,9 @@ class ColorFeature(BufferManager):
             alpha value for the colors
 
         """
-        # if provided as a numpy array of str
-        if isinstance(colors, np.ndarray):
-            if colors.dtype.kind in ["U", "S"]:
-                colors = colors.tolist()
-        # if the color is provided as a numpy array
-        if isinstance(colors, np.ndarray):
-            if colors.shape == (4,):  # single RGBA array
-                data = np.repeat(np.array([colors]), n_colors, axis=0)
-            # else assume it's already a stack of RGBA arrays, keep this directly as the data
-            elif colors.ndim == 2:
-                if colors.shape[1] != 4 and colors.shape[0] != n_colors:
-                    raise ValueError(
-                        "Valid array color arguments must be a single RGBA array or a stack of "
-                        "RGBA arrays for each datapoint in the shape [n_datapoints, 4]"
-                    )
-                data = colors
-            else:
-                raise ValueError(
-                    "Valid array color arguments must be a single RGBA array or a stack of "
-                    "RGBA arrays for each datapoint in the shape [n_datapoints, 4]"
-                )
-
-        # if the color is provided as an iterable
-        elif isinstance(colors, (list, tuple, np.ndarray)):
-            # if iterable of str
-            if all([isinstance(val, str) for val in colors]):
-                if not len(colors) == n_colors:
-                    raise ValueError(
-                        f"Valid iterable color arguments must be a `tuple` or `list` of `str` "
-                        f"where the length of the iterable is the same as the number of datapoints."
-                    )
-
-                data = np.vstack([np.array(pygfx.Color(c)) for c in colors])
-
-            # if it's a single RGBA array as a tuple/list
-            elif len(colors) == 4:
-                c = pygfx.Color(colors)
-                data = np.repeat(np.array([c]), n_colors, axis=0)
-
-            else:
-                raise ValueError(
-                    f"Valid iterable color arguments must be a `tuple` or `list` representing RGBA values or "
-                    f"an iterable of `str` with the same length as the number of datapoints."
-                )
-        elif isinstance(colors, str):
-            if colors == "random":
-                data = np.random.rand(n_colors, 4)
-                data[:, -1] = alpha
-            else:
-                data = make_pygfx_colors(colors, n_colors)
-        else:
-            # assume it's a single color, use pygfx.Color to parse it
-            data = make_pygfx_colors(colors, n_colors)
-
-        if alpha != 1.0:
-            data[:, -1] = alpha
-
-        super().__init__(parent, data, collection_index=collection_index)
+        data = parse_colors(colors, n_colors, alpha)
+        
+        super().__init__(data=data, isolated_buffer=isolated_buffer)
 
     def __setitem__(self, key, value):
         if isinstance(key, (int, np.ndarray, tuple, slice, range)):
@@ -194,7 +137,7 @@ class ColorFeature(BufferManager):
         self.buffer.data[key] = new_colors
 
         self._update_range(key)
-        self._feature_changed(key, new_colors)
+        # self._feature_changed(key, new_colors)
 
     def _feature_changed(self, key, new_data):
         key = cleanup_slice(key, self._upper_bound)

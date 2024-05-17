@@ -5,30 +5,20 @@ import numpy as np
 import pygfx
 
 from ._base import (
-    GraphicFeatureIndexable,
-    cleanup_slice,
+    BufferManager,
     FeatureEvent,
     to_gpu_supported_dtype,
-    cleanup_array_slice,
 )
 
 
-class PointsDataFeature(GraphicFeatureIndexable):
+class PointsDataFeature(BufferManager):
     """
     Access to the vertex buffer data shown in the graphic.
     Supports fancy indexing if the data array also supports it.
     """
 
-    def __init__(self, parent, data: Any, collection_index: int = None):
-        data = self._fix_data(data, parent)
-        super().__init__(parent, data, collection_index=collection_index)
-
-    @property
-    def buffer(self) -> pygfx.Buffer:
-        return self._parent.world_object.geometry.positions
-
-    def __getitem__(self, item):
-        return self.buffer.data[item]
+    def __init__(self, data: Any, isolated_buffer: bool = True):
+        super().__init__(data, isolated_buffer=isolated_buffer)
 
     def _fix_data(self, data, parent):
         graphic_type = parent.__class__.__name__
@@ -56,9 +46,7 @@ class PointsDataFeature(GraphicFeatureIndexable):
         return data
 
     def __setitem__(self, key, value):
-        if isinstance(key, np.ndarray):
-            # make sure 1D array of int or boolean
-            key = cleanup_array_slice(key, self._upper_bound)
+        key = self.cleanup_key(key)
 
         # put data into right shape if they're only indexing datapoints
         if isinstance(key, (slice, int, np.ndarray, np.integer)):
@@ -69,11 +57,8 @@ class PointsDataFeature(GraphicFeatureIndexable):
         self.buffer.data[key] = value
         self._update_range(key)
         # avoid creating dicts constantly if there are no events to handle
-        if len(self._event_handlers) > 0:
-            self._feature_changed(key, value)
-
-    def _update_range(self, key):
-        self._update_range_indices(key)
+        # if len(self._event_handlers) > 0:
+        #     self._feature_changed(key, value)
 
     def _feature_changed(self, key, new_data):
         if key is not None:
