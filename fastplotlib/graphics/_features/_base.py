@@ -231,7 +231,7 @@ class BufferManager(GraphicFeature):
                 key = np.nonzero(key)[0]
 
             if key.size < 1:
-                return None
+                return np.array([], dtype=np.int64)
 
             # make sure indices within bounds of feature buffer range
             if key[-1] > upper_bound:
@@ -281,31 +281,54 @@ class BufferManager(GraphicFeature):
     def __setitem__(self, key, value):
         raise NotImplementedError
 
-    def _update_range(self, key):
-        # assumes key is already cleaned up
-        if isinstance(key, range):
-            offset = key.start
-            size = key.stop - key.start
+    def _update_range(self, key: int | slice | range | np.ndarray[int | bool] | tuple[slice, ...] | tuple[range, ...]):
+        """
+        Uses key from slicing to determine the offset and
+        size of the buffer to mark for upload to the GPU
+        """
+        upper_bound = self.value.shape[0]
 
-        elif isinstance(key, np.ndarray):
-            offset = key.min()
-            size = key.max() - offset
+        if isinstance(key, tuple):
+            # if multiple dims are sliced, we only need the key for
+            # the first dimension corresponding to n_datapoints
+            key: int | np.ndarray[int | bool] | range | slice = key[0]
 
-        elif isinstance(key, int):
+        if isinstance(key, int):
+            # simplest case
             offset = key
             size = 1
-        elif isinstance(key, tuple):
-            key: range | slice = key[0]
-            upper_bound = self.value.shape[0]
 
+        elif isinstance(key, (slice, range)):
+            # first dimension, corresponding to n_datapoints, sliced
             offset = key.start if key.start is not None else 0
-            # size is number of points so do not subtract 1 from upper bound like in cleanup_key for indexing
+
+            # size is number of points so do not subtract 1 from upper bound since this is not for indexing
             stop = key.stop if key.stop is not None else upper_bound
 
-            offset %= upper_bound
-            stop %= upper_bound + 1
+            # add 1 to upper bound since we want size not index
+            offset %= (upper_bound + 1)
+            stop %= (upper_bound + 1)
 
             size = stop - offset
+
+        elif isinstance(key, np.ndarray):
+            if key.dtype == bool:
+                # convert bool mask to integer indices
+                key = np.nonzero(key)[0]
+
+            if key.size < 1:
+                # nothing to update
+                return
+
+            if not np.issubdtype(key.dtype, np.integer):
+                # fancy indexing doesn't make sense with non-integer types
+                raise TypeError(key)
+
+            # convert any negative integer indices to positive indices
+            key %= (upper_bound + 1)
+
+            offset = key.min()
+            size = key.max() - offset + 1
 
         else:
             raise TypeError(key)

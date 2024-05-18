@@ -41,16 +41,12 @@ class PointsDataFeature(BufferManager):
         return to_gpu_supported_dtype(data)
 
     def __setitem__(self, key, value):
-        key = self.cleanup_key(key)
-
-        # put data into right shape if they're only indexing datapoints
-        if isinstance(key, (slice, int, np.ndarray, np.integer)):
-            value = self._fix_data(value, self._parent)
-        # otherwise assume that they have the right shape
-        # numpy will throw errors if it can't broadcast
-
+        # directly use the key to slice the buffer
         self.buffer.data[key] = value
+        # _update_range handles parsing the key to
+        # determine offset and size for GPU upload
         self._update_range(key)
+
         # avoid creating dicts constantly if there are no events to handle
         # if len(self._event_handlers) > 0:
         #     self._feature_changed(key, value)
