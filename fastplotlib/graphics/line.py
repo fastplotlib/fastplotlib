@@ -7,12 +7,12 @@ import pygfx
 
 from ..utils import parse_cmap_values
 from ._base import Graphic, Interaction, PreviouslyModifiedData
-from ._features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
+from ._features import GraphicFeatureDescriptor, PointsDataFeature, ColorFeature#, CmapFeature, ThicknessFeature
 from .selectors import LinearRegionSelector, LinearSelector
 
 
 class LineGraphic(Graphic, Interaction):
-    feature_events = {"data", "colors", "cmap", "thickness", "present"}
+    features = {"data", "colors"}#, "cmap", "thickness", "present"}
 
     def __init__(
         self,
@@ -24,6 +24,7 @@ class LineGraphic(Graphic, Interaction):
         cmap_values: np.ndarray | Iterable = None,
         z_position: float = None,
         collection_index: int = None,
+        isolated_buffer: bool = True,
         *args,
         **kwargs,
     ):
@@ -64,6 +65,7 @@ class LineGraphic(Graphic, Interaction):
         Features
         --------
 
+
         **data**: :class:`.ImageDataFeature`
             Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
 
@@ -81,26 +83,24 @@ class LineGraphic(Graphic, Interaction):
 
         """
 
-        self.data = PointsDataFeature(self, data, collection_index=collection_index)
+        self._data = PointsDataFeature(data, isolated_buffer=isolated_buffer)
 
         if cmap is not None:
-            n_datapoints = self.data().shape[0]
+            n_datapoints = self._data.value.shape[0]
 
             colors = parse_cmap_values(
                 n_colors=n_datapoints, cmap_name=cmap, cmap_values=cmap_values
             )
 
-        self.colors = ColorFeature(
-            self,
+        self._colors = ColorFeature(
             colors,
-            n_colors=self.data().shape[0],
+            n_colors=self._data.value.shape[0],
             alpha=alpha,
-            collection_index=collection_index,
         )
 
-        self.cmap = CmapFeature(
-            self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
-        )
+        # self.cmap = CmapFeature(
+        #     self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
+        # )
 
         super().__init__(*args, **kwargs)
 
@@ -109,14 +109,12 @@ class LineGraphic(Graphic, Interaction):
         else:
             material = pygfx.LineMaterial
 
-        self.thickness = ThicknessFeature(self, thickness)
+        # self.thickness = ThicknessFeature(self, thickness)
 
         world_object: pygfx.Line = pygfx.Line(
             # self.data.feature_data because data is a Buffer
-            geometry=pygfx.Geometry(positions=self.data(), colors=self.colors()),
-            material=material(
-                thickness=self.thickness(), color_mode="vertex", pick_write=True
-            ),
+            geometry=pygfx.Geometry(positions=self._data.buffer, colors=self._colors.buffer),
+            material=material(thickness=thickness, color_mode="vertex"),
         )
 
         self._set_world_object(world_object)

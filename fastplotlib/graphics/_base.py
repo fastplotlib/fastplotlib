@@ -9,7 +9,7 @@ import pylinalg as la
 
 from pygfx import WorldObject
 
-from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable, Deleted
+from ._features import GraphicFeature, PresentFeature, BufferManager, GraphicFeatureDescriptor, Deleted
 
 
 HexStr: TypeAlias = str
@@ -49,12 +49,15 @@ class BaseGraphic:
 
 
 class Graphic(BaseGraphic):
-    feature_events = {}
+    features = {}
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         # all graphics give off a feature event when deleted
-        cls.feature_events = {*cls.feature_events, "deleted"}
+        cls.features = {*cls.features}#, "deleted"}
+
+        for f in cls.features:
+            setattr(cls, f, GraphicFeatureDescriptor(f))
 
     def __init__(
         self,
@@ -80,12 +83,12 @@ class Graphic(BaseGraphic):
         self.metadata = metadata
         self.collection_index = collection_index
         self.registered_callbacks = dict()
-        self.present = PresentFeature(parent=self)
+        # self.present = PresentFeature(parent=self)
 
         # store hex id str of Graphic instance mem location
         self._fpl_address: HexStr = hex(id(self))
 
-        self.deleted = Deleted(self, False)
+        # self.deleted = Deleted(self, False)
 
         self._plot_area = None
 
