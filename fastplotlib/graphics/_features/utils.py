@@ -2,6 +2,7 @@ import pygfx
 import numpy as np
 from typing import Iterable
 
+from ._base import to_gpu_supported_dtype
 from ...utils import make_pygfx_colors
 
 
@@ -85,4 +86,4 @@ def parse_colors(
         else:
             raise TypeError("if alpha is provided it must be of type `float`")
 
-    return data
+    return to_gpu_supported_dtype(data)

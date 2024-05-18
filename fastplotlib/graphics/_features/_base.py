@@ -186,7 +186,7 @@ class BufferManager(GraphicFeature):
         super().__init__()
         if isolated_buffer:
             # useful if data is read-only, example: memmaps
-            bdata = np.zeros(data.shape)
+            bdata = np.zeros(data.shape, dtype=data.dtype)
             bdata[:] = data[:]
         else:
             # user's input array is used as the buffer
@@ -209,7 +209,7 @@ class BufferManager(GraphicFeature):
     def buffer(self) -> pygfx.Buffer | pygfx.Texture:
         return self._buffer
 
-    def cleanup_key(self, key: int | np.ndarray[int, bool] | slice | tuple[slice, ...]) -> int | np.ndarray | range:
+    def cleanup_key(self, key: int | np.ndarray[int, bool] | slice | tuple[slice, ...]) -> int | np.ndarray | range | tuple[range, ...]:
         """
         Cleanup slice indices for setitem, returns positive indices. Converts negative indices to positive if necessary.
 
@@ -220,7 +220,7 @@ class BufferManager(GraphicFeature):
         if isinstance(key, int):
             if abs(key) > upper_bound:  # absolute value in case negative index
                 raise IndexError(f"key value: {key} out of range for dimension with size: {upper_bound}")
-            return [key]
+            return key
 
         elif isinstance(key, np.ndarray):
             if key.ndim > 1:
@@ -246,16 +246,22 @@ class BufferManager(GraphicFeature):
             raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing graphic features")
 
         elif isinstance(key, tuple):
-            if isinstance(key[0], slice):
-                key = key[0]
-            else:
-                raise TypeError
+            # multiple dimension slicing
+            if not all([isinstance(k, (int, slice, range, np.ndarray)) for k in key]):
+                raise TypeError(key)
+
+            cleaned_tuple = list()
+            # cleanup the key for each dim
+            for k in key:
+                cleaned_tuple.append(self.cleanup_key(k))
+
+            return key
 
         if not isinstance(key, (slice, range)):
             raise TypeError("Must pass slice or int object")
 
         start = key.start if key.start is not None else 0
-        stop = key.stop if key.stop is not None else self.value.shape[0]
+        stop = key.stop if key.stop is not None else self.value.shape[0] - 1
         # absolute value of the step in case it's negative
         # since we convert start and stop to be positive below it is fine for step to be converted to positive
         step = abs(key.step) if key.step is not None else 1
@@ -265,7 +271,7 @@ class BufferManager(GraphicFeature):
         stop %= upper_bound
 
         if start > stop:
-            raise ValueError("start index greater than stop index")
+            raise ValueError(f"start index: {start} greater than stop index: {stop}")
 
         return range(start, stop, step)
 
@@ -288,8 +294,21 @@ class BufferManager(GraphicFeature):
         elif isinstance(key, int):
             offset = key
             size = 1
+        elif isinstance(key, tuple):
+            key: range | slice = key[0]
+            upper_bound = self.value.shape[0]
+
+            offset = key.start if key.start is not None else 0
+            # size is number of points so do not subtract 1 from upper bound like in cleanup_key for indexing
+            stop = key.stop if key.stop is not None else upper_bound
+
+            offset %= upper_bound
+            stop %= upper_bound + 1
+
+            size = stop - offset
+
         else:
-            raise TypeError
+            raise TypeError(key)
 
         self.buffer.update_range(offset=offset, size=size)
 
@@ -298,7 +317,7 @@ class BufferManager(GraphicFeature):
                f"{self.value.__repr__()}"
 
 
-class GraphicProperty:
+class GraphicFeatureDescriptor:
     def __init__(self, name):
         self.name = name
 
@@ -312,30 +331,3 @@ class GraphicProperty:
     def __set__(self, obj, value):
         feature = self._get_feature(obj)
         feature[:] = value
-
-
-
-class ColorFeature(BufferManager):
-    """Manage color buffer for positions type objects"""
-
-    def __init__(self, data: str | np.ndarray, n_colors: int, isolated_buffer: bool):
-        if not isinstance(data, np.ndarray):
-            # isolated buffer is only useful when data is a numpy array
-            isolated_buffer = False
-
-        colors = parse_colors(data, n_colors)
-
-        super().__init__(colors, isolated_buffer)
-
-    def __setitem__(self, key, value):
-        if isinstance(value, BufferManager):
-            # trying to set feature from another feature instance
-            value = value.value
-
-        key = self.cleanup_slice(key)
-
-        colors = parse_colors(value, len(key))
-
-        self.buffer.data[key] = colors
-
-        self._update_range(key.start, key.stop - key.start)
