@@ -65,7 +65,7 @@ class ColorFeature(BufferManager):
         if isinstance(key, (int, np.ndarray, tuple, slice, range)):
             key = self.cleanup_key(key)
 
-        elif isinstance(key, tuple):
+        if isinstance(key, tuple):
             # directly setting RGBA values on every datapoint
             if not isinstance(value, (float, int, np.ndarray)):
                 raise ValueError(
