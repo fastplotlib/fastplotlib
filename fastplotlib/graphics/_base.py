@@ -56,6 +56,7 @@ class Graphic(BaseGraphic):
         # all graphics give off a feature event when deleted
         cls.features = {*cls.features}#, "deleted"}
 
+        # graphic feature class attributes
         for f in cls.features:
             setattr(cls, f, GraphicFeatureDescriptor(f))
 
@@ -180,15 +181,6 @@ class Graphic(BaseGraphic):
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
-
-    def __setattr__(self, key, value):
-        if hasattr(self, key):
-            attr = getattr(self, key)
-            if isinstance(attr, GraphicFeature):
-                attr._set(value)
-                return
-
-        super().__setattr__(key, value)
 
     def __repr__(self):
         rval = f"{self.__class__.__name__} @ {hex(id(self))}"
