@@ -209,79 +209,13 @@ class BufferManager(GraphicFeature):
     def buffer(self) -> pygfx.Buffer | pygfx.Texture:
         return self._buffer
 
-    def cleanup_key(self, key: int | np.ndarray[int, bool] | slice | tuple[slice, ...]) -> int | np.ndarray | range | tuple[range, ...]:
-        """
-        Cleanup slice indices for setitem, returns positive indices. Converts negative indices to positive if necessary.
-
-        Returns a cleaned up key corresponding to only the first dimension.
-        """
-        upper_bound = self.value.shape[0]
-
-        if isinstance(key, int):
-            if abs(key) > upper_bound:  # absolute value in case negative index
-                raise IndexError(f"key value: {key} out of range for dimension with size: {upper_bound}")
-            return key
-
-        elif isinstance(key, np.ndarray):
-            if key.ndim > 1:
-                raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing")
-
-            # if boolean array convert to integer array of indices
-            if key.dtype == bool:
-                key = np.nonzero(key)[0]
-
-            if key.size < 1:
-                return np.array([], dtype=np.int64)
-
-            # make sure indices within bounds of feature buffer range
-            if key[-1] > upper_bound:
-                raise IndexError(
-                    f"Index: `{key[-1]}` out of bounds for feature array of size: `{upper_bound}`"
-                )
-
-            # make sure indices are integers
-            if np.issubdtype(key.dtype, np.integer):
-                return key
-
-            raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing graphic features")
-
-        elif isinstance(key, tuple):
-            # multiple dimension slicing
-            if not all([isinstance(k, (int, slice, range, np.ndarray)) for k in key]):
-                raise TypeError(key)
-
-            cleaned_tuple = list()
-            # cleanup the key for each dim
-            for k in key:
-                cleaned_tuple.append(self.cleanup_key(k))
-
-            return key
-
-        if not isinstance(key, (slice, range)):
-            raise TypeError("Must pass slice or int object")
-
-        start = key.start if key.start is not None else 0
-        stop = key.stop if key.stop is not None else self.value.shape[0] - 1
-        # absolute value of the step in case it's negative
-        # since we convert start and stop to be positive below it is fine for step to be converted to positive
-        step = abs(key.step) if key.step is not None else 1
-
-        # modulus in case of negative indices
-        start %= upper_bound
-        stop %= upper_bound
-
-        if start > stop:
-            raise ValueError(f"start index: {start} greater than stop index: {stop}")
-
-        return range(start, stop, step)
-
     def __getitem__(self, item):
         return self.buffer.data[item]
 
     def __setitem__(self, key, value):
         raise NotImplementedError
 
-    def _update_range(self, key: int | slice | np.ndarray[int | bool] | tuple[slice, ...]):
+    def _update_range(self, key: int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]):
         """
         Uses key from slicing to determine the offset and
         size of the buffer to mark for upload to the GPU
@@ -308,22 +242,23 @@ class BufferManager(GraphicFeature):
 
         elif isinstance(key, (np.ndarray, list)):
             if isinstance(key, list):
-                # convert to 1D array
+                # convert to array
                 key = np.array(key)
-                if not key.ndim == 1:
-                    raise TypeError(key)
+
+            if not key.ndim == 1:
+                raise TypeError(key)
 
             if key.dtype == bool:
                 # convert bool mask to integer indices
                 key = np.nonzero(key)[0]
 
-            if key.size < 1:
-                # nothing to update
-                return
-
             if not np.issubdtype(key.dtype, np.integer):
                 # fancy indexing doesn't make sense with non-integer types
                 raise TypeError(key)
+
+            if key.size < 1:
+                # nothing to update
+                return
 
             # convert any negative integer indices to positive indices
             key %= upper_bound
