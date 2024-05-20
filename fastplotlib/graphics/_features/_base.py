@@ -234,11 +234,23 @@ class BufferManager(GraphicFeature):
             size = 1
 
         elif isinstance(key, slice):
-            # parse slice to get offset
-            offset, stop, step = key.indices(upper_bound)
+            # parse slice
+            start, stop, step = key.indices(upper_bound)
 
-            # make range from slice to get size
-            size = len(range(offset, stop, step))
+            # account for backwards indexing
+            if (start > stop) and step < 0:
+                offset = stop
+            else:
+                offset = start
+
+            # slice.indices will give -1 if None is passed
+            # which just means 0 here since buffers do not
+            # use negative indexing
+            offset = max(0, offset)
+
+            # number of elements to upload
+            # this is indexing so do not add 1
+            size = abs(stop - start)
 
         elif isinstance(key, (np.ndarray, list)):
             if isinstance(key, list):
@@ -266,7 +278,9 @@ class BufferManager(GraphicFeature):
             # index of first element to upload
             offset = key.min()
 
-            # number of elements to upload, max - min + 1
+            # number of elements to upload
+            # add 1 because this is direct
+            # passing of indices, not a start:stop
             size = np.ptp(key) + 1
 
         else:

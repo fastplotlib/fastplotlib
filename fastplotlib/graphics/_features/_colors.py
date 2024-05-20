@@ -89,7 +89,11 @@ class ColorFeature(BufferManager):
 
             value = parse_colors(value, n_colors)
 
-        elif isinstance(key, np.ndarray):
+        elif isinstance(key, (np.ndarray, list)):
+            if isinstance(key, list):
+                # convert to array
+                key = np.array(key)
+
             # make sure it's 1D
             if not key.ndim == 1:
                 raise TypeError("If slicing colors with an array, it must be a 1D array")
