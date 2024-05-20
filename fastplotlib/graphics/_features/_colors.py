@@ -64,7 +64,7 @@ class ColorFeature(BufferManager):
     def __setitem__(
             self,
             key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
-            value: str | np.ndarray | tuple[float, float, float, float] | list[str]
+            value: str | np.ndarray | tuple[float, float, float, float] | list[str] | list[float] | int | float
     ):
         # if key is tuple assume they want to edit [n_points, RGBA] directly
         # if key is slice | range | int | np.ndarray, they are slicing only n_points, get n_points and parse colors
@@ -96,7 +96,7 @@ class ColorFeature(BufferManager):
 
             # make sure it's 1D
             if not key.ndim == 1:
-                raise TypeError("If slicing colors with an array, it must be a 1D array")
+                raise TypeError("If slicing colors with an array, it must be a 1D bool or int array")
 
             if key.dtype == bool:
                 # make sure len is same
@@ -108,7 +108,7 @@ class ColorFeature(BufferManager):
                 n_colors = key.size
 
             else:
-                raise TypeError
+                raise TypeError("If slicing colors with an array, it must be a 1D bool or int array")
 
             value = parse_colors(value, n_colors)
 
