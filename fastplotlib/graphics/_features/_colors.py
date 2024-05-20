@@ -63,7 +63,7 @@ class ColorFeature(BufferManager):
 
     def __setitem__(
             self,
-            key: int | slice | range | np.ndarray[int | bool] | tuple[slice, ...] | tuple[range, ...],
+            key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
             value: str | np.ndarray | tuple[float, float, float, float] | list[str]
     ):
         # if key is tuple assume they want to edit [n_points, RGBA] directly
@@ -81,10 +81,12 @@ class ColorFeature(BufferManager):
             n_colors = 1
             value = parse_colors(value, n_colors)
 
-        elif isinstance(key, (slice, range)):
+        elif isinstance(key, slice):
             # find n_colors by converting slice to range and then parse colors
-            key = range(key.start, key.stop, key.step)
-            n_colors = len(key)
+            start, stop, step = key.indices(self.value.shape[0])
+
+            n_colors = len(range(start, stop, step))
+
             value = parse_colors(value, n_colors)
 
         elif isinstance(key, np.ndarray):
@@ -135,10 +137,6 @@ class ColorFeature(BufferManager):
         event_data = FeatureEvent(type="colors", pick_info=pick_info)
 
         self._call_event_handlers(event_data)
-
-    def __repr__(self) -> str:
-        s = f"ColorsFeature for {self._parent}. Call `<graphic>.colors()` to get values."
-        return s
 
 
 # class CmapFeature(ColorFeature):

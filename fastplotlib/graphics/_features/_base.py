@@ -281,37 +281,38 @@ class BufferManager(GraphicFeature):
     def __setitem__(self, key, value):
         raise NotImplementedError
 
-    def _update_range(self, key: int | slice | range | np.ndarray[int | bool] | tuple[slice, ...] | tuple[range, ...]):
+    def _update_range(self, key: int | slice | np.ndarray[int | bool] | tuple[slice, ...]):
         """
         Uses key from slicing to determine the offset and
         size of the buffer to mark for upload to the GPU
         """
+        # number of elements in the buffer
         upper_bound = self.value.shape[0]
 
         if isinstance(key, tuple):
             # if multiple dims are sliced, we only need the key for
             # the first dimension corresponding to n_datapoints
-            key: int | np.ndarray[int | bool] | range | slice = key[0]
+            key: int | np.ndarray[int | bool] | slice = key[0]
 
         if isinstance(key, int):
             # simplest case
             offset = key
             size = 1
 
-        elif isinstance(key, (slice, range)):
-            # first dimension, corresponding to n_datapoints, sliced
-            offset = key.start if key.start is not None else 0
+        elif isinstance(key, slice):
+            # parse slice to get offset
+            offset, stop, step = key.indices(upper_bound)
 
-            # size is number of points so do not subtract 1 from upper bound since this is not for indexing
-            stop = key.stop if key.stop is not None else upper_bound
+            # make range from slice to get size
+            size = len(range(offset, stop, step))
 
-            # add 1 to upper bound since we want size not index
-            offset %= (upper_bound + 1)
-            stop %= (upper_bound + 1)
+        elif isinstance(key, (np.ndarray, list)):
+            if isinstance(key, list):
+                # convert to 1D array
+                key = np.array(key)
+                if not key.ndim == 1:
+                    raise TypeError(key)
 
-            size = stop - offset
-
-        elif isinstance(key, np.ndarray):
             if key.dtype == bool:
                 # convert bool mask to integer indices
                 key = np.nonzero(key)[0]
@@ -325,10 +326,13 @@ class BufferManager(GraphicFeature):
                 raise TypeError(key)
 
             # convert any negative integer indices to positive indices
-            key %= (upper_bound + 1)
+            key %= upper_bound
 
+            # index of first element to upload
             offset = key.min()
-            size = key.max() - offset + 1
+
+            # number of elements to upload, max - min + 1
+            size = np.ptp(key) + 1
 
         else:
             raise TypeError(key)
