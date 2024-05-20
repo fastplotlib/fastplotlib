@@ -5,8 +5,9 @@ from fastplotlib.graphics._features import ColorFeature, PointsDataFeature
 from fastplotlib.graphics._features.utils import parse_colors
 
 
-def make_colors_buffer():
-    return ColorFeature(colors="w", n_colors=10)
+def make_colors_buffer() -> ColorFeature:
+    colors = ColorFeature(colors="w", n_colors=10)
+    return colors
 
 
 def make_points_buffer():
@@ -16,8 +17,12 @@ def make_points_buffer():
 def test_int():
     # setting single points
     colors = make_colors_buffer()
+    # TODO: placeholder until I make a testing figure where we draw frames only on call
+    colors.buffer._gfx_pending_uploads.clear()
+
     colors[3] = "r"
     npt.assert_almost_equal(colors[3], [1., 0., 0., 1.])
+    assert colors.buffer._gfx_pending_uploads[-1] == (3, 1)
 
     colors[6] = [0., 1., 1., 1.]
     npt.assert_almost_equal(colors[6], [0., 1., 1., 1.])
@@ -35,8 +40,8 @@ def test_int():
 def test_tuple():
     # setting entire array manually
     colors = make_colors_buffer()
+
     colors[1, :] = 0.5
-    print(colors[1])
     npt.assert_almost_equal(colors[1], [0.5, 0.5, 0.5, 0.5])
 
     colors[1, 0] = 1
@@ -50,7 +55,12 @@ def test_tuple():
 
 
 def test_slice():
-    pass
+    # slicing only first dim
+    colors = make_colors_buffer()
+
+    colors[1:3] = "r"
+    npt.assert_almost_equal(colors[1:3], [0.5, 0.5, 0.5, 0.5])
+
 
 
 def test_array():
