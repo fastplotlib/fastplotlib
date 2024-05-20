@@ -40,7 +40,7 @@ class PointsDataFeature(BufferManager):
 
         return to_gpu_supported_dtype(data)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: int | slice | range | np.ndarray[int | bool] | tuple[slice, ...] | tuple[range, ...], value):
         # directly use the key to slice the buffer
         self.buffer.data[key] = value
         # _update_range handles parsing the key to
