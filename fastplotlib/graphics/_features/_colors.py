@@ -61,80 +61,55 @@ class ColorFeature(BufferManager):
         
         super().__init__(data=data, isolated_buffer=isolated_buffer)
 
-    def __setitem__(self, key, value):
-        if isinstance(key, (int, np.ndarray, tuple, slice, range)):
-            key = self.cleanup_key(key)
+    def __setitem__(
+            self,
+            key: int | slice | range | np.ndarray[int | bool] | tuple[slice, ...] | tuple[range, ...],
+            value: str | np.ndarray | tuple[float, float, float, float] | list[str]
+    ):
+        # if key is tuple assume they want to edit [n_points, RGBA] directly
+        # if key is slice | range | int | np.ndarray, they are slicing only n_points, get n_points and parse colors
 
         if isinstance(key, tuple):
-            # directly setting RGBA values on every datapoint
-            if not isinstance(value, (float, int, np.ndarray)):
-                raise ValueError(
-                    "If using multiple-fancy indexing for color, you can only set numerical"
-                    "values since this sets the RGBA array data directly."
+            # directly setting RGBA values, we do no parsing
+            if not isinstance(value, (int, float, np.ndarray)):
+                raise TypeError(
+                    "Can only set from int, float, or array to set colors directly by slicing the entire array"
                 )
 
-            if len(key) != 2:
-                raise ValueError(
-                    "fancy indexing for colors must be 2-dimension, i.e. [n_datapoints, RGBA]"
-                )
+        elif isinstance(key, int):
+            # set color of one point
+            n_colors = 1
+            value = parse_colors(value, n_colors)
 
-            # set the user passed data directly
-            self.buffer.data[key] = value
+        elif isinstance(key, (slice, range)):
+            # find n_colors by converting slice to range and then parse colors
+            key = range(key.start, key.stop, key.step)
+            n_colors = len(key)
+            value = parse_colors(value, n_colors)
 
-            # update range
-            # first slice obj is going to be the datapoints to modify so use key[0]
-            # key[1] is going to be RGBA so get rid of it to pass to _update_range
-            key = self.cleanup_key(key[0])
-            self._update_range(key)
+        elif isinstance(key, np.ndarray):
+            # make sure it's 1D
+            if not key.ndim == 1:
+                raise TypeError("If slicing colors with an array, it must be a 1D array")
 
-            self._feature_changed(key, value)
-            return
+            if key.dtype == bool:
+                # make sure len is same
+                if not key.size == self.buffer.data.shape[0]:
+                    raise IndexError
+                n_colors = np.count_nonzero(key)
 
-        else:
-            raise TypeError(
-                "Graphic features only support integer and numerical fancy indexing"
-            )
-
-        new_data_size = len(key)
-
-        if not isinstance(value, np.ndarray):
-            color = np.array(pygfx.Color(value))  # pygfx color parser
-            # make it of shape [n_colors_modify, 4]
-            new_colors = np.repeat(
-                np.array([color]).astype(np.float32), new_data_size, axis=0
-            )
-
-        # if already a numpy array
-        elif isinstance(value, np.ndarray):
-            # if a single color provided as numpy array
-            if value.shape == (4,):
-                new_colors = value.astype(np.float32)
-                # if there are more than 1 datapoint color to modify
-                if new_data_size > 1:
-                    new_colors = np.repeat(
-                        np.array([new_colors]).astype(np.float32), new_data_size, axis=0
-                    )
-
-            elif value.ndim == 2:
-                if value.shape[1] != 4 and value.shape[0] != new_data_size:
-                    raise ValueError(
-                        "numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)"
-                    )
-                # if there is a single datapoint to change color of but user has provided shape [1, 4]
-                if new_data_size == 1:
-                    new_colors = value.ravel().astype(np.float32)
-                else:
-                    new_colors = value.astype(np.float32)
+            elif np.issubdtype(key.dtype, np.integer):
+                n_colors = key.size
 
             else:
-                raise ValueError(
-                    "numpy array passed to color must be of shape (4,) or (n_colors_modify, 4)"
-                )
+                raise TypeError
+
+            value = parse_colors(value, n_colors)
 
         else:
             raise TypeError
 
-        self.buffer.data[key] = new_colors
+        self.buffer.data[key] = value
 
         self._update_range(key)
         # self._feature_changed(key, new_colors)
