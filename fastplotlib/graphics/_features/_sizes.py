@@ -1,96 +1,63 @@
-from typing import Any
-
 import numpy as np
 
-import pygfx
-
 from ._base import (
-    GraphicFeatureIndexable,
-    cleanup_slice,
+    BufferManager,
     FeatureEvent,
     to_gpu_supported_dtype,
-    cleanup_array_slice,
 )
 
 
-class PointsSizesFeature(GraphicFeatureIndexable):
+class PointsSizesFeature(BufferManager):
     """
     Access to the vertex buffer data shown in the graphic.
     Supports fancy indexing if the data array also supports it.
     """
 
-    def __init__(self, parent, sizes: Any, collection_index: int = None):
-        sizes = self._fix_sizes(sizes, parent)
-        super().__init__(parent, sizes, collection_index=collection_index)
+    def __init__(
+            self,
+            sizes: np.ndarray | list[int | float] | tuple[int | float],
+            n_datapoints: int,
+            isolated_buffer: bool = True
+    ):
+        sizes = self._fix_sizes(sizes, n_datapoints)
+        super().__init__(data=sizes, isolated_buffer=isolated_buffer)
 
-    @property
-    def buffer(self) -> pygfx.Buffer:
-        return self._parent.world_object.geometry.sizes
-
-    def __getitem__(self, item):
-        return self.buffer.data[item]
-
-    def _fix_sizes(self, sizes, parent):
-        graphic_type = parent.__class__.__name__
-
-        n_datapoints = parent.data().shape[0]
-        if not isinstance(sizes, (list, tuple, np.ndarray)):
+    def _fix_sizes(self, sizes: int | float | np.ndarray | list[int | float] | tuple[int | float], n_datapoints: int):
+        if np.issubdtype(type(sizes), np.integer):
+            # single value given
             sizes = np.full(
                 n_datapoints, sizes, dtype=np.float32
             )  # force it into a float to avoid weird gpu errors
-        elif not isinstance(
-            sizes, np.ndarray
+
+        elif isinstance(
+            sizes, (np.ndarray, tuple, list)
         ):  # if it's not a ndarray already, make it one
-            sizes = np.array(sizes, dtype=np.float32)  # read it in as a numpy.float32
-            if (sizes.ndim != 1) or (sizes.size != parent.data().shape[0]):
+            sizes = np.asarray(sizes, dtype=np.float32)  # read it in as a numpy.float32
+            if (sizes.ndim != 1) or (sizes.size != n_datapoints):
                 raise ValueError(
                     f"sequence of `sizes` must be 1 dimensional with "
                     f"the same length as the number of datapoints"
                 )
 
-        sizes = to_gpu_supported_dtype(sizes)
+        else:
+            raise TypeError("sizes must be a single <int>, <float>, or a sequence (array, list, tuple) of int"
+                            "or float with the length equal to the number of datapoints")
 
-        if any(s < 0 for s in sizes):
+        if np.count_nonzero(sizes < 0) > 1:
             raise ValueError(
                 "All sizes must be positive numbers greater than or equal to 0.0."
             )
 
-        if sizes.ndim == 1:
-            if graphic_type == "ScatterGraphic":
-                sizes = np.array(sizes)
-        else:
-            raise ValueError(
-                f"Sizes must be an array of shape (n,) where n == the number of data points provided.\
-                             Received shape={sizes.shape}."
-            )
-
-        return np.array(sizes)
+        return sizes
 
     def __setitem__(self, key, value):
-        if isinstance(key, np.ndarray):
-            # make sure 1D array of int or boolean
-            key = cleanup_array_slice(key, self._upper_bound)
-
-        # put sizes into right shape if they're only indexing datapoints
-        if isinstance(key, (slice, int, np.ndarray, np.integer)):
-            value = self._fix_sizes(value, self._parent)
-        # otherwise assume that they have the right shape
-        # numpy will throw errors if it can't broadcast
-
-        if value.size != self.buffer.data[key].size:
-            raise ValueError(
-                f"{value.size} is not equal to buffer size {self.buffer.data[key].size}.\
-                             If you want to set size to a non-scalar value, make sure it's the right length!"
-            )
-
+        # this is a very simple 1D buffer, no parsing required, directly set buffer
         self.buffer.data[key] = value
         self._update_range(key)
+
         # avoid creating dicts constantly if there are no events to handle
         if len(self._event_handlers) > 0:
             self._feature_changed(key, value)
-
-    def _update_range(self, key):
-        self._update_range_indices(key)
 
     def _feature_changed(self, key, new_data):
         if key is not None:
