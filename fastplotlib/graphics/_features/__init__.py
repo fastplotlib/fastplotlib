@@ -1,6 +1,6 @@
 from ._colors import ColorFeature#, CmapFeature, ImageCmapFeature, HeatmapCmapFeature
 from ._data import PointsDataFeature#, ImageDataFeature, HeatmapDataFeature
-# from ._sizes import PointsSizesFeature
+from ._sizes import PointsSizesFeature
 # from ._present import PresentFeature
 # from ._thickness import ThicknessFeature
 from ._base import (
@@ -39,9 +39,6 @@ class Deleted:
     pass
 
 class CmapFeature:
-    pass
-
-class PointsSizesFeature:
     pass
 
 class ThicknessFeature:
