@@ -16,7 +16,7 @@ HexStr: TypeAlias = str
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
-WORLD_OBJECTS: dict[HexStr, WorldObject] = dict()  #: {hex id str: WorldObject}
+WORLD_OBJECTS: dict[HexStr, pygfx.WorldObject] = dict()  #: {hex id str: WorldObject}
 
 
 PYGFX_EVENTS = [
