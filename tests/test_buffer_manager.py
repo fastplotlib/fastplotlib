@@ -40,7 +40,7 @@ def generate_slice_indices(kind: int):
         case 2:
             # positive continuous range
             s = slice(1, 5, None)
-            indices = list(range(1, 5))
+            indices = [1, 2, 3, 4]
 
         case 3:
             # positive stepped range
@@ -114,7 +114,9 @@ def generate_slice_indices(kind: int):
 
     others = [i for i in a if i not in indices]
 
-    return {"slice": s, "indices": indices, "others": others}
+    offset, size = (min(indices), np.ptp(indices) + 1)
+
+    return {"slice": s, "indices": indices, "others": others, "offset": offset, "size": size}
 
 
 def make_colors_buffer() -> ColorFeature:
@@ -205,14 +207,29 @@ def test_slice(color_input, slice_method: dict):
     # slicing only first dim
     colors = make_colors_buffer()
 
+    # TODO: placeholder until I make a testing figure where we draw frames only on call
+    colors.buffer._gfx_pending_uploads.clear()
+
     s = slice_method["slice"]
     indices = slice_method["indices"]
+    offset = slice_method["offset"]
+    size = slice_method["size"]
     others = slice_method["others"]
 
     colors[s] = color_input
     truth = np.repeat([pygfx.Color(color_input)], repeats=len(indices), axis=0)
     # check that correct indices are modified
     npt.assert_almost_equal(colors[s], truth)
+
+    upload_offset, upload_size = colors.buffer._gfx_pending_uploads[-1]
+    # sometimes when slicing with step, it  will over-estimate offset
+    # but it overestimates to upload 1 extra point so it's fine
+    assert (upload_offset == offset) or (upload_offset == offset - 1)
+
+    # sometimes when slicing with step, it  will over-estimate size
+    # but it overestimates to upload 1 extra point so it's fine
+    assert (upload_size == size) or (upload_size == size + 1)
+
     # check that others are not touched
     others_truth = np.repeat([[1., 1., 1., 1.]], repeats=len(others), axis=0)
     npt.assert_almost_equal(colors[others], others_truth)
