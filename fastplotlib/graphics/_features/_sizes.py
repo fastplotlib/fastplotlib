@@ -15,7 +15,7 @@ class PointsSizesFeature(BufferManager):
 
     def __init__(
             self,
-            sizes: np.ndarray | list[int | float] | tuple[int | float],
+            sizes: int | float | np.ndarray | list[int | float] | tuple[int | float],
             n_datapoints: int,
             isolated_buffer: bool = True
     ):
@@ -23,7 +23,7 @@ class PointsSizesFeature(BufferManager):
         super().__init__(data=sizes, isolated_buffer=isolated_buffer)
 
     def _fix_sizes(self, sizes: int | float | np.ndarray | list[int | float] | tuple[int | float], n_datapoints: int):
-        if np.issubdtype(type(sizes), np.integer):
+        if np.issubdtype(type(sizes), np.number):
             # single value given
             sizes = np.full(
                 n_datapoints, sizes, dtype=np.float32
