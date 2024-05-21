@@ -124,6 +124,7 @@ def test_slice(color_input, slice_method: dict):
     truth = np.repeat([pygfx.Color(color_input)], repeats=len(indices), axis=0)
     # check that correct indices are modified
     npt.assert_almost_equal(colors[s], truth)
+    npt.assert_almost_equal(colors[indices], truth)
 
     upload_offset, upload_size = colors.buffer._gfx_pending_uploads[-1]
     # sometimes when slicing with step, it  will over-estimate offset
