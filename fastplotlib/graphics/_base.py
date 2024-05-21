@@ -1,3 +1,5 @@
+from collections import defaultdict
+from functools import partial
 from typing import Any, Literal, TypeAlias
 import weakref
 from warnings import warn
@@ -6,6 +8,7 @@ from dataclasses import dataclass
 
 import numpy as np
 import pylinalg as la
+from wgpu.gui.base import log_exception
 
 import pygfx
 
@@ -92,6 +95,8 @@ class Graphic(BaseGraphic):
         # self.deleted = Deleted(self, False)
 
         self._plot_area = None
+
+        self._event_handlers = defaultdict(set)
 
     @property
     def name(self) -> str | None:
@@ -184,6 +189,71 @@ class Graphic(BaseGraphic):
     def children(self) -> list[pygfx.WorldObject]:
         """Return the children of the WorldObject."""
         return self.world_object.children
+
+    def add_event_handler(self, *args):
+        """
+        Register an event handler.
+
+        Parameters
+        ----------
+        callback: callable, the first argument
+            Event handler, must accept a single event  argument
+        *types: list of strings
+            A list of event types, ex: "click", "data", "colors", "pointer_down"
+
+        For the available renderer event types, see
+        https://jupyter-rfb.readthedocs.io/en/stable/events.html
+
+        All feature support events, i.e. ``graphic.features`` will give a set of
+        all features that are evented
+
+        Can also be used as a decorator.
+
+        Example
+        -------
+
+        .. code-block:: py
+
+            def my_handler(event):
+                print(event)
+
+            graphic.add_event_handler(my_handler, "pointer_up", "pointer_down")
+
+        Decorator usage example:
+
+        .. code-block:: py
+
+            @graphic.add_event_handler("click")
+            def my_handler(event):
+                print(event)
+        """
+
+        decorating = not callable(args[0])
+        callback = None if decorating else args[0]
+        types = args if decorating else args[1:]
+
+        def decorator(_callback):
+            _callback_injector = partial(self._handle_event, _callback)  # adds graphic instance as attribute
+
+            for type in types:
+                if type in self.features:
+                    # fpl feature event
+                    feature = getattr(self, f"_{type}")
+                    feature.add_event_handler(_callback_injector)
+                else:
+                    # wrap pygfx event
+                    self.world_object._event_handlers[type].add(_callback_injector)
+            return _callback
+
+        if decorating:
+            return decorator
+
+        return decorator(callback)
+
+    def _handle_event(self, callback, event: pygfx.Event):
+        """Wrap pygfx event to add graphic to pick_info"""
+        event.graphic = self
+        callback(event)
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
