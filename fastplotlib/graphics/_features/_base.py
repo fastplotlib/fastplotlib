@@ -201,6 +201,8 @@ class BufferManager(GraphicFeature):
 
         self._event_handlers: list[callable] = list()
 
+        self._shared = False
+
     @property
     def value(self) -> NDArray:
         return self.buffer.data
@@ -208,6 +210,11 @@ class BufferManager(GraphicFeature):
     @property
     def buffer(self) -> pygfx.Buffer | pygfx.Texture:
         return self._buffer
+
+    @property
+    def shared(self) -> bool:
+        """If the buffer is shared between multiple graphics"""
+        return self._shared
 
     def __getitem__(self, item):
         return self.buffer.data[item]
