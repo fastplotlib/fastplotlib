@@ -87,10 +87,29 @@ def generate_slice_indices(kind: int):
             s = slice(None, None, -3)
             indices = [9, 6, 3, 0]
 
+        case 12:
+            # list indices
+            s = [2, 5, 9]
+            indices = [2, 5, 9]
+
+        case 13:
+            # bool indices
+            s = a > 5
+            indices = [6, 7, 8, 9]
+
+        case 14:
+            # list indices with negatives
+            s = [1, 4, -2]
+            indices = [1, 4, 8]
+
+        case 15:
+            # array indices
+            s = np.array([1, 4, -7, 9])
+            indices = [1, 4, 3, 9]
+
     others = [i for i in a if i not in indices]
 
     return {"slice": s, "indices": indices, "others": others}
-
 
 
 def make_colors_buffer() -> ColorFeature:
@@ -143,7 +162,7 @@ def test_tuple():
 
 
 @pytest.mark.parametrize("color_input", generate_color_inputs("red"))
-@pytest.mark.parametrize("slice_method", [generate_slice_indices(i) for i in range(1, 12)])
+@pytest.mark.parametrize("slice_method", [generate_slice_indices(i) for i in range(1, 16)])
 def test_slice(color_input, slice_method: dict):
     # slicing only first dim
     colors = make_colors_buffer()
