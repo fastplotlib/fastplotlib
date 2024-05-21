@@ -3,7 +3,7 @@ from numpy import testing as npt
 import pytest
 
 from fastplotlib.graphics._features import PointsDataFeature
-from .utils import generate_slice_indices
+from .utils import generate_slice_indices, assert_pending_uploads
 
 
 def generate_data(inputs: str) -> np.ndarray:
@@ -103,11 +103,5 @@ def test_slice(slice_method: dict, test_axis: str):
             # make sure other points are not modified
             npt.assert_almost_equal(points[others], data[others])
 
-    upload_offset, upload_size = points.buffer._gfx_pending_uploads[-1]
-    # sometimes when slicing with step, it  will over-estimate offset
-    # but it overestimates to upload 1 extra point so it's fine
-    assert (upload_offset == offset) or (upload_offset == offset - 1)
-
-    # sometimes when slicing with step, it  will over-estimate size
-    # but it overestimates to upload 1 extra point so it's fine
-    assert (upload_size == size) or (upload_size == size + 1)
+    # make sure correct offset and size marked for pending upload
+    assert_pending_uploads(points.buffer, offset, size)

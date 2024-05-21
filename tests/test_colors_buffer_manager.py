@@ -5,7 +5,7 @@ import pytest
 import pygfx
 
 from fastplotlib.graphics._features import ColorFeature
-from .utils import generate_slice_indices
+from .utils import generate_slice_indices, assert_pending_uploads
 
 
 def generate_color_inputs(name: str) -> list[str, np.ndarray, list, tuple]:
@@ -126,14 +126,8 @@ def test_slice(color_input, slice_method: dict):
     npt.assert_almost_equal(colors[s], truth)
     npt.assert_almost_equal(colors[indices], truth)
 
-    upload_offset, upload_size = colors.buffer._gfx_pending_uploads[-1]
-    # sometimes when slicing with step, it  will over-estimate offset
-    # but it overestimates to upload 1 extra point so it's fine
-    assert (upload_offset == offset) or (upload_offset == offset - 1)
-
-    # sometimes when slicing with step, it  will over-estimate size
-    # but it overestimates to upload 1 extra point so it's fine
-    assert (upload_size == size) or (upload_size == size + 1)
+    # make sure correct offset and size marked for pending upload
+    assert_pending_uploads(colors.buffer, offset, size)
 
     # check that others are not touched
     others_truth = np.repeat([[1., 1., 1., 1.]], repeats=len(others), axis=0)
