@@ -63,6 +63,20 @@ def test_int():
     indices.pop(2)
     npt.assert_almost_equal(points[indices], data[indices])
 
+    # reset
+    points = data
+    npt.assert_almost_equal(points[:], data)
+
+    # just set y value
+    points[3, 1] = 1.
+    npt.assert_almost_equal(points[3, 1], 1.)
+    # make sure others not modified
+    npt.assert_almost_equal(points[3, 0], data[3, 0])
+    npt.assert_almost_equal(points[3, 2], data[3, 2])
+    indices = list(range(10))
+    indices.pop(3)
+    npt.assert_almost_equal(points[indices], data[indices])
+
 
 @pytest.mark.parametrize("slice_method", [generate_slice_indices(i) for i in range(1, 16)])  # int tested separately
 @pytest.mark.parametrize("test_axis", ["y", "xy", "xyz"])
