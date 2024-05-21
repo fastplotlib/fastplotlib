@@ -1,10 +1,6 @@
-from typing import Literal
-
 import numpy as np
 from numpy import testing as npt
 import pytest
-
-import pygfx
 
 from fastplotlib.graphics._features import PointsDataFeature
 from .utils import generate_slice_indices
@@ -68,7 +64,7 @@ def test_int():
     npt.assert_almost_equal(points[indices], data[indices])
 
 
-@pytest.mark.parametrize("slice_method", [generate_slice_indices(i) for i in range(1, 16)])
+@pytest.mark.parametrize("slice_method", [generate_slice_indices(i) for i in range(1, 16)])  # int tested separately
 @pytest.mark.parametrize("test_axis", ["y", "xy", "xyz"])
 def test_slice(slice_method: dict, test_axis: str):
     data = generate_data("xyz")
