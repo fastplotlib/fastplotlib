@@ -4,11 +4,7 @@ import pytest
 
 import pygfx
 
-from fastplotlib.graphics._features import ColorFeature, PointsDataFeature
-from fastplotlib.graphics._features.utils import parse_colors
-
-
-# TODO: parameterize every test where the color is given in as str, array, tuple, and list
+from fastplotlib.graphics._features import ColorFeature
 
 
 def generate_color_inputs(name: str) -> list[str, np.ndarray, list, tuple]:
@@ -122,10 +118,6 @@ def generate_slice_indices(kind: int):
 def make_colors_buffer() -> ColorFeature:
     colors = ColorFeature(colors="w", n_colors=10)
     return colors
-
-
-def make_points_buffer():
-    pass
 
 
 def test_int():
