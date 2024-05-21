@@ -77,6 +77,16 @@ def generate_slice_indices(kind: int):
             s = slice(8, -9, -2)
             indices = [8, 6, 4, 2]
 
+        case 10:
+            # only stepped forward
+            s = slice(None, None, 2)
+            indices = [0, 2, 4, 6, 8]
+
+        case 11:
+            # only stepped backward
+            s = slice(None, None, -3)
+            indices = [9, 6, 3, 0]
+
     others = [i for i in a if i not in indices]
 
     return {"slice": s, "indices": indices, "others": others}
@@ -133,7 +143,7 @@ def test_tuple():
 
 
 @pytest.mark.parametrize("color_input", generate_color_inputs("red"))
-@pytest.mark.parametrize("slice_method", [generate_slice_indices(i) for i in range(1, 10)])
+@pytest.mark.parametrize("slice_method", [generate_slice_indices(i) for i in range(1, 12)])
 def test_slice(color_input, slice_method: dict):
     # slicing only first dim
     colors = make_colors_buffer()
