@@ -92,11 +92,15 @@ class LineGraphic(Graphic, Interaction):
                 n_colors=n_datapoints, cmap_name=cmap, cmap_values=cmap_values
             )
 
-        self._colors = ColorFeature(
-            colors,
-            n_colors=self._data.value.shape[0],
-            alpha=alpha,
-        )
+        if isinstance(colors, ColorFeature):
+            self._colors = colors
+            self._shared = True
+        else:
+            self._colors = ColorFeature(
+                colors,
+                n_colors=self._data.value.shape[0],
+                alpha=alpha,
+            )
 
         # self.cmap = CmapFeature(
         #     self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
@@ -121,6 +125,16 @@ class LineGraphic(Graphic, Interaction):
 
         if z_position is not None:
             self.position_z = z_position
+
+    def unshare_buffer(self, feature: str):
+        f = getattr(self, feature)
+        if not f.shared:
+            raise BufferError
+
+        if isinstance(f, ColorFeature):
+            self._colors._buffer = pygfx.Buffer(self._colors.value.copy())
+            self.world_object.geometry.colors = self._colors.buffer
+            self._colors._shared = False
 
     def add_linear_selector(
         self, selection: int = None, padding: float = 50, **kwargs
