@@ -201,7 +201,7 @@ class BufferManager(GraphicFeature):
 
         self._event_handlers: list[callable] = list()
 
-        self._shared = False
+        self._shared: int = 0
 
     @property
     def value(self) -> NDArray:
@@ -212,8 +212,8 @@ class BufferManager(GraphicFeature):
         return self._buffer
 
     @property
-    def shared(self) -> bool:
-        """If the buffer is shared between multiple graphics"""
+    def shared(self) -> int:
+        """Number of graphics that share this buffer"""
         return self._shared
 
     def __getitem__(self, item):

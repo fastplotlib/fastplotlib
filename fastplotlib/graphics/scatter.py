@@ -4,11 +4,11 @@ import numpy as np
 import pygfx
 
 from ..utils import parse_cmap_values
-from ._base import Graphic
+from ._base import PositionsGraphic
 from ._features import PointsDataFeature, ColorFeature, CmapFeature, PointsSizesFeature
 
 
-class ScatterGraphic(Graphic):
+class ScatterGraphic(PositionsGraphic):
     feature_events = {"data", "sizes", "colors", "cmap", "present"}
 
     def __init__(

@@ -6,12 +6,12 @@ import numpy as np
 import pygfx
 
 from ..utils import parse_cmap_values
-from ._base import Graphic, Interaction, PreviouslyModifiedData
+from ._base import PositionsGraphic, Interaction, PreviouslyModifiedData
 from ._features import GraphicFeatureDescriptor, PointsDataFeature, ColorFeature#, CmapFeature, ThicknessFeature
 from .selectors import LinearRegionSelector, LinearSelector
 
 
-class LineGraphic(Graphic, Interaction):
+class LineGraphic(PositionsGraphic, Interaction):
     features = {"data", "colors"}#, "cmap", "thickness", "present"}
 
     def __init__(
@@ -94,7 +94,7 @@ class LineGraphic(Graphic, Interaction):
 
         if isinstance(colors, ColorFeature):
             self._colors = colors
-            self._shared = True
+            self._colors._shared += 1
         else:
             self._colors = ColorFeature(
                 colors,
@@ -125,16 +125,6 @@ class LineGraphic(Graphic, Interaction):
 
         if z_position is not None:
             self.position_z = z_position
-
-    def unshare_buffer(self, feature: str):
-        f = getattr(self, feature)
-        if not f.shared:
-            raise BufferError
-
-        if isinstance(f, ColorFeature):
-            self._colors._buffer = pygfx.Buffer(self._colors.value.copy())
-            self.world_object.geometry.colors = self._colors.buffer
-            self._colors._shared = False
 
     def add_linear_selector(
         self, selection: int = None, padding: float = 50, **kwargs

@@ -7,9 +7,9 @@ from dataclasses import dataclass
 import numpy as np
 import pylinalg as la
 
-from pygfx import WorldObject
+import pygfx
 
-from ._features import GraphicFeature, PresentFeature, BufferManager, GraphicFeatureDescriptor, Deleted
+from ._features import GraphicFeature, PresentFeature, BufferManager, GraphicFeatureDescriptor, Deleted, PointsDataFeature, ColorFeature, PointsSizesFeature
 
 
 HexStr: TypeAlias = str
@@ -112,13 +112,19 @@ class Graphic(BaseGraphic):
         self._name = name
 
     @property
-    def world_object(self) -> WorldObject:
+    def world_object(self) -> pygfx.WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
         # We use weakref to simplify garbage collection
         return weakref.proxy(WORLD_OBJECTS[self._fpl_address])
 
-    def _set_world_object(self, wo: WorldObject):
+    def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
+
+    def detach_feature(self, feature: str):
+        raise NotImplementedError
+
+    def attach_feature(self, feature: BufferManager):
+        raise NotImplementedError
 
     @property
     def position(self) -> np.ndarray:
@@ -175,7 +181,7 @@ class Graphic(BaseGraphic):
         self.world_object.visible = v
 
     @property
-    def children(self) -> list[WorldObject]:
+    def children(self) -> list[pygfx.WorldObject]:
         """Return the children of the WorldObject."""
         return self.world_object.children
 
@@ -262,6 +268,56 @@ class Graphic(BaseGraphic):
                 f"`axis` must be either `x`, `y`, or `z`. `{axis}` provided instead!"
             )
         self.rotation = la.quat_mul(rot, self.rotation)
+
+
+class PositionsGraphic(Graphic):
+    """Base class for LineGraphic and ScatterGraphic"""
+
+    def detach_feature(self, feature: str):
+        if not isinstance(feature, str):
+            raise TypeError
+
+        f = getattr(self, feature)
+        if f.shared == 0:
+            raise BufferError("Cannot detach an independent buffer")
+
+        if feature == "colors":
+            self._colors._buffer = pygfx.Buffer(self._colors.value.copy())
+            self.world_object.geometry.colors = self._colors.buffer
+            self._colors._shared -= 1
+
+        elif feature == "data":
+            self._data._buffer = pygfx.Buffer(self._data.value.copy())
+            self.world_object.geometry.positions = self._data.buffer
+            self._data._shared -= 1
+
+        elif feature == "sizes":
+            self._sizes._buffer = pygfx.Buffer(self._sizes.value.copy())
+            self.world_object.geometry.positions = self._sizes.buffer
+            self._sizes._shared -= 1
+
+    def attach_feature(self, feature: PointsDataFeature | ColorFeature | PointsSizesFeature):
+        if isinstance(feature, PointsDataFeature):
+            # TODO: check if this causes a memory leak
+            self._data._shared -= 1
+
+            self._data = feature
+            self._data._shared += 1
+            self.world_object.geometry.positions = self._data.buffer
+
+        elif isinstance(feature, ColorFeature):
+            self._colors._shared -= 1
+
+            self._colors = feature
+            self._colors._shared += 1
+            self.world_object.geometry.colors = self._colors.buffer
+
+        elif isinstance(feature, PointsSizesFeature):
+            self._sizes._shared -= 1
+
+            self._sizes = feature
+            self._sizes._shared += 1
+            self.world_object.geometry.sizes = self._sizes.buffer
 
 
 class Interaction(ABC):
