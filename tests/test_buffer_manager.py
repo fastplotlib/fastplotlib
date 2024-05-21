@@ -27,6 +27,11 @@ def generate_slice_indices(kind: int):
     a = np.arange(n_elements)
 
     match kind:
+        case 0:
+            # simplest, just int
+            s = 2
+            indices = [2]
+
         case 1:
             # everything
             s = slice(None, None, None)
@@ -144,21 +149,54 @@ def test_int():
     npt.assert_almost_equal(colors[2], [1., 0., 1., 0.5])
 
 
-def test_tuple():
+@pytest.mark.parametrize("slice_method", [generate_slice_indices(i) for i in range(0, 16)])
+def test_tuple(slice_method):
     # setting entire array manually
     colors = make_colors_buffer()
 
-    colors[1, :] = 0.5
-    npt.assert_almost_equal(colors[1], [0.5, 0.5, 0.5, 0.5])
+    s = slice_method["slice"]
+    indices = slice_method["indices"]
+    others = slice_method["others"]
 
-    colors[1, 0] = 1
-    npt.assert_almost_equal(colors[1], [1., 0.5, 0.5, 0.5])
+    # set all RGBA vals
+    colors[s, :] = 0.5
+    truth = np.repeat([[0.5, 0.5, 0.5, 0.5]], repeats=len(indices), axis=0)
+    npt.assert_almost_equal(colors[indices], truth)
 
-    colors[1, 2:] = 0.7
-    npt.assert_almost_equal(colors[1], [1., 0.5, 0.7, 0.7])
+    # check others are not modified
+    others_truth = np.repeat([[1., 1., 1., 1.]], repeats=len(others), axis=0)
+    npt.assert_almost_equal(colors[others], others_truth)
 
-    colors[1, -1] = 0.2
-    npt.assert_almost_equal(colors[1], [1., 0.5, 0.7, 0.2])
+    # reset
+    colors[:] = (1, 1, 1, 1)
+    npt.assert_almost_equal(colors[:], np.repeat([[1., 1., 1., 1.]], 10, axis=0))
+
+    # set just R values
+    colors[s, 0] = 0.5
+    truth = np.repeat([[0.5, 1., 1., 1.]], repeats=len(indices), axis=0)
+    # check others not modified
+    npt.assert_almost_equal(colors[indices], truth)
+    npt.assert_almost_equal(colors[others], others_truth)
+
+    # reset
+    colors[:] = (1, 1, 1, 1)
+    npt.assert_almost_equal(colors[:], np.repeat([[1., 1., 1., 1.]], 10, axis=0))
+
+    # set green and blue
+    colors[s, 1:-1] = 0.7
+    truth = np.repeat([[1., 0.7, 0.7, 1.0]], repeats=len(indices), axis=0)
+    npt.assert_almost_equal(colors[indices], truth)
+    npt.assert_almost_equal(colors[others], others_truth)
+
+    # reset
+    colors[:] = (1, 1, 1, 1)
+    npt.assert_almost_equal(colors[:], np.repeat([[1., 1., 1., 1.]], 10, axis=0))
+
+    # set only alpha
+    colors[s, -1] = 0.2
+    truth = np.repeat([[1., 1., 1., 0.2]], repeats=len(indices), axis=0)
+    npt.assert_almost_equal(colors[indices], truth)
+    npt.assert_almost_equal(colors[others], others_truth)
 
 
 @pytest.mark.parametrize("color_input", generate_color_inputs("red"))
@@ -182,7 +220,3 @@ def test_slice(color_input, slice_method: dict):
     # reset
     colors[:] = (1, 1, 1, 1)
     npt.assert_almost_equal(colors[:], np.repeat([[1., 1., 1., 1.]], 10, axis=0))
-
-
-def test_array():
-    pass
