@@ -92,9 +92,6 @@ class ScatterGraphic(PositionsGraphic):
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
         """
-        # self.cmap = CmapFeature(
-        #     self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
-        # )
 
         super().__init__(
             data=data,

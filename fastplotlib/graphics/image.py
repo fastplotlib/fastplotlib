@@ -11,7 +11,9 @@ from ..utils import quick_min_max
 from ._base import Graphic, Interaction
 from .selectors import LinearSelector, LinearRegionSelector
 from ._features import (
-    ImageCmapFeature,
+    Cmap,
+    Vmin,
+    Vmax,
     ImageDataFeature,
     HeatmapDataFeature,
     HeatmapCmapFeature,
@@ -196,7 +198,16 @@ class _AddSelectorsMixin:
 
 
 class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
-    feature_events = {"data", "cmap", "present"}
+    features = {"data", "cmap", "vmin", "vmax"}
+
+    @property
+    def cmap(self) -> str:
+        """Graphic name"""
+        return self._cmap.value
+
+    @cmap.setter
+    def cmap(self, name: str):
+        self._cmap.set_value(self, name)
 
     def __init__(
         self,
@@ -277,7 +288,7 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
 
         geometry = pygfx.Geometry(grid=texture)
 
-        self.cmap = ImageCmapFeature(self, cmap)
+        self._cmap = Cmap(cmap)
 
         # if data is RGB or RGBA
         if data.ndim > 2:
@@ -288,7 +299,7 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
         else:
             material = pygfx.ImageBasicMaterial(
                 clim=(vmin, vmax),
-                map=self.cmap(),
+                map=self._cmap.texture,
                 map_interpolation=filter,
                 pick_write=True,
             )
@@ -297,8 +308,8 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
 
         self._set_world_object(world_object)
 
-        self.cmap.vmin = vmin
-        self.cmap.vmax = vmax
+        self.vmin = Vmin(vmin)
+        self.vmax = Vmax(Vmax)
 
         self.data = ImageDataFeature(self, data)
         # TODO: we need to organize and do this better
@@ -306,6 +317,9 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
             # if the buffer was initialized with zeros
             # set it with the actual data
             self.data = data
+
+    # def reset_vmin_vmax(self):
+    #     vmin, vmax = quick_min_max(data)
 
     def set_feature(self, feature: str, new_data: Any, indices: Any):
         pass

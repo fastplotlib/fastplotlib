@@ -4,10 +4,7 @@ import numpy as np
 import pygfx
 
 from ...utils import (
-    make_colors,
-    get_cmap_texture,
     parse_cmap_values,
-    quick_min_max,
 )
 from ._base import (
     GraphicFeature,
@@ -235,6 +232,24 @@ class PointsSizesFeature(BufferManager):
         self._emit_event("sizes", key, value)
 
 
+class Thickness(GraphicFeature):
+    """line thickness"""
+    def __init__(self, value: float):
+        self._value = value
+        super().__init__()
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    def set_value(self, graphic, value: float):
+        graphic.world_object.material.thickness = value
+        self._value = value
+
+        event = FeatureEvent(type="thickness", info={"value": value})
+        self._call_event_handlers(event)
+
+
 class VertexCmap(BufferManager):
     """
     Sliceable colormap feature, manages a VertexColors instance and just provides a way to set colormaps.
@@ -264,6 +279,8 @@ class VertexCmap(BufferManager):
         self._cmap_name = cmap_name
         self._vertex_colors[key] = colors
 
+        self._emit_event("cmap", key, cmap_name)
+
     @property
     def name(self) -> str:
         return self._cmap_name
@@ -292,100 +309,8 @@ class VertexCmap(BufferManager):
 
         self._vertex_colors[indices] = colors
 
-#
-#
-# class ImageCmapFeature(GraphicFeature):
-#     """
-#     Colormap for :class:`ImageGraphic`.
-#
-#     <graphic>.cmap() returns the Texture buffer for the cmap.
-#
-#     <graphic>.cmap.name returns the cmap name as a str.
-#
-#     **event pick info:**
-#
-#      ================ =================== ===============
-#       key              type                description
-#      ================ =================== ===============
-#       "index"          ``None``            not used
-#       "name"           ``str``             colormap name
-#       "world_object"   pygfx.WorldObject   world object
-#       "vmin"           ``float``           minimum value
-#       "vmax"           ``float``           maximum value
-#      ================ =================== ===============
-#
-#     """
-#
-#     def __init__(self, parent, cmap: str):
-#         cmap_texture_view = get_cmap_texture(cmap)
-#         super().__init__(parent, cmap_texture_view)
-#         self._name = cmap
-#
-#     def _set(self, cmap_name: str):
-#         if self._parent.data().ndim > 2:
-#             return
-#
-#         self._parent.world_object.material.map.data[:] = make_colors(256, cmap_name)
-#         self._parent.world_object.material.map.update_range((0, 0, 0), size=(256, 1, 1))
-#         self._name = cmap_name
-#
-#         self._feature_changed(key=None, new_data=self._name)
-#
-#     @property
-#     def name(self) -> str:
-#         return self._name
-#
-#     @property
-#     def vmin(self) -> float:
-#         """Minimum contrast limit."""
-#         return self._parent.world_object.material.clim[0]
-#
-#     @vmin.setter
-#     def vmin(self, value: float):
-#         """Minimum contrast limit."""
-#         self._parent.world_object.material.clim = (
-#             value,
-#             self._parent.world_object.material.clim[1],
-#         )
-#         self._feature_changed(key=None, new_data=None)
-#
-#     @property
-#     def vmax(self) -> float:
-#         """Maximum contrast limit."""
-#         return self._parent.world_object.material.clim[1]
-#
-#     @vmax.setter
-#     def vmax(self, value: float):
-#         """Maximum contrast limit."""
-#         self._parent.world_object.material.clim = (
-#             self._parent.world_object.material.clim[0],
-#             value,
-#         )
-#         self._feature_changed(key=None, new_data=None)
-#
-#     def reset_vmin_vmax(self):
-#         """Reset vmin vmax values based on current data"""
-#         self.vmin, self.vmax = quick_min_max(self._parent.data())
-#
-#     def _feature_changed(self, key, new_data):
-#         # this is a non-indexable feature so key=None
-#
-#         pick_info = {
-#             "index": None,
-#             "world_object": self._parent.world_object,
-#             "name": self._name,
-#             "vmin": self.vmin,
-#             "vmax": self.vmax,
-#         }
-#
-#         event_data = FeatureEvent(type="cmap", pick_info=pick_info)
-#
-#         self._call_event_handlers(event_data)
-#
-#     def __repr__(self) -> str:
-#         s = f"ImageCmapFeature for {self._parent}. Use `<graphic>.cmap.name` to get str name of cmap."
-#         return s
-#
+        self._emit_event("cmap.name", indices, values)
+
 #
 # class HeatmapCmapFeature(ImageCmapFeature):
 #     """

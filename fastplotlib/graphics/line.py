@@ -7,10 +7,20 @@ import pygfx
 
 from ._base import PositionsGraphic, Interaction, PreviouslyModifiedData
 from .selectors import LinearRegionSelector, LinearSelector
+from ._features import Thickness
 
 
 class LineGraphic(PositionsGraphic, Interaction):
-    features = {"data", "colors", "cmap"}#, "thickness"}
+    features = {"data", "colors", "cmap", "thickness"}
+
+    @property
+    def thickness(self) -> float:
+        """Graphic name"""
+        return self._thickness.value
+
+    @thickness.setter
+    def thickness(self, value: float):
+        self._thickness.set_value(self, value)
 
     def __init__(
         self,
@@ -82,10 +92,6 @@ class LineGraphic(PositionsGraphic, Interaction):
 
         """
 
-        # self.cmap = CmapFeature(
-        #     self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
-        # )
-
         super().__init__(
             data=data,
             colors=colors,
@@ -98,6 +104,8 @@ class LineGraphic(PositionsGraphic, Interaction):
             **kwargs
         )
 
+        self._thickness = Thickness(thickness)
+
         if thickness < 1.1:
             MaterialCls = pygfx.LineThinMaterial
         else:
@@ -105,12 +113,10 @@ class LineGraphic(PositionsGraphic, Interaction):
 
         if uniform_colors:
             geometry = pygfx.Geometry(positions=self._data.buffer)
-            material = MaterialCls(thickness=thickness, color_mode="uniform", pick_write=True)
+            material = MaterialCls(thickness=self.thickness, color_mode="uniform", pick_write=True)
         else:
-            material = MaterialCls(thickness=thickness, color_mode="vertex", pick_write=True)
+            material = MaterialCls(thickness=self.thickness, color_mode="vertex", pick_write=True)
             geometry = pygfx.Geometry(positions=self._data.buffer, colors=self._colors.buffer)
-
-        # self.thickness = ThicknessFeature(self, thickness)
 
         world_object: pygfx.Line = pygfx.Line(
             geometry=geometry,
