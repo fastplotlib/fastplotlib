@@ -1,5 +1,8 @@
+from typing import Any
+
 import numpy as np
 import pygfx
+from ._base import BufferManager, to_gpu_supported_dtype
 
 from ...utils import (
     make_colors,
@@ -15,14 +18,14 @@ from ._base import (
 from .utils import parse_colors
 
 
-class ColorFeature(BufferManager):
+class VertexColors(BufferManager):
     """
     Manages the color buffer for :class:`LineGraphic` or :class:`ScatterGraphic`
     """
 
     def __init__(
         self,
-        colors: str | np.ndarray | tuple[float, float, float, float] | list[str] | list[float] | int | float,
+        colors: str | np.ndarray | tuple[float] | list[float] | list[str],
         n_colors: int,
         alpha: float = None,
         isolated_buffer: bool = True,
@@ -50,7 +53,7 @@ class ColorFeature(BufferManager):
     def __setitem__(
             self,
             key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
-            value: str | np.ndarray | tuple[float, float, float, float] | list[str] | list[float] | int | float
+            value: str | np.ndarray | tuple[float] | list[float] | list[str]
     ):
         if isinstance(key, tuple):
             # directly setting RGBA values for points, we do no parsing
@@ -103,6 +106,64 @@ class ColorFeature(BufferManager):
         self._update_range(key)
 
         self._emit_event("colors", key, value)
+
+
+class UniformColor(GraphicFeature):
+    def __init__(self, value: str | np.ndarray | tuple | list | pygfx.Color):
+        self._value = pygfx.Color(value)
+        super().__init__()
+        
+    @property
+    def value(self) -> pygfx.Color:
+        return self._value
+
+    def set_value(self, graphic, value: str | np.ndarray | tuple | list | pygfx.Color):
+        value = pygfx.Color(value)
+        graphic.world_object.material.color = value
+        self._value = value
+
+        event = FeatureEvent(type="colors", info={"value": value})
+        self._call_event_handlers(event)
+
+
+class VertexPositions(BufferManager):
+    """
+    Manages the vertex positions buffer shown in the graphic.
+    Supports fancy indexing if the data array also supports it.
+    """
+
+    def __init__(self, data: Any, isolated_buffer: bool = True):
+        data = self._fix_data(data)
+        super().__init__(data, isolated_buffer=isolated_buffer)
+
+    def _fix_data(self, data):
+        # data = to_gpu_supported_dtype(data)
+
+        if data.ndim == 1:
+            # if user provides a 1D array, assume these are y-values
+            data = np.column_stack([np.arange(data.size, dtype=data.dtype), data])
+
+        if data.shape[1] != 3:
+            if data.shape[1] != 2:
+                raise ValueError(f"Must pass 1D, 2D or 3D data")
+
+            # zeros for z
+            zs = np.zeros(data.shape[0], dtype=data.dtype)
+
+            # column stack [x, y, z] to make data of shape [n_points, 3]
+            data = np.column_stack([data[:, 0], data[:, 1], zs])
+
+        return to_gpu_supported_dtype(data)
+
+    def __setitem__(self, key: int | slice | range | np.ndarray[int | bool] | tuple[slice, ...] | tuple[range, ...], value):
+        # directly use the key to slice the buffer
+        self.buffer.data[key] = value
+
+        # _update_range handles parsing the key to
+        # determine offset and size for GPU upload
+        self._update_range(key)
+
+        self._emit_event("data", key, value)
 
 
 # class CmapFeature(ColorFeature):

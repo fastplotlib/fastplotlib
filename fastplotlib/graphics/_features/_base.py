@@ -1,5 +1,3 @@
-from abc import abstractmethod
-from inspect import getfullargspec
 from warnings import warn
 from typing import Any, Literal
 
@@ -292,26 +290,3 @@ class BufferManager(GraphicFeature):
     def __repr__(self):
         return f"{self.__class__.__name__} buffer data:\n" \
                f"{self.value.__repr__()}"
-
-
-class GraphicFeatureDescriptor:
-    def __init__(self, feature_name):
-        self.feature_name = feature_name
-
-    def _get_feature(self, instance):
-        feature: GraphicFeature = getattr(instance, f"_{self.feature_name}")
-        return feature
-
-    def __get__(self, graphic, owner):
-        f = self._get_feature(graphic)
-        if isinstance(f, BufferManager):
-            return f
-        else:
-            return f.value
-
-    def __set__(self, graphic, value):
-        feature = self._get_feature(graphic)
-        if isinstance(feature, BufferManager):
-            feature[:] = value
-        else:
-            feature.set_value(graphic, value)

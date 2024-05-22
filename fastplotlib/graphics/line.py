@@ -5,9 +5,7 @@ import numpy as np
 
 import pygfx
 
-from ..utils import parse_cmap_values
 from ._base import PositionsGraphic, Interaction, PreviouslyModifiedData
-from ._features import GraphicFeatureDescriptor, PointsDataFeature, ColorFeature#, CmapFeature, ThicknessFeature
 from .selectors import LinearRegionSelector, LinearSelector
 
 
@@ -19,6 +17,7 @@ class LineGraphic(PositionsGraphic, Interaction):
         data: Any,
         thickness: float = 2.0,
         colors: str | np.ndarray | Iterable = "w",
+        uniform_colors: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
         cmap_values: np.ndarray | Iterable = None,
@@ -83,42 +82,39 @@ class LineGraphic(PositionsGraphic, Interaction):
 
         """
 
-        self._data = PointsDataFeature(data, isolated_buffer=isolated_buffer)
-
-        if cmap is not None:
-            n_datapoints = self._data.value.shape[0]
-
-            colors = parse_cmap_values(
-                n_colors=n_datapoints, cmap_name=cmap, cmap_values=cmap_values
-            )
-
-        if isinstance(colors, ColorFeature):
-            self._colors = colors
-            self._colors._shared += 1
-        else:
-            self._colors = ColorFeature(
-                colors,
-                n_colors=self._data.value.shape[0],
-                alpha=alpha,
-            )
-
         # self.cmap = CmapFeature(
         #     self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
         # )
 
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            data=data,
+            colors=colors,
+            uniform_colors=uniform_colors,
+            alpha=alpha,
+            cmap=cmap,
+            cmap_values=cmap_values,
+            isolated_buffer=isolated_buffer,
+            *args,
+            **kwargs
+        )
 
         if thickness < 1.1:
-            material = pygfx.LineThinMaterial
+            MaterialCls = pygfx.LineThinMaterial
         else:
-            material = pygfx.LineMaterial
+            MaterialCls = pygfx.LineMaterial
+
+        if uniform_colors:
+            geometry = pygfx.Geometry(positions=self._data.buffer)
+            material = MaterialCls(thickness=thickness, color_mode="uniform", pick_write=True)
+        else:
+            material = MaterialCls(thickness=thickness, color_mode="vertex", pick_write=True)
+            geometry = pygfx.Geometry(positions=self._data.buffer, colors=self._colors.buffer)
 
         # self.thickness = ThicknessFeature(self, thickness)
 
         world_object: pygfx.Line = pygfx.Line(
-            # self.data.feature_data because data is a Buffer
-            geometry=pygfx.Geometry(positions=self._data.buffer, colors=self._colors.buffer),
-            material=material(thickness=thickness, color_mode="vertex", pick_write=True),
+            geometry=geometry,
+            material=material
         )
 
         self._set_world_object(world_object)

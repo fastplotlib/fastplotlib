@@ -11,7 +11,7 @@ class Name(GraphicFeature):
     def value(self) -> str:
         return self._value
 
-    def set_value(self, graphic, value: bool):
+    def set_value(self, graphic, value: str):
         if not isinstance(value, str):
             raise TypeError("`Graphic` name must be of type <str>")
 

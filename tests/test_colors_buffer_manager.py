@@ -4,7 +4,7 @@ import pytest
 
 import pygfx
 
-from fastplotlib.graphics._features import ColorFeature
+from fastplotlib.graphics._features import VertexColors
 from .utils import generate_slice_indices, assert_pending_uploads
 
 
@@ -19,14 +19,14 @@ def generate_color_inputs(name: str) -> list[str, np.ndarray, list, tuple]:
     return [s, a, l, t]
 
 
-def make_colors_buffer() -> ColorFeature:
-    colors = ColorFeature(colors="w", n_colors=10)
+def make_colors_buffer() -> VertexColors:
+    colors = VertexColors(colors="w", n_colors=10)
     return colors
 
 
 @pytest.mark.parametrize("color_input", [*generate_color_inputs("r"), *generate_color_inputs("g"), *generate_color_inputs("b")])
 def test_create_buffer(color_input):
-    colors = ColorFeature(colors=color_input, n_colors=10)
+    colors = VertexColors(colors=color_input, n_colors=10)
     truth = np.repeat([pygfx.Color(color_input)], 10, axis=0)
     npt.assert_almost_equal(colors[:], truth)
 

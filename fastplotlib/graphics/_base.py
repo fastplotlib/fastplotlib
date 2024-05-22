@@ -12,8 +12,8 @@ from wgpu.gui.base import log_exception
 
 import pygfx
 
-from ._features import GraphicFeature, BufferManager, GraphicFeatureDescriptor, Deleted, PointsDataFeature, ColorFeature, PointsSizesFeature, Name, Offset, Rotation, Visible
-
+from ._features import GraphicFeature, BufferManager, Deleted, VertexPositions, VertexColors, PointsSizesFeature, Name, Offset, Rotation, Visible, UniformColor
+from ..utils import parse_cmap_values
 
 HexStr: TypeAlias = str
 
@@ -38,9 +38,56 @@ PYGFX_EVENTS = [
 ]
 
 
-class BaseGraphic:
+class Graphic:
+    features = {}
+
+    @property
+    def name(self) -> str | None:
+        """Graphic name"""
+        return self._name.value
+
+    @name.setter
+    def name(self, value: str):
+        self._name.set_value(self, value)
+
+    @property
+    def offset(self) -> tuple:
+        """Offset position of the graphic, [x, y, z]"""
+        return self._offset.value
+
+    @offset.setter
+    def offset(self, value: tuple[float, float, float]):
+        self._offset.set_value(self, value)
+
+    @property
+    def rotation(self) -> np.ndarray:
+        """Orientation of the graphic as a quaternion"""
+        return self._rotation.value
+
+    @rotation.setter
+    def rotation(self, value: tuple[float, float, float, float]):
+        self._rotation.set_value(self, value)
+
+    @property
+    def visible(self) -> bool:
+        """Whether the graphic is visible"""
+        return self._visible.value
+
+    @visible.setter
+    def visible(self, value: bool):
+        self._visible.set_value(self, value)
+
+    @property
+    def deleted(self) -> bool:
+        """used to emit an event after the graphic is deleted"""
+        return self._deleted.value
+
+    @deleted.setter
+    def deleted(self, value: bool):
+        self._deleted.set_value(self, value)
+
     def __init_subclass__(cls, **kwargs):
-        """set the type of the graphic in lower case like "image", "line_collection", etc."""
+        # set the type of the graphic in lower case like "image", "line_collection", etc.
         cls.type = (
             cls.__name__.lower()
             .replace("graphic", "")
@@ -48,23 +95,14 @@ class BaseGraphic:
             .replace("stack", "_stack")
         )
 
-        super().__init_subclass__(**kwargs)
-
-
-class Graphic(BaseGraphic):
-    features = {}
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
+        # set of all features
         cls.features = {*cls.features, "name", "offset", "rotation", "visible", "deleted"}
-
-        # graphic feature class attributes
-        for f in cls.features:
-            setattr(cls, f, GraphicFeatureDescriptor(f))
+        super().__init_subclass__(**kwargs)
 
     def __init__(
         self,
         name: str = None,
+        offset: tuple[float] = (0., 0., 0.),
         metadata: Any = None,
         collection_index: int = None,
     ):
@@ -82,7 +120,6 @@ class Graphic(BaseGraphic):
         if (name is not None) and (not isinstance(name, str)):
             raise TypeError("Graphic `name` must be of type <str>")
 
-        self._name = Name(name)
         self.metadata = metadata
         self.collection_index = collection_index
         self.registered_callbacks = dict()
@@ -90,8 +127,6 @@ class Graphic(BaseGraphic):
 
         # store hex id str of Graphic instance mem location
         self._fpl_address: HexStr = hex(id(self))
-
-        self._deleted = Deleted(False)
 
         self._plot_area = None
 
@@ -101,6 +136,13 @@ class Graphic(BaseGraphic):
         # maps callbacks to their partials
         self._event_handler_wrappers = defaultdict(set)
 
+        # all the common features
+        self._name = Name(name)
+        self._deleted = Deleted(False)
+        self._rotation = None  # set later when world object is set
+        self._offset = Offset(offset)
+        self._visible = Visible(True)
+
     @property
     def world_object(self) -> pygfx.WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
@@ -109,6 +151,8 @@ class Graphic(BaseGraphic):
 
     def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
+
+        self._rotation = Rotation(self.world_object.world.rotation[:])
 
     def detach_feature(self, feature: str):
         raise NotImplementedError
@@ -203,7 +247,8 @@ class Graphic(BaseGraphic):
             # for feature events
             event._target = self.world_object
 
-        callback(event)
+        with log_exception(f"Error during handling {event.type} event"):
+            callback(event)
 
     def remove_event_handler(self, callback, *types):
         # remove from our record first
@@ -315,6 +360,77 @@ class Graphic(BaseGraphic):
 class PositionsGraphic(Graphic):
     """Base class for LineGraphic and ScatterGraphic"""
 
+    @property
+    def data(self) -> VertexPositions:
+        """Get or set the vertex positions data"""
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        self._data[:] = value
+
+    @property
+    def colors(self) -> VertexColors | pygfx.Color:
+        """Get or set the colors data"""
+        if isinstance(self._colors, VertexColors):
+            return self._colors
+
+        elif isinstance(self._colors, UniformColor):
+            return self._colors.value
+
+    @colors.setter
+    def colors(self, value):
+        if isinstance(self._colors, VertexColors):
+            self._colors[:] = value
+
+        elif isinstance(self._colors, UniformColor):
+            self._colors.set_value(self, value)
+
+    def __init__(
+            self,
+            data: Any,
+            colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
+            uniform_colors: bool = False,
+            alpha: float = 1.0,
+            cmap: str = None,
+            cmap_values: np.ndarray = None,
+            isolated_buffer: bool = True,
+            *args,
+            **kwargs,
+    ):
+        self._data = VertexPositions(data, isolated_buffer=isolated_buffer)
+
+        if cmap is not None:
+            if uniform_colors:
+                raise TypeError(
+                    "Cannot use cmap if uniform_colors=True"
+                )
+
+            n_datapoints = self._data.value.shape[0]
+
+            colors = parse_cmap_values(
+                n_colors=n_datapoints, cmap_name=cmap, cmap_values=cmap_values
+            )
+
+        if isinstance(colors, VertexColors):
+            if uniform_colors:
+                raise TypeError(
+                    "Cannot use vertex colors from existing instance if uniform_colors=True"
+                )
+            self._colors = colors
+            self._colors._shared += 1
+        else:
+            if uniform_colors:
+                self._colors = UniformColor(colors)
+            else:
+                self._colors = VertexColors(
+                    colors,
+                    n_colors=self._data.value.shape[0],
+                    alpha=alpha,
+                )
+                
+        super().__init__(*args, **kwargs)
+
     def detach_feature(self, feature: str):
         if not isinstance(feature, str):
             raise TypeError
@@ -323,7 +439,7 @@ class PositionsGraphic(Graphic):
         if f.shared == 0:
             raise BufferError("Cannot detach an independent buffer")
 
-        if feature == "colors":
+        if feature == "colors" and isinstance(feature, VertexColors):
             self._colors._buffer = pygfx.Buffer(self._colors.value.copy())
             self.world_object.geometry.colors = self._colors.buffer
             self._colors._shared -= 1
@@ -338,8 +454,8 @@ class PositionsGraphic(Graphic):
             self.world_object.geometry.positions = self._sizes.buffer
             self._sizes._shared -= 1
 
-    def attach_feature(self, feature: PointsDataFeature | ColorFeature | PointsSizesFeature):
-        if isinstance(feature, PointsDataFeature):
+    def attach_feature(self, feature: VertexPositions | VertexColors | PointsSizesFeature):
+        if isinstance(feature, VertexPositions):
             # TODO: check if this causes a memory leak
             self._data._shared -= 1
 
@@ -347,7 +463,7 @@ class PositionsGraphic(Graphic):
             self._data._shared += 1
             self.world_object.geometry.positions = self._data.buffer
 
-        elif isinstance(feature, ColorFeature):
+        elif isinstance(feature, VertexColors):
             self._colors._shared -= 1
 
             self._colors = feature

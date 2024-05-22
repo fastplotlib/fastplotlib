@@ -2,7 +2,7 @@ import numpy as np
 from numpy import testing as npt
 import pytest
 
-from fastplotlib.graphics._features import PointsDataFeature
+from fastplotlib.graphics._features import VertexPositions
 from .utils import generate_slice_indices, assert_pending_uploads
 
 
@@ -31,7 +31,7 @@ def generate_data(inputs: str) -> np.ndarray:
 
 @pytest.mark.parametrize("data", [generate_data(v) for v in ["y", "xy", "xyz"]])
 def test_create_buffer(data):
-    points_data = PointsDataFeature(data)
+    points_data = VertexPositions(data)
 
     if data.ndim == 1:
         # only y-vals specified
@@ -53,7 +53,7 @@ def test_create_buffer(data):
 def test_int():
     data = generate_data("xyz")
     # test setting single points
-    points = PointsDataFeature(data)
+    points = VertexPositions(data)
 
     # set all x, y, z points, create a kink in the spiral
     points[2] = 1.
@@ -89,7 +89,7 @@ def test_slice(slice_method: dict, test_axis: str):
     size = slice_method["size"]
     others = slice_method["others"]
 
-    points = PointsDataFeature(data)
+    points = VertexPositions(data)
     # TODO: placeholder until I make a testing figure where we draw frames only on call
     points.buffer._gfx_pending_uploads.clear()
 

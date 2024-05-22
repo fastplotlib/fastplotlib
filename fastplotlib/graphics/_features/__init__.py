@@ -1,12 +1,11 @@
-from ._colors import ColorFeature#, CmapFeature, ImageCmapFeature, HeatmapCmapFeature
-from ._data import PointsDataFeature#, ImageDataFeature, HeatmapDataFeature
+from ._positions_graphics import VertexColors, UniformColor, \
+    VertexPositions  # , CmapFeature, ImageCmapFeature, HeatmapCmapFeature
 from ._sizes import PointsSizesFeature
 # from ._present import PresentFeature
 # from ._thickness import ThicknessFeature
 from ._base import (
     GraphicFeature,
     BufferManager,
-    GraphicFeatureDescriptor,
     FeatureEvent,
     to_gpu_supported_dtype,
 )
