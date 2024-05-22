@@ -10,7 +10,7 @@ from .selectors import LinearRegionSelector, LinearSelector
 
 
 class LineGraphic(PositionsGraphic, Interaction):
-    features = {"data", "colors"}#, "cmap", "thickness", "present"}
+    features = {"data", "colors", "cmap"}#, "thickness"}
 
     def __init__(
         self,

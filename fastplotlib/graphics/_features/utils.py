@@ -7,7 +7,7 @@ from ...utils import make_pygfx_colors
 
 
 def parse_colors(
-    colors: str | np.ndarray | Iterable[str],
+    colors: str | np.ndarray | list[str] | tuple[str],
     n_colors: int | None,
     alpha: float | None = None,
     key: int | tuple | slice | None = None,
@@ -48,8 +48,8 @@ def parse_colors(
                 "RGBA arrays for each datapoint in the shape [n_datapoints, 4]"
             )
 
-    # if the color is provided as an iterable
-    elif isinstance(colors, (list, tuple, np.ndarray)):
+    # if the color is provided as list or tuple
+    elif isinstance(colors, (list, tuple)):
         # if iterable of str
         if all([isinstance(val, str) for val in colors]):
             if not len(colors) == n_colors:

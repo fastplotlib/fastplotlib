@@ -1,4 +1,5 @@
-from ._positions_graphics import VertexColors, UniformColor, UniformSizes, VertexPositions, PointsSizesFeature  # , CmapFeature, ImageCmapFeature, HeatmapCmapFeature
+from ._positions_graphics import VertexColors, UniformColor, UniformSizes, VertexPositions, PointsSizesFeature, VertexCmap
+# , CmapFeature, ImageCmapFeature, HeatmapCmapFeature
 # from ._present import PresentFeature
 # from ._thickness import ThicknessFeature
 from ._base import (
@@ -27,9 +28,6 @@ from ._common import Name, Offset, Rotation, Visible, Deleted
 #     "LinearRegionSelectionFeature",
 #     "Deleted",
 # ]
-
-class CmapFeature:
-    pass
 
 class ThicknessFeature:
     pass

@@ -12,7 +12,7 @@ from wgpu.gui.base import log_exception
 
 import pygfx
 
-from ._features import GraphicFeature, BufferManager, Deleted, VertexPositions, VertexColors, PointsSizesFeature, Name, Offset, Rotation, Visible, UniformColor
+from ._features import GraphicFeature, BufferManager, Deleted, VertexPositions, VertexColors, VertexCmap, PointsSizesFeature, Name, Offset, Rotation, Visible, UniformColor
 from ..utils import parse_cmap_values
 
 HexStr: TypeAlias = str
@@ -386,6 +386,18 @@ class PositionsGraphic(Graphic):
         elif isinstance(self._colors, UniformColor):
             self._colors.set_value(self, value)
 
+    @property
+    def cmap(self) -> VertexCmap:
+        """Control cmap"""
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, name: str):
+        if self._cmap is None:
+            raise BufferError("Cannot use cmap with uniform_colors=True")
+
+        self._cmap[:] = name
+
     def __init__(
             self,
             data: Any,
@@ -422,12 +434,14 @@ class PositionsGraphic(Graphic):
         else:
             if uniform_colors:
                 self._colors = UniformColor(colors)
+                self._cmap = None
             else:
                 self._colors = VertexColors(
                     colors,
                     n_colors=self._data.value.shape[0],
                     alpha=alpha,
                 )
+                self._cmap = VertexCmap(self._colors, cmap_name=cmap, cmap_values=cmap_values)
                 
         super().__init__(*args, **kwargs)
 

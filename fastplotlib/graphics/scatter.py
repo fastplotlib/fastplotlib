@@ -5,11 +5,11 @@ import pygfx
 
 from ..utils import parse_cmap_values
 from ._base import PositionsGraphic
-from ._features import CmapFeature, PointsSizesFeature, UniformSizes
+from ._features import PointsSizesFeature, UniformSizes
 
 
 class ScatterGraphic(PositionsGraphic):
-    features = {"data", "sizes", "colors"}#, "cmap", "present"}
+    features = {"data", "sizes", "colors", "cmap"}
 
     @property
     def sizes(self) -> PointsSizesFeature | float:

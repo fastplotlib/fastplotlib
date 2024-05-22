@@ -235,66 +235,63 @@ class PointsSizesFeature(BufferManager):
         self._emit_event("sizes", key, value)
 
 
-# class CmapFeature(ColorFeature):
-#     """
-#     Indexable colormap feature, mostly wraps colors and just provides a way to set colormaps.
-#
-#     Same event pick info as :class:`ColorFeature`
-#     """
-#
-#     def __init__(self, parent, colors, cmap_name: str, cmap_values: np.ndarray):
-#         # Skip the ColorFeature's __init__
-#         super(ColorFeature, self).__init__(parent, colors)
-#
-#         self._cmap_name = cmap_name
-#         self._cmap_values = cmap_values
-#
-#     def __setitem__(self, key, cmap_name):
-#         key = cleanup_slice(key, self._upper_bound)
-#         if not isinstance(key, (slice, np.ndarray)):
-#             raise TypeError(
-#                 "Cannot set cmap on single indices, must pass a slice object, "
-#                 "numpy.ndarray or set it on the entire data."
-#             )
-#
-#         if isinstance(key, slice):
-#             n_colors = len(range(key.start, key.stop, key.step))
-#
-#         else:
-#             # numpy array
-#             n_colors = key.size
-#
-#         colors = parse_cmap_values(
-#             n_colors=n_colors, cmap_name=cmap_name, cmap_values=self._cmap_values
-#         )
-#
-#         self._cmap_name = cmap_name
-#         super().__setitem__(key, colors)
-#
-#     @property
-#     def name(self) -> str:
-#         return self._cmap_name
-#
-#     @property
-#     def values(self) -> np.ndarray:
-#         return self._cmap_values
-#
-#     @values.setter
-#     def values(self, values: np.ndarray):
-#         if not isinstance(values, np.ndarray):
-#             values = np.array(values)
-#
-#         colors = parse_cmap_values(
-#             n_colors=self().shape[0], cmap_name=self._cmap_name, cmap_values=values
-#         )
-#
-#         self._cmap_values = values
-#
-#         super().__setitem__(slice(None), colors)
-#
-#     def __repr__(self) -> str:
-#         s = f"CmapFeature for {self._parent}, to get name or values: `<graphic>.cmap.name`, `<graphic>.cmap.values`"
-#         return s
+class VertexCmap(BufferManager):
+    """
+    Sliceable colormap feature, manages a VertexColors instance and just provides a way to set colormaps.
+    """
+
+    def __init__(self, vertex_colors: VertexColors, cmap_name: str, cmap_values: np.ndarray):
+        super().__init__(data=vertex_colors)
+
+        self._vertex_colors = vertex_colors
+        self._cmap_name = cmap_name
+        self._cmap_values = cmap_values
+
+    def __setitem__(self, key, cmap_name):
+        if isinstance(key, slice):
+            if key.step is not None:
+                raise TypeError(
+                    "step sized indexing not currently supported for setting VertexCmap, "
+                    "continuous regions are recommended"
+                )
+
+        offset, size, n_elements = self._parse_offset_size(key)
+
+        colors = parse_cmap_values(
+            n_colors=n_elements, cmap_name=cmap_name, cmap_values=self._cmap_values
+        )
+
+        self._cmap_name = cmap_name
+        self._vertex_colors[key] = colors
+
+    @property
+    def name(self) -> str:
+        return self._cmap_name
+
+    @property
+    def values(self) -> np.ndarray:
+        return self._cmap_values
+
+    @values.setter
+    def values(self, values: np.ndarray | list[float | int], indices: slice | list | np.ndarray = None):
+        if self._cmap_name is None:
+            raise AttributeError(
+                "cmap is not set, set the cmap before setting the cmap_values"
+            )
+
+        values = np.asarray(values)
+
+        colors = parse_cmap_values(
+            n_colors=self.value.shape[0], cmap_name=self._cmap_name, cmap_values=values
+        )
+
+        self._cmap_values = values
+
+        if indices is None:
+            indices = slice(None)
+
+        self._vertex_colors[indices] = colors
+
 #
 #
 # class ImageCmapFeature(GraphicFeature):

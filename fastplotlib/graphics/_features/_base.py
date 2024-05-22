@@ -153,7 +153,7 @@ class BufferManager(GraphicFeature):
 
     def __init__(
             self,
-            data: NDArray,
+            data: NDArray | pygfx.Buffer,
             buffer_type: Literal["buffer", "texture"] = "buffer",
             isolated_buffer: bool = True,
             texture_dim: int = 2,
@@ -168,12 +168,18 @@ class BufferManager(GraphicFeature):
             # user's input array is used as the buffer
             bdata = data
 
-        if buffer_type == "buffer":
+        if isinstance(data, pygfx.Buffer):
+            # already a buffer, probably used for
+            # managing another BufferManager, example: VertexCmap manages VertexColors
+            self._buffer = data
+        elif buffer_type == "buffer":
             self._buffer = pygfx.Buffer(bdata)
         elif buffer_type == "texture":
             self._buffer = pygfx.Texture(bdata, dim=texture_dim)
         else:
-            raise ValueError("`buffer_type` must be one of: 'buffer' or 'texture'")
+            raise ValueError(
+                "`data` must be a pygfx.Buffer instance or `buffer_type` must be one of: 'buffer' or 'texture'"
+            )
 
         self._event_handlers: list[callable] = list()
 
@@ -202,11 +208,7 @@ class BufferManager(GraphicFeature):
     def __setitem__(self, key, value):
         raise NotImplementedError
 
-    def _update_range(self, key: int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]):
-        """
-        Uses key from slicing to determine the offset and
-        size of the buffer to mark for upload to the GPU
-        """
+    def _parse_offset_size(self, key: int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]):
         # number of elements in the buffer
         upper_bound = self.value.shape[0]
 
@@ -219,8 +221,12 @@ class BufferManager(GraphicFeature):
             # simplest case
             offset = key
             size = 1
+            n_elements = 1
 
         elif isinstance(key, slice):
+            # TODO: off-by-one sometimes when step is used
+            #  the offset can be one to the left or the size
+            #  is one extra so it's not really an issue for now
             # parse slice
             start, stop, step = key.indices(upper_bound)
 
@@ -238,6 +244,7 @@ class BufferManager(GraphicFeature):
             # number of elements to upload
             # this is indexing so do not add 1
             size = abs(stop - start)
+            n_elements = len(range(start, stop, step))
 
         elif isinstance(key, (np.ndarray, list)):
             if isinstance(key, list):
@@ -265,14 +272,25 @@ class BufferManager(GraphicFeature):
             # index of first element to upload
             offset = key.min()
 
-            # number of elements to upload
+            # size range to upload
             # add 1 because this is direct
             # passing of indices, not a start:stop
             size = np.ptp(key) + 1
 
+            # number of elements indexed
+            n_elements = key.size
+
         else:
             raise TypeError(key)
 
+        return offset, size, n_elements
+
+    def _update_range(self, key: int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]):
+        """
+        Uses key from slicing to determine the offset and
+        size of the buffer to mark for upload to the GPU
+        """
+        offset, size, n_elements = self._parse_offset_size(key)
         self.buffer.update_range(offset=offset, size=size)
 
     def _emit_event(self, type: str, key, value):
