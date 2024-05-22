@@ -12,7 +12,7 @@ from wgpu.gui.base import log_exception
 
 import pygfx
 
-from ._features import GraphicFeature, PresentFeature, BufferManager, GraphicFeatureDescriptor, Deleted, PointsDataFeature, ColorFeature, PointsSizesFeature
+from ._features import GraphicFeature, BufferManager, GraphicFeatureDescriptor, Deleted, PointsDataFeature, ColorFeature, PointsSizesFeature, Name, Offset, Rotation, Visible
 
 
 HexStr: TypeAlias = str
@@ -56,8 +56,7 @@ class Graphic(BaseGraphic):
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        # all graphics give off a feature event when deleted
-        cls.features = {*cls.features}#, "deleted"}
+        cls.features = {*cls.features, "name", "offset", "rotation", "visible", "deleted"}
 
         # graphic feature class attributes
         for f in cls.features:
@@ -83,7 +82,7 @@ class Graphic(BaseGraphic):
         if (name is not None) and (not isinstance(name, str)):
             raise TypeError("Graphic `name` must be of type <str>")
 
-        self._name = name
+        self._name = Name(name)
         self.metadata = metadata
         self.collection_index = collection_index
         self.registered_callbacks = dict()
@@ -92,7 +91,7 @@ class Graphic(BaseGraphic):
         # store hex id str of Graphic instance mem location
         self._fpl_address: HexStr = hex(id(self))
 
-        # self.deleted = Deleted(self, False)
+        self._deleted = Deleted(False)
 
         self._plot_area = None
 
@@ -101,24 +100,6 @@ class Graphic(BaseGraphic):
 
         # maps callbacks to their partials
         self._event_handler_wrappers = defaultdict(set)
-
-    @property
-    def name(self) -> str | None:
-        """str name reference for this item"""
-        return self._name
-
-    @name.setter
-    def name(self, name: str):
-        if self.name == name:
-            return
-
-        if not isinstance(name, str):
-            raise TypeError("`Graphic` name must be of type <str>")
-
-        if self._plot_area is not None:
-            self._plot_area._check_graphic_name_exists(name)
-
-        self._name = name
 
     @property
     def world_object(self) -> pygfx.WorldObject:
@@ -134,60 +115,6 @@ class Graphic(BaseGraphic):
 
     def attach_feature(self, feature: BufferManager):
         raise NotImplementedError
-
-    @property
-    def position(self) -> np.ndarray:
-        """position of the graphic, [x, y, z]"""
-        return self.world_object.world.position
-
-    @property
-    def position_x(self) -> float:
-        """x-axis position of the graphic"""
-        return self.world_object.world.x
-
-    @property
-    def position_y(self) -> float:
-        """y-axis position of the graphic"""
-        return self.world_object.world.y
-
-    @property
-    def position_z(self) -> float:
-        """z-axis position of the graphic"""
-        return self.world_object.world.z
-
-    @position.setter
-    def position(self, val):
-        self.world_object.world.position = val
-
-    @position_x.setter
-    def position_x(self, val):
-        self.world_object.world.x = val
-
-    @position_y.setter
-    def position_y(self, val):
-        self.world_object.world.y = val
-
-    @position_z.setter
-    def position_z(self, val):
-        self.world_object.world.z = val
-
-    @property
-    def rotation(self):
-        return self.world_object.local.rotation
-
-    @rotation.setter
-    def rotation(self, val):
-        self.world_object.local.rotation = val
-
-    @property
-    def visible(self) -> bool:
-        """Access or change the visibility."""
-        return self.world_object.visible
-
-    @visible.setter
-    def visible(self, v: bool):
-        """Access or change the visibility."""
-        self.world_object.visible = v
 
     @property
     def children(self) -> list[pygfx.WorldObject]:

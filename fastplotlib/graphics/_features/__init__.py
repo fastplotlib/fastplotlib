@@ -11,8 +11,7 @@ from ._base import (
     to_gpu_supported_dtype,
 )
 from ._selection_features import LinearSelectionFeature, LinearRegionSelectionFeature
-from ._deleted import Deleted
-#
+from ._common import Name, Offset, Rotation, Visible, Deleted
 # __all__ = [
 #     "ColorFeature",
 #     "CmapFeature",
@@ -31,12 +30,6 @@ from ._deleted import Deleted
 #     "LinearRegionSelectionFeature",
 #     "Deleted",
 # ]
-
-class PresentFeature:
-    pass
-
-class Deleted:
-    pass
 
 class CmapFeature:
     pass

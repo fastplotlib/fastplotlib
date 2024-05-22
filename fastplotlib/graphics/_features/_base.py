@@ -75,11 +75,13 @@ class GraphicFeature:
     def __init__(self, **kwargs):
         self._event_handlers = list()
         self._block_events = False
-        self.collection_index: int = None
 
     @property
     def value(self) -> Any:
         raise NotImplemented
+
+    def set_value(self, graphic, value: float):
+        raise NotImplementedError
 
     def block_events(self, val: bool):
         """
@@ -182,6 +184,10 @@ class BufferManager(GraphicFeature):
     @property
     def value(self) -> NDArray:
         return self.buffer.data
+
+    def set_value(self, graphic, value):
+        """Sets values on entire array"""
+        self[:] = value
 
     @property
     def buffer(self) -> pygfx.Buffer | pygfx.Texture:
@@ -289,16 +295,23 @@ class BufferManager(GraphicFeature):
 
 
 class GraphicFeatureDescriptor:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, feature_name):
+        self.feature_name = feature_name
 
     def _get_feature(self, instance):
-        feature: GraphicFeature = getattr(instance, f"_{self.name}")
+        feature: GraphicFeature = getattr(instance, f"_{self.feature_name}")
         return feature
 
-    def __get__(self, instance, owner):
-        return self._get_feature(instance)
+    def __get__(self, graphic, owner):
+        f = self._get_feature(graphic)
+        if isinstance(f, BufferManager):
+            return f
+        else:
+            return f.value
 
-    def __set__(self, obj, value):
-        feature = self._get_feature(obj)
-        feature[:] = value
+    def __set__(self, graphic, value):
+        feature = self._get_feature(graphic)
+        if isinstance(feature, BufferManager):
+            feature[:] = value
+        else:
+            feature.set_value(graphic, value)
