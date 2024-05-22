@@ -96,7 +96,11 @@ class Graphic(BaseGraphic):
 
         self._plot_area = None
 
+        # event handlers
         self._event_handlers = defaultdict(set)
+
+        # maps callbacks to their partials
+        self._event_handler_wrappers = defaultdict(set)
 
     @property
     def name(self) -> str | None:
@@ -190,6 +194,14 @@ class Graphic(BaseGraphic):
         """Return the children of the WorldObject."""
         return self.world_object.children
 
+    @property
+    def event_handlers(self) -> list[tuple[str, callable, ...]]:
+        """
+        Registered event handlers. Read-only use ``add_event_handler()``
+        and ``remove_event_handler()`` to manage callbacks
+        """
+        return list(self._event_handlers.items())
+
     def add_event_handler(self, *args):
         """
         Register an event handler.
@@ -235,14 +247,20 @@ class Graphic(BaseGraphic):
         def decorator(_callback):
             _callback_injector = partial(self._handle_event, _callback)  # adds graphic instance as attribute
 
-            for type in types:
-                if type in self.features:
+            for t in types:
+                # add to our record
+                self._event_handlers[t].add(_callback)
+
+                if t in self.features:
                     # fpl feature event
-                    feature = getattr(self, f"_{type}")
+                    feature = getattr(self, f"_{t}")
                     feature.add_event_handler(_callback_injector)
                 else:
                     # wrap pygfx event
-                    self.world_object._event_handlers[type].add(_callback_injector)
+                    self.world_object._event_handlers[t].add(_callback_injector)
+
+                # keep track of the partial too
+                self._event_handler_wrappers[t].add((_callback, _callback_injector))
             return _callback
 
         if decorating:
@@ -253,7 +271,34 @@ class Graphic(BaseGraphic):
     def _handle_event(self, callback, event: pygfx.Event):
         """Wrap pygfx event to add graphic to pick_info"""
         event.graphic = self
+
+        if event.type in self.features:
+            # for feature events
+            event._target = self.world_object
+
         callback(event)
+
+    def remove_event_handler(self, callback, *types):
+        # remove from our record first
+        for t in types:
+            for wrapper_map in self._event_handler_wrappers[t]:
+                # TODO: not sure if we can handle this mapping in a better way
+                if wrapper_map[0] == callback:
+                    wrapper = wrapper_map[1]
+                    self._event_handler_wrappers[t].remove(wrapper_map)
+                    break
+            else:
+                raise KeyError(f"event type: {t} with callback: {callback} is not registered")
+
+            self._event_handlers[t].remove(callback)
+            # remove callback wrapper from world object if pygfx event
+            if t in PYGFX_EVENTS:
+                print("pygfx event")
+                print(wrapper)
+                self.world_object.remove_event_handler(wrapper, t)
+            else:
+                feature = getattr(self, f"_{t}")
+                feature.remove_event_handler(wrapper)
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area

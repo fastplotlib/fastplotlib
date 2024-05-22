@@ -118,7 +118,7 @@ class LineGraphic(PositionsGraphic, Interaction):
         world_object: pygfx.Line = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=self._data.buffer, colors=self._colors.buffer),
-            material=material(thickness=thickness, color_mode="vertex"),
+            material=material(thickness=thickness, color_mode="vertex", pick_write=True),
         )
 
         self._set_world_object(world_object)
@@ -231,7 +231,7 @@ class LineGraphic(PositionsGraphic, Interaction):
     # TODO: this method is a bit of a mess, can refactor later
     def _get_linear_selector_init_args(self, padding: float, **kwargs):
         # computes initial bounds, limits, size and origin of linear selectors
-        data = self.data()
+        data = self.data.value
 
         if "axis" in kwargs.keys():
             axis = kwargs["axis"]
@@ -255,8 +255,8 @@ class LineGraphic(PositionsGraphic, Interaction):
             # endpoints of the data range
             # used by linear selector but not linear region
             end_points = (
-                self.data()[:, 1].min() - padding,
-                self.data()[:, 1].max() + padding,
+                self.data.value[:, 1].min() - padding,
+                self.data.value[:, 1].max() + padding,
             )
         else:
             offset = self.position_y
@@ -273,8 +273,8 @@ class LineGraphic(PositionsGraphic, Interaction):
             origin = (position_x + self.position_x, limits[0] - offset)
 
             end_points = (
-                self.data()[:, 0].min() - padding,
-                self.data()[:, 0].max() + padding,
+                self.data.value[:, 0].min() - padding,
+                self.data.value[:, 0].max() + padding,
             )
 
         # initial bounds are 20% of the limits range

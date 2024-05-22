@@ -43,40 +43,12 @@ class PointsDataFeature(BufferManager):
     def __setitem__(self, key: int | slice | range | np.ndarray[int | bool] | tuple[slice, ...] | tuple[range, ...], value):
         # directly use the key to slice the buffer
         self.buffer.data[key] = value
+
         # _update_range handles parsing the key to
         # determine offset and size for GPU upload
         self._update_range(key)
 
-        # avoid creating dicts constantly if there are no events to handle
-        # if len(self._event_handlers) > 0:
-        #     self._feature_changed(key, value)
-
-    def _feature_changed(self, key, new_data):
-        if key is not None:
-            key = cleanup_slice(key, self._upper_bound)
-        if isinstance(key, (int, np.integer)):
-            indices = [key]
-        elif isinstance(key, slice):
-            indices = range(key.start, key.stop, key.step)
-        elif isinstance(key, np.ndarray):
-            indices = key
-        elif key is None:
-            indices = None
-
-        pick_info = {
-            "index": indices,
-            "collection-index": self._collection_index,
-            "world_object": self._parent.world_object,
-            "new_data": new_data,
-        }
-
-        event_data = FeatureEvent(type="data", pick_info=pick_info)
-
-        self._call_event_handlers(event_data)
-
-    # def __repr__(self) -> str:
-    #     s = f"PointsDataFeature for {self._parent}, call `<graphic>.data()` to get values"
-    #     return s
+        self._emit_event("data", key, value)
 
 #
 # class ImageDataFeature(GraphicFeatureIndexable):

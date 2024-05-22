@@ -6,6 +6,8 @@ from typing import Any, Literal
 import numpy as np
 from numpy.typing import NDArray
 
+from wgpu.gui.base import log_exception
+
 import pygfx
 
 
@@ -41,7 +43,7 @@ def to_gpu_supported_dtype(array):
     return array
 
 
-class FeatureEvent:
+class FeatureEvent(pygfx.Event):
     """
     Dataclass that holds feature event information. Has ``type`` and ``pick_info`` attributes.
 
@@ -64,16 +66,9 @@ class FeatureEvent:
 
     """
 
-    def __init__(self, type: str, pick_info: dict):
-        self.type = type
-        self.pick_info = pick_info
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__} @ {hex(id(self))}\n"
-            f"type: {self.type}\n"
-            f"pick_info: {self.pick_info}\n"
-        )
+    def __init__(self, type: str, info: dict):
+        super().__init__(type=type)
+        self.info = info
 
 
 class GraphicFeature:
@@ -100,7 +95,7 @@ class GraphicFeature:
 
     def add_event_handler(self, handler: callable):
         """
-        Add an event handler. All added event handlers are calledcollection_ind when this feature changes.
+        Add an event handler. All added event handlers are called when this feature changes.
 
         The ``handler`` can optionally accept a :class:`.FeatureEvent` as the first and only argument.
         The ``FeatureEvent`` only has 2 attributes, ``type`` which denotes the type of event
@@ -141,32 +136,13 @@ class GraphicFeature:
         """Clear all event handlers"""
         self._event_handlers.clear()
 
-    # TODO: maybe this can be implemented right here in the base class
-    @abstractmethod
-    def _feature_changed(self,new_data: Any, key: int | slice | tuple[slice] | None = None):
-        """Called whenever a feature changes, and it calls all funcs in self._event_handlers"""
-        pass
-
     def _call_event_handlers(self, event_data: FeatureEvent):
         if self._block_events:
             return
 
         for func in self._event_handlers:
-            try:
-                args = getfullargspec(func).args
-
-                if len(args) > 0:
-                    if args[0] == "self" and not len(args) > 1:
-                        func()
-                    else:
-                        func(event_data)
-                else:
-                    func()
-            except TypeError:
-                warn(
-                    f"Event handler {func} has an unresolvable argspec, calling it without arguments"
-                )
-                func()
+            with log_exception(f"Error during handling {self.__class__.__name__} event"):
+                func(event_data)
 
     def __repr__(self) -> str:
         raise NotImplementedError
@@ -294,6 +270,18 @@ class BufferManager(GraphicFeature):
             raise TypeError(key)
 
         self.buffer.update_range(offset=offset, size=size)
+
+    def _emit_event(self, type: str, key, value):
+        if len(self._event_handlers) < 1:
+            return
+
+        event_info = {
+            "key": key,
+            "value": value,
+        }
+        event = FeatureEvent(type, info=event_info)
+
+        super()._call_event_handlers(event)
 
     def __repr__(self):
         return f"{self.__class__.__name__} buffer data:\n" \

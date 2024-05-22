@@ -9,7 +9,7 @@ from ._features import PointsDataFeature, ColorFeature, CmapFeature, PointsSizes
 
 
 class ScatterGraphic(PositionsGraphic):
-    feature_events = {"data", "sizes", "colors", "cmap", "present"}
+    features = {"data", "sizes", "colors"}#, "cmap", "present"}
 
     def __init__(
         self,
@@ -20,6 +20,7 @@ class ScatterGraphic(PositionsGraphic):
         cmap: str = None,
         cmap_values: np.ndarray | List = None,
         z_position: float = 0.0,
+        isolated_buffer: bool = True,
         *args,
         **kwargs,
     ):
@@ -73,25 +74,35 @@ class ScatterGraphic(PositionsGraphic):
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
         """
-        self.data = PointsDataFeature(self, data)
-        n_datapoints = self.data().shape[0]
+        self._data = PointsDataFeature(data, isolated_buffer=isolated_buffer)
+
+        n_datapoints = self._data.value.shape[0]
 
         if cmap is not None:
             colors = parse_cmap_values(
                 n_colors=n_datapoints, cmap_name=cmap, cmap_values=cmap_values
             )
 
-        self.colors = ColorFeature(self, colors, n_colors=n_datapoints, alpha=alpha)
-        self.cmap = CmapFeature(
-            self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
-        )
+        if isinstance(colors, ColorFeature):
+            self._colors = colors
+            self._colors._shared += 1
+        else:
+            self._colors = ColorFeature(
+                colors,
+                n_colors=self._data.value.shape[0],
+                alpha=alpha,
+            )
 
-        self.sizes = PointsSizesFeature(self, sizes)
+        # self.cmap = CmapFeature(
+        #     self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
+        # )
+
+        self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
         super().__init__(*args, **kwargs)
 
         world_object = pygfx.Points(
             pygfx.Geometry(
-                positions=self.data(), sizes=self.sizes(), colors=self.colors()
+                positions=self._data.buffer, sizes=self._sizes.buffer, colors=self._colors.buffer
             ),
             material=pygfx.PointsMaterial(
                 color_mode="vertex", size_mode="vertex", pick_write=True

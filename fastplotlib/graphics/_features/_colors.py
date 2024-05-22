@@ -18,23 +18,11 @@ from .utils import parse_colors
 class ColorFeature(BufferManager):
     """
     Manages the color buffer for :class:`LineGraphic` or :class:`ScatterGraphic`
-
-    **event pick info:**
-
-     ==================== =============================== =========================================================================
-      key                  type                            description
-     ==================== =============================== =========================================================================
-      "index"              ``numpy.ndarray`` or ``None``   changed indices in the buffer
-      "new_data"           ``numpy.ndarray`` or ``None``   new buffer data at the changed indices
-      "collection-index"   int                             the index of the graphic within the collection that triggered the event
-      "world_object"       pygfx.WorldObject               world object
-     ==================== =============================== =========================================================================
-
     """
 
     def __init__(
         self,
-        colors,
+        colors: str | np.ndarray | tuple[float, float, float, float] | list[str] | list[float] | int | float,
         n_colors: int,
         alpha: float = None,
         isolated_buffer: bool = True,
@@ -44,16 +32,14 @@ class ColorFeature(BufferManager):
 
         Parameters
         ----------
-        parent: Graphic or GraphicCollection
-
-        colors: str, array, or iterable
-            specify colors as a single human readable string, RGBA array,
+        colors: str | np.ndarray | tuple[float, float, float, float] | list[str] | list[float] | int | float
+            specify colors as a single human-readable string, RGBA array,
             or an iterable of strings or RGBA arrays
 
         n_colors: int
-            number of colors to hold, if passing in a single str or single RGBA array
+            number of colors, if passing in a single str or single RGBA array
 
-        alpha: float
+        alpha: float, optional
             alpha value for the colors
 
         """
@@ -66,11 +52,8 @@ class ColorFeature(BufferManager):
             key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
             value: str | np.ndarray | tuple[float, float, float, float] | list[str] | list[float] | int | float
     ):
-        # if key is tuple assume they want to edit [n_points, RGBA] directly
-        # if key is slice | range | int | np.ndarray, they are slicing only n_points, get n_points and parse colors
-
         if isinstance(key, tuple):
-            # directly setting RGBA values, we do no parsing
+            # directly setting RGBA values for points, we do no parsing
             if not isinstance(value, (int, float, np.ndarray)):
                 raise TypeError(
                     "Can only set from int, float, or array to set colors directly by slicing the entire array"
@@ -118,29 +101,8 @@ class ColorFeature(BufferManager):
         self.buffer.data[key] = value
 
         self._update_range(key)
-        # self._feature_changed(key, new_colors)
 
-    def _feature_changed(self, key, new_data):
-        key = cleanup_slice(key, self._upper_bound)
-        if isinstance(key, int):
-            indices = [key]
-        elif isinstance(key, slice):
-            indices = range(key.start, key.stop, key.step)
-        elif isinstance(key, np.ndarray):
-            indices = key
-        else:
-            raise TypeError("feature changed key must be slice or int")
-
-        pick_info = {
-            "index": indices,
-            "collection-index": self._collection_index,
-            "world_object": self._parent.world_object,
-            "new_data": new_data,
-        }
-
-        event_data = FeatureEvent(type="colors", pick_info=pick_info)
-
-        self._call_event_handlers(event_data)
+        self._emit_event("colors", key, value)
 
 
 # class CmapFeature(ColorFeature):
