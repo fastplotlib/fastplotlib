@@ -5,11 +5,28 @@ import pygfx
 
 from ..utils import parse_cmap_values
 from ._base import PositionsGraphic
-from ._features import CmapFeature, PointsSizesFeature
+from ._features import CmapFeature, PointsSizesFeature, UniformSizes
 
 
 class ScatterGraphic(PositionsGraphic):
     features = {"data", "sizes", "colors"}#, "cmap", "present"}
+
+    @property
+    def sizes(self) -> PointsSizesFeature | float:
+        """Get or set the scatter point size(s)"""
+        if isinstance(self._sizes, PointsSizesFeature):
+            return self._sizes
+
+        elif isinstance(self._sizes, UniformSizes):
+            return self._sizes.value
+
+    @sizes.setter
+    def sizes(self, value):
+        if isinstance(self._sizes, PointsSizesFeature):
+            self._sizes[:] = value
+
+        elif isinstance(self._sizes, UniformSizes):
+            self._sizes.set_value(self, value)
 
     def __init__(
         self,
@@ -99,15 +116,17 @@ class ScatterGraphic(PositionsGraphic):
 
         if uniform_colors:
             material_kwargs["color_mode"] = "uniform"
+            material_kwargs["color"] = self.colors.value
         else:
             material_kwargs["color_mode"] = "vertex"
-            geo_kwargs["colors"] = self._colors.buffer
+            geo_kwargs["colors"] = self.colors.buffer
 
         if uniform_sizes:
             material_kwargs["size_mode"] = "uniform"
+            material_kwargs["size"] = self.sizes.value
         else:
             material_kwargs["size_mode"] = "vertex"
-            geo_kwargs["sizes"] = self._sizes.buffer
+            geo_kwargs["sizes"] = self.sizes.buffer
 
         world_object = pygfx.Points(
             pygfx.Geometry(**geo_kwargs),

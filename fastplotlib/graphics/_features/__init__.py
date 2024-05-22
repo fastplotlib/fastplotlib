@@ -1,6 +1,4 @@
-from ._positions_graphics import VertexColors, UniformColor, \
-    VertexPositions  # , CmapFeature, ImageCmapFeature, HeatmapCmapFeature
-from ._sizes import PointsSizesFeature
+from ._positions_graphics import VertexColors, UniformColor, UniformSizes, VertexPositions, PointsSizesFeature  # , CmapFeature, ImageCmapFeature, HeatmapCmapFeature
 # from ._present import PresentFeature
 # from ._thickness import ThicknessFeature
 from ._base import (

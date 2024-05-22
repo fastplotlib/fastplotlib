@@ -2,7 +2,6 @@ from typing import Any
 
 import numpy as np
 import pygfx
-from ._base import BufferManager, to_gpu_supported_dtype
 
 from ...utils import (
     make_colors,
@@ -14,6 +13,7 @@ from ._base import (
     GraphicFeature,
     BufferManager,
     FeatureEvent,
+    to_gpu_supported_dtype,
 )
 from .utils import parse_colors
 
@@ -128,19 +128,19 @@ class UniformColor(GraphicFeature):
 
 class UniformSizes(GraphicFeature):
     def __init__(self, value: int | float):
-        self._value = pygfx.Color(value)
+        self._value = float(value)
         super().__init__()
 
     @property
-    def value(self) -> pygfx.Color:
+    def value(self) -> float:
         return self._value
 
     def set_value(self, graphic, value: str | np.ndarray | tuple | list | pygfx.Color):
         value = pygfx.Color(value)
-        graphic.world_object.material.color = value
+        graphic.world_object.material.size = value
         self._value = value
 
-        event = FeatureEvent(type="colors", info={"value": value})
+        event = FeatureEvent(type="sizes", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -182,6 +182,57 @@ class VertexPositions(BufferManager):
         self._update_range(key)
 
         self._emit_event("data", key, value)
+
+
+class PointsSizesFeature(BufferManager):
+    """
+    Access to the vertex buffer data shown in the graphic.
+    Supports fancy indexing if the data array also supports it.
+    """
+
+    def __init__(
+            self,
+            sizes: int | float | np.ndarray | list[int | float] | tuple[int | float],
+            n_datapoints: int,
+            isolated_buffer: bool = True
+    ):
+        sizes = self._fix_sizes(sizes, n_datapoints)
+        super().__init__(data=sizes, isolated_buffer=isolated_buffer)
+
+    def _fix_sizes(self, sizes: int | float | np.ndarray | list[int | float] | tuple[int | float], n_datapoints: int):
+        if np.issubdtype(type(sizes), np.number):
+            # single value given
+            sizes = np.full(
+                n_datapoints, sizes, dtype=np.float32
+            )  # force it into a float to avoid weird gpu errors
+
+        elif isinstance(
+            sizes, (np.ndarray, tuple, list)
+        ):  # if it's not a ndarray already, make it one
+            sizes = np.asarray(sizes, dtype=np.float32)  # read it in as a numpy.float32
+            if (sizes.ndim != 1) or (sizes.size != n_datapoints):
+                raise ValueError(
+                    f"sequence of `sizes` must be 1 dimensional with "
+                    f"the same length as the number of datapoints"
+                )
+
+        else:
+            raise TypeError("sizes must be a single <int>, <float>, or a sequence (array, list, tuple) of int"
+                            "or float with the length equal to the number of datapoints")
+
+        if np.count_nonzero(sizes < 0) > 1:
+            raise ValueError(
+                "All sizes must be positive numbers greater than or equal to 0.0."
+            )
+
+        return sizes
+
+    def __setitem__(self, key, value):
+        # this is a very simple 1D buffer, no parsing required, directly set buffer
+        self.buffer.data[key] = value
+        self._update_range(key)
+
+        self._emit_event("sizes", key, value)
 
 
 # class CmapFeature(ColorFeature):
