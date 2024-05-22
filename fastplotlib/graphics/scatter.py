@@ -5,7 +5,7 @@ import pygfx
 
 from ..utils import parse_cmap_values
 from ._base import PositionsGraphic
-from ._features import PointsDataFeature, ColorFeature, CmapFeature, PointsSizesFeature
+from ._features import CmapFeature, PointsSizesFeature
 
 
 class ScatterGraphic(PositionsGraphic):
@@ -13,14 +13,15 @@ class ScatterGraphic(PositionsGraphic):
 
     def __init__(
         self,
-        data: np.ndarray,
-        sizes: float | np.ndarray | Iterable[float] = 1,
-        colors: str | np.ndarray | Iterable[str] = "w",
+        data: Any,
+        colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
+        uniform_colors: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: np.ndarray | List = None,
-        z_position: float = 0.0,
+        cmap_values: np.ndarray = None,
         isolated_buffer: bool = True,
+        sizes: float | np.ndarray | Iterable[float] = 1,
+        uniform_sizes: bool = False,
         *args,
         **kwargs,
     ):
@@ -74,41 +75,43 @@ class ScatterGraphic(PositionsGraphic):
             Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
         """
-        self._data = PointsDataFeature(data, isolated_buffer=isolated_buffer)
-
-        n_datapoints = self._data.value.shape[0]
-
-        if cmap is not None:
-            colors = parse_cmap_values(
-                n_colors=n_datapoints, cmap_name=cmap, cmap_values=cmap_values
-            )
-
-        if isinstance(colors, ColorFeature):
-            self._colors = colors
-            self._colors._shared += 1
-        else:
-            self._colors = ColorFeature(
-                colors,
-                n_colors=self._data.value.shape[0],
-                alpha=alpha,
-            )
-
         # self.cmap = CmapFeature(
         #     self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
         # )
 
+        super().__init__(
+            data=data,
+            colors=colors,
+            uniform_colors=uniform_colors,
+            alpha=alpha,
+            cmap=cmap,
+            cmap_values=cmap_values,
+            isolated_buffer=isolated_buffer,
+            *args,
+            **kwargs
+        )
+
+        n_datapoints = self.data.value.shape[0]
         self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
-        super().__init__(*args, **kwargs)
+
+        geo_kwargs = {"positions": self._data.buffer}
+        material_kwargs = {"pick_write": True}
+
+        if uniform_colors:
+            material_kwargs["color_mode"] = "uniform"
+        else:
+            material_kwargs["color_mode"] = "vertex"
+            geo_kwargs["colors"] = self._colors.buffer
+
+        if uniform_sizes:
+            material_kwargs["size_mode"] = "uniform"
+        else:
+            material_kwargs["size_mode"] = "vertex"
+            geo_kwargs["sizes"] = self._sizes.buffer
 
         world_object = pygfx.Points(
-            pygfx.Geometry(
-                positions=self._data.buffer, sizes=self._sizes.buffer, colors=self._colors.buffer
-            ),
-            material=pygfx.PointsMaterial(
-                color_mode="vertex", size_mode="vertex", pick_write=True
-            ),
+            pygfx.Geometry(**geo_kwargs),
+            material=pygfx.PointsMaterial(**material_kwargs),
         )
 
         self._set_world_object(world_object)
-
-        self.position_z = z_position

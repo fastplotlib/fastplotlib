@@ -126,6 +126,24 @@ class UniformColor(GraphicFeature):
         self._call_event_handlers(event)
 
 
+class UniformSizes(GraphicFeature):
+    def __init__(self, value: int | float):
+        self._value = pygfx.Color(value)
+        super().__init__()
+
+    @property
+    def value(self) -> pygfx.Color:
+        return self._value
+
+    def set_value(self, graphic, value: str | np.ndarray | tuple | list | pygfx.Color):
+        value = pygfx.Color(value)
+        graphic.world_object.material.color = value
+        self._value = value
+
+        event = FeatureEvent(type="colors", info={"value": value})
+        self._call_event_handlers(event)
+
+
 class VertexPositions(BufferManager):
     """
     Manages the vertex positions buffer shown in the graphic.
