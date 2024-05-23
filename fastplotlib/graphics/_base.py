@@ -404,44 +404,68 @@ class PositionsGraphic(Graphic):
             colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
             uniform_colors: bool = False,
             alpha: float = 1.0,
-            cmap: str = None,
+            cmap: str | VertexCmap = None,
             cmap_values: np.ndarray = None,
             isolated_buffer: bool = True,
             *args,
             **kwargs,
     ):
-        self._data = VertexPositions(data, isolated_buffer=isolated_buffer)
+        if isinstance(data, VertexPositions):
+            self._data = data
+        else:
+            self._data = VertexPositions(data, isolated_buffer=isolated_buffer)
 
         if cmap is not None:
+            # if a cmap is specified it overrides colors argument
             if uniform_colors:
                 raise TypeError(
                     "Cannot use cmap if uniform_colors=True"
                 )
 
-            n_datapoints = self._data.value.shape[0]
-
-            colors = parse_cmap_values(
-                n_colors=n_datapoints, cmap_name=cmap, cmap_values=cmap_values
-            )
-
-        if isinstance(colors, VertexColors):
-            if uniform_colors:
-                raise TypeError(
-                    "Cannot use vertex colors from existing instance if uniform_colors=True"
-                )
-            self._colors = colors
-            self._colors._shared += 1
-        else:
-            if uniform_colors:
-                self._colors = UniformColor(colors)
-                self._cmap = None
+            if isinstance(cmap, str):
+                # make colors from cmap
+                if isinstance(colors, VertexColors):
+                    # share buffer with existing colors instance for the cmap
+                    self._colors = colors
+                    self._colors._shared += 1
+                else:
+                    # create vertex colors buffer
+                    self._colors = VertexColors("w", n_colors=self._data.value.shape[0])
+                    # make cmap using vertex colors buffer
+                    self._cmap = VertexCmap(
+                        self._colors,
+                        cmap_name=cmap,
+                        cmap_values=cmap_values
+                    )
+            elif isinstance(cmap, VertexCmap):
+                # use existing cmap instance
+                self._cmap = cmap
+                self._colors = cmap._vertex_colors
             else:
-                self._colors = VertexColors(
-                    colors,
-                    n_colors=self._data.value.shape[0],
-                    alpha=alpha,
+                raise TypeError
+        else:
+            # no cmap given
+            if isinstance(colors, VertexColors):
+                # share buffer with existing colors instance
+                self._colors = colors
+                self._colors._shared += 1
+                # blank colormap instance
+                self._cmap = VertexCmap(
+                    self._colors,
+                    cmap_name=None,
+                    cmap_values=None
                 )
-                self._cmap = VertexCmap(self._colors, cmap_name=cmap, cmap_values=cmap_values)
+            else:
+                if uniform_colors:
+                    self._colors = UniformColor(colors)
+                    self._cmap = None
+                else:
+                    self._colors = VertexColors(
+                        colors,
+                        n_colors=self._data.value.shape[0],
+                        alpha=alpha,
+                    )
+                    self._cmap = VertexCmap(self._colors, cmap_name=None, cmap_values=None)
                 
         super().__init__(*args, **kwargs)
 

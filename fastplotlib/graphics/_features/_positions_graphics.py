@@ -170,7 +170,7 @@ class VertexPositions(BufferManager):
 
         return to_gpu_supported_dtype(data)
 
-    def __setitem__(self, key: int | slice | range | np.ndarray[int | bool] | tuple[slice, ...] | tuple[range, ...], value):
+    def __setitem__(self, key: int | slice | np.ndarray[int | bool] | tuple[slice, ...], value):
         # directly use the key to slice the buffer
         self.buffer.data[key] = value
 
@@ -255,22 +255,42 @@ class VertexCmap(BufferManager):
     Sliceable colormap feature, manages a VertexColors instance and just provides a way to set colormaps.
     """
 
-    def __init__(self, vertex_colors: VertexColors, cmap_name: str, cmap_values: np.ndarray):
+    def __init__(self, vertex_colors: VertexColors, cmap_name: str | None, cmap_values: np.ndarray | None):
         super().__init__(data=vertex_colors)
 
         self._vertex_colors = vertex_colors
         self._cmap_name = cmap_name
         self._cmap_values = cmap_values
 
-    def __setitem__(self, key, cmap_name):
-        if isinstance(key, slice):
-            if key.step is not None:
-                raise TypeError(
-                    "step sized indexing not currently supported for setting VertexCmap, "
-                    "continuous regions are recommended"
-                )
+        if self._cmap_name is not None:
+            if not isinstance(self._cmap_name, str):
+                raise TypeError
+            if not isinstance(self._cmap_values, np.ndarray):
+                raise TypeError
 
-        offset, size, n_elements = self._parse_offset_size(key)
+            n_datapoints = vertex_colors.value.shape[0]
+
+            colors = parse_cmap_values(
+                n_colors=n_datapoints, cmap_name=self._cmap_name, cmap_values=self._cmap_values
+            )
+            # set vertex colors from cmap
+            self._vertex_colors[:] = colors
+
+    def __setitem__(self, key: slice, cmap_name):
+        if not isinstance(key, slice):
+            raise TypeError(
+                "fancy indexing not supported for VertexCmap, only slices "
+                "of a continuous are supported for apply a cmap"
+            )
+        if key.step is not None:
+            raise TypeError(
+                "step sized indexing not currently supported for setting VertexCmap, "
+                "slices must be a continuous region"
+            )
+
+        # parse slice
+        start, stop, step = key.indices(self.value.shape[0])
+        n_elements = len(range(start, stop, step))
 
         colors = parse_cmap_values(
             n_colors=n_elements, cmap_name=cmap_name, cmap_values=self._cmap_values
@@ -279,6 +299,9 @@ class VertexCmap(BufferManager):
         self._cmap_name = cmap_name
         self._vertex_colors[key] = colors
 
+        # TODO: should we block vertex_colors from emitting an event?
+        #  Because currently this will result in 2 emitted events, one
+        #  for cmap and another from the colors
         self._emit_event("cmap", key, cmap_name)
 
     @property
