@@ -10,69 +10,40 @@ class LinearSelectionFeature(GraphicFeature):
     # A bit much to have a class for this but this allows it to integrate with the fastplotlib callback system
     """
     Manages the linear selection and callbacks
-
-    **event pick info**
-
-     ===================  ===============================  =================================================================================================
-      key                  type                             selection
-     ===================  ===============================  =================================================================================================
-      "selected_index"     ``int``                          the graphic data index that corresponds to the selector position
-      "world_object"       ``pygfx.WorldObject``            pygfx WorldObject
-      "new_data"           ``numpy.ndarray`` or ``None``    the new selector position in world coordinates, not necessarily the same as "selected_index"
-      "graphic"            ``Graphic``                      the selector graphic
-      "delta"              ``numpy.ndarray``                the delta vector of the graphic in NDC
-      "pygfx_event"        ``pygfx.Event``                  pygfx Event
-     ===================  ===============================  =================================================================================================
-
     """
 
-    def __init__(self, parent, axis: str, value: float, limits: Tuple[int, int]):
-        super().__init__(parent, data=value)
+    def __init__(self, axis: str, value: float, limits: Tuple[int, int]):
+        super().__init__()
 
         self._axis = axis
         self._limits = limits
+        self._value = value
 
-    def _set(self, value: float):
+    @property
+    def value(self) -> float:
+        """
+        selection index w.r.t. the graphic.data
+        not world position, graphic.offset is subtracted
+        """
+        return self._value
+
+    def set_value(self, graphic, value: float):
         if not (self._limits[0] <= value <= self._limits[1]):
             return
 
+        offset = list(graphic.offset)
+
         if self._axis == "x":
-            self._parent.position_x = value
+            offset[0] = value
         else:
-            self._parent.position_y = value
+            offset[1] = value
 
-        self._data = value
-        self._feature_changed(key=None, new_data=value)
+        graphic.offset = offset
 
-    def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
-        if len(self._event_handlers) < 1:
-            return
-
-        if self._parent.parent is not None:
-            g_ix = self._parent.get_selected_index()
-        else:
-            g_ix = None
-
-        # get pygfx event and reset it
-        pygfx_ev = self._parent._pygfx_event
-        self._parent._pygfx_event = None
-
-        pick_info = {
-            "world_object": self._parent.world_object,
-            "new_data": new_data,
-            "selected_index": g_ix,
-            "graphic": self._parent,
-            "pygfx_event": pygfx_ev,
-            "delta": self._parent.delta,
-        }
-
-        event_data = FeatureEvent(type="selection", pick_info=pick_info)
-
-        self._call_event_handlers(event_data)
-
-    def __repr__(self) -> str:
-        s = f"LinearSelectionFeature for {self._parent}"
-        return s
+        self._value = value
+        event = FeatureEvent("selection", {"value": value})
+        self._call_event_handlers(event)
+        # TODO: selector event handlers can call event.get_selected_index() to get the data index
 
 
 class LinearRegionSelectionFeature(GraphicFeature):
