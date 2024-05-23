@@ -11,10 +11,10 @@ from ..utils import quick_min_max
 from ._base import Graphic, Interaction
 from .selectors import LinearSelector, LinearRegionSelector
 from ._features import (
-    Cmap,
-    Vmin,
-    Vmax,
-    ImageDataFeature,
+    ImageData,
+    ImageCmap,
+    ImageVmin,
+    ImageVmax,
     HeatmapDataFeature,
     HeatmapCmapFeature,
     to_gpu_supported_dtype,
@@ -201,13 +201,40 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
     features = {"data", "cmap", "vmin", "vmax"}
 
     @property
+    def data(self) -> ImageData:
+        """Get or set the image data"""
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._data[:] = data
+
+    @property
     def cmap(self) -> str:
-        """Graphic name"""
+        """colormap name"""
         return self._cmap.value
 
     @cmap.setter
     def cmap(self, name: str):
         self._cmap.set_value(self, name)
+
+    @property
+    def vmin(self) -> float:
+        """lower contrast limit"""
+        return self._vmin.value
+
+    @vmin.setter
+    def vmin(self, value: float):
+        self._vmin.set_value(self, value)
+
+    @property
+    def vmax(self) -> float:
+        """upper contrast limit"""
+        return self._vmax.value
+
+    @vmax.setter
+    def vmax(self, value: float):
+        self._vmax.set_value(self, value)
 
     def __init__(
         self,
@@ -268,37 +295,29 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
         """
 
         super().__init__(*args, **kwargs)
-
-        data = to_gpu_supported_dtype(data)
-
-        # TODO: we need to organize and do this better
-        if isolated_buffer:
-            # initialize a buffer with the same shape as the input data
-            # we do not directly use the input data array as the buffer
-            # because if the input array is a read-only type, such as
-            # numpy memmaps, we would not be able to change the image data
-            buffer_init = np.zeros(shape=data.shape, dtype=data.dtype)
-        else:
-            buffer_init = data
+        self._data = ImageData(data, isolated_buffer=isolated_buffer)
+        self._cmap = ImageCmap(cmap)
 
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
 
-        texture = pygfx.Texture(buffer_init, dim=2)
+        self._vmin = ImageVmin(vmin)
+        self._vmax = ImageVmax(vmax)
 
-        geometry = pygfx.Geometry(grid=texture)
+        clim = (self.vmin, self.vmax)
 
-        self._cmap = Cmap(cmap)
+        # make grid geometry from image data Texture
+        geometry = pygfx.Geometry(grid=self._data.buffer)
 
-        # if data is RGB or RGBA
-        if data.ndim > 2:
+        if self._data.value.ndim > 2:
+            # if data is RGB or RGBA
             material = pygfx.ImageBasicMaterial(
-                clim=(vmin, vmax), map_interpolation=filter, pick_write=True
+                clim=clim, map_interpolation=filter, pick_write=True
             )
-        # if data is just 2D without color information, use colormap LUT
         else:
+            # if data is just 2D without color information, use colormap LUT
             material = pygfx.ImageBasicMaterial(
-                clim=(vmin, vmax),
+                clim=clim,
                 map=self._cmap.texture,
                 map_interpolation=filter,
                 pick_write=True,
@@ -308,18 +327,8 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
 
         self._set_world_object(world_object)
 
-        self.vmin = Vmin(vmin)
-        self.vmax = Vmax(Vmax)
-
-        self.data = ImageDataFeature(self, data)
-        # TODO: we need to organize and do this better
-        if isolated_buffer:
-            # if the buffer was initialized with zeros
-            # set it with the actual data
-            self.data = data
-
-    # def reset_vmin_vmax(self):
-    #     vmin, vmax = quick_min_max(data)
+    def reset_vmin_vmax(self):
+        self.vmin, self.vmax = quick_min_max(self._data.value)
 
     def set_feature(self, feature: str, new_data: Any, indices: Any):
         pass
