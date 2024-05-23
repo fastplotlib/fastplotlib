@@ -208,20 +208,14 @@ class BufferManager(GraphicFeature):
     def __setitem__(self, key, value):
         raise NotImplementedError
 
-    def _parse_offset_size(self, key: int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]):
-        # number of elements in the buffer
-        upper_bound = self.value.shape[0]
-
-        if isinstance(key, tuple):
-            # if multiple dims are sliced, we only need the key for
-            # the first dimension corresponding to n_datapoints
-            key: int | np.ndarray[int | bool] | slice = key[0]
-
+    def _parse_offset_size(self, key: int | slice | np.ndarray[int | bool] | list[bool | int], upper_bound: int):
+        """
+        parse offset and size for one dimension
+        """
         if isinstance(key, int):
             # simplest case
             offset = key
             size = 1
-            n_elements = 1
 
         elif isinstance(key, slice):
             # TODO: off-by-one sometimes when step is used
@@ -244,7 +238,6 @@ class BufferManager(GraphicFeature):
             # number of elements to upload
             # this is indexing so do not add 1
             size = abs(stop - start)
-            n_elements = len(range(start, stop, step))
 
         elif isinstance(key, (np.ndarray, list)):
             if isinstance(key, list):
@@ -277,20 +270,27 @@ class BufferManager(GraphicFeature):
             # passing of indices, not a start:stop
             size = np.ptp(key) + 1
 
-            # number of elements indexed
-            n_elements = key.size
-
         else:
             raise TypeError(key)
 
-        return offset, size, n_elements
+        return offset, size
 
     def _update_range(self, key: int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]):
         """
         Uses key from slicing to determine the offset and
         size of the buffer to mark for upload to the GPU
         """
-        offset, size, n_elements = self._parse_offset_size(key)
+        upper_bound = self.value.shape[0]
+
+        if isinstance(key, tuple):
+            if any([k is Ellipsis for k in key]):
+                # let's worry about ellipsis later
+                raise TypeError("ellipses not supported for indexing buffers")
+            # if multiple dims are sliced, we only need the key for
+            # the first dimension corresponding to n_datapoints
+            key: int | np.ndarray[int | bool] | slice = key[0]
+
+        offset, size = self._parse_offset_size(key, upper_bound)
         self.buffer.update_range(offset=offset, size=size)
 
     def _emit_event(self, type: str, key, value):

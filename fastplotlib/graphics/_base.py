@@ -13,7 +13,6 @@ from wgpu.gui.base import log_exception
 import pygfx
 
 from ._features import GraphicFeature, BufferManager, Deleted, VertexPositions, VertexColors, VertexCmap, PointsSizesFeature, Name, Offset, Rotation, Visible, UniformColor
-from ..utils import parse_cmap_values
 
 HexStr: TypeAlias = str
 

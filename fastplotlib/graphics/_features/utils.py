@@ -1,6 +1,5 @@
 import pygfx
 import numpy as np
-from typing import Iterable
 
 from ._base import to_gpu_supported_dtype
 from ...utils import make_pygfx_colors
@@ -10,7 +9,6 @@ def parse_colors(
     colors: str | np.ndarray | list[str] | tuple[str],
     n_colors: int | None,
     alpha: float | None = None,
-    key: int | tuple | slice | None = None,
 ):
     """
 
