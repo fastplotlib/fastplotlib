@@ -12,7 +12,21 @@ class LinearSelectionFeature(GraphicFeature):
     Manages the linear selection and callbacks
     """
 
-    def __init__(self, axis: str, value: float, limits: Tuple[int, int]):
+    def __init__(self, axis: str, value: float, limits: Tuple[float, float]):
+        """
+
+        Parameters
+        ----------
+        axis: "x" | "y"
+            axis the selector is restricted to
+
+        value: float
+            position of the slider in world space, NOT data space
+        limits: (float, float)
+            min, max limits of the selector
+
+        """
+
         super().__init__()
 
         self._axis = axis
@@ -22,9 +36,10 @@ class LinearSelectionFeature(GraphicFeature):
     @property
     def value(self) -> float:
         """
-        selection index w.r.t. the graphic.data
-        not world position, graphic.offset is subtracted
+        selection in world space, NOT data space
         """
+        # TODO: Not sure if we should make this public since it's in world space, not data space
+        #  need to decide if we give a value based on the selector's parent graphic, if there is one
         return self._value
 
     def set_value(self, graphic, value: float):
@@ -41,48 +56,37 @@ class LinearSelectionFeature(GraphicFeature):
         graphic.offset = offset
 
         self._value = value
-        event = FeatureEvent("selection", {"value": value})
+        event = FeatureEvent("selection", {"index": graphic.get_selected_index()})
         self._call_event_handlers(event)
-        # TODO: selector event handlers can call event.get_selected_index() to get the data index
 
 
 class LinearRegionSelectionFeature(GraphicFeature):
     """
     Feature for a linearly bounding region
-
-    **event pick info**
-
-    ===================== =============================== =======================================================================================
-      key                  type                            description
-    ===================== =============================== =======================================================================================
-      "selected_indices"   ``numpy.ndarray`` or ``None``   selected graphic data indices
-      "world_object"       ``pygfx.WorldObject``           pygfx World Object
-      "new_data"           ``(float, float)``              current bounds in world coordinates, NOT necessarily the same as "selected_indices".
-      "graphic"            ``Graphic``                     the selection graphic
-      "delta"              ``numpy.ndarray``               the delta vector of the graphic in NDC
-      "pygfx_event"        ``pygfx.Event``                 pygfx Event
-      "selected_data"      ``numpy.ndarray`` or ``None``   selected graphic data
-      "move_info"          ``MoveInfo``                    last position and event source (pygfx.Mesh or pygfx.Line)
-    ===================== =============================== =======================================================================================
-
     """
 
     def __init__(
-        self, parent, selection: Tuple[int, int], axis: str, limits: Tuple[int, int]
+        self, value: Tuple[int, int], axis: str, limits: Tuple[int, int]
     ):
-        super().__init__(parent, data=selection)
+        super().__init__()
 
         self._axis = axis
         self._limits = limits
+        self._value = value
 
-        self._set(selection)
+    @property
+    def value(self) -> float:
+        """
+        selection in world space, NOT data space
+        """
+        return self._value
 
     @property
     def axis(self) -> str:
         """one of "x" | "y" """
         return self._axis
 
-    def _set(self, value: Tuple[float, float]):
+    def set_value(self, graphic, value: Tuple[float, float]):
         # sets new bounds
         if not isinstance(value, tuple):
             raise TypeError(
@@ -103,71 +107,41 @@ class LinearRegionSelectionFeature(GraphicFeature):
 
         if self.axis == "x":
             # change left x position of the fill mesh
-            self._parent.fill.geometry.positions.data[mesh_masks.x_left] = value[0]
+            graphic.fill.geometry.positions.data[mesh_masks.x_left] = value[0]
 
             # change right x position of the fill mesh
-            self._parent.fill.geometry.positions.data[mesh_masks.x_right] = value[1]
+            graphic.fill.geometry.positions.data[mesh_masks.x_right] = value[1]
 
             # change x position of the left edge line
-            self._parent.edges[0].geometry.positions.data[:, 0] = value[0]
+            graphic.edges[0].geometry.positions.data[:, 0] = value[0]
 
             # change x position of the right edge line
-            self._parent.edges[1].geometry.positions.data[:, 0] = value[1]
+            graphic.edges[1].geometry.positions.data[:, 0] = value[1]
 
         elif self.axis == "y":
             # change bottom y position of the fill mesh
-            self._parent.fill.geometry.positions.data[mesh_masks.y_bottom] = value[0]
+            graphic.fill.geometry.positions.data[mesh_masks.y_bottom] = value[0]
 
             # change top position of the fill mesh
-            self._parent.fill.geometry.positions.data[mesh_masks.y_top] = value[1]
+            graphic.fill.geometry.positions.data[mesh_masks.y_top] = value[1]
 
             # change y position of the bottom edge line
-            self._parent.edges[0].geometry.positions.data[:, 1] = value[0]
+            graphic.edges[0].geometry.positions.data[:, 1] = value[0]
 
             # change y position of the top edge line
-            self._parent.edges[1].geometry.positions.data[:, 1] = value[1]
+            graphic.edges[1].geometry.positions.data[:, 1] = value[1]
 
-        self._data = value  # (value[0], value[1])
+        self._value = value  # (value[0], value[1])
 
         # send changes to GPU
-        self._parent.fill.geometry.positions.update_range()
+        graphic.fill.geometry.positions.update_range()
 
-        self._parent.edges[0].geometry.positions.update_range()
-        self._parent.edges[1].geometry.positions.update_range()
+        graphic.edges[0].geometry.positions.update_range()
+        graphic.edges[1].geometry.positions.update_range()
 
-        # calls any events
-        self._feature_changed(key=None, new_data=value)
-
-    def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
-        if len(self._event_handlers) < 1:
-            return
-
-        if self._parent.parent is not None:
-            selected_ixs = self._parent.get_selected_indices()
-            selected_data = self._parent.get_selected_data()
-        else:
-            selected_ixs = None
-            selected_data = None
-
-        # get pygfx event and reset it
-        pygfx_ev = self._parent._pygfx_event
-        self._parent._pygfx_event = None
-
-        pick_info = {
-            "world_object": self._parent.world_object,
-            "new_data": new_data,
-            "selected_indices": selected_ixs,
-            "selected_data": selected_data,
-            "graphic": self._parent,
-            "delta": self._parent.delta,
-            "pygfx_event": pygfx_ev,
-            "move_info": self._parent._move_info,
-        }
-
-        event_data = FeatureEvent(type="selection", pick_info=pick_info)
-
-        self._call_event_handlers(event_data)
-
-    def __repr__(self) -> str:
-        s = f"LinearRegionSelectionFeature for {self._parent}"
-        return s
+        # send event
+        event = FeatureEvent("selection", {"value": value})
+        self._call_event_handlers(event)
+        # TODO: user's selector event handlers can call event.graphic.get_selected_indices() to get the data index,
+        #  and event.graphic.get_selected_data() to get the data under the selection
+        #  this is probably a good idea so that the data isn't sliced until it's actually necessary
