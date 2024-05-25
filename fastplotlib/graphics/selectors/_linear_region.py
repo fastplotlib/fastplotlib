@@ -89,7 +89,7 @@ class LinearRegionSelector(BaseSelector):
             self,
             selection: Tuple[int, int],
             limits: Tuple[int, int],
-            size: tuple[float, float],
+            size: int,
             center: float,
             axis: str = "x",
             parent: Graphic = None,
@@ -174,17 +174,15 @@ class LinearRegionSelector(BaseSelector):
 
         group = pygfx.Group()
 
-        mesh_size = np.ptp(size)
-
         if axis == "x":
             mesh = pygfx.Mesh(
-                pygfx.box_geometry(1, mesh_size, 1),
+                pygfx.box_geometry(1, size, 1),
                 pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
             )
 
         elif axis == "y":
             mesh = pygfx.Mesh(
-                pygfx.box_geometry(mesh_size, 1, 1),
+                pygfx.box_geometry(size, 1, 1),
                 pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
             )
         else:
@@ -205,8 +203,8 @@ class LinearRegionSelector(BaseSelector):
             # just some data to initialize the edge lines
             init_line_data = np.array(
                 [
-                    [0, size[0], 0],
-                    [0, size[1], 0]
+                    [0, -size / 2, 0],
+                    [0, size / 2, 0]
                 ]
             ).astype(np.float32)
 
@@ -219,8 +217,8 @@ class LinearRegionSelector(BaseSelector):
             # just some line data to initialize y axis edge lines
             init_line_data = np.array(
                 [
-                    [size[0], 0, 0],
-                    [size[1], 0, 0],
+                    [-size / 2, 0, 0],
+                    [size / 2, 0, 0],
                 ]
             ).astype(np.float32)
 

@@ -232,7 +232,7 @@ class LineGraphic(PositionsGraphic, Interaction):
         limits = axis_vals[0], axis_vals[-1]
 
         # width or height of selector
-        size = (magn_vals.min() - padding, magn_vals.max() + padding)
+        size = int(np.ptp(magn_vals) + padding)
 
         # center of selector along the other axis
         center = np.nanmean(magn_vals)
@@ -243,6 +243,7 @@ class LineGraphic(PositionsGraphic, Interaction):
             limits=limits,
             size=size,
             center=center,
+            axis=axis,
             parent=self,
             **kwargs,
         )
