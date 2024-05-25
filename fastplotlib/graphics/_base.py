@@ -50,12 +50,12 @@ class Graphic:
         self._name.set_value(self, value)
 
     @property
-    def offset(self) -> tuple:
-        """Offset position of the graphic, [x, y, z]"""
+    def offset(self) -> np.ndarray:
+        """Offset position of the graphic, array: [x, y, z]"""
         return self._offset.value
 
     @offset.setter
-    def offset(self, value: tuple[float, float, float]):
+    def offset(self, value: np.ndarray | list | tuple):
         self._offset.set_value(self, value)
 
     @property
@@ -64,7 +64,7 @@ class Graphic:
         return self._rotation.value
 
     @rotation.setter
-    def rotation(self, value: tuple[float, float, float, float]):
+    def rotation(self, value: np.ndarray | list | tuple):
         self._rotation.set_value(self, value)
 
     @property
@@ -101,7 +101,8 @@ class Graphic:
     def __init__(
         self,
         name: str = None,
-        offset: tuple[float] = (0., 0., 0.),
+        offset: np.ndarray | list | tuple = (0., 0., 0.),
+        rotation: np.ndarray | list | tuple = (0., 0., 0., 1.),
         metadata: Any = None,
         collection_index: int = None,
     ):
@@ -122,7 +123,6 @@ class Graphic:
         self.metadata = metadata
         self.collection_index = collection_index
         self.registered_callbacks = dict()
-        # self.present = PresentFeature(parent=self)
 
         # store hex id str of Graphic instance mem location
         self._fpl_address: HexStr = hex(id(self))
@@ -138,7 +138,7 @@ class Graphic:
         # all the common features
         self._name = Name(name)
         self._deleted = Deleted(False)
-        self._rotation = None  # set later when world object is set
+        self._rotation = Rotation(rotation)  # set later when world object is set
         self._offset = Offset(offset)
         self._visible = Visible(True)
 
@@ -151,7 +151,13 @@ class Graphic:
     def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
 
-        self._rotation = Rotation(self.world_object.world.rotation[:])
+        # set offset if it's not (0., 0., 0.)
+        if not all(self.world_object.world.position == self.offset):
+            self.offset = self.offset
+
+        # set rotation if it's not (0., 0., 0., 1.)
+        if not all(self.world_object.world.rotation == self.rotation):
+            self.rotation = self.rotation
 
     def detach_feature(self, feature: str):
         raise NotImplementedError
