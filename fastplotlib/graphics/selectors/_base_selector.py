@@ -35,7 +35,7 @@ key_bind_direction = {
 
 # Selector base class
 class BaseSelector(Graphic):
-    feature_events = ("selection",)
+    features = {"selection"}
 
     def __init__(
         self,
@@ -46,6 +46,7 @@ class BaseSelector(Graphic):
         arrow_keys_modifier: str = None,
         axis: str = None,
         name: str = None,
+        parent: Graphic = None,
     ):
         if edges is None:
             edges = tuple()
@@ -95,6 +96,8 @@ class BaseSelector(Graphic):
 
         self._pygfx_event = None
 
+        self._parent = parent
+
         Graphic.__init__(self, name=name)
 
     def get_selected_index(self):
@@ -110,7 +113,7 @@ class BaseSelector(Graphic):
         raise NotImplementedError
 
     def _get_source(self, graphic):
-        if self.parent is None and graphic is None:
+        if self._parent is None and graphic is None:
             raise AttributeError(
                 "No Graphic to apply selector. "
                 "You must either set a ``parent`` Graphic on the selector, or pass a graphic."
@@ -120,7 +123,7 @@ class BaseSelector(Graphic):
         if graphic is not None:
             source = graphic
         else:
-            source = self.parent
+            source = self._parent
 
         return source
 
@@ -262,7 +265,7 @@ class BaseSelector(Graphic):
         """
         Calculates delta just using current world object position and calls self._move_graphic().
         """
-        current_position: np.ndarray = self.position
+        current_position: np.ndarray = self.offset
 
         # middle mouse button clicks
         if ev.button != 3:

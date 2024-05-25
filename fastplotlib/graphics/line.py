@@ -177,12 +177,12 @@ class LineGraphic(PositionsGraphic, Interaction):
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        selector.position_z = self.position_z + 1
+        selector.offset = selector.offset + (0., 0., self.offset[-1] + 1)
 
         return weakref.proxy(selector)
 
     def add_linear_region_selector(
-        self, padding: float = 100.0, **kwargs
+        self, padding: float = 100.0, axis="x", **kwargs
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -203,28 +203,54 @@ class LineGraphic(PositionsGraphic, Interaction):
 
         """
 
-        (
-            bounds_init,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
+        # (
+        #     bounds_init,
+        #     limits,
+        #     size,
+        #     origin,
+        #     axis,
+        #     end_points,
+        # ) = self._get_linear_selector_init_args(padding, **kwargs)
+
+        n_datapoints = self.data.value.shape[0]
+        value_25p = int(n_datapoints / 4)
+
+        # remove any nans
+        data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
+
+        if axis == "x":
+            # xvals
+            axis_vals = data[:, 0]
+
+            # yvals to get size and center
+            magn_vals = data[:, 1]
+        elif axis == "y":
+            axis_vals = data[:, 1]
+            magn_vals = data[:, 0]
+
+        bounds_init = axis_vals[0], axis_vals[value_25p]
+        limits = axis_vals[0], axis_vals[-1]
+
+        # width or height of selector
+        size = (magn_vals.min() - padding, magn_vals.max() + padding)
+
+        # center of selector along the other axis
+        center = np.nanmean(magn_vals)
 
         # create selector
         selector = LinearRegionSelector(
-            bounds=bounds_init,
+            selection=bounds_init,
             limits=limits,
             size=size,
-            origin=origin,
+            center=center,
             parent=self,
             **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        # so that it is below this graphic
-        selector.position_z = self.position_z - 1
+
+        # place selector below this graphic
+        selector.offset = selector.offset + (0., 0., self.offset[-1] - 1)
 
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end
@@ -241,7 +267,7 @@ class LineGraphic(PositionsGraphic, Interaction):
             axis = "x"
 
         if axis == "x":
-            offset = self.position_x
+            offset = self.offset[0]
             # x limits
             limits = (data[0, 0] + offset, data[-1, 0] + offset)
 
@@ -252,7 +278,7 @@ class LineGraphic(PositionsGraphic, Interaction):
             position_y = (data[:, 1].min() + data[:, 1].max()) / 2
 
             # need y offset too for this
-            origin = (limits[0] - offset, position_y + self.position_y)
+            origin = (limits[0] - offset, position_y + self.offset[1])
 
             # endpoints of the data range
             # used by linear selector but not linear region
@@ -261,7 +287,7 @@ class LineGraphic(PositionsGraphic, Interaction):
                 self.data.value[:, 1].max() + padding,
             )
         else:
-            offset = self.position_y
+            offset = self.offset[1]
             # y limits
             limits = (data[0, 1] + offset, data[-1, 1] + offset)
 
@@ -272,7 +298,7 @@ class LineGraphic(PositionsGraphic, Interaction):
             position_x = (data[:, 0].min() + data[:, 0].max()) / 2
 
             # need x offset too for this
-            origin = (position_x + self.position_x, limits[0] - offset)
+            origin = (position_x + self.offset[0], limits[0] - offset)
 
             end_points = (
                 self.data.value[:, 0].min() - padding,

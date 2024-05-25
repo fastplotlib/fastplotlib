@@ -1,5 +1,3 @@
-from typing import Tuple, Union, Any
-
 import numpy as np
 
 from ...utils import mesh_masks
@@ -12,7 +10,7 @@ class LinearSelectionFeature(GraphicFeature):
     Manages the linear selection and callbacks
     """
 
-    def __init__(self, axis: str, value: float, limits: Tuple[float, float]):
+    def __init__(self, axis: str, value: float, limits: tuple[float, float]):
         """
 
         Parameters
@@ -42,21 +40,21 @@ class LinearSelectionFeature(GraphicFeature):
         #  need to decide if we give a value based on the selector's parent graphic, if there is one
         return self._value
 
-    def set_value(self, graphic, value: float):
+    def set_value(self, selector, value: float):
         if not (self._limits[0] <= value <= self._limits[1]):
             return
 
-        offset = list(graphic.offset)
+        offset = list(selector.offset)
 
         if self._axis == "x":
             offset[0] = value
         else:
             offset[1] = value
 
-        graphic.offset = offset
+        selector.offset = offset
 
         self._value = value
-        event = FeatureEvent("selection", {"index": graphic.get_selected_index()})
+        event = FeatureEvent("selection", {"index": selector.get_selected_index()})
         self._call_event_handlers(event)
 
 
@@ -66,16 +64,16 @@ class LinearRegionSelectionFeature(GraphicFeature):
     """
 
     def __init__(
-        self, value: Tuple[int, int], axis: str, limits: Tuple[int, int]
+        self, value: tuple[int, int], axis: str, limits: tuple[float, float]
     ):
         super().__init__()
 
         self._axis = axis
         self._limits = limits
-        self._value = value
+        self._value = tuple(int(v) for v in value)
 
     @property
-    def value(self) -> float:
+    def value(self) -> np.ndarray[int]:
         """
         selection in world space, NOT data space
         """
@@ -86,13 +84,25 @@ class LinearRegionSelectionFeature(GraphicFeature):
         """one of "x" | "y" """
         return self._axis
 
-    def set_value(self, graphic, value: Tuple[float, float]):
-        # sets new bounds
+    def set_value(self, selector, value: tuple[float, float]):
+        """
+        Set start, stop range of selector
+
+        Parameters
+        ----------
+        selector: LinearRegionSelector
+
+        value: (float, float)
+             in world space, NOT data space
+
+        """
         if not isinstance(value, tuple):
             raise TypeError(
                 "Bounds must be a tuple in the form of `(min_bound, max_bound)`, "
                 "where `min_bound` and `max_bound` are numeric values."
             )
+
+        # value = tuple(int(v) for v in value)
 
         # make sure bounds not exceeded
         for v in value:
@@ -107,41 +117,44 @@ class LinearRegionSelectionFeature(GraphicFeature):
 
         if self.axis == "x":
             # change left x position of the fill mesh
-            graphic.fill.geometry.positions.data[mesh_masks.x_left] = value[0]
+            selector.fill.geometry.positions.data[mesh_masks.x_left] = value[0]
 
             # change right x position of the fill mesh
-            graphic.fill.geometry.positions.data[mesh_masks.x_right] = value[1]
+            selector.fill.geometry.positions.data[mesh_masks.x_right] = value[1]
 
             # change x position of the left edge line
-            graphic.edges[0].geometry.positions.data[:, 0] = value[0]
+            selector.edges[0].geometry.positions.data[:, 0] = value[0]
 
             # change x position of the right edge line
-            graphic.edges[1].geometry.positions.data[:, 0] = value[1]
+            selector.edges[1].geometry.positions.data[:, 0] = value[1]
 
         elif self.axis == "y":
             # change bottom y position of the fill mesh
-            graphic.fill.geometry.positions.data[mesh_masks.y_bottom] = value[0]
+            selector.fill.geometry.positions.data[mesh_masks.y_bottom] = value[0]
 
             # change top position of the fill mesh
-            graphic.fill.geometry.positions.data[mesh_masks.y_top] = value[1]
+            selector.fill.geometry.positions.data[mesh_masks.y_top] = value[1]
 
             # change y position of the bottom edge line
-            graphic.edges[0].geometry.positions.data[:, 1] = value[0]
+            selector.edges[0].geometry.positions.data[:, 1] = value[0]
 
             # change y position of the top edge line
-            graphic.edges[1].geometry.positions.data[:, 1] = value[1]
+            selector.edges[1].geometry.positions.data[:, 1] = value[1]
 
-        self._value = value  # (value[0], value[1])
+        self._value = np.array(value)  # (value[0], value[1])
 
         # send changes to GPU
-        graphic.fill.geometry.positions.update_range()
+        selector.fill.geometry.positions.update_range()
 
-        graphic.edges[0].geometry.positions.update_range()
-        graphic.edges[1].geometry.positions.update_range()
+        selector.edges[0].geometry.positions.update_range()
+        selector.edges[1].geometry.positions.update_range()
 
         # send event
-        event = FeatureEvent("selection", {"value": value})
-        self._call_event_handlers(event)
+        if len(self._event_handlers) > 0:
+            return
+
+        # event = FeatureEvent("selection", {"indices": selector.get_selected_indices()})
+        # self._call_event_handlers(event)
         # TODO: user's selector event handlers can call event.graphic.get_selected_indices() to get the data index,
         #  and event.graphic.get_selected_data() to get the data under the selection
         #  this is probably a good idea so that the data isn't sliced until it's actually necessary

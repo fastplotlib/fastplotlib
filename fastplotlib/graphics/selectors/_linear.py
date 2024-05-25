@@ -18,6 +18,42 @@ if IS_JUPYTER:
 
 class LinearSelector(BaseSelector):
     @property
+    def selection(self) -> float:
+        """
+        The selected data index. Index of the data under the selector
+        not the x or y value of the data but the index of the x or y value
+        """
+        if self._parent is not None:
+            return self.get_selected_index()
+        # TODO: if no parent graphic is set, this just returns world position
+        #  but should we change it?
+        return self._selection.value
+
+    @selection.setter
+    def selection(self, index: int):
+        graphic = self._parent
+
+        if "Line" in graphic.__class__.__name__ or "Scatter" in graphic.__class__.__name__:
+            if self.axis == "x":
+                geo_positions = graphic.data.value[:, 0]
+                offset = graphic.offset[0]
+            elif self.axis == "y":
+                geo_positions = graphic.data.value[:, 1]
+                offset = graphic.offset[1]
+
+            # we want to find the geometry position at the desired index
+            position = geo_positions[index]
+
+        elif "Image" in graphic.__class__.__name__:
+            # 1:1 mapping between geometry position and index
+            position = index
+
+        # new world position for the selector
+        # offset + new_index
+        world_pos = offset + position
+        self._selection.set_value(self, world_pos)
+
+    @property
     def limits(self) -> Tuple[float, float]:
         return self._limits
 
@@ -79,17 +115,6 @@ class LinearSelector(BaseSelector):
         name: str, optional
             name of line slider
 
-        Features
-        --------
-
-        selection: :class:`.LinearSelectionFeature`
-            ``selection()`` returns the current selector position in world coordinates.
-            Use ``get_selected_index()`` to get the currently selected index in data
-            space.
-            Use ``selection.add_event_handler()`` to add callback functions that are
-            called when the LinearSelector selection changes. See feature class for
-            event pick_info table
-
         """
         if len(limits) != 2:
             raise ValueError("limits must be a tuple of 2 integers, i.e. (int, int)")
@@ -144,8 +169,6 @@ class LinearSelector(BaseSelector):
 
         self._move_info: dict = None
 
-        self.parent = parent
-
         self._block_ipywidget_call = False
 
         self._handled_widgets = list()
@@ -158,19 +181,26 @@ class LinearSelector(BaseSelector):
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
             name=name,
+            parent=parent,
         )
 
         self._set_world_object(world_object)
 
-        self.selection = LinearSelectionFeature(
-            self, axis=axis, value=selection, limits=self._limits
+        self._selection = LinearSelectionFeature(
+            axis=axis, value=selection, limits=self._limits
         )
 
-        self.selection = selection
+        if self._parent is not None:
+            self.selection = selection
+        else:
+            self._selection.set_value(self, selection)
+
+        # update any ipywidgets
+        self.add_event_handler("selection", self._update_ipywidgets)
 
     def _setup_ipywidget_slider(self, widget):
         # setup an ipywidget slider with bidirectional callbacks to this LinearSelector
-        value = self.selection()
+        value = self.selection
 
         if isinstance(widget, ipywidgets.IntSlider):
             value = int(value)
@@ -180,16 +210,13 @@ class LinearSelector(BaseSelector):
         # user changes widget -> linear selection changes
         widget.observe(self._ipywidget_callback, "value")
 
-        # user changes linear selection -> widget changes
-        self.selection.add_event_handler(self._update_ipywidgets)
-
         self._handled_widgets.append(widget)
 
     def _update_ipywidgets(self, ev):
         # update the ipywidget sliders when LinearSelector value changes
         self._block_ipywidget_call = True  # prevent infinite recursion
 
-        value = ev.pick_info["new_data"]
+        value = ev.info["index"]
         # update all the handled slider widgets
         for widget in self._handled_widgets:
             if isinstance(widget, ipywidgets.IntSlider):
@@ -200,7 +227,7 @@ class LinearSelector(BaseSelector):
         self._block_ipywidget_call = False
 
     def _ipywidget_callback(self, change):
-        # update the LinearSelector if the ipywidget value changes
+        # update the LinearSelector when the ipywidget value changes
         if self._block_ipywidget_call or self._moving:
             return
 
@@ -249,9 +276,9 @@ class LinearSelector(BaseSelector):
 
         cls = getattr(ipywidgets, kind)
 
-        value = self.selection()
+        value = self.selection
         if "Int" in kind:
-            value = int(self.selection())
+            value = int(self.selection)
 
         slider = cls(
             min=self.limits[0],
@@ -335,7 +362,7 @@ class LinearSelector(BaseSelector):
 
         if "Line" in graphic.__class__.__name__:
             # we want to find the index of the geometry position that is closest to the slider's geometry position
-            find_value = self.selection() - offset
+            find_value = self._selection.value - offset
 
             # get closest data index to the world space position of the slider
             idx = np.searchsorted(geo_positions, find_value, side="left")
@@ -354,7 +381,7 @@ class LinearSelector(BaseSelector):
             or "Image" in graphic.__class__.__name__
         ):
             # indices map directly to grid geometry for image data buffer
-            index = self.selection() - offset
+            index = self._selection.value - offset
             return round(index)
 
     def _move_graphic(self, delta: np.ndarray):
@@ -369,9 +396,9 @@ class LinearSelector(BaseSelector):
         """
 
         if self.axis == "x":
-            self.selection = self.selection() + delta[0]
+            self.selection = self._selection + delta[0]
         else:
-            self.selection = self.selection() + delta[1]
+            self.selection = self._selection + delta[1]
 
     def _fpl_cleanup(self):
         for widget in self._handled_widgets:

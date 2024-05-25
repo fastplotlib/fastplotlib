@@ -17,6 +17,60 @@ if IS_JUPYTER:
 
 class LinearRegionSelector(BaseSelector):
     @property
+    def selection(self) -> tuple[int, int] | List[tuple[int, int]]:
+        """
+        (min, max) of data value along selector's axis, in data space
+        """
+        # TODO: This probably does not account for rotation since world.position
+        #  does not account for rotation, we can do this later
+        if self._parent is not None:
+            # just subtract parent offset to map from world to data space
+            if self.axis == "x":
+                offset = self._parent.offset[0]
+            elif self.axis == "y":
+                offset = self._parent.offset[1]
+
+            return self._selection.value.copy() - offset
+
+            #
+            # indices = self.get_selected_indices()
+            # if isinstance(indices, np.ndarray):
+            #     # this can be used directly to create a range object
+            #     return indices[0], indices[-1] + 1
+            # # if a collection is under the selector
+            # elif isinstance(indices, list):
+            #     ranges = list()
+            #     for ixs in indices:
+            #         ranges.append((ixs[0], ixs[-1] + 1))
+            #
+            #     return ranges
+
+        # TODO: if no parent graphic is set, this just returns world positions
+        #  but should we change it?
+        return self._selection.value
+
+    @selection.setter
+    def selection(self, selection: tuple[int, int]):
+        # set (xmin, xmax), or (ymin, ymax) of the selector in data space
+        graphic = self._parent
+
+        start, stop = selection
+
+        if isinstance(graphic, GraphicCollection):
+            pass
+
+        if self.axis == "x":
+            offset = graphic.offset[0]
+        elif self.axis == "y":
+            offset = graphic.offset[1]
+
+        # add the offset
+        start += offset
+        stop += offset
+
+        self._selection.set_value(self, (start, stop))
+
+    @property
     def limits(self) -> Tuple[float, float]:
         return self._limits
 
@@ -32,19 +86,19 @@ class LinearRegionSelector(BaseSelector):
         self.selection._limits = self._limits
 
     def __init__(
-        self,
-        bounds: Tuple[int, int],
-        limits: Tuple[int, int],
-        size: int,
-        origin: Tuple[int, int],
-        axis: str = "x",
-        parent: Graphic = None,
-        resizable: bool = True,
-        fill_color=(0, 0, 0.35),
-        edge_color=(0.8, 0.8, 0),
-        edge_thickness: int = 3,
-        arrow_keys_modifier: str = "Shift",
-        name: str = None,
+            self,
+            selection: Tuple[int, int],
+            limits: Tuple[int, int],
+            size: tuple[float, float],
+            center: float,
+            axis: str = "x",
+            parent: Graphic = None,
+            resizable: bool = True,
+            fill_color=(0, 0, 0.35),
+            edge_color=(0.8, 0.8, 0),
+            edge_thickness: int = 3,
+            arrow_keys_modifier: str = "Shift",
+            name: str = None,
     ):
         """
         Create a LinearRegionSelector graphic which can be moved only along either the x-axis or y-axis.
@@ -60,17 +114,14 @@ class LinearRegionSelector(BaseSelector):
 
         Parameters
         ----------
-        bounds: (int, int)
-            the initial bounds of the linear selector
+        selection: (int, int)
+            (min, max) values of the "axis" under the selector
 
         limits: (int, int)
-            (min limit, max limit) for the selector
+            (min limit, max limit) of values on the axis
 
         size: int
             height or width of the selector
-
-        origin: (int, int)
-            initial position of the selector
 
         axis: str, default "x"
             "x" | "y", axis for the selector
@@ -108,43 +159,32 @@ class LinearRegionSelector(BaseSelector):
         """
 
         # lots of very close to zero values etc. so round them, otherwise things get weird
-        bounds = tuple(map(round, bounds))
-        self._limits = tuple(map(round, limits))
-        origin = tuple(map(round, origin))
+        if not len(selection) == 2:
+            raise ValueError
+
+        selection = np.asarray(selection)
+
+        if not len(limits) == 2:
+            raise ValueError
+
+        self._limits = np.asarray(limits)
 
         # TODO: sanity checks, we recommend users to add LinearSelection using the add_linear_selector() methods
         # TODO: so we can worry about the sanity checks later
-        # if axis == "x":
-        #     if limits[0] != origin[0] != bounds[0]:
-        #         raise ValueError(
-        #             f"limits[0] != position[0] != bounds[0]\n"
-        #             f"{limits[0]} != {origin[0]} != {bounds[0]}"
-        #         )
-        #
-        # elif axis == "y":
-        #     # initial y-position is position[1]
-        #     if limits[0] != origin[1] != bounds[0]:
-        #         raise ValueError(
-        #             f"limits[0] != position[1] != bounds[0]\n"
-        #             f"{limits[0]} != {origin[1]} != {bounds[0]}"
-        #         )
 
-        self.parent = parent
-
-        # world object for this will be a group
-        # basic mesh for the fill area of the selector
-        # line for each edge of the selector
         group = pygfx.Group()
+
+        mesh_size = np.ptp(size)
 
         if axis == "x":
             mesh = pygfx.Mesh(
-                pygfx.box_geometry(1, size, 1),
+                pygfx.box_geometry(1, mesh_size, 1),
                 pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
             )
 
         elif axis == "y":
             mesh = pygfx.Mesh(
-                pygfx.box_geometry(size, 1, 1),
+                pygfx.box_geometry(mesh_size, 1, 1),
                 pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
             )
         else:
@@ -152,90 +192,76 @@ class LinearRegionSelector(BaseSelector):
 
         # the fill of the selection
         self.fill = mesh
-        self.fill.world.position = (*origin, -2)
+        # no x, y offsets for linear region selector
+        # everything is done by setting the mesh data
+        # and line positions
+        self.fill.world.position = (0, 0, -2)
 
         group.add(self.fill)
 
         self._resizable = resizable
 
         if axis == "x":
-            # position data for the left edge line
-            left_line_data = np.array(
+            # just some data to initialize the edge lines
+            init_line_data = np.array(
                 [
-                    [origin[0], (-size / 2) + origin[1], 0.5],
-                    [origin[0], (size / 2) + origin[1], 0.5],
+                    [0, size[0], 0],
+                    [0, size[1], 0]
                 ]
             ).astype(np.float32)
 
-            left_line = pygfx.Line(
-                pygfx.Geometry(positions=left_line_data),
-                pygfx.LineMaterial(
-                    thickness=edge_thickness, color=edge_color, pick_write=True
-                ),
-            )
-
-            # position data for the right edge line
-            right_line_data = np.array(
-                [
-                    [bounds[1], (-size / 2) + origin[1], 0.5],
-                    [bounds[1], (size / 2) + origin[1], 0.5],
-                ]
-            ).astype(np.float32)
-
-            right_line = pygfx.Line(
-                pygfx.Geometry(positions=right_line_data),
-                pygfx.LineMaterial(
-                    thickness=edge_thickness, color=edge_color, pick_write=True
-                ),
-            )
-
-            self.edges: Tuple[pygfx.Line, pygfx.Line] = (left_line, right_line)
+            if parent is not None:
+                parent_offset = parent.offset[0]
+            else:
+                parent_offset = 0
 
         elif axis == "y":
-            # position data for the left edge line
-            bottom_line_data = np.array(
+            # just some line data to initialize y axis edge lines
+            init_line_data = np.array(
                 [
-                    [(-size / 2) + origin[0], origin[1], 0.5],
-                    [(size / 2) + origin[0], origin[1], 0.5],
+                    [size[0], 0, 0],
+                    [size[1], 0, 0],
                 ]
             ).astype(np.float32)
 
-            bottom_line = pygfx.Line(
-                pygfx.Geometry(positions=bottom_line_data),
-                pygfx.LineMaterial(
-                    thickness=edge_thickness, color=edge_color, pick_write=True
-                ),
-            )
-
-            # position data for the right edge line
-            top_line_data = np.array(
-                [
-                    [(-size / 2) + origin[0], bounds[1], 0.5],
-                    [(size / 2) + origin[0], bounds[1], 0.5],
-                ]
-            ).astype(np.float32)
-
-            top_line = pygfx.Line(
-                pygfx.Geometry(positions=top_line_data),
-                pygfx.LineMaterial(
-                    thickness=edge_thickness, color=edge_color, pick_write=True
-                ),
-            )
-
-            self.edges: Tuple[pygfx.Line, pygfx.Line] = (bottom_line, top_line)
+            if parent is not None:
+                parent_offset = parent.offset[1]
+            else:
+                parent_offset = 0
 
         else:
             raise ValueError("axis argument must be one of 'x' or 'y'")
 
+        line0 = pygfx.Line(
+            pygfx.Geometry(positions=init_line_data.copy()),  # copy so the line buffer is isolated
+            pygfx.LineMaterial(
+                thickness=edge_thickness, color=edge_color, pick_write=True
+            ),
+        )
+        line1 = pygfx.Line(
+            pygfx.Geometry(positions=init_line_data.copy()),  # copy so the line buffer is isolated
+            pygfx.LineMaterial(
+                thickness=edge_thickness, color=edge_color, pick_write=True
+            ),
+        )
+
+        self.edges: Tuple[pygfx.Line, pygfx.Line] = (line0, line1)
+
         # add the edge lines
         for edge in self.edges:
-            edge.world.z = -1
+            edge.world.z = -0.5
             group.add(edge)
 
         # set the initial bounds of the selector
-        self.selection = LinearRegionSelectionFeature(
-            self, bounds, axis=axis, limits=self._limits
+        # compensate for any offset from the parent graphic
+        # selection feature only works in world space, not data space
+        self._selection = LinearRegionSelectionFeature(
+            selection + parent_offset,
+            axis=axis,
+            limits=self._limits + parent_offset
         )
+
+        print(f"sel value after construct: {selection}")
 
         self._handled_widgets = list()
         self._block_ipywidget_call = False
@@ -249,13 +275,25 @@ class LinearRegionSelector(BaseSelector):
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
             name=name,
+            parent=parent
         )
 
         self._set_world_object(group)
 
+        self.selection = selection
+
+        print(f"sel value after set: {selection}")
+
+        if self.axis == "x":
+            offset = (0, center, 0)
+        elif self.axis == "y":
+            offset = (center, 0, 0)
+
+        self.offset = self.offset + offset
+
     def get_selected_data(
-        self, graphic: Graphic = None
-    ) -> Union[np.ndarray, List[np.ndarray], None]:
+            self, graphic: Graphic = None
+    ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Get the ``Graphic`` data bounded by the current selection.
         Returns a view of the full data array.
@@ -289,33 +327,34 @@ class LinearRegionSelector(BaseSelector):
                 data_selections: List[np.ndarray] = list()
 
                 for i, g in enumerate(source.graphics):
-                    if ixs[i].size == 0:
-                        data_selections.append(None)
-                    else:
-                        s = slice(ixs[i][0], ixs[i][-1])
-                        data_selections.append(g.data.buffer.data[s])
+                    # if ixs[i].size == 0:
+                    #     data_selections.append(np.array([], dtype=np.float32))
+                    # else:
+                    s = slice(ixs[i][0], ixs[i][-1])
+                    # slices n_datapoints dim
+                    data_selections.append(g.data.buffer.data[s])
 
                 return source[:].data[s]
-            # just for one Line graphic
             else:
-                if ixs.size == 0:
-                    return None
+                # just for one graphic
+                # if ixs.size == 0:
+                #     return np.array([], dtype=np.float32)
 
                 s = slice(ixs[0], ixs[-1])
+                # slices n_datapoints dim
                 return source.data.buffer.data[s]
 
-        if (
-            "Heatmap" in source.__class__.__name__
-            or "Image" in source.__class__.__name__
-        ):
+        if "Image" in source.__class__.__name__:
             s = slice(ixs[0], ixs[-1])
+
             if self.axis == "x":
-                return source.data()[:, s]
+                return source.data.value[:, s]
+
             elif self.axis == "y":
-                return source.data()[s]
+                return source.data.value[s]
 
     def get_selected_indices(
-        self, graphic: Graphic = None
+            self, graphic: Graphic = None
     ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Returns the indices of the ``Graphic`` data bounded by the current selection.
@@ -336,47 +375,52 @@ class LinearRegionSelector(BaseSelector):
             data indices of the selection, list of np.ndarray if graphic is LineCollection
 
         """
+        # we get the indices from the source graphic
         source = self._get_source(graphic)
 
-        # if the graphic position is not at (0, 0) then the bounds must be offset
-        offset = getattr(source, f"position_{self.selection.axis}")
-        offset_bounds = tuple(v - offset for v in self.selection())
-
-        # need them to be int to use as indices
-        offset_bounds = tuple(map(int, offset_bounds))
-
-        if self.selection.axis == "x":
+        # get the offset of the source graphic
+        if self.axis == "x":
+            source_offset = source.offset[0]
             dim = 0
-        else:
+        elif self.axis == "y":
+            source_offset = source.offset[1]
             dim = 1
 
+        # selector (min, max) in world space
+        bounds = self._selection.value
+        # subtract offset to get the (min, max) bounded region
+        # of the source graphic in world space
+        bounds = tuple(v - source_offset for v in bounds)
+
+        # # need them to be int to use as indices
+        # offset_bounds = tuple(map(int, offset_bounds))
+
         if "Line" in source.__class__.__name__:
-            # now we need to map from graphic space to data space
-            # we can have more than 1 datapoint between two integer locations in the world space
+            # now we need to map from world space to data space
+            # gets indices corresponding to n_datapoints dim
+            # data space is [n_datapoints, xyz], so we return
+            # indices that can be used to slice `n_datapoints`
             if isinstance(source, GraphicCollection):
                 ixs = list()
                 for g in source.graphics:
                     # map for each graphic in the collection
                     g_ixs = np.where(
-                        (g.data()[:, dim] >= offset_bounds[0])
-                        & (g.data()[:, dim] <= offset_bounds[1])
+                        (g.data.value[:, dim] >= bounds[0])
+                        & (g.data.value[:, dim] <= bounds[1])
                     )[0]
                     ixs.append(g_ixs)
             else:
                 # map this only this graphic
                 ixs = np.where(
-                    (source.data()[:, dim] >= offset_bounds[0])
-                    & (source.data()[:, dim] <= offset_bounds[1])
+                    (source.data.value[:, dim] >= bounds[0])
+                    & (source.data.value[:, dim] <= bounds[1])
                 )[0]
 
             return ixs
 
-        if (
-            "Heatmap" in source.__class__.__name__
-            or "Image" in source.__class__.__name__
-        ):
+        if "Image" in source.__class__.__name__:
             # indices map directly to grid geometry for image data buffer
-            ixs = np.arange(*self.selection(), dtype=int)
+            ixs = np.arange(*bounds, dtype=int)
             return ixs
 
     def make_ipywidget_slider(self, kind: str = "IntRangeSlider", **kwargs):
@@ -410,9 +454,9 @@ class LinearRegionSelector(BaseSelector):
 
         cls = getattr(ipywidgets, kind)
 
-        value = self.selection()
+        value = self.selection
         if "Int" in kind:
-            value = tuple(map(int, self.selection()))
+            value = tuple(map(int, self.selection))
 
         slider = cls(
             min=self.limits[0],
@@ -438,7 +482,7 @@ class LinearRegionSelector(BaseSelector):
 
         """
         if not isinstance(
-            widget, (ipywidgets.IntRangeSlider, ipywidgets.FloatRangeSlider)
+                widget, (ipywidgets.IntRangeSlider, ipywidgets.FloatRangeSlider)
         ):
             raise TypeError(
                 f"`widget` must be one of: ipywidgets.IntRangeSlider or ipywidgets.FloatRangeSlider\n"
@@ -457,7 +501,7 @@ class LinearRegionSelector(BaseSelector):
 
     def _setup_ipywidget_slider(self, widget):
         # setup an ipywidget slider with bidirectional callbacks to this LinearSelector
-        value = self.selection()
+        value = self.selection
 
         if isinstance(widget, ipywidgets.IntSlider):
             value = tuple(map(int, value))
@@ -503,18 +547,19 @@ class LinearRegionSelector(BaseSelector):
 
     def _move_graphic(self, delta: np.ndarray):
         # add delta to current bounds to get new positions
-        if self.selection.axis == "x":
+        # print(delta)
+        if self.axis == "x":
             # min and max of current bounds, i.e. the edges
-            xmin, xmax = self.selection()
+            xmin, xmax = self._selection.value
 
             # new left bound position
             bound0_new = xmin + delta[0]
 
             # new right bound position
             bound1_new = xmax + delta[0]
-        else:
+        elif self.axis == "y":
             # min and max of current bounds, i.e. the edges
-            ymin, ymax = self.selection()
+            ymin, ymax = self._selection.value
 
             # new bottom bound position
             bound0_new = ymin + delta[1]
@@ -524,8 +569,9 @@ class LinearRegionSelector(BaseSelector):
 
         # move entire selector if source was fill
         if self._move_info.source == self.fill:
-            # set the new bounds
-            self.selection = (bound0_new, bound1_new)
+            # set the new bounds, in WORLD space
+            # don't set property because that is in data space!
+            self._selection.set_value(self, (bound0_new, bound1_new))
             return
 
         # if selector is not resizable do nothing
@@ -535,10 +581,10 @@ class LinearRegionSelector(BaseSelector):
         # if resizable, move edges
         if self._move_info.source == self.edges[0]:
             # change only left or bottom bound
-            self.selection = (bound0_new, self.selection()[1])
+            self._selection.set_value(self, (bound0_new, self._selection.value[1]))
 
         elif self._move_info.source == self.edges[1]:
             # change only right or top bound
-            self.selection = (self.selection()[0], bound1_new)
+            self._selection.set_value(self, (self._selection.value[0], bound1_new))
         else:
             return
