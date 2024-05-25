@@ -1,3 +1,5 @@
+import numpy as np
+
 from ._base import GraphicFeature, FeatureEvent
 
 
@@ -26,20 +28,26 @@ class Name(GraphicFeature):
 
 class Offset(GraphicFeature):
     """Offset position of the graphic, [x, y, z]"""
-    def __init__(self, value: tuple[float, float, float]):
-        self._value = value
+    def __init__(self, value: np.ndarray | list | tuple):
+        self._validate(value)
+        self._value = np.array(value)
+        self._value.flags.writeable = False
         super().__init__()
 
-    @property
-    def value(self) -> tuple[float, float, float]:
-        return self._value
-
-    def set_value(self, graphic, value: tuple[float, float, float]):
+    def _validate(self, value):
         if not len(value) == 3:
             raise ValueError("offset must be a list, tuple, or array of 3 float values")
 
-        graphic.position = value
-        self._value = value
+    @property
+    def value(self) -> np.ndarray:
+        return self._value
+
+    def set_value(self, graphic, value: np.ndarray | list | tuple):
+        self._validate(value)
+
+        graphic.world_object.world.position = value
+        self._value = graphic.world_object.world.position.copy()
+        self._value.flags.writeable = False
 
         event = FeatureEvent(type="offset", info={"value": value})
         self._call_event_handlers(event)
@@ -47,21 +55,26 @@ class Offset(GraphicFeature):
 
 class Rotation(GraphicFeature):
     """Graphic rotation quaternion"""
-    def __init__(self, value: tuple[float, float, float, float]):
-        self._value = value
+    def __init__(self, value: np.ndarray | list | tuple):
+        self._validate(value)
+        self._value = np.array(value)
+        self._value.flags.writeable = False
         super().__init__()
 
+    def _validate(self, value):
+        if not len(value) == 4:
+            raise ValueError("rotation quaternion must be a list, tuple, or array of 4 float values")
+
     @property
-    def value(self) -> tuple[float, float, float, float]:
+    def value(self) -> np.ndarray:
         return self._value
 
-    def set_value(self, graphic, value: tuple[float, float, float, float]):
-        if not len(value) == 4:
-            raise ValueError("rotation must be a list, tuple, or array of 4 float values"
-                             "representing a quaternion")
+    def set_value(self, graphic, value: np.ndarray | list | tuple):
+        self._validate(value)
 
-        graphic.rotation = value
-        self._value = value
+        graphic.world_object.world.rotation = value
+        self._value = graphic.world_object.world.rotation.copy()
+        self._value.flags.writeable = False
 
         event = FeatureEvent(type="rotation", info={"value": value})
         self._call_event_handlers(event)
