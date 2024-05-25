@@ -43,24 +43,21 @@ def to_gpu_supported_dtype(array):
 
 class FeatureEvent(pygfx.Event):
     """
-    Dataclass that holds feature event information. Has ``type`` and ``pick_info`` attributes.
+    **All event instances have the following attributes**
 
-    Attributes
-    ----------
-    type: str, example "colors"
-
-    pick_info: dict:
-
-        ============== =============================================================================
-        key             value
-        ============== =============================================================================
-        "index"         indices where feature data was changed, ``range`` object or ``List[int]``
-        "world_object"  world object the feature belongs to
-        "new_data:      the new data for this feature
-        ============== =============================================================================
-
-        .. note::
-            pick info varies between features, this is just the general structure
+    +------------+-------------+-----------------------------------------------+
+    | attribute  | type        | description                                   |
+    +============+=============+===============================================+
+    | type       | str         | "colors" - name of the event                  |
+    +------------+-------------+-----------------------------------------------+
+    | graphic    | Graphic     | graphic instance that the event is from       |
+    +------------+-------------+-----------------------------------------------+
+    | info       | dict        | event info dictionary (see below)             |
+    +------------+-------------+-----------------------------------------------+
+    | target     | WorldObject | pygfx rendering engine object for the graphic |
+    +------------+-------------+-----------------------------------------------+
+    | time_stamp | float       | time when the event occured, in ms            |
+    +------------+-------------+-----------------------------------------------+
 
     """
 
