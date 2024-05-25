@@ -17,7 +17,18 @@ from .utils import parse_colors
 
 class VertexColors(BufferManager):
     """
-    Manages the color buffer for :class:`LineGraphic` or :class:`ScatterGraphic`
+
+    **info dict**
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+    | dict key   | value type                                                | value description                                                                |
+    +============+===========================================================+==================================================================================+
+    | key        | int | slice | np.ndarray[int | bool] | tuple[slice, ...]  | key at which colors were indexed/sliced                                          |
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+    | value      | np.ndarray                                                | new color values for points that were changed, shape is [n_points_changed, RGBA] |
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+    | user_value | str | np.ndarray | tuple[float] | list[float] | list[str] | user input value that was parsed into the RGBA array                             |
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+
     """
 
     def __init__(
@@ -28,7 +39,7 @@ class VertexColors(BufferManager):
         isolated_buffer: bool = True,
     ):
         """
-        ColorFeature
+        Manages the vertex color buffer for :class:`LineGraphic` or :class:`ScatterGraphic`
 
         Parameters
         ----------
@@ -50,19 +61,20 @@ class VertexColors(BufferManager):
     def __setitem__(
             self,
             key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
-            value: str | np.ndarray | tuple[float] | list[float] | list[str]
+            user_value: str | np.ndarray | tuple[float] | list[float] | list[str]
     ):
         if isinstance(key, tuple):
             # directly setting RGBA values for points, we do no parsing
-            if not isinstance(value, (int, float, np.ndarray)):
+            if not isinstance(user_value, (int, float, np.ndarray)):
                 raise TypeError(
                     "Can only set from int, float, or array to set colors directly by slicing the entire array"
                 )
+            value = user_value
 
         elif isinstance(key, int):
             # set color of one point
             n_colors = 1
-            value = parse_colors(value, n_colors)
+            value = parse_colors(user_value, n_colors)
 
         elif isinstance(key, slice):
             # find n_colors by converting slice to range and then parse colors
@@ -70,7 +82,7 @@ class VertexColors(BufferManager):
 
             n_colors = len(range(start, stop, step))
 
-            value = parse_colors(value, n_colors)
+            value = parse_colors(user_value, n_colors)
 
         elif isinstance(key, (np.ndarray, list)):
             if isinstance(key, list):
@@ -93,7 +105,7 @@ class VertexColors(BufferManager):
             else:
                 raise TypeError("If slicing colors with an array, it must be a 1D bool or int array")
 
-            value = parse_colors(value, n_colors)
+            value = parse_colors(user_value, n_colors)
 
         else:
             raise TypeError
@@ -102,7 +114,16 @@ class VertexColors(BufferManager):
 
         self._update_range(key)
 
-        self._emit_event("colors", key, value)
+        if len(self._event_handlers) < 1:
+            return
+
+        event_info = {
+            "key": key,
+            "value": value,
+            "user_value": user_value,
+        }
+        event = FeatureEvent("colors", info=event_info)
+        self._call_event_handlers(event)
 
 
 class UniformColor(GraphicFeature):
@@ -143,11 +164,22 @@ class UniformSizes(GraphicFeature):
 
 class VertexPositions(BufferManager):
     """
-    Manages the vertex positions buffer shown in the graphic.
-    Supports fancy indexing if the data array also supports it.
+    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+    | dict key | value type                                               | value description                                                                        |
+    +==========+==========================================================+==========================================================================================+
+    | key      | int | slice | np.ndarray[int | bool] | tuple[slice, ...] | key at which vertex positions data were indexed/sliced                                   |
+    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+    | value    | np.ndarray | float | list[float]                         | new data values for points that were changed, shape depends on the indices that were set |
+    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+
     """
 
     def __init__(self, data: Any, isolated_buffer: bool = True):
+        """
+        Manages the vertex positions buffer shown in the graphic.
+        Supports fancy indexing if the data array also supports it.
+        """
+
         data = self._fix_data(data)
         super().__init__(data, isolated_buffer=isolated_buffer)
 
@@ -170,7 +202,7 @@ class VertexPositions(BufferManager):
 
         return to_gpu_supported_dtype(data)
 
-    def __setitem__(self, key: int | slice | np.ndarray[int | bool] | tuple[slice, ...], value):
+    def __setitem__(self, key: int | slice | np.ndarray[int | bool] | tuple[slice, ...], value: np.ndarray | float | list[float]):
         # directly use the key to slice the buffer
         self.buffer.data[key] = value
 
@@ -183,8 +215,13 @@ class VertexPositions(BufferManager):
 
 class PointsSizesFeature(BufferManager):
     """
-    Access to the vertex buffer data shown in the graphic.
-    Supports fancy indexing if the data array also supports it.
+    +----------+-------------------------------------------------------------------+----------------------------------------------+
+    | dict key | value type                                                        | value description                            |
+    +==========+===================================================================+==============================================+
+    | key      | int | slice | np.ndarray[int | bool] | list[int | bool]           | key at which point sizes indexed/sliced      |
+    +----------+-------------------------------------------------------------------+----------------------------------------------+
+    | value    | int | float | np.ndarray | list[int | float] | tuple[int | float] | new size values for points that were changed |
+    +----------+-------------------------------------------------------------------+----------------------------------------------+
     """
 
     def __init__(
@@ -193,6 +230,9 @@ class PointsSizesFeature(BufferManager):
             n_datapoints: int,
             isolated_buffer: bool = True
     ):
+        """
+        Manages sizes buffer of scatter points.
+        """
         sizes = self._fix_sizes(sizes, n_datapoints)
         super().__init__(data=sizes, isolated_buffer=isolated_buffer)
 
@@ -224,7 +264,7 @@ class PointsSizesFeature(BufferManager):
 
         return sizes
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: int | slice | np.ndarray[int | bool] | list[int | bool], value: int | float | np.ndarray | list[int | float] | tuple[int | float]):
         # this is a very simple 1D buffer, no parsing required, directly set buffer
         self.buffer.data[key] = value
         self._update_range(key)
