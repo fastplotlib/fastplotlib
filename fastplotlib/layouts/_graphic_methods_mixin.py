@@ -178,7 +178,7 @@ class GraphicMethodsMixin:
     def add_line_collection(
         self,
         data: List[numpy.ndarray],
-        z_offset: Union[Iterable[float], float] = None,
+        z_offset: Union[Iterable[float | int], float, int] = None,
         thickness: Union[float, Iterable[float]] = 2.0,
         colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
         alpha: float = 1.0,
@@ -200,8 +200,8 @@ class GraphicMethodsMixin:
             if elements are 2D, interpreted as [y_vals, n_lines]
 
         z_offset: Iterable of float or float, optional
-            | if ``float``, single offset will be used for all lines
-            | if ``list`` of ``float``, each value will apply to the individual lines
+            | if ``float`` | ``int``, single offset will be used for all lines
+            | if ``list`` of ``float`` | ``int``, each value will apply to the individual lines
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -268,11 +268,13 @@ class GraphicMethodsMixin:
         data: Any,
         thickness: float = 2.0,
         colors: Union[str, numpy.ndarray, Iterable] = "w",
+        uniform_colors: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
         cmap_values: Union[numpy.ndarray, Iterable] = None,
         z_position: float = None,
         collection_index: int = None,
+        isolated_buffer: bool = True,
         *args,
         **kwargs
     ) -> LineGraphic:
@@ -314,6 +316,7 @@ class GraphicMethodsMixin:
         Features
         --------
 
+
         **data**: :class:`.ImageDataFeature`
             Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
 
@@ -336,11 +339,13 @@ class GraphicMethodsMixin:
             data,
             thickness,
             colors,
+            uniform_colors,
             alpha,
             cmap,
             cmap_values,
             z_position,
             collection_index,
+            isolated_buffer,
             *args,
             **kwargs
         )
@@ -439,13 +444,15 @@ class GraphicMethodsMixin:
 
     def add_scatter(
         self,
-        data: numpy.ndarray,
-        sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
-        colors: Union[str, numpy.ndarray, Iterable[str]] = "w",
+        data: Any,
+        colors: str | numpy.ndarray | tuple[float] | list[float] | list[str] = "w",
+        uniform_colors: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: Union[numpy.ndarray, List] = None,
-        z_position: float = 0.0,
+        cmap_values: numpy.ndarray = None,
+        isolated_buffer: bool = True,
+        sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
+        uniform_sizes: bool = False,
         *args,
         **kwargs
     ) -> ScatterGraphic:
@@ -504,12 +511,14 @@ class GraphicMethodsMixin:
         return self._create_graphic(
             ScatterGraphic,
             data,
-            sizes,
             colors,
+            uniform_colors,
             alpha,
             cmap,
             cmap_values,
-            z_position,
+            isolated_buffer,
+            sizes,
+            uniform_sizes,
             *args,
             **kwargs
         )
