@@ -45,8 +45,8 @@ class BaseSelector(Graphic):
         hover_responsive: Tuple[WorldObject, ...] = None,
         arrow_keys_modifier: str = None,
         axis: str = None,
-        name: str = None,
         parent: Graphic = None,
+        **kwargs,
     ):
         if edges is None:
             edges = tuple()
@@ -98,7 +98,7 @@ class BaseSelector(Graphic):
 
         self._parent = parent
 
-        Graphic.__init__(self, name=name)
+        Graphic.__init__(self, **kwargs)
 
     def get_selected_index(self):
         """Not implemented for this selector"""

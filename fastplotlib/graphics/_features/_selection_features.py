@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import numpy as np
 
 from ...utils import mesh_masks
@@ -73,9 +75,9 @@ class LinearRegionSelectionFeature(GraphicFeature):
         self._value = tuple(int(v) for v in value)
 
     @property
-    def value(self) -> np.ndarray[int]:
+    def value(self) -> np.ndarray[float]:
         """
-        selection in world space, NOT data space
+        (min, max) of the selection, in data space
         """
         return self._value
 
@@ -84,7 +86,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
         """one of "x" | "y" """
         return self._axis
 
-    def set_value(self, selector, value: tuple[float, float]):
+    def set_value(self, selector, value: Sequence[float]):
         """
         Set start, stop range of selector
 
@@ -93,26 +95,21 @@ class LinearRegionSelectionFeature(GraphicFeature):
         selector: LinearRegionSelector
 
         value: (float, float)
-             in world space, NOT data space
+             (min, max) values in data space
 
         """
-        if not isinstance(value, tuple):
+        if not len(value) == 2:
             raise TypeError(
-                "Bounds must be a tuple in the form of `(min_bound, max_bound)`, "
-                "where `min_bound` and `max_bound` are numeric values."
+                "selection must be a array, tuple, list, or sequence in the form of `(min, max)`, "
+                "where `min` and `max` are numeric values."
             )
 
-        # value = tuple(int(v) for v in value)
-
-        # make sure bounds not exceeded
-        for v in value:
-            if not (self._limits[0] <= v <= self._limits[1]):
-                return
+        # convert to array, clip values if they are beyond the limits
+        value = np.asarray(value, dtype=np.float32).clip(*self._limits)
 
         # make sure `selector width >= 2`, left edge must not move past right edge!
         # or bottom edge must not move past top edge!
-        # has to be at least 2 otherwise can't join datapoints for lines
-        if not (value[1] - value[0]) >= 2:
+        if not (value[1] - value[0]) >= 0:
             return
 
         if self.axis == "x":
@@ -141,7 +138,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
             # change y position of the top edge line
             selector.edges[1].geometry.positions.data[:, 1] = value[1]
 
-        self._value = np.array(value)  # (value[0], value[1])
+        self._value = value
 
         # send changes to GPU
         selector.fill.geometry.positions.update_range()

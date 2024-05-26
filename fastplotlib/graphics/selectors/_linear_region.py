@@ -17,20 +17,20 @@ if IS_JUPYTER:
 
 class LinearRegionSelector(BaseSelector):
     @property
-    def selection(self) -> tuple[int, int] | List[tuple[int, int]]:
+    def selection(self) -> Sequence[float] | List[Sequence[float]]:
         """
         (min, max) of data value along selector's axis, in data space
         """
         # TODO: This probably does not account for rotation since world.position
         #  does not account for rotation, we can do this later
-        if self._parent is not None:
-            # just subtract parent offset to map from world to data space
-            if self.axis == "x":
-                offset = self._parent.offset[0]
-            elif self.axis == "y":
-                offset = self._parent.offset[1]
+        # if self._parent is not None:
+        #     # just subtract parent offset to map from world to data space
+        #     if self.axis == "x":
+        #         offset = self._parent.offset[0]
+        #     elif self.axis == "y":
+        #         offset = self._parent.offset[1]
 
-            return self._selection.value.copy() - offset
+        return self._selection.value.copy()
 
             #
             # indices = self.get_selected_indices()
@@ -47,28 +47,28 @@ class LinearRegionSelector(BaseSelector):
 
         # TODO: if no parent graphic is set, this just returns world positions
         #  but should we change it?
-        return self._selection.value
+        # return self._selection.value
 
     @selection.setter
-    def selection(self, selection: tuple[int, int]):
+    def selection(self, selection: Sequence[float]):
         # set (xmin, xmax), or (ymin, ymax) of the selector in data space
         graphic = self._parent
 
-        start, stop = selection
+        # start, stop = selection
 
         if isinstance(graphic, GraphicCollection):
             pass
 
-        if self.axis == "x":
-            offset = graphic.offset[0]
-        elif self.axis == "y":
-            offset = graphic.offset[1]
+        # if self.axis == "x":
+        #     offset = graphic.offset[0]
+        # elif self.axis == "y":
+        #     offset = graphic.offset[1]
+        #
+        # # add the offset
+        # start += offset
+        # stop += offset
 
-        # add the offset
-        start += offset
-        stop += offset
-
-        self._selection.set_value(self, (start, stop))
+        self._selection.set_value(self, selection)
 
     @property
     def limits(self) -> Tuple[float, float]:
@@ -104,13 +104,9 @@ class LinearRegionSelector(BaseSelector):
         Create a LinearRegionSelector graphic which can be moved only along either the x-axis or y-axis.
         Allows sub-selecting data from a ``Graphic`` or from multiple Graphics.
 
-        bounds[0], limits[0], and position[0] must be identical.
-
-        Holding the right mouse button while dragging an edge will force the entire region selector to move. This is
-        a when using transparent fill areas due to ``pygfx`` picking limitations.
-
-        **Note:** Events get very weird if the values of bounds, limits and origin are close to zero. If you need
-        a linear selector with small data, we recommend scaling the data and then using the selector.
+        Assumes that the data under the selector is a function of the axis on which the selector moves
+        along. Example: if the selector is along the x-axis, then there must be only one y-value for each
+        x-value, otherwise functions such as ``get_selected_indices()`` do not make sense.
 
         Parameters
         ----------
@@ -208,11 +204,6 @@ class LinearRegionSelector(BaseSelector):
                 ]
             ).astype(np.float32)
 
-            if parent is not None:
-                parent_offset = parent.offset[0]
-            else:
-                parent_offset = 0
-
         elif axis == "y":
             # just some line data to initialize y axis edge lines
             init_line_data = np.array(
@@ -221,11 +212,6 @@ class LinearRegionSelector(BaseSelector):
                     [size / 2, 0, 0],
                 ]
             ).astype(np.float32)
-
-            if parent is not None:
-                parent_offset = parent.offset[1]
-            else:
-                parent_offset = 0
 
         else:
             raise ValueError("axis argument must be one of 'x' or 'y'")
@@ -250,16 +236,19 @@ class LinearRegionSelector(BaseSelector):
             edge.world.z = -0.5
             group.add(edge)
 
+        if axis == "x":
+            offset = (parent.offset[0], center, 0)
+        elif axis == "y":
+            offset = (center, parent.offset[1], 0)
+
         # set the initial bounds of the selector
         # compensate for any offset from the parent graphic
         # selection feature only works in world space, not data space
         self._selection = LinearRegionSelectionFeature(
-            selection + parent_offset,
+            selection,
             axis=axis,
-            limits=self._limits + parent_offset
+            limits=self._limits
         )
-
-        print(f"sel value after construct: {selection}")
 
         self._handled_widgets = list()
         self._block_ipywidget_call = False
@@ -272,22 +261,14 @@ class LinearRegionSelector(BaseSelector):
             hover_responsive=self.edges,
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
+            parent=parent,
             name=name,
-            parent=parent
+            offset=offset,
         )
 
         self._set_world_object(group)
 
         self.selection = selection
-
-        print(f"sel value after set: {selection}")
-
-        if self.axis == "x":
-            offset = (0, center, 0)
-        elif self.axis == "y":
-            offset = (center, 0, 0)
-
-        self.offset = self.offset + offset
 
     def get_selected_data(
             self, graphic: Graphic = None
@@ -544,45 +525,37 @@ class LinearRegionSelector(BaseSelector):
             widget.layout = ipywidgets.Layout(width=f"{w}px")
 
     def _move_graphic(self, delta: np.ndarray):
-        # add delta to current bounds to get new positions
-        # print(delta)
+        # add delta to current min, max to get new positions
         if self.axis == "x":
-            # min and max of current bounds, i.e. the edges
-            xmin, xmax = self._selection.value
+            # add x value
+            new_min, new_max = self.selection + delta[0]
 
-            # new left bound position
-            bound0_new = xmin + delta[0]
-
-            # new right bound position
-            bound1_new = xmax + delta[0]
         elif self.axis == "y":
-            # min and max of current bounds, i.e. the edges
-            ymin, ymax = self._selection.value
+            # add y value
+            new_min, new_max = self.selection + delta[1]
 
-            # new bottom bound position
-            bound0_new = ymin + delta[1]
-
-            # new top bound position
-            bound1_new = ymax + delta[1]
-
-        # move entire selector if source was fill
+        # move entire selector if event source was fill
         if self._move_info.source == self.fill:
-            # set the new bounds, in WORLD space
-            # don't set property because that is in data space!
-            self._selection.set_value(self, (bound0_new, bound1_new))
+            # prevent weird shrinkage of selector if one edge is already at the limit
+            if self.selection[0] == self.limits[0] and new_min < self.limits[0]:
+                return
+            if self.selection[1] == self.limits[1] and new_max > self.limits[1]:
+                return
+
+            # move entire selector
+            self._selection.set_value(self, (new_min, new_max))
             return
 
-        # if selector is not resizable do nothing
+        # if selector is not resizable return
         if not self._resizable:
             return
 
-        # if resizable, move edges
+        # if event source was an edge and selector is resizable,
+        # move the edge that caused the event
         if self._move_info.source == self.edges[0]:
             # change only left or bottom bound
-            self._selection.set_value(self, (bound0_new, self._selection.value[1]))
+            self._selection.set_value(self, (new_min, self._selection.value[1]))
 
         elif self._move_info.source == self.edges[1]:
             # change only right or top bound
-            self._selection.set_value(self, (self._selection.value[0], bound1_new))
-        else:
-            return
+            self._selection.set_value(self, (self.selection[0], new_max))
