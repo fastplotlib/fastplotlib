@@ -17,33 +17,19 @@ if IS_JUPYTER:
 
 class LinearRegionSelector(BaseSelector):
     @property
+    def parent(self) -> Graphic | None:
+        """graphic that the selector is associated with"""
+        return self._parent
+
+    @property
     def selection(self) -> Sequence[float] | List[Sequence[float]]:
         """
-        (min, max) of data value along selector's axis, in data space
+        (min, max) of data value along selector's axis
         """
         # TODO: This probably does not account for rotation since world.position
         #  does not account for rotation, we can do this later
-        # if self._parent is not None:
-        #     # just subtract parent offset to map from world to data space
-        #     if self.axis == "x":
-        #         offset = self._parent.offset[0]
-        #     elif self.axis == "y":
-        #         offset = self._parent.offset[1]
 
         return self._selection.value.copy()
-
-            #
-            # indices = self.get_selected_indices()
-            # if isinstance(indices, np.ndarray):
-            #     # this can be used directly to create a range object
-            #     return indices[0], indices[-1] + 1
-            # # if a collection is under the selector
-            # elif isinstance(indices, list):
-            #     ranges = list()
-            #     for ixs in indices:
-            #         ranges.append((ixs[0], ixs[-1] + 1))
-            #
-            #     return ranges
 
         # TODO: if no parent graphic is set, this just returns world positions
         #  but should we change it?
@@ -54,19 +40,8 @@ class LinearRegionSelector(BaseSelector):
         # set (xmin, xmax), or (ymin, ymax) of the selector in data space
         graphic = self._parent
 
-        # start, stop = selection
-
         if isinstance(graphic, GraphicCollection):
             pass
-
-        # if self.axis == "x":
-        #     offset = graphic.offset[0]
-        # elif self.axis == "y":
-        #     offset = graphic.offset[1]
-        #
-        # # add the offset
-        # start += offset
-        # stop += offset
 
         self._selection.set_value(self, selection)
 
@@ -95,18 +70,18 @@ class LinearRegionSelector(BaseSelector):
             parent: Graphic = None,
             resizable: bool = True,
             fill_color=(0, 0, 0.35),
-            edge_color=(0.8, 0.8, 0),
-            edge_thickness: int = 3,
+            edge_color=(0.8, 0.6, 0),
+            edge_thickness: float = 8,
             arrow_keys_modifier: str = "Shift",
             name: str = None,
     ):
         """
         Create a LinearRegionSelector graphic which can be moved only along either the x-axis or y-axis.
-        Allows sub-selecting data from a ``Graphic`` or from multiple Graphics.
+        Allows sub-selecting data from a parent ``Graphic`` or from multiple Graphics.
 
         Assumes that the data under the selector is a function of the axis on which the selector moves
         along. Example: if the selector is along the x-axis, then there must be only one y-value for each
-        x-value, otherwise functions such as ``get_selected_indices()`` do not make sense.
+        x-value, otherwise functions such as ``get_selected_data()`` do not make sense.
 
         Parameters
         ----------
@@ -114,16 +89,19 @@ class LinearRegionSelector(BaseSelector):
             (min, max) values of the "axis" under the selector
 
         limits: (int, int)
-            (min limit, max limit) of values on the axis
+            (min limit, max limit) within which the selector can move
 
         size: int
             height or width of the selector
 
+        center: float
+            center offset of the selector, by default the data mean
+
         axis: str, default "x"
-            "x" | "y", axis for the selector
+            "x" | "y", axis the selected can move on
 
         parent: Graphic, default ``None``
-            associate this selector with a parent Graphic
+            associate this selector with a parent Graphic from which to fetch data or indices
 
         resizable: bool
             if ``True``, the edges can be dragged to resize the width of the linear selection
@@ -134,23 +112,15 @@ class LinearRegionSelector(BaseSelector):
         edge_color: str, array, or tuple
             edge color for the selector, passed to pygfx.Color
 
+        edge_thickness: float, default 8
+            edge thickness
+
         arrow_keys_modifier: str
             modifier key that must be pressed to initiate movement using arrow keys, must be one of:
             "Control", "Shift", "Alt" or ``None``
 
         name: str
             name for this selector graphic
-
-        Features
-        --------
-
-        selection: :class:`.LinearRegionSelectionFeature`
-            ``selection()`` returns the current selector bounds in world coordinates.
-            Use ``get_selected_indices()`` to return the selected indices in data
-            space, and ``get_selected_data()`` to return the selected data.
-            Use ``selection.add_event_handler()`` to add callback functions that are
-            called when the LinearSelector selection changes. See feature class for
-            event pick_info table.
 
         """
 
@@ -236,6 +206,7 @@ class LinearRegionSelector(BaseSelector):
             edge.world.z = -0.5
             group.add(edge)
 
+        # TODO: if parent offset changes, we should set the selector offset too
         if axis == "x":
             offset = (parent.offset[0], center, 0)
         elif axis == "y":
@@ -275,7 +246,8 @@ class LinearRegionSelector(BaseSelector):
     ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Get the ``Graphic`` data bounded by the current selection.
-        Returns a view of the full data array.
+        Returns a view of the data array.
+
         If the ``Graphic`` is a collection, such as a ``LineStack``, it returns a list of views of the full array.
         Can be performed on the ``parent`` Graphic or on another graphic by passing to the ``graphic`` arg.
 
@@ -286,15 +258,16 @@ class LinearRegionSelector(BaseSelector):
 
         Parameters
         ----------
-        graphic: Graphic, optional
+        graphic: Graphic, optional, default ``None``
             if provided, returns the data selection from this graphic instead of the graphic set as ``parent``
 
         Returns
         -------
-        np.ndarray, List[np.ndarray], or None
+        np.ndarray or List[np.ndarray]
             view or list of views of the full array, returns ``None`` if selection is empty
 
         """
+
         source = self._get_source(graphic)
         ixs = self.get_selected_indices(source)
 
@@ -306,42 +279,42 @@ class LinearRegionSelector(BaseSelector):
                 data_selections: List[np.ndarray] = list()
 
                 for i, g in enumerate(source.graphics):
-                    # if ixs[i].size == 0:
-                    #     data_selections.append(np.array([], dtype=np.float32))
-                    # else:
-                    s = slice(ixs[i][0], ixs[i][-1])
-                    # slices n_datapoints dim
-                    data_selections.append(g.data.buffer.data[s])
+                    if ixs[i].size == 0:
+                        data_selections.append(np.array([], dtype=np.float32).reshape(0, 3))
+                    else:
+                        s = slice(ixs[i][0], ixs[i][-1] + 1)  # add 1 because these are direct indices
+                        # slices n_datapoints dim
+                        data_selections.append(g.data[s])
 
-                return source[:].data[s]
+                # return source[:].data[s]
             else:
-                # just for one graphic
-                # if ixs.size == 0:
-                #     return np.array([], dtype=np.float32)
+                if ixs.size == 0:
+                    # empty selection
+                    return np.array([], dtype=np.float32).reshape(0, 3)
 
-                s = slice(ixs[0], ixs[-1])
+                s = slice(ixs[0], ixs[-1] + 1)  # add 1 to end because these are direct indices
                 # slices n_datapoints dim
-                return source.data.buffer.data[s]
+                # slice with min, max is faster than using all the indices
+                return source.data[s]
 
         if "Image" in source.__class__.__name__:
-            s = slice(ixs[0], ixs[-1])
+            s = slice(ixs[0], ixs[-1] + 1)
 
             if self.axis == "x":
-                return source.data.value[:, s]
+                # slice columns
+                return source.data[:, s]
 
             elif self.axis == "y":
-                return source.data.value[s]
+                # slice rows
+                return source.data[s]
 
     def get_selected_indices(
             self, graphic: Graphic = None
     ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Returns the indices of the ``Graphic`` data bounded by the current selection.
-        This is useful because the ``bounds`` min and max are not necessarily the same
-        as the Line Geometry positions x-vals or y-vals. For example, if if you used a
-        np.linspace(0, 100, 1000) for xvals in your line, then you will have 1,000
-        x-positions. If the selection ``bounds`` are set to ``(0, 10)``, the returned
-        indices would be ``(0, 100)``.
+
+        These are the data indices along the selector's "axis" which correspond to the data under the selector.
 
         Parameters
         ----------
@@ -351,7 +324,7 @@ class LinearRegionSelector(BaseSelector):
         Returns
         -------
         Union[np.ndarray, List[np.ndarray]]
-            data indices of the selection, list of np.ndarray if graphic is LineCollection
+            data indices of the selection, list of np.ndarray if graphic is a collection
 
         """
         # we get the indices from the source graphic
@@ -359,48 +332,34 @@ class LinearRegionSelector(BaseSelector):
 
         # get the offset of the source graphic
         if self.axis == "x":
-            source_offset = source.offset[0]
             dim = 0
         elif self.axis == "y":
-            source_offset = source.offset[1]
             dim = 1
 
-        # selector (min, max) in world space
-        bounds = self._selection.value
-        # subtract offset to get the (min, max) bounded region
-        # of the source graphic in world space
-        bounds = tuple(v - source_offset for v in bounds)
+        # selector (min, max) data values along axis
+        bounds = self.selection
 
-        # # need them to be int to use as indices
-        # offset_bounds = tuple(map(int, offset_bounds))
-
-        if "Line" in source.__class__.__name__:
-            # now we need to map from world space to data space
+        if "Line" in source.__class__.__name__ or "Scatter" in source.__class__.__name__:
             # gets indices corresponding to n_datapoints dim
-            # data space is [n_datapoints, xyz], so we return
+            # data is [n_datapoints, xyz], so we return
             # indices that can be used to slice `n_datapoints`
             if isinstance(source, GraphicCollection):
                 ixs = list()
                 for g in source.graphics:
-                    # map for each graphic in the collection
-                    g_ixs = np.where(
-                        (g.data.value[:, dim] >= bounds[0])
-                        & (g.data.value[:, dim] <= bounds[1])
-                    )[0]
+                    # indices for each graphic in the collection
+                    data = g.data.value[:, dim]
+                    g_ixs = np.where((data >= bounds[0]) & (data <= bounds[1]))[0]
                     ixs.append(g_ixs)
             else:
                 # map this only this graphic
-                ixs = np.where(
-                    (source.data.value[:, dim] >= bounds[0])
-                    & (source.data.value[:, dim] <= bounds[1])
-                )[0]
+                data = source.data.value[:, dim]
+                ixs = np.where((data >= bounds[0]) & (data <= bounds[1]))[0]
 
             return ixs
 
         if "Image" in source.__class__.__name__:
             # indices map directly to grid geometry for image data buffer
-            ixs = np.arange(*bounds, dtype=int)
-            return ixs
+            return np.arange(*bounds, dtype=int)
 
     def make_ipywidget_slider(self, kind: str = "IntRangeSlider", **kwargs):
         """
@@ -538,8 +497,10 @@ class LinearRegionSelector(BaseSelector):
         if self._move_info.source == self.fill:
             # prevent weird shrinkage of selector if one edge is already at the limit
             if self.selection[0] == self.limits[0] and new_min < self.limits[0]:
+                # self._move_end(None)  # TODO: cancel further movement to prevent weird asynchronization with pointer
                 return
             if self.selection[1] == self.limits[1] and new_max > self.limits[1]:
+                # self._move_end(None)
                 return
 
             # move entire selector

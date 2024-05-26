@@ -182,7 +182,7 @@ class LineGraphic(PositionsGraphic, Interaction):
         return weakref.proxy(selector)
 
     def add_linear_region_selector(
-        self, padding: float = 100.0, axis="x", **kwargs
+        self, padding: float = 0.0, axis="x", **kwargs
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -202,15 +202,6 @@ class LineGraphic(PositionsGraphic, Interaction):
             linear selection graphic
 
         """
-
-        # (
-        #     bounds_init,
-        #     limits,
-        #     size,
-        #     origin,
-        #     axis,
-        #     end_points,
-        # ) = self._get_linear_selector_init_args(padding, **kwargs)
 
         n_datapoints = self.data.value.shape[0]
         value_25p = int(n_datapoints / 4)
@@ -232,7 +223,7 @@ class LineGraphic(PositionsGraphic, Interaction):
         limits = axis_vals[0], axis_vals[-1]
 
         # width or height of selector
-        size = int(np.ptp(magn_vals) + padding)
+        size = int(np.ptp(magn_vals) * 1.5 + padding)
 
         # center of selector along the other axis
         center = np.nanmean(magn_vals)

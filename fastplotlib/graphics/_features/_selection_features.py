@@ -147,11 +147,13 @@ class LinearRegionSelectionFeature(GraphicFeature):
         selector.edges[1].geometry.positions.update_range()
 
         # send event
-        if len(self._event_handlers) > 0:
+        if len(self._event_handlers) < 1:
             return
 
-        # event = FeatureEvent("selection", {"indices": selector.get_selected_indices()})
-        # self._call_event_handlers(event)
+        event = FeatureEvent("selection", {"value": self.value})
+        event.get_selected_indices = selector.get_selected_indices
+        event.get_selected_data = selector.get_selected_data
+        self._call_event_handlers(event)
         # TODO: user's selector event handlers can call event.graphic.get_selected_indices() to get the data index,
         #  and event.graphic.get_selected_data() to get the data under the selection
         #  this is probably a good idea so that the data isn't sliced until it's actually necessary

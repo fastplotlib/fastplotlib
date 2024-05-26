@@ -37,6 +37,10 @@ key_bind_direction = {
 class BaseSelector(Graphic):
     features = {"selection"}
 
+    @property
+    def axis(self) -> str:
+        return self._axis
+
     def __init__(
         self,
         edges: Tuple[Line, ...] = None,
@@ -72,7 +76,7 @@ class BaseSelector(Graphic):
             for wo in self._hover_responsive:
                 self._original_colors[wo] = wo.material.color
 
-        self.axis = axis
+        self._axis = axis
 
         # current delta in world coordinates
         self.delta: np.ndarray = None
