@@ -157,7 +157,7 @@ class BufferManager(GraphicFeature):
             **kwargs
     ):
         super().__init__()
-        if isolated_buffer:
+        if isolated_buffer and not isinstance(data, pygfx.Resource):
             # useful if data is read-only, example: memmaps
             bdata = np.zeros(data.shape, dtype=data.dtype)
             bdata[:] = data[:]
@@ -165,7 +165,7 @@ class BufferManager(GraphicFeature):
             # user's input array is used as the buffer
             bdata = data
 
-        if isinstance(data, pygfx.Buffer):
+        if isinstance(data, pygfx.Resource):
             # already a buffer, probably used for
             # managing another BufferManager, example: VertexCmap manages VertexColors
             self._buffer = data

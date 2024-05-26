@@ -296,7 +296,7 @@ class VertexCmap(BufferManager):
     """
 
     def __init__(self, vertex_colors: VertexColors, cmap_name: str | None, cmap_values: np.ndarray | None):
-        super().__init__(data=vertex_colors)
+        super().__init__(data=vertex_colors.buffer)
 
         self._vertex_colors = vertex_colors
         self._cmap_name = cmap_name
