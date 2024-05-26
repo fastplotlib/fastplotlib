@@ -62,8 +62,8 @@ class LinearRegionSelector(BaseSelector):
 
     def __init__(
             self,
-            selection: Tuple[int, int],
-            limits: Tuple[int, int],
+            selection: Sequence[float],
+            limits: Sequence[float],
             size: int,
             center: float,
             axis: str = "x",
@@ -85,10 +85,10 @@ class LinearRegionSelector(BaseSelector):
 
         Parameters
         ----------
-        selection: (int, int)
-            (min, max) values of the "axis" under the selector
+        selection: (float, float)
+            initial (min, max) x or y values
 
-        limits: (int, int)
+        limits: (float, float)
             (min limit, max limit) within which the selector can move
 
         size: int
@@ -347,12 +347,12 @@ class LinearRegionSelector(BaseSelector):
                 ixs = list()
                 for g in source.graphics:
                     # indices for each graphic in the collection
-                    data = g.data.value[:, dim]
+                    data = g.data[:, dim]
                     g_ixs = np.where((data >= bounds[0]) & (data <= bounds[1]))[0]
                     ixs.append(g_ixs)
             else:
                 # map this only this graphic
-                data = source.data.value[:, dim]
+                data = source.data[:, dim]
                 ixs = np.where((data >= bounds[0]) & (data <= bounds[1]))[0]
 
             return ixs
@@ -450,7 +450,7 @@ class LinearRegionSelector(BaseSelector):
         widget.observe(self._ipywidget_callback, "value")
 
         # user changes linear selection -> widget changes
-        self.selection.add_event_handler(self._update_ipywidgets)
+        self.selection.add_event_handler(self._update_ipywidgets, "selection")
 
         self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
 

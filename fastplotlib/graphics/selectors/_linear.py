@@ -18,40 +18,24 @@ if IS_JUPYTER:
 
 class LinearSelector(BaseSelector):
     @property
+    def parent(self) -> Graphic:
+        return self._parent
+
+    @property
     def selection(self) -> float:
         """
-        The selected data index. Index of the data under the selector
-        not the x or y value of the data but the index of the x or y value
+        x or y value of selector's current position
         """
-        if self._parent is not None:
-            return self.get_selected_index()
-        # TODO: if no parent graphic is set, this just returns world position
-        #  but should we change it?
         return self._selection.value
 
     @selection.setter
-    def selection(self, index: int):
+    def selection(self, value: int):
         graphic = self._parent
 
-        if "Line" in graphic.__class__.__name__ or "Scatter" in graphic.__class__.__name__:
-            if self.axis == "x":
-                geo_positions = graphic.data.value[:, 0]
-                offset = graphic.offset[0]
-            elif self.axis == "y":
-                geo_positions = graphic.data.value[:, 1]
-                offset = graphic.offset[1]
+        if isinstance(graphic, GraphicCollection):
+            pass
 
-            # we want to find the geometry position at the desired index
-            position = geo_positions[index]
-
-        elif "Image" in graphic.__class__.__name__:
-            # 1:1 mapping between geometry position and index
-            position = index
-
-        # new world position for the selector
-        # offset + new_index
-        world_pos = offset + position
-        self._selection.set_value(self, world_pos)
+        self._selection.set_value(self, value)
 
     @property
     def limits(self) -> Tuple[float, float]:
@@ -71,14 +55,15 @@ class LinearSelector(BaseSelector):
     # TODO: make `selection` arg in graphics data space not world space
     def __init__(
         self,
-        selection: int,
-        limits: Tuple[int, int],
+        selection: float,
+        limits: Sequence[float],
+        size: float,
+        center: float,
         axis: str = "x",
         parent: Graphic = None,
-        end_points: Tuple[int, int] = None,
-        arrow_keys_modifier: str = "Shift",
+        color: str | tuple = "w",
         thickness: float = 2.5,
-        color: Any = "w",
+        arrow_keys_modifier: str = "Shift",
         name: str = None,
     ):
         """
@@ -119,19 +104,19 @@ class LinearSelector(BaseSelector):
         if len(limits) != 2:
             raise ValueError("limits must be a tuple of 2 integers, i.e. (int, int)")
 
-        self._limits = tuple(map(round, limits))
+        self._limits = np.asarray(limits)
 
-        selection = round(selection)
+        end_points = [-size / 2, size / 2]
 
         if axis == "x":
-            xs = np.zeros(2)
+            xs = np.array([selection, selection])
             ys = np.array(end_points)
             zs = np.zeros(2)
 
             line_data = np.column_stack([xs, ys, zs])
         elif axis == "y":
             xs = np.array(end_points)
-            ys = np.zeros(2)
+            ys = np.array([selection, selection])
             zs = np.zeros(2)
 
             line_data = np.column_stack([xs, ys, zs])
@@ -173,6 +158,11 @@ class LinearSelector(BaseSelector):
 
         self._handled_widgets = list()
 
+        if axis == "x":
+            offset = (parent.offset[0], center, 0)
+        elif axis == "y":
+            offset = (center, parent.offset[1], 0)
+
         # init base selector
         BaseSelector.__init__(
             self,
@@ -180,8 +170,9 @@ class LinearSelector(BaseSelector):
             hover_responsive=(line_inner, self.line_outer),
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
-            name=name,
             parent=parent,
+            name=name,
+            offset=offset
         )
 
         self._set_world_object(world_object)
@@ -196,7 +187,7 @@ class LinearSelector(BaseSelector):
             self._selection.set_value(self, selection)
 
         # update any ipywidgets
-        self.add_event_handler("selection", self._update_ipywidgets)
+        self.add_event_handler(self._update_ipywidgets, "selection")
 
     def _setup_ipywidget_slider(self, widget):
         # setup an ipywidget slider with bidirectional callbacks to this LinearSelector
@@ -216,7 +207,7 @@ class LinearSelector(BaseSelector):
         # update the ipywidget sliders when LinearSelector value changes
         self._block_ipywidget_call = True  # prevent infinite recursion
 
-        value = ev.info["index"]
+        value = ev.info["value"]
         # update all the handled slider widgets
         for widget in self._handled_widgets:
             if isinstance(widget, ipywidgets.IntSlider):
@@ -354,34 +345,29 @@ class LinearSelector(BaseSelector):
     def _get_selected_index(self, graphic):
         # the array to search for the closest value along that axis
         if self.axis == "x":
-            geo_positions = graphic.data()[:, 0]
-            offset = getattr(graphic, f"position_{self.axis}")
-        else:
-            geo_positions = graphic.data()[:, 1]
-            offset = getattr(graphic, f"position_{self.axis}")
+            data = graphic.data[:, 0]
+        elif self.axis == "y":
+            data = graphic.data[:, 1]
 
-        if "Line" in graphic.__class__.__name__:
-            # we want to find the index of the geometry position that is closest to the slider's geometry position
-            find_value = self._selection.value - offset
+        if "Line" in graphic.__class__.__name__ or "Scatter" in graphic.__class__.__name__:
+            # we want to find the index of the data closest to the slider position
+            find_value = self.selection
 
             # get closest data index to the world space position of the slider
-            idx = np.searchsorted(geo_positions, find_value, side="left")
+            idx = np.searchsorted(data, find_value, side="left")
 
             if idx > 0 and (
-                idx == len(geo_positions)
-                or math.fabs(find_value - geo_positions[idx - 1])
-                < math.fabs(find_value - geo_positions[idx])
+                idx == len(data)
+                or math.fabs(find_value - data[idx - 1])
+                < math.fabs(find_value - data[idx])
             ):
                 return round(idx - 1)
             else:
                 return round(idx)
 
-        if (
-            "Heatmap" in graphic.__class__.__name__
-            or "Image" in graphic.__class__.__name__
-        ):
+        if "Image" in graphic.__class__.__name__:
             # indices map directly to grid geometry for image data buffer
-            index = self._selection.value - offset
+            index = self.selection
             return round(index)
 
     def _move_graphic(self, delta: np.ndarray):
@@ -396,9 +382,9 @@ class LinearSelector(BaseSelector):
         """
 
         if self.axis == "x":
-            self.selection = self._selection + delta[0]
+            self.selection = self.selection + delta[0]
         else:
-            self.selection = self._selection + delta[1]
+            self.selection = self.selection + delta[1]
 
     def _fpl_cleanup(self):
         for widget in self._handled_widgets:

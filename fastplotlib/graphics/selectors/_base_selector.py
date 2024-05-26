@@ -355,8 +355,6 @@ class BaseSelector(Graphic):
         if ev.key not in key_bind_direction.keys():
             return
 
-        # print(ev.key)
-
         self._key_move_value = ev.key
 
     def _key_up(self, ev):

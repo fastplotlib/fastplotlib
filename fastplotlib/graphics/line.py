@@ -129,14 +129,14 @@ class LineGraphic(PositionsGraphic, Interaction):
             self.position_z = z_position
 
     def add_linear_selector(
-        self, selection: int = None, padding: float = 50, **kwargs
+        self, selection: float = None, padding: float = 0., axis: str = "x",**kwargs
     ) -> LinearSelector:
         """
         Adds a linear selector.
 
         Parameters
         ----------
-        selection: int
+        selection: float
             initial position of the selector
 
         padding: float
@@ -151,38 +151,52 @@ class LineGraphic(PositionsGraphic, Interaction):
 
         """
 
-        (
-            bounds_init,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
+        data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
+
+        if axis == "x":
+            # xvals
+            axis_vals = data[:, 0]
+
+            # yvals to get size and center
+            magn_vals = data[:, 1]
+        elif axis == "y":
+            axis_vals = data[:, 1]
+            magn_vals = data[:, 0]
 
         if selection is None:
-            selection = limits[0]
+            selection = axis_vals[0]
+        limits = axis_vals[0], axis_vals[-1]
 
-        if selection < limits[0] or selection > limits[1]:
+        if not limits[0] <= selection <= limits[1]:
             raise ValueError(
                 f"the passed selection: {selection} is beyond the limits: {limits}"
             )
 
+        # width or height of selector
+        size = int(np.ptp(magn_vals) * 1.5 + padding)
+
+        # center of selector along the other axis
+        center = np.nanmean(magn_vals)
+
         selector = LinearSelector(
             selection=selection,
             limits=limits,
-            end_points=end_points,
+            size=size,
+            center=center,
+            axis=axis,
             parent=self,
             **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
+
+        # place selector above this graphic
         selector.offset = selector.offset + (0., 0., self.offset[-1] + 1)
 
         return weakref.proxy(selector)
 
     def add_linear_region_selector(
-        self, padding: float = 0.0, axis="x", **kwargs
+        self, padding: float = 0., axis: str = "x", **kwargs
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,

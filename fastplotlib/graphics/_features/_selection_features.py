@@ -7,9 +7,23 @@ from ._base import GraphicFeature, FeatureEvent
 
 
 class LinearSelectionFeature(GraphicFeature):
-    # A bit much to have a class for this but this allows it to integrate with the fastplotlib callback system
     """
-    Manages the linear selection and callbacks
+    **additional event attributes:**
+
+    +--------------------+----------+------------------------------------+
+    | attribute          | type     | description                        |
+    +====================+==========+====================================+
+    | get_selected_index | callable | returns indices under the selector |
+    +--------------------+----------+------------------------------------+
+
+    **info dict:**
+
+    +----------+------------+-------------------------------+
+    | dict key | value type | value description             |
+    +==========+============+===============================+
+    | value    | np.ndarray | new x or y value of selection |
+    +----------+------------+-------------------------------+
+
     """
 
     def __init__(self, axis: str, value: float, limits: tuple[float, float]):
@@ -36,33 +50,52 @@ class LinearSelectionFeature(GraphicFeature):
     @property
     def value(self) -> float:
         """
-        selection in world space, NOT data space
+        selection, data x or y value
         """
-        # TODO: Not sure if we should make this public since it's in world space, not data space
-        #  need to decide if we give a value based on the selector's parent graphic, if there is one
         return self._value
 
     def set_value(self, selector, value: float):
-        if not (self._limits[0] <= value <= self._limits[1]):
-            return
+        # clip value between limits
+        value = np.clip(value, self._limits[0], self._limits[1])
 
-        offset = list(selector.offset)
-
+        # set position
         if self._axis == "x":
-            offset[0] = value
-        else:
-            offset[1] = value
+            dim = 0
+        elif self._axis == "y":
+            dim = 1
 
-        selector.offset = offset
+        for edge in selector._edges:
+            edge.geometry.positions.data[:, dim] = value
+            edge.geometry.positions.update_range()
 
         self._value = value
-        event = FeatureEvent("selection", {"index": selector.get_selected_index()})
+
+        event = FeatureEvent("selection", {"value": value})
+        event.get_selected_index = selector.get_selected_index
+
         self._call_event_handlers(event)
 
 
 class LinearRegionSelectionFeature(GraphicFeature):
     """
-    Feature for a linearly bounding region
+    **additional event attributes:**
+
+    +----------------------+----------+------------------------------------+
+    | attribute            | type     | description                        |
+    +======================+==========+====================================+
+    | get_selected_indices | callable | returns indices under the selector |
+    +----------------------+----------+------------------------------------+
+    | get_selected_data    | callable | returns data under the selector    |
+    +----------------------+----------+------------------------------------+
+
+    **info dict:**
+
+    +----------+------------+-----------------------------+
+    | dict key | value type | value description           |
+    +==========+============+=============================+
+    | value    | np.ndarray | new [min, max] of selection |
+    +----------+------------+-----------------------------+
+
     """
 
     def __init__(
@@ -151,8 +184,10 @@ class LinearRegionSelectionFeature(GraphicFeature):
             return
 
         event = FeatureEvent("selection", {"value": self.value})
+
         event.get_selected_indices = selector.get_selected_indices
         event.get_selected_data = selector.get_selected_data
+
         self._call_event_handlers(event)
         # TODO: user's selector event handlers can call event.graphic.get_selected_indices() to get the data index,
         #  and event.graphic.get_selected_data() to get the data under the selection
