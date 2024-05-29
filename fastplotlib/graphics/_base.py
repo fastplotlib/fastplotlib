@@ -384,7 +384,7 @@ class PositionsGraphic(Graphic):
             return self._colors.value
 
     @colors.setter
-    def colors(self, value):
+    def colors(self, value: str | np.ndarray | tuple[float] | list[float] | list[str]):
         if isinstance(self._colors, VertexColors):
             self._colors[:] = value
 
