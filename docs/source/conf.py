@@ -3,6 +3,15 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 import fastplotlib
+from pygfx.utils.gallery_scraper import find_examples_for_gallery
+from pathlib import Path
+import sys
+import os
+
+ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
+EXAMPLES_DIR = ROOT_DIR / "examples" / "desktop"
+
+sys.path.insert(0, str(ROOT_DIR))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -15,6 +24,9 @@ release = fastplotlib.__version__
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
+# Force offscreen rendering
+os.environ["WGPU_FORCE_OFFSCREEN"] = "true"
+
 extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
@@ -24,7 +36,20 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_design",
     "nbsphinx",
+    "sphinx_gallery.gen_gallery"
 ]
+
+sphinx_gallery_conf = {
+    "gallery_dirs": "_gallery",
+    "backreferences_dir": "_gallery/backreferences",
+    "doc_module": ("fastplotlib",),
+    "image_scrapers": ("pygfx",),
+    "remove_config_comments": True,
+    "ignore_pattern": r'__init__\.py',
+}
+
+extra_conf = find_examples_for_gallery(EXAMPLES_DIR)
+sphinx_gallery_conf.update(extra_conf)
 
 autosummary_generate = True
 
@@ -52,7 +77,7 @@ autodoc_typehints_description_target = "documented_params"
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "pygfx": ("https://pygfx.readthedocs.io/en/latest", None),
+    "pygfx": ("https://pygfx.com/stable/", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
 }
 
