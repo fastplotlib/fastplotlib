@@ -84,8 +84,6 @@ autodoc_member_order = "groupwise"
 autoclass_content = "both"
 add_module_names = False
 
-nbsphinx_allow_errors = True
-
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented_params"
 
