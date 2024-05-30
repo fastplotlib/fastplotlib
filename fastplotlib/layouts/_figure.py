@@ -477,7 +477,10 @@ class Figure:
                 subplot.auto_scale(maintain_aspect=_maintain_aspect, zoom=0.95)
 
         # used for generating images in docs using nbsphinx
-        if "NB_SNAPSHOT" in os.environ.keys() and "WGPU_FORCE_OFFSCREEN" not in os.environ.keys():
+        if (
+            "NB_SNAPSHOT" in os.environ.keys()
+            and "WGPU_FORCE_OFFSCREEN" not in os.environ.keys()
+        ):
             if os.environ["NB_SNAPSHOT"] == "1":
                 return self.canvas.snapshot()
 
