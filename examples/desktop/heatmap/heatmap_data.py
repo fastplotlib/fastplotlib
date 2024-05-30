@@ -5,7 +5,7 @@ Change the data of a heatmap
 """
 
 # test_example = true
-# sphinx_gallery_pygfx_docs = 'screenshot'
+# sphinx_gallery_pygfx_docs = 'hidden'
 
 import fastplotlib as fpl
 import numpy as np
