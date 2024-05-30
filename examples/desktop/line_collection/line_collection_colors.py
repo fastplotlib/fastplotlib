@@ -1,10 +1,12 @@
 """
-Line Plot
-============
+Line Collection Colors
+======================
+
 Example showing how to plot line collections
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 from itertools import product
 import numpy as np
@@ -32,6 +34,9 @@ pos_xy = np.vstack(circles)
 colors = ["blue"] * 4 + ["red"] * 4 + ["yellow"] * 4 + ["w"] * 4
 
 fig = fpl.Figure()
+
+# set canvas variable for sphinx_gallery to properly generate examples
+canvas = fig.canvas
 
 fig[0, 0].add_line_collection(circles, colors=colors, thickness=10)
 

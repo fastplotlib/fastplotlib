@@ -1,16 +1,20 @@
 """
-Line Plot
-============
+Line Plot Present & Scaling
+===========================
+
 Example showing present and scaling feature for lines.
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 import numpy as np
+from wgpu.gui.offscreen import WgpuCanvas
 
+canvas = WgpuCanvas()
 
-fig = fpl.Figure()
+fig = fpl.Figure(canvas=canvas)
 
 xs = np.linspace(-10, 10, 100)
 # sine wave

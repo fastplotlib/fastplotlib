@@ -1,14 +1,19 @@
 """
-Line Plot
-============
+Line Collection Simple
+======================
+
 Example showing how to plot line collections
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 from itertools import product
 import numpy as np
 import fastplotlib as fpl
+from wgpu.gui.offscreen import WgpuCanvas
+
+canvas = WgpuCanvas()
 
 
 def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
@@ -27,7 +32,7 @@ for center in product(range(0, spatial_dims[0], 15), range(0, spatial_dims[1], 1
 
 pos_xy = np.vstack(circles)
 
-fig = fpl.Figure()
+fig = fpl.Figure(canvas=canvas)
 
 fig[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
 

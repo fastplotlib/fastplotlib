@@ -5,6 +5,8 @@ Example showing point size change for scatter plot.
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
+
 import numpy as np
 import fastplotlib as fpl
 
@@ -23,6 +25,9 @@ y_values = 30 * np.sin(angles)  # 1 thousand points
 x_values = np.array([x for x in range(len(y_values))], dtype=np.float32)
 
 data = np.column_stack([x_values, y_values])
+
+# set canvas variable for sphinx_gallery to properly generate examples
+canvas = fig.canvas
 
 fig["scalar_size"].add_scatter(
     data=data, sizes=5, colors="blue"

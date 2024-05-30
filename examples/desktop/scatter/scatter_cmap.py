@@ -5,12 +5,12 @@ Example showing cmap change for scatter plot.
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'hidden'
 
 import fastplotlib as fpl
 import numpy as np
 from pathlib import Path
 from sklearn.cluster import AgglomerativeClustering
-
 
 fig = fpl.Figure()
 
@@ -23,6 +23,9 @@ agg.fit_predict(data)
 scatter_graphic = fig[0, 0].add_scatter(
     data=data[:, :-1], sizes=15, alpha=0.7, cmap="Set1", cmap_values=agg.labels_
 )
+
+# set canvas variable for sphinx_gallery to properly generate examples
+canvas = fig.canvas
 
 fig.show()
 

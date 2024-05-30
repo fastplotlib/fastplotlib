@@ -5,12 +5,15 @@ Change the vmin vmax of a heatmap
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 import numpy as np
+from wgpu.gui.offscreen import WgpuCanvas
 
+canvas = WgpuCanvas()
 
-fig = fpl.Figure()
+fig = fpl.Figure(canvas=canvas)
 
 xs = np.linspace(0, 1_000, 10_000)
 

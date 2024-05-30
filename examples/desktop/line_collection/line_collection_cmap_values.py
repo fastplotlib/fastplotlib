@@ -1,15 +1,19 @@
 """
-Line Plot
-============
+Line Plot Colormap Values
+=========================
+
 Example showing how to plot line collections
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 from itertools import product
 import numpy as np
 import fastplotlib as fpl
+from wgpu.gui.offscreen import WgpuCanvas
 
+canvas = WgpuCanvas()
 
 def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
     theta = np.linspace(0, 2 * np.pi, n_points)
@@ -33,7 +37,7 @@ pos_xy = np.vstack(circles)
 # highest values, lowest values, mid-high values, mid values
 cmap_values = [10] * 4 + [0] * 4 + [7] * 4 + [5] * 4
 
-fig = fpl.Figure()
+fig = fpl.Figure(canvas=canvas)
 
 fig[0, 0].add_line_collection(
     circles,

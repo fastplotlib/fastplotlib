@@ -2,11 +2,17 @@
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
+
+# Force offscreen rendering
+import os
+
+os.environ["WGPU_FORCE_OFFSCREEN"] = "1"
+
 import fastplotlib
 from pygfx.utils.gallery_scraper import find_examples_for_gallery
 from pathlib import Path
 import sys
-import os
+from sphinx_gallery.sorting import ExplicitOrder
 
 ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
 EXAMPLES_DIR = ROOT_DIR / "examples" / "desktop"
@@ -23,9 +29,6 @@ release = fastplotlib.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
-
-# Force offscreen rendering
-os.environ["WGPU_FORCE_OFFSCREEN"] = "true"
 
 extensions = [
     "sphinx.ext.napoleon",
@@ -45,6 +48,16 @@ sphinx_gallery_conf = {
     "doc_module": ("fastplotlib",),
     "image_scrapers": ("pygfx",),
     "remove_config_comments": True,
+    "subsection_order": ExplicitOrder(
+        [
+            "../../examples/desktop/image",
+            "../../examples/desktop/gridplot",
+            "../../examples/desktop/line",
+            "../../examples/desktop/line_collection",
+            "../../examples/desktop/scatter",
+            "../../examples/desktop/heatmap"
+        ]
+    ),
     "ignore_pattern": r'__init__\.py',
 }
 
@@ -70,6 +83,8 @@ html_title = f"v{release}"
 autodoc_member_order = "groupwise"
 autoclass_content = "both"
 add_module_names = False
+
+nbsphinx_allow_errors = True
 
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented_params"

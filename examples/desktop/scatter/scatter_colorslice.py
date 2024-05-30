@@ -5,6 +5,7 @@ Example showing color slice for scatter plot.
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'hidden'
 
 import fastplotlib as fpl
 import numpy as np
@@ -22,6 +23,9 @@ colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 scatter_graphic = fig[0, 0].add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
 
 fig.show()
+
+# set canvas variable for sphinx_gallery to properly generate examples
+canvas = fig.canvas
 
 fig.canvas.set_logical_size(800, 800)
 

@@ -1,10 +1,12 @@
 """
-Simple Plot
-============
+Image colormap
+==============
+
 Example showing simple plot creation and subsequent cmap change with Standard image from imageio.
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 import imageio.v3 as iio
@@ -17,6 +19,9 @@ fig = fpl.Figure()
 image_graphic = fig[0, 0].add_image(data=im, name="random-image")
 
 fig.show()
+
+# set canvas variable for sphinx_gallery to properly generate examples
+canvas = fig.canvas
 
 fig.canvas.set_logical_size(800, 800)
 

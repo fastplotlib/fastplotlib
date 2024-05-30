@@ -14,12 +14,6 @@ Welcome to fastplotlib's documentation!
    GPU Info <user_guide/gpu>
 
 .. toctree::
-   :caption: Gallery
-   :maxdepth:  1
-
-   Gallery <_gallery/index>
-
-.. toctree::
    :maxdepth: 1
    :caption: API
    
@@ -31,6 +25,12 @@ Welcome to fastplotlib's documentation!
    Widgets <api/widgets/index>
    Utils <api/utils>
    GPU <api/gpu>
+
+.. toctree::
+   :caption: Gallery
+   :maxdepth:  2
+
+   Gallery <_gallery/index>
 
 Summary
 =======
