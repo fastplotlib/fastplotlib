@@ -14,62 +14,62 @@ def generate_slice_indices(kind: int):
             indices = [2]
 
         case 1:
-            # everything
+            # everything, [:]
             s = slice(None, None, None)
             indices = list(range(10))
 
         case 2:
-            # positive continuous range
+            # positive continuous range, [1:5]
             s = slice(1, 5, None)
             indices = [1, 2, 3, 4]
 
         case 3:
-            # positive stepped range
+            # positive stepped range, [2:8:2]
             s = slice(2, 8, 2)
             indices = [2, 4, 6]
 
         case 4:
-            # negative continuous range
+            # negative continuous range, [-5:]
             s = slice(-5, None, None)
             indices = [5, 6, 7, 8, 9]
 
         case 5:
-            # negative backwards
+            # negative backwards, [-5::-1]
             s = slice(-5, None, -1)
             indices = [5, 4, 3, 2, 1, 0]
 
         case 5:
-            # negative backwards stepped
+            # negative backwards stepped, [-5::-2]
             s = slice(-5, None, -2)
             indices = [5, 3, 1]
 
         case 6:
-            # negative stepped forward
+            # negative stepped forward[-5::2]
             s = slice(-5, None, 2)
             indices = [5, 7, 9]
 
         case 7:
-            # both negative
+            # both negative, [-8:-2]
             s = slice(-8, -2, None)
             indices = [2, 3, 4, 5, 6, 7]
 
         case 8:
-            # both negative and stepped
+            # both negative and stepped, [-8:2:2]
             s = slice(-8, -2, 2)
             indices = [2, 4, 6]
 
         case 9:
-            # positive, negative, negative
+            # positive, negative, negative, [8:-9:-2]
             s = slice(8, -9, -2)
             indices = [8, 6, 4, 2]
 
         case 10:
-            # only stepped forward
+            # only stepped forward, [::2]
             s = slice(None, None, 2)
             indices = [0, 2, 4, 6, 8]
 
         case 11:
-            # only stepped backward
+            # only stepped backward, [::-3]
             s = slice(None, None, -3)
             indices = [9, 6, 3, 0]
 
