@@ -1,6 +1,7 @@
 """
-GridPlot Simple
-============
+GridPlot Non-Square Example
+===========================
+
 Example showing simple 2x2 GridPlot with Standard images from imageio.
 """
 

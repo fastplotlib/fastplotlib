@@ -59,6 +59,8 @@ sphinx_gallery_conf = {
         ]
     ),
     "ignore_pattern": r'__init__\.py',
+    "nested_sections": False,
+    "thumbnail_size": (250, 250)
 }
 
 extra_conf = find_examples_for_gallery(EXAMPLES_DIR)

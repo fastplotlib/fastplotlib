@@ -28,7 +28,7 @@ Welcome to fastplotlib's documentation!
 
 .. toctree::
    :caption: Gallery
-   :maxdepth:  2
+   :maxdepth:  1
 
    Gallery <_gallery/index>
 
