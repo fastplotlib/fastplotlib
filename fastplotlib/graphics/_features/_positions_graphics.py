@@ -305,8 +305,9 @@ class VertexCmap(BufferManager):
         if self._cmap_name is not None:
             if not isinstance(self._cmap_name, str):
                 raise TypeError
-            if not isinstance(self._cmap_values, np.ndarray):
-                raise TypeError
+            if self._cmap_values is not None:
+                if not isinstance(self._cmap_values, np.ndarray):
+                    raise TypeError
 
             n_datapoints = vertex_colors.value.shape[0]
 

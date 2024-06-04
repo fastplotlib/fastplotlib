@@ -469,14 +469,14 @@ class PlotArea:
         if self.camera.fov == 0:
             # for orthographic positions stack objects along the z-axis
             # for perspective projections we assume the user wants full 3D control
-            graphic.position_z = len(self)
+            graphic.offset = (*graphic.offset[:-1], len(self))
 
     def insert_graphic(
         self,
         graphic: Graphic,
         center: bool = True,
         index: int = 0,
-        z_position: int = None,
+        auto_offset: int = None,
     ):
         """
         Insert graphic into scene at given position ``index`` in stored graphics.
@@ -493,8 +493,8 @@ class PlotArea:
         index: int, default 0
             Index to insert graphic.
 
-        z_position: int, default None
-            z axis position to place Graphic. If ``None``, uses value of `index` argument
+        auto_offset: bool, default True
+            If True and using an orthographic projection, sets z-axis offset of graphic to `index`
 
         """
         if index > len(self._graphics):
@@ -511,10 +511,8 @@ class PlotArea:
         if self.camera.fov == 0:
             # for orthographic positions stack objects along the z-axis
             # for perspective projections we assume the user wants full 3D control
-            if z_position is None:
-                graphic.position_z = index
-            else:
-                graphic.position_z = z_position
+            if auto_offset:
+                graphic.offset = (*graphic.offset[:-1], index)
 
     def _add_or_insert_graphic(
         self,
