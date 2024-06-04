@@ -1,9 +1,8 @@
 from typing import *
-from math import ceil
-from itertools import product
 import weakref
 
 import numpy as np
+from numpy.typing import NDArray
 
 import pygfx
 
@@ -11,13 +10,13 @@ from ..utils import quick_min_max
 from ._base import Graphic, Interaction
 from .selectors import LinearSelector, LinearRegionSelector
 from ._features import (
-    ImageData,
+    TextureArray,
     ImageCmap,
     ImageVmin,
     ImageVmax,
-    HeatmapDataFeature,
-    HeatmapCmapFeature,
-    to_gpu_supported_dtype,
+    ImageInterpolation,
+    ImageCmapInterpolation,
+    WGPU_MAX_TEXTURE_SIZE
 )
 
 
@@ -113,7 +112,7 @@ class _AddSelectorsMixin:
 
         # create selector
         selector = LinearRegionSelector(
-            bounds=bounds_init,
+            selection=bounds_init,
             limits=limits,
             size=size,
             origin=origin,
@@ -197,11 +196,55 @@ class _AddSelectorsMixin:
         self._plot_area = plot_area
 
 
+class _ImageTile(pygfx.Image):
+    """
+    Similar to pygfx.Image, only difference is that it contains a few properties to keep track of
+    row chunk index, column chunk index
+    """
+    def __init__(self, geometry, material, row_chunk_ix: int, col_chunk_ix: int, **kwargs):
+        super().__init__(geometry, material, **kwargs)
+
+        self._row_chunk_index = row_chunk_ix
+        self._col_chunk_index = col_chunk_ix
+
+    def _wgpu_get_pick_info(self, pick_value):
+        pick_info = super()._wgpu_get_pick_info(pick_value)
+
+        row_start_ix = WGPU_MAX_TEXTURE_SIZE * self.row_chunk_index
+        col_start_ix = WGPU_MAX_TEXTURE_SIZE * self.col_chunk_index
+
+        # adjust w.r.t. chunk
+        x, y = pick_info["index"]
+        x += col_start_ix
+        y += row_start_ix
+        pick_info["index"] = (x, y)
+
+        xp, yp = pick_info["pixel_coord"]
+        xp += col_start_ix
+        yp += row_start_ix
+        pick_info["pixel_coord"] = (xp, yp)
+
+        # add row chunk and col chunk index to pick_info dict
+        return {
+            **pick_info,
+            "row_chunk_index": self.row_chunk_index,
+            "col_chunk_index": self.col_chunk_index,
+        }
+
+    @property
+    def row_chunk_index(self) -> int:
+        return self._row_chunk_index
+
+    @property
+    def col_chunk_index(self) -> int:
+        return self._col_chunk_index
+
+
 class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
     features = {"data", "cmap", "vmin", "vmax"}
 
     @property
-    def data(self) -> ImageData:
+    def data(self) -> NDArray:
         """Get or set the image data"""
         return self._data
 
@@ -236,13 +279,32 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
     def vmax(self, value: float):
         self._vmax.set_value(self, value)
 
+    @property
+    def interpolation(self) -> str:
+        """image data interpolation method"""
+        return self._interpolation.value
+
+    @interpolation.setter
+    def interpolation(self, value: str):
+        self._interpolation.set_value(self, value)
+
+    @property
+    def cmap_interpolation(self) -> str:
+        """cmap interpolation method"""
+        return self._cmap_interpolation.value
+
+    @cmap_interpolation.setter
+    def cmap_interpolation(self, value: str):
+        self._cmap_interpolation.set_value(self, value)
+
     def __init__(
         self,
         data: Any,
         vmin: int = None,
         vmax: int = None,
         cmap: str = "plasma",
-        filter: str = "nearest",
+        interpolation: str = "nearest",
+        cmap_interpolation: str = "linear",
         isolated_buffer: bool = True,
         *args,
         **kwargs,
@@ -254,145 +316,6 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
         ----------
         data: array-like
             array-like, usually numpy.ndarray, must support ``memoryview()``
-            Tensorflow Tensors also work **probably**, but not thoroughly tested
-            | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
-
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
-
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
-
-        cmap: str, optional, default "plasma"
-            colormap to use to display the image data, ignored if data is RGB
-
-        filter: str, optional, default "nearest"
-            interpolation filter, one of "nearest" or "linear"
-
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer.
-
-        args:
-            additional arguments passed to Graphic
-
-        kwargs:
-            additional keyword arguments passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the data buffer displayed in the ImageGraphic
-
-        **cmap**: :class:`.ImageCmapFeature`
-            Manages the colormap
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene
-
-        """
-
-        super().__init__(*args, **kwargs)
-        self._data = ImageData(data, isolated_buffer=isolated_buffer)
-        self._cmap = ImageCmap(cmap)
-
-        if (vmin is None) or (vmax is None):
-            vmin, vmax = quick_min_max(data)
-
-        self._vmin = ImageVmin(vmin)
-        self._vmax = ImageVmax(vmax)
-
-        clim = (self.vmin, self.vmax)
-
-        # make grid geometry from image data Texture
-        geometry = pygfx.Geometry(grid=self._data.buffer)
-
-        if self._data.value.ndim > 2:
-            # if data is RGB or RGBA
-            material = pygfx.ImageBasicMaterial(
-                clim=clim, map_interpolation=filter, pick_write=True
-            )
-        else:
-            # if data is just 2D without color information, use colormap LUT
-            material = pygfx.ImageBasicMaterial(
-                clim=clim,
-                map=self._cmap.texture,
-                map_interpolation=filter,
-                pick_write=True,
-            )
-
-        world_object = pygfx.Image(geometry, material)
-
-        self._set_world_object(world_object)
-
-    def reset_vmin_vmax(self):
-        self.vmin, self.vmax = quick_min_max(self._data.value)
-
-    def set_feature(self, feature: str, new_data: Any, indices: Any):
-        pass
-
-    def reset_feature(self, feature: str):
-        pass
-
-
-class _ImageTile(pygfx.Image):
-    """
-    Similar to pygfx.Image, only difference is that it contains a few properties to keep track of
-    row chunk index, column chunk index
-    """
-
-    def _wgpu_get_pick_info(self, pick_value):
-        pick_info = super()._wgpu_get_pick_info(pick_value)
-
-        # add row chunk and col chunk index to pick_info dict
-        return {
-            **pick_info,
-            "row_chunk_index": self.row_chunk_index,
-            "col_chunk_index": self.col_chunk_index,
-        }
-
-    @property
-    def row_chunk_index(self) -> int:
-        return self._row_chunk_index
-
-    @row_chunk_index.setter
-    def row_chunk_index(self, index: int):
-        self._row_chunk_index = index
-
-    @property
-    def col_chunk_index(self) -> int:
-        return self._col_chunk_index
-
-    @col_chunk_index.setter
-    def col_chunk_index(self, index: int):
-        self._col_chunk_index = index
-
-
-class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
-    feature_events = {"data", "cmap", "present"}
-
-    def __init__(
-        self,
-        data: Any,
-        vmin: int = None,
-        vmax: int = None,
-        cmap: str = "plasma",
-        filter: str = "nearest",
-        chunk_size: int = 8192,
-        isolated_buffer: bool = True,
-        *args,
-        **kwargs,
-    ):
-        """
-        Create an Image Graphic
-
-        Parameters
-        ----------
-        data: array-like
-            array-like, usually numpy.ndarray, must support ``memoryview()``
-            Tensorflow Tensors also work **probably**, but not thoroughly tested
             | shape must be ``[x_dim, y_dim]``
 
         vmin: int, optional
@@ -404,11 +327,11 @@ class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
         cmap: str, optional, default "plasma"
             colormap to use to display the data
 
-        filter: str, optional, default "nearest"
+        interpolation: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
 
-        chunk_size: int, default 8192, max 8192
-            chunk size for each tile used to make up the heatmap texture
+        cmap_interpolation: str, optional, default "linear"
+            colormap interpolation method, one of "nearest" or "linear"
 
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
@@ -437,77 +360,41 @@ class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
 
         super().__init__(*args, **kwargs)
 
-        if chunk_size > 8192:
-            raise ValueError("Maximum chunk size is 8192")
-
-        data = to_gpu_supported_dtype(data)
-
-        # TODO: we need to organize and do this better
-        if isolated_buffer:
-            # initialize a buffer with the same shape as the input data
-            # we do not directly use the input data array as the buffer
-            # because if the input array is a read-only type, such as
-            # numpy memmaps, we would not be able to change the image data
-            buffer_init = np.zeros(shape=data.shape, dtype=data.dtype)
-        else:
-            buffer_init = data
-
-        row_chunks = range(ceil(data.shape[0] / chunk_size))
-        col_chunks = range(ceil(data.shape[1] / chunk_size))
-
-        chunks = list(product(row_chunks, col_chunks))
-        # chunks is the index position of each chunk
-
-        start_ixs = [list(map(lambda c: c * chunk_size, chunk)) for chunk in chunks]
-        stop_ixs = [list(map(lambda c: c + chunk_size, chunk)) for chunk in start_ixs]
-
         world_object = pygfx.Group()
-        self._set_world_object(world_object)
+
+        self._data = TextureArray(data, isolated_buffer=isolated_buffer)
 
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
 
-        self.cmap = HeatmapCmapFeature(self, cmap)
+        self._vmin = ImageVmin(vmin)
+        self._vmax = ImageVmax(vmax)
+
+        self._cmap = ImageCmap(cmap)
+
+        self._interpolation = ImageInterpolation(interpolation)
+        self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
+
         self._material = pygfx.ImageBasicMaterial(
             clim=(vmin, vmax),
-            map=self.cmap(),
-            map_interpolation=filter,
+            map=self._cmap.texture,
+            interpolatio=self._interpolation.value,
+            map_interpolation=self._cmap_interpolation.value,
             pick_write=True,
         )
 
-        for start, stop, chunk in zip(start_ixs, stop_ixs, chunks):
-            row_start, col_start = start
-            row_stop, col_stop = stop
+        for row_ix in range(self._data.row_indices.size):
+            for col_ix in range(self._data.col_indices.size):
+                img = _ImageTile(
+                    geometry=pygfx.Geometry(grid=self._data.buffer[row_ix, col_ix]),
+                    material=self._material,
+                    row_chunk_ix=row_ix,
+                    col_chunk_ix=col_ix
+                )
 
-            # x and y positions of the Tile in world space coordinates
-            y_pos, x_pos = row_start, col_start
+                img.world.x = self._data.row_indices[row_ix]
+                img.world.y = self._data.row_indices[col_ix]
 
-            texture = pygfx.Texture(
-                buffer_init[row_start:row_stop, col_start:col_stop], dim=2
-            )
-            geometry = pygfx.Geometry(grid=texture)
-            # material = pygfx.ImageBasicMaterial(clim=(0, 1), map=self.cmap())
+                world_object.add(img)
 
-            img = _ImageTile(geometry, self._material)
-
-            # row and column chunk index for this Tile
-            img.row_chunk_index = chunk[0]
-            img.col_chunk_index = chunk[1]
-
-            img.world.x = x_pos
-            img.world.y = y_pos
-
-            self.world_object.add(img)
-
-        self.data = HeatmapDataFeature(self, buffer_init)
-        # TODO: we need to organize and do this better
-        if isolated_buffer:
-            # if the buffer was initialized with zeros
-            # set it with the actual data
-            self.data = data
-
-    def set_feature(self, feature: str, new_data: Any, indices: Any):
-        pass
-
-    def reset_feature(self, feature: str):
-        pass
+        self._set_world_object(world_object)

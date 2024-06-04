@@ -1,22 +1,79 @@
+from math import ceil
+
 import numpy as np
+from numpy.typing import NDArray
 
 import pygfx
-from ._base import GraphicFeature, BufferManager, FeatureEvent
+from ._base import GraphicFeature, FeatureEvent, WGPU_MAX_TEXTURE_SIZE
 
 from ...utils import (
     make_colors,
     get_cmap_texture,
 )
 
+# manages an array of 8192x8192 Textures representing chunks of an image
+class TextureArray(GraphicFeature):
 
-class ImageData(BufferManager):
     def __init__(self, data, isolated_buffer: bool = True):
+        super().__init__()
+
         data = self._fix_data(data)
-        super().__init__(data, buffer_type="texture", isolated_buffer=isolated_buffer)
+
+        if isolated_buffer:
+            # useful if data is read-only, example: memmaps
+            self._value = np.zeros(data.shape, dtype=data.dtype)
+            self.value[:] = data[:]
+        else:
+            # user's input array is used as the buffer
+            self._value = data
+
+        # indices for each Texture
+        self._row_indices = np.arange(0, ceil(self.value.shape[0] / WGPU_MAX_TEXTURE_SIZE) * WGPU_MAX_TEXTURE_SIZE, WGPU_MAX_TEXTURE_SIZE)
+        self._col_indices = np.arange(0, ceil(self.value.shape[1] / WGPU_MAX_TEXTURE_SIZE) * WGPU_MAX_TEXTURE_SIZE, WGPU_MAX_TEXTURE_SIZE)
+
+        # buffer will be an array of textures
+        self._buffer: np.ndarray[pygfx.Texture] = np.empty(shape=(self.row_indices.size, self.col_indices.size), dtype=object)
+
+        # max index
+        row_max = self.value.shape[0] - 1
+        col_max = self.value.shape[1] - 1
+
+        for (buffer_row, row_ix), (buffer_col, col_ix) in zip(enumerate(self.row_indices), enumerate(self.col_indices)):
+            # stop index for this chunk
+            row_stop = min(row_max, row_ix + WGPU_MAX_TEXTURE_SIZE)
+            col_stop = min(col_max, col_ix + WGPU_MAX_TEXTURE_SIZE)
+
+            # make texture from slice
+            texture = pygfx.Texture(
+                self.value[row_ix:row_stop, col_ix:col_stop], dim=2
+            )
+
+            self.buffer[buffer_row, buffer_col] = texture
+
+        self._shared: int = 0
 
     @property
-    def buffer(self) -> pygfx.Texture:
+    def value(self) -> NDArray:
+        return self._data
+
+    def set_value(self, graphic, value):
+        self[:] = value
+
+    @property
+    def buffer(self) -> np.ndarray[pygfx.Texture]:
         return self._buffer
+
+    @property
+    def row_indices(self) -> np.ndarray:
+        return self._row_indices
+
+    @property
+    def col_indices(self) -> np.ndarray:
+        return self._row_indices
+
+    @property
+    def shared(self) -> int:
+        return self._shared
 
     def _fix_data(self, data):
         if data.ndim not in (2, 3):
@@ -28,34 +85,17 @@ class ImageData(BufferManager):
         # let's just cast to float32 always
         return data.astype(np.float32)
 
-    def __setitem__(self, key: int | slice | np.ndarray[int | bool] | tuple[slice | np.ndarray[int | bool]], value):
-        # offset and size should be (width, height, depth), i.e. (columns, rows, depth)
-        # offset and size for depth should always be 0, 1 for 2D images
-        if isinstance(key, tuple):
-            # multiple dims sliced
-            if any([k is Ellipsis for k in key]):
-                # let's worry about ellipsis later
-                raise TypeError("ellipses not supported for indexing buffers")
-            if len(key) in (2, 3):
-                dim_os = list()  # hold offset and size for each dim
-                for dim, k in enumerate(key[:2]):  # we only need width and height
-                    dim_os.append(self._parse_offset_size(k, self.value.shape[dim]))
+    def __getitem__(self, item):
+        return self.value[item]
 
-                # offset and size for each dim into individual offset and size tuple
-                # note that this is flipped since we need (width, height) from (rows, cols)
-                offset = (*tuple(os[1] for os in dim_os), 0)
-                size = (*tuple(os[1] for os in dim_os), 0)
-            else:
-                raise IndexError
+    def __setitem__(self, key, value):
+        self.value[key] = value
 
-        else:
-            # only first dim (rows) indexed
-            row_offset, row_size = self._parse_offset_size(key, self.value.shape[0])
-            offset = (0, row_offset, 0)
-            size = (self.value.shape[1], row_size, 1)
+        for texture in self.buffer.ravel():
+            texture.update_range((0, 0, 0), texture.size)
 
-        self.buffer.update_range(offset, size)
-        self._emit_event("data", key, value)
+        event = FeatureEvent("data", info={"key": key, "value": value})
+        self._call_event_handlers(event)
 
 
 class ImageVmin(GraphicFeature):
@@ -114,4 +154,55 @@ class ImageCmap(GraphicFeature):
 
         self._value = value
         event = FeatureEvent(type="cmap", info={"value": value})
+        self._call_event_handlers(event)
+
+
+class ImageInterpolation(GraphicFeature):
+    """Image interpolation method"""
+    def __init__(self, value: str):
+        self._validate(value)
+        self._value = value
+        super().__init__()
+
+    def _validate(self, value):
+        if value not in ["nearest", "linear"]:
+            raise ValueError("`interpolation` must be one of 'nearest' or 'linear'")
+
+    @property
+    def value(self) -> str:
+        return self._value
+
+    def set_value(self, graphic, value: str):
+        self._validate(value)
+
+        graphic.world_object.material.interpolation = value
+
+        self._value = value
+        event = FeatureEvent(type="interpolation", info={"value": value})
+        self._call_event_handlers(event)
+
+
+class ImageCmapInterpolation(GraphicFeature):
+    """Image cmap interpolation method"""
+
+    def __init__(self, value: str):
+        self._validate(value)
+        self._value = value
+        super().__init__()
+
+    def _validate(self, value):
+        if value not in ["nearest", "linear"]:
+            raise ValueError("`cmap_interpolation` must be one of 'nearest' or 'linear'")
+
+    @property
+    def value(self) -> str:
+        return self._value
+
+    def set_value(self, graphic, value: str):
+        self._validate(value)
+
+        graphic.world_object.material.map_interpolation = value
+
+        self._value = value
+        event = FeatureEvent(type="interpolation", info={"value": value})
         self._call_event_handlers(event)

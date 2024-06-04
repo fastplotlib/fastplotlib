@@ -1,5 +1,5 @@
 from ._positions_graphics import VertexColors, UniformColor, UniformSizes, Thickness, VertexPositions, PointsSizesFeature, VertexCmap
-from ._image import ImageData, ImageCmap, ImageVmin, ImageVmax
+from ._image import TextureArray, ImageCmap, ImageVmin, ImageVmax, ImageInterpolation, ImageCmapInterpolation, WGPU_MAX_TEXTURE_SIZE
 from ._base import (
     GraphicFeature,
     BufferManager,
@@ -8,10 +8,3 @@ from ._base import (
 )
 from ._selection_features import LinearSelectionFeature, LinearRegionSelectionFeature
 from ._common import Name, Offset, Rotation, Visible, Deleted
-
-
-class HeatmapDataFeature:
-    pass
-
-class HeatmapCmapFeature:
-    pass

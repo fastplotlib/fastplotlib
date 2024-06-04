@@ -9,6 +9,9 @@ from wgpu.gui.base import log_exception
 import pygfx
 
 
+WGPU_MAX_TEXTURE_SIZE = 8192
+
+
 supported_dtypes = [
     np.uint8,
     np.uint16,
@@ -141,9 +144,6 @@ class GraphicFeature:
             with log_exception(f"Error during handling {self.__class__.__name__} event"):
                 func(event_data)
 
-    def __repr__(self) -> str:
-        raise NotImplementedError
-
 
 class BufferManager(GraphicFeature):
     """Smaller wrapper for pygfx.Buffer"""
@@ -151,7 +151,7 @@ class BufferManager(GraphicFeature):
     def __init__(
             self,
             data: NDArray | pygfx.Buffer,
-            buffer_type: Literal["buffer", "texture"] = "buffer",
+            buffer_type: Literal["buffer", "texture", "texture-array"] = "buffer",
             isolated_buffer: bool = True,
             texture_dim: int = 2,
             **kwargs
@@ -300,7 +300,7 @@ class BufferManager(GraphicFeature):
         }
         event = FeatureEvent(type, info=event_info)
 
-        super()._call_event_handlers(event)
+        self._call_event_handlers(event)
 
     def __repr__(self):
         return f"{self.__class__.__name__} buffer data:\n" \
