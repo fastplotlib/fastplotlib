@@ -352,6 +352,7 @@ class ImageGraphic(Graphic):
             size=size,
             center=center,
             axis=axis,
+            fill_color=fill_color,
             parent=weakref.proxy(self),
             **kwargs,
         )
