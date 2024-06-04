@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, List
 
 import numpy as np
 import pygfx
@@ -330,6 +330,8 @@ class VertexCmap(BufferManager):
             if not isinstance(self._cmap_name, str):
                 raise TypeError
             if self._cmap_values is not None:
+                if isinstance(self._cmap_values, List):
+                    self._cmap_values = np.asarray(self._cmap_values)
                 if not isinstance(self._cmap_values, np.ndarray):
                     raise TypeError
 
