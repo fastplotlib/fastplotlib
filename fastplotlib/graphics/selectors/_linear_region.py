@@ -208,6 +208,7 @@ class LinearRegionSelector(BaseSelector):
             group.add(edge)
 
         # TODO: if parent offset changes, we should set the selector offset too
+        # TODO: add check if parent is `None`, will throw error otherwise
         if axis == "x":
             offset = (parent.offset[0], center, 0)
         elif axis == "y":

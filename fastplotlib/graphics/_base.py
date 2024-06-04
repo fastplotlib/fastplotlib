@@ -98,6 +98,15 @@ class Graphic:
     def deleted(self, value: bool):
         self._deleted.set_value(self, value)
 
+    @property
+    def block_events(self) -> bool:
+        """Used to block events for a graphic and prevent recursion."""
+        return self._block_events
+
+    @block_events.setter
+    def block_events(self, value: bool):
+        self._block_events = value
+
     def __init_subclass__(cls, **kwargs):
         # set the type of the graphic in lower case like "image", "line_collection", etc.
         cls.type = (
@@ -165,6 +174,7 @@ class Graphic:
         self._rotation = Rotation(rotation)
         self._offset = Offset(offset)
         self._visible = Visible(True)
+        self._block_events = False
 
     @property
     def world_object(self) -> pygfx.WorldObject:
@@ -268,6 +278,9 @@ class Graphic:
     def _handle_event(self, callback, event: pygfx.Event):
         """Wrap pygfx event to add graphic to pick_info"""
         event.graphic = self
+
+        if self.block_events:
+            return
 
         if event.type in self.features:
             # for feature events
