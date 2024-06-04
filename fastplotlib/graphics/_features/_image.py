@@ -54,7 +54,7 @@ class TextureArray(GraphicFeature):
 
     @property
     def value(self) -> NDArray:
-        return self._data
+        return self._value
 
     def set_value(self, graphic, value):
         self[:] = value
@@ -109,8 +109,8 @@ class ImageVmin(GraphicFeature):
         return self._value
 
     def set_value(self, graphic, value: float):
-        vmax = graphic.world_object.material.clim[1]
-        graphic.world_object.material.clim = (value, vmax)
+        vmax = graphic._material.clim[1]
+        graphic._material.clim = (value, vmax)
         self._value = value
 
         event = FeatureEvent(type="vmin", info={"value": value})
@@ -128,8 +128,8 @@ class ImageVmax(GraphicFeature):
         return self._value
 
     def set_value(self, graphic, value: float):
-        vmin = graphic.world_object.material.clim[0]
-        graphic.world_object.material.clim = (vmin, value)
+        vmin = graphic._material.clim[0]
+        graphic._material.clim = (vmin, value)
         self._value = value
 
         event = FeatureEvent(type="vmax", info={"value": value})
@@ -149,8 +149,8 @@ class ImageCmap(GraphicFeature):
 
     def set_value(self, graphic, value: str):
         new_colors = make_colors(256, value)
-        graphic.world_object.material.map.data[:] = new_colors
-        graphic.world_object.material.map.data.update_range((0, 0, 0), size=(256, 1, 1))
+        graphic._material.map.data[:] = new_colors
+        graphic._material.map.update_range((0, 0, 0), size=(256, 1, 1))
 
         self._value = value
         event = FeatureEvent(type="cmap", info={"value": value})
@@ -175,7 +175,7 @@ class ImageInterpolation(GraphicFeature):
     def set_value(self, graphic, value: str):
         self._validate(value)
 
-        graphic.world_object.material.interpolation = value
+        graphic._material.interpolation = value
 
         self._value = value
         event = FeatureEvent(type="interpolation", info={"value": value})
@@ -201,8 +201,9 @@ class ImageCmapInterpolation(GraphicFeature):
     def set_value(self, graphic, value: str):
         self._validate(value)
 
-        graphic.world_object.material.map_interpolation = value
+        # common material for all image tiles
+        graphic._material.map_interpolation = value
 
         self._value = value
-        event = FeatureEvent(type="interpolation", info={"value": value})
+        event = FeatureEvent(type="cmap_interpolation", info={"value": value})
         self._call_event_handlers(event)

@@ -28,18 +28,18 @@ class GraphicMethodsMixin:
         # only return a proxy to the real graphic
         return weakref.proxy(graphic)
 
-    def add_heatmap(
+    def add_image(
         self,
         data: Any,
         vmin: int = None,
         vmax: int = None,
         cmap: str = "plasma",
-        filter: str = "nearest",
-        chunk_size: int = 8192,
+        interpolation: str = "nearest",
+        cmap_interpolation: str = "linear",
         isolated_buffer: bool = True,
         *args,
         **kwargs
-    ) -> HeatmapGraphic:
+    ) -> ImageGraphic:
         """
 
         Create an Image Graphic
@@ -48,7 +48,6 @@ class GraphicMethodsMixin:
         ----------
         data: array-like
             array-like, usually numpy.ndarray, must support ``memoryview()``
-            Tensorflow Tensors also work **probably**, but not thoroughly tested
             | shape must be ``[x_dim, y_dim]``
 
         vmin: int, optional
@@ -60,11 +59,11 @@ class GraphicMethodsMixin:
         cmap: str, optional, default "plasma"
             colormap to use to display the data
 
-        filter: str, optional, default "nearest"
+        interpolation: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
 
-        chunk_size: int, default 8192, max 8192
-            chunk size for each tile used to make up the heatmap texture
+        cmap_interpolation: str, optional, default "linear"
+            colormap interpolation method, one of "nearest" or "linear"
 
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
@@ -92,84 +91,13 @@ class GraphicMethodsMixin:
 
         """
         return self._create_graphic(
-            HeatmapGraphic,
-            data,
-            vmin,
-            vmax,
-            cmap,
-            filter,
-            chunk_size,
-            isolated_buffer,
-            *args,
-            **kwargs
-        )
-
-    def add_image(
-        self,
-        data: Any,
-        vmin: int = None,
-        vmax: int = None,
-        cmap: str = "plasma",
-        filter: str = "nearest",
-        isolated_buffer: bool = True,
-        *args,
-        **kwargs
-    ) -> ImageGraphic:
-        """
-
-        Create an Image Graphic
-
-        Parameters
-        ----------
-        data: array-like
-            array-like, usually numpy.ndarray, must support ``memoryview()``
-            Tensorflow Tensors also work **probably**, but not thoroughly tested
-            | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
-
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
-
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
-
-        cmap: str, optional, default "plasma"
-            colormap to use to display the image data, ignored if data is RGB
-
-        filter: str, optional, default "nearest"
-            interpolation filter, one of "nearest" or "linear"
-
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer.
-
-        args:
-            additional arguments passed to Graphic
-
-        kwargs:
-            additional keyword arguments passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the data buffer displayed in the ImageGraphic
-
-        **cmap**: :class:`.ImageCmapFeature`
-            Manages the colormap
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene
-
-
-        """
-        return self._create_graphic(
             ImageGraphic,
             data,
             vmin,
             vmax,
             cmap,
-            filter,
+            interpolation,
+            cmap_interpolation,
             isolated_buffer,
             *args,
             **kwargs

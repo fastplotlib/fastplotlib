@@ -200,8 +200,8 @@ class ImageGraphic(Graphic):
 
         self._material = pygfx.ImageBasicMaterial(
             clim=(vmin, vmax),
-            map=self._cmap.texture,
-            interpolatio=self._interpolation.value,
+            map=self._cmap.texture if self._data.value.ndim == 2 else None,  # RGB vs. grayscale
+            interpolation=self._interpolation.value,
             map_interpolation=self._cmap_interpolation.value,
             pick_write=True,
         )
@@ -221,6 +221,11 @@ class ImageGraphic(Graphic):
                 world_object.add(img)
 
         self._set_world_object(world_object)
+
+    def reset_vmin_vmax(self):
+        vmin, vmax = quick_min_max(self._data.value)
+        self.vmin = vmin
+        self.vmax = vmax
 
     def add_linear_selector(
         self, selection: int = None, axis: str = "x", padding: float = None, **kwargs
@@ -290,7 +295,7 @@ class ImageGraphic(Graphic):
         return weakref.proxy(selector)
 
     def add_linear_region_selector(
-        self, selection: tuple[float, float] = None, axis: str = "x", padding: float = 0., fill_color=(0, 0, 0.35, 0.2), **kwargs,
+        self, selection: tuple[float, float] = None, axis: str = "x", padding: float = 0., fill_color = (0, 0, 0.35, 0.2), **kwargs,
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
