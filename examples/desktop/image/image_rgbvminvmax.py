@@ -23,8 +23,8 @@ fig.canvas.set_logical_size(800, 800)
 
 fig[0, 0].auto_scale()
 
-image_graphic.cmap.vmin = 0.5
-image_graphic.cmap.vmax = 0.75
+image_graphic.vmin = 0.5
+image_graphic.vmax = 0.75
 
 
 if __name__ == "__main__":
