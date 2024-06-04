@@ -1,3 +1,4 @@
+from itertools import product
 from math import ceil
 
 import numpy as np
@@ -48,17 +49,16 @@ class TextureArray(GraphicFeature):
         row_max = self.value.shape[0] - 1
         col_max = self.value.shape[1] - 1
 
-        for (buffer_row, row_ix), (buffer_col, col_ix) in zip(
-            enumerate(self.row_indices), enumerate(self.col_indices)
-        ):
-            # stop index for this chunk
-            row_stop = min(row_max, row_ix + WGPU_MAX_TEXTURE_SIZE)
-            col_stop = min(col_max, col_ix + WGPU_MAX_TEXTURE_SIZE)
+        for buffer_row, row_ix in enumerate(self.row_indices):
+            for buffer_col, col_ix in enumerate(self.col_indices):
+                # stop index for this chunk
+                row_stop = min(row_max, row_ix + WGPU_MAX_TEXTURE_SIZE)
+                col_stop = min(col_max, col_ix + WGPU_MAX_TEXTURE_SIZE)
 
-            # make texture from slice
-            texture = pygfx.Texture(self.value[row_ix:row_stop, col_ix:col_stop], dim=2)
+                # make texture from slice
+                texture = pygfx.Texture(self.value[row_ix:row_stop, col_ix:col_stop], dim=2)
 
-            self.buffer[buffer_row, buffer_col] = texture
+                self.buffer[buffer_row, buffer_col] = texture
 
         self._shared: int = 0
 
@@ -79,7 +79,7 @@ class TextureArray(GraphicFeature):
 
     @property
     def col_indices(self) -> np.ndarray:
-        return self._row_indices
+        return self._col_indices
 
     @property
     def shared(self) -> int:

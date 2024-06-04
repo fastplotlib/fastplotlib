@@ -216,8 +216,8 @@ class ImageGraphic(Graphic):
                     col_chunk_ix=col_ix,
                 )
 
-                img.world.x = self._data.row_indices[row_ix]
-                img.world.y = self._data.row_indices[col_ix]
+                img.world.y = row_ix * WGPU_MAX_TEXTURE_SIZE
+                img.world.x = col_ix * WGPU_MAX_TEXTURE_SIZE
 
                 world_object.add(img)
 
