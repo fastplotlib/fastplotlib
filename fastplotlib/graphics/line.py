@@ -5,12 +5,12 @@ import numpy as np
 
 import pygfx
 
-from ._base import PositionsGraphic, Interaction, PreviouslyModifiedData
+from ._base import PositionsGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 from ._features import Thickness
 
 
-class LineGraphic(PositionsGraphic, Interaction):
+class LineGraphic(PositionsGraphic):
     features = {"data", "colors", "cmap", "thickness"}
 
     @property

@@ -7,7 +7,7 @@ import numpy as np
 import pygfx
 
 from ..utils import parse_cmap_values
-from ._base import Interaction, PreviouslyModifiedData, GraphicCollection, CollectionIndexer, CollectionFeature
+from ._base import GraphicCollection, CollectionIndexer, CollectionFeature
 from ._features import GraphicFeature
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
@@ -83,7 +83,7 @@ class LineSelection(CollectionIndexer):
             g.thickness = v
 
 
-class LineCollection(GraphicCollection, Interaction):
+class LineCollection(GraphicCollection):
     child_type = LineGraphic
     _indexer = LineSelection
 
