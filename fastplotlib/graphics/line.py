@@ -5,7 +5,7 @@ import numpy as np
 
 import pygfx
 
-from ._base import PositionsGraphic
+from ._positions_base import PositionsGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 from ._features import Thickness
 

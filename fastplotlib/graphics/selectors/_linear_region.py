@@ -5,7 +5,8 @@ import numpy as np
 import pygfx
 
 from ...utils.gui import IS_JUPYTER
-from .._base import Graphic, GraphicCollection
+from .._base import Graphic
+from .._collection_base import GraphicCollection
 from .._features._selection_features import LinearRegionSelectionFeature
 from ._base_selector import BaseSelector
 

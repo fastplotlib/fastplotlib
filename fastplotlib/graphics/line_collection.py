@@ -6,7 +6,7 @@ import numpy as np
 import pygfx
 
 from ..utils import parse_cmap_values
-from ._base import GraphicCollection, CollectionIndexer, CollectionFeature
+from ._collection_base import CollectionIndexer, GraphicCollection, CollectionFeature
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 
