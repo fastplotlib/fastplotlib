@@ -39,7 +39,6 @@ class ScatterGraphic(PositionsGraphic):
         isolated_buffer: bool = True,
         sizes: float | np.ndarray | Iterable[float] = 1,
         uniform_sizes: bool = False,
-        *args,
         **kwargs,
     ):
         """
@@ -70,9 +69,6 @@ class ScatterGraphic(PositionsGraphic):
         z_position: float, optional
             z-axis position for placing the graphic
 
-        args
-            passed to Graphic
-
         kwargs
             passed to Graphic
 
@@ -101,7 +97,6 @@ class ScatterGraphic(PositionsGraphic):
             cmap=cmap,
             cmap_values=cmap_values,
             isolated_buffer=isolated_buffer,
-            *args,
             **kwargs
         )
 

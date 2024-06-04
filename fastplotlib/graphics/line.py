@@ -31,10 +31,7 @@ class LineGraphic(PositionsGraphic, Interaction):
         alpha: float = 1.0,
         cmap: str = None,
         cmap_values: np.ndarray | Iterable = None,
-        z_position: float = None,
-        collection_index: int = None,
         isolated_buffer: bool = True,
-        *args,
         **kwargs,
     ):
         """
@@ -64,9 +61,6 @@ class LineGraphic(PositionsGraphic, Interaction):
 
         z_position: float, optional
             z-axis position for placing the graphic
-
-        args
-            passed to Graphic
 
         kwargs
             passed to Graphic
@@ -100,7 +94,6 @@ class LineGraphic(PositionsGraphic, Interaction):
             cmap=cmap,
             cmap_values=cmap_values,
             isolated_buffer=isolated_buffer,
-            *args,
             **kwargs
         )
 
@@ -124,9 +117,6 @@ class LineGraphic(PositionsGraphic, Interaction):
         )
 
         self._set_world_object(world_object)
-
-        if z_position is not None:
-            self.position_z = z_position
 
     def add_linear_selector(
         self, selection: float = None, padding: float = 0., axis: str = "x",**kwargs

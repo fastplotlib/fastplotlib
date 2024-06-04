@@ -37,7 +37,6 @@ class GraphicMethodsMixin:
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
         isolated_buffer: bool = True,
-        *args,
         **kwargs
     ) -> ImageGraphic:
         """
@@ -70,9 +69,6 @@ class GraphicMethodsMixin:
             set the data, useful if the data arrays are ready-only such as memmaps.
             If False, the input array is itself used as the buffer.
 
-        args:
-            additional arguments passed to Graphic
-
         kwargs:
             additional keyword arguments passed to Graphic
 
@@ -99,22 +95,21 @@ class GraphicMethodsMixin:
             interpolation,
             cmap_interpolation,
             isolated_buffer,
-            *args,
             **kwargs
         )
 
     def add_line_collection(
         self,
         data: List[numpy.ndarray],
-        z_offset: Union[Iterable[float | int], float, int] = None,
-        thickness: Union[float, Iterable[float]] = 2.0,
-        colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
+        thickness: Union[float, Sequence[float]] = 2.0,
+        colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
+        uniform_colors: bool = False,
         alpha: float = 1.0,
-        cmap: Union[Iterable[str], str] = None,
+        cmap: Union[Sequence[str], str] = None,
         cmap_values: Union[numpy.ndarray, List] = None,
         name: str = None,
-        metadata: Union[Iterable[Any], numpy.ndarray] = None,
-        *args,
+        metadata: Union[Sequence[Any], numpy.ndarray] = None,
+        isolated_buffer: bool = True,
         **kwargs
     ) -> LineCollection:
         """
@@ -126,10 +121,6 @@ class GraphicMethodsMixin:
         data: list of array-like or array
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
-
-        z_offset: Iterable of float or float, optional
-            | if ``float`` | ``int``, single offset will be used for all lines
-            | if ``list`` of ``float`` | ``int``, each value will apply to the individual lines
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -161,11 +152,8 @@ class GraphicMethodsMixin:
             metadata associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
-        args
-            passed to GraphicCollection
-
         kwargs
-            passed to GraphicCollection
+            passed to Graphic
 
         Features
         --------
@@ -179,15 +167,15 @@ class GraphicMethodsMixin:
         return self._create_graphic(
             LineCollection,
             data,
-            z_offset,
             thickness,
             colors,
+            uniform_colors,
             alpha,
             cmap,
             cmap_values,
             name,
             metadata,
-            *args,
+            isolated_buffer,
             **kwargs
         )
 
@@ -200,10 +188,7 @@ class GraphicMethodsMixin:
         alpha: float = 1.0,
         cmap: str = None,
         cmap_values: Union[numpy.ndarray, Iterable] = None,
-        z_position: float = None,
-        collection_index: int = None,
         isolated_buffer: bool = True,
-        *args,
         **kwargs
     ) -> LineGraphic:
         """
@@ -234,9 +219,6 @@ class GraphicMethodsMixin:
 
         z_position: float, optional
             z-axis position for placing the graphic
-
-        args
-            passed to Graphic
 
         kwargs
             passed to Graphic
@@ -271,17 +253,13 @@ class GraphicMethodsMixin:
             alpha,
             cmap,
             cmap_values,
-            z_position,
-            collection_index,
             isolated_buffer,
-            *args,
             **kwargs
         )
 
     def add_line_stack(
         self,
         data: List[numpy.ndarray],
-        z_offset: Union[Iterable[float], float] = None,
         thickness: Union[float, Iterable[float]] = 2.0,
         colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
         alpha: float = 1.0,
@@ -291,7 +269,6 @@ class GraphicMethodsMixin:
         metadata: Union[Iterable[Any], numpy.ndarray] = None,
         separation: float = 10.0,
         separation_axis: str = "y",
-        *args,
         **kwargs
     ) -> LineStack:
         """
@@ -303,10 +280,6 @@ class GraphicMethodsMixin:
         data: list of array-like or array
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
-
-        z_offset: Iterable of float or float, optional
-            | if ``float``, single offset will be used for all lines
-            | if ``list`` of ``float``, each value will apply to the individual lines
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -356,7 +329,6 @@ class GraphicMethodsMixin:
         return self._create_graphic(
             LineStack,
             data,
-            z_offset,
             thickness,
             colors,
             alpha,
@@ -366,7 +338,6 @@ class GraphicMethodsMixin:
             metadata,
             separation,
             separation_axis,
-            *args,
             **kwargs
         )
 
@@ -381,7 +352,6 @@ class GraphicMethodsMixin:
         isolated_buffer: bool = True,
         sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
         uniform_sizes: bool = False,
-        *args,
         **kwargs
     ) -> ScatterGraphic:
         """
@@ -412,9 +382,6 @@ class GraphicMethodsMixin:
 
         z_position: float, optional
             z-axis position for placing the graphic
-
-        args
-            passed to Graphic
 
         kwargs
             passed to Graphic
@@ -447,7 +414,6 @@ class GraphicMethodsMixin:
             isolated_buffer,
             sizes,
             uniform_sizes,
-            *args,
             **kwargs
         )
 
@@ -461,7 +427,6 @@ class GraphicMethodsMixin:
         outline_thickness=0,
         screen_space: bool = True,
         anchor: str = "middle-center",
-        *args,
         **kwargs
     ) -> TextGraphic:
         """
@@ -512,6 +477,5 @@ class GraphicMethodsMixin:
             outline_thickness,
             screen_space,
             anchor,
-            *args,
             **kwargs
         )

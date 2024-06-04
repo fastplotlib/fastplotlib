@@ -16,7 +16,6 @@ class TextGraphic(Graphic):
         outline_thickness=0,
         screen_space: bool = True,
         anchor: str = "middle-center",
-        *args,
         **kwargs,
     ):
         """
@@ -55,7 +54,7 @@ class TextGraphic(Graphic):
             * Vertical values: "top", "middle", "baseline", "bottom"
             * Horizontal values: "left", "center", "right"
         """
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         self._text = text
 

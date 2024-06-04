@@ -129,7 +129,6 @@ class ImageGraphic(Graphic):
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
         isolated_buffer: bool = True,
-        *args,
         **kwargs,
     ):
         """
@@ -161,9 +160,6 @@ class ImageGraphic(Graphic):
             set the data, useful if the data arrays are ready-only such as memmaps.
             If False, the input array is itself used as the buffer.
 
-        args:
-            additional arguments passed to Graphic
-
         kwargs:
             additional keyword arguments passed to Graphic
 
@@ -181,7 +177,7 @@ class ImageGraphic(Graphic):
 
         """
 
-        super().__init__(*args, **kwargs)
+        super().__init__(**kwargs)
 
         world_object = pygfx.Group()
 
