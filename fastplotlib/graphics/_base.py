@@ -104,7 +104,6 @@ class Graphic:
         offset: np.ndarray | list | tuple = (0., 0., 0.),
         rotation: np.ndarray | list | tuple = (0., 0., 0., 1.),
         metadata: Any = None,
-        collection_index: int = None,
     ):
         """
 
@@ -112,6 +111,12 @@ class Graphic:
         ----------
         name: str, optional
             name this graphic to use it as a key to access from the plot
+
+        offset: (float, float, float), default (0., 0., 0.)
+            (x, y, z) vector to offset this graphic from the origin
+
+        rotation: (float, float, float, float), default (0, 0, 0, 1)
+            rotation quaternion
 
         metadata: Any, optional
             metadata attached to this Graphic, this is for the user to manage
@@ -121,7 +126,6 @@ class Graphic:
             raise TypeError("Graphic `name` must be of type <str>")
 
         self.metadata = metadata
-        self.collection_index = collection_index
         self.registered_callbacks = dict()
 
         # store hex id str of Graphic instance mem location
@@ -138,7 +142,7 @@ class Graphic:
         # all the common features
         self._name = Name(name)
         self._deleted = Deleted(False)
-        self._rotation = Rotation(rotation)  # set later when world object is set
+        self._rotation = Rotation(rotation)
         self._offset = Offset(offset)
         self._visible = Visible(True)
 
@@ -164,11 +168,6 @@ class Graphic:
 
     def attach_feature(self, feature: BufferManager):
         raise NotImplementedError
-
-    @property
-    def children(self) -> list[pygfx.WorldObject]:
-        """Return the children of the WorldObject."""
-        return self.world_object.children
 
     @property
     def event_handlers(self) -> list[tuple[str, callable, ...]]:
@@ -729,11 +728,52 @@ class PreviouslyModifiedData:
 COLLECTION_GRAPHICS: dict[HexStr, Graphic] = dict()
 
 
+class CollectionIndexer:
+    """Collection Indexer"""
+
+    def __init__(
+        self,
+        selection: np.ndarray[Graphic],
+    ):
+        """
+
+        Parameters
+        ----------
+
+        selection: np.ndarray of Graphics
+            array of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
+
+        """
+
+        self._selection = selection
+
+    @property
+    def graphics(self) -> np.ndarray[Graphic]:
+        """Returns an array of the selected graphics. Always returns a proxy to the Graphic"""
+        return tuple(self._selection)
+
+    def __getitem__(self, item):
+        return self.graphics[item]
+
+    def __len__(self):
+        return len(self._selection)
+
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__} @ {hex(id(self))}\n"
+            f"Selection of <{len(self._selection)}> {self._selection[0].__class__.__name__}"
+        )
+
+
 class GraphicCollection(Graphic):
     """Graphic Collection base class"""
+    child_type: type
+    _indexer: type
 
     def __init__(self, name: str = None):
         super().__init__(name)
+
+        # list of mem locations of the graphics
         self._graphics: list[str] = list()
 
         self._graphics_changed: bool = True
@@ -752,7 +792,7 @@ class GraphicCollection(Graphic):
 
         return self._graphics_array
 
-    def add_graphic(self, graphic: Graphic, reset_index: False):
+    def add_graphic(self, graphic: Graphic):
         """
         Add a graphic to the collection.
 
@@ -761,15 +801,12 @@ class GraphicCollection(Graphic):
         graphic: Graphic
             graphic to add, must be a real ``Graphic`` not a proxy
 
-        reset_index: bool, default ``False``
-            reset the collection index
-
         """
 
-        if not type(graphic).__name__ == self.child_type:
+        if not type(graphic) == self.child_type:
             raise TypeError(
-                f"Can only add graphics of the same type to a collection, "
-                f"You can only add {self.child_type} to a {self.__class__.__name__}, "
+                f"Can only add graphics of the same type to a collection.\n"
+                f"You can only add {self.child_type.__name__} to a {self.__class__.__name__}, "
                 f"you are trying to add a {graphic.__class__.__name__}."
             )
 
@@ -778,41 +815,32 @@ class GraphicCollection(Graphic):
 
         self._graphics.append(addr)
 
-        if reset_index:
-            self._reset_index()
-        elif graphic.collection_index is None:
-            graphic.collection_index = len(self)
-
         self.world_object.add(graphic.world_object)
 
         self._graphics_changed = True
 
-    def remove_graphic(self, graphic: Graphic, reset_index: True):
+    def remove_graphic(self, graphic: Graphic):
         """
         Remove a graphic from the collection.
+
+        Note: Only removes the graphic from the collection. Does not remove
+        the graphic from the scene, and does not delete the graphic.
 
         Parameters
         ----------
         graphic: Graphic
             graphic to remove
 
-        reset_index: bool, default ``False``
-            reset the collection index
-
         """
 
         self._graphics.remove(graphic._fpl_address)
-
-        if reset_index:
-            self._reset_index()
 
         self.world_object.remove(graphic.world_object)
 
         self._graphics_changed = True
 
-    def __getitem__(self, key):
-        return CollectionIndexer(
-            parent=self,
+    def __getitem__(self, key) -> CollectionIndexer:
+        return self._indexer(
             selection=self.graphics[key],
         )
 
@@ -824,10 +852,6 @@ class GraphicCollection(Graphic):
 
         super().__del__()
 
-    def _reset_index(self):
-        for new_index, graphic in enumerate(self._graphics):
-            graphic.collection_index = new_index
-
     def __len__(self):
         return len(self._graphics)
 
@@ -836,70 +860,10 @@ class GraphicCollection(Graphic):
         return f"{rval}\nCollection of <{len(self._graphics)}> Graphics"
 
 
-class CollectionIndexer:
-    """Collection Indexer"""
-
-    def __init__(
-        self,
-        parent: GraphicCollection,
-        selection: list[Graphic],
-    ):
-        """
-
-        Parameters
-        ----------
-        parent: GraphicCollection
-            the GraphicCollection object that is being indexed
-
-        selection: list of Graphics
-            a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
-
-        """
-
-        self._parent = weakref.proxy(parent)
-        self._selection = selection
-
-        # we use parent.graphics[0] instead of selection[0]
-        # because the selection can be empty
-        for attr_name in self._parent.graphics[0].__dict__.keys():
-            attr = getattr(self._parent.graphics[0], attr_name)
-            if isinstance(attr, GraphicFeature):
-                collection_feature = CollectionFeature(
-                    self._selection, feature=attr_name
-                )
-                collection_feature.__doc__ = (
-                    f"indexable <{attr_name}> feature for collection"
-                )
-                setattr(self, attr_name, collection_feature)
-
-    @property
-    def graphics(self) -> np.ndarray[Graphic]:
-        """Returns an array of the selected graphics. Always returns a proxy to the Graphic"""
-        return tuple(self._selection)
-
-    def __setattr__(self, key, value):
-        if hasattr(self, key):
-            attr = getattr(self, key)
-            if isinstance(attr, CollectionFeature):
-                attr._set(value)
-                return
-
-        super().__setattr__(key, value)
-
-    def __len__(self):
-        return len(self._selection)
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__} @ {hex(id(self))}\n"
-            f"Selection of <{len(self._selection)}> {self._selection[0].__class__.__name__}"
-        )
-
-
 class CollectionFeature:
     """Collection Feature"""
 
-    def __init__(self, selection: list[Graphic], feature: str):
+    def __init__(self, selection: np.ndarray[Graphic], feature: str):
         """
         selection: list of Graphics
             a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
@@ -912,50 +876,14 @@ class CollectionFeature:
         self._selection = selection
         self._feature = feature
 
-        self._feature_instances: list[GraphicFeature] = list()
-
-        if len(self._selection) > 0:
-            for graphic in self._selection:
-                fi = getattr(graphic, self._feature)
-                self._feature_instances.append(fi)
-
-            if isinstance(fi, GraphicFeatureIndexable):
-                self._indexable = True
-            else:
-                self._indexable = False
-        else:  # it's an empty selection so it doesn't really matter
-            self._indexable = False
-
-    def _set(self, value):
-        self[:] = value
+        self._feature_instances = [getattr(g, feature) for g in self._selection]
 
     def __getitem__(self, item):
-        # only for indexable graphic features
         return [fi[item] for fi in self._feature_instances]
 
     def __setitem__(self, key, value):
-        if self._indexable:
-            for fi in self._feature_instances:
-                fi[key] = value
-
-        else:
-            for fi in self._feature_instances:
-                fi._set(value)
-
-    def add_event_handler(self, handler: callable):
-        """Adds an event handler to each of the selected Graphics from the parent GraphicCollection"""
         for fi in self._feature_instances:
-            fi.add_event_handler(handler)
-
-    def remove_event_handler(self, handler: callable):
-        """Removes an event handler from each of the selected Graphics of the parent GraphicCollection"""
-        for fi in self._feature_instances:
-            fi.remove_event_handler(handler)
-
-    def block_events(self, b: bool):
-        """Blocks event handling from occurring."""
-        for fi in self._feature_instances:
-            fi.block_events(b)
+            fi[key] = value
 
     def __repr__(self):
         return f"Collection feature for: <{self._feature}>"

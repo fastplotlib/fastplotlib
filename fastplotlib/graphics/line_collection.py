@@ -7,27 +7,84 @@ import numpy as np
 import pygfx
 
 from ..utils import parse_cmap_values
-from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
-from ._features import GraphicFeature
+from ._base import Interaction, PreviouslyModifiedData, GraphicCollection, CollectionIndexer, CollectionFeature
+from ._features import GraphicFeature, VertexColors, VertexPositions
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 
 
+class LineSelection(CollectionIndexer):
+    """A sub-selection of a line-collection"""
+    @property
+    def name(self) -> np.ndarray[str | None]:
+        return np.asarray([g.name for g in self.graphics])
+
+    @name.setter
+    def name(self, values: np.ndarray[str] | list[str]):
+        if not len(values) == len(self):
+            raise IndexError
+
+        for g, v in zip(self.graphics, values):
+            g.name = v
+
+    @property
+    def colors(self) -> CollectionFeature:
+        return CollectionFeature(self.graphics, "colors")
+
+    @colors.setter
+    def colors(self, values: str | np.ndarray | tuple[float] | list[float] | list[str]):
+        if isinstance(values, str):
+            # set colors of all lines to one str color
+            self.colors[:] = values
+            return
+
+        elif all(isinstance(v, str) for v in values):
+            # individual str colors for each line
+            if not len(values) == len(self):
+                raise IndexError
+
+            for g, v in zip(self.graphics, values):
+                g.colors = v
+
+            return
+
+        elif len(values) == 4:
+            # assume RGBA
+            self.colors[:] = values
+
+        else:
+            # assume individual colors for each
+            for g, v in zip(self.graphics, values):
+                g.colors = v
+
+    @property
+    def data(self) -> CollectionFeature:
+        return CollectionFeature(self.graphics, "data")
+
+    @data.setter
+    def data(self, values):
+        self.data[:] = values
+
+    def add_event_handler(self):
+        pass
+
+
 class LineCollection(GraphicCollection, Interaction):
-    child_type = LineGraphic.__name__
+    child_type = LineGraphic
+    _indexer = LineSelection
 
     def __init__(
         self,
         data: List[np.ndarray],
-        z_offset: Iterable[float | int] | float | int = None,
-        thickness: float | Iterable[float] = 2.0,
-        colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
+        thickness: float | Sequence[float] = 2.0,
+        colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
+        uniform_colors: bool = False,
         alpha: float = 1.0,
-        cmap: Iterable[str] | str = None,
+        cmap: Sequence[str] | str = None,
         cmap_values: np.ndarray | List = None,
         name: str = None,
-        metadata: Iterable[Any] | np.ndarray = None,
-        *args,
+        metadata: Sequence[Any] | np.ndarray = None,
+        isolated_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -38,10 +95,6 @@ class LineCollection(GraphicCollection, Interaction):
         data: list of array-like or array
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
-
-        z_offset: Iterable of float or float, optional
-            | if ``float`` | ``int``, single offset will be used for all lines
-            | if ``list`` of ``float`` | ``int``, each value will apply to the individual lines
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -73,11 +126,8 @@ class LineCollection(GraphicCollection, Interaction):
             metadata associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
-        args
-            passed to GraphicCollection
-
         kwargs
-            passed to GraphicCollection
+            passed to Graphic
 
         Features
         --------
@@ -89,12 +139,6 @@ class LineCollection(GraphicCollection, Interaction):
         """
 
         super().__init__(name)
-
-        if not isinstance(z_offset, (float, int)) and z_offset is not None:
-            if len(data) != len(z_offset):
-                raise ValueError(
-                    "z_position must be a single float or an iterable with same length as data"
-                )
 
         if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
@@ -178,11 +222,6 @@ class LineCollection(GraphicCollection, Interaction):
         self._set_world_object(pygfx.Group())
 
         for i, d in enumerate(data):
-            if isinstance(z_offset, list):
-                _z = z_offset[i]
-            else:
-                _z = z_offset
-
             if isinstance(thickness, list):
                 _s = thickness[i]
             else:
@@ -208,13 +247,14 @@ class LineCollection(GraphicCollection, Interaction):
                 data=d,
                 thickness=_s,
                 colors=_c,
-                z_position=_z,
+                uniform_colors=uniform_colors,
                 cmap=_cmap,
-                collection_index=i,
                 metadata=_m,
+                isolated_buffer=isolated_buffer,
+                **kwargs
             )
 
-            self.add_graphic(lg, reset_index=False)
+            self.add_graphic(lg)
 
     @property
     def cmap(self) -> str:
@@ -330,7 +370,7 @@ class LineCollection(GraphicCollection, Interaction):
         ) = self._get_linear_selector_init_args(padding, **kwargs)
 
         selector = LinearRegionSelector(
-            bounds=bounds,
+            selection=bounds,
             limits=limits,
             size=size,
             origin=origin,
@@ -478,7 +518,6 @@ class LineStack(LineCollection):
     def __init__(
         self,
         data: List[np.ndarray],
-        z_offset: Iterable[float] | float = None,
         thickness: float | Iterable[float] = 2.0,
         colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
         alpha: float = 1.0,
@@ -488,7 +527,6 @@ class LineStack(LineCollection):
         metadata: Iterable[Any] | np.ndarray = None,
         separation: float = 10.0,
         separation_axis: str = "y",
-        *args,
         **kwargs,
     ):
         """
@@ -499,10 +537,6 @@ class LineStack(LineCollection):
         data: list of array-like or array
             List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
             if elements are 2D, interpreted as [y_vals, n_lines]
-
-        z_offset: Iterable of float or float, optional
-            | if ``float``, single offset will be used for all lines
-            | if ``list`` of ``float``, each value will apply to the individual lines
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -550,27 +584,26 @@ class LineStack(LineCollection):
         """
         super().__init__(
             data=data,
-            z_offset=z_offset,
             thickness=thickness,
             colors=colors,
             alpha=alpha,
             cmap=cmap,
             cmap_values=cmap_values,
-            metadata=metadata,
             name=name,
-            *args,
+            metadata=metadata,
             **kwargs,
         )
 
         axis_zero = 0
         for i, line in enumerate(self.graphics):
             if separation_axis == "x":
-                line.position_x = axis_zero
+                line.offset = (axis_zero, *line.offset[1:])
+
             elif separation_axis == "y":
-                line.position_y = axis_zero
+                line.offset = (line.offset[0], axis_zero, line.offset[2])
 
             axis_zero = (
-                axis_zero + line.data()[:, axes[separation_axis]].max() + separation
+                axis_zero + line.data.value[:, axes[separation_axis]].max() + separation
             )
 
         self.separation = separation
