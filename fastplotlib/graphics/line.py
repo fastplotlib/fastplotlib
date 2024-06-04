@@ -305,35 +305,3 @@ class LineGraphic(PositionsGraphic):
         bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
 
         return bounds_init, limits, size, origin, axis, end_points
-
-    def set_feature(self, feature: str, new_data: Any, indices: Any = None):
-        if not hasattr(self, "_previous_data"):
-            self._previous_data = dict()
-        elif hasattr(self, "_previous_data"):
-            self.reset_feature(feature)
-
-        feature_instance = getattr(self, feature)
-        if indices is not None:
-            previous = feature_instance[indices].copy()
-            feature_instance[indices] = new_data
-        else:
-            previous = feature_instance._data.copy()
-            feature_instance._set(new_data)
-        if feature in self._previous_data.keys():
-            self._previous_data[feature].data = previous
-            self._previous_data[feature].indices = indices
-        else:
-            self._previous_data[feature] = PreviouslyModifiedData(
-                data=previous, indices=indices
-            )
-
-    def reset_feature(self, feature: str):
-        if feature not in self._previous_data.keys():
-            return
-
-        prev_ixs = self._previous_data[feature].indices
-        feature_instance = getattr(self, feature)
-        if prev_ixs is not None:
-            feature_instance[prev_ixs] = self._previous_data[feature].data
-        else:
-            feature_instance._set(self._previous_data[feature].data)

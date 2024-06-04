@@ -470,61 +470,6 @@ class LineCollection(GraphicCollection):
 
         return bounds, limits, size, origin, axis, end_points
 
-    def _fpl_add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
-
-    def set_feature(self, feature: str, new_data: Any, indices: Any):
-        # if single value force to be an array of size 1
-        if isinstance(indices, (np.integer, int)):
-            indices = np.array([indices])
-        if not hasattr(self, "_previous_data"):
-            self._previous_data = dict()
-        elif hasattr(self, "_previous_data"):
-            if feature in self._previous_data.keys():
-                # for now assume same index won't be changed with diff data
-                # I can't think of a usecase where we'd have to check the data too
-                # so unless there is a bug we keep it like this
-                if self._previous_data[feature].indices == indices:
-                    return  # nothing to change, and this allows bidirectional linking without infinite recursion
-
-            self.reset_feature(feature)
-
-        # coll_feature = getattr(self[indices], feature)
-
-        data = list()
-
-        for graphic in self.graphics[indices]:
-            feature_instance: GraphicFeature = getattr(graphic, feature)
-            data.append(feature_instance())
-
-        # later we can think about multi-index events
-        previous_data = deepcopy(data[0])
-
-        if feature in self._previous_data.keys():
-            self._previous_data[feature].data = previous_data
-            self._previous_data[feature].indices = indices
-        else:
-            self._previous_data[feature] = PreviouslyModifiedData(
-                data=previous_data, indices=indices
-            )
-
-        # finally set the new data
-        # this MUST occur after setting the previous data attribute to prevent recursion
-        # since calling `feature._set()` triggers all the feature callbacks
-        feature_instance._set(new_data)
-
-    def reset_feature(self, feature: str):
-        if feature not in self._previous_data.keys():
-            return
-
-        # implemented for a single index at moment
-        prev_ixs = self._previous_data[feature].indices
-        coll_feature = getattr(self[prev_ixs], feature)
-
-        coll_feature.block_events(True)
-        coll_feature._set(self._previous_data[feature].data)
-        coll_feature.block_events(False)
-
 
 axes = {"x": 0, "y": 1, "z": 2}
 
