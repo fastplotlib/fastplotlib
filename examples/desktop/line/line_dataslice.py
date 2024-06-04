@@ -41,9 +41,9 @@ cosine_graphic.data[10:50:5, :2] = sine[10:50:5]
 cosine_graphic.data[90:, 1] = 7
 cosine_graphic.data[0] = np.array([[-10, 0, 0]])
 
-# additional fancy indexing using numpy
-key2 = [True, False] * 50
-sinc_graphic.data[key2] = np.array([[5, 1, 2]])
+# additional fancy indexing with boolean array
+bool_key = [True, True, True, False, False] * 20
+sinc_graphic.data[bool_key, 1] = 7  # y vals to 1
 
 fig.canvas.set_logical_size(800, 800)
 
