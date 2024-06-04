@@ -8,25 +8,12 @@ import pygfx
 
 from ..utils import parse_cmap_values
 from ._base import Interaction, PreviouslyModifiedData, GraphicCollection, CollectionIndexer, CollectionFeature
-from ._features import GraphicFeature, VertexColors, VertexPositions
+from ._features import GraphicFeature
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 
 
 class LineSelection(CollectionIndexer):
-    """A sub-selection of a line-collection"""
-    @property
-    def name(self) -> np.ndarray[str | None]:
-        return np.asarray([g.name for g in self.graphics])
-
-    @name.setter
-    def name(self, values: np.ndarray[str] | list[str]):
-        if not len(values) == len(self):
-            raise IndexError
-
-        for g, v in zip(self.graphics, values):
-            g.name = v
-
     @property
     def colors(self) -> CollectionFeature:
         return CollectionFeature(self.graphics, "colors")
@@ -48,6 +35,13 @@ class LineSelection(CollectionIndexer):
 
             return
 
+        if isinstance(values, np.ndarray):
+            if values.ndim == 2:
+                # assume individual colors for each
+                for g, v in zip(self.graphics, values):
+                    g.colors = v
+                return
+
         elif len(values) == 4:
             # assume RGBA
             self.colors[:] = values
@@ -65,8 +59,28 @@ class LineSelection(CollectionIndexer):
     def data(self, values):
         self.data[:] = values
 
-    def add_event_handler(self):
-        pass
+    @property
+    def cmap(self) -> CollectionFeature:
+        return CollectionFeature(self.graphics, "cmap")
+
+    @cmap.setter
+    def cmap(self, name: str):
+        colors = parse_cmap_values(
+            n_colors=len(self), cmap_name=name
+        )
+        self.colors = colors
+
+    @property
+    def thickness(self) -> np.ndarray:
+        return np.asarray([g.thickness for g in self.graphics])
+
+    @thickness.setter
+    def thickness(self, values: np.ndarray | list[float]):
+        if not len(values) == len(self):
+            raise IndexError
+
+        for g, v in zip(self.graphics, values):
+            g.thickness = v
 
 
 class LineCollection(GraphicCollection, Interaction):
@@ -308,6 +322,7 @@ class LineCollection(GraphicCollection, Interaction):
         LinearSelector
 
         """
+        # TODO: Use bbox to get size and center for selectors!
 
         (
             bounds,
