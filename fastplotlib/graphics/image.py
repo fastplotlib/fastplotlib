@@ -1,13 +1,12 @@
 from typing import *
 import weakref
 
-import numpy as np
 from numpy.typing import NDArray
 
 import pygfx
 
 from ..utils import quick_min_max
-from ._base import Graphic, Interaction
+from ._base import Graphic
 from .selectors import LinearSelector, LinearRegionSelector
 from ._features import (
     TextureArray,
@@ -18,182 +17,6 @@ from ._features import (
     ImageCmapInterpolation,
     WGPU_MAX_TEXTURE_SIZE
 )
-
-
-class _AddSelectorsMixin:
-    def add_linear_selector(
-        self, selection: int = None, padding: float = None, **kwargs
-    ) -> LinearSelector:
-        """
-        Adds a :class:`.LinearSelector`.
-
-        Parameters
-        ----------
-        selection: int, optional
-            initial position of the selector
-
-        padding: float, optional
-            pad the length of the selector
-
-        kwargs:
-            passed to :class:`.LinearSelector`
-
-        Returns
-        -------
-        LinearSelector
-
-        """
-
-        # default padding is 15% the height or width of the image
-        if "axis" in kwargs.keys():
-            axis = kwargs["axis"]
-        else:
-            axis = "x"
-
-        (
-            bounds_init,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
-
-        if selection is None:
-            selection = limits[0]
-
-        if selection < limits[0] or selection > limits[1]:
-            raise ValueError(
-                f"the passed selection: {selection} is beyond the limits: {limits}"
-            )
-
-        selector = LinearSelector(
-            selection=selection,
-            limits=limits,
-            end_points=end_points,
-            parent=weakref.proxy(self),
-            **kwargs,
-        )
-
-        self._plot_area.add_graphic(selector, center=False)
-        selector.position_z = self.position_z + 1
-
-        return weakref.proxy(selector)
-
-    def add_linear_region_selector(
-        self, padding: float = None, **kwargs
-    ) -> LinearRegionSelector:
-        """
-        Add a :class:`.LinearRegionSelector`.
-
-        Parameters
-        ----------
-        padding: float, optional
-            Extends the linear selector along the y-axis to make it easier to interact with.
-
-        kwargs: optional
-            passed to ``LinearRegionSelector``
-
-        Returns
-        -------
-        LinearRegionSelector
-            linear selection graphic
-
-        """
-
-        (
-            bounds_init,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
-
-        # create selector
-        selector = LinearRegionSelector(
-            selection=bounds_init,
-            limits=limits,
-            size=size,
-            origin=origin,
-            parent=weakref.proxy(self),
-            fill_color=(0, 0, 0.35, 0.2),
-            **kwargs,
-        )
-
-        self._plot_area.add_graphic(selector, center=False)
-        # so that it is above this graphic
-        selector.position_z = self.position_z + 3
-
-        # PlotArea manages this for garbage collection etc. just like all other Graphics
-        # so we should only work with a proxy on the user-end
-        return weakref.proxy(selector)
-
-    # TODO: this method is a bit of a mess, can refactor later
-    def _get_linear_selector_init_args(self, padding: float, **kwargs):
-        # computes initial bounds, limits, size and origin of linear selectors
-        data = self.data()
-
-        if "axis" in kwargs.keys():
-            axis = kwargs["axis"]
-        else:
-            axis = "x"
-
-        if padding is None:
-            if axis == "x":
-                # based on number of rows
-                padding = int(data.shape[0] * 0.15)
-            elif axis == "y":
-                # based on number of columns
-                padding = int(data.shape[1] * 0.15)
-
-        if axis == "x":
-            offset = self.position_x
-            # x limits, number of columns
-            limits = (offset, data.shape[1] - 1)
-
-            # size is number of rows + padding
-            # used by LinearRegionSelector but not LinearSelector
-            size = data.shape[0] + padding
-
-            # initial position of the selector
-            # center row
-            position_y = data.shape[0] / 2
-
-            # need y offset too for this
-            origin = (limits[0] - offset, position_y + self.position_y)
-
-            # endpoints of the data range
-            # used by linear selector but not linear region
-            # padding, n_rows + padding
-            end_points = (0 - padding, data.shape[0] + padding)
-        else:
-            offset = self.position_y
-            # y limits
-            limits = (offset, data.shape[0] - 1)
-
-            # width + padding
-            # used by LinearRegionSelector but not LinearSelector
-            size = data.shape[1] + padding
-
-            # initial position of the selector
-            position_x = data.shape[1] / 2
-
-            # need x offset too for this
-            origin = (position_x + self.position_x, limits[0] - offset)
-
-            # endpoints of the data range
-            # used by linear selector but not linear region
-            end_points = (0 - padding, data.shape[1] + padding)
-
-        # initial bounds are 20% of the limits range
-        # used by LinearRegionSelector but not LinearSelector
-        bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
-
-        return bounds_init, limits, size, origin, axis, end_points
-
-    def _add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
 
 
 class _ImageTile(pygfx.Image):
@@ -240,7 +63,7 @@ class _ImageTile(pygfx.Image):
         return self._col_chunk_index
 
 
-class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
+class ImageGraphic(Graphic):
     features = {"data", "cmap", "vmin", "vmax"}
 
     @property
@@ -398,3 +221,143 @@ class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
                 world_object.add(img)
 
         self._set_world_object(world_object)
+
+    def add_linear_selector(
+        self, selection: int = None, axis: str = "x", padding: float = None, **kwargs
+    ) -> LinearSelector:
+        """
+        Adds a :class:`.LinearSelector`.
+
+        Parameters
+        ----------
+        selection: int, optional
+            initial position of the selector
+
+        padding: float, optional
+            pad the length of the selector
+
+        kwargs:
+            passed to :class:`.LinearSelector`
+
+        Returns
+        -------
+        LinearSelector
+
+        """
+
+        if axis == "x":
+            size = self._data.value.shape[0]
+            center = size / 2
+            limits = (0, self._data.value.shape[1])
+        elif axis == "y":
+            size = self._data.value.shape[1]
+            center = size / 2
+            limits = (0, self._data.value.shape[0])
+        else:
+            raise ValueError(
+                "`axis` must be one of 'x' | 'y'"
+            )
+
+        # default padding is 25% the height or width of the image
+        if padding is None:
+            size *= 1.25
+        else:
+            size += padding
+
+        if selection is None:
+            selection = limits[0]
+
+        if selection < limits[0] or selection > limits[1]:
+            raise ValueError(
+                f"the passed selection: {selection} is beyond the limits: {limits}"
+            )
+
+        selector = LinearSelector(
+            selection=selection,
+            limits=limits,
+            size=size,
+            center=center,
+            axis=axis,
+            parent=weakref.proxy(self),
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        # place selector above this graphic
+        selector.offset = selector.offset + (0., 0., self.offset[-1] + 1)
+
+        return weakref.proxy(selector)
+
+    def add_linear_region_selector(
+        self, selection: tuple[float, float] = None, axis: str = "x", padding: float = 0., fill_color=(0, 0, 0.35, 0.2), **kwargs,
+    ) -> LinearRegionSelector:
+        """
+        Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: (float, float)
+            initial (min, max) of the selection
+
+        axis: "x" | "y"
+            axis the selector can move along
+
+        padding: float, default 100.0
+            Extends the linear selector along the perpendicular axis to make it easier to interact with.
+
+        kwargs
+            passed to ``LinearRegionSelector``
+
+        Returns
+        -------
+        LinearRegionSelector
+            linear selection graphic
+
+        """
+
+        if axis == "x":
+            size = self._data.value.shape[0]
+            center = size / 2
+            limits = (0, self._data.value.shape[1])
+        elif axis == "y":
+            size = self._data.value.shape[1]
+            center = size / 2
+            limits = (0, self._data.value.shape[0])
+        else:
+            raise ValueError(
+                "`axis` must be one of 'x' | 'y'"
+            )
+
+        # default padding is 25% the height or width of the image
+        if padding is None:
+            size *= 1.25
+        else:
+            size += padding
+
+        if selection is None:
+            selection = limits[0], int(limits[1] * 0.25)
+
+        if padding is None:
+            size *= 1.25
+
+        else:
+            size += padding
+
+        selector = LinearRegionSelector(
+            selection=selection,
+            limits=limits,
+            size=size,
+            center=center,
+            axis=axis,
+            parent=weakref.proxy(self),
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        # place above this graphic
+        selector.offset = selector.offset + (0., 0., self.offset[-1] + 1)
+
+        return weakref.proxy(selector)
