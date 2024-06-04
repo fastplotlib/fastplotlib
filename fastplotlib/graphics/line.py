@@ -184,7 +184,7 @@ class LineGraphic(PositionsGraphic, Interaction):
             size=size,
             center=center,
             axis=axis,
-            parent=self,
+            parent=weakref.proxy(self),
             **kwargs,
         )
 
@@ -249,7 +249,7 @@ class LineGraphic(PositionsGraphic, Interaction):
             size=size,
             center=center,
             axis=axis,
-            parent=self,
+            parent=weakref.proxy(self),
             **kwargs,
         )
 
@@ -315,9 +315,6 @@ class LineGraphic(PositionsGraphic, Interaction):
         bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
 
         return bounds_init, limits, size, origin, axis, end_points
-
-    def _fpl_add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
 
     def set_feature(self, feature: str, new_data: Any, indices: Any = None):
         if not hasattr(self, "_previous_data"):
