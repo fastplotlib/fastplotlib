@@ -38,7 +38,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "sphinx_design",
-  #  "nbsphinx",
     "sphinx_gallery.gen_gallery"
 ]
 
