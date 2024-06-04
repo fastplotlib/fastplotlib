@@ -61,19 +61,19 @@ class LinearRegionSelector(BaseSelector):
         self.selection._limits = self._limits
 
     def __init__(
-            self,
-            selection: Sequence[float],
-            limits: Sequence[float],
-            size: int,
-            center: float,
-            axis: str = "x",
-            parent: Graphic = None,
-            resizable: bool = True,
-            fill_color=(0, 0, 0.35),
-            edge_color=(0.8, 0.6, 0),
-            edge_thickness: float = 8,
-            arrow_keys_modifier: str = "Shift",
-            name: str = None,
+        self,
+        selection: Sequence[float],
+        limits: Sequence[float],
+        size: int,
+        center: float,
+        axis: str = "x",
+        parent: Graphic = None,
+        resizable: bool = True,
+        fill_color=(0, 0, 0.35),
+        edge_color=(0.8, 0.6, 0),
+        edge_thickness: float = 8,
+        arrow_keys_modifier: str = "Shift",
+        name: str = None,
     ):
         """
         Create a LinearRegionSelector graphic which can be moved only along either the x-axis or y-axis.
@@ -167,12 +167,9 @@ class LinearRegionSelector(BaseSelector):
 
         if axis == "x":
             # just some data to initialize the edge lines
-            init_line_data = np.array(
-                [
-                    [0, -size / 2, 0],
-                    [0, size / 2, 0]
-                ]
-            ).astype(np.float32)
+            init_line_data = np.array([[0, -size / 2, 0], [0, size / 2, 0]]).astype(
+                np.float32
+            )
 
         elif axis == "y":
             # just some line data to initialize y axis edge lines
@@ -187,13 +184,17 @@ class LinearRegionSelector(BaseSelector):
             raise ValueError("axis argument must be one of 'x' or 'y'")
 
         line0 = pygfx.Line(
-            pygfx.Geometry(positions=init_line_data.copy()),  # copy so the line buffer is isolated
+            pygfx.Geometry(
+                positions=init_line_data.copy()
+            ),  # copy so the line buffer is isolated
             pygfx.LineMaterial(
                 thickness=edge_thickness, color=edge_color, pick_write=True
             ),
         )
         line1 = pygfx.Line(
-            pygfx.Geometry(positions=init_line_data.copy()),  # copy so the line buffer is isolated
+            pygfx.Geometry(
+                positions=init_line_data.copy()
+            ),  # copy so the line buffer is isolated
             pygfx.LineMaterial(
                 thickness=edge_thickness, color=edge_color, pick_write=True
             ),
@@ -216,9 +217,7 @@ class LinearRegionSelector(BaseSelector):
         # compensate for any offset from the parent graphic
         # selection feature only works in world space, not data space
         self._selection = LinearRegionSelectionFeature(
-            selection,
-            axis=axis,
-            limits=self._limits
+            selection, axis=axis, limits=self._limits
         )
 
         self._handled_widgets = list()
@@ -242,7 +241,7 @@ class LinearRegionSelector(BaseSelector):
         self.selection = selection
 
     def get_selected_data(
-            self, graphic: Graphic = None
+        self, graphic: Graphic = None
     ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Get the ``Graphic`` data bounded by the current selection.
@@ -280,9 +279,13 @@ class LinearRegionSelector(BaseSelector):
 
                 for i, g in enumerate(source.graphics):
                     if ixs[i].size == 0:
-                        data_selections.append(np.array([], dtype=np.float32).reshape(0, 3))
+                        data_selections.append(
+                            np.array([], dtype=np.float32).reshape(0, 3)
+                        )
                     else:
-                        s = slice(ixs[i][0], ixs[i][-1] + 1)  # add 1 because these are direct indices
+                        s = slice(
+                            ixs[i][0], ixs[i][-1] + 1
+                        )  # add 1 because these are direct indices
                         # slices n_datapoints dim
                         data_selections.append(g.data[s])
 
@@ -292,7 +295,9 @@ class LinearRegionSelector(BaseSelector):
                     # empty selection
                     return np.array([], dtype=np.float32).reshape(0, 3)
 
-                s = slice(ixs[0], ixs[-1] + 1)  # add 1 to end because these are direct indices
+                s = slice(
+                    ixs[0], ixs[-1] + 1
+                )  # add 1 to end because these are direct indices
                 # slices n_datapoints dim
                 # slice with min, max is faster than using all the indices
                 return source.data[s]
@@ -309,7 +314,7 @@ class LinearRegionSelector(BaseSelector):
                 return source.data[s]
 
     def get_selected_indices(
-            self, graphic: Graphic = None
+        self, graphic: Graphic = None
     ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Returns the indices of the ``Graphic`` data bounded by the current selection.
@@ -339,7 +344,10 @@ class LinearRegionSelector(BaseSelector):
         # selector (min, max) data values along axis
         bounds = self.selection
 
-        if "Line" in source.__class__.__name__ or "Scatter" in source.__class__.__name__:
+        if (
+            "Line" in source.__class__.__name__
+            or "Scatter" in source.__class__.__name__
+        ):
             # gets indices corresponding to n_datapoints dim
             # data is [n_datapoints, xyz], so we return
             # indices that can be used to slice `n_datapoints`
@@ -420,7 +428,7 @@ class LinearRegionSelector(BaseSelector):
 
         """
         if not isinstance(
-                widget, (ipywidgets.IntRangeSlider, ipywidgets.FloatRangeSlider)
+            widget, (ipywidgets.IntRangeSlider, ipywidgets.FloatRangeSlider)
         ):
             raise TypeError(
                 f"`widget` must be one of: ipywidgets.IntRangeSlider or ipywidgets.FloatRangeSlider\n"

@@ -97,7 +97,7 @@ class ScatterGraphic(PositionsGraphic):
             cmap=cmap,
             cmap_values=cmap_values,
             isolated_buffer=isolated_buffer,
-            **kwargs
+            **kwargs,
         )
 
         n_datapoints = self.data.value.shape[0]

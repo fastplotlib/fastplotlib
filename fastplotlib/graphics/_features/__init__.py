@@ -1,5 +1,21 @@
-from ._positions_graphics import VertexColors, UniformColor, UniformSizes, Thickness, VertexPositions, PointsSizesFeature, VertexCmap
-from ._image import TextureArray, ImageCmap, ImageVmin, ImageVmax, ImageInterpolation, ImageCmapInterpolation, WGPU_MAX_TEXTURE_SIZE
+from ._positions_graphics import (
+    VertexColors,
+    UniformColor,
+    UniformSizes,
+    Thickness,
+    VertexPositions,
+    PointsSizesFeature,
+    VertexCmap,
+)
+from ._image import (
+    TextureArray,
+    ImageCmap,
+    ImageVmin,
+    ImageVmax,
+    ImageInterpolation,
+    ImageCmapInterpolation,
+    WGPU_MAX_TEXTURE_SIZE,
+)
 from ._base import (
     GraphicFeature,
     BufferManager,

@@ -141,7 +141,9 @@ class GraphicFeature:
             return
 
         for func in self._event_handlers:
-            with log_exception(f"Error during handling {self.__class__.__name__} event"):
+            with log_exception(
+                f"Error during handling {self.__class__.__name__} event"
+            ):
                 func(event_data)
 
 
@@ -149,12 +151,12 @@ class BufferManager(GraphicFeature):
     """Smaller wrapper for pygfx.Buffer"""
 
     def __init__(
-            self,
-            data: NDArray | pygfx.Buffer,
-            buffer_type: Literal["buffer", "texture", "texture-array"] = "buffer",
-            isolated_buffer: bool = True,
-            texture_dim: int = 2,
-            **kwargs
+        self,
+        data: NDArray | pygfx.Buffer,
+        buffer_type: Literal["buffer", "texture", "texture-array"] = "buffer",
+        isolated_buffer: bool = True,
+        texture_dim: int = 2,
+        **kwargs,
     ):
         super().__init__()
         if isolated_buffer and not isinstance(data, pygfx.Resource):
@@ -205,7 +207,11 @@ class BufferManager(GraphicFeature):
     def __setitem__(self, key, value):
         raise NotImplementedError
 
-    def _parse_offset_size(self, key: int | slice | np.ndarray[int | bool] | list[bool | int], upper_bound: int):
+    def _parse_offset_size(
+        self,
+        key: int | slice | np.ndarray[int | bool] | list[bool | int],
+        upper_bound: int,
+    ):
         """
         parse offset and size for one dimension
         """
@@ -272,7 +278,14 @@ class BufferManager(GraphicFeature):
 
         return offset, size
 
-    def _update_range(self, key: int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]):
+    def _update_range(
+        self,
+        key: int
+        | slice
+        | np.ndarray[int | bool]
+        | list[bool | int]
+        | tuple[slice, ...],
+    ):
         """
         Uses key from slicing to determine the offset and
         size of the buffer to mark for upload to the GPU
@@ -303,5 +316,4 @@ class BufferManager(GraphicFeature):
         self._call_event_handlers(event)
 
     def __repr__(self):
-        return f"{self.__class__.__name__} buffer data:\n" \
-               f"{self.value.__repr__()}"
+        return f"{self.__class__.__name__} buffer data:\n" f"{self.value.__repr__()}"

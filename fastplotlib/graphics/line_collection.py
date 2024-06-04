@@ -63,9 +63,7 @@ class LineSelection(CollectionIndexer):
 
     @cmap.setter
     def cmap(self, name: str):
-        colors = parse_cmap_values(
-            n_colors=len(self), cmap_name=name
-        )
+        colors = parse_cmap_values(n_colors=len(self), cmap_name=name)
         self.colors = colors
 
     @property
@@ -263,7 +261,7 @@ class LineCollection(GraphicCollection):
                 cmap=_cmap,
                 metadata=_m,
                 isolated_buffer=isolated_buffer,
-                **kwargs
+                **kwargs,
             )
 
             self.add_graphic(lg)

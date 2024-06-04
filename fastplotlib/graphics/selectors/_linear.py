@@ -172,7 +172,7 @@ class LinearSelector(BaseSelector):
             axis=axis,
             parent=parent,
             name=name,
-            offset=offset
+            offset=offset,
         )
 
         self._set_world_object(world_object)
@@ -349,7 +349,10 @@ class LinearSelector(BaseSelector):
         elif self.axis == "y":
             data = graphic.data[:, 1]
 
-        if "Line" in graphic.__class__.__name__ or "Scatter" in graphic.__class__.__name__:
+        if (
+            "Line" in graphic.__class__.__name__
+            or "Scatter" in graphic.__class__.__name__
+        ):
             # we want to find the index of the data closest to the slider position
             find_value = self.selection
 

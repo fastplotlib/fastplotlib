@@ -55,13 +55,13 @@ class VertexColors(BufferManager):
 
         """
         data = parse_colors(colors, n_colors, alpha)
-        
+
         super().__init__(data=data, isolated_buffer=isolated_buffer)
 
     def __setitem__(
-            self,
-            key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
-            user_value: str | np.ndarray | tuple[float] | list[float] | list[str]
+        self,
+        key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
+        user_value: str | np.ndarray | tuple[float] | list[float] | list[str],
     ):
         if isinstance(key, tuple):
             # directly setting RGBA values for points, we do no parsing
@@ -91,7 +91,9 @@ class VertexColors(BufferManager):
 
             # make sure it's 1D
             if not key.ndim == 1:
-                raise TypeError("If slicing colors with an array, it must be a 1D bool or int array")
+                raise TypeError(
+                    "If slicing colors with an array, it must be a 1D bool or int array"
+                )
 
             if key.dtype == bool:
                 # make sure len is same
@@ -103,7 +105,9 @@ class VertexColors(BufferManager):
                 n_colors = key.size
 
             else:
-                raise TypeError("If slicing colors with an array, it must be a 1D bool or int array")
+                raise TypeError(
+                    "If slicing colors with an array, it must be a 1D bool or int array"
+                )
 
             value = parse_colors(user_value, n_colors)
 
@@ -130,7 +134,7 @@ class UniformColor(GraphicFeature):
     def __init__(self, value: str | np.ndarray | tuple | list | pygfx.Color):
         self._value = pygfx.Color(value)
         super().__init__()
-        
+
     @property
     def value(self) -> pygfx.Color:
         return self._value
@@ -202,7 +206,11 @@ class VertexPositions(BufferManager):
 
         return to_gpu_supported_dtype(data)
 
-    def __setitem__(self, key: int | slice | np.ndarray[int | bool] | tuple[slice, ...], value: np.ndarray | float | list[float]):
+    def __setitem__(
+        self,
+        key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
+        value: np.ndarray | float | list[float],
+    ):
         # directly use the key to slice the buffer
         self.buffer.data[key] = value
 
@@ -225,10 +233,10 @@ class PointsSizesFeature(BufferManager):
     """
 
     def __init__(
-            self,
-            sizes: int | float | np.ndarray | list[int | float] | tuple[int | float],
-            n_datapoints: int,
-            isolated_buffer: bool = True
+        self,
+        sizes: int | float | np.ndarray | list[int | float] | tuple[int | float],
+        n_datapoints: int,
+        isolated_buffer: bool = True,
     ):
         """
         Manages sizes buffer of scatter points.
@@ -236,7 +244,11 @@ class PointsSizesFeature(BufferManager):
         sizes = self._fix_sizes(sizes, n_datapoints)
         super().__init__(data=sizes, isolated_buffer=isolated_buffer)
 
-    def _fix_sizes(self, sizes: int | float | np.ndarray | list[int | float] | tuple[int | float], n_datapoints: int):
+    def _fix_sizes(
+        self,
+        sizes: int | float | np.ndarray | list[int | float] | tuple[int | float],
+        n_datapoints: int,
+    ):
         if np.issubdtype(type(sizes), np.number):
             # single value given
             sizes = np.full(
@@ -254,8 +266,10 @@ class PointsSizesFeature(BufferManager):
                 )
 
         else:
-            raise TypeError("sizes must be a single <int>, <float>, or a sequence (array, list, tuple) of int"
-                            "or float with the length equal to the number of datapoints")
+            raise TypeError(
+                "sizes must be a single <int>, <float>, or a sequence (array, list, tuple) of int"
+                "or float with the length equal to the number of datapoints"
+            )
 
         if np.count_nonzero(sizes < 0) > 1:
             raise ValueError(
@@ -264,7 +278,11 @@ class PointsSizesFeature(BufferManager):
 
         return sizes
 
-    def __setitem__(self, key: int | slice | np.ndarray[int | bool] | list[int | bool], value: int | float | np.ndarray | list[int | float] | tuple[int | float]):
+    def __setitem__(
+        self,
+        key: int | slice | np.ndarray[int | bool] | list[int | bool],
+        value: int | float | np.ndarray | list[int | float] | tuple[int | float],
+    ):
         # this is a very simple 1D buffer, no parsing required, directly set buffer
         self.buffer.data[key] = value
         self._update_range(key)
@@ -274,6 +292,7 @@ class PointsSizesFeature(BufferManager):
 
 class Thickness(GraphicFeature):
     """line thickness"""
+
     def __init__(self, value: float):
         self._value = value
         super().__init__()
@@ -295,7 +314,12 @@ class VertexCmap(BufferManager):
     Sliceable colormap feature, manages a VertexColors instance and just provides a way to set colormaps.
     """
 
-    def __init__(self, vertex_colors: VertexColors, cmap_name: str | None, cmap_values: np.ndarray | None):
+    def __init__(
+        self,
+        vertex_colors: VertexColors,
+        cmap_name: str | None,
+        cmap_values: np.ndarray | None,
+    ):
         super().__init__(data=vertex_colors.buffer)
 
         self._vertex_colors = vertex_colors
@@ -312,7 +336,9 @@ class VertexCmap(BufferManager):
             n_datapoints = vertex_colors.value.shape[0]
 
             colors = parse_cmap_values(
-                n_colors=n_datapoints, cmap_name=self._cmap_name, cmap_values=self._cmap_values
+                n_colors=n_datapoints,
+                cmap_name=self._cmap_name,
+                cmap_values=self._cmap_values,
             )
             # set vertex colors from cmap
             self._vertex_colors[:] = colors
@@ -354,7 +380,11 @@ class VertexCmap(BufferManager):
         return self._cmap_values
 
     @values.setter
-    def values(self, values: np.ndarray | list[float | int], indices: slice | list | np.ndarray = None):
+    def values(
+        self,
+        values: np.ndarray | list[float | int],
+        indices: slice | list | np.ndarray = None,
+    ):
         if self._cmap_name is None:
             raise AttributeError(
                 "cmap is not set, set the cmap before setting the cmap_values"

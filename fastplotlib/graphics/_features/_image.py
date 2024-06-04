@@ -11,9 +11,9 @@ from ...utils import (
     get_cmap_texture,
 )
 
+
 # manages an array of 8192x8192 Textures representing chunks of an image
 class TextureArray(GraphicFeature):
-
     def __init__(self, data, isolated_buffer: bool = True):
         super().__init__()
 
@@ -28,25 +28,35 @@ class TextureArray(GraphicFeature):
             self._value = data
 
         # indices for each Texture
-        self._row_indices = np.arange(0, ceil(self.value.shape[0] / WGPU_MAX_TEXTURE_SIZE) * WGPU_MAX_TEXTURE_SIZE, WGPU_MAX_TEXTURE_SIZE)
-        self._col_indices = np.arange(0, ceil(self.value.shape[1] / WGPU_MAX_TEXTURE_SIZE) * WGPU_MAX_TEXTURE_SIZE, WGPU_MAX_TEXTURE_SIZE)
+        self._row_indices = np.arange(
+            0,
+            ceil(self.value.shape[0] / WGPU_MAX_TEXTURE_SIZE) * WGPU_MAX_TEXTURE_SIZE,
+            WGPU_MAX_TEXTURE_SIZE,
+        )
+        self._col_indices = np.arange(
+            0,
+            ceil(self.value.shape[1] / WGPU_MAX_TEXTURE_SIZE) * WGPU_MAX_TEXTURE_SIZE,
+            WGPU_MAX_TEXTURE_SIZE,
+        )
 
         # buffer will be an array of textures
-        self._buffer: np.ndarray[pygfx.Texture] = np.empty(shape=(self.row_indices.size, self.col_indices.size), dtype=object)
+        self._buffer: np.ndarray[pygfx.Texture] = np.empty(
+            shape=(self.row_indices.size, self.col_indices.size), dtype=object
+        )
 
         # max index
         row_max = self.value.shape[0] - 1
         col_max = self.value.shape[1] - 1
 
-        for (buffer_row, row_ix), (buffer_col, col_ix) in zip(enumerate(self.row_indices), enumerate(self.col_indices)):
+        for (buffer_row, row_ix), (buffer_col, col_ix) in zip(
+            enumerate(self.row_indices), enumerate(self.col_indices)
+        ):
             # stop index for this chunk
             row_stop = min(row_max, row_ix + WGPU_MAX_TEXTURE_SIZE)
             col_stop = min(col_max, col_ix + WGPU_MAX_TEXTURE_SIZE)
 
             # make texture from slice
-            texture = pygfx.Texture(
-                self.value[row_ix:row_stop, col_ix:col_stop], dim=2
-            )
+            texture = pygfx.Texture(self.value[row_ix:row_stop, col_ix:col_stop], dim=2)
 
             self.buffer[buffer_row, buffer_col] = texture
 
@@ -100,6 +110,7 @@ class TextureArray(GraphicFeature):
 
 class ImageVmin(GraphicFeature):
     """lower contrast limit"""
+
     def __init__(self, value: float):
         self._value = value
         super().__init__()
@@ -119,6 +130,7 @@ class ImageVmin(GraphicFeature):
 
 class ImageVmax(GraphicFeature):
     """upper contrast limit"""
+
     def __init__(self, value: float):
         self._value = value
         super().__init__()
@@ -138,6 +150,7 @@ class ImageVmax(GraphicFeature):
 
 class ImageCmap(GraphicFeature):
     """colormap for texture"""
+
     def __init__(self, value: str):
         self._value = value
         self.texture = get_cmap_texture(value)
@@ -159,6 +172,7 @@ class ImageCmap(GraphicFeature):
 
 class ImageInterpolation(GraphicFeature):
     """Image interpolation method"""
+
     def __init__(self, value: str):
         self._validate(value)
         self._value = value
@@ -192,7 +206,9 @@ class ImageCmapInterpolation(GraphicFeature):
 
     def _validate(self, value):
         if value not in ["nearest", "linear"]:
-            raise ValueError("`cmap_interpolation` must be one of 'nearest' or 'linear'")
+            raise ValueError(
+                "`cmap_interpolation` must be one of 'nearest' or 'linear'"
+            )
 
     @property
     def value(self) -> str:

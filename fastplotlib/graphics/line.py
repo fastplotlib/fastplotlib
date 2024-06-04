@@ -94,7 +94,7 @@ class LineGraphic(PositionsGraphic):
             cmap=cmap,
             cmap_values=cmap_values,
             isolated_buffer=isolated_buffer,
-            **kwargs
+            **kwargs,
         )
 
         self._thickness = Thickness(thickness)
@@ -106,20 +106,23 @@ class LineGraphic(PositionsGraphic):
 
         if uniform_colors:
             geometry = pygfx.Geometry(positions=self._data.buffer)
-            material = MaterialCls(thickness=self.thickness, color_mode="uniform", pick_write=True)
+            material = MaterialCls(
+                thickness=self.thickness, color_mode="uniform", pick_write=True
+            )
         else:
-            material = MaterialCls(thickness=self.thickness, color_mode="vertex", pick_write=True)
-            geometry = pygfx.Geometry(positions=self._data.buffer, colors=self._colors.buffer)
+            material = MaterialCls(
+                thickness=self.thickness, color_mode="vertex", pick_write=True
+            )
+            geometry = pygfx.Geometry(
+                positions=self._data.buffer, colors=self._colors.buffer
+            )
 
-        world_object: pygfx.Line = pygfx.Line(
-            geometry=geometry,
-            material=material
-        )
+        world_object: pygfx.Line = pygfx.Line(geometry=geometry, material=material)
 
         self._set_world_object(world_object)
 
     def add_linear_selector(
-        self, selection: float = None, padding: float = 0., axis: str = "x",**kwargs
+        self, selection: float = None, padding: float = 0.0, axis: str = "x", **kwargs
     ) -> LinearSelector:
         """
         Adds a linear selector.
@@ -181,12 +184,12 @@ class LineGraphic(PositionsGraphic):
         self._plot_area.add_graphic(selector, center=False)
 
         # place selector above this graphic
-        selector.offset = selector.offset + (0., 0., self.offset[-1] + 1)
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
 
         return weakref.proxy(selector)
 
     def add_linear_region_selector(
-        self, padding: float = 0., axis: str = "x", **kwargs
+        self, padding: float = 0.0, axis: str = "x", **kwargs
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -246,7 +249,7 @@ class LineGraphic(PositionsGraphic):
         self._plot_area.add_graphic(selector, center=False)
 
         # place selector below this graphic
-        selector.offset = selector.offset + (0., 0., self.offset[-1] - 1)
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] - 1)
 
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end

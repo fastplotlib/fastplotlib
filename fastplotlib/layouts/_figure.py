@@ -128,7 +128,6 @@ class Figure:
 
         # if controller instances have been specified for each subplot
         if controllers is not None:
-
             # one controller for all subplots
             if isinstance(controllers, pygfx.Controller):
                 controllers = [controllers] * len(self)

@@ -366,7 +366,6 @@ class ImageWidget:
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
             if all([_is_arraylike(d) for d in data]):
-
                 # Grid computations
                 if figure_shape is None:
                     figure_shape = calculate_figure_shape(len(data))

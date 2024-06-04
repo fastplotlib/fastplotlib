@@ -15,7 +15,7 @@ from ._features import (
     ImageVmax,
     ImageInterpolation,
     ImageCmapInterpolation,
-    WGPU_MAX_TEXTURE_SIZE
+    WGPU_MAX_TEXTURE_SIZE,
 )
 
 
@@ -24,7 +24,10 @@ class _ImageTile(pygfx.Image):
     Similar to pygfx.Image, only difference is that it contains a few properties to keep track of
     row chunk index, column chunk index
     """
-    def __init__(self, geometry, material, row_chunk_ix: int, col_chunk_ix: int, **kwargs):
+
+    def __init__(
+        self, geometry, material, row_chunk_ix: int, col_chunk_ix: int, **kwargs
+    ):
         super().__init__(geometry, material, **kwargs)
 
         self._row_chunk_index = row_chunk_ix
@@ -196,7 +199,9 @@ class ImageGraphic(Graphic):
 
         self._material = pygfx.ImageBasicMaterial(
             clim=(vmin, vmax),
-            map=self._cmap.texture if self._data.value.ndim == 2 else None,  # RGB vs. grayscale
+            map=self._cmap.texture
+            if self._data.value.ndim == 2
+            else None,  # RGB vs. grayscale
             interpolation=self._interpolation.value,
             map_interpolation=self._cmap_interpolation.value,
             pick_write=True,
@@ -208,7 +213,7 @@ class ImageGraphic(Graphic):
                     geometry=pygfx.Geometry(grid=self._data.buffer[row_ix, col_ix]),
                     material=self._material,
                     row_chunk_ix=row_ix,
-                    col_chunk_ix=col_ix
+                    col_chunk_ix=col_ix,
                 )
 
                 img.world.x = self._data.row_indices[row_ix]
@@ -255,9 +260,7 @@ class ImageGraphic(Graphic):
             center = size / 2
             limits = (0, self._data.value.shape[0])
         else:
-            raise ValueError(
-                "`axis` must be one of 'x' | 'y'"
-            )
+            raise ValueError("`axis` must be one of 'x' | 'y'")
 
         # default padding is 25% the height or width of the image
         if padding is None:
@@ -286,12 +289,17 @@ class ImageGraphic(Graphic):
         self._plot_area.add_graphic(selector, center=False)
 
         # place selector above this graphic
-        selector.offset = selector.offset + (0., 0., self.offset[-1] + 1)
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
 
         return weakref.proxy(selector)
 
     def add_linear_region_selector(
-        self, selection: tuple[float, float] = None, axis: str = "x", padding: float = 0., fill_color = (0, 0, 0.35, 0.2), **kwargs,
+        self,
+        selection: tuple[float, float] = None,
+        axis: str = "x",
+        padding: float = 0.0,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -327,9 +335,7 @@ class ImageGraphic(Graphic):
             center = size / 2
             limits = (0, self._data.value.shape[0])
         else:
-            raise ValueError(
-                "`axis` must be one of 'x' | 'y'"
-            )
+            raise ValueError("`axis` must be one of 'x' | 'y'")
 
         # default padding is 25% the height or width of the image
         if padding is None:
@@ -360,6 +366,6 @@ class ImageGraphic(Graphic):
         self._plot_area.add_graphic(selector, center=False)
 
         # place above this graphic
-        selector.offset = selector.offset + (0., 0., self.offset[-1] + 1)
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
 
         return weakref.proxy(selector)

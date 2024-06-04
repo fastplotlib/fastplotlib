@@ -5,6 +5,7 @@ from ._base import GraphicFeature, FeatureEvent
 
 class Name(GraphicFeature):
     """Graphic name"""
+
     def __init__(self, value: str):
         self._value = value
         super().__init__()
@@ -28,6 +29,7 @@ class Name(GraphicFeature):
 
 class Offset(GraphicFeature):
     """Offset position of the graphic, [x, y, z]"""
+
     def __init__(self, value: np.ndarray | list | tuple):
         self._validate(value)
         self._value = np.array(value)
@@ -55,6 +57,7 @@ class Offset(GraphicFeature):
 
 class Rotation(GraphicFeature):
     """Graphic rotation quaternion"""
+
     def __init__(self, value: np.ndarray | list | tuple):
         self._validate(value)
         self._value = np.array(value)
@@ -63,7 +66,9 @@ class Rotation(GraphicFeature):
 
     def _validate(self, value):
         if not len(value) == 4:
-            raise ValueError("rotation quaternion must be a list, tuple, or array of 4 float values")
+            raise ValueError(
+                "rotation quaternion must be a list, tuple, or array of 4 float values"
+            )
 
     @property
     def value(self) -> np.ndarray:
@@ -82,6 +87,7 @@ class Rotation(GraphicFeature):
 
 class Visible(GraphicFeature):
     """Access or change the visibility."""
+
     def __init__(self, value: bool):
         self._value = value
         super().__init__()
@@ -102,6 +108,7 @@ class Deleted(GraphicFeature):
     """
     Used when a graphic is deleted, triggers events that can be useful to indicate this graphic has been deleted
     """
+
     def __init__(self, value: bool):
         self._value = value
         super().__init__()

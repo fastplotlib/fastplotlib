@@ -98,9 +98,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
 
     """
 
-    def __init__(
-        self, value: tuple[int, int], axis: str, limits: tuple[float, float]
-    ):
+    def __init__(self, value: tuple[int, int], axis: str, limits: tuple[float, float]):
         super().__init__()
 
         self._axis = axis

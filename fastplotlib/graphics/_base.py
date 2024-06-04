@@ -12,7 +12,20 @@ from wgpu.gui.base import log_exception
 
 import pygfx
 
-from ._features import GraphicFeature, BufferManager, Deleted, VertexPositions, VertexColors, VertexCmap, PointsSizesFeature, Name, Offset, Rotation, Visible, UniformColor
+from ._features import (
+    GraphicFeature,
+    BufferManager,
+    Deleted,
+    VertexPositions,
+    VertexColors,
+    VertexCmap,
+    PointsSizesFeature,
+    Name,
+    Offset,
+    Rotation,
+    Visible,
+    UniformColor,
+)
 
 HexStr: TypeAlias = str
 
@@ -95,14 +108,21 @@ class Graphic:
         )
 
         # set of all features
-        cls.features = {*cls.features, "name", "offset", "rotation", "visible", "deleted"}
+        cls.features = {
+            *cls.features,
+            "name",
+            "offset",
+            "rotation",
+            "visible",
+            "deleted",
+        }
         super().__init_subclass__(**kwargs)
 
     def __init__(
         self,
         name: str = None,
-        offset: np.ndarray | list | tuple = (0., 0., 0.),
-        rotation: np.ndarray | list | tuple = (0., 0., 0., 1.),
+        offset: np.ndarray | list | tuple = (0.0, 0.0, 0.0),
+        rotation: np.ndarray | list | tuple = (0.0, 0.0, 0.0, 1.0),
         metadata: Any = None,
     ):
         """
@@ -220,7 +240,9 @@ class Graphic:
         types = args if decorating else args[1:]
 
         def decorator(_callback):
-            _callback_injector = partial(self._handle_event, _callback)  # adds graphic instance as attribute
+            _callback_injector = partial(
+                self._handle_event, _callback
+            )  # adds graphic instance as attribute
 
             for t in types:
                 # add to our record
@@ -264,7 +286,9 @@ class Graphic:
                     self._event_handler_wrappers[t].remove(wrapper_map)
                     break
             else:
-                raise KeyError(f"event type: {t} with callback: {callback} is not registered")
+                raise KeyError(
+                    f"event type: {t} with callback: {callback} is not registered"
+                )
 
             self._event_handlers[t].remove(callback)
             # remove callback wrapper from world object if pygfx event
@@ -403,16 +427,16 @@ class PositionsGraphic(Graphic):
         self._cmap[:] = name
 
     def __init__(
-            self,
-            data: Any,
-            colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
-            uniform_colors: bool = False,
-            alpha: float = 1.0,
-            cmap: str | VertexCmap = None,
-            cmap_values: np.ndarray = None,
-            isolated_buffer: bool = True,
-            *args,
-            **kwargs,
+        self,
+        data: Any,
+        colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
+        uniform_colors: bool = False,
+        alpha: float = 1.0,
+        cmap: str | VertexCmap = None,
+        cmap_values: np.ndarray = None,
+        isolated_buffer: bool = True,
+        *args,
+        **kwargs,
     ):
         if isinstance(data, VertexPositions):
             self._data = data
@@ -422,9 +446,7 @@ class PositionsGraphic(Graphic):
         if cmap is not None:
             # if a cmap is specified it overrides colors argument
             if uniform_colors:
-                raise TypeError(
-                    "Cannot use cmap if uniform_colors=True"
-                )
+                raise TypeError("Cannot use cmap if uniform_colors=True")
 
             if isinstance(cmap, str):
                 # make colors from cmap
@@ -437,9 +459,7 @@ class PositionsGraphic(Graphic):
                     self._colors = VertexColors("w", n_colors=self._data.value.shape[0])
                     # make cmap using vertex colors buffer
                     self._cmap = VertexCmap(
-                        self._colors,
-                        cmap_name=cmap,
-                        cmap_values=cmap_values
+                        self._colors, cmap_name=cmap, cmap_values=cmap_values
                     )
             elif isinstance(cmap, VertexCmap):
                 # use existing cmap instance
@@ -454,11 +474,7 @@ class PositionsGraphic(Graphic):
                 self._colors = colors
                 self._colors._shared += 1
                 # blank colormap instance
-                self._cmap = VertexCmap(
-                    self._colors,
-                    cmap_name=None,
-                    cmap_values=None
-                )
+                self._cmap = VertexCmap(self._colors, cmap_name=None, cmap_values=None)
             else:
                 if uniform_colors:
                     self._colors = UniformColor(colors)
@@ -469,8 +485,10 @@ class PositionsGraphic(Graphic):
                         n_colors=self._data.value.shape[0],
                         alpha=alpha,
                     )
-                    self._cmap = VertexCmap(self._colors, cmap_name=None, cmap_values=None)
-                
+                    self._cmap = VertexCmap(
+                        self._colors, cmap_name=None, cmap_values=None
+                    )
+
         super().__init__(*args, **kwargs)
 
     def detach_feature(self, feature: str):
@@ -496,7 +514,9 @@ class PositionsGraphic(Graphic):
             self.world_object.geometry.positions = self._sizes.buffer
             self._sizes._shared -= 1
 
-    def attach_feature(self, feature: VertexPositions | VertexColors | PointsSizesFeature):
+    def attach_feature(
+        self, feature: VertexPositions | VertexColors | PointsSizesFeature
+    ):
         if isinstance(feature, VertexPositions):
             # TODO: check if this causes a memory leak
             self._data._shared -= 1
@@ -567,6 +587,7 @@ COLLECTION_GRAPHICS: dict[HexStr, Graphic] = dict()
 
 class CollectionIndexer:
     """Collection Indexer"""
+
     @property
     def name(self) -> np.ndarray[str | None]:
         return np.asarray([g.name for g in self.graphics])
@@ -608,11 +629,7 @@ class CollectionIndexer:
         for g, v in zip(self.graphics, values):
             setattr(g, feature, v)
 
-    def __init__(
-        self,
-        selection: np.ndarray[Graphic],
-        features: set[str]
-    ):
+    def __init__(self, selection: np.ndarray[Graphic], features: set[str]):
         """
 
         Parameters
@@ -708,6 +725,7 @@ class CollectionIndexer:
 
 class GraphicCollection(Graphic):
     """Graphic Collection base class"""
+
     child_type: type
     _indexer: type
 
