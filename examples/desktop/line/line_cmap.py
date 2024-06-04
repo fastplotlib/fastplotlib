@@ -35,7 +35,7 @@ cosine_graphic = fig[0, 0].add_line(
     data=cosine,
     thickness=10,
     cmap="tab10",
-    cmap_values=np.array(cmap_values)
+    cmap_values=cmap_values
 )
 
 fig.show()
