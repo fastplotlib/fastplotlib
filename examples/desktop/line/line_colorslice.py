@@ -61,7 +61,7 @@ sinc_graphic.colors[key] = "Red"
 key2 = np.array([True, False, True, False, True, True, True, True])
 cosine_graphic.colors[key2] = "Green"
 
-fig.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(700, 560)
 
 fig[0, 0].auto_scale()
 

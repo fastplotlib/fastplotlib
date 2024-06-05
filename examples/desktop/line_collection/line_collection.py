@@ -39,7 +39,7 @@ fig[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
 
 fig.show()
 
-fig.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

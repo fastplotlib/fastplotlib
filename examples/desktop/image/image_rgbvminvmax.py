@@ -24,7 +24,7 @@ fig.show()
 # NOT required for users
 canvas = fig.canvas
 
-fig.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(700, 560)
 
 fig[0, 0].auto_scale()
 

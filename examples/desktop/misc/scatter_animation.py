@@ -54,7 +54,7 @@ fig_scatter.show()
 # NOT required for users
 canvas = fig_scatter.canvas
 
-fig_scatter.canvas.set_logical_size(800, 800)
+subplot_scatter.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

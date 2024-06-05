@@ -50,7 +50,7 @@ cosine_graphic.data[0] = np.array([[-10, 0, 0]])
 key2 = np.array([True, False, True, False, True, True, True, True])
 sinc_graphic.data[key2] = np.array([[5, 1, 2]])
 
-fig.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(700, 560)
 
 fig[0, 0].auto_scale()
 

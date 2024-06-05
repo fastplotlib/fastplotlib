@@ -29,7 +29,7 @@ canvas = fig.canvas
 
 fig.show()
 
-fig.canvas.set_logical_size(800, 800)
+fig.canvas.set_logical_size(700, 560)
 
 for subplot in fig:
     subplot.auto_scale()
