@@ -263,7 +263,8 @@ class HistogramLUT(Graphic):
 
         line_data = np.column_stack([hist_scaled, edges_flanked])
 
-        self._histogram_line.data = line_data
+        # set x and y vals
+        self._histogram_line.data[:, :2] = line_data
 
         bounds = (edges[0], edges[-1])
         limits = (edges_flanked[0], edges_flanked[-11])

@@ -59,7 +59,7 @@ class LinearRegionSelector(BaseSelector):
         self._limits = tuple(
             map(round, values)
         )  # if values are close to zero things get weird so round them
-        self.selection._limits = self._limits
+        self._selection._limits = self._limits
 
     def __init__(
         self,
@@ -460,7 +460,7 @@ class LinearRegionSelector(BaseSelector):
         widget.observe(self._ipywidget_callback, "value")
 
         # user changes linear selection -> widget changes
-        self.selection.add_event_handler(self._update_ipywidgets, "selection")
+        self.add_event_handler(self._update_ipywidgets, "selection")
 
         self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
 
