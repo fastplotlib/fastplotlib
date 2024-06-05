@@ -11,11 +11,13 @@ import fastplotlib as fpl
 import numpy as np
 from pathlib import Path
 from sklearn.cluster import AgglomerativeClustering
-import os
+import sys
 
 fig = fpl.Figure()
 
-data_path = Path(os.getcwd()).parent.joinpath("data", "iris.npy")
+current_file = Path(sys.argv[0]).resolve()
+
+data_path = Path(current_file.parent.parent.joinpath("data", "iris.npy"))
 data = np.load(data_path)
 
 agg = AgglomerativeClustering(n_clusters=3)

@@ -1,0 +1,55 @@
+"""
+Simple Line Animation
+=====================
+
+Example showing animation with lines.
+"""
+
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'animate'
+
+import fastplotlib as fpl
+import numpy as np
+
+# generate some data
+start, stop = 0, 2 * np.pi
+increment = (2 * np.pi) / 50
+
+# make a simple sine wave
+xs = np.linspace(start, stop, 100)
+ys = np.sin(xs)
+
+fig = fpl.Figure()
+
+# plot the image data
+sine = fig[0, 0].add_line(ys, name="sine", colors="r")
+
+
+# increment along the x-axis on each render loop :D
+def update_line(subplot):
+    global increment, start, stop
+    xs = np.linspace(start + increment, stop + increment, 100)
+    ys = np.sin(xs)
+
+    start += increment
+    stop += increment
+
+    # change only the y-axis values of the line
+    subplot["sine"].data[:, 1] = ys
+
+
+fig[0, 0].add_animations(update_line)
+
+fig.show()
+
+# set canvas variable for sphinx_gallery to properly generate examples
+# NOT required for users
+canvas = fig.canvas
+
+fig.canvas.set_logical_size(800, 800)
+
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
+if __name__ == "__main__":
+    print(__doc__)
+    fpl.run()

@@ -56,7 +56,8 @@ sphinx_gallery_conf = {
             "../../examples/desktop/line",
             "../../examples/desktop/line_collection",
             "../../examples/desktop/scatter",
-            "../../examples/desktop/heatmap"
+            "../../examples/desktop/heatmap",
+            "../../examples/desktop/misc"
         ]
     ),
     "ignore_pattern": r'__init__\.py',
@@ -104,7 +105,7 @@ intersphinx_mapping = {
 }
 
 html_theme_options = {
-    "source_repository": "https://github.com/kushalkolar/fastplotlib",
+    "source_repository": "https://github.com/fastplotlib/fastplotlib",
     "source_branch": "main",
     "source_directory": "docs/",
 }

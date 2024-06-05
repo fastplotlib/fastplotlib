@@ -10,12 +10,14 @@ Example showing data slice for scatter plot.
 import fastplotlib as fpl
 import numpy as np
 from pathlib import Path
-import os
+import sys
 
 
 fig = fpl.Figure()
 
-data_path = Path(os.getcwd()).parent.joinpath("data", "iris.npy")
+current_file = Path(sys.argv[0]).resolve()
+
+data_path = Path(current_file.parent.parent.joinpath("data", "iris.npy"))
 data = np.load(data_path)
 
 n_points = 50
