@@ -5,16 +5,17 @@ Example showing cmap change for scatter plot.
 """
 
 # test_example = true
-# sphinx_gallery_pygfx_docs = 'hidden'
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 import numpy as np
 from pathlib import Path
 from sklearn.cluster import AgglomerativeClustering
+import os
 
 fig = fpl.Figure()
 
-data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
+data_path = Path(os.getcwd()).parent.joinpath("data", "iris.npy")
 data = np.load(data_path)
 
 agg = AgglomerativeClustering(n_clusters=3)
@@ -25,6 +26,7 @@ scatter_graphic = fig[0, 0].add_scatter(
 )
 
 # set canvas variable for sphinx_gallery to properly generate examples
+# NOT required for users
 canvas = fig.canvas
 
 fig.show()
@@ -35,7 +37,8 @@ fig[0, 0].auto_scale()
 
 scatter_graphic.cmap = "tab10"
 
-
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

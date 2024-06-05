@@ -36,6 +36,7 @@ colors = ["blue"] * 4 + ["red"] * 4 + ["yellow"] * 4 + ["w"] * 4
 fig = fpl.Figure()
 
 # set canvas variable for sphinx_gallery to properly generate examples
+# NOT required for users
 canvas = fig.canvas
 
 fig[0, 0].add_line_collection(circles, colors=colors, thickness=10)
@@ -44,6 +45,8 @@ fig.show()
 
 fig.canvas.set_logical_size(800, 800)
 
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

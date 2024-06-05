@@ -10,11 +10,8 @@ Example showing data slicing with cosine, sine, sinc lines.
 
 import fastplotlib as fpl
 import numpy as np
-from wgpu.gui.offscreen import WgpuCanvas
 
-canvas = WgpuCanvas()
-
-fig = fpl.Figure(canvas=canvas)
+fig = fpl.Figure()
 
 xs = np.linspace(-10, 10, 100)
 # sine wave
@@ -41,6 +38,10 @@ sinc_graphic = fig[0, 0].add_line(data=sinc, thickness=5, colors=colors)
 
 fig.show()
 
+# set canvas variable for sphinx_gallery to properly generate examples
+# NOT required for users
+canvas = fig.canvas
+
 cosine_graphic.data[10:50:5, :2] = sine[10:50:5]
 cosine_graphic.data[90:, 1] = 7
 cosine_graphic.data[0] = np.array([[-10, 0, 0]])
@@ -53,7 +54,8 @@ fig.canvas.set_logical_size(800, 800)
 
 fig[0, 0].auto_scale()
 
-
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

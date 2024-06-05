@@ -27,6 +27,7 @@ x_values = np.array([x for x in range(len(y_values))], dtype=np.float32)
 data = np.column_stack([x_values, y_values])
 
 # set canvas variable for sphinx_gallery to properly generate examples
+# NOT required for users
 canvas = fig.canvas
 
 fig["scalar_size"].add_scatter(
@@ -41,6 +42,8 @@ for graph in fig:
 
 fig.show()
 
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

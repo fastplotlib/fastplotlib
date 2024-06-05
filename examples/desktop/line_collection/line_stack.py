@@ -20,16 +20,19 @@ data = np.vstack([ys] * 25)
 
 fig = fpl.Figure()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-canvas = fig.canvas
-
 # line stack takes all the same arguments as line collection and behaves similarly
 fig[0, 0].add_line_stack(data, cmap="jet")
 
 fig.show(maintain_aspect=False)
 
+# set canvas variable for sphinx_gallery to properly generate examples
+# NOT required for users
+canvas = fig.canvas
+
 fig.canvas.set_logical_size(900, 600)
 
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

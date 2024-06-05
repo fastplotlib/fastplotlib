@@ -11,9 +11,6 @@ Example showing how to plot line collections
 from itertools import product
 import numpy as np
 import fastplotlib as fpl
-from wgpu.gui.offscreen import WgpuCanvas
-
-canvas = WgpuCanvas()
 
 
 def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
@@ -32,7 +29,11 @@ for center in product(range(0, spatial_dims[0], 15), range(0, spatial_dims[1], 1
 
 pos_xy = np.vstack(circles)
 
-fig = fpl.Figure(canvas=canvas)
+fig = fpl.Figure()
+
+# set canvas variable for sphinx_gallery to properly generate examples
+# NOT required for users
+canvas = fig.canvas
 
 fig[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
 
@@ -40,6 +41,8 @@ fig.show()
 
 fig.canvas.set_logical_size(800, 800)
 
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

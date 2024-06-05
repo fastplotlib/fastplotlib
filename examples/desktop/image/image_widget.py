@@ -15,10 +15,8 @@ a = iio.imread("imageio:camera.png")
 iw = fpl.ImageWidget(data=a, cmap="viridis")
 iw.show()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-canvas = iw.figure.canvas
-
-
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

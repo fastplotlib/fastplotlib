@@ -3,9 +3,10 @@
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# Force offscreen rendering
 import os
 
+# need to force offscreen rendering before importing fpl
+# otherwise fpl tries to select glfw canvas
 os.environ["WGPU_FORCE_OFFSCREEN"] = "1"
 
 import fastplotlib
@@ -13,9 +14,10 @@ from pygfx.utils.gallery_scraper import find_examples_for_gallery
 from pathlib import Path
 import sys
 from sphinx_gallery.sorting import ExplicitOrder
+import imageio.v3 as iio
 
 ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
-EXAMPLES_DIR = ROOT_DIR / "examples" / "desktop"
+EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples", "desktop")
 
 sys.path.insert(0, str(ROOT_DIR))
 
@@ -64,6 +66,12 @@ sphinx_gallery_conf = {
 
 extra_conf = find_examples_for_gallery(EXAMPLES_DIR)
 sphinx_gallery_conf.update(extra_conf)
+
+# download imageio examples for the gallery
+iio.imread("imageio:clock.png")
+iio.imread("imageio:astronaut.png")
+iio.imread("imageio:coffee.png")
+iio.imread("imageio:hubble_deep_field.png")
 
 autosummary_generate = True
 

@@ -5,16 +5,17 @@ Example showing color slice for scatter plot.
 """
 
 # test_example = true
-# sphinx_gallery_pygfx_docs = 'hidden'
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 import numpy as np
 from pathlib import Path
+import os
 
 
 fig = fpl.Figure()
 
-data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
+data_path = Path(os.getcwd()).parent.joinpath("data", "iris.npy")
 data = np.load(data_path)
 
 n_points = 50
@@ -25,6 +26,7 @@ scatter_graphic = fig[0, 0].add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, c
 fig.show()
 
 # set canvas variable for sphinx_gallery to properly generate examples
+# NOT required for users
 canvas = fig.canvas
 
 fig.canvas.set_logical_size(800, 800)
@@ -35,7 +37,8 @@ scatter_graphic.colors[0:75] = "red"
 scatter_graphic.colors[75:150] = "white"
 scatter_graphic.colors[::2] = "blue"
 
-
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()
