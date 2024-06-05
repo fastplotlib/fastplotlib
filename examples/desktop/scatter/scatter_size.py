@@ -1,6 +1,7 @@
 """
-Scatter Plot
-============
+Scatter Plot Size
+=================
+
 Example showing point size change for scatter plot.
 """
 

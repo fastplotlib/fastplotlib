@@ -24,7 +24,6 @@ extras_require = {
         "sidecar",
         "imageio",
         "matplotlib",
-        "scikit-learn"
     ],
     "notebook": [
         "jupyterlab",

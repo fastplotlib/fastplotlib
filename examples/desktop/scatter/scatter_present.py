@@ -1,6 +1,7 @@
 """
-Scatter Plot
-============
+Scatter Plot Present
+====================
+
 Example showing present feature for scatter plot.
 """
 
@@ -9,35 +10,37 @@ Example showing present feature for scatter plot.
 
 import fastplotlib as fpl
 import numpy as np
-from pathlib import Path
-import sys
+
 
 fig = fpl.Figure()
 
-current_file = Path(sys.argv[0]).resolve()
+# create a gaussian cloud of 5_000 points
+n_points = 1_000
 
-data_path = Path(current_file.parent.parent.joinpath("data", "iris.npy"))
-data = np.load(data_path)
+mean = [0, 0]  # mean of the Gaussian distribution
+covariance = [[1, 0], [0, 1]]  # covariance matrix
 
-n_points = 50
-colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
+gaussian_cloud = np.random.multivariate_normal(mean, covariance, n_points)
+gaussian_cloud2 = np.random.multivariate_normal(mean, covariance, n_points)
 
-scatter_graphic = fig[0, 0].add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
+# create plot
+fig = fpl.Figure()
 
-colors = ["red"] * n_points + ["white"] * n_points + ["blue"] * n_points
-scatter_graphic2 = fig[0, 0].add_scatter(data=data[:, 1:], sizes=6, alpha=0.7, colors=colors)
-
-fig.show()
+# use an alpha value since this will be a lot of points
+scatter1 = fig[0,0].add_scatter(data=gaussian_cloud, sizes=3)
+scatter2 = fig[0,0].add_scatter(data=gaussian_cloud2, colors="r", sizes=3)
 
 # set canvas variable for sphinx_gallery to properly generate examples
 # NOT required for users
 canvas = fig.canvas
 
+fig.show()
+
 fig.canvas.set_logical_size(700, 560)
 
 fig[0, 0].auto_scale()
 
-scatter_graphic.present = False
+scatter1.present = False
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

@@ -1,5 +1,5 @@
 """
-Image colormap
+Image Colormap
 ==============
 
 Example showing simple plot creation and subsequent cmap change with Standard image from imageio.
