@@ -23,7 +23,7 @@ extras_require = {
         "jupyterlab",
         "sidecar",
         "imageio",
-        "matplotlib"
+        "matplotlib",
         "sklearn"
     ],
     "notebook": [
