@@ -1,6 +1,6 @@
 """
-Scatter Animation Data
-======================
+Scatter Animation Colors
+========================
 
 Example showing animation with a scatter plot.
 """
@@ -40,13 +40,16 @@ subplot_scatter = fig_scatter[0, 0]
 scatter_graphic = subplot_scatter.add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
 
 
-def update_points(subplot):
-    # move every point by a small amount
-    deltas = np.random.normal(size=scatter_graphic.data().shape, loc=0, scale=0.15)
-    scatter_graphic.data = scatter_graphic.data() + deltas
+i = 0.05
+def cycle_colors(subplot):
+    global i
+    # cycle the red values
+    scatter_graphic.colors[n_points * 2:, 0] = np.abs(np.sin(i))
+    scatter_graphic.colors[n_points * 2:, 1] = np.abs(np.sin(i + (np.pi / 4)))
+    scatter_graphic.colors[n_points * 2:, 2] = np.abs(np.cos(i))
+    i += 0.05
 
-
-subplot_scatter.add_animations(update_points)
+subplot_scatter.add_animations(cycle_colors)
 
 fig_scatter.show()
 
