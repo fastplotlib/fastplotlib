@@ -15,7 +15,6 @@ from ._features import (
     ImageVmax,
     ImageInterpolation,
     ImageCmapInterpolation,
-    WGPU_MAX_TEXTURE_SIZE,
 )
 
 
@@ -200,9 +199,9 @@ class ImageGraphic(Graphic):
 
         # use cmap if not RGB
         if self._data.value.ndim == 2:
-            _map = None
-        else:
             _map = self._cmap.texture
+        else:
+            _map = None
 
         # one common material is used for every Texture chunk
         self._material = pygfx.ImageBasicMaterial(
@@ -216,17 +215,18 @@ class ImageGraphic(Graphic):
         # iterate through each texture chunk and create
         # an _ImageTIle, offset the tile using the data indices
         for texture, chunk_index, data_slice in self._data:
-            # row and column start index for this chunk
-            data_row_start = data_slice[0].start
-            data_col_start = data_slice[1].start
 
             # create an ImageTile using the texture for this chunk
             img = _ImageTile(
                 geometry=pygfx.Geometry(grid=texture),
                 material=self._material,
-                data_slice=(data_row_start, data_col_start),  # used to parse pick_info
+                data_slice=data_slice,  # used to parse pick_info
                 chunk_index=chunk_index
             )
+
+            # row and column start index for this chunk
+            data_row_start = data_slice[0].start
+            data_col_start = data_slice[1].start
 
             # offset tile position using the indices from the big data array
             # that correspond to this chunk
