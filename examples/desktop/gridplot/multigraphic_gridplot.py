@@ -57,13 +57,24 @@ cmap_values = [
     1, 9, 1, 5
 ]
 
+# add an image to overlay the circles on
+img2 = np.ones((60, 60))
+
+fig["circles"].add_image(data=img2)
+
 # add the circles to the figure
 fig["circles"].add_line_collection(
     circles,
     cmap="tab10",
     cmap_values=cmap_values,
-    thickness=3
+    thickness=3,
+    alpha=0.5,
+    name="circles-graphic"
 )
+
+# move the circles graphic so that it is centered over the image
+fig["circles"]["circles-graphic"].position_y += 7
+fig["circles"]["circles-graphic"].position_x += 7
 
 # generate some sine data
 # linspace, create 100 evenly spaced x values from -10 to 10
