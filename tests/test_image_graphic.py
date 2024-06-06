@@ -86,6 +86,10 @@ def test_gray():
 
     check_set_slice(GRAY_IMAGE, ig, slice(100, 200), slice(200, 300))
 
+    # test setting all values
+    ig.data = 1
+    npt.assert_almost_equal(ig.data.value, 1)
+
 
 def test_rgb():
     fig = fpl.Figure()
