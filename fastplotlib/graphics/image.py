@@ -21,49 +21,48 @@ from ._features import (
 
 class _ImageTile(pygfx.Image):
     """
-    Similar to pygfx.Image, only difference is that it contains a few properties to keep track of
-    row chunk index, column chunk index
+    Similar to pygfx.Image, only difference is that it modifies the pick_info
+    by adding the data row start indices that correspond to this chunk of the big image
     """
 
     def __init__(
-        self, geometry, material, row_chunk_ix: int, col_chunk_ix: int, **kwargs
+        self, geometry, material, data_slice: tuple[slice, slice], chunk_index: tuple[int, int], **kwargs
     ):
         super().__init__(geometry, material, **kwargs)
 
-        self._row_chunk_index = row_chunk_ix
-        self._col_chunk_index = col_chunk_ix
+        self._data_slice = data_slice
+        self._chunk_index = chunk_index
 
     def _wgpu_get_pick_info(self, pick_value):
         pick_info = super()._wgpu_get_pick_info(pick_value)
 
-        row_start_ix = WGPU_MAX_TEXTURE_SIZE * self.row_chunk_index
-        col_start_ix = WGPU_MAX_TEXTURE_SIZE * self.col_chunk_index
+        data_row_start, data_col_start = self.data_slice[0].start, self.data_slice[1].start
 
-        # adjust w.r.t. chunk
+        # add the actual data row and col start indices
         x, y = pick_info["index"]
-        x += col_start_ix
-        y += row_start_ix
+        x += data_col_start
+        y += data_row_start
         pick_info["index"] = (x, y)
 
         xp, yp = pick_info["pixel_coord"]
-        xp += col_start_ix
-        yp += row_start_ix
+        xp += data_col_start
+        yp += data_row_start
         pick_info["pixel_coord"] = (xp, yp)
 
         # add row chunk and col chunk index to pick_info dict
         return {
             **pick_info,
-            "row_chunk_index": self.row_chunk_index,
-            "col_chunk_index": self.col_chunk_index,
+            "data_slice": self.data_slice,
+            "chunk_index": self.chunk_index
         }
 
     @property
-    def row_chunk_index(self) -> int:
-        return self._row_chunk_index
+    def data_slice(self) -> tuple[slice, slice]:
+        return self._data_slice
 
     @property
-    def col_chunk_index(self) -> int:
-        return self._col_chunk_index
+    def chunk_index(self) -> tuple[int, int]:
+        return self._chunk_index
 
 
 class ImageGraphic(Graphic):
@@ -184,11 +183,13 @@ class ImageGraphic(Graphic):
 
         world_object = pygfx.Group()
 
+        # texture array that manages the textures on the GPU for displaying this image
         self._data = TextureArray(data, isolated_buffer=isolated_buffer)
 
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
 
+        # other graphic features
         self._vmin = ImageVmin(vmin)
         self._vmax = ImageVmax(vmax)
 
@@ -197,33 +198,55 @@ class ImageGraphic(Graphic):
         self._interpolation = ImageInterpolation(interpolation)
         self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
+        # use cmap if not RGB
+        if self._data.value.ndim == 2:
+            _map = None
+        else:
+            _map = self._cmap.texture
+
+        # one common material is used for every Texture chunk
         self._material = pygfx.ImageBasicMaterial(
             clim=(vmin, vmax),
-            map=self._cmap.texture
-            if self._data.value.ndim == 2
-            else None,  # RGB vs. grayscale
+            map=_map,
             interpolation=self._interpolation.value,
             map_interpolation=self._cmap_interpolation.value,
             pick_write=True,
         )
 
-        for row_ix in range(self._data.row_indices.size):
-            for col_ix in range(self._data.col_indices.size):
-                img = _ImageTile(
-                    geometry=pygfx.Geometry(grid=self._data.buffer[row_ix, col_ix]),
-                    material=self._material,
-                    row_chunk_ix=row_ix,
-                    col_chunk_ix=col_ix,
-                )
+        # iterate through each texture chunk and create
+        # an _ImageTIle, offset the tile using the data indices
+        for texture, chunk_index, data_slice in self._data:
+            # row and column start index for this chunk
+            data_row_start = data_slice[0].start
+            data_col_start = data_slice[1].start
 
-                img.world.y = row_ix * WGPU_MAX_TEXTURE_SIZE
-                img.world.x = col_ix * WGPU_MAX_TEXTURE_SIZE
+            # create an ImageTile using the texture for this chunk
+            img = _ImageTile(
+                geometry=pygfx.Geometry(grid=texture),
+                material=self._material,
+                data_slice=(data_row_start, data_col_start),  # used to parse pick_info
+                chunk_index=chunk_index
+            )
 
-                world_object.add(img)
+            # offset tile position using the indices from the big data array
+            # that correspond to this chunk
+            img.world.x = data_col_start
+            img.world.y = data_row_start
+
+            world_object.add(img)
 
         self._set_world_object(world_object)
 
     def reset_vmin_vmax(self):
+        """
+        Reset the vmin, vmax by estimating it from the data
+
+        Returns
+        -------
+        None
+
+        """
+
         vmin, vmax = quick_min_max(self._data.value)
         self.vmin = vmin
         self.vmax = vmax

@@ -1,4 +1,5 @@
 from itertools import product
+
 from math import ceil
 
 import numpy as np
@@ -28,7 +29,7 @@ class TextureArray(GraphicFeature):
             # user's input array is used as the buffer
             self._value = data
 
-        # indices for each Texture
+        # data start indices for each Texture
         self._row_indices = np.arange(
             0,
             ceil(self.value.shape[0] / WGPU_MAX_TEXTURE_SIZE) * WGPU_MAX_TEXTURE_SIZE,
@@ -45,20 +46,14 @@ class TextureArray(GraphicFeature):
             shape=(self.row_indices.size, self.col_indices.size), dtype=object
         )
 
-        # max index
-        row_max = self.value.shape[0] - 1
-        col_max = self.value.shape[1] - 1
+        self._iter = None
 
-        for buffer_row, row_ix in enumerate(self.row_indices):
-            for buffer_col, col_ix in enumerate(self.col_indices):
-                # stop index for this chunk
-                row_stop = min(row_max, row_ix + WGPU_MAX_TEXTURE_SIZE)
-                col_stop = min(col_max, col_ix + WGPU_MAX_TEXTURE_SIZE)
+        # iterate through each chunk of passed `data`
+        # create a pygfx.Texture from this chunk
+        for _, buffer_index, data_slice in self:
+            texture = pygfx.Texture(self.value[data_slice], dim=2)
 
-                # make texture from slice
-                texture = pygfx.Texture(self.value[row_ix:row_stop, col_ix:col_stop], dim=2)
-
-                self.buffer[buffer_row, buffer_col] = texture
+            self.buffer[buffer_index] = texture
 
         self._shared: int = 0
 
@@ -75,10 +70,18 @@ class TextureArray(GraphicFeature):
 
     @property
     def row_indices(self) -> np.ndarray:
+        """
+        row indices that are used to chunk the big data array
+        into individual Textures on the GPU
+        """
         return self._row_indices
 
     @property
     def col_indices(self) -> np.ndarray:
+        """
+        column indices that are used to chunk the big data array
+        into individual Textures on the GPU
+        """
         return self._col_indices
 
     @property
@@ -94,6 +97,38 @@ class TextureArray(GraphicFeature):
 
         # let's just cast to float32 always
         return data.astype(np.float32)
+
+    def __iter__(self):
+        self._iter = product(enumerate(self.row_indices), enumerate(self.col_indices))
+        return self
+
+    def __next__(self) -> tuple[pygfx.Texture, tuple[int, int], tuple[slice, slice]]:
+        """
+        Iterate through each Texture within the texture array
+
+        Returns
+        -------
+        Texture, tuple[int, int], tuple[slice, slice]
+            | Texture: pygfx.Texture
+            | tuple[int, int]: chunk index, i.e corresponding index of ``self.buffer`` array
+            | tuple[slice, slice]: data slice of big array in this chunk and Texture
+        """
+        (chunk_row, data_row_start), (chunk_col, data_col_start) = next(self._iter)
+
+        # indices for to self.buffer for this chunk
+        chunk_index = (chunk_row, chunk_col)
+
+        # stop indices of big data array for this chunk
+        row_stop = min(self.value.shape[0] - 1, data_row_start + WGPU_MAX_TEXTURE_SIZE)
+        col_stop = min(self.value.shape[1] - 1, data_col_start + WGPU_MAX_TEXTURE_SIZE)
+
+        # row and column slices that slice the data for this chunk from the big data array
+        data_slice = (slice(data_row_start, row_stop), slice(data_col_start, col_stop))
+
+        # texture for this chunk
+        texture = self.buffer[chunk_index]
+
+        return texture, chunk_index, data_slice
 
     def __getitem__(self, item):
         return self.value[item]
