@@ -74,7 +74,7 @@ class HistogramLUT(Graphic):
 
         self._text_vmin = TextGraphic(
             text=vmin_str,
-            size=16,
+            font_size=16,
             position=(0, 0),
             anchor="top-left",
             outline_color="black",
@@ -85,7 +85,7 @@ class HistogramLUT(Graphic):
 
         self._text_vmax = TextGraphic(
             text=vmax_str,
-            size=16,
+            font_size=16,
             position=(0, 0),
             anchor="bottom-left",
             outline_color="black",

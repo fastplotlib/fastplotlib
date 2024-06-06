@@ -22,5 +22,8 @@ from ._base import (
     FeatureEvent,
     to_gpu_supported_dtype,
 )
+
+from ._text import TextData, FontSize, TextFaceColor, TextOutlineColor, TextOutlineThickness
+
 from ._selection_features import LinearSelectionFeature, LinearRegionSelectionFeature
 from ._common import Name, Offset, Rotation, Visible, Deleted
