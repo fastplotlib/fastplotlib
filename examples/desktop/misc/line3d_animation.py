@@ -25,10 +25,6 @@ fig = fpl.Figure(cameras="3d")
 
 line_graphic = fig[0,0].add_line(data=spiral, thickness=3, cmap='jet')
 
-# make axes visible
-fig[0,0].set_axes_visibility(True)
-fig[0,0].set_grid_visibility(True)
-
 marker = fig[0,0].add_scatter(data=spiral[0], sizes=10, name="marker")
 
 marker_index = 0
