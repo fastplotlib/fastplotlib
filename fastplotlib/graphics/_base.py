@@ -123,6 +123,7 @@ class Graphic:
         name: str = None,
         offset: np.ndarray | list | tuple = (0.0, 0.0, 0.0),
         rotation: np.ndarray | list | tuple = (0.0, 0.0, 0.0, 1.0),
+        visible: bool = True,
         metadata: Any = None,
     ):
         """
@@ -164,7 +165,7 @@ class Graphic:
         self._deleted = Deleted(False)
         self._rotation = Rotation(rotation)
         self._offset = Offset(offset)
-        self._visible = Visible(True)
+        self._visible = Visible(visible)
         self._block_events = False
 
     @property
@@ -175,6 +176,8 @@ class Graphic:
 
     def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
+
+        self.world_object.visible = self.visible
 
         # set offset if it's not (0., 0., 0.)
         if not all(self.world_object.world.position == self.offset):
