@@ -75,7 +75,7 @@ class HistogramLUT(Graphic):
         self._text_vmin = TextGraphic(
             text=vmin_str,
             font_size=16,
-            position=(0, 0),
+            offset=(0, 0, 0),
             anchor="top-left",
             outline_color="black",
             outline_thickness=1,
@@ -86,7 +86,7 @@ class HistogramLUT(Graphic):
         self._text_vmax = TextGraphic(
             text=vmax_str,
             font_size=16,
-            position=(0, 0),
+            offset=(0, 0, 0),
             anchor="bottom-left",
             outline_color="black",
             outline_thickness=1,
@@ -269,7 +269,6 @@ class HistogramLUT(Graphic):
         bounds = (edges[0], edges[-1])
         limits = (edges_flanked[0], edges_flanked[-11])
         origin = (hist_scaled.max() / 2, 0)
-        # self.linear_region.fill.world.position = (*origin, -2)
 
         if reset_vmin_vmax:
             # reset according to the new data
