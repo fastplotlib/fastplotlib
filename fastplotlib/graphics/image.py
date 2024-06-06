@@ -68,7 +68,7 @@ class ImageGraphic(Graphic):
     features = {"data", "cmap", "vmin", "vmax"}
 
     @property
-    def data(self) -> NDArray:
+    def data(self) -> TextureArray:
         """Get or set the image data"""
         return self._data
 
