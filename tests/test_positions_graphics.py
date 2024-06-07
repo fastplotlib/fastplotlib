@@ -132,10 +132,6 @@ def test_uniform_color(graphic_type, colors, uniform_color, alpha):
         )
 
 
-def test_uniform_size():
-    pass
-
-
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize(
     "data", [generate_positions_spiral_data(v) for v in ["y", "xy", "xyz"]]
@@ -324,12 +320,18 @@ def test_sizes(sizes):
 
     graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
+    assert isinstance(graphic.sizes, PointsSizesFeature)
+    assert isinstance(graphic._sizes, PointsSizesFeature)
     assert len(data) == len(graphic.sizes)
 
     if sizes is None:
         sizes = 1  # default sizes
 
     npt.assert_almost_equal(graphic.sizes.value, sizes)
+
+
+def test_uniform_size():
+    pass
 
 
 @pytest.mark.parametrize(
