@@ -27,7 +27,7 @@ class LineGraphic(PositionsGraphic):
         data: Any,
         thickness: float = 2.0,
         colors: str | np.ndarray | Iterable = "w",
-        uniform_colors: bool = False,
+        uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
         cmap_values: np.ndarray | Iterable = None,
@@ -70,7 +70,7 @@ class LineGraphic(PositionsGraphic):
         super().__init__(
             data=data,
             colors=colors,
-            uniform_colors=uniform_colors,
+            uniform_color=uniform_color,
             alpha=alpha,
             cmap=cmap,
             cmap_values=cmap_values,
@@ -85,7 +85,7 @@ class LineGraphic(PositionsGraphic):
         else:
             MaterialCls = pygfx.LineMaterial
 
-        if uniform_colors:
+        if uniform_color:
             geometry = pygfx.Geometry(positions=self._data.buffer)
             material = MaterialCls(
                 thickness=self.thickness, color_mode="uniform", pick_write=True

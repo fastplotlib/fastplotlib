@@ -134,8 +134,9 @@ class VertexColors(BufferManager):
 
 
 class UniformColor(GraphicFeature):
-    def __init__(self, value: str | np.ndarray | tuple | list | pygfx.Color):
-        self._value = pygfx.Color(value)
+    def __init__(self, value: str | np.ndarray | tuple | list | pygfx.Color, alpha: float = 1.0):
+        v = (*tuple(pygfx.Color(value))[:-1], alpha)  # apply alpha
+        self._value = pygfx.Color(v)
         super().__init__()
 
     @property
@@ -328,12 +329,14 @@ class VertexCmap(BufferManager):
         vertex_colors: VertexColors,
         cmap_name: str | None,
         cmap_values: np.ndarray | None,
+        alpha: float = 1.0
     ):
         super().__init__(data=vertex_colors.buffer)
 
         self._vertex_colors = vertex_colors
         self._cmap_name = cmap_name
         self._cmap_values = cmap_values
+        self._alpha = alpha
 
         if self._cmap_name is not None:
             if not isinstance(self._cmap_name, str):
@@ -351,6 +354,7 @@ class VertexCmap(BufferManager):
                 cmap_name=self._cmap_name,
                 cmap_values=self._cmap_values,
             )
+            colors[:, -1] = alpha
             # set vertex colors from cmap
             self._vertex_colors[:] = colors
 
@@ -373,6 +377,7 @@ class VertexCmap(BufferManager):
         colors = parse_cmap_values(
             n_colors=n_elements, cmap_name=cmap_name, cmap_values=self._cmap_values
         )
+        colors[:, -1] = self.alpha
 
         self._cmap_name = cmap_name
         self._vertex_colors[key] = colors
@@ -407,6 +412,8 @@ class VertexCmap(BufferManager):
             n_colors=self.value.shape[0], cmap_name=self._cmap_name, cmap_values=values
         )
 
+        colors[:, -1] = self.alpha
+
         self._cmap_values = values
 
         if indices is None:
@@ -415,6 +422,17 @@ class VertexCmap(BufferManager):
         self._vertex_colors[indices] = colors
 
         self._emit_event("cmap.values", indices, values)
+
+    @property
+    def alpha(self) -> float:
+        return self._alpha
+
+    @alpha.setter
+    def alpha(self, value: float, indices: slice | list | np.ndarray = None):
+        self._vertex_colors[indices, -1] = value
+        self._alpha = value
+
+        self._emit_event("cmap.alpha", indices, value)
 
     def __len__(self):
         raise NotImplementedError("len not implemented for `cmap`, use len(colors) instead")

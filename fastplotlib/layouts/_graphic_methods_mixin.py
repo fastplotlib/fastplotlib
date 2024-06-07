@@ -184,7 +184,7 @@ class GraphicMethodsMixin:
         data: Any,
         thickness: float = 2.0,
         colors: Union[str, numpy.ndarray, Iterable] = "w",
-        uniform_colors: bool = False,
+        uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
         cmap_values: Union[numpy.ndarray, Iterable] = None,
@@ -220,27 +220,8 @@ class GraphicMethodsMixin:
         z_position: float, optional
             z-axis position for placing the graphic
 
-        kwargs
+        **kwargs
             passed to Graphic
-
-        Features
-        --------
-
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
-
-        **colors**: :class:`.ColorFeature`
-            Manages the color buffer, allows regular and fancy indexing.
-
-        **cmap**: :class:`.CmapFeature`
-            Manages the cmap, wraps :class:`.ColorFeature` to add additional functionality relevant to cmaps.
-
-        **thickness**: :class:`.ThicknessFeature`
-            Manages the thickness feature of the lines.
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
 
         """
@@ -249,7 +230,7 @@ class GraphicMethodsMixin:
             data,
             thickness,
             colors,
-            uniform_colors,
+            uniform_color,
             alpha,
             cmap,
             cmap_values,
@@ -345,7 +326,7 @@ class GraphicMethodsMixin:
         self,
         data: Any,
         colors: str | numpy.ndarray | tuple[float] | list[float] | list[str] = "w",
-        uniform_colors: bool = False,
+        uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
         cmap_values: numpy.ndarray = None,
@@ -407,7 +388,7 @@ class GraphicMethodsMixin:
             ScatterGraphic,
             data,
             colors,
-            uniform_colors,
+            uniform_color,
             alpha,
             cmap,
             cmap_values,
@@ -420,12 +401,12 @@ class GraphicMethodsMixin:
     def add_text(
         self,
         text: str,
-        position: Tuple[int] = (0, 0, 0),
-        size: int = 14,
-        face_color: Union[str, numpy.ndarray] = "w",
-        outline_color: Union[str, numpy.ndarray] = "w",
-        outline_thickness=0,
+        font_size: float | int = 14,
+        face_color: str | numpy.ndarray | list[float] | tuple[float] = "w",
+        outline_color: str | numpy.ndarray | list[float] | tuple[float] = "w",
+        outline_thickness: float | int = 0,
         screen_space: bool = True,
+        offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
         **kwargs
     ) -> TextGraphic:
@@ -436,13 +417,10 @@ class GraphicMethodsMixin:
         Parameters
         ----------
         text: str
-            display text
+            text to display
 
-        position: int tuple, default (0, 0, 0)
-            int tuple indicating location of text in scene
-
-        size: int, default 10
-            text size
+        font_size: float | int, default 10
+            font size
 
         face_color: str or array, default "w"
             str or RGBA array to set the color of the text
@@ -450,14 +428,14 @@ class GraphicMethodsMixin:
         outline_color: str or array, default "w"
             str or RGBA array to set the outline color of the text
 
-        outline_thickness: int, default 0
+        outline_thickness: float | int, default 0
             text outline thickness
 
         screen_space: bool = True
-            whether the text is rendered in screen space, in contrast to world space
+            if True, text size is in screen space, if False the text size is in data space
 
-        name: str, optional
-            name of graphic, passed to Graphic
+        offset: (float, float, float), default (0, 0, 0)
+            places the text at this location
 
         anchor: str, default "middle-center"
             position of the origin of the text
@@ -466,16 +444,20 @@ class GraphicMethodsMixin:
             * Vertical values: "top", "middle", "baseline", "bottom"
             * Horizontal values: "left", "center", "right"
 
+        **kwargs
+            passed to Graphic
+
+
         """
         return self._create_graphic(
             TextGraphic,
             text,
-            position,
-            size,
+            font_size,
             face_color,
             outline_color,
             outline_thickness,
             screen_space,
+            offset,
             anchor,
             **kwargs
         )

@@ -257,7 +257,7 @@ class LineCollection(GraphicCollection):
                 data=d,
                 thickness=_s,
                 colors=_c,
-                uniform_colors=uniform_colors,
+                uniform_color=uniform_colors,
                 cmap=_cmap,
                 metadata=_m,
                 isolated_buffer=isolated_buffer,

@@ -31,7 +31,7 @@ class ScatterGraphic(PositionsGraphic):
         self,
         data: Any,
         colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
-        uniform_colors: bool = False,
+        uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
         cmap_values: np.ndarray = None,
@@ -91,7 +91,7 @@ class ScatterGraphic(PositionsGraphic):
         super().__init__(
             data=data,
             colors=colors,
-            uniform_colors=uniform_colors,
+            uniform_color=uniform_color,
             alpha=alpha,
             cmap=cmap,
             cmap_values=cmap_values,
@@ -105,7 +105,7 @@ class ScatterGraphic(PositionsGraphic):
         geo_kwargs = {"positions": self._data.buffer}
         material_kwargs = {"pick_write": True}
 
-        if uniform_colors:
+        if uniform_color:
             material_kwargs["color_mode"] = "uniform"
             material_kwargs["color"] = self.colors.value
         else:
