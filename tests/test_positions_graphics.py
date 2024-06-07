@@ -75,8 +75,55 @@ def test_change_thickness():
     pass
 
 
-def test_uniform_color():
-    pass
+@pytest.mark.parametrize("graphic_type", ["line", "scatter"])
+@pytest.mark.parametrize("colors", [None, *generate_color_inputs("b")])
+@pytest.mark.parametrize(
+    "uniform_color", [True, False]
+)
+@pytest.mark.parametrize(
+    "alpha", [1.0, 0.5, 0.0]
+)
+def test_uniform_color(graphic_type, colors, uniform_color, alpha):
+    fig = fpl.Figure()
+
+    kwargs = dict()
+    for kwarg in ["colors", "uniform_color", "alpha"]:
+        if locals()[kwarg] is not None:
+            # add to dict of arguments that will be passed
+            kwargs[kwarg] = locals()[kwarg]
+
+    data = generate_positions_spiral_data("xy")
+
+    if graphic_type == "line":
+        graphic = fig[0, 0].add_line(data=data, **kwargs)
+    elif graphic_type == "scatter":
+        graphic = fig[0, 0].add_scatter(data=data, **kwargs)
+
+    if uniform_color:
+        assert isinstance(graphic._colors, UniformColor)
+        assert isinstance(graphic.colors, pygfx.Color)
+        if colors is None:
+            # default white
+            assert graphic.colors == pygfx.Color([1, 1, 1, alpha])
+        else:
+            # should be blue
+            assert graphic.colors == pygfx.Color([0, 0, 1, alpha])
+
+        # check pygfx material
+        npt.assert_almost_equal(graphic.world_object.material.color, np.asarray(graphic.colors))
+    else:
+        assert isinstance(graphic._colors, VertexColors)
+        assert isinstance(graphic.colors, VertexColors)
+        if colors is None:
+            # default white
+            npt.assert_almost_equal(graphic.colors.value,
+                                    np.repeat([[1, 1, 1, alpha]], repeats=len(graphic.data), axis=0))
+        else:
+            # blue
+            npt.assert_almost_equal(graphic.colors.value, np.repeat([[0, 0, 1, alpha]], repeats=len(graphic.data), axis=0))
+
+        # check geometry
+        npt.assert_almost_equal(graphic.world_object.geometry.colors.data, graphic.colors.value)
 
 
 def test_uniform_size():
@@ -225,7 +272,7 @@ def test_cmap(
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("cmap", ["jet"])
-@pytest.mark.parametrize("colors", [*generate_color_inputs("multi")])
+@pytest.mark.parametrize("colors", [None, *generate_color_inputs("multi")])  # cmap arg overrides colors
 @pytest.mark.parametrize(
     "uniform_color", [True]  # none of these will work with a uniform buffer
 )
