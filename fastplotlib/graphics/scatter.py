@@ -107,14 +107,14 @@ class ScatterGraphic(PositionsGraphic):
 
         if uniform_color:
             material_kwargs["color_mode"] = "uniform"
-            material_kwargs["color"] = self.colors.value
+            material_kwargs["color"] = self.colors
         else:
             material_kwargs["color_mode"] = "vertex"
             geo_kwargs["colors"] = self.colors.buffer
 
         if uniform_sizes:
             material_kwargs["size_mode"] = "uniform"
-            material_kwargs["size"] = self.sizes.value
+            material_kwargs["size"] = self.sizes
         else:
             material_kwargs["size_mode"] = "vertex"
             geo_kwargs["sizes"] = self.sizes.buffer
