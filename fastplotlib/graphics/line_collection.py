@@ -11,7 +11,8 @@ from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 
 
-class LineSelection(CollectionIndexer):
+class LineCollectionProperties:
+    """Mix-in class for LineCollection properties"""
     @property
     def colors(self) -> CollectionFeature:
         return CollectionFeature(self.graphics, "colors")
@@ -79,9 +80,9 @@ class LineSelection(CollectionIndexer):
             g.thickness = v
 
 
-class LineCollection(GraphicCollection):
+class LineCollection(GraphicCollection, LineCollectionProperties):
     child_type = LineGraphic
-    _indexer = LineSelection
+    _indexer = CollectionIndexer
 
     def __init__(
         self,

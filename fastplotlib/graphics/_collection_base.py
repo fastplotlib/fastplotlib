@@ -64,7 +64,7 @@ class CollectionIndexer:
         """
 
         self._selection = selection
-        self._features = features
+        self.features = features
 
     @property
     def graphics(self) -> np.ndarray[Graphic]:
@@ -110,24 +110,17 @@ class CollectionIndexer:
         """
 
         decorating = not callable(args[0])
-        callback = None if decorating else args[0]
         types = args if decorating else args[1:]
 
-        if not all(t in set(PYGFX_EVENTS).union(self._features) for t in types):
-            raise KeyError(
-                f"event types must be strings for a valid event from the following:\n"
-                f"{PYGFX_EVENTS + list(self._features)}"
-            )
-
-        def decorator(_callback):
-            for g in self.graphics:
-                g.add_event_handler(_callback, types)
-            return _callback
-
         if decorating:
+            def decorator(_callback):
+                for g in self.graphics:
+                    g.add_event_handler(_callback, *types)
+                return _callback
             return decorator
 
-        return decorator(callback)
+        for g in self.graphics:
+            g.add_event_handler(*args)
 
     def remove_event_handler(self, callback, *types):
         for g in self.graphics:
@@ -151,6 +144,10 @@ class GraphicCollection(Graphic):
 
     child_type: type
     _indexer: type
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls.features = cls.child_type.features
 
     def __init__(self, name: str = None):
         super().__init__(name)
@@ -222,14 +219,52 @@ class GraphicCollection(Graphic):
         self._graphics_changed = True
 
     def add_event_handler(self, *args):
-        raise NotImplementedError("Slice graphic collection to add event handlers")
+        """
+        Register an event handler.
+
+        Parameters
+        ----------
+        callback: callable, the first argument
+            Event handler, must accept a single event  argument
+        *types: list of strings
+            A list of event types, ex: "click", "data", "colors", "pointer_down"
+
+        For the available renderer event types, see
+        https://jupyter-rfb.readthedocs.io/en/stable/events.html
+
+        All feature support events, i.e. ``graphic.features`` will give a set of
+        all features that are evented
+
+        Can also be used as a decorator.
+
+        Example
+        -------
+
+        .. code-block:: py
+
+            def my_handler(event):
+                print(event)
+
+            graphic.add_event_handler(my_handler, "pointer_up", "pointer_down")
+
+        Decorator usage example:
+
+        .. code-block:: py
+
+            @graphic.add_event_handler("click")
+            def my_handler(event):
+                print(event)
+        """
+
+        return self[:].add_event_handler(*args)
 
     def remove_event_handler(self, callback, *types):
-        raise NotImplementedError("Slice graphic collection to remove event handlers")
+        self[:].remove_event_handler(callback, *types)
 
     def __getitem__(self, key) -> CollectionIndexer:
         return self._indexer(
             selection=self.graphics[key],
+            features=self.features
         )
 
     def __del__(self):
