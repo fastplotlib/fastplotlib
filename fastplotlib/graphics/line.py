@@ -62,27 +62,8 @@ class LineGraphic(PositionsGraphic):
         z_position: float, optional
             z-axis position for placing the graphic
 
-        kwargs
+        **kwargs
             passed to Graphic
-
-        Features
-        --------
-
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
-
-        **colors**: :class:`.ColorFeature`
-            Manages the color buffer, allows regular and fancy indexing.
-
-        **cmap**: :class:`.CmapFeature`
-            Manages the cmap, wraps :class:`.ColorFeature` to add additional functionality relevant to cmaps.
-
-        **thickness**: :class:`.ThicknessFeature`
-            Manages the thickness feature of the lines.
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
         """
 
