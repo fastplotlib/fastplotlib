@@ -5,6 +5,7 @@ Welcome to fastplotlib's documentation!
    :caption: User Guide
    :maxdepth:  2
 
+   Guide <user_guide/guide.rst>
    GPU Info <user_guide/gpu>
 
 .. toctree::
