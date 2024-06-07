@@ -40,10 +40,7 @@ def test_positions_data_event(graphic: fpl.LineGraphic | fpl.ScatterGraphic):
 
     value = np.cos(np.linspace(0, 10 * np.pi, 10))[3:8]
 
-    info = {
-        "key": (slice(3, 8, None), 1),
-        "value": value
-    }
+    info = {"key": (slice(3, 8, None), 1), "value": value}
 
     expected = FeatureEvent(type="data", info=info)
 
@@ -51,7 +48,9 @@ def test_positions_data_event(graphic: fpl.LineGraphic | fpl.ScatterGraphic):
         assert expected_feature_event.type == event_to_test.type
         assert expected_feature_event.info["key"] == event_to_test.info["key"]
 
-        npt.assert_almost_equal(expected_feature_event.info["value"], event_to_test.info["value"])
+        npt.assert_almost_equal(
+            expected_feature_event.info["value"], event_to_test.info["value"]
+        )
 
         # should only have one event handler
         assert graphic._event_handlers["data"] == {handler}
