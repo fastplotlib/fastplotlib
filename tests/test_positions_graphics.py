@@ -12,6 +12,7 @@ from fastplotlib.graphics._features import (
     UniformColor,
     UniformSizes,
     PointsSizesFeature,
+    Thickness
 )
 
 from .utils import (
@@ -153,6 +154,9 @@ def test_positions_graphics_data(
     elif graphic_type == "scatter":
         graphic = fig[0, 0].add_scatter(data=data)
 
+    assert isinstance(graphic._data, VertexPositions)
+    assert isinstance(graphic.data, VertexPositions)
+
     # n_datapoints must match
     assert len(graphic.data.value) == len(data)
 
@@ -265,6 +269,8 @@ def test_cmap(
     if cmap_values is not None:
         truth = truth[cmap_values]
 
+    assert isinstance(graphic._cmap, VertexCmap)
+
     assert graphic.cmap.name == cmap
 
     # make sure buffer is identical
@@ -302,18 +308,58 @@ def test_incompatible_args(graphic_type, cmap, colors, uniform_color):
             graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
 
-# @pytest.mark.parametrize(
-#     "sizes", [None, 5.0, np.linspace(3, 8, 10)]
-# )
-# def test_sizes():
-#     pass
-#
-#
-# @pytest.mark.parametrize(
-#     "thickness", [None, 5.0]
-# )
-# def test_thicnkess():
-#     pass
+@pytest.mark.parametrize(
+    "sizes", [None, 5.0, np.linspace(3, 8, 10, dtype=np.float32)]
+)
+def test_sizes(sizes):
+    fig = fpl.Figure()
+
+    kwargs = dict()
+    for kwarg in ["sizes"]:
+        if locals()[kwarg] is not None:
+            # add to dict of arguments that will be passed
+            kwargs[kwarg] = locals()[kwarg]
+
+    data = generate_positions_spiral_data("xy")
+
+    graphic = fig[0, 0].add_scatter(data=data, **kwargs)
+
+    assert len(data) == len(graphic.sizes)
+
+    if sizes is None:
+        sizes = 1  # default sizes
+
+    npt.assert_almost_equal(graphic.sizes.value, sizes)
+
+
+@pytest.mark.parametrize(
+    "thickness", [None, 0.5, 5.0]
+)
+def test_thicnkess(thickness):
+    fig = fpl.Figure()
+
+    kwargs = dict()
+    for kwarg in ["thickness"]:
+        if locals()[kwarg] is not None:
+            # add to dict of arguments that will be passed
+            kwargs[kwarg] = locals()[kwarg]
+
+    data = generate_positions_spiral_data("xy")
+
+    graphic = fig[0, 0].add_line(data=data, **kwargs)
+
+    if thickness is None:
+        thickness = 2.0  # default thickness
+
+    assert isinstance(graphic._thickness, Thickness)
+
+    assert graphic.thickness == thickness
+
+    if thickness == 0.5:
+        assert isinstance(graphic.world_object.material, pygfx.LineThinMaterial)
+
+    else:
+        assert isinstance(graphic.world_object.material, pygfx.LineMaterial)
 
 
 def test_line_feature_events():
