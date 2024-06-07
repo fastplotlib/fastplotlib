@@ -3,7 +3,6 @@ from itertools import product
 from math import ceil
 
 import numpy as np
-from numpy.typing import NDArray
 
 import pygfx
 from ._base import GraphicFeature, FeatureEvent, WGPU_MAX_TEXTURE_SIZE
@@ -58,7 +57,7 @@ class TextureArray(GraphicFeature):
         self._shared: int = 0
 
     @property
-    def value(self) -> NDArray:
+    def value(self) -> np.ndarray:
         return self._value
 
     def set_value(self, graphic, value):
@@ -141,6 +140,9 @@ class TextureArray(GraphicFeature):
 
         event = FeatureEvent("data", info={"key": key, "value": value})
         self._call_event_handlers(event)
+
+    def __len__(self):
+        return self.buffer.size
 
 
 class ImageVmin(GraphicFeature):
