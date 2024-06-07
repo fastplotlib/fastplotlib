@@ -97,7 +97,13 @@ def generate_slice_indices(kind: int):
 
     offset, size = (min(indices), np.ptp(indices) + 1)
 
-    return {"slice": s, "indices": indices, "others": others, "offset": offset, "size": size}
+    return {
+        "slice": s,
+        "indices": indices,
+        "others": others,
+        "offset": offset,
+        "size": size,
+    }
 
 
 def assert_pending_uploads(buffer: pygfx.Buffer, offset: int, size: int):
@@ -109,3 +115,37 @@ def assert_pending_uploads(buffer: pygfx.Buffer, offset: int, size: int):
     # sometimes when slicing with step, it  will over-estimate size
     # but it overestimates to upload 1 extra point so it's fine
     assert (upload_size == size) or (upload_size == size + 1)
+
+
+def generate_positions_spiral_data(inputs: str) -> np.ndarray:
+    """
+    Generates a spiral/spring
+
+    Only 10 points so a very pointy spiral but easier to spot changes :D
+    """
+    xs = np.linspace(0, 10 * np.pi, 10)
+    ys = np.sin(xs)
+    zs = np.cos(xs)
+
+    match inputs:
+        case "y":
+            data = ys
+
+        case "xy":
+            data = np.column_stack([xs, ys])
+
+        case "xyz":
+            data = np.column_stack([xs, ys, zs])
+
+    return data.astype(np.float32)
+
+
+def generate_color_inputs(name: str) -> list[str, np.ndarray, list, tuple]:
+    color = pygfx.Color(name)
+
+    s = name
+    a = np.array(color)
+    l = list(color)
+    t = tuple(color)
+
+    return [s, a, l, t]

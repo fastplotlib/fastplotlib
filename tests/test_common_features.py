@@ -15,8 +15,7 @@ def make_graphic(kind: str, **kwargs):
             return fpl.LineGraphic(np.random.rand(10), **kwargs)
         case "scatter":
             return fpl.ScatterGraphic(
-                np.column_stack([np.random.rand(10), np.random.rand(10)]),
-                **kwargs
+                np.column_stack([np.random.rand(10), np.random.rand(10)]), **kwargs
             )
         case "text":
             return fpl.TextGraphic("bah", **kwargs)
@@ -84,7 +83,9 @@ def test_name(graphic):
     assert DECORATED_EVENT_VALUE.info["value"] == "test_dec"
 
 
-@pytest.mark.parametrize("graphic", [make_graphic(k, name="init_name") for k in graphic_kinds])
+@pytest.mark.parametrize(
+    "graphic", [make_graphic(k, name="init_name") for k in graphic_kinds]
+)
 def test_name_init(graphic):
     assert graphic.name == "init_name"
 
@@ -95,22 +96,22 @@ def test_name_init(graphic):
 
 @pytest.mark.parametrize("graphic", [make_graphic(k) for k in graphic_kinds])
 def test_offset(graphic):
-    npt.assert_almost_equal(graphic.offset, (0., 0., 0.))
-    npt.assert_almost_equal(graphic.world_object.world.position, (0., 0., 0.))
+    npt.assert_almost_equal(graphic.offset, (0.0, 0.0, 0.0))
+    npt.assert_almost_equal(graphic.world_object.world.position, (0.0, 0.0, 0.0))
 
     graphic.add_event_handler(return_event, "offset")
 
-    graphic.offset = (1., 2., 3.)
+    graphic.offset = (1.0, 2.0, 3.0)
 
-    npt.assert_almost_equal(graphic.offset, (1., 2., 3.))
-    npt.assert_almost_equal(graphic.world_object.world.position, (1., 2., 3.))
+    npt.assert_almost_equal(graphic.offset, (1.0, 2.0, 3.0))
+    npt.assert_almost_equal(graphic.world_object.world.position, (1.0, 2.0, 3.0))
 
     global RETURN_EVENT_VALUE
 
     assert RETURN_EVENT_VALUE.type == "offset"
     assert RETURN_EVENT_VALUE.graphic is graphic
     assert RETURN_EVENT_VALUE.target is graphic.world_object
-    npt.assert_almost_equal(RETURN_EVENT_VALUE.info["value"], (1., 2., 3.))
+    npt.assert_almost_equal(RETURN_EVENT_VALUE.info["value"], (1.0, 2.0, 3.0))
 
     # check removing event handler
     RETURN_EVENT_VALUE = None
@@ -120,7 +121,7 @@ def test_offset(graphic):
     graphic.offset = (4, 5, 6)
 
     assert RETURN_EVENT_VALUE is None
-    npt.assert_almost_equal(graphic.offset, (4., 5., 6.))
+    npt.assert_almost_equal(graphic.offset, (4.0, 5.0, 6.0))
 
     # check adding event with decorator
     global DECORATED_EVENT_VALUE
@@ -132,23 +133,25 @@ def test_offset(graphic):
         DECORATED_EVENT_VALUE = ev
 
     graphic.offset = (7, 8, 9)
-    npt.assert_almost_equal(graphic.offset, (7., 8., 9.))
+    npt.assert_almost_equal(graphic.offset, (7.0, 8.0, 9.0))
 
     assert DECORATED_EVENT_VALUE.type == "offset"
     assert DECORATED_EVENT_VALUE.graphic is graphic
     assert DECORATED_EVENT_VALUE.target is graphic.world_object
-    assert DECORATED_EVENT_VALUE.info["value"] == (7., 8., 9.)
+    assert DECORATED_EVENT_VALUE.info["value"] == (7.0, 8.0, 9.0)
 
 
-@pytest.mark.parametrize("graphic", [make_graphic(k, offset=(3., 4., 5.)) for k in graphic_kinds])
+@pytest.mark.parametrize(
+    "graphic", [make_graphic(k, offset=(3.0, 4.0, 5.0)) for k in graphic_kinds]
+)
 def test_offset_init(graphic):
-    npt.assert_almost_equal(graphic.offset, (3., 4., 5.))
-    npt.assert_almost_equal(graphic.world_object.world.position, (3., 4., 5.))
+    npt.assert_almost_equal(graphic.offset, (3.0, 4.0, 5.0))
+    npt.assert_almost_equal(graphic.world_object.world.position, (3.0, 4.0, 5.0))
 
-    graphic.offset = (6., 7., 8.)
+    graphic.offset = (6.0, 7.0, 8.0)
 
-    npt.assert_almost_equal(graphic.offset, (6., 7., 8.))
-    npt.assert_almost_equal(graphic.world_object.world.position, (6., 7., 8.))
+    npt.assert_almost_equal(graphic.offset, (6.0, 7.0, 8.0))
+    npt.assert_almost_equal(graphic.world_object.world.position, (6.0, 7.0, 8.0))
 
 
 @pytest.mark.parametrize("graphic", [make_graphic(k) for k in graphic_kinds])
@@ -158,17 +161,21 @@ def test_rotation(graphic):
 
     graphic.add_event_handler(return_event, "rotation")
 
-    graphic.rotation = (0., 0., 0.30001427, 0.95393471)
+    graphic.rotation = (0.0, 0.0, 0.30001427, 0.95393471)
 
-    npt.assert_almost_equal(graphic.rotation, (0., 0., 0.30001427, 0.95393471))
-    npt.assert_almost_equal(graphic.world_object.world.rotation, (0., 0., 0.30001427, 0.95393471))
+    npt.assert_almost_equal(graphic.rotation, (0.0, 0.0, 0.30001427, 0.95393471))
+    npt.assert_almost_equal(
+        graphic.world_object.world.rotation, (0.0, 0.0, 0.30001427, 0.95393471)
+    )
 
     global RETURN_EVENT_VALUE
 
     assert RETURN_EVENT_VALUE.type == "rotation"
     assert RETURN_EVENT_VALUE.graphic is graphic
     assert RETURN_EVENT_VALUE.target is graphic.world_object
-    npt.assert_almost_equal(RETURN_EVENT_VALUE.info["value"], (0., 0., 0.30001427, 0.95393471))
+    npt.assert_almost_equal(
+        RETURN_EVENT_VALUE.info["value"], (0.0, 0.0, 0.30001427, 0.95393471)
+    )
 
     # check removing event handler
     RETURN_EVENT_VALUE = None
@@ -198,10 +205,18 @@ def test_rotation(graphic):
     assert DECORATED_EVENT_VALUE.info["value"] == (0, 0, 0.6, 0.8)
 
 
-@pytest.mark.parametrize("graphic", [make_graphic(k, rotation=(0., 0., 0.30001427, 0.95393471)) for k in graphic_kinds])
+@pytest.mark.parametrize(
+    "graphic",
+    [
+        make_graphic(k, rotation=(0.0, 0.0, 0.30001427, 0.95393471))
+        for k in graphic_kinds
+    ],
+)
 def test_rotation(graphic):
-    npt.assert_almost_equal(graphic.rotation, (0., 0., 0.30001427, 0.95393471))
-    npt.assert_almost_equal(graphic.world_object.world.rotation, (0., 0., 0.30001427, 0.95393471))
+    npt.assert_almost_equal(graphic.rotation, (0.0, 0.0, 0.30001427, 0.95393471))
+    npt.assert_almost_equal(
+        graphic.world_object.world.rotation, (0.0, 0.0, 0.30001427, 0.95393471)
+    )
 
     graphic.rotation = (0, 0.0, 0.6, 0.8)
 
@@ -209,7 +224,7 @@ def test_rotation(graphic):
     npt.assert_almost_equal(graphic.world_object.world.rotation, (0, 0.0, 0.6, 0.8))
 
 
-@pytest.mark.parametrize("graphic", [make_graphic(k)for k in graphic_kinds])
+@pytest.mark.parametrize("graphic", [make_graphic(k) for k in graphic_kinds])
 def test_visible(graphic):
     assert graphic.visible is True
     assert graphic.world_object.visible is True
@@ -255,7 +270,9 @@ def test_visible(graphic):
     assert DECORATED_EVENT_VALUE.info["value"] is False
 
 
-@pytest.mark.parametrize("graphic", [make_graphic(k, visible=False) for k in graphic_kinds])
+@pytest.mark.parametrize(
+    "graphic", [make_graphic(k, visible=False) for k in graphic_kinds]
+)
 def test_visible(graphic):
     assert graphic.visible is False
     assert graphic.world_object.visible is False

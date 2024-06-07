@@ -17,19 +17,21 @@ COFFEE_IMAGE = iio.imread("imageio:coffee.png")
 
 def check_set_slice(
     data: np.ndarray,
-        image_graphic: fpl.ImageGraphic,
-        row_slice: slice,
-        col_slice: slice,
+    image_graphic: fpl.ImageGraphic,
+    row_slice: slice,
+    col_slice: slice,
 ):
     image_graphic.data[row_slice, col_slice] = 1
     data_values = image_graphic.data.value
     npt.assert_almost_equal(data_values[row_slice, col_slice], 1)
 
     # make sure other vals unchanged
-    npt.assert_almost_equal(data_values[:row_slice.start], data[:row_slice.start])
-    npt.assert_almost_equal(data_values[row_slice.stop:], data[row_slice.stop:])
-    npt.assert_almost_equal(data_values[:, :col_slice.start], data[:, :col_slice.start])
-    npt.assert_almost_equal(data_values[:, col_slice.stop:], data[:, col_slice.stop:])
+    npt.assert_almost_equal(data_values[: row_slice.start], data[: row_slice.start])
+    npt.assert_almost_equal(data_values[row_slice.stop :], data[row_slice.stop :])
+    npt.assert_almost_equal(
+        data_values[:, : col_slice.start], data[:, : col_slice.start]
+    )
+    npt.assert_almost_equal(data_values[:, col_slice.stop :], data[:, col_slice.stop :])
 
 
 def test_gray():
@@ -134,9 +136,13 @@ def test_rgba():
 
     # fancy indexing
     # set the blue values of some pixels with an alpha > 1
-    ig.data[COFFEE_IMAGE[:, :, -1] > 200] = np.array([0.0, 0.0, 1.0, 0.6]).astype(np.float32)
+    ig.data[COFFEE_IMAGE[:, :, -1] > 200] = np.array([0.0, 0.0, 1.0, 0.6]).astype(
+        np.float32
+    )
 
-    rgba[COFFEE_IMAGE[:, :, -1] > 200] = np.array([0.0, 0.0, 1.0, 0.6]).astype(np.float32)
+    rgba[COFFEE_IMAGE[:, :, -1] > 200] = np.array([0.0, 0.0, 1.0, 0.6]).astype(
+        np.float32
+    )
 
     # check that fancy indexing works
     npt.assert_almost_equal(ig.data.value, rgba)

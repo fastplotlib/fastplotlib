@@ -16,7 +16,7 @@ def generate_data(input_type: str) -> np.ndarray | float:
         one of "sine", "cosine", or "float"
     """
     if input_type == "float":
-        return 10.
+        return 10.0
     xs = np.linspace(0, 10 * np.pi, 10)
 
     if input_type == "sine":
@@ -37,7 +37,9 @@ def test_create_buffer(data):
         npt.assert_almost_equal(sizes[:], generate_data("sine"))
 
 
-@pytest.mark.parametrize("slice_method", [generate_slice_indices(i) for i in range(0, 16)])
+@pytest.mark.parametrize(
+    "slice_method", [generate_slice_indices(i) for i in range(0, 16)]
+)
 @pytest.mark.parametrize("user_input", ["float", "cosine"])
 def test_slice(slice_method: dict, user_input: str):
     data = generate_data("sine")
@@ -55,8 +57,8 @@ def test_slice(slice_method: dict, user_input: str):
 
     match user_input:
         case "float":
-            sizes[s] = 20.
-            truth = np.full(len(indices), 20.)
+            sizes[s] = 20.0
+            truth = np.full(len(indices), 20.0)
             npt.assert_almost_equal(sizes[s], truth)
             npt.assert_almost_equal(sizes[indices], truth)
             # make sure other sizes not modified

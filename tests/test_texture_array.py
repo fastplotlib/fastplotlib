@@ -20,14 +20,14 @@ def make_data(n_rows: int, n_cols: int) -> np.ndarray:
 
 
 def check_texture_array(
-        data: np.ndarray,
-        ta: TextureArray,
-        buffer_size: int,
-        buffer_shape: tuple[int, int],
-        row_indices_size: int,
-        col_indices_size: int,
-        row_indices_values: np.ndarray,
-        col_indices_values: np.ndarray,
+    data: np.ndarray,
+    ta: TextureArray,
+    buffer_size: int,
+    buffer_shape: tuple[int, int],
+    row_indices_size: int,
+    col_indices_size: int,
+    row_indices_values: np.ndarray,
+    col_indices_values: np.ndarray,
 ):
 
     npt.assert_almost_equal(ta.value, data)
@@ -50,8 +50,12 @@ def check_texture_array(
         data_row_start_index = chunk_row * WGPU_MAX_TEXTURE_SIZE
         data_col_start_index = chunk_col * WGPU_MAX_TEXTURE_SIZE
 
-        data_row_stop_index = min(data.shape[0] - 1, data_row_start_index + WGPU_MAX_TEXTURE_SIZE)
-        data_col_stop_index = min(data.shape[1] - 1, data_col_start_index + WGPU_MAX_TEXTURE_SIZE)
+        data_row_stop_index = min(
+            data.shape[0] - 1, data_row_start_index + WGPU_MAX_TEXTURE_SIZE
+        )
+        data_col_stop_index = min(
+            data.shape[1] - 1, data_col_start_index + WGPU_MAX_TEXTURE_SIZE
+        )
 
         row_slice = slice(data_row_start_index, data_row_stop_index)
         col_slice = slice(data_col_start_index, data_col_stop_index)
@@ -64,10 +68,10 @@ def check_set_slice(data, ta, row_slice, col_slice):
     npt.assert_almost_equal(ta[row_slice, col_slice], 1)
 
     # make sure other vals unchanged
-    npt.assert_almost_equal(ta[:row_slice.start], data[:row_slice.start])
-    npt.assert_almost_equal(ta[row_slice.stop:], data[row_slice.stop:])
-    npt.assert_almost_equal(ta[:, :col_slice.start], data[:, :col_slice.start])
-    npt.assert_almost_equal(ta[:, col_slice.stop:], data[:, col_slice.stop:])
+    npt.assert_almost_equal(ta[: row_slice.start], data[: row_slice.start])
+    npt.assert_almost_equal(ta[row_slice.stop :], data[row_slice.stop :])
+    npt.assert_almost_equal(ta[:, : col_slice.start], data[:, : col_slice.start])
+    npt.assert_almost_equal(ta[:, col_slice.stop :], data[:, col_slice.stop :])
 
 
 def test_small_texture():
@@ -84,7 +88,7 @@ def test_small_texture():
         row_indices_size=1,
         col_indices_size=1,
         row_indices_values=np.array([0]),
-        col_indices_values=np.array([0])
+        col_indices_values=np.array([0]),
     )
 
     check_set_slice(data, ta, slice(50, 200), slice(600, 800))
@@ -104,7 +108,7 @@ def test_texture_at_limit():
         row_indices_size=1,
         col_indices_size=1,
         row_indices_values=np.array([0]),
-        col_indices_values=np.array([0])
+        col_indices_values=np.array([0]),
     )
 
     check_set_slice(data, ta, slice(5000, 8000), slice(2000, 3000))
@@ -123,7 +127,7 @@ def test_wide():
         row_indices_size=2,
         col_indices_size=3,
         row_indices_values=np.array([0, 8192]),
-        col_indices_values=np.array([0, 8192, 16384])
+        col_indices_values=np.array([0, 8192, 16384]),
     )
 
     check_set_slice(data, ta, slice(6_000, 9_000), slice(12_000, 18_000))
@@ -142,7 +146,7 @@ def test_tall():
         row_indices_size=3,
         col_indices_size=2,
         row_indices_values=np.array([0, 8192, 16384]),
-        col_indices_values=np.array([0, 8192])
+        col_indices_values=np.array([0, 8192]),
     )
 
     check_set_slice(data, ta, slice(12_000, 18_000), slice(6_000, 9_000))
@@ -161,7 +165,7 @@ def test_square():
         row_indices_size=3,
         col_indices_size=3,
         row_indices_values=np.array([0, 8192, 16384]),
-        col_indices_values=np.array([0, 8192, 16384])
+        col_indices_values=np.array([0, 8192, 16384]),
     )
 
     check_set_slice(data, ta, slice(12_000, 18_000), slice(16_000, 19_000))
