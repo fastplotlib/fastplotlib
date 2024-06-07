@@ -201,6 +201,13 @@ class BufferManager(GraphicFeature):
         """Number of graphics that share this buffer"""
         return self._shared
 
+    @property
+    def __array_interface__(self):
+        raise BufferError(
+            f"Cannot use graphic feature buffer as an array, use <feature-name>.value instead.\n"
+            f"Examples: line.data.value, line.colors.value, scatter.data.value, scatter.sizes.value"
+        )
+
     def __getitem__(self, item):
         return self.buffer.data[item]
 
@@ -314,6 +321,9 @@ class BufferManager(GraphicFeature):
         event = FeatureEvent(type, info=event_info)
 
         self._call_event_handlers(event)
+
+    def __len__(self):
+        raise NotImplementedError
 
     def __repr__(self):
         return f"{self.__class__.__name__} buffer data:\n" f"{self.value.__repr__()}"

@@ -129,6 +129,9 @@ class VertexColors(BufferManager):
         event = FeatureEvent("colors", info=event_info)
         self._call_event_handlers(event)
 
+    def __len__(self):
+        return len(self.buffer.data)
+
 
 class UniformColor(GraphicFeature):
     def __init__(self, value: str | np.ndarray | tuple | list | pygfx.Color):
@@ -220,6 +223,9 @@ class VertexPositions(BufferManager):
 
         self._emit_event("data", key, value)
 
+    def __len__(self):
+        return len(self.buffer.data)
+
 
 class PointsSizesFeature(BufferManager):
     """
@@ -288,6 +294,9 @@ class PointsSizesFeature(BufferManager):
         self._update_range(key)
 
         self._emit_event("sizes", key, value)
+
+    def __len__(self):
+        return len(self.buffer.data)
 
 
 class Thickness(GraphicFeature):
@@ -406,3 +415,6 @@ class VertexCmap(BufferManager):
         self._vertex_colors[indices] = colors
 
         self._emit_event("cmap.values", indices, values)
+
+    def __len__(self):
+        raise NotImplementedError("len not implemented for `cmap`, use len(colors) instead")
