@@ -2,7 +2,13 @@ import pygfx
 import numpy as np
 
 from ._base import Graphic
-from ._features import TextData, FontSize, TextFaceColor, TextOutlineColor, TextOutlineThickness
+from ._features import (
+    TextData,
+    FontSize,
+    TextFaceColor,
+    TextOutlineColor,
+    TextOutlineThickness,
+)
 
 
 class TextGraphic(Graphic):
@@ -94,7 +100,7 @@ class TextGraphic(Graphic):
 
     @property
     def font_size(self) -> float | int:
-        """"text font size"""
+        """ "text font size"""
         return self._font_size.value
 
     @font_size.setter

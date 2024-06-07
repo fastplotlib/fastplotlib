@@ -25,7 +25,12 @@ class _ImageTile(pygfx.Image):
     """
 
     def __init__(
-        self, geometry, material, data_slice: tuple[slice, slice], chunk_index: tuple[int, int], **kwargs
+        self,
+        geometry,
+        material,
+        data_slice: tuple[slice, slice],
+        chunk_index: tuple[int, int],
+        **kwargs,
     ):
         super().__init__(geometry, material, **kwargs)
 
@@ -35,7 +40,10 @@ class _ImageTile(pygfx.Image):
     def _wgpu_get_pick_info(self, pick_value):
         pick_info = super()._wgpu_get_pick_info(pick_value)
 
-        data_row_start, data_col_start = self.data_slice[0].start, self.data_slice[1].start
+        data_row_start, data_col_start = (
+            self.data_slice[0].start,
+            self.data_slice[1].start,
+        )
 
         # add the actual data row and col start indices
         x, y = pick_info["index"]
@@ -52,7 +60,7 @@ class _ImageTile(pygfx.Image):
         return {
             **pick_info,
             "data_slice": self.data_slice,
-            "chunk_index": self.chunk_index
+            "chunk_index": self.chunk_index,
         }
 
     @property
@@ -221,7 +229,7 @@ class ImageGraphic(Graphic):
                 geometry=pygfx.Geometry(grid=texture),
                 material=self._material,
                 data_slice=data_slice,  # used to parse pick_info
-                chunk_index=chunk_index
+                chunk_index=chunk_index,
             )
 
             # row and column start index for this chunk

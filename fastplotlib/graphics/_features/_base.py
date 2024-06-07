@@ -287,11 +287,9 @@ class BufferManager(GraphicFeature):
 
     def _update_range(
         self,
-        key: int
-        | slice
-        | np.ndarray[int | bool]
-        | list[bool | int]
-        | tuple[slice, ...],
+        key: (
+            int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]
+        ),
     ):
         """
         Uses key from slicing to determine the offset and

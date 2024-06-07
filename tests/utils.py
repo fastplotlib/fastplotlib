@@ -140,9 +140,22 @@ def generate_positions_spiral_data(inputs: str) -> np.ndarray:
     return data.astype(np.float32)
 
 
-def generate_color_inputs(name: str) -> list[str, np.ndarray, list, tuple] | list[str, np.ndarray]:
+def generate_color_inputs(
+    name: str,
+) -> list[str, np.ndarray, list, tuple] | list[str, np.ndarray]:
     if name == "multi":
-        s = ["r", "g", "b", "cyan", "magenta", "green", "yellow", "white", "purple", "orange"]
+        s = [
+            "r",
+            "g",
+            "b",
+            "cyan",
+            "magenta",
+            "green",
+            "yellow",
+            "white",
+            "purple",
+            "orange",
+        ]
         array = np.vstack([pygfx.Color(c) for c in s])
         return [s, array]
 
@@ -157,14 +170,16 @@ def generate_color_inputs(name: str) -> list[str, np.ndarray, list, tuple] | lis
 
 
 MULTI_COLORS_TRUTH = np.array(
-    [[1.0, 0.0, 0.0, 1.0],
-     [0.0, 1.0, 0.0, 1.0],
-     [0.0, 0.0, 1.0, 1.0],
-     [0.0, 1.0, 1.0, 1.0],
-     [1.0, 0.0, 1.0, 1.0],
-     [0.0, 0.501960813999176, 0.0, 1.0],
-     [1.0, 1.0, 0.0, 1.0],
-     [1.0, 1.0, 1.0, 1.0],
-     [0.501960813999176, 0.0, 0.501960813999176, 1.0],
-     [1.0, 0.6470588445663452, 0.0, 1.0]]
+    [
+        [1.0, 0.0, 0.0, 1.0],
+        [0.0, 1.0, 0.0, 1.0],
+        [0.0, 0.0, 1.0, 1.0],
+        [0.0, 1.0, 1.0, 1.0],
+        [1.0, 0.0, 1.0, 1.0],
+        [0.0, 0.501960813999176, 0.0, 1.0],
+        [1.0, 1.0, 0.0, 1.0],
+        [1.0, 1.0, 1.0, 1.0],
+        [0.501960813999176, 0.0, 0.501960813999176, 1.0],
+        [1.0, 0.6470588445663452, 0.0, 1.0],
+    ]
 )

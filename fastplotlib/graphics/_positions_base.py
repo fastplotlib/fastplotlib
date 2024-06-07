@@ -4,7 +4,13 @@ import numpy as np
 
 import pygfx
 from ._base import Graphic
-from ._features import VertexPositions, VertexColors, UniformColor, VertexCmap, PointsSizesFeature
+from ._features import (
+    VertexPositions,
+    VertexColors,
+    UniformColor,
+    VertexCmap,
+    PointsSizesFeature,
+)
 
 
 class PositionsGraphic(Graphic):
@@ -84,7 +90,10 @@ class PositionsGraphic(Graphic):
                     self._colors = VertexColors("w", n_colors=self._data.value.shape[0])
                     # make cmap using vertex colors buffer
                     self._cmap = VertexCmap(
-                        self._colors, cmap_name=cmap, cmap_values=cmap_values, alpha=alpha
+                        self._colors,
+                        cmap_name=cmap,
+                        cmap_values=cmap_values,
+                        alpha=alpha,
                     )
             elif isinstance(cmap, VertexCmap):
                 # use existing cmap instance
@@ -99,12 +108,16 @@ class PositionsGraphic(Graphic):
                 self._colors = colors
                 self._colors._shared += 1
                 # blank colormap instance
-                self._cmap = VertexCmap(self._colors, cmap_name=None, cmap_values=None, alpha=alpha)
+                self._cmap = VertexCmap(
+                    self._colors, cmap_name=None, cmap_values=None, alpha=alpha
+                )
             else:
                 if uniform_color:
                     if not isinstance(colors, str):  # not a single color
                         if not len(colors) in [3, 4]:  # not an RGB(A) array
-                            raise TypeError("must pass a single color if using `uniform_colors=True`")
+                            raise TypeError(
+                                "must pass a single color if using `uniform_colors=True`"
+                            )
                     self._colors = UniformColor(colors, alpha=alpha)
                     self._cmap = None
                 else:

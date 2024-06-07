@@ -134,7 +134,9 @@ class VertexColors(BufferManager):
 
 
 class UniformColor(GraphicFeature):
-    def __init__(self, value: str | np.ndarray | tuple | list | pygfx.Color, alpha: float = 1.0):
+    def __init__(
+        self, value: str | np.ndarray | tuple | list | pygfx.Color, alpha: float = 1.0
+    ):
         v = (*tuple(pygfx.Color(value))[:-1], alpha)  # apply alpha
         self._value = pygfx.Color(v)
         super().__init__()
@@ -329,7 +331,7 @@ class VertexCmap(BufferManager):
         vertex_colors: VertexColors,
         cmap_name: str | None,
         cmap_values: np.ndarray | None,
-        alpha: float = 1.0
+        alpha: float = 1.0,
     ):
         super().__init__(data=vertex_colors.buffer)
 
@@ -435,4 +437,6 @@ class VertexCmap(BufferManager):
         self._emit_event("cmap.alpha", indices, value)
 
     def __len__(self):
-        raise NotImplementedError("len not implemented for `cmap`, use len(colors) instead")
+        raise NotImplementedError(
+            "len not implemented for `cmap`, use len(colors) instead"
+        )
