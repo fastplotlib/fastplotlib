@@ -285,11 +285,37 @@ def test_cmap(
 @pytest.mark.parametrize(
     "uniform_color", [True]  # none of these will work with a uniform buffer
 )
-def test_incompatible_color_args(graphic_type, cmap, colors, uniform_color):
+def test_incompatible_cmap_color_args(graphic_type, cmap, colors, uniform_color):
     fig = fpl.Figure()
 
     kwargs = dict()
     for kwarg in ["cmap", "colors", "uniform_color"]:
+        if locals()[kwarg] is not None:
+            # add to dict of arguments that will be passed
+            kwargs[kwarg] = locals()[kwarg]
+
+    data = generate_positions_spiral_data("xy")
+
+    if graphic_type == "line":
+        with pytest.raises(TypeError):
+            graphic = fig[0, 0].add_line(data=data, **kwargs)
+    elif graphic_type == "scatter":
+        with pytest.raises(TypeError):
+            graphic = fig[0, 0].add_scatter(data=data, **kwargs)
+
+
+@pytest.mark.parametrize("graphic_type", ["line", "scatter"])
+@pytest.mark.parametrize(
+    "colors", [*generate_color_inputs("multi")]
+)
+@pytest.mark.parametrize(
+    "uniform_color", [True]  # none of these will work with a uniform buffer
+)
+def test_incompatible_color_args(graphic_type, colors, uniform_color):
+    fig = fpl.Figure()
+
+    kwargs = dict()
+    for kwarg in ["colors", "uniform_color"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -340,12 +366,11 @@ def test_sizes(sizes, uniform_size):
 @pytest.mark.parametrize(
     "uniform_size", [True]
 )
-@pytest.mark.parametrize()
 def test_uniform_size(sizes, uniform_size):
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["sizes"]:
+    for kwarg in ["sizes", "uniform_size"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
