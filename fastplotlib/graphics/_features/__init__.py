@@ -1,7 +1,7 @@
 from ._positions_graphics import (
     VertexColors,
     UniformColor,
-    UniformSizes,
+    UniformSize,
     Thickness,
     VertexPositions,
     PointsSizesFeature,

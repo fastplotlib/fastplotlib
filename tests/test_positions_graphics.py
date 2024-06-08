@@ -10,7 +10,7 @@ from fastplotlib.graphics._features import (
     VertexColors,
     VertexCmap,
     UniformColor,
-    UniformSizes,
+    UniformSize,
     PointsSizesFeature,
     Thickness
 )
@@ -285,7 +285,7 @@ def test_cmap(
 @pytest.mark.parametrize(
     "uniform_color", [True]  # none of these will work with a uniform buffer
 )
-def test_incompatible_args(graphic_type, cmap, colors, uniform_color):
+def test_incompatible_color_args(graphic_type, cmap, colors, uniform_color):
     fig = fpl.Figure()
 
     kwargs = dict()
@@ -307,7 +307,10 @@ def test_incompatible_args(graphic_type, cmap, colors, uniform_color):
 @pytest.mark.parametrize(
     "sizes", [None, 5.0, np.linspace(3, 8, 10, dtype=np.float32)]
 )
-def test_sizes(sizes):
+@pytest.mark.parametrize(
+    "uniform_size", [None, False]
+)
+def test_sizes(sizes, uniform_size):
     fig = fpl.Figure()
 
     kwargs = dict()
@@ -328,10 +331,37 @@ def test_sizes(sizes):
         sizes = 1  # default sizes
 
     npt.assert_almost_equal(graphic.sizes.value, sizes)
+    npt.assert_almost_equal(graphic.world_object.geometry.sizes.data, graphic.sizes.value)
 
 
-def test_uniform_size():
-    pass
+@pytest.mark.parametrize(
+    "sizes", [None, 5.0]
+)
+@pytest.mark.parametrize(
+    "uniform_size", [True]
+)
+@pytest.mark.parametrize()
+def test_uniform_size(sizes, uniform_size):
+    fig = fpl.Figure()
+
+    kwargs = dict()
+    for kwarg in ["sizes"]:
+        if locals()[kwarg] is not None:
+            # add to dict of arguments that will be passed
+            kwargs[kwarg] = locals()[kwarg]
+
+    data = generate_positions_spiral_data("xy")
+
+    graphic = fig[0, 0].add_scatter(data=data, **kwargs)
+
+    assert isinstance(graphic.sizes, (float, int))
+    assert isinstance(graphic._sizes, UniformSize)
+
+    if sizes is None:
+        sizes = 1  # default sizes
+
+    npt.assert_almost_equal(graphic.sizes, sizes)
+    npt.assert_almost_equal(graphic.world_object.material.size, sizes)
 
 
 @pytest.mark.parametrize(

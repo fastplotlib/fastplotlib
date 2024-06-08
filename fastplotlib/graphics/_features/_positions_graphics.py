@@ -154,7 +154,7 @@ class UniformColor(GraphicFeature):
         self._call_event_handlers(event)
 
 
-class UniformSizes(GraphicFeature):
+class UniformSize(GraphicFeature):
     def __init__(self, value: int | float):
         self._value = float(value)
         super().__init__()
