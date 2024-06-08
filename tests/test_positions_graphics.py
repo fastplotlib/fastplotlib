@@ -58,6 +58,10 @@ TRUTH_CMAPS = {
 }
 
 
+# TODO: data slice int
+def test_data_slice_int():
+    pass
+
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize(
     "slice_method", [generate_slice_indices(i) for i in range(1, 16)]
@@ -117,14 +121,6 @@ def test_data_slice(graphic_type, slice_method, test_axis):
 
     # make sure correct offset and size marked for pending upload
     assert_pending_uploads(graphic.data.buffer, offset, size)
-
-
-def test_color_slice():
-    pass
-
-
-def test_cmap_slice():
-    pass
 
 
 def test_sizes_slice():
