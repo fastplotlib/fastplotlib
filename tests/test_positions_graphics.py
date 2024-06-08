@@ -19,6 +19,8 @@ from .utils import (
     generate_positions_spiral_data,
     generate_color_inputs,
     MULTI_COLORS_TRUTH,
+    generate_slice_indices,
+    assert_pending_uploads,
 )
 
 
@@ -56,8 +58,65 @@ TRUTH_CMAPS = {
 }
 
 
-def test_data_slice():
-    pass
+@pytest.mark.parametrize("graphic_type", ["line", "scatter"])
+@pytest.mark.parametrize(
+    "slice_method", [generate_slice_indices(i) for i in range(1, 16)]
+)  # same as slice methods in the buffer tests
+@pytest.mark.parametrize("test_axis", ["y", "xy", "xyz"])
+def test_data_slice(graphic_type, slice_method, test_axis):
+    fig = fpl.Figure()
+
+    data = generate_positions_spiral_data("xyz")
+
+    if graphic_type == "line":
+        graphic = fig[0, 0].add_line(data=data)
+
+    elif graphic_type == "scatter":
+        graphic = fig[0, 0].add_scatter(data=data)
+
+    s = slice_method["slice"]
+    indices = slice_method["indices"]
+    offset = slice_method["offset"]
+    size = slice_method["size"]
+    others = slice_method["others"]
+
+    # TODO: placeholder until I make a testing figure where we draw frames only on call
+    graphic.data.buffer._gfx_pending_uploads.clear()
+
+    match test_axis:
+        case "y":
+            graphic.data[s, 1] = -data[s, 1]
+            npt.assert_almost_equal(graphic.data[s, 1], -data[s, 1])
+            npt.assert_almost_equal(graphic.data[indices, 1], -data[indices, 1])
+            # make sure other points are not modified
+            npt.assert_almost_equal(
+                graphic.data[others, 1], data[others, 1]
+            )  # other points in same dimension
+            npt.assert_almost_equal(
+                graphic.data[:, 2:], data[:, 2:]
+            )  # dimensions that are not sliced
+
+        case "xy":
+            graphic.data[s, :-1] = -data[s, :-1]
+            npt.assert_almost_equal(graphic.data[s, :-1], -data[s, :-1])
+            npt.assert_almost_equal(graphic.data[indices, :-1], -data[s, :-1])
+            # make sure other points are not modified
+            npt.assert_almost_equal(
+                graphic.data[others, :-1], data[others, :-1]
+            )  # other points in the same dimensions
+            npt.assert_almost_equal(
+                graphic.data[:, -1], data[:, -1]
+            )  # dimensions that are not touched
+
+        case "xyz":
+            graphic.data[s] = -data[s]
+            npt.assert_almost_equal(graphic.data[s], -data[s])
+            npt.assert_almost_equal(graphic.data[indices], -data[s])
+            # make sure other points are not modified
+            npt.assert_almost_equal(graphic.data[others], data[others])
+
+    # make sure correct offset and size marked for pending upload
+    assert_pending_uploads(graphic.data.buffer, offset, size)
 
 
 def test_color_slice():
@@ -140,8 +199,7 @@ def test_positions_graphics_data(
     graphic_type,
     data,
 ):
-    # tests with multi-lines
-
+    # tests with different ways of passing positions data, x, xy and xyz
     fig = fpl.Figure()
 
     if graphic_type == "line":
