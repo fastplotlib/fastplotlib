@@ -94,7 +94,6 @@ class ScatterGraphic(PositionsGraphic):
         )
 
         n_datapoints = self.data.value.shape[0]
-        self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
 
         geo_kwargs = {"positions": self._data.buffer}
         material_kwargs = {"pick_write": True}
@@ -108,9 +107,11 @@ class ScatterGraphic(PositionsGraphic):
 
         if uniform_size:
             material_kwargs["size_mode"] = "uniform"
+            self._sizes = UniformSize(sizes)
             material_kwargs["size"] = self.sizes
         else:
             material_kwargs["size_mode"] = "vertex"
+            self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
             geo_kwargs["sizes"] = self.sizes.buffer
 
         world_object = pygfx.Points(
