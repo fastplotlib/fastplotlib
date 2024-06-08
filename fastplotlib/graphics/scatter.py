@@ -4,7 +4,7 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from ._features import PointsSizesFeature, UniformSizes
+from ._features import PointsSizesFeature, UniformSize
 
 
 class ScatterGraphic(PositionsGraphic):
@@ -16,7 +16,7 @@ class ScatterGraphic(PositionsGraphic):
         if isinstance(self._sizes, PointsSizesFeature):
             return self._sizes
 
-        elif isinstance(self._sizes, UniformSizes):
+        elif isinstance(self._sizes, UniformSize):
             return self._sizes.value
 
     @sizes.setter
@@ -24,7 +24,7 @@ class ScatterGraphic(PositionsGraphic):
         if isinstance(self._sizes, PointsSizesFeature):
             self._sizes[:] = value
 
-        elif isinstance(self._sizes, UniformSizes):
+        elif isinstance(self._sizes, UniformSize):
             self._sizes.set_value(self, value)
 
     def __init__(
@@ -37,7 +37,7 @@ class ScatterGraphic(PositionsGraphic):
         cmap_values: np.ndarray = None,
         isolated_buffer: bool = True,
         sizes: float | np.ndarray | Iterable[float] = 1,
-        uniform_sizes: bool = False,
+        uniform_size: bool = False,
         **kwargs,
     ):
         """
@@ -48,12 +48,16 @@ class ScatterGraphic(PositionsGraphic):
         data: array-like
             Scatter data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
 
-        sizes: float or iterable of float, optional, default 1.0
-            size of the scatter points
-
         colors: str, array, or iterable, default "w"
             specify colors as a single human readable string, a single RGBA array,
             or an iterable of strings or RGBA arrays
+
+        uniform_color: bool, default False
+            if True, uses a uniform buffer for the scatter point colors,
+            basically saves GPU VRAM when the entire line has a single color
+
+        alpha: float, optional, default 1.0
+            alpha value for the colors
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
@@ -62,29 +66,19 @@ class ScatterGraphic(PositionsGraphic):
         cmap_values: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
-        alpha: float, optional, default 1.0
-            alpha value for the colors
+        isolated_buffer: bool, default True
+            whether the buffers should be isolated from the user input array.
+            Generally always ``True``, ``False`` is for rare advanced use.
 
-        z_position: float, optional
-            z-axis position for placing the graphic
+        sizes: float or iterable of float, optional, default 1.0
+            size of the scatter points
+
+        uniform_size: bool, default False
+            if True, uses a uniform buffer for the scatter point sizes,
+            basically saves GPU VRAM when all scatter points are the same size
 
         kwargs
             passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
-
-        **colors**: :class:`.ColorFeature`
-            Manages the color buffer, allows regular and fancy indexing.
-
-        **cmap**: :class:`.CmapFeature`
-            Manages the cmap, wraps :class:`.ColorFeature` to add additional functionality relevant to cmaps.
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
         """
 
@@ -112,7 +106,7 @@ class ScatterGraphic(PositionsGraphic):
             material_kwargs["color_mode"] = "vertex"
             geo_kwargs["colors"] = self.colors.buffer
 
-        if uniform_sizes:
+        if uniform_size:
             material_kwargs["size_mode"] = "uniform"
             material_kwargs["size"] = self.sizes
         else:
