@@ -4,8 +4,9 @@ import pytest
 
 import pygfx
 
+import fastplotlib as fpl
 from fastplotlib.graphics._features import VertexColors
-from .utils import generate_slice_indices, assert_pending_uploads, generate_color_inputs
+from .utils import generate_slice_indices, assert_pending_uploads, generate_color_inputs, generate_positions_spiral_data
 
 
 def make_colors_buffer() -> VertexColors:
@@ -107,9 +108,24 @@ def test_tuple(slice_method):
 @pytest.mark.parametrize(
     "slice_method", [generate_slice_indices(i) for i in range(1, 16)]
 )
-def test_slice(color_input, slice_method: dict):
+@pytest.mark.parametrize(
+    "test_graphic", [False, "line", "scatter"]
+)
+def test_slice(color_input, slice_method: dict, test_graphic: bool):
     # slicing only first dim
-    colors = make_colors_buffer()
+    if test_graphic:
+        fig = fpl.Figure()
+
+        data = generate_positions_spiral_data("xyz")
+        if test_graphic == "line":
+            graphic = fig[0, 0].add_line(data=data)
+
+        elif test_graphic == "scatter":
+            graphic = fig[0, 0].add_scatter(data=data)
+
+        colors = graphic.colors
+    else:
+        colors = make_colors_buffer()
 
     # TODO: placeholder until I make a testing figure where we draw frames only on call
     colors.buffer._gfx_pending_uploads.clear()
