@@ -5,7 +5,7 @@ import pytest
 import pygfx
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import VertexColors
+from fastplotlib.graphics._features import VertexColors, FeatureEvent
 from .utils import generate_slice_indices, assert_pending_uploads, generate_color_inputs, generate_positions_spiral_data
 
 
@@ -103,6 +103,13 @@ def test_tuple(slice_method):
     npt.assert_almost_equal(colors[others], others_truth)
 
 
+EVENT_RETURN_VALUE: FeatureEvent = None
+
+def event_handler(ev):
+    global EVENT_RETURN_VALUE
+    EVENT_RETURN_VALUE = ev
+
+
 @pytest.mark.parametrize("color_input", generate_color_inputs("red"))
 # skip testing with int since that results in shape [1, 4] with np.repeat, int tested in independent unit test
 @pytest.mark.parametrize(
@@ -124,6 +131,9 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
             graphic = fig[0, 0].add_scatter(data=data)
 
         colors = graphic.colors
+
+        global EVENT_RETURN_VALUE
+        graphic.add_event_handler(event_handler, "colors")
     else:
         colors = make_colors_buffer()
 
@@ -142,6 +152,19 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
     npt.assert_almost_equal(colors[s], truth)
     npt.assert_almost_equal(colors[indices], truth)
 
+    # check event
+    if test_graphic:
+        global EVENT_RETURN_VALUE
+
+        assert EVENT_RETURN_VALUE.graphic == graphic
+        assert EVENT_RETURN_VALUE.target is graphic.world_object
+        if isinstance(s, slice):
+            assert EVENT_RETURN_VALUE.info["key"] == s
+        else:
+            npt.assert_almost_equal(EVENT_RETURN_VALUE.info["key"], s)
+        # assert EVENT_RETURN_VALUE.info["key"] == s
+        npt.assert_almost_equal(EVENT_RETURN_VALUE.info["value"], truth)
+
     # make sure correct offset and size marked for pending upload
     assert_pending_uploads(colors.buffer, offset, size)
 
@@ -152,3 +175,4 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
     # reset
     colors[:] = (1, 1, 1, 1)
     npt.assert_almost_equal(colors[:], np.repeat([[1.0, 1.0, 1.0, 1.0]], 10, axis=0))
+

@@ -63,6 +63,8 @@ class VertexColors(BufferManager):
         key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
         user_value: str | np.ndarray | tuple[float] | list[float] | list[str],
     ):
+        user_key = key
+
         if isinstance(key, tuple):
             # directly setting RGBA values for points, we do no parsing
             if not isinstance(user_value, (int, float, np.ndarray)):
@@ -122,10 +124,11 @@ class VertexColors(BufferManager):
             return
 
         event_info = {
-            "key": key,
+            "key": user_key,
             "value": value,
             "user_value": user_value,
         }
+
         event = FeatureEvent("colors", info=event_info)
         self._call_event_handlers(event)
 
