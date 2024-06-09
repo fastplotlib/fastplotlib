@@ -14,6 +14,14 @@ def make_colors_buffer() -> VertexColors:
     return colors
 
 
+EVENT_RETURN_VALUE: FeatureEvent = None
+
+
+def event_handler(ev):
+    global EVENT_RETURN_VALUE
+    EVENT_RETURN_VALUE = ev
+
+
 @pytest.mark.parametrize(
     "color_input",
     [
@@ -28,15 +36,42 @@ def test_create_buffer(color_input):
     npt.assert_almost_equal(colors[:], truth)
 
 
-def test_int():
+@pytest.mark.parametrize(
+    "test_graphic", [False, "line", "scatter"]
+)
+def test_int(test_graphic):
     # setting single points
-    colors = make_colors_buffer()
+    if test_graphic:
+        fig = fpl.Figure()
+
+        data = generate_positions_spiral_data("xyz")
+        if test_graphic == "line":
+            graphic = fig[0, 0].add_line(data=data)
+
+        elif test_graphic == "scatter":
+            graphic = fig[0, 0].add_scatter(data=data)
+
+        colors = graphic.colors
+        global EVENT_RETURN_VALUE
+        graphic.add_event_handler(event_handler, "colors")
+    else:
+        colors = make_colors_buffer()
+
     # TODO: placeholder until I make a testing figure where we draw frames only on call
     colors.buffer._gfx_pending_uploads.clear()
 
     colors[3] = "r"
     npt.assert_almost_equal(colors[3], [1.0, 0.0, 0.0, 1.0])
     assert colors.buffer._gfx_pending_uploads[-1] == (3, 1)
+
+    if test_graphic:
+        # test event
+        assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+        assert EVENT_RETURN_VALUE.graphic == graphic
+        assert EVENT_RETURN_VALUE.target is graphic.world_object
+        assert EVENT_RETURN_VALUE.info["key"] == 3
+        npt.assert_almost_equal(EVENT_RETURN_VALUE.info["value"], np.array([[1, 0, 0, 1]]))
+        assert EVENT_RETURN_VALUE.info["user_value"] == "r"
 
     colors[6] = [0.0, 1.0, 1.0, 1.0]
     npt.assert_almost_equal(colors[6], [0.0, 1.0, 1.0, 1.0])
@@ -52,11 +87,28 @@ def test_int():
 
 
 @pytest.mark.parametrize(
+    "test_graphic", [False, "line", "scatter"]
+)
+@pytest.mark.parametrize(
     "slice_method", [generate_slice_indices(i) for i in range(0, 16)]
 )
-def test_tuple(slice_method):
+def test_tuple(test_graphic, slice_method):
     # setting entire array manually
-    colors = make_colors_buffer()
+    if test_graphic:
+        fig = fpl.Figure()
+
+        data = generate_positions_spiral_data("xyz")
+        if test_graphic == "line":
+            graphic = fig[0, 0].add_line(data=data)
+
+        elif test_graphic == "scatter":
+            graphic = fig[0, 0].add_scatter(data=data)
+
+        colors = graphic.colors
+        global EVENT_RETURN_VALUE
+        graphic.add_event_handler(event_handler, "colors")
+    else:
+        colors = make_colors_buffer()
 
     s = slice_method["slice"]
     indices = slice_method["indices"]
@@ -67,13 +119,36 @@ def test_tuple(slice_method):
     truth = np.repeat([[0.5, 0.5, 0.5, 0.5]], repeats=len(indices), axis=0)
     npt.assert_almost_equal(colors[indices], truth)
 
+    if test_graphic:
+        # test event
+        assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+        assert EVENT_RETURN_VALUE.graphic == graphic
+        assert EVENT_RETURN_VALUE.target is graphic.world_object
+        assert EVENT_RETURN_VALUE.info["key"] == (s, slice(None))
+        npt.assert_almost_equal(EVENT_RETURN_VALUE.info["value"], truth)
+        assert EVENT_RETURN_VALUE.info["user_value"] == 0.5
+
     # check others are not modified
     others_truth = np.repeat([[1.0, 1.0, 1.0, 1.0]], repeats=len(others), axis=0)
     npt.assert_almost_equal(colors[others], others_truth)
 
     # reset
-    colors[:] = (1, 1, 1, 1)
-    npt.assert_almost_equal(colors[:], np.repeat([[1.0, 1.0, 1.0, 1.0]], 10, axis=0))
+    if test_graphic:
+        # test setter
+        graphic.colors = "w"
+    else:
+        colors[:] = [1, 1, 1, 1]
+    truth = np.repeat([[1.0, 1.0, 1.0, 1.0]], 10, axis=0)
+    npt.assert_almost_equal(colors[:], truth)
+
+    if test_graphic:
+        # test event
+        assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+        assert EVENT_RETURN_VALUE.graphic == graphic
+        assert EVENT_RETURN_VALUE.target is graphic.world_object
+        assert EVENT_RETURN_VALUE.info["key"] == slice(None)
+        npt.assert_almost_equal(EVENT_RETURN_VALUE.info["value"], truth)
+        assert EVENT_RETURN_VALUE.info["user_value"] == "w"
 
     # set just R values
     colors[s, 0] = 0.5
@@ -101,14 +176,6 @@ def test_tuple(slice_method):
     truth = np.repeat([[1.0, 1.0, 1.0, 0.2]], repeats=len(indices), axis=0)
     npt.assert_almost_equal(colors[indices], truth)
     npt.assert_almost_equal(colors[others], others_truth)
-
-
-EVENT_RETURN_VALUE: FeatureEvent = None
-
-
-def event_handler(ev):
-    global EVENT_RETURN_VALUE
-    EVENT_RETURN_VALUE = ev
 
 
 @pytest.mark.parametrize("color_input", generate_color_inputs("red"))
@@ -166,6 +233,10 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
             npt.assert_almost_equal(EVENT_RETURN_VALUE.info["key"], s)
         # assert EVENT_RETURN_VALUE.info["key"] == s
         npt.assert_almost_equal(EVENT_RETURN_VALUE.info["value"], truth)
+        if isinstance(color_input, str):
+            assert EVENT_RETURN_VALUE.info["user_value"] == color_input
+        else:
+            npt.assert_almost_equal(EVENT_RETURN_VALUE.info["user_value"], color_input)
 
     # make sure correct offset and size marked for pending upload
     assert_pending_uploads(colors.buffer, offset, size)
