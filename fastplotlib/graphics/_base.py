@@ -257,9 +257,9 @@ class Graphic:
             )
 
         def decorator(_callback):
-            _callback_injector = partial(
+            _callback_wrapper = partial(
                 self._handle_event, _callback
-            )  # adds graphic instance as attribute
+            )  # adds graphic instance as attribute and other things
 
             for t in types:
                 # add to our record
@@ -268,13 +268,13 @@ class Graphic:
                 if t in self._features:
                     # fpl feature event
                     feature = getattr(self, f"_{t}")
-                    feature.add_event_handler(_callback_injector)
+                    feature.add_event_handler(_callback_wrapper)
                 else:
                     # wrap pygfx event
-                    self.world_object._event_handlers[t].add(_callback_injector)
+                    self.world_object._event_handlers[t].add(_callback_wrapper)
 
                 # keep track of the partial too
-                self._event_handler_wrappers[t].add((_callback, _callback_injector))
+                self._event_handler_wrappers[t].add((_callback, _callback_wrapper))
             return _callback
 
         if decorating:
@@ -292,6 +292,18 @@ class Graphic:
         if event.type in self._features:
             # for feature events
             event._target = self.world_object
+
+        if isinstance(event, pygfx.PointerEvent):
+            # map from screen to world space and data space
+            world_xy = self._plot_area.map_screen_to_world(event)
+
+            # subtract offset to map to data
+            data_xy = world_xy - self.offset
+
+            # append attributes
+            event.x_world, event.y_world = world_xy[:2]
+            event.x_data, event.y_data = data_xy[:2]
+
 
         with log_exception(f"Error during handling {event.type} event"):
             callback(event)
