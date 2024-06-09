@@ -231,7 +231,6 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
             assert EVENT_RETURN_VALUE.info["key"] == s
         else:
             npt.assert_almost_equal(EVENT_RETURN_VALUE.info["key"], s)
-        # assert EVENT_RETURN_VALUE.info["key"] == s
         npt.assert_almost_equal(EVENT_RETURN_VALUE.info["value"], truth)
         if isinstance(color_input, str):
             assert EVENT_RETURN_VALUE.info["user_value"] == color_input
