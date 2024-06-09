@@ -304,7 +304,6 @@ class Graphic:
             event.x_world, event.y_world = world_xy[:2]
             event.x_data, event.y_data = data_xy[:2]
 
-
         with log_exception(f"Error during handling {event.type} event"):
             callback(event)
 
