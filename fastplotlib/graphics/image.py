@@ -71,7 +71,7 @@ class _ImageTile(pygfx.Image):
 
 
 class ImageGraphic(Graphic):
-    _features = {"data", "cmap", "vmin", "vmax"}
+    _features = {"data", "cmap", "vmin", "vmax", "interpolation", "cmap_interpolation"}
 
     @property
     def data(self) -> TextureArray:
