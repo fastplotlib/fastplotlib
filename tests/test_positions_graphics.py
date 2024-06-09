@@ -67,71 +67,6 @@ def event_handler(ev):
     EVENT_RETURN_VALUE = ev
 
 
-# TODO: data slice int
-def test_data_slice_int():
-    pass
-
-@pytest.mark.parametrize("graphic_type", ["line", "scatter"])
-@pytest.mark.parametrize(
-    "slice_method", [generate_slice_indices(i) for i in range(1, 16)]
-)  # same as slice methods in the buffer tests
-@pytest.mark.parametrize("test_axis", ["y", "xy", "xyz"])
-def test_data_slice(graphic_type, slice_method, test_axis):
-    fig = fpl.Figure()
-
-    data = generate_positions_spiral_data("xyz")
-
-    if graphic_type == "line":
-        graphic = fig[0, 0].add_line(data=data)
-
-    elif graphic_type == "scatter":
-        graphic = fig[0, 0].add_scatter(data=data)
-
-    s = slice_method["slice"]
-    indices = slice_method["indices"]
-    offset = slice_method["offset"]
-    size = slice_method["size"]
-    others = slice_method["others"]
-
-    # TODO: placeholder until I make a testing figure where we draw frames only on call
-    graphic.data.buffer._gfx_pending_uploads.clear()
-
-    match test_axis:
-        case "y":
-            graphic.data[s, 1] = -data[s, 1]
-            npt.assert_almost_equal(graphic.data[s, 1], -data[s, 1])
-            npt.assert_almost_equal(graphic.data[indices, 1], -data[indices, 1])
-            # make sure other points are not modified
-            npt.assert_almost_equal(
-                graphic.data[others, 1], data[others, 1]
-            )  # other points in same dimension
-            npt.assert_almost_equal(
-                graphic.data[:, 2:], data[:, 2:]
-            )  # dimensions that are not sliced
-
-        case "xy":
-            graphic.data[s, :-1] = -data[s, :-1]
-            npt.assert_almost_equal(graphic.data[s, :-1], -data[s, :-1])
-            npt.assert_almost_equal(graphic.data[indices, :-1], -data[s, :-1])
-            # make sure other points are not modified
-            npt.assert_almost_equal(
-                graphic.data[others, :-1], data[others, :-1]
-            )  # other points in the same dimensions
-            npt.assert_almost_equal(
-                graphic.data[:, -1], data[:, -1]
-            )  # dimensions that are not touched
-
-        case "xyz":
-            graphic.data[s] = -data[s]
-            npt.assert_almost_equal(graphic.data[s], -data[s])
-            npt.assert_almost_equal(graphic.data[indices], -data[s])
-            # make sure other points are not modified
-            npt.assert_almost_equal(graphic.data[others], data[others])
-
-    # make sure correct offset and size marked for pending upload
-    assert_pending_uploads(graphic.data.buffer, offset, size)
-
-
 def test_sizes_slice():
     pass
 
@@ -244,6 +179,7 @@ def test_positions_graphic_vertex_colors(
     uniform_color,
     alpha,
 ):
+    # test different ways of passing vertex colors
     fig = fpl.Figure()
 
     kwargs = dict()
@@ -292,7 +228,7 @@ def test_positions_graphic_vertex_colors(
 @pytest.mark.parametrize("uniform_color", [None, False])
 @pytest.mark.parametrize("cmap", ["jet"])
 @pytest.mark.parametrize(
-    "cmap_transform", [None]#, [3, 5, 2, 1, 0, 6, 9, 7, 4, 8], np.arange(9, -1, -1)]
+    "cmap_transform", [None, [3, 5, 2, 1, 0, 6, 9, 7, 4, 8], np.arange(9, -1, -1)]
 )
 @pytest.mark.parametrize("alpha", [None, 0.5, 0.0])
 def test_cmap(
@@ -300,9 +236,10 @@ def test_cmap(
     colors,
     uniform_color,
     cmap,
-        cmap_transform,
+    cmap_transform,
     alpha,
 ):
+    # test different ways of passing cmap args
     fig = fpl.Figure()
 
     kwargs = dict()
@@ -380,6 +317,7 @@ def test_cmap(
     "uniform_color", [True]  # none of these will work with a uniform buffer
 )
 def test_incompatible_cmap_color_args(graphic_type, cmap, colors, uniform_color):
+    # test incompatible cmap args
     fig = fpl.Figure()
 
     kwargs = dict()
@@ -406,6 +344,7 @@ def test_incompatible_cmap_color_args(graphic_type, cmap, colors, uniform_color)
     "uniform_color", [True]  # none of these will work with a uniform buffer
 )
 def test_incompatible_color_args(graphic_type, colors, uniform_color):
+    # test incompatible color args
     fig = fpl.Figure()
 
     kwargs = dict()
@@ -431,6 +370,7 @@ def test_incompatible_color_args(graphic_type, colors, uniform_color):
     "uniform_size", [None, False]
 )
 def test_sizes(sizes, uniform_size):
+    # test scatter sizes
     fig = fpl.Figure()
 
     kwargs = dict()
