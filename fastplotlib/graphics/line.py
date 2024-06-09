@@ -40,18 +40,19 @@ class LineGraphic(PositionsGraphic):
             specify colors as a single human-readable string, a single RGBA array,
             or an iterable of strings or RGBA arrays
 
+        uniform_color: bool, default ``False``
+            if True, uses a uniform buffer for the line color,
+            basically saves GPU VRAM when the entire line has a single color
+
+        alpha: float, optional, default 1.0
+            alpha value for the colors
+
         cmap: str, optional
             apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors"
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
-
-        alpha: float, optional, default 1.0
-            alpha value for the colors
-
-        z_position: float, optional
-            z-axis position for placing the graphic
 
         **kwargs
             passed to Graphic
@@ -98,7 +99,7 @@ class LineGraphic(PositionsGraphic):
 
     @property
     def thickness(self) -> float:
-        """Graphic name"""
+        """line thickness"""
         return self._thickness.value
 
     @thickness.setter

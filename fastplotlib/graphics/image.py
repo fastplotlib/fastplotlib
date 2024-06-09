@@ -116,18 +116,6 @@ class ImageGraphic(Graphic):
         kwargs:
             additional keyword arguments passed to Graphic
 
-        Features
-        --------
-
-        **data**: :class:`.HeatmapDataFeature`
-            Manages the data buffer displayed in the HeatmapGraphic
-
-        **cmap**: :class:`.HeatmapCmapFeature`
-            Manages the colormap
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene
-
         """
 
         super().__init__(**kwargs)

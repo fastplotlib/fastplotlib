@@ -44,7 +44,7 @@ class PositionsGraphic(Graphic):
 
     @property
     def cmap(self) -> VertexCmap:
-        """Control cmap"""
+        """Control the cmap, cmap transform, or cmap alpha"""
         return self._cmap
 
     @cmap.setter
@@ -100,7 +100,7 @@ class PositionsGraphic(Graphic):
                 self._cmap = cmap
                 self._colors = cmap._vertex_colors
             else:
-                raise TypeError
+                raise TypeError("`cmap` argument must be a <str> cmap name or an existing `VertexCmap` instance")
         else:
             # no cmap given
             if isinstance(colors, VertexColors):

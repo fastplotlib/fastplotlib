@@ -100,7 +100,10 @@ class VertexColors(BufferManager):
             if key.dtype == bool:
                 # make sure len is same
                 if not key.size == self.buffer.data.shape[0]:
-                    raise IndexError
+                    raise IndexError(
+                        f"Length of array for fancy indexing must match number of datapoints.\n"
+                        f"There are {len(self.buffer.data.shape[0])} datapoints and you have passed {key.size} indices"
+                    )
                 n_colors = np.count_nonzero(key)
 
             elif np.issubdtype(key.dtype, np.integer):
@@ -114,7 +117,10 @@ class VertexColors(BufferManager):
             value = parse_colors(user_value, n_colors)
 
         else:
-            raise TypeError
+            raise TypeError(
+                f"invalid key for setting colors, you may set colors using integer indices, slices, or "
+                f"fancy indexing using an array of integers or bool"
+            )
 
         self.buffer.data[key] = value
 
@@ -347,7 +353,9 @@ class VertexCmap(BufferManager):
 
         if self._cmap_name is not None:
             if not isinstance(self._cmap_name, str):
-                raise TypeError
+                raise TypeError(
+                    f"cmap name must be of type <str>, you have passed: {self._cmap_name} of type: {type(self._cmap_name)}"
+                )
 
             if self._transform is not None:
                 self._transform = np.asarray(self._transform)
