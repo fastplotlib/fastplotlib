@@ -71,10 +71,6 @@ def test_sizes_slice():
     pass
 
 
-def test_change_thickness():
-    pass
-
-
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("colors", [None, *generate_color_inputs("b")])
 @pytest.mark.parametrize("uniform_color", [True, False])
@@ -413,6 +409,12 @@ def test_uniform_size(sizes, uniform_size):
 
     npt.assert_almost_equal(graphic.sizes, sizes)
     npt.assert_almost_equal(graphic.world_object.material.size, sizes)
+
+    # test changing size
+    graphic.sizes = 10.0
+    assert isinstance(graphic.sizes, float)
+    assert isinstance(graphic._sizes, UniformSize)
+    assert graphic.sizes == 10.0
 
 
 @pytest.mark.parametrize("thickness", [None, 0.5, 5.0])

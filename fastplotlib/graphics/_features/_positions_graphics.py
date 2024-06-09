@@ -136,6 +136,7 @@ class VertexColors(BufferManager):
         return len(self.buffer.data)
 
 
+# Manages uniform color for line or scatter material
 class UniformColor(GraphicFeature):
     def __init__(
         self, value: str | np.ndarray | tuple | list | pygfx.Color, alpha: float = 1.0
@@ -157,6 +158,7 @@ class UniformColor(GraphicFeature):
         self._call_event_handlers(event)
 
 
+# manages uniform size for scatter material
 class UniformSize(GraphicFeature):
     def __init__(self, value: int | float):
         self._value = float(value)
@@ -166,9 +168,8 @@ class UniformSize(GraphicFeature):
     def value(self) -> float:
         return self._value
 
-    def set_value(self, graphic, value: str | np.ndarray | tuple | list | pygfx.Color):
-        value = pygfx.Color(value)
-        graphic.world_object.material.size = value
+    def set_value(self, graphic, value: float | int):
+        graphic.world_object.material.size = float(value)
         self._value = value
 
         event = FeatureEvent(type="sizes", info={"value": value})

@@ -76,9 +76,11 @@ class GraphicFeature:
 
     @property
     def value(self) -> Any:
+        """Graphic Feature value, must be implemented in subclass"""
         raise NotImplemented
 
     def set_value(self, graphic, value: float):
+        """Graphic Feature value setter, must be implemented in subclass"""
         raise NotImplementedError
 
     def block_events(self, val: bool):
@@ -97,10 +99,10 @@ class GraphicFeature:
         """
         Add an event handler. All added event handlers are called when this feature changes.
 
-        The ``handler`` can optionally accept a :class:`.FeatureEvent` as the first and only argument.
-        The ``FeatureEvent`` only has 2 attributes, ``type`` which denotes the type of event
-        as a ``str`` in the form of "<feature_name>", such as "color". And ``pick_info`` which contains
-        information about the event and Graphic that triggered it.
+        Used by `Graphic` classes to add to their event handlers, not meant for users. Users
+        add handlers to Graphic instances only.
+
+        The ``handler`` must accept a :class:`.FeatureEvent` as the first and only argument.
 
         Parameters
         ----------
@@ -174,6 +176,7 @@ class BufferManager(GraphicFeature):
         elif buffer_type == "buffer":
             self._buffer = pygfx.Buffer(bdata)
         elif buffer_type == "texture":
+            # TODO: placeholder, not currently used since TextureArray is used specifically for Image graphics
             self._buffer = pygfx.Texture(bdata, dim=texture_dim)
         else:
             raise ValueError(
@@ -185,7 +188,8 @@ class BufferManager(GraphicFeature):
         self._shared: int = 0
 
     @property
-    def value(self) -> NDArray:
+    def value(self) -> np.ndarray:
+        """numpy array object representing the data managed by this buffer"""
         return self.buffer.data
 
     def set_value(self, graphic, value):
@@ -194,6 +198,7 @@ class BufferManager(GraphicFeature):
 
     @property
     def buffer(self) -> pygfx.Buffer | pygfx.Texture:
+        """managed buffer"""
         return self._buffer
 
     @property
@@ -220,7 +225,7 @@ class BufferManager(GraphicFeature):
         upper_bound: int,
     ):
         """
-        parse offset and size for one dimension
+        parse offset and size for first, i.e. n_datapoints, dimension
         """
         if isinstance(key, int):
             # simplest case
