@@ -406,6 +406,7 @@ class VertexCmap(BufferManager):
 
     @property
     def transform(self) -> np.ndarray | None:
+        """Get or set the cmap transform. Maps values from the transform array to the cmap colors"""
         return self._transform
 
     @transform.setter
@@ -438,6 +439,7 @@ class VertexCmap(BufferManager):
 
     @property
     def alpha(self) -> float:
+        """Get or set the alpha level"""
         return self._alpha
 
     @alpha.setter
