@@ -21,6 +21,8 @@ Properties
     :toctree: PointsSizesFeature_api
 
     PointsSizesFeature.buffer
+    PointsSizesFeature.shared
+    PointsSizesFeature.value
 
 Methods
 ~~~~~~~
@@ -31,4 +33,5 @@ Methods
     PointsSizesFeature.block_events
     PointsSizesFeature.clear_event_handlers
     PointsSizesFeature.remove_event_handler
+    PointsSizesFeature.set_value
 

@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: Deleted_api
 
+    Deleted.value
 
 Methods
 ~~~~~~~
@@ -30,4 +31,5 @@ Methods
     Deleted.block_events
     Deleted.clear_event_handlers
     Deleted.remove_event_handler
+    Deleted.set_value
 

@@ -20,14 +20,20 @@ Properties
 .. autosummary::
     :toctree: ImageGraphic_api
 
-    ImageGraphic.children
+    ImageGraphic.block_events
+    ImageGraphic.cmap
+    ImageGraphic.cmap_interpolation
+    ImageGraphic.data
+    ImageGraphic.deleted
+    ImageGraphic.event_handlers
+    ImageGraphic.events
+    ImageGraphic.interpolation
     ImageGraphic.name
-    ImageGraphic.position
-    ImageGraphic.position_x
-    ImageGraphic.position_y
-    ImageGraphic.position_z
+    ImageGraphic.offset
     ImageGraphic.rotation
     ImageGraphic.visible
+    ImageGraphic.vmax
+    ImageGraphic.vmin
     ImageGraphic.world_object
 
 Methods
@@ -35,10 +41,12 @@ Methods
 .. autosummary::
     :toctree: ImageGraphic_api
 
+    ImageGraphic.add_event_handler
     ImageGraphic.add_linear_region_selector
     ImageGraphic.add_linear_selector
-    ImageGraphic.link
-    ImageGraphic.reset_feature
+    ImageGraphic.attach_feature
+    ImageGraphic.detach_feature
+    ImageGraphic.remove_event_handler
+    ImageGraphic.reset_vmin_vmax
     ImageGraphic.rotate
-    ImageGraphic.set_feature
 

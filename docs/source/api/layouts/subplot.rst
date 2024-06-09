@@ -42,7 +42,6 @@ Methods
 
     Subplot.add_animations
     Subplot.add_graphic
-    Subplot.add_heatmap
     Subplot.add_image
     Subplot.add_line
     Subplot.add_line_collection

@@ -20,13 +20,17 @@ Properties
 .. autosummary::
     :toctree: ScatterGraphic_api
 
-    ScatterGraphic.children
+    ScatterGraphic.block_events
+    ScatterGraphic.cmap
+    ScatterGraphic.colors
+    ScatterGraphic.data
+    ScatterGraphic.deleted
+    ScatterGraphic.event_handlers
+    ScatterGraphic.events
     ScatterGraphic.name
-    ScatterGraphic.position
-    ScatterGraphic.position_x
-    ScatterGraphic.position_y
-    ScatterGraphic.position_z
+    ScatterGraphic.offset
     ScatterGraphic.rotation
+    ScatterGraphic.sizes
     ScatterGraphic.visible
     ScatterGraphic.world_object
 
@@ -35,5 +39,9 @@ Methods
 .. autosummary::
     :toctree: ScatterGraphic_api
 
+    ScatterGraphic.add_event_handler
+    ScatterGraphic.attach_feature
+    ScatterGraphic.detach_feature
+    ScatterGraphic.remove_event_handler
     ScatterGraphic.rotate
 
