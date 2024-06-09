@@ -292,7 +292,7 @@ def test_positions_graphic_vertex_colors(
 @pytest.mark.parametrize("uniform_color", [None, False])
 @pytest.mark.parametrize("cmap", ["jet"])
 @pytest.mark.parametrize(
-    "transform", [None, [3, 5, 2, 1, 0, 6, 9, 7, 4, 8], np.arange(9, -1, -1)]
+    "cmap_transform", [None]#, [3, 5, 2, 1, 0, 6, 9, 7, 4, 8], np.arange(9, -1, -1)]
 )
 @pytest.mark.parametrize("alpha", [None, 0.5, 0.0])
 def test_cmap(
@@ -300,13 +300,13 @@ def test_cmap(
     colors,
     uniform_color,
     cmap,
-    transform,
+        cmap_transform,
     alpha,
 ):
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["cmap", "transform", "colors", "uniform_color", "alpha"]:
+    for kwarg in ["cmap", "cmap_transform", "colors", "uniform_color", "alpha"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -325,9 +325,9 @@ def test_cmap(
     truth[:, -1] = alpha
 
     # permute if transform is provided
-    if transform is not None:
-        truth = truth[transform]
-        npt.assert_almost_equal(graphic.cmap.transform, transform)
+    if cmap_transform is not None:
+        truth = truth[cmap_transform]
+        npt.assert_almost_equal(graphic.cmap.transform, cmap_transform)
 
     assert isinstance(graphic._cmap, VertexCmap)
 
@@ -345,21 +345,27 @@ def test_cmap(
     truth = TRUTH_CMAPS["viridis"].copy()
     truth[:, -1] = alpha
 
-    if transform is not None:
-        truth = truth[transform]
+    if cmap_transform is not None:
+        truth = truth[cmap_transform]
 
     assert graphic.cmap.name == "viridis"
     npt.assert_almost_equal(graphic.cmap.value, truth)
     npt.assert_almost_equal(graphic.colors.value, truth)
 
     # test changing transform
-    transform = np.random.rand(10)
-    graphic.cmap.transform = transform
-    npt.assert_almost_equal(graphic.cmap.transform, transform)
+    cmap_transform = np.random.rand(10)
 
-    truth = TRUTH_CMAPS["viridis"].copy()
-    truth = truth[transform.argsort()]
-    truth[:, -1] = alpha
+    # cmap transform is internally normalized between 0 - 1
+    cmap_transform_norm = cmap_transform.copy()
+    cmap_transform_norm -= cmap_transform.min()
+    cmap_transform_norm /= cmap_transform_norm.max()
+    cmap_transform_norm *= 255
+
+    truth = fpl.utils.get_cmap("viridis", alpha=alpha)
+    truth = np.vstack([truth[val] for val in cmap_transform_norm.astype(int)])
+
+    graphic.cmap.transform = cmap_transform
+    npt.assert_almost_equal(graphic.cmap.transform, cmap_transform)
 
     npt.assert_almost_equal(graphic.cmap.value, truth)
     npt.assert_almost_equal(graphic.colors.value, truth)

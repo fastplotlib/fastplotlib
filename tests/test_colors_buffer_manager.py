@@ -105,6 +105,7 @@ def test_tuple(slice_method):
 
 EVENT_RETURN_VALUE: FeatureEvent = None
 
+
 def event_handler(ev):
     global EVENT_RETURN_VALUE
     EVENT_RETURN_VALUE = ev
@@ -156,6 +157,7 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
     if test_graphic:
         global EVENT_RETURN_VALUE
 
+        assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
         assert EVENT_RETURN_VALUE.graphic == graphic
         assert EVENT_RETURN_VALUE.target is graphic.world_object
         if isinstance(s, slice):
