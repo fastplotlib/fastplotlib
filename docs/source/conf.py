@@ -23,7 +23,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "sphinx_design",
-    "nbsphinx",
 ]
 
 autosummary_generate = True
