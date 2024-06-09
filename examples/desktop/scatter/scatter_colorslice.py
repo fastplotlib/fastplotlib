@@ -19,7 +19,12 @@ data = np.load(data_path)
 n_points = 50
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
-scatter_graphic = fig[0, 0].add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
+scatter_graphic = fig[0, 0].add_scatter(
+    data=data[:, :-1],
+    sizes=6,
+    alpha=0.7,
+    colors=colors  # use colors from the list of strings
+)
 
 fig.show()
 

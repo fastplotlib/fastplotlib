@@ -30,12 +30,12 @@ sine_graphic = fig[0, 0].add_line(
 )
 
 # qualitative colormaps, useful for cluster labels or other types of categorical labels
-cmap_transform = [0] * 25 + [5] * 10 + [1] * 35 + [2] * 30
+labels = [0] * 25 + [5] * 10 + [1] * 35 + [2] * 30
 cosine_graphic = fig[0, 0].add_line(
     data=cosine,
     thickness=10,
     cmap="tab10",
-    cmap_transform=cmap_transform
+    cmap_transform=labels
 )
 
 fig.show()
