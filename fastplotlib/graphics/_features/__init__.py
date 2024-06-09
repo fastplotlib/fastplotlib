@@ -33,3 +33,32 @@ from ._text import (
 
 from ._selection_features import LinearSelectionFeature, LinearRegionSelectionFeature
 from ._common import Name, Offset, Rotation, Visible, Deleted
+
+
+__all__ =[
+    "VertexColors",
+    "UniformColor",
+    "UniformSize",
+    "Thickness",
+    "VertexPositions",
+    "PointsSizesFeature",
+    "VertexCmap",
+    "TextureArray",
+    "ImageCmap",
+    "ImageVmin",
+    "ImageVmax",
+    "ImageInterpolation",
+    "ImageCmapInterpolation",
+    "TextData",
+    "FontSize",
+    "TextFaceColor",
+    "TextOutlineColor",
+    "TextOutlineThickness",
+    "LinearSelectionFeature",
+    "LinearRegionSelectionFeature",
+    "Name",
+    "Offset",
+    "Rotation",
+    "Visible",
+    "Deleted",
+]
