@@ -106,7 +106,7 @@ class GraphicMethodsMixin:
         uniform_colors: bool = False,
         alpha: float = 1.0,
         cmap: Union[Sequence[str], str] = None,
-        cmap_values: Union[numpy.ndarray, List] = None,
+        cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
         metadata: Union[Sequence[Any], numpy.ndarray] = None,
         isolated_buffer: bool = True,
@@ -142,7 +142,7 @@ class GraphicMethodsMixin:
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
-        cmap_values: 1D array-like or Iterable of numerical values, optional
+        cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         name: str, optional
@@ -172,7 +172,7 @@ class GraphicMethodsMixin:
             uniform_colors,
             alpha,
             cmap,
-            cmap_values,
+            cmap_transform,
             name,
             metadata,
             isolated_buffer,
@@ -187,7 +187,7 @@ class GraphicMethodsMixin:
         uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: Union[numpy.ndarray, Iterable] = None,
+        cmap_transform: Union[numpy.ndarray, Iterable] = None,
         isolated_buffer: bool = True,
         **kwargs
     ) -> LineGraphic:
@@ -211,7 +211,7 @@ class GraphicMethodsMixin:
             apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors"
 
-        cmap_values: 1D array-like or Iterable of numerical values, optional
+        cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         alpha: float, optional, default 1.0
@@ -233,7 +233,7 @@ class GraphicMethodsMixin:
             uniform_color,
             alpha,
             cmap,
-            cmap_values,
+            cmap_transform,
             isolated_buffer,
             **kwargs
         )
@@ -245,7 +245,7 @@ class GraphicMethodsMixin:
         colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
         alpha: float = 1.0,
         cmap: Union[Iterable[str], str] = None,
-        cmap_values: Union[numpy.ndarray, List] = None,
+        cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
         metadata: Union[Iterable[Any], numpy.ndarray] = None,
         separation: float = 10.0,
@@ -279,7 +279,7 @@ class GraphicMethodsMixin:
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
-        cmap_values: 1D array-like or Iterable of numerical values, optional
+        cmap_transform: 1D array-like or Iterable of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         metadata: Iterable or array
@@ -314,7 +314,7 @@ class GraphicMethodsMixin:
             colors,
             alpha,
             cmap,
-            cmap_values,
+            cmap_transform,
             name,
             metadata,
             separation,
@@ -329,7 +329,7 @@ class GraphicMethodsMixin:
         uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: numpy.ndarray = None,
+        cmap_transform: numpy.ndarray = None,
         isolated_buffer: bool = True,
         sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
         uniform_size: bool = False,
@@ -359,7 +359,7 @@ class GraphicMethodsMixin:
             apply a colormap to the scatter instead of assigning colors manually, this
             overrides any argument passed to "colors"
 
-        cmap_values: 1D array-like or list of numerical values, optional
+        cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         isolated_buffer: bool, default True
@@ -385,7 +385,7 @@ class GraphicMethodsMixin:
             uniform_color,
             alpha,
             cmap,
-            cmap_values,
+            cmap_transform,
             isolated_buffer,
             sizes,
             uniform_size,
