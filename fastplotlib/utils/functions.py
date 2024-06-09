@@ -91,8 +91,8 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
         max_colors = cmap.shape[0]
         if n_colors > cmap.shape[0]:
             raise ValueError(
-                f"You have requested <{n_colors}> but only <{max_colors} existing for the "
-                f"chosen cmap: <{cmap}>"
+                f"You have requested <{n_colors}> colors but only <{max_colors}> exist for the "
+                f"chosen cmap: <{name}>"
             )
         return cmap[:n_colors]
 
