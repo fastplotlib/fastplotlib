@@ -13,15 +13,6 @@ from ._features import Thickness
 class LineGraphic(PositionsGraphic):
     _features = {"data", "colors", "cmap", "thickness"}
 
-    @property
-    def thickness(self) -> float:
-        """Graphic name"""
-        return self._thickness.value
-
-    @thickness.setter
-    def thickness(self, value: float):
-        self._thickness.set_value(self, value)
-
     def __init__(
         self,
         data: Any,
@@ -104,6 +95,15 @@ class LineGraphic(PositionsGraphic):
         world_object: pygfx.Line = pygfx.Line(geometry=geometry, material=material)
 
         self._set_world_object(world_object)
+
+    @property
+    def thickness(self) -> float:
+        """Graphic name"""
+        return self._thickness.value
+
+    @thickness.setter
+    def thickness(self, value: float):
+        self._thickness.set_value(self, value)
 
     def add_linear_selector(
         self, selection: float = None, padding: float = 0.0, axis: str = "x", **kwargs

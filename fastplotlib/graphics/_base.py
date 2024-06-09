@@ -44,65 +44,6 @@ PYGFX_EVENTS = [
 class Graphic:
     _features = {}
 
-    @property
-    def events(self) -> tuple[str]:
-        """events supported by this graphic"""
-        return (*tuple(self._features), *PYGFX_EVENTS)
-
-    @property
-    def name(self) -> str | None:
-        """Graphic name"""
-        return self._name.value
-
-    @name.setter
-    def name(self, value: str):
-        self._name.set_value(self, value)
-
-    @property
-    def offset(self) -> np.ndarray:
-        """Offset position of the graphic, array: [x, y, z]"""
-        return self._offset.value
-
-    @offset.setter
-    def offset(self, value: np.ndarray | list | tuple):
-        self._offset.set_value(self, value)
-
-    @property
-    def rotation(self) -> np.ndarray:
-        """Orientation of the graphic as a quaternion"""
-        return self._rotation.value
-
-    @rotation.setter
-    def rotation(self, value: np.ndarray | list | tuple):
-        self._rotation.set_value(self, value)
-
-    @property
-    def visible(self) -> bool:
-        """Whether the graphic is visible"""
-        return self._visible.value
-
-    @visible.setter
-    def visible(self, value: bool):
-        self._visible.set_value(self, value)
-
-    @property
-    def deleted(self) -> bool:
-        """used to emit an event after the graphic is deleted"""
-        return self._deleted.value
-
-    @deleted.setter
-    def deleted(self, value: bool):
-        self._deleted.set_value(self, value)
-
-    @property
-    def block_events(self) -> bool:
-        """Used to block events for a graphic and prevent recursion."""
-        return self._block_events
-
-    @block_events.setter
-    def block_events(self, value: bool):
-        self._block_events = value
-
     def __init_subclass__(cls, **kwargs):
         # set the type of the graphic in lower case like "image", "line_collection", etc.
         cls.type = (
@@ -172,6 +113,65 @@ class Graphic:
         self._offset = Offset(offset)
         self._visible = Visible(visible)
         self._block_events = False
+
+    @property
+    def events(self) -> tuple[str]:
+        """events supported by this graphic"""
+        return (*tuple(self._features), *PYGFX_EVENTS)
+
+    @property
+    def name(self) -> str | None:
+        """Graphic name"""
+        return self._name.value
+
+    @name.setter
+    def name(self, value: str):
+        self._name.set_value(self, value)
+
+    @property
+    def offset(self) -> np.ndarray:
+        """Offset position of the graphic, array: [x, y, z]"""
+        return self._offset.value
+
+    @offset.setter
+    def offset(self, value: np.ndarray | list | tuple):
+        self._offset.set_value(self, value)
+
+    @property
+    def rotation(self) -> np.ndarray:
+        """Orientation of the graphic as a quaternion"""
+        return self._rotation.value
+
+    @rotation.setter
+    def rotation(self, value: np.ndarray | list | tuple):
+        self._rotation.set_value(self, value)
+
+    @property
+    def visible(self) -> bool:
+        """Whether the graphic is visible"""
+        return self._visible.value
+
+    @visible.setter
+    def visible(self, value: bool):
+        self._visible.set_value(self, value)
+
+    @property
+    def deleted(self) -> bool:
+        """used to emit an event after the graphic is deleted"""
+        return self._deleted.value
+
+    @deleted.setter
+    def deleted(self, value: bool):
+        self._deleted.set_value(self, value)
+
+    @property
+    def block_events(self) -> bool:
+        """Used to block events for a graphic and prevent recursion."""
+        return self._block_events
+
+    @block_events.setter
+    def block_events(self, value: bool):
+        self._block_events = value
 
     @property
     def world_object(self) -> pygfx.WorldObject:

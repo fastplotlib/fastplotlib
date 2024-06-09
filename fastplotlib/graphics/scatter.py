@@ -10,23 +10,6 @@ from ._features import PointsSizesFeature, UniformSize
 class ScatterGraphic(PositionsGraphic):
     _features = {"data", "sizes", "colors", "cmap"}
 
-    @property
-    def sizes(self) -> PointsSizesFeature | float:
-        """Get or set the scatter point size(s)"""
-        if isinstance(self._sizes, PointsSizesFeature):
-            return self._sizes
-
-        elif isinstance(self._sizes, UniformSize):
-            return self._sizes.value
-
-    @sizes.setter
-    def sizes(self, value):
-        if isinstance(self._sizes, PointsSizesFeature):
-            self._sizes[:] = value
-
-        elif isinstance(self._sizes, UniformSize):
-            self._sizes.set_value(self, value)
-
     def __init__(
         self,
         data: Any,
@@ -120,3 +103,20 @@ class ScatterGraphic(PositionsGraphic):
         )
 
         self._set_world_object(world_object)
+
+    @property
+    def sizes(self) -> PointsSizesFeature | float:
+        """Get or set the scatter point size(s)"""
+        if isinstance(self._sizes, PointsSizesFeature):
+            return self._sizes
+
+        elif isinstance(self._sizes, UniformSize):
+            return self._sizes.value
+
+    @sizes.setter
+    def sizes(self, value):
+        if isinstance(self._sizes, PointsSizesFeature):
+            self._sizes[:] = value
+
+        elif isinstance(self._sizes, UniformSize):
+            self._sizes.set_value(self, value)

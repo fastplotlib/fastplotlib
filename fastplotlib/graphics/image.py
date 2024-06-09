@@ -73,60 +73,6 @@ class _ImageTile(pygfx.Image):
 class ImageGraphic(Graphic):
     _features = {"data", "cmap", "vmin", "vmax", "interpolation", "cmap_interpolation"}
 
-    @property
-    def data(self) -> TextureArray:
-        """Get or set the image data"""
-        return self._data
-
-    @data.setter
-    def data(self, data):
-        self._data[:] = data
-
-    @property
-    def cmap(self) -> str:
-        """colormap name"""
-        return self._cmap.value
-
-    @cmap.setter
-    def cmap(self, name: str):
-        self._cmap.set_value(self, name)
-
-    @property
-    def vmin(self) -> float:
-        """lower contrast limit"""
-        return self._vmin.value
-
-    @vmin.setter
-    def vmin(self, value: float):
-        self._vmin.set_value(self, value)
-
-    @property
-    def vmax(self) -> float:
-        """upper contrast limit"""
-        return self._vmax.value
-
-    @vmax.setter
-    def vmax(self, value: float):
-        self._vmax.set_value(self, value)
-
-    @property
-    def interpolation(self) -> str:
-        """image data interpolation method"""
-        return self._interpolation.value
-
-    @interpolation.setter
-    def interpolation(self, value: str):
-        self._interpolation.set_value(self, value)
-
-    @property
-    def cmap_interpolation(self) -> str:
-        """cmap interpolation method"""
-        return self._cmap_interpolation.value
-
-    @cmap_interpolation.setter
-    def cmap_interpolation(self, value: str):
-        self._cmap_interpolation.set_value(self, value)
-
     def __init__(
         self,
         data: Any,
@@ -242,6 +188,60 @@ class ImageGraphic(Graphic):
             world_object.add(img)
 
         self._set_world_object(world_object)
+
+    @property
+    def data(self) -> TextureArray:
+        """Get or set the image data"""
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._data[:] = data
+
+    @property
+    def cmap(self) -> str:
+        """colormap name"""
+        return self._cmap.value
+
+    @cmap.setter
+    def cmap(self, name: str):
+        self._cmap.set_value(self, name)
+
+    @property
+    def vmin(self) -> float:
+        """lower contrast limit"""
+        return self._vmin.value
+
+    @vmin.setter
+    def vmin(self, value: float):
+        self._vmin.set_value(self, value)
+
+    @property
+    def vmax(self) -> float:
+        """upper contrast limit"""
+        return self._vmax.value
+
+    @vmax.setter
+    def vmax(self, value: float):
+        self._vmax.set_value(self, value)
+
+    @property
+    def interpolation(self) -> str:
+        """image data interpolation method"""
+        return self._interpolation.value
+
+    @interpolation.setter
+    def interpolation(self, value: str):
+        self._interpolation.set_value(self, value)
+
+    @property
+    def cmap_interpolation(self) -> str:
+        """cmap interpolation method"""
+        return self._cmap_interpolation.value
+
+    @cmap_interpolation.setter
+    def cmap_interpolation(self, value: str):
+        self._cmap_interpolation.set_value(self, value)
 
     def reset_vmin_vmax(self):
         """
