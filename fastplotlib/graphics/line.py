@@ -88,7 +88,10 @@ class LineGraphic(PositionsGraphic):
         if uniform_color:
             geometry = pygfx.Geometry(positions=self._data.buffer)
             material = MaterialCls(
-                thickness=self.thickness, color_mode="uniform", color=self.colors, pick_write=True
+                thickness=self.thickness,
+                color_mode="uniform",
+                color=self.colors,
+                pick_write=True,
             )
         else:
             material = MaterialCls(

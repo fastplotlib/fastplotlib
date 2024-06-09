@@ -13,7 +13,7 @@ from fastplotlib.graphics._features import (
     UniformSize,
     PointsSizesFeature,
     Thickness,
-    FeatureEvent
+    FeatureEvent,
 )
 
 from .utils import (
@@ -337,9 +337,7 @@ def test_incompatible_cmap_color_args(graphic_type, cmap, colors, uniform_color)
 
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
-@pytest.mark.parametrize(
-    "colors", [*generate_color_inputs("multi")]
-)
+@pytest.mark.parametrize("colors", [*generate_color_inputs("multi")])
 @pytest.mark.parametrize(
     "uniform_color", [True]  # none of these will work with a uniform buffer
 )
@@ -363,12 +361,8 @@ def test_incompatible_color_args(graphic_type, colors, uniform_color):
             graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
 
-@pytest.mark.parametrize(
-    "sizes", [None, 5.0, np.linspace(3, 8, 10, dtype=np.float32)]
-)
-@pytest.mark.parametrize(
-    "uniform_size", [None, False]
-)
+@pytest.mark.parametrize("sizes", [None, 5.0, np.linspace(3, 8, 10, dtype=np.float32)])
+@pytest.mark.parametrize("uniform_size", [None, False])
 def test_sizes(sizes, uniform_size):
     # test scatter sizes
     fig = fpl.Figure()
@@ -391,15 +385,13 @@ def test_sizes(sizes, uniform_size):
         sizes = 1  # default sizes
 
     npt.assert_almost_equal(graphic.sizes.value, sizes)
-    npt.assert_almost_equal(graphic.world_object.geometry.sizes.data, graphic.sizes.value)
+    npt.assert_almost_equal(
+        graphic.world_object.geometry.sizes.data, graphic.sizes.value
+    )
 
 
-@pytest.mark.parametrize(
-    "sizes", [None, 5.0]
-)
-@pytest.mark.parametrize(
-    "uniform_size", [True]
-)
+@pytest.mark.parametrize("sizes", [None, 5.0])
+@pytest.mark.parametrize("uniform_size", [True])
 def test_uniform_size(sizes, uniform_size):
     fig = fpl.Figure()
 
@@ -423,9 +415,7 @@ def test_uniform_size(sizes, uniform_size):
     npt.assert_almost_equal(graphic.world_object.material.size, sizes)
 
 
-@pytest.mark.parametrize(
-    "thickness", [None, 0.5, 5.0]
-)
+@pytest.mark.parametrize("thickness", [None, 0.5, 5.0])
 def test_thickness(thickness):
     fig = fpl.Figure()
 

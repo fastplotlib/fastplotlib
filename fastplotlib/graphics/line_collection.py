@@ -13,6 +13,7 @@ from .selectors import LinearRegionSelector, LinearSelector
 
 class LineCollectionProperties:
     """Mix-in class for LineCollection properties"""
+
     @property
     def colors(self) -> CollectionFeature:
         return CollectionFeature(self.graphics, "colors")

@@ -42,6 +42,7 @@ def test_create_buffer(data):
         # test 3D spiral
         npt.assert_almost_equal(points_data[:], generate_positions_spiral_data("xyz"))
 
+
 @pytest.mark.parametrize("test_graphic", [False, "line", "scatter"])
 def test_int(test_graphic):
     # test setting single points

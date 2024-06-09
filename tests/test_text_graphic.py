@@ -1,7 +1,14 @@
 from numpy import testing as npt
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import FeatureEvent, TextData, FontSize, TextFaceColor, TextOutlineColor, TextOutlineThickness
+from fastplotlib.graphics._features import (
+    FeatureEvent,
+    TextData,
+    FontSize,
+    TextFaceColor,
+    TextOutlineColor,
+    TextOutlineThickness,
+)
 
 import pygfx
 
@@ -41,11 +48,7 @@ def event_handler(ev):
     EVENT_RETURN_VALUE = ev
 
 
-def check_event(
-    graphic,
-    feature,
-    value
-):
+def check_event(graphic, feature, value):
     global EVENT_RETURN_VALUE
     assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
     assert EVENT_RETURN_VALUE.type == feature
@@ -63,7 +66,14 @@ def test_text_changes_events():
     data = "lorem ipsum"
     text = fig[0, 0].add_text(data)
 
-    text.add_event_handler(event_handler, "text", "font_size", "face_color", "outline_color", "outline_thickness")
+    text.add_event_handler(
+        event_handler,
+        "text",
+        "font_size",
+        "face_color",
+        "outline_color",
+        "outline_thickness",
+    )
 
     text.text = "bah"
     assert text.text == "bah"

@@ -24,11 +24,7 @@ def event_handler(ev):
     EVENT_RETURN_VALUE = ev
 
 
-def check_event(
-    graphic,
-    feature,
-    value
-):
+def check_event(graphic, feature, value):
     global EVENT_RETURN_VALUE
     assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
     assert EVENT_RETURN_VALUE.type == feature
@@ -73,17 +69,21 @@ def test_gray():
     ig = fig[0, 0].add_image(GRAY_IMAGE)
     assert isinstance(ig, fpl.ImageGraphic)
 
-    ig.add_event_handler(event_handler, "data", "cmap", "vmin", "vmax", "interpolation", "cmap_interpolation")
+    ig.add_event_handler(
+        event_handler,
+        "data",
+        "cmap",
+        "vmin",
+        "vmax",
+        "interpolation",
+        "cmap_interpolation",
+    )
 
     npt.assert_almost_equal(ig.data.value, GRAY_IMAGE)
 
     ig.cmap = "viridis"
     assert ig.cmap == "viridis"
-    check_event(
-        graphic=ig,
-        feature="cmap",
-        value="viridis"
-    )
+    check_event(graphic=ig, feature="cmap", value="viridis")
 
     new_colors = make_colors(256, "viridis")
     for child in ig.world_object.children:
@@ -104,11 +104,7 @@ def test_gray():
     assert ig.interpolation == "linear"
     for child in ig.world_object.children:
         assert child.material.interpolation == "linear"
-    check_event(
-        graphic=ig,
-        feature="interpolation",
-        value="linear"
-    )
+    check_event(graphic=ig, feature="interpolation", value="linear")
 
     assert ig.cmap_interpolation == "linear"
     for child in ig.world_object.children:
@@ -118,11 +114,7 @@ def test_gray():
     assert ig.cmap_interpolation == "nearest"
     for child in ig.world_object.children:
         assert child.material.map_interpolation == "nearest"
-    check_event(
-        graphic=ig,
-        feature="cmap_interpolation",
-        value="nearest"
-    )
+    check_event(graphic=ig, feature="cmap_interpolation", value="nearest")
 
     npt.assert_almost_equal(ig.vmin, GRAY_IMAGE.min())
     npt.assert_almost_equal(ig.vmax, GRAY_IMAGE.max())
@@ -131,21 +123,13 @@ def test_gray():
     assert ig.vmin == 50
     for child in ig.world_object.children:
         assert child.material.clim == (50, ig.vmax)
-    check_event(
-        graphic=ig,
-        feature="vmin",
-        value=50
-    )
+    check_event(graphic=ig, feature="vmin", value=50)
 
     ig.vmax = 100
     assert ig.vmax == 100
     for child in ig.world_object.children:
         assert child.material.clim == (ig.vmin, 100)
-    check_event(
-        graphic=ig,
-        feature="vmax",
-        value=100
-    )
+    check_event(graphic=ig, feature="vmax", value=100)
 
     # test reset
     ig.reset_vmin_vmax()
@@ -153,7 +137,6 @@ def test_gray():
     npt.assert_almost_equal(ig.vmax, GRAY_IMAGE.max())
 
     check_set_slice(GRAY_IMAGE, ig, slice(100, 200), slice(200, 300))
-
 
     # test setting all values
     ig.data = 1
@@ -220,4 +203,3 @@ def test_rgba():
 
     # check that fancy indexing works
     npt.assert_almost_equal(ig.data.value, rgba)
-

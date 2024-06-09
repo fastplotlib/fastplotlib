@@ -6,7 +6,12 @@ import pygfx
 
 import fastplotlib as fpl
 from fastplotlib.graphics._features import VertexColors, FeatureEvent
-from .utils import generate_slice_indices, assert_pending_uploads, generate_color_inputs, generate_positions_spiral_data
+from .utils import (
+    generate_slice_indices,
+    assert_pending_uploads,
+    generate_color_inputs,
+    generate_positions_spiral_data,
+)
 
 
 def make_colors_buffer() -> VertexColors:
@@ -36,9 +41,7 @@ def test_create_buffer(color_input):
     npt.assert_almost_equal(colors[:], truth)
 
 
-@pytest.mark.parametrize(
-    "test_graphic", [False, "line", "scatter"]
-)
+@pytest.mark.parametrize("test_graphic", [False, "line", "scatter"])
 def test_int(test_graphic):
     # setting single points
     if test_graphic:
@@ -70,7 +73,9 @@ def test_int(test_graphic):
         assert EVENT_RETURN_VALUE.graphic == graphic
         assert EVENT_RETURN_VALUE.target is graphic.world_object
         assert EVENT_RETURN_VALUE.info["key"] == 3
-        npt.assert_almost_equal(EVENT_RETURN_VALUE.info["value"], np.array([[1, 0, 0, 1]]))
+        npt.assert_almost_equal(
+            EVENT_RETURN_VALUE.info["value"], np.array([[1, 0, 0, 1]])
+        )
         assert EVENT_RETURN_VALUE.info["user_value"] == "r"
 
     colors[6] = [0.0, 1.0, 1.0, 1.0]
@@ -86,9 +91,7 @@ def test_int(test_graphic):
     npt.assert_almost_equal(colors[2], [1.0, 0.0, 1.0, 0.5])
 
 
-@pytest.mark.parametrize(
-    "test_graphic", [False, "line", "scatter"]
-)
+@pytest.mark.parametrize("test_graphic", [False, "line", "scatter"])
 @pytest.mark.parametrize(
     "slice_method", [generate_slice_indices(i) for i in range(0, 16)]
 )
@@ -183,9 +186,7 @@ def test_tuple(test_graphic, slice_method):
 @pytest.mark.parametrize(
     "slice_method", [generate_slice_indices(i) for i in range(1, 16)]
 )
-@pytest.mark.parametrize(
-    "test_graphic", [False, "line", "scatter"]
-)
+@pytest.mark.parametrize("test_graphic", [False, "line", "scatter"])
 def test_slice(color_input, slice_method: dict, test_graphic: bool):
     # slicing only first dim
     if test_graphic:
@@ -247,4 +248,3 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
     # reset
     colors[:] = (1, 1, 1, 1)
     npt.assert_almost_equal(colors[:], np.repeat([[1.0, 1.0, 1.0, 1.0]], 10, axis=0))
-

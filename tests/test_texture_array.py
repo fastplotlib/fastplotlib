@@ -84,7 +84,9 @@ def make_image_graphic(data) -> fpl.ImageGraphic:
 
 def check_image_graphic(texture_array, graphic):
     # make sure each ImageTile has the right texture
-    for (texture, chunk_index, data_slice), img in zip(texture_array, graphic.world_object.children):
+    for (texture, chunk_index, data_slice), img in zip(
+        texture_array, graphic.world_object.children
+    ):
         assert isinstance(img, _ImageTile)
         assert img.geometry.grid is texture
         assert img.world.x == data_slice[1].start

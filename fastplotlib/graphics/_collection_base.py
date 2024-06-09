@@ -113,10 +113,12 @@ class CollectionIndexer:
         types = args if decorating else args[1:]
 
         if decorating:
+
             def decorator(_callback):
                 for g in self.graphics:
                     g.add_event_handler(_callback, *types)
                 return _callback
+
             return decorator
 
         for g in self.graphics:
@@ -262,10 +264,7 @@ class GraphicCollection(Graphic):
         self[:].remove_event_handler(callback, *types)
 
     def __getitem__(self, key) -> CollectionIndexer:
-        return self._indexer(
-            selection=self.graphics[key],
-            features=self.features
-        )
+        return self._indexer(selection=self.graphics[key], features=self.features)
 
     def __del__(self):
         self.world_object.clear()
