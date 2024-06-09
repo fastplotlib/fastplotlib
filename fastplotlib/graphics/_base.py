@@ -42,7 +42,12 @@ PYGFX_EVENTS = [
 
 
 class Graphic:
-    features = {}
+    _features = {}
+
+    @property
+    def events(self) -> tuple[str]:
+        """events supported by this graphic"""
+        return (*tuple(self._features), *PYGFX_EVENTS)
 
     @property
     def name(self) -> str | None:
@@ -108,8 +113,8 @@ class Graphic:
         )
 
         # set of all features
-        cls.features = {
-            *cls.features,
+        cls._features = {
+            *cls._features,
             "name",
             "offset",
             "rotation",
@@ -243,6 +248,14 @@ class Graphic:
         callback = None if decorating else args[0]
         types = args if decorating else args[1:]
 
+        unsupported_events = [t for t in types if t not in self.events]
+
+        if len(unsupported_events) > 0:
+            raise TypeError(
+                f"unsupported events passed: {unsupported_events} for {self.__class__.__name__}\n"
+                f"`graphic.events` will return a tuple of supported events"
+            )
+
         def decorator(_callback):
             _callback_injector = partial(
                 self._handle_event, _callback
@@ -252,7 +265,7 @@ class Graphic:
                 # add to our record
                 self._event_handlers[t].add(_callback)
 
-                if t in self.features:
+                if t in self._features:
                     # fpl feature event
                     feature = getattr(self, f"_{t}")
                     feature.add_event_handler(_callback_injector)
@@ -276,7 +289,7 @@ class Graphic:
         if self.block_events:
             return
 
-        if event.type in self.features:
+        if event.type in self._features:
             # for feature events
             event._target = self.world_object
 

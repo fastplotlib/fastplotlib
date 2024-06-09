@@ -11,7 +11,7 @@ from ._features import Thickness
 
 
 class LineGraphic(PositionsGraphic):
-    features = {"data", "colors", "cmap", "thickness"}
+    _features = {"data", "colors", "cmap", "thickness"}
 
     @property
     def thickness(self) -> float:

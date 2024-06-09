@@ -35,7 +35,7 @@ key_bind_direction = {
 
 # Selector base class
 class BaseSelector(Graphic):
-    features = {"selection"}
+    _features = {"selection"}
 
     @property
     def axis(self) -> str:

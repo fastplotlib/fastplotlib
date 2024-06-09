@@ -1,8 +1,6 @@
 from typing import *
 import weakref
 
-from numpy.typing import NDArray
-
 import pygfx
 
 from ..utils import quick_min_max
@@ -73,7 +71,7 @@ class _ImageTile(pygfx.Image):
 
 
 class ImageGraphic(Graphic):
-    features = {"data", "cmap", "vmin", "vmax"}
+    _features = {"data", "cmap", "vmin", "vmax"}
 
     @property
     def data(self) -> TextureArray:

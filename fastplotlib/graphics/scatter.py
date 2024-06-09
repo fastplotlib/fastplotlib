@@ -8,7 +8,7 @@ from ._features import PointsSizesFeature, UniformSize
 
 
 class ScatterGraphic(PositionsGraphic):
-    features = {"data", "sizes", "colors", "cmap"}
+    _features = {"data", "sizes", "colors", "cmap"}
 
     @property
     def sizes(self) -> PointsSizesFeature | float:

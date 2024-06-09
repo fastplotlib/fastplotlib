@@ -147,7 +147,7 @@ class GraphicCollection(Graphic):
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls.features = cls.child_type.features
+        cls._features = cls.child_type._features
 
     def __init__(self, name: str = None):
         super().__init__(name)
