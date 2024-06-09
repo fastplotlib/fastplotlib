@@ -33,7 +33,7 @@ class FontSize(GraphicFeature):
 
     def set_value(self, graphic, value: float | int):
         graphic.world_object.geometry.font_size = value
-        self._value = value
+        self._value = graphic.world_object.geometry.font_size
 
         event = FeatureEvent(type="font_size", info={"value": value})
         self._call_event_handlers(event)
@@ -51,7 +51,7 @@ class TextFaceColor(GraphicFeature):
     def set_value(self, graphic, value: str | np.ndarray | list[float] | tuple[float]):
         value = pygfx.Color(value)
         graphic.world_object.material.color = value
-        self._value = value
+        self._value = graphic.world_object.material.color
 
         event = FeatureEvent(type="face_color", info={"value": value})
         self._call_event_handlers(event)
@@ -69,24 +69,24 @@ class TextOutlineColor(GraphicFeature):
     def set_value(self, graphic, value: str | np.ndarray | list[float] | tuple[float]):
         value = pygfx.Color(value)
         graphic.world_object.material.outline_color = value
-        self._value = value
+        self._value = graphic.world_object.material.outline_color
 
         event = FeatureEvent(type="outline_color", info={"value": value})
         self._call_event_handlers(event)
 
 
 class TextOutlineThickness(GraphicFeature):
-    def __init__(self, value: float | int):
+    def __init__(self, value: float):
         self._value = value
         super().__init__()
 
     @property
-    def value(self) -> float | int:
+    def value(self) -> float:
         return self._value
 
-    def set_value(self, graphic, value: float | int):
+    def set_value(self, graphic, value: float):
         graphic.world_object.material.outline_thickness = value
-        self._value = value
+        self._value = graphic.world_object.material.outline_thickness
 
         event = FeatureEvent(type="outline_thickness", info={"value": value})
         self._call_event_handlers(event)

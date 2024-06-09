@@ -19,7 +19,7 @@ class TextGraphic(Graphic):
         font_size: float | int = 14,
         face_color: str | np.ndarray | list[float] | tuple[float] = "w",
         outline_color: str | np.ndarray | list[float] | tuple[float] = "w",
-        outline_thickness: float | int = 0,
+        outline_thickness: float = 0.0,
         screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
@@ -42,8 +42,8 @@ class TextGraphic(Graphic):
         outline_color: str or array, default "w"
             str or RGBA array to set the outline color of the text
 
-        outline_thickness: float | int, default 0
-            text outline thickness
+        outline_thickness: float, default 0
+            relative outline thickness, value between 0.0 - 0.5
 
         screen_space: bool = True
             if True, text size is in screen space, if False the text size is in data space
@@ -118,12 +118,12 @@ class TextGraphic(Graphic):
         self._face_color.set_value(self, color)
 
     @property
-    def outline_thickness(self) -> float | int:
+    def outline_thickness(self) -> float:
         """text outline thickness"""
         return self._outline_thickness.value
 
     @outline_thickness.setter
-    def outline_thickness(self, thickness: float | int):
+    def outline_thickness(self, thickness: float):
         self._outline_thickness.set_value(self, thickness)
 
     @property
