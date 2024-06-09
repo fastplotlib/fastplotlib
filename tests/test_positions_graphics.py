@@ -12,7 +12,8 @@ from fastplotlib.graphics._features import (
     UniformColor,
     UniformSize,
     PointsSizesFeature,
-    Thickness
+    Thickness,
+    FeatureEvent
 )
 
 from .utils import (
@@ -56,6 +57,14 @@ TRUTH_CMAPS = {
         dtype=np.float32,
     ),
 }
+
+
+EVENT_RETURN_VALUE: FeatureEvent = None
+
+
+def event_handler(ev):
+    global EVENT_RETURN_VALUE
+    EVENT_RETURN_VALUE = ev
 
 
 # TODO: data slice int
@@ -281,9 +290,9 @@ def test_positions_graphic_vertex_colors(
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("colors", [None, *generate_color_inputs("r")])
 @pytest.mark.parametrize("uniform_color", [None, False])
-@pytest.mark.parametrize("cmap", ["jet", "viridis"])
+@pytest.mark.parametrize("cmap", ["jet"])
 @pytest.mark.parametrize(
-    "cmap_values", [None, [3, 5, 2, 1, 0, 6, 9, 7, 4, 8], np.arange(9, -1, -1)]
+    "transform", [None, [3, 5, 2, 1, 0, 6, 9, 7, 4, 8], np.arange(9, -1, -1)]
 )
 @pytest.mark.parametrize("alpha", [None, 0.5, 0.0])
 def test_cmap(
@@ -291,13 +300,13 @@ def test_cmap(
     colors,
     uniform_color,
     cmap,
-    cmap_values,
+    transform,
     alpha,
 ):
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["cmap", "cmap_values", "colors", "uniform_color", "alpha"]:
+    for kwarg in ["cmap", "transform", "colors", "uniform_color", "alpha"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -315,9 +324,10 @@ def test_cmap(
     truth = TRUTH_CMAPS[cmap].copy()
     truth[:, -1] = alpha
 
-    # permute if cmap_values is provided
-    if cmap_values is not None:
-        truth = truth[cmap_values]
+    # permute if transform is provided
+    if transform is not None:
+        truth = truth[transform]
+        npt.assert_almost_equal(graphic.cmap.transform, transform)
 
     assert isinstance(graphic._cmap, VertexCmap)
 
@@ -326,6 +336,30 @@ def test_cmap(
     # make sure buffer is identical
     # cmap overrides colors argument
     assert graphic.colors.buffer is graphic.cmap.buffer
+
+    npt.assert_almost_equal(graphic.cmap.value, truth)
+    npt.assert_almost_equal(graphic.colors.value, truth)
+
+    # test changing cmap but not transform
+    graphic.cmap = "viridis"
+    truth = TRUTH_CMAPS["viridis"].copy()
+    truth[:, -1] = alpha
+
+    if transform is not None:
+        truth = truth[transform]
+
+    assert graphic.cmap.name == "viridis"
+    npt.assert_almost_equal(graphic.cmap.value, truth)
+    npt.assert_almost_equal(graphic.colors.value, truth)
+
+    # test changing transform
+    transform = np.random.rand(10)
+    graphic.cmap.transform = transform
+    npt.assert_almost_equal(graphic.cmap.transform, transform)
+
+    truth = TRUTH_CMAPS["viridis"].copy()
+    truth = truth[transform.argsort()]
+    truth[:, -1] = alpha
 
     npt.assert_almost_equal(graphic.cmap.value, truth)
     npt.assert_almost_equal(graphic.colors.value, truth)
@@ -446,7 +480,7 @@ def test_uniform_size(sizes, uniform_size):
 @pytest.mark.parametrize(
     "thickness", [None, 0.5, 5.0]
 )
-def test_thicnkess(thickness):
+def test_thickness(thickness):
     fig = fpl.Figure()
 
     kwargs = dict()
@@ -465,17 +499,10 @@ def test_thicnkess(thickness):
     assert isinstance(graphic._thickness, Thickness)
 
     assert graphic.thickness == thickness
+    assert graphic.world_object.material.thickness == thickness
 
     if thickness == 0.5:
         assert isinstance(graphic.world_object.material, pygfx.LineThinMaterial)
 
     else:
         assert isinstance(graphic.world_object.material, pygfx.LineMaterial)
-
-
-def test_line_feature_events():
-    pass
-
-
-def test_scatter_feature_events():
-    pass

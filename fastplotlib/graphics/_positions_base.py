@@ -61,7 +61,7 @@ class PositionsGraphic(Graphic):
         uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str | VertexCmap = None,
-        cmap_values: np.ndarray = None,
+        cmap_transform: np.ndarray = None,
         isolated_buffer: bool = True,
         *args,
         **kwargs,
@@ -71,8 +71,8 @@ class PositionsGraphic(Graphic):
         else:
             self._data = VertexPositions(data, isolated_buffer=isolated_buffer)
 
-        if cmap_values is not None and cmap is None:
-            raise ValueError("must pass `cmap` if passing `cmap_values`")
+        if cmap_transform is not None and cmap is None:
+            raise ValueError("must pass `cmap` if passing `cmap_transform`")
 
         if cmap is not None:
             # if a cmap is specified it overrides colors argument
@@ -92,7 +92,7 @@ class PositionsGraphic(Graphic):
                     self._cmap = VertexCmap(
                         self._colors,
                         cmap_name=cmap,
-                        cmap_values=cmap_values,
+                        transform=cmap_transform,
                         alpha=alpha,
                     )
             elif isinstance(cmap, VertexCmap):
@@ -109,7 +109,7 @@ class PositionsGraphic(Graphic):
                 self._colors._shared += 1
                 # blank colormap instance
                 self._cmap = VertexCmap(
-                    self._colors, cmap_name=None, cmap_values=None, alpha=alpha
+                    self._colors, cmap_name=None, transform=None, alpha=alpha
                 )
             else:
                 if uniform_color:
@@ -127,7 +127,7 @@ class PositionsGraphic(Graphic):
                         alpha=alpha,
                     )
                     self._cmap = VertexCmap(
-                        self._colors, cmap_name=None, cmap_values=None, alpha=alpha
+                        self._colors, cmap_name=None, transform=None, alpha=alpha
                     )
 
         super().__init__(*args, **kwargs)

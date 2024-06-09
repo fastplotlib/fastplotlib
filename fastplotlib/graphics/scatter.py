@@ -34,7 +34,7 @@ class ScatterGraphic(PositionsGraphic):
         uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: np.ndarray = None,
+        cmap_transform: np.ndarray = None,
         isolated_buffer: bool = True,
         sizes: float | np.ndarray | Iterable[float] = 1,
         uniform_size: bool = False,
@@ -63,7 +63,7 @@ class ScatterGraphic(PositionsGraphic):
             apply a colormap to the scatter instead of assigning colors manually, this
             overrides any argument passed to "colors"
 
-        cmap_values: 1D array-like or list of numerical values, optional
+        cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         isolated_buffer: bool, default True
@@ -88,7 +88,7 @@ class ScatterGraphic(PositionsGraphic):
             uniform_color=uniform_color,
             alpha=alpha,
             cmap=cmap,
-            cmap_values=cmap_values,
+            cmap_transform=cmap_transform,
             isolated_buffer=isolated_buffer,
             **kwargs,
         )

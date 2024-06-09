@@ -92,7 +92,7 @@ class LineCollection(GraphicCollection, LineCollectionProperties):
         uniform_colors: bool = False,
         alpha: float = 1.0,
         cmap: Sequence[str] | str = None,
-        cmap_values: np.ndarray | List = None,
+        cmap_transform: np.ndarray | List = None,
         name: str = None,
         metadata: Sequence[Any] | np.ndarray = None,
         isolated_buffer: bool = True,
@@ -127,7 +127,7 @@ class LineCollection(GraphicCollection, LineCollectionProperties):
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
-        cmap_values: 1D array-like or Iterable of numerical values, optional
+        cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         name: str, optional
@@ -163,7 +163,7 @@ class LineCollection(GraphicCollection, LineCollectionProperties):
                     f"len(metadata) != len(data)\n" f"{len(metadata)} != {len(data)}"
                 )
 
-        self._cmap_values = cmap_values
+        self._cmap_transform = cmap_transform
         self._cmap_str = cmap
 
         # cmap takes priority over colors
@@ -171,7 +171,7 @@ class LineCollection(GraphicCollection, LineCollectionProperties):
             # cmap across lines
             if isinstance(cmap, str):
                 colors = parse_cmap_values(
-                    n_colors=len(data), cmap_name=cmap, cmap_values=cmap_values
+                    n_colors=len(data), cmap_name=cmap, transform=cmap_transform
                 )
                 single_color = False
                 cmap = None
@@ -266,36 +266,6 @@ class LineCollection(GraphicCollection, LineCollectionProperties):
             )
 
             self.add_graphic(lg)
-
-    @property
-    def cmap(self) -> str:
-        return self._cmap_str
-
-    @cmap.setter
-    def cmap(self, cmap: str):
-        colors = parse_cmap_values(
-            n_colors=len(self), cmap_name=cmap, cmap_values=self.cmap_values
-        )
-
-        for i, g in enumerate(self.graphics):
-            g.colors = colors[i]
-
-        self._cmap_str = cmap
-
-    @property
-    def cmap_values(self) -> np.ndarray:
-        return self._cmap_values
-
-    @cmap_values.setter
-    def cmap_values(self, values: np.ndarray | Iterable):
-        colors = parse_cmap_values(
-            n_colors=len(self), cmap_name=self.cmap, cmap_values=values
-        )
-
-        for i, g in enumerate(self.graphics):
-            g.colors = colors[i]
-
-        self._cmap_values = values
 
     def add_linear_selector(
         self, selection: int = None, padding: float = 50, **kwargs
@@ -479,7 +449,7 @@ class LineStack(LineCollection):
         colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
         alpha: float = 1.0,
         cmap: Iterable[str] | str = None,
-        cmap_values: np.ndarray | List = None,
+        cmap_transform: np.ndarray | List = None,
         name: str = None,
         metadata: Iterable[Any] | np.ndarray = None,
         separation: float = 10.0,
@@ -512,7 +482,7 @@ class LineStack(LineCollection):
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
-        cmap_values: 1D array-like or Iterable of numerical values, optional
+        cmap_transform: 1D array-like or Iterable of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         metadata: Iterable or array
@@ -545,7 +515,7 @@ class LineStack(LineCollection):
             colors=colors,
             alpha=alpha,
             cmap=cmap,
-            cmap_values=cmap_values,
+            cmap_transform=cmap_transform,
             name=name,
             metadata=metadata,
             **kwargs,

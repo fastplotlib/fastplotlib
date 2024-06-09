@@ -30,7 +30,7 @@ class LineGraphic(PositionsGraphic):
         uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: np.ndarray | Iterable = None,
+        cmap_transform: np.ndarray | Iterable = None,
         isolated_buffer: bool = True,
         **kwargs,
     ):
@@ -53,7 +53,7 @@ class LineGraphic(PositionsGraphic):
             apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors"
 
-        cmap_values: 1D array-like or Iterable of numerical values, optional
+        cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         alpha: float, optional, default 1.0
@@ -73,7 +73,7 @@ class LineGraphic(PositionsGraphic):
             uniform_color=uniform_color,
             alpha=alpha,
             cmap=cmap,
-            cmap_values=cmap_values,
+            cmap_transform=cmap_transform,
             isolated_buffer=isolated_buffer,
             **kwargs,
         )

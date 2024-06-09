@@ -326,38 +326,37 @@ class Thickness(GraphicFeature):
 
 class VertexCmap(BufferManager):
     """
-    Sliceable colormap feature, manages a VertexColors instance and just provides a way to set colormaps.
+    Sliceable colormap feature, manages a VertexColors instance and
+    provides a way to set colormaps with arbitrary transforms
     """
 
     def __init__(
         self,
         vertex_colors: VertexColors,
         cmap_name: str | None,
-        cmap_values: np.ndarray | None,
+        transform: np.ndarray | None,
         alpha: float = 1.0,
     ):
         super().__init__(data=vertex_colors.buffer)
 
         self._vertex_colors = vertex_colors
         self._cmap_name = cmap_name
-        self._cmap_values = cmap_values
+        self._transform = transform
         self._alpha = alpha
 
         if self._cmap_name is not None:
             if not isinstance(self._cmap_name, str):
                 raise TypeError
-            if self._cmap_values is not None:
-                if isinstance(self._cmap_values, List):
-                    self._cmap_values = np.asarray(self._cmap_values)
-                if not isinstance(self._cmap_values, np.ndarray):
-                    raise TypeError
+
+            if self._transform is not None:
+                self._transform = np.asarray(self._transform)
 
             n_datapoints = vertex_colors.value.shape[0]
 
             colors = parse_cmap_values(
                 n_colors=n_datapoints,
                 cmap_name=self._cmap_name,
-                cmap_values=self._cmap_values,
+                transform=self._transform,
             )
             colors[:, -1] = alpha
             # set vertex colors from cmap
@@ -380,7 +379,7 @@ class VertexCmap(BufferManager):
         n_elements = len(range(start, stop, step))
 
         colors = parse_cmap_values(
-            n_colors=n_elements, cmap_name=cmap_name, cmap_values=self._cmap_values
+            n_colors=n_elements, cmap_name=cmap_name, transform=self._transform
         )
         colors[:, -1] = self.alpha
 
@@ -397,36 +396,36 @@ class VertexCmap(BufferManager):
         return self._cmap_name
 
     @property
-    def values(self) -> np.ndarray:
-        return self._cmap_values
+    def transform(self) -> np.ndarray | None:
+        return self._transform
 
-    @values.setter
-    def values(
+    @transform.setter
+    def transform(
         self,
         values: np.ndarray | list[float | int],
         indices: slice | list | np.ndarray = None,
     ):
         if self._cmap_name is None:
             raise AttributeError(
-                "cmap is not set, set the cmap before setting the cmap_values"
+                "cmap name is not set, set the cmap name before setting the transform"
             )
 
         values = np.asarray(values)
 
         colors = parse_cmap_values(
-            n_colors=self.value.shape[0], cmap_name=self._cmap_name, cmap_values=values
+            n_colors=self.value.shape[0], cmap_name=self._cmap_name, transform=values
         )
 
         colors[:, -1] = self.alpha
 
-        self._cmap_values = values
+        self._transform = values
 
         if indices is None:
             indices = slice(None)
 
         self._vertex_colors[indices] = colors
 
-        self._emit_event("cmap.values", indices, values)
+        self._emit_event("cmap.transform", indices, values)
 
     @property
     def alpha(self) -> float:
@@ -443,3 +442,6 @@ class VertexCmap(BufferManager):
         raise NotImplementedError(
             "len not implemented for `cmap`, use len(colors) instead"
         )
+
+    def __repr__(self):
+        return f"{self.__class__.__name__} | cmap: {self.name}\ntransform: {self.transform}"
