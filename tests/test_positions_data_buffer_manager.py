@@ -2,6 +2,7 @@ import numpy as np
 from numpy import testing as npt
 import pytest
 
+import fastplotlib as fpl
 from fastplotlib.graphics._features import VertexPositions
 from .utils import (
     generate_slice_indices,
@@ -62,12 +63,27 @@ def test_int():
     npt.assert_almost_equal(points[indices], data[indices])
 
 
+@pytest.mark.parametrize("graphic_type", [None, "line", "scatter"])
 @pytest.mark.parametrize(
     "slice_method", [generate_slice_indices(i) for i in range(1, 16)]
 )  # int tested separately
 @pytest.mark.parametrize("test_axis", ["y", "xy", "xyz"])
-def test_slice(slice_method: dict, test_axis: str):
+def test_slice(graphic_type, slice_method: dict, test_axis: str):
     data = generate_positions_spiral_data("xyz")
+
+    if graphic_type is not None:
+        fig = fpl.Figure()
+
+        if graphic_type == "line":
+            graphic = fig[0, 0].add_line(data=data)
+
+        elif graphic_type == "scatter":
+            graphic = fig[0, 0].add_scatter(data=data)
+
+        points = graphic.data
+
+    else:
+        points = VertexPositions(data)
 
     s = slice_method["slice"]
     indices = slice_method["indices"]
@@ -75,7 +91,6 @@ def test_slice(slice_method: dict, test_axis: str):
     size = slice_method["size"]
     others = slice_method["others"]
 
-    points = VertexPositions(data)
     # TODO: placeholder until I make a testing figure where we draw frames only on call
     points.buffer._gfx_pending_uploads.clear()
 
