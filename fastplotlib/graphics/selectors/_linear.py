@@ -81,11 +81,11 @@ class LinearSelector(BaseSelector):
         axis: str, default "x"
             "x" | "y", the axis which the slider can move along
 
+        center: float
+            center of selector along the opposite axis of `axis`
+
         parent: Graphic
             parent graphic for this LineSelector
-
-        end_points: (int, int)
-            set length of slider by bounding it between two x-pos or two y-pos
 
         arrow_keys_modifier: str
             modifier key that must be pressed to initiate movement using arrow keys, must be one of:

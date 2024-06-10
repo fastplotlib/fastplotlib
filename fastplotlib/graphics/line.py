@@ -264,12 +264,6 @@ class LineGraphic(PositionsGraphic):
             # need y offset too for this
             origin = (limits[0] - offset, position_y + self.offset[1])
 
-            # endpoints of the data range
-            # used by linear selector but not linear region
-            end_points = (
-                self.data.value[:, 1].min() - padding,
-                self.data.value[:, 1].max() + padding,
-            )
         else:
             offset = self.offset[1]
             # y limits
@@ -284,12 +278,7 @@ class LineGraphic(PositionsGraphic):
             # need x offset too for this
             origin = (position_x + self.offset[0], limits[0] - offset)
 
-            end_points = (
-                self.data.value[:, 0].min() - padding,
-                self.data.value[:, 0].max() + padding,
-            )
-
         # initial bounds are 20% of the limits range
         bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
 
-        return bounds_init, limits, size, origin, axis, end_points
+        return bounds_init, limits, size, origin, axis
