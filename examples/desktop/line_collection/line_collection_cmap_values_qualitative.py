@@ -44,7 +44,7 @@ fig = fpl.Figure()
 fig[0, 0].add_line_collection(
     circles,
     cmap="tab10",
-    cmap_values=cmap_values,
+    cmap_transform=cmap_values,
     thickness=10
 )
 

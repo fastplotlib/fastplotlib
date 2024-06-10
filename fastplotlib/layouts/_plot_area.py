@@ -12,6 +12,7 @@ from wgpu.gui import WgpuCanvasBase
 
 from ._utils import create_controller
 from ..graphics._base import Graphic
+from ..graphics._collection_base import GraphicCollection
 from ..graphics.selectors._base_selector import BaseSelector
 from ..legends import Legend
 
@@ -564,6 +565,11 @@ class PlotArea:
 
         # if we don't use the weakref above, then the object lingers if a plot hook is used!
         graphic._fpl_add_plot_area_hook(self)
+
+        # need to also hook in individual graphics in a collection to plot area
+        if isinstance(graphic, GraphicCollection):
+            for g in graphic.graphics:
+                g._fpl_add_plot_area_hook(self)
 
     def _check_graphic_name_exists(self, name):
         if name in self:
