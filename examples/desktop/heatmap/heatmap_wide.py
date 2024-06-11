@@ -4,7 +4,7 @@ Wide Heatmap
 Wide example
 """
 
-# test_example = true
+# test_example = false
 
 import fastplotlib as fpl
 import numpy as np

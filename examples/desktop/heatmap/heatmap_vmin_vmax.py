@@ -4,7 +4,7 @@ Heatmap change vmin vmax
 Change the vmin vmax of a heatmap
 """
 
-# test_example = true
+# test_example = false
 
 import fastplotlib as fpl
 import numpy as np
