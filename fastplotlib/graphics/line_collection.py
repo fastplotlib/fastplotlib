@@ -11,11 +11,12 @@ from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 
 
-class LineCollectionProperties:
+class _LineCollectionProperties:
     """Mix-in class for LineCollection properties"""
 
     @property
     def colors(self) -> CollectionFeature:
+        """get or set colors of lines in the collection"""
         return CollectionFeature(self.graphics, "colors")
 
     @colors.setter
@@ -53,6 +54,7 @@ class LineCollectionProperties:
 
     @property
     def data(self) -> CollectionFeature:
+        """get or set data of lines in the collection"""
         return CollectionFeature(self.graphics, "data")
 
     @data.setter
@@ -61,15 +63,25 @@ class LineCollectionProperties:
 
     @property
     def cmap(self) -> CollectionFeature:
+        """
+        Get or set a cmap along the line collection.
+
+        Optionally set using a tuple ("cmap", <transform>, <alpha>) to set the transform and/or alpha.
+        Example:
+
+        line_collection.cmap = ("jet", sine_transform_vals, 0.7)
+
+        """
         return CollectionFeature(self.graphics, "cmap")
 
     @cmap.setter
-    def cmap(self, name: str):
-        colors = parse_cmap_values(n_colors=len(self), cmap_name=name)
+    def cmap(self, name: str, transform: np.ndarray = None, alpha: float = 1.0):
+        colors = parse_cmap_values(n_colors=len(self), cmap_name=name, transform=transform, alpha=alpha)
         self.colors = colors
 
     @property
     def thickness(self) -> np.ndarray:
+        """get or set the thickness of the lines"""
         return np.asarray([g.thickness for g in self.graphics])
 
     @thickness.setter
@@ -81,9 +93,14 @@ class LineCollectionProperties:
             g.thickness = v
 
 
-class LineCollection(GraphicCollection, LineCollectionProperties):
+class LineCollectionIndexer(CollectionIndexer, _LineCollectionProperties):
+    """Indexer for line collections"""
+    pass
+
+
+class LineCollection(GraphicCollection, _LineCollectionProperties):
     child_type = LineGraphic
-    _indexer = CollectionIndexer
+    _indexer = LineCollectionIndexer
 
     def __init__(
             self,
@@ -267,6 +284,9 @@ class LineCollection(GraphicCollection, LineCollectionProperties):
             )
 
             self.add_graphic(lg)
+            
+    def __getitem__(self, item) -> LineCollectionIndexer:
+        return super().__getitem__(item)
 
     def add_linear_selector(
             self, selection: int = None, padding: float = 50, **kwargs

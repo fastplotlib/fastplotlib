@@ -11,6 +11,23 @@ COLLECTION_GRAPHICS: dict[HexStr, Graphic] = dict()
 class CollectionIndexer:
     """Collection Indexer"""
 
+    def __init__(self, selection: np.ndarray[Graphic], features: set[str]):
+        """
+
+        Parameters
+        ----------
+
+        selection: np.ndarray of Graphics
+            array of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
+
+        """
+
+        if isinstance(selection, Graphic):
+            selection = np.asarray([selection])
+
+        self._selection = selection
+        self.features = features
+
     @property
     def name(self) -> np.ndarray[str | None]:
         return np.asarray([g.name for g in self.graphics])
@@ -39,11 +56,11 @@ class CollectionIndexer:
     def visible(self) -> np.ndarray[bool]:
         return np.asarray([g.visible for g in self.graphics])
 
+    # TODO: how to work with deleted feature in a collection
+
     @visible.setter
     def visible(self, values: np.ndarray[bool] | list[bool]):
         self._set_feature("visible", values)
-
-    # TODO: how to work with deleted feature in a collection
 
     def _set_feature(self, feature, values):
         if not len(values) == len(self):
@@ -51,20 +68,6 @@ class CollectionIndexer:
 
         for g, v in zip(self.graphics, values):
             setattr(g, feature, v)
-
-    def __init__(self, selection: np.ndarray[Graphic], features: set[str]):
-        """
-
-        Parameters
-        ----------
-
-        selection: np.ndarray of Graphics
-            array of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
-
-        """
-
-        self._selection = selection
-        self.features = features
 
     @property
     def graphics(self) -> np.ndarray[Graphic]:
@@ -149,7 +152,7 @@ class GraphicCollection(Graphic):
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls.features = cls.child_type._features
+        cls._features = cls.child_type._features
 
     def __init__(self, name: str = None):
         super().__init__(name)
@@ -264,7 +267,7 @@ class GraphicCollection(Graphic):
         self[:].remove_event_handler(callback, *types)
 
     def __getitem__(self, key) -> CollectionIndexer:
-        return self._indexer(selection=self.graphics[key], features=self.features)
+        return self._indexer(selection=self.graphics[key], features=self._features)
 
     def __del__(self):
         self.world_object.clear()
