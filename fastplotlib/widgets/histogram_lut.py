@@ -58,10 +58,10 @@ class HistogramLUT(Graphic):
             center=origin[0],
             axis="y",
             edge_thickness=8,
-            parent=self._histogram_line
+            parent=self._histogram_line,
         )
 
-        #there will be a small difference with the histogram edges so this makes them both line up exactly
+        # there will be a small difference with the histogram edges so this makes them both line up exactly
         self._linear_region_selector.selection = (
             self._image_graphic.vmin,
             self._image_graphic.vmax,
