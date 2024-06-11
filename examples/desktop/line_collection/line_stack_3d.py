@@ -4,7 +4,7 @@ Line stack 3D
 Example showing a 3D stack of lines with animations
 """
 
-# test_example = true
+# test_example = false
 
 import numpy as np
 import fastplotlib as fpl
