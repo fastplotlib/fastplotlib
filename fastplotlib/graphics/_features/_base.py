@@ -227,8 +227,8 @@ class BufferManager(GraphicFeature):
         """
         parse offset and size for first, i.e. n_datapoints, dimension
         """
-        if isinstance(key, int):
-            # simplest case
+        if np.issubdtype(type(key), np.integer):
+            # simplest case, just an int
             offset = key
             size = 1
 
