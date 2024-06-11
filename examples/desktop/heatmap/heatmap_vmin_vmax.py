@@ -12,7 +12,7 @@ import numpy as np
 
 fig = fpl.Figure()
 
-xs = np.linspace(0, 1_000, 10_000)
+xs = np.linspace(0, 1_000, 10_000, dtype=np.float32)
 
 sine = np.sin(np.sqrt(xs))
 

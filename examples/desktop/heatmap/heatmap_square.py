@@ -12,7 +12,7 @@ import numpy as np
 
 fig = fpl.Figure()
 
-xs = np.linspace(0, 1_000, 20_000)
+xs = np.linspace(0, 1_000, 20_000, dtype=np.float32)
 
 sine = np.sin(np.sqrt(xs))
 
@@ -21,6 +21,7 @@ data = np.vstack([sine * i for i in range(20_000)])
 # plot the image data
 img = fig[0, 0].add_image(data=data, name="heatmap")
 
+del data  # data no longer needed after given to graphic
 fig.show()
 
 fig.canvas.set_logical_size(1500, 1500)
