@@ -299,6 +299,12 @@ class GraphicCollection(Graphic, CollectionProperties):
         """remove an event handler"""
         self[:].remove_event_handler(callback, *types)
 
+    def _fpl_add_plot_area_hook(self, plot_area):
+        super()._fpl_add_plot_area_hook(plot_area)
+
+        for g in self:
+            g._fpl_add_plot_area_hook(plot_area)
+
     def __getitem__(self, key) -> CollectionIndexer:
         if np.issubdtype(type(key), np.integer):
             addr = self._graphics[key]
@@ -351,7 +357,7 @@ class CollectionFeature:
         self._feature_instances = [getattr(g, feature) for g in self._selection]
 
     def __getitem__(self, item):
-        return [fi[item] for fi in self._feature_instances]
+        return np.stack([fi[item] for fi in self._feature_instances])
 
     def __setitem__(self, key, value):
         for fi in self._feature_instances:
