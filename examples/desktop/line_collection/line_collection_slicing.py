@@ -30,14 +30,16 @@ lines = fig[0, 0].add_line_stack(
 
 print("slice a collection to return a collection indexer")
 print(lines[1:5])  # lines 1, 2, 3, 4
+
 print("collections supports fancy indexing!")
 print(lines[::3])
+
 print("fancy index using properties of individual lines!")
 print(lines[lines.thickness < 3])
 print(lines[lines.metadatas > 10])
 
 # set line properties, such as data
-# set y-values of lines 3 and 4
+# set y-values of lines 3, 4, 5
 lines[3:6].data[:, 1] = np.cos(xs)
 # set these same lines to a different color
 lines[3:6].colors = "cyan"

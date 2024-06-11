@@ -36,10 +36,7 @@ cmap_values = [10] * 4 + [0] * 4 + [7] * 4 + [5] * 4
 fig = fpl.Figure()
 
 fig[0, 0].add_line_collection(
-    circles,
-    cmap="bwr",
-    cmap_transform=cmap_values,
-    thickness=10
+    circles, cmap="bwr", cmap_transform=cmap_values, thickness=10
 )
 
 fig.show()
