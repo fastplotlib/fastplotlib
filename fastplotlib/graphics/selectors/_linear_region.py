@@ -65,7 +65,7 @@ class LinearRegionSelector(BaseSelector):
         self,
         selection: Sequence[float],
         limits: Sequence[float],
-        size: int,
+        size: float,
         center: float,
         axis: str = "x",
         parent: Graphic = None,
@@ -96,7 +96,7 @@ class LinearRegionSelector(BaseSelector):
             height or width of the selector
 
         center: float
-            center offset of the selector, by default the data mean
+            center offset of the selector on the orthogonal axis, by default the data mean
 
         axis: str, default "x"
             "x" | "y", axis the selected can move on
@@ -291,7 +291,7 @@ class LinearRegionSelector(BaseSelector):
                         # slices n_datapoints dim
                         data_selections.append(g.data[s])
 
-                # return source[:].data[s]
+                return source.data[s]
             else:
                 if ixs.size == 0:
                     # empty selection
