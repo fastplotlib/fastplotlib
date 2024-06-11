@@ -10,14 +10,6 @@ COLLECTION_GRAPHICS: dict[HexStr, Graphic] = dict()
 
 
 class CollectionProperties:
-    @property
-    def names(self) -> np.ndarray[str | None]:
-        return np.asarray([g.name for g in self])
-
-    @names.setter
-    def names(self, values: np.ndarray[str] | list[str]):
-        self._set_feature("name", values)
-
     def _set_feature(self, feature, values):
         if not len(values) == len(self):
             raise IndexError
@@ -26,7 +18,17 @@ class CollectionProperties:
             setattr(g, feature, v)
 
     @property
+    def names(self) -> np.ndarray[str | None]:
+        """get or set the name of the individual graphics in the collection"""
+        return np.asarray([g.name for g in self])
+
+    @names.setter
+    def names(self, values: np.ndarray[str] | list[str]):
+        self._set_feature("name", values)
+
+    @property
     def metadatas(self) -> np.ndarray[str | None]:
+        """get or set the metadata of the individual graphics in the collection"""
         return np.asarray([g.metadata for g in self])
 
     @metadatas.setter
@@ -34,37 +36,32 @@ class CollectionProperties:
         self._set_feature("metadata", values)
 
     @property
-    def name(self) -> np.ndarray[str | None]:
-        return np.asarray([g.name for g in self])
-
-    @name.setter
-    def name(self, values: np.ndarray[str] | list[str]):
-        self._set_feature("name", values)
-
-    @property
-    def offset(self) -> np.ndarray:
+    def offsets(self) -> np.ndarray:
+        """get or set the offset of the individual graphics in the collection"""
         return np.stack([g.offset for g in self])
 
-    @offset.setter
-    def offset(self, values: np.ndarray | list[np.ndarray]):
+    @offsets.setter
+    def offsets(self, values: np.ndarray | list[np.ndarray]):
         self._set_feature("offset", values)
 
     @property
-    def rotation(self) -> np.ndarray:
+    def rotations(self) -> np.ndarray:
+        """get or set the rotation of the individual graphics in the collection"""
         return np.stack([g.rotation for g in self])
 
-    @rotation.setter
-    def rotation(self, values: np.ndarray | list[np.ndarray]):
+    @rotations.setter
+    def rotations(self, values: np.ndarray | list[np.ndarray]):
         self._set_feature("rotation", values)
 
     # TODO: how to work with deleted feature in a collection
 
     @property
-    def visible(self) -> np.ndarray[bool]:
+    def visibles(self) -> np.ndarray[bool]:
+        """get or set the offsets of the individual graphics in the collection"""
         return np.asarray([g.visible for g in self])
 
-    @visible.setter
-    def visible(self, values: np.ndarray[bool] | list[bool]):
+    @visibles.setter
+    def visibles(self, values: np.ndarray[bool] | list[bool]):
         self._set_feature("visible", values)
 
 
