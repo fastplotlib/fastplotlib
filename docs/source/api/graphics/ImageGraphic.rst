@@ -45,6 +45,7 @@ Methods
     ImageGraphic.add_linear_region_selector
     ImageGraphic.add_linear_selector
     ImageGraphic.attach_feature
+    ImageGraphic.clear_event_handlers
     ImageGraphic.detach_feature
     ImageGraphic.remove_event_handler
     ImageGraphic.reset_vmin_vmax

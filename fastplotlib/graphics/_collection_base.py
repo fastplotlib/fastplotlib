@@ -182,12 +182,12 @@ class CollectionIndexer(CollectionProperties):
 class GraphicCollection(Graphic, CollectionProperties):
     """Graphic Collection base class"""
 
-    child_type: type
+    _child_type: type
     _indexer: type
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._features = cls.child_type._features
+        cls._features = cls._child_type._features
 
     def __init__(self, name: str = None, metadata: Any = None, **kwargs):
         super().__init__(name=name, metadata=metadata, **kwargs)
@@ -224,10 +224,10 @@ class GraphicCollection(Graphic, CollectionProperties):
 
         """
 
-        if not type(graphic) == self.child_type:
+        if not type(graphic) == self._child_type:
             raise TypeError(
                 f"Can only add graphics of the same type to a collection.\n"
-                f"You can only add {self.child_type.__name__} to a {self.__class__.__name__}, "
+                f"You can only add {self._child_type.__name__} to a {self.__class__.__name__}, "
                 f"you are trying to add a {graphic.__class__.__name__}."
             )
 

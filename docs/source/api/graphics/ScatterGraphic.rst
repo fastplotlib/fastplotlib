@@ -41,6 +41,7 @@ Methods
 
     ScatterGraphic.add_event_handler
     ScatterGraphic.attach_feature
+    ScatterGraphic.clear_event_handlers
     ScatterGraphic.detach_feature
     ScatterGraphic.remove_event_handler
     ScatterGraphic.rotate

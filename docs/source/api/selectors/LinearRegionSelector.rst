@@ -42,6 +42,7 @@ Methods
     LinearRegionSelector.add_event_handler
     LinearRegionSelector.add_ipywidget_handler
     LinearRegionSelector.attach_feature
+    LinearRegionSelector.clear_event_handlers
     LinearRegionSelector.detach_feature
     LinearRegionSelector.get_selected_data
     LinearRegionSelector.get_selected_index

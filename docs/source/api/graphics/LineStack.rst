@@ -28,11 +28,16 @@ Properties
     LineStack.event_handlers
     LineStack.events
     LineStack.graphics
+    LineStack.metadatas
     LineStack.name
+    LineStack.names
     LineStack.offset
+    LineStack.offsets
     LineStack.rotation
+    LineStack.rotations
     LineStack.thickness
     LineStack.visible
+    LineStack.visibles
     LineStack.world_object
 
 Methods
@@ -45,7 +50,7 @@ Methods
     LineStack.add_linear_region_selector
     LineStack.add_linear_selector
     LineStack.attach_feature
-    LineStack.child_type
+    LineStack.clear_event_handlers
     LineStack.detach_feature
     LineStack.remove_event_handler
     LineStack.remove_graphic

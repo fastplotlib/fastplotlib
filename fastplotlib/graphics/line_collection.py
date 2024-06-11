@@ -119,7 +119,7 @@ class LineCollectionIndexer(CollectionIndexer, _LineCollectionProperties):
 
 
 class LineCollection(GraphicCollection, _LineCollectionProperties):
-    child_type = LineGraphic
+    _child_type = LineGraphic
     _indexer = LineCollectionIndexer
 
     def __init__(

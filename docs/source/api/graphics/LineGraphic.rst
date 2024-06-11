@@ -43,6 +43,7 @@ Methods
     LineGraphic.add_linear_region_selector
     LineGraphic.add_linear_selector
     LineGraphic.attach_feature
+    LineGraphic.clear_event_handlers
     LineGraphic.detach_feature
     LineGraphic.remove_event_handler
     LineGraphic.rotate

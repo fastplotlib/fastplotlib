@@ -2,12 +2,6 @@ Welcome to fastplotlib's documentation!
 =======================================
 
 .. toctree::
-    :caption: Quick Start
-    :maxdepth: 2
-    
-    quickstart
-
-.. toctree::
    :caption: User Guide
    :maxdepth:  2
 
@@ -23,6 +17,7 @@ Welcome to fastplotlib's documentation!
    Graphic Features <api/graphic_features/index>
    Selectors <api/selectors/index>
    Widgets <api/widgets/index>
+   Functions <api/functions>
    Utils <api/utils>
    GPU <api/gpu>
 

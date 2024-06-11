@@ -28,11 +28,16 @@ Properties
     LineCollection.event_handlers
     LineCollection.events
     LineCollection.graphics
+    LineCollection.metadatas
     LineCollection.name
+    LineCollection.names
     LineCollection.offset
+    LineCollection.offsets
     LineCollection.rotation
+    LineCollection.rotations
     LineCollection.thickness
     LineCollection.visible
+    LineCollection.visibles
     LineCollection.world_object
 
 Methods
@@ -45,7 +50,7 @@ Methods
     LineCollection.add_linear_region_selector
     LineCollection.add_linear_selector
     LineCollection.attach_feature
-    LineCollection.child_type
+    LineCollection.clear_event_handlers
     LineCollection.detach_feature
     LineCollection.remove_event_handler
     LineCollection.remove_graphic

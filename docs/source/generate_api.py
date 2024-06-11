@@ -263,6 +263,12 @@ def main():
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
 
+    # gpu selection
+    fpl_functions = generate_functions_module(fastplotlib, "fastplotlib.utils.gpu")
+
+    with open(API_DIR.joinpath("gpu.rst"), "w") as f:
+        f.write(fpl_functions)
+
 
 if __name__ == "__main__":
     main()

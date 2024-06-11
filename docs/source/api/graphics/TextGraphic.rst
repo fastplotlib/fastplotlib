@@ -42,6 +42,7 @@ Methods
 
     TextGraphic.add_event_handler
     TextGraphic.attach_feature
+    TextGraphic.clear_event_handlers
     TextGraphic.detach_feature
     TextGraphic.remove_event_handler
     TextGraphic.rotate

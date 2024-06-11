@@ -42,6 +42,7 @@ Methods
     LinearSelector.add_event_handler
     LinearSelector.add_ipywidget_handler
     LinearSelector.attach_feature
+    LinearSelector.clear_event_handlers
     LinearSelector.detach_feature
     LinearSelector.get_selected_data
     LinearSelector.get_selected_index
