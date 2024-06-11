@@ -77,7 +77,18 @@ class _LineCollectionProperties:
         return CollectionFeature(self.graphics, "cmap")
 
     @cmap.setter
-    def cmap(self, name: str, transform: np.ndarray = None, alpha: float = 1.0):
+    def cmap(self, args):
+        if len(args) == 1:
+            name = args[0]
+            transform, alpha = None, None
+
+        elif len(args) == 2:
+            name, transform = args
+            alpha = None
+
+        elif len(args) == 3:
+            name, transform, alpha = args
+
         colors = parse_cmap_values(n_colors=len(self), cmap_name=name, transform=transform)
         colors[:, -1] = alpha
         self.colors = colors
