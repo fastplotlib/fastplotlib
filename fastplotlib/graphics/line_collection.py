@@ -78,6 +78,9 @@ class _LineCollectionProperties:
 
     @cmap.setter
     def cmap(self, args):
+        if isinstance(args, str):
+            name = args
+            transform, alpha = None, 1.0
         if len(args) == 1:
             name = args[0]
             transform, alpha = None, None
