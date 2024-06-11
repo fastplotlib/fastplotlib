@@ -1,7 +1,7 @@
 """
-Line Plot
-============
-Example showing how to plot line collections
+Line collections qualitative cmaps
+==================================
+Example showing a line collection with a qualitative cmap
 """
 
 # test_example = true

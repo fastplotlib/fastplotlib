@@ -1,7 +1,7 @@
 """
-Line Plot
-============
-Example showing how to plot line collections
+Line stack
+==========
+Example showing how to plot a stack of lines
 """
 
 # test_example = true
@@ -20,7 +20,7 @@ data = np.vstack([ys] * 25)
 fig = fpl.Figure()
 
 # line stack takes all the same arguments as line collection and behaves similarly
-fig[0, 0].add_line_stack(data, cmap="jet")
+lines_stack = fig[0, 0].add_line_stack(data, cmap="jet")
 
 fig.show(maintain_aspect=False)
 

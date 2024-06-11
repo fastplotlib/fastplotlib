@@ -1,7 +1,7 @@
 """
-Line Plot
-============
-Example showing how to plot line collections
+Line collection colors
+======================
+Example showing one way ot setting colors for individual lines in a collection
 """
 
 # test_example = true
