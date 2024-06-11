@@ -4,7 +4,7 @@ Square Heatmap
 square heatmap test
 """
 
-# test_example = true
+# test_example = false
 
 import fastplotlib as fpl
 import numpy as np
