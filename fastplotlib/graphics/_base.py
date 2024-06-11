@@ -282,6 +282,12 @@ class Graphic:
 
         return decorator(callback)
 
+    def clear_event_handlers(self):
+        for ev, handlers in self.event_handlers:
+            handlers = list(handlers)
+            for h in handlers:
+                self.remove_event_handler(h, ev)
+
     def _handle_event(self, callback, event: pygfx.Event):
         """Wrap pygfx event to add graphic to pick_info"""
         event.graphic = self
@@ -358,6 +364,9 @@ class Graphic:
 
         Optionally implemented in subclasses
         """
+        # remove event handlers
+        self.clear_event_handlers()
+
         # clear any attached event handlers and animation functions
         for attr in dir(self):
             try:

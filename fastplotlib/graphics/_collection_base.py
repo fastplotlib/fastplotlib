@@ -153,6 +153,10 @@ class CollectionIndexer(CollectionProperties):
         for g in self:
             g.remove_event_handler(callback, *types)
 
+    def clear_event_handlers(self):
+        for g in self:
+            g.clear_event_handlers()
+
     def __getitem__(self, item):
         return self.graphics[item]
 
@@ -300,11 +304,27 @@ class GraphicCollection(Graphic, CollectionProperties):
         """remove an event handler"""
         self[:].remove_event_handler(callback, *types)
 
+    def clear_event_handlers(self):
+        self[:].clear_event_handlers()
+
     def _fpl_add_plot_area_hook(self, plot_area):
         super()._fpl_add_plot_area_hook(plot_area)
 
         for g in self:
             g._fpl_add_plot_area_hook(plot_area)
+
+    def _fpl_cleanup(self):
+        """
+        Cleans up the graphic in preparation for __del__(), such as removing event handlers from
+        plot renderer, feature event handlers, etc.
+
+        Optionally implemented in subclasses
+        """
+        # clear any attached event handlers and animation functions
+        self.world_object._event_handlers.clear()
+
+        for g in self:
+            g._fpl_cleanup()
 
     def __getitem__(self, key) -> CollectionIndexer:
         if np.issubdtype(type(key), np.integer):
