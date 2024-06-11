@@ -82,7 +82,7 @@ class LinearSelector(BaseSelector):
             "x" | "y", the axis which the slider can move along
 
         center: float
-            center of selector along the opposite axis of `axis`
+            center offset of the selector on the orthogonal axis, by default the data mean
 
         parent: Graphic
             parent graphic for this LineSelector
