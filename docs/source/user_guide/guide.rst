@@ -21,7 +21,7 @@ What is `fastplotlib`?
 ----------------------
 
 `fastplotlib` is a cutting-edge plotting library built using the `pygfx <https://github.com/pygfx/pygfx>`_ rendering engine.
-The lower level details of the rendering process (i.e. defining a scene, camera, renderer, etc.) are abstracted away, allowing users to focus on their data.
+The lower-level details of the rendering process (i.e. defining a scene, camera, renderer, etc.) are abstracted away, allowing users to focus on their data.
 The fundamental goal of `fastplotlib` is to provide a high-level, expressive API that promotes large-scale explorative scientific visualization.
 
 
@@ -47,7 +47,7 @@ Before giving a detailed overview of the library, here is a minimal example::
 .. image:: /_static/guide_hello_world.png
 
 
-This was a simple example of how the `fastplotlib` API works to create a plot, add some data to the plot, and then visualize it.
+This is just a simple example of how the `fastplotlib` API works to create a plot, add some image data to the plot, and then visualize it.
 However, this is just scratching the surface of what we can do with `fastplotlib`.
 Next, we will take a look at the building blocks of `fastplotlib` and how they can be used to create more complex visualizations.
 
@@ -56,30 +56,43 @@ Next, we will take a look at the building blocks of `fastplotlib` and how they c
 The base of any visualization in `fastplotlib` is a `Figure` object. This can be a singular plot or a grid of subplots.
 The `Figure` object houses and takes care of the underlying rendering components such as the camera, controller, renderer, and canvas.
 
-Initially, our figure is empty as we have not added any `Graphics`. After defining a `Figure`, we can begin to add `Graphic` objects.
+After defining a `Figure`, we can begin to add `Graphic` objects.
 
 **Graphics**
 
-A `Graphic` can be an image, a line, a scatter, a collection of lines, and more. Graphics have what we like to call `GraphicFeatures` which
-are mutable, indexable properties that can be linked to events.
+A `Graphic` can be an image, a line, a scatter, a collection of lines, and more. All graphics can be given a string name. This allows graphics
+to be easily accessed from figures::
 
-(1) Common `GraphicFeatures`
+    fig = fpl.Figure()
+
+    data = np.random.rand(512, 512)
+
+    image_graphic = fig[0,0].add_image(data=data, name="random-img")
+
+    fig.show()
+
+    fig[0,0]["random-img"]
+..
+
+Graphics also have mutable, indexable properties that can be linked to events.
+
+(1) Common properties
 
 +--------------+--------------------------------------------------------------------------------------------------------------+
 | Feature Name | Description                                                                                                  |
 +==============+==============================================================================================================+
-| Name         | Graphic name                                                                                                 |
+| name         | Graphic name                                                                                                 |
 +--------------+--------------------------------------------------------------------------------------------------------------+
-| Offset       | Offset position of the graphic, [x, y, z]                                                                    |
+| offset       | Offset position of the graphic, [x, y, z]                                                                    |
 +--------------+--------------------------------------------------------------------------------------------------------------+
-| Rotation     | Graphic rotation quaternion                                                                                  |
+| rotation     | Graphic rotation quaternion                                                                                  |
 +--------------+--------------------------------------------------------------------------------------------------------------+
-| Visible      | Access or change the visibility                                                                              |
+| visible      | Access or change the visibility                                                                              |
 +--------------+--------------------------------------------------------------------------------------------------------------+
-| Deleted      | Used when a graphic is deleted, triggers events that can be useful to indicate this graphic has been deleted |
+| deleted      | Used when a graphic is deleted, triggers events that can be useful to indicate this graphic has been deleted |
 +--------------+--------------------------------------------------------------------------------------------------------------+
 
-(2) Graphic-Specific `GraphicFeatures`
+(2) Graphic-Specific properties
 
     (a) `ImageGraphic`
 
@@ -153,11 +166,33 @@ Using our example from above: once we add a `Graphic` to the figure, we can then
 .. image:: /_static/guide_image_slice.png
 
 Now that we have the basics of creating a `Figure`, adding `Graphics` to the `Figure`, and working with `GraphicFeatures` to change or alter a `Graphic`.
-Let's take a look at how we can define events to like `Graphics` and their `GraphicFeatures` together.
+Let's take a look at how we can define events to link `Graphics` and their properties together.
 
 Events
 ------
 
+All events inherit from the `pygfx.Event` class (add link)
+
+events table: 
+
+PYGFX_EVENTS = [
+    "key_down",
+    "key_up",
+    "pointer_down",
+    "pointer_move",
+    "pointer_up",
+    "pointer_enter",
+    "pointer_leave",
+    "click",
+    "double_click",
+    "wheel",
+    "close",
+    "resize",
+]
+
+adding events (2 methods)
+
+attributes of all events (table)
 
 Selectors
 ---------
