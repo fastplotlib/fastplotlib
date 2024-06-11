@@ -4,7 +4,7 @@ Heatmap change data
 Change the data of a heatmap
 """
 
-# test_example = true
+# test_example = false
 
 import fastplotlib as fpl
 import numpy as np
