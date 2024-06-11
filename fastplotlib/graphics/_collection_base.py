@@ -10,6 +10,11 @@ COLLECTION_GRAPHICS: dict[HexStr, Graphic] = dict()
 
 
 class CollectionProperties:
+    """
+    Properties common to all Graphic Collections
+
+    Allows getting and setting the common properties of the individual graphics in the collection
+    """
     def _set_feature(self, feature, values):
         if not len(values) == len(self):
             raise IndexError
@@ -87,7 +92,7 @@ class CollectionIndexer(CollectionProperties):
 
     @property
     def graphics(self) -> np.ndarray[Graphic]:
-        """Returns an array of the selected graphics. Always returns a proxy to the Graphic"""
+        """Returns an array of the selected graphics"""
         return tuple(self._selection)
 
     def add_event_handler(self, *args):
@@ -291,6 +296,7 @@ class GraphicCollection(Graphic, CollectionProperties):
         return self[:].add_event_handler(*args)
 
     def remove_event_handler(self, callback, *types):
+        """remove an event handler"""
         self[:].remove_event_handler(callback, *types)
 
     def __getitem__(self, key) -> CollectionIndexer:
