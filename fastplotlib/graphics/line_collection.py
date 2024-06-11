@@ -92,7 +92,9 @@ class _LineCollectionProperties:
         elif len(args) == 3:
             name, transform, alpha = args
 
-        colors = parse_cmap_values(n_colors=len(self), cmap_name=name, transform=transform)
+        colors = parse_cmap_values(
+            n_colors=len(self), cmap_name=name, transform=transform
+        )
         colors[:, -1] = alpha
         self.colors = colors
 
@@ -112,6 +114,7 @@ class _LineCollectionProperties:
 
 class LineCollectionIndexer(CollectionIndexer, _LineCollectionProperties):
     """Indexer for line collections"""
+
     pass
 
 
@@ -120,21 +123,21 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
     _indexer = LineCollectionIndexer
 
     def __init__(
-            self,
-            data: np.ndarray | List[np.ndarray],
-            thickness: float | Sequence[float] = 2.0,
-            colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
-            uniform_colors: bool = False,
-            alpha: float = 1.0,
-            cmap: Sequence[str] | str = None,
-            cmap_transform: np.ndarray | List = None,
-            name: str = None,
-            names: list[str] = None,
-            metadata: Any = None,
-            metadatas: Sequence[Any] | np.ndarray = None,
-            isolated_buffer: bool = True,
-            kwargs_lines: list[dict] = None,
-            **kwargs,
+        self,
+        data: np.ndarray | List[np.ndarray],
+        thickness: float | Sequence[float] = 2.0,
+        colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
+        uniform_colors: bool = False,
+        alpha: float = 1.0,
+        cmap: Sequence[str] | str = None,
+        cmap_transform: np.ndarray | List = None,
+        name: str = None,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Sequence[Any] | np.ndarray = None,
+        isolated_buffer: bool = True,
+        kwargs_lines: list[dict] = None,
+        **kwargs,
     ):
         """
         Create a collection of :class:`.LineGraphic`
@@ -214,7 +217,8 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         if kwargs_lines is not None:
             if len(kwargs_lines) != len(data):
                 raise ValueError(
-                    f"len(kwargs_lines) != len(data)\n" f"{len(kwargs_lines)} != {len(data)}"
+                    f"len(kwargs_lines) != len(data)\n"
+                    f"{len(kwargs_lines)} != {len(data)}"
                 )
 
         self._cmap_transform = cmap_transform
@@ -329,7 +333,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             )
 
             self.add_graphic(lg)
-            
+
     def __getitem__(self, item) -> LineCollectionIndexer:
         return super().__getitem__(item)
 
@@ -361,7 +365,9 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         """
 
-        bounds_init, limits, size, center = self._get_linear_selector_init_args(axis, padding)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(
+            axis, padding
+        )
 
         if selection is None:
             selection = bounds_init[0]
@@ -388,7 +394,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         selection: tuple[float, float] = None,
         padding: float = 0.0,
         axis: str = "x",
-        **kwargs
+        **kwargs,
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -415,7 +421,9 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         """
 
-        bounds_init, limits, size, center = self._get_linear_selector_init_args(axis, padding)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(
+            axis, padding
+        )
 
         if selection is None:
             selection = bounds_init
@@ -476,22 +484,22 @@ axes = {"x": 0, "y": 1, "z": 2}
 
 class LineStack(LineCollection):
     def __init__(
-            self,
-            data: List[np.ndarray],
-            thickness: float | Iterable[float] = 2.0,
-            colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
-            alpha: float = 1.0,
-            cmap: Iterable[str] | str = None,
-            cmap_transform: np.ndarray | List = None,
-            name: str = None,
-            names: list[str] = None,
-            metadata: Any = None,
-            metadatas: Sequence[Any] | np.ndarray = None,
-            isolated_buffer: bool = True,
-            separation: float = 10.0,
-            separation_axis: str = "y",
-            kwargs_lines: list[dict] = None,
-            **kwargs,
+        self,
+        data: List[np.ndarray],
+        thickness: float | Iterable[float] = 2.0,
+        colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
+        alpha: float = 1.0,
+        cmap: Iterable[str] | str = None,
+        cmap_transform: np.ndarray | List = None,
+        name: str = None,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Sequence[Any] | np.ndarray = None,
+        isolated_buffer: bool = True,
+        separation: float = 10.0,
+        separation_axis: str = "y",
+        kwargs_lines: list[dict] = None,
+        **kwargs,
     ):
         """
         Create a stack of :class:`.LineGraphic` that are separated along the "x" or "y" axis.
@@ -579,7 +587,7 @@ class LineStack(LineCollection):
                 line.offset = (line.offset[0], axis_zero, line.offset[2])
 
             axis_zero = (
-                    axis_zero + line.data.value[:, axes[separation_axis]].max() + separation
+                axis_zero + line.data.value[:, axes[separation_axis]].max() + separation
             )
 
         self.separation = separation

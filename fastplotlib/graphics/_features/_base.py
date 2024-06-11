@@ -260,7 +260,9 @@ class BufferManager(GraphicFeature):
                 key = np.array(key)
 
             if not key.ndim == 1:
-                raise TypeError(f"can only use 1D arrays for fancy indexing, you have passed a data with: {key.ndim} dimensions")
+                raise TypeError(
+                    f"can only use 1D arrays for fancy indexing, you have passed a data with: {key.ndim} dimensions"
+                )
 
             if key.dtype == bool:
                 # convert bool mask to integer indices
@@ -268,7 +270,9 @@ class BufferManager(GraphicFeature):
 
             if not np.issubdtype(key.dtype, np.integer):
                 # fancy indexing doesn't make sense with non-integer types
-                raise TypeError(f"can only using integer or booleans arrays for fancy indexing, your array is of type: {key.dtype}")
+                raise TypeError(
+                    f"can only using integer or booleans arrays for fancy indexing, your array is of type: {key.dtype}"
+                )
 
             if key.size < 1:
                 # nothing to update

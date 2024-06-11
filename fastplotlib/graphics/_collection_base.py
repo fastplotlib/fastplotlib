@@ -15,6 +15,7 @@ class CollectionProperties:
 
     Allows getting and setting the common properties of the individual graphics in the collection
     """
+
     def _set_feature(self, feature, values):
         if not len(values) == len(self):
             raise IndexError

@@ -35,7 +35,7 @@ from ._selection_features import LinearSelectionFeature, LinearRegionSelectionFe
 from ._common import Name, Offset, Rotation, Visible, Deleted
 
 
-__all__ =[
+__all__ = [
     "VertexColors",
     "UniformColor",
     "UniformSize",

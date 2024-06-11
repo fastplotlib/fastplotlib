@@ -100,7 +100,9 @@ class PositionsGraphic(Graphic):
                 self._cmap = cmap
                 self._colors = cmap._vertex_colors
             else:
-                raise TypeError("`cmap` argument must be a <str> cmap name or an existing `VertexCmap` instance")
+                raise TypeError(
+                    "`cmap` argument must be a <str> cmap name or an existing `VertexCmap` instance"
+                )
         else:
             # no cmap given
             if isinstance(colors, VertexColors):

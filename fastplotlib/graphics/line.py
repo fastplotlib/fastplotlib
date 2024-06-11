@@ -134,7 +134,9 @@ class LineGraphic(PositionsGraphic):
 
         """
 
-        bounds_init, limits, size, center = self._get_linear_selector_init_args(axis, padding)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(
+            axis, padding
+        )
 
         if selection is None:
             selection = bounds_init[0]
@@ -161,7 +163,7 @@ class LineGraphic(PositionsGraphic):
         selection: tuple[float, float] = None,
         padding: float = 0.0,
         axis: str = "x",
-        **kwargs
+        **kwargs,
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -188,7 +190,9 @@ class LineGraphic(PositionsGraphic):
 
         """
 
-        bounds_init, limits, size, center = self._get_linear_selector_init_args(axis, padding)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(
+            axis, padding
+        )
 
         if selection is None:
             selection = bounds_init
@@ -214,7 +218,9 @@ class LineGraphic(PositionsGraphic):
         return weakref.proxy(selector)
 
     # TODO: this method is a bit of a mess, can refactor later
-    def _get_linear_selector_init_args(self, axis: str, padding) -> tuple[tuple[float, float], tuple[float, float], float, float]:
+    def _get_linear_selector_init_args(
+        self, axis: str, padding
+    ) -> tuple[tuple[float, float], tuple[float, float], float, float]:
         # computes args to create selectors
         n_datapoints = self.data.value.shape[0]
         value_25p = int(n_datapoints / 4)
