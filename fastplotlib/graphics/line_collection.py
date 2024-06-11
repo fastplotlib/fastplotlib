@@ -23,7 +23,8 @@ class _LineCollectionProperties:
     def colors(self, values: str | np.ndarray | tuple[float] | list[float] | list[str]):
         if isinstance(values, str):
             # set colors of all lines to one str color
-            self.colors[:] = values
+            for g in self:
+                g.colors = values
             return
 
         elif all(isinstance(v, str) for v in values):
@@ -39,7 +40,7 @@ class _LineCollectionProperties:
         if isinstance(values, np.ndarray):
             if values.ndim == 2:
                 # assume individual colors for each
-                for g, v in zip(self.graphics, values):
+                for g, v in zip(self, values):
                     g.colors = v
                 return
 
@@ -49,7 +50,7 @@ class _LineCollectionProperties:
 
         else:
             # assume individual colors for each
-            for g, v in zip(self.graphics, values):
+            for g, v in zip(self, values):
                 g.colors = v
 
     @property
@@ -59,7 +60,8 @@ class _LineCollectionProperties:
 
     @data.setter
     def data(self, values):
-        self.data[:] = values
+        for g, v in zip(self, values):
+            g.data = v
 
     @property
     def cmap(self) -> CollectionFeature:
@@ -76,20 +78,21 @@ class _LineCollectionProperties:
 
     @cmap.setter
     def cmap(self, name: str, transform: np.ndarray = None, alpha: float = 1.0):
-        colors = parse_cmap_values(n_colors=len(self), cmap_name=name, transform=transform, alpha=alpha)
+        colors = parse_cmap_values(n_colors=len(self), cmap_name=name, transform=transform)
+        colors[:, -1] = alpha
         self.colors = colors
 
     @property
     def thickness(self) -> np.ndarray:
         """get or set the thickness of the lines"""
-        return np.asarray([g.thickness for g in self.graphics])
+        return np.asarray([g.thickness for g in self])
 
     @thickness.setter
     def thickness(self, values: np.ndarray | list[float]):
         if not len(values) == len(self):
             raise IndexError
 
-        for g, v in zip(self.graphics, values):
+        for g, v in zip(self, values):
             g.thickness = v
 
 
@@ -104,7 +107,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
     def __init__(
             self,
-            data: List[np.ndarray],
+            data: np.ndarray | List[np.ndarray],
             thickness: float | Sequence[float] = 2.0,
             colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
             uniform_colors: bool = False,
@@ -112,18 +115,23 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             cmap: Sequence[str] | str = None,
             cmap_transform: np.ndarray | List = None,
             name: str = None,
-            metadata: Sequence[Any] | np.ndarray = None,
+            names: list[str] = None,
+            metadata: Any = None,
+            metadatas: Sequence[Any] | np.ndarray = None,
             isolated_buffer: bool = True,
-            **kwargs,
+            kwargs_lines: list[dict] = None,
+            **kwargs_collection,
     ):
         """
         Create a collection of :class:`.LineGraphic`
 
         Parameters
         ----------
-        data: list of array-like or array
-            List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
-            if elements are 2D, interpreted as [y_vals, n_lines]
+        data: list of array-like
+            List or array-like of multiple line data to plot
+
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -149,14 +157,23 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             if provided, these values are used to map the colors from the cmap
 
         name: str, optional
-            name of the line collection
+            name of the line collection as a whole
 
-        metadata: Iterable or array
-            metadata associated with this collection, this is for the user to manage.
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            meatadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
-        kwargs
-            passed to Graphic
+        kwargs_lines: list[dict], optional
+            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
+
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
 
         Features
         --------
@@ -167,18 +184,30 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         """
 
-        super().__init__(name)
+        super().__init__(name=name, metadata=metadata, **kwargs_collection)
 
         if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
                 raise ValueError(
-                    "args must be a single float or an iterable with same length as data"
+                    f"len(thickness) != len(data)\n" f"{len(thickness)} != {len(data)}"
                 )
 
-        if metadata is not None:
-            if len(metadata) != len(data):
+        if names is not None:
+            if len(names) != len(data):
                 raise ValueError(
-                    f"len(metadata) != len(data)\n" f"{len(metadata)} != {len(data)}"
+                    f"len(names) != len(data)\n" f"{len(names)} != {len(data)}"
+                )
+
+        if metadatas is not None:
+            if len(metadatas) != len(data):
+                raise ValueError(
+                    f"len(metadata) != len(data)\n" f"{len(metadatas)} != {len(data)}"
+                )
+
+        if kwargs_lines is not None:
+            if len(kwargs_lines) != len(data):
+                raise ValueError(
+                    f"len(kwargs_lines) != len(data)\n" f"{len(kwargs_lines)} != {len(data)}"
                 )
 
         self._cmap_transform = cmap_transform
@@ -248,6 +277,9 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                         "or must be a tuple/list of colors represented by a string with the same length as the data"
                     )
 
+        if kwargs_lines is None:
+            kwargs_lines = dict()
+
         self._set_world_object(pygfx.Group())
 
         for i, d in enumerate(data):
@@ -267,10 +299,15 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                 _cmap = cmap[i]
                 _c = None
 
-            if metadata is not None:
-                _m = metadata[i]
+            if metadatas is not None:
+                _m = metadatas[i]
             else:
                 _m = None
+
+            if names is not None:
+                _name = names[i]
+            else:
+                _name = None
 
             lg = LineGraphic(
                 data=d,
@@ -278,9 +315,10 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                 colors=_c,
                 uniform_color=uniform_colors,
                 cmap=_cmap,
+                name=_name,
                 metadata=_m,
                 isolated_buffer=isolated_buffer,
-                **kwargs,
+                **kwargs_lines,
             )
 
             self.add_graphic(lg)
@@ -394,7 +432,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         sizes = list()
         origin = list()
 
-        for g in self.graphics:
+        for g in self:
             (
                 _bounds_init,
                 _limits,

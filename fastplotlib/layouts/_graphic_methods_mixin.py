@@ -72,18 +72,6 @@ class GraphicMethodsMixin:
         kwargs:
             additional keyword arguments passed to Graphic
 
-        Features
-        --------
-
-        **data**: :class:`.HeatmapDataFeature`
-            Manages the data buffer displayed in the HeatmapGraphic
-
-        **cmap**: :class:`.HeatmapCmapFeature`
-            Manages the colormap
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene
-
 
         """
         return self._create_graphic(
@@ -100,7 +88,7 @@ class GraphicMethodsMixin:
 
     def add_line_collection(
         self,
-        data: List[numpy.ndarray],
+        data: Union[numpy.ndarray, List[numpy.ndarray]],
         thickness: Union[float, Sequence[float]] = 2.0,
         colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
         uniform_colors: bool = False,
@@ -108,9 +96,12 @@ class GraphicMethodsMixin:
         cmap: Union[Sequence[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
-        metadata: Union[Sequence[Any], numpy.ndarray] = None,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
         isolated_buffer: bool = True,
-        **kwargs
+        kwargs_lines: list[dict] = None,
+        **kwargs_collection
     ) -> LineCollection:
         """
 
@@ -118,9 +109,11 @@ class GraphicMethodsMixin:
 
         Parameters
         ----------
-        data: list of array-like or array
-            List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
-            if elements are 2D, interpreted as [y_vals, n_lines]
+        data: list of array-like
+            List or array-like of multiple line data to plot
+
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -146,14 +139,23 @@ class GraphicMethodsMixin:
             if provided, these values are used to map the colors from the cmap
 
         name: str, optional
-            name of the line collection
+            name of the line collection as a whole
 
-        metadata: Iterable or array
-            metadata associated with this collection, this is for the user to manage.
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            meatadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
-        kwargs
-            passed to Graphic
+        kwargs_lines: list[dict], optional
+            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
+
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
 
         Features
         --------
@@ -174,8 +176,11 @@ class GraphicMethodsMixin:
             cmap,
             cmap_transform,
             name,
+            names,
             metadata,
+            metadatas,
             isolated_buffer,
+            kwargs_lines,
             **kwargs
         )
 
@@ -207,18 +212,19 @@ class GraphicMethodsMixin:
             specify colors as a single human-readable string, a single RGBA array,
             or an iterable of strings or RGBA arrays
 
+        uniform_color: bool, default ``False``
+            if True, uses a uniform buffer for the line color,
+            basically saves GPU VRAM when the entire line has a single color
+
+        alpha: float, optional, default 1.0
+            alpha value for the colors
+
         cmap: str, optional
             apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors"
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
-
-        alpha: float, optional, default 1.0
-            alpha value for the colors
-
-        z_position: float, optional
-            z-axis position for placing the graphic
 
         **kwargs
             passed to Graphic
@@ -398,7 +404,7 @@ class GraphicMethodsMixin:
         font_size: float | int = 14,
         face_color: str | numpy.ndarray | list[float] | tuple[float] = "w",
         outline_color: str | numpy.ndarray | list[float] | tuple[float] = "w",
-        outline_thickness: float | int = 0,
+        outline_thickness: float = 0.0,
         screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
@@ -422,8 +428,8 @@ class GraphicMethodsMixin:
         outline_color: str or array, default "w"
             str or RGBA array to set the outline color of the text
 
-        outline_thickness: float | int, default 0
-            text outline thickness
+        outline_thickness: float, default 0
+            relative outline thickness, value between 0.0 - 0.5
 
         screen_space: bool = True
             if True, text size is in screen space, if False the text size is in data space

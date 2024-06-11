@@ -1,14 +1,74 @@
+from typing import Any
 import weakref
 
 import numpy as np
 
-from ._base import HexStr, Graphic, PYGFX_EVENTS
+from ._base import HexStr, Graphic
 
 # Dict that holds all collection graphics in one python instance
 COLLECTION_GRAPHICS: dict[HexStr, Graphic] = dict()
 
 
-class CollectionIndexer:
+class CollectionProperties:
+    @property
+    def names(self) -> np.ndarray[str | None]:
+        return np.asarray([g.name for g in self])
+
+    @names.setter
+    def names(self, values: np.ndarray[str] | list[str]):
+        self._set_feature("name", values)
+
+    def _set_feature(self, feature, values):
+        if not len(values) == len(self):
+            raise IndexError
+
+        for g, v in zip(self, values):
+            setattr(g, feature, v)
+
+    @property
+    def metadatas(self) -> np.ndarray[str | None]:
+        return np.asarray([g.metadata for g in self])
+
+    @metadatas.setter
+    def metadatas(self, values: np.ndarray[str] | list[str]):
+        self._set_feature("metadata", values)
+
+    @property
+    def name(self) -> np.ndarray[str | None]:
+        return np.asarray([g.name for g in self])
+
+    @name.setter
+    def name(self, values: np.ndarray[str] | list[str]):
+        self._set_feature("name", values)
+
+    @property
+    def offset(self) -> np.ndarray:
+        return np.stack([g.offset for g in self])
+
+    @offset.setter
+    def offset(self, values: np.ndarray | list[np.ndarray]):
+        self._set_feature("offset", values)
+
+    @property
+    def rotation(self) -> np.ndarray:
+        return np.stack([g.rotation for g in self])
+
+    @rotation.setter
+    def rotation(self, values: np.ndarray | list[np.ndarray]):
+        self._set_feature("rotation", values)
+
+    # TODO: how to work with deleted feature in a collection
+
+    @property
+    def visible(self) -> np.ndarray[bool]:
+        return np.asarray([g.visible for g in self])
+
+    @visible.setter
+    def visible(self, values: np.ndarray[bool] | list[bool]):
+        self._set_feature("visible", values)
+
+
+class CollectionIndexer(CollectionProperties):
     """Collection Indexer"""
 
     def __init__(self, selection: np.ndarray[Graphic], features: set[str]):
@@ -27,47 +87,6 @@ class CollectionIndexer:
 
         self._selection = selection
         self.features = features
-
-    @property
-    def name(self) -> np.ndarray[str | None]:
-        return np.asarray([g.name for g in self.graphics])
-
-    @name.setter
-    def name(self, values: np.ndarray[str] | list[str]):
-        self._set_feature("name", values)
-
-    @property
-    def offset(self) -> np.ndarray:
-        return np.stack([g.offset for g in self.graphics])
-
-    @offset.setter
-    def offset(self, values: np.ndarray | list[np.ndarray]):
-        self._set_feature("offset", values)
-
-    @property
-    def rotation(self) -> np.ndarray:
-        return np.stack([g.rotation for g in self.graphics])
-
-    @rotation.setter
-    def rotation(self, values: np.ndarray | list[np.ndarray]):
-        self._set_feature("rotation", values)
-
-    @property
-    def visible(self) -> np.ndarray[bool]:
-        return np.asarray([g.visible for g in self.graphics])
-
-    # TODO: how to work with deleted feature in a collection
-
-    @visible.setter
-    def visible(self, values: np.ndarray[bool] | list[bool]):
-        self._set_feature("visible", values)
-
-    def _set_feature(self, feature, values):
-        if not len(values) == len(self):
-            raise IndexError
-
-        for g, v in zip(self.graphics, values):
-            setattr(g, feature, v)
 
     @property
     def graphics(self) -> np.ndarray[Graphic]:
@@ -118,17 +137,17 @@ class CollectionIndexer:
         if decorating:
 
             def decorator(_callback):
-                for g in self.graphics:
+                for g in self:
                     g.add_event_handler(_callback, *types)
                 return _callback
 
             return decorator
 
-        for g in self.graphics:
+        for g in self:
             g.add_event_handler(*args)
 
     def remove_event_handler(self, callback, *types):
-        for g in self.graphics:
+        for g in self:
             g.remove_event_handler(callback, *types)
 
     def __getitem__(self, item):
@@ -137,6 +156,15 @@ class CollectionIndexer:
     def __len__(self):
         return len(self._selection)
 
+    def __iter__(self):
+        self._iter = iter(range(len(self)))
+        return self
+
+    def __next__(self) -> Graphic:
+        index = next(self._iter)
+
+        return self.graphics[index]
+
     def __repr__(self):
         return (
             f"{self.__class__.__name__} @ {hex(id(self))}\n"
@@ -144,7 +172,7 @@ class CollectionIndexer:
         )
 
 
-class GraphicCollection(Graphic):
+class GraphicCollection(Graphic, CollectionProperties):
     """Graphic Collection base class"""
 
     child_type: type
@@ -154,14 +182,16 @@ class GraphicCollection(Graphic):
         super().__init_subclass__(**kwargs)
         cls._features = cls.child_type._features
 
-    def __init__(self, name: str = None):
-        super().__init__(name)
+    def __init__(self, name: str = None, metadata: Any = None, **kwargs):
+        super().__init__(name=name, metadata=metadata, **kwargs)
 
         # list of mem locations of the graphics
         self._graphics: list[str] = list()
 
         self._graphics_changed: bool = True
         self._graphics_array: np.ndarray[Graphic] = None
+
+        self._iter = None
 
     @property
     def graphics(self) -> np.ndarray[Graphic]:
@@ -267,6 +297,10 @@ class GraphicCollection(Graphic):
         self[:].remove_event_handler(callback, *types)
 
     def __getitem__(self, key) -> CollectionIndexer:
+        if np.issubdtype(type(key), np.integer):
+            addr = self._graphics[key]
+            return weakref.proxy(COLLECTION_GRAPHICS[addr])
+
         return self._indexer(selection=self.graphics[key], features=self._features)
 
     def __del__(self):
@@ -279,6 +313,16 @@ class GraphicCollection(Graphic):
 
     def __len__(self):
         return len(self._graphics)
+
+    def __iter__(self):
+        self._iter = iter(range(len(self)))
+        return self
+
+    def __next__(self) -> Graphic:
+        index = next(self._iter)
+        addr = self._graphics[index]
+
+        return weakref.proxy(COLLECTION_GRAPHICS[addr])
 
     def __repr__(self):
         rval = super().__repr__()
