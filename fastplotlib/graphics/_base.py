@@ -384,9 +384,8 @@ class Graphic:
 
         self.world_object._event_handlers.clear()
 
-        feature_names = getattr(self, "feature_events")
-        for n in feature_names:
-            fea = getattr(self, n)
+        for n in self._features:
+            fea = getattr(self, f"_{n}")
             fea.clear_event_handlers()
 
     def __del__(self):
