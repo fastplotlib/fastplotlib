@@ -131,7 +131,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             metadatas: Sequence[Any] | np.ndarray = None,
             isolated_buffer: bool = True,
             kwargs_lines: list[dict] = None,
-            **kwargs_collection,
+            **kwargs,
     ):
         """
         Create a collection of :class:`.LineGraphic`
@@ -186,16 +186,9 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         kwargs_collection
             kwargs for the collection, passed to GraphicCollection
 
-        Features
-        --------
-
-        Collections support the same features as the underlying graphic. You just have to slice the selection.
-
-        See :class:`LineGraphic` details on the features.
-
         """
 
-        super().__init__(name=name, metadata=metadata, **kwargs_collection)
+        super().__init__(name=name, metadata=metadata, **kwargs)
 
         if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
@@ -505,9 +498,13 @@ class LineStack(LineCollection):
             cmap: Iterable[str] | str = None,
             cmap_transform: np.ndarray | List = None,
             name: str = None,
-            metadata: Iterable[Any] | np.ndarray = None,
+            names: list[str] = None,
+            metadata: Any = None,
+            metadatas: Sequence[Any] | np.ndarray = None,
+            isolated_buffer: bool = True,
             separation: float = 10.0,
             separation_axis: str = "y",
+            kwargs_lines: list[dict] = None,
             **kwargs,
     ):
         """
@@ -515,9 +512,11 @@ class LineStack(LineCollection):
 
         Parameters
         ----------
-        data: list of array-like or array
-            List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
-            if elements are 2D, interpreted as [y_vals, n_lines]
+        data: list of array-like
+            List or array-like of multiple line data to plot
+
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -529,6 +528,9 @@ class LineStack(LineCollection):
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
+        alpha: float, optional
+            alpha value for colors, if colors is a ``str``
+
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
@@ -536,11 +538,20 @@ class LineStack(LineCollection):
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
-        cmap_transform: 1D array-like or Iterable of numerical values, optional
+        cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
-        metadata: Iterable or array
-            metadata associated with this collection, this is for the user to manage.
+        name: str, optional
+            name of the line collection as a whole
+
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            metadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
         separation: float, default 10
@@ -549,18 +560,12 @@ class LineStack(LineCollection):
         separation_axis: str, default "y"
             axis in which the line graphics in the stack should be separated
 
-        name: str, optional
-            name of the line stack
 
-        kwargs
-            passed to LineCollection
+        kwargs_lines: list[dict], optional
+            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
 
-        Features
-        --------
-
-        Collections support the same features as the underlying graphic. You just have to slice the selection.
-
-        See :class:`LineGraphic` details on the features.
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
 
         """
         super().__init__(
@@ -571,7 +576,11 @@ class LineStack(LineCollection):
             cmap=cmap,
             cmap_transform=cmap_transform,
             name=name,
+            names=names,
             metadata=metadata,
+            metadatas=metadatas,
+            isolated_buffer=isolated_buffer,
+            kwargs_lines=kwargs_lines,
             **kwargs,
         )
 
