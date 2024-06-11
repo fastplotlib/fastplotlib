@@ -331,18 +331,23 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         return super().__getitem__(item)
 
     def add_linear_selector(
-            self, selection: int = None, padding: float = 50, **kwargs
+        self, selection: float = None, padding: float = 0.0, axis: str = "x", **kwargs
     ) -> LinearSelector:
         """
-        Adds a :class:`.LinearSelector` .
+        Adds a linear selector.
 
         Parameters
         ----------
-        selection: int
-            initial position of the selector
+        Parameters
+        ----------
+        selection: float, optional
+            selected point on the linear selector, computed from data if not provided
 
-        padding: float
-            pad the length of the selector
+        axis: str, default "x"
+            axis that the selector resides on
+
+        padding: float, default 0.0
+            Extra padding to extend the linear selector along the orthogonal axis to make it easier to interact with.
 
         kwargs
             passed to :class:`.LinearSelector`
@@ -352,50 +357,50 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         LinearSelector
 
         """
-        # TODO: Use bbox to get size and center for selectors!
 
-        (
-            bounds,
-            limits,
-            size,
-            origin,
-            axis,
-            center
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(axis, padding)
 
         if selection is None:
-            selection = limits[0]
-
-        if selection < limits[0] or selection > limits[1]:
-            raise ValueError(
-                f"the passed selection: {selection} is beyond the limits: {limits}"
-            )
-
-        # center should be the middle of the collection
+            selection = bounds_init[0]
 
         selector = LinearSelector(
             selection=selection,
             limits=limits,
-            parent=self,
             size=size,
             center=center,
-            ** kwargs,
+            axis=axis,
+            parent=weakref.proxy(self),
+            **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
 
+        # place selector above this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
+
         return weakref.proxy(selector)
 
     def add_linear_region_selector(
-            self, padding: float = 100.0, **kwargs
+        self,
+        selection: tuple[float, float] = None,
+        padding: float = 0.0,
+        axis: str = "x",
+        **kwargs
     ) -> LinearRegionSelector:
         """
-        Add a :class:`.LinearRegionSelector`
+        Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
 
         Parameters
         ----------
-        padding: float, default 100.0
-            Extends the linear selector along the y-axis to make it easier to interact with.
+        selection: (float, float), optional
+            the starting bounds of the linear region selector, computed from data if not provided
+
+        axis: str, default "x"
+            axis that the selector resides on
+
+        padding: float, default 0.0
+            Extra padding to extend the linear region selector along the orthogonal axis to make it easier to interact with.
 
         kwargs
             passed to ``LinearRegionSelector``
@@ -407,82 +412,60 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         """
 
-        (
-            bounds,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(axis, padding)
 
+        if selection is None:
+            selection = bounds_init
+
+        # create selector
         selector = LinearRegionSelector(
-            selection=bounds,
+            selection=selection,
             limits=limits,
             size=size,
-            origin=origin,
-            parent=self,
+            center=center,
+            axis=axis,
+            parent=weakref.proxy(self),
             **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        selector.position_z = self.position_z - 1
 
+        # place selector below this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] - 1)
+
+        # PlotArea manages this for garbage collection etc. just like all other Graphics
+        # so we should only work with a proxy on the user-end
         return weakref.proxy(selector)
 
-    def _get_linear_selector_init_args(self, padding, **kwargs):
-        bounds_init = list()
-        limits = list()
-        sizes = list()
-        origin = list()
-
-        for g in self:
-            (
-                _bounds_init,
-                _limits,
-                _size,
-                _origin,
-                axis,
-            ) = g._get_linear_selector_init_args(padding=0, **kwargs)
-
-            bounds_init.append(_bounds_init)
-            limits.append(_limits)
-            sizes.append(_size)
-            origin.append(_origin)
-
-        # set the init bounds using the extents of the collection
-        b = np.vstack(bounds_init)
-        bounds = (b[:, 0].min(), b[:, 1].max())
-
-        # set the limits using the extents of the collection
-        limits = np.vstack(limits)
-        limits = (limits[:, 0].min(), limits[:, 1].max())
-
-        # TODO: refactor this to use `LineStack.graphics[-1].position.y`
-        if isinstance(self, LineStack):
-            stack_offset = self.separation * len(sizes)
-            # sum them if it's a stack
-            size = sum(sizes)
-            # add the separations
-            size += stack_offset
-        else:
-            # just the biggest one if not stacked
-            size = max(sizes)
-
-        size += padding
+    def _get_linear_selector_init_args(self, axis, padding):
+        # use bbox to get size and center
+        bbox = self.world_object.get_world_bounding_box()
 
         if axis == "x":
-            o = np.vstack(origin)
-            origin_y = (o[:, 1].min() + o[:, 1].max()) / 2
-            origin = (limits[0], origin_y)
-            center = (self.graphics[-1].world_object.world.y - self.graphics[0].world_object.world.y) / 2
-        else:
-            o = np.vstack(origin)
-            origin_x = (o[:, 0].min() + o[:, 0].max()) / 2
-            origin = (origin_x, limits[0])
-            center = (self.graphics[-1].world_object.world.x - self.graphics[0].world_object.world.x) / 2
+            xdata = np.array(self.data[:, 0])
+            xmin, xmax = (np.nanmin(xdata), np.nanmax(xdata))
+            value_25p = (xmax - xmin) / 4
 
-        return bounds, limits, size, origin, axis, center
+            bounds = (xmin, value_25p)
+            limits = (xmin, xmax)
+            # size from orthogonal axis
+            size = bbox[:, 1].ptp() * 1.5
+            # center on orthogonal axis
+            center = bbox[:, 1].mean()
+
+        elif axis == "y":
+            ydata = np.array(self.data[:, 1])
+            xmin, xmax = (np.nanmin(ydata), np.nanmax(ydata))
+            value_25p = (xmax - xmin) / 4
+
+            bounds = (xmin, value_25p)
+            limits = (xmin, xmax)
+
+            size = bbox[:, 0].ptp() * 1.5
+            # center on orthogonal axis
+            center = bbox[:, 0].mean()
+
+        return bounds, limits, size, center
 
 
 axes = {"x": 0, "y": 1, "z": 2}
