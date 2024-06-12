@@ -17,7 +17,6 @@ Welcome to fastplotlib's documentation!
    Graphic Features <api/graphic_features/index>
    Selectors <api/selectors/index>
    Widgets <api/widgets/index>
-   Functions <api/functions>
    Utils <api/utils>
    GPU <api/gpu>
 
