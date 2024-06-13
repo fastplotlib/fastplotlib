@@ -134,50 +134,52 @@ class PositionsGraphic(Graphic):
 
         super().__init__(*args, **kwargs)
 
-    def detach_feature(self, feature: str):
-        if not isinstance(feature, str):
+    def unshare_property(self, property: str):
+        """unshare a shared property. Experimental and untested!"""
+        if not isinstance(property, str):
             raise TypeError
 
-        f = getattr(self, feature)
+        f = getattr(self, property)
         if f.shared == 0:
             raise BufferError("Cannot detach an independent buffer")
 
-        if feature == "colors" and isinstance(feature, VertexColors):
+        if property == "colors" and isinstance(property, VertexColors):
             self._colors._buffer = pygfx.Buffer(self._colors.value.copy())
             self.world_object.geometry.colors = self._colors.buffer
             self._colors._shared -= 1
 
-        elif feature == "data":
+        elif property == "data":
             self._data._buffer = pygfx.Buffer(self._data.value.copy())
             self.world_object.geometry.positions = self._data.buffer
             self._data._shared -= 1
 
-        elif feature == "sizes":
+        elif property == "sizes":
             self._sizes._buffer = pygfx.Buffer(self._sizes.value.copy())
             self.world_object.geometry.positions = self._sizes.buffer
             self._sizes._shared -= 1
 
-    def attach_feature(
-        self, feature: VertexPositions | VertexColors | PointsSizesFeature
+    def share_property(
+        self, property: VertexPositions | VertexColors | PointsSizesFeature
     ):
-        if isinstance(feature, VertexPositions):
+        """share a property from another graphic. Experimental and untested!"""
+        if isinstance(property, VertexPositions):
             # TODO: check if this causes a memory leak
             self._data._shared -= 1
 
-            self._data = feature
+            self._data = property
             self._data._shared += 1
             self.world_object.geometry.positions = self._data.buffer
 
-        elif isinstance(feature, VertexColors):
+        elif isinstance(property, VertexColors):
             self._colors._shared -= 1
 
-            self._colors = feature
+            self._colors = property
             self._colors._shared += 1
             self.world_object.geometry.colors = self._colors.buffer
 
-        elif isinstance(feature, PointsSizesFeature):
+        elif isinstance(property, PointsSizesFeature):
             self._sizes._shared -= 1
 
-            self._sizes = feature
+            self._sizes = property
             self._sizes._shared += 1
             self.world_object.geometry.sizes = self._sizes.buffer

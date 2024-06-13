@@ -115,7 +115,7 @@ class Graphic:
         self._block_events = False
 
     @property
-    def events(self) -> tuple[str]:
+    def supported_events(self) -> tuple[str]:
         """events supported by this graphic"""
         return (*tuple(self._features), *PYGFX_EVENTS)
 
@@ -192,10 +192,10 @@ class Graphic:
         if not all(self.world_object.world.rotation == self.rotation):
             self.rotation = self.rotation
 
-    def detach_feature(self, feature: str):
+    def unshare_property(self, feature: str):
         raise NotImplementedError
 
-    def attach_feature(self, feature: BufferManager):
+    def share_property(self, feature: BufferManager):
         raise NotImplementedError
 
     @property
@@ -248,7 +248,7 @@ class Graphic:
         callback = None if decorating else args[0]
         types = args if decorating else args[1:]
 
-        unsupported_events = [t for t in types if t not in self.events]
+        unsupported_events = [t for t in types if t not in self.supported_events]
 
         if len(unsupported_events) > 0:
             raise TypeError(
@@ -283,6 +283,7 @@ class Graphic:
         return decorator(callback)
 
     def clear_event_handlers(self):
+        """clear all event handlers added to this graphic"""
         for ev, handlers in self.event_handlers:
             handlers = list(handlers)
             for h in handlers:
