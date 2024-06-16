@@ -28,18 +28,17 @@ class GraphicMethodsMixin:
         # only return a proxy to the real graphic
         return weakref.proxy(graphic)
 
-    def add_heatmap(
+    def add_image(
         self,
         data: Any,
         vmin: int = None,
         vmax: int = None,
         cmap: str = "plasma",
-        filter: str = "nearest",
-        chunk_size: int = 8192,
+        interpolation: str = "nearest",
+        cmap_interpolation: str = "linear",
         isolated_buffer: bool = True,
-        *args,
         **kwargs
-    ) -> HeatmapGraphic:
+    ) -> ImageGraphic:
         """
 
         Create an Image Graphic
@@ -48,7 +47,6 @@ class GraphicMethodsMixin:
         ----------
         data: array-like
             array-like, usually numpy.ndarray, must support ``memoryview()``
-            Tensorflow Tensors also work **probably**, but not thoroughly tested
             | shape must be ``[x_dim, y_dim]``
 
         vmin: int, optional
@@ -60,106 +58,19 @@ class GraphicMethodsMixin:
         cmap: str, optional, default "plasma"
             colormap to use to display the data
 
-        filter: str, optional, default "nearest"
+        interpolation: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
 
-        chunk_size: int, default 8192, max 8192
-            chunk size for each tile used to make up the heatmap texture
+        cmap_interpolation: str, optional, default "linear"
+            colormap interpolation method, one of "nearest" or "linear"
 
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
             set the data, useful if the data arrays are ready-only such as memmaps.
             If False, the input array is itself used as the buffer.
 
-        args:
-            additional arguments passed to Graphic
-
         kwargs:
             additional keyword arguments passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.HeatmapDataFeature`
-            Manages the data buffer displayed in the HeatmapGraphic
-
-        **cmap**: :class:`.HeatmapCmapFeature`
-            Manages the colormap
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene
-
-
-        """
-        return self._create_graphic(
-            HeatmapGraphic,
-            data,
-            vmin,
-            vmax,
-            cmap,
-            filter,
-            chunk_size,
-            isolated_buffer,
-            *args,
-            **kwargs
-        )
-
-    def add_image(
-        self,
-        data: Any,
-        vmin: int = None,
-        vmax: int = None,
-        cmap: str = "plasma",
-        filter: str = "nearest",
-        isolated_buffer: bool = True,
-        *args,
-        **kwargs
-    ) -> ImageGraphic:
-        """
-
-        Create an Image Graphic
-
-        Parameters
-        ----------
-        data: array-like
-            array-like, usually numpy.ndarray, must support ``memoryview()``
-            Tensorflow Tensors also work **probably**, but not thoroughly tested
-            | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
-
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
-
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
-
-        cmap: str, optional, default "plasma"
-            colormap to use to display the image data, ignored if data is RGB
-
-        filter: str, optional, default "nearest"
-            interpolation filter, one of "nearest" or "linear"
-
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer.
-
-        args:
-            additional arguments passed to Graphic
-
-        kwargs:
-            additional keyword arguments passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the data buffer displayed in the ImageGraphic
-
-        **cmap**: :class:`.ImageCmapFeature`
-            Manages the colormap
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene
 
 
         """
@@ -169,24 +80,27 @@ class GraphicMethodsMixin:
             vmin,
             vmax,
             cmap,
-            filter,
+            interpolation,
+            cmap_interpolation,
             isolated_buffer,
-            *args,
             **kwargs
         )
 
     def add_line_collection(
         self,
-        data: List[numpy.ndarray],
-        z_offset: Union[Iterable[float], float] = None,
-        thickness: Union[float, Iterable[float]] = 2.0,
-        colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
+        data: Union[numpy.ndarray, List[numpy.ndarray]],
+        thickness: Union[float, Sequence[float]] = 2.0,
+        colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
+        uniform_colors: bool = False,
         alpha: float = 1.0,
-        cmap: Union[Iterable[str], str] = None,
-        cmap_values: Union[numpy.ndarray, List] = None,
+        cmap: Union[Sequence[str], str] = None,
+        cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
-        metadata: Union[Iterable[Any], numpy.ndarray] = None,
-        *args,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
+        isolated_buffer: bool = True,
+        kwargs_lines: list[dict] = None,
         **kwargs
     ) -> LineCollection:
         """
@@ -195,13 +109,11 @@ class GraphicMethodsMixin:
 
         Parameters
         ----------
-        data: list of array-like or array
-            List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
-            if elements are 2D, interpreted as [y_vals, n_lines]
+        data: list of array-like
+            List or array-like of multiple line data to plot
 
-        z_offset: Iterable of float or float, optional
-            | if ``float``, single offset will be used for all lines
-            | if ``list`` of ``float``, each value will apply to the individual lines
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -223,43 +135,45 @@ class GraphicMethodsMixin:
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
-        cmap_values: 1D array-like or Iterable of numerical values, optional
+        cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         name: str, optional
-            name of the line collection
+            name of the line collection as a whole
 
-        metadata: Iterable or array
-            metadata associated with this collection, this is for the user to manage.
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            meatadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
-        args
-            passed to GraphicCollection
+        kwargs_lines: list[dict], optional
+            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
 
-        kwargs
-            passed to GraphicCollection
-
-        Features
-        --------
-
-        Collections support the same features as the underlying graphic. You just have to slice the selection.
-
-        See :class:`LineGraphic` details on the features.
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
 
 
         """
         return self._create_graphic(
             LineCollection,
             data,
-            z_offset,
             thickness,
             colors,
+            uniform_colors,
             alpha,
             cmap,
-            cmap_values,
+            cmap_transform,
             name,
+            names,
             metadata,
-            *args,
+            metadatas,
+            isolated_buffer,
+            kwargs_lines,
             **kwargs
         )
 
@@ -268,12 +182,11 @@ class GraphicMethodsMixin:
         data: Any,
         thickness: float = 2.0,
         colors: Union[str, numpy.ndarray, Iterable] = "w",
+        uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: Union[numpy.ndarray, Iterable] = None,
-        z_position: float = None,
-        collection_index: int = None,
-        *args,
+        cmap_transform: Union[numpy.ndarray, Iterable] = None,
+        isolated_buffer: bool = True,
         **kwargs
     ) -> LineGraphic:
         """
@@ -292,42 +205,22 @@ class GraphicMethodsMixin:
             specify colors as a single human-readable string, a single RGBA array,
             or an iterable of strings or RGBA arrays
 
-        cmap: str, optional
-            apply a colormap to the line instead of assigning colors manually, this
-            overrides any argument passed to "colors"
-
-        cmap_values: 1D array-like or Iterable of numerical values, optional
-            if provided, these values are used to map the colors from the cmap
+        uniform_color: bool, default ``False``
+            if True, uses a uniform buffer for the line color,
+            basically saves GPU VRAM when the entire line has a single color
 
         alpha: float, optional, default 1.0
             alpha value for the colors
 
-        z_position: float, optional
-            z-axis position for placing the graphic
+        cmap: str, optional
+            apply a colormap to the line instead of assigning colors manually, this
+            overrides any argument passed to "colors"
 
-        args
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        **kwargs
             passed to Graphic
-
-        kwargs
-            passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
-
-        **colors**: :class:`.ColorFeature`
-            Manages the color buffer, allows regular and fancy indexing.
-
-        **cmap**: :class:`.CmapFeature`
-            Manages the cmap, wraps :class:`.ColorFeature` to add additional functionality relevant to cmaps.
-
-        **thickness**: :class:`.ThicknessFeature`
-            Manages the thickness feature of the lines.
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
 
         """
@@ -336,29 +229,30 @@ class GraphicMethodsMixin:
             data,
             thickness,
             colors,
+            uniform_color,
             alpha,
             cmap,
-            cmap_values,
-            z_position,
-            collection_index,
-            *args,
+            cmap_transform,
+            isolated_buffer,
             **kwargs
         )
 
     def add_line_stack(
         self,
         data: List[numpy.ndarray],
-        z_offset: Union[Iterable[float], float] = None,
         thickness: Union[float, Iterable[float]] = 2.0,
         colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
         alpha: float = 1.0,
         cmap: Union[Iterable[str], str] = None,
-        cmap_values: Union[numpy.ndarray, List] = None,
+        cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
-        metadata: Union[Iterable[Any], numpy.ndarray] = None,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
+        isolated_buffer: bool = True,
         separation: float = 10.0,
         separation_axis: str = "y",
-        *args,
+        kwargs_lines: list[dict] = None,
         **kwargs
     ) -> LineStack:
         """
@@ -367,13 +261,11 @@ class GraphicMethodsMixin:
 
         Parameters
         ----------
-        data: list of array-like or array
-            List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
-            if elements are 2D, interpreted as [y_vals, n_lines]
+        data: list of array-like
+            List or array-like of multiple line data to plot
 
-        z_offset: Iterable of float or float, optional
-            | if ``float``, single offset will be used for all lines
-            | if ``list`` of ``float``, each value will apply to the individual lines
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
 
         thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
@@ -385,6 +277,9 @@ class GraphicMethodsMixin:
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
+        alpha: float, optional
+            alpha value for colors, if colors is a ``str``
+
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
@@ -392,11 +287,20 @@ class GraphicMethodsMixin:
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
-        cmap_values: 1D array-like or Iterable of numerical values, optional
+        cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
-        metadata: Iterable or array
-            metadata associated with this collection, this is for the user to manage.
+        name: str, optional
+            name of the line collection as a whole
+
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            metadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
         separation: float, default 10
@@ -405,48 +309,45 @@ class GraphicMethodsMixin:
         separation_axis: str, default "y"
             axis in which the line graphics in the stack should be separated
 
-        name: str, optional
-            name of the line stack
 
-        kwargs
-            passed to LineCollection
+        kwargs_lines: list[dict], optional
+            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
 
-        Features
-        --------
-
-        Collections support the same features as the underlying graphic. You just have to slice the selection.
-
-        See :class:`LineGraphic` details on the features.
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
 
 
         """
         return self._create_graphic(
             LineStack,
             data,
-            z_offset,
             thickness,
             colors,
             alpha,
             cmap,
-            cmap_values,
+            cmap_transform,
             name,
+            names,
             metadata,
+            metadatas,
+            isolated_buffer,
             separation,
             separation_axis,
-            *args,
+            kwargs_lines,
             **kwargs
         )
 
     def add_scatter(
         self,
-        data: numpy.ndarray,
-        sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
-        colors: Union[str, numpy.ndarray, Iterable[str]] = "w",
+        data: Any,
+        colors: str | numpy.ndarray | tuple[float] | list[float] | list[str] = "w",
+        uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: Union[numpy.ndarray, List] = None,
-        z_position: float = 0.0,
-        *args,
+        cmap_transform: numpy.ndarray = None,
+        isolated_buffer: bool = True,
+        sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
+        uniform_size: bool = False,
         **kwargs
     ) -> ScatterGraphic:
         """
@@ -458,73 +359,64 @@ class GraphicMethodsMixin:
         data: array-like
             Scatter data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
 
-        sizes: float or iterable of float, optional, default 1.0
-            size of the scatter points
-
         colors: str, array, or iterable, default "w"
             specify colors as a single human readable string, a single RGBA array,
             or an iterable of strings or RGBA arrays
+
+        uniform_color: bool, default False
+            if True, uses a uniform buffer for the scatter point colors,
+            basically saves GPU VRAM when the entire line has a single color
+
+        alpha: float, optional, default 1.0
+            alpha value for the colors
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
             overrides any argument passed to "colors"
 
-        cmap_values: 1D array-like or list of numerical values, optional
+        cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
-        alpha: float, optional, default 1.0
-            alpha value for the colors
+        isolated_buffer: bool, default True
+            whether the buffers should be isolated from the user input array.
+            Generally always ``True``, ``False`` is for rare advanced use.
 
-        z_position: float, optional
-            z-axis position for placing the graphic
+        sizes: float or iterable of float, optional, default 1.0
+            size of the scatter points
 
-        args
-            passed to Graphic
+        uniform_size: bool, default False
+            if True, uses a uniform buffer for the scatter point sizes,
+            basically saves GPU VRAM when all scatter points are the same size
 
         kwargs
             passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
-
-        **colors**: :class:`.ColorFeature`
-            Manages the color buffer, allows regular and fancy indexing.
-
-        **cmap**: :class:`.CmapFeature`
-            Manages the cmap, wraps :class:`.ColorFeature` to add additional functionality relevant to cmaps.
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
 
         """
         return self._create_graphic(
             ScatterGraphic,
             data,
-            sizes,
             colors,
+            uniform_color,
             alpha,
             cmap,
-            cmap_values,
-            z_position,
-            *args,
+            cmap_transform,
+            isolated_buffer,
+            sizes,
+            uniform_size,
             **kwargs
         )
 
     def add_text(
         self,
         text: str,
-        position: Tuple[int] = (0, 0, 0),
-        size: int = 14,
-        face_color: Union[str, numpy.ndarray] = "w",
-        outline_color: Union[str, numpy.ndarray] = "w",
-        outline_thickness=0,
+        font_size: float | int = 14,
+        face_color: str | numpy.ndarray | list[float] | tuple[float] = "w",
+        outline_color: str | numpy.ndarray | list[float] | tuple[float] = "w",
+        outline_thickness: float = 0.0,
         screen_space: bool = True,
+        offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
-        *args,
         **kwargs
     ) -> TextGraphic:
         """
@@ -534,13 +426,10 @@ class GraphicMethodsMixin:
         Parameters
         ----------
         text: str
-            display text
+            text to display
 
-        position: int tuple, default (0, 0, 0)
-            int tuple indicating location of text in scene
-
-        size: int, default 10
-            text size
+        font_size: float | int, default 10
+            font size
 
         face_color: str or array, default "w"
             str or RGBA array to set the color of the text
@@ -548,14 +437,14 @@ class GraphicMethodsMixin:
         outline_color: str or array, default "w"
             str or RGBA array to set the outline color of the text
 
-        outline_thickness: int, default 0
-            text outline thickness
+        outline_thickness: float, default 0
+            relative outline thickness, value between 0.0 - 0.5
 
         screen_space: bool = True
-            whether the text is rendered in screen space, in contrast to world space
+            if True, text size is in screen space, if False the text size is in data space
 
-        name: str, optional
-            name of graphic, passed to Graphic
+        offset: (float, float, float), default (0, 0, 0)
+            places the text at this location
 
         anchor: str, default "middle-center"
             position of the origin of the text
@@ -564,17 +453,20 @@ class GraphicMethodsMixin:
             * Vertical values: "top", "middle", "baseline", "bottom"
             * Horizontal values: "left", "center", "right"
 
+        **kwargs
+            passed to Graphic
+
+
         """
         return self._create_graphic(
             TextGraphic,
             text,
-            position,
-            size,
+            font_size,
             face_color,
             outline_color,
             outline_thickness,
             screen_space,
+            offset,
             anchor,
-            *args,
             **kwargs
         )

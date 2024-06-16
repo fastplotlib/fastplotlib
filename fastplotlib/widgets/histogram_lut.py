@@ -52,29 +52,30 @@ class HistogramLUT(Graphic):
         origin = (hist_scaled.max() / 2, 0)
 
         self._linear_region_selector = LinearRegionSelector(
-            bounds=bounds,
+            selection=bounds,
             limits=limits,
             size=size,
-            origin=origin,
+            center=origin[0],
             axis="y",
             edge_thickness=8,
+            parent=self._histogram_line,
         )
 
         # there will be a small difference with the histogram edges so this makes them both line up exactly
         self._linear_region_selector.selection = (
-            image_graphic.cmap.vmin,
-            image_graphic.cmap.vmax,
+            self._image_graphic.vmin,
+            self._image_graphic.vmax,
         )
 
-        self._vmin = self.image_graphic.cmap.vmin
-        self._vmax = self.image_graphic.cmap.vmax
+        self._vmin = self.image_graphic.vmin
+        self._vmax = self.image_graphic.vmax
 
         vmin_str, vmax_str = self._get_vmin_vmax_str()
 
         self._text_vmin = TextGraphic(
             text=vmin_str,
-            size=16,
-            position=(0, 0),
+            font_size=16,
+            offset=(0, 0, 0),
             anchor="top-left",
             outline_color="black",
             outline_thickness=1,
@@ -84,8 +85,8 @@ class HistogramLUT(Graphic):
 
         self._text_vmax = TextGraphic(
             text=vmax_str,
-            size=16,
-            position=(0, 0),
+            font_size=16,
+            offset=(0, 0, 0),
             anchor="bottom-left",
             outline_color="black",
             outline_thickness=1,
@@ -105,17 +106,15 @@ class HistogramLUT(Graphic):
 
         self.world_object.local.scale_x *= -1
 
-        self._text_vmin.position_x = -120
-        self._text_vmin.position_y = self._linear_region_selector.selection()[0]
+        self._text_vmin.offset = (-120, self._linear_region_selector.selection[0], 0)
 
-        self._text_vmax.position_x = -120
-        self._text_vmax.position_y = self._linear_region_selector.selection()[1]
+        self._text_vmax.offset = (-120, self._linear_region_selector.selection[1], 0)
 
-        self._linear_region_selector.selection.add_event_handler(
-            self._linear_region_handler
+        self._linear_region_selector.add_event_handler(
+            self._linear_region_handler, "selection"
         )
 
-        self.image_graphic.cmap.add_event_handler(self._image_cmap_handler)
+        self.image_graphic.add_event_handler(self._image_cmap_handler, "vmin", "vmax")
 
     def _get_vmin_vmax_str(self) -> tuple[str, str]:
         if self.vmin < 0.001 or self.vmin > 99_999:
@@ -198,16 +197,13 @@ class HistogramLUT(Graphic):
     def _linear_region_handler(self, ev):
         # must use world coordinate values directly from selection()
         # otherwise the linear region bounds jump to the closest bin edges
-        vmin, vmax = self._linear_region_selector.selection()
+        selected_ixs = self._linear_region_selector.selection
+        vmin, vmax = selected_ixs[0], selected_ixs[1]
         vmin, vmax = vmin / self._scale_factor, vmax / self._scale_factor
         self.vmin, self.vmax = vmin, vmax
 
     def _image_cmap_handler(self, ev):
-        self.vmin, self.vmax = ev.pick_info["vmin"], ev.pick_info["vmax"]
-
-    def _block_events(self, b: bool):
-        self.image_graphic.cmap.block_events(b)
-        self._linear_region_selector.selection.block_events(b)
+        setattr(self, ev.type, ev.info["value"])
 
     @property
     def vmin(self) -> float:
@@ -215,22 +211,24 @@ class HistogramLUT(Graphic):
 
     @vmin.setter
     def vmin(self, value: float):
-        self._block_events(True)
+        self.image_graphic.block_events = True
+        self._linear_region_selector.block_events = True
 
         # must use world coordinate values directly from selection()
         # otherwise the linear region bounds jump to the closest bin edges
         self._linear_region_selector.selection = (
             value * self._scale_factor,
-            self._linear_region_selector.selection()[1],
+            self._linear_region_selector.selection[1],
         )
-        self.image_graphic.cmap.vmin = value
+        self.image_graphic.vmin = value
 
-        self._block_events(False)
+        self.image_graphic.block_events = False
+        self._linear_region_selector.block_events = False
 
         self._vmin = value
 
         vmin_str, vmax_str = self._get_vmin_vmax_str()
-        self._text_vmin.position_y = self._linear_region_selector.selection()[0]
+        self._text_vmin.offset = (-120, self._linear_region_selector.selection[0], 0)
         self._text_vmin.text = vmin_str
 
     @property
@@ -239,22 +237,25 @@ class HistogramLUT(Graphic):
 
     @vmax.setter
     def vmax(self, value: float):
-        self._block_events(True)
+        self.image_graphic.block_events = True
+        self._linear_region_selector.block_events = True
 
         # must use world coordinate values directly from selection()
         # otherwise the linear region bounds jump to the closest bin edges
         self._linear_region_selector.selection = (
-            self._linear_region_selector.selection()[0],
+            self._linear_region_selector.selection[0],
             value * self._scale_factor,
         )
-        self.image_graphic.cmap.vmax = value
 
-        self._block_events(False)
+        self.image_graphic.vmax = value
+
+        self.image_graphic.block_events = False
+        self._linear_region_selector.block_events = False
 
         self._vmax = value
 
         vmin_str, vmax_str = self._get_vmin_vmax_str()
-        self._text_vmax.position_y = self._linear_region_selector.selection()[1]
+        self._text_vmax.offset = (-120, self._linear_region_selector.selection[1], 0)
         self._text_vmax.text = vmax_str
 
     def set_data(self, data, reset_vmin_vmax: bool = True):
@@ -262,12 +263,12 @@ class HistogramLUT(Graphic):
 
         line_data = np.column_stack([hist_scaled, edges_flanked])
 
-        self._histogram_line.data = line_data
+        # set x and y vals
+        self._histogram_line.data[:, :2] = line_data
 
         bounds = (edges[0], edges[-1])
         limits = (edges_flanked[0], edges_flanked[-11])
         origin = (hist_scaled.max() / 2, 0)
-        # self.linear_region.fill.world.position = (*origin, -2)
 
         if reset_vmin_vmax:
             # reset according to the new data
@@ -275,9 +276,11 @@ class HistogramLUT(Graphic):
             self._linear_region_selector.selection = bounds
         else:
             # don't change the current selection
-            self._block_events(True)
+            self.image_graphic.block_events = True
+            self._linear_region_selector.block_events = True
             self._linear_region_selector.limits = limits
-            self._block_events(False)
+            self.image_graphic.block_events = False
+            self._linear_region_selector.block_events = False
 
         self._data = weakref.proxy(data)
 
@@ -297,14 +300,14 @@ class HistogramLUT(Graphic):
 
         if self._image_graphic is not None:
             # cleanup events from current image graphic
-            self._image_graphic.cmap.remove_event_handler(self._image_cmap_handler)
+            self._image_graphic.remove_event_handler(self._image_cmap_handler)
 
         self._image_graphic = graphic
 
-        self.image_graphic.cmap.add_event_handler(self._image_cmap_handler)
+        self.image_graphic.add_event_handler(self._image_cmap_handler)
 
     def disconnect_image_graphic(self):
-        self._image_graphic.cmap.remove_event_handler(self._image_cmap_handler)
+        self._image_graphic.remove_event_handler(self._image_cmap_handler)
         del self._image_graphic
         # self._image_graphic = None
 

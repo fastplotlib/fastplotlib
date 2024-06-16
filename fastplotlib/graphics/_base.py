@@ -1,22 +1,28 @@
+from collections import defaultdict
+from functools import partial
 from typing import Any, Literal, TypeAlias
 import weakref
-from warnings import warn
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 
 import numpy as np
 import pylinalg as la
+from wgpu.gui.base import log_exception
 
-from pygfx import WorldObject
+import pygfx
 
-from ._features import GraphicFeature, PresentFeature, GraphicFeatureIndexable, Deleted
-
+from ._features import (
+    BufferManager,
+    Deleted,
+    Name,
+    Offset,
+    Rotation,
+    Visible,
+)
 
 HexStr: TypeAlias = str
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
-WORLD_OBJECTS: dict[HexStr, WorldObject] = dict()  #: {hex id str: WorldObject}
+WORLD_OBJECTS: dict[HexStr, pygfx.WorldObject] = dict()  #: {hex id str: WorldObject}
 
 
 PYGFX_EVENTS = [
@@ -35,9 +41,11 @@ PYGFX_EVENTS = [
 ]
 
 
-class BaseGraphic:
+class Graphic:
+    _features = {}
+
     def __init_subclass__(cls, **kwargs):
-        """set the type of the graphic in lower case like "image", "line_collection", etc."""
+        # set the type of the graphic in lower case like "image", "line_collection", etc.
         cls.type = (
             cls.__name__.lower()
             .replace("graphic", "")
@@ -45,22 +53,24 @@ class BaseGraphic:
             .replace("stack", "_stack")
         )
 
+        # set of all features
+        cls._features = {
+            *cls._features,
+            "name",
+            "offset",
+            "rotation",
+            "visible",
+            "deleted",
+        }
         super().__init_subclass__(**kwargs)
-
-
-class Graphic(BaseGraphic):
-    feature_events = {}
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        # all graphics give off a feature event when deleted
-        cls.feature_events = {*cls.feature_events, "deleted"}
 
     def __init__(
         self,
         name: str = None,
+        offset: np.ndarray | list | tuple = (0.0, 0.0, 0.0),
+        rotation: np.ndarray | list | tuple = (0.0, 0.0, 0.0, 1.0),
+        visible: bool = True,
         metadata: Any = None,
-        collection_index: int = None,
     ):
         """
 
@@ -69,6 +79,12 @@ class Graphic(BaseGraphic):
         name: str, optional
             name this graphic to use it as a key to access from the plot
 
+        offset: (float, float, float), default (0., 0., 0.)
+            (x, y, z) vector to offset this graphic from the origin
+
+        rotation: (float, float, float, float), default (0, 0, 0, 1)
+            rotation quaternion
+
         metadata: Any, optional
             metadata attached to this Graphic, this is for the user to manage
 
@@ -76,116 +92,254 @@ class Graphic(BaseGraphic):
         if (name is not None) and (not isinstance(name, str)):
             raise TypeError("Graphic `name` must be of type <str>")
 
-        self._name = name
         self.metadata = metadata
-        self.collection_index = collection_index
         self.registered_callbacks = dict()
-        self.present = PresentFeature(parent=self)
 
         # store hex id str of Graphic instance mem location
         self._fpl_address: HexStr = hex(id(self))
 
-        self.deleted = Deleted(self, False)
-
         self._plot_area = None
+
+        # event handlers
+        self._event_handlers = defaultdict(set)
+
+        # maps callbacks to their partials
+        self._event_handler_wrappers = defaultdict(set)
+
+        # all the common features
+        self._name = Name(name)
+        self._deleted = Deleted(False)
+        self._rotation = Rotation(rotation)
+        self._offset = Offset(offset)
+        self._visible = Visible(visible)
+        self._block_events = False
+
+    @property
+    def supported_events(self) -> tuple[str]:
+        """events supported by this graphic"""
+        return (*tuple(self._features), *PYGFX_EVENTS)
 
     @property
     def name(self) -> str | None:
-        """str name reference for this item"""
-        return self._name
+        """Graphic name"""
+        return self._name.value
 
     @name.setter
-    def name(self, name: str):
-        if self.name == name:
-            return
-
-        if not isinstance(name, str):
-            raise TypeError("`Graphic` name must be of type <str>")
-
-        if self._plot_area is not None:
-            self._plot_area._check_graphic_name_exists(name)
-
-        self._name = name
+    def name(self, value: str):
+        self._name.set_value(self, value)
 
     @property
-    def world_object(self) -> WorldObject:
+    def offset(self) -> np.ndarray:
+        """Offset position of the graphic, array: [x, y, z]"""
+        return self._offset.value
+
+    @offset.setter
+    def offset(self, value: np.ndarray | list | tuple):
+        self._offset.set_value(self, value)
+
+    @property
+    def rotation(self) -> np.ndarray:
+        """Orientation of the graphic as a quaternion"""
+        return self._rotation.value
+
+    @rotation.setter
+    def rotation(self, value: np.ndarray | list | tuple):
+        self._rotation.set_value(self, value)
+
+    @property
+    def visible(self) -> bool:
+        """Whether the graphic is visible"""
+        return self._visible.value
+
+    @visible.setter
+    def visible(self, value: bool):
+        self._visible.set_value(self, value)
+
+    @property
+    def deleted(self) -> bool:
+        """used to emit an event after the graphic is deleted"""
+        return self._deleted.value
+
+    @deleted.setter
+    def deleted(self, value: bool):
+        self._deleted.set_value(self, value)
+
+    @property
+    def block_events(self) -> bool:
+        """Used to block events for a graphic and prevent recursion."""
+        return self._block_events
+
+    @block_events.setter
+    def block_events(self, value: bool):
+        self._block_events = value
+
+    @property
+    def world_object(self) -> pygfx.WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
         # We use weakref to simplify garbage collection
         return weakref.proxy(WORLD_OBJECTS[self._fpl_address])
 
-    def _set_world_object(self, wo: WorldObject):
+    def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
 
-    @property
-    def position(self) -> np.ndarray:
-        """position of the graphic, [x, y, z]"""
-        return self.world_object.world.position
+        self.world_object.visible = self.visible
+
+        # set offset if it's not (0., 0., 0.)
+        if not all(self.world_object.world.position == self.offset):
+            self.offset = self.offset
+
+        # set rotation if it's not (0., 0., 0., 1.)
+        if not all(self.world_object.world.rotation == self.rotation):
+            self.rotation = self.rotation
+
+    def unshare_property(self, feature: str):
+        raise NotImplementedError
+
+    def share_property(self, feature: BufferManager):
+        raise NotImplementedError
 
     @property
-    def position_x(self) -> float:
-        """x-axis position of the graphic"""
-        return self.world_object.world.x
+    def event_handlers(self) -> list[tuple[str, callable, ...]]:
+        """
+        Registered event handlers. Read-only use ``add_event_handler()``
+        and ``remove_event_handler()`` to manage callbacks
+        """
+        return list(self._event_handlers.items())
 
-    @property
-    def position_y(self) -> float:
-        """y-axis position of the graphic"""
-        return self.world_object.world.y
+    def add_event_handler(self, *args):
+        """
+        Register an event handler.
 
-    @property
-    def position_z(self) -> float:
-        """z-axis position of the graphic"""
-        return self.world_object.world.z
+        Parameters
+        ----------
+        callback: callable, the first argument
+            Event handler, must accept a single event  argument
+        *types: list of strings
+            A list of event types, ex: "click", "data", "colors", "pointer_down"
 
-    @position.setter
-    def position(self, val):
-        self.world_object.world.position = val
+        For the available renderer event types, see
+        https://jupyter-rfb.readthedocs.io/en/stable/events.html
 
-    @position_x.setter
-    def position_x(self, val):
-        self.world_object.world.x = val
+        All feature support events, i.e. ``graphic.features`` will give a set of
+        all features that are evented
 
-    @position_y.setter
-    def position_y(self, val):
-        self.world_object.world.y = val
+        Can also be used as a decorator.
 
-    @position_z.setter
-    def position_z(self, val):
-        self.world_object.world.z = val
+        Example
+        -------
 
-    @property
-    def rotation(self):
-        return self.world_object.local.rotation
+        .. code-block:: py
 
-    @rotation.setter
-    def rotation(self, val):
-        self.world_object.local.rotation = val
+            def my_handler(event):
+                print(event)
 
-    @property
-    def visible(self) -> bool:
-        """Access or change the visibility."""
-        return self.world_object.visible
+            graphic.add_event_handler(my_handler, "pointer_up", "pointer_down")
 
-    @visible.setter
-    def visible(self, v: bool):
-        """Access or change the visibility."""
-        self.world_object.visible = v
+        Decorator usage example:
 
-    @property
-    def children(self) -> list[WorldObject]:
-        """Return the children of the WorldObject."""
-        return self.world_object.children
+        .. code-block:: py
+
+            @graphic.add_event_handler("click")
+            def my_handler(event):
+                print(event)
+        """
+
+        decorating = not callable(args[0])
+        callback = None if decorating else args[0]
+        types = args if decorating else args[1:]
+
+        unsupported_events = [t for t in types if t not in self.supported_events]
+
+        if len(unsupported_events) > 0:
+            raise TypeError(
+                f"unsupported events passed: {unsupported_events} for {self.__class__.__name__}\n"
+                f"`graphic.events` will return a tuple of supported events"
+            )
+
+        def decorator(_callback):
+            _callback_wrapper = partial(
+                self._handle_event, _callback
+            )  # adds graphic instance as attribute and other things
+
+            for t in types:
+                # add to our record
+                self._event_handlers[t].add(_callback)
+
+                if t in self._features:
+                    # fpl feature event
+                    feature = getattr(self, f"_{t}")
+                    feature.add_event_handler(_callback_wrapper)
+                else:
+                    # wrap pygfx event
+                    self.world_object._event_handlers[t].add(_callback_wrapper)
+
+                # keep track of the partial too
+                self._event_handler_wrappers[t].add((_callback, _callback_wrapper))
+            return _callback
+
+        if decorating:
+            return decorator
+
+        return decorator(callback)
+
+    def clear_event_handlers(self):
+        """clear all event handlers added to this graphic"""
+        for ev, handlers in self.event_handlers:
+            handlers = list(handlers)
+            for h in handlers:
+                self.remove_event_handler(h, ev)
+
+    def _handle_event(self, callback, event: pygfx.Event):
+        """Wrap pygfx event to add graphic to pick_info"""
+        event.graphic = self
+
+        if self.block_events:
+            return
+
+        if event.type in self._features:
+            # for feature events
+            event._target = self.world_object
+
+        if isinstance(event, pygfx.PointerEvent):
+            # map from screen to world space and data space
+            world_xy = self._plot_area.map_screen_to_world(event)
+
+            # subtract offset to map to data
+            data_xy = world_xy - self.offset
+
+            # append attributes
+            event.x_world, event.y_world = world_xy[:2]
+            event.x_data, event.y_data = data_xy[:2]
+
+        with log_exception(f"Error during handling {event.type} event"):
+            callback(event)
+
+    def remove_event_handler(self, callback, *types):
+        # remove from our record first
+        for t in types:
+            for wrapper_map in self._event_handler_wrappers[t]:
+                # TODO: not sure if we can handle this mapping in a better way
+                if wrapper_map[0] == callback:
+                    wrapper = wrapper_map[1]
+                    self._event_handler_wrappers[t].remove(wrapper_map)
+                    break
+            else:
+                raise KeyError(
+                    f"event type: {t} with callback: {callback} is not registered"
+                )
+
+            self._event_handlers[t].remove(callback)
+            # remove callback wrapper from world object if pygfx event
+            if t in PYGFX_EVENTS:
+                print("pygfx event")
+                print(wrapper)
+                self.world_object.remove_event_handler(wrapper, t)
+            else:
+                feature = getattr(self, f"_{t}")
+                feature.remove_event_handler(wrapper)
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
-
-    def __setattr__(self, key, value):
-        if hasattr(self, key):
-            attr = getattr(self, key)
-            if isinstance(attr, GraphicFeature):
-                attr._set(value)
-                return
-
-        super().__setattr__(key, value)
 
     def __repr__(self):
         rval = f"{self.__class__.__name__} @ {hex(id(self))}"
@@ -211,6 +365,9 @@ class Graphic(BaseGraphic):
 
         Optionally implemented in subclasses
         """
+        # remove event handlers
+        self.clear_event_handlers()
+
         # clear any attached event handlers and animation functions
         for attr in dir(self):
             try:
@@ -237,9 +394,8 @@ class Graphic(BaseGraphic):
 
         self.world_object._event_handlers.clear()
 
-        feature_names = getattr(self, "feature_events")
-        for n in feature_names:
-            fea = getattr(self, n)
+        for n in self._features:
+            fea = getattr(self, f"_{n}")
             fea.clear_event_handlers()
 
     def __del__(self):
@@ -267,443 +423,3 @@ class Graphic(BaseGraphic):
                 f"`axis` must be either `x`, `y`, or `z`. `{axis}` provided instead!"
             )
         self.rotation = la.quat_mul(rot, self.rotation)
-
-
-class Interaction(ABC):
-    """Mixin class that makes graphics interactive"""
-
-    @abstractmethod
-    def set_feature(self, feature: str, new_data: Any, indices: Any):
-        pass
-
-    @abstractmethod
-    def reset_feature(self, feature: str):
-        pass
-
-    def link(
-        self,
-        event_type: str,
-        target: Any,
-        feature: str,
-        new_data: Any,
-        callback: callable = None,
-        bidirectional: bool = False,
-    ):
-        """
-        Link this graphic to another graphic upon an ``event_type`` to change the ``feature``
-        of a ``target`` graphic.
-
-        Parameters
-        ----------
-        event_type: str
-            can be a pygfx event ("key_down", "key_up","pointer_down", "pointer_move", "pointer_up",
-            "pointer_enter", "pointer_leave", "click", "double_click", "wheel", "close", "resize")
-            or appropriate feature event (ex. colors, data, etc.) associated with the graphic (can use
-            ``graphic_instance.feature_events`` to get a tuple of the valid feature events for the
-            graphic)
-
-        target: Any
-            graphic to be linked to
-
-        feature: str
-            feature (ex. colors, data, etc.) of the target graphic that will change following
-            the event
-
-        new_data: Any
-            appropriate data that will be changed in the feature of the target graphic after
-            the event occurs
-
-        callback: callable, optional
-            user-specified callable that will handle event,
-            the callable must take the following four arguments
-            | ''source'' - this graphic instance
-            | ''target'' - the graphic to be changed following the event
-            | ''event'' - the ''pygfx event'' or ''feature event'' that occurs
-            | ''new_data'' - the appropriate data of the ''target'' that will be changed
-
-        bidirectional: bool, default False
-            if True, the target graphic is also linked back to this graphic instance using the
-            same arguments
-
-            For example:
-            .. code-block::python
-
-        Returns
-        -------
-        None
-
-        """
-        if event_type in PYGFX_EVENTS:
-            self.world_object.add_event_handler(self._event_handler, event_type)
-
-        # make sure event is valid
-        elif event_type in self.feature_events:
-            if isinstance(self, GraphicCollection):
-                feature_instance = getattr(self[:], event_type)
-            else:
-                feature_instance = getattr(self, event_type)
-
-            feature_instance.add_event_handler(self._event_handler)
-
-        else:
-            raise ValueError(
-                f"Invalid event, valid events are: {PYGFX_EVENTS + self.feature_events}"
-            )
-
-        # make sure target feature is valid
-        if feature is not None:
-            if feature not in target.feature_events:
-                raise ValueError(
-                    f"Invalid feature for target, valid features are: {target.feature_events}"
-                )
-
-        if event_type not in self.registered_callbacks.keys():
-            self.registered_callbacks[event_type] = list()
-
-        callback_data = CallbackData(
-            target=target,
-            feature=feature,
-            new_data=new_data,
-            callback_function=callback,
-        )
-
-        for existing_callback_data in self.registered_callbacks[event_type]:
-            if existing_callback_data == callback_data:
-                warn(
-                    "linkage already exists for given event, target, and data, skipping"
-                )
-                return
-
-        self.registered_callbacks[event_type].append(callback_data)
-
-        if bidirectional:
-            if event_type in PYGFX_EVENTS:
-                warn("cannot use bidirectional link for pygfx events")
-                return
-
-            target.link(
-                event_type=event_type,
-                target=self,
-                feature=feature,
-                new_data=new_data,
-                callback=callback,
-                bidirectional=False,  # else infinite recursion, otherwise target will call
-                # this instance .link(), and then it will happen again etc.
-            )
-
-    def _event_handler(self, event):
-        """Handles the event after it occurs when two graphic have been linked together."""
-        if event.type in self.registered_callbacks.keys():
-            for target_info in self.registered_callbacks[event.type]:
-                if target_info.callback_function is not None:
-                    # if callback_function is not None, then callback function should handle the entire event
-                    target_info.callback_function(
-                        source=self,
-                        target=target_info.target,
-                        event=event,
-                        new_data=target_info.new_data,
-                    )
-
-                elif isinstance(self, GraphicCollection):
-                    # if target is a GraphicCollection, then indices will be stored in collection_index
-                    if event.type in self.feature_events:
-                        indices = event.pick_info["collection-index"]
-
-                    # for now we only have line collections so this works
-                    else:
-                        # get index of world object that made this event
-                        for i, item in enumerate(self.graphics):
-                            wo = WORLD_OBJECTS[item._fpl_address]
-                            # we only store hex id of worldobject, but worldobject `pick_info` is always the real object
-                            # so if pygfx worldobject triggers an event by itself, such as `click`, etc., this will be
-                            # the real world object in the pick_info and not the proxy
-                            if wo is event.pick_info["world_object"]:
-                                indices = i
-                    target_info.target.set_feature(
-                        feature=target_info.feature,
-                        new_data=target_info.new_data,
-                        indices=indices,
-                    )
-                else:
-                    # if target is a single graphic, then indices do not matter
-                    target_info.target.set_feature(
-                        feature=target_info.feature,
-                        new_data=target_info.new_data,
-                        indices=None,
-                    )
-
-
-@dataclass
-class CallbackData:
-    """Class for keeping track of the info necessary for interactivity after event occurs."""
-
-    target: Any
-    feature: str
-    new_data: Any
-    callback_function: callable = None
-
-    def __eq__(self, other):
-        if not isinstance(other, CallbackData):
-            raise TypeError("Can only compare against other <CallbackData> types")
-
-        if other.target is not self.target:
-            return False
-
-        if not other.feature == self.feature:
-            return False
-
-        if not other.new_data == self.new_data:
-            return False
-
-        if (self.callback_function is None) and (other.callback_function is None):
-            return True
-
-        if other.callback_function is self.callback_function:
-            return True
-
-        else:
-            return False
-
-
-@dataclass
-class PreviouslyModifiedData:
-    """Class for keeping track of previously modified data at indices"""
-
-    data: Any
-    indices: Any
-
-
-# Dict that holds all collection graphics in one python instance
-COLLECTION_GRAPHICS: dict[HexStr, Graphic] = dict()
-
-
-class GraphicCollection(Graphic):
-    """Graphic Collection base class"""
-
-    def __init__(self, name: str = None):
-        super().__init__(name)
-        self._graphics: list[str] = list()
-
-        self._graphics_changed: bool = True
-        self._graphics_array: np.ndarray[Graphic] = None
-
-    @property
-    def graphics(self) -> np.ndarray[Graphic]:
-        """The Graphics within this collection. Always returns a proxy to the Graphics."""
-        if self._graphics_changed:
-            proxies = [
-                weakref.proxy(COLLECTION_GRAPHICS[addr]) for addr in self._graphics
-            ]
-            self._graphics_array = np.array(proxies)
-            self._graphics_array.flags["WRITEABLE"] = False
-            self._graphics_changed = False
-
-        return self._graphics_array
-
-    def add_graphic(self, graphic: Graphic, reset_index: False):
-        """
-        Add a graphic to the collection.
-
-        Parameters
-        ----------
-        graphic: Graphic
-            graphic to add, must be a real ``Graphic`` not a proxy
-
-        reset_index: bool, default ``False``
-            reset the collection index
-
-        """
-
-        if not type(graphic).__name__ == self.child_type:
-            raise TypeError(
-                f"Can only add graphics of the same type to a collection, "
-                f"You can only add {self.child_type} to a {self.__class__.__name__}, "
-                f"you are trying to add a {graphic.__class__.__name__}."
-            )
-
-        addr = graphic._fpl_address
-        COLLECTION_GRAPHICS[addr] = graphic
-
-        self._graphics.append(addr)
-
-        if reset_index:
-            self._reset_index()
-        elif graphic.collection_index is None:
-            graphic.collection_index = len(self)
-
-        self.world_object.add(graphic.world_object)
-
-        self._graphics_changed = True
-
-    def remove_graphic(self, graphic: Graphic, reset_index: True):
-        """
-        Remove a graphic from the collection.
-
-        Parameters
-        ----------
-        graphic: Graphic
-            graphic to remove
-
-        reset_index: bool, default ``False``
-            reset the collection index
-
-        """
-
-        self._graphics.remove(graphic._fpl_address)
-
-        if reset_index:
-            self._reset_index()
-
-        self.world_object.remove(graphic.world_object)
-
-        self._graphics_changed = True
-
-    def __getitem__(self, key):
-        return CollectionIndexer(
-            parent=self,
-            selection=self.graphics[key],
-        )
-
-    def __del__(self):
-        self.world_object.clear()
-
-        for addr in self._graphics:
-            del COLLECTION_GRAPHICS[addr]
-
-        super().__del__()
-
-    def _reset_index(self):
-        for new_index, graphic in enumerate(self._graphics):
-            graphic.collection_index = new_index
-
-    def __len__(self):
-        return len(self._graphics)
-
-    def __repr__(self):
-        rval = super().__repr__()
-        return f"{rval}\nCollection of <{len(self._graphics)}> Graphics"
-
-
-class CollectionIndexer:
-    """Collection Indexer"""
-
-    def __init__(
-        self,
-        parent: GraphicCollection,
-        selection: list[Graphic],
-    ):
-        """
-
-        Parameters
-        ----------
-        parent: GraphicCollection
-            the GraphicCollection object that is being indexed
-
-        selection: list of Graphics
-            a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
-
-        """
-
-        self._parent = weakref.proxy(parent)
-        self._selection = selection
-
-        # we use parent.graphics[0] instead of selection[0]
-        # because the selection can be empty
-        for attr_name in self._parent.graphics[0].__dict__.keys():
-            attr = getattr(self._parent.graphics[0], attr_name)
-            if isinstance(attr, GraphicFeature):
-                collection_feature = CollectionFeature(
-                    self._selection, feature=attr_name
-                )
-                collection_feature.__doc__ = (
-                    f"indexable <{attr_name}> feature for collection"
-                )
-                setattr(self, attr_name, collection_feature)
-
-    @property
-    def graphics(self) -> np.ndarray[Graphic]:
-        """Returns an array of the selected graphics. Always returns a proxy to the Graphic"""
-        return tuple(self._selection)
-
-    def __setattr__(self, key, value):
-        if hasattr(self, key):
-            attr = getattr(self, key)
-            if isinstance(attr, CollectionFeature):
-                attr._set(value)
-                return
-
-        super().__setattr__(key, value)
-
-    def __len__(self):
-        return len(self._selection)
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__} @ {hex(id(self))}\n"
-            f"Selection of <{len(self._selection)}> {self._selection[0].__class__.__name__}"
-        )
-
-
-class CollectionFeature:
-    """Collection Feature"""
-
-    def __init__(self, selection: list[Graphic], feature: str):
-        """
-        selection: list of Graphics
-            a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
-
-        feature: str
-            feature of Graphics in the GraphicCollection being indexed
-
-        """
-
-        self._selection = selection
-        self._feature = feature
-
-        self._feature_instances: list[GraphicFeature] = list()
-
-        if len(self._selection) > 0:
-            for graphic in self._selection:
-                fi = getattr(graphic, self._feature)
-                self._feature_instances.append(fi)
-
-            if isinstance(fi, GraphicFeatureIndexable):
-                self._indexable = True
-            else:
-                self._indexable = False
-        else:  # it's an empty selection so it doesn't really matter
-            self._indexable = False
-
-    def _set(self, value):
-        self[:] = value
-
-    def __getitem__(self, item):
-        # only for indexable graphic features
-        return [fi[item] for fi in self._feature_instances]
-
-    def __setitem__(self, key, value):
-        if self._indexable:
-            for fi in self._feature_instances:
-                fi[key] = value
-
-        else:
-            for fi in self._feature_instances:
-                fi._set(value)
-
-    def add_event_handler(self, handler: callable):
-        """Adds an event handler to each of the selected Graphics from the parent GraphicCollection"""
-        for fi in self._feature_instances:
-            fi.add_event_handler(handler)
-
-    def remove_event_handler(self, handler: callable):
-        """Removes an event handler from each of the selected Graphics of the parent GraphicCollection"""
-        for fi in self._feature_instances:
-            fi.remove_event_handler(handler)
-
-    def block_events(self, b: bool):
-        """Blocks event handling from occurring."""
-        for fi in self._feature_instances:
-            fi.block_events(b)
-
-    def __repr__(self):
-        return f"Collection feature for: <{self._feature}>"

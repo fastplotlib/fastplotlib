@@ -149,7 +149,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         if self._title_graphic is not None:
             self._title_graphic.text = text
         else:
-            tg = TextGraphic(text=text, size=18)
+            tg = TextGraphic(text=text, font_size=18)
             self._title_graphic = tg
 
             self.docks["top"].size = 35

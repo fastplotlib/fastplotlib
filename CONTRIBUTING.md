@@ -77,35 +77,37 @@ keeps a *private* global dictionary of all `WorldObject` instances and users are
 This is due to garbage collection. This may be quite complicated for beginners, for more details see this PR: https://github.com/fastplotlib/fastplotlib/pull/160 . 
 If you are curious or have more questions on garbage collection in fastplotlib you're welcome to post an issue :D. 
 
-#### Graphic Features
+#### Graphic properties
 
-There is one important thing that `fastplotlib` uses which we call "graphic features". 
+Graphic properties are all evented, and internally we called these "graphic features". They are the various 
+aspects of a graphic that the user can change.
 The "graphic features" subpackage can be found at `fastplotlib/graphics/_features`. As we can see this 
-is a private subpackage and never meant to be accessible to users. In `fastplotlib` "graphic features" are the various 
-aspects of a graphic that the user can change. Users can also run callbacks whenever a graphic feature changes.
+is a private subpackage and never meant to be accessible to users..
 
 ##### LineGraphic
 
 For example let's look at `LineGraphic` in `fastplotlib/graphics/line.py`. Every graphic has a class variable called 
-`feature_events` which is a set of all graphic features. It has the following graphic features: "data", "colors", "cmap", "thickness", "present".
+`_features` which is a set of all graphic properties that are evented. It has the following evented properties: 
+`"data", "colors", "cmap", "thickness"` in addition to properties common to all graphics, such as `"name", "offset", "rotation", and "visible"` 
 
-Now look at the constructor for `LineGraphic`, it first creates an instance of `PointsDataFeature`. This is basically a 
-class that wraps the positions buffer, the vertex positions that define the line, and provides additional useful functionality. 
-For example, every time that the `data` is changed event handlers will be called (if any event handlers are registered). 
+Now look at the constructor for the `LineGraphic` base class `PositionsGraphic`, it first creates an instance of `VertexPositions`. 
+This is a class that manages vertex positions buffer. It defines the line, and provides additional useful functionality. 
+For example, every time that the `data` is changed, the new data will be marked for upload to the GPU before the next draw. 
+In addition, event handlers will be called if any event handlers are registered. 
 
-`ColorFeature`behaves similarly, but it can perform additional parsing that can create the colors buffer from different forms of user input. For example if a user runs: 
-`line_graphic.colors = "blue"`, then `ColorFeature.__setitem__()` will create a buffer that corresponds to what `pygfx.Color` thinks is "blue". 
-Users can also take advantage of fancy indexing, ex: `line_graphics.colors[bool_array] = "red"` :smile: 
+`VertexColors`behaves similarly, but it can perform additional parsing that can create the colors buffer from different 
+forms of user input. For example if a user runs: `line_graphic.colors = "blue"`, then `VertexColors.__setitem__()` will 
+create a buffer that corresponds to what `pygfx.Color` thinks is "blue". Users can also take advantage of fancy indexing, 
+ex: `line_graphics.colors[bool_array] = "red"` :smile: 
 
-`LineGraphic` also has a `CmapFeature`, this is a subclass of `ColorFeature` which can parse colormaps, for example: 
+`LineGraphic` also has a `VertexCmap`, this manages the line `VertexColors` instance to parse colormaps, for example: 
 `line_graphic.cmap = "jet"` or even `line_graphic.cmap[50:] = "viridis"`.
 
-`LineGraphic` also has `ThicknessFeature` which is pretty simple, `PresentFeature` which indicates if a graphic is 
-currently in the scene, and `DeletedFeature` which is useful if you need callbacks to indicate that the graphic has been 
-deleted (for example, removing references to a graphic from a legend).
+`LineGraphic` also has a `thickness` property which is pretty simple, and `DeletedFeature` which is useful if you need 
+callbacks to indicate that the graphic has been deleted (for example, removing references to a graphic from a legend).
 
-Other graphics have graphic features that are relevant to them, for example `ImageGraphic` has a `cmap` feature which is 
-unique to images or heatmaps.
+Other graphics have properties that are relevant to them, for example `ImageGraphic` has `cmap`, `vmin`, `vmax`,
+properties unique to images.
 
 #### Selectors
 
@@ -192,9 +194,10 @@ the subplots. All subplots within a `Figure` share the same canvas and use diffe
 
 ## Tests in detail
 
-The CI pipeline for a plotting library that is supposed to produce things that "look visually correct". Each example 
-within the `examples` dir is run and an image of the canvas is taken and compared with a ground-truth 
-screenshot that we have manually inspected. Ground-truth image are stored using `git-lfs`.
+Backend tests are in `tests/`, in addition as a plotting library CI pipeline produces things that 
+"look visually correct". Each example within the `examples` dir is run and an image of the canvas 
+is taken and compared with a ground-truth screenshot that we have manually inspected. 
+Ground-truth image are stored using `git-lfs`.
 
 The ground-truth images are in:
 

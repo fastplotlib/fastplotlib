@@ -1,15 +1,15 @@
 from .line import LineGraphic
 from .scatter import ScatterGraphic
-from .image import ImageGraphic, HeatmapGraphic
+from .image import ImageGraphic
 from .text import TextGraphic
 from .line_collection import LineCollection, LineStack
 
+
 __all__ = [
+    "LineGraphic",
     "ImageGraphic",
     "ScatterGraphic",
-    "LineGraphic",
-    "HeatmapGraphic",
+    "TextGraphic",
     "LineCollection",
     "LineStack",
-    "TextGraphic",
 ]

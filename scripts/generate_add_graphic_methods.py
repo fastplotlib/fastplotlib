@@ -69,7 +69,7 @@ def generate_add_graphics_methods():
         f.write(f"        {class_name.__init__.__doc__}\n")
         f.write('        """\n')
         f.write(
-            f"        return self._create_graphic({class_name.__name__}, {s}*args, **kwargs)\n\n"
+            f"        return self._create_graphic({class_name.__name__}, {s} **kwargs)\n\n"
         )
 
     f.close()

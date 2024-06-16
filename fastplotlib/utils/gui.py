@@ -44,7 +44,6 @@ IS_JUPYTER = GUI_BACKEND == "jupyter"
 
 
 def _notebook_print_banner():
-
     from ipywidgets import Image
     from IPython.display import display
 

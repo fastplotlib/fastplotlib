@@ -1,27 +1,252 @@
 from typing import *
-from math import ceil
-from itertools import product
 import weakref
-
-import numpy as np
 
 import pygfx
 
 from ..utils import quick_min_max
-from ._base import Graphic, Interaction
+from ._base import Graphic
 from .selectors import LinearSelector, LinearRegionSelector
 from ._features import (
-    ImageCmapFeature,
-    ImageDataFeature,
-    HeatmapDataFeature,
-    HeatmapCmapFeature,
-    to_gpu_supported_dtype,
+    TextureArray,
+    ImageCmap,
+    ImageVmin,
+    ImageVmax,
+    ImageInterpolation,
+    ImageCmapInterpolation,
 )
 
 
-class _AddSelectorsMixin:
+class _ImageTile(pygfx.Image):
+    """
+    Similar to pygfx.Image, only difference is that it modifies the pick_info
+    by adding the data row start indices that correspond to this chunk of the big image
+    """
+
+    def __init__(
+        self,
+        geometry,
+        material,
+        data_slice: tuple[slice, slice],
+        chunk_index: tuple[int, int],
+        **kwargs,
+    ):
+        super().__init__(geometry, material, **kwargs)
+
+        self._data_slice = data_slice
+        self._chunk_index = chunk_index
+
+    def _wgpu_get_pick_info(self, pick_value):
+        pick_info = super()._wgpu_get_pick_info(pick_value)
+
+        data_row_start, data_col_start = (
+            self.data_slice[0].start,
+            self.data_slice[1].start,
+        )
+
+        # add the actual data row and col start indices
+        x, y = pick_info["index"]
+        x += data_col_start
+        y += data_row_start
+        pick_info["index"] = (x, y)
+
+        xp, yp = pick_info["pixel_coord"]
+        xp += data_col_start
+        yp += data_row_start
+        pick_info["pixel_coord"] = (xp, yp)
+
+        # add row chunk and col chunk index to pick_info dict
+        return {
+            **pick_info,
+            "data_slice": self.data_slice,
+            "chunk_index": self.chunk_index,
+        }
+
+    @property
+    def data_slice(self) -> tuple[slice, slice]:
+        return self._data_slice
+
+    @property
+    def chunk_index(self) -> tuple[int, int]:
+        return self._chunk_index
+
+
+class ImageGraphic(Graphic):
+    _features = {"data", "cmap", "vmin", "vmax", "interpolation", "cmap_interpolation"}
+
+    def __init__(
+        self,
+        data: Any,
+        vmin: int = None,
+        vmax: int = None,
+        cmap: str = "plasma",
+        interpolation: str = "nearest",
+        cmap_interpolation: str = "linear",
+        isolated_buffer: bool = True,
+        **kwargs,
+    ):
+        """
+        Create an Image Graphic
+
+        Parameters
+        ----------
+        data: array-like
+            array-like, usually numpy.ndarray, must support ``memoryview()``
+            | shape must be ``[x_dim, y_dim]``
+
+        vmin: int, optional
+            minimum value for color scaling, calculated from data if not provided
+
+        vmax: int, optional
+            maximum value for color scaling, calculated from data if not provided
+
+        cmap: str, optional, default "plasma"
+            colormap to use to display the data
+
+        interpolation: str, optional, default "nearest"
+            interpolation filter, one of "nearest" or "linear"
+
+        cmap_interpolation: str, optional, default "linear"
+            colormap interpolation method, one of "nearest" or "linear"
+
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then
+            set the data, useful if the data arrays are ready-only such as memmaps.
+            If False, the input array is itself used as the buffer.
+
+        kwargs:
+            additional keyword arguments passed to Graphic
+
+        """
+
+        super().__init__(**kwargs)
+
+        world_object = pygfx.Group()
+
+        # texture array that manages the textures on the GPU for displaying this image
+        self._data = TextureArray(data, isolated_buffer=isolated_buffer)
+
+        if (vmin is None) or (vmax is None):
+            vmin, vmax = quick_min_max(data)
+
+        # other graphic features
+        self._vmin = ImageVmin(vmin)
+        self._vmax = ImageVmax(vmax)
+
+        self._cmap = ImageCmap(cmap)
+
+        self._interpolation = ImageInterpolation(interpolation)
+        self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
+
+        # use cmap if not RGB
+        if self._data.value.ndim == 2:
+            _map = self._cmap.texture
+        else:
+            _map = None
+
+        # one common material is used for every Texture chunk
+        self._material = pygfx.ImageBasicMaterial(
+            clim=(vmin, vmax),
+            map=_map,
+            interpolation=self._interpolation.value,
+            map_interpolation=self._cmap_interpolation.value,
+            pick_write=True,
+        )
+
+        # iterate through each texture chunk and create
+        # an _ImageTIle, offset the tile using the data indices
+        for texture, chunk_index, data_slice in self._data:
+
+            # create an ImageTile using the texture for this chunk
+            img = _ImageTile(
+                geometry=pygfx.Geometry(grid=texture),
+                material=self._material,
+                data_slice=data_slice,  # used to parse pick_info
+                chunk_index=chunk_index,
+            )
+
+            # row and column start index for this chunk
+            data_row_start = data_slice[0].start
+            data_col_start = data_slice[1].start
+
+            # offset tile position using the indices from the big data array
+            # that correspond to this chunk
+            img.world.x = data_col_start
+            img.world.y = data_row_start
+
+            world_object.add(img)
+
+        self._set_world_object(world_object)
+
+    @property
+    def data(self) -> TextureArray:
+        """Get or set the image data"""
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self._data[:] = data
+
+    @property
+    def cmap(self) -> str:
+        """colormap name"""
+        return self._cmap.value
+
+    @cmap.setter
+    def cmap(self, name: str):
+        self._cmap.set_value(self, name)
+
+    @property
+    def vmin(self) -> float:
+        """lower contrast limit"""
+        return self._vmin.value
+
+    @vmin.setter
+    def vmin(self, value: float):
+        self._vmin.set_value(self, value)
+
+    @property
+    def vmax(self) -> float:
+        """upper contrast limit"""
+        return self._vmax.value
+
+    @vmax.setter
+    def vmax(self, value: float):
+        self._vmax.set_value(self, value)
+
+    @property
+    def interpolation(self) -> str:
+        """image data interpolation method"""
+        return self._interpolation.value
+
+    @interpolation.setter
+    def interpolation(self, value: str):
+        self._interpolation.set_value(self, value)
+
+    @property
+    def cmap_interpolation(self) -> str:
+        """cmap interpolation method"""
+        return self._cmap_interpolation.value
+
+    @cmap_interpolation.setter
+    def cmap_interpolation(self, value: str):
+        self._cmap_interpolation.set_value(self, value)
+
+    def reset_vmin_vmax(self):
+        """
+        Reset the vmin, vmax by estimating it from the data
+
+        Returns
+        -------
+        None
+
+        """
+
+        vmin, vmax = quick_min_max(self._data.value)
+        self.vmin = vmin
+        self.vmax = vmax
+
     def add_linear_selector(
-        self, selection: int = None, padding: float = None, **kwargs
+        self, selection: int = None, axis: str = "x", padding: float = None, **kwargs
     ) -> LinearSelector:
         """
         Adds a :class:`.LinearSelector`.
@@ -43,20 +268,22 @@ class _AddSelectorsMixin:
 
         """
 
-        # default padding is 15% the height or width of the image
-        if "axis" in kwargs.keys():
-            axis = kwargs["axis"]
+        if axis == "x":
+            size = self._data.value.shape[0]
+            center = size / 2
+            limits = (0, self._data.value.shape[1])
+        elif axis == "y":
+            size = self._data.value.shape[1]
+            center = size / 2
+            limits = (0, self._data.value.shape[0])
         else:
-            axis = "x"
+            raise ValueError("`axis` must be one of 'x' | 'y'")
 
-        (
-            bounds_init,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
+        # default padding is 25% the height or width of the image
+        if padding is None:
+            size *= 1.25
+        else:
+            size += padding
 
         if selection is None:
             selection = limits[0]
@@ -69,28 +296,44 @@ class _AddSelectorsMixin:
         selector = LinearSelector(
             selection=selection,
             limits=limits,
-            end_points=end_points,
+            size=size,
+            center=center,
+            axis=axis,
             parent=weakref.proxy(self),
             **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        selector.position_z = self.position_z + 1
+
+        # place selector above this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
 
         return weakref.proxy(selector)
 
     def add_linear_region_selector(
-        self, padding: float = None, **kwargs
+        self,
+        selection: tuple[float, float] = None,
+        axis: str = "x",
+        padding: float = 0.0,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
     ) -> LinearRegionSelector:
         """
-        Add a :class:`.LinearRegionSelector`.
+        Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
 
         Parameters
         ----------
-        padding: float, optional
-            Extends the linear selector along the y-axis to make it easier to interact with.
+        selection: (float, float)
+            initial (min, max) of the selection
 
-        kwargs: optional
+        axis: "x" | "y"
+            axis the selector can move along
+
+        padding: float, default 100.0
+            Extends the linear selector along the perpendicular axis to make it easier to interact with.
+
+        kwargs
             passed to ``LinearRegionSelector``
 
         Returns
@@ -100,391 +343,46 @@ class _AddSelectorsMixin:
 
         """
 
-        (
-            bounds_init,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
+        if axis == "x":
+            size = self._data.value.shape[0]
+            center = size / 2
+            limits = (0, self._data.value.shape[1])
+        elif axis == "y":
+            size = self._data.value.shape[1]
+            center = size / 2
+            limits = (0, self._data.value.shape[0])
+        else:
+            raise ValueError("`axis` must be one of 'x' | 'y'")
 
-        # create selector
+        # default padding is 25% the height or width of the image
+        if padding is None:
+            size *= 1.25
+        else:
+            size += padding
+
+        if selection is None:
+            selection = limits[0], int(limits[1] * 0.25)
+
+        if padding is None:
+            size *= 1.25
+
+        else:
+            size += padding
+
         selector = LinearRegionSelector(
-            bounds=bounds_init,
+            selection=selection,
             limits=limits,
             size=size,
-            origin=origin,
+            center=center,
+            axis=axis,
+            fill_color=fill_color,
             parent=weakref.proxy(self),
-            fill_color=(0, 0, 0.35, 0.2),
             **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        # so that it is above this graphic
-        selector.position_z = self.position_z + 3
 
-        # PlotArea manages this for garbage collection etc. just like all other Graphics
-        # so we should only work with a proxy on the user-end
+        # place above this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
+
         return weakref.proxy(selector)
-
-    # TODO: this method is a bit of a mess, can refactor later
-    def _get_linear_selector_init_args(self, padding: float, **kwargs):
-        # computes initial bounds, limits, size and origin of linear selectors
-        data = self.data()
-
-        if "axis" in kwargs.keys():
-            axis = kwargs["axis"]
-        else:
-            axis = "x"
-
-        if padding is None:
-            if axis == "x":
-                # based on number of rows
-                padding = int(data.shape[0] * 0.15)
-            elif axis == "y":
-                # based on number of columns
-                padding = int(data.shape[1] * 0.15)
-
-        if axis == "x":
-            offset = self.position_x
-            # x limits, number of columns
-            limits = (offset, data.shape[1] - 1)
-
-            # size is number of rows + padding
-            # used by LinearRegionSelector but not LinearSelector
-            size = data.shape[0] + padding
-
-            # initial position of the selector
-            # center row
-            position_y = data.shape[0] / 2
-
-            # need y offset too for this
-            origin = (limits[0] - offset, position_y + self.position_y)
-
-            # endpoints of the data range
-            # used by linear selector but not linear region
-            # padding, n_rows + padding
-            end_points = (0 - padding, data.shape[0] + padding)
-        else:
-            offset = self.position_y
-            # y limits
-            limits = (offset, data.shape[0] - 1)
-
-            # width + padding
-            # used by LinearRegionSelector but not LinearSelector
-            size = data.shape[1] + padding
-
-            # initial position of the selector
-            position_x = data.shape[1] / 2
-
-            # need x offset too for this
-            origin = (position_x + self.position_x, limits[0] - offset)
-
-            # endpoints of the data range
-            # used by linear selector but not linear region
-            end_points = (0 - padding, data.shape[1] + padding)
-
-        # initial bounds are 20% of the limits range
-        # used by LinearRegionSelector but not LinearSelector
-        bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
-
-        return bounds_init, limits, size, origin, axis, end_points
-
-    def _add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
-
-
-class ImageGraphic(Graphic, Interaction, _AddSelectorsMixin):
-    feature_events = {"data", "cmap", "present"}
-
-    def __init__(
-        self,
-        data: Any,
-        vmin: int = None,
-        vmax: int = None,
-        cmap: str = "plasma",
-        filter: str = "nearest",
-        isolated_buffer: bool = True,
-        *args,
-        **kwargs,
-    ):
-        """
-        Create an Image Graphic
-
-        Parameters
-        ----------
-        data: array-like
-            array-like, usually numpy.ndarray, must support ``memoryview()``
-            Tensorflow Tensors also work **probably**, but not thoroughly tested
-            | shape must be ``[x_dim, y_dim]`` or ``[x_dim, y_dim, rgb]``
-
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
-
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
-
-        cmap: str, optional, default "plasma"
-            colormap to use to display the image data, ignored if data is RGB
-
-        filter: str, optional, default "nearest"
-            interpolation filter, one of "nearest" or "linear"
-
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer.
-
-        args:
-            additional arguments passed to Graphic
-
-        kwargs:
-            additional keyword arguments passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the data buffer displayed in the ImageGraphic
-
-        **cmap**: :class:`.ImageCmapFeature`
-            Manages the colormap
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene
-
-        """
-
-        super().__init__(*args, **kwargs)
-
-        data = to_gpu_supported_dtype(data)
-
-        # TODO: we need to organize and do this better
-        if isolated_buffer:
-            # initialize a buffer with the same shape as the input data
-            # we do not directly use the input data array as the buffer
-            # because if the input array is a read-only type, such as
-            # numpy memmaps, we would not be able to change the image data
-            buffer_init = np.zeros(shape=data.shape, dtype=data.dtype)
-        else:
-            buffer_init = data
-
-        if (vmin is None) or (vmax is None):
-            vmin, vmax = quick_min_max(data)
-
-        texture = pygfx.Texture(buffer_init, dim=2)
-
-        geometry = pygfx.Geometry(grid=texture)
-
-        self.cmap = ImageCmapFeature(self, cmap)
-
-        # if data is RGB or RGBA
-        if data.ndim > 2:
-            material = pygfx.ImageBasicMaterial(
-                clim=(vmin, vmax), map_interpolation=filter, pick_write=True
-            )
-        # if data is just 2D without color information, use colormap LUT
-        else:
-            material = pygfx.ImageBasicMaterial(
-                clim=(vmin, vmax),
-                map=self.cmap(),
-                map_interpolation=filter,
-                pick_write=True,
-            )
-
-        world_object = pygfx.Image(geometry, material)
-
-        self._set_world_object(world_object)
-
-        self.cmap.vmin = vmin
-        self.cmap.vmax = vmax
-
-        self.data = ImageDataFeature(self, data)
-        # TODO: we need to organize and do this better
-        if isolated_buffer:
-            # if the buffer was initialized with zeros
-            # set it with the actual data
-            self.data = data
-
-    def set_feature(self, feature: str, new_data: Any, indices: Any):
-        pass
-
-    def reset_feature(self, feature: str):
-        pass
-
-
-class _ImageTile(pygfx.Image):
-    """
-    Similar to pygfx.Image, only difference is that it contains a few properties to keep track of
-    row chunk index, column chunk index
-    """
-
-    def _wgpu_get_pick_info(self, pick_value):
-        pick_info = super()._wgpu_get_pick_info(pick_value)
-
-        # add row chunk and col chunk index to pick_info dict
-        return {
-            **pick_info,
-            "row_chunk_index": self.row_chunk_index,
-            "col_chunk_index": self.col_chunk_index,
-        }
-
-    @property
-    def row_chunk_index(self) -> int:
-        return self._row_chunk_index
-
-    @row_chunk_index.setter
-    def row_chunk_index(self, index: int):
-        self._row_chunk_index = index
-
-    @property
-    def col_chunk_index(self) -> int:
-        return self._col_chunk_index
-
-    @col_chunk_index.setter
-    def col_chunk_index(self, index: int):
-        self._col_chunk_index = index
-
-
-class HeatmapGraphic(Graphic, Interaction, _AddSelectorsMixin):
-    feature_events = {"data", "cmap", "present"}
-
-    def __init__(
-        self,
-        data: Any,
-        vmin: int = None,
-        vmax: int = None,
-        cmap: str = "plasma",
-        filter: str = "nearest",
-        chunk_size: int = 8192,
-        isolated_buffer: bool = True,
-        *args,
-        **kwargs,
-    ):
-        """
-        Create an Image Graphic
-
-        Parameters
-        ----------
-        data: array-like
-            array-like, usually numpy.ndarray, must support ``memoryview()``
-            Tensorflow Tensors also work **probably**, but not thoroughly tested
-            | shape must be ``[x_dim, y_dim]``
-
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
-
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
-
-        cmap: str, optional, default "plasma"
-            colormap to use to display the data
-
-        filter: str, optional, default "nearest"
-            interpolation filter, one of "nearest" or "linear"
-
-        chunk_size: int, default 8192, max 8192
-            chunk size for each tile used to make up the heatmap texture
-
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer.
-
-        args:
-            additional arguments passed to Graphic
-
-        kwargs:
-            additional keyword arguments passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.HeatmapDataFeature`
-            Manages the data buffer displayed in the HeatmapGraphic
-
-        **cmap**: :class:`.HeatmapCmapFeature`
-            Manages the colormap
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene
-
-        """
-
-        super().__init__(*args, **kwargs)
-
-        if chunk_size > 8192:
-            raise ValueError("Maximum chunk size is 8192")
-
-        data = to_gpu_supported_dtype(data)
-
-        # TODO: we need to organize and do this better
-        if isolated_buffer:
-            # initialize a buffer with the same shape as the input data
-            # we do not directly use the input data array as the buffer
-            # because if the input array is a read-only type, such as
-            # numpy memmaps, we would not be able to change the image data
-            buffer_init = np.zeros(shape=data.shape, dtype=data.dtype)
-        else:
-            buffer_init = data
-
-        row_chunks = range(ceil(data.shape[0] / chunk_size))
-        col_chunks = range(ceil(data.shape[1] / chunk_size))
-
-        chunks = list(product(row_chunks, col_chunks))
-        # chunks is the index position of each chunk
-
-        start_ixs = [list(map(lambda c: c * chunk_size, chunk)) for chunk in chunks]
-        stop_ixs = [list(map(lambda c: c + chunk_size, chunk)) for chunk in start_ixs]
-
-        world_object = pygfx.Group()
-        self._set_world_object(world_object)
-
-        if (vmin is None) or (vmax is None):
-            vmin, vmax = quick_min_max(data)
-
-        self.cmap = HeatmapCmapFeature(self, cmap)
-        self._material = pygfx.ImageBasicMaterial(
-            clim=(vmin, vmax),
-            map=self.cmap(),
-            map_interpolation=filter,
-            pick_write=True,
-        )
-
-        for start, stop, chunk in zip(start_ixs, stop_ixs, chunks):
-            row_start, col_start = start
-            row_stop, col_stop = stop
-
-            # x and y positions of the Tile in world space coordinates
-            y_pos, x_pos = row_start, col_start
-
-            texture = pygfx.Texture(
-                buffer_init[row_start:row_stop, col_start:col_stop], dim=2
-            )
-            geometry = pygfx.Geometry(grid=texture)
-            # material = pygfx.ImageBasicMaterial(clim=(0, 1), map=self.cmap())
-
-            img = _ImageTile(geometry, self._material)
-
-            # row and column chunk index for this Tile
-            img.row_chunk_index = chunk[0]
-            img.col_chunk_index = chunk[1]
-
-            img.world.x = x_pos
-            img.world.y = y_pos
-
-            self.world_object.add(img)
-
-        self.data = HeatmapDataFeature(self, buffer_init)
-        # TODO: we need to organize and do this better
-        if isolated_buffer:
-            # if the buffer was initialized with zeros
-            # set it with the actual data
-            self.data = data
-
-    def set_feature(self, feature: str, new_data: Any, indices: Any):
-        pass
-
-    def reset_feature(self, feature: str):
-        pass

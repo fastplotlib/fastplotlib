@@ -23,7 +23,6 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "sphinx_design",
-    "nbsphinx",
 ]
 
 autosummary_generate = True
@@ -52,7 +51,7 @@ autodoc_typehints_description_target = "documented_params"
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "pygfx": ("https://pygfx.readthedocs.io/en/latest", None),
+    "pygfx": ("https://pygfx.com/latest", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
 }
 

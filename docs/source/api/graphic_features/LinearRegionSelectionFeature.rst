@@ -21,6 +21,7 @@ Properties
     :toctree: LinearRegionSelectionFeature_api
 
     LinearRegionSelectionFeature.axis
+    LinearRegionSelectionFeature.value
 
 Methods
 ~~~~~~~
@@ -31,4 +32,5 @@ Methods
     LinearRegionSelectionFeature.block_events
     LinearRegionSelectionFeature.clear_event_handlers
     LinearRegionSelectionFeature.remove_event_handler
+    LinearRegionSelectionFeature.set_value
 
