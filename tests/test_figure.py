@@ -1,4 +1,8 @@
+import os
+
+import imageio.v3 as iio
 import numpy as np
+import numpy.testing as npt
 import pytest
 
 import fastplotlib as fpl
@@ -170,3 +174,20 @@ def test_set_controllers_from_existing_controllers():
     assert fig[0, 0].camera is cameras[0][0]
 
     assert fig[0, 1].camera.fov == 50
+
+
+def test_export():
+    os.environ["WGPU_FORCE_OFFSCREEN"] = "0"
+    fig = fpl.Figure(canvas="glfw")
+
+    fig[0, 0].add_image(np.random.rand(100, 100))
+    fig[0, 0].add_line(np.random.rand(150) * 25, alpha=0.5, colors="g")
+
+    fig.show()
+    fig.canvas.draw_frame()
+
+    fig.export("./test_fig_export.png")
+
+    img = iio.imread("./test_fig_export.png")
+
+    npt.assert_almost_equal(img, fig.renderer.snapshot())
