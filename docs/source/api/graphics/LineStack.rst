@@ -26,7 +26,6 @@ Properties
     LineStack.data
     LineStack.deleted
     LineStack.event_handlers
-    LineStack.events
     LineStack.graphics
     LineStack.metadatas
     LineStack.name
@@ -35,6 +34,7 @@ Properties
     LineStack.offsets
     LineStack.rotation
     LineStack.rotations
+    LineStack.supported_events
     LineStack.thickness
     LineStack.visible
     LineStack.visibles
@@ -49,10 +49,10 @@ Methods
     LineStack.add_graphic
     LineStack.add_linear_region_selector
     LineStack.add_linear_selector
-    LineStack.attach_feature
     LineStack.clear_event_handlers
-    LineStack.detach_feature
     LineStack.remove_event_handler
     LineStack.remove_graphic
     LineStack.rotate
+    LineStack.share_property
+    LineStack.unshare_property
 

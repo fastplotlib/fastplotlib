@@ -26,7 +26,6 @@ Properties
     LineCollection.data
     LineCollection.deleted
     LineCollection.event_handlers
-    LineCollection.events
     LineCollection.graphics
     LineCollection.metadatas
     LineCollection.name
@@ -35,6 +34,7 @@ Properties
     LineCollection.offsets
     LineCollection.rotation
     LineCollection.rotations
+    LineCollection.supported_events
     LineCollection.thickness
     LineCollection.visible
     LineCollection.visibles
@@ -49,10 +49,10 @@ Methods
     LineCollection.add_graphic
     LineCollection.add_linear_region_selector
     LineCollection.add_linear_selector
-    LineCollection.attach_feature
     LineCollection.clear_event_handlers
-    LineCollection.detach_feature
     LineCollection.remove_event_handler
     LineCollection.remove_graphic
     LineCollection.rotate
+    LineCollection.share_property
+    LineCollection.unshare_property
 

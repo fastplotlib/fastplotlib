@@ -26,11 +26,11 @@ Properties
     ScatterGraphic.data
     ScatterGraphic.deleted
     ScatterGraphic.event_handlers
-    ScatterGraphic.events
     ScatterGraphic.name
     ScatterGraphic.offset
     ScatterGraphic.rotation
     ScatterGraphic.sizes
+    ScatterGraphic.supported_events
     ScatterGraphic.visible
     ScatterGraphic.world_object
 
@@ -40,9 +40,9 @@ Methods
     :toctree: ScatterGraphic_api
 
     ScatterGraphic.add_event_handler
-    ScatterGraphic.attach_feature
     ScatterGraphic.clear_event_handlers
-    ScatterGraphic.detach_feature
     ScatterGraphic.remove_event_handler
     ScatterGraphic.rotate
+    ScatterGraphic.share_property
+    ScatterGraphic.unshare_property
 

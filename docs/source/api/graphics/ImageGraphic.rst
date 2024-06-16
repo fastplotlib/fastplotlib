@@ -26,11 +26,11 @@ Properties
     ImageGraphic.data
     ImageGraphic.deleted
     ImageGraphic.event_handlers
-    ImageGraphic.events
     ImageGraphic.interpolation
     ImageGraphic.name
     ImageGraphic.offset
     ImageGraphic.rotation
+    ImageGraphic.supported_events
     ImageGraphic.visible
     ImageGraphic.vmax
     ImageGraphic.vmin
@@ -44,10 +44,10 @@ Methods
     ImageGraphic.add_event_handler
     ImageGraphic.add_linear_region_selector
     ImageGraphic.add_linear_selector
-    ImageGraphic.attach_feature
     ImageGraphic.clear_event_handlers
-    ImageGraphic.detach_feature
     ImageGraphic.remove_event_handler
     ImageGraphic.reset_vmin_vmax
     ImageGraphic.rotate
+    ImageGraphic.share_property
+    ImageGraphic.unshare_property
 

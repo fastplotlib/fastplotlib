@@ -24,13 +24,13 @@ Properties
     LinearRegionSelector.block_events
     LinearRegionSelector.deleted
     LinearRegionSelector.event_handlers
-    LinearRegionSelector.events
     LinearRegionSelector.limits
     LinearRegionSelector.name
     LinearRegionSelector.offset
     LinearRegionSelector.parent
     LinearRegionSelector.rotation
     LinearRegionSelector.selection
+    LinearRegionSelector.supported_events
     LinearRegionSelector.visible
     LinearRegionSelector.world_object
 
@@ -41,13 +41,13 @@ Methods
 
     LinearRegionSelector.add_event_handler
     LinearRegionSelector.add_ipywidget_handler
-    LinearRegionSelector.attach_feature
     LinearRegionSelector.clear_event_handlers
-    LinearRegionSelector.detach_feature
     LinearRegionSelector.get_selected_data
     LinearRegionSelector.get_selected_index
     LinearRegionSelector.get_selected_indices
     LinearRegionSelector.make_ipywidget_slider
     LinearRegionSelector.remove_event_handler
     LinearRegionSelector.rotate
+    LinearRegionSelector.share_property
+    LinearRegionSelector.unshare_property
 

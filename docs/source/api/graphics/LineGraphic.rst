@@ -26,10 +26,10 @@ Properties
     LineGraphic.data
     LineGraphic.deleted
     LineGraphic.event_handlers
-    LineGraphic.events
     LineGraphic.name
     LineGraphic.offset
     LineGraphic.rotation
+    LineGraphic.supported_events
     LineGraphic.thickness
     LineGraphic.visible
     LineGraphic.world_object
@@ -42,9 +42,9 @@ Methods
     LineGraphic.add_event_handler
     LineGraphic.add_linear_region_selector
     LineGraphic.add_linear_selector
-    LineGraphic.attach_feature
     LineGraphic.clear_event_handlers
-    LineGraphic.detach_feature
     LineGraphic.remove_event_handler
     LineGraphic.rotate
+    LineGraphic.share_property
+    LineGraphic.unshare_property
 
