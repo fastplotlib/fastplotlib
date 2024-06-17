@@ -34,8 +34,8 @@ cloud = np.vstack(
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
 # create plot
-fig_scatter = fpl.Figure()
-subplot_scatter = fig_scatter[0, 0]
+figure = fpl.Figure()
+subplot_scatter = figure[0, 0]
 # use an alpha value since this will be a lot of points
 scatter_graphic = subplot_scatter.add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
 
@@ -51,11 +51,7 @@ def cycle_colors(subplot):
 
 subplot_scatter.add_animations(cycle_colors)
 
-fig_scatter.show()
-
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig_scatter.canvas
+figure.show()
 
 subplot_scatter.canvas.set_logical_size(700, 560)
 

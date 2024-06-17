@@ -11,22 +11,18 @@ Example showing the simple plot creation with Standard imageio image.
 import fastplotlib as fpl
 import imageio.v3 as iio
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
 data = iio.imread("imageio:camera.png")
 
 # plot the image data
-image_graphic = fig[0, 0].add_image(data=data, name="iio camera")
+image_graphic = figure[0, 0].add_image(data=data, name="iio camera")
 
-fig.show()
+figure.show()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
+figure.canvas.set_logical_size(700, 560)
 
-fig.canvas.set_logical_size(700, 560)
-
-fig[0, 0].auto_scale()
+figure[0, 0].auto_scale()
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

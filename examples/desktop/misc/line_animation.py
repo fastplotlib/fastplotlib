@@ -19,10 +19,10 @@ increment = (2 * np.pi) / 50
 xs = np.linspace(start, stop, 100)
 ys = np.sin(xs)
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
 # plot the image data
-sine = fig[0, 0].add_line(ys, name="sine", colors="r")
+sine = figure[0, 0].add_line(ys, name="sine", colors="r")
 
 
 # increment along the x-axis on each render loop :D
@@ -38,17 +38,13 @@ def update_line(subplot):
     subplot["sine"].data[:, 1] = ys
 
 
-fig[0, 0].add_animations(update_line)
+figure[0, 0].add_animations(update_line)
 
-fig.show()
+figure.show()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
+figure.canvas.set_logical_size(700, 560)
 
-fig.canvas.set_logical_size(700, 560)
-
-fig[0,0].auto_scale(maintain_aspect=False)
+figure[0,0].auto_scale(maintain_aspect=False)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

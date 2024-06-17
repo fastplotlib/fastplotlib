@@ -366,7 +366,6 @@ class ImageWidget:
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
             if all([_is_arraylike(d) for d in data]):
-
                 # Grid computations
                 if figure_shape is None:
                     figure_shape = calculate_figure_shape(len(data))
@@ -755,7 +754,7 @@ class ImageWidget:
         Reset the vmin and vmax w.r.t. the full data
         """
         for ig in self.managed_graphics:
-            ig.cmap.reset_vmin_vmax()
+            ig.reset_vmin_vmax()
 
     def reset_vmin_vmax_frame(self):
         """
@@ -773,7 +772,7 @@ class ImageWidget:
 
             hlut = subplot.docks["right"]["histogram_lut"]
             # set the data using the current image graphic data
-            hlut.set_data(subplot["image_widget_managed"].data())
+            hlut.set_data(subplot["image_widget_managed"].data.value)
 
     def set_data(
         self,

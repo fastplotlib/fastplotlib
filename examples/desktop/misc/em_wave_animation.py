@@ -11,7 +11,7 @@ Example showing animation of an electromagnetic wave.
 import fastplotlib as fpl
 import numpy as np
 
-fig_em = fpl.Figure(
+figure = fpl.Figure(
     cameras="3d",
     controller_types="orbit",
     size=(700, 400)
@@ -33,23 +33,23 @@ m_xs = np.zeros(200)
 magnetic = np.column_stack([m_xs, m_ys, zs])
 
 # add the lines
-fig_em[0, 0].add_line(electric, colors="blue", thickness=2, name="e")
-fig_em[0, 0].add_line(magnetic, colors="red", thickness=2, name="m")
+figure[0, 0].add_line(electric, colors="blue", thickness=2, name="e")
+figure[0, 0].add_line(magnetic, colors="red", thickness=2, name="m")
 
 # draw vector line at every 10th position
 electric_vectors = [np.array([[0, 0, z], [x, 0, z]]) for (x, z) in zip(e_xs[::10], zs[::10])]
 magnetic_vectors = [np.array([[0, 0, z], [0, y, z]]) for (y, z) in zip(m_ys[::10], zs[::10])]
 
 # add as a line collection
-fig_em[0, 0].add_line_collection(electric_vectors, colors="blue", thickness=1.5, name="e-vec", z_offset=0)
-fig_em[0, 0].add_line_collection(magnetic_vectors, colors="red", thickness=1.5, name="m-vec", z_offset=0)
+figure[0, 0].add_line_collection(electric_vectors, colors="blue", thickness=1.5, name="e-vec")
+figure[0, 0].add_line_collection(magnetic_vectors, colors="red", thickness=1.5, name="m-vec")
 # note that the z_offset in `add_line_collection` is not data-related
 # it is the z-offset for where to place the *graphic*, by default with Orthographic cameras (i.e. 2D views)
 # it will increment by 1 for each line in the collection, we want to disable this so set z_position=0
 
 # axes are a WIP, just draw a white line along z for now
 z_axis = np.array([[0, 0, 0], [0, 0, stop]])
-fig_em[0, 0].add_line(z_axis, colors="w", thickness=1)
+figure[0, 0].add_line(z_axis, colors="w", thickness=1)
 
 # just a pre-saved camera state
 state = {
@@ -66,19 +66,15 @@ state = {
 }
 
 
-fig_em[0, 0].camera.set_state(state)
+figure[0, 0].camera.set_state(state)
 
-fig_em.show()
+figure.show()
 
-fig_em[0, 0].camera.zoom = 1.5
+figure[0, 0].camera.zoom = 1.5
 
 increment = np.pi * 4 / 100
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig_em.canvas
-
-fig_em.canvas.set_logical_size(700, 560)
+figure.canvas.set_logical_size(700, 560)
 
 # moves the wave one step along the z-axis
 def tick(subplot):
@@ -100,7 +96,7 @@ def tick(subplot):
     stop += increment
 
 
-fig_em[0, 0].add_animations(tick)
+figure[0, 0].add_animations(tick)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

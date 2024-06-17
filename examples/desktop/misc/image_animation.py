@@ -13,10 +13,10 @@ import numpy as np
 
 data = np.random.rand(512, 512)
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
 # plot the image data
-image_graphic = fig[0, 0].add_image(data=data, name="random-image")
+image_graphic = figure[0, 0].add_image(data=data, name="random-image")
 
 
 # a function to update the image_graphic
@@ -25,15 +25,11 @@ def update_data(figure_instance):
     new_data = np.random.rand(512, 512)
     figure_instance[0, 0]["random-image"].data = new_data
 
-fig.add_animations(update_data)
+figure.add_animations(update_data)
 
-fig.show()
+figure.show()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
-
-fig.canvas.set_logical_size(700, 560)
+figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

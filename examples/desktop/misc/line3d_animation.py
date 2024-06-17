@@ -21,11 +21,11 @@ zs = phi
 # make data 3d, with shape [<n_vertices>, 3]
 spiral = np.dstack([xs, ys, zs])[0]
 
-fig = fpl.Figure(cameras="3d")
+figure = fpl.Figure(cameras="3d")
 
-line_graphic = fig[0,0].add_line(data=spiral, thickness=3, cmap='jet')
+line_graphic = figure[0,0].add_line(data=spiral, thickness=3, cmap='jet')
 
-marker = fig[0,0].add_scatter(data=spiral[0], sizes=10, name="marker")
+marker = figure[0,0].add_scatter(data=spiral[0], sizes=10, name="marker")
 
 marker_index = 0
 
@@ -39,22 +39,18 @@ def move_marker():
     if marker_index == spiral.shape[0]:
         marker_index = 0
 
-    for subplot in fig:
+    for subplot in figure:
         subplot["marker"].data = spiral[marker_index]
 
 
 # add `move_marker` to the animations
-fig.add_animations(move_marker)
+figure.add_animations(move_marker)
 
-fig.show()
+figure.show()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
+figure.canvas.set_logical_size(700, 560)
 
-fig.canvas.set_logical_size(700, 560)
-
-fig[0,0].auto_scale(maintain_aspect=False)
+figure[0,0].auto_scale(maintain_aspect=False)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

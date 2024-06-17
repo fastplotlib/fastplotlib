@@ -20,18 +20,18 @@ Properties
 .. autosummary::
     :toctree: TextGraphic_api
 
-    TextGraphic.children
+    TextGraphic.block_events
+    TextGraphic.deleted
+    TextGraphic.event_handlers
     TextGraphic.face_color
+    TextGraphic.font_size
     TextGraphic.name
+    TextGraphic.offset
     TextGraphic.outline_color
-    TextGraphic.outline_size
-    TextGraphic.position
-    TextGraphic.position_x
-    TextGraphic.position_y
-    TextGraphic.position_z
+    TextGraphic.outline_thickness
     TextGraphic.rotation
+    TextGraphic.supported_events
     TextGraphic.text
-    TextGraphic.text_size
     TextGraphic.visible
     TextGraphic.world_object
 
@@ -40,5 +40,10 @@ Methods
 .. autosummary::
     :toctree: TextGraphic_api
 
+    TextGraphic.add_event_handler
+    TextGraphic.clear_event_handlers
+    TextGraphic.remove_event_handler
     TextGraphic.rotate
+    TextGraphic.share_property
+    TextGraphic.unshare_property
 

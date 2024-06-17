@@ -35,7 +35,11 @@ key_bind_direction = {
 
 # Selector base class
 class BaseSelector(Graphic):
-    feature_events = ("selection",)
+    _features = {"selection"}
+
+    @property
+    def axis(self) -> str:
+        return self._axis
 
     def __init__(
         self,
@@ -45,7 +49,8 @@ class BaseSelector(Graphic):
         hover_responsive: Tuple[WorldObject, ...] = None,
         arrow_keys_modifier: str = None,
         axis: str = None,
-        name: str = None,
+        parent: Graphic = None,
+        **kwargs,
     ):
         if edges is None:
             edges = tuple()
@@ -71,7 +76,7 @@ class BaseSelector(Graphic):
             for wo in self._hover_responsive:
                 self._original_colors[wo] = wo.material.color
 
-        self.axis = axis
+        self._axis = axis
 
         # current delta in world coordinates
         self.delta: np.ndarray = None
@@ -95,7 +100,9 @@ class BaseSelector(Graphic):
 
         self._pygfx_event = None
 
-        Graphic.__init__(self, name=name)
+        self._parent = parent
+
+        Graphic.__init__(self, **kwargs)
 
     def get_selected_index(self):
         """Not implemented for this selector"""
@@ -110,7 +117,7 @@ class BaseSelector(Graphic):
         raise NotImplementedError
 
     def _get_source(self, graphic):
-        if self.parent is None and graphic is None:
+        if self._parent is None and graphic is None:
             raise AttributeError(
                 "No Graphic to apply selector. "
                 "You must either set a ``parent`` Graphic on the selector, or pass a graphic."
@@ -120,7 +127,7 @@ class BaseSelector(Graphic):
         if graphic is not None:
             source = graphic
         else:
-            source = self.parent
+            source = self._parent
 
         return source
 
@@ -262,7 +269,7 @@ class BaseSelector(Graphic):
         """
         Calculates delta just using current world object position and calls self._move_graphic().
         """
-        current_position: np.ndarray = self.position
+        current_position: np.ndarray = self.offset
 
         # middle mouse button clicks
         if ev.button != 3:
@@ -347,8 +354,6 @@ class BaseSelector(Graphic):
         # ignore if non-arrow key is pressed
         if ev.key not in key_bind_direction.keys():
             return
-
-        # print(ev.key)
 
         self._key_move_value = ev.key
 

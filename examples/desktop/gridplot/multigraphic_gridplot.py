@@ -14,12 +14,12 @@ import imageio.v3 as iio
 from itertools import product
 
 # define figure
-fig = fpl.Figure(shape=(2,2), names=[["image-overlay", "circles"], ["line-stack", "scatter"]])
+figure = fpl.Figure(shape=(2, 2), names=[["image-overlay", "circles"], ["line-stack", "scatter"]])
 
 img = iio.imread("imageio:coffee.png")
 
 # add image to subplot
-fig["image-overlay"].add_image(data=img)
+figure["image-overlay"].add_image(data=img)
 
 # generate overlay
 
@@ -30,7 +30,7 @@ overlay = np.zeros(shape=(*img.shape[:2], 4), dtype=np.float32)
 overlay[img[:, :, -1] > 200] = np.array([0.0, 0.0, 1.0, 0.6]).astype(np.float32)
 
 # add overlay to image
-fig["image-overlay"].add_image(data=overlay)
+figure["image-overlay"].add_image(data=overlay)
 
 # generate some circles
 def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
@@ -44,13 +44,13 @@ def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
 spatial_dims = (50, 50)
 
 # this makes 16 circles, so we can create 16 cmap values, so it will use these values to set the
-# color of the line based by using the cmap as a LUT with the corresponding cmap_value
+# color of the line based by using the cmap as a LUT with the corresponding cmap_transform
 circles = list()
 for center in product(range(0, spatial_dims[0], 15), range(0, spatial_dims[1], 15)):
     circles.append(make_circle(center, 5, n_points=75))
 
 # things like class labels, cluster labels, etc.
-cmap_values = [
+cmap_transform = [
     0, 1, 1, 2,
     0, 0, 1, 1,
     2, 2, 8, 3,
@@ -60,21 +60,20 @@ cmap_values = [
 # add an image to overlay the circles on
 img2 = np.ones((60, 60))
 
-fig["circles"].add_image(data=img2)
+figure["circles"].add_image(data=img2)
 
 # add the circles to the figure
-fig["circles"].add_line_collection(
+figure["circles"].add_line_collection(
     circles,
     cmap="tab10",
-    cmap_values=cmap_values,
+    cmap_transform=cmap_transform,
     thickness=3,
     alpha=0.5,
     name="circles-graphic"
 )
 
 # move the circles graphic so that it is centered over the image
-fig["circles"]["circles-graphic"].position_y += 7
-fig["circles"]["circles-graphic"].position_x += 7
+figure["circles"]["circles-graphic"].offset = np.array([7, 7, 2])
 
 # generate some sine data
 # linspace, create 100 evenly spaced x values from -10 to 10
@@ -87,9 +86,9 @@ sine = np.dstack([xs, ys])[0]
 sine_waves = 10 * [sine]
 
 # add the line stack to the figure
-fig["line-stack"].add_line_stack(data=sine_waves, cmap="Wistia", separation=1)
+figure["line-stack"].add_line_stack(data=sine_waves, cmap="Wistia", separation=1)
 
-fig["line-stack"].auto_scale(maintain_aspect=True)
+figure["line-stack"].auto_scale(maintain_aspect=True)
 
 # generate some scatter data
 # create a gaussian cloud of 500 points
@@ -102,16 +101,12 @@ gaussian_cloud = np.random.multivariate_normal(mean, covariance, n_points)
 gaussian_cloud2 = np.random.multivariate_normal(mean, covariance, n_points)
 
 # add the scatter graphics to the figure
-fig["scatter"].add_scatter(data=gaussian_cloud, sizes=1, cmap="jet")
-fig["scatter"].add_scatter(data=gaussian_cloud2, colors="r", sizes=1)
+figure["scatter"].add_scatter(data=gaussian_cloud, sizes=1, cmap="jet")
+figure["scatter"].add_scatter(data=gaussian_cloud2, colors="r", sizes=1)
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
+figure.show()
 
-fig.show()
-
-fig.canvas.set_logical_size(700, 560)
+figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

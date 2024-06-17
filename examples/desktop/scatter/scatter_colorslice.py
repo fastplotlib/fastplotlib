@@ -11,7 +11,7 @@ Example showing color slice for scatter plot.
 import fastplotlib as fpl
 import numpy as np
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
 # create a random distribution of 10,000 xyz coordinates
 n_points = 5_000
@@ -36,22 +36,18 @@ cloud = np.vstack(
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
 # create plot
-fig = fpl.Figure()
+figure = fpl.Figure()
 
 # use an alpha value since this will be a lot of points
-fig[0,0].add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
+figure[0,0].add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
+figure.show()
 
-fig.show()
+figure.canvas.set_logical_size(700, 560)
 
-fig.canvas.set_logical_size(700, 560)
+scatter_graphic = figure[0, 0].graphics[0]
 
-scatter_graphic = fig[0, 0].graphics[0]
-
-fig[0, 0].auto_scale()
+figure[0, 0].auto_scale()
 
 scatter_graphic.colors[0:75] = "red"
 scatter_graphic.colors[75:150] = "white"

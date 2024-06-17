@@ -6,5 +6,3 @@ Selectors
 
     LinearSelector
     LinearRegionSelector
-    PolygonSelector
-    Synchronizer

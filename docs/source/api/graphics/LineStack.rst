@@ -20,17 +20,24 @@ Properties
 .. autosummary::
     :toctree: LineStack_api
 
-    LineStack.children
+    LineStack.block_events
     LineStack.cmap
-    LineStack.cmap_values
+    LineStack.colors
+    LineStack.data
+    LineStack.deleted
+    LineStack.event_handlers
     LineStack.graphics
+    LineStack.metadatas
     LineStack.name
-    LineStack.position
-    LineStack.position_x
-    LineStack.position_y
-    LineStack.position_z
+    LineStack.names
+    LineStack.offset
+    LineStack.offsets
     LineStack.rotation
+    LineStack.rotations
+    LineStack.supported_events
+    LineStack.thickness
     LineStack.visible
+    LineStack.visibles
     LineStack.world_object
 
 Methods
@@ -38,12 +45,14 @@ Methods
 .. autosummary::
     :toctree: LineStack_api
 
+    LineStack.add_event_handler
     LineStack.add_graphic
     LineStack.add_linear_region_selector
     LineStack.add_linear_selector
-    LineStack.link
+    LineStack.clear_event_handlers
+    LineStack.remove_event_handler
     LineStack.remove_graphic
-    LineStack.reset_feature
     LineStack.rotate
-    LineStack.set_feature
+    LineStack.share_property
+    LineStack.unshare_property
 

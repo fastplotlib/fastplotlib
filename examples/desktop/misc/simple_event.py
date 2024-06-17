@@ -28,10 +28,10 @@ ys = np.sinc(xs) * 3 + 8
 sinc = np.column_stack([xs, ys])
 
 # Create a figure
-fig_lines = fpl.Figure()
+figure = fpl.Figure()
 
 # we will add all the lines to the same subplot
-subplot = fig_lines[0, 0]
+subplot = figure[0, 0]
 
 # plot sine wave, use a single color
 sine_graphic = subplot.add_line(data=sine, thickness=5, colors="magenta")
@@ -44,7 +44,7 @@ colors = ["r"] * 25 + ["purple"] * 25 + ["y"] * 25 + ["b"] * 25
 sinc_graphic = subplot.add_line(data=sinc, thickness=5, colors=colors)
 
 # show the plot
-fig_lines.show()
+figure.show()
 
 subplot.auto_scale(maintain_aspect=True)
 
@@ -60,11 +60,7 @@ cosine_graphic.colors.add_event_handler(callback_func)
 # from point 15 - 30, set every 3rd point as "cyan"
 cosine_graphic.colors[15:50:3] = "cyan"
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig_lines.canvas
-
-fig_lines.canvas.set_logical_size(700, 560)
+figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

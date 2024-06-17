@@ -29,17 +29,13 @@ for center in product(range(0, spatial_dims[0], 15), range(0, spatial_dims[1], 1
 
 pos_xy = np.vstack(circles)
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
+figure[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
 
-fig[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
+figure.show()
 
-fig.show()
-
-fig.canvas.set_logical_size(700, 560)
+figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

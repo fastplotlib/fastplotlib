@@ -13,7 +13,7 @@ import numpy as np
 from pathlib import Path
 import sys
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
 current_file = Path(sys.argv[0]).resolve()
 
@@ -23,17 +23,13 @@ data = np.load(data_path)
 n_points = 50
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
-scatter_graphic = fig[0, 0].add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
+scatter_graphic = figure[0, 0].add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
+figure.show()
 
-fig.show()
+figure.canvas.set_logical_size(700, 560)
 
-fig.canvas.set_logical_size(700, 560)
-
-fig[0, 0].auto_scale()
+figure[0, 0].auto_scale()
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

@@ -34,25 +34,21 @@ cloud = np.vstack(
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
 # create plot
-fig_scatter = fpl.Figure()
-subplot_scatter = fig_scatter[0, 0]
+figure = fpl.Figure()
+subplot_scatter = figure[0, 0]
 # use an alpha value since this will be a lot of points
 scatter_graphic = subplot_scatter.add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
 
 
 def update_points(subplot):
     # move every point by a small amount
-    deltas = np.random.normal(size=scatter_graphic.data().shape, loc=0, scale=0.15)
-    scatter_graphic.data = scatter_graphic.data() + deltas
+    deltas = np.random.normal(size=scatter_graphic.data.value.shape, loc=0, scale=0.15)
+    scatter_graphic.data = scatter_graphic.data.value + deltas
 
 
 subplot_scatter.add_animations(update_points)
 
-fig_scatter.show()
-
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig_scatter.canvas
+figure.show()
 
 subplot_scatter.canvas.set_logical_size(700, 560)
 

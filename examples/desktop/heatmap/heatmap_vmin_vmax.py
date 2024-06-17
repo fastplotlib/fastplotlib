@@ -4,39 +4,31 @@ Heatmap change vmin vmax
 Change the vmin vmax of a heatmap
 """
 
-# test_example = true
-# sphinx_gallery_pygfx_docs = 'screenshot'
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'hidden'
 
 import fastplotlib as fpl
 import numpy as np
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
-xs = np.linspace(0, 1_000, 10_000)
+xs = np.linspace(0, 1_000, 10_000, dtype=np.float32)
 
-sine = np.sin(xs)
-cosine = np.cos(xs)
+sine = np.sin(np.sqrt(xs))
 
-# alternating sines and cosines
-data = np.zeros((10_000, 10_000), dtype=np.float32)
-data[::2] = sine
-data[1::2] = cosine
+data = np.vstack([sine * i for i in range(20_000)])
 
 # plot the image data
-heatmap_graphic = fig[0, 0].add_heatmap(data=data, name="heatmap")
+img = figure[0, 0].add_image(data=data, name="heatmap")
 
-fig.show()
+figure.show()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
+figure.canvas.set_logical_size(700, 560)
 
-fig.canvas.set_logical_size(700, 560)
+figure[0, 0].auto_scale()
 
-fig[0, 0].auto_scale()
-
-heatmap_graphic.cmap.vmin = -0.5
-heatmap_graphic.cmap.vmax = 0.5
+img.vmin = -5_000
+img.vmax = 10_000
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

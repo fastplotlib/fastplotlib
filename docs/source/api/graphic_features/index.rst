@@ -4,20 +4,28 @@ Graphic Features
 .. toctree::
     :maxdepth: 1
 
-    ColorFeature
-    CmapFeature
-    ImageCmapFeature
-    HeatmapCmapFeature
-    PointsDataFeature
+    VertexColors
+    UniformColor
+    UniformSize
+    Thickness
+    VertexPositions
     PointsSizesFeature
-    ImageDataFeature
-    HeatmapDataFeature
-    PresentFeature
-    ThicknessFeature
-    GraphicFeature
-    GraphicFeatureIndexable
-    FeatureEvent
-    to_gpu_supported_dtype
+    VertexCmap
+    TextureArray
+    ImageCmap
+    ImageVmin
+    ImageVmax
+    ImageInterpolation
+    ImageCmapInterpolation
+    TextData
+    FontSize
+    TextFaceColor
+    TextOutlineColor
+    TextOutlineThickness
     LinearSelectionFeature
     LinearRegionSelectionFeature
+    Name
+    Offset
+    Rotation
+    Visible
     Deleted

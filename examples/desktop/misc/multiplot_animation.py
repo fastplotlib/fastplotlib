@@ -12,19 +12,19 @@ import fastplotlib as fpl
 import numpy as np
 
 # Figure of shape 2 x 3 with all controllers synced
-figure_grid = fpl.Figure(shape=(2, 3), controller_ids="sync")
+figure = fpl.Figure(shape=(2, 3), controller_ids="sync")
 
 # Make a random image graphic for each subplot
-for subplot in figure_grid:
+for subplot in figure:
     # create image data
     data = np.random.rand(512, 512)
     # add an image to the subplot
     subplot.add_image(data, name="rand-img")
 
-figure_grid[0,1]["rand-img"].cmap = "viridis"
-figure_grid[1,0]["rand-img"].cmap = "Wistia"
-figure_grid[0,2]["rand-img"].cmap = "gray"
-figure_grid[1,1]["rand-img"].cmap = "spring"
+figure[0,1]["rand-img"].cmap = "viridis"
+figure[1,0]["rand-img"].cmap = "Wistia"
+figure[0,2]["rand-img"].cmap = "gray"
+figure[1,1]["rand-img"].cmap = "spring"
 
 # Define a function to update the image graphics with new data
 # add_animations will pass the gridplot to the animation function
@@ -35,16 +35,12 @@ def update_data(f):
         subplot["rand-img"].data = new_data
 
 # add the animation function
-figure_grid.add_animations(update_data)
+figure.add_animations(update_data)
 
 # show the gridplot
-figure_grid.show()
+figure.show()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = figure_grid.canvas
-
-figure_grid.canvas.set_logical_size(700, 560)
+figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

@@ -1,8 +1,8 @@
 """
-Line Plot Colormap Values
-=========================
+Line collections quantitative cmap
+==================================
 
-Example showing how to plot line collections
+Example showing a line collection with a quantitative cmap
 """
 
 # test_example = true
@@ -34,22 +34,15 @@ pos_xy = np.vstack(circles)
 # highest values, lowest values, mid-high values, mid values
 cmap_values = [10] * 4 + [0] * 4 + [7] * 4 + [5] * 4
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
-fig[0, 0].add_line_collection(
-    circles,
-    cmap="bwr",
-    cmap_values=cmap_values,
-    thickness=10
+figure[0, 0].add_line_collection(
+    circles, cmap="bwr", cmap_transform=cmap_values, thickness=10
 )
 
-fig.show()
+figure.show()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
-
-fig.canvas.set_logical_size(700, 560)
+figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

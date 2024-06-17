@@ -17,6 +17,7 @@ jobs:
   docs-build:
     name: Docs
     runs-on: bigmem
+    if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
     steps:

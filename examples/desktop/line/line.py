@@ -11,7 +11,7 @@ Example showing cosine, sine, sinc lines.
 import fastplotlib as fpl
 import numpy as np
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
 xs = np.linspace(-10, 10, 100)
 # sine wave
@@ -27,24 +27,20 @@ a = 0.5
 ys = np.sinc(xs) * 3 + 8
 sinc = np.dstack([xs, ys])[0]
 
-sine_graphic = fig[0, 0].add_line(data=sine, thickness=5, colors="magenta")
+sine_graphic = figure[0, 0].add_line(data=sine, thickness=5, colors="magenta")
 
 # you can also use colormaps for lines!
-cosine_graphic = fig[0, 0].add_line(data=cosine, thickness=12, cmap="autumn")
+cosine_graphic = figure[0, 0].add_line(data=cosine, thickness=12, cmap="autumn")
 
 # or a list of colors for each datapoint
 colors = ["r"] * 25 + ["purple"] * 25 + ["y"] * 25 + ["b"] * 25
-sinc_graphic = fig[0, 0].add_line(data=sinc, thickness=5, colors=colors)
+sinc_graphic = figure[0, 0].add_line(data=sinc, thickness=5, colors=colors)
 
-fig.show()
+figure.show()
 
-# set canvas variable for sphinx_gallery to properly generate examples
-# NOT required for users
-canvas = fig.canvas
+figure.canvas.set_logical_size(700, 560)
 
-fig.canvas.set_logical_size(700, 560)
-
-fig[0, 0].auto_scale()
+figure[0, 0].auto_scale()
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter
