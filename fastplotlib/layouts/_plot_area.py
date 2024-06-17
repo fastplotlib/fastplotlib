@@ -361,7 +361,7 @@ class PlotArea:
         self,
         pos: tuple[float, float] | tuple[float, float, float],
         method: str = "center",
-        subset: np.ndarray[Graphic] = None,
+        subset: GraphicCollection | np.ndarray[Graphic] = None,
     ) -> np.ndarray[Graphic]:
         """
         Returns the nearest ``n_graphics`` to the passed position ``pos`` in world space
@@ -387,6 +387,9 @@ class PlotArea:
         """
 
         if subset is not None:
+            if isinstance(subset, GraphicCollection):
+                subset = subset.graphics
+
             if not isinstance(subset, np.ndarray):
                 raise TypeError("`subset` must be a numpy array of Graphic objects")
 
