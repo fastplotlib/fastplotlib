@@ -6,18 +6,16 @@ Example showing cmap change for scatter plot.
 """
 
 # test_example = true
-# sphinx_gallery_pygfx_docs = 'hidden'
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
-import numpy as np
-from pathlib import Path
 from sklearn.cluster import AgglomerativeClustering
+from sklearn import datasets
 
 
 figure = fpl.Figure()
 
-data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
-data = np.load(data_path)
+data = datasets.load_iris()["data"]
 
 agg = AgglomerativeClustering(n_clusters=3)
 agg.fit_predict(data)
@@ -32,7 +30,7 @@ scatter_graphic = figure[0, 0].add_scatter(
 
 figure.show()
 
-figure.canvas.set_logical_size(800, 800)
+figure.canvas.set_logical_size(700, 560)
 
 figure[0, 0].auto_scale()
 

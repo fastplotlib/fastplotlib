@@ -6,17 +6,15 @@ Example showing color slice for scatter plot.
 """
 
 # test_example = true
-# sphinx_gallery_pygfx_docs = 'hidden'
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
-import numpy as np
-from pathlib import Path
+from sklearn import datasets
 
 
 figure = fpl.Figure()
 
-data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
-data = np.load(data_path)
+data = datasets.load_iris()["data"]
 
 n_points = 50
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
@@ -30,7 +28,7 @@ scatter_graphic = figure[0, 0].add_scatter(
 
 figure.show()
 
-figure.canvas.set_logical_size(800, 800)
+figure.canvas.set_logical_size(700, 560)
 
 figure[0, 0].auto_scale()
 
