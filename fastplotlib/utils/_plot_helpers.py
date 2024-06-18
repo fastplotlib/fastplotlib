@@ -7,21 +7,21 @@ from ..graphics._collection_base import GraphicCollection
 
 
 def get_nearest_graphics(
-        graphics: Sequence[Graphic] | GraphicCollection,
         pos: tuple[float, float] | tuple[float, float, float],
+        graphics: Sequence[Graphic] | GraphicCollection,
 ) -> np.ndarray[Graphic]:
     """
-    Returns the nearest ``n_graphics`` to the passed position ``pos`` in world space.
+    Returns the nearest ``graphics`` to the passed position ``pos`` in world space.
     Uses the distance between ``pos`` and the center of the bounding sphere for each graphic.
 
     Parameters
     ----------
+    pos: (x, y) | (x, y, z)
+        position in world space, z-axis is ignored when calculating L2 norms if ``pos`` is 2D
+
     graphics: Sequence, i.e. array, list, tuple, etc. of Graphic | GraphicCollection
         the graphics from which to return a sorted array of graphics in order of closest
         to furthest graphic
-
-    pos: (x, y) | (x, y, z)
-        position in world space, z-axis is ignored when calculating L2 norms if ``pos`` is 2D
 
     Returns
     -------
