@@ -12,36 +12,18 @@ import pygfx
 WGPU_MAX_TEXTURE_SIZE = 8192
 
 
-supported_dtypes = [
-    np.uint8,
-    np.uint16,
-    np.uint32,
-    np.int8,
-    np.int16,
-    np.int32,
-    np.float16,
-    np.float32,
-]
-
-
 def to_gpu_supported_dtype(array):
     """
-    If ``array`` is a numpy array, converts it to a supported type. GPUs don't support 64 bit dtypes.
+    convert input array to float32 numpy array
     """
     if isinstance(array, np.ndarray):
-        if array.dtype not in supported_dtypes:
-            if np.issubdtype(array.dtype, np.integer):
-                warn(f"converting {array.dtype} array to int32")
-                return array.astype(np.int32)
-            elif np.issubdtype(array.dtype, np.floating):
-                warn(f"converting {array.dtype} array to float32")
-                return array.astype(np.float32, copy=False)
-            else:
-                raise TypeError(
-                    "Unsupported type, supported array types must be int or float dtypes"
-                )
+        if not array.dtype == np.float32:
+            warn(f"casting {array.dtype} array to float32")
+            return array.astype(np.float32)
+        return array
 
-    return array
+    # try to make a numpy array from it, should not copy, tested with jax arrays
+    return np.asarray(array).astype(np.float32)
 
 
 class FeatureEvent(pygfx.Event):
