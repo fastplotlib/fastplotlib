@@ -34,7 +34,7 @@ image_graphic.add_event_handler(callback_func, "cmap")
 image_graphic.cmap = "viridis"
 
 
-# adding a click event
+# adding a click event, we can also use decorators to add event handlers
 @image_graphic.add_event_handler("click")
 def click_event(event_data):
     # get the click location in screen coordinates
