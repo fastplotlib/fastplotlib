@@ -1,40 +1,46 @@
 """
-Scatter Plot
-============
+Scatter Plot Data Slicing
+=========================
+
 Example showing data slice for scatter plot.
 """
 
-# test_example = true
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 import numpy as np
-from pathlib import Path
 
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
-data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
-data = np.load(data_path)
+# create a gaussian cloud of 5_000 points
+n_points = 1_000
 
-n_points = 50
-colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
+mean = [0, 0]  # mean of the Gaussian distribution
+covariance = [[1, 0], [0, 1]]  # covariance matrix
 
-scatter_graphic = fig[0, 0].add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
+gaussian_cloud = np.random.multivariate_normal(mean, covariance, n_points)
+gaussian_cloud2 = np.random.multivariate_normal(mean, covariance, n_points)
 
-fig.show()
+# create plot
+figure = fpl.Figure()
 
-fig.canvas.set_logical_size(800, 800)
+# use an alpha value since this will be a lot of points
+scatter1 = figure[0,0].add_scatter(data=gaussian_cloud, sizes=3)
+scatter2 = figure[0,0].add_scatter(data=gaussian_cloud2, colors="r", sizes=3)
 
-fig[0, 0].auto_scale()
+figure.show()
 
-scatter_graphic.data[0] = np.array([[5, 3, 1.5]])
-scatter_graphic.data[1] = np.array([[4.3, 3.2, 1.3]])
-scatter_graphic.data[2] = np.array([[5.2, 2.7, 1.7]])
+figure.canvas.set_logical_size(700, 560)
 
-scatter_graphic.data[10:15] = scatter_graphic.data[0:5] + np.array([1, 1, 1])
-scatter_graphic.data[50:100:2] = scatter_graphic.data[100:150:2] + np.array([1, 1, 0])
+figure[0, 0].auto_scale()
 
+scatter1.data[:500] = np.array([0 , 0, 0])
+scatter2.data[500:] = np.array([0 , 0, 0])
 
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

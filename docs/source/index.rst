@@ -20,6 +20,12 @@ Welcome to fastplotlib's documentation!
    Utils <api/utils>
    GPU <api/gpu>
 
+.. toctree::
+   :caption: Gallery
+   :maxdepth:  1
+
+   Gallery <_gallery/index>
+
 Summary
 =======
 
