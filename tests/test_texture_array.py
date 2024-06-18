@@ -54,10 +54,10 @@ def check_texture_array(
         data_col_start_index = chunk_col * WGPU_MAX_TEXTURE_SIZE
 
         data_row_stop_index = min(
-            data.shape[0] - 1, data_row_start_index + WGPU_MAX_TEXTURE_SIZE
+            data.shape[0], data_row_start_index + WGPU_MAX_TEXTURE_SIZE
         )
         data_col_stop_index = min(
-            data.shape[1] - 1, data_col_start_index + WGPU_MAX_TEXTURE_SIZE
+            data.shape[1], data_col_start_index + WGPU_MAX_TEXTURE_SIZE
         )
 
         row_slice = slice(data_row_start_index, data_row_stop_index)
