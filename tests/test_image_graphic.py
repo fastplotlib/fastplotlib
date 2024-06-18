@@ -79,7 +79,12 @@ def test_gray():
         "cmap_interpolation",
     )
 
+    # make sure entire data is the same
     npt.assert_almost_equal(ig.data.value, GRAY_IMAGE)
+
+    # since this entire image is under the wgpu max texture limit,
+    # the entire image should be in the single Texture buffer
+    npt.assert_almost_equal(ig.data.buffer[0, 0].data, GRAY_IMAGE)
 
     ig.cmap = "viridis"
     assert ig.cmap == "viridis"
