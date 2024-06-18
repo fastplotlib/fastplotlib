@@ -118,8 +118,8 @@ class TextureArray(GraphicFeature):
         chunk_index = (chunk_row, chunk_col)
 
         # stop indices of big data array for this chunk
-        row_stop = min(self.value.shape[0] - 1, data_row_start + WGPU_MAX_TEXTURE_SIZE)
-        col_stop = min(self.value.shape[1] - 1, data_col_start + WGPU_MAX_TEXTURE_SIZE)
+        row_stop = min(self.value.shape[0], data_row_start + WGPU_MAX_TEXTURE_SIZE)
+        col_stop = min(self.value.shape[1], data_col_start + WGPU_MAX_TEXTURE_SIZE)
 
         # row and column slices that slice the data for this chunk from the big data array
         data_slice = (slice(data_row_start, row_stop), slice(data_col_start, col_stop))
