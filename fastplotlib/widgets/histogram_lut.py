@@ -163,7 +163,7 @@ class HistogramLUT(Graphic):
         # used if data ptp <= 10 because event things get weird
         # with tiny world objects due to  floating point error
         # so if ptp <= 10, scale up by a factor
-        self._scale_factor: int = max(1, 100 * int(10 / data_ss.ptp()))
+        self._scale_factor: int = max(1, 100 * int(10 / np.ptp(data_ss)))
 
         edges = edges * self._scale_factor
 
