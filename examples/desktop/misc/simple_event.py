@@ -9,56 +9,43 @@ Example showing how to add a simple callback event.
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
-import numpy as np
+import imageio.v3 as iio
 
-# generate some date
-# linspace, create 100 evenly spaced x values from -10 to 10
-xs = np.linspace(-10, 10, 100)
-# sine wave
-ys = np.sin(xs)
-sine = np.column_stack([xs, ys])
-
-# cosine wave
-ys = np.cos(xs) + 5
-cosine = np.column_stack([xs, ys])
-
-# sinc function
-a = 0.5
-ys = np.sinc(xs) * 3 + 8
-sinc = np.column_stack([xs, ys])
+data = iio.imread("imageio:camera.png")
 
 # Create a figure
 figure = fpl.Figure()
 
-# we will add all the lines to the same subplot
-subplot = figure[0, 0]
-
 # plot sine wave, use a single color
-sine_graphic = subplot.add_line(data=sine, thickness=5, colors="magenta")
-
-# you can also use colormaps for lines!
-cosine_graphic = subplot.add_line(data=cosine, thickness=12, cmap="autumn")
-
-# or a list of colors for each datapoint
-colors = ["r"] * 25 + ["purple"] * 25 + ["y"] * 25 + ["b"] * 25
-sinc_graphic = subplot.add_line(data=sinc, thickness=5, colors=colors)
+image_graphic = figure[0,0].add_image(data=data)
 
 # show the plot
 figure.show()
 
-subplot.auto_scale(maintain_aspect=True)
 
-
+# define callback function to print the event data
 def callback_func(event_data):
-    print(event_data)
+    print(event_data.info)
 
 
 # Will print event data when the color changes
-cosine_graphic.colors.add_event_handler(callback_func)
+image_graphic.add_event_handler(callback_func, "cmap")
 
-# more complex indexing of colors
-# from point 15 - 30, set every 3rd point as "cyan"
-cosine_graphic.colors[15:50:3] = "cyan"
+image_graphic.cmap = "viridis"
+
+
+# adding a click event
+@image_graphic.add_event_handler("click")
+def click_event(event_data):
+    # get the click location in screen coordinates
+    xy = (event_data.x, event_data.y)
+
+    # map the screen coordinates to world coordinates
+    xy = figure[0,0].map_screen_to_world(xy)[:-1]
+
+    # print the click location
+    print(xy)
+
 
 figure.canvas.set_logical_size(700, 560)
 

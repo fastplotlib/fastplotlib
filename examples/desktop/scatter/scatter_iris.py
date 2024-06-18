@@ -5,8 +5,8 @@ Iris Scatter Plot
 Example showing scatter plot using sklearn iris dataset.
 """
 
-# test_example = false
-# sphinx_gallery_pygfx_docs = 'screenshot'
+# test_example = true
+# sphinx_gallery_pygfx_docs = 'hidden'
 
 import fastplotlib as fpl
 import numpy as np
@@ -17,7 +17,7 @@ figure = fpl.Figure()
 
 current_file = Path(sys.argv[0]).resolve()
 
-data_path = Path(current_file.parent.parent.joinpath("data", "iris.npy"))
+data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
 data = np.load(data_path)
 
 n_points = 50
