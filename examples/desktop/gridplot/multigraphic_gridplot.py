@@ -5,7 +5,7 @@ Multi-Graphic GridPlot
 Example showing a Figure with multiple subplots and multiple graphic types.
 """
 
-# test_example = true
+# test_example = false
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
@@ -58,9 +58,9 @@ cmap_transform = [
 ]
 
 # add an image to overlay the circles on
-img2 = np.ones((60, 60))
+img2 = iio.imread("imageio:coins.png")[10::5, 5::5]
 
-figure["circles"].add_image(data=img2)
+figure["circles"].add_image(data=img2, cmap="gray")
 
 # add the circles to the figure
 figure["circles"].add_line_collection(
@@ -101,8 +101,8 @@ gaussian_cloud = np.random.multivariate_normal(mean, covariance, n_points)
 gaussian_cloud2 = np.random.multivariate_normal(mean, covariance, n_points)
 
 # add the scatter graphics to the figure
-figure["scatter"].add_scatter(data=gaussian_cloud, sizes=1, cmap="jet")
-figure["scatter"].add_scatter(data=gaussian_cloud2, colors="r", sizes=1)
+figure["scatter"].add_scatter(data=gaussian_cloud, sizes=2, cmap="jet")
+figure["scatter"].add_scatter(data=gaussian_cloud2, colors="r", sizes=2)
 
 figure.show()
 
