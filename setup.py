@@ -12,6 +12,7 @@ install_requires = [
 extras_require = {
     "docs": [
         "sphinx",
+        "sphinx-gallery",
         "furo",
         "glfw",
         "jupyter-rfb>=0.4.1",  # required so ImageWidget docs show up
@@ -21,6 +22,9 @@ extras_require = {
         "pandoc",
         "jupyterlab",
         "sidecar",
+        "imageio",
+        "matplotlib",
+        "scikit-learn"
     ],
     "notebook": [
         "jupyterlab",

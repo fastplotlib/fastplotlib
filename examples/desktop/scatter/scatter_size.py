@@ -1,10 +1,13 @@
 """
-Scatter Plot
-============
+Scatter Plot Size
+=================
+
 Example showing point size change for scatter plot.
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
+
 import numpy as np
 import fastplotlib as fpl
 
@@ -15,7 +18,7 @@ shape = (2, 1)
 names = [["scalar_size"], ["array_size"]]
 
 # Create the grid plot
-fig = fpl.Figure(shape=shape, names=names, size=(1000, 1000))
+figure = fpl.Figure(shape=shape, names=names, size=(1000, 1000))
 
 # get y_values using sin function
 angles = np.arange(0, 20 * np.pi + 0.001, np.pi / 20)
@@ -24,18 +27,22 @@ x_values = np.array([x for x in range(len(y_values))], dtype=np.float32)
 
 data = np.column_stack([x_values, y_values])
 
-fig["scalar_size"].add_scatter(
+figure["scalar_size"].add_scatter(
     data=data, sizes=5, colors="blue"
 )  # add a set of scalar sizes
 
 non_scalar_sizes = np.abs((y_values / np.pi))  # ensure minimum size of 5
-fig["array_size"].add_scatter(data=data, sizes=non_scalar_sizes, colors="red")
+figure["array_size"].add_scatter(data=data, sizes=non_scalar_sizes, colors="red")
 
-for graph in fig:
+for graph in figure:
     graph.auto_scale(maintain_aspect=True)
 
-fig.show()
+figure.show()
 
+figure.canvas.set_logical_size(700, 560)
+
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

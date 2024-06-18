@@ -1,42 +1,53 @@
 """
-Scatter Plot
-============
+Scatter Colormap
+================
+
 Example showing cmap change for scatter plot.
 """
 
-# test_example = true
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 import numpy as np
-from pathlib import Path
-from sklearn.cluster import AgglomerativeClustering
 
+figure = fpl.Figure()
 
-fig = fpl.Figure()
+# create a random distribution of 10,000 xyz coordinates
+n_points = 5_000
 
-data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
-data = np.load(data_path)
+# dimensions always have to be [n_points, xyz]
+dims = (n_points, 3)
 
-agg = AgglomerativeClustering(n_clusters=3)
-agg.fit_predict(data)
+clouds_offset = 15
 
-scatter_graphic = fig[0, 0].add_scatter(
-    data=data[:, :-1],  # use only xy data
-    sizes=15,
-    alpha=0.7,
-    cmap="Set1",
-    cmap_transform=agg.labels_  # use the labels as a transform to map colors from the colormap
+# create some random clouds
+normal = np.random.normal(size=dims, scale=5)
+# stack the data into a single array
+cloud = np.vstack(
+    [
+        normal - clouds_offset,
+        normal,
+        normal + clouds_offset,
+    ]
 )
 
-fig.show()
+# color each of them separately
+colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
-fig.canvas.set_logical_size(800, 800)
+# use an alpha value since this will be a lot of points
+figure[0,0].add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
 
-fig[0, 0].auto_scale()
+figure.show()
 
-scatter_graphic.cmap = "tab10"
+figure[0,0].graphics[0].cmap = "viridis"
 
+figure.canvas.set_logical_size(700, 560)
 
+figure[0, 0].auto_scale()
+
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

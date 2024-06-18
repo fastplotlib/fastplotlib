@@ -1,10 +1,12 @@
 """
 Line collection slicing
 =======================
+
 Example showing how to slice a line collection
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np
 import fastplotlib as fpl
@@ -18,9 +20,9 @@ data = np.column_stack([xs, ys])
 multi_data = np.stack([data] * 15)
 
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
-lines = fig[0, 0].add_line_stack(
+lines = figure[0, 0].add_line_stack(
     multi_data,
     thickness=[2, 10, 2, 5, 5, 5, 8, 8, 8, 9, 3, 3, 3, 4, 4],
     separation=1,
@@ -59,9 +61,9 @@ lines[lines.names == "a"].colors = "b"
 lines[::2].colors[::5] = "magenta"  # set every 5th point of every other line to magenta
 lines[3:6].colors[50:, -1] = 0.6  # set half the points alpha to 0.6
 
-fig.show(maintain_aspect=False)
+figure.show(maintain_aspect=False)
 
-fig.canvas.set_logical_size(900, 600)
+figure.canvas.set_logical_size(700, 580)
 
 if __name__ == "__main__":
     print(__doc__)

@@ -1,10 +1,12 @@
 """
-Line collection colors
+Line Collection Colors
 ======================
+
 Example showing one way ot setting colors for individual lines in a collection
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 from itertools import product
 import numpy as np
@@ -31,14 +33,16 @@ pos_xy = np.vstack(circles)
 # this will produce 16 circles so we will define 16 colors
 colors = ["blue"] * 4 + ["red"] * 4 + ["yellow"] * 4 + ["w"] * 4
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
-fig[0, 0].add_line_collection(circles, colors=colors, thickness=10)
+figure[0, 0].add_line_collection(circles, colors=colors, thickness=10)
 
-fig.show()
+figure.show()
 
-fig.canvas.set_logical_size(800, 800)
+figure.canvas.set_logical_size(700, 560)
 
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

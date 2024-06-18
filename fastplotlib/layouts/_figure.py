@@ -475,11 +475,6 @@ class Figure:
                     _maintain_aspect = maintain_aspect
                 subplot.auto_scale(maintain_aspect=_maintain_aspect, zoom=0.95)
 
-        # used for generating images in docs using nbsphinx
-        if "NB_SNAPSHOT" in os.environ.keys():
-            if os.environ["NB_SNAPSHOT"] == "1":
-                return self.canvas.snapshot()
-
         # return the appropriate OutputContext based on the current canvas
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
             from .output.jupyter_output import (

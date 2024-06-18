@@ -1,15 +1,16 @@
 """
 Line collections quantitative cmap
 ==================================
+
 Example showing a line collection with a quantitative cmap
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 from itertools import product
 import numpy as np
 import fastplotlib as fpl
-
 
 def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
     theta = np.linspace(0, 2 * np.pi, n_points)
@@ -33,16 +34,18 @@ pos_xy = np.vstack(circles)
 # highest values, lowest values, mid-high values, mid values
 cmap_values = [10] * 4 + [0] * 4 + [7] * 4 + [5] * 4
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
-fig[0, 0].add_line_collection(
+figure[0, 0].add_line_collection(
     circles, cmap="bwr", cmap_transform=cmap_values, thickness=10
 )
 
-fig.show()
+figure.show()
 
-fig.canvas.set_logical_size(800, 800)
+figure.canvas.set_logical_size(700, 560)
 
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

@@ -1,10 +1,12 @@
 """
 Line stack 3D
 =============
+
 Example showing a 3D stack of lines with animations
 """
 
 # test_example = false
+# sphinx_gallery_pygfx_docs = 'animate'
 
 import numpy as np
 import fastplotlib as fpl
@@ -19,9 +21,9 @@ data = np.column_stack([xs, ys, zs])
 multi_data = np.stack([data] * 10)
 
 # create figure to plot lines and use an orbit controller in 3D
-fig = fpl.Figure(cameras="3d", controller_types="orbit")
+figure = fpl.Figure(cameras="3d", controller_types="orbit")
 
-line_stack = fig[0, 0].add_line_stack(
+line_stack = figure[0, 0].add_line_stack(
     multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
     cmap="jet",  # applied along n_lines
     thickness=3,
@@ -75,7 +77,7 @@ def animate_colors(subplot):
     colors_iteration += 1
 
 
-fig[0, 0].add_animations(animate_data, animate_colors)
+figure[0, 0].add_animations(animate_data, animate_colors)
 
 # just a pre-saved camera state
 camera_state = {
@@ -91,13 +93,14 @@ camera_state = {
     "depth_range": None,
 }
 
-fig.show(maintain_aspect=False)
+figure.show(maintain_aspect=False)
 
-fig[0, 0].camera.set_state(camera_state)
+figure[0, 0].camera.set_state(camera_state)
 
-fig.canvas.set_logical_size(500, 500)
+figure.canvas.set_logical_size(700, 560)
 
-
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()
