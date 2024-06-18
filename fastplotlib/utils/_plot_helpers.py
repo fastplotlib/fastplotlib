@@ -7,8 +7,8 @@ from ..graphics._collection_base import GraphicCollection
 
 
 def get_nearest_graphics(
-        pos: tuple[float, float] | tuple[float, float, float],
-        graphics: Sequence[Graphic] | GraphicCollection,
+    pos: tuple[float, float] | tuple[float, float, float],
+    graphics: Sequence[Graphic] | GraphicCollection,
 ) -> np.ndarray[Graphic]:
     """
     Returns the nearest ``graphics`` to the passed position ``pos`` in world space.
@@ -44,10 +44,10 @@ def get_nearest_graphics(
     # get centers
     centers = np.empty(shape=(len(graphics), len(pos)))
     for i in range(centers.shape[0]):
-        centers[i] = graphics[i].world_object.get_world_bounding_sphere()[:len(pos)]
+        centers[i] = graphics[i].world_object.get_world_bounding_sphere()[: len(pos)]
 
     # l2
-    distances = np.linalg.norm(centers[:, :len(pos)] - pos, ord=2, axis=1)
+    distances = np.linalg.norm(centers[:, : len(pos)] - pos, ord=2, axis=1)
 
     sort_indices = np.argsort(distances)
     return np.asarray(graphics)[sort_indices]

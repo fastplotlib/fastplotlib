@@ -13,12 +13,7 @@ def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
 def test_get_nearest_graphics():
     circles = list()
 
-    centers = [
-        [0, 0],
-        [0, 20],
-        [20, 0],
-        [20, 20]
-    ]
+    centers = [[0, 0], [0, 20], [20, 0], [20, 20]]
 
     for center in centers:
         circles.append(make_circle(center, 5, n_points=75))
