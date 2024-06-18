@@ -244,7 +244,7 @@ class Legend(Graphic):
             # get width of widest LegendItem in previous column to add to x_pos offset for this column
             for item in prev_column_items:
                 bbox = item.world_object.get_world_bounding_box()
-                width, height, depth = bbox.ptp(axis=0)
+                width, height, depth = np.ptp(bbox, axis=0)
                 max_width = max(max_width, width)
 
             # x position offset for this new column
@@ -278,7 +278,7 @@ class Legend(Graphic):
     def _reset_mesh_dims(self):
         bbox = self._legend_items_group.get_world_bounding_box()
 
-        width, height, _ = bbox.ptp(axis=0)
+        width, height, _ = np.ptp(bbox, axis=0)
 
         self._mesh.geometry.positions.data[mesh_masks.x_right] = width + 7
         self._mesh.geometry.positions.data[mesh_masks.x_left] = -5
