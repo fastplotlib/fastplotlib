@@ -81,7 +81,7 @@ class _LineCollectionProperties:
         if isinstance(args, str):
             name = args
             transform, alpha = None, 1.0
-        if len(args) == 1:
+        elif len(args) == 1:
             name = args[0]
             transform, alpha = None, None
 
@@ -460,7 +460,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             bounds = (xmin, value_25p)
             limits = (xmin, xmax)
             # size from orthogonal axis
-            size = bbox[:, 1].ptp() * 1.5
+            size = np.ptp(bbox[:, 1]) * 1.5
             # center on orthogonal axis
             center = bbox[:, 1].mean()
 
@@ -472,7 +472,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             bounds = (xmin, value_25p)
             limits = (xmin, xmax)
 
-            size = bbox[:, 0].ptp() * 1.5
+            size = np.ptp(bbox[:, 0]) * 1.5
             # center on orthogonal axis
             center = bbox[:, 0].mean()
 

@@ -59,7 +59,7 @@ You can get more detailed info on each adapter like this::
 
     import pprint
     for a in fpl.enumerate_adapters():
-        pprint.pprint(a.request_adapter_info())
+        pprint.pprint(a.info)
 
 General description of the fields:
     * vendor: GPU manufacturer
@@ -265,7 +265,9 @@ You can select an adapter by passing one of the ``wgpu.GPUAdapter`` instances re
 to ``fpl.select_adapter()``::
 
     # get info or summary of all adapters to pick an adapter
-    print([a.request_adapter_info() for a in fpl.enumerate_adapters()])
+    import pprint
+    for a in fpl.enumerate_adapters():
+        pprint.pprint(a.info)
 
     # example, pick adapter at index 2
     chosen_gpu = fpl.enumerate_adapters()[2]
