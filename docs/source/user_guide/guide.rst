@@ -22,7 +22,8 @@ What is `fastplotlib`?
 
 `fastplotlib` is a cutting-edge plotting library built using the `pygfx <https://github.com/pygfx/pygfx>`_ rendering engine.
 The lower-level details of the rendering process (i.e. defining a scene, camera, renderer, etc.) are abstracted away, allowing users to focus on their data.
-The fundamental goal of `fastplotlib` is to provide a high-level, expressive API that promotes large-scale explorative scientific visualization.
+The fundamental goal of `fastplotlib` is to provide a high-level, expressive API that promotes large-scale explorative scientific visualization. We want to
+make it easy and intuitive to produce interactive visualizations that are as performant and vibrant as a modern video game :D
 
 
 How to use `fastplotlib`
@@ -31,11 +32,11 @@ How to use `fastplotlib`
 Before giving a detailed overview of the library, here is a minimal example::
 
     import fastplotlib as fpl
-    import numpy as np
+    import imageio.v3 as iio
 
     fig = fpl.Figure()
 
-    data = np.random.rand(512, 512)
+    data = iio.imread("imageio:astronaut.png")
 
     image_graphic = fig[0,0].add_image(data=data)
 
@@ -44,7 +45,7 @@ Before giving a detailed overview of the library, here is a minimal example::
     if __name__ == "__main__":
         fpl.run()
 
-.. image:: /_static/guide_hello_world.png
+..
 
 
 This is just a simple example of how the `fastplotlib` API works to create a plot, add some image data to the plot, and then visualize it.
@@ -53,28 +54,31 @@ Next, we will take a look at the building blocks of `fastplotlib` and how they c
 
 **Figure**
 
-The base of any visualization in `fastplotlib` is a `Figure` object. This can be a singular plot or a grid of subplots.
+The starting for creating any visualization in `fastplotlib` is a `Figure` object. This can be a single plot or a grid of subplots.
 The `Figure` object houses and takes care of the underlying rendering components such as the camera, controller, renderer, and canvas.
+Most users won't need to use these directly; however, the ability to directly interact with the rendering engine is still available if
+needed.
 
 After defining a `Figure`, we can begin to add `Graphic` objects.
 
 **Graphics**
 
-A `Graphic` can be an image, a line, a scatter, a collection of lines, and more. All graphics can be given a string name. This allows graphics
+A `Graphic` can be an image, a line, a scatter, a collection of lines, and more. All graphics can be given a convenient ``name``. This allows graphics
 to be easily accessed from figures::
 
     fig = fpl.Figure()
 
     data = np.random.rand(512, 512)
 
-    image_graphic = fig[0,0].add_image(data=data, name="random-img")
+    image_graphic = fig[0,0].add_image(data=data, name="astronaut")
 
     fig.show()
 
-    fig[0,0]["random-img"]
+    fig[0,0]["astronaut"]
 ..
 
-Graphics also have mutable, indexable properties that can be linked to events.
+Graphics also have mutable properties that can be linked to events. Some of these properties, such as the `data` or `colors` of a line can even be indexed,
+allowing for the creation of very powerful visualizations.
 
 (1) Common properties
 
@@ -152,20 +156,20 @@ Graphics also have mutable, indexable properties that can be linked to events.
     | outline_thickness | thickness of the text     |
     +-------------------+---------------------------+
 
-Using our example from above: once we add a `Graphic` to the figure, we can then begin to change its features. ::
+Using our example from above: once we add a `Graphic` to the figure, we can then begin to change its properties. ::
 
-    image_graphic.cmap = "viridis"
+    image_graphic.vmax = "150"
 
-.. image:: /_static/guide_image_cmap.png
+..
 
-`GraphicFeatures` also support slicing and indexing. For example ::
+`Graphic` properties also support slicing and indexing. For example ::
 
-    image_graphic.data[::15] = 1
-    image_graphic.data[15::] = 1
+    image_graphic.data[::8, :, :] = 1
+    image_graphic.data[:, ::8, :] = 1
 
-.. image:: /_static/guide_image_slice.png
+..
 
-Now that we have the basics of creating a `Figure`, adding `Graphics` to the `Figure`, and working with `GraphicFeatures` to change or alter a `Graphic`.
+Now we have the basics of creating a `Figure`, adding `Graphics` to a `Figure`, and working with `Graphic` properties to dynamically change or alter them.
 Let's take a look at how we can define events to link `Graphics` and their properties together.
 
 Events
@@ -200,8 +204,41 @@ Selectors
 `ImageWidget`
 -------------
 
+Often times, developing UIs for interacting with multi-dimension image data can be tedious and repetitive. In order to alleviate the headache that accompanies
+constantly recreating visualizations, we created an `ImageWidget` that automatically generates sliders and 
+
 Animations
 ----------
 
+An animation function is a user-defined function that gets called on every rendering cycle. Let's look at an example: ::
+
+    import fastplotlib as fpl
+    import numpy as np
+
+    data = np.random.rand(512, 512)
+
+    fig = fpl.Figure()
+
+    fig[0,0].add_image(data=data, name="random-img")
+
+    def update_data(plot_instance):
+        new_data = np.random.rand(512, 512)
+        plot_instance["random-img"].data = new_data
+
+    fig[0,0].add_animations(update_data)
+
+    fig.show()
+
+..
+
+Here we are defining a function that updates the data of the `ImageGraphic` in the plot with new random data. When adding an animation function, the
+user-defined function will receive a plot instance as an argument when it is called.
+
+Spaces
+------
+
+
+Using `fastplotlib` interactively
+---------------------------------
 
 
