@@ -4,6 +4,7 @@ from pathlib import Path
 
 install_requires = [
     "numpy>=1.23.0",
+    "wgpu<0.16.0",
     "pygfx>=0.1.14,<=0.2.0",
 ]
 
