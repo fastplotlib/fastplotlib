@@ -5,7 +5,7 @@ Scatter Plot Color Slicing
 Example showing color slice for scatter plot.
 """
 
-# test_example = true
+# test_example = false
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
