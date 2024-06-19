@@ -14,7 +14,7 @@
 [**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | 
 [**Contributing**](https://github.com/kushalkolar/fastplotlib#heart-contributing)
 
-Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that can utilize [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! `fastplotlib` also aims to be an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
+Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that can utilize [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! `fastplotlib` is an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
 
 ![scipy-fpl](https://github.com/fastplotlib/fastplotlib/assets/9403332/b981a54c-05f9-443f-a8e4-52cd01cd802a)
 
@@ -41,17 +41,15 @@ concepts are similar to those from the API shown in the video.
 
 > **Note**
 > 
-> `fastplotlib` is currently in the **alpha stage with breaking changes every ~month**, but you're welcome to try it out or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). See this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121 
+> `fastplotlib` is currently in the **late alpha stage**, but you're welcome to try it out or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). See this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121 
 
 # Documentation
 
 http://fastplotlib.readthedocs.io/ 
 
-The Quickstart guide is not interactive. We recommend cloning/downloading the repo and trying out the `desktop` or `notebook` examples: https://github.com/kushalkolar/fastplotlib/tree/main/examples
+The examples are interactive if you run them locally on your computer. If someone wants to integrate `pyodide` with `pygfx` we would be able to have live interactive examples on the website!
 
-If someone wants to integrate `pyodide` with `pygfx` we would be able to have live interactive examples! :smiley:
-
-Questions, issues, ideas? Post an [issue](https://github.com/fastplotlib/fastplotlib/issues) or post on the [discussion forum](https://github.com/fastplotlib/fastplotlib/discussions)!
+Questions, issues, ideas? You are welcome to post an [issue](https://github.com/fastplotlib/fastplotlib/issues) or post on the [discussion forum](https://github.com/fastplotlib/fastplotlib/discussions)! :smiley: 
 
 # Installation
 
@@ -87,50 +85,39 @@ cd fastplotlib
 
 # install all extras in place
 pip install -e ".[notebook,docs,tests]"
+
+# install latest pygfx
+pip install git+https://github.com/pygfx/pygfx.git@main
 ```
 
 Se [Contributing](https://github.com/fastplotlib/fastplotlib?tab=readme-ov-file#heart-contributing) for more details on development
 
 # Examples
 
+Examples gallery: https://fastplotlib.readthedocs.io/en/latest/_gallery/index.html 
+
 > **Note:** `fastplotlib` and `pygfx` are fast evolving, you will probably require the latest `pygfx` and `fastplotlib` from github to use the examples in the main branch.
 
 `fastplotlib` code is identical across notebook (`jupyter`), and desktop use with `Qt`/`PySide` or `glfw`. 
 
-Even if you do not intend to use notebooks with `fastplotlib`, the `quickstart.ipynb` notebook is currently the best way to get familiar with the API: https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks/quickstart.ipynb
+Even if you do not intend to use notebooks with `fastplotlib`, the `quickstart.ipynb` tutorial notebook is the best way to get familiar with the API: https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks/quickstart.ipynb
 
 The specifics for running `fastplotlib` in different GUI frameworks are:
 - Running in `glfw` requires a `fastplotlib.run()` call (which is really just a `wgpu` `run()` call)
 - With `Qt` you can encapsulate it within a `QApplication`, see `examples/qt`
 - Notebooks plots have ipywidget-based toolbars and widgets. There are plans to move toward an identical in-canvas toolbar with UI elements across all supported frameworks 😄
 
-### Desktop examples using `glfw` or `Qt`
+### Embedding in a `Qt` app
 
-GLFW examples are here. GLFW is a "minimal" desktop framework.
-
-https://github.com/fastplotlib/fastplotlib/tree/main/examples/desktop
-
-Qt examples are here:
+See these for examples on embedding within a Qt app. Note that you can also use `fastplotlib` with qt interactively using `%gui qt` in jupyter or ipython.
 
 https://github.com/fastplotlib/fastplotlib/tree/main/examples/qt
 
-Some of the examples require imageio:
-```
-pip install imageio
-```
-
 ### Notebook examples
 
-Notebook examples are here:
+Notebook examples are here, these include examples on selector tools.
 
 https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks
-
-**Start with `quickstart.ipynb`.**
-
-Some of the examples require imageio:
-```
-pip install imageio
-```
 
 ### Video
 
