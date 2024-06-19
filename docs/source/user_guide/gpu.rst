@@ -59,7 +59,7 @@ You can get more detailed info on each adapter like this::
 
     import pprint
     for a in fpl.enumerate_adapters():
-        pprint.pprint(a.info)
+        pprint.pprint(a.request_adapter_info())
 
 General description of the fields:
     * vendor: GPU manufacturer
@@ -267,7 +267,7 @@ to ``fpl.select_adapter()``::
     # get info or summary of all adapters to pick an adapter
     import pprint
     for a in fpl.enumerate_adapters():
-        pprint.pprint(a.info)
+        pprint.pprint(a.request_adapter_info())
 
     # example, pick adapter at index 2
     chosen_gpu = fpl.enumerate_adapters()[2]
