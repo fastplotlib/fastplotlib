@@ -37,6 +37,7 @@ Methods
     Figure.add_animations
     Figure.clear
     Figure.close
+    Figure.export
     Figure.remove_animation
     Figure.render
     Figure.show
