@@ -78,8 +78,8 @@ to be easily accessed from figures::
     fig.show()
 
     fig[0, 0]["astronaut"]
-..
 
+..
 
 Graphics also have mutable properties that can be linked to events. Some of these properties, such as the `data` or `colors` of a line can even be indexed,
 allowing for the creation of very powerful visualizations.
@@ -173,35 +173,6 @@ Using our example from above: once we add a `Graphic` to the figure, we can then
 
 .. image:: _static/hello_world_data.png
 
-Now we have the basics of creating a `Figure`, adding `Graphics` to a `Figure`, and working with `Graphic` properties to dynamically change or alter them.
-Let's take a look at how we can define events to link `Graphics` and their properties together.
-
-Events
-------
-
-All events inherit from the `pygfx.Event` class (add link)
-
-events table: 
-
-PYGFX_EVENTS = [
-    "key_down",
-    "key_up",
-    "pointer_down",
-    "pointer_move",
-    "pointer_up",
-    "pointer_enter",
-    "pointer_leave",
-    "click",
-    "double_click",
-    "wheel",
-    "close",
-    "resize",
-]
-
-
-adding events (2 methods)
-
-attributes of all events (table)
 
 Selectors
 ---------
@@ -236,6 +207,193 @@ data. Let's look at an example: ::
 
 A `LinearRegionSelector` is very similar to a `LinearSelector` but as opposed to selecting a singular point of
 your data, you are able to select an entire region.
+
+
+Now we have the basics of creating a `Figure`, adding `Graphics` to a `Figure`, and working with `Graphic` properties to dynamically change or alter them.
+Let's take a look at how we can define events to link `Graphics` and their properties together.
+
+Events
+------
+
+Events can be a multitude of things: traditional events such as mouse or keyboard events, but they can also be
+events related to `Graphic` properties.
+
+
+There are two methods for adding events in `fastplotlib`.
+
+1) Add an event handler directly. ::
+
+    def event_handler(ev):
+        pass
+
+    graphic.add_event_handler(event_handler, "event_type")
+
+..
+
+
+2) Use decorator notation. ::
+
+    @graphic.add_event_handler("event_type")
+    def event_handler(ev):
+        pass
+
+..
+
+.. note::
+    You can also add events to a `Figure` object's renderer. This is useful for defining click events where
+    you want to map your click position to the nearest graphic object for example.
+
+
+The `event_handler` is a user-defined function that accepts a singular event object (`ev`) as an argument.
+Information about the contents of the event object argument can be found below. The `"event_type"`
+is a string that identifies the type of event; this can be either a `pygfx.Event` or a `Graphic` property event.
+See the above graphic-specific properties that can be used for events and below for the available `pygfx` events.
+
+Available `pygfx` Events:
+    - "key_down"
+    - "key_up"
+    - "pointer_down"
+    - "pointer_move"
+    - "pointer_up"
+    - "pointer_enter"
+    - "pointer_leave"
+    - "click"
+    - "double_click"
+    - "wheel"
+    - "close"
+    - "resize"
+
+When an event occurs, the user-defined event handler will receive and event object. Depending on the type of event, the
+event object will have relevant information that can be used in the callback. See below for event tables.
+
+
+**All events have the following attributes:**
+
+    +------------+-------------+-----------------------------------------------+
+    | attribute  | type        | description                                   |
+    +============+=============+===============================================+
+    | type       | str         | "colors" - name of the event                  |
+    +------------+-------------+-----------------------------------------------+
+    | graphic    | Graphic     | graphic instance that the event is from       |
+    +------------+-------------+-----------------------------------------------+
+    | info       | dict        | event info dictionary                         |
+    +------------+-------------+-----------------------------------------------+
+    | target     | WorldObject | pygfx rendering engine object for the graphic |
+    +------------+-------------+-----------------------------------------------+
+    | time_stamp | float       | time when the event occurred, in ms           |
+    +------------+-------------+-----------------------------------------------+
+
+The ``info`` attribute will house additional information for different `Graphic` property events:
+
+event_type: "colors"
+
+    Vertex Colors
+
+    **info dict**
+
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+    | dict key   | value type                                                | value description                                                                |
+    +============+===========================================================+==================================================================================+
+    | key        | int | slice | np.ndarray[int | bool] | tuple[slice, ...]  | key at which colors were indexed/sliced                                          |
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+    | value      | np.ndarray                                                | new color values for points that were changed, shape is [n_points_changed, RGBA] |
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+    | user_value | str | np.ndarray | tuple[float] | list[float] | list[str] | user input value that was parsed into the RGBA array                             |
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+
+    Uniform Colors
+
+    **info dict**
+
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+    | dict key   | value type                                                | value description                                                                |
+    +============+===========================================================+==================================================================================+
+    | value      | np.ndarray                                                | new color values for points that were changed, shape is [n_points_changed, RGBA] |
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+
+event_type: "sizes"
+
+    **info dict**
+
+    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+    | dict key | value type                                               | value description                                                                        |
+    +==========+==========================================================+==========================================================================================+
+    | key      | int | slice | np.ndarray[int | bool] | tuple[slice, ...] | key at which vertex positions data were indexed/sliced                                   |
+    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+    | value    | np.ndarray | float | list[float]                         | new data values for points that were changed, shape depends on the indices that were set |
+    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+
+event_type: "data"
+
+    **info dict**
+
+    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+    | dict key | value type                                               | value description                                                                        |
+    +==========+==========================================================+==========================================================================================+
+    | key      | int | slice | np.ndarray[int | bool] | tuple[slice, ...] | key at which vertex positions data were indexed/sliced                                   |
+    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+    | value    | np.ndarray | float | list[float]                         | new data values for points that were changed, shape depends on the indices that were set |
+    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+
+event_type: "thickness"
+
+    **info dict**
+
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+    | dict key   | value type                                                | value description                                                                |
+    +============+===========================================================+==================================================================================+
+    | value      | float                                                     | new thickness value                                                              |
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+
+event_type: "cmap"
+
+    **info dict**
+
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+    | dict key   | value type                                                | value description                                                                |
+    +============+===========================================================+==================================================================================+
+    | value      | string                                                    | new colormap value                                                               |
+    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+
+event_type: "selection"
+
+    LinearSelector
+
+    **additional event attributes:**
+
+    +--------------------+----------+------------------------------------+
+    | attribute          | type     | description                        |
+    +====================+==========+====================================+
+    | get_selected_index | callable | returns indices under the selector |
+    +--------------------+----------+------------------------------------+
+
+    **info dict:**
+
+    +----------+------------+-------------------------------+
+    | dict key | value type | value description             |
+    +==========+============+===============================+
+    | value    | np.ndarray | new x or y value of selection |
+    +----------+------------+-------------------------------+
+
+    LinearRegionSelector
+
+    **additional event attributes:**
+
+    +----------------------+----------+------------------------------------+
+    | attribute            | type     | description                        |
+    +======================+==========+====================================+
+    | get_selected_indices | callable | returns indices under the selector |
+    +----------------------+----------+------------------------------------+
+    | get_selected_data    | callable | returns data under the selector    |
+    +----------------------+----------+------------------------------------+
+
+    **info dict:**
+
+    +----------+------------+-----------------------------+
+    | dict key | value type | value description           |
+    +==========+============+=============================+
+    | value    | np.ndarray | new [min, max] of selection |
+    +----------+------------+-----------------------------+
 
 `ImageWidget`
 -------------
