@@ -22,11 +22,11 @@ What is ``fastplotlib``?
 
 ``fastplotlib`` is a cutting-edge plotting library built using the ```pygfx`` <https://github.com/pygfx/pygfx>`_ rendering engine.
 The lower-level details of the rendering process (i.e. defining a scene, camera, renderer, etc.) are abstracted away, allowing users to focus on their data.
-The fundamental goal of `fastplotlib` is to provide a high-level, expressive API that promotes large-scale explorative scientific visualization. We want to
+The fundamental goal of ``fastplotlib`` is to provide a high-level, expressive API that promotes large-scale explorative scientific visualization. We want to
 make it easy and intuitive to produce interactive visualizations that are as performant and vibrant as a modern video game 😄
 
 
-How to use `fastplotlib`
+How to use ``fastplotlib``
 ------------------------
 
 Before giving a detailed overview of the library, here is a minimal example::
@@ -34,54 +34,63 @@ Before giving a detailed overview of the library, here is a minimal example::
     import fastplotlib as fpl
     import imageio.v3 as iio
 
+    # create a `Figure`
     fig = fpl.Figure()
 
+    # read data
     data = iio.imread("imageio:astronaut.png")
 
+    # add image graphic
     image_graphic = fig[0, 0].add_image(data=data)
 
+    # show the plot
     fig.show()
 
     if __name__ == "__main__":
         fpl.run()
 
-.. image:: _static/guide_hello_world.png
+.. image:: ./_static/guide_hello_world.png
 
 
-This is just a simple example of how the `fastplotlib` API works to create a plot, add some image data to the plot, and then visualize it.
-However, we are just scratching the surface of what is possible with `fastplotlib`.
-Next, let's take a look at the building blocks of `fastplotlib` and how they can be used to create more complex visualizations.
+This is just a simple example of how the ``fastplotlib`` API works to create a plot, add some image data to the plot, and then visualize it.
+However, we are just scratching the surface of what is possible with ``fastplotlib``.
+Next, let's take a look at the building blocks of ``fastplotlib`` and how they can be used to create more complex visualizations.
 
 **Figure**
 
-The starting point for creating any visualization in `fastplotlib` is a `Figure` object. This can be a single plot or a grid of subplots.
-The `Figure` object houses and takes care of the underlying rendering components such as the camera, controller, renderer, and canvas.
+The starting point for creating any visualization in ``fastplotlib`` is a ``Figure`` object. This can be a single plot or a grid of subplots.
+The ``Figure`` object houses and takes care of the underlying rendering components such as the camera, controller, renderer, and canvas.
 Most users won't need to use these directly; however, the ability to directly interact with the rendering engine is still available if
 needed.
 
-By default, if no ``shape`` argument is provided when creating a `Figure`, there will be a single subplot. All subplots in a `Figure` can be accessed using
-indexing (i.e. `fig_object[i ,j]`).
+By default, if no ``shape`` argument is provided when creating a ``Figure``, there will be a single subplot. All subplots in a ``Figure`` can be accessed using
+indexing (i.e. ``fig_object[i ,j]``).
 
-After defining a `Figure`, we can begin to add `Graphic` objects.
+After defining a ``Figure``, we can begin to add ``Graphic`` objects.
 
 **Graphics**
 
-A `Graphic` can be an image, a line, a scatter, a collection of lines, and more. All graphics can also be given a convenient ``name``. This allows graphics
+A ``Graphic`` can be an image, a line, a scatter, a collection of lines, and more. All graphics can also be given a convenient ``name``. This allows graphics
 to be easily accessed from figures::
 
+    # create a `Figure`
     fig = fpl.Figure()
 
+    # read data
     data = iio.imread("imageio:astronaut.png")
 
+    add image graphic
     image_graphic = fig[0, 0].add_image(data=data, name="astronaut")
 
+    # show plot
     fig.show()
 
+    # index plot to get graphic
     fig[0, 0]["astronaut"]
 
 ..
 
-Graphics also have mutable properties that can be linked to events. Some of these properties, such as the `data` or `colors` of a line can even be indexed,
+Graphics also have mutable properties that can be linked to events. Some of these properties, such as the ``data`` or ``colors`` of a line can even be indexed,
 allowing for the creation of very powerful visualizations.
 
 (1) Common properties that all graphics have
@@ -102,7 +111,7 @@ allowing for the creation of very powerful visualizations.
 
 (2) Graphic-Specific properties
 
-    (a) `ImageGraphic`
+    (a) ``ImageGraphic``
 
     +------------------------+------------------------------------+
     | Feature Name           | Description                        |
@@ -116,7 +125,7 @@ allowing for the creation of very powerful visualizations.
     | cmap                   | Colormap of an image               |
     +------------------------+------------------------------------+
 
-    (b) `LineGraphic`, `LineCollection`, `LineStack`
+    (b) ``LineGraphic``, ``LineCollection``, ``LineStack``
 
     +--------------+--------------------------------+
     | Feature Name | Description                    |
@@ -130,7 +139,7 @@ allowing for the creation of very powerful visualizations.
     | thickness    | thickness of the line(s)       |
     +--------------+--------------------------------+
 
-    (c) `ScatterGraphic`
+    (c) ``ScatterGraphic``
 
     +--------------+---------------------------------------+
     | Feature Name | Description                           |
@@ -144,7 +153,7 @@ allowing for the creation of very powerful visualizations.
     | sizes        | size of the scatter points            |
     +--------------+---------------------------------------+
 
-    (d) `TextGraphic`
+    (d) ``TextGraphic``
 
     +-------------------+---------------------------+
     | Feature Name      | Description               |
@@ -160,27 +169,27 @@ allowing for the creation of very powerful visualizations.
     | outline_thickness | thickness of the text     |
     +-------------------+---------------------------+
 
-Using our example from above: once we add a `Graphic` to the figure, we can then begin to change its properties. ::
+Using our example from above: once we add a ``Graphic`` to the figure, we can then begin to change its properties. ::
 
     image_graphic.vmax = 150
 
-.. image:: _static/hello_world_vmax.png
+.. image:: ./_static/hello_world_vmax.png
 
-`Graphic` properties also support slicing and indexing. For example ::
+``Graphic`` properties also support slicing and indexing. For example ::
 
     image_graphic.data[::8, :, :] = 1
     image_graphic.data[:, ::8, :] = 1
 
-.. image:: _static/hello_world_data.png
+.. image:: ./_static/hello_world_data.png
 
 
 Selectors
 ---------
 
-A primary feature of `fastplotlib` is the ability to easily interact with your data. Two extremely helpful tools that can
-be used in order to facilitate this process are a `LinearSelector` and `LinearRegionSelector`.
+A primary feature of ``fastplotlib`` is the ability to easily interact with your data. Two extremely helpful tools that can
+be used in order to facilitate this process are a ``LinearSelector`` and ``LinearRegionSelector``.
 
-A `LinearSelector` is a horizontal or vertical line slider. This tool allows you to very easily select different points in your
+A ``LinearSelector`` is a horizontal or vertical line slider. This tool allows you to very easily select different points in your
 data. Let's look at an example: ::
 
     import fastplotlib as fpl
@@ -205,21 +214,21 @@ data. Let's look at an example: ::
 .. image:: _static/guide_linear_selector.gif
 
 
-A `LinearRegionSelector` is very similar to a `LinearSelector` but as opposed to selecting a singular point of
+A ``LinearRegionSelector`` is very similar to a ``LinearSelector`` but as opposed to selecting a singular point of
 your data, you are able to select an entire region.
 
 
-Now we have the basics of creating a `Figure`, adding `Graphics` to a `Figure`, and working with `Graphic` properties to dynamically change or alter them.
-Let's take a look at how we can define events to link `Graphics` and their properties together.
+Now we have the basics of creating a ``Figure``, adding ``Graphics`` to a ``Figure``, and working with ``Graphic`` properties to dynamically change or alter them.
+Let's take a look at how we can define events to link ``Graphics`` and their properties together.
 
 Events
 ------
 
 Events can be a multitude of things: traditional events such as mouse or keyboard events, but they can also be
-You can use renderer events, such as mouse or keyboard events, or events related to `Graphic` properties.
+You can use renderer events, such as mouse or keyboard events, or events related to ``Graphic`` properties.
 
 
-There are two ways to add events in `fastplotlib`.
+There are two ways to add events in ``fastplotlib``.
 
 1) Use the method ::
 
@@ -239,15 +248,11 @@ There are two ways to add events in `fastplotlib`.
 
 ..
 
-.. note::
-    You can also add events to a `Figure` object's renderer. This is useful for defining click events where
-    you want to map your click position to the nearest graphic object for example.
 
-
-The `event_handler` is a user-defined function that accepts an event instance as the first and only positional argument.
+The ``event_handler`` is a user-defined function that accepts an event instance as the first and only positional argument.
 Information about the structure of event instances are described below. The `"event_type"`
-is a string that identifies the type of event; this can be either a `pygfx.Event` or a `Graphic` property event.
-See the above graphic-specific properties that can be used for events and below for the available `pygfx` events.
+is a string that identifies the type of event; this can be either a ``pygfx.Event`` or a ``Graphic`` property event.
+See the above graphic-specific properties that can be used for events and below for the available ``pygfx`` events.
 
 Rendering engine (``pygfx``) events:
     - "key_down"
@@ -283,7 +288,7 @@ event object will have relevant information that can be used in the callback. Se
     | time_stamp | float       | time when the event occurred, in ms           |
     +------------+-------------+-----------------------------------------------+
 
-The ``info`` attribute will house additional information for different `Graphic` property events:
+The ``info`` attribute will house additional information for different ``Graphic`` property events:
 
 event_type: "colors"
 
@@ -357,7 +362,7 @@ event_type: "cmap"
 
 event_type: "selection"
 
-    LinearSelector
+    ``LinearSelector``
 
     **additional event attributes:**
 
@@ -375,7 +380,7 @@ event_type: "selection"
     | value    | np.ndarray | new x or y value of selection |
     +----------+------------+-------------------------------+
 
-    LinearRegionSelector
+    ``LinearRegionSelector``
 
     **additional event attributes:**
 
@@ -395,11 +400,61 @@ event_type: "selection"
     | value    | np.ndarray | new [min, max] of selection |
     +----------+------------+-----------------------------+
 
-`ImageWidget`
--------------
+**Renderer Events:**
+
+You can also add events to a ``Figure`` object's renderer. This is useful for defining click events where
+you want to map your click position to the nearest graphic object for example.
+
+Renderer events can be added using either method mentioned above (i.e. using the method or via a decorator).
+
+For example: ::
+
+    import fastplotlib as fpl
+    import numpy as np
+
+    # generate some circles
+    def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
+        theta = np.linspace(0, 2 * np.pi, n_points)
+        xs = radius * np.sin(theta)
+        ys = radius * np.cos(theta)
+
+        return np.column_stack([xs, ys]) + center
+
+    # this makes 5 circles, so we can create 5 cmap values, so it will use these values to set the
+    # color of the line based by using the cmap as a LUT with the corresponding cmap_value
+    circles = list()
+    for x in range(0, 50, 10):
+        circles.append(make_circle(center=(x, 0), radius=4, n_points=100))
+
+    # create figure
+    fig = fpl.Figure()
+
+    # add circles to plot
+    circles_graphic = fig[0,0].add_line_collection(data=circles, cmap="tab10", thickness=10)
+
+    # get the nearest graphic that is clicked and change the color
+    @fig.renderer.add_event_handler("click")
+    def click_event(ev):
+        # reset colors
+        circles_graphic.cmap = "tab10"
+
+        # map the click position to world coordinates
+        xy = fig[0, 0].map_screen_to_world(ev)[:-1]
+
+        # get the nearest graphic to the position
+        nearest = fpl.utils.get_nearest_graphics(xy, circles_graphic)[0]
+
+        # change the closest graphic color to white
+        nearest.colors = "w"
+
+     fig.show()
+.. image:: ./_static/click_event.gif
+
+ImageWidget
+-----------
 
 Often times, developing UIs for interacting with multi-dimension image data can be tedious and repetitive.
-In order to aid with common image and video visualization requirements the `ImageWidget` automatically generates sliders
+In order to aid with common image and video visualization requirements the ``ImageWidget`` automatically generates sliders
 to easily navigate through different dimensions of your data. Let's look at an example: ::
 
     import fastplotlib as fpl
@@ -443,23 +498,25 @@ An animation function is a user-defined function that gets called on every rende
 
 .. image:: _static/guide_animation.gif
 
-Here we are defining a function that updates the data of the `ImageGraphic` in the plot with new random data. When adding an animation function, the
+Here we are defining a function that updates the data of the ``ImageGraphic`` in the plot with new random data. When adding an animation function, the
 user-defined function will receive a plot instance as an argument when it is called.
 
 Spaces
 ------
 
-There are several spaces to consider when using `fastplotlib`:
+There are several spaces to consider when using ``fastplotlib``:
 
 1) World Space
 
     World space is the 3D space in which graphical objects live. Objects
-    and the camera can exist anywhere in this space. Objects in this space exist relative to a larger
-    world.
+    and the camera can exist anywhere in this space.
 
 2) Data Space
 
     Data space is simply the world space plus any offset or rotation that has been applied to an object.
+
+.. note::
+    World space does not always correspond directly to data space, you may have to adjust for any offset or rotation of the ``Graphic``.
 
 3) Screen Space
 
@@ -467,31 +524,37 @@ There are several spaces to consider when using `fastplotlib`:
     In the rendering process, the camera is responsible for projecting the world space into screen space.
 
 .. note::
-    When interacting with `Graphic` objects, there is a very helpful function for mapping screen space to world space
-    (`Figure.map_screen_to_world(pos=(x, y))`). This can be particularly useful when working with click events where click
-    positions are returned in screen space but `Graphic` objects that you may want to interact with exist in world
+    When interacting with ``Graphic`` objects, there is a very helpful function for mapping screen space to world space
+    (``Figure.map_screen_to_world(pos=(x, y))``). This can be particularly useful when working with click events where click
+    positions are returned in screen space but ``Graphic`` objects that you may want to interact with exist in world
     space.
 
+For more information on the various spaces used by rendering engines please see this `article <https://learnopengl.com/Getting-started/Coordinate-Systems>`_
 
-Using `fastplotlib` interactively
----------------------------------
 
-There are multiple ways to use `fastplotlib` interactively.
+Using ``fastplotlib`` interactively
+-----------------------------------
 
-On `jupyter lab` or `jupyter notebook` the jupyter backend (i.e. `jupyter_rfb`) is normally selected. This works via
+There are multiple ways to use ``fastplotlib`` interactively.
+
+1) Jupyter
+
+On ``jupyter lab`` the jupyter backend (i.e. ``jupyter_rfb``) is normally selected. This works via
 client-server rendering. Images generated on the server are streamed to the client (Jupyter) via a jpeg byte stream.
 Events (such as mouse or keyboard events) are then streamed in the opposite direction prompting new images to be generated
-by the server if necessary. This remote-frame-buffer approach makes the rendering process very fast. `fastplotlib` viusalizations
-can be displayed in cell output or on the side using `jupyterlab-sidecar`.
+by the server if necessary. This remote-frame-buffer approach makes the rendering process very fast. ``fastplotlib`` viusalizations
+can be displayed in cell output or on the side using ``sidecar``.
 
-However, a Qt backend can optionally be used as well. If `%gui qt` is selected before importing `fastplotlib` then this backend
+A Qt backend can also optionally be used as well. If ``%gui qt`` is selected before importing ``fastplotlib`` then this backend
 will be used instead.
-Users can also force using `glfw` by specifying this as an argument when instantiating a `Figure` (i.e. `Figure(canvas="gflw"`).
+
+Lastly, users can also force using ``glfw`` by specifying this as an argument when instantiating a ``Figure`` (i.e. ``Figure(canvas="gflw"``).
 
 .. note::
     Do not mix between gui backends. For example, if you start the notebook using Qt, do not attempt to force using another backend such
-    as `jupyter_rfb` later.
+    as ``jupyter_rfb`` later.
 
+2) IPython
 
-Furthermore, in `IPython`, users can select between using a Qt backend or gflw the same as above.
+Users can select between using a Qt backend or gflw using the same methods as above.
 
