@@ -204,6 +204,37 @@ attributes of all events (table)
 Selectors
 ---------
 
+A primary feature of `fastplotlib` is the ability to easily interact with your data. Two extremely helpful tools that can
+be used in order to facilitate this process are a `LinearSelector` and `LinearRegionSelector`.
+
+A `LinearSelector` is a horizontal or vertical line slider. This tool allows you to very easily select different points in your
+data. Let's look at an example: ::
+
+    import fastplotlib as fpl
+    import numpy as np
+
+    # generate data
+    xs = np.linspace(-10, 10, 100)
+    ys = np.sin(xs)
+    sine = np.column_stack([xs, ys])
+
+    fig = fpl.Figure()
+
+    sine_graphic = fig[0, 0].add_line(data=sine, colors="w")
+
+    # add a linear selector the sine wave
+    selector = sine_graphic.add_linear_selector()
+
+    fig[0, 0].auto_scale()
+
+    fig.show(maintain_aspect=False)
+
+.. image:: _static/guide_linear_selector.gif
+
+
+A `LinearRegionSelector` is very similar to a `LinearSelector` but as opposed to selecting a singular point of
+your data, you are able to select an entire region.
+
 `ImageWidget`
 -------------
 
