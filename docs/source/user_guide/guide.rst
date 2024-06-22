@@ -14,16 +14,16 @@ or install the bleeding edge from Github:
 
 .. code-block::
 
-    pip install -U https://github.com/fastplotlib/fastplotlib/archive/main.zip
+    pip install git+https://github.com/fastplotlib/fastplotlib.git@main
 
 
-What is `fastplotlib`?
+What is ``fastplotlib``?
 ----------------------
 
-`fastplotlib` is a cutting-edge plotting library built using the `pygfx <https://github.com/pygfx/pygfx>`_ rendering engine.
+``fastplotlib`` is a cutting-edge plotting library built using the ```pygfx`` <https://github.com/pygfx/pygfx>`_ rendering engine.
 The lower-level details of the rendering process (i.e. defining a scene, camera, renderer, etc.) are abstracted away, allowing users to focus on their data.
 The fundamental goal of `fastplotlib` is to provide a high-level, expressive API that promotes large-scale explorative scientific visualization. We want to
-make it easy and intuitive to produce interactive visualizations that are as performant and vibrant as a modern video game :D
+make it easy and intuitive to produce interactive visualizations that are as performant and vibrant as a modern video game 😄
 
 
 How to use `fastplotlib`
@@ -84,7 +84,7 @@ to be easily accessed from figures::
 Graphics also have mutable properties that can be linked to events. Some of these properties, such as the `data` or `colors` of a line can even be indexed,
 allowing for the creation of very powerful visualizations.
 
-(1) Common properties
+(1) Common properties that all graphics have
 
 +--------------+--------------------------------------------------------------------------------------------------------------+
 | Feature Name | Description                                                                                                  |
@@ -216,12 +216,12 @@ Events
 ------
 
 Events can be a multitude of things: traditional events such as mouse or keyboard events, but they can also be
-events related to `Graphic` properties.
+You can use renderer events, such as mouse or keyboard events, or events related to `Graphic` properties.
 
 
-There are two methods for adding events in `fastplotlib`.
+There are two ways to add events in `fastplotlib`.
 
-1) Add an event handler directly. ::
+1) Use the method ::
 
     def event_handler(ev):
         pass
@@ -231,7 +231,7 @@ There are two methods for adding events in `fastplotlib`.
 ..
 
 
-2) Use decorator notation. ::
+2) or a decorator ::
 
     @graphic.add_event_handler("event_type")
     def event_handler(ev):
@@ -244,12 +244,12 @@ There are two methods for adding events in `fastplotlib`.
     you want to map your click position to the nearest graphic object for example.
 
 
-The `event_handler` is a user-defined function that accepts a singular event object (`ev`) as an argument.
-Information about the contents of the event object argument can be found below. The `"event_type"`
+The `event_handler` is a user-defined function that accepts an event instance as the first and only positional argument.
+Information about the structure of event instances are described below. The `"event_type"`
 is a string that identifies the type of event; this can be either a `pygfx.Event` or a `Graphic` property event.
 See the above graphic-specific properties that can be used for events and below for the available `pygfx` events.
 
-Available `pygfx` Events:
+Rendering engine (``pygfx``) events:
     - "key_down"
     - "key_up"
     - "pointer_down"
@@ -267,7 +267,7 @@ When an event occurs, the user-defined event handler will receive and event obje
 event object will have relevant information that can be used in the callback. See below for event tables.
 
 
-**All events have the following attributes:**
+**All ``Graphic`` events have the following attributes:**
 
     +------------+-------------+-----------------------------------------------+
     | attribute  | type        | description                                   |
@@ -453,7 +453,7 @@ There are several spaces to consider when using `fastplotlib`:
 
 1) World Space
 
-    World space is the 3D space in which objects live. World space has no limits on its size. Objects
+    World space is the 3D space in which graphical objects live. Objects
     and the camera can exist anywhere in this space. Objects in this space exist relative to a larger
     world.
 
@@ -463,7 +463,7 @@ There are several spaces to consider when using `fastplotlib`:
 
 3) Screen Space
 
-    Screen space is a 2D space represented in pixels. This space is constrained by the screen width and screen height.
+    Screen space is the 2D space in which your screen pixels reside. This space is constrained by the screen width and height in pixels.
     In the rendering process, the camera is responsible for projecting the world space into screen space.
 
 .. note::
