@@ -80,6 +80,7 @@ to be easily accessed from figures::
     fig[0, 0]["astronaut"]
 ..
 
+
 Graphics also have mutable properties that can be linked to events. Some of these properties, such as the `data` or `colors` of a line can even be indexed,
 allowing for the creation of very powerful visualizations.
 
@@ -196,6 +197,7 @@ PYGFX_EVENTS = [
     "close",
     "resize",
 ]
+
 
 adding events (2 methods)
 
