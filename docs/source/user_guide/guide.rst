@@ -258,8 +258,49 @@ user-defined function will receive a plot instance as an argument when it is cal
 Spaces
 ------
 
+There are several spaces to consider when using `fastplotlib`:
+
+1) World Space
+
+    World space is the 3D space in which objects live. World space has no limits on its size. Objects
+    and the camera can exist anywhere in this space. Objects in this space exist relative to a larger
+    world.
+
+2) Data Space
+
+    Data space is simply the world space plus any offset or rotation that has been applied to an object.
+
+3) Screen Space
+
+    Screen space is a 2D space represented in pixels. This space is constrained by the screen width and screen height.
+    In the rendering process, the camera is responsible for projecting the world space into screen space.
+
+.. note::
+    When interacting with `Graphic` objects, there is a very helpful function for mapping screen space to world space
+    (`Figure.map_screen_to_world(pos=(x, y))`). This can be particularly useful when working with click events where click
+    positions are returned in screen space but `Graphic` objects that you may want to interact with exist in world
+    space.
+
 
 Using `fastplotlib` interactively
 ---------------------------------
 
+There are multiple ways to use `fastplotlib` interactively.
+
+On `jupyter lab` or `jupyter notebook` the jupyter backend (i.e. `jupyter_rfb`) is normally selected. This works via
+client-server rendering. Images generated on the server are streamed to the client (Jupyter) via a jpeg byte stream.
+Events (such as mouse or keyboard events) are then streamed in the opposite direction prompting new images to be generated
+by the server if necessary. This remote-frame-buffer approach makes the rendering process very fast. `fastplotlib` viusalizations
+can be displayed in cell output or on the side using `jupyterlab-sidecar`.
+
+However, a Qt backend can optionally be used as well. If `%gui qt` is selected before importing `fastplotlib` then this backend
+will be used instead.
+Users can also force using `glfw` by specifying this as an argument when instantiating a `Figure` (i.e. `Figure(canvas="gflw"`).
+
+.. note::
+    Do not mix between gui backends. For example, if you start the notebook using Qt, do not attempt to force using another backend such
+    as `jupyter_rfb` later.
+
+
+Furthermore, in `IPython`, users can select between using a Qt backend or gflw the same as above.
 
