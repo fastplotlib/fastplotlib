@@ -18,7 +18,7 @@ or install the bleeding edge from Github:
 
 
 What is ``fastplotlib``?
-----------------------
+------------------------
 
 ``fastplotlib`` is a cutting-edge plotting library built using the ```pygfx`` <https://github.com/pygfx/pygfx>`_ rendering engine.
 The lower-level details of the rendering process (i.e. defining a scene, camera, renderer, etc.) are abstracted away, allowing users to focus on their data.
@@ -27,7 +27,7 @@ make it easy and intuitive to produce interactive visualizations that are as per
 
 
 How to use ``fastplotlib``
-------------------------
+--------------------------
 
 Before giving a detailed overview of the library, here is a minimal example::
 
@@ -49,7 +49,7 @@ Before giving a detailed overview of the library, here is a minimal example::
     if __name__ == "__main__":
         fpl.run()
 
-.. image:: ./_static/guide_hello_world.png
+.. image:: ../_static/guide_hello_world.png
 
 
 This is just a simple example of how the ``fastplotlib`` API works to create a plot, add some image data to the plot, and then visualize it.
@@ -173,14 +173,14 @@ Using our example from above: once we add a ``Graphic`` to the figure, we can th
 
     image_graphic.vmax = 150
 
-.. image:: ./_static/hello_world_vmax.png
+.. image:: ../_static/guide_hello_world_vmax.png
 
 ``Graphic`` properties also support slicing and indexing. For example ::
 
     image_graphic.data[::8, :, :] = 1
     image_graphic.data[:, ::8, :] = 1
 
-.. image:: ./_static/hello_world_data.png
+.. image:: ../_static/guide_hello_world_data.png
 
 
 Selectors
@@ -211,7 +211,7 @@ data. Let's look at an example: ::
 
     fig.show(maintain_aspect=False)
 
-.. image:: _static/guide_linear_selector.gif
+.. image:: ../_static/guide_linear_selector.gif
 
 
 A ``LinearRegionSelector`` is very similar to a ``LinearSelector`` but as opposed to selecting a singular point of
@@ -448,7 +448,8 @@ For example: ::
         nearest.colors = "w"
 
      fig.show()
-.. image:: ./_static/click_event.gif
+
+.. image:: ../_static/click_event.gif
 
 ImageWidget
 -----------
@@ -472,7 +473,7 @@ to easily navigate through different dimensions of your data. Let's look at an e
 
     iw_movie.show()
 
-.. image:: _static/guide_image_widget.gif
+.. image:: ../_static/guide_image_widget.gif
 
 Animations
 ----------
@@ -496,7 +497,7 @@ An animation function is a user-defined function that gets called on every rende
 
     fig.show()
 
-.. image:: _static/guide_animation.gif
+.. image:: ../_static/guide_animation.gif
 
 Here we are defining a function that updates the data of the ``ImageGraphic`` in the plot with new random data. When adding an animation function, the
 user-defined function will receive a plot instance as an argument when it is called.
