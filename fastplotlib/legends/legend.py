@@ -56,10 +56,10 @@ class LineLegendItem(LegendItem):
             )
 
         # for now only support lines with a single color
-        if np.unique(graphic.colors(), axis=0).shape[0] > 1:
+        if np.unique(graphic.colors.value, axis=0).shape[0] > 1:
             raise ValueError("Use colorbars for multi-colored lines, not legends")
 
-        color = pygfx.Color(np.unique(graphic.colors(), axis=0).ravel())
+        color = pygfx.Color(np.unique(graphic.colors.value, axis=0).ravel())
 
         self._parent = parent
 
@@ -117,7 +117,7 @@ class LineLegendItem(LegendItem):
         self._label_world_object.geometry.set_text(text)
 
     def _update_color(self, ev: FeatureEvent):
-        new_color = ev.pick_info["new_data"]
+        new_color = ev.info["value"]
         if np.unique(new_color, axis=0).shape[0] > 1:
             raise ValueError(
                 "LegendError: LineGraphic colors no longer appropriate for legend"
@@ -126,8 +126,8 @@ class LineLegendItem(LegendItem):
         self._color = new_color[0]
         self._line_world_object.material.color = pygfx.Color(self._color)
 
-    def _highlight_graphic(self, graphic, ev):
-        graphic_color = pygfx.Color(np.unique(graphic.colors(), axis=0).ravel())
+    def _highlight_graphic(self, graphic: Graphic, ev):
+        graphic_color = pygfx.Color(np.unique(graphic.colors.value, axis=0).ravel())
 
         if graphic_color == self._parent.highlight_color:
             graphic.colors = self._color
@@ -270,7 +270,7 @@ class Legend(Graphic):
         self._graphics.append(graphic)
         self._items[graphic._fpl_address] = legend_item
 
-        graphic.deleted.add_event_handler(partial(self.remove_graphic, graphic))
+        graphic.add_event_handler(partial(self.remove_graphic, graphic), "deleted")
 
         self._col_counter = new_col_ix
         self._row_counter = new_row_ix

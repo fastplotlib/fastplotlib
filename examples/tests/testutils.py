@@ -31,7 +31,7 @@ def get_wgpu_backend():
     """
     Query the configured wgpu backend driver.
     """
-    code = "import wgpu.utils; info = wgpu.utils.get_default_device().adapter.request_adapter_info(); print(info['adapter_type'], info['backend_type'])"
+    code = "import wgpu.utils; info = wgpu.utils.get_default_device().adapter.info; print(info['adapter_type'], info['backend_type'])"
     result = subprocess.run(
         [
             sys.executable,
