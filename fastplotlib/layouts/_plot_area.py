@@ -1,7 +1,5 @@
 from inspect import getfullargspec
-from sys import getrefcount
-from typing import TypeAlias, Literal, Union
-import weakref
+from typing import Literal, Union
 from warnings import warn
 
 import numpy as np
@@ -12,85 +10,19 @@ from wgpu.gui import WgpuCanvasBase
 
 from ._utils import create_controller
 from ..graphics._base import Graphic
-from ..graphics._collection_base import GraphicCollection
 from ..graphics.selectors._base_selector import BaseSelector
 from ..legends import Legend
 
 
-HexStr: TypeAlias = str
-
-
-class References:
-    """
-    This is the only place where the real graphic objects are stored. Everywhere else gets a proxy.
-    """
-
-    _graphics: dict[HexStr, Graphic] = dict()
-    _selectors: dict[HexStr, BaseSelector] = dict()
-    _legends: dict[HexStr, Legend] = dict()
-
-    def add(self, graphic: Graphic | BaseSelector | Legend):
-        """Adds the real graphic to the dict"""
-        addr = graphic._fpl_address
-
-        if isinstance(graphic, BaseSelector):
-            self._selectors[addr] = graphic
-
-        elif isinstance(graphic, Legend):
-            self._legends[addr] = graphic
-
-        elif isinstance(graphic, Graphic):
-            self._graphics[addr] = graphic
-
-        else:
-            raise TypeError("Can only add Graphic, Selector or Legend types")
-
-    def remove(self, address):
-        if address in self._graphics.keys():
-            del self._graphics[address]
-        elif address in self._selectors.keys():
-            del self._selectors[address]
-        elif address in self._legends.keys():
-            del self._legends[address]
-        else:
-            raise KeyError(f"graphic with address not found: {address}")
-
-    def get_proxies(self, refs: list[HexStr]) -> tuple[weakref.proxy]:
-        proxies = list()
-        for key in refs:
-            if key in self._graphics.keys():
-                proxies.append(weakref.proxy(self._graphics[key]))
-
-            elif key in self._selectors.keys():
-                proxies.append(weakref.proxy(self._selectors[key]))
-
-            elif key in self._legends.keys():
-                proxies.append(weakref.proxy(self._legends[key]))
-
-            else:
-                raise KeyError(f"graphic object with address not found: {key}")
-
-        return tuple(proxies)
-
-    def get_refcounts(self) -> dict[HexStr:int]:
-        counts = dict()
-
-        for item in (self._graphics, self._selectors, self._legends):
-            for k in item.keys():
-                counts[(k, item[k].name, item[k].__class__.__name__)] = getrefcount(
-                    item[k]
-                )
-
-        return counts
-
-
-REFERENCES = References()
+try:
+    ip = get_ipython()
+except NameError:
+    IS_IPYTHON = False
+else:
+    IS_IPYTHON = True
 
 
 class PlotArea:
-    def get_refcounts(self):
-        return REFERENCES.get_refcounts()
-
     def __init__(
         self,
         parent: Union["PlotArea", "Figure"],
@@ -158,14 +90,14 @@ class PlotArea:
 
         # list of hex id strings for all graphics managed by this PlotArea
         # the real Graphic instances are managed by REFERENCES
-        self._graphics: list[HexStr] = list()
+        self._graphics: list[Graphic] = list()
 
         # selectors are in their own list so they can be excluded from scene bbox calculations
         # managed similar to GRAPHICS for garbage collection etc.
-        self._selectors: list[HexStr] = list()
+        self._selectors: list[BaseSelector] = list()
 
         # legends, managed just like other graphics as explained above
-        self._legends: list[HexStr] = list()
+        self._legends: list[Legend] = list()
 
         self._name = name
 
@@ -276,18 +208,18 @@ class PlotArea:
 
     @property
     def graphics(self) -> tuple[Graphic, ...]:
-        """Graphics in the plot area. Always returns a proxy to the Graphic instances."""
-        return REFERENCES.get_proxies(self._graphics)
+        """Graphics in the plot area."""
+        return tuple(self._graphics)
 
     @property
     def selectors(self) -> tuple[BaseSelector, ...]:
-        """Selectors in the plot area. Always returns a proxy to the Graphic instances."""
-        return REFERENCES.get_proxies(self._selectors)
+        """Selectors in the plot area."""
+        return tuple(self._selectors)
 
     @property
     def legends(self) -> tuple[Legend, ...]:
         """Legends in the plot area."""
-        return REFERENCES.get_proxies(self._legends)
+        return tuple(self._legends)
 
     @property
     def objects(self) -> tuple[Graphic | BaseSelector | Legend, ...]:
@@ -531,31 +463,24 @@ class PlotArea:
         if graphic.name is not None:  # skip for those that have no name
             self._check_graphic_name_exists(graphic.name)
 
-        addr = graphic._fpl_address
-
         if isinstance(graphic, BaseSelector):
-            addr_list = self._selectors
+            obj_list = self._selectors
 
         elif isinstance(graphic, Legend):
-            addr_list = self._legends
+            obj_list = self._legends
 
         elif isinstance(graphic, Graphic):
-            addr_list = self._graphics
+            obj_list = self._graphics
 
         else:
             raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
 
         if action == "insert":
-            addr_list.insert(index, addr)
+            obj_list.insert(index, graphic)
         elif action == "add":
-            addr_list.append(addr)
+            obj_list.append(graphic)
         else:
             raise ValueError("valid actions are 'insert' | 'add'")
-
-        REFERENCES.add(graphic)
-
-        # now that it's in the dict, just use the weakref
-        graphic = weakref.proxy(graphic)
 
         # add world object to scene
         self.scene.add(graphic.world_object)
@@ -696,29 +621,34 @@ class PlotArea:
             The graphic to delete
 
         """
-        # TODO: proper gc of selectors, RAM is freed for regular graphics but not selectors
-        # TODO: references to selectors must be lingering somewhere
-        # TODO: update March 2024, I think selectors are gc properly, should check
-        # get memory address
-        address = graphic._fpl_address
-
         if graphic not in self:
             raise KeyError(f"Graphic not found in plot area: {graphic}")
 
-        # check which type it is
-        for l in [self._graphics, self._selectors, self._legends]:
-            if address in l:
-                l.remove(address)
-                break
+        if isinstance(graphic, BaseSelector):
+            self._selectors.remove(graphic)
+        elif isinstance(graphic, Legend):
+            self._legends.remove(graphic)
+
+        elif isinstance(graphic, Graphic):
+            self._graphics.remove(graphic)
 
         # remove from scene if necessary
         if graphic.world_object in self.scene.children:
             self.scene.remove(graphic.world_object)
 
         # cleanup
-        graphic._fpl_cleanup()
+        graphic._fpl_prepare_del()
 
-        REFERENCES.remove(address)
+        if IS_IPYTHON:
+            # remove any references that ipython might have made
+            ip = get_ipython()
+            # get all references in ipython namespace
+            references = list(ip.user_ns.keys())
+            for ref in references:
+                if ip.user_ns[ref] is graphic:
+                    # we found the graphic, remove from ipython
+                    ip.del_var(ref)
+                    break
 
     def clear(self):
         """

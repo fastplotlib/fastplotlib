@@ -311,8 +311,8 @@ class HistogramLUT(Graphic):
         del self._image_graphic
         # self._image_graphic = None
 
-    def _fpl_cleanup(self):
-        self._linear_region_selector._fpl_cleanup()
-        self._histogram_line._fpl_cleanup()
+    def _fpl_prepare_del(self):
+        self._linear_region_selector._fpl_prepare_del()
+        self._histogram_line._fpl_prepare_del()
         del self._histogram_line
         del self._linear_region_selector

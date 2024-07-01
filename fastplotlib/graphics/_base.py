@@ -1,4 +1,5 @@
 from collections import defaultdict
+from contextlib import suppress
 from functools import partial
 from typing import Any, Literal, TypeAlias
 import weakref
@@ -177,7 +178,7 @@ class Graphic:
     def world_object(self) -> pygfx.WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
         # We use weakref to simplify garbage collection
-        return weakref.proxy(WORLD_OBJECTS[self._fpl_address])
+        return weakref.proxy(WORLD_OBJECTS[hex(id(self))])
 
     def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
@@ -348,24 +349,17 @@ class Graphic:
         else:
             return rval
 
-    def __eq__(self, other):
-        # This is necessary because we use Graphics as weakref proxies
-        if not isinstance(other, Graphic):
-            raise TypeError("`==` operator is only valid between two Graphics")
-
-        if self._fpl_address == other._fpl_address:
-            return True
-
-        return False
-
-    def _fpl_cleanup(self):
+    def _fpl_prepare_del(self):
         """
         Cleans up the graphic in preparation for __del__(), such as removing event handlers from
         plot renderer, feature event handlers, etc.
 
         Optionally implemented in subclasses
         """
-        # remove event handlers
+        # signal that a deletion has been requested
+        self.deleted = True
+
+        # clear event handlers
         self.clear_event_handlers()
 
         # clear any attached event handlers and animation functions
@@ -394,13 +388,10 @@ class Graphic:
 
         self.world_object._event_handlers.clear()
 
-        for n in self._features:
-            fea = getattr(self, f"_{n}")
-            fea.clear_event_handlers()
-
     def __del__(self):
-        self.deleted = True
-        del WORLD_OBJECTS[self._fpl_address]
+        with suppress(KeyError):
+            # remove world object if created
+            del WORLD_OBJECTS[hex(id(self))]
 
     def rotate(self, alpha: float, axis: Literal["x", "y", "z"] = "y"):
         """Rotate the Graphic with respect to the world.

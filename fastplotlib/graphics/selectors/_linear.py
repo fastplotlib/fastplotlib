@@ -390,8 +390,8 @@ class LinearSelector(BaseSelector):
         else:
             self.selection = self.selection + delta[1]
 
-    def _fpl_cleanup(self):
+    def _fpl_prepare_del(self):
         for widget in self._handled_widgets:
             widget.unobserve(self._ipywidget_callback, "value")
 
-        super()._fpl_cleanup()
+        super()._fpl_prepare_del()

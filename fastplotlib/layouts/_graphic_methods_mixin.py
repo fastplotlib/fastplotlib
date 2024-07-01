@@ -3,7 +3,6 @@
 from typing import *
 
 import numpy
-import weakref
 
 from ..graphics import *
 from ..graphics._base import Graphic
@@ -25,8 +24,7 @@ class GraphicMethodsMixin:
         graphic = graphic_class(*args, **kwargs)
         self.add_graphic(graphic, center=center)
 
-        # only return a proxy to the real graphic
-        return weakref.proxy(graphic)
+        return graphic
 
     def add_image(
         self,

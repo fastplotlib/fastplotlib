@@ -55,7 +55,6 @@ Methods
     Subplot.clear
     Subplot.delete_graphic
     Subplot.get_rect
-    Subplot.get_refcounts
     Subplot.insert_graphic
     Subplot.map_screen_to_world
     Subplot.remove_animation
