@@ -1,12 +1,9 @@
+from contextlib import suppress
 from typing import Any
-import weakref
 
 import numpy as np
 
-from ._base import HexStr, Graphic
-
-# Dict that holds all collection graphics in one python instance
-COLLECTION_GRAPHICS: dict[HexStr, Graphic] = dict()
+from ._base import Graphic
 
 
 class CollectionProperties:
@@ -193,25 +190,17 @@ class GraphicCollection(Graphic, CollectionProperties):
         super().__init__(name=name, metadata=metadata, **kwargs)
 
         # list of mem locations of the graphics
-        self._graphics: list[str] = list()
+        self._graphics: list[Graphic] = list()
 
         self._graphics_changed: bool = True
-        self._graphics_array: np.ndarray[Graphic] = None
 
         self._iter = None
 
     @property
     def graphics(self) -> np.ndarray[Graphic]:
-        """The Graphics within this collection. Always returns a proxy to the Graphics."""
-        if self._graphics_changed:
-            proxies = [
-                weakref.proxy(COLLECTION_GRAPHICS[addr]) for addr in self._graphics
-            ]
-            self._graphics_array = np.array(proxies)
-            self._graphics_array.flags["WRITEABLE"] = False
-            self._graphics_changed = False
+        """The Graphics within this collection."""
 
-        return self._graphics_array
+        return np.asarray(self._graphics)
 
     def add_graphic(self, graphic: Graphic):
         """
@@ -231,10 +220,7 @@ class GraphicCollection(Graphic, CollectionProperties):
                 f"you are trying to add a {graphic.__class__.__name__}."
             )
 
-        addr = graphic._fpl_address
-        COLLECTION_GRAPHICS[addr] = graphic
-
-        self._graphics.append(addr)
+        self._graphics.append(graphic)
 
         self.world_object.add(graphic.world_object)
 
@@ -254,7 +240,7 @@ class GraphicCollection(Graphic, CollectionProperties):
 
         """
 
-        self._graphics.remove(graphic._fpl_address)
+        self._graphics.remove(graphic)
 
         self.world_object.remove(graphic.world_object)
 
@@ -313,7 +299,7 @@ class GraphicCollection(Graphic, CollectionProperties):
         for g in self:
             g._fpl_add_plot_area_hook(plot_area)
 
-    def _fpl_cleanup(self):
+    def _fpl_prepare_del(self):
         """
         Cleans up the graphic in preparation for __del__(), such as removing event handlers from
         plot renderer, feature event handlers, etc.
@@ -324,20 +310,22 @@ class GraphicCollection(Graphic, CollectionProperties):
         self.world_object._event_handlers.clear()
 
         for g in self:
-            g._fpl_cleanup()
+            g._fpl_prepare_del()
 
     def __getitem__(self, key) -> CollectionIndexer:
         if np.issubdtype(type(key), np.integer):
-            addr = self._graphics[key]
-            return weakref.proxy(COLLECTION_GRAPHICS[addr])
+            return self.graphics[key]
 
         return self._indexer(selection=self.graphics[key], features=self._features)
 
     def __del__(self):
-        self.world_object.clear()
+        # remove world object if it was created
+        with suppress(KeyError):
+            self.world_object.clear()
 
-        for addr in self._graphics:
-            del COLLECTION_GRAPHICS[addr]
+        for g in self.graphics:
+            g._fpl_prepare_del()
+            del g
 
         super().__del__()
 
@@ -350,9 +338,8 @@ class GraphicCollection(Graphic, CollectionProperties):
 
     def __next__(self) -> Graphic:
         index = next(self._iter)
-        addr = self._graphics[index]
 
-        return weakref.proxy(COLLECTION_GRAPHICS[addr])
+        return self._graphics[index]
 
     def __repr__(self):
         rval = super().__repr__()

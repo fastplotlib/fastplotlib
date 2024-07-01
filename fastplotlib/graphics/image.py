@@ -1,5 +1,4 @@
 from typing import *
-import weakref
 
 import pygfx
 
@@ -307,7 +306,7 @@ class ImageGraphic(Graphic):
             size=size,
             center=center,
             axis=axis,
-            parent=weakref.proxy(self),
+            parent=self,
             **kwargs,
         )
 
@@ -316,7 +315,7 @@ class ImageGraphic(Graphic):
         # place selector above this graphic
         selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
 
-        return weakref.proxy(selector)
+        return selector
 
     def add_linear_region_selector(
         self,
@@ -384,7 +383,7 @@ class ImageGraphic(Graphic):
             center=center,
             axis=axis,
             fill_color=fill_color,
-            parent=weakref.proxy(self),
+            parent=self,
             **kwargs,
         )
 
@@ -393,4 +392,4 @@ class ImageGraphic(Graphic):
         # place above this graphic
         selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
 
-        return weakref.proxy(selector)
+        return selector
