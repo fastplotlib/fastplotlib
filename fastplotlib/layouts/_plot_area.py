@@ -642,13 +642,15 @@ class PlotArea:
         if IS_IPYTHON:
             # remove any references that ipython might have made
             ip = get_ipython()
-            # get all references in ipython namespace
-            references = list(ip.user_ns.keys())
-            for ref in references:
-                if ip.user_ns[ref] is graphic:
-                    # we found the graphic, remove from ipython
-                    ip.del_var(ref)
-                    break
+
+            # check both namespaces
+            for namespace in [ip.user_ns, ip.user_ns_hidden]:
+                # find the reference
+                for ref, obj in namespace.items():
+                    if graphic is obj:
+                        # we found the reference, remove from ipython
+                        ip.del_var(ref)
+                        break
 
     def clear(self):
         """

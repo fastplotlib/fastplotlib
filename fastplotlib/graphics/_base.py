@@ -389,9 +389,11 @@ class Graphic:
         self.world_object._event_handlers.clear()
 
     def __del__(self):
-        with suppress(KeyError):
-            # remove world object if created
-            del WORLD_OBJECTS[hex(id(self))]
+        wo = WORLD_OBJECTS.pop(hex(id(self)), None)
+        # remove world object if created
+        # world object does not exist if an exception was raised during __init__ which is why this check exists
+        if wo is not None:
+            del wo
 
     def rotate(self, alpha: float, axis: Literal["x", "y", "z"] = "y"):
         """Rotate the Graphic with respect to the world.

@@ -319,9 +319,8 @@ class GraphicCollection(Graphic, CollectionProperties):
         return self._indexer(selection=self.graphics[key], features=self._features)
 
     def __del__(self):
-        # remove world object if it was created
-        with suppress(KeyError):
-            self.world_object.clear()
+        # detach children
+        self.world_object.clear()
 
         for g in self.graphics:
             g._fpl_prepare_del()
