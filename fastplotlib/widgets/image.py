@@ -126,7 +126,7 @@ class ImageWidget:
     def cmap(self) -> list[str]:
         cmaps = list()
         for g in self.managed_graphics:
-            cmaps.append(g.cmap.name)
+            cmaps.append(g.cmap)
 
         return cmaps
 

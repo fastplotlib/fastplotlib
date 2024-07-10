@@ -1,8 +1,9 @@
 import weakref
+from math import ceil
 
 import numpy as np
 
-from pygfx import Group
+import pygfx
 
 from ..graphics import LineGraphic, ImageGraphic, TextGraphic
 from ..graphics._base import Graphic
@@ -46,7 +47,7 @@ class HistogramLUT(Graphic):
 
         self._histogram_line = LineGraphic(line_data)
 
-        bounds = (edges[0], edges[-1])
+        bounds = (edges[0] * self._scale_factor, edges[-1] * self._scale_factor)
         limits = (edges_flanked[0], edges_flanked[-1])
         size = 120  # since it's scaled to 100
         origin = (hist_scaled.max() / 2, 0)
@@ -63,8 +64,8 @@ class HistogramLUT(Graphic):
 
         # there will be a small difference with the histogram edges so this makes them both line up exactly
         self._linear_region_selector.selection = (
-            self._image_graphic.vmin,
-            self._image_graphic.vmax,
+            self._image_graphic.vmin * self._scale_factor,
+            self._image_graphic.vmax * self._scale_factor,
         )
 
         self._vmin = self.image_graphic.vmin
@@ -94,7 +95,7 @@ class HistogramLUT(Graphic):
 
         self._text_vmax.world_object.material.pick_write = False
 
-        widget_wo = Group()
+        widget_wo = pygfx.Group()
         widget_wo.add(
             self._histogram_line.world_object,
             self._linear_region_selector.world_object,
@@ -114,7 +115,39 @@ class HistogramLUT(Graphic):
             self._linear_region_handler, "selection"
         )
 
-        self.image_graphic.add_event_handler(self._image_cmap_handler, "vmin", "vmax")
+        self.image_graphic.add_event_handler(self._image_cmap_handler, "vmin", "vmax", "cmap")
+
+        # colorbar for grayscale images
+        if self.image_graphic.data.value.ndim != 3:
+            self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
+
+            self.world_object.add(self._colorbar.world_object)
+        else:
+            self._colorbar = None
+            self._cmap = None
+
+    def _make_colorbar(self, edges_flanked) -> ImageGraphic:
+        # use the histogram edge values as data for an
+        # image with 2 columns, this will be our colorbar!
+        colorbar_data = np.column_stack(
+            [np.linspace(edges_flanked[0], edges_flanked[-1], ceil(np.ptp(edges_flanked)))] * 2
+        ).astype(np.float32)
+
+        colorbar_data /= self._scale_factor
+
+        cbar = ImageGraphic(
+            data=colorbar_data,
+            vmin=self.vmin,
+            vmax=self.vmax,
+            cmap=self.image_graphic.cmap,
+            interpolation="linear",
+            offset=(-55, edges_flanked[0], -1)
+        )
+
+        cbar.world_object.world.scale_x = 20
+        self._cmap = self.image_graphic.cmap
+
+        return cbar
 
     def _get_vmin_vmax_str(self) -> tuple[str, str]:
         if self.vmin < 0.001 or self.vmin > 99_999:
@@ -135,6 +168,7 @@ class HistogramLUT(Graphic):
         self._histogram_line._fpl_add_plot_area_hook(plot_area)
 
         self._plot_area.auto_scale()
+        self._plot_area.controller.enabled = True
 
     def _calculate_histogram(self, data):
         if data.ndim > 2:
@@ -206,6 +240,22 @@ class HistogramLUT(Graphic):
         setattr(self, ev.type, ev.info["value"])
 
     @property
+    def cmap(self) -> str:
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, name: str):
+        if self._colorbar is None:
+            return
+
+        self.image_graphic.block_events = True
+        self.image_graphic.cmap = name
+
+        self._cmap = name
+        self._colorbar.cmap = name
+        self.image_graphic.block_events = False
+
+    @property
     def vmin(self) -> float:
         return self._vmin
 
@@ -226,6 +276,8 @@ class HistogramLUT(Graphic):
         self._linear_region_selector.block_events = False
 
         self._vmin = value
+        if self._colorbar is not None:
+            self._colorbar.vmin = value
 
         vmin_str, vmax_str = self._get_vmin_vmax_str()
         self._text_vmin.offset = (-120, self._linear_region_selector.selection[0], 0)
@@ -253,6 +305,8 @@ class HistogramLUT(Graphic):
         self._linear_region_selector.block_events = False
 
         self._vmax = value
+        if self._colorbar is not None:
+            self._colorbar.vmax = value
 
         vmin_str, vmax_str = self._get_vmin_vmax_str()
         self._text_vmax.offset = (-120, self._linear_region_selector.selection[1], 0)
@@ -284,6 +338,17 @@ class HistogramLUT(Graphic):
 
         self._data = weakref.proxy(data)
 
+        if self._colorbar is not None:
+            self.world_object.remove(self._colorbar.world_object)
+
+        if self.image_graphic.data.value.ndim != 3:
+            self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
+
+            self.world_object.add(self._colorbar.world_object)
+        else:
+            self._colorbar = None
+            self._cmap = None
+
         # reset plotarea dims
         self._plot_area.auto_scale()
 
@@ -300,14 +365,14 @@ class HistogramLUT(Graphic):
 
         if self._image_graphic is not None:
             # cleanup events from current image graphic
-            self._image_graphic.remove_event_handler(self._image_cmap_handler)
+            self._image_graphic.remove_event_handler(self._image_cmap_handler, "vmin", "vmax", "cmap")
 
         self._image_graphic = graphic
 
-        self.image_graphic.add_event_handler(self._image_cmap_handler)
+        self.image_graphic.add_event_handler(self._image_cmap_handler, "vmin", "vmax", "cmap")
 
     def disconnect_image_graphic(self):
-        self._image_graphic.remove_event_handler(self._image_cmap_handler)
+        self._image_graphic.remove_event_handler(self._image_cmap_handler, "vmin", "vmax", "cmap")
         del self._image_graphic
         # self._image_graphic = None
 
