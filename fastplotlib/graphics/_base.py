@@ -1,5 +1,4 @@
 from collections import defaultdict
-from contextlib import suppress
 from functools import partial
 from typing import Any, Literal, TypeAlias
 import weakref
@@ -43,7 +42,7 @@ PYGFX_EVENTS = [
 
 
 class Graphic:
-    _features = {}
+    _features: set[str] = {}
 
     def __init_subclass__(cls, **kwargs):
         # set the type of the graphic in lower case like "image", "line_collection", etc.
@@ -389,11 +388,9 @@ class Graphic:
         self.world_object._event_handlers.clear()
 
     def __del__(self):
-        wo = WORLD_OBJECTS.pop(hex(id(self)), None)
         # remove world object if created
         # world object does not exist if an exception was raised during __init__ which is why this check exists
-        if wo is not None:
-            del wo
+        WORLD_OBJECTS.pop(hex(id(self)), None)
 
     def rotate(self, alpha: float, axis: Literal["x", "y", "z"] = "y"):
         """Rotate the Graphic with respect to the world.
