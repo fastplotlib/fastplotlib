@@ -503,6 +503,8 @@ class LinearRegionSelector(BaseSelector):
             # add y value
             new_min, new_max = self.selection + delta[1]
 
+        print(self._move_info)
+
         # move entire selector if event source was fill
         if self._move_info.source == self.fill:
             # prevent weird shrinkage of selector if one edge is already at the limit

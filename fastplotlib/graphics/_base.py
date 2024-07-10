@@ -177,7 +177,7 @@ class Graphic:
     def world_object(self) -> pygfx.WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
         # We use weakref to simplify garbage collection
-        return weakref.proxy(WORLD_OBJECTS[self._fpl_address])
+        return WORLD_OBJECTS[self._fpl_address]
 
     def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo

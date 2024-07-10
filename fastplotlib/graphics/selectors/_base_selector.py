@@ -135,12 +135,26 @@ class BaseSelector(Graphic):
         self._plot_area = plot_area
 
         # when the pointer is pressed on a fill, edge or vertex
-        for wo in self._world_objects:
-            pfunc_down = partial(self._move_start, wo)
-            wo.add_event_handler(pfunc_down, "pointer_down")
+        # we cannot just do self.world_object.add_event_handler
+        # since we need to know if the event source was an edge,
+        # fill, or a vertex
+        # for wo in self._world_objects:
+        #     # pfunc_down = partial(self._move_start, wo)
+        #     wo.add_event_handler(self._move_start, "pointer_down")
+        #
+        #     # double-click to enable arrow-key moveable mode
+        #     wo.add_event_handler(self._toggle_arrow_key_moveable, "double_click")
+        #
+        #     # when the pointer moves
+        #     wo.add_event_handler(self._move, "pointer_move")
+        #
+        #     # when the pointer is released
+        #     wo.add_event_handler(self._move_end, "pointer_up")
 
-            # double-click to enable arrow-key moveable mode
-            wo.add_event_handler(self._toggle_arrow_key_moveable, "double_click")
+        self.add_event_handler(self._move_start, "pointer_down")
+        self.add_event_handler(self._move, "pointer_move")
+        self.add_event_handler(self._move_end, "pointer_up")
+        self.add_event_handler(self._toggle_arrow_key_moveable, "double_click")
 
         for fill in self._fill:
             if fill.material.color_is_transparent:
@@ -148,12 +162,6 @@ class BaseSelector(Graphic):
                 self._plot_area.renderer.add_event_handler(
                     self._pfunc_fill, "pointer_down"
                 )
-
-        # when the pointer moves
-        self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
-
-        # when the pointer is released
-        self._plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
 
         # move directly to location of center mouse button click
         self._plot_area.renderer.add_event_handler(self._move_to_pointer, "click")
@@ -191,9 +199,11 @@ class BaseSelector(Graphic):
         if not (ymin <= world_pos[1] <= ymax):
             return
 
-        self._move_start(event_source, ev)
+        ev.target = event_source
 
-    def _move_start(self, event_source: WorldObject, ev):
+        self._move_start(ev)
+
+    def _move_start(self, ev):
         """
         Called on "pointer_down" events
 
@@ -210,10 +220,13 @@ class BaseSelector(Graphic):
         """
         last_position = self._plot_area.map_screen_to_world(ev)
 
-        self._move_info = MoveInfo(last_position=last_position, source=event_source)
+        self._move_info = MoveInfo(last_position=last_position, source=ev.target)
         self._moving = True
+        print(self._move_info)
 
-        self._initial_controller_state = self._plot_area.controller.enabled
+        # capture pointer until "pointer_up" event
+        self.world_object.set_pointer_capture(ev.pointer_id, ev.root)
+        print("move start")
 
     def _move(self, ev):
         """
@@ -229,9 +242,6 @@ class BaseSelector(Graphic):
         """
         if self._move_info is None:
             return
-
-        # disable controller during moves
-        self._plot_area.controller.enabled = False
 
         # get pointer current world position
         world_pos = self._plot_area.map_screen_to_world(ev)
@@ -249,21 +259,15 @@ class BaseSelector(Graphic):
         # update last position
         self._move_info.last_position = world_pos
 
-        # restore the initial controller state
-        # if it was disabled, keep it disabled
-        self._plot_area.controller.enabled = self._initial_controller_state
-
     def _move_graphic(self, delta: np.ndarray):
         raise NotImplementedError("Must be implemented in subclass")
 
     def _move_end(self, ev):
+        self.world_object.release_pointer_capture(ev.pointer_id)
         self._move_info = None
         self._moving = False
 
-        # restore the initial controller state
-        # if it was disabled, keep it disabled
-        if self._initial_controller_state is not None:
-            self._plot_area.controller.enabled = self._initial_controller_state
+        self._pointer_leave(ev)
 
     def _move_to_pointer(self, ev):
         """
