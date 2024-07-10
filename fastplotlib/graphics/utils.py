@@ -13,11 +13,9 @@ def pause_events(*graphics: Graphic):
 
     original_vals = [g.block_events for g in graphics]
 
-    try:
-        for g in graphics:
-            g.block_events = True
-        yield
+    for g in graphics:
+        g.block_events = True
+    yield
 
-    finally:
-        for g, value in zip(graphics, original_vals):
-            g.block_events = value
+    for g, value in zip(graphics, original_vals):
+        g.block_events = value
