@@ -29,8 +29,7 @@ def generate_add_graphics_methods():
     f.write("# This is an auto-generated file and should not be modified directly\n\n")
 
     f.write("from typing import *\n\n")
-    f.write("import numpy\n")
-    f.write("import weakref\n\n")
+    f.write("import numpy\n\n")
     f.write("from ..graphics import *\n")
     f.write("from ..graphics._base import Graphic\n\n")
 
@@ -49,8 +48,7 @@ def generate_add_graphics_methods():
     f.write("            self._check_graphic_name_exists(kwargs['name'])\n\n")
     f.write("        graphic = graphic_class(*args, **kwargs)\n")
     f.write("        self.add_graphic(graphic, center=center)\n\n")
-    f.write("        # only return a proxy to the real graphic\n")
-    f.write("        return weakref.proxy(graphic)\n\n")
+    f.write("        return graphic\n\n")
 
     for m in modules:
         class_name = m
