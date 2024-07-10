@@ -1,11 +1,11 @@
-import weakref
 from math import ceil
+import weakref
 
 import numpy as np
 
 import pygfx
 
-from ..graphics import LineGraphic, ImageGraphic, TextGraphic
+from ..graphics import LineGraphic, ImageGraphic, TextGraphic, pause_events
 from ..graphics._base import Graphic
 from ..graphics.selectors import LinearRegionSelector
 
@@ -248,12 +248,11 @@ class HistogramLUT(Graphic):
         if self._colorbar is None:
             return
 
-        self.image_graphic.block_events = True
-        self.image_graphic.cmap = name
+        with pause_events(self.image_graphic):
+            self.image_graphic.cmap = name
 
-        self._cmap = name
-        self._colorbar.cmap = name
-        self.image_graphic.block_events = False
+            self._cmap = name
+            self._colorbar.cmap = name
 
     @property
     def vmin(self) -> float:
@@ -261,19 +260,14 @@ class HistogramLUT(Graphic):
 
     @vmin.setter
     def vmin(self, value: float):
-        self.image_graphic.block_events = True
-        self._linear_region_selector.block_events = True
-
-        # must use world coordinate values directly from selection()
-        # otherwise the linear region bounds jump to the closest bin edges
-        self._linear_region_selector.selection = (
-            value * self._scale_factor,
-            self._linear_region_selector.selection[1],
-        )
-        self.image_graphic.vmin = value
-
-        self.image_graphic.block_events = False
-        self._linear_region_selector.block_events = False
+        with pause_events(self.image_graphic, self._linear_region_selector):
+            # must use world coordinate values directly from selection()
+            # otherwise the linear region bounds jump to the closest bin edges
+            self._linear_region_selector.selection = (
+                value * self._scale_factor,
+                self._linear_region_selector.selection[1],
+            )
+            self.image_graphic.vmin = value
 
         self._vmin = value
         if self._colorbar is not None:
@@ -289,20 +283,15 @@ class HistogramLUT(Graphic):
 
     @vmax.setter
     def vmax(self, value: float):
-        self.image_graphic.block_events = True
-        self._linear_region_selector.block_events = True
+        with pause_events(self.image_graphic, self._linear_region_selector):
+            # must use world coordinate values directly from selection()
+            # otherwise the linear region bounds jump to the closest bin edges
+            self._linear_region_selector.selection = (
+                self._linear_region_selector.selection[0],
+                value * self._scale_factor,
+            )
 
-        # must use world coordinate values directly from selection()
-        # otherwise the linear region bounds jump to the closest bin edges
-        self._linear_region_selector.selection = (
-            self._linear_region_selector.selection[0],
-            value * self._scale_factor,
-        )
-
-        self.image_graphic.vmax = value
-
-        self.image_graphic.block_events = False
-        self._linear_region_selector.block_events = False
+            self.image_graphic.vmax = value
 
         self._vmax = value
         if self._colorbar is not None:
@@ -329,12 +318,9 @@ class HistogramLUT(Graphic):
             self._linear_region_selector.limits = limits
             self._linear_region_selector.selection = bounds
         else:
-            # don't change the current selection
-            self.image_graphic.block_events = True
-            self._linear_region_selector.block_events = True
-            self._linear_region_selector.limits = limits
-            self.image_graphic.block_events = False
-            self._linear_region_selector.block_events = False
+            with pause_events(self.image_graphic, self._linear_region_selector):
+                # don't change the current selection
+                self._linear_region_selector.limits = limits
 
         self._data = weakref.proxy(data)
 
