@@ -418,6 +418,7 @@ class Figure:
 
         self.renderer.flush()
 
+        imgui.set_current_context(self.imgui_renderer.imgui_context)
         # begin making new frame data for imgui
         imgui.new_frame()
 
