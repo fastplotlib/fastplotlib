@@ -1,5 +1,4 @@
 from typing import *
-import weakref
 
 import numpy as np
 
@@ -147,7 +146,7 @@ class LineGraphic(PositionsGraphic):
             size=size,
             center=center,
             axis=axis,
-            parent=weakref.proxy(self),
+            parent=self,
             **kwargs,
         )
 
@@ -156,7 +155,7 @@ class LineGraphic(PositionsGraphic):
         # place selector above this graphic
         selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
 
-        return weakref.proxy(selector)
+        return selector
 
     def add_linear_region_selector(
         self,
@@ -204,7 +203,7 @@ class LineGraphic(PositionsGraphic):
             size=size,
             center=center,
             axis=axis,
-            parent=weakref.proxy(self),
+            parent=self,
             **kwargs,
         )
 
@@ -215,7 +214,7 @@ class LineGraphic(PositionsGraphic):
 
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end
-        return weakref.proxy(selector)
+        return selector
 
     # TODO: this method is a bit of a mess, can refactor later
     def _get_linear_selector_init_args(
