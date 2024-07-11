@@ -99,6 +99,11 @@ class PlotArea:
         # legends, managed just like other graphics as explained above
         self._legends: list[Legend] = list()
 
+        # keep all graphics in a separate group, makes bbox calculations etc. easier
+        # this is the "real scene" excluding axes, selection tools etc.
+        self._graphics_scene = pygfx.Group()
+        self.scene.add(self._graphics_scene)
+
         self._name = name
 
         # need to think about how to deal with children better
@@ -394,7 +399,7 @@ class PlotArea:
 
         if graphic in self:
             # graphic is already in this plot but was removed from the scene, add it back
-            self.scene.add(graphic.world_object)
+            self._graphics_scene.add(graphic.world_object)
             return
 
         self._add_or_insert_graphic(graphic=graphic, center=center, action="add")
@@ -465,12 +470,15 @@ class PlotArea:
 
         if isinstance(graphic, BaseSelector):
             obj_list = self._selectors
+            self.scene.add(graphic.world_object)
 
         elif isinstance(graphic, Legend):
             obj_list = self._legends
+            self.scene.add(graphic.world_object)
 
         elif isinstance(graphic, Graphic):
             obj_list = self._graphics
+            self._graphics_scene.add(graphic.world_object)
 
         else:
             raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
@@ -481,9 +489,6 @@ class PlotArea:
             obj_list.append(graphic)
         else:
             raise ValueError("valid actions are 'insert' | 'add'")
-
-        # add world object to scene
-        self.scene.add(graphic.world_object)
 
         if center:
             self.center_graphic(graphic)
@@ -518,7 +523,7 @@ class PlotArea:
         # probably because camera.show_object uses bounding sphere
         self.camera.zoom = zoom
 
-    def center_scene(self, *, zoom: float = 1.35):
+    def center_scene(self, *, zoom: float = 1.0):
         """
         Auto-center the scene, does not scale.
 
@@ -528,13 +533,13 @@ class PlotArea:
             apply a zoom after centering the scene
 
         """
-        if not len(self.scene.children) > 0:
+        if not len(self._graphics_scene.children) > 0:
             return
 
         # scale all cameras associated with this controller
         # else it looks wonky
         for camera in self.controller.cameras:
-            camera.show_object(self.scene)
+            camera.show_object(self._graphics_scene)
 
             # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
             # probably because camera.show_object uses bounding sphere
@@ -544,7 +549,7 @@ class PlotArea:
         self,
         *,  # since this is often used as an event handler, don't want to coerce maintain_aspect = True
         maintain_aspect: None | bool = None,
-        zoom: float = 0.8,
+        zoom: float = 1.0,
     ):
         """
         Auto-scale the camera w.r.t to the scene
@@ -559,12 +564,8 @@ class PlotArea:
             zoom value for the camera after auto-scaling, if zoom = 1.0 then the graphics
             in the scene will fill the entire canvas.
         """
-        if not len(self.scene.children) > 0:
+        if not len(self._graphics_scene.children) > 0:
             return
-        # hacky workaround for now until we decide if we want to put selectors in their own scene
-        # remove all selectors from a scene to calculate scene bbox
-        for selector in self.selectors:
-            self.scene.remove(selector.world_object)
 
         self.center_scene()
 
@@ -575,8 +576,8 @@ class PlotArea:
         for camera in self.controller.cameras:
             camera.maintain_aspect = maintain_aspect
 
-        if len(self.scene.children) > 0:
-            width, height, depth = np.ptp(self.scene.get_world_bounding_box(), axis=0)
+        if len(self._graphics_scene.children) > 0:
+            width, height, depth = np.ptp(self._graphics_scene.get_world_bounding_box(), axis=0)
         else:
             width, height, depth = (1, 1, 1)
 
@@ -585,9 +586,6 @@ class PlotArea:
             width = 1
         if height < 0.01:
             height = 1
-
-        for selector in self.selectors:
-            self.scene.add(selector.world_object)
 
         # scale all cameras associated with this controller else it looks wonky
         for camera in self.controller.cameras:
@@ -609,7 +607,11 @@ class PlotArea:
 
         """
 
-        self.scene.remove(graphic.world_object)
+        if isinstance(graphic, (BaseSelector, Legend)):
+            self.scene.remove(graphic.world_object)
+
+        elif isinstance(graphic, Graphic):
+            self._graphics_scene.remove(graphic.world_object)
 
     def delete_graphic(self, graphic: Graphic):
         """
@@ -626,15 +628,19 @@ class PlotArea:
 
         if isinstance(graphic, BaseSelector):
             self._selectors.remove(graphic)
+
         elif isinstance(graphic, Legend):
             self._legends.remove(graphic)
 
         elif isinstance(graphic, Graphic):
-            self._graphics.remove(graphic)
+            self._graphics_scene.remove(graphic)
 
         # remove from scene if necessary
         if graphic.world_object in self.scene.children:
             self.scene.remove(graphic.world_object)
+
+        elif graphic.world_object in self._graphics_scene.children:
+            self._graphics_scene.remove(graphic.world_object)
 
         # cleanup
         graphic._fpl_prepare_del()
