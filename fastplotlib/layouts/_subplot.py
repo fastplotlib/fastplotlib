@@ -10,6 +10,7 @@ from ..graphics import TextGraphic
 from ._utils import make_canvas_and_renderer, create_camera, create_controller
 from ._plot_area import PlotArea
 from ._graphic_methods_mixin import GraphicMethodsMixin
+from .ui._toolbar import SubplotToolbar
 
 
 class Subplot(PlotArea, GraphicMethodsMixin):
@@ -116,6 +117,13 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         if self.name is not None:
             self.set_title(self.name)
 
+        self.toolbar = SubplotToolbar(self, self.parent._imgui_icons)
+
+    #     self.add_animations(self.render_imgui)
+    #
+    # def render_imgui(self):
+    #     self.parent.imgui_renderer.render(self.toolbar.update())
+
     @property
     def name(self) -> str:
         return self._name
@@ -171,14 +179,22 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         row_ix, col_ix = self.position
         width_canvas, height_canvas = self.renderer.logical_size
 
+        # spacings for imgui toolbar
+        height_canvas -= 50
+        if row_ix > 0:
+            top_spacing = 50
+        else:
+            top_spacing = 0
+
         x_pos = (
             (width_canvas / self.ncols) + ((col_ix - 1) * (width_canvas / self.ncols))
         ) + self.spacing
         y_pos = (
             (height_canvas / self.nrows) + ((row_ix - 1) * (height_canvas / self.nrows))
-        ) + self.spacing
+        ) + self.spacing + top_spacing
+
         width_subplot = (width_canvas / self.ncols) - self.spacing
-        height_subplot = (height_canvas / self.nrows) - self.spacing
+        height_subplot = (height_canvas / self.nrows) - self.spacing - top_spacing
 
         rect = np.array([x_pos, y_pos, width_subplot, height_subplot])
 
@@ -246,6 +262,7 @@ class Dock(PlotArea):
 
         row_ix_parent, col_ix_parent = self.parent.position
         width_canvas, height_canvas = self.parent.renderer.logical_size
+        height_canvas -= 60
 
         spacing = 2  # spacing in pixels
 

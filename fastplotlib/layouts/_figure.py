@@ -9,9 +9,13 @@ from typing import Literal, Iterable
 from inspect import getfullargspec
 from warnings import warn
 
+import imgui_bundle
+from imgui_bundle import imgui, icons_fontawesome_6 as fa, imgui_ctx
+
 import pygfx
 
 from wgpu.gui import WgpuCanvasBase
+from wgpu.utils.imgui import ImguiRenderer
 
 from ._video_writer import VideoWriterAV
 from ._utils import make_canvas_and_renderer, create_controller, create_camera
@@ -110,6 +114,21 @@ class Figure:
             subplot_names = None
 
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
+
+        self.imgui_renderer = ImguiRenderer(renderer.device, canvas)
+
+        path = str(Path(imgui_bundle.__file__).parent.joinpath("assets", "fonts", "Font_Awesome_6_Free-Solid-900.otf"))
+
+        io = imgui.get_io()
+
+        self._imgui_icons = io.fonts.add_font_from_file_ttf(
+            path,
+            24,
+            glyph_ranges_as_int_list=[fa.ICON_MIN_FA, fa.ICON_MAX_FA]
+        )
+
+        io.fonts.build()
+        self.imgui_renderer.backend.create_fonts_texture()
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
@@ -398,6 +417,19 @@ class Figure:
             subplot.render()
 
         self.renderer.flush()
+
+        # begin making new frame data for imgui
+        imgui.new_frame()
+
+        # update the toolbars
+        for subplot in self:
+            subplot.toolbar.update()
+
+        # render new UI frame
+        imgui.end_frame()
+        imgui.render()
+        self.imgui_renderer.render(imgui.get_draw_data())
+
         self.canvas.request_draw()
 
         # call post-render animate functions
@@ -415,7 +447,6 @@ class Figure:
         toolbar: bool = True,
         sidecar: bool = False,
         sidecar_kwargs: dict = None,
-        add_widgets: list = None,
     ):
         """
         Begins the rendering event loop and shows the plot in the desired output context (jupyter, qt or glfw).
@@ -438,9 +469,6 @@ class Figure:
             kwargs for sidecar instance to display plot
             i.e. title, layout
 
-        add_widgets: list of widgets
-            a list of ipywidgets or QWidget that are vertically stacked below the plot
-
         Returns
         -------
         OutputContext
@@ -454,12 +482,6 @@ class Figure:
             return self._output
 
         self.start_render()
-
-        if sidecar_kwargs is None:
-            sidecar_kwargs = dict()
-
-        if add_widgets is None:
-            add_widgets = list()
 
         # flip y-axis if ImageGraphics are present
         for subplot in self:
@@ -484,17 +506,15 @@ class Figure:
 
             self._output = JupyterOutputContext(
                 frame=self,
-                make_toolbar=toolbar,
                 use_sidecar=sidecar,
                 sidecar_kwargs=sidecar_kwargs,
-                add_widgets=add_widgets,
             )
 
         elif self.canvas.__class__.__name__ == "QWgpuCanvas":
             from .output.qt_output import QOutputContext  # noqa - inline import
 
             self._output = QOutputContext(
-                frame=self, make_toolbar=toolbar, add_widgets=add_widgets
+                frame=self,
             )
 
         else:  # assume GLFW, the output context is just the canvas

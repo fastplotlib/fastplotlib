@@ -1,5 +1,4 @@
 from ...utils.gui import QtWidgets
-from ._qt_toolbar import QToolbar
 
 
 class QOutputContext(QtWidgets.QWidget):
@@ -12,8 +11,6 @@ class QOutputContext(QtWidgets.QWidget):
     def __init__(
         self,
         frame,
-        make_toolbar,
-        add_widgets,
     ):
         """
 
@@ -36,22 +33,13 @@ class QOutputContext(QtWidgets.QWidget):
         # add canvas to layout
         self.vlayout.addWidget(self.frame.canvas)
 
-        if make_toolbar:  # make toolbar and add to layout
-            self.toolbar = QToolbar(output_context=self, figure=frame)
-            self.vlayout.addWidget(self.toolbar)
-
-        for w in add_widgets:  # add any additional widgets to layout
-            w.setParent(self)
-            self.vlayout.addWidget(w)
-
         self.setLayout(self.vlayout)
 
-        self.resize(*self.frame._starting_size)
-
         self.show()
+
+        self.resize(*self.frame._starting_size)
 
     def close(self):
         """Cleanup and close the output context"""
         self.frame.canvas.close()
-        self.toolbar.close()
         super().close()  # QWidget cleanup
