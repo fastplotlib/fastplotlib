@@ -130,6 +130,10 @@ class Figure:
         io.fonts.build()
         self.imgui_renderer.backend.create_fonts_texture()
 
+        # number of pixels in the width, height we reserve for imgui at the right and bottom edges of the canvas
+        # used for imagewidget sliders or other imgui stuff
+        self.imgui_reserved_canvas = [0, 0]
+
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
             cameras = np.array([cameras] * len(self)).reshape(self.shape)
@@ -350,6 +354,8 @@ class Figure:
         else:
             self.recorder = None
 
+        self._imgui_updaters: list[callable] = list()
+
     @property
     def toolbar(self):
         """ipywidget or QToolbar instance"""
@@ -409,6 +415,9 @@ class Figure:
         else:
             return self._subplots[index[0], index[1]]
 
+    def add_imgui_ui(self, func: callable):
+        self._imgui_updaters.append(func)
+
     def render(self):
         # call the animation functions before render
         self._call_animate_functions(self._animate_funcs_pre)
@@ -425,6 +434,10 @@ class Figure:
         # update the toolbars
         for subplot in self:
             subplot.toolbar.update()
+
+        # call any other imgui updaters
+        for func in self._imgui_updaters:
+            func()
 
         # render new UI frame
         imgui.end_frame()

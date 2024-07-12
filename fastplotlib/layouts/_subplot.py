@@ -179,6 +179,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         row_ix, col_ix = self.position
         width_canvas, height_canvas = self.renderer.logical_size
 
+        width_canvas -= self.parent.imgui_reserved_canvas[0]
+        height_canvas -= self.parent.imgui_reserved_canvas[1]
+
         # spacings for imgui toolbar
         height_canvas -= 50
         if row_ix > 0:
@@ -262,6 +265,10 @@ class Dock(PlotArea):
 
         row_ix_parent, col_ix_parent = self.parent.position
         width_canvas, height_canvas = self.parent.renderer.logical_size
+
+        width_canvas -= self.parent.parent.imgui_reserved_canvas[0]
+        height_canvas -= self.parent.parent.imgui_reserved_canvas[1]
+
         height_canvas -= 60
 
         spacing = 2  # spacing in pixels

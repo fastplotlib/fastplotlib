@@ -1,12 +1,13 @@
-from typing import Any, Literal, Callable
+from typing import Any, Callable
 from warnings import warn
 
 import numpy as np
 
-from ..layouts import Figure
-from ..graphics import ImageGraphic
-from ..utils import calculate_figure_shape
-from .histogram_lut import HistogramLUT
+from ...layouts import Figure
+from ...graphics import ImageGraphic
+from ...utils import calculate_figure_shape
+from ..histogram_lut import HistogramLUT
+from ._toolbar import ImageWidgetToolbar
 
 
 # Number of dimensions that represent one image/one frame. For grayscale shape will be [x, y], i.e. 2 dims, for RGB(A)
@@ -171,11 +172,6 @@ class ImageWidget:
         return self._n_scrollable_dims
 
     @property
-    def sliders(self) -> dict[str, Any]:
-        """the ipywidget IntSlider or QSlider instances used by the widget for indexing the desired dimensions"""
-        return self._image_widget_toolbar.sliders
-
-    @property
     def slider_dims(self) -> list[str]:
         """the dimensions that the sliders index"""
         return self._slider_dims
@@ -271,12 +267,6 @@ class ImageWidget:
                 )
 
         self._current_index.update(index)
-
-        # can make a callback_block decorator later
-        self.block_sliders = True
-        for k in index.keys():
-            self.sliders[k].value = index[k]
-        self.block_sliders = False
 
         for i, (ig, data) in enumerate(zip(self.managed_graphics, self.data)):
             frame = self._process_indices(data, self._current_index)
@@ -537,7 +527,13 @@ class ImageWidget:
                 subplot.docks["right"].controller.enabled = False
 
         self.block_sliders = False
-        self._image_widget_toolbar = None
+
+        # TODO: Can probably have a base class for all imgui UIs that fastplotlib
+        #  supports and Figure() will take it as an instance and call update().
+        #  Figure will give it the font and any other config, maybe the ID_COUNTER too?
+        self.figure.imgui_reserved_canvas = [0, 75]
+        self._image_widget_toolbar = ImageWidgetToolbar(self, icons=self._figure._imgui_icons)
+        self.figure.add_imgui_ui(self._image_widget_toolbar.update)
 
     @property
     def frame_apply(self) -> dict | None:
@@ -799,8 +795,6 @@ class ImageWidget:
         if reset_indices:
             for key in self.current_index:
                 self.current_index[key] = 0
-            for key in self.sliders:
-                self.sliders[key].value = 0
 
         # set slider max according to new data
         max_lengths = dict()
@@ -879,9 +873,7 @@ class ImageWidget:
 
         # set slider maxes
         # TODO: maybe make this stuff a property, like ndims, n_frames etc. and have it set the sliders
-        for key in self.sliders.keys():
-            self.sliders[key].max = max_lengths[key]
-            self._dims_max_bounds[key] = max_lengths[key]
+        self._dims_max_bounds[key] = max_lengths[key]
 
         # force graphics to update
         self.current_index = self.current_index
@@ -897,21 +889,11 @@ class ImageWidget:
         OutputContext
             ImageWidget just uses the Gridplot output context
         """
-        if self.figure.canvas.__class__.__name__ == "JupyterWgpuCanvas":
-            from ._image_widget_ipywidget_toolbar import IpywidgetImageWidgetToolbar
-
-            self._image_widget_toolbar = IpywidgetImageWidgetToolbar(self)
-
-        elif self.figure.canvas.__class__.__name__ == "QWgpuCanvas":
-            from ._image_widget_qt_toolbar import QToolbarImageWidget
-
-            self._image_widget_toolbar = QToolbarImageWidget(self)
 
         self._output = self.figure.show(
             toolbar=toolbar,
             sidecar=sidecar,
             sidecar_kwargs=sidecar_kwargs,
-            add_widgets=[self._image_widget_toolbar],
         )
 
         return self._output
