@@ -60,6 +60,4 @@ class SubplotToolbar:
 
         imgui.pop_id()
 
-        # imgui.pop_font()
-
         imgui.end()

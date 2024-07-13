@@ -1,4 +1,3 @@
-import os
 from itertools import product, chain
 from multiprocessing import Queue
 from pathlib import Path
@@ -10,7 +9,7 @@ from inspect import getfullargspec
 from warnings import warn
 
 import imgui_bundle
-from imgui_bundle import imgui, icons_fontawesome_6 as fa, imgui_ctx
+from imgui_bundle import imgui, icons_fontawesome_6 as fa
 
 import pygfx
 
@@ -21,6 +20,7 @@ from ._video_writer import VideoWriterAV
 from ._utils import make_canvas_and_renderer, create_controller, create_camera
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
+from .ui._right_click_menu import RightClickMenu
 from .. import ImageGraphic
 
 
@@ -356,6 +356,8 @@ class Figure:
 
         self._imgui_updaters: list[callable] = list()
 
+        self._right_click_menu = RightClickMenu(self)
+
     @property
     def toolbar(self):
         """ipywidget or QToolbar instance"""
@@ -438,6 +440,9 @@ class Figure:
         # call any other imgui updaters
         for func in self._imgui_updaters:
             func()
+
+        # make right click menu
+        self._right_click_menu.update()
 
         # render new UI frame
         imgui.end_frame()
