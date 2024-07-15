@@ -369,8 +369,8 @@ class ImageWidget:
                 # Grid computations
                 if figure_shape is None:
                     if figure_kwargs is not None:
-                        if 'shape' in figure_kwargs:
-                            figure_shape = figure_kwargs['shape']
+                        if "shape" in figure_kwargs:
+                            figure_shape = figure_kwargs["shape"]
                     else:
                         figure_shape = calculate_figure_shape(len(data))
 
@@ -384,8 +384,6 @@ class ImageWidget:
                         f" but data length is {len(data)}"
                         f" Resetting figure shape to: {figure_shape}"
                     )
-
-
 
                 self._data: list[np.ndarray] = data
 
@@ -516,7 +514,7 @@ class ImageWidget:
         # update the default kwargs with any user-specified kwargs
         # user specified kwargs will overwrite the defaults
         figure_kwargs_default.update(figure_kwargs)
-        figure_kwargs_default['shape'] = figure_shape
+        figure_kwargs_default["shape"] = figure_shape
 
         if graphic_kwargs is None:
             graphic_kwargs = dict()
