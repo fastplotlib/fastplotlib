@@ -357,6 +357,9 @@ class ImageWidget:
         """
         self._names = None
 
+        if figure_kwargs is None:
+            figure_kwargs = dict()
+
         # output context
         self._output = None
 
@@ -368,9 +371,8 @@ class ImageWidget:
             if all([_is_arraylike(d) for d in data]):
                 # Grid computations
                 if figure_shape is None:
-                    if figure_kwargs is not None:
-                        if "shape" in figure_kwargs:
-                            figure_shape = figure_kwargs["shape"]
+                    if "shape" in figure_kwargs:
+                        figure_shape = figure_kwargs["shape"]
                     else:
                         figure_shape = calculate_figure_shape(len(data))
 
@@ -508,8 +510,6 @@ class ImageWidget:
                         )
 
         figure_kwargs_default = {"controller_ids": "sync"}
-        if figure_kwargs is None:
-            figure_kwargs = dict()
 
         # update the default kwargs with any user-specified kwargs
         # user specified kwargs will overwrite the defaults
