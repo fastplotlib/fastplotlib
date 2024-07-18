@@ -43,30 +43,10 @@ class RightClickMenu:
             if imgui.menu_item(f"Center", None, False)[0]:
                 self.get_subplot().auto_scale()
 
-            _, enabled_controller = imgui.menu_item(
-                "Controller Enabled", None, self.get_subplot().controller.enabled
-            )
-            self.get_subplot().controller.enabled = enabled_controller
-
             _, maintain_aspect = imgui.menu_item(
                 "Maintain Aspect", None, self.get_subplot().camera.maintain_aspect
             )
             self.get_subplot().camera.maintain_aspect = maintain_aspect
-
-            # controller must be disabled for this
-            # orig_val = self.get_subplot().controller.enabled
-            # self.get_subplot().controller.enabled = False
-            changed, fov = imgui.slider_int(
-                "FOV",
-                v=int(self.get_subplot().camera.fov),
-                v_min=0,
-                v_max=180,
-            )
-            if changed:
-                self.get_subplot().controller.update_fov(
-                    fov - self.get_subplot().camera.fov, animate=False
-                )
-            # self.get_subplot().controller.enabled = orig_val
 
             if imgui.begin_menu("Controller Type"):
                 for name, controller_type_iter in controller_types.items():
@@ -83,8 +63,27 @@ class RightClickMenu:
                         self.get_subplot().controller = name
 
                 imgui.end_menu()
+
+            # if imgui.begin_menu("Controller"):
+            #     _, enabled_controller = imgui.menu_item(
+            #         "Enabled", None, self.get_subplot().controller.enabled
+            #     )
+            #
+            #     self.get_subplot().controller.enabled = enabled_controller
+            #
+            #     changed, damping = imgui.slider_int(
+            #         "damping",
+            #         v=int(self.get_subplot().controller.damping),
+            #         v_min=0,
+            #         v_max=10,
+            #     )
+            #     if changed:
+            #         self.get_subplot().controller.damping = damping
+
+                
+
             imgui.end_popup()
 
-        elif self._is_open:
+        # elif self._is_open:
             # went from open -> closed
             self.figure.renderer.enable_events()
