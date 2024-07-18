@@ -474,7 +474,7 @@ class Figure:
                     _maintain_aspect = subplot.camera.maintain_aspect
                 else:
                     _maintain_aspect = maintain_aspect
-                subplot.auto_scale(maintain_aspect=_maintain_aspect, zoom=0.95)
+                subplot.auto_scale(maintain_aspect=maintain_aspect)
 
         # return the appropriate OutputContext based on the current canvas
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
