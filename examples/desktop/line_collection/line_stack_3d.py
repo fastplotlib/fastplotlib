@@ -22,6 +22,7 @@ multi_data = np.stack([data] * 10)
 
 # create figure to plot lines and use an orbit controller in 3D
 figure = fpl.Figure(cameras="3d", controller_types="orbit")
+figure[0, 0].axes.grids.visible = False
 
 line_stack = figure[0, 0].add_line_stack(
     multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
@@ -88,7 +89,7 @@ camera_state = {
     "fov": 50.0,
     "width": 32,
     "height": 20,
-    "zoom": 1,
+    "zoom": 0.7,
     "maintain_aspect": True,
     "depth_range": None,
 }
