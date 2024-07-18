@@ -101,8 +101,8 @@ class PlotArea:
 
         # keep all graphics in a separate group, makes bbox calculations etc. easier
         # this is the "real scene" excluding axes, selection tools etc.
-        self._graphics_scene = pygfx.Group()
-        self.scene.add(self._graphics_scene)
+        self._fpl_graphics_scene = pygfx.Group()
+        self.scene.add(self._fpl_graphics_scene)
 
         self._name = name
 
@@ -399,7 +399,7 @@ class PlotArea:
 
         if graphic in self:
             # graphic is already in this plot but was removed from the scene, add it back
-            self._graphics_scene.add(graphic.world_object)
+            self._fpl_graphics_scene.add(graphic.world_object)
             return
 
         self._add_or_insert_graphic(graphic=graphic, center=center, action="add")
@@ -478,7 +478,7 @@ class PlotArea:
 
         elif isinstance(graphic, Graphic):
             obj_list = self._graphics
-            self._graphics_scene.add(graphic.world_object)
+            self._fpl_graphics_scene.add(graphic.world_object)
 
         else:
             raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
@@ -533,13 +533,13 @@ class PlotArea:
             apply a zoom after centering the scene
 
         """
-        if not len(self._graphics_scene.children) > 0:
+        if not len(self._fpl_graphics_scene.children) > 0:
             return
 
         # scale all cameras associated with this controller
         # else it looks wonky
         for camera in self.controller.cameras:
-            camera.show_object(self._graphics_scene)
+            camera.show_object(self._fpl_graphics_scene)
 
             # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
             # probably because camera.show_object uses bounding sphere
@@ -549,7 +549,7 @@ class PlotArea:
         self,
         *,  # since this is often used as an event handler, don't want to coerce maintain_aspect = True
         maintain_aspect: None | bool = None,
-        zoom: float = 1.0,
+        zoom: float = 0.75,
     ):
         """
         Auto-scale the camera w.r.t to the scene
@@ -564,7 +564,7 @@ class PlotArea:
             zoom value for the camera after auto-scaling, if zoom = 1.0 then the graphics
             in the scene will fill the entire canvas.
         """
-        if not len(self._graphics_scene.children) > 0:
+        if not len(self._fpl_graphics_scene.children) > 0:
             return
 
         self.center_scene()
@@ -576,8 +576,8 @@ class PlotArea:
         for camera in self.controller.cameras:
             camera.maintain_aspect = maintain_aspect
 
-        if len(self._graphics_scene.children) > 0:
-            width, height, depth = np.ptp(self._graphics_scene.get_world_bounding_box(), axis=0)
+        if len(self._fpl_graphics_scene.children) > 0:
+            width, height, depth = np.ptp(self._fpl_graphics_scene.get_world_bounding_box(), axis=0)
         else:
             width, height, depth = (1, 1, 1)
 
@@ -611,7 +611,7 @@ class PlotArea:
             self.scene.remove(graphic.world_object)
 
         elif isinstance(graphic, Graphic):
-            self._graphics_scene.remove(graphic.world_object)
+            self._fpl_graphics_scene.remove(graphic.world_object)
 
     def delete_graphic(self, graphic: Graphic):
         """
@@ -633,14 +633,14 @@ class PlotArea:
             self._legends.remove(graphic)
 
         elif isinstance(graphic, Graphic):
-            self._graphics_scene.remove(graphic)
+            self._fpl_graphics_scene.remove(graphic)
 
         # remove from scene if necessary
         if graphic.world_object in self.scene.children:
             self.scene.remove(graphic.world_object)
 
-        elif graphic.world_object in self._graphics_scene.children:
-            self._graphics_scene.remove(graphic.world_object)
+        elif graphic.world_object in self._fpl_graphics_scene.children:
+            self._fpl_graphics_scene.remove(graphic.world_object)
 
         # cleanup
         graphic._fpl_prepare_del()
