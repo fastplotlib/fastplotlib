@@ -10,7 +10,7 @@ from ..graphics import TextGraphic
 from ._utils import make_canvas_and_renderer, create_camera, create_controller
 from ._plot_area import PlotArea
 from ._graphic_methods_mixin import GraphicMethodsMixin
-from ._axes import Axes
+from ..graphics._axes import Axes
 
 
 class Subplot(PlotArea, GraphicMethodsMixin):
@@ -111,9 +111,12 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         if self.name is not None:
             self.set_title(self.name)
 
-        self.axes = Axes(self)
+        self._axes = Axes(self)
         self.scene.add(self.axes.world_object)
-        self.add_animations(self.axes.animate)
+
+    @property
+    def axes(self) -> Axes:
+        return self._axes
 
     @property
     def name(self) -> str:
@@ -138,6 +141,10 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         """
         return self._docks
+
+    def render(self):
+        self.axes.animate()
+        super().render()
 
     def set_title(self, text: str):
         """Sets the plot title, stored as a ``TextGraphic`` in the "top" dock area"""
