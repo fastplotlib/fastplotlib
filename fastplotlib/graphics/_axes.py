@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 import numpy as np
 
 import pygfx
@@ -112,6 +111,7 @@ class Grid(pygfx.Grid):
 
 
 class Grids(pygfx.Group):
+    """Just a class to make accessing the grids easier"""
     def __init__(self, *, xy, xz, yz):
         super().__init__()
 
@@ -123,14 +123,17 @@ class Grids(pygfx.Group):
 
     @property
     def xy(self) -> Grid:
+        """xy grid"""
         return self._xy
 
     @property
     def xz(self) -> Grid:
+        """xz grid"""
         return self._xz
 
     @property
     def yz(self) -> Grid:
+        """yz grid"""
         return self._yz
 
 
@@ -173,6 +176,7 @@ class Axes:
             **z_kwargs,
         }
 
+        # create ruler for each dim
         self._x = pygfx.Ruler(**x_kwargs)
         self._y = pygfx.Ruler(**y_kwargs)
         self._z = pygfx.Ruler(**z_kwargs)
@@ -194,15 +198,19 @@ class Axes:
         self.z.start_pos = 0, 0, 0
         self.z.end_pos = 0, 0, 100
         self.z.start_value = self.z.start_pos[1] - offset[2]
-        statsz = self.z.update(self._plot_area.camera, self._plot_area.viewport.logical_size)
+        self.z.update(self._plot_area.camera, self._plot_area.viewport.logical_size)
 
+        # world object for the rulers + grids
         self._world_object = pygfx.Group()
+
+        # add rulers
         self.world_object.add(
             self.x,
             self.y,
             self._z,
         )
 
+        # set z ruler invisible for orthographic projections for now
         if self._plot_area.camera.fov == 0:
             # TODO: allow any orientation in the future even for orthographic projections
             self.z.visible = False
@@ -235,6 +243,7 @@ class Axes:
             self.world_object.add(self._grids)
 
             if self._plot_area.camera.fov == 0:
+                # orthographic projection, place grids far away
                 self._grids.local.z = -1000
 
             major_step_x, major_step_y = statsx["tick_step"], statsy["tick_step"]
@@ -254,6 +263,7 @@ class Axes:
 
     @property
     def offset(self) -> np.ndarray:
+        """offset of the axes"""
         return self._offset
 
     @offset.setter
@@ -272,15 +282,17 @@ class Axes:
 
     @property
     def z(self) -> pygfx.Ruler:
+        """z axis ruler"""
         return self._z
 
     @property
     def grids(self) -> Grids | bool:
-        """grids for each plane if present: 'xy', 'xz', 'yz'"""
+        """grids for each plane: xy, xz, yz"""
         return self._grids
 
     @property
     def auto_grid(self) -> bool:
+        """auto adjust the grid on each render cycle"""
         return self._auto_grid
 
     @auto_grid.setter
@@ -289,6 +301,7 @@ class Axes:
 
     @property
     def visible(self) -> bool:
+        """set visibility of all axes elements, rulers and grids"""
         return self._world_object.visible
 
     @visible.setter
@@ -297,6 +310,7 @@ class Axes:
 
     @property
     def follow(self) -> bool:
+        """if True, axes will follow during pan-zoom movements, only for orthographic projections"""
         return self._follow
 
     @follow.setter
@@ -306,10 +320,21 @@ class Axes:
         self._follow = value
 
     def update_bounded(self, bbox):
+        """update the axes using the given bbox"""
         self._update(bbox, (0, 0, 0))
 
     def auto_update(self):
-        # TODO: figure out z
+        """
+        Auto update the axes
+
+        For orthographic projections of the xy plane, it will calculate the inverse projection
+        of the screen space onto world space to determine the current range of the world space
+        to set the rulers and ticks
+
+        For perspective projetions it will just use the bbox of the scene to set the rulers
+
+        """
+
         rect = self._plot_area.get_rect()
 
         if self._plot_area.camera.fov == 0:
@@ -344,10 +369,12 @@ class Axes:
 
         self._update(bbox, edge_positions)
 
-    def _update(self, bbox, edge_positions):
+    def _update(self, bbox, ruler_intersection_point):
+        """update the axes using the given bbox and ruler intersection point"""
+
         world_xmin, world_ymin, world_zmin = bbox[0]
         world_xmax, world_ymax, world_zmax = bbox[1]
-        world_x_10, world_y_10, world_z_10 = edge_positions
+        world_x_10, world_y_10, world_z_10 = ruler_intersection_point
 
         # swap min and max for each dimension if necessary
         if self._plot_area.camera.local.scale_y < 0:
