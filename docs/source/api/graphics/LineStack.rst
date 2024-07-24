@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: LineStack_api
 
+    LineStack.axes
     LineStack.block_events
     LineStack.cmap
     LineStack.colors
@@ -45,6 +46,7 @@ Methods
 .. autosummary::
     :toctree: LineStack_api
 
+    LineStack.add_axes
     LineStack.add_event_handler
     LineStack.add_graphic
     LineStack.add_linear_region_selector

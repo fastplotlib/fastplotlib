@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: ScatterGraphic_api
 
+    ScatterGraphic.axes
     ScatterGraphic.block_events
     ScatterGraphic.cmap
     ScatterGraphic.colors
@@ -39,6 +40,7 @@ Methods
 .. autosummary::
     :toctree: ScatterGraphic_api
 
+    ScatterGraphic.add_axes
     ScatterGraphic.add_event_handler
     ScatterGraphic.clear_event_handlers
     ScatterGraphic.remove_event_handler

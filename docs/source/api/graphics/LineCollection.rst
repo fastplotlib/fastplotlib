@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: LineCollection_api
 
+    LineCollection.axes
     LineCollection.block_events
     LineCollection.cmap
     LineCollection.colors
@@ -45,6 +46,7 @@ Methods
 .. autosummary::
     :toctree: LineCollection_api
 
+    LineCollection.add_axes
     LineCollection.add_event_handler
     LineCollection.add_graphic
     LineCollection.add_linear_region_selector

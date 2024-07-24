@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: Subplot_api
 
+    Subplot.axes
     Subplot.camera
     Subplot.canvas
     Subplot.controller
@@ -60,8 +61,6 @@ Methods
     Subplot.remove_animation
     Subplot.remove_graphic
     Subplot.render
-    Subplot.set_axes_visibility
-    Subplot.set_grid_visibility
     Subplot.set_title
     Subplot.set_viewport_rect
 
