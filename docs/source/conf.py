@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT_DIR))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "fastplotlib"
-copyright = "2023, Kushal Kolar, Caitlin Lewis"
+copyright = "2024, Kushal Kolar, Caitlin Lewis"
 author = "Kushal Kolar, Caitlin Lewis"
 release = fastplotlib.__version__
 
