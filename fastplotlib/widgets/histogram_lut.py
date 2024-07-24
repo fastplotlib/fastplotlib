@@ -5,7 +5,8 @@ import numpy as np
 
 import pygfx
 
-from ..graphics import LineGraphic, ImageGraphic, TextGraphic, pause_events
+from ..graphics import LineGraphic, ImageGraphic, TextGraphic
+from ..graphics.utils import pause_events
 from ..graphics._base import Graphic
 from ..graphics.selectors import LinearRegionSelector
 
