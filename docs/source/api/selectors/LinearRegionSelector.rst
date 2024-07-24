@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: LinearRegionSelector_api
 
+    LinearRegionSelector.axes
     LinearRegionSelector.axis
     LinearRegionSelector.block_events
     LinearRegionSelector.deleted
@@ -39,6 +40,7 @@ Methods
 .. autosummary::
     :toctree: LinearRegionSelector_api
 
+    LinearRegionSelector.add_axes
     LinearRegionSelector.add_event_handler
     LinearRegionSelector.add_ipywidget_handler
     LinearRegionSelector.clear_event_handlers
