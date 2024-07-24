@@ -319,21 +319,43 @@ class Axes:
             raise TypeError
         self._follow = value
 
-    def update_bounded(self, bbox):
-        """update the axes using the given bbox"""
-        self._update(bbox, (0, 0, 0))
-
-    def auto_update(self):
+    def update_using_bbox(self, bbox):
         """
-        Auto update the axes
+        Update the w.r.t. the given bbox
+
+        Parameters
+        ----------
+        bbox: np.ndarray
+            array of shape [2, 3], [[xmin, ymin, zmin], [xmax, ymax, zmax]]
+
+        """
+
+        # flip axes if camera scale is flipped
+        if self._plot_area.camera.local.scale_x < 0:
+            bbox[0, 0], bbox[1, 0] = bbox[1, 0], bbox[0, 0]
+
+        if self._plot_area.camera.local.scale_y < 0:
+            bbox[0, 1], bbox[1, 1] = bbox[1, 1], bbox[0, 1]
+
+        if self._plot_area.camera.local.scale_z < 0:
+            bbox[0, 2], bbox[1, 2] = bbox[1, 2], bbox[0, 2]
+
+        self.update(bbox, (0, 0, 0))
+
+    def update_using_camera(self):
+        """
+        Update the axes w.r.t the current camera state
 
         For orthographic projections of the xy plane, it will calculate the inverse projection
         of the screen space onto world space to determine the current range of the world space
         to set the rulers and ticks
 
-        For perspective projetions it will just use the bbox of the scene to set the rulers
+        For perspective projections it will just use the bbox of the scene to set the rulers
 
         """
+
+        if not self.visible:
+            return
 
         if self._plot_area.camera.fov == 0:
             xpos, ypos, width, height = self._plot_area.get_rect()
@@ -358,11 +380,10 @@ class Axes:
                 [world_xmin, world_ymin, world_zmin],
                 [world_xmax, world_ymax, world_zmax]
             ])
+
         else:
             # set ruler start and end positions based on scene bbox
             bbox = self._plot_area._fpl_graphics_scene.get_world_bounding_box()
-
-        self.follow = False
 
         if self.follow and self._plot_area.camera.fov == 0:
             # place the ruler close to the left and bottom edges of the viewport
@@ -374,10 +395,21 @@ class Axes:
             # axes intersect at the origin
             edge_positions = 0, 0, 0
 
-        self._update(bbox, edge_positions)
+        self.update(bbox, edge_positions)
 
-    def _update(self, bbox, ruler_intersection_point):
-        """update the axes using the given bbox and ruler intersection point"""
+    def update(self, bbox, ruler_intersection_point):
+        """
+        Update the axes using the given bbox and ruler intersection point
+
+        Parameters
+        ----------
+        bbox: np.ndarray
+            array of shape [2, 3], [[xmin, ymin, zmin], [xmax, ymax, zmax]]
+
+        ruler_intersection_point: float, float, float
+            intersection point of the x, y, z ruler
+
+        """
 
         world_xmin, world_ymin, world_zmin = bbox[0]
         world_xmax, world_ymax, world_zmax = bbox[1]
