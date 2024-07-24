@@ -1,5 +1,5 @@
 """
-Simple Line Plot
+Linear Selectors
 ================
 
 Example showing how to use a `LinearSelector` with lines, line collections, and images
