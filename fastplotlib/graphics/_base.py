@@ -436,7 +436,4 @@ class Graphic:
         self._axes.world_object.local.rotation = self.world_object.local.rotation
 
         self._plot_area.scene.add(self.axes.world_object)
-        self._plot_area.add_animations(self._update_axes)
-
-    def _update_axes(self):
-        self._axes.update_bounded(self.world_object.get_world_bounding_box())
+        self._axes.update_using_bbox(self.world_object.get_world_bounding_box())
