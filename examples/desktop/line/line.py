@@ -11,7 +11,7 @@ Example showing cosine, sine, sinc lines.
 import fastplotlib as fpl
 import numpy as np
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 xs = np.linspace(-10, 10, 100)
 # sine wave
@@ -38,9 +38,6 @@ sinc_graphic = figure[0, 0].add_line(data=sinc, thickness=5, colors=colors)
 
 figure.show()
 
-figure.canvas.set_logical_size(700, 560)
-
-figure[0, 0].auto_scale()
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

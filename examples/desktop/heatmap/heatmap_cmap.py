@@ -11,7 +11,7 @@ Change the cmap of a heatmap
 import fastplotlib as fpl
 import numpy as np
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 xs = np.linspace(0, 1_000, 10_000, dtype=np.float32)
 
@@ -23,10 +23,6 @@ data = np.vstack([sine * i for i in range(20_000)])
 img = figure[0, 0].add_image(data=data, name="heatmap")
 
 figure.show()
-
-figure.canvas.set_logical_size(700, 560)
-
-figure[0, 0].auto_scale()
 
 img.cmap = "viridis"
 

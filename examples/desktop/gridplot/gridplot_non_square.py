@@ -11,7 +11,7 @@ Example showing simple 2x2 GridPlot with Standard images from imageio.
 import fastplotlib as fpl
 import imageio.v3 as iio
 
-figure = fpl.Figure(shape=(2, 2), controller_ids="sync")
+figure = fpl.Figure(shape=(2, 2), controller_ids="sync", size=(700, 560))
 
 im = iio.imread("imageio:clock.png")
 im2 = iio.imread("imageio:astronaut.png")
@@ -23,10 +23,6 @@ figure[1, 0].add_image(data=im3)
 
 figure.show()
 
-figure.canvas.set_logical_size(700, 560)
-
-for subplot in figure:
-    subplot.auto_scale()
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

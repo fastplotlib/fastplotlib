@@ -19,7 +19,7 @@ increment = (2 * np.pi) / 50
 xs = np.linspace(start, stop, 100)
 ys = np.sin(xs)
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 # plot the image data
 sine = figure[0, 0].add_line(ys, name="sine", colors="r")
@@ -40,11 +40,8 @@ def update_line(subplot):
 
 figure[0, 0].add_animations(update_line)
 
-figure.show()
+figure.show(maintain_aspect=False)
 
-figure.canvas.set_logical_size(700, 560)
-
-figure[0,0].auto_scale(maintain_aspect=False)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

@@ -13,16 +13,13 @@ import imageio.v3 as iio
 
 im = iio.imread("imageio:astronaut.png")
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 # plot the image data
 image_graphic = figure[0, 0].add_image(data=im, name="iio astronaut")
 
 figure.show()
 
-figure.canvas.set_logical_size(700, 560)
-
-figure[0, 0].auto_scale()
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

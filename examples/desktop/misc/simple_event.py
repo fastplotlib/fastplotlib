@@ -14,7 +14,7 @@ import imageio.v3 as iio
 data = iio.imread("imageio:camera.png")
 
 # Create a figure
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 # plot sine wave, use a single color
 image_graphic = figure[0,0].add_image(data=data)
@@ -46,8 +46,6 @@ def click_event(event_data):
     # print the click location
     print(xy)
 
-
-figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter
