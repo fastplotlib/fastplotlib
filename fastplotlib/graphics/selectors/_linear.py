@@ -372,7 +372,16 @@ class LinearSelector(BaseSelector):
         if "Image" in graphic.__class__.__name__:
             # indices map directly to grid geometry for image data buffer
             index = self.selection
-            return round(index)
+            shape = graphic.data[:].shape
+
+            if self.axis == "x":
+                # assume selecting columns
+                upper_bound = shape[1] - 1
+            elif self.axis == "y":
+                # assume selecting rows
+                upper_bound = shape[0] - 1
+
+            return min(round(index), upper_bound)
 
     def _move_graphic(self, delta: np.ndarray):
         """
