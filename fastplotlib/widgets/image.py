@@ -357,6 +357,9 @@ class ImageWidget:
         """
         self._names = None
 
+        if figure_kwargs is None:
+            figure_kwargs = dict()
+
         # output context
         self._output = None
 
@@ -368,13 +371,20 @@ class ImageWidget:
             if all([_is_arraylike(d) for d in data]):
                 # Grid computations
                 if figure_shape is None:
-                    figure_shape = calculate_figure_shape(len(data))
+                    if "shape" in figure_kwargs:
+                        figure_shape = figure_kwargs["shape"]
+                    else:
+                        figure_shape = calculate_figure_shape(len(data))
 
-                # verify that user-specified figure shape is large enough for the number of image arrays passed
-                elif figure_shape[0] * figure_shape[1] < len(data):
+                # Regardless of how figure_shape is computed, below code
+                # verifies that figure shape is large enough for the number of image arrays passed
+                if figure_shape[0] * figure_shape[1] < len(data):
+                    original_shape = (figure_shape[0], figure_shape[1])
                     figure_shape = calculate_figure_shape(len(data))
                     warn(
-                        f"Invalid `figure_shape` passed, setting figure shape to: {figure_shape}"
+                        f"Original `figure_shape` was: {original_shape} "
+                        f" but data length is {len(data)}"
+                        f" Resetting figure shape to: {figure_shape}"
                     )
 
                 self._data: list[np.ndarray] = data
@@ -500,19 +510,18 @@ class ImageWidget:
                         )
 
         figure_kwargs_default = {"controller_ids": "sync"}
-        if figure_kwargs is None:
-            figure_kwargs = dict()
 
         # update the default kwargs with any user-specified kwargs
         # user specified kwargs will overwrite the defaults
         figure_kwargs_default.update(figure_kwargs)
+        figure_kwargs_default["shape"] = figure_shape
 
         if graphic_kwargs is None:
             graphic_kwargs = dict()
 
         graphic_kwargs.update({"cmap": cmap})
 
-        self._figure: Figure = Figure(shape=figure_shape, **figure_kwargs_default)
+        self._figure: Figure = Figure(**figure_kwargs_default)
 
         self._histogram_widget = histogram_widget
         for data_ix, (d, subplot) in enumerate(zip(self.data, self.figure)):
