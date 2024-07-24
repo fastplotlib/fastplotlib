@@ -109,6 +109,15 @@ class PlotArea:
         # need to think about how to deal with children better
         self.children = list()
 
+        self._background_material = pygfx.BackgroundMaterial(
+            (0., 0., 0., 1.),
+            (0., 0., 0., 1.),
+            (0., 0., 0., 1.),
+            (0., 0., 0., 1.),
+        )
+        self._background = pygfx.Background(None, self._background_material)
+        self.scene.add(self._background)
+
         self.set_viewport_rect()
 
     # several read-only properties
@@ -244,6 +253,21 @@ class PlotArea:
         if not isinstance(name, str):
             raise TypeError("PlotArea `name` must be of type <str>")
         self._name = name
+
+    @property
+    def background_color(self) -> tuple[pygfx.Color, ...]:
+        """background colors, (top left, top right, bottom right, bottom left)"""
+        return (
+            self._background_material.color_top_left,
+            self._background_material.color_top_right,
+            self._background_material.color_bottom_right,
+            self._background_material.color_bottom_left,
+        )
+
+    @background_color.setter
+    def background_color(self, colors: str | tuple[float]):
+        """1, 2, or 4 colors, each color must be acceptable by pygfx.Color"""
+        self._background_material.set_colors(*colors)
 
     def get_rect(self) -> tuple[float, float, float, float]:
         """
