@@ -11,11 +11,15 @@ def pause_events(*graphics: Graphic):
     Examples
     --------
 
+    .. code-block::
+
         # pass in any number of graphics
         with fpl.pause_events(graphic1, graphic2, graphic3):
+            # enter context manager
             # all events are blocked from graphic1, graphic2, graphic3
 
         # context manager exited, event states restored.
+
     """
     if not all([isinstance(g, Graphic) for g in graphics]):
         raise TypeError(
