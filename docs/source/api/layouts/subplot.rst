@@ -21,6 +21,7 @@ Properties
     :toctree: Subplot_api
 
     Subplot.axes
+    Subplot.background_color
     Subplot.camera
     Subplot.canvas
     Subplot.controller

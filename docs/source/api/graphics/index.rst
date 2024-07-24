@@ -10,4 +10,3 @@ Graphics
     TextGraphic
     LineCollection
     LineStack
-    pause_events
