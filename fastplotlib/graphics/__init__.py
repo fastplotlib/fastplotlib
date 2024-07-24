@@ -3,7 +3,6 @@ from .scatter import ScatterGraphic
 from .image import ImageGraphic
 from .text import TextGraphic
 from .line_collection import LineCollection, LineStack
-from .utils import pause_events
 
 
 __all__ = [
@@ -13,5 +12,4 @@ __all__ = [
     "TextGraphic",
     "LineCollection",
     "LineStack",
-    "pause_events"
 ]
