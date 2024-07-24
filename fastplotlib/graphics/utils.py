@@ -5,6 +5,18 @@ from ._base import Graphic
 
 @contextmanager
 def pause_events(*graphics: Graphic):
+    """
+    Context manager for pausing Graphic events.
+
+    Examples
+    --------
+
+        # pass in any number of graphics
+        with fpl.pause_events(graphic1, graphic2, graphic3):
+            # all events are blocked from graphic1, graphic2, graphic3
+
+        # context manager exited, event states restored.
+    """
     if not all([isinstance(g, Graphic) for g in graphics]):
         raise TypeError(
             f"`pause_events` only takes Graphic instances as arguments, "
