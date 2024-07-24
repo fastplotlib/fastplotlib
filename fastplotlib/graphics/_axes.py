@@ -9,52 +9,52 @@ GRID_PLANES = ["xy", "xz", "yz"]
 # very thin subclass that just adds GridMaterial properties to this world object for easier user control
 class Grid(pygfx.Grid):
     @property
-    def major_step(self):
+    def major_step(self) -> tuple[float, float]:
         """The step distance between the major grid lines."""
         return self.material.major_step
 
     @major_step.setter
-    def major_step(self, step):
+    def major_step(self, step: tuple[float, float]):
         self.material.major_step = step
 
     @property
-    def minor_step(self):
+    def minor_step(self) -> tuple[float, float]:
         """The step distance between the minor grid lines."""
         return self.material.minor_step
 
     @minor_step.setter
-    def minor_step(self, step):
+    def minor_step(self, step: tuple[float, float]):
         self.material.minor_step = step
 
     @property
-    def axis_thickness(self):
+    def axis_thickness(self) -> float:
         """The thickness of the axis lines."""
         return self.material.axis_thickness
 
     @axis_thickness.setter
-    def axis_thickness(self, thickness):
+    def axis_thickness(self, thickness: float):
         self.material.axis_thickness = thickness
 
     @property
-    def major_thickness(self):
+    def major_thickness(self) -> float:
         """The thickness of the major grid lines."""
         return self.material.major_thickness
 
     @major_thickness.setter
-    def major_thickness(self, thickness):
+    def major_thickness(self, thickness: float):
         self.material.major_thickness = thickness
 
     @property
-    def minor_thickness(self):
+    def minor_thickness(self) -> float:
         """The thickness of the minor grid lines."""
         return self.material.minor_thickness
 
     @minor_thickness.setter
-    def minor_thickness(self, thickness):
+    def minor_thickness(self, thickness: float):
         self.material.minor_thickness = thickness
 
     @property
-    def thickness_space(self):
+    def thickness_space(self) -> str:
         """The coordinate space in which the thicknesses are expressed.
 
         See :obj:`pygfx.utils.enums.CoordSpace`:
@@ -62,38 +62,38 @@ class Grid(pygfx.Grid):
         return self.material.thickness_space
 
     @thickness_space.setter
-    def thickness_space(self, value):
+    def thickness_space(self, value: str):
         self.material.thickness_space = value
 
     @property
-    def axis_color(self):
+    def axis_color(self) -> str:
         """The color of the axis lines."""
         return self.material.axis_color
 
     @axis_color.setter
-    def axis_color(self, color):
+    def axis_color(self, color: str):
         self.material.axis_color = color
 
     @property
-    def major_color(self):
+    def major_color(self) -> str:
         """The color of the major grid lines."""
         return self.material.major_color
 
     @major_color.setter
-    def major_color(self, color):
+    def major_color(self, color: str):
         self.material.major_color = color
 
     @property
-    def minor_color(self):
+    def minor_color(self) -> str:
         """The color of the minor grid lines."""
         return self.material.minor_color
 
     @minor_color.setter
-    def minor_color(self, color):
+    def minor_color(self, color: str):
         self.material.minor_color = color
 
     @property
-    def infinite(self):
+    def infinite(self) -> bool:
         """Whether the grid is infinite.
 
         If not infinite, the grid is 1x1 in world space, scaled, rotated, and
@@ -106,7 +106,7 @@ class Grid(pygfx.Grid):
         return self.material.infinite
 
     @infinite.setter
-    def infinite(self, value):
+    def infinite(self, value: str):
         self.material.infinite = value
 
 
