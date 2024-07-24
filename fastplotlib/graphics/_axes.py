@@ -207,7 +207,7 @@ class Axes:
         self.world_object.add(
             self.x,
             self.y,
-            self._z,
+            self.z,
         )
 
         # set z ruler invisible for orthographic projections for now
@@ -335,17 +335,22 @@ class Axes:
 
         """
 
-        rect = self._plot_area.get_rect()
-
         if self._plot_area.camera.fov == 0:
+            xpos, ypos, width, height = self._plot_area.get_rect()
             # orthographic projection, get ranges using inverse
 
             # get range of screen space
-            xmin, xmax = rect[0], rect[2]
-            ymin, ymax = rect[3], rect[1]
+            xmin, xmax = xpos, xpos + width
+            ymin, ymax = ypos + height, ypos
 
-            world_xmin, world_ymin, _ = self._plot_area.map_screen_to_world((xmin, ymin))
-            world_xmax, world_ymax, _ = self._plot_area.map_screen_to_world((xmax, ymax))
+            min_vals = self._plot_area.map_screen_to_world((xmin, ymin))
+            max_vals = self._plot_area.map_screen_to_world((xmax, ymax))
+
+            if min_vals is None or max_vals is None:
+                return
+
+            world_xmin, world_ymin, _ = min_vals
+            world_xmax, world_ymax, _ = max_vals
 
             world_zmin, world_zmax = 0, 0
 
@@ -357,10 +362,12 @@ class Axes:
             # set ruler start and end positions based on scene bbox
             bbox = self._plot_area._fpl_graphics_scene.get_world_bounding_box()
 
+        self.follow = False
+
         if self.follow and self._plot_area.camera.fov == 0:
             # place the ruler close to the left and bottom edges of the viewport
             # TODO: determine this for perspective projections
-            xscreen_10, yscreen_10 = 0.1 * rect[2], 0.9 * rect[3]
+            xscreen_10, yscreen_10 = xpos + (width * 0.1), ypos + (height * 0.9)
             edge_positions = self._plot_area.map_screen_to_world((xscreen_10, yscreen_10))
 
         else:
