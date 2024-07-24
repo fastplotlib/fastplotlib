@@ -13,7 +13,7 @@ import numpy as np
 from pathlib import Path
 import sys
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 current_file = Path(sys.argv[0]).resolve()
 
@@ -27,9 +27,6 @@ scatter_graphic = figure[0, 0].add_scatter(data=data[:, :-1], sizes=6, alpha=0.7
 
 figure.show()
 
-figure.canvas.set_logical_size(700, 560)
-
-figure[0, 0].auto_scale()
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

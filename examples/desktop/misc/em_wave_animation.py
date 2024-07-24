@@ -14,7 +14,7 @@ import numpy as np
 figure = fpl.Figure(
     cameras="3d",
     controller_types="orbit",
-    size=(700, 400)
+    size=(700, 560)
 )
 
 start, stop = 0, 4 * np.pi
@@ -68,13 +68,16 @@ state = {
 
 figure[0, 0].camera.set_state(state)
 
+# make all grids except xz plane invisible to remove clutter
+figure[0, 0].axes.grids.yz.visible = False
+figure[0, 0].axes.grids.xy.visible = False
+
 figure.show()
 
 figure[0, 0].camera.zoom = 1.5
 
 increment = np.pi * 4 / 100
 
-figure.canvas.set_logical_size(700, 560)
 
 # moves the wave one step along the z-axis
 def tick(subplot):
@@ -97,6 +100,7 @@ def tick(subplot):
 
 
 figure[0, 0].add_animations(tick)
+
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

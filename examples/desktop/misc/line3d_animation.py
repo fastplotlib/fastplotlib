@@ -21,7 +21,7 @@ zs = phi
 # make data 3d, with shape [<n_vertices>, 3]
 spiral = np.dstack([xs, ys, zs])[0]
 
-figure = fpl.Figure(cameras="3d")
+figure = fpl.Figure(cameras="3d", size=(700, 560))
 
 line_graphic = figure[0,0].add_line(data=spiral, thickness=3, cmap='jet')
 
@@ -46,11 +46,11 @@ def move_marker():
 # add `move_marker` to the animations
 figure.add_animations(move_marker)
 
+# remove clutter
+figure[0, 0].axes.grids.yz.visible = False
+
 figure.show()
 
-figure.canvas.set_logical_size(700, 560)
-
-figure[0,0].auto_scale(maintain_aspect=False)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

@@ -13,7 +13,7 @@ import numpy as np
 from sklearn import datasets
 
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 data = datasets.load_iris()["data"]
 
@@ -23,10 +23,6 @@ colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 scatter_graphic = figure[0, 0].add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
 
 figure.show()
-
-figure.canvas.set_logical_size(700, 560)
-
-figure[0, 0].auto_scale()
 
 scatter_graphic.data[0] = np.array([[5, 3, 1.5]])
 scatter_graphic.data[1] = np.array([[4.3, 3.2, 1.3]])

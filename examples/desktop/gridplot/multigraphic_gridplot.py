@@ -14,7 +14,11 @@ import imageio.v3 as iio
 from itertools import product
 
 # define figure
-figure = fpl.Figure(shape=(2, 2), names=[["image-overlay", "circles"], ["line-stack", "scatter"]])
+figure = fpl.Figure(
+    shape=(2, 2),
+    names=[["image-overlay", "circles"], ["line-stack", "scatter"]],
+    size=(700, 560)
+)
 
 img = iio.imread("imageio:coffee.png")
 
@@ -105,8 +109,6 @@ figure["scatter"].add_scatter(data=gaussian_cloud, sizes=2, cmap="jet")
 figure["scatter"].add_scatter(data=gaussian_cloud2, colors="r", sizes=2)
 
 figure.show()
-
-figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

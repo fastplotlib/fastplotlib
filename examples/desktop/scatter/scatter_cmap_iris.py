@@ -13,7 +13,7 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn import datasets
 
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 data = datasets.load_iris()["data"]
 
@@ -29,10 +29,6 @@ scatter_graphic = figure[0, 0].add_scatter(
 )
 
 figure.show()
-
-figure.canvas.set_logical_size(700, 560)
-
-figure[0, 0].auto_scale()
 
 scatter_graphic.cmap = "tab10"
 
