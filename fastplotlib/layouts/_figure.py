@@ -497,6 +497,11 @@ class Figure:
                 frame=self, make_toolbar=toolbar, add_widgets=add_widgets
             )
 
+        elif self.canvas.__class__.__name__ == "WgpuManualOffscreenCanvas":
+            # for test and docs gallery screenshots
+            for subplot in self:
+                subplot.axes.update_using_bbox(subplot.scene.get_world_bounding_box())
+
         else:  # assume GLFW, the output context is just the canvas
             self._output = self.canvas
 
