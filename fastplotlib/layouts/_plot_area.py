@@ -657,7 +657,7 @@ class PlotArea:
             self._legends.remove(graphic)
 
         elif isinstance(graphic, Graphic):
-            self._fpl_graphics_scene.remove(graphic)
+            self._graphics.remove(graphic)
 
         # remove from scene if necessary
         if graphic.world_object in self.scene.children:
