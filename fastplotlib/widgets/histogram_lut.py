@@ -146,7 +146,12 @@ class HistogramLUT(Graphic):
         # use the histogram edge values as data for an
         # image with 2 columns, this will be our colorbar!
         colorbar_data = np.column_stack(
-            [np.linspace(edges_flanked[0], edges_flanked[-1], ceil(np.ptp(edges_flanked)))] * 2
+            [
+                np.linspace(
+                    edges_flanked[0], edges_flanked[-1], ceil(np.ptp(edges_flanked))
+                )
+            ]
+            * 2
         ).astype(np.float32)
 
         colorbar_data /= self._scale_factor
@@ -157,7 +162,7 @@ class HistogramLUT(Graphic):
             vmax=self.vmax,
             cmap=self.image_graphic.cmap,
             interpolation="linear",
-            offset=(-55, edges_flanked[0], -1)
+            offset=(-55, edges_flanked[0], -1),
         )
 
         cbar.world_object.world.scale_x = 20
@@ -371,7 +376,9 @@ class HistogramLUT(Graphic):
         if self._image_graphic is not None:
             # cleanup events from current image graphic
             ig_events = _get_image_graphic_events(self._image_graphic)
-            self._image_graphic.remove_event_handler(self._image_cmap_handler, *ig_events)
+            self._image_graphic.remove_event_handler(
+                self._image_cmap_handler, *ig_events
+            )
 
         self._image_graphic = graphic
 

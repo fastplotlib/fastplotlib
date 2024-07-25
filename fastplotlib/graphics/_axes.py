@@ -112,6 +112,7 @@ class Grid(pygfx.Grid):
 
 class Grids(pygfx.Group):
     """Just a class to make accessing the grids easier"""
+
     def __init__(self, *, xy, xz, yz):
         super().__init__()
 
@@ -241,16 +242,16 @@ class Ruler(pygfx.Ruler):
 
 class Axes:
     def __init__(
-            self,
-            plot_area,
-            intersection: tuple[int, int, int] | None = None,
-            x_kwargs: dict = None,
-            y_kwargs: dict = None,
-            z_kwargs: dict = None,
-            grids: bool = True,
-            grid_kwargs: dict = None,
-            auto_grid: bool = True,
-            offset: np.ndarray = np.array([0., 0., 0.])
+        self,
+        plot_area,
+        intersection: tuple[int, int, int] | None = None,
+        x_kwargs: dict = None,
+        y_kwargs: dict = None,
+        z_kwargs: dict = None,
+        grids: bool = True,
+        grid_kwargs: dict = None,
+        auto_grid: bool = True,
+        offset: np.ndarray = np.array([0.0, 0.0, 0.0]),
     ):
         self._plot_area = plot_area
 
@@ -268,10 +269,7 @@ class Axes:
             **x_kwargs,
         }
 
-        y_kwargs = {
-            "tick_side": "left",
-            **y_kwargs
-        }
+        y_kwargs = {"tick_side": "left", **y_kwargs}
 
         z_kwargs = {
             "tick_side": "left",
@@ -290,12 +288,16 @@ class Axes:
         self.x.start_pos = 0, 0, 0
         self.x.end_pos = 100, 0, 0
         self.x.start_value = self.x.start_pos[0] - offset[0]
-        statsx = self.x.update(self._plot_area.camera, self._plot_area.viewport.logical_size)
+        statsx = self.x.update(
+            self._plot_area.camera, self._plot_area.viewport.logical_size
+        )
 
         self.y.start_pos = 0, 0, 0
         self.y.end_pos = 0, 100, 0
         self.y.start_value = self.y.start_pos[1] - offset[1]
-        statsy = self.y.update(self._plot_area.camera, self._plot_area.viewport.logical_size)
+        statsy = self.y.update(
+            self._plot_area.camera, self._plot_area.viewport.logical_size
+        )
 
         self.z.start_pos = 0, 0, 0
         self.z.end_pos = 0, 0, 100
@@ -327,7 +329,7 @@ class Axes:
             "major_thickness": 2,
             "minor_thickness": 0.5,
             "infinite": True,
-            **grid_kwargs
+            **grid_kwargs,
         }
 
         if grids:
@@ -427,7 +429,9 @@ class Axes:
             return
 
         if len(intersection) != 3:
-            raise ValueError("intersection must be a float of 3 elements for [x, y, z] or `None`")
+            raise ValueError(
+                "intersection must be a float of 3 elements for [x, y, z] or `None`"
+            )
 
         self._intersection = tuple(float(v) for v in intersection)
 
@@ -493,10 +497,12 @@ class Axes:
 
             world_zmin, world_zmax = 0, 0
 
-            bbox = np.array([
-                [world_xmin, world_ymin, world_zmin],
-                [world_xmax, world_ymax, world_zmax]
-            ])
+            bbox = np.array(
+                [
+                    [world_xmin, world_ymin, world_zmin],
+                    [world_xmax, world_ymax, world_zmax],
+                ]
+            )
 
         else:
             # set ruler start and end positions based on scene bbox
@@ -507,7 +513,9 @@ class Axes:
                 # place the ruler close to the left and bottom edges of the viewport
                 # TODO: determine this for perspective projections
                 xscreen_10, yscreen_10 = xpos + (width * 0.1), ypos + (height * 0.9)
-                intersection = self._plot_area.map_screen_to_world((xscreen_10, yscreen_10))
+                intersection = self._plot_area.map_screen_to_world(
+                    (xscreen_10, yscreen_10)
+                )
             else:
                 # force origin since None is not supported for Persepctive projections
                 self._intersection = (0, 0, 0)
@@ -554,20 +562,26 @@ class Axes:
         self.x.end_pos = world_xmax, world_y_10, world_z_10
 
         self.x.start_value = self.x.start_pos[0] - self.offset[0]
-        statsx = self.x.update(self._plot_area.camera, self._plot_area.viewport.logical_size)
+        statsx = self.x.update(
+            self._plot_area.camera, self._plot_area.viewport.logical_size
+        )
 
         self.y.start_pos = world_x_10, world_ymin, world_z_10
         self.y.end_pos = world_x_10, world_ymax, world_z_10
 
         self.y.start_value = self.y.start_pos[1] - self.offset[1]
-        statsy = self.y.update(self._plot_area.camera, self._plot_area.viewport.logical_size)
+        statsy = self.y.update(
+            self._plot_area.camera, self._plot_area.viewport.logical_size
+        )
 
         if self._plot_area.camera.fov != 0:
             self.z.start_pos = world_x_10, world_y_10, world_zmin
             self.z.end_pos = world_x_10, world_y_10, world_zmax
 
             self.z.start_value = self.z.start_pos[1] - self.offset[2]
-            statsz = self.z.update(self._plot_area.camera, self._plot_area.viewport.logical_size)
+            statsz = self.z.update(
+                self._plot_area.camera, self._plot_area.viewport.logical_size
+            )
             major_step_z = statsz["tick_step"]
 
         if self.grids:
