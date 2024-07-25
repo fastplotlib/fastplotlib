@@ -452,7 +452,12 @@ class Axes:
         if self._plot_area.camera.local.scale_z < 0:
             bbox[0, 2], bbox[1, 2] = bbox[1, 2], bbox[0, 2]
 
-        self.update(bbox, self.intersection)
+        if self.intersection is None:
+            intersection = (0, 0, 0)
+        else:
+            intersection = self.intersection
+
+        self.update(bbox, intersection)
 
     def update_using_camera(self):
         """
