@@ -110,10 +110,10 @@ class PlotArea:
         self.children = list()
 
         self._background_material = pygfx.BackgroundMaterial(
-            (0., 0., 0., 1.),
-            (0., 0., 0., 1.),
-            (0., 0., 0., 1.),
-            (0., 0., 0., 1.),
+            (0.0, 0.0, 0.0, 1.0),
+            (0.0, 0.0, 0.0, 1.0),
+            (0.0, 0.0, 0.0, 1.0),
+            (0.0, 0.0, 0.0, 1.0),
         )
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
@@ -601,7 +601,9 @@ class PlotArea:
             camera.maintain_aspect = maintain_aspect
 
         if len(self._fpl_graphics_scene.children) > 0:
-            width, height, depth = np.ptp(self._fpl_graphics_scene.get_world_bounding_box(), axis=0)
+            width, height, depth = np.ptp(
+                self._fpl_graphics_scene.get_world_bounding_box(), axis=0
+            )
         else:
             width, height, depth = (1, 1, 1)
 
