@@ -11,6 +11,18 @@ from ..graphics._base import Graphic
 from ..graphics.selectors import LinearRegionSelector
 
 
+def _get_image_graphic_events(image_graphic: ImageGraphic) -> list[str]:
+    """Small helper function to return the relevant events for an ImageGraphic"""
+    events = ["vmin", "vmax"]
+
+    if not image_graphic.data.value.ndim > 2:
+        events.append("cmap")
+
+    # if RGB(A), do not add cmap
+
+    return events
+
+
 # TODO: This is a widget, we can think about a BaseWidget class later if necessary
 class HistogramLUT(Graphic):
     def __init__(
@@ -117,7 +129,9 @@ class HistogramLUT(Graphic):
             self._linear_region_handler, "selection"
         )
 
-        self.image_graphic.add_event_handler(self._image_cmap_handler, "vmin", "vmax", "cmap")
+        ig_events = _get_image_graphic_events(self.image_graphic)
+
+        self.image_graphic.add_event_handler(self._image_cmap_handler, *ig_events)
 
         # colorbar for grayscale images
         if self.image_graphic.data.value.ndim != 3:
@@ -356,14 +370,18 @@ class HistogramLUT(Graphic):
 
         if self._image_graphic is not None:
             # cleanup events from current image graphic
-            self._image_graphic.remove_event_handler(self._image_cmap_handler, "vmin", "vmax", "cmap")
+            ig_events = _get_image_graphic_events(self._image_graphic)
+            self._image_graphic.remove_event_handler(self._image_cmap_handler, *ig_events)
 
         self._image_graphic = graphic
 
-        self.image_graphic.add_event_handler(self._image_cmap_handler, "vmin", "vmax", "cmap")
+        ig_events = _get_image_graphic_events(self._image_graphic)
+
+        self.image_graphic.add_event_handler(self._image_cmap_handler, *ig_events)
 
     def disconnect_image_graphic(self):
-        self._image_graphic.remove_event_handler(self._image_cmap_handler, "vmin", "vmax", "cmap")
+        ig_events = _get_image_graphic_events(self._image_graphic)
+        self._image_graphic.remove_event_handler(self._image_cmap_handler, *ig_events)
         del self._image_graphic
         # self._image_graphic = None
 
