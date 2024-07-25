@@ -576,9 +576,9 @@ class Axes:
                 self.grids.xy.major_step = major_step_x, major_step_y
                 self.grids.xy.minor_step = 0.2 * major_step_x, 0.2 * major_step_y
 
-            if self._plot_area.camera.fov != 0:
-                self.grids.xz.major_step = major_step_x, major_step_z
-                self.grids.xz.minor_step = 0.2 * major_step_x, 0.2 * major_step_z
+                if self._plot_area.camera.fov != 0:
+                    self.grids.xz.major_step = major_step_x, major_step_z
+                    self.grids.xz.minor_step = 0.2 * major_step_x, 0.2 * major_step_z
 
-                self.grids.yz.material.major_step = major_step_y, major_step_z
-                self.grids.yz.minor_step = 0.2 * major_step_y, 0.2 * major_step_z
+                    self.grids.yz.material.major_step = major_step_y, major_step_z
+                    self.grids.yz.minor_step = 0.2 * major_step_y, 0.2 * major_step_z
