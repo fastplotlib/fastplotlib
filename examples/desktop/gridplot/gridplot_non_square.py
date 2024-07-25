@@ -11,7 +11,7 @@ Example showing simple 2x2 GridPlot with Standard images from imageio.
 import fastplotlib as fpl
 import imageio.v3 as iio
 
-figure = fpl.Figure(shape=(2, 2), controller_ids="sync", size=(700, 560))
+figure = fpl.Figure(shape=(2, 2), size=(700, 560))
 
 im = iio.imread("imageio:clock.png")
 im2 = iio.imread("imageio:astronaut.png")

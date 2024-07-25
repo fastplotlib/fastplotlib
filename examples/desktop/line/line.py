@@ -36,6 +36,7 @@ cosine_graphic = figure[0, 0].add_line(data=cosine, thickness=12, cmap="autumn")
 colors = ["r"] * 25 + ["purple"] * 25 + ["y"] * 25 + ["b"] * 25
 sinc_graphic = figure[0, 0].add_line(data=sinc, thickness=5, colors=colors)
 
+figure[0, 0].axes.grids.xy.visible = True
 figure.show()
 
 
