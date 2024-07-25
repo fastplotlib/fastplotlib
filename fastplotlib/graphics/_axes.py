@@ -243,7 +243,7 @@ class Axes:
     def __init__(
             self,
             plot_area,
-            follow: bool = True,
+            intersection: tuple[int, int, int] | None = None,
             x_kwargs: dict = None,
             y_kwargs: dict = None,
             z_kwargs: dict = None,
@@ -337,6 +337,7 @@ class Axes:
                     geometry=None,
                     material=pygfx.GridMaterial(**grid_kwargs),
                     orientation=plane,
+                    visible=False,
                 )
 
                 _grids[plane] = grid
@@ -356,7 +357,7 @@ class Axes:
         else:
             self._grids = False
 
-        self._follow = follow
+        self._intersection = intersection
         self._auto_grid = auto_grid
 
     @property
@@ -411,15 +412,24 @@ class Axes:
         self._world_object.visible = value
 
     @property
-    def follow(self) -> bool:
-        """if True, axes will follow during pan-zoom movements, only for orthographic projections"""
-        return self._follow
+    def intersection(self) -> tuple[float, float, float] | None:
+        return self._intersection
 
-    @follow.setter
-    def follow(self, value: bool):
-        if not isinstance(value, bool):
-            raise TypeError
-        self._follow = value
+    @intersection.setter
+    def intersection(self, intersection: tuple[float, float, float] | None):
+        """
+        intersection point of [x, y, z] rulers.
+        Set (0, 0, 0) for origin
+        Set to `None` to follow when panning through the scene with orthographic projection
+        """
+        if intersection is None:
+            self._intersection = None
+            return
+
+        if len(intersection) != 3:
+            raise ValueError("intersection must be a float of 3 elements for [x, y, z] or `None`")
+
+        self._intersection = tuple(float(v) for v in intersection)
 
     def update_using_bbox(self, bbox):
         """
@@ -442,7 +452,7 @@ class Axes:
         if self._plot_area.camera.local.scale_z < 0:
             bbox[0, 2], bbox[1, 2] = bbox[1, 2], bbox[0, 2]
 
-        self.update(bbox, (0, 0, 0))
+        self.update(bbox, self.intersection)
 
     def update_using_camera(self):
         """
@@ -487,19 +497,24 @@ class Axes:
             # set ruler start and end positions based on scene bbox
             bbox = self._plot_area._fpl_graphics_scene.get_world_bounding_box()
 
-        if self.follow and self._plot_area.camera.fov == 0:
-            # place the ruler close to the left and bottom edges of the viewport
-            # TODO: determine this for perspective projections
-            xscreen_10, yscreen_10 = xpos + (width * 0.1), ypos + (height * 0.9)
-            edge_positions = self._plot_area.map_screen_to_world((xscreen_10, yscreen_10))
+        if self.intersection is None:
+            if self._plot_area.camera.fov == 0:
+                # place the ruler close to the left and bottom edges of the viewport
+                # TODO: determine this for perspective projections
+                xscreen_10, yscreen_10 = xpos + (width * 0.1), ypos + (height * 0.9)
+                intersection = self._plot_area.map_screen_to_world((xscreen_10, yscreen_10))
+            else:
+                # force origin since None is not supported for Persepctive projections
+                self._intersection = (0, 0, 0)
+                intersection = self._intersection
 
         else:
             # axes intersect at the origin
-            edge_positions = 0, 0, 0
+            intersection = self.intersection
 
-        self.update(bbox, edge_positions)
+        self.update(bbox, intersection)
 
-    def update(self, bbox, ruler_intersection_point):
+    def update(self, bbox, intersection):
         """
         Update the axes using the given bbox and ruler intersection point
 
@@ -508,20 +523,20 @@ class Axes:
         bbox: np.ndarray
             array of shape [2, 3], [[xmin, ymin, zmin], [xmax, ymax, zmax]]
 
-        ruler_intersection_point: float, float, float
+        intersection: float, float, float
             intersection point of the x, y, z ruler
 
         """
 
         world_xmin, world_ymin, world_zmin = bbox[0]
         world_xmax, world_ymax, world_zmax = bbox[1]
-        world_x_10, world_y_10, world_z_10 = ruler_intersection_point
+        world_x_10, world_y_10, world_z_10 = intersection
 
         # swap min and max for each dimension if necessary
         if self._plot_area.camera.local.scale_y < 0:
             world_ymin, world_ymax = world_ymax, world_ymin
             self.y.tick_side = "right"  # swap tick side
-            self.x.tick_side = "left"
+            self.x.tick_side = "right"
         else:
             self.y.tick_side = "left"
             self.x.tick_side = "right"
