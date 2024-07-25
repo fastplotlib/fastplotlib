@@ -6,7 +6,7 @@ Example showing animation with 3D lines.
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'animate 5s'
+# sphinx_gallery_pygfx_docs = 'animate 8s'
 
 import numpy as np
 import fastplotlib as fpl
@@ -47,7 +47,9 @@ def move_marker():
 figure.add_animations(move_marker)
 
 # remove clutter
-figure[0, 0].axes.grids.yz.visible = False
+figure[0, 0].axes.grids.xy.visible = True
+figure[0, 0].axes.grids.xz.visible = True
+
 
 figure.show()
 
