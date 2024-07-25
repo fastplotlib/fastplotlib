@@ -175,7 +175,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     def get_rect(self):
         """Returns the bounding box that defines the Subplot within the canvas."""
         row_ix, col_ix = self.position
-        width_canvas, height_canvas = self.renderer.logical_size
+        width_canvas, height_canvas = self.canvas.get_logical_size()
 
         x_pos = (
             (width_canvas / self.ncols) + ((col_ix - 1) * (width_canvas / self.ncols))
