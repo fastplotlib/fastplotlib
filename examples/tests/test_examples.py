@@ -69,7 +69,7 @@ def test_example_screenshots(module, force_offscreen):
     example = importlib.import_module(module_name)
 
     for subplot in example.figure:
-        subplot.render(subplot.scene, subplot.camera)
+        subplot.viewport.render(subplot.scene, subplot.camera)
     example.figure.renderer.flush()
 
     # render a frame
