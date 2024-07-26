@@ -17,6 +17,7 @@ jobs:
   docs-build:
     name: Docs
     runs-on: bigmem
+    timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
@@ -49,6 +50,7 @@ jobs:
   test-build-full:
     name: Test Linux, notebook + glfw
     runs-on: bigmem
+    timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
@@ -105,6 +107,7 @@ jobs:
   test-build-desktop:
     name: Test Linux, only glfw
     runs-on: bigmem
+    timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
