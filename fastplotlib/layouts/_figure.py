@@ -507,8 +507,9 @@ class Figure:
                 # but not for rtd build, this is a workaround
                 # for CI tests, the render call works if it's in test_examples
                 # but it is necessary for the gallery images too so that's why this check is here
-                if os.environ["RTD_BUILD"] == "1":
-                    subplot.viewport.render(subplot.scene, subplot.camera)
+                if "RTD_BUILD" in os.environ.keys():
+                    if os.environ["RTD_BUILD"] == "1":
+                        subplot.viewport.render(subplot.scene, subplot.camera)
 
         else:  # assume GLFW, the output context is just the canvas
             self._output = self.canvas
