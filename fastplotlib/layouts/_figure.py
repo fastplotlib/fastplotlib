@@ -501,7 +501,14 @@ class Figure:
             # for test and docs gallery screenshots
             for subplot in self:
                 subplot.set_viewport_rect()
+                # if maintain_aspect is None:
+                #     _ma = subplot.camera.maintain_aspect
+                # else:
+                #     _ma = maintain_aspect
+                # subplot.auto_scale(maintain_aspect=_ma)
                 subplot.axes.update_using_camera()
+                subplot.viewport.render(subplot.scene, subplot.camera)
+            # self.renderer.flush()
 
         else:  # assume GLFW, the output context is just the canvas
             self._output = self.canvas
