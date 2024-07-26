@@ -501,14 +501,14 @@ class Figure:
             # for test and docs gallery screenshots
             for subplot in self:
                 subplot.set_viewport_rect()
-                # if maintain_aspect is None:
-                #     _ma = subplot.camera.maintain_aspect
-                # else:
-                #     _ma = maintain_aspect
-                # subplot.auto_scale(maintain_aspect=_ma)
                 subplot.axes.update_using_camera()
-                # subplot.viewport.render(subplot.scene, subplot.camera)
-            # self.renderer.flush()
+
+                # render call is blocking only on github actions for some reason,
+                # but not for rtd build, this is a workaround
+                # for CI tests, the render call works if it's in test_examples
+                # but it is necessary for the gallery images too so that's why this check is here
+                if os.environ["RTD_BUILD"] == "1":
+                    subplot.viewport.render(subplot.scene, subplot.camera)
 
         else:  # assume GLFW, the output context is just the canvas
             self._output = self.canvas
