@@ -143,7 +143,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         return self._docks
 
     def render(self):
-        # self.axes.update_using_camera()
+        self.axes.update_using_camera()
         super().render()
 
     def set_title(self, text: str):
