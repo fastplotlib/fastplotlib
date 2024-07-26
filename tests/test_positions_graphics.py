@@ -21,7 +21,6 @@ from .utils import (
     generate_color_inputs,
     MULTI_COLORS_TRUTH,
     generate_slice_indices,
-    assert_pending_uploads,
 )
 
 

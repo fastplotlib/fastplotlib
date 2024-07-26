@@ -39,9 +39,10 @@ class HistogramLUT(Graphic):
         ----------
         data
         image_graphic
-        nbins
-        flank_divisor: float, default 5.0
-            set `np.inf` for no flanks
+        nbins: int, defaut 100.
+            Total number of bins used in the histogram
+        flank_divisor: float, default 5.0.
+            Fraction of empty histogram bins on the tails of the distribution set `np.inf` for no flanks
         kwargs
         """
         super().__init__(**kwargs)
@@ -215,9 +216,10 @@ class HistogramLUT(Graphic):
             hist, edges = np.histogram(data_ss, bins=self._nbins)
 
         # used if data ptp <= 10 because event things get weird
-        # with tiny world objects due to  floating point error
+        # with tiny world objects due to floating point error
         # so if ptp <= 10, scale up by a factor
-        self._scale_factor: int = max(1, 100 * int(10 / np.ptp(data_ss)))
+        data_interval = edges[-1] - edges[0]
+        self._scale_factor: int = max(1, 100 * int(10 / data_interval))
 
         edges = edges * self._scale_factor
 
@@ -232,7 +234,6 @@ class HistogramLUT(Graphic):
         )
 
         edges_flanked = np.concatenate((flank_left, edges, flank_right))
-        np.unique(np.diff(edges_flanked))
 
         hist_flanked = np.concatenate(
             (np.zeros(flank_nbins), hist, np.zeros(flank_nbins))
@@ -240,7 +241,10 @@ class HistogramLUT(Graphic):
 
         # scale 0-100 to make it easier to see
         # float32 data can produce unnecessarily high values
-        hist_scaled = hist_flanked / (hist_flanked.max() / 100)
+        hist_scale_value = hist_flanked.max()
+        if np.allclose(hist_scale_value, 0):
+            hist_scale_value = 1
+        hist_scaled = hist_flanked / (hist_scale_value / 100)
 
         if edges_flanked.size > hist_scaled.size:
             # we don't care about accuracy here so if it's off by 1-2 bins that's fine
