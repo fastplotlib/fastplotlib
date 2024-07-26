@@ -14,6 +14,7 @@ jobs:
   screenshots:
     name: Regenerate
     runs-on: bigmem
+    timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     steps:
       - name: Install git-lfs

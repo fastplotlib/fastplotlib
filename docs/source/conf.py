@@ -25,7 +25,7 @@ sys.path.insert(0, str(ROOT_DIR))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "fastplotlib"
-copyright = "2023, Kushal Kolar, Caitlin Lewis"
+copyright = "2024, Kushal Kolar, Caitlin Lewis"
 author = "Kushal Kolar, Caitlin Lewis"
 release = fastplotlib.__version__
 
@@ -57,7 +57,8 @@ sphinx_gallery_conf = {
             "../../examples/desktop/line_collection",
             "../../examples/desktop/scatter",
             "../../examples/desktop/heatmap",
-            "../../examples/desktop/misc"
+            "../../examples/desktop/misc",
+            "../../examples/desktop/selectors",
         ]
     ),
     "ignore_pattern": r'__init__\.py',
@@ -102,6 +103,7 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "pygfx": ("https://pygfx.com/stable", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
+    "fastplotlib": ("https://fastplotlib.readthedocs.io/en/latest/", None),
 }
 
 html_theme_options = {

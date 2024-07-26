@@ -19,7 +19,7 @@ ys = np.sin(xs)
 data = np.column_stack([xs, ys])
 multi_data = np.stack([data] * 10)
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 line_stack = figure[0, 0].add_line_stack(
     multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
@@ -30,7 +30,6 @@ line_stack = figure[0, 0].add_line_stack(
 
 figure.show(maintain_aspect=False)
 
-figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

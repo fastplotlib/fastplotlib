@@ -132,7 +132,7 @@ class ImageGraphic(Graphic):
         self._vmax = ImageVmax(vmax)
 
         # set cmap to None for RGB images
-        if self._data.value.ndim == 3:
+        if self._data.value.ndim > 2:
             self._cmap = None
         else:
             self._cmap = ImageCmap(cmap)
@@ -192,14 +192,14 @@ class ImageGraphic(Graphic):
     @property
     def cmap(self) -> str:
         """colormap name"""
-        if self.data.value.ndim == 3:
-            raise AttributeError("RGB images do not have a colormap property")
+        if self.data.value.ndim > 2:
+            raise AttributeError("RGB(A) images do not have a colormap property")
         return self._cmap.value
 
     @cmap.setter
     def cmap(self, name: str):
-        if self.data.value.ndim == 3:
-            raise AttributeError("RGB images do not have a colormap property")
+        if self.data.value.ndim > 2:
+            raise AttributeError("RGB(A) images do not have a colormap property")
         self._cmap.set_value(self, name)
 
     @property

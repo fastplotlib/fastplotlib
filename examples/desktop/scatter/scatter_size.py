@@ -18,7 +18,7 @@ shape = (2, 1)
 names = [["scalar_size"], ["array_size"]]
 
 # Create the grid plot
-figure = fpl.Figure(shape=shape, names=names, size=(1000, 1000))
+figure = fpl.Figure(shape=shape, names=names, size=(700, 560))
 
 # get y_values using sin function
 angles = np.arange(0, 20 * np.pi + 0.001, np.pi / 20)
@@ -39,7 +39,6 @@ for graph in figure:
 
 figure.show()
 
-figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

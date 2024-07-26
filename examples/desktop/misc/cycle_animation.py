@@ -34,7 +34,7 @@ cloud = np.vstack(
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
 # create plot
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 subplot_scatter = figure[0, 0]
 # use an alpha value since this will be a lot of points
 scatter_graphic = subplot_scatter.add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
@@ -53,7 +53,6 @@ subplot_scatter.add_animations(cycle_colors)
 
 figure.show()
 
-subplot_scatter.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

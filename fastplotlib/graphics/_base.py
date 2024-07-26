@@ -17,6 +17,7 @@ from ._features import (
     Rotation,
     Visible,
 )
+from ._axes import Axes
 
 HexStr: TypeAlias = str
 
@@ -113,6 +114,8 @@ class Graphic:
         self._offset = Offset(offset)
         self._visible = Visible(visible)
         self._block_events = False
+
+        self._axes: Axes = None
 
     @property
     def supported_events(self) -> tuple[str]:
@@ -355,6 +358,12 @@ class Graphic:
 
         Optionally implemented in subclasses
         """
+        # remove axes if added to this graphic
+        if self._axes is not None:
+            self._plot_area.scene.remove(self._axes)
+            self._plot_area.remove_animation(self._update_axes)
+            self._axes.world_object.clear()
+
         # signal that a deletion has been requested
         self.deleted = True
 
@@ -413,3 +422,18 @@ class Graphic:
                 f"`axis` must be either `x`, `y`, or `z`. `{axis}` provided instead!"
             )
         self.rotation = la.quat_mul(rot, self.rotation)
+
+    @property
+    def axes(self) -> Axes:
+        return self._axes
+
+    def add_axes(self):
+        """Add axes onto this Graphic"""
+        if self._axes is not None:
+            raise AttributeError("Axes already added onto this graphic")
+
+        self._axes = Axes(self._plot_area, offset=self.offset, grids=False)
+        self._axes.world_object.local.rotation = self.world_object.local.rotation
+
+        self._plot_area.scene.add(self.axes.world_object)
+        self._axes.update_using_bbox(self.world_object.get_world_bounding_box())

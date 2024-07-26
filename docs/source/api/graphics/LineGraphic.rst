@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: LineGraphic_api
 
+    LineGraphic.axes
     LineGraphic.block_events
     LineGraphic.cmap
     LineGraphic.colors
@@ -39,6 +40,7 @@ Methods
 .. autosummary::
     :toctree: LineGraphic_api
 
+    LineGraphic.add_axes
     LineGraphic.add_event_handler
     LineGraphic.add_linear_region_selector
     LineGraphic.add_linear_selector
