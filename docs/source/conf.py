@@ -103,6 +103,7 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
     "pygfx": ("https://pygfx.com/stable", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
+    "fastplotlib": ("https://fastplotlib.readthedocs.io/en/latest/", None),
 }
 
 html_theme_options = {
