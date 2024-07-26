@@ -507,7 +507,7 @@ class Figure:
                 #     _ma = maintain_aspect
                 # subplot.auto_scale(maintain_aspect=_ma)
                 subplot.axes.update_using_camera()
-                subplot.viewport.render(subplot.scene, subplot.camera)
+                # subplot.viewport.render(subplot.scene, subplot.camera)
             # self.renderer.flush()
 
         else:  # assume GLFW, the output context is just the canvas

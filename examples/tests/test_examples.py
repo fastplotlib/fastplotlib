@@ -68,6 +68,10 @@ def test_example_screenshots(module, force_offscreen):
     # import the example module
     example = importlib.import_module(module_name)
 
+    for subplot in example.figure:
+        subplot.render(subplot.scene, subplot.camera)
+    example.figure.renderer.flush()
+
     # render a frame
     img = np.asarray(example.figure.renderer.target.draw())
 
