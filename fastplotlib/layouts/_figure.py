@@ -26,29 +26,29 @@ from .. import ImageGraphic
 
 class Figure:
     def __init__(
-        self,
-        shape: tuple[int, int] = (1, 1),
-        cameras: (
-            Literal["2d", "3d"]
-            | Iterable[Iterable[Literal["2d", "3d"]]]
-            | pygfx.PerspectiveCamera
-            | Iterable[Iterable[pygfx.PerspectiveCamera]]
-        ) = "2d",
-        controller_types: (
-            Iterable[Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]]
-            | Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]
-        ) = None,
-        controller_ids: (
-            Literal["sync"]
-            | Iterable[int]
-            | Iterable[Iterable[int]]
-            | Iterable[Iterable[str]]
-        ) = None,
-        controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
-        canvas: str | WgpuCanvasBase | pygfx.Texture = None,
-        renderer: pygfx.WgpuRenderer = None,
-        size: tuple[int, int] = (500, 300),
-        names: list | np.ndarray = None,
+            self,
+            shape: tuple[int, int] = (1, 1),
+            cameras: (
+                    Literal["2d", "3d"]
+                    | Iterable[Iterable[Literal["2d", "3d"]]]
+                    | pygfx.PerspectiveCamera
+                    | Iterable[Iterable[pygfx.PerspectiveCamera]]
+            ) = "2d",
+            controller_types: (
+                    Iterable[Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]]
+                    | Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]
+            ) = None,
+            controller_ids: (
+                    Literal["sync"]
+                    | Iterable[int]
+                    | Iterable[Iterable[int]]
+                    | Iterable[Iterable[str]]
+            ) = None,
+            controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
+            canvas: str | WgpuCanvasBase | pygfx.Texture = None,
+            renderer: pygfx.WgpuRenderer = None,
+            size: tuple[int, int] = (500, 300),
+            names: list | np.ndarray = None,
     ):
         """
         A grid of subplots.
@@ -234,7 +234,7 @@ class Figure:
                     for i, sublist in enumerate(controller_ids):
                         for name in sublist:
                             ids_init[subplot_names == name] = -(
-                                i + 1
+                                    i + 1
                             )  # use negative numbers because why not
 
                     controller_ids = ids_init
@@ -357,6 +357,7 @@ class Figure:
         self._imgui_updaters: list[callable] = list()
 
         self._right_click_menu = RightClickMenu(self)
+        self.imgui_renderer.set_gui(self.update_imgui)
 
     @property
     def toolbar(self):
@@ -429,8 +430,14 @@ class Figure:
 
         self.renderer.flush()
 
-        imgui.set_current_context(self.imgui_renderer.imgui_context)
-        # begin making new frame data for imgui
+        self.imgui_renderer.render()
+
+        self.canvas.request_draw()
+
+        # call post-render animate functions
+        self._call_animate_functions(self._animate_funcs_post)
+
+    def update_imgui(self):
         imgui.new_frame()
 
         # update the toolbars
@@ -446,13 +453,10 @@ class Figure:
 
         # render new UI frame
         imgui.end_frame()
+
         imgui.render()
-        self.imgui_renderer.render(imgui.get_draw_data())
 
-        self.canvas.request_draw()
-
-        # call post-render animate functions
-        self._call_animate_functions(self._animate_funcs_post)
+        return imgui.get_draw_data()
 
     def start_render(self):
         """start render cycle"""
@@ -460,12 +464,12 @@ class Figure:
         self.canvas.set_logical_size(*self._starting_size)
 
     def show(
-        self,
-        autoscale: bool = True,
-        maintain_aspect: bool = None,
-        toolbar: bool = True,
-        sidecar: bool = False,
-        sidecar_kwargs: dict = None,
+            self,
+            autoscale: bool = True,
+            maintain_aspect: bool = None,
+            toolbar: bool = True,
+            sidecar: bool = False,
+            sidecar_kwargs: dict = None,
     ):
         """
         Begins the rendering event loop and shows the plot in the desired output context (jupyter, qt or glfw).
@@ -560,10 +564,10 @@ class Figure:
                 fn()
 
     def add_animations(
-        self,
-        *funcs: callable,
-        pre_render: bool = True,
-        post_render: bool = False,
+            self,
+            *funcs: callable,
+            pre_render: bool = True,
+            post_render: bool = False,
     ):
         """
         Add function(s) that are called on every render cycle.
