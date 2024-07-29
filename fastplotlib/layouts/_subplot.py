@@ -10,6 +10,7 @@ from ..graphics import TextGraphic
 from ._utils import make_canvas_and_renderer, create_camera, create_controller
 from ._plot_area import PlotArea
 from ._graphic_methods_mixin import GraphicMethodsMixin
+from ..graphics._axes import Axes
 
 
 class Subplot(PlotArea, GraphicMethodsMixin):
@@ -88,12 +89,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self.spacing = 2
 
-        self._axes: pygfx.AxesHelper = pygfx.AxesHelper(size=100)
-        for arrow in self._axes.children:
-            self._axes.remove(arrow)
-
-        self._grid: pygfx.GridHelper = pygfx.GridHelper(size=100, thickness=1)
-
         self._title_graphic: TextGraphic = None
 
         super(Subplot, self).__init__(
@@ -115,6 +110,13 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         if self.name is not None:
             self.set_title(self.name)
+
+        self._axes = Axes(self)
+        self.scene.add(self.axes.world_object)
+
+    @property
+    def axes(self) -> Axes:
+        return self._axes
 
     @property
     def name(self) -> str:
@@ -139,6 +141,10 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         """
         return self._docks
+
+    def render(self):
+        self.axes.update_using_camera()
+        super().render()
 
     def set_title(self, text: str):
         """Sets the plot title, stored as a ``TextGraphic`` in the "top" dock area"""
@@ -169,7 +175,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     def get_rect(self):
         """Returns the bounding box that defines the Subplot within the canvas."""
         row_ix, col_ix = self.position
-        width_canvas, height_canvas = self.renderer.logical_size
+        width_canvas, height_canvas = self.canvas.get_logical_size()
 
         x_pos = (
             (width_canvas / self.ncols) + ((col_ix - 1) * (width_canvas / self.ncols))
@@ -186,20 +192,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             rect = rect + dv.get_parent_rect_adjust()
 
         return rect
-
-    def set_axes_visibility(self, visible: bool):
-        """Toggles axes visibility."""
-        if visible:
-            self.scene.add(self._axes)
-        else:
-            self.scene.remove(self._axes)
-
-    def set_grid_visibility(self, visible: bool):
-        """Toggles grid visibility."""
-        if visible:
-            self.scene.add(self._grid)
-        else:
-            self.scene.remove(self._grid)
 
 
 class Dock(PlotArea):

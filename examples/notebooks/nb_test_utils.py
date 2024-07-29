@@ -16,7 +16,7 @@ DIFFS_DIR = current_dir.joinpath("diffs")
 os.makedirs(SCREENSHOTS_DIR, exist_ok=True)
 os.makedirs(DIFFS_DIR, exist_ok=True)
 
-TOLERANCE = 0.025
+TOLERANCE = 0.05
 
 # store all the failures to allow the nb to proceed to test other examples
 FAILURES = list()

@@ -474,7 +474,7 @@ class Figure:
                     _maintain_aspect = subplot.camera.maintain_aspect
                 else:
                     _maintain_aspect = maintain_aspect
-                subplot.auto_scale(maintain_aspect=_maintain_aspect, zoom=0.95)
+                subplot.auto_scale(maintain_aspect=maintain_aspect)
 
         # return the appropriate OutputContext based on the current canvas
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
@@ -496,6 +496,20 @@ class Figure:
             self._output = QOutputContext(
                 frame=self, make_toolbar=toolbar, add_widgets=add_widgets
             )
+
+        elif self.canvas.__class__.__name__ == "WgpuManualOffscreenCanvas":
+            # for test and docs gallery screenshots
+            for subplot in self:
+                subplot.set_viewport_rect()
+                subplot.axes.update_using_camera()
+
+                # render call is blocking only on github actions for some reason,
+                # but not for rtd build, this is a workaround
+                # for CI tests, the render call works if it's in test_examples
+                # but it is necessary for the gallery images too so that's why this check is here
+                if "RTD_BUILD" in os.environ.keys():
+                    if os.environ["RTD_BUILD"] == "1":
+                        subplot.viewport.render(subplot.scene, subplot.camera)
 
         else:  # assume GLFW, the output context is just the canvas
             self._output = self.canvas

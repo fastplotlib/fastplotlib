@@ -2,7 +2,7 @@
 Multi-Subplot Image Update
 ==========================
 
-Example showing updating a single plot with new random 512x512 data.
+Example showing updating a multiple subplots with new random 512x512 data.
 """
 
 # test_example = false
@@ -12,7 +12,7 @@ import fastplotlib as fpl
 import numpy as np
 
 # Figure of shape 2 x 3 with all controllers synced
-figure = fpl.Figure(shape=(2, 3), controller_ids="sync")
+figure = fpl.Figure(shape=(2, 3), controller_ids="sync", size=(700, 560))
 
 # Make a random image graphic for each subplot
 for subplot in figure:
@@ -40,7 +40,6 @@ figure.add_animations(update_data)
 # show the gridplot
 figure.show()
 
-figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

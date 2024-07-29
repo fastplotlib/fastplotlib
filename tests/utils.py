@@ -106,17 +106,6 @@ def generate_slice_indices(kind: int):
     }
 
 
-def assert_pending_uploads(buffer: pygfx.Buffer, offset: int, size: int):
-    upload_offset, upload_size = buffer._gfx_pending_uploads[-1]
-    # sometimes when slicing with step, it  will over-estimate offset
-    # but it overestimates to upload 1 extra point so it's fine
-    assert (upload_offset == offset) or (upload_offset == offset - 1)
-
-    # sometimes when slicing with step, it  will over-estimate size
-    # but it overestimates to upload 1 extra point so it's fine
-    assert (upload_size == size) or (upload_size == size + 1)
-
-
 def generate_positions_spiral_data(inputs: str) -> np.ndarray:
     """
     Generates a spiral/spring

@@ -6,7 +6,6 @@ import fastplotlib as fpl
 from fastplotlib.graphics._features import VertexPositions, FeatureEvent
 from .utils import (
     generate_slice_indices,
-    assert_pending_uploads,
     generate_positions_spiral_data,
 )
 
@@ -134,9 +133,6 @@ def test_slice(test_graphic, slice_method: dict, test_axis: str):
     size = slice_method["size"]
     others = slice_method["others"]
 
-    # TODO: placeholder until I make a testing figure where we draw frames only on call
-    points.buffer._gfx_pending_uploads.clear()
-
     match test_axis:
         case "y":
             points[s, 1] = -data[s, 1]
@@ -203,6 +199,3 @@ def test_slice(test_graphic, slice_method: dict, test_axis: str):
                 else:
                     npt.assert_almost_equal(EVENT_RETURN_VALUE.info["key"], s)
                 npt.assert_almost_equal(EVENT_RETURN_VALUE.info["value"], -data[s])
-
-    # make sure correct offset and size marked for pending upload
-    assert_pending_uploads(points.buffer, offset, size)

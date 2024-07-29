@@ -11,7 +11,7 @@ Example showing the simple plot creation followed by changing the vmin/vmax with
 import fastplotlib as fpl
 import imageio.v3 as iio
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 data = iio.imread("imageio:astronaut.png")
 
@@ -19,10 +19,6 @@ data = iio.imread("imageio:astronaut.png")
 image_graphic = figure[0, 0].add_image(data=data, name="iio astronaut")
 
 figure.show()
-
-figure.canvas.set_logical_size(700, 560)
-
-figure[0, 0].auto_scale()
 
 image_graphic.vmin = 0.5
 image_graphic.vmax = 0.75

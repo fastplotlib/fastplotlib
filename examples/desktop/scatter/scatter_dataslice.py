@@ -12,7 +12,7 @@ import fastplotlib as fpl
 import numpy as np
 
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 # create a gaussian cloud of 5_000 points
 n_points = 1_000
@@ -23,18 +23,11 @@ covariance = [[1, 0], [0, 1]]  # covariance matrix
 gaussian_cloud = np.random.multivariate_normal(mean, covariance, n_points)
 gaussian_cloud2 = np.random.multivariate_normal(mean, covariance, n_points)
 
-# create plot
-figure = fpl.Figure()
-
 # use an alpha value since this will be a lot of points
 scatter1 = figure[0,0].add_scatter(data=gaussian_cloud, sizes=3)
 scatter2 = figure[0,0].add_scatter(data=gaussian_cloud2, colors="r", sizes=3)
 
 figure.show()
-
-figure.canvas.set_logical_size(700, 560)
-
-figure[0, 0].auto_scale()
 
 scatter1.data[:500] = np.array([0 , 0, 0])
 scatter2.data[500:] = np.array([0 , 0, 0])

@@ -33,13 +33,15 @@ pos_xy = np.vstack(circles)
 # this will produce 16 circles so we will define 16 colors
 colors = ["blue"] * 4 + ["red"] * 4 + ["yellow"] * 4 + ["w"] * 4
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 figure[0, 0].add_line_collection(circles, colors=colors, thickness=10)
 
+# remove clutter
+figure[0, 0].axes.visible = False
+
 figure.show()
 
-figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

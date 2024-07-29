@@ -20,12 +20,12 @@ data = np.column_stack([xs, ys])
 multi_data = np.stack([data] * 15)
 
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 lines = figure[0, 0].add_line_stack(
     multi_data,
     thickness=[2, 10, 2, 5, 5, 5, 8, 8, 8, 9, 3, 3, 3, 4, 4],
-    separation=1,
+    separation=4,
     metadatas=list(range(15)),  # some metadata
     names=list("abcdefghijklmno"),  # unique name for each line
 )
@@ -63,7 +63,15 @@ lines[3:6].colors[50:, -1] = 0.6  # set half the points alpha to 0.6
 
 figure.show(maintain_aspect=False)
 
-figure.canvas.set_logical_size(700, 580)
+# individual y axis for each line
+for line in lines:
+    line.add_axes()
+    line.axes.x.visible = False
+    line.axes.update_using_bbox(line.world_object.get_world_bounding_box())
+
+# no y axis in subplot
+figure[0, 0].axes.y.visible = False
+
 
 if __name__ == "__main__":
     print(__doc__)
