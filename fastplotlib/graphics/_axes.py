@@ -638,7 +638,7 @@ class Axes:
             self.z.start_pos = world_x_10, world_y_10, world_zmin
             self.z.end_pos = world_x_10, world_y_10, world_zmax
 
-            self.z.start_value = self.z.start_pos[1] - self.offset[2]
+            self.z.start_value = self.z.start_pos[2] - self.offset[2]
             statsz = self.z.update(
                 self._plot_area.camera, self._plot_area.viewport.logical_size
             )
