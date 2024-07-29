@@ -269,7 +269,11 @@ class Dock(PlotArea):
         width_canvas -= self.parent.parent.imgui_reserved_canvas[0]
         height_canvas -= self.parent.parent.imgui_reserved_canvas[1]
 
-        height_canvas -= 60
+        height_canvas -= 50
+        if row_ix_parent > 0:
+            top_spacing = 50
+        else:
+            top_spacing = 0
 
         spacing = 2  # spacing in pixels
 
@@ -307,7 +311,7 @@ class Dock(PlotArea):
             y_pos = (
                 (height_canvas / self.parent.nrows)
                 + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
-            ) + spacing
+            ) + spacing + top_spacing
             width_viewport = (width_canvas / self.parent.ncols) - spacing
             height_viewport = self.size
 

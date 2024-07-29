@@ -1,6 +1,6 @@
 import numpy as np
 
-from imgui_bundle import imgui
+from imgui_bundle import imgui, imgui_ctx
 
 from .._utils import controller_types
 from .._plot_area import PlotArea
@@ -70,7 +70,7 @@ class RightClickMenu:
                 self.get_subplot().auto_scale()
 
             if imgui.menu_item(f"Center", None, False)[0]:
-                self.get_subplot().auto_scale()
+                self.get_subplot().center_scene()
 
             _, maintain_aspect = imgui.menu_item(
                 "Maintain Aspect", None, self.get_subplot().camera.maintain_aspect
