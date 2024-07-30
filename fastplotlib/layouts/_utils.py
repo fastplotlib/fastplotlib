@@ -20,7 +20,10 @@ class WgpuRendererWithEventFilters(WgpuRenderer):
 
         if EVENT_TYPE_MAP[event_type] is PointerEvent:
             for filt in self.event_filters.values():
-                if filt[0, 0] < event["x"] < filt[1, 0] and filt[0, 1] < event["y"] < filt[1, 1]:
+                if (
+                    filt[0, 0] < event["x"] < filt[1, 0]
+                    and filt[0, 1] < event["y"] < filt[1, 1]
+                ):
                     return
 
         super().convert_event(event)

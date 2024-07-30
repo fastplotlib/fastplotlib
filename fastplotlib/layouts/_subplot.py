@@ -179,14 +179,26 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         """Returns the bounding box that defines the Subplot within the canvas."""
         row_ix, col_ix = self.position
 
-        x_start_render, y_start_render, width_canvas_render, height_canvas_render = self.parent.get_pygfx_render_area()
+        x_start_render, y_start_render, width_canvas_render, height_canvas_render = (
+            self.parent.get_pygfx_render_area()
+        )
 
         x_pos = (
-            (width_canvas_render / self.ncols) + ((col_ix - 1) * (width_canvas_render / self.ncols))
-        ) + self.spacing + x_start_render
+            (
+                (width_canvas_render / self.ncols)
+                + ((col_ix - 1) * (width_canvas_render / self.ncols))
+            )
+            + self.spacing
+            + x_start_render
+        )
         y_pos = (
-            (height_canvas_render / self.nrows) + ((row_ix - 1) * (height_canvas_render / self.nrows))
-        ) + self.spacing + y_start_render
+            (
+                (height_canvas_render / self.nrows)
+                + ((row_ix - 1) * (height_canvas_render / self.nrows))
+            )
+            + self.spacing
+            + y_start_render
+        )
         width_subplot = (width_canvas_render / self.ncols) - self.spacing
         height_subplot = (height_canvas_render / self.nrows) - self.spacing
 
@@ -245,7 +257,9 @@ class Dock(PlotArea):
 
         row_ix_parent, col_ix_parent = self.parent.position
 
-        x_start_render, y_start_render, width_render_canvas, height_render_canvas = self.parent.parent.get_pygfx_render_area()
+        x_start_render, y_start_render, width_render_canvas, height_render_canvas = (
+            self.parent.parent.get_pygfx_render_area()
+        )
 
         spacing = 2  # spacing in pixels
 
@@ -309,7 +323,12 @@ class Dock(PlotArea):
         if self.parent.__class__.__name__ == "ImguiFigure":
             height_viewport -= IMGUI_TOOLBAR_HEIGHT
 
-        return [x_pos + x_start_render, y_pos + y_start_render, width_viewport, height_viewport]
+        return [
+            x_pos + x_start_render,
+            y_pos + y_start_render,
+            width_viewport,
+            height_viewport,
+        ]
 
     def get_parent_rect_adjust(self):
         if self.position == "right":
