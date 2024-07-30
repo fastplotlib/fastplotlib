@@ -4,9 +4,6 @@ from .._plot_area import PlotArea
 from ._base import BaseGUI
 
 
-ID_COUNTER = 0
-
-
 class SubplotToolbar(BaseGUI):
     def __init__(self, owner: PlotArea, fa_icons: imgui.ImFont):
         super().__init__(owner=owner, fa_icons=fa_icons, size=None)
