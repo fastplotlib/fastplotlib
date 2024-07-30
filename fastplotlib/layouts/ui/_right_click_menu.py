@@ -1,9 +1,23 @@
 import numpy as np
 
-from imgui_bundle import imgui, imgui_ctx
+from imgui_bundle import imgui
 
 from .._utils import controller_types
 from .._plot_area import PlotArea
+
+
+def flip_axis(subplot: PlotArea, axis: str, flip: bool):
+    camera = subplot.camera
+    axis_attr = f"scale_{axis}"
+    scale = getattr(camera.local, axis_attr)
+
+    if flip and scale > 0:
+        # flip is checked and axis is not already flipped
+        setattr(camera.local, axis_attr, scale * -1)
+
+    elif not flip and scale < 0:
+        # flip not checked and axis is flipped
+        setattr(camera.local, axis_attr, scale * -1)
 
 
 class RightClickMenu:
@@ -76,6 +90,39 @@ class RightClickMenu:
                 "Maintain Aspect", None, self.get_subplot().camera.maintain_aspect
             )
             self.get_subplot().camera.maintain_aspect = maintain_aspect
+
+            imgui.separator()
+
+            for axis in ["x", "y", "z"]:
+                scale = getattr(self.get_subplot().camera.local, f"scale_{axis}")
+                changed, flip = imgui.menu_item(
+                    f"Flip {axis} axis", None, scale < 0
+                )
+
+                if changed:
+                    flip_axis(self.get_subplot(), axis, flip)
+
+            imgui.separator()
+
+            changed, fov = imgui.slider_float(
+                "FOV",
+                v=self.get_subplot().camera.fov,
+                v_min=0.0,
+                v_max=180.0
+            )
+
+            imgui.separator()
+
+            if changed:
+                # FOV between 0 and 1 is numerically unstable
+                if 0 < fov < 1:
+                    fov = 1
+                self.get_subplot().controller.update_fov(
+                    fov - self.get_subplot().camera.fov,
+                    animate=False,
+                )
+
+            imgui.separator()
 
             if imgui.begin_menu("Controller"):
                 self.set_event_filter("controller-menu")
