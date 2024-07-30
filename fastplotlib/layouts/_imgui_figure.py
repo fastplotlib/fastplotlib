@@ -12,8 +12,7 @@ from wgpu.gui import WgpuCanvasBase
 import pygfx
 
 from ._figure import Figure
-from .ui import BaseGUI
-from .ui import SubplotToolbar
+from .ui import BaseGUI, SubplotToolbar, RightClickMenu
 
 
 GUI_EDGES = [
@@ -90,6 +89,8 @@ class ImguiFigure(Figure):
             )
             self._subplot_toolbars[subplot.position] = toolbar
 
+        self._right_click_menu = RightClickMenu(owner=self, fa_icons=self._fa_icons)
+
     @property
     def imgui_renderer(self) -> ImguiRenderer:
         return self._imgui_renderer
@@ -108,6 +109,8 @@ class ImguiFigure(Figure):
 
         for gui in self._guis.values():
             gui.update()
+
+        self._right_click_menu.update()
 
         imgui.end_frame()
 
@@ -158,9 +161,3 @@ class ImguiFigure(Figure):
             ypos = 0
 
         return [xpos, ypos, width, height]
-
-    def get_toolbar_height(self, index: tuple[int, int]) -> float:
-        if not hasattr(self, "_subplot_toolbars"):
-            return 0
-
-        return self._subplot_toolbars[index].height + 1
