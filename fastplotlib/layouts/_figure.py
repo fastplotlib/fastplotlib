@@ -11,7 +11,7 @@ from warnings import warn
 
 import pygfx
 
-from wgpu.gui import WgpuCanvasBase
+from wgpu.gui import WgpuCanvasBase, WgpuAutoGui
 
 from ._video_writer import VideoWriterAV
 from ._utils import make_canvas_and_renderer, create_controller, create_camera
@@ -390,7 +390,7 @@ class Figure:
         else:
             return self._subplots[index[0], index[1]]
 
-    def render(self):
+    def render(self, draw=True):
         # call the animation functions before render
         self._call_animate_functions(self._animate_funcs_pre)
 
@@ -398,15 +398,16 @@ class Figure:
             subplot.render()
 
         self.renderer.flush()
-        self.canvas.request_draw()
+        if draw:
+            self.canvas.request_draw()
 
         # call post-render animate functions
         self._call_animate_functions(self._animate_funcs_post)
 
     def start_render(self):
         """start render cycle"""
-        self.canvas.request_draw(self.render)
         self.canvas.set_logical_size(*self._starting_size)
+        self.canvas.request_draw(self.render)
 
     def show(
         self,

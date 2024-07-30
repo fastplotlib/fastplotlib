@@ -175,16 +175,20 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     def get_rect(self):
         """Returns the bounding box that defines the Subplot within the canvas."""
         row_ix, col_ix = self.position
-        width_canvas, height_canvas = self.canvas.get_logical_size()
+
+        x_start_render, y_start_render, width_canvas_render, height_canvas_render = self.parent.get_pygfx_render_area()
 
         x_pos = (
-            (width_canvas / self.ncols) + ((col_ix - 1) * (width_canvas / self.ncols))
-        ) + self.spacing
+            (width_canvas_render / self.ncols) + ((col_ix - 1) * (width_canvas_render / self.ncols))
+        ) + self.spacing + x_start_render
         y_pos = (
-            (height_canvas / self.nrows) + ((row_ix - 1) * (height_canvas / self.nrows))
-        ) + self.spacing
-        width_subplot = (width_canvas / self.ncols) - self.spacing
-        height_subplot = (height_canvas / self.nrows) - self.spacing
+            (height_canvas_render / self.nrows) + ((row_ix - 1) * (height_canvas_render / self.nrows))
+        ) + self.spacing + y_start_render
+        width_subplot = (width_canvas_render / self.ncols) - self.spacing
+        height_subplot = (height_canvas_render / self.nrows) - self.spacing
+
+        if self.parent.__class__.__name__ == "ImguiFigure":
+            height_subplot -= self.parent.get_toolbar_height(self.position)
 
         rect = np.array([x_pos, y_pos, width_subplot, height_subplot])
 
@@ -237,68 +241,72 @@ class Dock(PlotArea):
             return
 
         row_ix_parent, col_ix_parent = self.parent.position
-        width_canvas, height_canvas = self.parent.renderer.logical_size
+
+        x_start_render, y_start_render, width_render_canvas, height_render_canvas = self.parent.parent.get_pygfx_render_area()
 
         spacing = 2  # spacing in pixels
 
         if self.position == "right":
             x_pos = (
-                (width_canvas / self.parent.ncols)
-                + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
-                + (width_canvas / self.parent.ncols)
+                (width_render_canvas / self.parent.ncols)
+                + ((col_ix_parent - 1) * (width_render_canvas / self.parent.ncols))
+                + (width_render_canvas / self.parent.ncols)
                 - self.size
             )
             y_pos = (
-                (height_canvas / self.parent.nrows)
-                + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+                (height_render_canvas / self.parent.nrows)
+                + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
             ) + spacing
             width_viewport = self.size
-            height_viewport = (height_canvas / self.parent.nrows) - spacing
+            height_viewport = (height_render_canvas / self.parent.nrows) - spacing
 
         elif self.position == "left":
-            x_pos = (width_canvas / self.parent.ncols) + (
-                (col_ix_parent - 1) * (width_canvas / self.parent.ncols)
+            x_pos = (width_render_canvas / self.parent.ncols) + (
+                (col_ix_parent - 1) * (width_render_canvas / self.parent.ncols)
             )
             y_pos = (
-                (height_canvas / self.parent.nrows)
-                + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+                (height_render_canvas / self.parent.nrows)
+                + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
             ) + spacing
             width_viewport = self.size
-            height_viewport = (height_canvas / self.parent.nrows) - spacing
+            height_viewport = (height_render_canvas / self.parent.nrows) - spacing
 
         elif self.position == "top":
             x_pos = (
-                (width_canvas / self.parent.ncols)
-                + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
+                (width_render_canvas / self.parent.ncols)
+                + ((col_ix_parent - 1) * (width_render_canvas / self.parent.ncols))
                 + spacing
             )
             y_pos = (
-                (height_canvas / self.parent.nrows)
-                + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+                (height_render_canvas / self.parent.nrows)
+                + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
             ) + spacing
-            width_viewport = (width_canvas / self.parent.ncols) - spacing
+            width_viewport = (width_render_canvas / self.parent.ncols) - spacing
             height_viewport = self.size
 
         elif self.position == "bottom":
             x_pos = (
-                (width_canvas / self.parent.ncols)
-                + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
+                (width_render_canvas / self.parent.ncols)
+                + ((col_ix_parent - 1) * (width_render_canvas / self.parent.ncols))
                 + spacing
             )
             y_pos = (
                 (
-                    (height_canvas / self.parent.nrows)
-                    + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+                    (height_render_canvas / self.parent.nrows)
+                    + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
                 )
-                + (height_canvas / self.parent.nrows)
+                + (height_render_canvas / self.parent.nrows)
                 - self.size
             )
-            width_viewport = (width_canvas / self.parent.ncols) - spacing
+            width_viewport = (width_render_canvas / self.parent.ncols) - spacing
             height_viewport = self.size
         else:
             raise ValueError("invalid position")
 
-        return [x_pos, y_pos, width_viewport, height_viewport]
+        if self.parent.__class__.__name__ == "ImguiFigure":
+            height_viewport -= self.parent.get_toolbar_height(self.parent.position)
+
+        return [x_pos + x_start_render, y_pos + y_start_render, width_viewport, height_viewport]
 
     def get_parent_rect_adjust(self):
         if self.position == "right":
