@@ -12,14 +12,15 @@ fastplotlib FAQ
     `fastplotlib` allows for:
         - interactive visualization via an intuitive and expressive API
         - rapid prototyping and algorithm design
-        - easy exploration and rendering of large-scale data
+        - easy exploration and fast rendering of large-scale data
 
 .. dropdown:: How does `fastplotlib` relate to `matplotlib`?
 
     `fastplotlib` is **NOT** related to `matplotlib` in any way.
 
     These are two completely different libraries with their own APIs and use-cases. The `fastplotlib` library is primarily for *interactive*
-    visualization that runs on the GPU using WGPU.
+    visualization that runs on the GPU using WGPU. The `fastplotlib` architecture is completely different from `matplotlib`. Using `fastplotlib`
+    is more akin to using `numpy`. See the "How can I learn to use `fastplotlib`?" section below.
 
 .. dropdown:: How can I learn to use `fastplotlib`?
 
@@ -31,12 +32,12 @@ fastplotlib FAQ
 
 .. dropdown:: Should I use `fastplotlib` for making publication figures?
 
-    **NO!** `fastplotlib` is not meant for creating *static* publication figures. There are many other libraries that are well-suited
+    No, `fastplotlib` is not meant for creating *static* publication figures. There are many other libraries that are well-suited
     for this task.
 
 .. dropdown:: How does `fastplotlib` handle data loading?
 
-    `fastplotlib` is a plotting library and **NOT** a data handling or data loading library. These tasks are outside of the scope of
+    `fastplotlib` is a plotting library and not a data handling or data loading library. These tasks are outside of the scope of
     the library.
 
     In general, if your data is an array-like object, `fastplotlib` should be able to use it.
