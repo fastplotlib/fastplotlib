@@ -2,9 +2,32 @@ import importlib
 
 import pygfx
 from pygfx import WgpuRenderer, Texture, Renderer
+from pygfx.renderers.wgpu.engine.renderer import EVENT_TYPE_MAP, PointerEvent
+
 from wgpu.gui import WgpuCanvasBase
 
 from ..utils import gui
+
+
+# temporary until https://github.com/pygfx/pygfx/issues/495
+class WgpuRendererWithEventFilters(WgpuRenderer):
+    def __init__(self, target, *args, **kwargs):
+        super().__init__(target, *args, **kwargs)
+        self._event_filters = {}
+
+    def convert_event(self, event: dict):
+        event_type = event["event_type"]
+
+        if EVENT_TYPE_MAP[event_type] is PointerEvent:
+            for filt in self.event_filters.values():
+                if filt[0, 0] < event["x"] < filt[1, 0] and filt[0, 1] < event["y"] < filt[1, 1]:
+                    return
+
+        super().convert_event(event)
+
+    @property
+    def event_filters(self) -> dict:
+        return self._event_filters
 
 
 def make_canvas_and_renderer(
@@ -27,7 +50,7 @@ def make_canvas_and_renderer(
         )
 
     if renderer is None:
-        renderer = WgpuRenderer(canvas)
+        renderer = WgpuRendererWithEventFilters(canvas)
     elif not isinstance(renderer, Renderer):
         raise TypeError(
             f"renderer option must be a pygfx.Renderer instance such as pygfx.WgpuRenderer"

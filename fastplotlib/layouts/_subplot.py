@@ -13,6 +13,9 @@ from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..graphics._axes import Axes
 
 
+IMGUI_TOOLBAR_HEIGHT = 39
+
+
 class Subplot(PlotArea, GraphicMethodsMixin):
     def __init__(
         self,
@@ -188,7 +191,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         height_subplot = (height_canvas_render / self.nrows) - self.spacing
 
         if self.parent.__class__.__name__ == "ImguiFigure":
-            height_subplot -= self.parent.get_toolbar_height(self.position)
+            height_subplot -= IMGUI_TOOLBAR_HEIGHT
 
         rect = np.array([x_pos, y_pos, width_subplot, height_subplot])
 
@@ -304,7 +307,7 @@ class Dock(PlotArea):
             raise ValueError("invalid position")
 
         if self.parent.__class__.__name__ == "ImguiFigure":
-            height_viewport -= self.parent.get_toolbar_height(self.parent.position)
+            height_viewport -= IMGUI_TOOLBAR_HEIGHT
 
         return [x_pos + x_start_render, y_pos + y_start_render, width_viewport, height_viewport]
 

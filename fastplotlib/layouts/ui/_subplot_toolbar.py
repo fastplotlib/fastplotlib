@@ -15,8 +15,6 @@ class SubplotToolbar(BaseGUI):
             size=None
         )
 
-        self.height = 0
-
     def update(self):
         x, y, width, height = self.owner.get_rect()
 
@@ -62,7 +60,5 @@ class SubplotToolbar(BaseGUI):
                 imgui.set_tooltip("maintain aspect")
 
         imgui.pop_id()
-
-        self.height = imgui.get_window_height()
 
         imgui.end()
