@@ -26,8 +26,6 @@ class RightClickMenu(BaseGUI):
         super().__init__(owner=owner, fa_icons=fa_icons, size=None)
         self._last_right_click_pos = None
 
-        self._is_open = False
-
         self._mouse_down: bool = False
 
         self.owner.renderer.event_filters["right-click-menu"] = np.array([
@@ -51,7 +49,7 @@ class RightClickMenu(BaseGUI):
 
         self.owner.renderer.event_filters[name][:] = [x1 - 1, y1 - 1], [x2 + 4, y2 + 4]
 
-    def get_subplot(self) -> PlotArea:
+    def get_subplot(self) -> PlotArea | bool:
         if self._last_right_click_pos is None:
             return False
 
@@ -67,18 +65,32 @@ class RightClickMenu(BaseGUI):
         if imgui.is_mouse_released(1) and self._mouse_down:
             self._mouse_down = False
 
+            # mouse was not moved between down and up events
             if self._last_right_click_pos == imgui.get_mouse_pos():
                 if self.get_subplot():
                     # open only if right click was inside a subplot
                     imgui.open_popup(f"right-click-menu")
-                    self._is_open = True
-                    self.get_subplot().controller._actions = {}  # cancel any scheduled events
 
         if not imgui.is_popup_open("right-click-menu"):
             self.reset_event_filters()
 
         if imgui.begin_popup(f"right-click-menu"):
             self.set_event_filter("right-click-menu")
+
+            if not self.get_subplot():
+                # for some reason it will still trigger at certain locations
+                # despite open_popup() only being called when an actual
+                # subplot is returned
+                imgui.end_popup()
+                imgui.close_current_popup()
+                return
+
+            name = self.get_subplot().name
+            if name is None:
+                name = self.get_subplot().position
+
+            imgui.text(f"subplot: {name}")
+            imgui.separator()
 
             if imgui.menu_item(f"Autoscale", None, False)[0]:
                 self.get_subplot().auto_scale()
