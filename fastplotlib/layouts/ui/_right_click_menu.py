@@ -28,15 +28,13 @@ class RightClickMenu(BaseGUI):
 
         self._mouse_down: bool = False
 
-        self.owner.renderer.event_filters["right-click-menu"] = np.array([
-            [-1, -1],
-            [-1, -1]
-        ])
+        self.owner.renderer.event_filters["right-click-menu"] = np.array(
+            [[-1, -1], [-1, -1]]
+        )
 
-        self.owner.renderer.event_filters["controller-menu"] = np.array([
-            [-1, -1],
-            [-1, -1]
-        ])
+        self.owner.renderer.event_filters["controller-menu"] = np.array(
+            [[-1, -1], [-1, -1]]
+        )
 
     def reset_event_filters(self):
         for k in ["right-click-menu", "controller-menu"]:
@@ -107,9 +105,7 @@ class RightClickMenu(BaseGUI):
 
             for axis in ["x", "y", "z"]:
                 scale = getattr(self.get_subplot().camera.local, f"scale_{axis}")
-                changed, flip = imgui.menu_item(
-                    f"Flip {axis} axis", None, scale < 0
-                )
+                changed, flip = imgui.menu_item(f"Flip {axis} axis", None, scale < 0)
 
                 if changed:
                     flip_axis(self.get_subplot(), axis, flip)
@@ -119,9 +115,7 @@ class RightClickMenu(BaseGUI):
             for plane in ["xy", "xz", "yz"]:
                 grid = getattr(self.get_subplot().axes.grids, plane)
                 visible = grid.visible
-                changed, new_visible = imgui.menu_item(
-                    f"Grid {plane}", None, visible
-                )
+                changed, new_visible = imgui.menu_item(f"Grid {plane}", None, visible)
 
                 if changed:
                     grid.visible = new_visible
@@ -129,10 +123,7 @@ class RightClickMenu(BaseGUI):
             imgui.separator()
 
             changed, fov = imgui.slider_float(
-                "FOV",
-                v=self.get_subplot().camera.fov,
-                v_min=0.0,
-                v_max=180.0
+                "FOV", v=self.get_subplot().camera.fov, v_min=0.0, v_max=180.0
             )
 
             imgui.separator()

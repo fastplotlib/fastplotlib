@@ -8,7 +8,9 @@ class BaseGUI:
     # used for pushing unique ID between multiple figs with identical UI elements
     ID_COUNTER: int = 0
 
-    def __init__(self, owner: PlotArea | Figure, fa_icons: imgui.ImFont, size: int | None):
+    def __init__(
+        self, owner: PlotArea | Figure, fa_icons: imgui.ImFont, size: int | None
+    ):
         BaseGUI.ID_COUNTER += 1
         self._id_counter = BaseGUI.ID_COUNTER
 

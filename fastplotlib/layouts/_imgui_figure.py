@@ -15,39 +15,34 @@ from ._figure import Figure
 from .ui import BaseGUI, SubplotToolbar, RightClickMenu
 
 
-GUI_EDGES = [
-    "top",
-    "right",
-    "bottom",
-    "left"
-]
+GUI_EDGES = ["top", "right", "bottom", "left"]
 
 
 class ImguiFigure(Figure):
     def __init__(
-            self,
-            shape: tuple[int, int] = (1, 1),
-            cameras: (
-                    Literal["2d", "3d"]
-                    | Iterable[Iterable[Literal["2d", "3d"]]]
-                    | pygfx.PerspectiveCamera
-                    | Iterable[Iterable[pygfx.PerspectiveCamera]]
-            ) = "2d",
-            controller_types: (
-                    Iterable[Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]]
-                    | Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]
-            ) = None,
-            controller_ids: (
-                    Literal["sync"]
-                    | Iterable[int]
-                    | Iterable[Iterable[int]]
-                    | Iterable[Iterable[str]]
-            ) = None,
-            controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
-            canvas: str | WgpuCanvasBase | pygfx.Texture = None,
-            renderer: pygfx.WgpuRenderer = None,
-            size: tuple[int, int] = (500, 300),
-            names: list | np.ndarray = None,
+        self,
+        shape: tuple[int, int] = (1, 1),
+        cameras: (
+            Literal["2d", "3d"]
+            | Iterable[Iterable[Literal["2d", "3d"]]]
+            | pygfx.PerspectiveCamera
+            | Iterable[Iterable[pygfx.PerspectiveCamera]]
+        ) = "2d",
+        controller_types: (
+            Iterable[Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]]
+            | Iterable[Literal["panzoom", "fly", "trackball", "orbit"]]
+        ) = None,
+        controller_ids: (
+            Literal["sync"]
+            | Iterable[int]
+            | Iterable[Iterable[int]]
+            | Iterable[Iterable[str]]
+        ) = None,
+        controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
+        canvas: str | WgpuCanvasBase | pygfx.Texture = None,
+        renderer: pygfx.WgpuRenderer = None,
+        size: tuple[int, int] = (500, 300),
+        names: list | np.ndarray = None,
     ):
         self._guis: dict[str, BaseGUI] = {}
 
@@ -60,19 +55,21 @@ class ImguiFigure(Figure):
             canvas=canvas,
             renderer=renderer,
             size=size,
-            names=names
+            names=names,
         )
 
         self._imgui_renderer = ImguiRenderer(self.renderer.device, self.canvas)
 
-        fronts_path = str(Path(imgui_bundle.__file__).parent.joinpath("assets", "fonts", "Font_Awesome_6_Free-Solid-900.otf"))
+        fronts_path = str(
+            Path(imgui_bundle.__file__).parent.joinpath(
+                "assets", "fonts", "Font_Awesome_6_Free-Solid-900.otf"
+            )
+        )
 
         io = imgui.get_io()
 
         self._fa_icons = io.fonts.add_font_from_file_ttf(
-            fronts_path,
-            16,
-            glyph_ranges_as_int_list=[fa.ICON_MIN_FA, fa.ICON_MAX_FA]
+            fronts_path, 16, glyph_ranges_as_int_list=[fa.ICON_MIN_FA, fa.ICON_MAX_FA]
         )
 
         io.fonts.build()
@@ -80,13 +77,12 @@ class ImguiFigure(Figure):
 
         self._imgui_renderer.set_gui(self._draw_imgui)
 
-        self._subplot_toolbars: np.ndarray[SubplotToolbar] = np.empty(shape=self._subplots.shape, dtype=object)
+        self._subplot_toolbars: np.ndarray[SubplotToolbar] = np.empty(
+            shape=self._subplots.shape, dtype=object
+        )
 
         for subplot in self._subplots.ravel():
-            toolbar = SubplotToolbar(
-                owner=subplot,
-                fa_icons=self._fa_icons
-            )
+            toolbar = SubplotToolbar(owner=subplot, fa_icons=self._fa_icons)
             self._subplot_toolbars[subplot.position] = toolbar
 
         self._right_click_menu = RightClickMenu(owner=self, fa_icons=self._fa_icons)
