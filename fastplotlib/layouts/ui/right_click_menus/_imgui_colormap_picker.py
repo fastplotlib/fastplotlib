@@ -107,7 +107,10 @@ class ColormapPicker(Popup):
             imgui.open_popup("cmap-picker")
 
         if imgui.begin_popup("cmap-picker"):
-            texture_height = (self.imgui_renderer.backend.io.font_global_scale * imgui.get_font().font_size) - 2
+            texture_height = (
+                self.imgui_renderer.backend.io.font_global_scale
+                * imgui.get_font().font_size
+            ) - 2
 
             self.is_open = True
             if imgui.menu_item("reset vmin-vmax", None, False)[0]:
@@ -115,11 +118,15 @@ class ColormapPicker(Popup):
 
             for cmap_name, texture_id in self._texture_ids.items():
                 clicked, selected = imgui.menu_item(
-                    label=cmap_name, shortcut=None, p_selected=self._lut_tool.cmap == cmap_name
+                    label=cmap_name,
+                    shortcut=None,
+                    p_selected=self._lut_tool.cmap == cmap_name,
                 )
 
                 imgui.same_line()
-                imgui.image(texture_id, image_size=(50, texture_height), border_col=(1, 1, 1, 1))
+                imgui.image(
+                    texture_id, image_size=(50, texture_height), border_col=(1, 1, 1, 1)
+                )
 
                 if clicked and selected:
                     self._lut_tool.cmap = cmap_name

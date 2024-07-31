@@ -63,7 +63,6 @@ class SubplotToolbar(Window):
             if imgui.is_item_hovered(0):
                 imgui.set_tooltip("maintain aspect")
 
-
         imgui.pop_id()
 
         imgui.end()
