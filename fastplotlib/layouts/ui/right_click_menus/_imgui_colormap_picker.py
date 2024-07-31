@@ -2,6 +2,7 @@ from pathlib import Path
 import ctypes
 
 import numpy as np
+import cmap
 
 import wgpu
 from imgui_bundle import imgui
@@ -9,9 +10,6 @@ from wgpu import GPUTexture
 
 from .. import Popup
 from ....utils import colormaps
-
-
-cmap_paths = sorted(Path(colormaps.__file__).absolute().parent.glob("*"))
 
 
 # TODO: create and upload textures only once per Figure
@@ -29,16 +27,17 @@ class ColormapPicker(Popup):
         self._textures = list()
 
         # make all colormaps and upload representative texture for each to the GPU
-        for path in cmap_paths:
-            if not path.is_file():
+        for name in sorted(cmap.Catalog().short_keys()):
+            colormap = cmap.Colormap(name)
+            # qualitative colormap, only show quantitative cmaps in this picker
+            if colormap.interpolation == "nearest":
                 continue
 
-            data = np.loadtxt(path).T
+            data = colormap(np.linspace(0, 1)) * 255
+
             data = np.vstack([[data]] * 2).astype(np.uint8)
             if data.size < 1:
                 continue  # skip any files that are not cmaps in here
-
-            name = path.name
 
             self._texture_ids[name], texture = self._create_texture_and_upload(data)
             self._textures.append(texture)
@@ -103,35 +102,37 @@ class ColormapPicker(Popup):
             # new popup has been triggered by a LUT tool
             self._open_new = False
 
-            imgui.set_next_window_pos(self._pos, imgui.Cond_.appearing)
+            imgui.set_next_window_pos(self._pos)
             imgui.open_popup("cmap-picker")
 
         if imgui.begin_popup("cmap-picker"):
+            self.set_event_filter("cmap-picker-filter")
+
             texture_height = (
                 self.imgui_renderer.backend.io.font_global_scale
                 * imgui.get_font().font_size
             ) - 2
 
             self.is_open = True
-            if imgui.menu_item("reset vmin-vmax", None, False)[0]:
+            if imgui.menu_item("Reset vmin-vmax", None, False)[0]:
                 self._lut_tool.image_graphic.reset_vmin_vmax()
 
-            for cmap_name, texture_id in self._texture_ids.items():
-                clicked, selected = imgui.menu_item(
-                    label=cmap_name,
-                    shortcut=None,
-                    p_selected=self._lut_tool.cmap == cmap_name,
-                )
+            imgui.separator()
 
-                imgui.same_line()
+            for cmap_name, texture_id in self._texture_ids.items():
                 imgui.image(
                     texture_id, image_size=(50, texture_height), border_col=(1, 1, 1, 1)
                 )
 
+                imgui.same_line()
+
+                clicked, selected = imgui.selectable(
+                    label=cmap_name,
+                    p_selected=cmap_name == self._lut_tool.cmap,
+                )
+
                 if clicked and selected:
                     self._lut_tool.cmap = cmap_name
-
-            self.set_event_filter("cmap-picker-filter")
 
             imgui.end_popup()
 
