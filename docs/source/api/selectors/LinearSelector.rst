@@ -20,12 +20,18 @@ Properties
 .. autosummary::
     :toctree: LinearSelector_api
 
-    LinearSelector.children
+    LinearSelector.axes
+    LinearSelector.axis
+    LinearSelector.block_events
+    LinearSelector.deleted
+    LinearSelector.event_handlers
     LinearSelector.limits
-    LinearSelector.position
-    LinearSelector.position_x
-    LinearSelector.position_y
-    LinearSelector.position_z
+    LinearSelector.name
+    LinearSelector.offset
+    LinearSelector.parent
+    LinearSelector.rotation
+    LinearSelector.selection
+    LinearSelector.supported_events
     LinearSelector.visible
     LinearSelector.world_object
 
@@ -34,9 +40,16 @@ Methods
 .. autosummary::
     :toctree: LinearSelector_api
 
+    LinearSelector.add_axes
+    LinearSelector.add_event_handler
     LinearSelector.add_ipywidget_handler
+    LinearSelector.clear_event_handlers
     LinearSelector.get_selected_data
     LinearSelector.get_selected_index
     LinearSelector.get_selected_indices
     LinearSelector.make_ipywidget_slider
+    LinearSelector.remove_event_handler
+    LinearSelector.rotate
+    LinearSelector.share_property
+    LinearSelector.unshare_property
 

@@ -1,104 +1,69 @@
-from abc import ABC, abstractmethod
-from inspect import getfullargspec
 from warnings import warn
-from typing import *
-import weakref
+from typing import Any, Literal
 
 import numpy as np
+from numpy.typing import NDArray
+
+from wgpu.gui.base import log_exception
 
 import pygfx
 
 
-supported_dtypes = [
-    np.uint8,
-    np.uint16,
-    np.uint32,
-    np.int8,
-    np.int16,
-    np.int32,
-    np.float16,
-    np.float32,
-]
+WGPU_MAX_TEXTURE_SIZE = 8192
 
 
 def to_gpu_supported_dtype(array):
     """
-    If ``array`` is a numpy array, converts it to a supported type. GPUs don't support 64 bit dtypes.
+    convert input array to float32 numpy array
     """
     if isinstance(array, np.ndarray):
-        if array.dtype not in supported_dtypes:
-            if np.issubdtype(array.dtype, np.integer):
-                warn(f"converting {array.dtype} array to int32")
-                return array.astype(np.int32)
-            elif np.issubdtype(array.dtype, np.floating):
-                warn(f"converting {array.dtype} array to float32")
-                return array.astype(np.float32, copy=False)
-            else:
-                raise TypeError(
-                    "Unsupported type, supported array types must be int or float dtypes"
-                )
+        if not array.dtype == np.float32:
+            warn(f"casting {array.dtype} array to float32")
+            return array.astype(np.float32)
+        return array
 
-    return array
+    # try to make a numpy array from it, should not copy, tested with jax arrays
+    return np.asarray(array).astype(np.float32)
 
 
-class FeatureEvent:
+class FeatureEvent(pygfx.Event):
     """
-    Dataclass that holds feature event information. Has ``type`` and ``pick_info`` attributes.
+    **All event instances have the following attributes**
 
-    Attributes
-    ----------
-    type: str, example "colors"
-
-    pick_info: dict:
-
-        ============== =============================================================================
-        key             value
-        ============== =============================================================================
-        "index"         indices where feature data was changed, ``range`` object or ``List[int]``
-        "world_object"  world object the feature belongs to
-        "new_data:      the new data for this feature
-        ============== =============================================================================
-
-        .. note::
-            pick info varies between features, this is just the general structure
+    +------------+-------------+-----------------------------------------------+
+    | attribute  | type        | description                                   |
+    +============+=============+===============================================+
+    | type       | str         | "colors" - name of the event                  |
+    +------------+-------------+-----------------------------------------------+
+    | graphic    | Graphic     | graphic instance that the event is from       |
+    +------------+-------------+-----------------------------------------------+
+    | info       | dict        | event info dictionary (see below)             |
+    +------------+-------------+-----------------------------------------------+
+    | target     | WorldObject | pygfx rendering engine object for the graphic |
+    +------------+-------------+-----------------------------------------------+
+    | time_stamp | float       | time when the event occured, in ms            |
+    +------------+-------------+-----------------------------------------------+
 
     """
 
-    def __init__(self, type: str, pick_info: dict):
-        self.type = type
-        self.pick_info = pick_info
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__} @ {hex(id(self))}\n"
-            f"type: {self.type}\n"
-            f"pick_info: {self.pick_info}\n"
-        )
+    def __init__(self, type: str, info: dict):
+        super().__init__(type=type)
+        self.info = info
 
 
-class GraphicFeature(ABC):
-    def __init__(self, parent, data: Any, collection_index: int = None):
-        # not shown as a docstring so it doesn't show up in the docs
-        #
-        # Parameters
-        # ----------
-        # parent
-        #
-        # data: Any
-        #
-        # collection_index: int
-        #     if part of a collection, index of this graphic within the collection
-
-        self._parent = weakref.proxy(parent)
-
-        self._data = to_gpu_supported_dtype(data)
-
-        self._collection_index = collection_index
+class GraphicFeature:
+    def __init__(self, **kwargs):
         self._event_handlers = list()
         self._block_events = False
 
-    def __call__(self, *args, **kwargs):
-        return self._data
+    @property
+    def value(self) -> Any:
+        """Graphic Feature value, must be implemented in subclass"""
+        raise NotImplemented
+
+    def set_value(self, graphic, value: float):
+        """Graphic Feature value setter, must be implemented in subclass"""
+        raise NotImplementedError
 
     def block_events(self, val: bool):
         """
@@ -112,23 +77,14 @@ class GraphicFeature(ABC):
         """
         self._block_events = val
 
-    @abstractmethod
-    def _set(self, value):
-        pass
-
-    def _parse_set_value(self, value):
-        if isinstance(value, GraphicFeature):
-            return value()
-
-        return value
-
     def add_event_handler(self, handler: callable):
         """
         Add an event handler. All added event handlers are called when this feature changes.
-        The ``handler`` can optionally accept a :class:`.FeatureEvent` as the first and only argument.
-        The ``FeatureEvent`` only has two attributes, ``type`` which denotes the type of event
-        as a ``str`` in the form of "<feature_name>", such as "color". And ``pick_info`` which contains
-        information about the event and Graphic that triggered it.
+
+        Used by `Graphic` classes to add to their event handlers, not meant for users. Users
+        add handlers to Graphic instances only.
+
+        The ``handler`` must accept a :class:`.FeatureEvent` as the first and only argument.
 
         Parameters
         ----------
@@ -164,196 +120,202 @@ class GraphicFeature(ABC):
         """Clear all event handlers"""
         self._event_handlers.clear()
 
-    # TODO: maybe this can be implemented right here in the base class
-    @abstractmethod
-    def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
-        """Called whenever a feature changes, and it calls all funcs in self._event_handlers"""
-        pass
-
     def _call_event_handlers(self, event_data: FeatureEvent):
         if self._block_events:
             return
 
         for func in self._event_handlers:
-            try:
-                args = getfullargspec(func).args
-
-                if len(args) > 0:
-                    if args[0] == "self" and not len(args) > 1:
-                        func()
-                    else:
-                        func(event_data)
-                else:
-                    func()
-            except TypeError:
-                warn(
-                    f"Event handler {func} has an unresolvable argspec, calling it without arguments"
-                )
-                func()
-
-    @abstractmethod
-    def __repr__(self) -> str:
-        pass
+            with log_exception(
+                f"Error during handling {self.__class__.__name__} event"
+            ):
+                func(event_data)
 
 
-def cleanup_slice(key: Union[int, slice], upper_bound) -> Union[slice, int]:
-    """
+class BufferManager(GraphicFeature):
+    """Smaller wrapper for pygfx.Buffer"""
 
-    If the key in an `int`, it just returns it. Otherwise,
-    it parses it and removes the `None` vals and replaces
-    them with corresponding values that can be used to
-    create a `range`, get `len` etc.
-
-    Parameters
-    ----------
-    key
-    upper_bound
-
-    Returns
-    -------
-
-    """
-    if isinstance(key, int):
-        return key
-
-    if isinstance(key, np.ndarray):
-        return cleanup_array_slice(key, upper_bound)
-
-    if isinstance(key, tuple):
-        # if tuple of slice we only need the first obj
-        # since the first obj is the datapoint indices
-        if isinstance(key[0], slice):
-            key = key[0]
+    def __init__(
+        self,
+        data: NDArray | pygfx.Buffer,
+        buffer_type: Literal["buffer", "texture", "texture-array"] = "buffer",
+        isolated_buffer: bool = True,
+        texture_dim: int = 2,
+        **kwargs,
+    ):
+        super().__init__()
+        if isolated_buffer and not isinstance(data, pygfx.Resource):
+            # useful if data is read-only, example: memmaps
+            bdata = np.zeros(data.shape, dtype=data.dtype)
+            bdata[:] = data[:]
         else:
-            raise TypeError("Tuple slicing must have slice object in first position")
+            # user's input array is used as the buffer
+            bdata = data
 
-    if not isinstance(key, slice):
-        raise TypeError("Must pass slice or int object")
+        if isinstance(data, pygfx.Resource):
+            # already a buffer, probably used for
+            # managing another BufferManager, example: VertexCmap manages VertexColors
+            self._buffer = data
+        elif buffer_type == "buffer":
+            self._buffer = pygfx.Buffer(bdata)
+        elif buffer_type == "texture":
+            # TODO: placeholder, not currently used since TextureArray is used specifically for Image graphics
+            self._buffer = pygfx.Texture(bdata, dim=texture_dim)
+        else:
+            raise ValueError(
+                "`data` must be a pygfx.Buffer instance or `buffer_type` must be one of: 'buffer' or 'texture'"
+            )
 
-    start = key.start
-    stop = key.stop
-    step = key.step
-    for attr in [start, stop, step]:
-        if attr is None:
-            continue
-        if attr < 0:
-            raise IndexError("Negative indexing not supported.")
+        self._event_handlers: list[callable] = list()
 
-    if start is None:
-        start = 0
+        self._shared: int = 0
 
-    if stop is None:
-        stop = upper_bound
+    @property
+    def value(self) -> np.ndarray:
+        """numpy array object representing the data managed by this buffer"""
+        return self.buffer.data
 
-    elif stop > upper_bound:
-        raise IndexError(
-            f"Index: `{stop}` out of bounds for feature array of size: `{upper_bound}`"
-        )
-
-    step = key.step
-    if step is None:
-        step = 1
-
-    return slice(start, stop, step)
-
-
-def cleanup_array_slice(key: np.ndarray, upper_bound) -> Union[np.ndarray, None]:
-    """
-    Cleanup numpy array used for fancy indexing, make sure key[-1] <= upper_bound.
-
-    Returns None if nothing to change.
-
-    Parameters
-    ----------
-    key: np.ndarray
-        integer or boolean array
-
-    upper_bound
-
-    Returns
-    -------
-    np.ndarray
-        integer indexing array
-
-    """
-
-    if key.ndim > 1:
-        raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing")
-
-    # if boolean array convert to integer array of indices
-    if key.dtype == bool:
-        key = np.nonzero(key)[0]
-
-    if key.size < 1:
-        return None
-
-    # make sure indices within bounds of feature buffer range
-    if key[-1] > upper_bound:
-        raise IndexError(
-            f"Index: `{key[-1]}` out of bounds for feature array of size: `{upper_bound}`"
-        )
-
-    # make sure indices are integers
-    if np.issubdtype(key.dtype, np.integer):
-        return key
-
-    raise TypeError(f"Can only use 1D boolean or integer arrays for fancy indexing")
-
-
-class GraphicFeatureIndexable(GraphicFeature):
-    """An indexable Graphic Feature, colors, data, sizes etc."""
-
-    def _set(self, value):
-        value = self._parse_set_value(value)
+    def set_value(self, graphic, value):
+        """Sets values on entire array"""
         self[:] = value
 
-    @abstractmethod
+    @property
+    def buffer(self) -> pygfx.Buffer | pygfx.Texture:
+        """managed buffer"""
+        return self._buffer
+
+    @property
+    def shared(self) -> int:
+        """Number of graphics that share this buffer"""
+        return self._shared
+
+    @property
+    def __array_interface__(self):
+        raise BufferError(
+            f"Cannot use graphic feature buffer as an array, use <feature-name>.value instead.\n"
+            f"Examples: line.data.value, line.colors.value, scatter.data.value, scatter.sizes.value"
+        )
+
     def __getitem__(self, item):
-        pass
+        return self.buffer.data[item]
 
-    @abstractmethod
     def __setitem__(self, key, value):
-        pass
+        raise NotImplementedError
 
-    @abstractmethod
-    def _update_range(self, key):
-        pass
+    def _parse_offset_size(
+        self,
+        key: int | slice | np.ndarray[int | bool] | list[bool | int],
+        upper_bound: int,
+    ):
+        """
+        parse offset and size for first, i.e. n_datapoints, dimension
+        """
+        if np.issubdtype(type(key), np.integer):
+            # simplest case, just an int
+            offset = key
+            size = 1
 
-    @property
-    @abstractmethod
-    def buffer(self) -> Union[pygfx.Buffer, pygfx.Texture]:
-        """Underlying buffer for this feature"""
-        pass
+        elif isinstance(key, slice):
+            # TODO: off-by-one sometimes when step is used
+            #  the offset can be one to the left or the size
+            #  is one extra so it's not really an issue for now
+            # parse slice
+            start, stop, step = key.indices(upper_bound)
 
-    @property
-    def _upper_bound(self) -> int:
-        return self._data.shape[0]
-
-    def _update_range_indices(self, key):
-        """Currently used by colors and positions data"""
-        if not isinstance(key, np.ndarray):
-            key = cleanup_slice(key, self._upper_bound)
-
-        if isinstance(key, int):
-            self.buffer.update_range(key, size=1)
-            return
-
-        # else if it's a slice obj
-        if isinstance(key, slice):
-            if key.step == 1:  # we cleaned up the slice obj so step of None becomes 1
-                # update range according to size using the offset
-                self.buffer.update_range(offset=key.start, size=key.stop - key.start)
-
+            # account for backwards indexing
+            if (start > stop) and step < 0:
+                offset = stop
             else:
-                step = key.step
-                # convert slice to indices
-                ixs = range(key.start, key.stop, step)
-                for ix in ixs:
-                    self.buffer.update_range(ix, size=1)
+                offset = start
 
-        # TODO: See how efficient this is with large indexing
-        elif isinstance(key, np.ndarray):
-            self.buffer.update_range()
+            # slice.indices will give -1 if None is passed
+            # which just means 0 here since buffers do not
+            # use negative indexing
+            offset = max(0, offset)
+
+            # number of elements to upload
+            # this is indexing so do not add 1
+            size = abs(stop - start)
+
+        elif isinstance(key, (np.ndarray, list)):
+            if isinstance(key, list):
+                # convert to array
+                key = np.array(key)
+
+            if not key.ndim == 1:
+                raise TypeError(
+                    f"can only use 1D arrays for fancy indexing, you have passed a data with: {key.ndim} dimensions"
+                )
+
+            if key.dtype == bool:
+                # convert bool mask to integer indices
+                key = np.nonzero(key)[0]
+
+            if not np.issubdtype(key.dtype, np.integer):
+                # fancy indexing doesn't make sense with non-integer types
+                raise TypeError(
+                    f"can only using integer or booleans arrays for fancy indexing, your array is of type: {key.dtype}"
+                )
+
+            if key.size < 1:
+                # nothing to update
+                return
+
+            # convert any negative integer indices to positive indices
+            key %= upper_bound
+
+            # index of first element to upload
+            offset = key.min()
+
+            # size range to upload
+            # add 1 because this is direct
+            # passing of indices, not a start:stop
+            size = np.ptp(key) + 1
 
         else:
-            raise TypeError("must pass int or slice to update range")
+            raise TypeError(
+                f"invalid key for indexing buffer: {key}\n"
+                f"valid ways to index buffers are using integers, slices, or fancy indexing with integers or bool"
+            )
+
+        return offset, size
+
+    def _update_range(
+        self,
+        key: (
+            int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]
+        ),
+    ):
+        """
+        Uses key from slicing to determine the offset and
+        size of the buffer to mark for upload to the GPU
+        """
+        upper_bound = self.value.shape[0]
+
+        if isinstance(key, tuple):
+            if any([k is Ellipsis for k in key]):
+                # let's worry about ellipsis later
+                raise TypeError("ellipses not supported for indexing buffers")
+            # if multiple dims are sliced, we only need the key for
+            # the first dimension corresponding to n_datapoints
+            key: int | np.ndarray[int | bool] | slice = key[0]
+
+        offset, size = self._parse_offset_size(key, upper_bound)
+        self.buffer.update_range(offset=offset, size=size)
+
+    def _emit_event(self, type: str, key, value):
+        if len(self._event_handlers) < 1:
+            return
+
+        event_info = {
+            "key": key,
+            "value": value,
+        }
+        event = FeatureEvent(type, info=event_info)
+
+        self._call_event_handlers(event)
+
+    def __len__(self):
+        raise NotImplementedError
+
+    def __repr__(self):
+        return f"{self.__class__.__name__} buffer data:\n" f"{self.value.__repr__()}"

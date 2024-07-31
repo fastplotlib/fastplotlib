@@ -1,26 +1,64 @@
-from ._colors import ColorFeature, CmapFeature, ImageCmapFeature, HeatmapCmapFeature
-from ._data import PointsDataFeature, ImageDataFeature, HeatmapDataFeature
-from ._sizes import PointsSizesFeature
-from ._present import PresentFeature
-from ._thickness import ThicknessFeature
-from ._base import GraphicFeature, GraphicFeatureIndexable, FeatureEvent, to_gpu_supported_dtype
+from ._positions_graphics import (
+    VertexColors,
+    UniformColor,
+    UniformSize,
+    Thickness,
+    VertexPositions,
+    PointsSizesFeature,
+    VertexCmap,
+)
+from ._image import (
+    TextureArray,
+    ImageCmap,
+    ImageVmin,
+    ImageVmax,
+    ImageInterpolation,
+    ImageCmapInterpolation,
+    WGPU_MAX_TEXTURE_SIZE,
+)
+from ._base import (
+    GraphicFeature,
+    BufferManager,
+    FeatureEvent,
+    to_gpu_supported_dtype,
+)
+
+from ._text import (
+    TextData,
+    FontSize,
+    TextFaceColor,
+    TextOutlineColor,
+    TextOutlineThickness,
+)
+
 from ._selection_features import LinearSelectionFeature, LinearRegionSelectionFeature
+from ._common import Name, Offset, Rotation, Visible, Deleted
+
 
 __all__ = [
-    "ColorFeature",
-    "CmapFeature",
-    "ImageCmapFeature",
-    "HeatmapCmapFeature",
-    "PointsDataFeature",
+    "VertexColors",
+    "UniformColor",
+    "UniformSize",
+    "Thickness",
+    "VertexPositions",
     "PointsSizesFeature",
-    "ImageDataFeature",
-    "HeatmapDataFeature",
-    "PresentFeature",
-    "ThicknessFeature",
-    "GraphicFeature",
-    "GraphicFeatureIndexable",
-    "FeatureEvent",
-    "to_gpu_supported_dtype",
+    "VertexCmap",
+    "TextureArray",
+    "ImageCmap",
+    "ImageVmin",
+    "ImageVmax",
+    "ImageInterpolation",
+    "ImageCmapInterpolation",
+    "TextData",
+    "FontSize",
+    "TextFaceColor",
+    "TextOutlineColor",
+    "TextOutlineThickness",
     "LinearSelectionFeature",
     "LinearRegionSelectionFeature",
+    "Name",
+    "Offset",
+    "Rotation",
+    "Visible",
+    "Deleted",
 ]

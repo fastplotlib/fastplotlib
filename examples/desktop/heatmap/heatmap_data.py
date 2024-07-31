@@ -4,38 +4,32 @@ Heatmap change data
 Change the data of a heatmap
 """
 
-# test_example = true
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'hidden'
 
 import fastplotlib as fpl
 import numpy as np
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+figure = fpl.Figure(size=(700, 560))
 
-xs = np.linspace(0, 1_000, 10_000)
+xs = np.linspace(0, 1_000, 9_000, dtype=np.float32)
 
-sine = np.sin(xs)
-cosine = np.cos(xs)
+sine = np.sin(np.sqrt(xs))
 
-# alternating sines and cosines
-data = np.zeros((10_000, 10_000), dtype=np.float32)
-data[::2] = sine
-data[1::2] = cosine
+data = np.vstack([sine * i for i in range(9_000)])
 
 # plot the image data
-heatmap_graphic = plot.add_heatmap(data=data, name="heatmap")
+img = figure[0, 0].add_image(data=data, name="heatmap")
 
-plot.show()
+figure.show()
 
-plot.canvas.set_logical_size(1500, 1500)
+cosine = np.cos(np.sqrt(xs)[:3000])
 
-plot.auto_scale()
+# change first 2,000 rows and 3,000 columns
+img.data[:2_000, :3_000] = np.vstack([cosine * i * 4 for i in range(2_000)])
 
-heatmap_graphic.data[:5_000] = sine
-heatmap_graphic.data[5_000:] = cosine
-
-
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

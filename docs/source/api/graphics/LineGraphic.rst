@@ -20,11 +20,18 @@ Properties
 .. autosummary::
     :toctree: LineGraphic_api
 
-    LineGraphic.children
-    LineGraphic.position
-    LineGraphic.position_x
-    LineGraphic.position_y
-    LineGraphic.position_z
+    LineGraphic.axes
+    LineGraphic.block_events
+    LineGraphic.cmap
+    LineGraphic.colors
+    LineGraphic.data
+    LineGraphic.deleted
+    LineGraphic.event_handlers
+    LineGraphic.name
+    LineGraphic.offset
+    LineGraphic.rotation
+    LineGraphic.supported_events
+    LineGraphic.thickness
     LineGraphic.visible
     LineGraphic.world_object
 
@@ -33,9 +40,13 @@ Methods
 .. autosummary::
     :toctree: LineGraphic_api
 
+    LineGraphic.add_axes
+    LineGraphic.add_event_handler
     LineGraphic.add_linear_region_selector
     LineGraphic.add_linear_selector
-    LineGraphic.link
-    LineGraphic.reset_feature
-    LineGraphic.set_feature
+    LineGraphic.clear_event_handlers
+    LineGraphic.remove_event_handler
+    LineGraphic.rotate
+    LineGraphic.share_property
+    LineGraphic.unshare_property
 

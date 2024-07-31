@@ -62,8 +62,8 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
         max_colors = len(cm.color_stops)
         if n_colors > max_colors:
             raise ValueError(
-                f"You have requested <{n_colors}> but only <{max_colors} existing for the "
-                f"chosen cmap: <{cmap}>"
+                f"You have requested <{n_colors}> colors but only <{max_colors}> exist for the "
+                f"chosen cmap: <{name}>"
             )
         return np.asarray(cm.color_stops, dtype=np.float32)[:n_colors, 1:]
 
@@ -134,7 +134,7 @@ def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
     return OrderedDict(zip(labels, colors))
 
 
-def quick_min_max(data: np.ndarray) -> Tuple[float, float]:
+def quick_min_max(data: np.ndarray) -> tuple[float, float]:
     """
     Adapted from pyqtgraph.ImageView.
     Estimate the min/max values of *data* by subsampling.
@@ -189,7 +189,7 @@ def make_pygfx_colors(colors, n_colors):
     return colors_array
 
 
-def calculate_gridshape(n_subplots: int) -> Tuple[int, int]:
+def calculate_figure_shape(n_subplots: int) -> tuple[int, int]:
     """
     Returns ``(n_rows, n_cols)`` from given number of subplots ``n_subplots``
     """
@@ -209,7 +209,7 @@ def normalize_min_max(a):
 def parse_cmap_values(
     n_colors: int,
     cmap_name: str,
-    cmap_values: Union[np.ndarray, List[Union[int, float]]] = None,
+    transform: np.ndarray | list[int | float] = None,
 ) -> np.ndarray:
     """
 
@@ -221,28 +221,25 @@ def parse_cmap_values(
     cmap_name: str
         colormap name
 
-    cmap_values: np.ndarray | List[int | float], optional
-        cmap values
+    transform: np.ndarray | List[int | float], optional
+        cmap transform
     Returns
     -------
 
     """
-    if cmap_values is None:
-        # use the cmap values linearly just along the collection indices
-        # for example, if len(data) = 10 and the cmap is "jet", then it will
-        # linearly go from blue to red from data[0] to data[-1]
+    if transform is None:
         colors = make_colors(n_colors, cmap_name)
         return colors
 
     else:
-        if not isinstance(cmap_values, np.ndarray):
-            cmap_values = np.array(cmap_values)
+        if not isinstance(transform, np.ndarray):
+            transform = np.array(transform)
 
-        # use the values within cmap_values to set the color of the corresponding data
-        # each individual data[i] has its color based on the "relative cmap_value intensity"
-        if len(cmap_values) != n_colors:
+        # use the of the cmap_transform to set the color of the corresponding data
+        # each individual data[i] has its color based on the transform values
+        if len(transform) != n_colors:
             raise ValueError(
-                f"len(cmap_values) != len(data): {len(cmap_values)} != {n_colors}"
+                f"len(cmap_values) != len(data): {len(transform)} != {n_colors}"
             )
 
         colormap = get_cmap(cmap_name)
@@ -252,22 +249,23 @@ def parse_cmap_values(
         # can also use cm.category == "qualitative"
         if Colormap(cmap_name).interpolation == "nearest":
             # check that cmap_values are <int> and within the number of colors `n_colors`
+        
             # do not scale, use directly
-            if not np.issubdtype(cmap_values.dtype, np.integer):
+            if not np.issubdtype(transform.dtype, np.integer):
                 raise TypeError(
-                    f"<int> cmap_values should be used with qualitative colormaps, the dtype you "
-                    f"have passed is {cmap_values.dtype}"
+                    f"<int> `cmap_transform` values should be used with qualitative colormaps, "
+                    f"the dtype you have passed is {transform.dtype}"
                 )
-            if max(cmap_values) > n_colors:
+            if max(transform) > n_colors:
                 raise IndexError(
                     f"You have chosen the qualitative colormap <'{cmap_name}'> which only has "
-                    f"<{n_colors}> colors, which is lower than the max value of your `cmap_values`."
+                    f"<{n_colors}> colors, which is lower than the max value of your `cmap_transform`."
                     f"Choose a cmap with more colors, or a non-quantitative colormap."
                 )
-            norm_cmap_values = cmap_values
+            norm_cmap_values = transform
         else:
             # scale between 0 - n_colors so we can just index the colormap as a LUT
-            norm_cmap_values = (normalize_min_max(cmap_values) * n_colors).astype(int)
+            norm_cmap_values = (normalize_min_max(transform) * n_colors).astype(int)
 
         # use colormap as LUT to map the cmap_values to the colormap index
         colors = np.vstack([colormap[val] for val in norm_cmap_values])

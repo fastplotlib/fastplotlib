@@ -1,34 +1,48 @@
 """
 Scatter Plot
 ============
+
 Example showing scatter plot.
 """
 
-# test_example = true
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 import numpy as np
-from pathlib import Path
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+figure = fpl.Figure(size=(700, 560))
 
-data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
-data = np.load(data_path)
+# create a random distribution of 10,000 xyz coordinates
+n_points = 5_000
 
-n_points = 50
+# dimensions always have to be [n_points, xyz]
+dims = (n_points, 3)
+
+clouds_offset = 15
+
+# create some random clouds
+normal = np.random.normal(size=dims, scale=5)
+# stack the data into a single array
+cloud = np.vstack(
+    [
+        normal - clouds_offset,
+        normal,
+        normal + clouds_offset,
+    ]
+)
+
+# color each of them separately
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
-scatter_graphic = plot.add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
+# use an alpha value since this will be a lot of points
+figure[0,0].add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
 
-plot.show()
-
-plot.canvas.set_logical_size(800, 800)
-
-plot.auto_scale()
+figure.show()
 
 
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

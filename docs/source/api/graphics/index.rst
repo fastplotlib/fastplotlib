@@ -4,10 +4,9 @@ Graphics
 .. toctree::
     :maxdepth: 1
 
+    LineGraphic
     ImageGraphic
     ScatterGraphic
-    LineGraphic
-    HeatmapGraphic
+    TextGraphic
     LineCollection
     LineStack
-    TextGraphic

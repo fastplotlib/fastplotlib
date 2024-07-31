@@ -20,15 +20,25 @@ Properties
 .. autosummary::
     :toctree: LineCollection_api
 
-    LineCollection.children
+    LineCollection.axes
+    LineCollection.block_events
     LineCollection.cmap
-    LineCollection.cmap_values
+    LineCollection.colors
+    LineCollection.data
+    LineCollection.deleted
+    LineCollection.event_handlers
     LineCollection.graphics
-    LineCollection.position
-    LineCollection.position_x
-    LineCollection.position_y
-    LineCollection.position_z
+    LineCollection.metadatas
+    LineCollection.name
+    LineCollection.names
+    LineCollection.offset
+    LineCollection.offsets
+    LineCollection.rotation
+    LineCollection.rotations
+    LineCollection.supported_events
+    LineCollection.thickness
     LineCollection.visible
+    LineCollection.visibles
     LineCollection.world_object
 
 Methods
@@ -36,11 +46,15 @@ Methods
 .. autosummary::
     :toctree: LineCollection_api
 
+    LineCollection.add_axes
+    LineCollection.add_event_handler
     LineCollection.add_graphic
     LineCollection.add_linear_region_selector
     LineCollection.add_linear_selector
-    LineCollection.link
+    LineCollection.clear_event_handlers
+    LineCollection.remove_event_handler
     LineCollection.remove_graphic
-    LineCollection.reset_feature
-    LineCollection.set_feature
+    LineCollection.rotate
+    LineCollection.share_property
+    LineCollection.unshare_property
 

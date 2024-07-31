@@ -14,6 +14,7 @@ jobs:
   screenshots:
     name: Regenerate
     runs-on: bigmem
+    timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     steps:
       - name: Install git-lfs
@@ -48,7 +49,7 @@ jobs:
         run: |
           # regenerate screenshots
           REGENERATE_SCREENSHOTS=1 pytest -v examples
-          REGENERATE_SCREENSHOTS=1 pytest --nbmake examples/notebooks/
+          FASTPLOTLIB_NB_TESTS=1 REGENERATE_SCREENSHOTS=1 pytest --nbmake examples/notebooks/
       - uses: actions/upload-artifact@v3
         if: always()
         with:

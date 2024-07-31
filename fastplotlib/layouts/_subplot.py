@@ -1,46 +1,51 @@
-from typing import *
+from typing import Literal, Union
 
 import numpy as np
 
 import pygfx
 
-from wgpu.gui.auto import WgpuCanvas
+from wgpu.gui import WgpuCanvasBase
 
 from ..graphics import TextGraphic
 from ._utils import make_canvas_and_renderer, create_camera, create_controller
 from ._plot_area import PlotArea
-from .graphic_methods_mixin import GraphicMethodsMixin
+from ._graphic_methods_mixin import GraphicMethodsMixin
+from ..graphics._axes import Axes
 
 
 class Subplot(PlotArea, GraphicMethodsMixin):
     def __init__(
         self,
-        parent: Any = None,
-        position: Tuple[int, int] = None,
-        parent_dims: Tuple[int, int] = None,
-        camera: Union[str, pygfx.PerspectiveCamera] = "2d",
-        controller: Union[str, pygfx.Controller] = None,
-        canvas: Union[str, WgpuCanvas, pygfx.Texture] = None,
+        parent: Union["Figure", None] = None,
+        position: tuple[int, int] = None,
+        parent_dims: tuple[int, int] = None,
+        camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera = "2d",
+        controller: (
+            Literal["panzoom", "fly", "trackball", "orbit"] | pygfx.Controller
+        ) = None,
+        canvas: (
+            Literal["glfw", "jupyter", "qt", "wx"] | WgpuCanvasBase | pygfx.Texture
+        ) = None,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
     ):
         """
-        General plot object that composes a ``Gridplot``. Each ``Gridplot`` instance will have [n rows, n columns]
+        General plot object is found within a ``Figure``. Each ``Figure`` instance will have [n rows, n columns]
         of subplots.
 
         .. important::
-            ``Subplot`` is not meant to be constructed directly, it only exists as part of a ``GridPlot``
+            ``Subplot`` is not meant to be constructed directly, it only exists as part of a ``Figure``
 
         Parameters
         ----------
-        parent: Any
-            parent GridPlot instance
+        parent: 'Figure' | None
+            parent Figure instance
 
         position: (int, int), optional
-            corresponds to the [row, column] position of the subplot within a ``Gridplot``
+            corresponds to the [row, column] position of the subplot within a ``Figure``
 
         parent_dims: (int, int), optional
-            dimensions of the parent ``GridPlot``
+            dimensions of the parent ``Figure``
 
         camera: str or pygfx.PerspectiveCamera, default '2d'
             indicates the FOV for the camera, '2d' sets ``fov = 0``, '3d' sets ``fov = 50``.
@@ -51,7 +56,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             | if ``str``, must be one of: `"panzoom", "fly", "trackball", or "orbit"`.
             | also accepts a pygfx.Controller instance
 
-        canvas: one of "jupyter", "glfw", "qt", WgpuCanvas, or pygfx.Texture, optional
+        canvas: one of "jupyter", "glfw", "qt", "ex, a WgpuCanvas, or a pygfx.Texture, optional
             Provides surface on which a scene will be rendered. Can optionally provide a WgpuCanvas instance or a str
             to force the PlotArea to use a specific canvas from one of the following options: "jupyter", "glfw", "qt".
             Can also provide a pygfx Texture to render to.
@@ -84,11 +89,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self.spacing = 2
 
-        self._axes: pygfx.AxesHelper = pygfx.AxesHelper(size=100)
-        for arrow in self._axes.children:
-            self._axes.remove(arrow)
-
-        self._grid: pygfx.GridHelper = pygfx.GridHelper(size=100, thickness=1)
+        self._title_graphic: TextGraphic = None
 
         super(Subplot, self).__init__(
             parent=parent,
@@ -107,16 +108,22 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             self.docks[pos] = dv
             self.children.append(dv)
 
-        self._title_graphic: TextGraphic = None
         if self.name is not None:
             self.set_title(self.name)
 
+        self._axes = Axes(self)
+        self.scene.add(self.axes.world_object)
+
     @property
-    def name(self) -> Any:
+    def axes(self) -> Axes:
+        return self._axes
+
+    @property
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, name: Any):
+    def name(self, name: str):
         self._name = name
         self.set_title(name)
 
@@ -135,7 +142,11 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         """
         return self._docks
 
-    def set_title(self, text: Any):
+    def render(self):
+        self.axes.update_using_camera()
+        super().render()
+
+    def set_title(self, text: str):
         """Sets the plot title, stored as a ``TextGraphic`` in the "top" dock area"""
         if text is None:
             return
@@ -144,7 +155,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         if self._title_graphic is not None:
             self._title_graphic.text = text
         else:
-            tg = TextGraphic(text=text, size=18)
+            tg = TextGraphic(text=text, font_size=18)
             self._title_graphic = tg
 
             self.docks["top"].size = 35
@@ -164,7 +175,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     def get_rect(self):
         """Returns the bounding box that defines the Subplot within the canvas."""
         row_ix, col_ix = self.position
-        width_canvas, height_canvas = self.renderer.logical_size
+        width_canvas, height_canvas = self.canvas.get_logical_size()
 
         x_pos = (
             (width_canvas / self.ncols) + ((col_ix - 1) * (width_canvas / self.ncols))
@@ -181,20 +192,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             rect = rect + dv.get_parent_rect_adjust()
 
         return rect
-
-    def set_axes_visibility(self, visible: bool):
-        """Toggles axes visibility."""
-        if visible:
-            self.scene.add(self._axes)
-        else:
-            self.scene.remove(self._axes)
-
-    def set_grid_visibility(self, visible: bool):
-        """Toggles grid visibility."""
-        if visible:
-            self.scene.add(self._grid)
-        else:
-            self.scene.remove(self._grid)
 
 
 class Dock(PlotArea):
@@ -213,7 +210,7 @@ class Dock(PlotArea):
 
         self._size = size
 
-        super(Dock, self).__init__(
+        super().__init__(
             parent=parent,
             position=position,
             camera=pygfx.OrthographicCamera(),
@@ -348,4 +345,4 @@ class Dock(PlotArea):
         if self.size == 0:
             return
 
-        super(Dock, self).render()
+        super().render()

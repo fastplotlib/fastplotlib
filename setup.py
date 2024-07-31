@@ -4,7 +4,8 @@ from pathlib import Path
 
 install_requires = [
     "numpy>=1.23.0",
-    "pygfx>=0.1.14",
+    "wgpu>=0.16.0",
+    "pygfx>=0.3.0",
     "cmap>=0.1.3",
 ]
 
@@ -12,30 +13,30 @@ install_requires = [
 extras_require = {
     "docs": [
         "sphinx",
+        "sphinx-gallery",
         "furo",
         "glfw",
         "jupyter-rfb>=0.4.1",  # required so ImageWidget docs show up
         "ipywidgets>=8.0.0,<9",
         "sphinx-copybutton",
         "sphinx-design",
-        "nbsphinx",
         "pandoc",
         "jupyterlab",
-        "sidecar"
+        "sidecar",
+        "imageio",
+        "matplotlib",
+        "scikit-learn"
     ],
-
-    "notebook":
-    [
+    "notebook": [
         "jupyterlab",
         "jupyter-rfb>=0.4.1",
         "ipywidgets>=8.0.0,<9",
-        "sidecar"
+        "sidecar",
     ],
-
-    "tests":
-    [
-        "pytest",
+    "tests": [
+        "pytest<8.0.0",
         "nbmake",
+        "black",
         "scipy",
         "imageio[pyav]",
         "jupyterlab",
@@ -43,17 +44,15 @@ extras_require = {
         "ipywidgets>=8.0.0,<9",
         "scikit-learn",
         "tqdm",
-        "sidecar"
+        "sidecar",
     ],
-
-    "tests-desktop":
-    [
-        "pytest",
+    "tests-desktop": [
+        "pytest<8.0.0",
         "scipy",
         "imageio",
         "scikit-learn",
         "tqdm",
-    ]
+    ],
 }
 
 
@@ -73,19 +72,18 @@ classifiers = [
 
 
 setup(
-    name='fastplotlib',
+    name="fastplotlib",
     version=ver,
     long_description=readme,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     packages=find_packages(),
-    url='https://github.com/fastplotlib/fastplotlib',
-    license='Apache 2.0',
-    author='Kushal Kolar, Caitlin Lewis',
-    author_email='',
-    python_requires='>=3.9',
+    url="https://github.com/fastplotlib/fastplotlib",
+    license="Apache 2.0",
+    author="Kushal Kolar, Caitlin Lewis",
+    author_email="",
+    python_requires=">=3.10",
     install_requires=install_requires,
     extras_require=extras_require,
     include_package_data=True,
-    description='A fast plotting library built using the pygfx render engine'
+    description="A fast plotting library built using the pygfx render engine",
 )
-

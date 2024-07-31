@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: LinearSelectionFeature_api
 
+    LinearSelectionFeature.value
 
 Methods
 ~~~~~~~
@@ -30,4 +31,5 @@ Methods
     LinearSelectionFeature.block_events
     LinearSelectionFeature.clear_event_handlers
     LinearSelectionFeature.remove_event_handler
+    LinearSelectionFeature.set_value
 

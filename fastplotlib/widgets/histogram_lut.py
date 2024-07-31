@@ -1,24 +1,37 @@
-from typing import *
+from math import ceil
 import weakref
 
 import numpy as np
 
-from pygfx import Group
+import pygfx
 
 from ..graphics import LineGraphic, ImageGraphic, TextGraphic
+from ..graphics.utils import pause_events
 from ..graphics._base import Graphic
 from ..graphics.selectors import LinearRegionSelector
+
+
+def _get_image_graphic_events(image_graphic: ImageGraphic) -> list[str]:
+    """Small helper function to return the relevant events for an ImageGraphic"""
+    events = ["vmin", "vmax"]
+
+    if not image_graphic.data.value.ndim > 2:
+        events.append("cmap")
+
+    # if RGB(A), do not add cmap
+
+    return events
 
 
 # TODO: This is a widget, we can think about a BaseWidget class later if necessary
 class HistogramLUT(Graphic):
     def __init__(
-            self,
-            data: np.ndarray,
-            image_graphic: ImageGraphic,
-            nbins: int = 100,
-            flank_divisor: float = 5.0,
-            **kwargs
+        self,
+        data: np.ndarray,
+        image_graphic: ImageGraphic,
+        nbins: int = 100,
+        flank_divisor: float = 5.0,
+        **kwargs,
     ):
         """
 
@@ -26,9 +39,10 @@ class HistogramLUT(Graphic):
         ----------
         data
         image_graphic
-        nbins
-        flank_divisor: float, default 5.0
-            set `np.inf` for no flanks
+        nbins: int, defaut 100.
+            Total number of bins used in the histogram
+        flank_divisor: float, default 5.0.
+            Fraction of empty histogram bins on the tails of the distribution set `np.inf` for no flanks
         kwargs
         """
         super().__init__(**kwargs)
@@ -45,52 +59,60 @@ class HistogramLUT(Graphic):
 
         line_data = np.column_stack([hist_scaled, edges_flanked])
 
-        self.line = LineGraphic(line_data)
+        self._histogram_line = LineGraphic(line_data)
 
-        bounds = (edges[0], edges[-1])
+        bounds = (edges[0] * self._scale_factor, edges[-1] * self._scale_factor)
         limits = (edges_flanked[0], edges_flanked[-1])
         size = 120  # since it's scaled to 100
         origin = (hist_scaled.max() / 2, 0)
 
-        self.linear_region = LinearRegionSelector(
-            bounds=bounds,
+        self._linear_region_selector = LinearRegionSelector(
+            selection=bounds,
             limits=limits,
             size=size,
-            origin=origin,
+            center=origin[0],
             axis="y",
-            edge_thickness=8
+            edge_thickness=8,
+            parent=self._histogram_line,
         )
 
         # there will be a small difference with the histogram edges so this makes them both line up exactly
-        self.linear_region.selection = (image_graphic.cmap.vmin, image_graphic.cmap.vmax)
+        self._linear_region_selector.selection = (
+            self._image_graphic.vmin * self._scale_factor,
+            self._image_graphic.vmax * self._scale_factor,
+        )
 
-        self._vmin = self.image_graphic.cmap.vmin
-        self._vmax = self.image_graphic.cmap.vmax
+        self._vmin = self.image_graphic.vmin
+        self._vmax = self.image_graphic.vmax
 
         vmin_str, vmax_str = self._get_vmin_vmax_str()
 
         self._text_vmin = TextGraphic(
             text=vmin_str,
-            size=16,
-            position=(0, 0),
+            font_size=16,
+            offset=(0, 0, 0),
             anchor="top-left",
             outline_color="black",
             outline_thickness=1,
         )
 
+        self._text_vmin.world_object.material.pick_write = False
+
         self._text_vmax = TextGraphic(
             text=vmax_str,
-            size=16,
-            position=(0, 0),
+            font_size=16,
+            offset=(0, 0, 0),
             anchor="bottom-left",
             outline_color="black",
             outline_thickness=1,
         )
 
-        widget_wo = Group()
+        self._text_vmax.world_object.material.pick_write = False
+
+        widget_wo = pygfx.Group()
         widget_wo.add(
-            self.line.world_object,
-            self.linear_region.world_object,
+            self._histogram_line.world_object,
+            self._linear_region_selector.world_object,
             self._text_vmin.world_object,
             self._text_vmax.world_object,
         )
@@ -99,19 +121,56 @@ class HistogramLUT(Graphic):
 
         self.world_object.local.scale_x *= -1
 
-        self._text_vmin.position_x = -120
-        self._text_vmin.position_y = self.linear_region.selection()[0]
+        self._text_vmin.offset = (-120, self._linear_region_selector.selection[0], 0)
 
-        self._text_vmax.position_x = -120
-        self._text_vmax.position_y = self.linear_region.selection()[1]
+        self._text_vmax.offset = (-120, self._linear_region_selector.selection[1], 0)
 
-        self.linear_region.selection.add_event_handler(
-            self._linear_region_handler
+        self._linear_region_selector.add_event_handler(
+            self._linear_region_handler, "selection"
         )
 
-        self.image_graphic.cmap.add_event_handler(self._image_cmap_handler)
+        ig_events = _get_image_graphic_events(self.image_graphic)
 
-    def _get_vmin_vmax_str(self) -> Tuple[str, str]:
+        self.image_graphic.add_event_handler(self._image_cmap_handler, *ig_events)
+
+        # colorbar for grayscale images
+        if self.image_graphic.data.value.ndim != 3:
+            self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
+
+            self.world_object.add(self._colorbar.world_object)
+        else:
+            self._colorbar = None
+            self._cmap = None
+
+    def _make_colorbar(self, edges_flanked) -> ImageGraphic:
+        # use the histogram edge values as data for an
+        # image with 2 columns, this will be our colorbar!
+        colorbar_data = np.column_stack(
+            [
+                np.linspace(
+                    edges_flanked[0], edges_flanked[-1], ceil(np.ptp(edges_flanked))
+                )
+            ]
+            * 2
+        ).astype(np.float32)
+
+        colorbar_data /= self._scale_factor
+
+        cbar = ImageGraphic(
+            data=colorbar_data,
+            vmin=self.vmin,
+            vmax=self.vmax,
+            cmap=self.image_graphic.cmap,
+            interpolation="linear",
+            offset=(-55, edges_flanked[0], -1),
+        )
+
+        cbar.world_object.world.scale_x = 20
+        self._cmap = self.image_graphic.cmap
+
+        return cbar
+
+    def _get_vmin_vmax_str(self) -> tuple[str, str]:
         if self.vmin < 0.001 or self.vmin > 99_999:
             vmin_str = f"{self.vmin:.2e}"
         else:
@@ -124,12 +183,13 @@ class HistogramLUT(Graphic):
 
         return vmin_str, vmax_str
 
-    def _add_plot_area_hook(self, plot_area):
+    def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
-        self.linear_region._add_plot_area_hook(plot_area)
-        self.line._add_plot_area_hook(plot_area)
+        self._linear_region_selector._fpl_add_plot_area_hook(plot_area)
+        self._histogram_line._fpl_add_plot_area_hook(plot_area)
 
         self._plot_area.auto_scale()
+        self._plot_area.controller.enabled = True
 
     def _calculate_histogram(self, data):
         if data.ndim > 2:
@@ -156,9 +216,10 @@ class HistogramLUT(Graphic):
             hist, edges = np.histogram(data_ss, bins=self._nbins)
 
         # used if data ptp <= 10 because event things get weird
-        # with tiny world objects due to  floating point error
+        # with tiny world objects due to floating point error
         # so if ptp <= 10, scale up by a factor
-        self._scale_factor: int = max(1, 100 * int(10 / data_ss.ptp()))
+        data_interval = edges[-1] - edges[0]
+        self._scale_factor: int = max(1, 100 * int(10 / data_interval))
 
         edges = edges * self._scale_factor
 
@@ -168,36 +229,54 @@ class HistogramLUT(Graphic):
         flank_size = flank_nbins * bin_width
 
         flank_left = np.arange(edges[0] - flank_size, edges[0], bin_width)
-        flank_right = np.arange(edges[-1] + bin_width, edges[-1] + flank_size, bin_width)
+        flank_right = np.arange(
+            edges[-1] + bin_width, edges[-1] + flank_size, bin_width
+        )
 
         edges_flanked = np.concatenate((flank_left, edges, flank_right))
-        np.unique(np.diff(edges_flanked))
 
-        hist_flanked = np.concatenate((np.zeros(flank_nbins), hist, np.zeros(flank_nbins)))
+        hist_flanked = np.concatenate(
+            (np.zeros(flank_nbins), hist, np.zeros(flank_nbins))
+        )
 
         # scale 0-100 to make it easier to see
         # float32 data can produce unnecessarily high values
-        hist_scaled = hist_flanked / (hist_flanked.max() / 100)
+        hist_scale_value = hist_flanked.max()
+        if np.allclose(hist_scale_value, 0):
+            hist_scale_value = 1
+        hist_scaled = hist_flanked / (hist_scale_value / 100)
 
         if edges_flanked.size > hist_scaled.size:
             # we don't care about accuracy here so if it's off by 1-2 bins that's fine
-            edges_flanked = edges_flanked[:hist_scaled.size]
+            edges_flanked = edges_flanked[: hist_scaled.size]
 
         return hist, edges, hist_scaled, edges_flanked
 
     def _linear_region_handler(self, ev):
         # must use world coordinate values directly from selection()
         # otherwise the linear region bounds jump to the closest bin edges
-        vmin, vmax = self.linear_region.selection()
+        selected_ixs = self._linear_region_selector.selection
+        vmin, vmax = selected_ixs[0], selected_ixs[1]
         vmin, vmax = vmin / self._scale_factor, vmax / self._scale_factor
         self.vmin, self.vmax = vmin, vmax
 
     def _image_cmap_handler(self, ev):
-        self.vmin, self.vmax = ev.pick_info["vmin"], ev.pick_info["vmax"]
+        setattr(self, ev.type, ev.info["value"])
 
-    def _block_events(self, b: bool):
-        self.image_graphic.cmap.block_events(b)
-        self.linear_region.selection.block_events(b)
+    @property
+    def cmap(self) -> str:
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, name: str):
+        if self._colorbar is None:
+            return
+
+        with pause_events(self.image_graphic):
+            self.image_graphic.cmap = name
+
+            self._cmap = name
+            self._colorbar.cmap = name
 
     @property
     def vmin(self) -> float:
@@ -205,19 +284,21 @@ class HistogramLUT(Graphic):
 
     @vmin.setter
     def vmin(self, value: float):
-        self._block_events(True)
-
-        # must use world coordinate values directly from selection()
-        # otherwise the linear region bounds jump to the closest bin edges
-        self.linear_region.selection = (value * self._scale_factor, self.linear_region.selection()[1])
-        self.image_graphic.cmap.vmin = value
-
-        self._block_events(False)
+        with pause_events(self.image_graphic, self._linear_region_selector):
+            # must use world coordinate values directly from selection()
+            # otherwise the linear region bounds jump to the closest bin edges
+            self._linear_region_selector.selection = (
+                value * self._scale_factor,
+                self._linear_region_selector.selection[1],
+            )
+            self.image_graphic.vmin = value
 
         self._vmin = value
+        if self._colorbar is not None:
+            self._colorbar.vmin = value
 
         vmin_str, vmax_str = self._get_vmin_vmax_str()
-        self._text_vmin.position_y = self.linear_region.selection()[0]
+        self._text_vmin.offset = (-120, self._linear_region_selector.selection[0], 0)
         self._text_vmin.text = vmin_str
 
     @property
@@ -226,19 +307,22 @@ class HistogramLUT(Graphic):
 
     @vmax.setter
     def vmax(self, value: float):
-        self._block_events(True)
+        with pause_events(self.image_graphic, self._linear_region_selector):
+            # must use world coordinate values directly from selection()
+            # otherwise the linear region bounds jump to the closest bin edges
+            self._linear_region_selector.selection = (
+                self._linear_region_selector.selection[0],
+                value * self._scale_factor,
+            )
 
-        # must use world coordinate values directly from selection()
-        # otherwise the linear region bounds jump to the closest bin edges
-        self.linear_region.selection = (self.linear_region.selection()[0], value * self._scale_factor)
-        self.image_graphic.cmap.vmax = value
-
-        self._block_events(False)
+            self.image_graphic.vmax = value
 
         self._vmax = value
+        if self._colorbar is not None:
+            self._colorbar.vmax = value
 
         vmin_str, vmax_str = self._get_vmin_vmax_str()
-        self._text_vmax.position_y = self.linear_region.selection()[1]
+        self._text_vmax.offset = (-120, self._linear_region_selector.selection[1], 0)
         self._text_vmax.text = vmax_str
 
     def set_data(self, data, reset_vmin_vmax: bool = True):
@@ -246,24 +330,34 @@ class HistogramLUT(Graphic):
 
         line_data = np.column_stack([hist_scaled, edges_flanked])
 
-        self.line.data = line_data
+        # set x and y vals
+        self._histogram_line.data[:, :2] = line_data
 
         bounds = (edges[0], edges[-1])
         limits = (edges_flanked[0], edges_flanked[-11])
         origin = (hist_scaled.max() / 2, 0)
-        # self.linear_region.fill.world.position = (*origin, -2)
 
         if reset_vmin_vmax:
             # reset according to the new data
-            self.linear_region.limits = limits
-            self.linear_region.selection = bounds
+            self._linear_region_selector.limits = limits
+            self._linear_region_selector.selection = bounds
         else:
-            # don't change the current selection
-            self._block_events(True)
-            self.linear_region.limits = limits
-            self._block_events(False)
+            with pause_events(self.image_graphic, self._linear_region_selector):
+                # don't change the current selection
+                self._linear_region_selector.limits = limits
 
         self._data = weakref.proxy(data)
+
+        if self._colorbar is not None:
+            self.world_object.remove(self._colorbar.world_object)
+
+        if self.image_graphic.data.value.ndim != 3:
+            self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
+
+            self.world_object.add(self._colorbar.world_object)
+        else:
+            self._colorbar = None
+            self._cmap = None
 
         # reset plotarea dims
         self._plot_area.auto_scale()
@@ -279,16 +373,27 @@ class HistogramLUT(Graphic):
                 f"HistogramLUT can only use ImageGraphic types, you have passed: {type(graphic)}"
             )
 
-        # cleanup events from current image graphic
-        self._image_graphic.cmap.remove_event_handler(
-            self._image_cmap_handler
-        )
+        if self._image_graphic is not None:
+            # cleanup events from current image graphic
+            ig_events = _get_image_graphic_events(self._image_graphic)
+            self._image_graphic.remove_event_handler(
+                self._image_cmap_handler, *ig_events
+            )
 
         self._image_graphic = graphic
 
-        self.image_graphic.cmap.add_event_handler(self._image_cmap_handler)
+        ig_events = _get_image_graphic_events(self._image_graphic)
 
-    def _cleanup(self):
-        self.linear_region._cleanup()
-        del self.line
-        del self.linear_region
+        self.image_graphic.add_event_handler(self._image_cmap_handler, *ig_events)
+
+    def disconnect_image_graphic(self):
+        ig_events = _get_image_graphic_events(self._image_graphic)
+        self._image_graphic.remove_event_handler(self._image_cmap_handler, *ig_events)
+        del self._image_graphic
+        # self._image_graphic = None
+
+    def _fpl_prepare_del(self):
+        self._linear_region_selector._fpl_prepare_del()
+        self._histogram_line._fpl_prepare_del()
+        del self._histogram_line
+        del self._linear_region_selector

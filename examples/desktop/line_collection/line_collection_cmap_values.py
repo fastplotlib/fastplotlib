@@ -1,15 +1,16 @@
 """
-Line Plot
-============
-Example showing how to plot line collections
+Line collections quantitative cmap
+==================================
+
+Example showing a line collection with a quantitative cmap
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 from itertools import product
 import numpy as np
 import fastplotlib as fpl
-
 
 def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
     theta = np.linspace(0, 2 * np.pi, n_points)
@@ -33,21 +34,20 @@ pos_xy = np.vstack(circles)
 # highest values, lowest values, mid-high values, mid values
 cmap_values = [10] * 4 + [0] * 4 + [7] * 4 + [5] * 4
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+figure = fpl.Figure(size=(700, 560))
 
-plot.add_line_collection(
-    circles,
-    cmap="bwr",
-    cmap_values=cmap_values,
-    thickness=10
+figure[0, 0].add_line_collection(
+    circles, cmap="bwr", cmap_transform=cmap_values, thickness=10
 )
 
-plot.show()
+# remove clutter
+figure[0, 0].axes.visible = False
 
-plot.canvas.set_logical_size(800, 800)
+figure.show()
 
+
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

@@ -1,33 +1,38 @@
 """
-Line Plot
-============
-Example showing how to plot line collections
+Line Stack
+==========
+
+Example showing how to plot a stack of lines
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np
 import fastplotlib as fpl
 
 
-xs = np.linspace(0, 100, 1000)
+xs = np.linspace(0, np.pi * 10, 100)
 # sine wave
-ys = np.sin(xs) * 20
+ys = np.sin(xs)
 
-# make 25 lines
-data = np.vstack([ys] * 25)
+data = np.column_stack([xs, ys])
+multi_data = np.stack([data] * 10)
 
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+figure = fpl.Figure(size=(700, 560))
 
-# line stack takes all the same arguments as line collection and behaves similarly
-plot.add_line_stack(data, cmap="jet")
+line_stack = figure[0, 0].add_line_stack(
+    multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
+    cmap="jet",  # applied along n_lines
+    thickness=5,
+    separation=1,  # spacing between lines along the separation axis, default separation along "y" axis
+)
 
-plot.show(maintain_aspect=False)
+figure.show(maintain_aspect=False)
 
-plot.canvas.set_logical_size(900, 600)
 
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

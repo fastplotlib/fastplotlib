@@ -3,10 +3,10 @@ import numpy as np
 
 import pygfx
 
+from ...utils import mesh_masks
 from .._base import Graphic
 from .._features import GraphicFeature
 from ._base_selector import BaseSelector
-from ._mesh_positions import x_right, x_left, y_top, y_bottom
 
 
 class RectangleBoundsFeature(GraphicFeature):
@@ -28,7 +28,7 @@ class RectangleBoundsFeature(GraphicFeature):
     def __init__(
         self, parent, bounds: Tuple[int, int], axis: str, limits: Tuple[int, int]
     ):
-        super(RectangleBoundsFeature, self).__init__(parent, data=bounds)
+        super().__init__(parent, data=bounds)
 
         self._axis = axis
         self.limits = limits
@@ -58,16 +58,16 @@ class RectangleBoundsFeature(GraphicFeature):
 
         # change fill mesh
         # change left x position of the fill mesh
-        self._parent.fill.geometry.positions.data[x_left, 0] = xmin
+        self._parent.fill.geometry.positions.data[mesh_masks.x_left] = xmin
 
         # change right x position of the fill mesh
-        self._parent.fill.geometry.positions.data[x_right, 0] = xmax
+        self._parent.fill.geometry.positions.data[mesh_masks.x_right] = xmax
 
         # change bottom y position of the fill mesh
-        self._parent.fill.geometry.positions.data[y_bottom, 1] = ymin
+        self._parent.fill.geometry.positions.data[mesh_masks.y_bottom] = ymin
 
         # change top position of the fill mesh
-        self._parent.fill.geometry.positions.data[y_top, 1] = ymax
+        self._parent.fill.geometry.positions.data[mesh_masks.y_top] = ymax
 
         # change the edge lines
 
@@ -214,7 +214,7 @@ class RectangleRegionSelector(Graphic, BaseSelector):
 
         self.fill = pygfx.Mesh(
             pygfx.box_geometry(width, height, 1),
-            pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color)),
+            pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
         )
 
         self.fill.position.set(*origin, -2)

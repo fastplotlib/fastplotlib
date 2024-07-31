@@ -1,30 +1,27 @@
 from typing import *
-import weakref
 
 import numpy as np
 
 import pygfx
 
-from ..utils import parse_cmap_values
-from ._base import Graphic, Interaction, PreviouslyModifiedData
-from ._features import PointsDataFeature, ColorFeature, CmapFeature, ThicknessFeature
+from ._positions_base import PositionsGraphic
 from .selectors import LinearRegionSelector, LinearSelector
+from ._features import Thickness
 
 
-class LineGraphic(Graphic, Interaction):
-    feature_events = ("data", "colors", "cmap", "thickness", "present")
+class LineGraphic(PositionsGraphic):
+    _features = {"data", "colors", "cmap", "thickness"}
 
     def __init__(
         self,
         data: Any,
         thickness: float = 2.0,
-        colors: Union[str, np.ndarray, Iterable] = "w",
+        colors: str | np.ndarray | Iterable = "w",
+        uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_values: Union[np.ndarray, List] = None,
-        z_position: float = None,
-        collection_index: int = None,
-        *args,
+        cmap_transform: np.ndarray | Iterable = None,
+        isolated_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -42,99 +39,90 @@ class LineGraphic(Graphic, Interaction):
             specify colors as a single human-readable string, a single RGBA array,
             or an iterable of strings or RGBA arrays
 
-        cmap: str, optional
-            apply a colormap to the line instead of assigning colors manually, this
-            overrides any argument passed to "colors"
-
-        cmap_values: 1D array-like or list of numerical values, optional
-            if provided, these values are used to map the colors from the cmap
+        uniform_color: bool, default ``False``
+            if True, uses a uniform buffer for the line color,
+            basically saves GPU VRAM when the entire line has a single color
 
         alpha: float, optional, default 1.0
             alpha value for the colors
 
-        z_position: float, optional
-            z-axis position for placing the graphic
+        cmap: str, optional
+            apply a colormap to the line instead of assigning colors manually, this
+            overrides any argument passed to "colors"
 
-        args
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        **kwargs
             passed to Graphic
-
-        kwargs
-            passed to Graphic
-
-        Features
-        --------
-
-        **data**: :class:`.ImageDataFeature`
-            Manages the line [x, y, z] positions data buffer, allows regular and fancy indexing.
-
-        **colors**: :class:`.ColorFeature`
-            Manages the color buffer, allows regular and fancy indexing.
-
-        **cmap**: :class:`.CmapFeature`
-            Manages the cmap, wraps :class:`.ColorFeature` to add additional functionality relevant to cmaps.
-
-        **thickness**: :class:`.ThicknessFeature`
-            Manages the thickness feature of the lines.
-
-        **present**: :class:`.PresentFeature`
-            Control the presence of the Graphic in the scene, set to ``True`` or ``False``
 
         """
 
-        self.data = PointsDataFeature(self, data, collection_index=collection_index)
-
-        if cmap is not None:
-            n_datapoints = self.data().shape[0]
-
-            colors = parse_cmap_values(
-                n_colors=n_datapoints, cmap_name=cmap, cmap_values=cmap_values
-            )
-
-        self.colors = ColorFeature(
-            self,
-            colors,
-            n_colors=self.data().shape[0],
+        super().__init__(
+            data=data,
+            colors=colors,
+            uniform_color=uniform_color,
             alpha=alpha,
-            collection_index=collection_index,
+            cmap=cmap,
+            cmap_transform=cmap_transform,
+            isolated_buffer=isolated_buffer,
+            **kwargs,
         )
 
-        self.cmap = CmapFeature(
-            self, self.colors(), cmap_name=cmap, cmap_values=cmap_values
-        )
-
-        super(LineGraphic, self).__init__(*args, **kwargs)
+        self._thickness = Thickness(thickness)
 
         if thickness < 1.1:
-            material = pygfx.LineThinMaterial
+            MaterialCls = pygfx.LineThinMaterial
         else:
-            material = pygfx.LineMaterial
+            MaterialCls = pygfx.LineMaterial
 
-        self.thickness = ThicknessFeature(self, thickness)
+        if uniform_color:
+            geometry = pygfx.Geometry(positions=self._data.buffer)
+            material = MaterialCls(
+                thickness=self.thickness,
+                color_mode="uniform",
+                color=self.colors,
+                pick_write=True,
+            )
+        else:
+            material = MaterialCls(
+                thickness=self.thickness, color_mode="vertex", pick_write=True
+            )
+            geometry = pygfx.Geometry(
+                positions=self._data.buffer, colors=self._colors.buffer
+            )
 
-        world_object: pygfx.Line = pygfx.Line(
-            # self.data.feature_data because data is a Buffer
-            geometry=pygfx.Geometry(positions=self.data(), colors=self.colors()),
-            material=material(thickness=self.thickness(), color_mode="vertex"),
-        )
+        world_object: pygfx.Line = pygfx.Line(geometry=geometry, material=material)
 
         self._set_world_object(world_object)
 
-        if z_position is not None:
-            self.position_z = z_position
+    @property
+    def thickness(self) -> float:
+        """line thickness"""
+        return self._thickness.value
+
+    @thickness.setter
+    def thickness(self, value: float):
+        self._thickness.set_value(self, value)
 
     def add_linear_selector(
-        self, selection: int = None, padding: float = 50, **kwargs
+        self, selection: float = None, padding: float = 0.0, axis: str = "x", **kwargs
     ) -> LinearSelector:
         """
         Adds a linear selector.
 
         Parameters
         ----------
-        selection: int
-            initial position of the selector
+        Parameters
+        ----------
+        selection: float, optional
+            selected point on the linear selector, computed from data if not provided
 
-        padding: float
-            pad the length of the selector
+        axis: str, default "x"
+            axis that the selector resides on
+
+        padding: float, default 0.0
+            Extra padding to extend the linear selector along the orthogonal axis to make it easier to interact with.
 
         kwargs
             passed to :class:`.LinearSelector`
@@ -145,38 +133,36 @@ class LineGraphic(Graphic, Interaction):
 
         """
 
-        (
-            bounds_init,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(
+            axis, padding
+        )
 
         if selection is None:
-            selection = limits[0]
-
-        if selection < limits[0] or selection > limits[1]:
-            raise ValueError(
-                f"the passed selection: {selection} is beyond the limits: {limits}"
-            )
+            selection = bounds_init[0]
 
         selector = LinearSelector(
             selection=selection,
             limits=limits,
-            end_points=end_points,
+            size=size,
+            center=center,
+            axis=axis,
             parent=self,
             **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        selector.position_z = self.position_z + 1
 
-        return weakref.proxy(selector)
+        # place selector above this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
+
+        return selector
 
     def add_linear_region_selector(
-        self, padding: float = 100.0, **kwargs
+        self,
+        selection: tuple[float, float] = None,
+        padding: float = 0.0,
+        axis: str = "x",
+        **kwargs,
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -184,8 +170,14 @@ class LineGraphic(Graphic, Interaction):
 
         Parameters
         ----------
-        padding: float, default 100.0
-            Extends the linear selector along the y-axis to make it easier to interact with.
+        selection: (float, float), optional
+            the starting bounds of the linear region selector, computed from data if not provided
+
+        axis: str, default "x"
+            axis that the selector resides on
+
+        padding: float, default 0.0
+            Extra padding to extend the linear region selector along the orthogonal axis to make it easier to interact with.
 
         kwargs
             passed to ``LinearRegionSelector``
@@ -197,118 +189,61 @@ class LineGraphic(Graphic, Interaction):
 
         """
 
-        (
-            bounds_init,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(
+            axis, padding
+        )
+
+        if selection is None:
+            selection = bounds_init
 
         # create selector
         selector = LinearRegionSelector(
-            bounds=bounds_init,
+            selection=selection,
             limits=limits,
             size=size,
-            origin=origin,
+            center=center,
+            axis=axis,
             parent=self,
             **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        # so that it is below this graphic
-        selector.position_z = self.position_z - 1
+
+        # place selector below this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] - 1)
 
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end
-        return weakref.proxy(selector)
+        return selector
 
     # TODO: this method is a bit of a mess, can refactor later
-    def _get_linear_selector_init_args(self, padding: float, **kwargs):
-        # computes initial bounds, limits, size and origin of linear selectors
-        data = self.data()
+    def _get_linear_selector_init_args(
+        self, axis: str, padding
+    ) -> tuple[tuple[float, float], tuple[float, float], float, float]:
+        # computes args to create selectors
+        n_datapoints = self.data.value.shape[0]
+        value_25p = int(n_datapoints / 4)
 
-        if "axis" in kwargs.keys():
-            axis = kwargs["axis"]
-        else:
-            axis = "x"
+        # remove any nans
+        data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
 
         if axis == "x":
-            offset = self.position_x
-            # x limits
-            limits = (data[0, 0] + offset, data[-1, 0] + offset)
+            # xvals
+            axis_vals = data[:, 0]
 
-            # height + padding
-            size = np.ptp(data[:, 1]) + padding
+            # yvals to get size and center
+            magn_vals = data[:, 1]
+        elif axis == "y":
+            axis_vals = data[:, 1]
+            magn_vals = data[:, 0]
 
-            # initial position of the selector
-            position_y = (data[:, 1].min() + data[:, 1].max()) / 2
+        bounds_init = axis_vals[0], axis_vals[value_25p]
+        limits = axis_vals[0], axis_vals[-1]
 
-            # need y offset too for this
-            origin = (limits[0] - offset, position_y + self.position_y)
+        # width or height of selector
+        size = int(np.ptp(magn_vals) * 1.5 + padding)
 
-            # endpoints of the data range
-            # used by linear selector but not linear region
-            end_points = (
-                self.data()[:, 1].min() - padding,
-                self.data()[:, 1].max() + padding,
-            )
-        else:
-            offset = self.position_y
-            # y limits
-            limits = (data[0, 1] + offset, data[-1, 1] + offset)
+        # center of selector along the other axis
+        center = np.nanmean(magn_vals)
 
-            # width + padding
-            size = np.ptp(data[:, 0]) + padding
-
-            # initial position of the selector
-            position_x = (data[:, 0].min() + data[:, 0].max()) / 2
-
-            # need x offset too for this
-            origin = (position_x + self.position_x, limits[0] - offset)
-
-            end_points = (
-                self.data()[:, 0].min() - padding,
-                self.data()[:, 0].max() + padding,
-            )
-
-        # initial bounds are 20% of the limits range
-        bounds_init = (limits[0], int(np.ptp(limits) * 0.2) + offset)
-
-        return bounds_init, limits, size, origin, axis, end_points
-
-    def _add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
-
-    def set_feature(self, feature: str, new_data: Any, indices: Any = None):
-        if not hasattr(self, "_previous_data"):
-            self._previous_data = dict()
-        elif hasattr(self, "_previous_data"):
-            self.reset_feature(feature)
-
-        feature_instance = getattr(self, feature)
-        if indices is not None:
-            previous = feature_instance[indices].copy()
-            feature_instance[indices] = new_data
-        else:
-            previous = feature_instance._data.copy()
-            feature_instance._set(new_data)
-        if feature in self._previous_data.keys():
-            self._previous_data[feature].data = previous
-            self._previous_data[feature].indices = indices
-        else:
-            self._previous_data[feature] = PreviouslyModifiedData(
-                data=previous, indices=indices
-            )
-
-    def reset_feature(self, feature: str):
-        if feature not in self._previous_data.keys():
-            return
-
-        prev_ixs = self._previous_data[feature].indices
-        feature_instance = getattr(self, feature)
-        if prev_ixs is not None:
-            feature_instance[prev_ixs] = self._previous_data[feature].data
-        else:
-            feature_instance._set(self._previous_data[feature].data)
+        return bounds_init, limits, size, center

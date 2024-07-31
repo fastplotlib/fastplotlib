@@ -1,64 +1,14 @@
-from typing import *
+import importlib
 
 import pygfx
-from pygfx import WgpuRenderer, Texture
+from pygfx import WgpuRenderer, Texture, Renderer
+from wgpu.gui import WgpuCanvasBase
 
-# default auto-determined canvas
-from wgpu.gui.auto import WgpuCanvas
-from wgpu.gui.base import WgpuCanvasBase
-
-
-# TODO: this determination can be better
-try:
-    from wgpu.gui.jupyter import JupyterWgpuCanvas
-except ImportError:
-    JupyterWgpuCanvas = False
-
-try:
-    import PyQt6
-    from wgpu.gui.qt import QWgpuCanvas
-except ImportError:
-    QWgpuCanvas = False
-
-try:
-    from wgpu.gui.glfw import GlfwWgpuCanvas
-except ImportError:
-    GlfwWgpuCanvas = False
-
-
-CANVAS_OPTIONS = ["jupyter", "glfw", "qt"]
-CANVAS_OPTIONS_AVAILABLE = {
-    "jupyter": JupyterWgpuCanvas,
-    "glfw": GlfwWgpuCanvas,
-    "qt": QWgpuCanvas,
-}
-
-
-def auto_determine_canvas():
-    try:
-        ip = get_ipython()
-        if ip.has_trait("kernel"):
-            if hasattr(ip.kernel, "app"):
-                if ip.kernel.app.__class__.__name__ == "QApplication":
-                    return QWgpuCanvas
-            else:
-                return JupyterWgpuCanvas
-    except NameError:
-        pass
-
-    else:
-        if CANVAS_OPTIONS_AVAILABLE["qt"]:
-            return QWgpuCanvas
-        elif CANVAS_OPTIONS_AVAILABLE["glfw"]:
-            return GlfwWgpuCanvas
-
-    # We go with the wgpu auto guess
-    # for example, offscreen canvas etc.
-    return WgpuCanvas
+from ..utils import gui
 
 
 def make_canvas_and_renderer(
-    canvas: Union[str, WgpuCanvas, Texture, None], renderer: [WgpuRenderer, None]
+    canvas: str | WgpuCanvasBase | Texture | None, renderer: Renderer | None
 ):
     """
     Parses arguments and returns the appropriate canvas and renderer instances
@@ -66,33 +16,28 @@ def make_canvas_and_renderer(
     """
 
     if canvas is None:
-        Canvas = auto_determine_canvas()
-        canvas = Canvas(max_fps=60)
-
+        canvas = gui.WgpuCanvas(max_fps=60)
     elif isinstance(canvas, str):
-        if canvas not in CANVAS_OPTIONS:
-            raise ValueError(f"str canvas argument must be one of: {CANVAS_OPTIONS}")
-        elif not CANVAS_OPTIONS_AVAILABLE[canvas]:
-            raise ImportError(
-                f"The {canvas} framework is not installed for using this canvas"
-            )
-        else:
-            canvas = CANVAS_OPTIONS_AVAILABLE[canvas](max_fps=60)
-
+        m = importlib.import_module("wgpu.gui." + canvas)
+        canvas = m.WgpuCanvas(max_fps=60)
     elif not isinstance(canvas, (WgpuCanvasBase, Texture)):
-        raise ValueError(
+        raise TypeError(
             f"canvas option must either be a valid WgpuCanvas implementation, a pygfx Texture"
-            f" or a str from the following options: {CANVAS_OPTIONS}"
+            f" or a str with the wgpu gui backend name."
         )
 
     if renderer is None:
         renderer = WgpuRenderer(canvas)
+    elif not isinstance(renderer, Renderer):
+        raise TypeError(
+            f"renderer option must be a pygfx.Renderer instance such as pygfx.WgpuRenderer"
+        )
 
     return canvas, renderer
 
 
 def create_camera(
-    camera_type: Union[pygfx.PerspectiveCamera, str],
+    camera_type: pygfx.PerspectiveCamera | str,
 ) -> pygfx.PerspectiveCamera:
     if isinstance(camera_type, pygfx.PerspectiveCamera):
         return camera_type
@@ -119,7 +64,7 @@ controller_types = {
 
 
 def create_controller(
-    controller_type: Union[pygfx.Controller, None, str],
+    controller_type: pygfx.Controller | None | str,
     camera: pygfx.PerspectiveCamera,
 ) -> pygfx.Controller:
     """

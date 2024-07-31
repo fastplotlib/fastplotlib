@@ -23,9 +23,11 @@ Properties
     ImageWidget.cmap
     ImageWidget.current_index
     ImageWidget.data
-    ImageWidget.dims_order
-    ImageWidget.gridplot
+    ImageWidget.figure
+    ImageWidget.frame_apply
     ImageWidget.managed_graphics
+    ImageWidget.n_img_dims
+    ImageWidget.n_scrollable_dims
     ImageWidget.ndim
     ImageWidget.slider_dims
     ImageWidget.sliders

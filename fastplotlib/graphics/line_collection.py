@@ -1,34 +1,141 @@
 from typing import *
-from copy import deepcopy
-import weakref
 
 import numpy as np
 
 import pygfx
 
 from ..utils import parse_cmap_values
-from ._base import Interaction, PreviouslyModifiedData, GraphicCollection
-from ._features import GraphicFeature
+from ._collection_base import CollectionIndexer, GraphicCollection, CollectionFeature
 from .line import LineGraphic
 from .selectors import LinearRegionSelector, LinearSelector
 
 
-class LineCollection(GraphicCollection, Interaction):
-    child_type = LineGraphic.__name__
-    feature_events = ("data", "colors", "cmap", "thickness", "present")
+class _LineCollectionProperties:
+    """Mix-in class for LineCollection properties"""
+
+    @property
+    def colors(self) -> CollectionFeature:
+        """get or set colors of lines in the collection"""
+        return CollectionFeature(self.graphics, "colors")
+
+    @colors.setter
+    def colors(self, values: str | np.ndarray | tuple[float] | list[float] | list[str]):
+        if isinstance(values, str):
+            # set colors of all lines to one str color
+            for g in self:
+                g.colors = values
+            return
+
+        elif all(isinstance(v, str) for v in values):
+            # individual str colors for each line
+            if not len(values) == len(self):
+                raise IndexError
+
+            for g, v in zip(self.graphics, values):
+                g.colors = v
+
+            return
+
+        if isinstance(values, np.ndarray):
+            if values.ndim == 2:
+                # assume individual colors for each
+                for g, v in zip(self, values):
+                    g.colors = v
+                return
+
+        elif len(values) == 4:
+            # assume RGBA
+            self.colors[:] = values
+
+        else:
+            # assume individual colors for each
+            for g, v in zip(self, values):
+                g.colors = v
+
+    @property
+    def data(self) -> CollectionFeature:
+        """get or set data of lines in the collection"""
+        return CollectionFeature(self.graphics, "data")
+
+    @data.setter
+    def data(self, values):
+        for g, v in zip(self, values):
+            g.data = v
+
+    @property
+    def cmap(self) -> CollectionFeature:
+        """
+        Get or set a cmap along the line collection.
+
+        Optionally set using a tuple ("cmap", <transform>, <alpha>) to set the transform and/or alpha.
+        Example:
+
+        line_collection.cmap = ("jet", sine_transform_vals, 0.7)
+
+        """
+        return CollectionFeature(self.graphics, "cmap")
+
+    @cmap.setter
+    def cmap(self, args):
+        if isinstance(args, str):
+            name = args
+            transform, alpha = None, 1.0
+        elif len(args) == 1:
+            name = args[0]
+            transform, alpha = None, None
+
+        elif len(args) == 2:
+            name, transform = args
+            alpha = None
+
+        elif len(args) == 3:
+            name, transform, alpha = args
+
+        colors = parse_cmap_values(
+            n_colors=len(self), cmap_name=name, transform=transform
+        )
+        colors[:, -1] = alpha
+        self.colors = colors
+
+    @property
+    def thickness(self) -> np.ndarray:
+        """get or set the thickness of the lines"""
+        return np.asarray([g.thickness for g in self])
+
+    @thickness.setter
+    def thickness(self, values: np.ndarray | list[float]):
+        if not len(values) == len(self):
+            raise IndexError
+
+        for g, v in zip(self, values):
+            g.thickness = v
+
+
+class LineCollectionIndexer(CollectionIndexer, _LineCollectionProperties):
+    """Indexer for line collections"""
+
+    pass
+
+
+class LineCollection(GraphicCollection, _LineCollectionProperties):
+    _child_type = LineGraphic
+    _indexer = LineCollectionIndexer
 
     def __init__(
         self,
-        data: List[np.ndarray],
-        z_position: Union[List[float], float] = None,
-        thickness: Union[float, List[float]] = 2.0,
-        colors: Union[List[np.ndarray], np.ndarray] = "w",
+        data: np.ndarray | List[np.ndarray],
+        thickness: float | Sequence[float] = 2.0,
+        colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
+        uniform_colors: bool = False,
         alpha: float = 1.0,
-        cmap: Union[List[str], str] = None,
-        cmap_values: Union[np.ndarray, List] = None,
+        cmap: Sequence[str] | str = None,
+        cmap_transform: np.ndarray | List = None,
         name: str = None,
-        metadata: Union[list, tuple, np.ndarray] = None,
-        *args,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Sequence[Any] | np.ndarray = None,
+        isolated_buffer: bool = True,
+        kwargs_lines: list[dict] = None,
         **kwargs,
     ):
         """
@@ -36,78 +143,84 @@ class LineCollection(GraphicCollection, Interaction):
 
         Parameters
         ----------
+        data: list of array-like
+            List or array-like of multiple line data to plot
 
-        data: list of array-like or array
-            List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
-            if elements are 2D, interpreted as [y_vals, n_lines]
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
 
-        z_position: list of float or float, optional
-            | if ``float``, single position will be used for all lines
-            | if ``list`` of ``float``, each value will apply to the individual lines
-
-        thickness: float or list of float, default 2.0
+        thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
             | if ``list`` of ``float``, each value will apply to the individual lines
 
-        colors: str, RGBA array, list of RGBA array, or list of str, default "w"
+        colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
             | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
-        cmap: list of str or str, optional
+        alpha: float, optional
+            alpha value for colors, if colors is a ``str``
+
+        cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
 
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
-        cmap_values: 1D array-like or list of numerical values, optional
+        cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         name: str, optional
-            name of the line collection
+            name of the line collection as a whole
 
-        metadata: list, tuple, or array
-            metadata associated with this collection, this is for the user to manage.
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            meatadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
-        args
-            passed to GraphicCollection
+        kwargs_lines: list[dict], optional
+            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
 
-        kwargs
-            passed to GraphicCollection
-
-        Features
-        --------
-
-        Collections support the same features as the underlying graphic. You just have to slice the selection.
-
-        See :class:`LineGraphic` details on the features.
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
 
         """
 
-        super(LineCollection, self).__init__(name)
-
-        if not isinstance(z_position, float) and z_position is not None:
-            if len(data) != len(z_position):
-                raise ValueError(
-                    "z_position must be a single float or an iterable with same length as data"
-                )
+        super().__init__(name=name, metadata=metadata, **kwargs)
 
         if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
                 raise ValueError(
-                    "args must be a single float or an iterable with same length as data"
+                    f"len(thickness) != len(data)\n" f"{len(thickness)} != {len(data)}"
                 )
 
-        if metadata is not None:
-            if len(metadata) != len(data):
+        if names is not None:
+            if len(names) != len(data):
                 raise ValueError(
-                    f"len(metadata) != len(data)\n" f"{len(metadata)} != {len(data)}"
+                    f"len(names) != len(data)\n" f"{len(names)} != {len(data)}"
                 )
 
-        self._cmap_values = cmap_values
+        if metadatas is not None:
+            if len(metadatas) != len(data):
+                raise ValueError(
+                    f"len(metadata) != len(data)\n" f"{len(metadatas)} != {len(data)}"
+                )
+
+        if kwargs_lines is not None:
+            if len(kwargs_lines) != len(data):
+                raise ValueError(
+                    f"len(kwargs_lines) != len(data)\n"
+                    f"{len(kwargs_lines)} != {len(data)}"
+                )
+
+        self._cmap_transform = cmap_transform
         self._cmap_str = cmap
 
         # cmap takes priority over colors
@@ -115,7 +228,7 @@ class LineCollection(GraphicCollection, Interaction):
             # cmap across lines
             if isinstance(cmap, str):
                 colors = parse_cmap_values(
-                    n_colors=len(data), cmap_name=cmap, cmap_values=cmap_values
+                    n_colors=len(data), cmap_name=cmap, transform=cmap_transform
                 )
                 single_color = False
                 cmap = None
@@ -174,14 +287,12 @@ class LineCollection(GraphicCollection, Interaction):
                         "or must be a tuple/list of colors represented by a string with the same length as the data"
                     )
 
+        if kwargs_lines is None:
+            kwargs_lines = dict()
+
         self._set_world_object(pygfx.Group())
 
         for i, d in enumerate(data):
-            if isinstance(z_position, list):
-                _z = z_position[i]
-            else:
-                _z = 1.0
-
             if isinstance(thickness, list):
                 _s = thickness[i]
             else:
@@ -198,66 +309,51 @@ class LineCollection(GraphicCollection, Interaction):
                 _cmap = cmap[i]
                 _c = None
 
-            if metadata is not None:
-                _m = metadata[i]
+            if metadatas is not None:
+                _m = metadatas[i]
             else:
                 _m = None
+
+            if names is not None:
+                _name = names[i]
+            else:
+                _name = None
 
             lg = LineGraphic(
                 data=d,
                 thickness=_s,
                 colors=_c,
-                z_position=_z,
+                uniform_color=uniform_colors,
                 cmap=_cmap,
-                collection_index=i,
+                name=_name,
                 metadata=_m,
+                isolated_buffer=isolated_buffer,
+                **kwargs_lines,
             )
 
-            self.add_graphic(lg, reset_index=False)
+            self.add_graphic(lg)
 
-    @property
-    def cmap(self) -> str:
-        return self._cmap_str
-
-    @cmap.setter
-    def cmap(self, cmap: str):
-        colors = parse_cmap_values(
-            n_colors=len(self), cmap_name=cmap, cmap_values=self.cmap_values
-        )
-
-        for i, g in enumerate(self.graphics):
-            g.colors = colors[i]
-
-        self._cmap_str = cmap
-
-    @property
-    def cmap_values(self) -> np.ndarray:
-        return self._cmap_values
-
-    @cmap_values.setter
-    def cmap_values(self, values: Union[np.ndarray, list]):
-        colors = parse_cmap_values(
-            n_colors=len(self), cmap_name=self.cmap, cmap_values=values
-        )
-
-        for i, g in enumerate(self.graphics):
-            g.colors = colors[i]
-
-        self._cmap_values = values
+    def __getitem__(self, item) -> LineCollectionIndexer:
+        return super().__getitem__(item)
 
     def add_linear_selector(
-        self, selection: int = None, padding: float = 50, **kwargs
+        self, selection: float = None, padding: float = 0.0, axis: str = "x", **kwargs
     ) -> LinearSelector:
         """
-        Adds a :class:`.LinearSelector` .
+        Adds a linear selector.
 
         Parameters
         ----------
-        selection: int
-            initial position of the selector
+        Parameters
+        ----------
+        selection: float, optional
+            selected point on the linear selector, computed from data if not provided
 
-        padding: float
-            pad the length of the selector
+        axis: str, default "x"
+            axis that the selector resides on
+
+        padding: float, default 0.0
+            Extra padding to extend the linear selector along the orthogonal axis to make it easier to interact with.
 
         kwargs
             passed to :class:`.LinearSelector`
@@ -268,46 +364,51 @@ class LineCollection(GraphicCollection, Interaction):
 
         """
 
-        (
-            bounds,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(
+            axis, padding
+        )
 
         if selection is None:
-            selection = limits[0]
-
-        if selection < limits[0] or selection > limits[1]:
-            raise ValueError(
-                f"the passed selection: {selection} is beyond the limits: {limits}"
-            )
+            selection = bounds_init[0]
 
         selector = LinearSelector(
             selection=selection,
             limits=limits,
-            end_points=end_points,
+            size=size,
+            center=center,
+            axis=axis,
             parent=self,
             **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        selector.position_z = self.position_z + 1
 
-        return weakref.proxy(selector)
+        # place selector above this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
+
+        return selector
 
     def add_linear_region_selector(
-        self, padding: float = 100.0, **kwargs
+        self,
+        selection: tuple[float, float] = None,
+        padding: float = 0.0,
+        axis: str = "x",
+        **kwargs,
     ) -> LinearRegionSelector:
         """
-        Add a :class:`.LinearRegionSelector`
+        Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
 
         Parameters
         ----------
-        padding: float, default 100.0
-            Extends the linear selector along the y-axis to make it easier to interact with.
+        selection: (float, float), optional
+            the starting bounds of the linear region selector, computed from data if not provided
+
+        axis: str, default "x"
+            axis that the selector resides on
+
+        padding: float, default 0.0
+            Extra padding to extend the linear region selector along the orthogonal axis to make it easier to interact with.
 
         kwargs
             passed to ``LinearRegionSelector``
@@ -319,155 +420,62 @@ class LineCollection(GraphicCollection, Interaction):
 
         """
 
-        (
-            bounds,
-            limits,
-            size,
-            origin,
-            axis,
-            end_points,
-        ) = self._get_linear_selector_init_args(padding, **kwargs)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(
+            axis, padding
+        )
 
+        if selection is None:
+            selection = bounds_init
+
+        # create selector
         selector = LinearRegionSelector(
-            bounds=bounds,
+            selection=selection,
             limits=limits,
             size=size,
-            origin=origin,
+            center=center,
+            axis=axis,
             parent=self,
             **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
-        selector.position_z = self.position_z - 1
 
-        return weakref.proxy(selector)
+        # place selector below this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] - 1)
 
-    def _get_linear_selector_init_args(self, padding, **kwargs):
-        bounds_init = list()
-        limits = list()
-        sizes = list()
-        origin = list()
-        end_points = list()
+        # PlotArea manages this for garbage collection etc. just like all other Graphics
+        # so we should only work with a proxy on the user-end
+        return selector
 
-        for g in self.graphics:
-            (
-                _bounds_init,
-                _limits,
-                _size,
-                _origin,
-                axis,
-                _end_points,
-            ) = g._get_linear_selector_init_args(padding=0, **kwargs)
-
-            bounds_init.append(_bounds_init)
-            limits.append(_limits)
-            sizes.append(_size)
-            origin.append(_origin)
-            end_points.append(_end_points)
-
-        # set the init bounds using the extents of the collection
-        b = np.vstack(bounds_init)
-        bounds = (b[:, 0].min(), b[:, 1].max())
-
-        # set the limits using the extents of the collection
-        limits = np.vstack(limits)
-        limits = (limits[:, 0].min(), limits[:, 1].max())
-
-        # stack endpoints
-        end_points = np.vstack(end_points)
-        # use the min endpoint for index 0, highest endpoint for index 1
-        end_points = [
-            end_points[:, 0].min() - padding,
-            end_points[:, 1].max() + padding,
-        ]
-
-        # TODO: refactor this to use `LineStack.graphics[-1].position.y`
-        if isinstance(self, LineStack):
-            stack_offset = self.separation * len(sizes)
-            # sum them if it's a stack
-            size = sum(sizes)
-            # add the separations
-            size += stack_offset
-
-            # a better way to get the max y value?
-            # graphics y-position + data y-max + padding
-            end_points[1] = (
-                self.graphics[-1].position_y
-                + self.graphics[-1].data()[:, 1].max()
-                + padding
-            )
-
-        else:
-            # just the biggest one if not stacked
-            size = max(sizes)
-
-        size += padding
+    def _get_linear_selector_init_args(self, axis, padding):
+        # use bbox to get size and center
+        bbox = self.world_object.get_world_bounding_box()
 
         if axis == "x":
-            o = np.vstack(origin)
-            origin_y = (o[:, 1].min() + o[:, 1].max()) / 2
-            origin = (limits[0], origin_y)
-        else:
-            o = np.vstack(origin)
-            origin_x = (o[:, 0].min() + o[:, 0].max()) / 2
-            origin = (origin_x, limits[0])
+            xdata = np.array(self.data[:, 0])
+            xmin, xmax = (np.nanmin(xdata), np.nanmax(xdata))
+            value_25p = (xmax - xmin) / 4
 
-        return bounds, limits, size, origin, axis, end_points
+            bounds = (xmin, value_25p)
+            limits = (xmin, xmax)
+            # size from orthogonal axis
+            size = np.ptp(bbox[:, 1]) * 1.5
+            # center on orthogonal axis
+            center = bbox[:, 1].mean()
 
-    def _add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
+        elif axis == "y":
+            ydata = np.array(self.data[:, 1])
+            xmin, xmax = (np.nanmin(ydata), np.nanmax(ydata))
+            value_25p = (xmax - xmin) / 4
 
-    def set_feature(self, feature: str, new_data: Any, indices: Any):
-        # if single value force to be an array of size 1
-        if isinstance(indices, (np.integer, int)):
-            indices = np.array([indices])
-        if not hasattr(self, "_previous_data"):
-            self._previous_data = dict()
-        elif hasattr(self, "_previous_data"):
-            if feature in self._previous_data.keys():
-                # for now assume same index won't be changed with diff data
-                # I can't think of a usecase where we'd have to check the data too
-                # so unless there is a bug we keep it like this
-                if self._previous_data[feature].indices == indices:
-                    return  # nothing to change, and this allows bidirectional linking without infinite recursion
+            bounds = (xmin, value_25p)
+            limits = (xmin, xmax)
 
-            self.reset_feature(feature)
+            size = np.ptp(bbox[:, 0]) * 1.5
+            # center on orthogonal axis
+            center = bbox[:, 0].mean()
 
-        # coll_feature = getattr(self[indices], feature)
-
-        data = list()
-
-        for graphic in self.graphics[indices]:
-            feature_instance: GraphicFeature = getattr(graphic, feature)
-            data.append(feature_instance())
-
-        # later we can think about multi-index events
-        previous_data = deepcopy(data[0])
-
-        if feature in self._previous_data.keys():
-            self._previous_data[feature].data = previous_data
-            self._previous_data[feature].indices = indices
-        else:
-            self._previous_data[feature] = PreviouslyModifiedData(
-                data=previous_data, indices=indices
-            )
-
-        # finally set the new data
-        # this MUST occur after setting the previous data attribute to prevent recursion
-        # since calling `feature._set()` triggers all the feature callbacks
-        feature_instance._set(new_data)
-
-    def reset_feature(self, feature: str):
-        if feature not in self._previous_data.keys():
-            return
-
-        # implemented for a single index at moment
-        prev_ixs = self._previous_data[feature].indices
-        coll_feature = getattr(self[prev_ixs], feature)
-
-        coll_feature.block_events(True)
-        coll_feature._set(self._previous_data[feature].data)
-        coll_feature.block_events(False)
+        return bounds, limits, size, center
 
 
 axes = {"x": 0, "y": 1, "z": 2}
@@ -477,14 +485,19 @@ class LineStack(LineCollection):
     def __init__(
         self,
         data: List[np.ndarray],
-        z_position: Union[List[float], float] = None,
-        thickness: Union[float, List[float]] = 2.0,
-        colors: Union[List[np.ndarray], np.ndarray] = "w",
-        cmap: Union[List[str], str] = None,
-        separation: float = 10,
-        separation_axis: str = "y",
+        thickness: float | Iterable[float] = 2.0,
+        colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
+        alpha: float = 1.0,
+        cmap: Iterable[str] | str = None,
+        cmap_transform: np.ndarray | List = None,
         name: str = None,
-        *args,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Sequence[Any] | np.ndarray = None,
+        isolated_buffer: bool = True,
+        separation: float = 10.0,
+        separation_axis: str = "y",
+        kwargs_lines: list[dict] = None,
         **kwargs,
     ):
         """
@@ -493,32 +506,46 @@ class LineStack(LineCollection):
         Parameters
         ----------
         data: list of array-like
-            List of line data to plot, each element must be a 1D, 2D, or 3D numpy array
-            if elements are 2D, interpreted as [y_vals, n_lines]
+            List or array-like of multiple line data to plot
 
-        z_position: list of float or float, optional
-            | if ``float``, single position will be used for all lines
-            | if ``list`` of ``float``, each value will apply to individual lines
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
 
-        thickness: float or list of float, default 2.0
+        thickness: float or Iterable of float, default 2.0
             | if ``float``, single thickness will be used for all lines
             | if ``list`` of ``float``, each value will apply to the individual lines
 
-        colors: str, RGBA array, list of RGBA array, or list of str, default "w"
+        colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
             | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
-            | is ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
-            | if ``list`` of ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
+            | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
+            | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
-        cmap: list of str or str, optional
+        alpha: float, optional
+            alpha value for colors, if colors is a ``str``
+
+        cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
             | if ``list`` of ``str``, each cmap will apply to the individual lines
 
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
         name: str, optional
-            name of the line stack
+            name of the line collection as a whole
+
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            metadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
+            ``len(metadata)`` must be same as ``len(data)``
 
         separation: float, default 10
             space in between each line graphic in the stack
@@ -526,43 +553,40 @@ class LineStack(LineCollection):
         separation_axis: str, default "y"
             axis in which the line graphics in the stack should be separated
 
-        name: str, optional
-            name of the line stack
 
-        args
-            passed to LineCollection
+        kwargs_lines: list[dict], optional
+            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
 
-        kwargs
-            passed to LineCollection
-
-
-        Features
-        --------
-
-        Collections support the same features as the underlying graphic. You just have to slice the selection.
-
-        See :class:`LineGraphic` details on the features.
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
 
         """
-        super(LineStack, self).__init__(
+        super().__init__(
             data=data,
-            z_position=z_position,
             thickness=thickness,
             colors=colors,
+            alpha=alpha,
             cmap=cmap,
+            cmap_transform=cmap_transform,
             name=name,
+            names=names,
+            metadata=metadata,
+            metadatas=metadatas,
+            isolated_buffer=isolated_buffer,
+            kwargs_lines=kwargs_lines,
             **kwargs,
         )
 
         axis_zero = 0
         for i, line in enumerate(self.graphics):
             if separation_axis == "x":
-                line.position_x = axis_zero
+                line.offset = (axis_zero, *line.offset[1:])
+
             elif separation_axis == "y":
-                line.position_y = axis_zero
+                line.offset = (line.offset[0], axis_zero, line.offset[2])
 
             axis_zero = (
-                axis_zero + line.data()[:, axes[separation_axis]].max() + separation
+                axis_zero + line.data.value[:, axes[separation_axis]].max() + separation
             )
 
         self.separation = separation

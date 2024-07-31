@@ -1,30 +1,28 @@
 """
-Simple Plot
+Simple Image
 ============
+
 Example showing the simple plot creation with Standard imageio image.
 """
 
 # test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 import imageio.v3 as iio
 
-
-plot = fpl.Plot()
-# to force a specific framework such as glfw:
-# plot = fpl.Plot(canvas="glfw")
+figure = fpl.Figure(size=(700, 560))
 
 data = iio.imread("imageio:camera.png")
 
 # plot the image data
-image_graphic = plot.add_image(data=data, name="iio camera")
+image_graphic = figure[0, 0].add_image(data=data, name="iio camera")
 
-plot.show()
+figure.show()
 
-plot.canvas.set_logical_size(800, 800)
 
-plot.auto_scale()
-
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
     fpl.run()

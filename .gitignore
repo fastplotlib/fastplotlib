@@ -131,4 +131,7 @@ dmypy.json
 # Pycharm
 .idea/
 
+# vs code
+.vscode/
+
 examples/desktop/diffs/*.png

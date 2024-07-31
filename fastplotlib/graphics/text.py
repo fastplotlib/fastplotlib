@@ -1,23 +1,36 @@
-from typing import *
 import pygfx
 import numpy as np
 
 from ._base import Graphic
+from ._features import (
+    TextData,
+    FontSize,
+    TextFaceColor,
+    TextOutlineColor,
+    TextOutlineThickness,
+)
 
 
 class TextGraphic(Graphic):
+    _features = {
+        "text",
+        "font_size",
+        "face_color",
+        "outline_color",
+        "outline_thickness",
+    }
+
     def __init__(
         self,
         text: str,
-        position: Tuple[int] = (0, 0, 0),
-        size: int = 14,
-        face_color: Union[str, np.ndarray] = "w",
-        outline_color: Union[str, np.ndarray] = "w",
-        outline_thickness=0,
+        font_size: float | int = 14,
+        face_color: str | np.ndarray | list[float] | tuple[float] = "w",
+        outline_color: str | np.ndarray | list[float] | tuple[float] = "w",
+        outline_thickness: float = 0.0,
         screen_space: bool = True,
+        offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
-        *args,
-        **kwargs
+        **kwargs,
     ):
         """
         Create a text Graphic
@@ -25,13 +38,10 @@ class TextGraphic(Graphic):
         Parameters
         ----------
         text: str
-            display text
+            text to display
 
-        position: int tuple, default (0, 0, 0)
-            int tuple indicating location of text in scene
-
-        size: int, default 10
-            text size
+        font_size: float | int, default 10
+            font size
 
         face_color: str or array, default "w"
             str or RGBA array to set the color of the text
@@ -39,14 +49,14 @@ class TextGraphic(Graphic):
         outline_color: str or array, default "w"
             str or RGBA array to set the outline color of the text
 
-        outline_thickness: int, default 0
-            text outline thickness
+        outline_thickness: float, default 0
+            relative outline thickness, value between 0.0 - 0.5
 
         screen_space: bool = True
-            whether the text is rendered in screen space, in contrast to world space
+            if True, text size is in screen space, if False the text size is in data space
 
-        name: str, optional
-            name of graphic, passed to Graphic
+        offset: (float, float, float), default (0, 0, 0)
+            places the text at this location
 
         anchor: str, default "middle-center"
             position of the origin of the text
@@ -54,94 +64,80 @@ class TextGraphic(Graphic):
 
             * Vertical values: "top", "middle", "baseline", "bottom"
             * Horizontal values: "left", "center", "right"
-        """
-        super(TextGraphic, self).__init__(*args, **kwargs)
 
-        self._text = text
+        **kwargs
+            passed to Graphic
+
+        """
+
+        super().__init__(**kwargs)
+
+        self._text = TextData(text)
+        self._font_size = FontSize(font_size)
+        self._face_color = TextFaceColor(face_color)
+        self._outline_color = TextOutlineColor(outline_color)
+        self._outline_thickness = TextOutlineThickness(outline_thickness)
 
         world_object = pygfx.Text(
             pygfx.TextGeometry(
-                text=str(text),
-                font_size=size,
+                text=self.text,
+                font_size=self.font_size,
                 screen_space=screen_space,
                 anchor=anchor,
             ),
             pygfx.TextMaterial(
-                color=face_color,
-                outline_color=outline_color,
-                outline_thickness=outline_thickness,
+                color=self.face_color,
+                outline_color=self.outline_color,
+                outline_thickness=self.outline_thickness,
+                pick_write=True,
             ),
         )
 
         self._set_world_object(world_object)
 
-        self.world_object.position = position
+        self.offset = offset
 
     @property
-    def text(self):
-        """Returns the text of this graphic."""
-        return self._text
+    def text(self) -> str:
+        """the text displayed"""
+        return self._text.value
 
     @text.setter
     def text(self, text: str):
-        """Set the text of this graphic."""
-        if not isinstance(text, str):
-            raise ValueError("Text must be of type str.")
-
-        self._text = text
-        self.world_object.geometry.set_text(self._text)
+        self._text.set_value(self, text)
 
     @property
-    def text_size(self):
-        """Returns the text size of this graphic."""
-        return self.world_object.geometry.font_size
+    def font_size(self) -> float | int:
+        """ "text font size"""
+        return self._font_size.value
 
-    @text_size.setter
-    def text_size(self, size: Union[int, float]):
-        """Set the text size of this graphic."""
-        if not (isinstance(size, int) or isinstance(size, float)):
-            raise ValueError("Text size must be of type int or float")
-
-        self.world_object.geometry.font_size = size
+    @font_size.setter
+    def font_size(self, size: float | int):
+        self._font_size.set_value(self, size)
 
     @property
-    def face_color(self):
-        """Returns the face color of this graphic."""
-        return self.world_object.material.color
+    def face_color(self) -> pygfx.Color:
+        """text face color"""
+        return self._face_color.value
 
     @face_color.setter
-    def face_color(self, color: Union[str, np.ndarray]):
-        """Set the face color of this graphic."""
-        if not (isinstance(color, str) or isinstance(color, np.ndarray)):
-            raise ValueError("Face color must be of type str or np.ndarray")
-
-        color = pygfx.Color(color)
-
-        self.world_object.material.color = color
+    def face_color(self, color: str | np.ndarray | list[float] | tuple[float]):
+        self._face_color.set_value(self, color)
 
     @property
-    def outline_size(self):
-        """Returns the outline size of this graphic."""
-        return self.world_object.material.outline_thickness
+    def outline_thickness(self) -> float:
+        """text outline thickness"""
+        return self._outline_thickness.value
 
-    @outline_size.setter
-    def outline_size(self, size: Union[int, float]):
-        """Set the outline size of this text graphic."""
-        if not (isinstance(size, int) or isinstance(size, float)):
-            raise ValueError("Outline size must be of type int or float")
-
-        self.world_object.material.outline_thickness = size
+    @outline_thickness.setter
+    def outline_thickness(self, thickness: float):
+        self._outline_thickness.set_value(self, thickness)
 
     @property
-    def outline_color(self):
-        """Returns the outline color of this graphic."""
-        return self.world_object.material.outline_color
+    def outline_color(self) -> pygfx.Color:
+        """text outline color"""
+        return self._outline_color.value
 
     @outline_color.setter
-    def outline_color(self, color: Union[str, np.ndarray]):
-        """Set the outline color of this graphic"""
-        if not (isinstance(color, str) or isinstance(color, np.ndarray)):
-            raise ValueError("Outline color must be of type str or np.ndarray")
-
-        self.world_object.material.outline_color = color
-
+    def outline_color(self, color: str | np.ndarray | list[float] | tuple[float]):
+        self._outline_color.set_value(self, color)
