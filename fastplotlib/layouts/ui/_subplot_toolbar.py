@@ -1,15 +1,20 @@
 from imgui_bundle import imgui, icons_fontawesome_6 as fa, imgui_ctx
 
-from .._plot_area import PlotArea
-from ._base import BaseGUI
+from .._subplot import Subplot
+from ._base import Window
 
 
-class SubplotToolbar(BaseGUI):
-    def __init__(self, owner: PlotArea, fa_icons: imgui.ImFont):
-        super().__init__(owner=owner, fa_icons=fa_icons, size=None)
+class SubplotToolbar(Window):
+    def __init__(self, subplot: Subplot, fa_icons: imgui.ImFont):
+        super().__init__()
+
+        self._subplot = subplot
+        self._fa_icons = fa_icons
+
+        print(self._id_counter)
 
     def update(self):
-        x, y, width, height = self.owner.get_rect()
+        x, y, width, height = self._subplot.get_rect()
 
         pos = (x, y + height)
 
@@ -17,17 +22,17 @@ class SubplotToolbar(BaseGUI):
         imgui.set_next_window_pos(pos)
         flags = imgui.WindowFlags_.no_collapse | imgui.WindowFlags_.no_title_bar
 
-        imgui.begin(f"Toolbar-{self.owner.position}", p_open=None, flags=flags)
+        imgui.begin(f"Toolbar-{self._subplot.position}", p_open=None, flags=flags)
 
         imgui.push_font(self._fa_icons)
 
         imgui.push_id(
             self._id_counter
         )  # push ID to prevent conflict between multiple figs with same UI
-        with imgui_ctx.begin_horizontal(f"toolbar-{self.owner.position}"):
+        with imgui_ctx.begin_horizontal(f"toolbar-{self._subplot.position}"):
             # autoscale button
             if imgui.button(fa.ICON_FA_MAXIMIZE):
-                self.owner.auto_scale()
+                self._subplot.auto_scale()
             imgui.pop_font()
             if imgui.is_item_hovered(0):
                 imgui.set_tooltip("autoscale scene")
@@ -35,15 +40,15 @@ class SubplotToolbar(BaseGUI):
             # center scene
             imgui.push_font(self._fa_icons)
             if imgui.button(fa.ICON_FA_ALIGN_CENTER):
-                self.owner.center_scene()
+                self._subplot.center_scene()
             imgui.pop_font()
             if imgui.is_item_hovered(0):
                 imgui.set_tooltip("center scene")
 
             imgui.push_font(self._fa_icons)
             # checkbox controller
-            _, self.owner.controller.enabled = imgui.checkbox(
-                fa.ICON_FA_COMPUTER_MOUSE, self.owner.controller.enabled
+            _, self._subplot.controller.enabled = imgui.checkbox(
+                fa.ICON_FA_COMPUTER_MOUSE, self._subplot.controller.enabled
             )
             imgui.pop_font()
             if imgui.is_item_hovered(0):
@@ -51,12 +56,13 @@ class SubplotToolbar(BaseGUI):
 
             imgui.push_font(self._fa_icons)
             # checkbox maintain_apsect
-            _, self.owner.camera.maintain_aspect = imgui.checkbox(
-                fa.ICON_FA_EXPAND, self.owner.camera.maintain_aspect
+            _, self._subplot.camera.maintain_aspect = imgui.checkbox(
+                fa.ICON_FA_EXPAND, self._subplot.camera.maintain_aspect
             )
             imgui.pop_font()
             if imgui.is_item_hovered(0):
                 imgui.set_tooltip("maintain aspect")
+
 
         imgui.pop_id()
 
