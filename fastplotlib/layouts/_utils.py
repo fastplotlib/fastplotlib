@@ -2,7 +2,7 @@ import importlib
 
 import pygfx
 from pygfx import WgpuRenderer, Texture, Renderer
-from pygfx.renderers.wgpu.engine.renderer import EVENT_TYPE_MAP, PointerEvent
+from pygfx.renderers.wgpu.engine.renderer import EVENT_TYPE_MAP, PointerEvent, WheelEvent
 
 from wgpu.gui import WgpuCanvasBase
 
@@ -18,7 +18,7 @@ class WgpuRendererWithEventFilters(WgpuRenderer):
     def convert_event(self, event: dict):
         event_type = event["event_type"]
 
-        if EVENT_TYPE_MAP[event_type] is PointerEvent:
+        if EVENT_TYPE_MAP[event_type] in [PointerEvent, WheelEvent]:
             for filt in self.event_filters.values():
                 if (
                     filt[0, 0] < event["x"] < filt[1, 0]
