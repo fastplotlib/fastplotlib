@@ -25,14 +25,6 @@ class ColormapPicker(Popup):
         self.renderer = self._figure.renderer
         self.imgui_renderer = self._figure.imgui_renderer
 
-        # linear interpolation sampler to nicely display the cmaps
-        self.texture_sampler = self.renderer.device.create_sampler(
-            label="img-sampler",
-            mag_filter=wgpu.FilterMode.linear,
-            min_filter=wgpu.FilterMode.linear,
-            mipmap_filter=wgpu.FilterMode.linear,
-        )
-
         self._texture_ids: dict[str, int] = {}
         self._textures = list()
 
