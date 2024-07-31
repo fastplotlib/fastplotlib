@@ -12,7 +12,9 @@ from wgpu.gui import WgpuCanvasBase
 import pygfx
 
 from ._figure import Figure
-from .ui import BaseGUI, SubplotToolbar, RightClickMenu
+from ._utils import make_canvas_and_renderer
+from .ui import BaseGUI, SubplotToolbar, RightClickMenu, Popup
+from .ui.right_click_menus import ColormapPicker
 
 
 GUI_EDGES = ["top", "right", "bottom", "left"]
@@ -46,6 +48,9 @@ class ImguiFigure(Figure):
     ):
         self._guis: dict[str, BaseGUI] = {}
 
+        canvas, renderer = make_canvas_and_renderer(canvas, renderer)
+        self._imgui_renderer = ImguiRenderer(renderer.device, canvas)
+
         super().__init__(
             shape=shape,
             cameras=cameras,
@@ -57,8 +62,6 @@ class ImguiFigure(Figure):
             size=size,
             names=names,
         )
-
-        self._imgui_renderer = ImguiRenderer(self.renderer.device, self.canvas)
 
         fronts_path = str(
             Path(imgui_bundle.__file__).parent.joinpath(
@@ -82,10 +85,14 @@ class ImguiFigure(Figure):
         )
 
         for subplot in self._subplots.ravel():
-            toolbar = SubplotToolbar(owner=subplot, fa_icons=self._fa_icons)
+            toolbar = SubplotToolbar(subplot=subplot, fa_icons=self._fa_icons)
             self._subplot_toolbars[subplot.position] = toolbar
 
-        self._right_click_menu = RightClickMenu(owner=self, fa_icons=self._fa_icons)
+        self._right_click_menu = RightClickMenu(figure=self, fa_icons=self._fa_icons)
+
+        self._popups: dict[str, Popup] = {}
+
+        self.register_popup(ColormapPicker)
 
     @property
     def imgui_renderer(self) -> ImguiRenderer:
@@ -105,6 +112,9 @@ class ImguiFigure(Figure):
 
         for gui in self._guis.values():
             gui.update()
+
+        for popup in self._popups.values():
+            popup.update()
 
         self._right_click_menu.update()
 
@@ -157,3 +167,12 @@ class ImguiFigure(Figure):
             ypos = 0
 
         return [xpos, ypos, width, height]
+
+    def register_popup(self, popup: Popup.__class__):
+        self._popups[popup.name] = popup(self)
+
+    def open_popup(self, name, pos: tuple[int, int], **kwargs):
+        if self._popups[name].is_open:
+            return
+
+        self._popups[name].open(pos, **kwargs)
