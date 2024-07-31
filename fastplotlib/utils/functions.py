@@ -63,7 +63,7 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
         if n_colors > max_colors:
             raise ValueError(
                 f"You have requested <{n_colors}> colors but only <{max_colors}> exist for the "
-                f"chosen cmap: <{name}>"
+                f"chosen cmap: <{cmap}>"
             )
         return np.asarray(cm.color_stops, dtype=np.float32)[:n_colors, 1:]
 
