@@ -14,6 +14,7 @@ class BaseGUI:
 
     This ID can be pushed in subclasses within the `update()` method
     """
+
     ID_COUNTER: int = 0
 
     def __init__(self):
@@ -30,7 +31,9 @@ class Window(BaseGUI):
 
 
 class EdgeWindow(Window):
-    def __init__(self, figure: Figure, size: int, fa_icons: imgui.ImFont, *args, **kwargs):
+    def __init__(
+        self, figure: Figure, size: int, fa_icons: imgui.ImFont, *args, **kwargs
+    ):
         super().__init__()
 
         self._figure = figure
@@ -64,9 +67,14 @@ class Popup(BaseGUI):
         x2, y2 = x1 + width, y1 + height
 
         if name not in self._figure.renderer.event_filters.keys():
-            self._figure.renderer.event_filters[name] = np.array([[x1 - 1, y1 - 1], [x2 + 4, y2 + 4]])
+            self._figure.renderer.event_filters[name] = np.array(
+                [[x1 - 1, y1 - 1], [x2 + 4, y2 + 4]]
+            )
         else:
-            self._figure.renderer.event_filters[name][:] = [x1 - 1, y1 - 1], [x2 + 4, y2 + 4]
+            self._figure.renderer.event_filters[name][:] = [x1 - 1, y1 - 1], [
+                x2 + 4,
+                y2 + 4,
+            ]
 
         self._event_filter_names.add(name)
 
