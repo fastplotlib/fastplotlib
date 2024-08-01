@@ -1,1 +1,0 @@
-from ._imgui_colormap_picker import ColormapPicker

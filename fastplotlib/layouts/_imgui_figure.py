@@ -13,8 +13,8 @@ import pygfx
 
 from ._figure import Figure
 from ._utils import make_canvas_and_renderer
-from .ui import BaseGUI, SubplotToolbar, RightClickMenu, Popup
-from .ui.right_click_menus import ColormapPicker
+from ..ui import BaseGUI, SubplotToolbar, RightClickMenu, Popup
+from ..ui import ColormapPicker
 
 
 GUI_EDGES = ["top", "right", "bottom", "left"]

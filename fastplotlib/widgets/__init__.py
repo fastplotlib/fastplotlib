@@ -1,3 +1,1 @@
-from .image import ImageWidget
-
-__all__ = ["ImageWidget"]
+from .image_widget import ImageWidget

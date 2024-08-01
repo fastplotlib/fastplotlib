@@ -2,8 +2,8 @@ import numpy as np
 
 from imgui_bundle import imgui
 
-from .._plot_area import PlotArea
-from .._figure import Figure
+from ..layouts._plot_area import PlotArea
+from ..layouts._figure import Figure
 
 
 class BaseGUI:
