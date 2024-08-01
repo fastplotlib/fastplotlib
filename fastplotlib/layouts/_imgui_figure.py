@@ -12,6 +12,7 @@ from wgpu.gui import WgpuCanvasBase
 import pygfx
 
 from ._figure import Figure
+from ..layouts._subplot import IMGUI_TOOLBAR_HEIGHT
 from ._utils import make_canvas_and_renderer
 from ..ui import BaseGUI, EdgeWindow, SubplotToolbar, RightClickMenu, Popup
 from ..ui import ColormapPicker
