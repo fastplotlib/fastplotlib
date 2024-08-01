@@ -6,8 +6,8 @@ from ...ui import EdgeWindow
 
 
 class ImageWidgetSliders(EdgeWindow):
-    def __init__(self, figure, fa_icons, size, image_widget):
-        super().__init__(figure=figure, fa_icons=fa_icons, size=size)
+    def __init__(self, figure, size, image_widget):
+        super().__init__(figure=figure, size=size)
         self._image_widget = image_widget
 
         self._playing: dict[str, bool] = {"t": False, "z": False}

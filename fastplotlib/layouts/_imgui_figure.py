@@ -13,7 +13,7 @@ import pygfx
 
 from ._figure import Figure
 from ._utils import make_canvas_and_renderer
-from ..ui import BaseGUI, SubplotToolbar, RightClickMenu, Popup
+from ..ui import BaseGUI, EdgeWindow, SubplotToolbar, RightClickMenu, Popup
 from ..ui import ColormapPicker
 
 
@@ -46,7 +46,7 @@ class ImguiFigure(Figure):
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
     ):
-        self._guis: dict[str, BaseGUI] = {}
+        self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
 
         canvas, renderer = make_canvas_and_renderer(canvas, renderer)
         self._imgui_renderer = ImguiRenderer(renderer.device, canvas)
@@ -95,6 +95,10 @@ class ImguiFigure(Figure):
         self.register_popup(ColormapPicker)
 
     @property
+    def guis(self) -> dict[str, EdgeWindow]:
+        return self._guis
+
+    @property
     def imgui_renderer(self) -> ImguiRenderer:
         return self._imgui_renderer
 
@@ -110,8 +114,9 @@ class ImguiFigure(Figure):
         for toolbar in self._subplot_toolbars.ravel():
             toolbar.update()
 
-        for gui in self._guis.values():
-            gui.update()
+        for gui in self.guis.values():
+            if gui is not None:
+                gui.update()
 
         for popup in self._popups.values():
             popup.update()
@@ -124,45 +129,45 @@ class ImguiFigure(Figure):
 
         return imgui.get_draw_data()
 
-    def set_gui(self, edge: str, gui: BaseGUI):
+    def set_gui(self, edge: str, gui: EdgeWindow):
         if edge not in GUI_EDGES:
             raise ValueError
 
-        if edge in self._guis.keys():
+        if self.guis[edge] is not None:
             raise ValueError
 
         if not isinstance(gui, BaseGUI):
             raise TypeError
 
-        self._guis[edge] = gui
+        self.guis[edge] = gui
 
         self.set_gui_size(edge, gui.size)
 
     def set_gui_size(self, edge: str, size: int):
-        if edge not in self._guis.keys():
-            raise KeyError
+        if self.guis[edge] is None:
+            raise ValueError
 
-        self._guis[edge].size = size
+        self.guis[edge].size = size
 
     def get_pygfx_render_area(self, *args):
         """update size of fastplotlib managed, i.e. non-imgui, part of canvas"""
         width, height = self.canvas.get_logical_size()
 
         for edge in ["left", "right"]:
-            if edge in self._guis.keys():
+            if self.guis[edge]:
                 width -= self._guis[edge].size
 
         for edge in ["top", "bottom"]:
-            if edge in self._guis.keys():
+            if self.guis[edge]:
                 height -= self._guis[edge].size
 
-        if self._guis.get("left", False):
-            xpos = self._guis["left"].size
+        if self.guis["left"]:
+            xpos = self.guis["left"].size
         else:
             xpos = 0
 
-        if self._guis.get("top", False):
-            ypos = self._guis["top"].size
+        if self.guis["top"]:
+            ypos = self.guis["top"].size
         else:
             ypos = 0
 
