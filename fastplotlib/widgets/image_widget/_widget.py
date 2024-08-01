@@ -758,8 +758,15 @@ class ImageWidget:
         """
         Reset the vmin and vmax w.r.t. the full data
         """
-        for ig in self.managed_graphics:
-            ig.reset_vmin_vmax()
+        for data, subplot in zip(self.data, self.figure):
+            if "histogram_lut" not in subplot.docks["right"]:
+                continue
+            hlut = subplot.docks["right"]["histogram_lut"]
+            hlut.set_data(data, reset_vmin_vmax=True)
+
+        else:
+            for ig in self.managed_graphics:
+                ig.reset_vmin_vmax()
 
     def reset_vmin_vmax_frame(self):
         """

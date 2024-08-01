@@ -54,6 +54,21 @@ class ImageWidgetSliders(EdgeWindow):
         flag_index_changed = False
         # imgui.push_id(self._id_counter)  # push ID to prevent conflict between multiple figs with same UI
 
+        imgui.push_font(self._fa_icons)
+        if imgui.button(label=fa.ICON_FA_CIRCLE_HALF_STROKE + fa.ICON_FA_FILM):
+            self._image_widget.reset_vmin_vmax()
+        imgui.pop_font()
+        if imgui.is_item_hovered(0):
+            imgui.set_tooltip("reset contrast limits using full movie/stack")
+
+        imgui.push_font(self._fa_icons)
+        imgui.same_line()
+        if imgui.button(label=fa.ICON_FA_CIRCLE_HALF_STROKE):
+            self._image_widget.reset_vmin_vmax_frame()
+        imgui.pop_font()
+        if imgui.is_item_hovered(0):
+            imgui.set_tooltip("reset contrast limits using current frame")
+
         now = perf_counter()
         for dim in self._image_widget.slider_dims:
             imgui.push_id(f"{self._id_counter}_{dim}")
