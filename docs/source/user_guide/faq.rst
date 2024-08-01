@@ -42,3 +42,21 @@ fastplotlib FAQ
 
     In general, if your data is an array-like object, `fastplotlib` should be able to use it.
 
+.. dropdown:: What is the scope of `fastplotlib'?
+
+    While the capabilities are very far-reaching, we would like to emphasize that `fastplotlib` is a general-purpose plotting library focused on scientific visualization.
+    More specifically, we aim to develop the tools necessary for users to build fast and interactive visualizations for a variety of scientific domains (e.g. neuroscience,
+    astrophysics). If you have a particular feature in mind that you feel is missing, please post an issue and we will respond accordingly letting you know if it fits within
+    the scope of the project.
+
+.. dropdown:: What types of PRs are we willing to accept?
+
+    Primarily the features of `fastplotlib` have been developed as they relate to the core-developers research use cases (mostly neuroscience). With that being said, there are many domains in which
+    we do not have the knowledge to best-implement the tools needed for proper visualization. We welcome all PRs that address these types of missing functionality. We
+    recommend taking a look at our `Roadmap <https://github.com/fastplotlib/fastplotlib/issues/55>`_ to get a better idea of what those items might be :D
+
+    Closely related to this, we would love to add more examples to our repo for different types of scientific visualizations. We welcome all PRs that showcase using `fastplotlib` for
+    your given research domain.
+
+    Lastly, documentation is a critical part of open-source software and makes learning/using our tool much easier. We welcome all PRs that add missing or needed documentation of the
+    codebase. If you find a piece of the codebase that is confusing or does not have proper documentation, please also feel free to post an issue on the repo!
