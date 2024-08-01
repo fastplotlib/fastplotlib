@@ -1,4 +1,3 @@
-from pathlib import Path
 import ctypes
 
 import numpy as np
@@ -9,7 +8,14 @@ from imgui_bundle import imgui
 from wgpu import GPUTexture
 
 from .. import Popup
-from ....utils import colormaps
+from ...utils.functions import COLORMAP_NAMES, SEQUENTIAL_CMAPS, CYCLIC_CMAPS, DIVERGING_CMAPS, MISC_CMAPS
+
+all_cmaps = [
+    *SEQUENTIAL_CMAPS,
+    *CYCLIC_CMAPS,
+    *DIVERGING_CMAPS,
+    *MISC_CMAPS
+]
 
 
 # TODO: create and upload textures only once per Figure
@@ -23,25 +29,24 @@ class ColormapPicker(Popup):
         self.renderer = self._figure.renderer
         self.imgui_renderer = self._figure.imgui_renderer
 
+        # maps str cmap names -> int texture IDs
         self._texture_ids: dict[str, int] = {}
         self._textures = list()
 
-        # make all colormaps and upload representative texture for each to the GPU
-        for name in sorted(cmap.Catalog().short_keys()):
+        # make all colormaps and upload representative texture for each cmap to the GPU
+        for name in all_cmaps:
+            # get data that represents cmap
             colormap = cmap.Colormap(name)
-            # qualitative colormap, only show quantitative cmaps in this picker
-            if colormap.interpolation == "nearest":
-                continue
-
             data = colormap(np.linspace(0, 1)) * 255
 
+            # needs to be 2D to create a texture
             data = np.vstack([[data]] * 2).astype(np.uint8)
-            if data.size < 1:
-                continue  # skip any files that are not cmaps in here
 
+            # upload the texture to the GPU, get the texture ID and texture
             self._texture_ids[name], texture = self._create_texture_and_upload(data)
             self._textures.append(texture)
 
+        # used to set the states of the UI
         self._lut_tool = None
         self._pos: tuple[int, int] = -1, -1
         self._open_new: bool = False
@@ -50,8 +55,10 @@ class ColormapPicker(Popup):
 
         self._popup_state = "never-opened"
 
+        self._texture_height = None
+
     def _create_texture_and_upload(self, data: np.ndarray) -> tuple[int, GPUTexture]:
-        # crates a GPUTexture and uploads it
+        """crates a GPUTexture from the 2D data and uploads it"""
 
         # create a GPUTexture
         texture = self.renderer.device.create_texture(
@@ -97,6 +104,22 @@ class ColormapPicker(Popup):
 
         self.clear_event_filters()
 
+    def _add_cmap_menu_item(self, cmap_name: str):
+        texture_id = self._texture_ids[cmap_name]
+        imgui.image(
+            texture_id, image_size=(50, self._texture_height), border_col=(1, 1, 1, 1)
+        )
+
+        imgui.same_line()
+
+        clicked, selected = imgui.selectable(
+            label=cmap_name,
+            p_selected=cmap_name == self._lut_tool.cmap,
+        )
+
+        if clicked and selected:
+            self._lut_tool.cmap = cmap_name
+
     def update(self):
         if self._open_new:
             # new popup has been triggered by a LUT tool
@@ -108,7 +131,7 @@ class ColormapPicker(Popup):
         if imgui.begin_popup("cmap-picker"):
             self.set_event_filter("cmap-picker-filter")
 
-            texture_height = (
+            self._texture_height = (
                 self.imgui_renderer.backend.io.font_global_scale
                 * imgui.get_font().font_size
             ) - 2
@@ -117,22 +140,15 @@ class ColormapPicker(Popup):
             if imgui.menu_item("Reset vmin-vmax", None, False)[0]:
                 self._lut_tool.image_graphic.reset_vmin_vmax()
 
-            imgui.separator()
+            for cmap_type in COLORMAP_NAMES.keys():
+                if cmap_type == "qualitative":
+                    continue
 
-            for cmap_name, texture_id in self._texture_ids.items():
-                imgui.image(
-                    texture_id, image_size=(50, texture_height), border_col=(1, 1, 1, 1)
-                )
+                imgui.separator()
+                imgui.text(cmap_type.capitalize())
 
-                imgui.same_line()
-
-                clicked, selected = imgui.selectable(
-                    label=cmap_name,
-                    p_selected=cmap_name == self._lut_tool.cmap,
-                )
-
-                if clicked and selected:
-                    self._lut_tool.cmap = cmap_name
+                for cmap_name in COLORMAP_NAMES[cmap_type]:
+                    self._add_cmap_menu_item(cmap_name)
 
             imgui.end_popup()
 

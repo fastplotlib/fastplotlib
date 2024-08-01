@@ -1,6 +1,6 @@
 from imgui_bundle import imgui, icons_fontawesome_6 as fa, imgui_ctx
 
-from .._subplot import Subplot
+from ..layouts._subplot import Subplot
 from ._base import Window
 
 

@@ -3,10 +3,10 @@ from warnings import warn
 
 import numpy as np
 
-from ..layouts import Figure
-from ..graphics import ImageGraphic
-from ..utils import calculate_figure_shape
-from ..tools import HistogramLUTTool
+from ...layouts import Figure
+from ...graphics import ImageGraphic
+from ...utils import calculate_figure_shape
+from ...tools import HistogramLUTTool
 
 
 # Number of dimensions that represent one image/one frame. For grayscale shape will be [x, y], i.e. 2 dims, for RGB(A)

@@ -1,10 +1,8 @@
-import numpy as np
-
 from imgui_bundle import imgui
 
-from .._utils import controller_types
-from .._plot_area import PlotArea
-from ._base import Popup
+from ...layouts._utils import controller_types
+from ...layouts._plot_area import PlotArea
+from ...ui import Popup
 
 
 def flip_axis(subplot: PlotArea, axis: str, flip: bool):
