@@ -11,8 +11,6 @@ class SubplotToolbar(Window):
         self._subplot = subplot
         self._fa_icons = fa_icons
 
-        print(self._id_counter)
-
     def update(self):
         x, y, width, height = self._subplot.get_rect()
 
