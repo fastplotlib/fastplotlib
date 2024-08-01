@@ -3,9 +3,9 @@ Image widget
 ============
 
 Example showing the image widget in action.
-When run in a notebook, or with the Qt GUI backend, sliders are also shown.
 """
 
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl

@@ -68,9 +68,18 @@ def test_example_screenshots(module, force_offscreen):
     # import the example module
     example = importlib.import_module(module_name)
 
+    # there doesn't seem to be a resize event for the manual offscreen canvas
+    example.figure.imgui_renderer._backend.io.display_size = example.figure.canvas.get_logical_size()
+
+    # render each subplot
     for subplot in example.figure:
         subplot.viewport.render(subplot.scene, subplot.camera)
+
+    # flush pygfx renderer
     example.figure.renderer.flush()
+
+    # render imgui
+    example.figure.imgui_renderer.render()
 
     # render a frame
     img = np.asarray(example.figure.renderer.target.draw())
