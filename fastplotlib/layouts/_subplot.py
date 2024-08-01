@@ -7,7 +7,7 @@ import pygfx
 from wgpu.gui import WgpuCanvasBase
 
 from ..graphics import TextGraphic
-from ._utils import make_canvas_and_renderer, create_camera, create_controller
+from ._utils import create_camera, create_controller
 from ._plot_area import PlotArea
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..graphics._axes import Axes
@@ -19,16 +19,12 @@ IMGUI_TOOLBAR_HEIGHT = 39
 class Subplot(PlotArea, GraphicMethodsMixin):
     def __init__(
         self,
-        parent: Union["Figure", None] = None,
-        position: tuple[int, int] = None,
-        parent_dims: tuple[int, int] = None,
-        camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera = "2d",
-        controller: (
-            Literal["panzoom", "fly", "trackball", "orbit"] | pygfx.Controller
-        ) = None,
-        canvas: (
-            Literal["glfw", "jupyter", "qt", "wx"] | WgpuCanvasBase | pygfx.Texture
-        ) = None,
+        parent: Union["Figure"],
+        position: tuple[int, int],
+        parent_dims: tuple[int, int],
+        camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera,
+        controller: pygfx.Controller,
+        canvas: WgpuCanvasBase | pygfx.Texture,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
     ):
@@ -59,12 +55,10 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             | if ``str``, must be one of: `"panzoom", "fly", "trackball", or "orbit"`.
             | also accepts a pygfx.Controller instance
 
-        canvas: one of "jupyter", "glfw", "qt", "ex, a WgpuCanvas, or a pygfx.Texture, optional
-            Provides surface on which a scene will be rendered. Can optionally provide a WgpuCanvas instance or a str
-            to force the PlotArea to use a specific canvas from one of the following options: "jupyter", "glfw", "qt".
-            Can also provide a pygfx Texture to render to.
+        canvas: WgpuCanvas, or a pygfx.Texture
+            Provides surface on which a scene will be rendered.
 
-        renderer: WgpuRenderer, optional
+        renderer: WgpuRenderer
             object used to render scenes using wgpu
 
         name: str, optional
@@ -73,8 +67,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         """
 
         super(GraphicMethodsMixin, self).__init__()
-
-        canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
         if position is None:
             position = (0, 0)
