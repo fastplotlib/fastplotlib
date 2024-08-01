@@ -332,8 +332,6 @@ class Graphic:
             self._event_handlers[t].remove(callback)
             # remove callback wrapper from world object if pygfx event
             if t in PYGFX_EVENTS:
-                print("pygfx event")
-                print(wrapper)
                 self.world_object.remove_event_handler(wrapper, t)
             else:
                 feature = getattr(self, f"_{t}")

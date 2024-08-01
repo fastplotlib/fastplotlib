@@ -7,6 +7,7 @@ from ...layouts import Figure
 from ...graphics import ImageGraphic
 from ...utils import calculate_figure_shape
 from ...tools import HistogramLUTTool
+from ._sliders import ImageWidgetSliders
 
 
 # Number of dimensions that represent one image/one frame. For grayscale shape will be [x, y], i.e. 2 dims, for RGB(A)
@@ -171,11 +172,6 @@ class ImageWidget:
         return self._n_scrollable_dims
 
     @property
-    def sliders(self) -> dict[str, Any]:
-        """the ipywidget IntSlider or QSlider instances used by the widget for indexing the desired dimensions"""
-        return self._image_widget_toolbar.sliders
-
-    @property
     def slider_dims(self) -> list[str]:
         """the dimensions that the sliders index"""
         return self._slider_dims
@@ -196,6 +192,36 @@ class ImageWidget:
 
         """
         return self._current_index
+
+    @current_index.setter
+    def current_index(self, index: dict[str, int]):
+        # ignore if output context has not been created yet
+        if self.widget is None:
+            return
+
+        if not set(index.keys()).issubset(set(self._current_index.keys())):
+            raise KeyError(
+                f"All dimension keys for setting `current_index` must be present in the widget sliders. "
+                f"The dimensions currently used for sliders are: {list(self.current_index.keys())}"
+            )
+
+        for k, val in index.items():
+            if not isinstance(val, int):
+                raise TypeError("Indices for all dimensions must be int")
+            if val < 0:
+                raise IndexError("negative indexing is not supported for ImageWidget")
+            if val > self._dims_max_bounds[k]:
+                raise IndexError(
+                    f"index {val} is out of bounds for dimension '{k}' "
+                    f"which has a max bound of: {self._dims_max_bounds[k]}"
+                )
+
+        self._current_index.update(index)
+
+        for i, (ig, data) in enumerate(zip(self.managed_graphics, self.data)):
+            frame = self._process_indices(data, self._current_index)
+            frame = self._process_frame_apply(frame, i)
+            ig.data = frame
 
     @property
     def n_img_dims(self) -> list[int]:
@@ -246,42 +272,6 @@ class ImageWidget:
             raise ValueError(f"Array had shape {curr_arr.shape} which is not supported")
 
         return n_scrollable_dims
-
-    @current_index.setter
-    def current_index(self, index: dict[str, int]):
-        # ignore if output context has not been created yet
-        if self.widget is None:
-            return
-
-        if not set(index.keys()).issubset(set(self._current_index.keys())):
-            raise KeyError(
-                f"All dimension keys for setting `current_index` must be present in the widget sliders. "
-                f"The dimensions currently used for sliders are: {list(self.current_index.keys())}"
-            )
-
-        for k, val in index.items():
-            if not isinstance(val, int):
-                raise TypeError("Indices for all dimensions must be int")
-            if val < 0:
-                raise IndexError("negative indexing is not supported for ImageWidget")
-            if val > self._dims_max_bounds[k]:
-                raise IndexError(
-                    f"index {val} is out of bounds for dimension '{k}' "
-                    f"which has a max bound of: {self._dims_max_bounds[k]}"
-                )
-
-        self._current_index.update(index)
-
-        # can make a callback_block decorator later
-        self.block_sliders = True
-        for k in index.keys():
-            self.sliders[k].value = index[k]
-        self.block_sliders = False
-
-        for i, (ig, data) in enumerate(zip(self.managed_graphics, self.data)):
-            frame = self._process_indices(data, self._current_index)
-            frame = self._process_frame_apply(frame, i)
-            ig.data = frame
 
     def __init__(
         self,
@@ -545,8 +535,14 @@ class ImageWidget:
                 subplot.docks["right"].auto_scale(maintain_aspect=False)
                 subplot.docks["right"].controller.enabled = False
 
-        self.block_sliders = False
-        self._image_widget_toolbar = None
+        self._image_widget_sliders = ImageWidgetSliders(
+            figure=self.figure,
+            fa_icons=self.figure._fa_icons,
+            size=50,
+            image_widget=self
+        )
+
+        self.figure.set_gui(edge="bottom", gui=self._image_widget_sliders)
 
     @property
     def frame_apply(self) -> dict | None:
@@ -808,8 +804,6 @@ class ImageWidget:
         if reset_indices:
             for key in self.current_index:
                 self.current_index[key] = 0
-            for key in self.sliders:
-                self.sliders[key].value = 0
 
         # set slider max according to new data
         max_lengths = dict()
@@ -880,17 +874,13 @@ class ImageWidget:
                             f"New arrays have differing values along dim {scroll_dim}"
                         )
 
+                    self._dims_max_bounds[scroll_dim] = max_lengths[scroll_dim]
+
             # set histogram widget
             if self._histogram_widget:
                 subplot.docks["right"]["histogram_lut"].set_data(
                     new_array, reset_vmin_vmax=reset_vmin_vmax
                 )
-
-        # set slider maxes
-        # TODO: maybe make this stuff a property, like ndims, n_frames etc. and have it set the sliders
-        for key in self.sliders.keys():
-            self.sliders[key].max = max_lengths[key]
-            self._dims_max_bounds[key] = max_lengths[key]
 
         # force graphics to update
         self.current_index = self.current_index
@@ -906,21 +896,11 @@ class ImageWidget:
         OutputContext
             ImageWidget just uses the Gridplot output context
         """
-        if self.figure.canvas.__class__.__name__ == "JupyterWgpuCanvas":
-            from ._image_widget_ipywidget_toolbar import IpywidgetImageWidgetToolbar
-
-            self._image_widget_toolbar = IpywidgetImageWidgetToolbar(self)
-
-        elif self.figure.canvas.__class__.__name__ == "QWgpuCanvas":
-            from ._image_widget_qt_toolbar import QToolbarImageWidget
-
-            self._image_widget_toolbar = QToolbarImageWidget(self)
 
         self._output = self.figure.show(
             toolbar=toolbar,
             sidecar=sidecar,
             sidecar_kwargs=sidecar_kwargs,
-            add_widgets=[self._image_widget_toolbar],
         )
 
         return self._output
