@@ -483,8 +483,6 @@ class ImageWidget:
         self._window_funcs = None
         self.window_funcs = window_funcs
 
-        self._sliders: dict[str, Any] = dict()
-
         # get max bound for all data arrays for all slider dimensions and ensure compatibility across slider dims
         self._dims_max_bounds: dict[str, int] = {k: 0 for k in self.slider_dims}
         for i, _dim in enumerate(list(self._dims_max_bounds.keys())):
@@ -535,10 +533,18 @@ class ImageWidget:
                 subplot.docks["right"].auto_scale(maintain_aspect=False)
                 subplot.docks["right"].controller.enabled = False
 
+        # hard code the expected height so that the first render looks right in tests, docs etc.
+        if len(self.slider_dims) == 0:
+            ui_size = 57
+        if len(self.slider_dims) == 1:
+            ui_size = 106
+        elif len(self.slider_dims) == 2:
+            ui_size = 155
+
         self._image_widget_sliders = ImageWidgetSliders(
             figure=self.figure,
             fa_icons=self.figure._fa_icons,
-            size=50,
+            size=ui_size,
             image_widget=self
         )
 

@@ -14,8 +14,8 @@ class ImageWidgetSliders(EdgeWindow):
 
         self._step_size = 1
 
-        self._fps: dict[str, int] = {"t": 10, "z": 10}
-        self._frame_time: dict[str, float] = {"t": 1 / 10, "z": 1 / 10}
+        self._fps: dict[str, int] = {"t": 20, "z": 20}
+        self._frame_time: dict[str, float] = {"t": 1 / 20, "z": 1 / 20}
 
         # last timepoint a frame was displayed from a given dimension
         self._last_frame_time: dict[str, float] = {"t": 0, "z": 0}
@@ -137,6 +137,5 @@ class ImageWidgetSliders(EdgeWindow):
             self._image_widget.current_index = new_index
 
         self.size = int(imgui.get_window_height())
-
 
         imgui.end()
