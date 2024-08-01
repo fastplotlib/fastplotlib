@@ -7,6 +7,13 @@ import numpy as np
 import pylinalg as la
 from wgpu.gui.base import log_exception
 
+try:
+    from imgui_bundle import imgui
+except ImportError:
+    IMGUI = False
+else:
+    IMGUI = True
+
 import pygfx
 
 from ._features import (
@@ -116,6 +123,8 @@ class Graphic:
         self._block_events = False
 
         self._axes: Axes = None
+
+        self._right_click_menu = None
 
     @property
     def supported_events(self) -> tuple[str]:
@@ -303,17 +312,6 @@ class Graphic:
             # for feature events
             event._target = self.world_object
 
-        if isinstance(event, pygfx.PointerEvent):
-            # map from screen to world space and data space
-            world_xy = self._plot_area.map_screen_to_world(event)
-
-            # subtract offset to map to data
-            data_xy = world_xy - self.offset
-
-            # append attributes
-            event.x_world, event.y_world = world_xy[:2]
-            event.x_data, event.y_data = data_xy[:2]
-
         with log_exception(f"Error during handling {event.type} event"):
             callback(event)
 
@@ -437,3 +435,24 @@ class Graphic:
 
         self._plot_area.scene.add(self.axes.world_object)
         self._axes.update_using_bbox(self.world_object.get_world_bounding_box())
+
+    @property
+    def right_click_menu(self):
+        return self._right_click_menu
+
+    @right_click_menu.setter
+    def right_click_menu(self, menu):
+        if not IMGUI:
+            raise ImportError(
+                "imgui is required to set right-click menus:\n"
+                "pip install imgui_bundle"
+            )
+
+        self._right_click_menu = menu
+        menu.owner = self
+
+    def _fpl_request_right_click_menu(self):
+        pass
+
+    def _fpl_close_right_click_menu(self):
+        pass

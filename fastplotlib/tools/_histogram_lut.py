@@ -24,7 +24,7 @@ def _get_image_graphic_events(image_graphic: ImageGraphic) -> list[str]:
 
 
 # TODO: This is a widget, we can think about a BaseWidget class later if necessary
-class HistogramLUT(Graphic):
+class HistogramLUTTool(Graphic):
     def __init__(
         self,
         data: np.ndarray,
@@ -136,6 +136,7 @@ class HistogramLUT(Graphic):
         # colorbar for grayscale images
         if self.image_graphic.data.value.ndim != 3:
             self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
+            self._colorbar.add_event_handler(self._open_cmap_picker, "click")
 
             self.world_object.add(self._colorbar.world_object)
         else:
@@ -349,10 +350,12 @@ class HistogramLUT(Graphic):
         self._data = weakref.proxy(data)
 
         if self._colorbar is not None:
+            self._colorbar.clear_event_handlers()
             self.world_object.remove(self._colorbar.world_object)
 
         if self.image_graphic.data.value.ndim != 3:
             self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
+            self._colorbar.add_event_handler(self._open_cmap_picker, "click")
 
             self.world_object.add(self._colorbar.world_object)
         else:
@@ -370,7 +373,7 @@ class HistogramLUT(Graphic):
     def image_graphic(self, graphic):
         if not isinstance(graphic, ImageGraphic):
             raise TypeError(
-                f"HistogramLUT can only use ImageGraphic types, you have passed: {type(graphic)}"
+                f"HistogramLUTTool can only use ImageGraphic types, you have passed: {type(graphic)}"
             )
 
         if self._image_graphic is not None:
@@ -391,6 +394,15 @@ class HistogramLUT(Graphic):
         self._image_graphic.remove_event_handler(self._image_cmap_handler, *ig_events)
         del self._image_graphic
         # self._image_graphic = None
+
+    def _open_cmap_picker(self, ev):
+        # check if right click
+        if ev.button != 2:
+            return
+
+        pos = ev.x, ev.y
+
+        self._plot_area.get_figure().open_popup("colormap-picker", pos, lut_tool=self)
 
     def _fpl_prepare_del(self):
         self._linear_region_selector._fpl_prepare_del()

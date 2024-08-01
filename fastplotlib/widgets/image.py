@@ -1,4 +1,4 @@
-from typing import Any, Literal, Callable
+from typing import Any, Callable
 from warnings import warn
 
 import numpy as np
@@ -6,7 +6,7 @@ import numpy as np
 from ..layouts import Figure
 from ..graphics import ImageGraphic
 from ..utils import calculate_figure_shape
-from .histogram_lut import HistogramLUT
+from ..tools import HistogramLUTTool
 
 
 # Number of dimensions that represent one image/one frame. For grayscale shape will be [x, y], i.e. 2 dims, for RGB(A)
@@ -538,7 +538,7 @@ class ImageWidget:
             subplot.set_title(name)
 
             if self._histogram_widget:
-                hlut = HistogramLUT(data=d, image_graphic=ig, name="histogram_lut")
+                hlut = HistogramLUTTool(data=d, image_graphic=ig, name="histogram_lut")
 
                 subplot.docks["right"].add_graphic(hlut)
                 subplot.docks["right"].size = 80

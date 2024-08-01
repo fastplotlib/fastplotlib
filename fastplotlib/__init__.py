@@ -5,6 +5,7 @@ from .graphics import *
 from .graphics.selectors import *
 from .graphics.utils import pause_events
 from .legends import *
+from .tools import *
 from .layouts import Figure
 
 from .widgets import ImageWidget
