@@ -34,7 +34,9 @@ class WgpuRendererWithEventFilters(WgpuRenderer):
 
 
 def make_canvas_and_renderer(
-    canvas: str | WgpuCanvasBase | Texture | None, renderer: Renderer | None
+    canvas: str | WgpuCanvasBase | Texture | None,
+    renderer: Renderer | None,
+    canvas_kwargs: dict,
 ):
     """
     Parses arguments and returns the appropriate canvas and renderer instances
@@ -42,10 +44,10 @@ def make_canvas_and_renderer(
     """
 
     if canvas is None:
-        canvas = gui.WgpuCanvas(max_fps=60)
+        canvas = gui.WgpuCanvas(max_fps=60, **canvas_kwargs)
     elif isinstance(canvas, str):
         m = importlib.import_module("wgpu.gui." + canvas)
-        canvas = m.WgpuCanvas(max_fps=60)
+        canvas = m.WgpuCanvas(max_fps=60, **canvas_kwargs)
     elif not isinstance(canvas, (WgpuCanvasBase, Texture)):
         raise TypeError(
             f"canvas option must either be a valid WgpuCanvas implementation, a pygfx Texture"

@@ -109,7 +109,7 @@ class Figure:
         else:
             subplot_names = None
 
-        canvas, renderer = make_canvas_and_renderer(canvas, renderer)
+        canvas, renderer = make_canvas_and_renderer(canvas, renderer, canvas_kwargs={"size": size})
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
@@ -322,8 +322,6 @@ class Figure:
 
         self._current_iter = None
 
-        self._starting_size = size
-
         self._output = None
 
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
@@ -406,7 +404,6 @@ class Figure:
 
     def start_render(self):
         """start render cycle"""
-        self.canvas.set_logical_size(*self._starting_size)
         self.canvas.request_draw(self.render)
 
     def show(

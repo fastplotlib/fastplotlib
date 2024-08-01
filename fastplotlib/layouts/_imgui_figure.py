@@ -48,7 +48,7 @@ class ImguiFigure(Figure):
     ):
         self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
 
-        canvas, renderer = make_canvas_and_renderer(canvas, renderer)
+        canvas, renderer = make_canvas_and_renderer(canvas, renderer, canvas_kwargs={"size": size})
         self._imgui_renderer = ImguiRenderer(renderer.device, canvas)
 
         super().__init__(
