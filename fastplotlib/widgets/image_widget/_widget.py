@@ -543,7 +543,6 @@ class ImageWidget:
 
         self._image_widget_sliders = ImageWidgetSliders(
             figure=self.figure,
-            fa_icons=self.figure._fa_icons,
             size=ui_size,
             image_widget=self
         )

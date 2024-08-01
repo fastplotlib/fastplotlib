@@ -32,13 +32,13 @@ class Window(BaseGUI):
 
 class EdgeWindow(Window):
     def __init__(
-        self, figure: Figure, size: int, fa_icons: imgui.ImFont, *args, **kwargs
+        self, figure: Figure, size: int, *args, **kwargs
     ):
         super().__init__()
 
         self._figure = figure
         self._size = size
-        self._fa_icons = fa_icons
+        self._fa_icons = self._figure._fa_icons
 
     @property
     def size(self) -> int | None:
@@ -53,11 +53,11 @@ class EdgeWindow(Window):
 
 
 class Popup(BaseGUI):
-    def __init__(self, figure: Figure, fa_icons: imgui.ImFont, *args, **kwargs):
+    def __init__(self, figure: Figure, *args, **kwargs):
         super().__init__()
 
         self._figure = figure
-        self._fa_icons = fa_icons
+        self._fa_icons = self._figure._fa_icons
 
         self._event_filter_names = set()
 
