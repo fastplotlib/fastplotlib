@@ -20,15 +20,18 @@ def flip_axis(subplot: PlotArea, axis: str, flip: bool):
 
 
 class StandardRightClickMenu(Popup):
+    """Right click menu that is shown on subplots"""
     def __init__(self, figure, fa_icons):
         super().__init__(figure=figure, fa_icons=fa_icons)
 
         self._last_right_click_pos = None
         self._mouse_down: bool = False
 
+        # whether the right click menu is currently open or not
         self.is_open: bool = False
 
     def get_subplot(self) -> PlotArea | bool:
+        """get the subplot that a click occurred in"""
         if self._last_right_click_pos is None:
             return False
 
@@ -37,27 +40,31 @@ class StandardRightClickMenu(Popup):
                 return subplot
 
     def cleanup(self):
+        """called when the popup disappears"""
         self.clear_event_filters()
         self.is_open = False
 
     def update(self):
         if imgui.is_mouse_down(1) and not self._mouse_down:
+            # mouse button was pressed down, store this position
             self._mouse_down = True
             self._last_right_click_pos = imgui.get_mouse_pos()
 
         if imgui.is_mouse_released(1) and self._mouse_down:
             self._mouse_down = False
 
-            # mouse was not moved between down and up events
+            # open popup only if mouse was not moved between mouse_down and mouse_up events
             if self._last_right_click_pos == imgui.get_mouse_pos():
                 if self.get_subplot():
                     # open only if right click was inside a subplot
                     imgui.open_popup(f"right-click-menu")
 
+        # TODO: call this just once when going from open -> closed state
         if not imgui.is_popup_open("right-click-menu"):
             self.cleanup()
 
         if imgui.begin_popup(f"right-click-menu"):
+            # set event filter so event in the popup region are not handled by pygfx.WgpuRenderer
             self.set_event_filter("right-click-menu")
 
             if not self.get_subplot():
@@ -73,9 +80,11 @@ class StandardRightClickMenu(Popup):
             if name is None:
                 name = self.get_subplot().position
 
+            # text label at the top of the menu
             imgui.text(f"subplot: {name}")
             imgui.separator()
 
+            # autoscale, center, maintain aspect
             if imgui.menu_item(f"Autoscale", None, False)[0]:
                 self.get_subplot().auto_scale()
 
@@ -89,6 +98,7 @@ class StandardRightClickMenu(Popup):
 
             imgui.separator()
 
+            # toggles to flip axes cameras
             for axis in ["x", "y", "z"]:
                 scale = getattr(self.get_subplot().camera.local, f"scale_{axis}")
                 changed, flip = imgui.menu_item(f"Flip {axis} axis", None, scale < 0)
@@ -98,6 +108,7 @@ class StandardRightClickMenu(Popup):
 
             imgui.separator()
 
+            # toggles to show/hide the grid
             for plane in ["xy", "xz", "yz"]:
                 grid = getattr(self.get_subplot().axes.grids, plane)
                 visible = grid.visible
@@ -108,6 +119,7 @@ class StandardRightClickMenu(Popup):
 
             imgui.separator()
 
+            # camera FOV
             changed, fov = imgui.slider_float(
                 "FOV", v=self.get_subplot().camera.fov, v_min=0.0, v_max=180.0
             )
@@ -118,6 +130,9 @@ class StandardRightClickMenu(Popup):
                 # FOV between 0 and 1 is numerically unstable
                 if 0 < fov < 1:
                     fov = 1
+
+                # need to update FOV via controller, if FOV is directly set
+                # on the camera the controller will immediately set it back
                 self.get_subplot().controller.update_fov(
                     fov - self.get_subplot().camera.fov,
                     animate=False,
@@ -125,6 +140,7 @@ class StandardRightClickMenu(Popup):
 
             imgui.separator()
 
+            # controller options
             if imgui.begin_menu("Controller"):
                 self.set_event_filter("controller-menu")
                 _, enabled = imgui.menu_item(
@@ -145,7 +161,7 @@ class StandardRightClickMenu(Popup):
 
                 imgui.separator()
                 imgui.text("Controller type:")
-
+                # switching between different controllers
                 for name, controller_type_iter in controller_types.items():
                     current_type = type(self.get_subplot().controller)
 

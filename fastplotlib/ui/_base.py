@@ -246,6 +246,8 @@ class Popup(BaseGUI):
 
         self._event_filter_names = set()
 
+        self.is_open = False
+
     def set_event_filter(self, name: str):
         """Filter out events under the popup from being handled by pygfx renderer"""
         # get popup window position & size
@@ -270,3 +272,7 @@ class Popup(BaseGUI):
         """clear event filters when the popup is not shown"""
         for name in self._event_filter_names:
             self._figure.renderer.event_filters[name][:] = [-1, -1], [-1, -1]
+
+    def open(self, pos: tuple[int, int], *args, **kwargs):
+        """implement in subclass"""
+        raise NotImplementedError

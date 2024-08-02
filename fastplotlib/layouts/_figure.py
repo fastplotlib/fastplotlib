@@ -607,6 +607,9 @@ class Figure:
 
             return iio.imwrite(uri, snapshot, **kwargs)
 
+    def open_popup(self, *args, **kwargs):
+        warn("popups only supported by ImguiFigure")
+
     def _get_iterator(self):
         return product(range(self.shape[0]), range(self.shape[1]))
 
