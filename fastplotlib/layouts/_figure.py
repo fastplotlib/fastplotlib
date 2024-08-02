@@ -461,6 +461,8 @@ class Figure:
                 self._output = self.canvas
                 with self._sidecar:
                     return display(self.canvas)
+            self._output = self.canvas
+            return self._output
 
         elif self.canvas.__class__.__name__ == "QWgpuCanvas":
             self._output = self.canvas
