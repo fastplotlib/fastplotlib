@@ -1,9 +1,12 @@
 import numpy as np
 
 import pygfx
+from pylinalg import quat_from_vecs, vec_transform_quat
 
 
 GRID_PLANES = ["xy", "xz", "yz"]
+
+CANONICAL_BAIS = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 
 
 # very thin subclass that just adds GridMaterial properties to this world object for easier user control
@@ -252,6 +255,9 @@ class Axes:
         grid_kwargs: dict = None,
         auto_grid: bool = True,
         offset: np.ndarray = np.array([0.0, 0.0, 0.0]),
+        basis: np.ndarray = np.array(
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+        ),
     ):
         self._plot_area = plot_area
 
@@ -362,9 +368,27 @@ class Axes:
         self._intersection = intersection
         self._auto_grid = auto_grid
 
+        self._basis = None
+        self.basis = basis
+
     @property
     def world_object(self) -> pygfx.WorldObject:
         return self._world_object
+
+    @property
+    def basis(self) -> np.ndarray:
+        """get or set the basis, shape is [3, 3]"""
+        return self._basis
+
+    @basis.setter
+    def basis(self, basis: np.ndarray):
+        if basis.shape != (3, 3):
+            raise ValueError
+
+        # apply quaternion to each of x, y, z rulers
+        for dim, cbasis, new_basis in zip(["x", "y", "z"], CANONICAL_BAIS, basis):
+            ruler: pygfx.Ruler = getattr(self, dim)
+            ruler.local.rotation = quat_from_vecs(cbasis, new_basis)
 
     @property
     def offset(self) -> np.ndarray:
@@ -394,6 +418,19 @@ class Axes:
     def grids(self) -> Grids | bool:
         """grids for each plane: xy, xz, yz"""
         return self._grids
+
+    @property
+    def colors(self) -> tuple[pygfx.Color]:
+        return tuple(getattr(self, dim).line.material.color for dim in ["x", "y", "z"])
+
+    @colors.setter
+    def colors(self, colors: tuple[pygfx.Color | str]):
+        """get or set the colors for the x, y, and z rulers"""
+        if len(colors) != 3:
+            raise ValueError
+
+        for dim, color in zip(["x", "y", "z"], colors):
+            getattr(self, dim).line.material.color = color
 
     @property
     def auto_grid(self) -> bool:
@@ -482,9 +519,30 @@ class Axes:
             xpos, ypos, width, height = self._plot_area.get_rect()
             # orthographic projection, get ranges using inverse
 
-            # get range of screen space
+            # get range of screen space by getting the corners
             xmin, xmax = xpos, xpos + width
             ymin, ymax = ypos + height, ypos
+
+            # apply quaternion to account for rotation of axes
+            # xmin, _, _ = vec_transform_quat(
+            #     [xmin, ypos + height / 2, 0],
+            #     self.x.local.rotation
+            # )
+            #
+            # xmax, _, _ = vec_transform_quat(
+            #     [xmax, ypos + height / 2, 0],
+            #     self.x.local.rotation,
+            # )
+            #
+            # _, ymin, _ = vec_transform_quat(
+            #     [xpos + width / 2, ymin, 0],
+            #     self.y.local.rotation
+            # )
+            #
+            # _, ymax, _ = vec_transform_quat(
+            #     [xpos + width / 2, ymax, 0],
+            #     self.y.local.rotation
+            # )
 
             min_vals = self._plot_area.map_screen_to_world((xmin, ymin))
             max_vals = self._plot_area.map_screen_to_world((xmax, ymax))
@@ -578,7 +636,7 @@ class Axes:
             self.z.start_pos = world_x_10, world_y_10, world_zmin
             self.z.end_pos = world_x_10, world_y_10, world_zmax
 
-            self.z.start_value = self.z.start_pos[1] - self.offset[2]
+            self.z.start_value = self.z.start_pos[2] - self.offset[2]
             statsz = self.z.update(
                 self._plot_area.camera, self._plot_area.viewport.logical_size
             )
