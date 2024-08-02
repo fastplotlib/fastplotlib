@@ -36,6 +36,7 @@ Methods
     Figure.clear
     Figure.close
     Figure.export
+    Figure.open_popup
     Figure.remove_animation
     Figure.render
     Figure.show
