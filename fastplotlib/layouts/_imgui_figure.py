@@ -73,9 +73,9 @@ class ImguiFigure(Figure):
         )
 
         io.fonts.build()
-        self._imgui_renderer.backend.create_fonts_texture()
+        self.imgui_renderer.backend.create_fonts_texture()
 
-        self._imgui_renderer.set_gui(self._draw_imgui)
+        self.imgui_renderer.set_gui(self._draw_imgui)
 
         self._subplot_toolbars: np.ndarray[SubplotToolbar] = np.empty(
             shape=self._subplots.shape, dtype=object
@@ -98,6 +98,7 @@ class ImguiFigure(Figure):
 
     @property
     def imgui_renderer(self) -> ImguiRenderer:
+        """imgui renderer"""
         return self._imgui_renderer
 
     def render(self, draw=False):
