@@ -69,6 +69,9 @@ class BaseSelector(Graphic):
             self._edges + self._fill + self._vertices
         )
 
+        for wo in self._world_objects:
+            wo.material.pick_write = True
+
         self._hover_responsive: Tuple[WorldObject, ...] = hover_responsive
 
         if hover_responsive is not None:
