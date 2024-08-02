@@ -3,6 +3,8 @@ from warnings import warn
 
 import numpy as np
 
+from wgpu.gui import WgpuCanvasBase
+
 from ...layouts import Figure
 from ...graphics import ImageGraphic
 from ...utils import calculate_figure_shape
@@ -107,13 +109,6 @@ class ImageWidget:
         return self._figure
 
     @property
-    def widget(self):
-        """
-        Output context, either an ipywidget or QWidget
-        """
-        return self._output
-
-    @property
     def managed_graphics(self) -> list[ImageGraphic]:
         """List of ``ImageWidget`` managed graphics."""
         iw_managed = list()
@@ -195,8 +190,7 @@ class ImageWidget:
 
     @current_index.setter
     def current_index(self, index: dict[str, int]):
-        # ignore if output context has not been created yet
-        if self.widget is None:
+        if not self._initialized:
             return
 
         if not set(index.keys()).issubset(set(self._current_index.keys())):
@@ -345,13 +339,12 @@ class ImageWidget:
             passed to each ImageGraphic in the ImageWidget figure subplots
 
         """
+        self._initialized = False
+
         self._names = None
 
         if figure_kwargs is None:
             figure_kwargs = dict()
-
-        # output context
-        self._output = None
 
         if _is_arraylike(data):
             data = [data]
@@ -550,6 +543,8 @@ class ImageWidget:
         )
 
         self.figure.add_gui(self._image_widget_sliders)
+
+        self._initialized = True
 
     @property
     def frame_apply(self) -> dict | None:
@@ -907,16 +902,15 @@ class ImageWidget:
 
         Returns
         -------
-        OutputContext
-            ImageWidget just uses the Gridplot output context
+        WgpuCanvasBase
+            canvas used by the Figure
+
         """
 
-        self._output = self.figure.show(
+        return self.figure.show(
             sidecar=sidecar,
             sidecar_kwargs=sidecar_kwargs,
         )
-
-        return self._output
 
     def close(self):
         """Close Widget"""

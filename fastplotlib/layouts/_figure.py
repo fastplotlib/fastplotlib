@@ -11,7 +11,7 @@ from warnings import warn
 
 import pygfx
 
-from wgpu.gui import WgpuCanvasBase, WgpuAutoGui
+from wgpu.gui import WgpuCanvasBase
 
 from ._video_writer import VideoWriterAV
 from ._utils import make_canvas_and_renderer, create_controller, create_camera
@@ -327,16 +327,6 @@ class Figure:
         self._output = None
 
     @property
-    def toolbar(self):
-        """ipywidget or QToolbar instance"""
-        return self._output.toolbar
-
-    @property
-    def output(self):
-        """ipywidget or QWidget that contains this plot"""
-        return self._output
-
-    @property
     def shape(self) -> tuple[int, int]:
         """[n_rows, n_cols]"""
         return self._shape
@@ -411,7 +401,7 @@ class Figure:
         sidecar_kwargs: dict = None,
     ):
         """
-        Begins the rendering event loop and shows the plot in the desired output context (jupyter, qt or glfw).
+        Begins the rendering event loop and shows the Figure, returns the canvas
 
         Parameters
         ----------
@@ -431,13 +421,12 @@ class Figure:
         Returns
         -------
         WgpuCanvasBase
-            In jupyter, it will display the plot in the output cell or sidecar
-
-            In Qt, it will display the Plot, toolbar, etc. as stacked widget, use `Plot.widget` to access it.
+            In Qt or GLFW, the canvas window containing the Figure will be shown.
+            In jupyter, it will display the plot in the output cell or sidecar.
         """
 
-        # show was already called, return existing output context
-        if self._output is not None:
+        # show was already called, return canvas
+        if self._output:
             return self._output
 
         self.start_render()
@@ -460,7 +449,7 @@ class Figure:
                     _maintain_aspect = maintain_aspect
                 subplot.auto_scale(maintain_aspect=maintain_aspect)
 
-        # return the appropriate OutputContext based on the current canvas
+        # parse based on canvas type
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
             if sidecar:
                 from sidecar import Sidecar
@@ -489,14 +478,14 @@ class Figure:
                     if os.environ["RTD_BUILD"] == "1":
                         subplot.viewport.render(subplot.scene, subplot.camera)
 
-        else:  # assume GLFW, the output context is just the canvas
+        else:  # assume GLFW
             self._output = self.canvas
 
-        # return the output context, this call is required for jupyter but not for Qt
+        # return the canvas
         return self._output
 
     def close(self):
-        self.output.close()
+        self._output.close()
 
     def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:
