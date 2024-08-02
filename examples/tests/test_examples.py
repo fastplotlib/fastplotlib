@@ -71,9 +71,15 @@ def test_example_screenshots(module, force_offscreen):
     # there doesn't seem to be a resize event for the manual offscreen canvas
     example.figure.imgui_renderer._backend.io.display_size = example.figure.canvas.get_logical_size()
 
+    # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
+    # hacky but it works for now
+    example.figure.imgui_renderer.render()
+
     # render each subplot
     for subplot in example.figure:
         subplot.viewport.render(subplot.scene, subplot.camera)
+        for dock in subplot.docks.values():
+            dock.set_viewport_rect()
 
     # flush pygfx renderer
     example.figure.renderer.flush()
