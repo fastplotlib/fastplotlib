@@ -25,8 +25,8 @@ iw.show()
 
 # GUI for some basic image processing
 class ImageProcessingWindow(EdgeWindow):
-    def __init__(self, figure, size):
-        super().__init__(figure=figure, size=size)
+    def __init__(self, figure, size, location, title):
+        super().__init__(figure=figure, size=size, location=location, title=title)
 
         self.sigma = 0.0
         self.order_x, self.order_y = 0, 0
@@ -35,25 +35,8 @@ class ImageProcessingWindow(EdgeWindow):
         # implement the GUI within the update function
         # you do not need to call imgui.new_frame(), this is handled by Figure
 
-        width_canvas, height_canvas = self._figure.canvas.get_logical_size()
-
-        # we will put this GUI on the right side of the canvas
-        x_position = width_canvas - self.size
-        pos = (x_position, 0)
-
-        if self._figure.guis["bottom"]:
-            height_canvas -= self._figure.guis["bottom"].size
-
-        imgui.set_next_window_size((self.size, height_canvas))
-        imgui.set_next_window_pos(pos)
-        flags = imgui.WindowFlags_.no_collapse
-
-        # make the GUI, nothing special here, just regular imgui
-        imgui.begin("Image processing controls", p_open=None, flags=flags)
-
-        imgui.push_id(
-            self._id_counter
-        )  # push ID to prevent conflict between multiple figs with same UI
+        # window creation is handled by the base EdgeWindow.draw_window()
+        # if you want to customize the imgui window, you can override EdgeWindow.draw_window()
 
         something_changed = False
 
@@ -75,10 +58,7 @@ class ImageProcessingWindow(EdgeWindow):
         if something_changed:
             self.process_image()
 
-        imgui.pop_id()
-
-        # end any windows/popups
-        imgui.end()
+        # imgui.end() is handled by EdgeWindow.draw_window()
 
         # do not call imgui.end_frame(), this is handled by Figure
 
@@ -87,10 +67,10 @@ class ImageProcessingWindow(EdgeWindow):
         iw.set_data(processed)
 
 
-gui = ImageProcessingWindow(iw.figure, size=200)
+gui = ImageProcessingWindow(iw.figure, size=200, location="right", title="Gaussian Filter")
 
 
-iw.figure.set_gui(edge="right", gui=gui)
+iw.figure.add_gui(gui)
 
 figure = iw.figure
 
