@@ -6,8 +6,8 @@ from ...ui import EdgeWindow
 
 
 class ImageWidgetSliders(EdgeWindow):
-    def __init__(self, figure, size, image_widget):
-        super().__init__(figure=figure, size=size)
+    def __init__(self, figure, size, location, title, image_widget):
+        super().__init__(figure=figure, size=size, location=location, title=title)
         self._image_widget = image_widget
 
         self._playing: dict[str, bool] = {"t": False, "z": False}
@@ -36,23 +36,8 @@ class ImageWidgetSliders(EdgeWindow):
         }
 
     def update(self):
-        # get width and height of canvas
-        width_canvas, height_canvas = self._image_widget.figure.canvas.get_logical_size()
-
-        # y position for this UI will be the bottom of the canvas, so full canvas height - this UI size
-        y_pos = height_canvas - self.size
-
-        pos = (0, y_pos)
-
-        imgui.set_next_window_size((width_canvas, 0))
-        imgui.set_next_window_pos(pos)
-        flags = imgui.WindowFlags_.no_collapse
-
-        imgui.begin(f"ImageWidget controls", p_open=None, flags=flags)
-
         new_index = dict()
         flag_index_changed = False
-        # imgui.push_id(self._id_counter)  # push ID to prevent conflict between multiple figs with same UI
 
         imgui.push_font(self._fa_icons)
         if imgui.button(label=fa.ICON_FA_CIRCLE_HALF_STROKE + fa.ICON_FA_FILM):
@@ -124,7 +109,8 @@ class ImageWidgetSliders(EdgeWindow):
 
             imgui.text(f"{dim}: ")
             imgui.same_line()
-            imgui.set_next_item_width(width_canvas * 0.85)  # so that sliders occupies full width
+            # so that slider occupies full width
+            imgui.set_next_item_width(self.width * 0.85)
             changed, index = imgui.slider_int(f"{dim}", v=val, v_min=0, v_max=vmax)
 
             new_index[dim] = index
@@ -137,5 +123,3 @@ class ImageWidgetSliders(EdgeWindow):
             self._image_widget.current_index = new_index
 
         self.size = int(imgui.get_window_height())
-
-        imgui.end()
