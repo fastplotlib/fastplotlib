@@ -1,30 +1,13 @@
 from collections import OrderedDict
-from pathlib import Path
+from typing import *
 
 import numpy as np
+from cmap import Colormap
 
 from pygfx import Texture, Color
 
-# some funcs adapted from mesmerize
 
-
-QUALITATIVE_CMAPS = [
-    "Pastel1",
-    "Pastel2",
-    "Paired",
-    "Accent",
-    "Dark2",
-    "Set1",
-    "Set2",
-    "Set3",
-    "tab10",
-    "tab20",
-    "tab20b",
-    "tab20c",
-]
-
-
-def get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
+def get_cmap(name: str, alpha: float = 1.0, gamma: float = 1.0) -> np.ndarray:
     """
     Get a colormap as numpy array
 
@@ -34,6 +17,8 @@ def get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
         name of colormap
     alpha: float
         alpha, 0.0 - 1.0
+    gamma: float
+        gamma, 0.0 - 1.0
 
     Returns
     -------
@@ -41,24 +26,8 @@ def get_cmap(name: str, alpha: float = 1.0) -> np.ndarray:
         [n_colors, 4], i.e. [n_colors, RGBA]
 
     """
-
-    cmap_path = Path(__file__).absolute().parent.joinpath("colormaps", name)
-    if cmap_path.is_file():
-        cmap = np.loadtxt(cmap_path)
-
-    else:
-        try:
-            from .generate_colormaps import make_cmap
-
-            cmap = make_cmap(name, alpha)
-        except (ImportError, ModuleNotFoundError):
-            raise ModuleNotFoundError(
-                "Couldn't find colormap files, matplotlib is required to generate them "
-                "if they aren't found. Please install `matplotlib`"
-            )
-
+    cmap = Colormap(name).lut(256, gamma=gamma)
     cmap[:, -1] = alpha
-
     return cmap.astype(np.float32)
 
 
@@ -84,34 +53,35 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
         shape is [n_colors, 4], where the last dimension is RGBA
 
     """
-    name = cmap
-    cmap = get_cmap(name, alpha)
+    cm = Colormap(cmap)
 
-    if name in QUALITATIVE_CMAPS:
-        max_colors = cmap.shape[0]
-        if n_colors > cmap.shape[0]:
+    # can also use cm.category == "qualitative", but checking for non-interpolated
+    # colormaps is a bit more general.  (and not all "custom" colormaps will be
+    # assigned a category)
+    if cm.interpolation == "nearest":
+        max_colors = len(cm.color_stops)
+        if n_colors > max_colors:
             raise ValueError(
                 f"You have requested <{n_colors}> colors but only <{max_colors}> exist for the "
                 f"chosen cmap: <{name}>"
             )
-        return cmap[:n_colors]
+        return np.asarray(cm.color_stops, dtype=np.float32)[:n_colors, 1:]
 
     cm_ixs = np.linspace(0, 255, n_colors, dtype=int)
-    return np.take(cmap, cm_ixs, axis=0).astype(np.float32)
+    return cm(cm_ixs).astype(np.float32)
 
 
 def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
-    cmap = get_cmap(name)
-    return Texture(cmap, dim=1)
+    return Colormap(name).to_pygfx()
 
 
-def make_colors_dict(labels: iter, cmap: str, **kwargs) -> OrderedDict:
+def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
     """
     Get a dict for mapping labels onto colors.
 
     Parameters
     ----------
-    labels: Iterable[Any]
+    labels: Sequence[Any]
         labels for creating a colormap. Order is maintained if it is a list of unique elements.
 
     cmap: str
@@ -276,8 +246,10 @@ def parse_cmap_values(
 
         n_colors = colormap.shape[0] - 1
 
-        if cmap_name in QUALITATIVE_CMAPS:
-            # check that cmap_transform are <int> and within the number of colors `n_colors`
+        # can also use cm.category == "qualitative"
+        if Colormap(cmap_name).interpolation == "nearest":
+            # check that cmap_values are <int> and within the number of colors `n_colors`
+
             # do not scale, use directly
             if not np.issubdtype(transform.dtype, np.integer):
                 raise TypeError(
