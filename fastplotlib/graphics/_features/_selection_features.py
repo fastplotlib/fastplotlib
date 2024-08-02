@@ -192,7 +192,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
         #  this is probably a good idea so that the data isn't sliced until it's actually necessary
 
 
-class RectangleRegionSelectionFeature(GraphicFeature):
+class RectangleSelectionFeature(GraphicFeature):
     """
     **additional event attributes:**
 

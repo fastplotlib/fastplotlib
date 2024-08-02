@@ -31,7 +31,7 @@ from ._text import (
     TextOutlineThickness,
 )
 
-from ._selection_features import LinearSelectionFeature, LinearRegionSelectionFeature, RectangleRegionSelectionFeature
+from ._selection_features import LinearSelectionFeature, LinearRegionSelectionFeature, RectangleSelectionFeature
 from ._common import Name, Offset, Rotation, Visible, Deleted
 
 
