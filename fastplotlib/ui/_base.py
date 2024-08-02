@@ -30,6 +30,7 @@ class BaseGUI:
 
 
 class Window(BaseGUI):
+    """Base class for imgui windows drawn within Figures"""
     pass
 
 
@@ -45,7 +46,7 @@ class EdgeWindow(Window):
             **kwargs
     ):
         """
-        A base class for imgui windows displayed on one of the four edges of a Figure
+        A base class for imgui windows displayed at one of the four edges of a Figure
 
         Parameters
         ----------
@@ -108,7 +109,7 @@ class EdgeWindow(Window):
 
         self._x, self._y, self._width, self._height = self.get_rect()
 
-        self._figure.canvas.add_event_handler(self.set_rect, "resize")
+        self._figure.canvas.add_event_handler(self._set_rect, "resize")
 
     @property
     def size(self) -> int | None:
@@ -123,30 +124,35 @@ class EdgeWindow(Window):
 
     @property
     def location(self) -> str:
+        """location of the window"""
         return self._location
 
     @property
     def x(self) -> int:
+        """canvas x position of the window"""
         return self._x
 
     @property
     def y(self) -> int:
+        """canvas y position of the window"""
         return self._y
 
     @property
     def width(self) -> int:
+        """with the window"""
         return self._width
 
     @property
     def height(self) -> int:
+        """height of the window"""
         return self._height
 
-    def set_rect(self, *args):
+    def _set_rect(self, *args):
         self._x, self._y, self._width, self._height = self.get_rect()
 
     def get_rect(self) -> tuple[int, int, int, int]:
         """
-        Get the rect that defines the area this GUI is drawn to
+        Compute the rect that defines the area this GUI is drawn to
 
         Returns
         -------
@@ -212,9 +218,27 @@ class EdgeWindow(Window):
         # end the window
         imgui.end()
 
+    def update(self):
+        """Implement your GUI here and it will be drawn within the window. See the GUI examples"""
+        raise NotImplementedError
+
 
 class Popup(BaseGUI):
     def __init__(self, figure: Figure, *args, **kwargs):
+        """
+        Base class for creating ImGUI popups within Figures
+
+        Parameters
+        ----------
+        figure: Figure
+            Figure instance
+        *args
+            any args to pass to subclass constructor
+
+        **kwargs
+            any kwargs to pass to subclass constructor
+        """
+
         super().__init__()
 
         self._figure = figure
@@ -223,10 +247,13 @@ class Popup(BaseGUI):
         self._event_filter_names = set()
 
     def set_event_filter(self, name: str):
+        """Filter out events under the popup from being handled by pygfx renderer"""
+        # get popup window position & size
         x1, y1 = imgui.get_window_pos()
         width, height = imgui.get_window_size()
         x2, y2 = x1 + width, y1 + height
 
+        # add or modify event filter
         if name not in self._figure.renderer.event_filters.keys():
             self._figure.renderer.event_filters[name] = np.array(
                 [[x1 - 1, y1 - 1], [x2 + 4, y2 + 4]]
@@ -240,5 +267,6 @@ class Popup(BaseGUI):
         self._event_filter_names.add(name)
 
     def clear_event_filters(self):
+        """clear event filters when the popup is not shown"""
         for name in self._event_filter_names:
             self._figure.renderer.event_filters[name][:] = [-1, -1], [-1, -1]
