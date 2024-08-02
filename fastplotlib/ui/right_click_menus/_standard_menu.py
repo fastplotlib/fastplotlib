@@ -19,7 +19,7 @@ def flip_axis(subplot: PlotArea, axis: str, flip: bool):
         setattr(camera.local, axis_attr, scale * -1)
 
 
-class RightClickMenu(Popup):
+class StandardRightClickMenu(Popup):
     def __init__(self, figure, fa_icons):
         super().__init__(figure=figure, fa_icons=fa_icons)
 

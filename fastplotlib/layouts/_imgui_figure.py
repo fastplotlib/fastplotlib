@@ -13,7 +13,7 @@ import pygfx
 
 from ._figure import Figure
 from ._utils import make_canvas_and_renderer
-from ..ui import BaseGUI, EdgeWindow, SubplotToolbar, RightClickMenu, Popup
+from ..ui import BaseGUI, EdgeWindow, SubplotToolbar, StandardRightClickMenu, Popup
 from ..ui import ColormapPicker
 
 
@@ -88,7 +88,7 @@ class ImguiFigure(Figure):
             toolbar = SubplotToolbar(subplot=subplot, fa_icons=self._fa_icons)
             self._subplot_toolbars[subplot.position] = toolbar
 
-        self._right_click_menu = RightClickMenu(figure=self, fa_icons=self._fa_icons)
+        self._right_click_menu = StandardRightClickMenu(figure=self, fa_icons=self._fa_icons)
 
         self._popups: dict[str, Popup] = {}
 
