@@ -12,7 +12,6 @@ from wgpu.gui import WgpuCanvasBase
 import pygfx
 
 from ._figure import Figure
-from ..layouts._subplot import IMGUI_TOOLBAR_HEIGHT
 from ._utils import make_canvas_and_renderer
 from ..ui import BaseGUI, EdgeWindow, SubplotToolbar, RightClickMenu, Popup
 from ..ui import ColormapPicker
@@ -173,6 +172,15 @@ class ImguiFigure(Figure):
             ypos = 0
 
         return [xpos, ypos, width, height]
+
+    def _reset_viewports(self):
+        # TODO: think about moving this to Figure later,
+        #  maybe also refactor Subplot and PlotArea so that
+        #  the resize event is handled at the Figure level instead
+        for subplot in self:
+            subplot.set_viewport_rect()
+            for dock in subplot.docks.values():
+                dock.set_viewport_rect()
 
     def register_popup(self, popup: Popup.__class__):
         self._popups[popup.name] = popup(self)
