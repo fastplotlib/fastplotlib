@@ -24,10 +24,8 @@ Properties
     Figure.canvas
     Figure.controllers
     Figure.names
-    Figure.output
     Figure.renderer
     Figure.shape
-    Figure.toolbar
 
 Methods
 ~~~~~~~

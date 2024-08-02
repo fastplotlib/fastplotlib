@@ -29,6 +29,7 @@ Properties
     LineGraphic.event_handlers
     LineGraphic.name
     LineGraphic.offset
+    LineGraphic.right_click_menu
     LineGraphic.rotation
     LineGraphic.supported_events
     LineGraphic.thickness

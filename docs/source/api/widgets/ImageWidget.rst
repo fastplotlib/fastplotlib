@@ -30,8 +30,6 @@ Properties
     ImageWidget.n_scrollable_dims
     ImageWidget.ndim
     ImageWidget.slider_dims
-    ImageWidget.sliders
-    ImageWidget.widget
     ImageWidget.window_funcs
 
 Methods

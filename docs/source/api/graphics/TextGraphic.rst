@@ -30,6 +30,7 @@ Properties
     TextGraphic.offset
     TextGraphic.outline_color
     TextGraphic.outline_thickness
+    TextGraphic.right_click_menu
     TextGraphic.rotation
     TextGraphic.supported_events
     TextGraphic.text

@@ -33,6 +33,7 @@ Properties
     LineStack.names
     LineStack.offset
     LineStack.offsets
+    LineStack.right_click_menu
     LineStack.rotation
     LineStack.rotations
     LineStack.supported_events
