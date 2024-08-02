@@ -1,4 +1,4 @@
-from typing import Any, Callable
+from typing import Callable
 from warnings import warn
 
 import numpy as np
@@ -910,7 +910,6 @@ class ImageWidget:
         """
 
         self._output = self.figure.show(
-            toolbar=toolbar,
             sidecar=sidecar,
             sidecar_kwargs=sidecar_kwargs,
         )
