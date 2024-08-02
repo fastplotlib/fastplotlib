@@ -29,6 +29,7 @@ Properties
     ScatterGraphic.event_handlers
     ScatterGraphic.name
     ScatterGraphic.offset
+    ScatterGraphic.right_click_menu
     ScatterGraphic.rotation
     ScatterGraphic.sizes
     ScatterGraphic.supported_events
