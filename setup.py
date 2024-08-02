@@ -25,7 +25,8 @@ extras_require = {
         "sidecar",
         "imageio",
         "matplotlib",
-        "scikit-learn"
+        "scikit-learn",
+        "imgui-bundle",
     ],
     "notebook": [
         "jupyterlab",
@@ -45,6 +46,7 @@ extras_require = {
         "scikit-learn",
         "tqdm",
         "sidecar",
+        "imgui-bundle",
     ],
     "tests-desktop": [
         "pytest<8.0.0",
@@ -53,6 +55,7 @@ extras_require = {
         "scikit-learn",
         "tqdm",
     ],
+    "imgui": ["imgui-bundle"],
 }
 
 
