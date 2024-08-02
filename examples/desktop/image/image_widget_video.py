@@ -22,7 +22,7 @@ random_data = np.random.rand(*cockatoo.shape[:-1])
 iw = fpl.ImageWidget(
 [random_data, cockatoo],
     rgb=[False, True],
-    figure_kwargs={"size": (700, 560)}
+    figure_kwargs={"size": (900, 500)}
 )
 iw.show()
 
