@@ -96,6 +96,7 @@ class ImguiFigure(Figure):
 
     @property
     def guis(self) -> dict[str, EdgeWindow]:
+        """GUI windows added to the Figure"""
         return self._guis
 
     @property
@@ -116,7 +117,7 @@ class ImguiFigure(Figure):
 
         for gui in self.guis.values():
             if gui is not None:
-                gui.update()
+                gui.draw_window()
 
         for popup in self._popups.values():
             popup.update()
@@ -129,28 +130,49 @@ class ImguiFigure(Figure):
 
         return imgui.get_draw_data()
 
-    def set_gui(self, edge: str, gui: EdgeWindow):
-        if edge not in GUI_EDGES:
-            raise ValueError
+    def add_gui(self, gui: EdgeWindow):
+        """
+        Add a GUI to the Figure. GUIs can be added to the top, bottom, left or right edge.
 
-        if self.guis[edge] is not None:
-            raise ValueError
+        Parameters
+        ----------
+        gui: EdgeWindow
+            A GUI EdgeWindow instance
 
-        if not isinstance(gui, BaseGUI):
-            raise TypeError
+        """
+        if not isinstance(gui, EdgeWindow):
+            raise TypeError(
+                f"GUI must be of type: {EdgeWindow} you have passed a {type(gui)}"
+            )
 
-        self.guis[edge] = gui
+        location = gui.location
 
-        self.set_gui_size(edge, gui.size)
+        if location not in GUI_EDGES:
+            raise ValueError(
+                f"GUI does not have a valid location, valid locations are: {GUI_EDGES}, you have passed: {location}"
+            )
 
-    def set_gui_size(self, edge: str, size: int):
-        if self.guis[edge] is None:
-            raise ValueError
+        if self.guis[location] is not None:
+            raise ValueError(
+                f"GUI already exists in the desired location: {location}"
+            )
 
-        self.guis[edge].size = size
+        self.guis[location] = gui
 
-    def get_pygfx_render_area(self, *args):
-        """update size of fastplotlib managed, i.e. non-imgui, part of canvas"""
+        self._reset_viewports()
+
+    def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
+        """
+        Fet rect for the portion of the canvas that the pygfx renderer draws to,
+        i.e. non-imgui, part of canvas
+
+        Returns
+        -------
+        tuple[int, int, int, int]
+            x_pos, y_pos, width, height
+
+        """
+
         width, height = self.canvas.get_logical_size()
 
         for edge in ["left", "right"]:
@@ -171,7 +193,7 @@ class ImguiFigure(Figure):
         else:
             ypos = 0
 
-        return [xpos, ypos, width, height]
+        return xpos, ypos, width, height
 
     def _reset_viewports(self):
         # TODO: think about moving this to Figure later,
@@ -183,9 +205,33 @@ class ImguiFigure(Figure):
                 dock.set_viewport_rect()
 
     def register_popup(self, popup: Popup.__class__):
+        """
+        Register a popup class. Note that this takes the class, not an instance
+
+        Parameters
+        ----------
+        popup: Popup subclass
+
+        """
         self._popups[popup.name] = popup(self)
 
-    def open_popup(self, name, pos: tuple[int, int], **kwargs):
+    def open_popup(self, name: str, pos: tuple[int, int], **kwargs):
+        """
+        Open a registered popup
+
+        Parameters
+        ----------
+        name: str
+            The registered name of the popup
+
+        pos: int, int
+            x_pos, y_pos for the popup
+
+        kwargs
+            any additional kwargs to pass to the Popup's open() method
+
+        """
+
         if self._popups[name].is_open:
             return
 
