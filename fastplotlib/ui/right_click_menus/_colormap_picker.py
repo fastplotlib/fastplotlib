@@ -18,12 +18,12 @@ all_cmaps = [
 ]
 
 
-# TODO: create and upload textures only once per Figure
 class ColormapPicker(Popup):
+    """Colormap picker menu popup tool"""
+    # name used to trigger this popup after it has been registered with a Figure
     name = "colormap-picker"
 
     def __init__(self, figure):
-        # TODO: we actually don't need figure for this, maybe another simpler base class for popups?
         super().__init__(figure=figure, fa_icons=None)
 
         self.renderer = self._figure.renderer
@@ -89,6 +89,21 @@ class ColormapPicker(Popup):
         return id_texture, texture
 
     def open(self, pos: tuple[int, int], lut_tool):
+        """
+        Request that the popup be opened on the next render cycle
+
+        Parameters
+        ----------
+        pos: int, int
+            (x, y) position
+
+        lut_tool: HistogramLUTTool
+            instance of the LUT tool
+
+        Returns
+        -------
+
+        """
         self._lut_tool = lut_tool
 
         self._pos = pos
@@ -96,6 +111,7 @@ class ColormapPicker(Popup):
         self._open_new = True
 
     def close(self):
+        """cleanup after popup has closed"""
         self._lut_tool = None
         self._open_new = False
         self._pos = -1, -1
@@ -129,17 +145,21 @@ class ColormapPicker(Popup):
             imgui.open_popup("cmap-picker")
 
         if imgui.begin_popup("cmap-picker"):
+            self.is_open = True
+
+            # event filter so click events in the menu aren't propagated down to pygfx
             self.set_event_filter("cmap-picker-filter")
 
+            # make the cmap image height the same as the text height
             self._texture_height = (
                 self.imgui_renderer.backend.io.font_global_scale
                 * imgui.get_font().font_size
             ) - 2
 
-            self.is_open = True
             if imgui.menu_item("Reset vmin-vmax", None, False)[0]:
                 self._lut_tool.image_graphic.reset_vmin_vmax()
 
+            # add all the cmap options
             for cmap_type in COLORMAP_NAMES.keys():
                 if cmap_type == "qualitative":
                     continue

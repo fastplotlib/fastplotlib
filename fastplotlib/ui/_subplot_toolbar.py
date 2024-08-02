@@ -6,14 +6,19 @@ from ._base import Window
 
 class SubplotToolbar(Window):
     def __init__(self, subplot: Subplot, fa_icons: imgui.ImFont):
+        """
+        Subplot toolbar shown below all subplots
+        """
         super().__init__()
 
         self._subplot = subplot
         self._fa_icons = fa_icons
 
     def update(self):
+        # get subplot rect
         x, y, width, height = self._subplot.get_rect()
 
+        # place the toolbar window below the subplot
         pos = (x, y + height)
 
         imgui.set_next_window_size((width, 0))
@@ -22,11 +27,11 @@ class SubplotToolbar(Window):
 
         imgui.begin(f"Toolbar-{self._subplot.position}", p_open=None, flags=flags)
 
+        # icons for buttons
         imgui.push_font(self._fa_icons)
 
-        imgui.push_id(
-            self._id_counter
-        )  # push ID to prevent conflict between multiple figs with same UI
+        # push ID to prevent conflict between multiple figs with same UI
+        imgui.push_id(self._id_counter)
         with imgui_ctx.begin_horizontal(f"toolbar-{self._subplot.position}"):
             # autoscale button
             if imgui.button(fa.ICON_FA_MAXIMIZE):
@@ -61,6 +66,8 @@ class SubplotToolbar(Window):
             if imgui.is_item_hovered(0):
                 imgui.set_tooltip("maintain aspect")
 
+        # pop id when all UI has been written to window
         imgui.pop_id()
 
+        # end window
         imgui.end()
