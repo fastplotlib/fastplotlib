@@ -544,10 +544,12 @@ class ImageWidget:
         self._image_widget_sliders = ImageWidgetSliders(
             figure=self.figure,
             size=ui_size,
+            location="bottom",
+            title="ImageWidget Controls",
             image_widget=self
         )
 
-        self.figure.set_gui(edge="bottom", gui=self._image_widget_sliders)
+        self.figure.add_gui(self._image_widget_sliders)
 
     @property
     def frame_apply(self) -> dict | None:
