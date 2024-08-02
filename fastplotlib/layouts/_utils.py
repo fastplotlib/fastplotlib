@@ -2,7 +2,11 @@ import importlib
 
 import pygfx
 from pygfx import WgpuRenderer, Texture, Renderer
-from pygfx.renderers.wgpu.engine.renderer import EVENT_TYPE_MAP, PointerEvent, WheelEvent
+from pygfx.renderers.wgpu.engine.renderer import (
+    EVENT_TYPE_MAP,
+    PointerEvent,
+    WheelEvent,
+)
 
 from wgpu.gui import WgpuCanvasBase
 

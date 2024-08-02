@@ -21,6 +21,7 @@ def flip_axis(subplot: PlotArea, axis: str, flip: bool):
 
 class StandardRightClickMenu(Popup):
     """Right click menu that is shown on subplots"""
+
     def __init__(self, figure, fa_icons):
         super().__init__(figure=figure, fa_icons=fa_icons)
 

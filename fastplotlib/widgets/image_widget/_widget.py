@@ -539,7 +539,7 @@ class ImageWidget:
             size=ui_size,
             location="bottom",
             title="ImageWidget Controls",
-            image_widget=self
+            image_widget=self,
         )
 
         self.figure.add_gui(self._image_widget_sliders)
