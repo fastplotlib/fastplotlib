@@ -14,6 +14,7 @@ Welcome to fastplotlib's documentation!
 
    fastplotlib <api/fastplotlib>
    Figure <api/layouts/figure>
+   ImguiFigure <api/layouts/imgui_figure>
    Subplot <api/layouts/subplot>
    Graphics <api/graphics/index>
    Graphic Features <api/graphic_features/index>
