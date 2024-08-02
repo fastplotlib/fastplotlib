@@ -6,7 +6,7 @@ from .graphics.selectors import *
 from .graphics.utils import pause_events
 from .legends import *
 from .tools import *
-from .layouts import Figure
+from .layouts import *
 
 from .widgets import ImageWidget
 from .utils import config, enumerate_adapters, select_adapter, print_wgpu_report

@@ -143,9 +143,16 @@ def generate_page(
 def main():
     generate_page(
         page_name="Figure",
-        classes=[fastplotlib.Figure],
+        classes=[fastplotlib.layouts._figure.Figure],
         modules=["fastplotlib"],
         source_path=LAYOUTS_DIR.joinpath("figure.rst"),
+    )
+
+    generate_page(
+        page_name="ImguiFigure",
+        classes=[fastplotlib.layouts.ImguiFigure],
+        modules=["fastplotlib"],
+        source_path=LAYOUTS_DIR.joinpath("imgui_figure.rst"),
     )
 
     generate_page(
@@ -262,12 +269,6 @@ def main():
 
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
-
-    # gpu selection
-    fpl_functions = generate_functions_module(fastplotlib, "fastplotlib.utils.gpu")
-
-    with open(API_DIR.joinpath("gpu.rst"), "w") as f:
-        f.write(fpl_functions)
 
 
 if __name__ == "__main__":
