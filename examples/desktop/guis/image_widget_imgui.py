@@ -5,6 +5,7 @@ ImGUI with Image widget
 Example showing how to write a custom GUI with imgui and use it with ImageWidget
 """
 
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 # some simple image processing functions
