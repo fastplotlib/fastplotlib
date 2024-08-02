@@ -322,12 +322,9 @@ class Figure:
 
         self._current_iter = None
 
-        self._output = None
+        self._sidecar = None
 
-        if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
-            self.recorder = FigureRecorder(self)
-        else:
-            self.recorder = None
+        self._output = None
 
     @property
     def toolbar(self):
@@ -410,10 +407,8 @@ class Figure:
         self,
         autoscale: bool = True,
         maintain_aspect: bool = None,
-        toolbar: bool = True,
         sidecar: bool = False,
         sidecar_kwargs: dict = None,
-        add_widgets: list = None,
     ):
         """
         Begins the rendering event loop and shows the plot in the desired output context (jupyter, qt or glfw).
@@ -426,22 +421,16 @@ class Figure:
         maintain_aspect: bool, default ``True``
             maintain aspect ratio
 
-        toolbar: bool, default ``True``
-            show toolbar
-
         sidecar: bool, default ``True``
-            display plot in a ``jupyterlab-sidecar``, only for jupyter output context
+            display plot in a ``jupyterlab-sidecar``, only in jupyter
 
         sidecar_kwargs: dict, default ``None``
             kwargs for sidecar instance to display plot
             i.e. title, layout
 
-        add_widgets: list of widgets
-            a list of ipywidgets or QWidget that are vertically stacked below the plot
-
         Returns
         -------
-        OutputContext
+        WgpuCanvasBase
             In jupyter, it will display the plot in the output cell or sidecar
 
             In Qt, it will display the Plot, toolbar, etc. as stacked widget, use `Plot.widget` to access it.
@@ -455,9 +444,6 @@ class Figure:
 
         if sidecar_kwargs is None:
             sidecar_kwargs = dict()
-
-        if add_widgets is None:
-            add_widgets = list()
 
         # flip y-axis if ImageGraphics are present
         for subplot in self:
@@ -476,24 +462,18 @@ class Figure:
 
         # return the appropriate OutputContext based on the current canvas
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
-            from .output.jupyter_output import (
-                JupyterOutputContext,
-            )  # noqa - inline import
-
-            self._output = JupyterOutputContext(
-                frame=self,
-                make_toolbar=toolbar,
-                use_sidecar=sidecar,
-                sidecar_kwargs=sidecar_kwargs,
-                add_widgets=add_widgets,
-            )
+            if sidecar:
+                from sidecar import Sidecar
+                from IPython.display import display
+                self._sidecar = Sidecar(**sidecar_kwargs)
+                self._output = self.canvas
+                with self._sidecar:
+                    return display(self.canvas)
 
         elif self.canvas.__class__.__name__ == "QWgpuCanvas":
-            from .output.qt_output import QOutputContext  # noqa - inline import
-
-            self._output = QOutputContext(
-                frame=self, make_toolbar=toolbar, add_widgets=add_widgets
-            )
+            self._output = self.canvas
+            self._output.show()
+            return self.canvas
 
         elif self.canvas.__class__.__name__ == "WgpuManualOffscreenCanvas":
             # for test and docs gallery screenshots
