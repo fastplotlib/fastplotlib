@@ -19,24 +19,23 @@ class RectangleSelector(BaseSelector):
     @property
     def selection(self) -> Sequence[float] | List[Sequence[float]]:
         """
-
+        (xmin, xmax, ymin, ymax) of the rectangle selection
         """
         return self._selection.value
 
     @selection.setter
     def selection(self, selection: Sequence[float]):
+        # set (xmin, xmax, ymin, ymax) of the selector in data space
         graphic = self._parent
 
         if isinstance(graphic, GraphicCollection):
             pass
 
-        print(selection)
-
-    #  self._selection.set_value(self, selection)
+        self._selection.set_value(self, selection)
 
     @property
     def limits(self) -> Tuple[float, float, float, float]:
-        """Return the limits of the selector (xmin, xmax, ymin, ymax)."""
+        """Return the limits of the selector."""
         return self._limits
 
     @limits.setter
@@ -50,9 +49,8 @@ class RectangleSelector(BaseSelector):
 
     def __init__(
             self,
-            selection: Tuple[float, float, float, float],
-            limits: Tuple[float, float, float, float],
-            origin: Tuple[float, float],
+            selection: Sequence[float],
+            limits: Sequence[float],
             axis: str = None,
             parent: Graphic = None,
             resizable: bool = True,
@@ -73,9 +71,6 @@ class RectangleSelector(BaseSelector):
 
         limits: (float, float, float, float)
             limits of the selector, ``(x_min, x_max, y_min, y_max)``
-
-        origin: (float, float)
-            initial position of the selector
 
         axis: str, default ``None``
             Restrict the selector to the "x" or "y" axis.
@@ -105,16 +100,16 @@ class RectangleSelector(BaseSelector):
             name for this selector graphic
         """
 
-        if not len(selection) == 4 or not len(limits) == 4 or not len(origin) == 2:
+        if not len(selection) == 4 or not len(limits) == 4:
             raise ValueError()
 
         # lots of very close to zero values etc. so round them
         selection = tuple(map(round, selection))
         limits = tuple(map(round, limits))
-        origin = tuple(map(round, origin))
 
         self._parent = parent
         self._limits = np.asarray(limits)
+        self._resizable = resizable
 
         selection = np.asarray(selection)
 
@@ -136,15 +131,15 @@ class RectangleSelector(BaseSelector):
             pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
         )
 
-        self.fill.world.position = (origin[0] + (width / 2), origin[1] - (height / 2), -2)
+        self.fill.world.position = (0, 0, -2)
 
         group.add(self.fill)
 
         #position data for the left edge line
         left_line_data = np.array(
             [
-                [origin[0], -height + origin[1], 0],
-                [origin[0], origin[1], 0],
+                [0, -width / 2, 0],
+                [0, width / 2, 0],
             ]
         ).astype(np.float32)
 
@@ -156,8 +151,8 @@ class RectangleSelector(BaseSelector):
         # position data for the right edge line
         right_line_data = np.array(
             [
-                [origin[0] + xmax, -height + origin[1], 0],
-                [origin[0] + xmax, origin[1], 0],
+                [xmax, -width / 2, 0],
+                [xmax, width / 2, 0],
             ]
         ).astype(np.float32)
 
@@ -169,8 +164,8 @@ class RectangleSelector(BaseSelector):
         # position data for the left edge line
         bottom_line_data = np.array(
             [
-                [origin[0], -height + origin[1], 0],
-                [origin[0] + xmax, -height + origin[1], 0],
+                [-height / 2, ymax, 0],
+                [height / 2, ymax, 0],
             ]
         ).astype(np.float32)
 
@@ -182,8 +177,8 @@ class RectangleSelector(BaseSelector):
         # position data for the right edge line
         top_line_data = np.array(
             [
-                [origin[0], origin[1], 0],
-                [origin[0] + xmax, origin[1], 0],
+                [-height / 2, 0, 0],
+                [height / 2 + xmax, 0, 0],
             ]
         ).astype(np.float32)
 
@@ -204,7 +199,6 @@ class RectangleSelector(BaseSelector):
             edge.world.z = -0.5
             group.add(edge)
 
-        self._resizable = resizable
         self._selection = RectangleSelectionFeature(selection, axis=axis, limits=self._limits)
 
         BaseSelector.__init__(
