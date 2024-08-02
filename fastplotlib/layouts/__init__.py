@@ -7,6 +7,7 @@ else:
 
 if IMGUI:
     from ._imgui_figure import ImguiFigure
+
     Figure = ImguiFigure
     __all__ = ["Figure", "ImguiFigure"]
 else:

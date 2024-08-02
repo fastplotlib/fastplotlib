@@ -109,7 +109,9 @@ class Figure:
         else:
             subplot_names = None
 
-        canvas, renderer = make_canvas_and_renderer(canvas, renderer, canvas_kwargs={"size": size})
+        canvas, renderer = make_canvas_and_renderer(
+            canvas, renderer, canvas_kwargs={"size": size}
+        )
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
@@ -454,6 +456,7 @@ class Figure:
             if sidecar:
                 from sidecar import Sidecar
                 from IPython.display import display
+
                 self._sidecar = Sidecar(**sidecar_kwargs)
                 self._output = self.canvas
                 with self._sidecar:

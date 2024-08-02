@@ -31,9 +31,7 @@ class ImageWidgetSliders(EdgeWindow):
                 self._playing[dim] = False
                 return
 
-        self._image_widget.current_index = {
-            dim: min(index, max_index)
-        }
+        self._image_widget.current_index = {dim: min(index, max_index)}
 
     def update(self):
         new_index = dict()

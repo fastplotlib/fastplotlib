@@ -45,7 +45,9 @@ class ImguiFigure(Figure):
     ):
         self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
 
-        canvas, renderer = make_canvas_and_renderer(canvas, renderer, canvas_kwargs={"size": size})
+        canvas, renderer = make_canvas_and_renderer(
+            canvas, renderer, canvas_kwargs={"size": size}
+        )
         self._imgui_renderer = ImguiRenderer(renderer.device, canvas)
 
         super().__init__(
@@ -85,7 +87,9 @@ class ImguiFigure(Figure):
             toolbar = SubplotToolbar(subplot=subplot, fa_icons=self._fa_icons)
             self._subplot_toolbars[subplot.position] = toolbar
 
-        self._right_click_menu = StandardRightClickMenu(figure=self, fa_icons=self._fa_icons)
+        self._right_click_menu = StandardRightClickMenu(
+            figure=self, fa_icons=self._fa_icons
+        )
 
         self._popups: dict[str, Popup] = {}
 
@@ -151,9 +155,7 @@ class ImguiFigure(Figure):
             )
 
         if self.guis[location] is not None:
-            raise ValueError(
-                f"GUI already exists in the desired location: {location}"
-            )
+            raise ValueError(f"GUI already exists in the desired location: {location}")
 
         self.guis[location] = gui
 

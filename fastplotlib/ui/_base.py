@@ -31,19 +31,21 @@ class BaseGUI:
 
 class Window(BaseGUI):
     """Base class for imgui windows drawn within Figures"""
+
     pass
 
 
 class EdgeWindow(Window):
     def __init__(
         self,
-            figure: Figure,
-            size: int,
-            location: Literal["top", "bottom", "left", "right"],
-            title: str,
-            window_flags: int = imgui.WindowFlags_.no_collapse | imgui.WindowFlags_.no_resize,
-            *args,
-            **kwargs
+        figure: Figure,
+        size: int,
+        location: Literal["top", "bottom", "left", "right"],
+        title: str,
+        window_flags: int = imgui.WindowFlags_.no_collapse
+        | imgui.WindowFlags_.no_resize,
+        *args,
+        **kwargs,
     ):
         """
         A base class for imgui windows displayed at one of the four edges of a Figure

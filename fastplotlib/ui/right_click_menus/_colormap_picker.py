@@ -8,18 +8,20 @@ from imgui_bundle import imgui
 from wgpu import GPUTexture
 
 from .. import Popup
-from ...utils.functions import COLORMAP_NAMES, SEQUENTIAL_CMAPS, CYCLIC_CMAPS, DIVERGING_CMAPS, MISC_CMAPS
+from ...utils.functions import (
+    COLORMAP_NAMES,
+    SEQUENTIAL_CMAPS,
+    CYCLIC_CMAPS,
+    DIVERGING_CMAPS,
+    MISC_CMAPS,
+)
 
-all_cmaps = [
-    *SEQUENTIAL_CMAPS,
-    *CYCLIC_CMAPS,
-    *DIVERGING_CMAPS,
-    *MISC_CMAPS
-]
+all_cmaps = [*SEQUENTIAL_CMAPS, *CYCLIC_CMAPS, *DIVERGING_CMAPS, *MISC_CMAPS]
 
 
 class ColormapPicker(Popup):
     """Colormap picker menu popup tool"""
+
     # name used to trigger this popup after it has been registered with a Figure
     name = "colormap-picker"
 
