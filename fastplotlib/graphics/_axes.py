@@ -6,11 +6,7 @@ from pylinalg import quat_from_vecs, vec_transform_quat
 
 GRID_PLANES = ["xy", "xz", "yz"]
 
-CANONICAL_BAIS = np.array([
-    [1., 0., 0.],
-    [0., 1., 0.],
-    [0., 0., 1.]
-])
+CANONICAL_BAIS = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
 
 
 # very thin subclass that just adds GridMaterial properties to this world object for easier user control
@@ -259,7 +255,9 @@ class Axes:
         grid_kwargs: dict = None,
         auto_grid: bool = True,
         offset: np.ndarray = np.array([0.0, 0.0, 0.0]),
-        basis: np.ndarray = np.array([[1., 0., 0.], [0., 1., 0.], [0., 0., 1.]])
+        basis: np.ndarray = np.array(
+            [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+        ),
     ):
         self._plot_area = plot_area
 
