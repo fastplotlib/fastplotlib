@@ -206,26 +206,29 @@ class RectangleSelectionFeature(GraphicFeature):
 
     **info dict:**
 
-    +----------+------------+-----------------------------+
-    | dict key | value type | value description           |
-    +==========+============+=============================+
-    | value    | np.ndarray | new [min, max] of selection |
-    +----------+------------+-----------------------------+
+    +----------+------------+-------------------------------------------+
+    | dict key | value type | value description                         |
+    +==========+============+===========================================+
+    | value    | np.ndarray | new [xmin, xmax, ymin, ymax] of selection |
+    +----------+------------+-------------------------------------------+
 
     """
     def __init__(
-        self, value: Tuple[float, float, float, float], axis: str | None, limits: Tuple[int, int]
+            self,
+            value: tuple[float, float, float, float],
+            axis: str | None,
+            limits: tuple[float, float, float, float]
     ):
         super().__init__()
 
         self._axis = axis
         self._limits = limits
-        self._value = value
+        self._value = tuple(int(v) for v in value)
 
     @property
     def value(self) -> np.ndarray[float]:
         """
-        (min, max) of the selection, in data space
+        (xmin, xmax, ymin, ymax) of the selection, in data space
         """
         return self._value
 
@@ -234,27 +237,36 @@ class RectangleSelectionFeature(GraphicFeature):
         """one of "x" | "y" """
         return self._axis
 
-    def set_value(self, selector, selection: Sequence[float]):
+    def set_value(self, selector, value: Sequence[float]):
         """
+        Set the selection of the rectangle selector.
 
         Parameters
         ----------
-        value: Tuple[float]
-            new values: (xmin, xmax, ymin, ymax)
+        selector: RectangleSelector
 
-        Returns
-        -------
-
+        value: (float, float, float, float)
+            new values (xmin, xmax, ymin, ymax) of the selection
         """
+        if not len(value) == 4:
+            raise TypeError(
+                "Selection must be an array, tuple, list, or sequence in the form of `(xmin, xmax, ymin, ymax)`, "
+                "where `xmin`, `xmax`, `ymin`, `ymax` are numeric values."
+            )
+
         # convert to array, clip values if they are beyond the limits
-        #selection = np.asarray(selection, dtype=np.float32).clip(*self._limits)
+        # clip x
+        value = np.asarray(value, dtype=np.float32)
+        value[:2] = value[:2].clip(self._limits[0], self._limits[1])
+        # clip y
+        value[2:] = value[2:].clip(self._limits[2], self._limits[3])
 
-        xmin, xmax, ymin, ymax = selection
+        xmin, xmax, ymin, ymax = value
 
-        # make sure `selector width >= 2`, left edge must not move past right edge!
+        # make sure `selector width >= 2` and selector height >=2 , left edge must not move past right edge!
         # or bottom edge must not move past top edge!
-        # if not (xmax[1] - xmin[0]) >= 0 or not (ymax[1] - ymin[0]) >= 0:
-        #     return
+        if not (xmax - xmin) >= 0 or not (ymax - ymin) >= 0:
+            return
 
         # change fill mesh
         # change left x position of the fill mesh
@@ -297,13 +309,17 @@ class RectangleSelectionFeature(GraphicFeature):
             [[xmin, ymax, z], [xmax, ymax, z]]
         )
         #
-        # self._data = se  # (value[0], value[1])
+        self._value = value
         #
         # send changes to GPU
         selector.fill.geometry.positions.update_range()
         #
         for edge in selector.edges:
             edge.geometry.positions.update_range()
+
+        # send event
+        if len(self._event_handlers) < 1:
+            return
 
         event = FeatureEvent("selection", {"value": self.value})
 
