@@ -1,4 +1,4 @@
-from typing import Sequence
+from typing import Sequence, Tuple
 
 import numpy as np
 
@@ -190,3 +190,122 @@ class LinearRegionSelectionFeature(GraphicFeature):
         # TODO: user's selector event handlers can call event.graphic.get_selected_indices() to get the data index,
         #  and event.graphic.get_selected_data() to get the data under the selection
         #  this is probably a good idea so that the data isn't sliced until it's actually necessary
+
+
+class RectangleRegionSelectionFeature(GraphicFeature):
+    """
+    **additional event attributes:**
+
+    +----------------------+----------+------------------------------------+
+    | attribute            | type     | description                        |
+    +======================+==========+====================================+
+    | get_selected_indices | callable | returns indices under the selector |
+    +----------------------+----------+------------------------------------+
+    | get_selected_data    | callable | returns data under the selector    |
+    +----------------------+----------+------------------------------------+
+
+    **info dict:**
+
+    +----------+------------+-----------------------------+
+    | dict key | value type | value description           |
+    +==========+============+=============================+
+    | value    | np.ndarray | new [min, max] of selection |
+    +----------+------------+-----------------------------+
+
+    """
+    def __init__(
+        self, value: Tuple[float, float, float, float], axis: str | None, limits: Tuple[int, int]
+    ):
+        super().__init__()
+
+        self._axis = axis
+        self._limits = limits
+        self._value = value
+
+    @property
+    def value(self) -> np.ndarray[float]:
+        """
+        (min, max) of the selection, in data space
+        """
+        return self._value
+
+    @property
+    def axis(self) -> str:
+        """one of "x" | "y" """
+        return self._axis
+
+    def set_value(self, selector, selection: Sequence[float]):
+        """
+
+        Parameters
+        ----------
+        value: Tuple[float]
+            new values: (xmin, xmax, ymin, ymax)
+
+        Returns
+        -------
+
+        """
+        # convert to array, clip values if they are beyond the limits
+        #selection = np.asarray(selection, dtype=np.float32).clip(*self._limits)
+
+        xmin, xmax, ymin, ymax = selection
+
+        # make sure `selector width >= 2`, left edge must not move past right edge!
+        # or bottom edge must not move past top edge!
+        # if not (xmax[1] - xmin[0]) >= 0 or not (ymax[1] - ymin[0]) >= 0:
+        #     return
+
+        # change fill mesh
+        # change left x position of the fill mesh
+        selector.fill.geometry.positions.data[mesh_masks.x_left] = xmin
+
+        # change right x position of the fill mesh
+        selector.fill.geometry.positions.data[mesh_masks.x_right] = xmax
+
+        # change bottom y position of the fill mesh
+        selector.fill.geometry.positions.data[mesh_masks.y_bottom] = ymin
+
+        # change top position of the fill mesh
+        selector.fill.geometry.positions.data[mesh_masks.y_top] = ymax
+
+        # change the edge lines
+
+        # each edge line is defined by two end points which are stored in the
+        # geometry.positions
+        # [x0, y0, z0]
+        # [x1, y1, z0]
+
+        # left line
+        z = selector.edges[0].geometry.positions.data[:, -1][0]
+        selector.edges[0].geometry.positions.data[:] = np.array(
+            [[xmin, ymin, z], [xmin, ymax, z]]
+        )
+
+        # right line
+        selector.edges[1].geometry.positions.data[:] = np.array(
+            [[xmax, ymin, z], [xmax, ymax, z]]
+        )
+
+        # bottom line
+        selector.edges[2].geometry.positions.data[:] = np.array(
+            [[xmin, ymin, z], [xmax, ymin, z]]
+        )
+
+        # top line
+        selector.edges[3].geometry.positions.data[:] = np.array(
+            [[xmin, ymax, z], [xmax, ymax, z]]
+        )
+        #
+        # self._data = se  # (value[0], value[1])
+        #
+        # send changes to GPU
+        selector.fill.geometry.positions.update_range()
+        #
+        for edge in selector.edges:
+            edge.geometry.positions.update_range()
+
+        event = FeatureEvent("selection", {"value": self.value})
+
+        # calls any events
+        self._call_event_handlers(event)

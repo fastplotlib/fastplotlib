@@ -1,185 +1,91 @@
+from numbers import Real
 from typing import *
 import numpy as np
 
 import pygfx
+from .._collection_base import GraphicCollection
 
-from ...utils import mesh_masks
 from .._base import Graphic
-from .._features import GraphicFeature
+from .._features import RectangleRegionSelectionFeature
 from ._base_selector import BaseSelector
 
 
-class RectangleBoundsFeature(GraphicFeature):
-    """
-    Feature for a linearly bounding region
-
-    **event pick info**
-
-    +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
-    | key                | type                          | description                                                                          |
-    +====================+===============================+======================================================================================+
-    | "selected_indices" | ``numpy.ndarray`` or ``None`` | selected graphic data indices                                                        |
-    | "selected_data"    | ``numpy.ndarray`` or ``None`` | selected graphic data                                                                |
-    | "new_data"         | ``(float, float)``            | current bounds in world coordinates, NOT necessarily the same as "selected_indices". |
-    +--------------------+-------------------------------+--------------------------------------------------------------------------------------+
-
-    """
-
-    def __init__(
-        self, parent, bounds: Tuple[int, int], axis: str, limits: Tuple[int, int]
-    ):
-        super().__init__(parent, data=bounds)
-
-        self._axis = axis
-        self.limits = limits
-
-        self._set(bounds)
+class RectangleRegionSelector(BaseSelector):
+    @property
+    def parent(self) -> Graphic | None:
+        """Graphic that selector is associated with."""
+        return self._parent
 
     @property
-    def axis(self) -> str:
-        """one of "x" | "y" """
-        return self._axis
-
-    def _set(self, value: Tuple[float, float, float, float]):
+    def selection(self) -> Sequence[float] | List[Sequence[float]]:
         """
 
-        Parameters
-        ----------
-        value: Tuple[float]
-            new values: (xmin, xmax, ymin, ymax)
-
-        Returns
-        -------
-
         """
-        xmin, xmax, ymin, ymax = value
+        return self._selection.value
 
-        # TODO: make sure new values do not exceed limits
+    @selection.setter
+    def selection(self, selection: Sequence[float]):
+        graphic = self._parent
 
-        # change fill mesh
-        # change left x position of the fill mesh
-        self._parent.fill.geometry.positions.data[mesh_masks.x_left] = xmin
+        if isinstance(graphic, GraphicCollection):
+            pass
 
-        # change right x position of the fill mesh
-        self._parent.fill.geometry.positions.data[mesh_masks.x_right] = xmax
+        print(selection)
 
-        # change bottom y position of the fill mesh
-        self._parent.fill.geometry.positions.data[mesh_masks.y_bottom] = ymin
+    #  self._selection.set_value(self, selection)
 
-        # change top position of the fill mesh
-        self._parent.fill.geometry.positions.data[mesh_masks.y_top] = ymax
+    @property
+    def limits(self) -> Tuple[float, float, float, float]:
+        """Return the limits of the selector (xmin, xmax, ymin, ymax)."""
+        return self._limits
 
-        # change the edge lines
-
-        # each edge line is defined by two end points which are stored in the
-        # geometry.positions
-        # [x0, y0, z0]
-        # [x1, y1, z0]
-
-        # left line
-        z = self._parent.edges[0].geometry.positions.data[:, -1][0]
-        self._parent.edges[0].geometry.positions.data[:] = np.array(
-            [[xmin, ymin, z], [xmin, ymax, z]]
-        )
-
-        # right line
-        self._parent.edges[1].geometry.positions.data[:] = np.array(
-            [[xmax, ymin, z], [xmax, ymax, z]]
-        )
-
-        # bottom line
-        self._parent.edges[2].geometry.positions.data[:] = np.array(
-            [[xmin, ymin, z], [xmax, ymin, z]]
-        )
-
-        # top line
-        self._parent.edges[3].geometry.positions.data[:] = np.array(
-            [[xmin, ymax, z], [xmax, ymax, z]]
-        )
-
-        self._data = value  # (value[0], value[1])
-
-        # send changes to GPU
-        self._parent.fill.geometry.positions.update_range()
-
-        for edge in self._parent.edges:
-            edge.geometry.positions.update_range()
-
-        # calls any events
-        self._feature_changed(key=None, new_data=value)
-
-    # TODO: feature_changed
-    def _feature_changed(self, key: Union[int, slice, Tuple[slice]], new_data: Any):
-        return
-        # if len(self._event_handlers) < 1:
-        #     return
-        #
-        # if self._parent.parent is not None:
-        #     selected_ixs = self._parent.get_selected_indices()
-        #     selected_data = self._parent.get_selected_data()
-        # else:
-        #     selected_ixs = None
-        #     selected_data = None
-        #
-        # pick_info = {
-        #     "index": None,
-        #     "collection-index": self._collection_index,
-        #     "world_object": self._parent.world_object,
-        #     "new_data": new_data,
-        #     "selected_indices": selected_ixs,
-        #     "selected_data": selected_data
-        #     "graphic",
-        #     "delta",
-        #     "pygfx_event"
-        # }
-        #
-        # event_data = FeatureEvent(type="bounds", pick_info=pick_info)
-        #
-        # self._call_event_handlers(event_data)
-
-
-class RectangleRegionSelector(Graphic, BaseSelector):
-    feature_events = "bounds"
+    @limits.setter
+    def limits(self, values: Tuple[float, float, float, float]):
+        if len(values) != 4 or not all(map(lambda v: isinstance(v, Real), values)):
+            raise TypeError("limits must be an iterable of two numeric values")
+        self._limits = tuple(
+            map(round, values)
+        )  # if values are close to zero things get weird so round them
+        self._selection._limits = self._limits
 
     def __init__(
-        self,
-        bounds: Tuple[int, int, int, int],
-        limits: Tuple[int, int],
-        origin: Tuple[int, int],
-        axis: str = "x",
-        parent: Graphic = None,
-        resizable: bool = True,
-        fill_color=(0, 0, 0.35),
-        edge_color=(0.8, 0.8, 0),
-        arrow_keys_modifier: str = "Shift",
-        name: str = None,
+            self,
+            selection: Tuple[float, float, float, float],
+            limits: Tuple[float, float, float, float],
+            origin: Tuple[float, float],
+            axis: str = None,
+            parent: Graphic = None,
+            resizable: bool = True,
+            fill_color=(0, 0, 0.35),
+            edge_color=(0.8, 0.8, 0),
+            edge_thickness: float = 8,
+            arrow_keys_modifier: str = "Shift",
+            name: str = None,
     ):
         """
-        Create a LinearRegionSelector graphic which can be moved only along either the x-axis or y-axis.
+        Create a RectangleRegionSelector graphic which can be used to select a rectangular region of data.
         Allows sub-selecting data from a ``Graphic`` or from multiple Graphics.
-
-        bounds[0], limits[0], and position[0] must be identical
 
         Parameters
         ----------
-        bounds: (int, int, int, int)
-            the initial bounds of the rectangle, ``(x_min, x_max, y_min, y_max)``
+        selection: (float, float, float, float)
+            the initial selection of the rectangle, ``(x_min, x_max, y_min, y_max)``
 
-        limits: (int, int, int, int)
+        limits: (float, float, float, float)
             limits of the selector, ``(x_min, x_max, y_min, y_max)``
 
-        origin: (int, int)
+        origin: (float, float)
             initial position of the selector
 
         axis: str, default ``None``
             Restrict the selector to the "x" or "y" axis.
-            If the selector is restricted to an axis you cannot change the bounds along the other axis. For example,
-            if you set ``axis="x"``, then the ``y_min``, ``y_max`` values of the bounds will stay constant.
+            If the selector is restricted to an axis you cannot change the selection along the other axis. For example,
+            if you set ``axis="x"``, then the ``y_min``, ``y_max`` values of the selection will stay constant.
 
         parent: Graphic, default ``None``
             associate this selector with a parent Graphic
 
-        resizable: bool
+        resizable: bool, default ``True``
             if ``True``, the edges can be dragged to resize the selection
 
         fill_color: str, array, or tuple
@@ -188,91 +94,105 @@ class RectangleRegionSelector(Graphic, BaseSelector):
         edge_color: str, array, or tuple
             edge color for the selector, passed to pygfx.Color
 
+        edge_thickness: float, default 8
+            edge thickness
+
+        arrow_keys_modifier: str
+            modifier key that must be pressed to initiate movement using arrow keys, must be one of:
+            "Control", "Shift", "Alt" or ``None``
+
         name: str
             name for this selector graphic
         """
 
+        if not len(selection) == 4 or not len(limits) == 4 or not len(origin) == 2:
+            raise ValueError()
+
         # lots of very close to zero values etc. so round them
-        bounds = tuple(map(round, bounds))
+        selection = tuple(map(round, selection))
         limits = tuple(map(round, limits))
         origin = tuple(map(round, origin))
 
-        Graphic.__init__(self, name=name)
+        self._parent = parent
+        self._limits = np.asarray(limits)
 
-        self.parent = parent
+        selection = np.asarray(selection)
 
         # world object for this will be a group
         # basic mesh for the fill area of the selector
         # line for each edge of the selector
         group = pygfx.Group()
-        self._set_world_object(group)
 
-        xmin, xmax, ymin, ymax = bounds
+        xmin, xmax, ymin, ymax = selection
 
         width = xmax - xmin
         height = ymax - ymin
+
+        if width < 0 or height < 0:
+            raise ValueError()
 
         self.fill = pygfx.Mesh(
             pygfx.box_geometry(width, height, 1),
             pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
         )
 
-        self.fill.position.set(*origin, -2)
-        self.world_object.add(self.fill)
+        self.fill.world.position = (origin[0] + (width / 2), origin[1] - (height / 2), -2)
 
-        # position data for the left edge line
+        group.add(self.fill)
+
+        #position data for the left edge line
         left_line_data = np.array(
             [
-                [origin[0], (-height / 2) + origin[1], 0.5],
-                [origin[0], (height / 2) + origin[1], 0.5],
+                [origin[0], -height + origin[1], 0],
+                [origin[0], origin[1], 0],
             ]
         ).astype(np.float32)
 
         left_line = pygfx.Line(
-            pygfx.Geometry(positions=left_line_data),
-            pygfx.LineMaterial(thickness=3, color=edge_color),
+            pygfx.Geometry(positions=left_line_data.copy()),
+            pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
         )
 
         # position data for the right edge line
         right_line_data = np.array(
             [
-                [bounds[1], (-height / 2) + origin[1], 0.5],
-                [bounds[1], (height / 2) + origin[1], 0.5],
+                [origin[0] + xmax, -height + origin[1], 0],
+                [origin[0] + xmax, origin[1], 0],
             ]
         ).astype(np.float32)
 
         right_line = pygfx.Line(
-            pygfx.Geometry(positions=right_line_data),
-            pygfx.LineMaterial(thickness=3, color=edge_color),
+            pygfx.Geometry(positions=right_line_data.copy()),
+            pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
         )
 
         # position data for the left edge line
         bottom_line_data = np.array(
             [
-                [(-width / 2) + origin[0], origin[1], 0.5],
-                [(width / 2) + origin[0], origin[1], 0.5],
+                [origin[0], -height + origin[1], 0],
+                [origin[0] + xmax, -height + origin[1], 0],
             ]
         ).astype(np.float32)
 
         bottom_line = pygfx.Line(
-            pygfx.Geometry(positions=bottom_line_data),
-            pygfx.LineMaterial(thickness=3, color=edge_color),
+            pygfx.Geometry(positions=bottom_line_data.copy()),
+            pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
         )
 
         # position data for the right edge line
         top_line_data = np.array(
             [
-                [(-width / 2) + origin[0], bounds[1], 0.5],
-                [(width / 2) + origin[0], bounds[1], 0.5],
+                [origin[0], origin[1], 0],
+                [origin[0] + xmax, origin[1], 0],
             ]
         ).astype(np.float32)
 
         top_line = pygfx.Line(
-            pygfx.Geometry(positions=top_line_data),
-            pygfx.LineMaterial(thickness=3, color=edge_color),
+            pygfx.Geometry(positions=top_line_data.copy()),
+            pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
         )
 
-        self.edges: Tuple[pygfx.Line, ...] = (
+        self.edges: Tuple[pygfx.Line, pygfx.Line, pygfx.Line, pygfx.Line] = (
             left_line,
             right_line,
             bottom_line,
@@ -281,11 +201,11 @@ class RectangleRegionSelector(Graphic, BaseSelector):
 
         # add the edge lines
         for edge in self.edges:
-            edge.position.set(*origin, -1)
-            self.world_object.add(edge)
+            edge.world.z = -0.5
+            group.add(edge)
 
         self._resizable = resizable
-        self._bounds = RectangleBoundsFeature(self, bounds, axis=axis, limits=limits)
+        self._selection = RectangleRegionSelectionFeature(selection, axis=axis, limits=self._limits)
 
         BaseSelector.__init__(
             self,
@@ -294,62 +214,46 @@ class RectangleRegionSelector(Graphic, BaseSelector):
             hover_responsive=self.edges,
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
+            parent=parent,
+            name=name,
         )
 
-    @property
-    def bounds(self) -> RectangleBoundsFeature:
-        """
-        (xmin, xmax, ymin, ymax) The current bounds of the selection in world space.
+        self._set_world_object(group)
 
-        These bounds will NOT necessarily correspond to the indices of the data that are under the selection.
-        Use ``get_selected_indices()` which maps from world space to data indices.
-        """
-        return self._bounds
+        self.selection = selection
 
-    def _move_graphic(self, delta):
-        # new left bound position
-        xmin_new = Vector3(self.bounds()[0]).add(delta).x
+    def get_selected_data(self):
+        pass
 
-        # new right bound position
-        xmax_new = Vector3(self.bounds()[1]).add(delta).x
+    def get_selected_indices(self):
+        pass
 
-        # new bottom bound position
-        ymin_new = Vector3(0, self.bounds()[2]).add(delta).y
+    def _move_graphic(self, delta: np.ndarray):
 
-        # new top bound position
-        ymax_new = Vector3(0, self.bounds()[3]).add(delta).y
+        # new selection positions
+        xmin_new = self.selection[0] + delta[0]
+        xmax_new = self.selection[1] + delta[0]
+        ymin_new = self.selection[2] + delta[1]
+        ymax_new = self.selection[3] + delta[1]
 
-        # move entire selector if source was fill
+        # move entire selector if source is fill
         if self._move_info.source == self.fill:
-            # set the new bounds
-            self.bounds = (xmin_new, xmax_new, ymin_new, ymax_new)
+            # set thew new bounds
+            self._selection.set_value(self, (xmin_new, xmax_new, ymin_new, ymax_new))
             return
 
-        # if selector is not resizable do nothing
+        # if selector not resizable return
         if not self._resizable:
             return
 
-        # if resizable, move edges
+        xmin, xmax, ymin, ymax = self.selection
 
-        xmin, xmax, ymin, ymax = self.bounds()
-
-        # change only left bound
+        # if event source was an edge and selector is resizable, move the edge that caused the event
         if self._move_info.source == self.edges[0]:
-            xmin = xmin_new
-
-        # change only right bound
-        elif self._move_info.source == self.edges[1]:
-            xmax = xmax_new
-
-        # change only bottom bound
-        elif self._move_info.source == self.edges[2]:
-            ymin = ymin_new
-
-        # change only top bound
-        elif self._move_info.source == self.edges[3]:
-            ymax = ymax_new
-        else:
-            return
-
-        # set the new bounds
-        self.bounds = (xmin, xmax, ymin, ymax)
+            self._selection.set_value(self, (xmin_new, xmax, ymin, ymax))
+        if self._move_info.source == self.edges[1]:
+            self._selection.set_value(self, (xmin, xmax_new, ymin, ymax))
+        if self._move_info.source == self.edges[2]:
+            self._selection.set_value(self, (xmin, xmax, ymin_new, ymax))
+        if self._move_info.source == self.edges[3]:
+            self._selection.set_value(self, (xmin, xmax, ymin, ymax_new))
