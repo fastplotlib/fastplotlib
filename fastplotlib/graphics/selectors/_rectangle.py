@@ -55,7 +55,7 @@ class RectangleSelector(BaseSelector):
             parent: Graphic = None,
             resizable: bool = True,
             fill_color=(0, 0, 0.35),
-            edge_color=(0.8, 0.8, 0),
+            edge_color=(0.8, 0.6, 0),
             edge_thickness: float = 8,
             arrow_keys_modifier: str = "Shift",
             name: str = None,
@@ -138,8 +138,8 @@ class RectangleSelector(BaseSelector):
         #position data for the left edge line
         left_line_data = np.array(
             [
-                [0, -width / 2, 0],
-                [0, width / 2, 0],
+                [xmin, ymin, 0],
+                [xmin, ymax, 0],
             ]
         ).astype(np.float32)
 
@@ -151,8 +151,8 @@ class RectangleSelector(BaseSelector):
         # position data for the right edge line
         right_line_data = np.array(
             [
-                [xmax, -width / 2, 0],
-                [xmax, width / 2, 0],
+                [xmax, ymin, 0],
+                [xmax, ymax, 0],
             ]
         ).astype(np.float32)
 
@@ -164,8 +164,8 @@ class RectangleSelector(BaseSelector):
         # position data for the left edge line
         bottom_line_data = np.array(
             [
-                [-height / 2, ymax, 0],
-                [height / 2, ymax, 0],
+                [xmin, ymax, 0],
+                [xmax, ymax, 0],
             ]
         ).astype(np.float32)
 
@@ -177,8 +177,8 @@ class RectangleSelector(BaseSelector):
         # position data for the right edge line
         top_line_data = np.array(
             [
-                [-height / 2, 0, 0],
-                [height / 2 + xmax, 0, 0],
+                [xmin, ymin, 0],
+                [xmax, ymin, 0],
             ]
         ).astype(np.float32)
 
