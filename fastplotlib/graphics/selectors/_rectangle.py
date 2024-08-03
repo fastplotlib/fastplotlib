@@ -61,7 +61,7 @@ class RectangleSelector(BaseSelector):
             name: str = None,
     ):
         """
-        Create a RectangleRegionSelector graphic which can be used to select a rectangular region of data.
+        Create a RectangleSelector graphic which can be used to select a rectangular region of data.
         Allows sub-selecting data from a ``Graphic`` or from multiple Graphics.
 
         Parameters
@@ -201,6 +201,12 @@ class RectangleSelector(BaseSelector):
 
         self._selection = RectangleSelectionFeature(selection, axis=axis, limits=self._limits)
 
+        # include parent offset
+        if parent is not None:
+            offset = (parent.offset[0], parent.offset[1], 0)
+        else:
+            offset = (0, 0, 0)
+
         BaseSelector.__init__(
             self,
             edges=self.edges,
@@ -210,6 +216,7 @@ class RectangleSelector(BaseSelector):
             axis=axis,
             parent=parent,
             name=name,
+            offset=offset,
         )
 
         self._set_world_object(group)
@@ -232,6 +239,14 @@ class RectangleSelector(BaseSelector):
 
         # move entire selector if source is fill
         if self._move_info.source == self.fill:
+            if self.selection[0] == self.limits[0] and xmin_new < self.limits[0]:
+                return
+            if self.selection[1] == self.limits[1] and xmax_new > self.limits[1]:
+                return
+            if self.selection[2] == self.limits[2] and ymin_new < self.limits[2]:
+                return
+            if self.selection[3] == self.limits[3] and ymax_new > self.limits[3]:
+                return
             # set thew new bounds
             self._selection.set_value(self, (xmin_new, xmax_new, ymin_new, ymax_new))
             return

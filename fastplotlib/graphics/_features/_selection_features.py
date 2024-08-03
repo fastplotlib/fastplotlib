@@ -254,9 +254,18 @@ class RectangleSelectionFeature(GraphicFeature):
                 "where `xmin`, `xmax`, `ymin`, `ymax` are numeric values."
             )
 
-        # convert to array, clip values if they are beyond the limits
-        # clip x
+        # convert to array
         value = np.asarray(value, dtype=np.float32)
+
+        # check for fixed axis
+        if self.axis == "x":
+            value[2] = self.value[2]
+            value[3] = self.value[3]
+        elif self.axis == "y":
+            value[1] = self.value[1]
+            value[0] = self.value[0]
+
+        # clip values if they are beyond the limits
         value[:2] = value[:2].clip(self._limits[0], self._limits[1])
         # clip y
         value[2:] = value[2:].clip(self._limits[2], self._limits[3])
