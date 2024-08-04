@@ -2,7 +2,9 @@
 ImGUI Basics
 ============
 
-Basic examples demonstrating how to use imgui in fastplotlib
+Basic examples demonstrating how to use imgui in fastplotlib.
+
+See the imgui docs for extensive examples on how to create all UI elements: https://pyimgui.readthedocs.io/en/latest/reference/imgui.core.html#imgui.core.begin_combo
 """
 
 # test_example = true
@@ -19,12 +21,16 @@ from imgui_bundle import imgui
 np.random.seed(0)
 
 xs = np.linspace(0, np.pi * 10, 100)
-ys = np.sin(xs) + np.random.normal(scale=1)
+ys = np.sin(xs) + np.random.normal(scale=0.1, size=100)
 data = np.column_stack([xs, ys])
 
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
+# make some scatter points at every 10th point
+figure[0, 0].add_scatter(data[::10], colors="cyan", sizes=15, name="sine-scatter", uniform_color=True)
+
+# place a line above the scatter
 figure[0, 0].add_line(data, colors="r", name="sine-wave", uniform_color=True)
 
 
