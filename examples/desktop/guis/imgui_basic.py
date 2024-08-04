@@ -102,8 +102,15 @@ class ImguiExample(EdgeWindow):
         self._line.data[:, 1] = (np.sin(xs) * self._amplitude) + np.random.normal(scale=self._sigma, size=100)
 
 
-gui = ImguiExample(figure, size=250, location="right", title="Imgui Window")
+# make GUI instance
+gui = ImguiExample(
+    figure,  # the figure this GUI instance should live inside
+    size=250,  # width or height of the GUI window within the figure
+    location="right",  # the edge to place this window at
+    title="Imgui Window",  # window title
+)
 
+# add it to the figure
 figure.add_gui(gui)
 
 figure.show()
