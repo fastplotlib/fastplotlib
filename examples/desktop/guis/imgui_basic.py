@@ -21,7 +21,7 @@ from imgui_bundle import imgui
 np.random.seed(0)
 
 xs = np.linspace(0, np.pi * 10, 100)
-ys = np.sin(xs) + np.random.normal(scale=0.1, size=100)
+ys = np.sin(xs) + np.random.normal(scale=0.0, size=100)
 data = np.column_stack([xs, ys])
 
 
