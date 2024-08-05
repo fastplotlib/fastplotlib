@@ -7,7 +7,7 @@ import pygfx
 from ..utils import parse_cmap_values
 from ._collection_base import CollectionIndexer, GraphicCollection, CollectionFeature
 from .line import LineGraphic
-from .selectors import LinearRegionSelector, LinearSelector
+from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
 
 
 class _LineCollectionProperties:
@@ -445,6 +445,56 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end
+        return selector
+
+    def add_rectangle_selector(
+            self,
+            selection: tuple[float, float, float, float] = None,
+            axis: str = None,
+            fill_color=(0, 0, 0.35, 0.2),
+            **kwargs
+    ) -> RectangleSelector:
+        """
+        Add a :class:`.RectangleSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: (float, float, float, float), optional
+            initial (xmin, xmax, ymin, ymax) of the selection
+        axis: str, default None
+            Optional string to restrict the movement of the selector along one axis. If passed, should
+            be one of "x" or "y".
+        fill_color: (float, float, float), optional
+            The fill color of the selector.
+        """
+        bbox = self.world_object.get_world_bounding_box()
+
+        xdata = np.array(self.data[:, 0])
+        xmin, xmax = (np.nanmin(xdata), np.nanmax(xdata))
+        value_25px = (xmax - xmin) / 4
+
+        ydata = np.array(self.data[:, 1])
+        ymin, ymax = (np.nanmin(ydata), np.nanmax(ydata))
+
+        size = np.ptp(bbox[:, 1])
+
+        if selection is None:
+            selection = (xmin, value_25px, ymin, size)
+
+        limits = (xmin, xmax, ymin - 15, size * 1.1)
+
+        selector = RectangleSelector(
+            selection=selection,
+            limits=limits,
+            axis=axis,
+            fill_color=fill_color,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
         return selector
 
     def _get_linear_selector_init_args(self, axis, padding):

@@ -5,7 +5,7 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from .selectors import LinearRegionSelector, LinearSelector
+from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
 from ._features import Thickness
 
 
@@ -13,16 +13,16 @@ class LineGraphic(PositionsGraphic):
     _features = {"data", "colors", "cmap", "thickness"}
 
     def __init__(
-        self,
-        data: Any,
-        thickness: float = 2.0,
-        colors: str | np.ndarray | Iterable = "w",
-        uniform_color: bool = False,
-        alpha: float = 1.0,
-        cmap: str = None,
-        cmap_transform: np.ndarray | Iterable = None,
-        isolated_buffer: bool = True,
-        **kwargs,
+            self,
+            data: Any,
+            thickness: float = 2.0,
+            colors: str | np.ndarray | Iterable = "w",
+            uniform_color: bool = False,
+            alpha: float = 1.0,
+            cmap: str = None,
+            cmap_transform: np.ndarray | Iterable = None,
+            isolated_buffer: bool = True,
+            **kwargs,
     ):
         """
         Create a line Graphic, 2d or 3d
@@ -106,7 +106,7 @@ class LineGraphic(PositionsGraphic):
         self._thickness.set_value(self, value)
 
     def add_linear_selector(
-        self, selection: float = None, padding: float = 0.0, axis: str = "x", **kwargs
+            self, selection: float = None, padding: float = 0.0, axis: str = "x", **kwargs
     ) -> LinearSelector:
         """
         Adds a linear selector.
@@ -158,11 +158,11 @@ class LineGraphic(PositionsGraphic):
         return selector
 
     def add_linear_region_selector(
-        self,
-        selection: tuple[float, float] = None,
-        padding: float = 0.0,
-        axis: str = "x",
-        **kwargs,
+            self,
+            selection: tuple[float, float] = None,
+            padding: float = 0.0,
+            axis: str = "x",
+            **kwargs,
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -216,9 +216,63 @@ class LineGraphic(PositionsGraphic):
         # so we should only work with a proxy on the user-end
         return selector
 
+    def add_rectangle_selector(
+            self,
+            selection: tuple[float, float, float, float] = None,
+            axis: str = None,
+            fill_color=(0, 0, 0.35, 0.2),
+            **kwargs
+    ) -> RectangleSelector:
+        """
+        Add a :class:`.RectangleSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: (float, float, float, float), optional
+            initial (xmin, xmax, ymin, ymax) of the selection
+        axis: str, default None
+            Optional string to restrict the movement of the selector along one axis. If passed, should
+            be one of "x" or "y".
+        fill_color: (float, float, float), optional
+            The fill color of the selector.
+        """
+        # computes args to create selectors
+        n_datapoints = self.data.value.shape[0]
+        value_25p = int(n_datapoints / 4)
+
+        # remove any nans
+        data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
+
+        x_axis_vals = data[:, 0]
+        y_axis_vals = data[:, 1]
+
+        ymin = np.floor(y_axis_vals.min()).astype(int)
+        ymax = np.ceil(y_axis_vals.max()).astype(int)
+
+        # default selection is 25% of the image
+        if selection is None:
+            selection = (x_axis_vals[0], x_axis_vals[value_25p], ymin, ymax)
+
+        # min/max limits
+        limits = (x_axis_vals[0], x_axis_vals[-1], ymin * 1.5, ymax * 1.5)
+
+        selector = RectangleSelector(
+            selection=selection,
+            limits=limits,
+            axis=axis,
+            fill_color=fill_color,
+            parent=self,
+            **kwargs
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        return selector
+
     # TODO: this method is a bit of a mess, can refactor later
     def _get_linear_selector_init_args(
-        self, axis: str, padding
+            self, axis: str, padding
     ) -> tuple[tuple[float, float], tuple[float, float], float, float]:
         # computes args to create selectors
         n_datapoints = self.data.value.shape[0]

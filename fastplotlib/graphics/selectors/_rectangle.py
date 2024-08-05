@@ -225,7 +225,21 @@ class RectangleSelector(BaseSelector):
 
     def get_selected_data(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
         """
+        Get the ``Graphic`` data bounded by the current selection.
+        Returns a view of the data array.
 
+        If the ``Graphic`` is a collection, such as a ``LineStack``, it returns a list of views of the full array.
+        Can be performed on the ``parent`` Graphic or on another graphic by passing to the ``graphic`` arg.
+
+        Parameters
+        ----------
+        graphic: Graphic, optional, default ``None``
+            if provided, returns the data selection from this graphic instead of the graphic set as ``parent``
+
+        Returns
+        -------
+        np.ndarray or List[np.ndarray]
+            view or list of views of the full array, returns ``None`` if selection is empty
         """
         source = self._get_source(graphic)
         ixs = self.get_selected_indices(source)
@@ -235,6 +249,33 @@ class RectangleSelector(BaseSelector):
             s_y = slice(ixs[1][0], ixs[1][-1] + 1)
 
             return source.data[s_x, s_y]
+
+        if "Line" in source.__class__.__name__:
+            if isinstance(source, GraphicCollection):
+                data_selections: List[np.ndarray] = list()
+
+                for i, g in enumerate(source.graphics):
+                    if ixs[i].size == 0:
+                        data_selections.append(
+                            np.array([], dtype=np.float32).reshape(0, 3)
+                        )
+                    else:
+                        s = slice(
+                            ixs[i][0], ixs[i][-1] + 1
+                        )  # add 1 because these are direct indices
+                        # slices n_datapoints dim
+                        data_selections.append(g.data[s])
+            else:
+                if ixs.size == 0:
+                    # empty selection
+                    return np.array([], dtype=np.float32).reshape(0, 3)
+
+                s = slice(
+                    ixs[0], ixs[-1] + 1
+                )  # add 1 to end because these are direct indices
+                # slices n_datapoints dim
+                # slice with min, max is faster than using all the indices
+            return source.data[s]
 
     def get_selected_indices(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
         """
@@ -262,6 +303,25 @@ class RectangleSelector(BaseSelector):
             ys = np.arange(bounds[0], bounds[1], dtype=int)
             xs = np.arange(bounds[2], bounds[3], dtype=int)
             return [xs, ys]
+
+        if "Line" in source.__class__.__name__:
+            if isinstance(source, GraphicCollection):
+                ixs = list()
+                for g in source.graphics:
+                    data = g.data.value
+                    g_ixs = np.where((data[:, 0] >= bounds[0]) &
+                                     (data[:, 0] <= bounds[1]) &
+                                     (data[:, 1] >= bounds[2]) &
+                                     (data[:, 1] <= bounds[3]))[0]
+                    ixs.append(g_ixs)
+            else:
+                # map this only this graphic
+                data = source.data.value
+                ixs = np.where((data[:, 0] >= bounds[0]) &
+                               (data[:, 0] <= bounds[1]) &
+                               (data[:, 1] >= bounds[2]) &
+                               (data[:, 1] <= bounds[3]))[0]
+            return ixs
 
     def _move_graphic(self, delta: np.ndarray):
 
