@@ -475,14 +475,14 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         value_25px = (xmax - xmin) / 4
 
         ydata = np.array(self.data[:, 1])
-        ymin, ymax = (np.nanmin(ydata), np.nanmax(ydata))
+        ymin = np.floor(ydata.min()).astype(int)
 
-        size = np.ptp(bbox[:, 1])
+        ymax = np.ptp(bbox[:, 1])
 
         if selection is None:
-            selection = (xmin, value_25px, ymin, size)
+            selection = (xmin, value_25px, ymin, ymax)
 
-        limits = (xmin, xmax, ymin - 15, size * 1.1)
+        limits = (xmin, xmax, ymin - (ymax * 1.5 - ymax), ymax * 1.5)
 
         selector = RectangleSelector(
             selection=selection,
