@@ -223,8 +223,18 @@ class RectangleSelector(BaseSelector):
 
         self.selection = selection
 
-    def get_selected_data(self):
-        pass
+    def get_selected_data(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
+        """
+
+        """
+        source = self._get_source(graphic)
+        ixs = self.get_selected_indices(source)
+
+        if "Image" in source.__class__.__name__:
+            s_x = slice(ixs[0][0], ixs[0][-1] + 1)
+            s_y = slice(ixs[1][0], ixs[1][-1] + 1)
+
+            return source.data[s_x, s_y]
 
     def get_selected_indices(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
         """
@@ -245,8 +255,13 @@ class RectangleSelector(BaseSelector):
         # get indices from source
         source = self._get_source(graphic)
 
+        # selector (xmin, xmax, ymin, ymax) values
+        bounds = self.selection
 
-        pass
+        if "Image" in source.__class__.__name__:
+            ys = np.arange(bounds[0], bounds[1], dtype=int)
+            xs = np.arange(bounds[2], bounds[3], dtype=int)
+            return [xs, ys]
 
     def _move_graphic(self, delta: np.ndarray):
 
