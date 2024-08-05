@@ -226,7 +226,26 @@ class RectangleSelector(BaseSelector):
     def get_selected_data(self):
         pass
 
-    def get_selected_indices(self):
+    def get_selected_indices(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
+        """
+        Returns the indices of the ``Graphic`` data bounded by the current selection.
+
+        These are the data indices which correspond to the data under the selector.
+
+        Parameters
+        ----------
+        graphic: Graphic, default ``None``
+            If provided, returns the selection indices from this graphic instrad of the graphic set as ``parent``
+
+        Returns
+        -------
+        Union[np.ndarray, List[np.ndarray]]
+            data indicies of the selection, list of np.ndarray if the graphic is a collection
+        """
+        # get indices from source
+        source = self._get_source(graphic)
+
+
         pass
 
     def _move_graphic(self, delta: np.ndarray):

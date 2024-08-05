@@ -332,5 +332,8 @@ class RectangleSelectionFeature(GraphicFeature):
 
         event = FeatureEvent("selection", {"value": self.value})
 
+        event.get_selected_indices = selector.get_selected_indices
+        event.get_selected_data = selector.get_selected_data
+
         # calls any events
         self._call_event_handlers(event)
