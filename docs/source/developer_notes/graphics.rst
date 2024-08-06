@@ -2,31 +2,31 @@ Graphics
 ========
 
 
-A ``Graphic`` is something that can be added to a ``PlotArea`` (described in detail in a later section). All the various
+A ``Graphic`` is something that can be added to a ``PlotArea`` (described in detail in the layouts section). All the various
 fastplotlib graphics, such as ``ImageGraphic``, ``ScatterGraphic``, etc. inherit from the ``Graphic`` base class in
 ``fastplotlib/graphics/_base.py``. It has a few properties that mostly wrap ``pygfx`` ``WorldObject`` properties and transforms.
-These might change in the future (ex. ``Graphic.position_x`` etc.).
 
-```
-Graphic
-|
-├─ ImageGraphic
-│
-├─ TextGraphic
-│
-├─ PositionsGraphic
-│   │
-│   ├─ LineGraphic
-│   │
-│   └─ ScatterGraphic
-│
-└─ GraphicCollection
+.. code-block:: rst
+
+    Graphic
     │
-    └─ LineCollection
+    ├─ ImageGraphic
+    │
+    ├─ TextGraphic
+    │
+    ├─ PositionsGraphic
+    │   │
+    │   ├─ LineGraphic
+    │   │
+    │   └─ ScatterGraphic
+    │
+    └─ GraphicCollection
         │
-        └─ LineStack
+        └─ LineCollection
+            │
+            └─ LineStack
 
-```
+..
 
 All graphics can be given a string name for the user's convenience. This allows graphics to be easily accessed from
 plots, ex: ``subplot["some_image"]``.
@@ -35,6 +35,8 @@ All graphics contain a ``world_object`` property which is just the ``pygfx.World
 keeps a *private* global dictionary of all ``WorldObject`` instances and users are only given a weakref proxy to this world object.
 This is due to garbage collection. This may be quite complicated for beginners, for more details see this PR: https://github.com/fastplotlib/fastplotlib/pull/160 .
 If you are curious or have more questions on garbage collection in `fastplotlib` you're welcome to post an issue :D.
+
+## add notes on graphic collections
 
 Graphic Properties
 ------------------
@@ -67,11 +69,15 @@ callbacks to indicate that the graphic has been deleted (for example, removing r
 Other graphics have properties that are relevant to them, for example ``ImageGraphic`` has ``cmap``, ``vmin``, ``vmax``,
 properties unique to images.
 
-Selectors
----------
+Contributors Guidelines
+-----------------------
 
-Selectors are a fairly new subpackage at ``fastplotlib/graphics/selectors`` which is likely to change significantly
-after https://github.com/pygfx/pygfx/pull/665 . This subpackage contains selection tools, such as line selectors
-(horizontal or vertical lines that can be moved), linear region selectors, and a primitive polygon drawing selection tool.
-All selector tools inherit from ``BaseSelector`` in ``graphics/selectors/_base_selector.py`` but this is likely to change
-after the aforementioned ``Input`` class PR in ``pygfx`` and after https://github.com/fastplotlib/fastplotlib/pull/413 .
+**Implementing New Graphics**
+
+- **Must** inherit from the superclass ``Graphic``
+
+- **May** inherit from intermediate classes such as ``GraphicCollection`` or ``PositionsGraphic`` depending on
+        the type of graphic you are trying to implement
+
+
+
