@@ -317,7 +317,22 @@ class RectangleSelectionFeature(GraphicFeature):
         selector.edges[3].geometry.positions.data[:] = np.array(
             [[xmin, ymax, z], [xmax, ymax, z]]
         )
-        #
+
+
+        # change the vertice positions
+
+        # bottom left
+        selector.vertices[0].geometry.positions.data[:] = np.array([[xmin, ymin, 1]])
+
+        # bottom right
+        selector.vertices[1].geometry.positions.data[:] = np.array([[xmax, ymin, 1]])
+
+        # top left
+        selector.vertices[2].geometry.positions.data[:] = np.array([[xmin, ymax, 1]])
+
+        # top right
+        selector.vertices[3].geometry.positions.data[:] = np.array([[xmax, ymax, 1]])
+
         self._value = value
         #
         # send changes to GPU
@@ -325,6 +340,9 @@ class RectangleSelectionFeature(GraphicFeature):
         #
         for edge in selector.edges:
             edge.geometry.positions.update_range()
+
+        for vertex in selector.vertices:
+            vertex.geometry.positions.update_range()
 
         # send event
         if len(self._event_handlers) < 1:

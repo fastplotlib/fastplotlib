@@ -1,3 +1,4 @@
+import math
 from typing import *
 
 import pygfx
@@ -415,10 +416,11 @@ class ImageGraphic(Graphic):
         fill_color: (float, float, float), optional
             The fill color of the selector.
         """
-
-        # default selection is 25% of the image
+        # default selection is 25% of the diagonal
         if selection is None:
-            selection = (0, int(self._data.value.shape[0] / 4), 0, self._data.value.shape[1] / 4)
+            diagonal = math.sqrt(self._data.value.shape[0] ** 2 + self._data.value.shape[1] ** 2)
+
+            selection = (0, int(diagonal / 4), 0, int(diagonal / 4))
 
         # min/max limits are image shape
         limits = (0, self._data.value.shape[0], 0, self._data.value.shape[1])

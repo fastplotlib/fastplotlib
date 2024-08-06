@@ -199,6 +199,43 @@ class RectangleSelector(BaseSelector):
             edge.world.z = -0.5
             group.add(edge)
 
+        # vertices
+        top_left_vertex_data = (xmin, ymax, 1)
+        top_right_vertex_data = (xmax, ymax, 1)
+        bottom_left_vertex_data = (xmin, ymin, 1)
+        bottom_right_vertex_data = (xmax, ymin, 1)
+
+        top_left_vertex = pygfx.Points(
+            pygfx.Geometry(positions=[top_left_vertex_data], sizes=[edge_thickness]),
+            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_space="world", size_mode="vertex"),
+        )
+
+        top_right_vertex = pygfx.Points(
+            pygfx.Geometry(positions=[top_right_vertex_data], sizes=[edge_thickness]),
+            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_space="world", size_mode="vertex"),
+        )
+
+        bottom_left_vertex = pygfx.Points(
+            pygfx.Geometry(positions=[bottom_left_vertex_data], sizes=[edge_thickness]),
+            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_space="world", size_mode="vertex"),
+        )
+
+        bottom_right_vertex = pygfx.Points(
+            pygfx.Geometry(positions=[bottom_right_vertex_data], sizes=[edge_thickness]),
+            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_space="world", size_mode="vertex"),
+        )
+
+        self.vertices: Tuple[pygfx.Points, pygfx.Points, pygfx.Points, pygfx.Points] = (
+            bottom_left_vertex,
+            bottom_right_vertex,
+            top_left_vertex,
+            top_right_vertex,
+        )
+
+        for vertex in self.vertices:
+            vertex.world.z = -0.25
+            group.add(vertex)
+
         self._selection = RectangleSelectionFeature(selection, axis=axis, limits=self._limits)
 
         # include parent offset
@@ -211,7 +248,8 @@ class RectangleSelector(BaseSelector):
             self,
             edges=self.edges,
             fill=(self.fill,),
-            hover_responsive=self.edges,
+            vertices=self.vertices,
+            hover_responsive=(*self.edges, *self.vertices),
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
             parent=parent,
@@ -315,7 +353,7 @@ class RectangleSelector(BaseSelector):
                                      (data[:, 1] <= bounds[3]))[0]
                     ixs.append(g_ixs)
             else:
-                # map this only this graphic
+                # map only this graphic
                 data = source.data.value
                 ixs = np.where((data[:, 0] >= bounds[0]) &
                                (data[:, 0] <= bounds[1]) &
@@ -351,6 +389,14 @@ class RectangleSelector(BaseSelector):
 
         xmin, xmax, ymin, ymax = self.selection
 
+        if self._move_info.source == self.vertices[0]: # bottom left
+            self._selection.set_value(self, (xmin_new, xmax, ymin_new, ymax))
+        if self._move_info.source == self.vertices[1]: # bottom right
+            self._selection.set_value(self, (xmin, xmax_new, ymin_new, ymax))
+        if self._move_info.source == self.vertices[2]: # top left
+            self._selection.set_value(self, (xmin_new, xmax, ymin, ymax_new))
+        if self._move_info.source == self.vertices[3]: # top right
+            self._selection.set_value(self, (xmin, xmax_new, ymin, ymax_new))
         # if event source was an edge and selector is resizable, move the edge that caused the event
         if self._move_info.source == self.edges[0]:
             self._selection.set_value(self, (xmin_new, xmax, ymin, ymax))
