@@ -7,7 +7,8 @@ from everyone! :smile:
 This guide explains how to contribute: if you have questions about the process, please 
 reach out on [GitHub Discussions](https://github.com/fastplotlib/fastplotlib/discussions).
 
-If you are already familiar with contributing to open-source software packages, please check out the [quick guide](#contributing-quick-guide)!
+> **_NOTE:_** If you are already familiar with contributing to open-source software packages, 
+> please check out the [quick guide](#contributing-quick-guide)!
 
 ## General Guidelines
 
@@ -46,8 +47,7 @@ You will need a local installation `fastplotlib` which keeps up-to-date with any
 
 2. Clone the repo. Replace the `YOUR_ACCOUNT` in the repo URL to the fork on your account.
 
-> **_NOTE:_** 
-> We use [git-lfs](https://git-lfs.com) for storing large files, such as ground-truths for tests, so you will need 
+> **_NOTE:_** We use [git-lfs](https://git-lfs.com) for storing large files, such as ground-truths for tests, so you will need 
 > to [install it](https://github.com/git-lfs/git-lfs#installing) before cloning the repo.
 
 ```bash
@@ -62,8 +62,7 @@ cd fastplotlib
 pip install -e ".[notebook,docs,tests]"
 ```
 
-> **_NOTE:_** 
-> If you cloned the repo before installing `git-lfs`, you can run `git lfs pull` at any
+> **_NOTE:_** If you cloned the repo before installing `git-lfs`, you can run `git lfs pull` at any
 > time to download the files stored on LFS
 
 4. Add the upstream remote branch:
@@ -83,12 +82,16 @@ your own branch, run the following from within your `fastplotlib` directory:
 ```bash
 # switch to the main branch on your local copy
 git checkout main
+
 # update your local copy from your fork
 git pull origin main
+
 # sync your local copy with upstream main
 git pull upstream main
+
 # update your fork's main branch with any changes from upstream
 git push origin main
+
 # create and switch to a new branch, where you'll work on your new feature
 git checkout -b my_feature_branch
 ```
@@ -117,7 +120,7 @@ git commit -m "A one-line message explaining the changes made"
 # push to the remote origin
 git push origin my_feature_branch
 ```
-> **_NOTE:_** If your contributions modify how visualizations _look_, see the [Tests in detail](#testing-details) section at the very bottom.
+> **_NOTE:_** If your contributions modify how visualizations _look_, see the [Testing details](#testing-details) section at the very bottom.
 
 ### Contributing your changes back to `fastplotlib`
 
