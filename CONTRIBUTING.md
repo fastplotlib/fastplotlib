@@ -7,11 +7,13 @@ from everyone! :smile:
 This guide explains how to contribute: if you have questions about the process, please 
 reach out on [GitHub Discussions](https://github.com/fastplotlib/fastplotlib/discussions).
 
+If you are already familiar with contributing to open-source software packages, please check out the [quick guide](#contributing-quick-guide)!
+
 ## General Guidelines
 
 Developers are encouraged to contribute to various areas of development. This could include the addition of new features (e.g. 
-graphics or selector tools), bug fixes, or the addition of new examples to the [examples gallery](https://fastplotlib.readthedocs.io/en/latest/_gallery/index.html) . Enhancements to documentation and the overall readability of the 
-code are also greatly appreciated. 
+graphics or selector tools), bug fixes, or the addition of new examples to the [examples gallery](https://fastplotlib.readthedocs.io/en/latest/_gallery/index.html). 
+Enhancements to documentation and the overall readability of the code are also greatly appreciated. 
 
 Feel free to work on any section of the code that you believe you can improve. More importantly, remember to thoroughly test all
 your classes and functions, and to provide clear, detailed comments within your code. This not only aids others in using the library,
@@ -44,14 +46,14 @@ You will need a local installation `fastplotlib` which keeps up-to-date with any
 
 2. Clone the repo. Replace the `YOUR_ACCOUNT` in the repo URL to the fork on your account.
 
+> **_NOTE:_** 
+> We use [git-lfs](https://git-lfs.com) for storing large files, such as ground-truths for tests, so you will need 
+> to [install it](https://github.com/git-lfs/git-lfs#installing) before cloning the repo.
+
 ```bash
 git clone https://github.com/YOUR_ACCOUNT/fastplotlib.git
 cd fastplotlib
 ```
-
-> **_NOTE:_** 
-> We use [git-lfs](https://git-lfs.com) for storing large files, such as ground-truths for tests, so you will need 
-> to [install it](https://github.com/git-lfs/git-lfs#installing) before cloning the repo.
 
 3. Install `fastplotlib` in editable mode with developer dependencies 
 
@@ -101,7 +103,7 @@ black .
 WGPU_FORCE_OFFSCREEN=1 pytest tests/
 
 # desktop examples
-REGENERATE_SCREENSHOTS=1 pytest -v examples
+pytest -v examples
 
 # notebook examples
 FASTPLOTLIB_NB_TESTS=1 pytest --nbmake examples/notebooks/
@@ -115,7 +117,7 @@ git commit -m "A one-line message explaining the changes made"
 # push to the remote origin
 git push origin my_feature_branch
 ```
-> **_NOTE:_** If your contributions modify how visualizations _look_, see the [Tests in detail](#testing-) section at the very bottom.
+> **_NOTE:_** If your contributions modify how visualizations _look_, see the [Tests in detail](#testing-details) section at the very bottom.
 
 ### Contributing your changes back to `fastplotlib`
 
@@ -123,12 +125,12 @@ You can make any number of changes on your branch. Once you are happy with your 
 documentation to properly note your changes.
 See below for details on how to [add tests](#adding-tests) and properly [document](#adding-documentation) your code.
 
-Now you are ready to make a Pull Request.  You can open a pull request by clicking on the big `Compare & pull request` button that appears at the top of the `fastplotlib` repo 
+Now you are ready to make a Pull Request. You can open a pull request by clicking on the big `Compare & pull request` button that appears at the top of the `fastplotlib` repo 
 after pushing to your branch (see [here](https://intersect-training.org/collaborative-git/03-pr/index.html) for a tutorial).
 
 > **_NOTE:_** Please make sure that you initially make your PR as a **draft** PR against the `main` branch. When you think the PR is ready, mark
 > it for review to trigger tests using our CI pipeline. If you need to make changes, please set the PR back to a draft when pushing further
-> commits until it's ready for review again.
+> commits until it is ready for review again.
 
 Your pull request should include the following:
 - A summary including information on what you changed and why
@@ -140,7 +142,7 @@ Next, we will be notified of the pull request and will read it over. We will try
 review, at which point you will probably need to respond to our comments, making changes as appropriate. We will then respond again, and proceed
 in an iterative fashion until everyone is happy with the proposed changes.
 
-Once your changes are integrated, you will be added as a GitHub contributor and as one of the authors of the package. Thank you for being 
+Once your changes are integrated, you will be added as a GitHub contributor. Thank you for being 
 apart of `fastplotlib`!
 
 ### Style Guide
@@ -154,7 +156,7 @@ complete docstring, but they probably should.
 
 ### Releases
 
-We create releases on Github, deploy on / distribute via [pypi](https://pypi.org/), and try to follow [semantic versioning](https://semver.org/):
+We create releases on GitHub, deploy on / distribute via [pypi](https://pypi.org/), and try to follow [semantic versioning](https://semver.org/):
 
 > Given a version number MAJOR.MINOR.PATCH, increment the:
 > 1. MAJOR version when you make incompatible API changes
@@ -166,6 +168,8 @@ Creating the GitHub release will trigger the deployment to pypi, via our `deploy
 The built version will grab the version tag from the GitHub release, using [setuptools_scm](https://github.com/pypa/setuptools_scm).
 
 ### Testing 
+
+#### Testing Details
 
 An integral part of our testing suite is not only to test that our code is working, but to also check that are plotting 
 library CI pipeline is producing things that "look visually correct". 
@@ -201,7 +205,7 @@ examples/notebooks/screenshots
 ```bash
 # add changes
 git add examples/desktop/screenshots/
-git add examples/notebooks/screenshots
+git add examples/notebooks/screenshots/
 
 # commit changes
 git commit -m "update screenshots"
@@ -212,11 +216,88 @@ git push origin my_feature_branch
 
 #### Adding tests
 
+Depending on the type of contribution you are making, new tests will need to be added to the repository. Unit tests for testing underlying functionality such as buffer managers, figure instantiation, and
+more can be found in the `/tests` directory. However, we also test all of our desktop examples as well. 
+
+If you are adding a new example to the library, you will need to add to comments to the top of your `.py` file in order to make sure it is both tested and added to the gallery. 
+
+```python
+# test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
+```
+
 ### Documentation
+
+Documentation is a crucial part of open-source software and greatly influences the ability to use a codebase. As such, it is imperative that any new changes are
+properly documented as outlined below. 
+
+We use [`sphinx`](https://www.sphinx-doc.org/en/master/) for generating our documentation. In addition to this, we also use the [`sphinx-gallery`](https://sphinx-gallery.github.io/stable/index.html)
+extension to build our examples gallery.
+
+If you would like to build the documentation locally:
+
+```bash
+cd docs
+# regenerate the api guide
+python source/generate_api.py
+
+# build locally
+make html
+```
 
 #### Adding documentation
 
+All public-facing functions and classes should have complete docstrings, which start with a one-line short summary of the function, 
+a medium-length description of the function / class and what it does, and a complete description of all arguments and return values. 
+Docstrings should be relatively short, providing the information necessary for a user to use the code.
 
+Private functions and classes should have sufficient explanation that other developers know what the function / class does and how to use it, 
+but do not need to be as extensive.
+
+We follow the [numpydoc](https://numpydoc.readthedocs.io/en/latest/) conventions for docstring structure.
+
+### Contributing Quick Guide
+
+This section is a brief introduction to how to contribute to `fastplotlib`. It is intended for individuals who have prior experience with contributing 
+to open source software packages. 
+
+> **_NOTE:_** 
+> We use [git-lfs](https://git-lfs.com) for storing large files, such as ground-truths for tests, so you will need 
+> to [install it](https://github.com/git-lfs/git-lfs#installing) before cloning the repo.
+
+1) Fork and clone the repo 
+
+2) Install locally with developer dependencies 
+
+```bash
+# after cloning
+cd fastplotlib
+# install dev dependencies 
+pip install -e ".[tests, docs, notebook]"
+```
+
+3) Check out a feature branch from `main`
+
+4) Lint codebase and make sure tests pass 
+
+```bash
+# lint codebase 
+black .
+
+# run tests 
+# backend tests 
+WGPU_FORCE_OFFSCREEN=1 pytest tests/
+
+# desktop examples
+pytest -v examples
+
+# notebook examples
+FASTPLOTLIB_NB_TESTS=1 pytest --nbmake examples/notebooks/
+```
+
+5) Update screenshots if necessary ([see testing](#testing-details))
+
+6) Push and open a draft PR against `main`
 
 
 
