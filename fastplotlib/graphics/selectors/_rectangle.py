@@ -207,22 +207,22 @@ class RectangleSelector(BaseSelector):
 
         top_left_vertex = pygfx.Points(
             pygfx.Geometry(positions=[top_left_vertex_data], sizes=[edge_thickness]),
-            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_space="world", size_mode="vertex"),
+            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_mode="vertex"),
         )
 
         top_right_vertex = pygfx.Points(
             pygfx.Geometry(positions=[top_right_vertex_data], sizes=[edge_thickness]),
-            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_space="world", size_mode="vertex"),
+            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_mode="vertex"),
         )
 
         bottom_left_vertex = pygfx.Points(
             pygfx.Geometry(positions=[bottom_left_vertex_data], sizes=[edge_thickness]),
-            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_space="world", size_mode="vertex"),
+            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_mode="vertex"),
         )
 
         bottom_right_vertex = pygfx.Points(
             pygfx.Geometry(positions=[bottom_right_vertex_data], sizes=[edge_thickness]),
-            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_space="world", size_mode="vertex"),
+            pygfx.PointsMaterial(size=edge_thickness, color=edge_color, size_mode="vertex"),
         )
 
         self.vertices: Tuple[pygfx.Points, pygfx.Points, pygfx.Points, pygfx.Points] = (
