@@ -56,7 +56,7 @@ __all__ = [
     "TextOutlineThickness",
     "LinearSelectionFeature",
     "LinearRegionSelectionFeature",
-    "RectangleRegionSelectionFeature"
+    "RectangleSelectionFeature",
     "Name",
     "Offset",
     "Rotation",

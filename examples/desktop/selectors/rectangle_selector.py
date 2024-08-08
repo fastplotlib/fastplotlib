@@ -46,6 +46,8 @@ def update_data(ev):
     figure[1, 0].auto_scale()
 
 
+figure.show()
+
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
