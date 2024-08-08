@@ -448,11 +448,11 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         return selector
 
     def add_rectangle_selector(
-            self,
-            selection: tuple[float, float, float, float] = None,
-            axis: str = None,
-            fill_color=(0, 0, 0.35, 0.2),
-            **kwargs
+        self,
+        selection: tuple[float, float, float, float] = None,
+        axis: str = None,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
     ) -> RectangleSelector:
         """
         Add a :class:`.RectangleSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -490,7 +490,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             axis=axis,
             fill_color=fill_color,
             parent=self,
-            **kwargs
+            **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)

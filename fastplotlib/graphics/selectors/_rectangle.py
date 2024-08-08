@@ -49,19 +49,19 @@ class RectangleSelector(BaseSelector):
         self._selection._limits = self._limits
 
     def __init__(
-            self,
-            selection: Sequence[float],
-            limits: Sequence[float],
-            axis: str = None,
-            parent: Graphic = None,
-            resizable: bool = True,
-            fill_color=(0, 0, 0.35),
-            edge_color=(0.8, 0.6, 0),
-            edge_thickness: float = 8,
-            vertex_color=(0.7, 0.4, 0),
-            vertex_thickness: float = 8,
-            arrow_keys_modifier: str = "Shift",
-            name: str = None,
+        self,
+        selection: Sequence[float],
+        limits: Sequence[float],
+        axis: str = None,
+        parent: Graphic = None,
+        resizable: bool = True,
+        fill_color=(0, 0, 0.35),
+        edge_color=(0.8, 0.6, 0),
+        edge_thickness: float = 8,
+        vertex_color=(0.7, 0.4, 0),
+        vertex_thickness: float = 8,
+        arrow_keys_modifier: str = "Shift",
+        name: str = None,
     ):
         """
         Create a RectangleSelector graphic which can be used to select a rectangular region of data.
@@ -138,7 +138,7 @@ class RectangleSelector(BaseSelector):
 
         group.add(self.fill)
 
-        #position data for the left edge line
+        # position data for the left edge line
         left_line_data = np.array(
             [
                 [xmin, ymin, 0],
@@ -210,22 +210,50 @@ class RectangleSelector(BaseSelector):
 
         top_left_vertex = pygfx.Points(
             pygfx.Geometry(positions=[top_left_vertex_data], sizes=[vertex_thickness]),
-            pygfx.PointsMarkerMaterial(marker="square", size=vertex_thickness, color=vertex_color, size_mode="vertex", edge_color=vertex_color),
+            pygfx.PointsMarkerMaterial(
+                marker="square",
+                size=vertex_thickness,
+                color=vertex_color,
+                size_mode="vertex",
+                edge_color=vertex_color,
+            ),
         )
 
         top_right_vertex = pygfx.Points(
             pygfx.Geometry(positions=[top_right_vertex_data], sizes=[vertex_thickness]),
-            pygfx.PointsMarkerMaterial(marker="square", size=vertex_thickness, color=vertex_color, size_mode="vertex", edge_color=vertex_color),
+            pygfx.PointsMarkerMaterial(
+                marker="square",
+                size=vertex_thickness,
+                color=vertex_color,
+                size_mode="vertex",
+                edge_color=vertex_color,
+            ),
         )
 
         bottom_left_vertex = pygfx.Points(
-            pygfx.Geometry(positions=[bottom_left_vertex_data], sizes=[vertex_thickness]),
-            pygfx.PointsMarkerMaterial(marker="square", size=vertex_thickness, color=vertex_color, size_mode="vertex", edge_color=vertex_color),
+            pygfx.Geometry(
+                positions=[bottom_left_vertex_data], sizes=[vertex_thickness]
+            ),
+            pygfx.PointsMarkerMaterial(
+                marker="square",
+                size=vertex_thickness,
+                color=vertex_color,
+                size_mode="vertex",
+                edge_color=vertex_color,
+            ),
         )
 
         bottom_right_vertex = pygfx.Points(
-            pygfx.Geometry(positions=[bottom_right_vertex_data], sizes=[vertex_thickness]),
-            pygfx.PointsMarkerMaterial(marker="square", size=vertex_thickness, color=vertex_color, size_mode="vertex", edge_color=vertex_color),
+            pygfx.Geometry(
+                positions=[bottom_right_vertex_data], sizes=[vertex_thickness]
+            ),
+            pygfx.PointsMarkerMaterial(
+                marker="square",
+                size=vertex_thickness,
+                color=vertex_color,
+                size_mode="vertex",
+                edge_color=vertex_color,
+            ),
         )
 
         self.vertices: Tuple[pygfx.Points, pygfx.Points, pygfx.Points, pygfx.Points] = (
@@ -239,7 +267,9 @@ class RectangleSelector(BaseSelector):
             vertex.world.z = -0.25
             group.add(vertex)
 
-        self._selection = RectangleSelectionFeature(selection, axis=axis, limits=self._limits)
+        self._selection = RectangleSelectionFeature(
+            selection, axis=axis, limits=self._limits
+        )
 
         # include parent offset
         if parent is not None:
@@ -264,7 +294,9 @@ class RectangleSelector(BaseSelector):
 
         self.selection = selection
 
-    def get_selected_data(self, graphic: Graphic = None, mode: str = "full") -> Union[np.ndarray, List[np.ndarray]]:
+    def get_selected_data(
+        self, graphic: Graphic = None, mode: str = "full"
+    ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Get the ``Graphic`` data bounded by the current selection.
         Returns a view of the data array.
@@ -301,9 +333,10 @@ class RectangleSelector(BaseSelector):
             return source.data[s_x, s_y]
 
         if mode not in ["full", "partial", "ignore"]:
-            raise ValueError(f"`mode` must be one of 'full', 'partial', or 'ignore', you have passed {mode}")
+            raise ValueError(
+                f"`mode` must be one of 'full', 'partial', or 'ignore', you have passed {mode}"
+            )
         if "Line" in source.__class__.__name__:
-
 
             if isinstance(source, GraphicCollection):
                 data_selections: List[np.ndarray] = list()
@@ -319,7 +352,10 @@ class RectangleSelector(BaseSelector):
                         )  # add 1 because these are direct indices
                         # slices n_datapoints dim
 
-                        missing_ixs = np.setdiff1d(np.arange(ixs[i][0], ixs[i][-1] + 1), ixs[i]) - ixs[i][0]
+                        missing_ixs = (
+                            np.setdiff1d(np.arange(ixs[i][0], ixs[i][-1] + 1), ixs[i])
+                            - ixs[i][0]
+                        )
 
                         match mode:
                             case "full":
@@ -333,7 +369,9 @@ class RectangleSelector(BaseSelector):
                                     data_selections.append(g.data[s])
                             case "ignore":
                                 if len(missing_ixs) > 0:
-                                    data_selections.append(np.array([], dtype=np.float32).reshape(0, 3))
+                                    data_selections.append(
+                                        np.array([], dtype=np.float32).reshape(0, 3)
+                                    )
                                 else:
                                     data_selections.append(g.data[s])
                 return data_selections
@@ -363,13 +401,17 @@ class RectangleSelector(BaseSelector):
                             return source.data[s]
                     case "ignore":
                         if len(missing_ixs) > 0:
-                            warnings.warn("You have selected 'ignore' mode. Selected graphic has incomplete indices. "
-                                          "Move the selector or change the mode to one of `partial` or `full`.")
+                            warnings.warn(
+                                "You have selected 'ignore' mode. Selected graphic has incomplete indices. "
+                                "Move the selector or change the mode to one of `partial` or `full`."
+                            )
                             return np.array([], dtype=np.float32)
                         else:
                             return source.data[s]
 
-    def get_selected_indices(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
+    def get_selected_indices(
+        self, graphic: Graphic = None
+    ) -> Union[np.ndarray, List[np.ndarray]]:
         """
         Returns the indices of the ``Graphic`` data bounded by the current selection.
 
@@ -403,18 +445,22 @@ class RectangleSelector(BaseSelector):
                 ixs = list()
                 for g in source.graphics:
                     data = g.data.value
-                    g_ixs = np.where((data[:, 0] >= bounds[0] - g.offset[0]) &
-                                     (data[:, 0] <= bounds[1] - g.offset[0]) &
-                                     (data[:, 1] >= bounds[2] - g.offset[1]) &
-                                     (data[:, 1] <= bounds[3] - g.offset[1]))[0]
+                    g_ixs = np.where(
+                        (data[:, 0] >= bounds[0] - g.offset[0])
+                        & (data[:, 0] <= bounds[1] - g.offset[0])
+                        & (data[:, 1] >= bounds[2] - g.offset[1])
+                        & (data[:, 1] <= bounds[3] - g.offset[1])
+                    )[0]
                     ixs.append(g_ixs)
             else:
                 # map only this graphic
                 data = source.data.value
-                ixs = np.where((data[:, 0] >= bounds[0]) &
-                               (data[:, 0] <= bounds[1]) &
-                               (data[:, 1] >= bounds[2]) &
-                               (data[:, 1] <= bounds[3]))[0]
+                ixs = np.where(
+                    (data[:, 0] >= bounds[0])
+                    & (data[:, 0] <= bounds[1])
+                    & (data[:, 1] >= bounds[2])
+                    & (data[:, 1] <= bounds[3])
+                )[0]
 
             return ixs
 
@@ -446,13 +492,13 @@ class RectangleSelector(BaseSelector):
 
         xmin, xmax, ymin, ymax = self.selection
 
-        if self._move_info.source == self.vertices[0]: # bottom left
+        if self._move_info.source == self.vertices[0]:  # bottom left
             self._selection.set_value(self, (xmin_new, xmax, ymin_new, ymax))
-        if self._move_info.source == self.vertices[1]: # bottom right
+        if self._move_info.source == self.vertices[1]:  # bottom right
             self._selection.set_value(self, (xmin, xmax_new, ymin_new, ymax))
-        if self._move_info.source == self.vertices[2]: # top left
+        if self._move_info.source == self.vertices[2]:  # top left
             self._selection.set_value(self, (xmin_new, xmax, ymin, ymax_new))
-        if self._move_info.source == self.vertices[3]: # top right
+        if self._move_info.source == self.vertices[3]:  # top right
             self._selection.set_value(self, (xmin, xmax_new, ymin, ymax_new))
         # if event source was an edge and selector is resizable, move the edge that caused the event
         if self._move_info.source == self.edges[0]:

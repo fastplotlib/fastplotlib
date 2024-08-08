@@ -396,11 +396,11 @@ class ImageGraphic(Graphic):
         return selector
 
     def add_rectangle_selector(
-            self,
-            selection: tuple[float, float, float, float] = None,
-            axis: str = None,
-            fill_color=(0, 0, 0.35, 0.2),
-            **kwargs
+        self,
+        selection: tuple[float, float, float, float] = None,
+        axis: str = None,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
     ) -> RectangleSelector:
         """
         Add a :class:`.RectangleSelector`. Selectors are just ``Graphic`` objects, so you can manage,
@@ -418,7 +418,9 @@ class ImageGraphic(Graphic):
         """
         # default selection is 25% of the diagonal
         if selection is None:
-            diagonal = math.sqrt(self._data.value.shape[0] ** 2 + self._data.value.shape[1] ** 2)
+            diagonal = math.sqrt(
+                self._data.value.shape[0] ** 2 + self._data.value.shape[1] ** 2
+            )
 
             selection = (0, int(diagonal / 4), 0, int(diagonal / 4))
 
@@ -431,7 +433,7 @@ class ImageGraphic(Graphic):
             axis=axis,
             fill_color=fill_color,
             parent=self,
-            **kwargs
+            **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)

@@ -213,11 +213,12 @@ class RectangleSelectionFeature(GraphicFeature):
     +----------+------------+-------------------------------------------+
 
     """
+
     def __init__(
-            self,
-            value: tuple[float, float, float, float],
-            axis: str | None,
-            limits: tuple[float, float, float, float]
+        self,
+        value: tuple[float, float, float, float],
+        axis: str | None,
+        limits: tuple[float, float, float, float],
     ):
         super().__init__()
 
@@ -317,7 +318,6 @@ class RectangleSelectionFeature(GraphicFeature):
         selector.edges[3].geometry.positions.data[:] = np.array(
             [[xmin, ymax, z], [xmax, ymax, z]]
         )
-
 
         # change the vertice positions
 
