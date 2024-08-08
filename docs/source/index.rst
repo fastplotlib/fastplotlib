@@ -3,10 +3,11 @@ Welcome to fastplotlib's documentation!
 
 .. toctree::
    :caption: User Guide
-   :maxdepth:  2
+   :maxdepth:  1
 
    Guide <user_guide/guide.rst>
    GPU Info <user_guide/gpu>
+   FAQ <user_guide/faq>
 
 .. toctree::
    :maxdepth: 1
