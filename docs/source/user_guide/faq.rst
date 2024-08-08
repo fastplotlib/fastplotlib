@@ -16,7 +16,7 @@ fastplotlib FAQ
 
 .. dropdown:: How does `fastplotlib` relate to `matplotlib`?
 
-    `fastplotlib` is **NOT** related to `matplotlib` in any way.
+    `fastplotlib` is **not** related to `matplotlib` in any way.
 
     These are two completely different libraries with their own APIs and use-cases. The `fastplotlib` library is primarily for *interactive*
     visualization that runs on the GPU using WGPU. The `fastplotlib` architecture is completely different from `matplotlib`. Using `fastplotlib`
