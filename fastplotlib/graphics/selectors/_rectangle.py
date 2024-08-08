@@ -1,3 +1,4 @@
+import warnings
 from numbers import Real
 from typing import *
 import numpy as np
@@ -57,7 +58,7 @@ class RectangleSelector(BaseSelector):
             fill_color=(0, 0, 0.35),
             edge_color=(0.8, 0.6, 0),
             edge_thickness: float = 8,
-            vertex_color=(0, 0, 0),
+            vertex_color=(0.7, 0.4, 0),
             vertex_thickness: float = 8,
             arrow_keys_modifier: str = "Shift",
             name: str = None,
@@ -263,7 +264,7 @@ class RectangleSelector(BaseSelector):
 
         self.selection = selection
 
-    def get_selected_data(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
+    def get_selected_data(self, graphic: Graphic = None, mode: str = "full") -> Union[np.ndarray, List[np.ndarray]]:
         """
         Get the ``Graphic`` data bounded by the current selection.
         Returns a view of the data array.
@@ -275,6 +276,13 @@ class RectangleSelector(BaseSelector):
         ----------
         graphic: Graphic, optional, default ``None``
             if provided, returns the data selection from this graphic instead of the graphic set as ``parent``
+        mode: str, default 'full'
+            One of 'full', 'partial', or 'ignore'. Indicates how selected data should be returned based on the
+            selectors position over the graphic. Only used for ``LineGraphic``, ``LineCollection``, and ``LineStack``
+            If 'full', will return all data bounded by the x and y limits of the selector even if partial indices
+            alone one axis are not fully covered by the selector.
+            If 'partial' will return only the data that is bounded within the limits.
+            If 'ignore', will not return data if selector is not fully covering the graphic along the axes bounds.
 
         Returns
         -------
@@ -284,13 +292,19 @@ class RectangleSelector(BaseSelector):
         source = self._get_source(graphic)
         ixs = self.get_selected_indices(source)
 
+        # do not need to check for mode for images, because the selector is bounded by the image shape
+        # will always be `full`
         if "Image" in source.__class__.__name__:
             s_x = slice(ixs[0][0], ixs[0][-1] + 1)
             s_y = slice(ixs[1][0], ixs[1][-1] + 1)
 
             return source.data[s_x, s_y]
 
+        if mode not in ["full", "partial", "ignore"]:
+            raise ValueError(f"`mode` must be one of 'full', 'partial', or 'ignore', you have passed {mode}")
         if "Line" in source.__class__.__name__:
+
+
             if isinstance(source, GraphicCollection):
                 data_selections: List[np.ndarray] = list()
 
@@ -304,7 +318,25 @@ class RectangleSelector(BaseSelector):
                             ixs[i][0], ixs[i][-1] + 1
                         )  # add 1 because these are direct indices
                         # slices n_datapoints dim
-                        data_selections.append(g.data[s])
+
+                        missing_ixs = np.setdiff1d(np.arange(ixs[i][0], ixs[i][-1] + 1), ixs[i]) - ixs[i][0]
+
+                        match mode:
+                            case "full":
+                                data_selections.append(g.data[s])
+                            case "partial":
+                                if len(missing_ixs) > 0:
+                                    data = g.data[s].copy()
+                                    data[missing_ixs] = np.nan
+                                    data_selections.append(data)
+                                else:
+                                    data_selections.append(g.data[s])
+                            case "ignore":
+                                if len(missing_ixs) > 0:
+                                    data_selections.append(np.array([], dtype=np.float32).reshape(0, 3))
+                                else:
+                                    data_selections.append(g.data[s])
+                return data_selections
             else:
                 if ixs.size == 0:
                     # empty selection
@@ -315,7 +347,27 @@ class RectangleSelector(BaseSelector):
                 )  # add 1 to end because these are direct indices
                 # slices n_datapoints dim
                 # slice with min, max is faster than using all the indices
-            return source.data[s]
+
+                # get missing ixs
+                missing_ixs = np.setdiff1d(np.arange(ixs[0], ixs[-1] + 1), ixs) - ixs[0]
+
+                match mode:
+                    case "full":
+                        return source.data[s]
+                    case "partial":
+                        if len(missing_ixs) > 0:
+                            data = source.data[s].copy()
+                            data[missing_ixs] = np.nan
+                            return data
+                        else:
+                            return source.data[s]
+                    case "ignore":
+                        if len(missing_ixs) > 0:
+                            warnings.warn("You have selected 'ignore' mode. Selected graphic has incomplete indices. "
+                                          "Move the selector or change the mode to one of `partial` or `full`.")
+                            return np.array([], dtype=np.float32)
+                        else:
+                            return source.data[s]
 
     def get_selected_indices(self, graphic: Graphic = None) -> Union[np.ndarray, List[np.ndarray]]:
         """
@@ -339,6 +391,8 @@ class RectangleSelector(BaseSelector):
         # selector (xmin, xmax, ymin, ymax) values
         bounds = self.selection
 
+        # image data does not need to check for mode because the selector is always bounded
+        # to the image
         if "Image" in source.__class__.__name__:
             ys = np.arange(bounds[0], bounds[1], dtype=int)
             xs = np.arange(bounds[2], bounds[3], dtype=int)
@@ -349,10 +403,10 @@ class RectangleSelector(BaseSelector):
                 ixs = list()
                 for g in source.graphics:
                     data = g.data.value
-                    g_ixs = np.where((data[:, 0] >= bounds[0]) &
-                                     (data[:, 0] <= bounds[1]) &
-                                     (data[:, 1] >= bounds[2]) &
-                                     (data[:, 1] <= bounds[3]))[0]
+                    g_ixs = np.where((data[:, 0] >= bounds[0] - g.offset[0]) &
+                                     (data[:, 0] <= bounds[1] - g.offset[0]) &
+                                     (data[:, 1] >= bounds[2] - g.offset[1]) &
+                                     (data[:, 1] <= bounds[3] - g.offset[1]))[0]
                     ixs.append(g_ixs)
             else:
                 # map only this graphic
@@ -361,6 +415,7 @@ class RectangleSelector(BaseSelector):
                                (data[:, 0] <= bounds[1]) &
                                (data[:, 1] >= bounds[2]) &
                                (data[:, 1] <= bounds[3]))[0]
+
             return ixs
 
     def _move_graphic(self, delta: np.ndarray):
