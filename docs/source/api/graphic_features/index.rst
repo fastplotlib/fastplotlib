@@ -24,6 +24,7 @@ Graphic Features
     TextOutlineThickness
     LinearSelectionFeature
     LinearRegionSelectionFeature
+    RectangleSelectionFeature
     Name
     Offset
     Rotation

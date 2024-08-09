@@ -7,7 +7,7 @@ import pygfx
 from ..utils import parse_cmap_values
 from ._collection_base import CollectionIndexer, GraphicCollection, CollectionFeature
 from .line import LineGraphic
-from .selectors import LinearRegionSelector, LinearSelector
+from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
 
 
 class _LineCollectionProperties:
@@ -445,6 +445,47 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end
+        return selector
+
+    def add_rectangle_selector(
+        self,
+        selection: tuple[float, float, float, float] = None,
+        **kwargs,
+    ) -> RectangleSelector:
+        """
+        Add a :class:`.RectangleSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: (float, float, float, float), optional
+            initial (xmin, xmax, ymin, ymax) of the selection
+        """
+        bbox = self.world_object.get_world_bounding_box()
+
+        xdata = np.array(self.data[:, 0])
+        xmin, xmax = (np.nanmin(xdata), np.nanmax(xdata))
+        value_25px = (xmax - xmin) / 4
+
+        ydata = np.array(self.data[:, 1])
+        ymin = np.floor(ydata.min()).astype(int)
+
+        ymax = np.ptp(bbox[:, 1])
+
+        if selection is None:
+            selection = (xmin, value_25px, ymin, ymax)
+
+        limits = (xmin, xmax, ymin - (ymax * 1.5 - ymax), ymax * 1.5)
+
+        selector = RectangleSelector(
+            selection=selection,
+            limits=limits,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
         return selector
 
     def _get_linear_selector_init_args(self, axis, padding):

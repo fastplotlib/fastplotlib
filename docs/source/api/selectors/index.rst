@@ -6,3 +6,4 @@ Selectors
 
     LinearSelector
     LinearRegionSelector
+    RectangleSelector
