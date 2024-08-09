@@ -52,7 +52,6 @@ class RectangleSelector(BaseSelector):
         self,
         selection: Sequence[float],
         limits: Sequence[float],
-        axis: str = None,
         parent: Graphic = None,
         resizable: bool = True,
         fill_color=(0, 0, 0.35),
@@ -74,11 +73,6 @@ class RectangleSelector(BaseSelector):
 
         limits: (float, float, float, float)
             limits of the selector, ``(x_min, x_max, y_min, y_max)``
-
-        axis: str, default ``None``
-            Restrict the selector to the "x" or "y" axis.
-            If the selector is restricted to an axis you cannot change the selection along the other axis. For example,
-            if you set ``axis="x"``, then the ``y_min``, ``y_max`` values of the selection will stay constant.
 
         parent: Graphic, default ``None``
             associate this selector with a parent Graphic
@@ -267,9 +261,7 @@ class RectangleSelector(BaseSelector):
             vertex.world.z = -0.25
             group.add(vertex)
 
-        self._selection = RectangleSelectionFeature(
-            selection, axis=axis, limits=self._limits
-        )
+        self._selection = RectangleSelectionFeature(selection, limits=self._limits)
 
         # include parent offset
         if parent is not None:
@@ -284,7 +276,6 @@ class RectangleSelector(BaseSelector):
             vertices=self.vertices,
             hover_responsive=(*self.edges, *self.vertices),
             arrow_keys_modifier=arrow_keys_modifier,
-            axis=axis,
             parent=parent,
             name=name,
             offset=offset,
@@ -311,15 +302,16 @@ class RectangleSelector(BaseSelector):
         mode: str, default 'full'
             One of 'full', 'partial', or 'ignore'. Indicates how selected data should be returned based on the
             selectors position over the graphic. Only used for ``LineGraphic``, ``LineCollection``, and ``LineStack``
-            If 'full', will return all data bounded by the x and y limits of the selector even if partial indices
-            alone one axis are not fully covered by the selector.
-            If 'partial' will return only the data that is bounded within the limits.
-            If 'ignore', will not return data if selector is not fully covering the graphic along the axes bounds.
+            | If 'full', will return all data bounded by the x and y limits of the selector even if partial indices
+            along one axis are not fully covered by the selector.
+            | If 'partial' will return only the data that is bounded by the selector, missing indices not bounded by the
+            selector will be set to NaNs
+            | If 'ignore', will only return data for graphics that have indices completely bounded by the selector
 
         Returns
         -------
         np.ndarray or List[np.ndarray]
-            view or list of views of the full array, returns ``None`` if selection is empty
+            view or list of views of the full array, returns empty array if selection is empty
         """
         source = self._get_source(graphic)
         ixs = self.get_selected_indices(source)
@@ -327,10 +319,10 @@ class RectangleSelector(BaseSelector):
         # do not need to check for mode for images, because the selector is bounded by the image shape
         # will always be `full`
         if "Image" in source.__class__.__name__:
-            s_x = slice(ixs[0][0], ixs[0][-1] + 1)
-            s_y = slice(ixs[1][0], ixs[1][-1] + 1)
+            row_ixs = slice(ixs[0][0], ixs[0][-1] + 1)
+            col_ixs = slice(ixs[1][0], ixs[1][-1] + 1)
 
-            return source.data[s_x, s_y]
+            return source.data[row_ixs, col_ixs]
 
         if mode not in ["full", "partial", "ignore"]:
             raise ValueError(
@@ -342,24 +334,30 @@ class RectangleSelector(BaseSelector):
                 data_selections: List[np.ndarray] = list()
 
                 for i, g in enumerate(source.graphics):
+                    # want to keep same length as the original line collection
                     if ixs[i].size == 0:
                         data_selections.append(
                             np.array([], dtype=np.float32).reshape(0, 3)
                         )
                     else:
+                        # s gives entire slice of data along the x
                         s = slice(
                             ixs[i][0], ixs[i][-1] + 1
                         )  # add 1 because these are direct indices
                         # slices n_datapoints dim
 
+                        # calculate missing ixs using set difference
+                        # then calculate shift
                         missing_ixs = (
                             np.setdiff1d(np.arange(ixs[i][0], ixs[i][-1] + 1), ixs[i])
                             - ixs[i][0]
                         )
 
                         match mode:
+                            # take all ixs, ignore missing
                             case "full":
                                 data_selections.append(g.data[s])
+                            # set missing ixs data to NaNs
                             case "partial":
                                 if len(missing_ixs) > 0:
                                     data = g.data[s].copy()
@@ -367,6 +365,7 @@ class RectangleSelector(BaseSelector):
                                     data_selections.append(data)
                                 else:
                                     data_selections.append(g.data[s])
+                            # ignore lines that do not have full ixs to start
                             case "ignore":
                                 if len(missing_ixs) > 0:
                                     data_selections.append(
@@ -375,7 +374,7 @@ class RectangleSelector(BaseSelector):
                                 else:
                                     data_selections.append(g.data[s])
                 return data_selections
-            else:
+            else:  # for lines
                 if ixs.size == 0:
                     # empty selection
                     return np.array([], dtype=np.float32).reshape(0, 3)
@@ -390,8 +389,10 @@ class RectangleSelector(BaseSelector):
                 missing_ixs = np.setdiff1d(np.arange(ixs[0], ixs[-1] + 1), ixs) - ixs[0]
 
                 match mode:
+                    # return all, do not care about missing
                     case "full":
                         return source.data[s]
+                    # set missing to NaNs
                     case "partial":
                         if len(missing_ixs) > 0:
                             data = source.data[s].copy()
@@ -399,6 +400,8 @@ class RectangleSelector(BaseSelector):
                             return data
                         else:
                             return source.data[s]
+                    # missing means nothing will be returned even if selector is partially over data
+                    # warn the user and return empty
                     case "ignore":
                         if len(missing_ixs) > 0:
                             warnings.warn(
@@ -425,7 +428,10 @@ class RectangleSelector(BaseSelector):
         Returns
         -------
         Union[np.ndarray, List[np.ndarray]]
-            data indicies of the selection, list of np.ndarray if the graphic is a collection
+            data indicies of the selection
+            | list of [x_indices_array, y_indices_array] if the graphic is an image
+            | list of indices along the x-dimension for each line if graphic is a line collection
+            | array of indices along the x-dimension if graphic is a line
         """
         # get indices from source
         source = self._get_source(graphic)
@@ -436,8 +442,8 @@ class RectangleSelector(BaseSelector):
         # image data does not need to check for mode because the selector is always bounded
         # to the image
         if "Image" in source.__class__.__name__:
-            ys = np.arange(bounds[0], bounds[1], dtype=int)
-            xs = np.arange(bounds[2], bounds[3], dtype=int)
+            xs = np.arange(bounds[0], bounds[1], dtype=int)
+            ys = np.arange(bounds[2], bounds[3], dtype=int)
             return [xs, ys]
 
         if "Line" in source.__class__.__name__:

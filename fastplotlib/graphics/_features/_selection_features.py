@@ -217,12 +217,10 @@ class RectangleSelectionFeature(GraphicFeature):
     def __init__(
         self,
         value: tuple[float, float, float, float],
-        axis: str | None,
         limits: tuple[float, float, float, float],
     ):
         super().__init__()
 
-        self._axis = axis
         self._limits = limits
         self._value = tuple(int(v) for v in value)
 
@@ -232,11 +230,6 @@ class RectangleSelectionFeature(GraphicFeature):
         (xmin, xmax, ymin, ymax) of the selection, in data space
         """
         return self._value
-
-    @property
-    def axis(self) -> str:
-        """one of "x" | "y" """
-        return self._axis
 
     def set_value(self, selector, value: Sequence[float]):
         """
@@ -257,14 +250,6 @@ class RectangleSelectionFeature(GraphicFeature):
 
         # convert to array
         value = np.asarray(value, dtype=np.float32)
-
-        # check for fixed axis
-        if self.axis == "x":
-            value[2] = self.value[2]
-            value[3] = self.value[3]
-        elif self.axis == "y":
-            value[1] = self.value[1]
-            value[0] = self.value[0]
 
         # clip values if they are beyond the limits
         value[:2] = value[:2].clip(self._limits[0], self._limits[1])
@@ -319,7 +304,7 @@ class RectangleSelectionFeature(GraphicFeature):
             [[xmin, ymax, z], [xmax, ymax, z]]
         )
 
-        # change the vertice positions
+        # change the vertex positions
 
         # bottom left
         selector.vertices[0].geometry.positions.data[:] = np.array([[xmin, ymin, 1]])
@@ -334,10 +319,10 @@ class RectangleSelectionFeature(GraphicFeature):
         selector.vertices[3].geometry.positions.data[:] = np.array([[xmax, ymax, 1]])
 
         self._value = value
-        #
+
         # send changes to GPU
         selector.fill.geometry.positions.update_range()
-        #
+
         for edge in selector.edges:
             edge.geometry.positions.update_range()
 

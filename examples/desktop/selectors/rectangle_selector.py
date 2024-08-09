@@ -8,42 +8,53 @@ Example showing how to use a `RectangleSelector` with lines, line collections, a
 # test_example = false
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
-import imageio.v3 as iio
 import numpy as np
 import fastplotlib as fpl
+from itertools import product
 
 # create a figure
 figure = fpl.Figure(
-    shape=(2, 1),
     size=(700, 560)
 )
 
+
+# generate some data
+def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
+    theta = np.linspace(0, 2 * np.pi, n_points)
+    xs = radius * np.sin(theta)
+    ys = radius * np.cos(theta)
+
+    return np.column_stack([xs, ys]) + center
+
+
+spatial_dims = (50, 50)
+
+circles = list()
+for center in product(range(0, spatial_dims[0], 9), range(0, spatial_dims[1], 9)):
+    circles.append(make_circle(center, 3, n_points=75))
+
+pos_xy = np.vstack(circles)
+
 # add image
-image_graphic = figure[0, 0].add_image(data=iio.imread("imageio:camera.png"))
+line_collection = figure[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
 
 # add rectangle selector to image graphic
-rectangle_selector = image_graphic.add_rectangle_selector()
-
-# add a zoomed plot of the selected data
-zoom_ig = figure[1, 0].add_image(rectangle_selector.get_selected_data())
+rectangle_selector = line_collection.add_rectangle_selector()
 
 
-# add event handler to update the data of the zoomed image as the selection changes
+# add event handler to highlight selected indices
 @rectangle_selector.add_event_handler("selection")
-def update_data(ev):
-    # get the new data
-    new_data = ev.get_selected_data()
+def color_indices(ev):
+    line_collection.cmap = "jet"
+    ixs = ev.get_selected_indices()
 
-    # remove the old zoomed image graphic
-    global zoom_ig
+    # iterate through each of the selected indices, if the array size > 0 that mean it's under the selection
+    selected_line_ixs = [i for i in range(len(ixs)) if ixs[i].size > 0]
+    line_collection[selected_line_ixs].colors = "w"
 
-    figure[1, 0].remove_graphic(zoom_ig)
 
-    # add new zoomed image of new data
-    zoom_ig = figure[1, 0].add_image(data=new_data)
-
-    # autoscale the plot
-    figure[1, 0].auto_scale()
+# manually move selector to make a nice gallery image :D
+rectangle_selector.selection = (15, 30, 15, 30)
 
 
 figure.show()

@@ -450,8 +450,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
     def add_rectangle_selector(
         self,
         selection: tuple[float, float, float, float] = None,
-        axis: str = None,
-        fill_color=(0, 0, 0.35, 0.2),
         **kwargs,
     ) -> RectangleSelector:
         """
@@ -462,11 +460,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         ----------
         selection: (float, float, float, float), optional
             initial (xmin, xmax, ymin, ymax) of the selection
-        axis: str, default None
-            Optional string to restrict the movement of the selector along one axis. If passed, should
-            be one of "x" or "y".
-        fill_color: (float, float, float), optional
-            The fill color of the selector.
         """
         bbox = self.world_object.get_world_bounding_box()
 
@@ -487,8 +480,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         selector = RectangleSelector(
             selection=selection,
             limits=limits,
-            axis=axis,
-            fill_color=fill_color,
             parent=self,
             **kwargs,
         )

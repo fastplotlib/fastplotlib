@@ -398,8 +398,6 @@ class ImageGraphic(Graphic):
     def add_rectangle_selector(
         self,
         selection: tuple[float, float, float, float] = None,
-        axis: str = None,
-        fill_color=(0, 0, 0.35, 0.2),
         **kwargs,
     ) -> RectangleSelector:
         """
@@ -410,11 +408,6 @@ class ImageGraphic(Graphic):
         ----------
         selection: (float, float, float, float), optional
             initial (xmin, xmax, ymin, ymax) of the selection
-        axis: str, default None
-            Optional string to restrict the movement of the selector along one axis. If passed, should
-            be one of "x" or "y".
-        fill_color: (float, float, float), optional
-            The fill color of the selector.
         """
         # default selection is 25% of the diagonal
         if selection is None:
@@ -430,8 +423,6 @@ class ImageGraphic(Graphic):
         selector = RectangleSelector(
             selection=selection,
             limits=limits,
-            axis=axis,
-            fill_color=fill_color,
             parent=self,
             **kwargs,
         )
