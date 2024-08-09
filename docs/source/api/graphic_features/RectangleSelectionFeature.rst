@@ -20,7 +20,6 @@ Properties
 .. autosummary::
     :toctree: RectangleSelectionFeature_api
 
-    RectangleSelectionFeature.axis
     RectangleSelectionFeature.value
 
 Methods
