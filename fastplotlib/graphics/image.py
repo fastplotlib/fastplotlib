@@ -398,6 +398,7 @@ class ImageGraphic(Graphic):
     def add_rectangle_selector(
         self,
         selection: tuple[float, float, float, float] = None,
+        fill_color=(0, 0, 0.35, 0.2),
         **kwargs,
     ) -> RectangleSelector:
         """
@@ -423,10 +424,14 @@ class ImageGraphic(Graphic):
         selector = RectangleSelector(
             selection=selection,
             limits=limits,
+            fill_color=fill_color,
             parent=self,
             **kwargs,
         )
 
         self._plot_area.add_graphic(selector, center=False)
+
+        # place above this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
 
         return selector
