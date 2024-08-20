@@ -319,8 +319,8 @@ class RectangleSelector(BaseSelector):
         # do not need to check for mode for images, because the selector is bounded by the image shape
         # will always be `full`
         if "Image" in source.__class__.__name__:
-            row_ixs = slice(ixs[0][0], ixs[0][-1] + 1)
-            col_ixs = slice(ixs[1][0], ixs[1][-1] + 1)
+            col_ixs = slice(ixs[0][0], ixs[0][-1] + 1)
+            row_ixs = slice(ixs[1][0], ixs[1][-1] + 1)
 
             return source.data[row_ixs, col_ixs]
 

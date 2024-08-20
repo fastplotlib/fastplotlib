@@ -2,7 +2,7 @@
 Rectangle Selectors
 ===================
 
-Example showing how to use a `RectangleSelector` with lines, line collections, and images
+Example showing how to use a `RectangleSelector` with line collections
 """
 
 # test_example = false
