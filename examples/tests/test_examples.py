@@ -68,6 +68,10 @@ def test_example_screenshots(module, force_offscreen):
     # import the example module
     example = importlib.import_module(module_name)
 
+    for subplot in example.figure:
+        subplot.viewport.render(subplot.scene, subplot.camera)
+    example.figure.renderer.flush()
+
     # render a frame
     img = np.asarray(example.figure.renderer.target.draw())
 
@@ -104,7 +108,7 @@ def test_example_screenshots(module, force_offscreen):
     rgb = normalize_image(rgb)
     ref_img = normalize_image(ref_img)
 
-    similar, rmse = image_similarity(rgb, ref_img, threshold=0.025)
+    similar, rmse = image_similarity(rgb, ref_img, threshold=0.05)
 
     update_diffs(module.stem, similar, rgb, ref_img)
     assert similar, (

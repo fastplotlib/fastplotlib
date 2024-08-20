@@ -3,6 +3,7 @@ from pathlib import Path
 from .utils.gui import run  # noqa
 from .graphics import *
 from .graphics.selectors import *
+from .graphics.utils import pause_events
 from .legends import *
 from .layouts import Figure
 

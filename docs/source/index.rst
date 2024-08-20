@@ -12,7 +12,8 @@ Welcome to fastplotlib's documentation!
 .. toctree::
    :maxdepth: 1
    :caption: API
-   
+
+   fastplotlib <api/fastplotlib>
    Figure <api/layouts/figure>
    Subplot <api/layouts/subplot>
    Graphics <api/graphics/index>
@@ -20,7 +21,6 @@ Welcome to fastplotlib's documentation!
    Selectors <api/selectors/index>
    Widgets <api/widgets/index>
    Utils <api/utils>
-   GPU <api/gpu>
 
 .. toctree::
    :caption: Gallery

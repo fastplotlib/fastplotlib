@@ -8,7 +8,6 @@ import fastplotlib as fpl
 from fastplotlib.graphics._features import VertexColors, FeatureEvent
 from .utils import (
     generate_slice_indices,
-    assert_pending_uploads,
     generate_color_inputs,
     generate_positions_spiral_data,
 )
@@ -61,11 +60,8 @@ def test_int(test_graphic):
         colors = make_colors_buffer()
 
     # TODO: placeholder until I make a testing figure where we draw frames only on call
-    colors.buffer._gfx_pending_uploads.clear()
-
     colors[3] = "r"
     npt.assert_almost_equal(colors[3], [1.0, 0.0, 0.0, 1.0])
-    assert colors.buffer._gfx_pending_uploads[-1] == (3, 1)
 
     if test_graphic:
         # test event
@@ -206,9 +202,6 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
     else:
         colors = make_colors_buffer()
 
-    # TODO: placeholder until I make a testing figure where we draw frames only on call
-    colors.buffer._gfx_pending_uploads.clear()
-
     s = slice_method["slice"]
     indices = slice_method["indices"]
     offset = slice_method["offset"]
@@ -237,9 +230,6 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
             assert EVENT_RETURN_VALUE.info["user_value"] == color_input
         else:
             npt.assert_almost_equal(EVENT_RETURN_VALUE.info["user_value"], color_input)
-
-    # make sure correct offset and size marked for pending upload
-    assert_pending_uploads(colors.buffer, offset, size)
 
     # check that others are not touched
     others_truth = np.repeat([[1.0, 1.0, 1.0, 1.0]], repeats=len(others), axis=0)

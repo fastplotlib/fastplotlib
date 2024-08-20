@@ -12,6 +12,7 @@ from itertools import product
 import numpy as np
 import fastplotlib as fpl
 
+
 def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
     theta = np.linspace(0, 2 * np.pi, n_points)
     xs = radius * np.sin(theta)
@@ -40,7 +41,7 @@ cmap_values = [
     1, 1, 1, 5
 ]
 
-figure = fpl.Figure()
+figure = fpl.Figure(size=(700, 560))
 
 figure[0, 0].add_line_collection(
     circles,
@@ -49,9 +50,11 @@ figure[0, 0].add_line_collection(
     thickness=10
 )
 
+# remove clutter
+figure[0, 0].axes.visible = False
+
 figure.show()
 
-figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

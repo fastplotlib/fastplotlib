@@ -21,7 +21,10 @@ data = np.column_stack([xs, ys, zs])
 multi_data = np.stack([data] * 10)
 
 # create figure to plot lines and use an orbit controller in 3D
-figure = fpl.Figure(cameras="3d", controller_types="orbit")
+figure = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
+
+# make grid invisible to remove clutter
+figure[0, 0].axes.grids.visible = False
 
 line_stack = figure[0, 0].add_line_stack(
     multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
@@ -88,7 +91,7 @@ camera_state = {
     "fov": 50.0,
     "width": 32,
     "height": 20,
-    "zoom": 1,
+    "zoom": 0.7,
     "maintain_aspect": True,
     "depth_range": None,
 }
@@ -97,7 +100,6 @@ figure.show(maintain_aspect=False)
 
 figure[0, 0].camera.set_state(camera_state)
 
-figure.canvas.set_logical_size(700, 560)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

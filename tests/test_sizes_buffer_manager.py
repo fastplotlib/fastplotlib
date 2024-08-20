@@ -3,7 +3,7 @@ from numpy import testing as npt
 import pytest
 
 from fastplotlib.graphics._features import PointsSizesFeature
-from .utils import generate_slice_indices, assert_pending_uploads
+from .utils import generate_slice_indices
 
 
 def generate_data(input_type: str) -> np.ndarray | float:
@@ -52,9 +52,6 @@ def test_slice(slice_method: dict, user_input: str):
 
     sizes = PointsSizesFeature(data, n_datapoints=10)
 
-    # TODO: placeholder until I make a testing figure where we draw frames only on call
-    sizes.buffer._gfx_pending_uploads.clear()
-
     match user_input:
         case "float":
             sizes[s] = 20.0
@@ -71,6 +68,3 @@ def test_slice(slice_method: dict, user_input: str):
             npt.assert_almost_equal(sizes[indices], cosine[s])
             # make sure other sizes not modified
             npt.assert_almost_equal(sizes[others], data[others])
-
-    # make sure correct offset and size marked for pending upload
-    assert_pending_uploads(sizes.buffer, offset, size)

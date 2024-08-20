@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: ImageGraphic_api
 
+    ImageGraphic.axes
     ImageGraphic.block_events
     ImageGraphic.cmap
     ImageGraphic.cmap_interpolation
@@ -41,6 +42,7 @@ Methods
 .. autosummary::
     :toctree: ImageGraphic_api
 
+    ImageGraphic.add_axes
     ImageGraphic.add_event_handler
     ImageGraphic.add_linear_region_selector
     ImageGraphic.add_linear_selector
