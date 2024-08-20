@@ -42,7 +42,7 @@ fastplotlib FAQ
 
     In general, if your data is an array-like object, `fastplotlib` should be able to use it.
 
-.. dropdown:: What is the scope of `fastplotlib'?
+.. dropdown:: What is the scope of `fastplotlib`?
 
     While the capabilities are very far-reaching, we would like to emphasize that `fastplotlib` is a general-purpose plotting library focused on scientific visualization.
     More specifically, we aim to develop the tools necessary for users to build fast and interactive visualizations for a variety of scientific domains (e.g. neuroscience,
