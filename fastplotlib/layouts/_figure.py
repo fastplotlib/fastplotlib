@@ -491,6 +491,20 @@ class Figure:
 
     def close(self):
         self._output.close()
+        if self._sidecar:
+            self._sidecar.close()
+
+    def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
+        """
+        Get rect for the portion of the canvas that the pygfx renderer draws to
+
+        Returns
+        -------
+        tuple[int, int, int, int]
+            x_pos, y_pos, width, height
+
+        """
+        return 0, 0, *self.canvas.get_logical_size()
 
     def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:
