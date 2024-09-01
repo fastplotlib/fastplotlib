@@ -2,7 +2,7 @@
 Lorenz System Animation
 =======================
 
-Example the Lorenz attractor.
+Example of the Lorenz attractor.
 """
 
 # test_example = false
@@ -37,17 +37,17 @@ def lorenz(xyz, *, s=10, r=28, b=2.667):
 dt = 0.01
 num_steps = 3_000
 
-lorenz_data = list()
+lorenz_data = np.empty((5, num_steps + 1, 3))
 
 for i in range(5):
     xyzs = np.empty((num_steps + 1, 3))  # Need one more for the initial values
     xyzs[0] = (0., (i * 0.3) + 1, 1.05)  # Set initial values
     # Step through "time", calculating the partial derivatives at the current point
     # and using them to estimate the next point
-    for i in range(num_steps):
-        xyzs[i + 1] = xyzs[i] + lorenz(xyzs[i]) * dt
+    for j in range(num_steps):
+        xyzs[j + 1] = xyzs[j] + lorenz(xyzs[j]) * dt
 
-    lorenz_data.append(xyzs)
+    lorenz_data[i] = xyzs
 
 figure = fpl.Figure(
     cameras="3d",
@@ -59,7 +59,7 @@ lorenz_line = figure[0, 0].add_line_collection(data=lorenz_data, thickness=.1, c
 scatter_markers = list()
 
 for graphic in lorenz_line:
-    marker = figure[0, 0].add_scatter(graphic.data.value[0], sizes=8)
+    marker = figure[0, 0].add_scatter(graphic.data.value[0], sizes=8, colors=graphic.colors[0])
     scatter_markers.append(marker)
 
 # initialize time
