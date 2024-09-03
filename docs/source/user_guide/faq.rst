@@ -17,14 +17,16 @@ What can I do with `fastplotlib`?
         - rapid prototyping and algorithm design
         - easy exploration and fast rendering of large-scale data
         - design, develop, evaluate and ship machine learning models
+        - create visualizations for real-time acquisition systems for scientific instruments (cameras, etc.)
 
 Do I need a GPU?
 ----------------
 
-    Technically no, you can perform limited software rendering on linux using lavapipe.
-    However, `fastplotlib` is intentionally built for realtime rendering using the latest GPU technologies, so we
-    strongly recommend that you use a GPU. With that being said, an integrated GPU should be sufficient for many
-    use-cases.
+    Integrated GPUs, such as those found in modern laptops, are sufficient for many use cases.
+
+    For the best performance you will require a dedicated GPU. You can think of it like running a game, a more complex visualization or faster rendering will require a better GPU.
+
+    Limited software rendering using just the CPU is supported on linux using lavapipe, but this is mostly only useful for testing purposes.
 
 How does `fastplotlib` relate to `matplotlib`?
 ----------------------------------------------
@@ -33,7 +35,11 @@ How does `fastplotlib` relate to `matplotlib`?
 
     These are two completely different libraries with their own APIs and use-cases. The `fastplotlib` library is primarily for *interactive*
     visualization that runs on the GPU using WGPU. The `fastplotlib` architecture is completely different from `matplotlib`. Using `fastplotlib`
-    is more akin to using `numpy`. See the "How can I learn to use `fastplotlib`?" section below.
+    is more akin to using `numpy`.
+
+    To expand on this a bit more, the `pygfx` buffer interface is really unlike anything in`matplotlib` and other libraries which is a major reason
+    why `fastplotlib` can have an array-like API for plotting. We believe that these design choices make it much easier to learn how to use the library
+    and provide fine-grained control over your visualizations. See the "How can I learn to use `fastplotlib`?" section below.
 
 How can I learn to use `fastplotlib`?
 -------------------------------------
@@ -47,8 +53,8 @@ How can I learn to use `fastplotlib`?
 Should I use `fastplotlib` for making publication figures?
 ----------------------------------------------------------
 
-    No, `fastplotlib` is not meant for creating *static* publication figures. There are many other libraries that are well-suited
-    for this task.
+    While `fastplotlib` figures can be exported to PNG using ``figure.export()``, `fastplotlib` is not intended for creating *static*
+    publication figures. There are many other libraries that are well-suited for this task.
 
 How does `fastplotlib` handle data loading?
 -------------------------------------------
@@ -57,25 +63,25 @@ How does `fastplotlib` handle data loading?
     the library.
 
     In general, if your data is an array-like object, `fastplotlib` should be able to use it. However, if you have any problems using your data objects,
-    please do not hesitate to post an issue!
+    please do not hesitate to post an issue! See this `issue <https://github.com/fastplotlib/fastplotlib/issues/483>`_ for more details.
 
 What is the scope of `fastplotlib`?
 -----------------------------------
 
     While the capabilities are very far-reaching, we would like to emphasize that `fastplotlib` is a general-purpose plotting library focused on scientific visualization.
-    More specifically, we aim to develop the tools necessary for users to build fast and interactive visualizations for a variety of scientific domains (e.g. neuroscience,
-    astrophysics). If you have a particular feature in mind that you feel is missing, please post an issue and we will respond accordingly letting you know if it fits within
-    the scope of the project.
+    More specifically, we aim to develop the tools necessary for users to build fast and interactive visualizations for a variety of scientific domains including but not limited to
+    neuroscience, astronomy, biology, computer vision, signal processing, and more. If you have a particular feature in mind that you feel is missing, please post an issue and we will respond
+    accordingly letting you know if it fits within the scope of the project.
 
 What types of PRs are we willing to accept?
 -------------------------------------------
 
-    Primarily the features of `fastplotlib` have been developed as they relate to the core-developers research use cases (mostly neuroscience). With that being said, there are many domains in which
+    Primarily the features of `fastplotlib` have been developed as they relate to the core-developers research use cases (mostly neuroscience, algorithm development, and machine learning). With that being said, there are many domains in which
     we do not have the knowledge to best-implement the tools needed for proper visualization. We welcome all PRs that address these types of missing functionality. We
     recommend taking a look at our `Roadmap <https://github.com/fastplotlib/fastplotlib/issues/55>`_ to get a better idea of what those items might be :D
 
     Closely related to this, we would love to add more examples to our repo for different types of scientific visualizations. We welcome all PRs that showcase using `fastplotlib` for
-    your given research domain.
+    your given research domain! :D
 
     Lastly, documentation is a critical part of open-source software and makes learning/using our tool much easier. We welcome all PRs that add missing or needed documentation of the
     codebase. If you find a piece of the codebase that is confusing or does not have proper documentation, please also feel free to post an issue on the repo!
@@ -89,7 +95,8 @@ What frameworks does `fastplotlib` support?
         - `glfw`
         - `wxPython`
 
-    Note: Use in Google Colab does not currently work because Colab does not offer support for `jupyter_rfb`
+    Note: Use in Google Colab is not highly functional. We recommend using an inexpensive alternative cloud provider
+    such as CodeOcean or Lambda Cloud. We have tested these and `fastplotlib` works very well.
 
 How can I use `fastplotlib` interactively?
 ------------------------------------------
