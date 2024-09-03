@@ -22,9 +22,11 @@ What can I do with `fastplotlib`?
 Do I need a GPU?
 ----------------
 
-    Integrated GPUs, such as those found in modern laptops is sufficient for many use cases. However, you can perform limited software rendering on linux
-    using lavapipe. With that being said, `fastplotlib` is intentionally built for realtime rendering using the latest GPU technologies, so we
-    strongly recommend that you use a GPU.
+    Integrated GPUs, such as those found in modern laptops is sufficient for many use cases.
+
+    For the best performance you will require a dedicated GPU. You can think of it like running a game, a more complex visualization or faster rendering will require a better GPU.
+
+    Limited software rendering using just the CPU is supported on linux using lavapipe, but this is mostly only useful for testing purposes.
 
 How does `fastplotlib` relate to `matplotlib`?
 ----------------------------------------------
@@ -51,8 +53,8 @@ How can I learn to use `fastplotlib`?
 Should I use `fastplotlib` for making publication figures?
 ----------------------------------------------------------
 
-    No, `fastplotlib` is not meant for creating *static* publication figures. There are many other libraries that are well-suited
-    for this task. However, `fastplotlib` figures can be exported to PNG using ``figure.export()``.
+    While `fastplotlib` figures can be exported to PNG using ``figure.export()``, `fastplotlib` is not intended for creating *static*
+    publication figures. There are many other libraries that are well-suited for this task.
 
 How does `fastplotlib` handle data loading?
 -------------------------------------------
@@ -94,7 +96,7 @@ What frameworks does `fastplotlib` support?
         - `wxPython`
 
     Note: Use in Google Colab is not highly functional. We recommend using an inexpensive alternative cloud provider
-    such as CodeOcean or Lambda Cloud. Kushal has tested these and `fastplotlib` works very well.
+    such as CodeOcean or Lambda Cloud. We have tested these and `fastplotlib` works very well.
 
 How can I use `fastplotlib` interactively?
 ------------------------------------------
