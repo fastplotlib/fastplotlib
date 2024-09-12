@@ -515,3 +515,6 @@ class RectangleSelector(BaseSelector):
             self._selection.set_value(self, (xmin, xmax, ymin_new, ymax))
         if self._move_info.source == self.edges[3]:
             self._selection.set_value(self, (xmin, xmax, ymin, ymax_new))
+
+    def _move_to_pointer(self, ev):
+        pass

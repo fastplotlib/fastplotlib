@@ -280,7 +280,16 @@ class BaseSelector(Graphic):
         elif self.axis == "y":
             offset = self.offset[1]
 
-        current_pos_world: np.ndarray = self.selection + offset
+        if self.selection.size > 1:
+            # linear region selectors
+            # TODO: get center for rectangle and polygon selectors
+            center = self.selection.mean(axis=0)
+
+        else:
+            # linear selectors
+            center = self.selection
+
+        current_pos_world: np.ndarray = center + offset
 
         world_pos = self._plot_area.map_screen_to_world(ev)
 

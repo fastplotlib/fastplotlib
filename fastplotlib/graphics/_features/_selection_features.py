@@ -48,7 +48,7 @@ class LinearSelectionFeature(GraphicFeature):
         self._value = value
 
     @property
-    def value(self) -> float:
+    def value(self) -> np.float32:
         """
         selection, data x or y value
         """
@@ -56,7 +56,7 @@ class LinearSelectionFeature(GraphicFeature):
 
     def set_value(self, selector, value: float):
         # clip value between limits
-        value = np.clip(value, self._limits[0], self._limits[1])
+        value = np.clip(value, self._limits[0], self._limits[1], dtype=np.float32)
 
         # set position
         if self._axis == "x":
