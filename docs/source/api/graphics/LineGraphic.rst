@@ -44,6 +44,7 @@ Methods
     LineGraphic.add_event_handler
     LineGraphic.add_linear_region_selector
     LineGraphic.add_linear_selector
+    LineGraphic.add_rectangle_selector
     LineGraphic.clear_event_handlers
     LineGraphic.remove_event_handler
     LineGraphic.rotate

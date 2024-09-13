@@ -20,7 +20,7 @@ or install the bleeding edge from Github:
 What is ``fastplotlib``?
 ------------------------
 
-``fastplotlib`` is a cutting-edge plotting library built using the ```pygfx`` <https://github.com/pygfx/pygfx>`_ rendering engine.
+``fastplotlib`` is a cutting-edge plotting library built using the `pygfx <https://github.com/pygfx/pygfx>`_ rendering engine.
 The lower-level details of the rendering process (i.e. defining a scene, camera, renderer, etc.) are abstracted away, allowing users to focus on their data.
 The fundamental goal of ``fastplotlib`` is to provide a high-level, expressive API that promotes large-scale explorative scientific visualization. We want to
 make it easy and intuitive to produce interactive visualizations that are as performant and vibrant as a modern video game 😄
