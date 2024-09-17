@@ -50,13 +50,13 @@ def update_images(ev):
     """
 
     # get the bbox of the selection
-    ixs = ev.get_selected_indices()
-    r0, r1 = ixs[1][0], ixs[1][-1]
-    c0, c1 = ixs[0][0], ixs[0][-1]
+    row_ixs, col_ixs = ev.get_selected_indices()
+    row_slice = slice(row_ixs[0], row_ixs[-1] + 1)
+    col_slice = slice(col_ixs[0], col_ixs[-1] + 1)
 
     # fft of the selection
     selected_fft = np.zeros(image.shape, dtype=np.complex64)
-    selected_fft[r0:r1, c0:c1] = dft[r0:r1, c0:c1]
+    selected_fft[row_slice, col_slice] = dft[row_slice, col_slice]
 
     # update image graphic with the current fft selection
     iw.managed_graphics[2].data = np.log(np.abs(selected_fft))
@@ -67,7 +67,7 @@ def update_images(ev):
 
     # fft of the region outside the selection
     unselected_fft = dft.copy()
-    unselected_fft[r0:r1, c0:c1] = 0
+    unselected_fft[row_slice, col_slice] = 0
 
     # update image graphic with unselected fft area
     iw.managed_graphics[4].data = np.log(np.abs(unselected_fft))
