@@ -29,7 +29,7 @@ iw = fpl.ImageWidget(
     data=[image, log_abs_dft, zeros, zeros, zeros, zeros],
     names=["image", "DFT", "selected", "IDFT of selected", "not-selected", "IDFT of not-selected"],
     figure_shape=(3, 2),  # so we can see image and fft side by side
-    figure_kwargs={"size": (600, 900)},
+    figure_kwargs={"size": (700, 400)},
     histogram_widget=False,
 )
 
