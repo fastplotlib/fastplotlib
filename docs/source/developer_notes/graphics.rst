@@ -36,7 +36,8 @@ keeps a *private* global dictionary of all ``WorldObject`` instances and users a
 This is due to garbage collection. This may be quite complicated for beginners, for more details see this PR: https://github.com/fastplotlib/fastplotlib/pull/160 .
 If you are curious or have more questions on garbage collection in `fastplotlib` you're welcome to post an issue :D.
 
-## add notes on graphic collections
+Graphic collections are groups of graphics. For now, we have a ``LineCollection`` which is a group of ``LineGraphic`` objects. We also have a ``LineStack`` which
+inherits from ``LineCollection`` and gives some fixed offset between ``LineGraphic`` objects in the collection.
 
 Graphic Properties
 ------------------
@@ -68,16 +69,3 @@ callbacks to indicate that the graphic has been deleted (for example, removing r
 
 Other graphics have properties that are relevant to them, for example ``ImageGraphic`` has ``cmap``, ``vmin``, ``vmax``,
 properties unique to images.
-
-Contributors Guidelines
------------------------
-
-**Implementing New Graphics**
-
-- **Must** inherit from the superclass ``Graphic``
-
-- **May** inherit from intermediate classes such as ``GraphicCollection`` or ``PositionsGraphic`` depending on
-        the type of graphic you are trying to implement
-
-
-
