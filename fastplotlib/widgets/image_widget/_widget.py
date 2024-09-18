@@ -5,7 +5,7 @@ import numpy as np
 
 from wgpu.gui import WgpuCanvasBase
 
-from ...layouts import Figure
+from ... import Figure
 from ...graphics import ImageGraphic
 from ...utils import calculate_figure_shape
 from ...tools import HistogramLUTTool
@@ -216,6 +216,10 @@ class ImageWidget:
             frame = self._process_indices(data, self._current_index)
             frame = self._process_frame_apply(frame, i)
             ig.data = frame
+
+        # call any event handlers
+        for handler in self._current_index_changed_handlers:
+            handler(self.current_index)
 
     @property
     def n_img_dims(self) -> list[int]:
@@ -546,6 +550,8 @@ class ImageWidget:
 
         self._initialized = True
 
+        self._current_index_changed_handlers = set()
+
     @property
     def frame_apply(self) -> dict | None:
         return self._frame_apply
@@ -747,14 +753,50 @@ class ImageWidget:
 
         return array
 
-    def _slider_value_changed(self, dimension: str, change: dict | int):
-        if self.block_sliders:
-            return
-        if isinstance(change, dict):
-            value = change["new"]
-        else:
-            value = change
-        self.current_index = {dimension: value}
+    def add_event_handler(self, handler: callable, event: str = "current_index"):
+        """
+        Register an event handler.
+
+        Currently the only event that ImageWidget supports is "current_index". This event is
+        emitted whenever the index of the ImageWidget changes.
+
+        Parameters
+        ----------
+        handler: callable
+            callback function, must take a dict as the only argument. This dict will be the `current_index`
+
+        event: str, "current_index"
+            the only supported event is "current_index"
+
+        Example
+        -------
+
+        .. code-block:: py
+
+            def my_handler(index):
+                print(index)
+                # example prints: {"t": 100} if data has only time dimension
+                # "z" index will be another key if present in the data, ex: {"t": 100, "z": 5}
+
+            # create an image widget
+            iw = ImageWidget(...)
+
+            # add event handler
+            iw.add_event_handler(my_handler)
+
+        """
+        if event != "current_index":
+            raise ValueError("`current_index` is the only event supported by `ImageWidget`")
+
+        self._current_index_changed_handlers.add(handler)
+
+    def remove_event_handler(self, handler: callable):
+        """Remove a registered event handler"""
+        self._current_index_changed_handlers.remove(handler)
+
+    def clear_event_handlers(self):
+        """Clear all registered event handlers"""
+        self._current_index_changed_handlers.clear()
 
     def reset_vmin_vmax(self):
         """
