@@ -1,3 +1,5 @@
+from ._figure import Figure
+
 try:
     import imgui_bundle
 except ImportError:
@@ -8,9 +10,6 @@ else:
 if IMGUI:
     from ._imgui_figure import ImguiFigure
 
-    Figure = ImguiFigure
     __all__ = ["Figure", "ImguiFigure"]
 else:
-    from ._figure import Figure
-
     __all__ = ["Figure"]
