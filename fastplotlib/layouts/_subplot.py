@@ -86,6 +86,8 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self._title_graphic: TextGraphic = None
 
+        self._toolbar = True
+
         super(Subplot, self).__init__(
             parent=parent,
             position=position,
@@ -136,6 +138,16 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         """
         return self._docks
+
+    @property
+    def toolbar(self) -> bool:
+        """show/hide toolbar"""
+        return self._toolbar
+
+    @toolbar.setter
+    def toolbar(self, visible: bool):
+        self._toolbar = bool(visible)
+        self.set_viewport_rect()
 
     def render(self):
         self.axes.update_using_camera()
@@ -194,7 +206,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         width_subplot = (width_canvas_render / self.ncols) - self.spacing
         height_subplot = (height_canvas_render / self.nrows) - self.spacing
 
-        if self.parent.__class__.__name__ == "ImguiFigure":
+        if self.parent.__class__.__name__ == "ImguiFigure" and self.toolbar:
             height_subplot -= IMGUI_TOOLBAR_HEIGHT
 
         rect = np.array([x_pos, y_pos, width_subplot, height_subplot])
@@ -312,7 +324,7 @@ class Dock(PlotArea):
         else:
             raise ValueError("invalid position")
 
-        if self.parent.__class__.__name__ == "ImguiFigure":
+        if self.parent.__class__.__name__ == "ImguiFigure" and self.parent.toolbar:
             height_viewport -= IMGUI_TOOLBAR_HEIGHT
 
         return [
