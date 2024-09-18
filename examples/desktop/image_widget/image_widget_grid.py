@@ -5,7 +5,6 @@ Image widget grid
 Example showing how to view multiple images in an ImageWidget
 """
 
-import numpy as np
 import fastplotlib as fpl
 import imageio.v3 as iio
 

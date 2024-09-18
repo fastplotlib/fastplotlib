@@ -15,10 +15,7 @@ import numpy as np
 
 movie = iio.imread("imageio:cockatoo.mp4")
 
-iw_movie = fpl.ImageWidget(
-    data=movie,
-    rgb=[True]
-)
+iw_movie = fpl.ImageWidget(data=movie, rgb=[True])
 
 # ImageWidget supports setting window functions the `time` "t" or `volume` "z" dimension
 # These can also be given as kwargs to `ImageWidget` during instantiation

@@ -20,9 +20,7 @@ cockatoo = iio.imread("imageio:cockatoo.mp4")
 random_data = np.random.rand(*cockatoo.shape[:-1])
 
 iw = fpl.ImageWidget(
-[random_data, cockatoo],
-    rgb=[False, True],
-    figure_kwargs={"size": (700, 560)}
+    [random_data, cockatoo], rgb=[False, True], figure_kwargs={"size": (700, 560)}
 )
 
 iw.show()
