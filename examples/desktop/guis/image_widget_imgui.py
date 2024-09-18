@@ -1,6 +1,6 @@
 """
-ImGUI with Image widget
-=======================
+ImGUI with ImageWidget
+======================
 
 Example showing how to write a custom GUI with imgui and use it with ImageWidget
 """
