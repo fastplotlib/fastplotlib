@@ -1,6 +1,6 @@
 """
-Image widget
-============
+Image widget videos side by side
+================================
 
 Example showing how to scroll through one or more videos using the ImageWidget
 """
@@ -22,11 +22,15 @@ random_data = np.random.rand(*cockatoo.shape[:-1])
 iw = fpl.ImageWidget(
 [random_data, cockatoo],
     rgb=[False, True],
-    figure_kwargs={"size": (900, 500)}
+    figure_kwargs={"size": (700, 560)}
 )
+
 iw.show()
 
 figure = iw.figure
 
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
+    print(__doc__)
     fpl.run()
