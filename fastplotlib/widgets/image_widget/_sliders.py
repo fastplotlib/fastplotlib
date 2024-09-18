@@ -122,7 +122,9 @@ class ImageWidgetSliders(EdgeWindow):
             imgui.same_line()
             imgui.set_next_item_width(100)
             # framerate int entry
-            fps_changed, value = imgui.input_int(label="fps", v=self._fps[dim], step_fast=5)
+            fps_changed, value = imgui.input_int(
+                label="fps", v=self._fps[dim], step_fast=5
+            )
             if imgui.is_item_hovered(0):
                 imgui.set_tooltip(
                     "framerate is approximate and less reliable as it approaches your monitor refresh rate"
