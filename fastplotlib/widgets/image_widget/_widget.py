@@ -786,7 +786,9 @@ class ImageWidget:
 
         """
         if event != "current_index":
-            raise ValueError("`current_index` is the only event supported by `ImageWidget`")
+            raise ValueError(
+                "`current_index` is the only event supported by `ImageWidget`"
+            )
 
         self._current_index_changed_handlers.add(handler)
 
