@@ -35,6 +35,7 @@ Properties
     Subplot.renderer
     Subplot.scene
     Subplot.selectors
+    Subplot.toolbar
     Subplot.viewport
 
 Methods
