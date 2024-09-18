@@ -13,6 +13,7 @@ from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..graphics._axes import Axes
 
 
+# number of pixels taken by the imgui toolbar when present
 IMGUI_TOOLBAR_HEIGHT = 39
 
 
