@@ -615,6 +615,22 @@ class Figure:
     def open_popup(self, *args, **kwargs):
         warn("popups only supported by ImguiFigure")
 
+    def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
+        """
+        Fet rect for the portion of the canvas that the pygfx renderer draws to,
+        i.e. non-imgui, part of canvas
+
+        Returns
+        -------
+        tuple[int, int, int, int]
+            x_pos, y_pos, width, height
+
+        """
+
+        width, height = self.canvas.get_logical_size()
+
+        return 0, 0, width, height
+
     def _get_iterator(self):
         return product(range(self.shape[0]), range(self.shape[1]))
 
