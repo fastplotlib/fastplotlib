@@ -21,7 +21,7 @@ your classes and functions, and to provide clear, detailed comments within your 
 but also facilitates future maintenance and further development.
 
 For more detailed information about `fastplotlib` modules, including design choices and implementation details, visit the 
-[`For Develeopers`]() section of the package documentation.
+[`For Develeopers`](https://fastplotlib.readthedocs.io/en/latest/developer_notes/index.html) section of the package documentation.
 
 ## Contributing to the code 
 
@@ -33,50 +33,51 @@ In order to contribute, you will need to do the following:
 2) Make sure that tests pass 
 3) Open a Pull Request
 
-The `fastplotlib` package follows the [Git Flow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow) workflow. In essence, `main` is the primary branch to which no one is allowed to
+The `fastplotlib` package follows the [Git feature branch](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow) workflow. In essence, `main` is the primary branch to which no one is allowed to
 push directly. All development happens in separate feature branches that are then merged into `main` once we have determined they are ready. When enough changes have accumulated, a new release is 
 generated. This process includes adding a new tag to increment the version number and uploading the new release to PyPI. 
 
 ### Creating a development environment
 
-You will need a local installation `fastplotlib` which keeps up-to-date with any changes you make. To do so, you will need to fork and clone `fastplotlib` before checking out a new branch.
+You will need a local installation of `fastplotlib` which keeps up-to-date with any changes you make. To do so, you will need to fork and clone `fastplotlib` before checking out a new branch.
 
 1. Fork the repo to your own GitHub account, click the "Fork" button at the top:
 
 ![image](https://github.com/kushalkolar/fastplotlib/assets/9403332/82612021-37b2-48dd-b7e4-01a919535c17)
 
-2. Clone the repo. Replace the `YOUR_ACCOUNT` in the repo URL to the fork on your account.
+2. We use [git-lfs](https://git-lfs.com) for storing large files, such as ground-truths for tests, so you will need 
+to [install it](https://github.com/git-lfs/git-lfs#installing) before cloning the repo. If you already have `git-lfs`
+installed, ignore this step. 
 
-> **_NOTE:_** We use [git-lfs](https://git-lfs.com) for storing large files, such as ground-truths for tests, so you will need 
-> to [install it](https://github.com/git-lfs/git-lfs#installing) before cloning the repo.
+3. Clone the repo. Replace the `YOUR_ACCOUNT` in the repo URL to the fork on your account.
 
 ```bash
 git clone https://github.com/YOUR_ACCOUNT/fastplotlib.git
 cd fastplotlib
 ```
 
-3. Install `fastplotlib` in editable mode with developer dependencies 
+> **_NOTE:_** If you cloned the repo before installing `git-lfs`, you can run `git lfs pull` at any
+> time to download the files stored on LFS
+
+4. Install `fastplotlib` in editable mode with developer dependencies 
 
 ```bash
 # install all extras in place
 pip install -e ".[notebook,docs,tests]"
 ```
 
-> **_NOTE:_** If you cloned the repo before installing `git-lfs`, you can run `git lfs pull` at any
-> time to download the files stored on LFS
-
-4. Add the upstream remote branch:
+5. Add the upstream remote branch:
 
 ```bash
 git remote add upstream https://github.com/fastplotlib/fastplotlib
 ```
 
-At this point you have two remotes: `origin` (your fork) and `upstream` (the canonical version). You won't have permission to push to upstream (only `origin`), but 
-this make it easy to keep your `fastplotlib` up-to-date with the canonical version by pulling from upstream: `git pull upstream`.
+At this point you have two remotes: `origin` (your fork) and `upstream` (the official fastplotlib org version). You won't have permission to push to upstream (only `origin`), but 
+this makes it easy to keep your `fastplotlib` up-to-date with the official fastplotlib org version by pulling from upstream: `git pull upstream`.
 
 ### Creating a new branch
 
-As mentioned previously, each feature in `fastplotlib` is worked on in a separate branch. This allows multiple people developing multiple features simultaneously, without interfering with each other's work. To create
+As mentioned previously, each feature in `fastplotlib` is worked on in a separate branch. This allows multiple people to develop multiple features simultaneously, without interfering with each other's work. To create
 your own branch, run the following from within your `fastplotlib` directory:
 
 ```bash
@@ -122,6 +123,9 @@ git push origin my_feature_branch
 ```
 > **_NOTE:_** If your contributions modify how visualizations _look_, see the [Testing details](#testing-details) section at the very bottom.
 
+> **_NOTE:_** If your contributions modify the API, you must regenerate the API docs before making a PR, see
+> the [Documenation](#documentation) section below.
+
 ### Contributing your changes back to `fastplotlib`
 
 You can make any number of changes on your branch. Once you are happy with your changes, add tests to check that they run correctly and add
@@ -141,12 +145,12 @@ Your pull request should include the following:
 - Special notice to any portion of your changes where you have lingering questions (e.g., "was this the right way to implement this?") or
 want reviewers to pay special attention to
 
-Next, we will be notified of the pull request and will read it over. We will try to give and initial response quickly, and then do a longer in-depth
+Next, we will be notified of the pull request and will read it over. We will try to give an initial response quickly, and then do a longer in-depth
 review, at which point you will probably need to respond to our comments, making changes as appropriate. We will then respond again, and proceed
 in an iterative fashion until everyone is happy with the proposed changes.
 
 Once your changes are integrated, you will be added as a GitHub contributor. Thank you for being 
-apart of `fastplotlib`!
+a part of `fastplotlib`!
 
 ### Style Guide
 
@@ -154,12 +158,12 @@ As far as code style, please adhere to the following guidelines:
 
 - Longer, descriptive names are preferred (e.g., `x` is not an appropriate name for a variable), especially for anything user-facing,
 such as methods, attributes, or arguments
-- Any public method or function must have complete type-annotated docstrings (see below for details). Hidden ones do not need to have
-complete docstring, but they probably should.
+- Any public method, property, or attribute must have complete type-annotated docstrings (see below for details). Private methods or
+attributes do not need to have a complete docstring, but they probably should.
 
 ### Releases
 
-We create releases on GitHub, deploy on / distribute via [pypi](https://pypi.org/), and try to follow [semantic versioning](https://semver.org/):
+We create releases on GitHub and distribute via [pypi](https://pypi.org/), and try to follow [semantic versioning](https://semver.org/):
 
 > Given a version number MAJOR.MINOR.PATCH, increment the:
 > 1. MAJOR version when you make incompatible API changes
@@ -174,8 +178,8 @@ The built version will grab the version tag from the GitHub release, using [setu
 
 #### Testing Details
 
-An integral part of our testing suite is not only to test that our code is working, but to also check that are plotting 
-library CI pipeline is producing things that "look visually correct". 
+As a plotting library we require two layers of testing. 1) We use a backend test suite that verifies the basic functionality of buffer managers, 
+graphics, layouts, etc., and 2) another test suite which verifies that the library renders plots that are visually correct.
 
 In order to do this, each example within the `examples` directory is run and an image of the canvas is taken and compared 
 with a ground-truth screenshot that we have manually inspected. Ground-truth images are stored using `git-lfs`.
@@ -196,7 +200,7 @@ this, please do the following:
 
 1. Download the regenerated screenshots from the [`fastplotlib` GitHub Actions page](https://github.com/fastplotlib/fastplotlib/actions/workflows/screenshots.yml) for your specific PR
 
-2. Replace the screenshots in your local `fastplotlib` screenshots directories with those downloaded 
+2. Replace only the screenshots that your PR changes in your local `fastplotlib` screenshots directories with those downloaded 
 
 ```
 examples/desktop/screenshots
@@ -219,10 +223,10 @@ git push origin my_feature_branch
 
 #### Adding tests
 
-Depending on the type of contribution you are making, new tests will need to be added to the repository. Unit tests for testing underlying functionality such as buffer managers, figure instantiation, and
+Depending on the type of contribution you are making, new tests might need to be added to the repository. Unit tests for testing underlying functionality such as buffer managers, figure instantiation, and
 more can be found in the `/tests` directory. However, we also test all of our desktop examples as well. 
 
-If you are adding a new example to the library, you will need to add to comments to the top of your `.py` file in order to make sure it is both tested and added to the gallery. 
+If you are adding a new example to the library, you will need to add the following comments to the top of your `.py` file in order to make sure it is both tested and added to the gallery. 
 
 ```python
 # test_example = true
@@ -252,7 +256,7 @@ make html
 
 All public-facing functions and classes should have complete docstrings, which start with a one-line short summary of the function, 
 a medium-length description of the function / class and what it does, and a complete description of all arguments and return values. 
-Docstrings should be relatively short, providing the information necessary for a user to use the code.
+Docstrings should be comprehensive, providing the information necessary for a user to use the method or property without going through the code.
 
 Private functions and classes should have sufficient explanation that other developers know what the function / class does and how to use it, 
 but do not need to be as extensive.
