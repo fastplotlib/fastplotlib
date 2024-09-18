@@ -20,7 +20,7 @@ except NameError:
     IS_IPYTHON = False
     IPYTHON = None
 else:
-    IS_IPYTHON=True
+    IS_IPYTHON = True
     IPYTHON = get_ipython()
 
 
