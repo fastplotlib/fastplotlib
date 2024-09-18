@@ -180,8 +180,16 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self.docks["top"].center_graphic(self._title_graphic, zoom=1.5)
         self._title_graphic.world_object.position_y = -3.5
 
-    def get_rect(self):
-        """Returns the bounding box that defines the Subplot within the canvas."""
+    def get_rect(self) -> np.ndarray:
+        """
+        Returns the bounding box that defines the Subplot within the canvas.
+
+        Returns
+        -------
+        np.ndarray
+            x_position, y_position, width, height
+
+        """
         row_ix, col_ix = self.position
 
         x_start_render, y_start_render, width_canvas_render, height_canvas_render = (
@@ -208,6 +216,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         height_subplot = (height_canvas_render / self.nrows) - self.spacing
 
         if self.parent.__class__.__name__ == "ImguiFigure" and self.toolbar:
+            # leave space for imgui toolbar
             height_subplot -= IMGUI_TOOLBAR_HEIGHT
 
         rect = np.array([x_pos, y_pos, width_subplot, height_subplot])
@@ -256,6 +265,14 @@ class Dock(PlotArea):
         self.set_viewport_rect()
 
     def get_rect(self, *args):
+        """
+        Returns the bounding box that defines this dock area within the canvas.
+
+        Returns
+        -------
+        np.ndarray
+            x_position, y_position, width, height
+        """
         if self.size == 0:
             self.viewport.rect = None
             return
@@ -326,6 +343,7 @@ class Dock(PlotArea):
             raise ValueError("invalid position")
 
         if self.parent.__class__.__name__ == "ImguiFigure" and self.parent.toolbar:
+            # leave space for imgui toolbar
             height_viewport -= IMGUI_TOOLBAR_HEIGHT
 
         return [
