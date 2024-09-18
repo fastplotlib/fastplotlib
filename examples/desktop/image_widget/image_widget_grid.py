@@ -14,7 +14,7 @@ img2 = iio.imread("imageio:astronaut.png")
 img3 = iio.imread("imageio:chelsea.png")
 img4 = iio.imread("imageio:wikkie.png")
 
-iw = fpl.ImageWidget([img1, img2, img3, img4], rgb=[True, False, True, True])
+iw = fpl.ImageWidget([img1, img2, img3, img4], rgb=[False, True, True, True])
 iw.show()
 
 figure = iw.figure
