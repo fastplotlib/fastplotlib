@@ -15,11 +15,13 @@ from ..legends import Legend
 
 
 try:
-    ip = get_ipython()
+    get_ipython()
 except NameError:
     IS_IPYTHON = False
+    IPYTHON = None
 else:
-    IS_IPYTHON = True
+    IS_IPYTHON=True
+    IPYTHON = get_ipython()
 
 
 class PlotArea:
@@ -673,15 +675,13 @@ class PlotArea:
 
         if IS_IPYTHON:
             # remove any references that ipython might have made
-            ip = get_ipython()
-
             # check both namespaces
-            for namespace in [ip.user_ns, ip.user_ns_hidden]:
+            for namespace in [IPYTHON.user_ns, IPYTHON.user_ns_hidden]:
                 # find the reference
                 for ref, obj in namespace.items():
                     if graphic is obj:
                         # we found the reference, remove from ipython
-                        ip.del_var(ref)
+                        IPYTHON.del_var(ref)
                         break
 
     def clear(self):
