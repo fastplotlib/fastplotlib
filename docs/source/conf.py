@@ -102,7 +102,7 @@ autodoc_typehints_description_target = "documented_params"
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "pygfx": ("https://pygfx.org/stable", None),
+    "pygfx": ("https://docs.pygfx.org/stable/", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
     "fastplotlib": ("https://fastplotlib.readthedocs.io/en/latest/", None),
 }

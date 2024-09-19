@@ -1,7 +1,6 @@
 from typing import *
 from dataclasses import dataclass
 from functools import partial
-import weakref
 
 import numpy as np
 
@@ -68,6 +67,9 @@ class BaseSelector(Graphic):
         self._world_objects: Tuple[WorldObject, ...] = (
             self._edges + self._fill + self._vertices
         )
+
+        for wo in self._world_objects:
+            wo.material.pick_write = True
 
         self._hover_responsive: Tuple[WorldObject, ...] = hover_responsive
 
@@ -269,11 +271,25 @@ class BaseSelector(Graphic):
         """
         Calculates delta just using current world object position and calls self._move_graphic().
         """
-        current_position: np.ndarray = self.offset
-
-        # middle mouse button clicks
+        # check for middle mouse button click
         if ev.button != 3:
             return
+
+        if self.axis == "x":
+            offset = self.offset[0]
+        elif self.axis == "y":
+            offset = self.offset[1]
+
+        if self.selection.size > 1:
+            # linear region selectors
+            # TODO: get center for rectangle and polygon selectors
+            center = self.selection.mean(axis=0)
+
+        else:
+            # linear selectors
+            center = self.selection
+
+        current_pos_world: np.ndarray = center + offset
 
         world_pos = self._plot_area.map_screen_to_world(ev)
 
@@ -281,18 +297,18 @@ class BaseSelector(Graphic):
         if world_pos is None:
             return
 
-        self.delta = world_pos - current_position
+        self.delta = world_pos - current_pos_world
         self._pygfx_event = ev
 
         # use fill by default as the source, such as in region selectors
         if len(self._fill) > 0:
             self._move_info = MoveInfo(
-                last_position=current_position, source=self._fill[0]
+                last_position=current_pos_world, source=self._fill[0]
             )
         # else use an edge, such as for linear selector
         else:
             self._move_info = MoveInfo(
-                last_position=current_position, source=self._edges[0]
+                last_position=current_pos_world, source=self._edges[0]
             )
 
         self._move_graphic(self.delta)
