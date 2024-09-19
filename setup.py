@@ -22,7 +22,7 @@ extras_require = {
         "pandoc",
         "jupyterlab",
         "sidecar",
-        "imageio",
+        "imageio[pyav]",
         "matplotlib",
         "scikit-learn",
         "imgui-bundle",
@@ -50,7 +50,7 @@ extras_require = {
     "tests-desktop": [
         "pytest<8.0.0",
         "scipy",
-        "imageio",
+        "imageio[pyav]",
         "scikit-learn",
         "tqdm",
     ],
