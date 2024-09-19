@@ -147,14 +147,14 @@ def main():
     generate_page(
         page_name="Figure",
         classes=[fastplotlib.layouts._figure.Figure],
-        modules=["fastplotlib"],
+        modules=["fastplotlib.layouts"],
         source_path=LAYOUTS_DIR.joinpath("figure.rst"),
     )
 
     generate_page(
         page_name="ImguiFigure",
         classes=[fastplotlib.layouts.ImguiFigure],
-        modules=["fastplotlib"],
+        modules=["fastplotlib.layouts"],
         source_path=LAYOUTS_DIR.joinpath("imgui_figure.rst"),
     )
 

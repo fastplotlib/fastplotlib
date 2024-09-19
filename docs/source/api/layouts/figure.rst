@@ -6,7 +6,7 @@ Figure
 ======
 Figure
 ======
-.. currentmodule:: fastplotlib
+.. currentmodule:: fastplotlib.layouts
 
 Constructor
 ~~~~~~~~~~~

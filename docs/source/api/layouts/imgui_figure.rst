@@ -6,7 +6,7 @@ ImguiFigure
 ===========
 ImguiFigure
 ===========
-.. currentmodule:: fastplotlib
+.. currentmodule:: fastplotlib.layouts
 
 Constructor
 ~~~~~~~~~~~
