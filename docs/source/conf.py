@@ -52,6 +52,7 @@ sphinx_gallery_conf = {
     "subsection_order": ExplicitOrder(
         [
             "../../examples/desktop/image",
+            "../../examples/desktop/image_widget",
             "../../examples/desktop/gridplot",
             "../../examples/desktop/line",
             "../../examples/desktop/line_collection",
