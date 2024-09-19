@@ -67,29 +67,31 @@ class EdgeWindow(Window):
         window_flags: int
             window flag enum, valid flags are:
 
-            imgui.WindowFlags_.no_title_bar
-            imgui.WindowFlags_.no_resize
-            imgui.WindowFlags_.no_move
-            imgui.WindowFlags_.no_scrollbar
-            imgui.WindowFlags_.no_scroll_with_mouse
-            imgui.WindowFlags_.no_collapse
-            imgui.WindowFlags_.always_auto_resize
-            imgui.WindowFlags_.no_background
-            imgui.WindowFlags_.no_saved_settings
-            imgui.WindowFlags_.no_mouse_inputs
-            imgui.WindowFlags_.menu_bar
-            imgui.WindowFlags_.horizontal_scrollbar
-            imgui.WindowFlags_.no_focus_on_appearing
-            imgui.WindowFlags_.no_bring_to_front_on_focus
-            imgui.WindowFlags_.always_vertical_scrollbar
-            imgui.WindowFlags_.always_horizontal_scrollbar
-            imgui.WindowFlags_.no_nav_inputs
-            imgui.WindowFlags_.no_nav_focus
-            imgui.WindowFlags_.unsaved_document
-            imgui.WindowFlags_.no_docking
-            imgui.WindowFlags_.no_nav,
-            imgui.WindowFlags_.no_decoration
-            imgui.WindowFlags_.no_inputs
+            .. code-block:: py
+
+                imgui.WindowFlags_.no_title_bar
+                imgui.WindowFlags_.no_resize
+                imgui.WindowFlags_.no_move
+                imgui.WindowFlags_.no_scrollbar
+                imgui.WindowFlags_.no_scroll_with_mouse
+                imgui.WindowFlags_.no_collapse
+                imgui.WindowFlags_.always_auto_resize
+                imgui.WindowFlags_.no_background
+                imgui.WindowFlags_.no_saved_settings
+                imgui.WindowFlags_.no_mouse_inputs
+                imgui.WindowFlags_.menu_bar
+                imgui.WindowFlags_.horizontal_scrollbar
+                imgui.WindowFlags_.no_focus_on_appearing
+                imgui.WindowFlags_.no_bring_to_front_on_focus
+                imgui.WindowFlags_.always_vertical_scrollbar
+                imgui.WindowFlags_.always_horizontal_scrollbar
+                imgui.WindowFlags_.no_nav_inputs
+                imgui.WindowFlags_.no_nav_focus
+                imgui.WindowFlags_.unsaved_document
+                imgui.WindowFlags_.no_docking
+                imgui.WindowFlags_.no_nav
+                imgui.WindowFlags_.no_decoration
+                imgui.WindowFlags_.no_inputs
 
         *args
             additional args for the GUI
