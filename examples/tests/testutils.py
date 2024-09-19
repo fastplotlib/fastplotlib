@@ -26,6 +26,7 @@ example_globs = [
     "gridplot/*.py",
     "misc/*.py",
     "selectors/*.py"
+    "guis/*.py"
 ]
 
 

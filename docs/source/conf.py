@@ -60,7 +60,7 @@ sphinx_gallery_conf = {
             "../../examples/desktop/heatmap",
             "../../examples/desktop/misc",
             "../../examples/desktop/selectors",
-            "../../examples/desktop/ui"
+            "../../examples/desktop/guis"
         ]
     ),
     "ignore_pattern": r'__init__\.py',
