@@ -17,10 +17,12 @@ import numpy as np
 cockatoo = iio.imread("imageio:cockatoo.mp4")
 
 # make a random grayscale video, shape is [t, x, y]
-random_data = np.random.rand(*cockatoo.shape[:-1])
+random_data = np.random.rand(cockatoo.shape[0], 100, 100)
 
 iw = fpl.ImageWidget(
-    [random_data, cockatoo], rgb=[False, True], figure_kwargs={"size": (700, 560)}
+    [random_data, cockatoo],
+    rgb=[False, True],
+    figure_kwargs={"size": (700, 560), "controller_ids": [[0, 1]]}  # diff controllers, one video has much smaller dims
 )
 
 iw.show()
