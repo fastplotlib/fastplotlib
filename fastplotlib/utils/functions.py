@@ -7,6 +7,7 @@ import cmap as cmap_lib
 from pygfx import Texture, Color
 
 
+
 cmap_catalog = cmap_lib.Catalog()
 
 COLORMAPS = cmap_catalog.short_keys()
@@ -69,6 +70,7 @@ def get_cmap(name: str, alpha: float = 1.0, gamma: float = 1.0) -> np.ndarray:
         [n_colors, 4], i.e. [n_colors, RGBA]
 
     """
+
     cmap = cmap_lib.Colormap(name).lut(256, gamma=gamma)
     cmap[:, -1] = alpha
     return cmap.astype(np.float32)
@@ -96,6 +98,7 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
         shape is [n_colors, 4], where the last dimension is RGBA
 
     """
+
     cm = cmap_lib.Colormap(cmap)
 
     # can also use cm.category == "qualitative", but checking for non-interpolated
@@ -291,6 +294,7 @@ def parse_cmap_values(
 
         # can also use cm.category == "qualitative"
         if cmap_lib.Colormap(cmap_name).interpolation == "nearest":
+
             # check that cmap_values are <int> and within the number of colors `n_colors`
 
             # do not scale, use directly

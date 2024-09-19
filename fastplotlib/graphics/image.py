@@ -1,10 +1,11 @@
+import math
 from typing import *
 
 import pygfx
 
 from ..utils import quick_min_max
 from ._base import Graphic
-from .selectors import LinearSelector, LinearRegionSelector
+from .selectors import LinearSelector, LinearRegionSelector, RectangleSelector
 from ._features import (
     TextureArray,
     ImageCmap,
@@ -382,6 +383,47 @@ class ImageGraphic(Graphic):
             size=size,
             center=center,
             axis=axis,
+            fill_color=fill_color,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        # place above this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
+
+        return selector
+
+    def add_rectangle_selector(
+        self,
+        selection: tuple[float, float, float, float] = None,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
+    ) -> RectangleSelector:
+        """
+        Add a :class:`.RectangleSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: (float, float, float, float), optional
+            initial (xmin, xmax, ymin, ymax) of the selection
+        """
+        # default selection is 25% of the diagonal
+        if selection is None:
+            diagonal = math.sqrt(
+                self._data.value.shape[0] ** 2 + self._data.value.shape[1] ** 2
+            )
+
+            selection = (0, int(diagonal / 4), 0, int(diagonal / 4))
+
+        # min/max limits are image shape
+        limits = (0, self._data.value.shape[0], 0, self._data.value.shape[1])
+
+        selector = RectangleSelector(
+            selection=selection,
+            limits=limits,
             fill_color=fill_color,
             parent=self,
             **kwargs,
