@@ -7,7 +7,6 @@ import cmap as cmap_lib
 from pygfx import Texture, Color
 
 
-
 cmap_catalog = cmap_lib.Catalog()
 
 COLORMAPS = cmap_catalog.short_keys()
