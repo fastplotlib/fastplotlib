@@ -53,6 +53,7 @@ extras_require = {
         "imageio[pyav]",
         "scikit-learn",
         "tqdm",
+        "imgui-bundle",
     ],
     "imgui": ["imgui-bundle"],
 }
