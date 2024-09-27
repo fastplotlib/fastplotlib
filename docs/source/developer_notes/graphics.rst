@@ -34,7 +34,7 @@ plots, ex: ``subplot["some_image"]``.
 All graphics contain a ``world_object`` property which is just the ``pygfx.WorldObject`` that this graphic uses. Fastplotlib
 keeps a *private* global dictionary of all ``WorldObject`` instances and users are only given a weakref proxy to this world object.
 This is due to garbage collection. This may be quite complicated for beginners, for more details see this PR: https://github.com/fastplotlib/fastplotlib/pull/160 .
-If you are curious or have more questions on garbage collection in `fastplotlib` you're welcome to post an issue :D.
+If you are curious or have more questions on garbage collection in ``fastplotlib`` you're welcome to post an issue :D.
 
 Graphic collections are groups of graphics. For now, we have a ``LineCollection`` which is a group of ``LineGraphic`` objects. We also have a ``LineStack`` which
 inherits from ``LineCollection`` and gives some fixed offset between ``LineGraphic`` objects in the collection.
@@ -58,7 +58,7 @@ In addition, event handlers will be called if any event handlers are registered.
 
 ``VertexColors``behaves similarly, but it can perform additional parsing that can create the colors buffer from different
 forms of user input. For example if a user runs: ``line_graphic.colors = "blue"``, then ``VertexColors.__setitem__()`` will
-create a buffer that corresponds to what `pygfx.Color` thinks is "blue". Users can also take advantage of fancy indexing,
+create a buffer that corresponds to what ``pygfx.Color`` thinks is "blue". Users can also take advantage of fancy indexing,
 ex: ``line_graphics.colors[bool_array] = "red"`` :smile:
 
 ``LineGraphic`` also has a ``VertexCmap``, this manages the line ``VertexColors`` instance to parse colormaps, for example:

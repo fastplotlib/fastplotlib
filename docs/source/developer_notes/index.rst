@@ -35,5 +35,5 @@ We're looking forward to your contributions and to answering any questions you m
 .. toctree::
     :maxdepth: 1
 
-    graphics
-    layouts
+    Graphics <graphics.rst>
+    Layouts <layouts.rst>
