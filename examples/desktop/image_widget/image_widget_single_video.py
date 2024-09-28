@@ -6,7 +6,7 @@ Example showing how to scroll through one or more videos using the ImageWidget
 """
 
 # test_example = true
-# sphinx_gallery_pygfx_docs = 'screenshot'
+# sphinx_gallery_pygfx_docs = 'animate 6s 20fps'
 
 import fastplotlib as fpl
 import imageio.v3 as iio
@@ -16,11 +16,11 @@ import numpy as np
 movie = iio.imread("imageio:cockatoo.mp4")
 
 # Ignore and do not use the next 2 lines
-# for the purposes of docs gallery generation we subsample and only use 50 frames
-movie50 = movie[:50, ::10, ::10].copy()
+# for the purposes of docs gallery generation we subsample and only use 15 frames
+movie_sub = movie[:15, ::12, ::12].copy()
 del movie
 
-iw = fpl.ImageWidget(movie50, rgb=[True], figure_kwargs={"size": (700, 560)})
+iw = fpl.ImageWidget(movie_sub, rgb=[True], figure_kwargs={"size": (700, 560)})
 
 # ImageWidget supports setting window functions the `time` "t" or `volume` "z" dimension
 # These can also be given as kwargs to `ImageWidget` during instantiation

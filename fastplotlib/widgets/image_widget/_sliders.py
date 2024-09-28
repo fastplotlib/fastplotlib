@@ -1,3 +1,4 @@
+import os
 from time import perf_counter
 
 from imgui_bundle import imgui, icons_fontawesome_6 as fa
@@ -22,6 +23,11 @@ class ImageWidgetSliders(EdgeWindow):
         self._last_frame_time: dict[str, float] = {"t": 0, "z": 0}
 
         self._loop = False
+
+        if "RTD_BUILD" in os.environ.keys():
+            if os.environ["RTD_BUILD"] == "1":
+                self._playing["t"] = True
+                self._loop = True
 
     def set_index(self, dim: str, index: int):
         """set the current_index of the ImageWidget"""

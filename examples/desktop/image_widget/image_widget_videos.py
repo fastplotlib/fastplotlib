@@ -6,7 +6,7 @@ Example showing how to scroll through one or more videos using the ImageWidget
 """
 
 # test_example = true
-# sphinx_gallery_pygfx_docs = 'screenshot'
+# sphinx_gallery_pygfx_docs = 'animate 6s 20fps'
 
 import fastplotlib as fpl
 import imageio.v3 as iio
@@ -17,18 +17,19 @@ import numpy as np
 cockatoo = iio.imread("imageio:cockatoo.mp4")
 
 # Ignore and do not use the next 2 lines
-# for the purposes of docs gallery generation we subsample and only use 50 frames
-cockatoo50 = cockatoo[:50, ::10, ::10].copy()
+# for the purposes of docs gallery generation we subsample and only use 15 frames
+cockatoo_sub = cockatoo[:15, ::12, ::12].copy()
 del cockatoo
 
 # make a random grayscale video, shape is [t, rows, cols]
 np.random.seed(0)
-random_data = np.random.rand(*cockatoo50.shape[:-1])
+random_data = np.random.rand(*cockatoo_sub.shape[:-1])
 
 iw = fpl.ImageWidget(
-    [random_data, cockatoo50],
+    [random_data, cockatoo_sub],
     rgb=[False, True],
-    figure_kwargs={"size": (700, 560), "controller_ids": [[0, 1]]}  # diff controllers, one video has much smaller dims
+    figure_shape=(2, 1), # 2 rows, 1 column
+    figure_kwargs={"size": (700, 560), "controller_ids": [[0, 1]]}  # diff controllers, imagewidget syncs by default
 )
 
 iw.show()
