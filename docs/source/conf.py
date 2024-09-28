@@ -58,8 +58,8 @@ sphinx_gallery_conf = {
             "../../examples/desktop/line_collection",
             "../../examples/desktop/scatter",
             "../../examples/desktop/heatmap",
-            "../../examples/desktop/misc",
-            "../../examples/desktop/selectors",
+            # "../../examples/desktop/misc",
+            # "../../examples/desktop/selectors",
             "../../examples/desktop/guis"
         ]
     ),
