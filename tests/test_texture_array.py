@@ -10,8 +10,6 @@ from fastplotlib.graphics.image import _ImageTile
 
 
 MAX_TEXTURE_SIZE = 1024
-pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension2d": MAX_TEXTURE_SIZE})
-shared = pygfx.renderers.wgpu.get_shared()
 
 
 def make_data(n_rows: int, n_cols: int) -> np.ndarray:
