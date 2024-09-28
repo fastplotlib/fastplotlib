@@ -87,7 +87,6 @@ line_stack_selector_label = figure[0, 1].add_text(
 )
 
 
-@line_stack_selector.add_event_handler("selection")
 def line_stack_selector_changed(ev):
     selection = ev.info["value"]
 
