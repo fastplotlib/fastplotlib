@@ -8,7 +8,6 @@ Example showing how to plot a heatmap
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
-import pygfx
 import numpy as np
 
 
