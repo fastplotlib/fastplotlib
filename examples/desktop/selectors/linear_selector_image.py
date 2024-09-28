@@ -20,38 +20,38 @@ figure = fpl.Figure((1, 3), size=(700, 300), names=[["image", "selected row data
 # create an image
 image = figure[0, 0].add_image(image_data)
 
-# add a row selector
-image_row_selector = image.add_linear_selector(axis="y")
+# # add a row selector
+# image_row_selector = image.add_linear_selector(axis="y")
+#
+# # add column selector
+# image_col_selector = image.add_linear_selector()
 
-# add column selector
-image_col_selector = image.add_linear_selector()
-
-# make a line to indicate row data
-line_image_row = figure[0, 1].add_line(image.data[0])
-
-# make a line to indicate column data
-line_image_col = figure[0, 2].add_line(image.data[:, 0])
-
-
-# callbacks to change the line data in subplot [0, 1]
-# to display selected row and selected column data
-def image_row_selector_changed(ev):
-    ix = ev.get_selected_index()
-    new_data = image.data[ix]
-    # set y values of line with the row data
-    line_image_row.data[:, 1] = new_data
-
-
-def image_col_selector_changed(ev):
-    ix = ev.get_selected_index()
-    new_data = image.data[:, ix]
-    # set y values of line with the column data
-    line_image_col.data[:, 1] = new_data
-
-
-# add event handlers, you can also use a decorator
-image_row_selector.add_event_handler(image_row_selector_changed, "selection")
-image_col_selector.add_event_handler(image_col_selector_changed, "selection")
+# # make a line to indicate row data
+# line_image_row = figure[0, 1].add_line(image.data[0])
+#
+# # make a line to indicate column data
+# line_image_col = figure[0, 2].add_line(image.data[:, 0])
+#
+#
+# # callbacks to change the line data in subplot [0, 1]
+# # to display selected row and selected column data
+# def image_row_selector_changed(ev):
+#     ix = ev.get_selected_index()
+#     new_data = image.data[ix]
+#     # set y values of line with the row data
+#     line_image_row.data[:, 1] = new_data
+#
+#
+# def image_col_selector_changed(ev):
+#     ix = ev.get_selected_index()
+#     new_data = image.data[:, ix]
+#     # set y values of line with the column data
+#     line_image_col.data[:, 1] = new_data
+#
+#
+# # add event handlers, you can also use a decorator
+# image_row_selector.add_event_handler(image_row_selector_changed, "selection")
+# image_col_selector.add_event_handler(image_col_selector_changed, "selection")
 
 
 figure.show()
