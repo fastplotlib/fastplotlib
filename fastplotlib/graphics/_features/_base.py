@@ -9,9 +9,6 @@ from wgpu.gui.base import log_exception
 import pygfx
 
 
-WGPU_MAX_TEXTURE_SIZE = 8192
-
-
 def to_gpu_supported_dtype(array):
     """
     convert input array to float32 numpy array

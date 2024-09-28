@@ -5,8 +5,13 @@ import pytest
 import pygfx
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import TextureArray, WGPU_MAX_TEXTURE_SIZE
+from fastplotlib.graphics._features import TextureArray
 from fastplotlib.graphics.image import _ImageTile
+
+
+MAX_TEXTURE_SIZE = 1024
+pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension2d": MAX_TEXTURE_SIZE})
+shared = pygfx.renderers.wgpu.get_shared()
 
 
 def make_data(n_rows: int, n_cols: int) -> np.ndarray:
@@ -50,14 +55,14 @@ def check_texture_array(
         assert ta.buffer[chunk_index] is texture
         chunk_row, chunk_col = chunk_index
 
-        data_row_start_index = chunk_row * WGPU_MAX_TEXTURE_SIZE
-        data_col_start_index = chunk_col * WGPU_MAX_TEXTURE_SIZE
+        data_row_start_index = chunk_row * MAX_TEXTURE_SIZE
+        data_col_start_index = chunk_col * MAX_TEXTURE_SIZE
 
         data_row_stop_index = min(
-            data.shape[0], data_row_start_index + WGPU_MAX_TEXTURE_SIZE
+            data.shape[0], data_row_start_index + MAX_TEXTURE_SIZE
         )
         data_col_stop_index = min(
-            data.shape[1], data_col_start_index + WGPU_MAX_TEXTURE_SIZE
+            data.shape[1], data_col_start_index + MAX_TEXTURE_SIZE
         )
 
         row_slice = slice(data_row_start_index, data_row_stop_index)
@@ -96,7 +101,7 @@ def check_image_graphic(texture_array, graphic):
 @pytest.mark.parametrize("test_graphic", [False, True])
 def test_small_texture(test_graphic):
     # tests TextureArray with dims that requires only 1 texture
-    data = make_data(1_000, 1_000)
+    data = make_data(500, 500)
 
     if test_graphic:
         graphic = make_image_graphic(data)
@@ -118,13 +123,13 @@ def test_small_texture(test_graphic):
     if test_graphic:
         check_image_graphic(ta, graphic)
 
-    check_set_slice(data, ta, slice(50, 200), slice(600, 800))
+    check_set_slice(data, ta, slice(50, 200), slice(200, 400))
 
 
 @pytest.mark.parametrize("test_graphic", [False, True])
 def test_texture_at_limit(test_graphic):
-    # tests TextureArray with data that is 8192 x 8192
-    data = make_data(WGPU_MAX_TEXTURE_SIZE, WGPU_MAX_TEXTURE_SIZE)
+    # tests TextureArray with data that is 1024 x 1024
+    data = make_data(MAX_TEXTURE_SIZE, MAX_TEXTURE_SIZE)
 
     if test_graphic:
         graphic = make_image_graphic(data)
@@ -146,12 +151,12 @@ def test_texture_at_limit(test_graphic):
     if test_graphic:
         check_image_graphic(ta, graphic)
 
-    check_set_slice(data, ta, slice(5000, 8000), slice(2000, 3000))
+    check_set_slice(data, ta, slice(500, 800), slice(200, 300))
 
 
 @pytest.mark.parametrize("test_graphic", [False, True])
 def test_wide(test_graphic):
-    data = make_data(10_000, 20_000)
+    data = make_data(1_200, 2_200)
 
     if test_graphic:
         graphic = make_image_graphic(data)
@@ -166,19 +171,19 @@ def test_wide(test_graphic):
         buffer_shape=(2, 3),
         row_indices_size=2,
         col_indices_size=3,
-        row_indices_values=np.array([0, 8192]),
-        col_indices_values=np.array([0, 8192, 16384]),
+        row_indices_values=np.array([0, MAX_TEXTURE_SIZE]),
+        col_indices_values=np.array([0, MAX_TEXTURE_SIZE, 2 * MAX_TEXTURE_SIZE]),
     )
 
     if test_graphic:
         check_image_graphic(ta, graphic)
 
-    check_set_slice(data, ta, slice(6_000, 9_000), slice(12_000, 18_000))
+    check_set_slice(data, ta, slice(600, 1_100), slice(100, 2_100))
 
 
 @pytest.mark.parametrize("test_graphic", [False, True])
 def test_tall(test_graphic):
-    data = make_data(20_000, 10_000)
+    data = make_data(2_200, 1_200)
 
     if test_graphic:
         graphic = make_image_graphic(data)
@@ -193,19 +198,19 @@ def test_tall(test_graphic):
         buffer_shape=(3, 2),
         row_indices_size=3,
         col_indices_size=2,
-        row_indices_values=np.array([0, 8192, 16384]),
-        col_indices_values=np.array([0, 8192]),
+        row_indices_values=np.array([0, MAX_TEXTURE_SIZE, 2 * MAX_TEXTURE_SIZE]),
+        col_indices_values=np.array([0, MAX_TEXTURE_SIZE]),
     )
 
     if test_graphic:
         check_image_graphic(ta, graphic)
 
-    check_set_slice(data, ta, slice(12_000, 18_000), slice(6_000, 9_000))
+    check_set_slice(data, ta, slice(100, 2_100), slice(600, 1_100))
 
 
 @pytest.mark.parametrize("test_graphic", [False, True])
 def test_square(test_graphic):
-    data = make_data(20_000, 20_000)
+    data = make_data(2_200, 2_200)
 
     if test_graphic:
         graphic = make_image_graphic(data)
@@ -220,11 +225,11 @@ def test_square(test_graphic):
         buffer_shape=(3, 3),
         row_indices_size=3,
         col_indices_size=3,
-        row_indices_values=np.array([0, 8192, 16384]),
-        col_indices_values=np.array([0, 8192, 16384]),
+        row_indices_values=np.array([0, MAX_TEXTURE_SIZE, 2 * MAX_TEXTURE_SIZE]),
+        col_indices_values=np.array([0, MAX_TEXTURE_SIZE, 2 * MAX_TEXTURE_SIZE]),
     )
 
     if test_graphic:
         check_image_graphic(ta, graphic)
 
-    check_set_slice(data, ta, slice(12_000, 18_000), slice(16_000, 19_000))
+    check_set_slice(data, ta, slice(100, 2_100), slice(100, 2_100))

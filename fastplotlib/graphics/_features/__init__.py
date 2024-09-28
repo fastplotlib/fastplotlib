@@ -14,7 +14,6 @@ from ._image import (
     ImageVmax,
     ImageInterpolation,
     ImageCmapInterpolation,
-    WGPU_MAX_TEXTURE_SIZE,
 )
 from ._base import (
     GraphicFeature,

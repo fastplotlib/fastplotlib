@@ -5,7 +5,7 @@ from math import ceil
 import numpy as np
 
 import pygfx
-from ._base import GraphicFeature, FeatureEvent, WGPU_MAX_TEXTURE_SIZE
+from ._base import GraphicFeature, FeatureEvent
 
 from ...utils import (
     make_colors,
@@ -20,6 +20,9 @@ class TextureArray(GraphicFeature):
 
         data = self._fix_data(data)
 
+        shared = pygfx.renderers.wgpu.get_shared()
+        self._texture_limit_2d = shared.device.limits["max-texture-dimension2d"]
+
         if isolated_buffer:
             # useful if data is read-only, example: memmaps
             self._value = np.zeros(data.shape, dtype=data.dtype)
@@ -31,13 +34,13 @@ class TextureArray(GraphicFeature):
         # data start indices for each Texture
         self._row_indices = np.arange(
             0,
-            ceil(self.value.shape[0] / WGPU_MAX_TEXTURE_SIZE) * WGPU_MAX_TEXTURE_SIZE,
-            WGPU_MAX_TEXTURE_SIZE,
+            ceil(self.value.shape[0] / self._texture_limit_2d) * self._texture_limit_2d,
+            self._texture_limit_2d,
         )
         self._col_indices = np.arange(
             0,
-            ceil(self.value.shape[1] / WGPU_MAX_TEXTURE_SIZE) * WGPU_MAX_TEXTURE_SIZE,
-            WGPU_MAX_TEXTURE_SIZE,
+            ceil(self.value.shape[1] / self._texture_limit_2d) * self._texture_limit_2d,
+            self._texture_limit_2d,
         )
 
         # buffer will be an array of textures
@@ -118,8 +121,8 @@ class TextureArray(GraphicFeature):
         chunk_index = (chunk_row, chunk_col)
 
         # stop indices of big data array for this chunk
-        row_stop = min(self.value.shape[0], data_row_start + WGPU_MAX_TEXTURE_SIZE)
-        col_stop = min(self.value.shape[1], data_col_start + WGPU_MAX_TEXTURE_SIZE)
+        row_stop = min(self.value.shape[0], data_row_start + self._texture_limit_2d)
+        col_stop = min(self.value.shape[1], data_col_start + self._texture_limit_2d)
 
         # row and column slices that slice the data for this chunk from the big data array
         data_slice = (slice(data_row_start, row_stop), slice(data_col_start, col_stop))
