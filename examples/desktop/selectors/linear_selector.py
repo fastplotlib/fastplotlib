@@ -2,7 +2,7 @@
 Linear Selectors
 ================
 
-Example showing how to use a `LinearSelector` with lines, line collections, and images
+Example showing how to use a `LinearSelector` with lines and line collections.
 """
 
 # test_example = false
@@ -51,6 +51,8 @@ line_selection_label = figure[0, 0].add_text(
 
 
 # add an event handler using a decorator, selectors are just like other graphics
+# you can also use the .add_event_handler() method directly instead of a decorator
+# see the line collection example below for a non-decorator example
 @line_selector.add_event_handler("selection")
 def line_selector_changed(ev):
     selection = ev.info["value"]
@@ -85,7 +87,6 @@ line_stack_selector_label = figure[0, 1].add_text(
 )
 
 
-# add an event handler using a decorator
 @line_stack_selector.add_event_handler("selection")
 def line_stack_selector_changed(ev):
     selection = ev.info["value"]
@@ -100,6 +101,17 @@ def line_stack_selector_changed(ev):
          f"index: {index}\n"
          f"sine y value: {line_stack[0].data[index, 1]:.2f}\n"
          f"cosine y value: {line_stack[1].data[index, 1]:.2f}\n")
+
+
+# add an event handler, you can also use a decorator
+line_stack_selector.add_event_handler(line_stack_selector_changed, "selection")
+
+# some axes and camera zoom settings
+for subplot in [figure[0, 0], figure[0, 1]]:
+    subplot.axes.grids.xy.visible = True
+    subplot.axes.auto_grid = False
+    subplot.axes.grids.xy.major_step = (np.pi, 1)
+    subplot.axes.grids.xy.minor_step = (0, 0)
 
 
 figure.show(maintain_aspect=False)
