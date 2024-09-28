@@ -151,8 +151,17 @@ class ImageWidgetSliders(EdgeWindow):
             # so that slider occupies full width
             imgui.set_next_item_width(self.width * 0.85)
 
+            if "Jupyter" in self._image_widget.figure.canvas.__class__.__name__:
+                # until https://github.com/pygfx/wgpu-py/issues/530
+                flags = imgui.SliderFlags_.no_input
+            else:
+                # clamps to min, max if user inputs value outside these bounds
+                flags = imgui.SliderFlags_.always_clamp
+
             # slider for this dimension
-            changed, index = imgui.slider_int(f"{dim}", v=val, v_min=0, v_max=vmax)
+            changed, index = imgui.slider_int(
+                f"{dim}", v=val, v_min=0, v_max=vmax, flags=flags
+            )
 
             new_index[dim] = index
 
