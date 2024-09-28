@@ -481,7 +481,7 @@ class Figure:
                 # but it is necessary for the gallery images too so that's why this check is here
                 if "RTD_BUILD" in os.environ.keys():
                     if os.environ["RTD_BUILD"] == "1":
-                        subplot.viewport.render(subplot.scene, subplot.camera)
+                        self.render()
 
         else:  # assume GLFW
             self._output = self.canvas
