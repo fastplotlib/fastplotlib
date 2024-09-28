@@ -17,6 +17,7 @@ import numpy as np
 cockatoo = iio.imread("imageio:cockatoo.mp4")
 
 # make a random grayscale video, shape is [t, x, y]
+np.random.seed(0)
 random_data = np.random.rand(cockatoo.shape[0], 100, 100)
 
 iw = fpl.ImageWidget(
