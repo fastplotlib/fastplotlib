@@ -7,7 +7,7 @@ displays the data for the selector row and column.
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'code'
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 from imageio import v3 as iio
@@ -15,7 +15,11 @@ from imageio import v3 as iio
 image_data = iio.imread("imageio:coins.png")
 print(image_data.shape)
 
-figure = fpl.Figure((1, 3), size=(700, 300), names=[["image", "selected row data", "selected column data"]])
+figure = fpl.Figure(
+    (1, 3),
+    size=(700, 300),
+    names=[["image", "selected row data", "selected column data"]]
+)
 
 # create an image
 image = figure[0, 0].add_image(image_data)
