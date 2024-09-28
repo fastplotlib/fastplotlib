@@ -11,18 +11,14 @@ import fastplotlib as fpl
 import pygfx
 import numpy as np
 
-# THESE 3 LINES ARE ONLY FOR TESTS AND THE DOCS GALLERY, DO NOT SET THESE LIMITS IN YOUR OWN CODE!
-MAX_TEXTURE_SIZE = 1024
-pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension2d": MAX_TEXTURE_SIZE})
-shared = pygfx.renderers.wgpu.get_shared()
 
 figure = fpl.Figure(size=(700, 560))
 
-xs = np.linspace(0, 1_200, 1_200, dtype=np.float16)
+xs = np.linspace(0, 2300, 2300, dtype=np.float16)
 
 sine = np.sin(np.sqrt(xs))
 
-data = np.vstack([sine * i for i in range(1_000)])
+data = np.vstack([sine * i for i in range(2_300)])
 
 # plot the image data
 img = figure[0, 0].add_image(data=data, name="heatmap")
