@@ -16,12 +16,17 @@ import numpy as np
 # load the standard cockatoo video
 cockatoo = iio.imread("imageio:cockatoo.mp4")
 
-# make a random grayscale video, shape is [t, x, y]
+# Ignore and do not use the next 2 lines
+# for the purposes of docs gallery generation we subsample and only use 50 frames
+cockatoo50 = cockatoo[:50, ::10, ::10].copy()
+del cockatoo
+
+# make a random grayscale video, shape is [t, rows, cols]
 np.random.seed(0)
-random_data = np.random.rand(cockatoo.shape[0], 100, 100)
+random_data = np.random.rand(*cockatoo50.shape[:-1])
 
 iw = fpl.ImageWidget(
-    [random_data, cockatoo],
+    [random_data, cockatoo50],
     rgb=[False, True],
     figure_kwargs={"size": (700, 560), "controller_ids": [[0, 1]]}  # diff controllers, one video has much smaller dims
 )

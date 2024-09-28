@@ -15,7 +15,12 @@ import numpy as np
 
 movie = iio.imread("imageio:cockatoo.mp4")
 
-iw = fpl.ImageWidget(movie, rgb=[True], figure_kwargs={"size": (700, 560)})
+# Ignore and do not use the next 2 lines
+# for the purposes of docs gallery generation we subsample and only use 50 frames
+movie50 = movie[:50, ::10, ::10].copy()
+del movie
+
+iw = fpl.ImageWidget(movie50, rgb=[True], figure_kwargs={"size": (700, 560)})
 
 # ImageWidget supports setting window functions the `time` "t" or `volume` "z" dimension
 # These can also be given as kwargs to `ImageWidget` during instantiation
