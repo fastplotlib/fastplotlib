@@ -55,9 +55,9 @@ image = figure[0, 0].add_image(image_data)
 
 
 figure.show()
-
-for subplot in figure:
-    subplot.camera.zoom = 0.5
+#
+# for subplot in figure:
+#     subplot.camera.zoom = 0.5
 
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
