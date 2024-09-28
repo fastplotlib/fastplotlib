@@ -16,7 +16,7 @@ on:
 jobs:
   docs-build:
     name: Docs
-    runs-on: bigmem
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     strategy:
@@ -48,8 +48,8 @@ jobs:
         make html SPHINXOPTS="-W --keep-going"
 
   test-build-full:
-    name: Test Linux, notebook + glfw
-    runs-on: bigmem
+    name: Test Linux, notebook + offscreen
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     strategy:
@@ -105,8 +105,8 @@ jobs:
           examples/notebooks/diffs
 
   test-build-desktop:
-    name: Test Linux, only glfw
-    runs-on: bigmem
+    name: Test Linux, only offscreen
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     strategy:
