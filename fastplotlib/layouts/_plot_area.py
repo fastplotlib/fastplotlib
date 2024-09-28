@@ -228,7 +228,7 @@ class PlotArea:
         # TODO: monkeypatch until we figure out a better
         #  pygfx plans on refactoring viewports anyways
         if self.parent is not None:
-            if self.parent.__class__.__name__ == "Figure":
+            if self.parent.__class__.__name__.endswith("Figure"):
                 for subplot in self.parent:
                     if subplot.camera in cameras_list:
                         new_controller.register_events(subplot.viewport)
