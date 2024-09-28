@@ -1,7 +1,8 @@
 """
-Simple Heatmap
-==============
-Example showing how to plot a heatmap
+Heatmap or large arrays
+=======================
+Example showing how ImageGraphics can be useful for viewing large arrays, these can be in the order of 10^4 x 10^4.
+The performance and limitations will depend on your hardware.
 """
 
 # test_example = true
