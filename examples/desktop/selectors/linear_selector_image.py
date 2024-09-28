@@ -13,7 +13,6 @@ import fastplotlib as fpl
 from imageio import v3 as iio
 
 image_data = iio.imread("imageio:coins.png")
-print(image_data.shape)
 
 figure = fpl.Figure(
     (1, 3),
@@ -57,6 +56,9 @@ def image_col_selector_changed(ev):
 image_row_selector.add_event_handler(image_row_selector_changed, "selection")
 image_col_selector.add_event_handler(image_col_selector_changed, "selection")
 
+# programmatically set the selection or drag it with your mouse pointer
+image_row_selector.selection = 200
+image_col_selector.selection = 180
 
 figure.show()
 

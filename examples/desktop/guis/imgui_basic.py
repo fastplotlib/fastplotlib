@@ -105,7 +105,7 @@ class ImguiExample(EdgeWindow):
 # make GUI instance
 gui = ImguiExample(
     figure,  # the figure this GUI instance should live inside
-    size=250,  # width or height of the GUI window within the figure
+    size=275,  # width or height of the GUI window within the figure
     location="right",  # the edge to place this window at
     title="Imgui Window",  # window title
 )
