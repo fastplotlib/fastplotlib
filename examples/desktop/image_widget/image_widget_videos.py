@@ -28,8 +28,8 @@ random_data = np.random.rand(*cockatoo_sub.shape[:-1])
 iw = fpl.ImageWidget(
     [random_data, cockatoo_sub],
     rgb=[False, True],
-    figure_shape=(2, 1), # 2 rows, 1 column
-    figure_kwargs={"size": (700, 560), "controller_ids": [[0, 1]]}  # diff controllers, imagewidget syncs by default
+    figure_shape=(2, 1),  # 2 rows, 1 column
+    figure_kwargs={"size": (700, 560)}
 )
 
 iw.show()
