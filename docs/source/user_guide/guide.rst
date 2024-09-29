@@ -457,7 +457,7 @@ For example: ::
 
     fig.show()
 
-.. image:: ../_static/guide_click_event.gif
+.. image:: ../_static/guide_click_event.webp
 
 ImageWidget
 -----------
@@ -488,8 +488,8 @@ Animations
 
 An animation function is a user-defined function that gets called on every rendering cycle. Let's look at an example: ::
 
-import fastplotlib as fpl
-import numpy as np
+    import fastplotlib as fpl
+    import numpy as np
 
     # generate some data
     start, stop = 0, 2 * np.pi
