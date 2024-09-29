@@ -30,6 +30,7 @@ Properties
     ImageGraphic.interpolation
     ImageGraphic.name
     ImageGraphic.offset
+    ImageGraphic.right_click_menu
     ImageGraphic.rotation
     ImageGraphic.supported_events
     ImageGraphic.visible

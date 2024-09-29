@@ -35,6 +35,7 @@ Properties
     Subplot.renderer
     Subplot.scene
     Subplot.selectors
+    Subplot.toolbar
     Subplot.viewport
 
 Methods
@@ -56,6 +57,7 @@ Methods
     Subplot.center_title
     Subplot.clear
     Subplot.delete_graphic
+    Subplot.get_figure
     Subplot.get_rect
     Subplot.insert_graphic
     Subplot.map_screen_to_world

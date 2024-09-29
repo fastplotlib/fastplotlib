@@ -7,25 +7,25 @@ import pygfx
 from wgpu.gui import WgpuCanvasBase
 
 from ..graphics import TextGraphic
-from ._utils import make_canvas_and_renderer, create_camera, create_controller
+from ._utils import create_camera, create_controller
 from ._plot_area import PlotArea
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..graphics._axes import Axes
 
 
+# number of pixels taken by the imgui toolbar when present
+IMGUI_TOOLBAR_HEIGHT = 39
+
+
 class Subplot(PlotArea, GraphicMethodsMixin):
     def __init__(
         self,
-        parent: Union["Figure", None] = None,
-        position: tuple[int, int] = None,
-        parent_dims: tuple[int, int] = None,
-        camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera = "2d",
-        controller: (
-            Literal["panzoom", "fly", "trackball", "orbit"] | pygfx.Controller
-        ) = None,
-        canvas: (
-            Literal["glfw", "jupyter", "qt", "wx"] | WgpuCanvasBase | pygfx.Texture
-        ) = None,
+        parent: Union["Figure"],
+        position: tuple[int, int],
+        parent_dims: tuple[int, int],
+        camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera,
+        controller: pygfx.Controller,
+        canvas: WgpuCanvasBase | pygfx.Texture,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
     ):
@@ -56,12 +56,10 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             | if ``str``, must be one of: `"panzoom", "fly", "trackball", or "orbit"`.
             | also accepts a pygfx.Controller instance
 
-        canvas: one of "jupyter", "glfw", "qt", "ex, a WgpuCanvas, or a pygfx.Texture, optional
-            Provides surface on which a scene will be rendered. Can optionally provide a WgpuCanvas instance or a str
-            to force the PlotArea to use a specific canvas from one of the following options: "jupyter", "glfw", "qt".
-            Can also provide a pygfx Texture to render to.
+        canvas: WgpuCanvas, or a pygfx.Texture
+            Provides surface on which a scene will be rendered.
 
-        renderer: WgpuRenderer, optional
+        renderer: WgpuRenderer
             object used to render scenes using wgpu
 
         name: str, optional
@@ -70,8 +68,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         """
 
         super(GraphicMethodsMixin, self).__init__()
-
-        canvas, renderer = make_canvas_and_renderer(canvas, renderer)
 
         if position is None:
             position = (0, 0)
@@ -90,6 +86,8 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self.spacing = 2
 
         self._title_graphic: TextGraphic = None
+
+        self._toolbar = True
 
         super(Subplot, self).__init__(
             parent=parent,
@@ -142,6 +140,16 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         """
         return self._docks
 
+    @property
+    def toolbar(self) -> bool:
+        """show/hide toolbar"""
+        return self._toolbar
+
+    @toolbar.setter
+    def toolbar(self, visible: bool):
+        self._toolbar = bool(visible)
+        self.set_viewport_rect()
+
     def render(self):
         self.axes.update_using_camera()
         super().render()
@@ -172,19 +180,44 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self.docks["top"].center_graphic(self._title_graphic, zoom=1.5)
         self._title_graphic.world_object.position_y = -3.5
 
-    def get_rect(self):
-        """Returns the bounding box that defines the Subplot within the canvas."""
+    def get_rect(self) -> np.ndarray:
+        """
+        Returns the bounding box that defines the Subplot within the canvas.
+
+        Returns
+        -------
+        np.ndarray
+            x_position, y_position, width, height
+
+        """
         row_ix, col_ix = self.position
-        width_canvas, height_canvas = self.canvas.get_logical_size()
+
+        x_start_render, y_start_render, width_canvas_render, height_canvas_render = (
+            self.parent.get_pygfx_render_area()
+        )
 
         x_pos = (
-            (width_canvas / self.ncols) + ((col_ix - 1) * (width_canvas / self.ncols))
-        ) + self.spacing
+            (
+                (width_canvas_render / self.ncols)
+                + ((col_ix - 1) * (width_canvas_render / self.ncols))
+            )
+            + self.spacing
+            + x_start_render
+        )
         y_pos = (
-            (height_canvas / self.nrows) + ((row_ix - 1) * (height_canvas / self.nrows))
-        ) + self.spacing
-        width_subplot = (width_canvas / self.ncols) - self.spacing
-        height_subplot = (height_canvas / self.nrows) - self.spacing
+            (
+                (height_canvas_render / self.nrows)
+                + ((row_ix - 1) * (height_canvas_render / self.nrows))
+            )
+            + self.spacing
+            + y_start_render
+        )
+        width_subplot = (width_canvas_render / self.ncols) - self.spacing
+        height_subplot = (height_canvas_render / self.nrows) - self.spacing
+
+        if self.parent.__class__.__name__ == "ImguiFigure" and self.toolbar:
+            # leave space for imgui toolbar
+            height_subplot -= IMGUI_TOOLBAR_HEIGHT
 
         rect = np.array([x_pos, y_pos, width_subplot, height_subplot])
 
@@ -232,73 +265,93 @@ class Dock(PlotArea):
         self.set_viewport_rect()
 
     def get_rect(self, *args):
+        """
+        Returns the bounding box that defines this dock area within the canvas.
+
+        Returns
+        -------
+        np.ndarray
+            x_position, y_position, width, height
+        """
         if self.size == 0:
             self.viewport.rect = None
             return
 
         row_ix_parent, col_ix_parent = self.parent.position
-        width_canvas, height_canvas = self.parent.renderer.logical_size
+
+        x_start_render, y_start_render, width_render_canvas, height_render_canvas = (
+            self.parent.parent.get_pygfx_render_area()
+        )
 
         spacing = 2  # spacing in pixels
 
         if self.position == "right":
             x_pos = (
-                (width_canvas / self.parent.ncols)
-                + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
-                + (width_canvas / self.parent.ncols)
+                (width_render_canvas / self.parent.ncols)
+                + ((col_ix_parent - 1) * (width_render_canvas / self.parent.ncols))
+                + (width_render_canvas / self.parent.ncols)
                 - self.size
             )
             y_pos = (
-                (height_canvas / self.parent.nrows)
-                + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+                (height_render_canvas / self.parent.nrows)
+                + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
             ) + spacing
             width_viewport = self.size
-            height_viewport = (height_canvas / self.parent.nrows) - spacing
+            height_viewport = (height_render_canvas / self.parent.nrows) - spacing
 
         elif self.position == "left":
-            x_pos = (width_canvas / self.parent.ncols) + (
-                (col_ix_parent - 1) * (width_canvas / self.parent.ncols)
+            x_pos = (width_render_canvas / self.parent.ncols) + (
+                (col_ix_parent - 1) * (width_render_canvas / self.parent.ncols)
             )
             y_pos = (
-                (height_canvas / self.parent.nrows)
-                + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+                (height_render_canvas / self.parent.nrows)
+                + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
             ) + spacing
             width_viewport = self.size
-            height_viewport = (height_canvas / self.parent.nrows) - spacing
+            height_viewport = (height_render_canvas / self.parent.nrows) - spacing
 
         elif self.position == "top":
             x_pos = (
-                (width_canvas / self.parent.ncols)
-                + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
+                (width_render_canvas / self.parent.ncols)
+                + ((col_ix_parent - 1) * (width_render_canvas / self.parent.ncols))
                 + spacing
             )
             y_pos = (
-                (height_canvas / self.parent.nrows)
-                + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+                (height_render_canvas / self.parent.nrows)
+                + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
             ) + spacing
-            width_viewport = (width_canvas / self.parent.ncols) - spacing
+            width_viewport = (width_render_canvas / self.parent.ncols) - spacing
             height_viewport = self.size
 
         elif self.position == "bottom":
             x_pos = (
-                (width_canvas / self.parent.ncols)
-                + ((col_ix_parent - 1) * (width_canvas / self.parent.ncols))
+                (width_render_canvas / self.parent.ncols)
+                + ((col_ix_parent - 1) * (width_render_canvas / self.parent.ncols))
                 + spacing
             )
             y_pos = (
                 (
-                    (height_canvas / self.parent.nrows)
-                    + ((row_ix_parent - 1) * (height_canvas / self.parent.nrows))
+                    (height_render_canvas / self.parent.nrows)
+                    + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
                 )
-                + (height_canvas / self.parent.nrows)
+                + (height_render_canvas / self.parent.nrows)
                 - self.size
             )
-            width_viewport = (width_canvas / self.parent.ncols) - spacing
+            width_viewport = (width_render_canvas / self.parent.ncols) - spacing
             height_viewport = self.size
         else:
             raise ValueError("invalid position")
 
-        return [x_pos, y_pos, width_viewport, height_viewport]
+        if self.parent.__class__.__name__ == "ImguiFigure" and self.parent.toolbar:
+            # leave space for imgui toolbar
+            height_viewport -= IMGUI_TOOLBAR_HEIGHT
+
+        return [
+            x_pos + x_start_render,
+            y_pos + y_start_render,
+            width_viewport,
+            height_viewport,
+        ]
 
     def get_parent_rect_adjust(self):
         if self.position == "right":

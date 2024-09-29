@@ -5,7 +5,15 @@ from .graphics import *
 from .graphics.selectors import *
 from .graphics.utils import pause_events
 from .legends import *
-from .layouts import Figure
+from .tools import *
+
+from .layouts import IMGUI
+
+if IMGUI:
+    # default to imgui figure if imgui_bundle is installed
+    from .layouts import ImguiFigure as Figure
+else:
+    from .layouts import Figure
 
 from .widgets import ImageWidget
 from .utils import config, enumerate_adapters, select_adapter, print_wgpu_report

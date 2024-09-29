@@ -29,6 +29,7 @@ Properties
     LinearSelector.name
     LinearSelector.offset
     LinearSelector.parent
+    LinearSelector.right_click_menu
     LinearSelector.rotation
     LinearSelector.selection
     LinearSelector.supported_events

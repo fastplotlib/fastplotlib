@@ -18,13 +18,15 @@ diffs_dir = examples_dir / "diffs"
 # examples live in themed sub-folders
 example_globs = [
     "image/*.py",
+    "image_widget/*.py",
     "heatmap/*.py",
     "scatter/*.py",
     "line/*.py",
     "line_collection/*.py",
     "gridplot/*.py",
     "misc/*.py",
-    "selectors/*.py"
+    "selectors/*.py",
+    "guis/*.py",
 ]
 
 

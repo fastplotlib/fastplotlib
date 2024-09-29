@@ -33,6 +33,7 @@ Properties
     LineCollection.names
     LineCollection.offset
     LineCollection.offsets
+    LineCollection.right_click_menu
     LineCollection.rotation
     LineCollection.rotations
     LineCollection.supported_events

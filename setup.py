@@ -4,7 +4,8 @@ from pathlib import Path
 
 install_requires = [
     "numpy>=1.23.0",
-    "pygfx>=0.4.0",
+    "pygfx>=0.5.0",
+    "wgpu>=0.18.1",
     "cmap>=0.1.3",
 ]
 
@@ -22,9 +23,10 @@ extras_require = {
         "pandoc",
         "jupyterlab",
         "sidecar",
-        "imageio",
+        "imageio[pyav]",
         "matplotlib",
-        "scikit-learn"
+        "scikit-learn",
+        "imgui-bundle",
     ],
     "notebook": [
         "jupyterlab",
@@ -44,14 +46,17 @@ extras_require = {
         "scikit-learn",
         "tqdm",
         "sidecar",
+        "imgui-bundle",
     ],
     "tests-desktop": [
         "pytest<8.0.0",
         "scipy",
-        "imageio",
+        "imageio[pyav]",
         "scikit-learn",
         "tqdm",
+        "imgui-bundle",
     ],
+    "imgui": ["imgui-bundle"],
 }
 
 

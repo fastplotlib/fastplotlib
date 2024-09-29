@@ -9,6 +9,7 @@ from fastplotlib import graphics
 from fastplotlib.graphics import _features, selectors
 from fastplotlib import widgets
 from fastplotlib import utils
+from fastplotlib import ui
 
 
 current_dir = Path(__file__).parent.resolve()
@@ -19,6 +20,7 @@ GRAPHICS_DIR = API_DIR.joinpath("graphics")
 GRAPHIC_FEATURES_DIR = API_DIR.joinpath("graphic_features")
 SELECTORS_DIR = API_DIR.joinpath("selectors")
 WIDGETS_DIR = API_DIR.joinpath("widgets")
+UI_DIR = API_DIR.joinpath("ui")
 
 doc_sources = [
     API_DIR,
@@ -27,6 +29,7 @@ doc_sources = [
     GRAPHIC_FEATURES_DIR,
     SELECTORS_DIR,
     WIDGETS_DIR,
+    UI_DIR,
 ]
 
 for source_dir in doc_sources:
@@ -143,9 +146,16 @@ def generate_page(
 def main():
     generate_page(
         page_name="Figure",
-        classes=[fastplotlib.Figure],
-        modules=["fastplotlib"],
+        classes=[fastplotlib.layouts._figure.Figure],
+        modules=["fastplotlib.layouts"],
         source_path=LAYOUTS_DIR.joinpath("figure.rst"),
+    )
+
+    generate_page(
+        page_name="ImguiFigure",
+        classes=[fastplotlib.layouts.ImguiFigure],
+        modules=["fastplotlib.layouts"],
+        source_path=LAYOUTS_DIR.joinpath("imgui_figure.rst"),
     )
 
     generate_page(
@@ -258,16 +268,36 @@ def main():
         )
     ##############################################################################
 
+    ui_classes = [ui.BaseGUI, ui.Window, ui.EdgeWindow, ui.Popup]
+
+    ui_class_names = [cls.__name__ for cls in ui_classes]
+
+    ui_class_names_str = "\n    ".join([""] + ui_class_names)
+
+    with open(UI_DIR.joinpath("index.rst"), "w") as f:
+        f.write(
+            f"UI Bases\n"
+            f"********\n"
+            f"\n"
+            f".. toctree::\n"
+            f"    :maxdepth: 1\n"
+            f"{ui_class_names_str}\n"
+        )
+
+    for ui_cls in ui_classes:
+        generate_page(
+            page_name=ui_cls.__name__,
+            classes=[ui_cls],
+            modules=["fastplotlib.ui"],
+            source_path=UI_DIR.joinpath(f"{ui_cls.__name__}.rst"),
+        )
+
+    ##############################################################################
+
     utils_str = generate_functions_module(utils.functions, "fastplotlib.utils")
 
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
-
-    # gpu selection
-    fpl_functions = generate_functions_module(fastplotlib, "fastplotlib.utils.gpu")
-
-    with open(API_DIR.joinpath("gpu.rst"), "w") as f:
-        f.write(fpl_functions)
 
 
 if __name__ == "__main__":

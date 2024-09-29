@@ -10,11 +10,15 @@ import os
 os.environ["WGPU_FORCE_OFFSCREEN"] = "1"
 
 import fastplotlib
+import pygfx
 from pygfx.utils.gallery_scraper import find_examples_for_gallery
 from pathlib import Path
 import sys
 from sphinx_gallery.sorting import ExplicitOrder
 import imageio.v3 as iio
+
+MAX_TEXTURE_SIZE = 2048
+pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension2d": MAX_TEXTURE_SIZE})
 
 ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
 EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples", "desktop")
@@ -52,6 +56,7 @@ sphinx_gallery_conf = {
     "subsection_order": ExplicitOrder(
         [
             "../../examples/desktop/image",
+            "../../examples/desktop/image_widget",
             "../../examples/desktop/gridplot",
             "../../examples/desktop/line",
             "../../examples/desktop/line_collection",
@@ -59,6 +64,7 @@ sphinx_gallery_conf = {
             "../../examples/desktop/heatmap",
             "../../examples/desktop/misc",
             "../../examples/desktop/selectors",
+            "../../examples/desktop/guis"
         ]
     ),
     "ignore_pattern": r'__init__\.py',

@@ -2,13 +2,45 @@ import importlib
 
 import pygfx
 from pygfx import WgpuRenderer, Texture, Renderer
+from pygfx.renderers.wgpu.engine.renderer import (
+    EVENT_TYPE_MAP,
+    PointerEvent,
+    WheelEvent,
+)
+
 from wgpu.gui import WgpuCanvasBase
 
 from ..utils import gui
 
 
+# temporary until https://github.com/pygfx/pygfx/issues/495
+class WgpuRendererWithEventFilters(WgpuRenderer):
+    def __init__(self, target, *args, **kwargs):
+        super().__init__(target, *args, **kwargs)
+        self._event_filters = {}
+
+    def convert_event(self, event: dict):
+        event_type = event["event_type"]
+
+        if EVENT_TYPE_MAP[event_type] in [PointerEvent, WheelEvent]:
+            for filt in self.event_filters.values():
+                if (
+                    filt[0, 0] < event["x"] < filt[1, 0]
+                    and filt[0, 1] < event["y"] < filt[1, 1]
+                ):
+                    return
+
+        super().convert_event(event)
+
+    @property
+    def event_filters(self) -> dict:
+        return self._event_filters
+
+
 def make_canvas_and_renderer(
-    canvas: str | WgpuCanvasBase | Texture | None, renderer: Renderer | None
+    canvas: str | WgpuCanvasBase | Texture | None,
+    renderer: Renderer | None,
+    canvas_kwargs: dict,
 ):
     """
     Parses arguments and returns the appropriate canvas and renderer instances
@@ -16,10 +48,10 @@ def make_canvas_and_renderer(
     """
 
     if canvas is None:
-        canvas = gui.WgpuCanvas(max_fps=60)
+        canvas = gui.WgpuCanvas(max_fps=60, **canvas_kwargs)
     elif isinstance(canvas, str):
         m = importlib.import_module("wgpu.gui." + canvas)
-        canvas = m.WgpuCanvas(max_fps=60)
+        canvas = m.WgpuCanvas(max_fps=60, **canvas_kwargs)
     elif not isinstance(canvas, (WgpuCanvasBase, Texture)):
         raise TypeError(
             f"canvas option must either be a valid WgpuCanvas implementation, a pygfx Texture"
@@ -27,7 +59,7 @@ def make_canvas_and_renderer(
         )
 
     if renderer is None:
-        renderer = WgpuRenderer(canvas)
+        renderer = WgpuRendererWithEventFilters(canvas)
     elif not isinstance(renderer, Renderer):
         raise TypeError(
             f"renderer option must be a pygfx.Renderer instance such as pygfx.WgpuRenderer"

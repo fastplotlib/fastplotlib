@@ -109,7 +109,9 @@ class Figure:
         else:
             subplot_names = None
 
-        canvas, renderer = make_canvas_and_renderer(canvas, renderer)
+        canvas, renderer = make_canvas_and_renderer(
+            canvas, renderer, canvas_kwargs={"size": size}
+        )
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
@@ -322,24 +324,9 @@ class Figure:
 
         self._current_iter = None
 
-        self._starting_size = size
+        self._sidecar = None
 
         self._output = None
-
-        if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
-            self.recorder = FigureRecorder(self)
-        else:
-            self.recorder = None
-
-    @property
-    def toolbar(self):
-        """ipywidget or QToolbar instance"""
-        return self._output.toolbar
-
-    @property
-    def output(self):
-        """ipywidget or QWidget that contains this plot"""
-        return self._output
 
     @property
     def shape(self) -> tuple[int, int]:
@@ -390,7 +377,7 @@ class Figure:
         else:
             return self._subplots[index[0], index[1]]
 
-    def render(self):
+    def render(self, draw=True):
         # call the animation functions before render
         self._call_animate_functions(self._animate_funcs_pre)
 
@@ -398,7 +385,8 @@ class Figure:
             subplot.render()
 
         self.renderer.flush()
-        self.canvas.request_draw()
+        if draw:
+            self.canvas.request_draw()
 
         # call post-render animate functions
         self._call_animate_functions(self._animate_funcs_post)
@@ -406,19 +394,16 @@ class Figure:
     def start_render(self):
         """start render cycle"""
         self.canvas.request_draw(self.render)
-        self.canvas.set_logical_size(*self._starting_size)
 
     def show(
         self,
         autoscale: bool = True,
         maintain_aspect: bool = None,
-        toolbar: bool = True,
         sidecar: bool = False,
         sidecar_kwargs: dict = None,
-        add_widgets: list = None,
     ):
         """
-        Begins the rendering event loop and shows the plot in the desired output context (jupyter, qt or glfw).
+        Begins the rendering event loop and shows the Figure, returns the canvas
 
         Parameters
         ----------
@@ -428,38 +413,28 @@ class Figure:
         maintain_aspect: bool, default ``True``
             maintain aspect ratio
 
-        toolbar: bool, default ``True``
-            show toolbar
-
         sidecar: bool, default ``True``
-            display plot in a ``jupyterlab-sidecar``, only for jupyter output context
+            display plot in a ``jupyterlab-sidecar``, only in jupyter
 
         sidecar_kwargs: dict, default ``None``
             kwargs for sidecar instance to display plot
             i.e. title, layout
 
-        add_widgets: list of widgets
-            a list of ipywidgets or QWidget that are vertically stacked below the plot
-
         Returns
         -------
-        OutputContext
-            In jupyter, it will display the plot in the output cell or sidecar
-
-            In Qt, it will display the Plot, toolbar, etc. as stacked widget, use `Plot.widget` to access it.
+        WgpuCanvasBase
+            In Qt or GLFW, the canvas window containing the Figure will be shown.
+            In jupyter, it will display the plot in the output cell or sidecar.
         """
 
-        # show was already called, return existing output context
-        if self._output is not None:
+        # show was already called, return canvas
+        if self._output:
             return self._output
 
         self.start_render()
 
         if sidecar_kwargs is None:
             sidecar_kwargs = dict()
-
-        if add_widgets is None:
-            add_widgets = list()
 
         # flip y-axis if ImageGraphics are present
         for subplot in self:
@@ -476,26 +451,23 @@ class Figure:
                     _maintain_aspect = maintain_aspect
                 subplot.auto_scale(maintain_aspect=maintain_aspect)
 
-        # return the appropriate OutputContext based on the current canvas
+        # parse based on canvas type
         if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
-            from .output.jupyter_output import (
-                JupyterOutputContext,
-            )  # noqa - inline import
+            if sidecar:
+                from sidecar import Sidecar
+                from IPython.display import display
 
-            self._output = JupyterOutputContext(
-                frame=self,
-                make_toolbar=toolbar,
-                use_sidecar=sidecar,
-                sidecar_kwargs=sidecar_kwargs,
-                add_widgets=add_widgets,
-            )
+                self._sidecar = Sidecar(**sidecar_kwargs)
+                self._output = self.canvas
+                with self._sidecar:
+                    return display(self.canvas)
+            self._output = self.canvas
+            return self._output
 
         elif self.canvas.__class__.__name__ == "QWgpuCanvas":
-            from .output.qt_output import QOutputContext  # noqa - inline import
-
-            self._output = QOutputContext(
-                frame=self, make_toolbar=toolbar, add_widgets=add_widgets
-            )
+            self._output = self.canvas
+            self._output.show()
+            return self.canvas
 
         elif self.canvas.__class__.__name__ == "WgpuManualOffscreenCanvas":
             # for test and docs gallery screenshots
@@ -509,16 +481,30 @@ class Figure:
                 # but it is necessary for the gallery images too so that's why this check is here
                 if "RTD_BUILD" in os.environ.keys():
                     if os.environ["RTD_BUILD"] == "1":
-                        subplot.viewport.render(subplot.scene, subplot.camera)
+                        self.render()
 
-        else:  # assume GLFW, the output context is just the canvas
+        else:  # assume GLFW
             self._output = self.canvas
 
-        # return the output context, this call is required for jupyter but not for Qt
+        # return the canvas
         return self._output
 
     def close(self):
-        self.output.close()
+        self._output.close()
+        if self._sidecar:
+            self._sidecar.close()
+
+    def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
+        """
+        Get rect for the portion of the canvas that the pygfx renderer draws to
+
+        Returns
+        -------
+        tuple[int, int, int, int]
+            x_pos, y_pos, width, height
+
+        """
+        return 0, 0, *self.canvas.get_logical_size()
 
     def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:
@@ -639,6 +625,25 @@ class Figure:
                 snapshot = snapshot[..., :-1].shape
 
             return iio.imwrite(uri, snapshot, **kwargs)
+
+    def open_popup(self, *args, **kwargs):
+        warn("popups only supported by ImguiFigure")
+
+    def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
+        """
+        Fet rect for the portion of the canvas that the pygfx renderer draws to,
+        i.e. non-imgui, part of canvas
+
+        Returns
+        -------
+        tuple[int, int, int, int]
+            x_pos, y_pos, width, height
+
+        """
+
+        width, height = self.canvas.get_logical_size()
+
+        return 0, 0, width, height
 
     def _get_iterator(self):
         return product(range(self.shape[0]), range(self.shape[1]))

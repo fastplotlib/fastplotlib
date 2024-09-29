@@ -30,8 +30,6 @@ Properties
     ImageWidget.n_scrollable_dims
     ImageWidget.ndim
     ImageWidget.slider_dims
-    ImageWidget.sliders
-    ImageWidget.widget
     ImageWidget.window_funcs
 
 Methods
@@ -39,7 +37,10 @@ Methods
 .. autosummary::
     :toctree: ImageWidget_api
 
+    ImageWidget.add_event_handler
+    ImageWidget.clear_event_handlers
     ImageWidget.close
+    ImageWidget.remove_event_handler
     ImageWidget.reset_vmin_vmax
     ImageWidget.reset_vmin_vmax_frame
     ImageWidget.set_data

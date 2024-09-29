@@ -29,6 +29,7 @@ Properties
     RectangleSelector.name
     RectangleSelector.offset
     RectangleSelector.parent
+    RectangleSelector.right_click_menu
     RectangleSelector.rotation
     RectangleSelector.selection
     RectangleSelector.supported_events

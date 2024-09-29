@@ -6,7 +6,7 @@ Figure
 ======
 Figure
 ======
-.. currentmodule:: fastplotlib
+.. currentmodule:: fastplotlib.layouts
 
 Constructor
 ~~~~~~~~~~~
@@ -24,10 +24,8 @@ Properties
     Figure.canvas
     Figure.controllers
     Figure.names
-    Figure.output
     Figure.renderer
     Figure.shape
-    Figure.toolbar
 
 Methods
 ~~~~~~~
@@ -38,6 +36,8 @@ Methods
     Figure.clear
     Figure.close
     Figure.export
+    Figure.get_pygfx_render_area
+    Figure.open_popup
     Figure.remove_animation
     Figure.render
     Figure.show

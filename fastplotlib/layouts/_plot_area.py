@@ -34,6 +34,7 @@ class PlotArea:
         scene: pygfx.Scene,
         canvas: WgpuCanvasBase,
         renderer: pygfx.WgpuRenderer,
+        extra_renderers: dict = None,
         name: str = None,
     ):
         """
@@ -121,6 +122,19 @@ class PlotArea:
         self.scene.add(self._background)
 
         self.set_viewport_rect()
+
+    def get_figure(self, obj=None):
+        """Get Figure instance that contains this plot area"""
+        if obj is None:
+            obj = self
+
+        if obj.parent.__class__.__name__.endswith("Figure"):
+            return obj.parent
+        else:
+            if obj.parent is None:
+                raise RecursionError
+
+            return self.get_figure(obj=obj.parent)
 
     # several read-only properties
     @property
@@ -214,7 +228,7 @@ class PlotArea:
         # TODO: monkeypatch until we figure out a better
         #  pygfx plans on refactoring viewports anyways
         if self.parent is not None:
-            if self.parent.__class__.__name__ == "Figure":
+            if self.parent.__class__.__name__.endswith("Figure"):
                 for subplot in self.parent:
                     if subplot.camera in cameras_list:
                         new_controller.register_events(subplot.viewport)

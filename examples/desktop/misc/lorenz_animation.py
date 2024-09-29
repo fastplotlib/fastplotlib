@@ -51,7 +51,8 @@ for i in range(5):
 
 figure = fpl.Figure(
     cameras="3d",
-    controller_types="fly"
+    controller_types="fly",
+    size=(700, 560)
 )
 
 lorenz_line = figure[0, 0].add_line_collection(data=lorenz_data, thickness=.1, cmap="tab10")
@@ -59,14 +60,14 @@ lorenz_line = figure[0, 0].add_line_collection(data=lorenz_data, thickness=.1, c
 scatter_markers = list()
 
 for graphic in lorenz_line:
-    marker = figure[0, 0].add_scatter(graphic.data.value[0], sizes=8, colors=graphic.colors[0])
+    marker = figure[0, 0].add_scatter(graphic.data.value[0], sizes=16, colors=graphic.colors[0])
     scatter_markers.append(marker)
 
 # initialize time
 time = 0
 
 
-def animate(supblot):
+def animate(subplot):
     global time
 
     time += 2
@@ -83,7 +84,7 @@ figure[0, 0].add_animations(animate)
 figure.show()
 
 # set initial camera position to make animation in gallery render better
-figure[0, 0].camera.world.z = 75
+figure[0, 0].camera.world.z = 80
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

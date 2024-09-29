@@ -29,6 +29,7 @@ Properties
     LinearRegionSelector.name
     LinearRegionSelector.offset
     LinearRegionSelector.parent
+    LinearRegionSelector.right_click_menu
     LinearRegionSelector.rotation
     LinearRegionSelector.selection
     LinearRegionSelector.supported_events

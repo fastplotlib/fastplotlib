@@ -2,9 +2,52 @@ from collections import OrderedDict
 from typing import *
 
 import numpy as np
-from cmap import Colormap
+import cmap as cmap_lib
 
 from pygfx import Texture, Color
+
+
+cmap_catalog = cmap_lib.Catalog()
+
+COLORMAPS = cmap_catalog.short_keys()
+
+SEQUENTIAL_CMAPS = list()
+QUALITATIVE_CMAPS = list()
+CYCLIC_CMAPS = list()
+DIVERGING_CMAPS = list()
+MISC_CMAPS = list()
+
+
+for name in COLORMAPS:
+    _colormap = cmap_lib.Colormap(name)
+    match _colormap.category:
+        case "sequential":
+            if _colormap.interpolation == "nearest":
+                continue
+            SEQUENTIAL_CMAPS.append(name)
+        case "cyclic":
+            if _colormap.interpolation == "nearest":
+                continue
+            CYCLIC_CMAPS.append(name)
+        case "diverging":
+            if _colormap.interpolation == "nearest":
+                continue
+            DIVERGING_CMAPS.append(name)
+        case "qualitative":
+            QUALITATIVE_CMAPS.append(name)
+        case "miscellaneous":
+            if _colormap.interpolation == "nearest":
+                continue
+            MISC_CMAPS.append(name)
+
+
+COLORMAP_NAMES = {
+    "sequential": sorted(SEQUENTIAL_CMAPS),
+    "cyclic": sorted(CYCLIC_CMAPS),
+    "diverging": sorted(DIVERGING_CMAPS),
+    "qualitative": sorted(QUALITATIVE_CMAPS),
+    "miscellaneous": sorted(MISC_CMAPS),
+}
 
 
 def get_cmap(name: str, alpha: float = 1.0, gamma: float = 1.0) -> np.ndarray:
@@ -26,7 +69,8 @@ def get_cmap(name: str, alpha: float = 1.0, gamma: float = 1.0) -> np.ndarray:
         [n_colors, 4], i.e. [n_colors, RGBA]
 
     """
-    cmap = Colormap(name).lut(256, gamma=gamma)
+
+    cmap = cmap_lib.Colormap(name).lut(256, gamma=gamma)
     cmap[:, -1] = alpha
     return cmap.astype(np.float32)
 
@@ -53,7 +97,8 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
         shape is [n_colors, 4], where the last dimension is RGBA
 
     """
-    cm = Colormap(cmap)
+
+    cm = cmap_lib.Colormap(cmap)
 
     # can also use cm.category == "qualitative", but checking for non-interpolated
     # colormaps is a bit more general.  (and not all "custom" colormaps will be
@@ -63,7 +108,7 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
         if n_colors > max_colors:
             raise ValueError(
                 f"You have requested <{n_colors}> colors but only <{max_colors}> exist for the "
-                f"chosen cmap: <{name}>"
+                f"chosen cmap: <{cmap}>"
             )
         return np.asarray(cm.color_stops, dtype=np.float32)[:n_colors, 1:]
 
@@ -72,7 +117,7 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
 
 
 def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
-    return Colormap(name).to_pygfx()
+    return cmap_lib.Colormap(name).to_pygfx()
 
 
 def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
@@ -247,7 +292,8 @@ def parse_cmap_values(
         n_colors = colormap.shape[0] - 1
 
         # can also use cm.category == "qualitative"
-        if Colormap(cmap_name).interpolation == "nearest":
+        if cmap_lib.Colormap(cmap_name).interpolation == "nearest":
+
             # check that cmap_values are <int> and within the number of colors `n_colors`
 
             # do not scale, use directly

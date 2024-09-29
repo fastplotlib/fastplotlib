@@ -123,3 +123,8 @@ How can I use `fastplotlib` interactively?
     2. IPython
 
     Users can select between using a Qt backend or glfw using the same methods as above.
+
+Why the parrot logo?
+--------------------
+
+    The logo is a `swift parrot <https://en.wikipedia.org/wiki/Swift_parrot>`_, they are the fastest species of parrot and they are colorful like fastplotlib visualizations :D
