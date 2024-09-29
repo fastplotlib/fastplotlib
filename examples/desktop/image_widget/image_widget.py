@@ -3,6 +3,9 @@ Image widget
 ============
 
 Example showing the image widget in action.
+
+Every image in an `ImageWidget` is associated with an interactive Histogram LUT tool and colorbar. Right-click the
+colorbar to pick colormaps.
 """
 
 # test_example = true
