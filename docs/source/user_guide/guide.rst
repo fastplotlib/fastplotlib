@@ -175,12 +175,19 @@ Using our example from above: once we add a ``Graphic`` to the figure, we can th
 
 .. image:: ../_static/guide_hello_world_vmax.png
 
-``Graphic`` properties also support slicing and indexing. For example ::
+``Graphic`` properties also support numpy-like slicing for getting and setting data. For example ::
 
-    image_graphic.data[::8, :, :] = 1
-    image_graphic.data[:, ::8, :] = 1
+    # basic numpy-like slicing, set the top right corner
+    image_graphic.data[:150, -150:] = 0
 
-.. image:: ../_static/guide_hello_world_data.png
+.. image:: ../_static/guide_hello_world_simple_slicing.png
+
+Fancy indexing is also supported! ::
+
+    bool_array = np.random.choice([True, False], size=(512, 512), p=[0.1, 0.9])
+    image_graphic.data[bool_array] = 254
+
+.. image:: ../_static/guide_hello_world_fancy_slicing.png
 
 
 Selectors
@@ -207,16 +214,15 @@ data. Let's look at an example: ::
     # add a linear selector the sine wave
     selector = sine_graphic.add_linear_selector()
 
-    fig[0, 0].auto_scale()
-
     fig.show(maintain_aspect=False)
 
-.. image:: ../_static/guide_linear_selector.gif
+.. image:: ../_static/guide_linear_selector.webp
 
 
 A ``LinearRegionSelector`` is very similar to a ``LinearSelector`` but as opposed to selecting a singular point of
 your data, you are able to select an entire region.
 
+See the examples gallery for more in-depth examples with selector tools.
 
 Now we have the basics of creating a ``Figure``, adding ``Graphics`` to a ``Figure``, and working with ``Graphic`` properties to dynamically change or alter them.
 Let's take a look at how we can define events to link ``Graphics`` and their properties together.
@@ -271,8 +277,10 @@ Rendering engine (``pygfx``) events:
 When an event occurs, the user-defined event handler will receive and event object. Depending on the type of event, the
 event object will have relevant information that can be used in the callback. See below for event tables.
 
+Event Attributes
+^^^^^^^^^^^^^^^^
 
-**All ``Graphic`` events have the following attributes:**
+All ``Graphic`` events have the following attributes:
 
     +------------+-------------+-----------------------------------------------+
     | attribute  | type        | description                                   |
@@ -447,9 +455,9 @@ For example: ::
         # change the closest graphic color to white
         nearest.colors = "w"
 
-     fig.show()
+    fig.show()
 
-.. image:: ../_static/click_event.gif
+.. image:: ../_static/guide_click_event.gif
 
 ImageWidget
 -----------
@@ -473,34 +481,51 @@ to easily navigate through different dimensions of your data. Let's look at an e
 
     iw_movie.show()
 
-.. image:: ../_static/guide_image_widget.gif
+.. image:: ../_static/guide_image_widget.webp
 
 Animations
 ----------
 
 An animation function is a user-defined function that gets called on every rendering cycle. Let's look at an example: ::
 
-    import fastplotlib as fpl
-    import numpy as np
+import fastplotlib as fpl
+import numpy as np
 
-    data = np.random.rand(512, 512)
+    # generate some data
+    start, stop = 0, 2 * np.pi
+    increment = (2 * np.pi) / 50
 
-    fig = fpl.Figure()
+    # make a simple sine wave
+    xs = np.linspace(start, stop, 100)
+    ys = np.sin(xs)
 
-    fig[0,0].add_image(data=data, name="random-img")
+    figure = fpl.Figure(size=(700, 560))
 
-    def update_data(plot_instance):
-        new_data = np.random.rand(512, 512)
-        plot_instance["random-img"].data = new_data
+    # plot the image data
+    sine = figure[0, 0].add_line(ys, name="sine", colors="r")
 
-    fig[0,0].add_animations(update_data)
 
-    fig.show()
+    # increment along the x-axis on each render loop :D
+    def update_line(subplot):
+        global increment, start, stop
+        xs = np.linspace(start + increment, stop + increment, 100)
+        ys = np.sin(xs)
 
-.. image:: ../_static/guide_animation.gif
+        start += increment
+        stop += increment
 
-Here we are defining a function that updates the data of the ``ImageGraphic`` in the plot with new random data. When adding an animation function, the
-user-defined function will receive a plot instance as an argument when it is called.
+        # change only the y-axis values of the line
+        subplot["sine"].data[:, 1] = ys
+
+
+    figure[0, 0].add_animations(update_line)
+
+    figure.show(maintain_aspect=False)
+
+.. image:: ../_static/guide_animation.webp
+
+Here we are defining a function that updates the data of the ``LineGraphic`` in the plot with new data. When adding an animation function, the
+user-defined function will receive a subplot instance as an argument when it is called.
 
 Spaces
 ------
@@ -532,6 +557,20 @@ There are several spaces to consider when using ``fastplotlib``:
 
 For more information on the various spaces used by rendering engines please see this `article <https://learnopengl.com/Getting-started/Coordinate-Systems>`_
 
+Imgui
+-----
+
+Fastplotlib uses `imgui_bundle <https://github.com/pthom/imgui_bundle>`_ to provide within-canvas UI elemenents if you
+installed ``fastplotlib`` using the ``imgui`` toggle, i.e. ``fastplotlib[imgui]``, or installed ``imgui_bundle`` afterwards.
+
+Fastplotlib comes built-in with imgui UIs for subplot toolbars and a standard right-click menu with a number of options.
+You can also make custom GUIs and embed them within the canvas, see the examples gallery for detailed examples.
+
+.. note::
+    Imgui is optional, you can use other GUI frameworks such at Qt or ipywidgets with fastplotlib. You can also of course
+    use imgui and Qt or ipywidgets.
+
+.. image:: ../_static/guide_imgui.png
 
 Using ``fastplotlib`` interactively
 -----------------------------------
