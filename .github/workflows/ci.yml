@@ -101,7 +101,7 @@ jobs:
       with:
         name: screenshot-diffs
         path: |
-          examples/desktop/diffs
+          examples/diffs
           examples/notebooks/diffs
 
   test-build-desktop:
@@ -157,7 +157,7 @@ jobs:
       with:
         name: screenshot-diffs
         path: |
-          examples/desktop/diffs
+          examples/diffs
 
 #  test-build-full-mac:
 #    name: Test Mac, notebook + glfw

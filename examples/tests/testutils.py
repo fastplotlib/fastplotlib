@@ -11,7 +11,7 @@ import numpy as np
 
 
 ROOT = Path(__file__).parents[2]  # repo root
-examples_dir = ROOT / "examples" / "desktop"
+examples_dir = ROOT / "examples"
 screenshots_dir = examples_dir / "screenshots"
 diffs_dir = examples_dir / "diffs"
 
