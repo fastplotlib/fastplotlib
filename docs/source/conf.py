@@ -63,7 +63,7 @@ sphinx_gallery_conf = {
             "../../examples/scatter",
             "../../examples/heatmap",
             "../../examples/misc",
-            "../../examples/selectors",
+            "../../examples/selection_tools",
             "../../examples/guis"
         ]
     ),
