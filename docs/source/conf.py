@@ -21,7 +21,7 @@ MAX_TEXTURE_SIZE = 2048
 pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension2d": MAX_TEXTURE_SIZE})
 
 ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
-EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples", "desktop")
+EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples")
 
 sys.path.insert(0, str(ROOT_DIR))
 
@@ -55,16 +55,16 @@ sphinx_gallery_conf = {
     "remove_config_comments": True,
     "subsection_order": ExplicitOrder(
         [
-            "../../examples/desktop/image",
-            "../../examples/desktop/image_widget",
-            "../../examples/desktop/gridplot",
-            "../../examples/desktop/line",
-            "../../examples/desktop/line_collection",
-            "../../examples/desktop/scatter",
-            "../../examples/desktop/heatmap",
-            "../../examples/desktop/misc",
-            "../../examples/desktop/selectors",
-            "../../examples/desktop/guis"
+            "../../examples/image",
+            "../../examples/image_widget",
+            "../../examples/gridplot",
+            "../../examples/line",
+            "../../examples/line_collection",
+            "../../examples/scatter",
+            "../../examples/heatmap",
+            "../../examples/misc",
+            "../../examples/selectors",
+            "../../examples/guis"
         ]
     ),
     "ignore_pattern": r'__init__\.py',
