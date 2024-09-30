@@ -9,23 +9,16 @@ To install use pip:
 .. code-block::
 
     # with imgui and jupyterlab
-    pip instlal -U fastplotlib[notebook,imgui]
+    pip instlal -U "fastplotlib[notebook,imgui]"
 
     # minimal install, install glfw, pyqt6 or pyside6 separately
     pip install -U fastplotlib
 
     # with imgui
-    pip install -U fastplotlib[imgui]
+    pip install -U "fastplotlib[imgui]"
 
     # to use in jupyterlab, no imgui
-    pip instlal -U fastplotlib[notebook]
-
-or install the bleeding edge from Github:
-
-.. code-block::
-
-    pip install git+https://github.com/fastplotlib/fastplotlib.git@main
-
+    pip instlal -U "fastplotlib[notebook]"
 
 What is ``fastplotlib``?
 ------------------------

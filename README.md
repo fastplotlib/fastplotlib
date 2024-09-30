@@ -17,14 +17,9 @@
 
 Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that can utilize [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! `fastplotlib` is an expressive plotting library that enables rapid prototyping for large scale explorative scientific visualization.
 
-![scipy-fpl](https://github.com/fastplotlib/fastplotlib/assets/9403332/b981a54c-05f9-443f-a8e4-52cd01cd802a)
-
-### SciPy 2023 Talk
-
-[![fpl_thumbnail](http://i3.ytimg.com/vi/Q-UJpAqljsU/hqdefault.jpg)](https://www.youtube.com/watch?v=Q-UJpAqljsU)
-
-Note that the API is currently evolving quickly. We recommend using the latest notebooks from the repo but the general 
-concepts are similar to those from the API shown in the video.
+> **Note**
+> 
+> `fastplotlib` is currently in the **late alpha stage**, but you're welcome to try it out or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). See this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121
 
 # Supported frameworks
 
@@ -36,19 +31,17 @@ concepts are similar to those from the API shown in the video.
 :heavy_check_mark: `wxPython`
 
 **Notes:**\
-:heavy_check_mark: Non-blocking Qt/PySide output is supported in ipython and notebooks by using [`%gui qt`](https://ipython.readthedocs.io/en/stable/interactive/magics.html#magic-gui). This **must** be called *before* importing `fastplotlib`!
+:heavy_check_mark: Non-blocking interactive Qt/PySide output is supported in ipython and notebooks, see https://fastplotlib.readthedocs.io/en/latest/user_guide/guide.html#using-fastplotlib-interactively \
 :grey_exclamation: We do not officially support `jupyter notebook` through `jupyter_rfb`, this may change with notebook v7\
 :disappointed: [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb) does not work in collab, see https://github.com/vispy/jupyter_rfb/pull/77 
 
-> **Note**
-> 
-> `fastplotlib` is currently in the **late alpha stage**, but you're welcome to try it out or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). See this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121 
+We recommend sticking to jupyter-lab for notebooks. From our experience the usage on other platforms, such as vscode 
+notebooks, is not optimal. 
+
 
 # Documentation
 
-http://fastplotlib.readthedocs.io/ 
-
-The examples are interactive if you run them locally on your computer. If someone wants to integrate `pyodide` with `pygfx` we would be able to have live interactive examples on the website!
+http://fastplotlib.readthedocs.io/
 
 Questions, issues, ideas? You are welcome to post an [issue](https://github.com/fastplotlib/fastplotlib/issues) or post on the [discussion forum](https://github.com/fastplotlib/fastplotlib/discussions)! :smiley: 
 
@@ -57,13 +50,20 @@ Questions, issues, ideas? You are welcome to post an [issue](https://github.com/
 ### Minimal, use with your own `Qt` or `glfw` applications
 ```bash
 pip install fastplotlib
+
+# with imgui, recommended
+pip instlal "fastplotlib[imgui]"
 ```
 
-**This does not give you `PyQt`/`PySide` or `glfw`, you will have to install your preferred GUI framework separately**.
+**This does not give you `PyQt6`/`PySide6` or `glfw`, you will have to install your preferred GUI framework separately**.
 
-### Notebook
+### Notebook and imgui
 ```bash
+pip install "fastplotlib[notebook,imgui]"
+
+# without imgui
 pip install "fastplotlib[notebook]"
+
 ```
 
 **Strongly recommended: install `simplejpeg` for much faster notebook visualization, this requires you to first install [libjpeg-turbo](https://libjpeg-turbo.org/)**
@@ -95,34 +95,20 @@ Se [Contributing](https://github.com/fastplotlib/fastplotlib?tab=readme-ov-file#
 
 # Examples
 
-Examples gallery: https://fastplotlib.readthedocs.io/en/latest/_gallery/index.html 
+Examples gallery: https://fastplotlib.readthedocs.io/en/latest/_gallery/index.html
 
-> **Note:** `fastplotlib` and `pygfx` are fast evolving, you will probably require the latest `pygfx` and `fastplotlib` from github to use the examples in the main branch.
+User guide: https://fastplotlib.readthedocs.io/en/latest/user_guide/guide.html
 
-`fastplotlib` code is identical across notebook (`jupyter`), and desktop use with `Qt`/`PySide` or `glfw`. 
+`fastplotlib` code is identical across notebook (`jupyterlab`), and desktop use with `Qt`/`PySide` or `glfw`. 
+
+**Notebooks**
 
 Even if you do not intend to use notebooks with `fastplotlib`, the `quickstart.ipynb` tutorial notebook is the best way to get familiar with the API: https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks/quickstart.ipynb
 
-The specifics for running `fastplotlib` in different GUI frameworks are:
-- Running in `glfw` requires a `fastplotlib.run()` call (which is really just a `wgpu` `run()` call)
-- With `Qt` you can encapsulate it within a `QApplication`, see `examples/qt`
-- Notebooks plots have ipywidget-based toolbars and widgets. There are plans to move toward an identical in-canvas toolbar with UI elements across all supported frameworks 😄
-
-### Embedding in a `Qt` app
-
-See these for examples on embedding within a Qt app. Note that you can also use `fastplotlib` with qt interactively using `%gui qt` in jupyter or ipython.
-
-https://github.com/fastplotlib/fastplotlib/tree/main/examples/qt
-
-### Notebook examples
-
-Notebook examples are here, these include examples on selector tools.
+Other notebook examples: 
 
 https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks
 
-### Video
-
-Our SciPy 2023 talk walks through numerous demos: https://github.com/fastplotlib/fastplotlib#scipy-talk
 
 ## Graphics drivers
 
