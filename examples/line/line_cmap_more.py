@@ -23,24 +23,24 @@ cosine = np.column_stack([xs, ys])
 figure = fpl.Figure(size=(700, 560))
 
 # basic white line
-line1 = figure[0, 0].add_line(sine, thickness=10)
+line0 = figure[0, 0].add_line(sine, thickness=10)
 
 # set colormap along line datapoints, use an offset to place it above the previous line
-line2 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", offset=(0, 2, 0))
+line1 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", offset=(0, 2, 0))
 
 # set colormap by mapping data using a transform
 # here we map the color using the y-values of the sine data
 # i.e., the color is a function of sine(x)
-line3 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", cmap_transform=sine[:, 1], offset=(0, 4, 0))
+line2 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", cmap_transform=sine[:, 1], offset=(0, 4, 0))
 
 # make a line and change the cmap afterward, here we are using the cosine instead fot the transform
-line4 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", cmap_transform=cosine[:, 1], offset=(0, 6, 0))
+line3 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", cmap_transform=cosine[:, 1], offset=(0, 6, 0))
 # change the cmap
-line4.cmap = "bwr"
+line3.cmap = "bwr"
 
 # use quantitative colormaps with categorical cmap_transforms
 labels = [0] * 25 + [1] * 5 + [2] * 50 + [3] * 20
-line5 = figure[0, 0].add_line(sine, thickness=10, cmap="tab10", cmap_transform=labels, offset=(0, 8, 0))
+line4 = figure[0, 0].add_line(sine, thickness=10, cmap="tab10", cmap_transform=labels, offset=(0, 8, 0))
 
 # some text labels
 for i in range(5):
