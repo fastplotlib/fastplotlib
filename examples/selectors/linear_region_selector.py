@@ -23,7 +23,7 @@ names = [
 ]
 
 # 2 rows, 2 columns
-fig = fpl.Figure(
+figure = fpl.Figure(
     (2, 2),
     size=(700, 560),
     names=names,
@@ -37,14 +37,14 @@ xs = np.linspace(0, 10 * np.pi, 1_000)
 ys = np.sin(xs)  # y = sine(x)
 
 # make sine along x axis
-sine_graphic_x = fig[0, 0].add_line(np.column_stack([xs, ys]))
+sine_graphic_x = figure[0, 0].add_line(np.column_stack([xs, ys]))
 
 # x = sine(y), sine(y) > 0 = 0
 sine_y = ys
 sine_y[sine_y > 0] = 0
 
 # sine along y axis
-sine_graphic_y = fig[0, 1].add_line(np.column_stack([ys, xs]))
+sine_graphic_y = figure[0, 1].add_line(np.column_stack([ys, xs]))
 
 # offset the position of the graphic to demonstrate `get_selected_data()` later
 sine_graphic_y.position_x = 50
@@ -58,8 +58,8 @@ selector_y = sine_graphic_y.add_linear_region_selector(axis="y")
 zoomed_init = np.column_stack([np.arange(zoomed_prealloc), np.zeros(zoomed_prealloc)])
 
 # make line graphics for displaying zoomed data
-zoomed_x = fig[1, 0].add_line(zoomed_init)
-zoomed_y = fig[1, 1].add_line(zoomed_init)
+zoomed_x = figure[1, 0].add_line(zoomed_init)
+zoomed_y = figure[1, 1].add_line(zoomed_init)
 
 
 def interpolate(subdata: np.ndarray, axis: int):
@@ -82,7 +82,7 @@ def set_zoom_x(ev):
 
     # interpolate the y-values since y = f(x)
     zoomed_x.data[:, 1] = interpolate(selected_data, axis=1)
-    fig[1, 0].auto_scale()
+    figure[1, 0].auto_scale()
 
 
 def set_zoom_y(ev):
@@ -95,7 +95,7 @@ def set_zoom_y(ev):
 
     # interpolate the x values since this x = f(y)
     zoomed_y.data[:, 1] = -interpolate(selected_data, axis=0)
-    fig[1, 1].auto_scale()
+    figure[1, 1].auto_scale()
 
 
 # you can also add event handlers without a decorator
@@ -105,7 +105,7 @@ selector_y.add_event_handler(set_zoom_y, "selection")
 selector_x.selection = selector_y.selection = (0, 4 * np.pi)
 
 
-fig.show(maintain_aspect=False)
+figure.show(maintain_aspect=False)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter
