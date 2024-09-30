@@ -1,2 +1,0 @@
-Examples that use fastplotlib
-=============================
