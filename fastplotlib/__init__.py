@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from .utils.gui import run  # noqa
+# wgpu must be the first thing imported so auto-canvas detection works correctly
+from .utils import run  # noqa
 from .graphics import *
 from .graphics.selectors import *
 from .graphics.utils import pause_events

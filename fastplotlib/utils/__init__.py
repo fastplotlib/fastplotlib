@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-
+from .gui import run
 from .functions import *
 from .gpu import enumerate_adapters, select_adapter, print_wgpu_report
 from ._plot_helpers import *
