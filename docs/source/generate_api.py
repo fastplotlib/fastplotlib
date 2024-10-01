@@ -36,6 +36,35 @@ for source_dir in doc_sources:
     os.makedirs(source_dir, exist_ok=True)
 
 
+# this way we can just add the entire api dir to gitignore and generate before pushing
+with open(API_DIR.joinpath("fastplotlib.rst"), "w") as f:
+    f.write(
+        "fastplotlib\n"
+        "***********\n\n"
+        ".. currentmodule:: fastplotlib\n\n"
+
+        ".. autofunction:: fastplotlib.pause_events\n\n"
+        
+        ".. autofunction:: fastplotlib.enumerate_adapters\n\n"
+        
+        ".. autofunction:: fastplotlib.select_adapter\n\n"
+        
+        ".. autofunction:: fastplotlib.print_wgpu_report\n\n"
+        
+        ".. autofunction:: fastplotlib.run\n"
+    )
+
+with open(API_DIR.joinpath("utils.rst"), "w") as f:
+    f.write(
+        "fastplotlib.utils\n"
+        "*****************\n\n"
+        
+        "..currentmodule:: fastplotlib.utils\n"
+        "..automodule:: fastplotlib.utils.functions\n"
+        "    : members:\n"
+    )
+
+
 def get_public_members(cls) -> Tuple[List[str], List[str]]:
     """
     Returns (public_methods, public_properties)
