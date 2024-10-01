@@ -52,7 +52,7 @@ Questions, issues, ideas? You are welcome to post an [issue](https://github.com/
 pip install fastplotlib
 
 # with imgui, recommended
-pip instlal "fastplotlib[imgui]"
+pip install "fastplotlib[imgui]"
 ```
 
 **This does not give you `PyQt6`/`PySide6` or `glfw`, you will have to install your preferred GUI framework separately**.
