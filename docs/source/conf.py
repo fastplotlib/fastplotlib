@@ -65,7 +65,7 @@ sphinx_gallery_conf = {
             "../../examples/misc",
             "../../examples/selection_tools",
             "../../examples/guis",
-            # "../../examples/qt",
+            "../../examples/qt",
         ]
     ),
     "ignore_pattern": r'__init__\.py',
