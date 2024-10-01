@@ -11,8 +11,8 @@ Example showing updating a multiple subplots with new random 512x512 data.
 import fastplotlib as fpl
 import numpy as np
 
-# Figure of shape 2 x 3 with all controllers synced
-figure = fpl.Figure(shape=(2, 3), controller_ids="sync", size=(700, 560))
+# Figure of shape 1 x 2 with all controllers synced
+figure = fpl.Figure(shape=(1, 2), controller_ids="sync", size=(700, 560))
 
 # Make a random image graphic for each subplot
 for subplot in figure:
@@ -21,10 +21,8 @@ for subplot in figure:
     # add an image to the subplot
     subplot.add_image(data, name="rand-img")
 
-figure[0,1]["rand-img"].cmap = "viridis"
-figure[1,0]["rand-img"].cmap = "Wistia"
-figure[0,2]["rand-img"].cmap = "gray"
-figure[1,1]["rand-img"].cmap = "spring"
+figure[0, 1]["rand-img"].cmap = "viridis"
+
 
 # Define a function to update the image graphics with new data
 # add_animations will pass the gridplot to the animation function
