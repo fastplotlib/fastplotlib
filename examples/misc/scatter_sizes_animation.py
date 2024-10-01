@@ -6,7 +6,7 @@ Animate scatter sizes
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'animate 6s'
+# sphinx_gallery_pygfx_docs = 'animate 4s'
 
 import numpy as np
 import fastplotlib as fpl

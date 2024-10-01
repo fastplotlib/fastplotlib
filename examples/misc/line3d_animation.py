@@ -6,7 +6,7 @@ Example showing animation with 3D lines.
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'animate 8s'
+# sphinx_gallery_pygfx_docs = 'animate 6s'
 
 import numpy as np
 import fastplotlib as fpl

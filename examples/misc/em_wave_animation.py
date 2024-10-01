@@ -6,7 +6,7 @@ Example showing animation of an electromagnetic wave.
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'animate 8s'
+# sphinx_gallery_pygfx_docs = 'animate 5s'
 
 import fastplotlib as fpl
 import numpy as np

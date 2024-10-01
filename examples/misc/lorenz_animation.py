@@ -6,8 +6,9 @@ Example of the Lorenz attractor.
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'animate 10s'
+# sphinx_gallery_pygfx_docs = 'animate 6s'
 
+import glfw
 import fastplotlib as fpl
 import numpy as np
 
@@ -35,7 +36,7 @@ def lorenz(xyz, *, s=10, r=28, b=2.667):
 
 
 dt = 0.01
-num_steps = 3_000
+num_steps = 1_000
 
 lorenz_data = np.empty((5, num_steps + 1, 3))
 

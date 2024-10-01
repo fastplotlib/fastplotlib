@@ -6,7 +6,7 @@ Example showing updating a multiple subplots with new random 512x512 data.
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'animate'
+# sphinx_gallery_pygfx_docs = 'animate 2s'
 
 import fastplotlib as fpl
 import numpy as np
