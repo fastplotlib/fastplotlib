@@ -134,4 +134,10 @@ dmypy.json
 # vs code
 .vscode/
 
+# screenshot diffs
 examples/desktop/diffs/*.png
+
+# sphinx log file
+docs/source/sg_execution_times.rst
+docs/source/_gallery/sg_execution_times.rst
+
