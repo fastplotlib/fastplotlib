@@ -280,7 +280,7 @@ class ImageWidget:
         names: list[str] = None,
         figure_kwargs: dict = None,
         histogram_widget: bool = True,
-        rgb: list[bool] = None,
+        rgb: bool | list[bool] = None,
         cmap: str = "plasma",
         graphic_kwargs: dict = None,
     ):
@@ -336,8 +336,8 @@ class ImageWidget:
             make histogram LUT widget for each subplot
 
         rgb: bool | list[bool], default None
-            Includes a True or False for each ``array`` in the ImageWidget, indicating whether images are displayed as
-            grayscale or RGB(A).
+            bool or list of bool for each input data array in the ImageWidget, indicating whether the corresponding
+            data arrays are grayscale or RGB(A).
 
         graphic_kwargs: Any
             passed to each ImageGraphic in the ImageWidget figure subplots
@@ -379,15 +379,15 @@ class ImageWidget:
                 # Establish number of image dimensions and number of scrollable dimensions for each array
                 if rgb is None:
                     rgb = [False] * len(self.data)
-                if rgb is bool:
-                    rgb = [rgb]
+                if isinstance(rgb, bool):
+                    rgb = [rgb] * len(self.data)
                 if not isinstance(rgb, list):
                     raise TypeError(
-                        f"rgb_disp parameter must be a list, a {type(rgb)} was provided"
+                        f"`rgb` parameter must be a bool or list of bool, a <{type(rgb)}> was provided"
                     )
                 if not len(rgb) == len(self.data):
                     raise ValueError(
-                        f"rgb had length {len(rgb)} but there are {len(self.data)} data arrays; these must be equal"
+                        f"len(rgb) != len(data), {len(rgb)} != {len(self.data)}. These must be equal"
                     )
 
                 self._rgb = rgb
