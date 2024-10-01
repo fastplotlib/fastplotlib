@@ -9,7 +9,7 @@ To install use pip:
 .. code-block::
 
     # with imgui and jupyterlab
-    pip instlal -U "fastplotlib[notebook,imgui]"
+    pip install -U "fastplotlib[notebook,imgui]"
 
     # minimal install, install glfw, pyqt6 or pyside6 separately
     pip install -U fastplotlib
@@ -18,7 +18,7 @@ To install use pip:
     pip install -U "fastplotlib[imgui]"
 
     # to use in jupyterlab, no imgui
-    pip instlal -U "fastplotlib[notebook]"
+    pip install -U "fastplotlib[notebook]"
 
 What is ``fastplotlib``?
 ------------------------
