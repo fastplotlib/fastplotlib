@@ -13,8 +13,9 @@ jobs:
       uses: ammaraskar/sphinx-action@master
       with:
         pre-build-command: |
-          sudo apt-get update -y -qq
-          sudo apt-get install --no-install-recommends -y libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
+          apt-get update -y -qq
+          apt-get install --no-install-recommends -y build-essential
+          apt-get install --no-install-recommends -y libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
           # remove pygfx from install_requires, we install using pygfx@main
           sed -i "/pygfx/d" ./setup.py
           pip install git+https://github.com/pygfx/pygfx.git@main
