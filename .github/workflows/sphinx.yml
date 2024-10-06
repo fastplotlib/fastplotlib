@@ -2,9 +2,6 @@ name: "Sphinx: Render docs"
 
 on: push
 
-permissions:
-  contents: write
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -41,8 +38,9 @@ jobs:
       # if: github.ref == 'refs/heads/main'
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.PUSH_DOCS }}
         repository-name: fastplotlib/doc-builds
-        branch: main # The branch the action should deploy to.
+        branch: gh-pages # The branch the action should deploy to.
         folder: docs/build/html # The folder the action should deploy.
         target-folder: versions/${{ steps.pr.outputs.pull_request_number }}
         clean: true # Automatically remove deleted files from the deploy branch
