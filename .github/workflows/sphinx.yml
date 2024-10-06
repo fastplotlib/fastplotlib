@@ -8,11 +8,6 @@ jobs:
     permissions:
       contents: write
     steps:
-    - name: Get PR Number
-      id: pr
-      run: echo "::set-output name=pull_request_number::$(gh pr view --json number -q .number || echo "")"
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - uses: actions/checkout@v4
       with:
         lfs: true
