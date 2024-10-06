@@ -48,7 +48,7 @@ extensions = [
 ]
 
 
-if "RTD_BUILD" in os.environ.keys():
+if os.environ["FETCH_ARTIFACT"] == "1":
     extensions.append("rtds_action")
 
     # The name of your GitHub repository
