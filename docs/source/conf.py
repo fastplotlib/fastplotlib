@@ -97,7 +97,7 @@ html_theme = "pydata_sphinx_theme"
 html_theme_options = {
     "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
     "show_version_warning_banner": True,
-    "check_switcher": True,
+    "check_switcher": False,
     "switcher": {
         "json_url": "/home/kushal/repos/fastplotlib/docs/build/html/_static/switcher.json",
         "version_match": release
