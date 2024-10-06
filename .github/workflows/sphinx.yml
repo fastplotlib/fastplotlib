@@ -14,6 +14,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - uses: actions/checkout@v4
+      with:
+        lfs: true
     - name: Build HTML
       uses: ammaraskar/sphinx-action@8.0.2
       with:
@@ -21,9 +23,6 @@ jobs:
           apt-get update -y -qq
           apt-get install --no-install-recommends -y build-essential
           apt-get install --no-install-recommends -y libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
-          # fetch lfs files
-          git lfs fetch --all
-          git lfs pull
           # remove pygfx from install_requires, we install using pygfx@main
           sed -i "/pygfx/d" ./setup.py
           pip install git+https://github.com/pygfx/pygfx.git@main
