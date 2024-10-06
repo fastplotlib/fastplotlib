@@ -26,9 +26,12 @@ jobs:
         name: html-docs
         path: docs/build/html/
     - name: Deploy
-      uses: peaceiris/actions-gh-pages@v3
+      uses: JamesIves/github-pages-deploy-action@v4.6.8
       # if: github.ref == 'refs/heads/main'
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: docs/build/html
-        destination_dir: ${{ github.event.number }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages # The branch the action should deploy to.
+        FOLDER: docs/build/html # The folder the action should deploy.
+        TARGET_FOLDER: ${{ github.event.number }}
+        CLEAN: true # Automatically remove deleted files from the deploy branch
+        #CLEAN_EXCLUDE: '["version"]'
