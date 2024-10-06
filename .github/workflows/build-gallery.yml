@@ -29,7 +29,7 @@ jobs:
           python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
       - name: make gallery
         run: |
-          RTD_BUILD=1 FETCH_ARTIFACT=1 sphinx-build -b dummy docs/source/ /tmp/
+          RTD_BUILD=1 FETCH_ARTIFACT=0 sphinx-build -b dummy docs/source/ /tmp/
 
       - uses: actions/upload-artifact@v4
         with:
