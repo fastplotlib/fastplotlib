@@ -2,12 +2,20 @@ name: "Sphinx: Render docs"
 
 on: push
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+    - name: Get PR Number
+      id: pr
+      run: echo "::set-output name=pull_request_number::$(gh pr view --json number -q .number || echo "")"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - uses: actions/checkout@v4
     - name: Build HTML
       uses: ammaraskar/sphinx-action@8.0.2
@@ -33,8 +41,9 @@ jobs:
       # if: github.ref == 'refs/heads/main'
       with:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        branch: gh-pages # The branch the action should deploy to.
+        repository-name: fastplotlib/doc-builds
+        branch: main # The branch the action should deploy to.
         folder: docs/build/html # The folder the action should deploy.
-        target-folder: versions/${{ github.event.number }}
+        target-folder: versions/${{ steps.pr.outputs.pull_request_number }}
         clean: true # Automatically remove deleted files from the deploy branch
-        #CLEAN_EXCLUDE: '["version"]'
+        CLEAN_EXCLUDE: '["versions"]'
