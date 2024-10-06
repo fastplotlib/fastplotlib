@@ -15,6 +15,7 @@ extras_require = {
         "sphinx",
         "sphinx-gallery",
         "furo",
+        "rtds-action",
         "glfw",
         "jupyter-rfb>=0.4.1",  # required so ImageWidget docs show up
         "ipywidgets>=8.0.0,<9",
