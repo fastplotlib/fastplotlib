@@ -29,25 +29,6 @@ Next-gen plotting library built using the `pygfx <https://github.com/pygfx/pygfx
 visualization. ``fastplotlib`` will run on any framework that ``pygfx`` runs on, this includes ``glfw``, ``Qt``
 and ``jupyter lab``
 
-Installation
-============
-
-Install via pip:
-
-.. code-block::
-
-    # with imgui and jupyterlab
-    pip install -U "fastplotlib[notebook,imgui]"
-
-    # minimal install, install glfw, pyqt6 or pyside6 separately
-    pip install -U fastplotlib
-
-    # with imgui
-    pip install -U "fastplotlib[imgui]"
-
-    # to use in jupyterlab, no imgui
-    pip install -U "fastplotlib[notebook]"
-
 Contributing
 ============
 

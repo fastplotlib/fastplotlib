@@ -33,6 +33,7 @@ Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pyg
 **Notes:**\
 :heavy_check_mark: Non-blocking interactive Qt/PySide output is supported in ipython and notebooks, see https://fastplotlib.readthedocs.io/en/latest/user_guide/guide.html#using-fastplotlib-interactively \
 :grey_exclamation: We do not officially support `jupyter notebook` through `jupyter_rfb`, this may change with notebook v7\
+:grey_exclamation: We only officially support jupyterlab for use in notebook. This means we do not support vscode notebooks etc. Jupyterlab is the most reliable way to use `fastplotlib` in notebooks.\
 :disappointed: [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb) does not work in collab, see https://github.com/vispy/jupyter_rfb/pull/77 
 
 We recommend sticking to jupyter-lab for notebooks. From our experience the usage on other platforms, such as vscode 
@@ -41,32 +42,35 @@ notebooks, is not optimal.
 
 # Documentation
 
-http://fastplotlib.readthedocs.io/
+http://www.fastplotlib.org/
 
 Questions, issues, ideas? You are welcome to post an [issue](https://github.com/fastplotlib/fastplotlib/issues) or post on the [discussion forum](https://github.com/fastplotlib/fastplotlib/discussions)! :smiley: 
 
 # Installation
 
-### Minimal, use with your own `Qt` or `glfw` applications
-```bash
-pip install fastplotlib
+To install use pip:
 
-# with imgui, recommended
-pip install "fastplotlib[imgui]"
+```bash
+# with imgui and jupyterlab
+pip install -U "fastplotlib[notebook,imgui]"
+
+# minimal install, install glfw, pyqt6 or pyside6 separately
+pip install -U fastplotlib
+
+# with imgui
+pip install -U "fastplotlib[imgui]"
+
+# to use in jupyterlab, no imgui
+pip install -U "fastplotlib[notebook]"
 ```
 
-**This does not give you `PyQt6`/`PySide6` or `glfw`, you will have to install your preferred GUI framework separately**.
+We strongly recommend installing ``simplejpeg`` for use in notebooks, you must first install [libjpeg-turbo](https://libjpeg-turbo.org/)
 
-### Notebook and imgui
-```bash
-pip install "fastplotlib[notebook,imgui]"
+- If you use ``conda``, you can get ``libjpeg-turbo`` through conda.
+- If you are on linux you can get it through your distro's package manager.
+- For Windows and Mac compiled binaries are available on their release page: https://github.com/libjpeg-turbo/libjpeg-turbo/releases
 
-# without imgui
-pip install "fastplotlib[notebook]"
-
-```
-
-**Strongly recommended: install `simplejpeg` for much faster notebook visualization, this requires you to first install [libjpeg-turbo](https://libjpeg-turbo.org/)**
+Once you have ``libjpeg-turbo``:
 
 ```bash
 pip install simplejpeg
@@ -103,16 +107,11 @@ User guide: https://fastplotlib.readthedocs.io/en/latest/user_guide/guide.html
 
 **Notebooks**
 
-Even if you do not intend to use notebooks with `fastplotlib`, the `quickstart.ipynb` tutorial notebook is the best way to get familiar with the API: https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks/quickstart.ipynb
-
-Other notebook examples: 
-
-https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks
-
+The `quickstart.ipynb` tutorial notebook is a great way to get familiar with the API: https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks/quickstart.ipynb
 
 ## Graphics drivers
 
-You will need a relatively modern GPU (newer integrated GPUs in CPUs are usually fine). Generally if your GPU is from 2017 or later it should be fine.
+You will need a relatively modern GPU, modern integrated graphics are usually fine for many use cases. Generally if your GPU is from 2017 or later it should be fine.
 
 For more detailed information, such as use on cloud computing infrastructure, see: https://wgpu-py.readthedocs.io/en/stable/start.html#platform-requirements
 

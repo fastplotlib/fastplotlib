@@ -21,8 +21,12 @@ To install use pip:
     pip install -U "fastplotlib[notebook]"
 
 We strongly recommend installing ``simplejpeg`` for use in notebooks, you must first install `libjpeg-turbo <https://libjpeg-turbo.org/>`_.
-If you are on linux you can get it through your distro's package manager. For Windows and Mac compiled binaries are available
-on their release page: https://github.com/libjpeg-turbo/libjpeg-turbo/releases
+
+- If you use ``conda``, you can get ``libjpeg-turbo`` through conda.
+- If you are on linux you can get it through your distro's package manager.
+- For Windows and Mac compiled binaries are available on their release page: https://github.com/libjpeg-turbo/libjpeg-turbo/releases
+
+Once you have ``libjpeg-turbo``:
 
 .. code-block::
 
