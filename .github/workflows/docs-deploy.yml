@@ -49,23 +49,23 @@ jobs:
           cd docs
           RTD_BUILD=1 make html
 
-      - name: set output PR
+      - name: set output pr
         if: ${{ github.ref != 'refs/heads/main' }}
         env:
           DOCS_VERSION_DIR: ${{ github.head_ref }}
-        run: echo $DOCS_VERSION_DIR
+        run: echo "DOCS_VERSION_DIR=$GITHUB_HEAD_REF" >> "$GITHUB_ENV"
 
       - name: set output release
         if: ${{ github.ref_type == 'tag' }}
         env:
           DOCS_VERSION_DIR: "stable"
-        run: echo $DOCS_VERSION_DIR
+        run: echo "DOCS_VERSION_DIR=GITHUB_REF_NAME" >> "$GITHUB_ENV"
 
       - name: set output dev
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
           DOCS_VERSION_DIR: "dev"
-        run: echo $DOCS_VERSION_DIR
+        run: echo "DOCS_VERSION_DIR=dev" >> "$GITHUB_ENV"
 
       - name: Deploy docs
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
