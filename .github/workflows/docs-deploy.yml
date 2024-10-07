@@ -53,19 +53,19 @@ jobs:
         if: ${{ github.ref != 'refs/heads/main' }}
         env:
           DOCS_VERSION_DIR: ${{ github.ref_name }}
-        run: echo "outputting to PR dir"
+        run: echo $DOCS_VERSION_DIR
 
       - name: set output release
         if: ${{ github.ref_type == 'tag' }}
         env:
-          DOCS_VERSION_DIR: ${{ github.ref_name }}
-        run: echo "outputting to release dir"
+          DOCS_VERSION_DIR: "stable"
+        run: echo $DOCS_VERSION_DIR
 
       - name: set output dev
         if: ${{ github.ref == 'refs/heads/main' }}
         env:
           DOCS_VERSION_DIR: "dev"
-        run: echo "outputting to dev dir"
+        run: echo $DOCS_VERSION_DIR
 
       - name: Deploy docs
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -73,4 +73,5 @@ jobs:
           server: ${{ secrets.DOCS_SERVER }}
           username: ${{ secrets.DOCS_USERNAME }}
           password: ${{ secrets.DOCS_PASSWORD }}
-          local-dir: docs/build/html/${{ env.DOCS_VERSION_DIR }}
+          local-dir: docs/build/html/
+          server-dir: ./ver/${{ env.DOCS_VERSION_DIR }}
