@@ -16,7 +16,7 @@ on:
     types: [published]
 
 jobs:
-  notebooks:
+  build-docs:
     name: "Build and deploy docs"
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
