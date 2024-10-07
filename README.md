@@ -4,12 +4,12 @@
 
 ---
 
-[![CI](https://github.com/kushalkolar/fastplotlib/actions/workflows/ci.yml/badge.svg)](https://github.com/kushalkolar/fastplotlib/actions/workflows/ci.yml)
+[![CI](https://github.com/fastplotlib/fastplotlib/actions/workflows/ci.yml/badge.svg)](https://github.com/fastplotlib/fastplotlib/actions/workflows/ci.yml)
 [![PyPI version](https://badge.fury.io/py/fastplotlib.svg)](https://badge.fury.io/py/fastplotlib)
 [![Documentation Status](https://readthedocs.org/projects/fastplotlib/badge/?version=latest)](https://fastplotlib.readthedocs.io/en/latest/?badge=latest)
 [![DOI](https://zenodo.org/badge/485481453.svg)](https://zenodo.org/doi/10.5281/zenodo.13365890)
 
-[**Installation**](https://github.com/kushalkolar/fastplotlib#installation) | 
+[**Installation**](https://github.com/fastplotlib/fastplotlib#installation) | 
 [**GPU Drivers**](https://github.com/kushalkolar/fastplotlib#graphics-drivers) | 
 [**Documentation**](https://github.com/fastplotlib/fastplotlib#documentation) | 
 [**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | 
@@ -31,7 +31,7 @@ Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pyg
 :heavy_check_mark: `wxPython`
 
 **Notes:**\
-:heavy_check_mark: Non-blocking interactive Qt/PySide output is supported in ipython and notebooks, see https://fastplotlib.readthedocs.io/en/latest/user_guide/guide.html#using-fastplotlib-interactively \
+:heavy_check_mark: Non-blocking interactive Qt/PySide output is supported in ipython and notebooks, see http://fastplotlib.org/ver/dev/user_guide/guide.html#using-fastplotlib-in-an-interactive-shell \
 :grey_exclamation: We do not officially support `jupyter notebook` through `jupyter_rfb`, this may change with notebook v7\
 :grey_exclamation: We only officially support jupyterlab for use in notebook. This means we do not support vscode notebooks etc. Jupyterlab is the most reliable way to use `fastplotlib` in notebooks.\
 :disappointed: [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb) does not work in collab, see https://github.com/vispy/jupyter_rfb/pull/77 
@@ -99,9 +99,9 @@ Se [Contributing](https://github.com/fastplotlib/fastplotlib?tab=readme-ov-file#
 
 # Examples
 
-Examples gallery: https://fastplotlib.readthedocs.io/en/latest/_gallery/index.html
+Examples gallery: http://fastplotlib.org/ver/dev/_gallery/index.html
 
-User guide: https://fastplotlib.readthedocs.io/en/latest/user_guide/guide.html
+User guide: http://fastplotlib.org/ver/dev/user_guide/guide.html
 
 `fastplotlib` code is identical across notebook (`jupyterlab`), and desktop use with `Qt`/`PySide` or `glfw`. 
 
@@ -115,7 +115,7 @@ You will need a relatively modern GPU, modern integrated graphics are usually fi
 
 For more detailed information, such as use on cloud computing infrastructure, see: https://wgpu-py.readthedocs.io/en/stable/start.html#platform-requirements
 
-Some more information on GPUs is here: https://fastplotlib.readthedocs.io/en/latest/user_guide/gpu.html
+Some more information on GPUs is here: http://fastplotlib.org/ver/dev/user_guide/gpu.html
 
 ### Windows:
 Vulkan drivers should be installed by default on Windows 11, but you will need to install your GPU manufacturer's driver package (Nvidia or AMD). If you have an integrated GPU within your CPU, you might still need to install a driver package too, check your CPU manufacturer's info.
@@ -146,6 +146,6 @@ WGPU uses Metal instead of Vulkan on Mac. You will need at least Mac OSX 10.13. 
 
 # :heart: Contributing
 
-We welcome contributions! See the contributing guide: https://github.com/kushalkolar/fastplotlib/blob/main/CONTRIBUTING.md
+We welcome contributions! See the contributing guide: https://github.com/fastplotlib/fastplotlib/blob/main/CONTRIBUTING.md
 
-You can also take a look at our [**Roadmap for 2025**](https://github.com/kushalkolar/fastplotlib/issues/55) and [**Issues**](https://github.com/kushalkolar/fastplotlib/issues) for ideas on how to contribute!
+You can also take a look at our [**Roadmap for 2025**](https://github.com/fastplotlib/fastplotlib/issues/55) and [**Issues**](https://github.com/fastplotlib/fastplotlib/issues) for ideas on how to contribute!
