@@ -20,6 +20,8 @@ jobs:
     name: "Build and deploy docs"
     runs-on: ubuntu-latest
     if: ${{ !github.event.pull_request.draft }}
+    permissions:
+      pull-requests: write
     strategy:
       fail-fast: false
     steps:
@@ -78,6 +80,14 @@ jobs:
           local-dir: docs/build/html/
           # output subdir based on the previous if statements
           server-dir: ./ver/${{ env.DOCS_VERSION_DIR }}/
+
+      # comment on PR to provide link to built docs
+      - name: Add PR link in comment
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            📚 Documentation build and uploaded! fastplotlib.org/ver/${{ env.DOCS_VERSION_DIR }}
 
       # also deploy to root if this is a new release
       # i.e., fastplotlib.org/ points to docs for the latest release
