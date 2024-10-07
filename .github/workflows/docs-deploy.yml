@@ -49,28 +49,38 @@ jobs:
           cd docs
           RTD_BUILD=1 make html
 
+      # set environment variable `DOCS_VERSION_DIR` to either the pr-branch name, "dev", or the release version tag
       - name: set output pr
         if: ${{ github.ref != 'refs/heads/main' }}
+        # sets dir to the branch name when it's a PR
+        # ex: fastplotlib.org/ver/feature-branch
         run: echo "DOCS_VERSION_DIR=$GITHUB_HEAD_REF" >> "$GITHUB_ENV"
 
       - name: set output release
         if: ${{ github.ref_type == 'tag' }}
+        # sets dir to the release version tag, ex. v0.3.0 (I think...)
+        # ex: fastplotlib.org/ver/v0.3.0
         run: echo "DOCS_VERSION_DIR=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
 
       - name: set output dev
         if: ${{ github.ref == 'refs/heads/main' }}
+        # any push to main goes to fastplotlib.org/ver/dev
         run: echo "DOCS_VERSION_DIR=dev" >> "$GITHUB_ENV"
 
+        # upload docs via FTP
       - name: Deploy docs
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.DOCS_SERVER }}
           username: ${{ secrets.DOCS_USERNAME }}
           password: ${{ secrets.DOCS_PASSWORD }}
+          # built docs
           local-dir: docs/build/html/
+          # output subdir based on the previous if statements
           server-dir: ./ver/${{ env.DOCS_VERSION_DIR }}/
 
       # also deploy to root if this is a new release
+      # i.e., fastplotlib.org/ points to docs for the latest release
       - name: Deploy docs
         if: ${{ github.ref_type == 'tag' }}
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -79,6 +89,6 @@ jobs:
           username: ${{ secrets.DOCS_USERNAME }}
           password: ${{ secrets.DOCS_PASSWORD }}
           local-dir: docs/build/html/
-          server-dir: ./
-          exclude: |
+          server-dir: ./  # deploy to the root dir
+          exclude: |  # don't delete the /ver/ dir
             **/ver/**
