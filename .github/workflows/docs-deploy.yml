@@ -87,7 +87,7 @@ jobs:
         uses: mshick/add-pr-comment@v2
         with:
           message: |
-            📚 Documentation build and uploaded! fastplotlib.org/ver/${{ env.DOCS_VERSION_DIR }}
+            📚 Docs preview built and uploaded! https://www.fastplotlib.org/ver/${{ env.DOCS_VERSION_DIR }}
 
       # also deploy to root if this is a new release
       # i.e., fastplotlib.org/ points to docs for the latest release
