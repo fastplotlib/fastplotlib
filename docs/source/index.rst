@@ -22,21 +22,38 @@ Welcome to fastplotlib's documentation!
 Summary
 =======
 
-Next-gen plotting library built using the `pygfx <https://github.com/pygfx/pygfx>`_ render engine utilizing `Vulkan <https://en.wikipedia.org/wiki/Vulkan>`_, `DX12 <https://en.wikipedia.org/wiki/DirectX#DirectX_12>`_, or `Metal <https://developer.apple.com/metal/>`_ via `WGPU <https://github.com/gfx-rs/wgpu-native>`_, so it is very fast! ``fastplotlib`` is an expressive plotting library that enables rapid prototyping for large scale exploratory scientific visualization. ``fastplotlib`` will run on any framework that ``pygfx`` runs on, this includes ``glfw``, ``Qt`` and ``jupyter lab``
+Next-gen plotting library built using the `pygfx <https://github.com/pygfx/pygfx>`_ render engine utilizing
+`Vulkan <https://en.wikipedia.org/wiki/Vulkan>`_, `DX12 <https://en.wikipedia.org/wiki/DirectX#DirectX_12>`_, or
+`Metal <https://developer.apple.com/metal/>`_ via `WGPU <https://github.com/gfx-rs/wgpu-native>`_, so it is very fast!
+``fastplotlib`` is an expressive plotting library that enables rapid prototyping for large scale exploratory scientific
+visualization. ``fastplotlib`` will run on any framework that ``pygfx`` runs on, this includes ``glfw``, ``Qt``
+and ``jupyter lab``
 
 Installation
 ============
 
-For installation please see the instructions on GitHub:
+Install via pip:
 
-https://github.com/kushalkolar/fastplotlib#installation
+.. code-block::
+
+    # with imgui and jupyterlab
+    pip install -U "fastplotlib[notebook,imgui]"
+
+    # minimal install, install glfw, pyqt6 or pyside6 separately
+    pip install -U fastplotlib
+
+    # with imgui
+    pip install -U "fastplotlib[imgui]"
+
+    # to use in jupyterlab, no imgui
+    pip install -U "fastplotlib[notebook]"
 
 Contributing
 ============
 
-Contributions are welcome! See the contributing guide on GitHub: https://github.com/kushalkolar/fastplotlib/blob/master/CONTRIBUTING.md.
+Contributions are welcome! See the `contributing guide on GitHub <https://github.com/fastplotlib/fastplotlib/blob/main/CONTRIBUTING.md>`_
 
-Also take a look at the `Roadmap 2025 <https://github.com/kushalkolar/fastplotlib/issues/55>`_ for future plans or ways in which you could contribute.
+Also take a look at the `Roadmap 2025 <https://github.com/fastplotlib/fastplotlib/issues/55>`_ for future plans or ways in which you could contribute.
 
 Indices and tables
 ==================
