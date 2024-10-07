@@ -92,7 +92,17 @@ napoleon_custom_sections = ["Features"]
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "furo"
+html_theme = "pydata_sphinx_theme"
+
+html_theme_options = {
+    "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
+    "show_version_warning_banner": True,
+    "check_switcher": True,
+    "switcher": {
+        "json_url": "http://www.fastplotlib.org/_static/switcher.json",
+        "version_match": release
+    }
+}
 
 html_static_path = ["_static"]
 html_logo = "_static/logo.png"

@@ -1,0 +1,76 @@
+name: Deploy docs
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  release:
+    types: [published]
+
+jobs:
+  notebooks:
+    name: "Build and deploy docs"
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Install llvmpipe and lavapipe for offscreen canvas
+        run: |
+          sudo apt-get update -y -qq
+          sudo apt-get install --no-install-recommends -y ffmpeg libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools
+          # remove pygfx from install_requires, we install using pygfx@main
+          sed -i "/pygfx/d" ./setup.py
+          pip install git+https://github.com/pygfx/pygfx.git@main
+          pip install -e ".["docs"]"
+      - name: Show wgpu backend
+        run:
+          python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
+      - name: build docs
+        run: |
+          cd docs
+          RTD_BUILD=1 make html
+
+      - name: set output PR
+        if: ${{ github.ref != 'refs/heads/main' }}
+        env:
+          DOCS_VERSION_DIR: ${{ github.ref_name }}
+        run: echo "outputting to PR dir"
+
+      - name: set output release
+        if: ${{ github.ref_type == 'tag' }}
+        env:
+          DOCS_VERSION_DIR: ${{ github.ref_name }}
+        run: echo "outputting to release dir"
+
+      - name: set output dev
+        if: ${{ github.ref == 'refs/heads/main' }}
+        env:
+          DOCS_VERSION_DIR: "dev"
+        run: echo "outputting to dev dir"
+
+      - name: Deploy docs
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.DOCS_SERVER }}
+          username: ${{ secrets.DOCS_USERNAME }}
+          password: ${{ secrets.DOCS_PASSWORD }}
+          local-dir: docs/build/html/${{ env.DOCS_VERSION_DIR }}
