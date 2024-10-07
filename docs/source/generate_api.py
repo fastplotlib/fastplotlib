@@ -194,6 +194,20 @@ def main():
         source_path=LAYOUTS_DIR.joinpath("subplot.rst"),
     )
 
+    # layouts classes index file
+    with open(LAYOUTS_DIR.joinpath("index.rst"), "w") as f:
+        f.write(
+            f"Layouts\n"
+            f"********\n"
+            f"\n"
+            f".. toctree::\n"
+            f"    :maxdepth: 1\n"
+            f"\n"
+            f"    imgui_figure\n"
+            f"    figure\n"
+            f"    subplot\n"
+        )
+
     # the rest of this is a mess and can be refactored later
 
     graphic_classes = [getattr(graphics, g) for g in graphics.__all__]
@@ -328,6 +342,23 @@ def main():
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
 
+    # nake API index file
+    with open(API_DIR.joinpath("index.rst"), "w") as f:
+        f.write(
+            "API Reference\n"
+            "*************\n\n"
+            ".. toctree::\n"
+            "    :caption: API Reference\n"
+            "    :maxdepth: 2\n\n"
+            "    layouts/index\n"
+            "    graphics/index\n"
+            "    graphic_features/index\n"
+            "    selectors/index\n"
+            "    ui/index\n"
+            "    widgets/index\n"
+            "    fastplotlib\n"
+            "    utils\n"
+        )
 
 if __name__ == "__main__":
     main()

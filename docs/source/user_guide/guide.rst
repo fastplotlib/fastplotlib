@@ -1,5 +1,5 @@
-The `fastplotlib` guide
-=======================
+User Guide
+==========
 
 Installation
 ------------
@@ -59,7 +59,8 @@ This is just a simple example of how the ``fastplotlib`` API works to create a p
 However, we are just scratching the surface of what is possible with ``fastplotlib``.
 Next, let's take a look at the building blocks of ``fastplotlib`` and how they can be used to create more complex visualizations.
 
-**Figure**
+Figure
+------
 
 The starting point for creating any visualization in ``fastplotlib`` is a ``Figure`` object. This can be a single plot or a grid of subplots.
 The ``Figure`` object houses and takes care of the underlying rendering components such as the camera, controller, renderer, and canvas.
@@ -71,7 +72,8 @@ indexing (i.e. ``fig_object[i ,j]``).
 
 After defining a ``Figure``, we can begin to add ``Graphic`` objects.
 
-**Graphics**
+Graphics
+--------
 
 A ``Graphic`` can be an image, a line, a scatter, a collection of lines, and more. All graphics can also be given a convenient ``name``. This allows graphics
 to be easily accessed from figures::
@@ -92,6 +94,8 @@ to be easily accessed from figures::
     fig[0, 0]["astronaut"]
 
 ..
+
+See the examples gallery for examples on how to create and interactive with all the various types of graphics.
 
 Graphics also have mutable properties that can be linked to events. Some of these properties, such as the ``data`` or ``colors`` of a line can even be indexed,
 allowing for the creation of very powerful visualizations.
@@ -411,7 +415,8 @@ event_type: "selection"
     | value    | np.ndarray | new [min, max] of selection |
     +----------+------------+-----------------------------+
 
-**Renderer Events:**
+Renderer Events
+^^^^^^^^^^^^^^^
 
 You can also add events to a ``Figure`` object's renderer. This is useful for defining click events where
 you want to map your click position to the nearest graphic object for example.
@@ -575,10 +580,10 @@ You can also make custom GUIs and embed them within the canvas, see the examples
 
 .. image:: ../_static/guide_imgui.png
 
-Using ``fastplotlib`` interactively
------------------------------------
+Using ``fastplotlib`` in an interactive shell
+---------------------------------------------
 
-There are multiple ways to use ``fastplotlib`` interactively.
+There are multiple ways to use ``fastplotlib`` in interactive shells, such as ipython.
 
 1) Jupyter
 
@@ -600,4 +605,3 @@ Lastly, users can also force using ``glfw`` by specifying this as an argument wh
 2) IPython
 
 Users can select between using a Qt backend or gflw using the same methods as above.
-

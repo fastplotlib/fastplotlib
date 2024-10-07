@@ -2,33 +2,22 @@ Welcome to fastplotlib's documentation!
 =======================================
 
 .. toctree::
-   :caption: User Guide
-   :maxdepth:  1
+   :caption: Getting started
+   :maxdepth:  2
 
-   Guide <user_guide/guide.rst>
-   GPU Info <user_guide/gpu>
-   FAQ <user_guide/faq>
+   user_guide/index
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: API
 
-   fastplotlib <api/fastplotlib>
-   Figure <api/layouts/figure>
-   ImguiFigure <api/layouts/imgui_figure>
-   Subplot <api/layouts/subplot>
-   Graphics <api/graphics/index>
-   Graphic Features <api/graphic_features/index>
-   Selectors <api/selectors/index>
-   UI <api/ui/index>
-   Widgets <api/widgets/index>
-   Utils <api/utils>
+   api/index
 
 .. toctree::
    :caption: Gallery
-   :maxdepth:  1
+   :maxdepth: 1
 
-   Gallery <_gallery/index>
+   _gallery/index
 
 Summary
 =======

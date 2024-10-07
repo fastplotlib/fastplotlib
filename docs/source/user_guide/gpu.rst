@@ -1,14 +1,14 @@
 GPU Info and selection
-**********************
+======================
 
 FAQ
-===
+---
 
 1. Do I need a GPU?
 
 Technically no, you can perform limited software rendering on linux using lavapipe (see drivers link below). However
 ``fastplotlib`` is intentionally built for realtime rendering using the latest GPU technologies, so we strongly
-recommend that you use a GPU.
+recommend that you use a GPU. Note that modern integrated graphics is often sufficient for many use-cases.
 
 2. My kernel keeps crashing.
 
@@ -24,7 +24,7 @@ If you aren't able to solve it please post an issue on GitHub. :)
 - Probably driver issues (see next section).
 
 Drivers
-=======
+-------
 
 See the README: https://github.com/fastplotlib/fastplotlib?tab=readme-ov-file#graphics-drivers
 
@@ -32,10 +32,10 @@ If you notice weird graphic artifacts, things not rendering, or other glitches t
 drivers.
 
 GPU Info
-========
+--------
 
 View available adapters
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 You can get a summary of all adapters that are available to ``WGPU`` like this::
 
@@ -71,7 +71,7 @@ General description of the fields:
 For more information on the fields see: https://gpuweb.github.io/gpuweb/#gpuadapterinfo
 
 Adapter currently in use
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you want to know the adapter that a figure is using you can check the adapter on the renderer::
 
@@ -85,7 +85,7 @@ If you want to know the adapter that a figure is using you can check the adapter
 
 
 Diagnostic info
----------------
+^^^^^^^^^^^^^^^
 
 After creating a figure you can view WGPU diagnostic info like this::
 
@@ -259,7 +259,7 @@ Example output::
 
 
 Select GPU (adapter)
-====================
+--------------------
 
 You can select an adapter by passing one of the ``wgpu.GPUAdapter`` instances returned by ``fpl.enumerate_adapters()``
 to ``fpl.select_adapter()``::
