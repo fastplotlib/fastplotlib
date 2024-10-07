@@ -74,4 +74,4 @@ jobs:
           username: ${{ secrets.DOCS_USERNAME }}
           password: ${{ secrets.DOCS_PASSWORD }}
           local-dir: docs/build/html/
-          server-dir: ./ver/${{ env.DOCS_VERSION_DIR }}
+          server-dir: ./ver/${{ env.DOCS_VERSION_DIR }}/

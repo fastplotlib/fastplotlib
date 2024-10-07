@@ -20,6 +20,14 @@ To install use pip:
     # to use in jupyterlab, no imgui
     pip install -U "fastplotlib[notebook]"
 
+We strongly recommend installing ``simplejpeg`` for use in notebooks, you must first install `libjpeg-turbo <https://libjpeg-turbo.org/>`_.
+If you are on linux you can get it through your distro's package manager. For Windows and Mac compiled binaries are available
+on their release page: https://github.com/libjpeg-turbo/libjpeg-turbo/releases
+
+.. code-block::
+
+    pip install simplejpeg
+
 What is ``fastplotlib``?
 ------------------------
 
