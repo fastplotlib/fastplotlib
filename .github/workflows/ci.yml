@@ -14,35 +14,6 @@ on:
       - ready_for_review
 
 jobs:
-  docs-build:
-    name: Docs
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: ${{ !github.event.pull_request.draft }}
-    strategy:
-      fail-fast: false
-    steps:
-    - uses: actions/checkout@v3
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v4
-      with:
-        python-version: 3.11
-    - name: Install llvmpipe and lavapipe for offscreen canvas, and git lfs
-      run: |
-        sudo apt-get update -y -qq
-        sudo apt-get install --no-install-recommends -y libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
-    - name: Install dev dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools
-        # remove pygfx from install_requires, we install using pygfx@main
-        sed -i "/pygfx/d" ./setup.py
-        pip install git+https://github.com/pygfx/pygfx.git@main
-        pip install -e ".[notebook,docs,tests]"
-    - name: Build docs
-      run: |
-        cd docs
-        make html SPHINXOPTS="-W --keep-going"
-
   test-build-full:
     name: Test Linux, notebook + offscreen
     runs-on: ubuntu-latest
