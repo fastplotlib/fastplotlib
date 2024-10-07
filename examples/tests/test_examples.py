@@ -2,6 +2,7 @@
 Test that examples run without error.
 """
 
+import sys
 import importlib
 import runpy
 import pytest
@@ -57,20 +58,25 @@ def test_that_we_are_on_lavapipe():
         assert is_lavapipe
 
 
+def import_from_path(module_name, filename):
+    spec = importlib.util.spec_from_file_location(module_name, filename)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+
+    # With this approach the module is not added to sys.modules, which
+    # is great, because that way the gc can simply clean up when we lose
+    # the reference to the module
+    assert module.__name__ == module_name
+    assert module_name not in sys.modules
+
+    return module
+
+
 @pytest.mark.parametrize("module", examples_to_test, ids=lambda x: x.stem)
 def test_example_screenshots(module, force_offscreen):
     """Make sure that every example marked outputs the expected."""
-    # (relative) module name from project root
-    module_name = (
-        module.relative_to(ROOT / "examples")
-        .with_suffix("")
-        .as_posix()
-        .replace("/", ".")
-    )
-    print(pygfx.renderers.wgpu.get_shared().device.limits["max-texture-dimension2d"])
-
     # import the example module
-    example = importlib.import_module(module_name)
+    example = import_from_path(module.stem, module)
 
     # there doesn't seem to be a resize event for the manual offscreen canvas
     example.figure.imgui_renderer._backend.io.display_size = example.figure.canvas.get_logical_size()
