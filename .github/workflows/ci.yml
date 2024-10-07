@@ -31,10 +31,6 @@ jobs:
       run: |
         sudo apt-get update -y -qq
         sudo apt-get install --no-install-recommends -y libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
-    - name: Install pandoc v3.14, nbsphinx complains about older pandoc versions
-      run: |
-        wget https://github.com/jgm/pandoc/releases/download/3.1.4/pandoc-3.1.4-1-amd64.deb
-        sudo apt-get install ./pandoc-3.1.4-1-amd64.deb
     - name: Install dev dependencies
       run: |
         python -m pip install --upgrade pip setuptools
@@ -101,7 +97,7 @@ jobs:
       with:
         name: screenshot-diffs
         path: |
-          examples/desktop/diffs
+          examples/diffs
           examples/notebooks/diffs
 
   test-build-desktop:
@@ -157,7 +153,7 @@ jobs:
       with:
         name: screenshot-diffs
         path: |
-          examples/desktop/diffs
+          examples/diffs
 
 #  test-build-full-mac:
 #    name: Test Mac, notebook + glfw
