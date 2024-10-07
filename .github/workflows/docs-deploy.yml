@@ -52,7 +52,7 @@ jobs:
       - name: set output PR
         if: ${{ github.ref != 'refs/heads/main' }}
         env:
-          DOCS_VERSION_DIR: ${{ github.ref_name }}
+          DOCS_VERSION_DIR: ${{ github.head_ref }}
         run: echo $DOCS_VERSION_DIR
 
       - name: set output release
