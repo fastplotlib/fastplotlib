@@ -1,2 +1,2 @@
-Examples that use fastplotlib
-=============================
+Examples Gallery
+****************

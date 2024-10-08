@@ -1,6 +1,7 @@
 """
-Rectangle Selectors
-===================
+Rectangle Selectors Images
+==========================
+
 Example showing how to use a `RectangleSelector` with images
 """
 

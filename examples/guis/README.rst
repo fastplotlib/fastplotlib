@@ -1,2 +1,2 @@
-ImGUI for within-canvas GUIs
+ImGUI for within canvas GUIs
 ============================

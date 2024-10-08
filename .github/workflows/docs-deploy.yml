@@ -1,0 +1,104 @@
+name: Deploy docs
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  release:
+    types: [published]
+
+jobs:
+  build-docs:
+    name: "Build and deploy docs"
+    runs-on: ubuntu-latest
+    if: ${{ !github.event.pull_request.draft }}
+    permissions:
+      pull-requests: write
+    strategy:
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Install llvmpipe and lavapipe for offscreen canvas
+        run: |
+          sudo apt-get update -y -qq
+          sudo apt-get install --no-install-recommends -y ffmpeg libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools
+          # remove pygfx from install_requires, we install using pygfx@main
+          sed -i "/pygfx/d" ./setup.py
+          pip install git+https://github.com/pygfx/pygfx.git@main
+          pip install -e ".["docs"]"
+      - name: Show wgpu backend
+        run:
+          python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
+      - name: build docs
+        run: |
+          cd docs
+          RTD_BUILD=1 make html SPHINXOPTS="-W --keep-going"
+
+      # set environment variable `DOCS_VERSION_DIR` to either the pr-branch name, "dev", or the release version tag
+      - name: set output pr
+        if: ${{ github.ref != 'refs/heads/main' }}
+        # sets dir to the branch name when it's a PR
+        # ex: fastplotlib.org/ver/feature-branch
+        run: echo "DOCS_VERSION_DIR=$GITHUB_HEAD_REF" >> "$GITHUB_ENV"
+
+      - name: set output release
+        if: ${{ github.ref_type == 'tag' }}
+        # sets dir to the release version tag, ex. v0.3.0 (I think...)
+        # ex: fastplotlib.org/ver/v0.3.0
+        run: echo "DOCS_VERSION_DIR=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
+
+      - name: set output dev
+        if: ${{ github.ref == 'refs/heads/main' }}
+        # any push to main goes to fastplotlib.org/ver/dev
+        run: echo "DOCS_VERSION_DIR=dev" >> "$GITHUB_ENV"
+
+        # upload docs via FTP
+      - name: Deploy docs
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.DOCS_SERVER }}
+          username: ${{ secrets.DOCS_USERNAME }}
+          password: ${{ secrets.DOCS_PASSWORD }}
+          # built docs
+          local-dir: docs/build/html/
+          # output subdir based on the previous if statements
+          server-dir: ./ver/${{ env.DOCS_VERSION_DIR }}/
+
+      # comment on PR to provide link to built docs
+      - name: Add PR link in comment
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: |
+            📚 Docs preview built and uploaded! https://www.fastplotlib.org/ver/${{ env.DOCS_VERSION_DIR }}
+
+      # also deploy to root if this is a new release
+      # i.e., fastplotlib.org/ points to docs for the latest release
+      - name: Deploy docs
+        if: ${{ github.ref_type == 'tag' }}
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.DOCS_SERVER }}
+          username: ${{ secrets.DOCS_USERNAME }}
+          password: ${{ secrets.DOCS_PASSWORD }}
+          local-dir: docs/build/html/
+          server-dir: ./  # deploy to the root dir
+          exclude: |  # don't delete the /ver/ dir
+            **/ver/**

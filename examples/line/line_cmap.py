@@ -2,7 +2,7 @@
 Line Plot Colormap
 ==================
 
-Example showing cosine, sine, sinc lines.
+Example showing basic colormapping with lines
 """
 
 # test_example = true

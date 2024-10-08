@@ -55,5 +55,5 @@ jobs:
         with:
           name: screenshots
           path: |
-            examples/desktop/screenshots/
+            examples/screenshots/
             examples/notebooks/screenshots/

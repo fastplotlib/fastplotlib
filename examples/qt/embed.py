@@ -1,6 +1,15 @@
 """
-Use a simple Plot to display a video frame that can be updated using a QSlider
+Embed within a Qt Window
+========================
+
+When using the Qt canvas, `Figure.show()` just returns a QWidget that behaves like any other Qt widget. So you can
+embed it and do other things that you can do with ordinary QWidgets. This example use a simple Plot to display a video
+frame that can be updated using a QSlider.
 """
+
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'code'
+
 from PyQt6 import QtWidgets, QtCore
 import fastplotlib as fpl
 import imageio.v3 as iio
@@ -52,3 +61,6 @@ main_window.show()
 
 # execute Qt app
 fpl.run()
+
+# You can also use Qt interactively/in a non-blocking manner in notebooks and ipython
+# by using %gui qt and NOT calling `fpl.run()`, see the user guide for more details

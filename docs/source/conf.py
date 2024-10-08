@@ -21,7 +21,7 @@ MAX_TEXTURE_SIZE = 2048
 pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension2d": MAX_TEXTURE_SIZE})
 
 ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
-EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples", "desktop")
+EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples")
 
 sys.path.insert(0, str(ROOT_DIR))
 
@@ -55,16 +55,17 @@ sphinx_gallery_conf = {
     "remove_config_comments": True,
     "subsection_order": ExplicitOrder(
         [
-            "../../examples/desktop/image",
-            "../../examples/desktop/image_widget",
-            "../../examples/desktop/gridplot",
-            "../../examples/desktop/line",
-            "../../examples/desktop/line_collection",
-            "../../examples/desktop/scatter",
-            "../../examples/desktop/heatmap",
-            "../../examples/desktop/misc",
-            "../../examples/desktop/selectors",
-            "../../examples/desktop/guis"
+            "../../examples/image",
+            "../../examples/image_widget",
+            "../../examples/gridplot",
+            "../../examples/line",
+            "../../examples/line_collection",
+            "../../examples/scatter",
+            "../../examples/heatmap",
+            "../../examples/misc",
+            "../../examples/selection_tools",
+            "../../examples/guis",
+            "../../examples/qt",
         ]
     ),
     "ignore_pattern": r'__init__\.py',
@@ -91,7 +92,17 @@ napoleon_custom_sections = ["Features"]
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = "furo"
+html_theme = "pydata_sphinx_theme"
+
+html_theme_options = {
+    "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
+    "show_version_warning_banner": True,
+    "check_switcher": True,
+    "switcher": {
+        "json_url": "http://www.fastplotlib.org/_static/switcher.json",
+        "version_match": release
+    }
+}
 
 html_static_path = ["_static"]
 html_logo = "_static/logo.png"
@@ -106,14 +117,8 @@ autodoc_typehints_description_target = "documented_params"
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "numpy": ("https://numpy.org/doc/stable/", None),
-    "pygfx": ("https://docs.pygfx.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable", None),
+    "pygfx": ("https://docs.pygfx.org/stable", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
-    "fastplotlib": ("https://fastplotlib.readthedocs.io/en/latest/", None),
-}
-
-html_theme_options = {
-    "source_repository": "https://github.com/fastplotlib/fastplotlib",
-    "source_branch": "main",
-    "source_directory": "docs/",
+    # "fastplotlib": ("https://www.fastplotlib.org/", None),
 }

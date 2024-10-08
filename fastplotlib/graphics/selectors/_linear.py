@@ -160,9 +160,9 @@ class LinearSelector(BaseSelector):
         self._handled_widgets = list()
 
         if axis == "x":
-            offset = (parent.offset[0], center, 0)
+            offset = (parent.offset[0], center + parent.offset[1], 0)
         elif axis == "y":
-            offset = (center, parent.offset[1], 0)
+            offset = (center + parent.offset[0], parent.offset[1], 0)
 
         # init base selector
         BaseSelector.__init__(

@@ -211,9 +211,9 @@ class LinearRegionSelector(BaseSelector):
         # TODO: if parent offset changes, we should set the selector offset too
         # TODO: add check if parent is `None`, will throw error otherwise
         if axis == "x":
-            offset = (parent.offset[0], center, 0)
+            offset = (parent.offset[0], center + parent.offset[1], 0)
         elif axis == "y":
-            offset = (center, parent.offset[1], 0)
+            offset = (center + parent.offset[1], parent.offset[1], 0)
 
         # set the initial bounds of the selector
         # compensate for any offset from the parent graphic
