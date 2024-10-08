@@ -11,11 +11,6 @@ from .._features._selection_features import LinearRegionSelectionFeature
 from ._base_selector import BaseSelector
 
 
-if IS_JUPYTER:
-    # If using the jupyter backend, user has jupyter_rfb, and thus also ipywidgets
-    import ipywidgets
-
-
 class LinearRegionSelector(BaseSelector):
     @property
     def parent(self) -> Graphic | None:
@@ -211,9 +206,9 @@ class LinearRegionSelector(BaseSelector):
         # TODO: if parent offset changes, we should set the selector offset too
         # TODO: add check if parent is `None`, will throw error otherwise
         if axis == "x":
-            offset = (parent.offset[0], center + parent.offset[1], 0)
+            offset = (parent.offset[0], center, 0)
         elif axis == "y":
-            offset = (center + parent.offset[1], parent.offset[1], 0)
+            offset = (center, parent.offset[1], 0)
 
         # set the initial bounds of the selector
         # compensate for any offset from the parent graphic
@@ -222,8 +217,6 @@ class LinearRegionSelector(BaseSelector):
             selection, axis=axis, limits=self._limits
         )
 
-        self._handled_widgets = list()
-        self._block_ipywidget_call = False
         self._pygfx_event = None
 
         BaseSelector.__init__(
@@ -370,128 +363,6 @@ class LinearRegionSelector(BaseSelector):
         if "Image" in source.__class__.__name__:
             # indices map directly to grid geometry for image data buffer
             return np.arange(*bounds, dtype=int)
-
-    def make_ipywidget_slider(self, kind: str = "IntRangeSlider", **kwargs):
-        """
-        Makes and returns an ipywidget slider that is associated to this LinearSelector
-
-        Parameters
-        ----------
-        kind: str
-            "IntRangeSlider" or "FloatRangeSlider"
-
-        kwargs
-            passed to the ipywidget slider constructor
-
-        Returns
-        -------
-        ipywidgets.Intslider or ipywidgets.FloatSlider
-
-        """
-
-        if not IS_JUPYTER:
-            raise ImportError(
-                "Must installed `ipywidgets` to use `make_ipywidget_slider()`"
-            )
-
-        if kind not in ["IntRangeSlider", "FloatRangeSlider"]:
-            raise TypeError(
-                f"`kind` must be one of: 'IntRangeSlider', or 'FloatRangeSlider'\n"
-                f"You have passed: '{kind}'"
-            )
-
-        cls = getattr(ipywidgets, kind)
-
-        value = self.selection
-        if "Int" in kind:
-            value = tuple(map(int, self.selection))
-
-        slider = cls(
-            min=self.limits[0],
-            max=self.limits[1],
-            value=value,
-            **kwargs,
-        )
-        self.add_ipywidget_handler(slider)
-
-        return slider
-
-    def add_ipywidget_handler(self, widget, step: Union[int, float] = None):
-        """
-        Bidirectionally connect events with a ipywidget slider
-
-        Parameters
-        ----------
-        widget: ipywidgets.IntRangeSlider or ipywidgets.FloatRangeSlider
-            ipywidget slider to connect to
-
-        step: int or float, default ``None``
-            step size, if ``None`` 100 steps are created
-
-        """
-        if not isinstance(
-            widget, (ipywidgets.IntRangeSlider, ipywidgets.FloatRangeSlider)
-        ):
-            raise TypeError(
-                f"`widget` must be one of: ipywidgets.IntRangeSlider or ipywidgets.FloatRangeSlider\n"
-                f"You have passed a: <{type(widget)}"
-            )
-
-        if step is None:
-            step = (self.limits[1] - self.limits[0]) / 100
-
-        if isinstance(widget, ipywidgets.IntSlider):
-            step = int(step)
-
-        widget.step = step
-
-        self._setup_ipywidget_slider(widget)
-
-    def _setup_ipywidget_slider(self, widget):
-        # setup an ipywidget slider with bidirectional callbacks to this LinearSelector
-        value = self.selection
-
-        if isinstance(widget, ipywidgets.IntSlider):
-            value = tuple(map(int, value))
-
-        widget.value = value
-
-        # user changes widget -> linear selection changes
-        widget.observe(self._ipywidget_callback, "value")
-
-        # user changes linear selection -> widget changes
-        self.add_event_handler(self._update_ipywidgets, "selection")
-
-        self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
-
-        self._handled_widgets.append(widget)
-
-    def _update_ipywidgets(self, ev):
-        # update the ipywidget sliders when LinearSelector value changes
-        self._block_ipywidget_call = True  # prevent infinite recursion
-
-        value = ev.pick_info["new_data"]
-        # update all the handled slider widgets
-        for widget in self._handled_widgets:
-            if isinstance(widget, ipywidgets.IntSlider):
-                widget.value = tuple(map(int, value))
-            else:
-                widget.value = value
-
-        self._block_ipywidget_call = False
-
-    def _ipywidget_callback(self, change):
-        # update the LinearSelector if the ipywidget value changes
-        if self._block_ipywidget_call or self._moving:
-            return
-
-        self.selection = change["new"]
-
-    def _set_slider_layout(self, *args):
-        w, h = self._plot_area.renderer.logical_size
-
-        for widget in self._handled_widgets:
-            widget.layout = ipywidgets.Layout(width=f"{w}px")
 
     def _move_graphic(self, delta: np.ndarray):
         # add delta to current min, max to get new positions
