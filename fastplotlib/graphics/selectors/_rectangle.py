@@ -430,7 +430,7 @@ class RectangleSelector(BaseSelector):
         -------
         Union[np.ndarray, List[np.ndarray]]
             data indicies of the selection
-            | tuple of [row_indices, y_indices_array] if the graphic is an image
+            | tuple of [row_indices, col_indices] if the graphic is an image
             | list of indices along the x-dimension for each line if graphic is a line collection
             | array of indices along the x-dimension if graphic is a line
         """
