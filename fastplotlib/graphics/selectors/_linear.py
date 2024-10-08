@@ -1,20 +1,14 @@
-from typing import *
 import math
 from numbers import Real
+from typing import Sequence
 
 import numpy as np
 import pygfx
 
-from ...utils.gui import IS_JUPYTER
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from .._features._selection_features import LinearSelectionFeature
 from ._base_selector import BaseSelector
-
-
-if IS_JUPYTER:
-    # If using the jupyter backend, user has jupyter_rfb, and thus also ipywidgets
-    import ipywidgets
 
 
 class LinearSelector(BaseSelector):
@@ -39,11 +33,11 @@ class LinearSelector(BaseSelector):
         self._selection.set_value(self, value)
 
     @property
-    def limits(self) -> Tuple[float, float]:
+    def limits(self) -> tuple[float, float]:
         return self._limits
 
     @limits.setter
-    def limits(self, values: Tuple[float, float]):
+    def limits(self, values: tuple[float, float]):
         # check that `values` is an iterable of two real numbers
         # using `Real` here allows it to work with builtin `int` and `float` types, and numpy scaler types
         if len(values) != 2 or not all(map(lambda v: isinstance(v, Real), values)):
@@ -62,46 +56,50 @@ class LinearSelector(BaseSelector):
         center: float,
         axis: str = "x",
         parent: Graphic = None,
-        color: str | tuple = "w",
+        color: str | Sequence[float] | np.ndarray = "w",
         thickness: float = 2.5,
         arrow_keys_modifier: str = "Shift",
         name: str = None,
     ):
         """
-        Create a horizontal or vertical line slider that is synced to an ipywidget IntSlider
+        Create a horizontal or vertical line that can be used to select a value along an axis.
 
         Parameters
         ----------
         selection: int
-            initial x or y selected position for the slider, in world space
+            initial x or y selected position for the selector, in data space
 
         limits: (int, int)
-            (min, max) limits along the x or y axis for the selector, in world space
+            (min, max) limits along the x or y-axis for the selector, in data space
 
-        axis: str, default "x"
-            "x" | "y", the axis which the slider can move along
+        size: float
+            size of the selector, usually the range of the data
 
         center: float
-            center offset of the selector on the orthogonal axis, by default the data mean
+            center offset of the selector on the orthogonal axis, usually the data mean
+
+        axis: str, default "x"
+            "x" | "y", the axis along which the selector can move
 
         parent: Graphic
-            parent graphic for this LineSelector
+            parent graphic for this LinearSelector
 
         arrow_keys_modifier: str
             modifier key that must be pressed to initiate movement using arrow keys, must be one of:
-            "Control", "Shift", "Alt" or ``None``. Double click on the selector first to enable the
+            "Control", "Shift", "Alt" or ``None``. Double-click the selector first to enable the
             arrow key movements, or set the attribute ``arrow_key_events_enabled = True``
 
         thickness: float, default 2.5
-            thickness of the slider
+            thickness of the selector
 
-        color: Any, default "w"
-            selection to set the color of the slider
+        color: str | tuple | np.ndarray, default "w"
+            color of the selector
 
         name: str, optional
-            name of line slider
+            name of linear selector
 
         """
+
         if len(limits) != 2:
             raise ValueError("limits must be a tuple of 2 integers, i.e. (int, int)")
 
@@ -155,10 +153,6 @@ class LinearSelector(BaseSelector):
 
         self._move_info: dict = None
 
-        self._block_ipywidget_call = False
-
-        self._handled_widgets = list()
-
         if axis == "x":
             offset = (parent.offset[0], center + parent.offset[1], 0)
         elif axis == "y":
@@ -187,149 +181,22 @@ class LinearSelector(BaseSelector):
         else:
             self._selection.set_value(self, selection)
 
-        # update any ipywidgets
-        self.add_event_handler(self._update_ipywidgets, "selection")
-
-    def _setup_ipywidget_slider(self, widget):
-        # setup an ipywidget slider with bidirectional callbacks to this LinearSelector
-        value = self.selection
-
-        if isinstance(widget, ipywidgets.IntSlider):
-            value = int(value)
-
-        widget.value = value
-
-        # user changes widget -> linear selection changes
-        widget.observe(self._ipywidget_callback, "value")
-
-        self._handled_widgets.append(widget)
-
-    def _update_ipywidgets(self, ev):
-        # update the ipywidget sliders when LinearSelector value changes
-        self._block_ipywidget_call = True  # prevent infinite recursion
-
-        value = ev.info["value"]
-        # update all the handled slider widgets
-        for widget in self._handled_widgets:
-            if isinstance(widget, ipywidgets.IntSlider):
-                widget.value = int(value)
-            else:
-                widget.value = value
-
-        self._block_ipywidget_call = False
-
-    def _ipywidget_callback(self, change):
-        # update the LinearSelector when the ipywidget value changes
-        if self._block_ipywidget_call or self._moving:
-            return
-
-        self.selection = change["new"]
-
-    def _fpl_add_plot_area_hook(self, plot_area):
-        super()._fpl_add_plot_area_hook(plot_area=plot_area)
-
-        # resize the slider widgets when the canvas is resized
-        self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
-
-    def _set_slider_layout(self, *args):
-        w, h = self._plot_area.renderer.logical_size
-
-        for widget in self._handled_widgets:
-            widget.layout = ipywidgets.Layout(width=f"{w}px")
-
-    def make_ipywidget_slider(self, kind: str = "IntSlider", **kwargs):
+    def get_selected_index(self, graphic: Graphic = None) -> int | list[int]:
         """
-        Makes and returns an ipywidget slider that is associated to this LinearSelector
+        Data index the selector is currently at w.r.t. the Graphic data.
 
-        Parameters
-        ----------
-        kind: str
-            "IntSlider", "FloatSlider" or "FloatLogSlider"
-
-        kwargs
-            passed to the ipywidget slider constructor
-
-        Returns
-        -------
-        ipywidgets.Intslider or ipywidgets.FloatSlider
-
-        """
-
-        if not IS_JUPYTER:
-            raise ImportError(
-                "Must installed `ipywidgets` to use `make_ipywidget_slider()`"
-            )
-
-        if kind not in ["IntSlider", "FloatSlider", "FloatLogSlider"]:
-            raise TypeError(
-                f"`kind` must be one of: 'IntSlider', 'FloatSlider' or 'FloatLogSlider'\n"
-                f"You have passed: '{kind}'"
-            )
-
-        cls = getattr(ipywidgets, kind)
-
-        value = self.selection
-        if "Int" in kind:
-            value = int(self.selection)
-
-        slider = cls(
-            min=self.limits[0],
-            max=self.limits[1],
-            value=value,
-            **kwargs,
-        )
-        self.add_ipywidget_handler(slider)
-
-        return slider
-
-    def add_ipywidget_handler(self, widget, step: Union[int, float] = None):
-        """
-        Bidirectionally connect events with a ipywidget slider
-
-        Parameters
-        ----------
-        widget: ipywidgets.IntSlider, ipywidgets.FloatSlider, or ipywidgets.FloatLogSlider
-            ipywidget slider to connect to
-
-        step: int or float, default ``None``
-            step size, if ``None`` 100 steps are created
-
-        """
-
-        if not isinstance(
-            widget,
-            (ipywidgets.IntSlider, ipywidgets.FloatSlider, ipywidgets.FloatLogSlider),
-        ):
-            raise TypeError(
-                f"`widget` must be one of: ipywidgets.IntSlider, ipywidgets.FloatSlider, or ipywidgets.FloatLogSlider\n"
-                f"You have passed a: <{type(widget)}"
-            )
-
-        if step is None:
-            step = (self.limits[1] - self.limits[0]) / 100
-
-        if isinstance(widget, ipywidgets.IntSlider):
-            step = int(step)
-
-        widget.step = step
-
-        self._setup_ipywidget_slider(widget)
-
-    def get_selected_index(self, graphic: Graphic = None) -> Union[int, List[int]]:
-        """
-        Data index the slider is currently at w.r.t. the Graphic data. With LineGraphic data, the geometry x or y
-        position is not always the data position, for example if plotting data using np.linspace. Use this to get
-        the data index of the slider.
+        With LineGraphic data, the geometry x or y position is not always the data position, for example if plotting
+        data using np.linspace. Use this to get the data index of the selector.
 
         Parameters
         ----------
         graphic: Graphic, optional
-            Graphic to get the selected data index from. Default is the parent graphic associated to the slider.
+            Graphic to get the selected data index from. Default is the parent graphic associated to the selector.
 
         Returns
         -------
         int or List[int]
-            data index the slider is currently at, list of ``int`` if a Collection
+            data index the selector is currently at, list of ``int`` if a Collection
         """
 
         source = self._get_source(graphic)
@@ -354,10 +221,10 @@ class LinearSelector(BaseSelector):
             "Line" in graphic.__class__.__name__
             or "Scatter" in graphic.__class__.__name__
         ):
-            # we want to find the index of the data closest to the slider position
+            # we want to find the index of the data closest to the selector position
             find_value = self.selection
 
-            # get closest data index to the world space position of the slider
+            # get closest data index to the world space position of the selector
             idx = np.searchsorted(data, find_value, side="left")
 
             if idx > 0 and (
