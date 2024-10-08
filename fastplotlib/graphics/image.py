@@ -419,7 +419,8 @@ class ImageGraphic(Graphic):
             selection = (0, int(diagonal / 4), 0, int(diagonal / 4))
 
         # min/max limits are image shape
-        limits = (0, self._data.value.shape[0], 0, self._data.value.shape[1])
+        # rows are ys, columns are xs
+        limits = (0, self._data.value.shape[1], 0, self._data.value.shape[0])
 
         selector = RectangleSelector(
             selection=selection,
