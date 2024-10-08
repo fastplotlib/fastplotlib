@@ -1,19 +1,13 @@
-from typing import *
 from numbers import Real
+from typing import Sequence
 
 import numpy as np
 import pygfx
 
-from ...utils.gui import IS_JUPYTER
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from .._features._selection_features import LinearRegionSelectionFeature
 from ._base_selector import BaseSelector
-
-
-if IS_JUPYTER:
-    # If using the jupyter backend, user has jupyter_rfb, and thus also ipywidgets
-    import ipywidgets
 
 
 class LinearRegionSelector(BaseSelector):
@@ -23,35 +17,31 @@ class LinearRegionSelector(BaseSelector):
         return self._parent
 
     @property
-    def selection(self) -> Sequence[float] | List[Sequence[float]]:
+    def selection(self) -> np.ndarray[float]:
         """
-        (min, max) of data value along selector's axis
+        (min, max) of selector along selector's axis
         """
         # TODO: This probably does not account for rotation since world.position
         #  does not account for rotation, we can do this later
 
         return self._selection.value.copy()
 
-        # TODO: if no parent graphic is set, this just returns world positions
+        # TODO: if no parent graphic is set, this just returns values in world space
         #  but should we change it?
-        # return self._selection.value
 
     @selection.setter
     def selection(self, selection: Sequence[float]):
-        # set (xmin, xmax), or (ymin, ymax) of the selector in data space
+        # set (min, max) of the selector in data space
         graphic = self._parent
-
-        if isinstance(graphic, GraphicCollection):
-            pass
 
         self._selection.set_value(self, selection)
 
     @property
-    def limits(self) -> Tuple[float, float]:
+    def limits(self) -> tuple[float, float]:
         return self._limits
 
     @limits.setter
-    def limits(self, values: Tuple[float, float]):
+    def limits(self, values: tuple[float, float]):
         # check that `values` is an iterable of two real numbers
         # using `Real` here allows it to work with builtin `int` and `float` types, and numpy scaler types
         if len(values) != 2 or not all(map(lambda v: isinstance(v, Real), values)):
@@ -70,8 +60,8 @@ class LinearRegionSelector(BaseSelector):
         axis: str = "x",
         parent: Graphic = None,
         resizable: bool = True,
-        fill_color=(0, 0, 0.35),
-        edge_color=(0.8, 0.6, 0),
+        fill_color: str | Sequence[float] = (0, 0, 0.35),
+        edge_color: str | Sequence[float] = (0.8, 0.6, 0),
         edge_thickness: float = 8,
         arrow_keys_modifier: str = "Shift",
         name: str = None,
@@ -82,7 +72,7 @@ class LinearRegionSelector(BaseSelector):
 
         Assumes that the data under the selector is a function of the axis on which the selector moves
         along. Example: if the selector is along the x-axis, then there must be only one y-value for each
-        x-value, otherwise functions such as ``get_selected_data()`` do not make sense.
+        x-value, otherwise methods such as ``get_selected_data()`` do not make sense.
 
         Parameters
         ----------
@@ -93,19 +83,19 @@ class LinearRegionSelector(BaseSelector):
             (min limit, max limit) within which the selector can move
 
         size: int
-            height or width of the selector
+            usually the data range, height or width of the selector
 
         center: float
-            center offset of the selector on the orthogonal axis, by default the data mean
+            usually the data mean, center offset of the selector on the orthogonal axis
 
         axis: str, default "x"
-            "x" | "y", axis the selected can move on
+            "x" | "y", axis along which the selector can move
 
-        parent: Graphic, default ``None``
-            associate this selector with a parent Graphic from which to fetch data or indices
+        parent: ``Graphic`` instance, default ``None``
+            associate this selector with a parent ``Graphic`` from which to fetch data or indices
 
         resizable: bool
-            if ``True``, the edges can be dragged to resize the width of the linear selection
+            if ``True``, the edges can be dragged to change the range of the selection
 
         fill_color: str, array, or tuple
             fill color for the selector, passed to pygfx.Color
@@ -120,8 +110,8 @@ class LinearRegionSelector(BaseSelector):
             modifier key that must be pressed to initiate movement using arrow keys, must be one of:
             "Control", "Shift", "Alt" or ``None``
 
-        name: str
-            name for this selector graphic
+        name: str, optional
+            name of this selector graphic
 
         """
 
@@ -201,14 +191,14 @@ class LinearRegionSelector(BaseSelector):
             ),
         )
 
-        self.edges: Tuple[pygfx.Line, pygfx.Line] = (line0, line1)
+        self.edges: tuple[pygfx.Line, pygfx.Line] = (line0, line1)
 
         # add the edge lines
         for edge in self.edges:
             edge.world.z = -0.5
             group.add(edge)
 
-        # TODO: if parent offset changes, we should set the selector offset too
+        # TODO: if parent offset changes, we should set the selector offset too, use offset evented property
         # TODO: add check if parent is `None`, will throw error otherwise
         if axis == "x":
             offset = (parent.offset[0], center + parent.offset[1], 0)
@@ -222,8 +212,6 @@ class LinearRegionSelector(BaseSelector):
             selection, axis=axis, limits=self._limits
         )
 
-        self._handled_widgets = list()
-        self._block_ipywidget_call = False
         self._pygfx_event = None
 
         BaseSelector.__init__(
@@ -244,7 +232,7 @@ class LinearRegionSelector(BaseSelector):
 
     def get_selected_data(
         self, graphic: Graphic = None
-    ) -> Union[np.ndarray, List[np.ndarray]]:
+    ) -> np.ndarray | list[np.ndarray]:
         """
         Get the ``Graphic`` data bounded by the current selection.
         Returns a view of the data array.
@@ -277,7 +265,7 @@ class LinearRegionSelector(BaseSelector):
                 # this will return a list of views of the arrays, therefore no copy operations occur
                 # it's fine and fast even as a list of views because there is no re-allocating of memory
                 # this is fast even for slicing a 10,000 x 5,000 LineStack
-                data_selections: List[np.ndarray] = list()
+                data_selections: list[np.ndarray] = list()
 
                 for i, g in enumerate(source.graphics):
                     if ixs[i].size == 0:
@@ -317,7 +305,7 @@ class LinearRegionSelector(BaseSelector):
 
     def get_selected_indices(
         self, graphic: Graphic = None
-    ) -> Union[np.ndarray, List[np.ndarray]]:
+    ) -> np.ndarray | list[np.ndarray]:
         """
         Returns the indices of the ``Graphic`` data bounded by the current selection.
 
@@ -370,128 +358,6 @@ class LinearRegionSelector(BaseSelector):
         if "Image" in source.__class__.__name__:
             # indices map directly to grid geometry for image data buffer
             return np.arange(*bounds, dtype=int)
-
-    def make_ipywidget_slider(self, kind: str = "IntRangeSlider", **kwargs):
-        """
-        Makes and returns an ipywidget slider that is associated to this LinearSelector
-
-        Parameters
-        ----------
-        kind: str
-            "IntRangeSlider" or "FloatRangeSlider"
-
-        kwargs
-            passed to the ipywidget slider constructor
-
-        Returns
-        -------
-        ipywidgets.Intslider or ipywidgets.FloatSlider
-
-        """
-
-        if not IS_JUPYTER:
-            raise ImportError(
-                "Must installed `ipywidgets` to use `make_ipywidget_slider()`"
-            )
-
-        if kind not in ["IntRangeSlider", "FloatRangeSlider"]:
-            raise TypeError(
-                f"`kind` must be one of: 'IntRangeSlider', or 'FloatRangeSlider'\n"
-                f"You have passed: '{kind}'"
-            )
-
-        cls = getattr(ipywidgets, kind)
-
-        value = self.selection
-        if "Int" in kind:
-            value = tuple(map(int, self.selection))
-
-        slider = cls(
-            min=self.limits[0],
-            max=self.limits[1],
-            value=value,
-            **kwargs,
-        )
-        self.add_ipywidget_handler(slider)
-
-        return slider
-
-    def add_ipywidget_handler(self, widget, step: Union[int, float] = None):
-        """
-        Bidirectionally connect events with a ipywidget slider
-
-        Parameters
-        ----------
-        widget: ipywidgets.IntRangeSlider or ipywidgets.FloatRangeSlider
-            ipywidget slider to connect to
-
-        step: int or float, default ``None``
-            step size, if ``None`` 100 steps are created
-
-        """
-        if not isinstance(
-            widget, (ipywidgets.IntRangeSlider, ipywidgets.FloatRangeSlider)
-        ):
-            raise TypeError(
-                f"`widget` must be one of: ipywidgets.IntRangeSlider or ipywidgets.FloatRangeSlider\n"
-                f"You have passed a: <{type(widget)}"
-            )
-
-        if step is None:
-            step = (self.limits[1] - self.limits[0]) / 100
-
-        if isinstance(widget, ipywidgets.IntSlider):
-            step = int(step)
-
-        widget.step = step
-
-        self._setup_ipywidget_slider(widget)
-
-    def _setup_ipywidget_slider(self, widget):
-        # setup an ipywidget slider with bidirectional callbacks to this LinearSelector
-        value = self.selection
-
-        if isinstance(widget, ipywidgets.IntSlider):
-            value = tuple(map(int, value))
-
-        widget.value = value
-
-        # user changes widget -> linear selection changes
-        widget.observe(self._ipywidget_callback, "value")
-
-        # user changes linear selection -> widget changes
-        self.add_event_handler(self._update_ipywidgets, "selection")
-
-        self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
-
-        self._handled_widgets.append(widget)
-
-    def _update_ipywidgets(self, ev):
-        # update the ipywidget sliders when LinearSelector value changes
-        self._block_ipywidget_call = True  # prevent infinite recursion
-
-        value = ev.pick_info["new_data"]
-        # update all the handled slider widgets
-        for widget in self._handled_widgets:
-            if isinstance(widget, ipywidgets.IntSlider):
-                widget.value = tuple(map(int, value))
-            else:
-                widget.value = value
-
-        self._block_ipywidget_call = False
-
-    def _ipywidget_callback(self, change):
-        # update the LinearSelector if the ipywidget value changes
-        if self._block_ipywidget_call or self._moving:
-            return
-
-        self.selection = change["new"]
-
-    def _set_slider_layout(self, *args):
-        w, h = self._plot_area.renderer.logical_size
-
-        for widget in self._handled_widgets:
-            widget.layout = ipywidgets.Layout(width=f"{w}px")
 
     def _move_graphic(self, delta: np.ndarray):
         # add delta to current min, max to get new positions
