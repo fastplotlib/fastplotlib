@@ -1,4 +1,8 @@
-from typing import Any, List
+"""
+features shared by LineGraphic and ScatterGraphic
+"""
+
+from typing import Any
 
 import numpy as np
 import pygfx
