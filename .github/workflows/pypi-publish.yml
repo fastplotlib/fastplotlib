@@ -24,13 +24,13 @@ jobs:
     - name: Install git-lfs
       run: |
         sudo apt install --no-install-recommends -y  git-lfs
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: fetch git lfs files
       run: |
         git lfs fetch --all
         git lfs pull
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
     - name: Install dependencies
