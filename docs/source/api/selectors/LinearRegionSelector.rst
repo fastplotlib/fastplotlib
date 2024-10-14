@@ -43,12 +43,10 @@ Methods
 
     LinearRegionSelector.add_axes
     LinearRegionSelector.add_event_handler
-    LinearRegionSelector.add_ipywidget_handler
     LinearRegionSelector.clear_event_handlers
     LinearRegionSelector.get_selected_data
     LinearRegionSelector.get_selected_index
     LinearRegionSelector.get_selected_indices
-    LinearRegionSelector.make_ipywidget_slider
     LinearRegionSelector.remove_event_handler
     LinearRegionSelector.rotate
     LinearRegionSelector.share_property
