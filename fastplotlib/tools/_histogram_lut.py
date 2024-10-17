@@ -133,6 +133,8 @@ class HistogramLUTTool(Graphic):
 
         self.image_graphic.add_event_handler(self._image_cmap_handler, *ig_events)
 
+        self.ruler = None
+
         # colorbar for grayscale images
         if self.image_graphic.data.value.ndim != 3:
             self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
@@ -169,6 +171,22 @@ class HistogramLUTTool(Graphic):
         cbar.world_object.world.scale_x = 20
         self._cmap = self.image_graphic.cmap
 
+        # make ruler
+        start, stop = self.vmin, self.vmax
+        step = np.ptp([start, stop]) / 10
+        self.ruler = pygfx.Ruler(
+            tick_side="left",
+            start_pos=(0, start, -100),
+            end_pos=(0, stop, -100),
+            ticks=np.arange(start, stop + step, step),
+            tick_format=lambda v, _, __: str(v),
+        )
+
+        cbar.world_object.add(self.ruler)
+        self.ruler.local.x = -0.5
+        self.ruler.local.y = -edges_flanked[0]
+        self.ruler.ticks_at_end_points = True
+
         return cbar
 
     def _get_vmin_vmax_str(self) -> tuple[str, str]:
@@ -189,6 +207,11 @@ class HistogramLUTTool(Graphic):
         self._linear_region_selector._fpl_add_plot_area_hook(plot_area)
         self._histogram_line._fpl_add_plot_area_hook(plot_area)
 
+        if self.ruler is not None:
+            self.ruler.update(self._plot_area.camera, self._plot_area.viewport.logical_size)
+
+        # TODO: need to figure out how to get a real bbox for text objects in screen space
+        #  so that we can autoscale properly
         self._plot_area.auto_scale()
         self._plot_area.controller.enabled = True
 
