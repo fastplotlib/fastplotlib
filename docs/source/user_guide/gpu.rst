@@ -26,10 +26,38 @@ If you aren't able to solve it please post an issue on GitHub. :)
 Drivers
 -------
 
-See the README: https://github.com/fastplotlib/fastplotlib?tab=readme-ov-file#graphics-drivers
-
 If you notice weird graphic artifacts, things not rendering, or other glitches try updating to the latest stable
 drivers.
+
+More information is also available on the WGPU docs: https://wgpu-py.readthedocs.io/en/stable/start.html#platform-requirements
+
+Windows
+^^^^^^^
+
+Vulkan drivers should be installed by default on Windows 11, but you will need to install your GPU manufacturer's driver package (Nvidia or AMD). If you have an integrated GPU within your CPU, you might still need to install a driver package too, check your CPU manufacturer's info.
+
+Linux
+^^^^^
+
+You will generally need a linux distro that is from ~2020 or newer (ex. Ubuntu 18.04 won't work), this is due to the `glibc` requirements of the `wgpu-native` binary.
+
+Install the drivers directly from your GPU manufacturer's website, after that you may still need to install mesa vulkan drivers:
+
+Debian based distros::
+
+    sudo apt install mesa-vulkan-drivers
+
+For other distros install the corresponding vulkan driver package.
+
+Cloud compute
+~~~~~~~~~~~~~
+
+See the WGPU docs: https://wgpu-py.readthedocs.io/en/stable/start.html#cloud-compute
+
+Mac OSX
+^^^^^^^
+
+WGPU uses Metal instead of Vulkan on Mac. You will need at least Mac OSX 10.13. The OS should come with Metal pre-installed, so you should be good to go!
 
 GPU Info
 --------
@@ -279,7 +307,7 @@ to ``fpl.select_adapter()``::
 Note that using this function reduces the portability of your code, because
 it's highly specific for your current machine/environment.
 
-The order of the adapters returned by ``wgpu.gpu.enumerate_adapters()`` is
+The order of the adapters returned by ``fpl.enumerate_adapters()`` is
 such that Vulkan adapters go first, then Metal, then D3D12, then OpenGL.
 Within each category, the order as provided by the particular backend is
 maintained. Note that the same device may be present via multiple backends
