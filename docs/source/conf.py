@@ -56,15 +56,16 @@ sphinx_gallery_conf = {
     "subsection_order": ExplicitOrder(
         [
             "../../examples/image",
+            "../../examples/heatmap",
             "../../examples/image_widget",
             "../../examples/gridplot",
             "../../examples/line",
             "../../examples/line_collection",
             "../../examples/scatter",
-            "../../examples/heatmap",
-            "../../examples/misc",
             "../../examples/selection_tools",
+            "../../examples/machine_learning",
             "../../examples/guis",
+            "../../examples/misc",
             "../../examples/qt",
         ]
     ),
