@@ -220,22 +220,18 @@ class Graphic:
 
     def add_event_handler(self, *args):
         """
-        Register an event handler.
+        Register an event handler. Can also be used as a decorator.
 
         Parameters
         ----------
         callback: callable, the first argument
             Event handler, must accept a single event  argument
-        *types: list of strings
-            A list of event types, ex: "click", "data", "colors", "pointer_down"
 
-        For the available renderer event types, see
-        https://jupyter-rfb.readthedocs.io/en/stable/events.html
+        *types: strings
+            event types, ex: "click", "data", "colors", "pointer_down"
 
-        All feature support events, i.e. ``graphic.features`` will give a set of
-        all features that are evented
-
-        Can also be used as a decorator.
+            ``supported_events`` will return a tuple of all event type strings that this graphic supports.
+            See the user guide in the documentation for more information on events.
 
         Example
         -------
@@ -316,6 +312,34 @@ class Graphic:
             callback(event)
 
     def remove_event_handler(self, callback, *types):
+        """
+        remove a registered event handler
+
+        Parameters
+        ----------
+        callback: callable
+            event handler that has been added
+
+        *types: strings
+            event types that were registered with the given callback
+
+        Example
+        -------
+
+        .. code-block:: py
+
+            # define event handler
+            def my_handler(event):
+                print(event)
+
+            # add event handler
+            graphic.add_event_handler(my_handler, "pointer_up", "pointer_down")
+
+            # remove event handler
+            graphic.remove_event_handler(my_handler, "pointer_up", "pointer_down")
+
+        """
+
         # remove from our record first
         for t in types:
             for wrapper_map in self._event_handler_wrappers[t]:
