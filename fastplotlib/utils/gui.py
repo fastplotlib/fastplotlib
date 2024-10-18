@@ -45,7 +45,7 @@ IS_JUPYTER = GUI_BACKEND == "jupyter"
 
 def _notebook_print_banner():
     from ipywidgets import Image
-    from IPython.display import display
+    from IPython.display import display, HTML
 
     logo_path = Path(__file__).parent.parent.joinpath(
         "assets", "fastplotlib_face_logo.png"
@@ -54,40 +54,67 @@ def _notebook_print_banner():
     with open(logo_path, "rb") as f:
         logo_data = f.read()
 
+    # get small logo image
     image = Image(value=logo_data, format="png", width=300, height=55)
 
-    display(image)
-
-    # print logo and adapter info
+    # get adapters and info
     adapters = [a for a in wgpu.gpu.enumerate_adapters()]
     adapters_info = [a.info for a in adapters]
 
     default_adapter_info = wgpu.gpu.request_adapter().info
     default_ix = adapters_info.index(default_adapter_info)
 
-    if len(adapters) > 0:
-        print("Available devices:")
+    if len(adapters) < 1:
+        return
 
+    # start HTML table
+    table_str = ("<b>Available devices:</b>"
+                 "<table>"
+                 "<tr>"
+                 "<th>Valid</th>"
+                 "<th>Device</th>"
+                 "<th>Type</th>"
+                 "<th>Backend</th>"
+                 "<th>Driver</th>"
+                 "</tr>")
+
+    # parse each adapter that WGPU found
     for ix, adapter in enumerate(adapters_info):
         atype = adapter["adapter_type"]
         backend = adapter["backend_type"]
         driver = adapter["description"]
         device = adapter["device"]
 
-        if atype == "DiscreteGPU" and backend != "OpenGL":
-            charactor = chr(0x2705)
-        elif atype == "IntegratedGPU" and backend != "OpenGL":
-            charactor = chr(0x0001FBC4)
+        if atype in ("DiscreteGPU", "IntegratedGPU") and backend != "OpenGL":
+            charactor = chr(0x2705)  # green checkmark
+            tooltip = "This adapter can be used with fastplotlib"
+        elif backend == "OpenGL":
+            charactor = chr(0x0000274C)  # red x
+            tooltip = "This adapter cannot be used with fastplotlib"
+        elif device.startswith("llvmpipe") or atype == "CPU":
+            charactor = f"{chr(0x00002757)} limited"  # red !
+            tooltip = "CPU rendering support is limited and mainly for testing purposes"
         else:
-            charactor = chr(0x2757)
+            charactor = f"{chr(0x00002757)} unknown"  # red !
+            tooltip = "Unknown adapter type and backend"
 
         if ix == default_ix:
             default = " (default) "
         else:
-            default = " "
+            default = ""
 
-        output_str = f"{charactor}{default}| {device} | {atype} | {backend} | {driver}"
-        print(output_str)
+        # add row to HTML table
+        table_str += f"<tr title=\"{tooltip}\">"
+        # add each element to this row
+        for s in [f"{charactor}{default}", device, atype, backend, driver]:
+            table_str += f"<td>{s}</td>"
+        table_str += "</tr>"
+
+    table_str += "</table>"
+
+    # display logo and adapters table
+    display(image)
+    display(HTML(table_str))
 
 
 if GUI_BACKEND == "jupyter":
