@@ -97,16 +97,16 @@ jobs:
       with:
         python-version: ${{ matrix.pyversion }}
     - name: Install llvmpipe and lavapipe for offscreen canvas
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update -y -qq
         sudo apt-get install --no-install-recommends -y libegl1-mesa-dev libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
     - name: Install dev dependencies
       run: |
         python -m pip install --upgrade pip setuptools
-        # remove pygfx from install_requires, we install using pygfx@main
-        sed -i "/pygfx/d" ./setup.py
-        pip install git+https://github.com/pygfx/pygfx.git@main
         pip install -e ".["tests-desktop"]"
+        # install latest pygfx from main
+        pip install -U git+https://github.com/pygfx/pygfx.git@main
     - name: Show wgpu backend
       run:
         python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
