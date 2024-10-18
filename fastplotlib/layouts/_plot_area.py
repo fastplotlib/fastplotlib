@@ -543,7 +543,7 @@ class PlotArea:
                 f"All graphics within a subplot or plot area must have a unique name."
             )
 
-    def center_graphic(self, graphic: Graphic, zoom: float = 1.35):
+    def center_graphic(self, graphic: Graphic, zoom: float = 1.0):
         """
         Center the camera w.r.t. the passed graphic
 
@@ -552,7 +552,7 @@ class PlotArea:
         graphic: Graphic
             The graphic instance to center on
 
-        zoom: float, default 1.3
+        zoom: float
             zoom the camera after centering
 
         """
@@ -569,10 +569,11 @@ class PlotArea:
 
         Parameters
         ----------
-        zoom: float, default 1.3
+        zoom: float
             apply a zoom after centering the scene
 
         """
+
         if not len(self._fpl_graphics_scene.children) > 0:
             return
 
@@ -600,10 +601,11 @@ class PlotArea:
             Maintain the camera aspect ratio for all dimensions. If ``None``, the aspect is left unchanged.
             if ``False`` the camera is scaled to the bounding box of the current scene.
 
-        zoom: float, default 0.8
-            zoom value for the camera after auto-scaling, if zoom = 1.0 then the graphics
-            in the scene will fill the entire canvas.
+        zoom: float
+            zoom value for the camera after auto-scaling
+
         """
+
         if not len(self._fpl_graphics_scene.children) > 0:
             return
 
