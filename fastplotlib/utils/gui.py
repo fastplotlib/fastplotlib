@@ -68,15 +68,17 @@ def _notebook_print_banner():
         return
 
     # start HTML table
-    table_str = ("<b>Available devices:</b>"
-                 "<table>"
-                 "<tr>"
-                 "<th>Valid</th>"
-                 "<th>Device</th>"
-                 "<th>Type</th>"
-                 "<th>Backend</th>"
-                 "<th>Driver</th>"
-                 "</tr>")
+    table_str = (
+        "<b>Available devices:</b>"
+        "<table>"
+        "<tr>"
+        "<th>Valid</th>"
+        "<th>Device</th>"
+        "<th>Type</th>"
+        "<th>Backend</th>"
+        "<th>Driver</th>"
+        "</tr>"
+    )
 
     # parse each adapter that WGPU found
     for ix, adapter in enumerate(adapters_info):
@@ -104,7 +106,7 @@ def _notebook_print_banner():
             default = ""
 
         # add row to HTML table
-        table_str += f"<tr title=\"{tooltip}\">"
+        table_str += f'<tr title="{tooltip}">'
         # add each element to this row
         for s in [f"{charactor}{default}", device, atype, backend, driver]:
             table_str += f"<td>{s}</td>"
