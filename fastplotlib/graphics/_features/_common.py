@@ -18,8 +18,8 @@ class Name(GraphicFeature):
         if not isinstance(value, str):
             raise TypeError("`Graphic` name must be of type <str>")
 
-        if graphic._plot_area is not None:
-            graphic._plot_area._check_graphic_name_exists(value)
+        if graphic._fpl_plot_area is not None:
+            graphic._fpl_plot_area._check_graphic_name_exists(value)
 
         self._value = value
 
