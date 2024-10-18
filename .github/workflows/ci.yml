@@ -88,10 +88,9 @@ jobs:
     timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     steps:
-    - name: Install git-lfs
-      run: |
-        sudo apt install --no-install-recommends -y  git-lfs
     - uses: actions/checkout@v4
+      with:
+        lfs: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
