@@ -72,13 +72,11 @@ jobs:
           examples/notebooks/diffs
 
   test-build-desktop:
-    name: Test Linux, only offscreen
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: ${{ !github.event.pull_request.draft }}
+    name: Test only offscreen
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-latest]
         include:
           - name: Test py310
             pyversion: '3.10'
@@ -86,6 +84,9 @@ jobs:
             pyversion: '3.11'
           - name: Test py312
             pyversion: '3.12'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    if: ${{ !github.event.pull_request.draft }}
     steps:
     - name: Install git-lfs
       run: |
