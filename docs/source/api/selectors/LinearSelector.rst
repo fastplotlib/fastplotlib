@@ -43,12 +43,10 @@ Methods
 
     LinearSelector.add_axes
     LinearSelector.add_event_handler
-    LinearSelector.add_ipywidget_handler
     LinearSelector.clear_event_handlers
     LinearSelector.get_selected_data
     LinearSelector.get_selected_index
     LinearSelector.get_selected_indices
-    LinearSelector.make_ipywidget_slider
     LinearSelector.remove_event_handler
     LinearSelector.rotate
     LinearSelector.share_property
