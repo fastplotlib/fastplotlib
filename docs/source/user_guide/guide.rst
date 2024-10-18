@@ -249,13 +249,11 @@ Let's take a look at how we can define events to link ``Graphics`` and their pro
 Events
 ------
 
-Events can be a multitude of things: traditional events such as mouse or keyboard events, but they can also be
-You can use renderer events, such as mouse or keyboard events, or events related to ``Graphic`` properties.
-
+Events can be a multitude of things: traditional events such as mouse or keyboard events, or events related to ``Graphic`` properties.
 
 There are two ways to add events in ``fastplotlib``.
 
-1) Use the method ::
+1) Use the method `add_event_handler()` ::
 
     def event_handler(ev):
         pass
@@ -275,29 +273,16 @@ There are two ways to add events in ``fastplotlib``.
 
 
 The ``event_handler`` is a user-defined function that accepts an event instance as the first and only positional argument.
-Information about the structure of event instances are described below. The `"event_type"`
+Information about the structure of event instances are described below. The ``"event_type"``
 is a string that identifies the type of event; this can be either a ``pygfx.Event`` or a ``Graphic`` property event.
-See the above graphic-specific properties that can be used for events and below for the available ``pygfx`` events.
 
-Rendering engine (``pygfx``) events:
-    - "key_down"
-    - "key_up"
-    - "pointer_down"
-    - "pointer_move"
-    - "pointer_up"
-    - "pointer_enter"
-    - "pointer_leave"
-    - "click"
-    - "double_click"
-    - "wheel"
-    - "close"
-    - "resize"
+``graphic.supported_events`` will return a tuple of all ``event_type`` strings that this graphic supports.
 
-When an event occurs, the user-defined event handler will receive and event object. Depending on the type of event, the
+When an event occurs, the user-defined event handler will receive an event object. Depending on the type of event, the
 event object will have relevant information that can be used in the callback. See below for event tables.
 
-Event Attributes
-^^^^^^^^^^^^^^^^
+Graphic property events
+^^^^^^^^^^^^^^^^^^^^^^^
 
 All ``Graphic`` events have the following attributes:
 
@@ -427,13 +412,107 @@ event_type: "selection"
     | value    | np.ndarray | new [min, max] of selection |
     +----------+------------+-----------------------------+
 
-Renderer Events
-^^^^^^^^^^^^^^^
+Rendering engine events from a Graphic
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can also add events to a ``Figure`` object's renderer. This is useful for defining click events where
-you want to map your click position to the nearest graphic object for example.
+Rendering engine event handlers can be added to a graphic or to a Figure (see next section).
+Here is a description of all rendering engine events and their attributes.
 
-Renderer events can be added using either method mentioned above (i.e. using the method or via a decorator).
+* **pointer_down**: emitted when the user interacts with mouse,
+  touch or other pointer devices, by pressing it down.
+
+    * *x*: horizontal position of the pointer within the widget.
+    * *y*: vertical position of the pointer within the widget.
+    * *button*: the button to which this event applies. See "Mouse buttons" section below for details.
+    * *buttons*: a tuple of buttons being pressed down.
+    * *modifiers*: a tuple of modifier keys being pressed down. See section below for details.
+    * *ntouches*: the number of simultaneous pointers being down.
+    * *touches*: a dict with int keys (pointer id's), and values that are dicts
+      that contain "x", "y", and "pressure".
+    * *time_stamp*: a timestamp in seconds.
+
+* **pointer_up**: emitted when the user releases a pointer.
+  This event has the same keys as the pointer down event.
+
+* **pointer_move**: emitted when the user moves a pointer.
+  This event has the same keys as the pointer down event.
+  This event is throttled.
+
+* **double_click**: emitted on a double-click.
+  This event looks like a pointer event, but without the touches.
+
+* **wheel**: emitted when the mouse-wheel is used (scrolling),
+  or when scrolling/pinching on the touchpad/touchscreen.
+
+  Similar to the JS wheel event, the values of the deltas depend on the
+  platform and whether the mouse-wheel, trackpad or a touch-gesture is
+  used. Also, scrolling can be linear or have inertia. As a rule of
+  thumb, one "wheel action" results in a cumulative ``dy`` of around
+  100. Positive values of ``dy`` are associated with scrolling down and
+  zooming out. Positive values of ``dx`` are associated with scrolling
+  to the right. (A note for Qt users: the sign of the deltas is (usually)
+  reversed compared to the QWheelEvent.)
+
+  On MacOS, using the mouse-wheel while holding shift results in horizontal
+  scrolling. In applications where the scroll dimension does not matter,
+  it is therefore recommended to use `delta = event['dy'] or event['dx']`.
+
+    * *dx*: the horizontal scroll delta (positive means scroll right).
+    * *dy*: the vertical scroll delta (positive means scroll down or zoom out).
+    * *x*: the mouse horizontal position during the scroll.
+    * *y*: the mouse vertical position during the scroll.
+    * *buttons*: a tuple of buttons being pressed down.
+    * *modifiers*: a tuple of modifier keys being pressed down.
+    * *time_stamp*: a timestamp in seconds.
+
+* **key_down**: emitted when a key is pressed down.
+
+    * *key*: the key being pressed as a string. See section below for details.
+    * *modifiers*: a tuple of modifier keys being pressed down.
+    * *time_stamp*: a timestamp in seconds.
+
+* **key_up**: emitted when a key is released.
+  This event has the same keys as the key down event.
+
+
+Time stamps
+~~~~~~~~~~~
+
+Since the time origin of ``time_stamp`` values is undefined,
+time stamp values only make sense in relation to other time stamps.
+
+
+Mouse buttons
+~~~~~~~~~~~~~
+
+* 0: No button.
+* 1: Left button.
+* 2: Right button.
+* 3: Middle button
+* 4-9: etc.
+
+
+Keys
+~~~~
+
+The key names follow the `browser spec <https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent>`_.
+
+* Keys that represent a character are simply denoted as such. For these the case matters:
+  "a", "A", "z", "Z" "3", "7", "&", " " (space), etc.
+* The modifier keys are:
+  "Shift", "Control", "Alt", "Meta".
+* Some example keys that do not represent a character:
+  "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "F1", "Backspace", etc.
+
+
+Add renderer event handlers to a Figure
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can add event handlers to a ``Figure`` object's renderer. For example, this is useful for defining click events
+where you want to map click positions to the nearest graphic object. See the previous section for a description
+of all the renderer events.
+
+Renderer event handlers can be added using a method or a decorator.
 
 For example: ::
 
@@ -484,7 +563,9 @@ ImageWidget
 
 Often times, developing UIs for interacting with multi-dimension image data can be tedious and repetitive.
 In order to aid with common image and video visualization requirements the ``ImageWidget`` automatically generates sliders
-to easily navigate through different dimensions of your data. Let's look at an example: ::
+to easily navigate through different dimensions of your data. The image widget supports 2D, 3D and 4D arrays.
+
+Let's look at an example: ::
 
     import fastplotlib as fpl
     import imageio.v3 as iio
