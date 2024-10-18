@@ -462,7 +462,7 @@ class LinearRegionSelector(BaseSelector):
         # user changes linear selection -> widget changes
         self.add_event_handler(self._update_ipywidgets, "selection")
 
-        self._plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
+        self._fpl_plot_area.renderer.add_event_handler(self._set_slider_layout, "resize")
 
         self._handled_widgets.append(widget)
 
@@ -488,7 +488,7 @@ class LinearRegionSelector(BaseSelector):
         self.selection = change["new"]
 
     def _set_slider_layout(self, *args):
-        w, h = self._plot_area.renderer.logical_size
+        w, h = self._fpl_plot_area.renderer.logical_size
 
         for widget in self._handled_widgets:
             widget.layout = ipywidgets.Layout(width=f"{w}px")
