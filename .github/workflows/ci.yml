@@ -72,13 +72,11 @@ jobs:
           examples/notebooks/diffs
 
   test-build-desktop:
-    name: Test Linux, only offscreen
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    if: ${{ !github.event.pull_request.draft }}
+    name: Test only offscreen
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-latest]
         include:
           - name: Test py310
             pyversion: '3.10'
@@ -86,16 +84,19 @@ jobs:
             pyversion: '3.11'
           - name: Test py312
             pyversion: '3.12'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    if: ${{ !github.event.pull_request.draft }}
     steps:
-    - name: Install git-lfs
-      run: |
-        sudo apt install --no-install-recommends -y  git-lfs
     - uses: actions/checkout@v4
+      with:
+        lfs: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.pyversion }}
     - name: Install llvmpipe and lavapipe for offscreen canvas
+      if: runner.os == 'Linux'
       run: |
         sudo apt-get update -y -qq
         sudo apt-get install --no-install-recommends -y libegl1-mesa-dev libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers git-lfs
@@ -103,7 +104,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools
         # remove pygfx from install_requires, we install using pygfx@main
-        sed -i "/pygfx/d" ./setup.py
+        sed -i'' -e "/pygfx/d" ./setup.py
         pip install git+https://github.com/pygfx/pygfx.git@main
         pip install -e ".["tests-desktop"]"
     - name: Show wgpu backend
