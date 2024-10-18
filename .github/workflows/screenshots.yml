@@ -17,10 +17,9 @@ jobs:
     timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     steps:
-      - name: Install git-lfs
-        run: |
-          sudo apt install --no-install-recommends -y  git-lfs
       - uses: actions/checkout@v4
+        with:
+          lfs: true
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
@@ -39,10 +38,6 @@ jobs:
       - name: Show wgpu backend
         run:
           python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
-      - name: fetch git lfs files
-        run: |
-          git lfs fetch --all
-          git lfs pull
       - name: Test examples
         env:
           PYGFX_EXPECT_LAVAPIPE: true

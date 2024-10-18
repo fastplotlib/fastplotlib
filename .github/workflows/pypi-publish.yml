@@ -21,14 +21,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Install git-lfs
-      run: |
-        sudo apt install --no-install-recommends -y  git-lfs
     - uses: actions/checkout@v4
-    - name: fetch git lfs files
-      run: |
-        git lfs fetch --all
-        git lfs pull
+      with:
+        lfs: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -40,7 +35,7 @@ jobs:
     - name: Build package
       run: python -m build
     - name: Publish package
-      uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+      uses: pypa/gh-action-pypi-publish@release/v1
       with:
         user: __token__
         password: ${{ secrets.PYPI_API_TOKEN }}
