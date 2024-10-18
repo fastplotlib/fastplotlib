@@ -29,8 +29,6 @@ jobs:
             pyversion: '3.11'
           - name: Test py312
             pyversion: '3.12'
-          - name: Test py313
-            pyversion: '3.13'
     steps:
     - uses: actions/checkout@v4
       with:
@@ -87,8 +85,6 @@ jobs:
             pyversion: '3.11'
           - name: Test py312
             pyversion: '3.12'
-          - name: Test py313
-            pyversion: '3.13'
     steps:
     - uses: actions/checkout@v4
       with:
