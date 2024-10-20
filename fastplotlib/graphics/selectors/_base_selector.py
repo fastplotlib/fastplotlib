@@ -134,7 +134,7 @@ class BaseSelector(Graphic):
         return source
 
     def _fpl_add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
+        self._fpl_plot_area = plot_area
 
         # when the pointer is pressed on a fill, edge or vertex
         for wo in self._world_objects:
@@ -147,18 +147,18 @@ class BaseSelector(Graphic):
         for fill in self._fill:
             if fill.material.color_is_transparent:
                 self._pfunc_fill = partial(self._check_fill_pointer_event, fill)
-                self._plot_area.renderer.add_event_handler(
+                self._fpl_plot_area.renderer.add_event_handler(
                     self._pfunc_fill, "pointer_down"
                 )
 
         # when the pointer moves
-        self._plot_area.renderer.add_event_handler(self._move, "pointer_move")
+        self._fpl_plot_area.renderer.add_event_handler(self._move, "pointer_move")
 
         # when the pointer is released
-        self._plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
+        self._fpl_plot_area.renderer.add_event_handler(self._move_end, "pointer_up")
 
         # move directly to location of center mouse button click
-        self._plot_area.renderer.add_event_handler(self._move_to_pointer, "click")
+        self._fpl_plot_area.renderer.add_event_handler(self._move_to_pointer, "click")
 
         # mouse hover color events
         for wo in self._hover_responsive:
@@ -166,16 +166,16 @@ class BaseSelector(Graphic):
             wo.add_event_handler(self._pointer_leave, "pointer_leave")
 
         # arrow key bindings
-        self._plot_area.renderer.add_event_handler(self._key_down, "key_down")
-        self._plot_area.renderer.add_event_handler(self._key_up, "key_up")
-        self._plot_area.add_animations(self._key_hold)
+        self._fpl_plot_area.renderer.add_event_handler(self._key_down, "key_down")
+        self._fpl_plot_area.renderer.add_event_handler(self._key_up, "key_up")
+        self._fpl_plot_area.add_animations(self._key_hold)
 
     def _check_fill_pointer_event(self, event_source: WorldObject, ev):
         if self._edge_hovered:
             # if edge is hovered, prefer edge events, disable fill moves
             return
 
-        world_pos = self._plot_area.map_screen_to_world(ev)
+        world_pos = self._fpl_plot_area.map_screen_to_world(ev)
         # outside viewport, ignore
         # this shouldn't be possible since the event handler is registered to the fill mesh world object
         # but I like sanity checks anyways
@@ -210,12 +210,12 @@ class BaseSelector(Graphic):
             pygfx ``Event``
 
         """
-        last_position = self._plot_area.map_screen_to_world(ev)
+        last_position = self._fpl_plot_area.map_screen_to_world(ev)
 
         self._move_info = MoveInfo(last_position=last_position, source=event_source)
         self._moving = True
 
-        self._initial_controller_state = self._plot_area.controller.enabled
+        self._initial_controller_state = self._fpl_plot_area.controller.enabled
 
     def _move(self, ev):
         """
@@ -233,10 +233,10 @@ class BaseSelector(Graphic):
             return
 
         # disable controller during moves
-        self._plot_area.controller.enabled = False
+        self._fpl_plot_area.controller.enabled = False
 
         # get pointer current world position
-        world_pos = self._plot_area.map_screen_to_world(ev)
+        world_pos = self._fpl_plot_area.map_screen_to_world(ev)
 
         # outside this viewport
         if world_pos is None:
@@ -253,7 +253,7 @@ class BaseSelector(Graphic):
 
         # restore the initial controller state
         # if it was disabled, keep it disabled
-        self._plot_area.controller.enabled = self._initial_controller_state
+        self._fpl_plot_area.controller.enabled = self._initial_controller_state
 
     def _move_graphic(self, delta: np.ndarray):
         raise NotImplementedError("Must be implemented in subclass")
@@ -265,7 +265,7 @@ class BaseSelector(Graphic):
         # restore the initial controller state
         # if it was disabled, keep it disabled
         if self._initial_controller_state is not None:
-            self._plot_area.controller.enabled = self._initial_controller_state
+            self._fpl_plot_area.controller.enabled = self._initial_controller_state
 
     def _move_to_pointer(self, ev):
         """
@@ -291,7 +291,7 @@ class BaseSelector(Graphic):
 
         current_pos_world: np.ndarray = center + offset
 
-        world_pos = self._plot_area.map_screen_to_world(ev)
+        world_pos = self._fpl_plot_area.map_screen_to_world(ev)
 
         # outside this viewport
         if world_pos is None:
@@ -382,7 +382,7 @@ class BaseSelector(Graphic):
 
     def _fpl_prepare_del(self):
         if hasattr(self, "_pfunc_fill"):
-            self._plot_area.renderer.remove_event_handler(
+            self._fpl_plot_area.renderer.remove_event_handler(
                 self._pfunc_fill, "pointer_down"
             )
             del self._pfunc_fill

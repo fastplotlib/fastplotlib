@@ -106,7 +106,7 @@ class Graphic:
         # store hex id str of Graphic instance mem location
         self._fpl_address: HexStr = hex(id(self))
 
-        self._plot_area = None
+        self._fpl_plot_area = None
 
         # event handlers
         self._event_handlers = defaultdict(set)
@@ -362,7 +362,7 @@ class Graphic:
                 feature.remove_event_handler(wrapper)
 
     def _fpl_add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
+        self._fpl_plot_area = plot_area
 
     def __repr__(self):
         rval = f"{self.__class__.__name__} @ {hex(id(self))}"
@@ -380,8 +380,8 @@ class Graphic:
         """
         # remove axes if added to this graphic
         if self._axes is not None:
-            self._plot_area.scene.remove(self._axes)
-            self._plot_area.remove_animation(self._update_axes)
+            self._fpl_plot_area.scene.remove(self._axes)
+            self._fpl_plot_area.remove_animation(self._update_axes)
             self._axes.world_object.clear()
 
         # signal that a deletion has been requested
@@ -402,12 +402,12 @@ class Graphic:
 
             for ev_type in PYGFX_EVENTS:
                 try:
-                    self._plot_area.renderer.remove_event_handler(method, ev_type)
+                    self._fpl_plot_area.renderer.remove_event_handler(method, ev_type)
                 except (KeyError, TypeError):
                     pass
 
             try:
-                self._plot_area.remove_animation(method)
+                self._fpl_plot_area.remove_animation(method)
             except KeyError:
                 pass
 
@@ -452,10 +452,10 @@ class Graphic:
         if self._axes is not None:
             raise AttributeError("Axes already added onto this graphic")
 
-        self._axes = Axes(self._plot_area, offset=self.offset, grids=False)
+        self._axes = Axes(self._fpl_plot_area, offset=self.offset, grids=False)
         self._axes.world_object.local.rotation = self.world_object.local.rotation
 
-        self._plot_area.scene.add(self.axes.world_object)
+        self._fpl_plot_area.scene.add(self.axes.world_object)
         self._axes.update_using_bbox(self.world_object.get_world_bounding_box())
 
     @property

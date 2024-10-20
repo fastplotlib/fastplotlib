@@ -185,12 +185,12 @@ class HistogramLUTTool(Graphic):
         return vmin_str, vmax_str
 
     def _fpl_add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
+        self._fpl_plot_area = plot_area
         self._linear_region_selector._fpl_add_plot_area_hook(plot_area)
         self._histogram_line._fpl_add_plot_area_hook(plot_area)
 
-        self._plot_area.auto_scale()
-        self._plot_area.controller.enabled = True
+        self._fpl_plot_area.auto_scale()
+        self._fpl_plot_area.controller.enabled = True
 
     def _calculate_histogram(self, data):
         if data.ndim > 2:
@@ -363,7 +363,7 @@ class HistogramLUTTool(Graphic):
             self._cmap = None
 
         # reset plotarea dims
-        self._plot_area.auto_scale()
+        self._fpl_plot_area.auto_scale()
 
     @property
     def image_graphic(self) -> ImageGraphic:
@@ -402,7 +402,7 @@ class HistogramLUTTool(Graphic):
 
         pos = ev.x, ev.y
 
-        self._plot_area.get_figure().open_popup("colormap-picker", pos, lut_tool=self)
+        self._fpl_plot_area.get_figure().open_popup("colormap-picker", pos, lut_tool=self)
 
     def _fpl_prepare_del(self):
         self._linear_region_selector._fpl_prepare_del()
