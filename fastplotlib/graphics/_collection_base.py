@@ -1,9 +1,9 @@
-from contextlib import suppress
 from typing import Any
 
 import numpy as np
 
 from ._base import Graphic
+from ._features import GraphicFeature
 
 
 class CollectionProperties:
@@ -249,6 +249,7 @@ class GraphicCollection(Graphic, CollectionProperties):
     def add_event_handler(self, *args):
         """
         Register an event handler.
+        Just adds the event handler to each individual graphic in the collection.
 
         Parameters
         ----------
