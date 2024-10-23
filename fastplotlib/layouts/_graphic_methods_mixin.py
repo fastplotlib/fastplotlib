@@ -343,9 +343,12 @@ class GraphicMethodsMixin:
         alpha: float = 1.0,
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
-        isolated_buffer: bool = True,
-        sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
+        sizes: Union[float, numpy.ndarray, Iterable[float]] = 5,
         uniform_size: bool = False,
+        marker: str = "circle",
+        edge_color: str | numpy.ndarray | tuple[float] | list[float] = "black",
+        edge_width: float = 1.0,
+        isolated_buffer: bool = True,
         **kwargs
     ) -> ScatterGraphic:
         """
@@ -375,16 +378,61 @@ class GraphicMethodsMixin:
         cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
-        isolated_buffer: bool, default True
-            whether the buffers should be isolated from the user input array.
-            Generally always ``True``, ``False`` is for rare advanced use.
-
         sizes: float or iterable of float, optional, default 1.0
             size of the scatter points
 
         uniform_size: bool, default False
             if True, uses a uniform buffer for the scatter point sizes,
             basically saves GPU VRAM when all scatter points are the same size
+
+        marker: str, default "circle"
+            shape of the markers
+
+            Valid inputs are the following strings or unicode characters and emojis::
+
+                "o": "circle",
+                "s": "square",
+                "D": "diamond",
+                "+": "plus",
+                "x": "cross",
+                "^": "triangle_up",
+                "<": "triangle_left",
+                ">": "triangle_right",
+                "v": "triangle_down",
+
+                # Unicode
+                "●": "circle",
+                "○": "ring",
+                "■": "square",
+                "♦": "diamond",
+                "♥": "heart",
+                "♠": "spade",
+                "♣": "club",
+                "✳": "asterix",
+                "▲": "triangle_up",
+                "▼": "triangle_down",
+                "◀": "triangle_left",
+                "▶": "triangle_right",
+
+                # Emojis (these may look like their plaintext variants in your editor)
+                "❤️": "heart",
+                "♠️": "spade",
+                "♣️": "club",
+                "♦️": "diamond",
+                "💎": "diamond",
+                "💍": "ring",
+                "✳️": "asterix",
+                "📍": "pin",
+
+        edge_color: str, array, or iterable, default "black"
+            color of the scatter point edges, accepts any type that pygfx.Color can parse
+
+        edge_width: float, default 1.0
+            width of the scatter point edges
+
+        isolated_buffer: bool, default True
+            whether the buffers should be isolated from the user input array.
+            Generally always ``True``, ``False`` is for rare advanced use.
 
         kwargs
             passed to Graphic
@@ -399,9 +447,12 @@ class GraphicMethodsMixin:
             alpha,
             cmap,
             cmap_transform,
-            isolated_buffer,
             sizes,
             uniform_size,
+            marker,
+            edge_color,
+            edge_width,
+            isolated_buffer,
             **kwargs
         )
 
