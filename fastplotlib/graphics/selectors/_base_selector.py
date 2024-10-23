@@ -40,6 +40,41 @@ class BaseSelector(Graphic):
     def axis(self) -> str:
         return self._axis
 
+    @property
+    def fill_color(self) -> str | Sequence[float] | None:
+        return self._fill_color
+
+    @fill_color.setter
+    def fill_color(self, color: str | Sequence[float]):
+        for fill in self._fill:
+            fill.material.color = color
+            self._original_colors[fill] = color
+        self._fill_color = color
+
+    @property
+    def vertex_color(self) -> str | Sequence[float] | None:
+        return self._vertex_color
+
+    @vertex_color.setter
+    def vertex_color(self, color: str | Sequence[float]):
+        for vertex in self._vertices:
+            vertex.material.color = color
+            vertex.material.edge_color = color
+            self._original_colors[vertex] = color
+        self._vertex_color = color
+
+
+    @property
+    def edge_color(self) -> str | Sequence[float] | None:
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, color: str | Sequence[float]):
+        for edge in self._edges:
+            edge.material.color = color
+            self._original_colors[edge] = color
+        self._edge_color = color
+
     def __init__(
         self,
         edges: Tuple[Line, ...] = None,

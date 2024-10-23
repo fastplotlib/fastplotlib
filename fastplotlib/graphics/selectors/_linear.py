@@ -99,6 +99,9 @@ class LinearSelector(BaseSelector):
             name of linear selector
 
         """
+        self._fill_color = None
+        self._edge_color = None
+        self._vertex_color = None
 
         if len(limits) != 2:
             raise ValueError("limits must be a tuple of 2 integers, i.e. (int, int)")

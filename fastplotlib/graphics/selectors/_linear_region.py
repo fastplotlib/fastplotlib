@@ -114,6 +114,8 @@ class LinearRegionSelector(BaseSelector):
             name of this selector graphic
 
         """
+        self._edge_color = edge_color
+        self._fill_color = fill_color
 
         # lots of very close to zero values etc. so round them, otherwise things get weird
         if not len(selection) == 2:
@@ -134,13 +136,13 @@ class LinearRegionSelector(BaseSelector):
         if axis == "x":
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(1, size, 1),
-                pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
+                pygfx.MeshBasicMaterial(color=pygfx.Color(self.fill_color), pick_write=True),
             )
 
         elif axis == "y":
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(size, 1, 1),
-                pygfx.MeshBasicMaterial(color=pygfx.Color(fill_color), pick_write=True),
+                pygfx.MeshBasicMaterial(color=pygfx.Color(self.fill_color), pick_write=True),
             )
         else:
             raise ValueError("`axis` must be one of 'x' or 'y'")
@@ -179,7 +181,7 @@ class LinearRegionSelector(BaseSelector):
                 positions=init_line_data.copy()
             ),  # copy so the line buffer is isolated
             pygfx.LineMaterial(
-                thickness=edge_thickness, color=edge_color, pick_write=True
+                thickness=edge_thickness, color=self.edge_color, pick_write=True
             ),
         )
         line1 = pygfx.Line(
@@ -187,7 +189,7 @@ class LinearRegionSelector(BaseSelector):
                 positions=init_line_data.copy()
             ),  # copy so the line buffer is isolated
             pygfx.LineMaterial(
-                thickness=edge_thickness, color=edge_color, pick_write=True
+                thickness=edge_thickness, color=self.edge_color, pick_write=True
             ),
         )
 
