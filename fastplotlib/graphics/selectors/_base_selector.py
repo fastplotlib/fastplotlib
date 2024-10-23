@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from functools import partial
 
 import numpy as np
+import pygfx
 
 from pygfx import WorldObject, Line, Mesh, Points
 
@@ -41,22 +42,24 @@ class BaseSelector(Graphic):
         return self._axis
 
     @property
-    def fill_color(self) -> str | Sequence[float] | None:
+    def fill_color(self) -> pygfx.Color:
         return self._fill_color
 
     @fill_color.setter
     def fill_color(self, color: str | Sequence[float]):
+        color = pygfx.Color(color)
         for fill in self._fill:
             fill.material.color = color
             self._original_colors[fill] = color
         self._fill_color = color
 
     @property
-    def vertex_color(self) -> str | Sequence[float] | None:
+    def vertex_color(self) -> pygfx.Color:
         return self._vertex_color
 
     @vertex_color.setter
     def vertex_color(self, color: str | Sequence[float]):
+        color = pygfx.Color(color)
         for vertex in self._vertices:
             vertex.material.color = color
             vertex.material.edge_color = color
@@ -64,11 +67,12 @@ class BaseSelector(Graphic):
         self._vertex_color = color
 
     @property
-    def edge_color(self) -> str | Sequence[float] | None:
+    def edge_color(self) -> pygfx.Color:
         return self._edge_color
 
     @edge_color.setter
     def edge_color(self, color: str | Sequence[float]):
+        color = pygfx.Color(color)
         for edge in self._edges:
             edge.material.color = color
             self._original_colors[edge] = color

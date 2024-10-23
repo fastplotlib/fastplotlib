@@ -117,9 +117,9 @@ class RectangleSelector(BaseSelector):
 
         xmin, xmax, ymin, ymax = selection
 
-        self._fill_color = fill_color
-        self._edge_color = edge_color
-        self._vertex_color = vertex_color
+        self._fill_color = pygfx.Color(fill_color)
+        self._edge_color = pygfx.Color(edge_color)
+        self._vertex_color = pygfx.Color(vertex_color)
 
         width = xmax - xmin
         height = ymax - ymin

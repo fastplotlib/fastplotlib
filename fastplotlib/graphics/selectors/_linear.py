@@ -56,7 +56,7 @@ class LinearSelector(BaseSelector):
         center: float,
         axis: str = "x",
         parent: Graphic = None,
-        color: str | Sequence[float] | np.ndarray = "w",
+        edge_color: str | Sequence[float] | np.ndarray = "w",
         thickness: float = 2.5,
         arrow_keys_modifier: str = "Shift",
         name: str = None,
@@ -92,7 +92,7 @@ class LinearSelector(BaseSelector):
         thickness: float, default 2.5
             thickness of the selector
 
-        color: str | tuple | np.ndarray, default "w"
+        edge_color: str | tuple | np.ndarray, default "w"
             color of the selector
 
         name: str, optional
@@ -100,7 +100,7 @@ class LinearSelector(BaseSelector):
 
         """
         self._fill_color = None
-        self._edge_color = None
+        self._edge_color = pygfx.Color(edge_color)
         self._vertex_color = None
 
         if len(limits) != 2:
@@ -137,7 +137,7 @@ class LinearSelector(BaseSelector):
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=line_data),
-            material=material(thickness=thickness, color=color, pick_write=True),
+            material=material(thickness=thickness, color=edge_color, pick_write=True),
         )
 
         self.line_outer = pygfx.Line(

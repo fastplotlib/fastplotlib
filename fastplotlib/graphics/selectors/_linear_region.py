@@ -114,8 +114,8 @@ class LinearRegionSelector(BaseSelector):
             name of this selector graphic
 
         """
-        self._edge_color = edge_color
-        self._fill_color = fill_color
+        self._edge_color = pygfx.Color(edge_color)
+        self._fill_color = pygfx.Color(fill_color)
 
         # lots of very close to zero values etc. so round them, otherwise things get weird
         if not len(selection) == 2:
