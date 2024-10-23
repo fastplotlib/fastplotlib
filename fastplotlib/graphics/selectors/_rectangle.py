@@ -129,7 +129,9 @@ class RectangleSelector(BaseSelector):
 
         self.fill = pygfx.Mesh(
             pygfx.box_geometry(width, height, 1),
-            pygfx.MeshBasicMaterial(color=pygfx.Color(self.fill_color), pick_write=True),
+            pygfx.MeshBasicMaterial(
+                color=pygfx.Color(self.fill_color), pick_write=True
+            ),
         )
 
         self.fill.world.position = (0, 0, -2)

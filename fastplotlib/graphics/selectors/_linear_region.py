@@ -136,13 +136,17 @@ class LinearRegionSelector(BaseSelector):
         if axis == "x":
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(1, size, 1),
-                pygfx.MeshBasicMaterial(color=pygfx.Color(self.fill_color), pick_write=True),
+                pygfx.MeshBasicMaterial(
+                    color=pygfx.Color(self.fill_color), pick_write=True
+                ),
             )
 
         elif axis == "y":
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(size, 1, 1),
-                pygfx.MeshBasicMaterial(color=pygfx.Color(self.fill_color), pick_write=True),
+                pygfx.MeshBasicMaterial(
+                    color=pygfx.Color(self.fill_color), pick_write=True
+                ),
             )
         else:
             raise ValueError("`axis` must be one of 'x' or 'y'")

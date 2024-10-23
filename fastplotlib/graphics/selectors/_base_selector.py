@@ -63,7 +63,6 @@ class BaseSelector(Graphic):
             self._original_colors[vertex] = color
         self._vertex_color = color
 
-
     @property
     def edge_color(self) -> str | Sequence[float] | None:
         return self._edge_color
