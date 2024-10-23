@@ -24,7 +24,9 @@ Properties
     RectangleSelector.axis
     RectangleSelector.block_events
     RectangleSelector.deleted
+    RectangleSelector.edge_color
     RectangleSelector.event_handlers
+    RectangleSelector.fill_color
     RectangleSelector.limits
     RectangleSelector.name
     RectangleSelector.offset
@@ -33,6 +35,7 @@ Properties
     RectangleSelector.rotation
     RectangleSelector.selection
     RectangleSelector.supported_events
+    RectangleSelector.vertex_color
     RectangleSelector.visible
     RectangleSelector.world_object
 
