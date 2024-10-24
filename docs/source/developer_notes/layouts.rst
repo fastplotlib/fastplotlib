@@ -69,6 +69,7 @@ Each ``add_<graphic>`` method basically creates an instance of ``Graphic``, adds
 ``Subplot`` has one property that is not in ``PlotArea``:
 
 * docks: a ``dict`` of ``PlotAreas`` which are located at the "top", "right", "left", and "bottom" edges of a ``Subplot``.
+
 By default their size is ``0``. They are useful for putting things like histogram LUT tools.
 
 The key method in ``Subplot`` is an implementation of ``get_rect`` that returns the viewport rect for this subplot.
