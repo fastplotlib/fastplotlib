@@ -1,3 +1,0 @@
-libvulkan1
-mesa-vulkan-drivers
-neofetch
