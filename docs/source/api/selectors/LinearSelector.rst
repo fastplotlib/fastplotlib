@@ -24,7 +24,9 @@ Properties
     LinearSelector.axis
     LinearSelector.block_events
     LinearSelector.deleted
+    LinearSelector.edge_color
     LinearSelector.event_handlers
+    LinearSelector.fill_color
     LinearSelector.limits
     LinearSelector.name
     LinearSelector.offset
@@ -33,6 +35,7 @@ Properties
     LinearSelector.rotation
     LinearSelector.selection
     LinearSelector.supported_events
+    LinearSelector.vertex_color
     LinearSelector.visible
     LinearSelector.world_object
 

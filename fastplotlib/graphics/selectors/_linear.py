@@ -47,6 +47,27 @@ class LinearSelector(BaseSelector):
         )  # if values are close to zero things get weird so round them
         self.selection._limits = self._limits
 
+    @property
+    def edge_color(self) -> pygfx.Color:
+        """Returns the color of the linear selector."""
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, color: str | Sequence[float]):
+        """
+        Set the color of the linear selector.
+
+        Parameters
+        ----------
+        color : str | Sequence[float]
+            String or sequence of floats that gets converted into a ``pygfx.Color`` object.
+        """
+        color = pygfx.Color(color)
+        # only want to change inner line color
+        self._edges[0].material.color = color
+        self._original_colors[self._edges[0]] = color
+        self._edge_color = color
+
     # TODO: make `selection` arg in graphics data space not world space
     def __init__(
         self,
@@ -56,7 +77,7 @@ class LinearSelector(BaseSelector):
         center: float,
         axis: str = "x",
         parent: Graphic = None,
-        color: str | Sequence[float] | np.ndarray = "w",
+        edge_color: str | Sequence[float] | np.ndarray = "w",
         thickness: float = 2.5,
         arrow_keys_modifier: str = "Shift",
         name: str = None,
@@ -92,13 +113,16 @@ class LinearSelector(BaseSelector):
         thickness: float, default 2.5
             thickness of the selector
 
-        color: str | tuple | np.ndarray, default "w"
+        edge_color: str | tuple | np.ndarray, default "w"
             color of the selector
 
         name: str, optional
             name of linear selector
 
         """
+        self._fill_color = None
+        self._edge_color = pygfx.Color(edge_color)
+        self._vertex_color = None
 
         if len(limits) != 2:
             raise ValueError("limits must be a tuple of 2 integers, i.e. (int, int)")
@@ -134,7 +158,7 @@ class LinearSelector(BaseSelector):
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=line_data),
-            material=material(thickness=thickness, color=color, pick_write=True),
+            material=material(thickness=thickness, color=edge_color, pick_write=True),
         )
 
         self.line_outer = pygfx.Line(

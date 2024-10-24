@@ -24,7 +24,9 @@ Properties
     LinearRegionSelector.axis
     LinearRegionSelector.block_events
     LinearRegionSelector.deleted
+    LinearRegionSelector.edge_color
     LinearRegionSelector.event_handlers
+    LinearRegionSelector.fill_color
     LinearRegionSelector.limits
     LinearRegionSelector.name
     LinearRegionSelector.offset
@@ -33,6 +35,7 @@ Properties
     LinearRegionSelector.rotation
     LinearRegionSelector.selection
     LinearRegionSelector.supported_events
+    LinearRegionSelector.vertex_color
     LinearRegionSelector.visible
     LinearRegionSelector.world_object
 
