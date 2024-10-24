@@ -116,6 +116,7 @@ class LinearRegionSelector(BaseSelector):
         """
         self._edge_color = pygfx.Color(edge_color)
         self._fill_color = pygfx.Color(fill_color)
+        self._vertex_color = None
 
         # lots of very close to zero values etc. so round them, otherwise things get weird
         if not len(selection) == 2:

@@ -43,10 +43,19 @@ class BaseSelector(Graphic):
 
     @property
     def fill_color(self) -> pygfx.Color:
+        """Returns the fill color of the selector, ``None`` if selector has no fill."""
         return self._fill_color
 
     @fill_color.setter
     def fill_color(self, color: str | Sequence[float]):
+        """
+        Set the fill color of the selector.
+
+        Parameters
+        ----------
+        color : str | Sequence[float]
+            String or sequence of floats that gets converted into a ``pygfx.Color`` object.
+        """
         color = pygfx.Color(color)
         for fill in self._fill:
             fill.material.color = color
@@ -55,10 +64,19 @@ class BaseSelector(Graphic):
 
     @property
     def vertex_color(self) -> pygfx.Color:
+        """Returns the vertex color of the selector, ``None`` if selector has no vertices."""
         return self._vertex_color
 
     @vertex_color.setter
     def vertex_color(self, color: str | Sequence[float]):
+        """
+        Set the vertex color of the selector.
+
+        Parameters
+        ----------
+        color : str | Sequence[float]
+            String or sequence of floats that gets converted into a ``pygfx.Color`` object.
+        """
         color = pygfx.Color(color)
         for vertex in self._vertices:
             vertex.material.color = color
@@ -68,10 +86,19 @@ class BaseSelector(Graphic):
 
     @property
     def edge_color(self) -> pygfx.Color:
+        """Returns the edge color of the selector"""
         return self._edge_color
 
     @edge_color.setter
     def edge_color(self, color: str | Sequence[float]):
+        """
+        Set the edge color of the selector.
+
+        Parameters
+        ----------
+        color : str | Sequence[float]
+            String or sequence of floats that gets converted into a ``pygfx.Color`` object.
+        """
         color = pygfx.Color(color)
         for edge in self._edges:
             edge.material.color = color

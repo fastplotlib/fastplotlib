@@ -47,6 +47,27 @@ class LinearSelector(BaseSelector):
         )  # if values are close to zero things get weird so round them
         self.selection._limits = self._limits
 
+    @property
+    def edge_color(self) -> pygfx.Color:
+        """Returns the color of the linear selector."""
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, color: str | Sequence[float]):
+        """
+        Set the color of the linear selector.
+
+        Parameters
+        ----------
+        color : str | Sequence[float]
+            String or sequence of floats that gets converted into a ``pygfx.Color`` object.
+        """
+        color = pygfx.Color(color)
+        # only want to change inner line color
+        self._edges[0].material.color = color
+        self._original_colors[self._edges[0]] = color
+        self._edge_color = color
+
     # TODO: make `selection` arg in graphics data space not world space
     def __init__(
         self,
