@@ -64,7 +64,7 @@ In addition, event handlers will be called if any event handlers are registered.
 ``VertexColors`` behaves similarly, but it can perform additional parsing that can create the colors buffer from different
 forms of user input. For example if a user runs: ``line_graphic.colors = "blue"``, then ``VertexColors.__setitem__()`` will
 create a buffer that corresponds to what ``pygfx.Color`` thinks is "blue". Users can also take advantage of fancy indexing,
-ex: ``line_graphics.colors[bool_array] = "red"`` 
+ex: ``line_graphics.colors[bool_array] = "red"`` 😊
 
 ``LineGraphic`` also has a ``VertexCmap``, this manages the line ``VertexColors`` instance to parse colormaps, for example:
 ``line_graphic.cmap = "jet"`` or even ``line_graphic.cmap[50:] = "viridis"``.
