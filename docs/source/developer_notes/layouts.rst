@@ -17,7 +17,7 @@ inherit from ``PlotArea``.
 * controller - instance of ``pygfx.Controller``
 
 If these concepts are unfamiliar to you we recommend learning about how rendering engines work, the pygfx guide
-is a great place to start! https://docs.pygfx.org/stable/guide.html"
+is a great place to start! https://docs.pygfx.org/stable/guide.html
 
 Here is also a short video that goes through the basic concepts: https://www.youtube.com/watch?v=cvcAjgMUPUA
 
@@ -49,7 +49,7 @@ Important methods:
 * auto_scale - Auto-scale the camera w.r.t to the ``Scene``
 
 In addition, ``PlotArea`` supports ``__getitem__``, so you can do: ``plot_area["graphic_name"]`` to retrieve a ``Graphic`` by
-name :smile:
+name.
 
 You can also check if a ``PlotArea`` has certain graphics, ex: ``"some_image_name" in plot_area``, or ``graphic_instance in plot_area``
 

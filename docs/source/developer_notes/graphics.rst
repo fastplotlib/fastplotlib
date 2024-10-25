@@ -61,10 +61,10 @@ It defines the line, and provides additional useful functionality.
 For example, every time that the ``data`` is changed, the new data will be marked for upload to the GPU before the next draw.
 In addition, event handlers will be called if any event handlers are registered.
 
-``VertexColors``behaves similarly, but it can perform additional parsing that can create the colors buffer from different
+``VertexColors`` behaves similarly, but it can perform additional parsing that can create the colors buffer from different
 forms of user input. For example if a user runs: ``line_graphic.colors = "blue"``, then ``VertexColors.__setitem__()`` will
 create a buffer that corresponds to what ``pygfx.Color`` thinks is "blue". Users can also take advantage of fancy indexing,
-ex: ``line_graphics.colors[bool_array] = "red"`` :smile:
+ex: ``line_graphics.colors[bool_array] = "red"`` 
 
 ``LineGraphic`` also has a ``VertexCmap``, this manages the line ``VertexColors`` instance to parse colormaps, for example:
 ``line_graphic.cmap = "jet"`` or even ``line_graphic.cmap[50:] = "viridis"``.
