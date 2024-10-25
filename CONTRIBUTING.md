@@ -13,7 +13,7 @@ reach out on [GitHub Discussions](https://github.com/fastplotlib/fastplotlib/dis
 ## General Guidelines
 
 Developers are encouraged to contribute to various areas of development. This could include the addition of new features (e.g. 
-graphics or selector tools), bug fixes, or the addition of new examples to the [examples gallery](https://fastplotlib.readthedocs.io/en/latest/_gallery/index.html). 
+graphics or selector tools), bug fixes, or the addition of new examples to the [examples gallery](https://www.fastplotlib.org/ver/dev/_gallery/index.html). 
 Enhancements to documentation and the overall readability of the code are also greatly appreciated. 
 
 Feel free to work on any section of the code that you believe you can improve. More importantly, remember to thoroughly test all
@@ -21,7 +21,7 @@ your classes and functions, and to provide clear, detailed comments within your 
 but also facilitates future maintenance and further development.
 
 For more detailed information about `fastplotlib` modules, including design choices and implementation details, visit the 
-[`For Develeopers`](https://fastplotlib.readthedocs.io/en/latest/developer_notes/index.html) section of the package documentation.
+[`For Develeopers`](https://www.fastplotlib.org/ver/dev/developer_notes/index.html) section of the package documentation.
 
 ## Contributing to the code 
 
