@@ -12,8 +12,9 @@ from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
 
 
-# Number of dimensions that represent one image/one frame. For grayscale shape will be [x, y], i.e. 2 dims, for RGB(A)
-# shape will be [x, y, c] where c is of size 3 (RGB) or 4 (RGBA)
+# Number of dimensions that represent one image/one frame
+# For grayscale shape will be [n_rows, n_cols], i.e. 2 dims
+# For RGB(A) shape will be [n_rows, n_cols, c] where c is of size 3 (RGB) or 4 (RGBA)
 IMAGE_DIM_COUNTS = {"gray": 2, "rgb": 3}
 
 # Map boolean (indicating whether we use RGB or grayscale) to the string. Used to index RGB_DIM_MAP
@@ -162,7 +163,7 @@ class ImageWidget:
     def n_scrollable_dims(self) -> list[int]:
         """
         list indicating the number of dimenensions that are scrollable for each data array
-        All other dimensions are frame/image data, i.e. [x, y] or [x, y, c]
+        All other dimensions are frame/image data, i.e. [rows, cols] or [rows, cols, rgb(a)]
         """
         return self._n_scrollable_dims
 

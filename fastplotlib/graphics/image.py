@@ -91,7 +91,7 @@ class ImageGraphic(Graphic):
         ----------
         data: array-like
             array-like, usually numpy.ndarray, must support ``memoryview()``
-            | shape must be ``[x_dim, y_dim]``
+            | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
