@@ -94,7 +94,7 @@ class TextureArray(GraphicFeature):
         if data.ndim not in (2, 3):
             raise ValueError(
                 "image data must be 2D with or without an RGB(A) dimension, i.e. "
-                "it must be of shape [x, y], [x, y, 3] or [x, y, 4]"
+                "it must be of shape [rows, cols], [rows, cols, 3] or [rows, cols, 4]"
             )
 
         # let's just cast to float32 always
