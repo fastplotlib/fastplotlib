@@ -8,7 +8,10 @@ from ._features import (
     VertexPositions,
     VertexColors,
     UniformColor,
+    UniformAlpha,
+    VertexAlpha,
     VertexCmap,
+    VertexCmapTransform,
     PointsSizesFeature,
 )
 
@@ -39,20 +42,61 @@ class PositionsGraphic(Graphic):
         if isinstance(self._colors, VertexColors):
             self._colors[:] = value
 
+            # invalidate any cmap, cmap_transform, or alpha that have been set
+            self._cmap._value = None
+            self._cmap_transform._value = None
+
+            alphas = np.unique(self._colors[:, -1])
+            # invalidate alpha if it is different between vertices
+            if alphas.size == 1:
+                self._alpha._value = alphas[0]
+            else:
+                self._alpha._value = None
+
         elif isinstance(self._colors, UniformColor):
             self._colors.set_value(self, value)
 
+            # push the alpha value
+            self._alpha._value = np.array(self.colors)[-1]
+
     @property
-    def cmap(self) -> VertexCmap:
-        """Control the cmap, cmap transform, or cmap alpha"""
-        return self._cmap
+    def cmap(self) -> str:
+        """Get or set the colormap"""
+        if self._cmap is None:
+            raise BufferError("Cannot use cmap with uniform_colors=True")
+
+        return self._cmap.value
 
     @cmap.setter
     def cmap(self, name: str):
         if self._cmap is None:
             raise BufferError("Cannot use cmap with uniform_colors=True")
 
-        self._cmap[:] = name
+        self._cmap.set_value(self, name)
+
+    @property
+    def cmap_transform(self) -> np.ndarray:
+        """Get or set the colormap transform"""
+        if self._cmap is None:
+            raise BufferError("Cannot use cmap_transform with uniform_colors=True")
+
+        return self._cmap_transform.value
+
+    @cmap_transform.setter
+    def cmap_transform(self, transform: np.ndarray):
+        if self._cmap is None:
+            raise BufferError("Cannot use cmap_transform with uniform_colors=True")
+
+        self._cmap_transform.set_value(self, transform)
+
+    @property
+    def alpha(self) -> float:
+        """Get or set the alpha (transparency) value"""
+        return self._alpha.value
+
+    @alpha.setter
+    def alpha(self, value: float):
+        self._alpha.set_value(self, value)
 
     def __init__(
         self,
@@ -95,6 +139,12 @@ class PositionsGraphic(Graphic):
                         transform=cmap_transform,
                         alpha=alpha,
                     )
+
+                    self._cmap_transform = VertexCmapTransform(
+                        cmap_transform,
+                        vertex_colors=self._colors,
+                    )
+                    self._alpha = VertexAlpha(alpha, vertex_colors=self._colors)
             elif isinstance(cmap, VertexCmap):
                 # use existing cmap instance
                 self._cmap = cmap
@@ -121,7 +171,9 @@ class PositionsGraphic(Graphic):
                                 "must pass a single color if using `uniform_colors=True`"
                             )
                     self._colors = UniformColor(colors, alpha=alpha)
+                    self._alpha = UniformAlpha(alpha, uniform_colors=self._colors)
                     self._cmap = None
+                    self._cmap_transform = None
                 else:
                     self._colors = VertexColors(
                         colors,
@@ -131,6 +183,8 @@ class PositionsGraphic(Graphic):
                     self._cmap = VertexCmap(
                         self._colors, cmap_name=None, transform=None, alpha=alpha
                     )
+                    self._cmap_transform = VertexCmapTransform(None, vertex_colors=self._colors)
+                    self._alpha = VertexAlpha(alpha, vertex_colors=self._colors)
 
         super().__init__(*args, **kwargs)
 
