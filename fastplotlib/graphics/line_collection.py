@@ -381,7 +381,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             **kwargs,
         )
 
-        self._plot_area.add_graphic(selector, center=False)
+        self._fpl_plot_area.add_graphic(selector, center=False)
 
         # place selector above this graphic
         selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
@@ -438,7 +438,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             **kwargs,
         )
 
-        self._plot_area.add_graphic(selector, center=False)
+        self._fpl_plot_area.add_graphic(selector, center=False)
 
         # place selector below this graphic
         selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] - 1)
@@ -484,7 +484,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             **kwargs,
         )
 
-        self._plot_area.add_graphic(selector, center=False)
+        self._fpl_plot_area.add_graphic(selector, center=False)
 
         return selector
 
