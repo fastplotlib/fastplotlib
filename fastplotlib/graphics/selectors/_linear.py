@@ -47,6 +47,14 @@ class LinearSelector(BaseSelector):
         )  # if values are close to zero things get weird so round them
         self.selection._limits = self._limits
 
+    @property
+    def end_points(self) -> tuple[float, float]:
+        pass
+
+    @end_points.setter
+    def end_points(self, points: tuple[float, float]):
+        pass
+
     # TODO: make `selection` arg in graphics data space not world space
     def __init__(
         self,
