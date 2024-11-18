@@ -4,11 +4,11 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from ._features import PointsSizesFeature, UniformSize
+from ._features import PointsSizesFeature, UniformSize, ScatterMarker, ScatterEdgeColor, ScatterEdgeWidth
 
 
 class ScatterGraphic(PositionsGraphic):
-    _features = {"data", "sizes", "colors", "cmap"}
+    _features = {"data", "sizes", "colors", "cmap", "marker", "edge_width", "edge_color"}
 
     def __init__(
         self,
@@ -18,9 +18,12 @@ class ScatterGraphic(PositionsGraphic):
         alpha: float = 1.0,
         cmap: str = None,
         cmap_transform: np.ndarray = None,
-        isolated_buffer: bool = True,
-        sizes: float | np.ndarray | Iterable[float] = 1,
+        sizes: float | np.ndarray | Iterable[float] = 5,
         uniform_size: bool = False,
+        marker: str = "circle",
+        edge_color: str | np.ndarray | tuple[float] | list[float] = "black",
+        edge_width: float = 1.0,
+        isolated_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -49,16 +52,61 @@ class ScatterGraphic(PositionsGraphic):
         cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
-        isolated_buffer: bool, default True
-            whether the buffers should be isolated from the user input array.
-            Generally always ``True``, ``False`` is for rare advanced use.
-
         sizes: float or iterable of float, optional, default 1.0
             size of the scatter points
 
         uniform_size: bool, default False
             if True, uses a uniform buffer for the scatter point sizes,
             basically saves GPU VRAM when all scatter points are the same size
+
+        marker: str, default "circle"
+            shape of the markers
+
+            Valid inputs are the following strings or unicode characters and emojis::
+
+                "o": "circle",
+                "s": "square",
+                "D": "diamond",
+                "+": "plus",
+                "x": "cross",
+                "^": "triangle_up",
+                "<": "triangle_left",
+                ">": "triangle_right",
+                "v": "triangle_down",
+
+                # Unicode
+                "●": "circle",
+                "○": "ring",
+                "■": "square",
+                "♦": "diamond",
+                "♥": "heart",
+                "♠": "spade",
+                "♣": "club",
+                "✳": "asterix",
+                "▲": "triangle_up",
+                "▼": "triangle_down",
+                "◀": "triangle_left",
+                "▶": "triangle_right",
+
+                # Emojis (these may look like their plaintext variants in your editor)
+                "❤️": "heart",
+                "♠️": "spade",
+                "♣️": "club",
+                "♦️": "diamond",
+                "💎": "diamond",
+                "💍": "ring",
+                "✳️": "asterix",
+                "📍": "pin",
+
+        edge_color: str, array, or iterable, default "black"
+            color of the scatter point edges, accepts any type that pygfx.Color can parse
+
+        edge_width: float, default 1.0
+            width of the scatter point edges
+
+        isolated_buffer: bool, default True
+            whether the buffers should be isolated from the user input array.
+            Generally always ``True``, ``False`` is for rare advanced use.
 
         kwargs
             passed to Graphic
@@ -79,7 +127,20 @@ class ScatterGraphic(PositionsGraphic):
         n_datapoints = self.data.value.shape[0]
 
         geo_kwargs = {"positions": self._data.buffer}
-        material_kwargs = {"pick_write": True}
+        material_kwargs = {
+            "pick_write": True,
+        }
+
+        self._marker = ScatterMarker(marker)
+        self._edge_color = ScatterEdgeColor(edge_color)
+        self._edge_width = ScatterEdgeWidth(edge_width)
+
+        material_kwargs = {
+            **material_kwargs,
+            "marker": marker,
+            "edge_color": edge_color,
+            "edge_width": edge_width,
+        }
 
         if uniform_color:
             material_kwargs["color_mode"] = "uniform"
@@ -99,7 +160,7 @@ class ScatterGraphic(PositionsGraphic):
 
         world_object = pygfx.Points(
             pygfx.Geometry(**geo_kwargs),
-            material=pygfx.PointsMaterial(**material_kwargs),
+            material=pygfx.PointsMarkerMaterial(**material_kwargs),
         )
 
         self._set_world_object(world_object)
@@ -120,3 +181,29 @@ class ScatterGraphic(PositionsGraphic):
 
         elif isinstance(self._sizes, UniformSize):
             self._sizes.set_value(self, value)
+
+    @property
+    def marker(self) -> str:
+        return self._marker.value
+
+    @marker.setter
+    def marker(self, value):
+        self._marker.set_value(self, value)
+
+    @property
+    def edge_color(self) -> pygfx.Color:
+        if self._edge_color is not None:
+            return self._edge_color.value
+
+    @edge_color.setter
+    def edge_color(self, value: str | np.ndarray | tuple[float] | list[float]):
+        self._edge_color.set_value(self, value)
+
+    @property
+    def edge_width(self) -> float:
+        if self._edge_width is not None:
+            return self._edge_width.value
+
+    @edge_width.setter
+    def edge_width(self, value: float):
+        self._edge_width.set_value(self, value)

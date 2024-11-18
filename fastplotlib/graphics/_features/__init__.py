@@ -7,6 +7,13 @@ from ._positions_graphics import (
     PointsSizesFeature,
     VertexCmap,
 )
+
+from ._scatter import (
+    ScatterMarker,
+    ScatterEdgeColor,
+    ScatterEdgeWidth,
+)
+
 from ._image import (
     TextureArray,
     ImageCmap,

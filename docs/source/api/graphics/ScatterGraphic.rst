@@ -26,7 +26,10 @@ Properties
     ScatterGraphic.colors
     ScatterGraphic.data
     ScatterGraphic.deleted
+    ScatterGraphic.edge_color
+    ScatterGraphic.edge_width
     ScatterGraphic.event_handlers
+    ScatterGraphic.marker
     ScatterGraphic.name
     ScatterGraphic.offset
     ScatterGraphic.right_click_menu
