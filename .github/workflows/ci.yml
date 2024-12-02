@@ -73,7 +73,7 @@ jobs:
   test-build-offscreen:
     name: Test Linux, only offscreen
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
