@@ -21,7 +21,7 @@ class TextureArray(GraphicFeature):
         data = self._fix_data(data)
 
         shared = pygfx.renderers.wgpu.get_shared()
-        self._texture_limit_2d = shared.device.limits["max-texture-dimension2d"]
+        self._texture_limit_2d = shared.device.limits["max-texture-dimension-2d"]
 
         if isolated_buffer:
             # useful if data is read-only, example: memmaps

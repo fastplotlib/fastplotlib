@@ -235,38 +235,38 @@ Example output::
 
                                                       adapter  device
 
-                                    max_bind_groups:        8       8
-                max_bind_groups_plus_vertex_buffers:        0       0
-                        max_bindings_per_bind_group:    1.00K   1.00K
-                                    max_buffer_size:    2.14G   2.14G
-              max_color_attachment_bytes_per_sample:        0       0
-                              max_color_attachments:        0       0
-              max_compute_invocations_per_workgroup:    1.02K   1.02K
-                       max_compute_workgroup_size_x:    1.02K   1.02K
-                       max_compute_workgroup_size_y:    1.02K   1.02K
-                       max_compute_workgroup_size_z:    1.02K   1.02K
-                 max_compute_workgroup_storage_size:    32.7K   32.7K
-               max_compute_workgroups_per_dimension:    65.5K   65.5K
-    max_dynamic_storage_buffers_per_pipeline_layout:        8       8
-    max_dynamic_uniform_buffers_per_pipeline_layout:       16      16
-                  max_inter_stage_shader_components:      128     128
-                   max_inter_stage_shader_variables:        0       0
-              max_sampled_textures_per_shader_stage:    8.38M   8.38M
-                      max_samplers_per_shader_stage:    8.38M   8.38M
-                    max_storage_buffer_binding_size:    2.14G   2.14G
-               max_storage_buffers_per_shader_stage:    8.38M   8.38M
-              max_storage_textures_per_shader_stage:    8.38M   8.38M
-                           max_texture_array_layers:    2.04K   2.04K
-                            max_texture_dimension1d:    16.3K   16.3K
-                            max_texture_dimension2d:    16.3K   16.3K
-                            max_texture_dimension3d:    2.04K   2.04K
-                    max_uniform_buffer_binding_size:    2.14G   2.14G
-               max_uniform_buffers_per_shader_stage:    8.38M   8.38M
-                              max_vertex_attributes:       32      32
-                     max_vertex_buffer_array_stride:    2.04K   2.04K
-                                 max_vertex_buffers:       16      16
-                min_storage_buffer_offset_alignment:       32      32
-                min_uniform_buffer_offset_alignment:       32      32
+                                    max-bind-groups:        8       8
+                max-bind-groups-plus-vertex-buffers:        0       0
+                        max-bindings-per-bind-group:    1.00K   1.00K
+                                    max-buffer-size:    2.14G   2.14G
+              max-color-attachment-bytes-per-sample:        0       0
+                              max-color-attachments:        0       0
+              max-compute-invocations-per-workgroup:    1.02K   1.02K
+                       max-compute-workgroup-size-x:    1.02K   1.02K
+                       max-compute-workgroup-size-y:    1.02K   1.02K
+                       max-compute-workgroup-size-z:    1.02K   1.02K
+                 max-compute-workgroup-storage-size:    32.7K   32.7K
+               max-compute-workgroups-per-dimension:    65.5K   65.5K
+    max-dynamic-storage-buffers-per-pipeline-layout:        8       8
+    max-dynamic-uniform-buffers-per-pipeline-layout:       16      16
+                  max-inter-stage-shader-components:      128     128
+                   max-inter-stage-shader-variables:        0       0
+              max-sampled-textures-per-shader-stage:    8.38M   8.38M
+                      max-samplers-per-shader-stage:    8.38M   8.38M
+                    max-storage-buffer-binding-size:    2.14G   2.14G
+               max-storage-buffers-per-shader-stage:    8.38M   8.38M
+              max-storage-textures-per-shader-stage:    8.38M   8.38M
+                           max-texture-array-layers:    2.04K   2.04K
+                           max-texture-dimension-1d:    16.3K   16.3K
+                           max-texture-dimension-2d:    16.3K   16.3K
+                           max-texture-dimension-3d:    2.04K   2.04K
+                    max-uniform-buffer-binding-size:    2.14G   2.14G
+               max-uniform-buffers-per-shader-stage:    8.38M   8.38M
+                              max-vertex-attributes:       32      32
+                     max-vertex-buffer-array-stride:    2.04K   2.04K
+                                 max-vertex-buffers:       16      16
+                min-storage-buffer-offset-alignment:       32      32
+                min-uniform-buffer-offset-alignment:       32      32
 
     ██ pygfx_caches:
 
