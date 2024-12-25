@@ -18,7 +18,7 @@ from sphinx_gallery.sorting import ExplicitOrder
 import imageio.v3 as iio
 
 MAX_TEXTURE_SIZE = 2048
-pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension2d": MAX_TEXTURE_SIZE})
+pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension-2d": MAX_TEXTURE_SIZE})
 
 ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
 EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples")
