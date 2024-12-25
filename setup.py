@@ -51,7 +51,7 @@ extras_require = {
     "tests-desktop": [
         "pytest<8.0.0",
         "scipy",
-        "imageio[pyav]",
+        "imageio[ffmpeg]",
         "scikit-learn",
         "tqdm",
         "imgui-bundle",
