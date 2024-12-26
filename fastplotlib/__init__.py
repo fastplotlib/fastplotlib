@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # this must be the first import for auto-canvas detection
-from .utils import run  # noqa
+from .utils import loop  # noqa
 from .graphics import *
 from .graphics.selectors import *
 from .graphics.utils import pause_events

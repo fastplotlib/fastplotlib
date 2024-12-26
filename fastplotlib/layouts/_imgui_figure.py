@@ -7,7 +7,7 @@ import imgui_bundle
 from imgui_bundle import imgui, icons_fontawesome_6 as fa
 
 from wgpu.utils.imgui import ImguiRenderer
-from wgpu.gui import WgpuCanvasBase
+from rendercanvas import BaseRenderCanvas
 
 import pygfx
 
@@ -38,7 +38,7 @@ class ImguiFigure(Figure):
             | Iterable[Iterable[str]]
         ) = None,
         controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
-        canvas: str | WgpuCanvasBase | pygfx.Texture = None,
+        canvas: str | BaseRenderCanvas | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
@@ -198,7 +198,7 @@ class ImguiFigure(Figure):
         else:
             ypos = 0
 
-        return xpos, ypos, width, height
+        return xpos, ypos, max(1, width), max(1, height)
 
     def _reset_viewports(self):
         # TODO: think about moving this to Figure later,

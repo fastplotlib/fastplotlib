@@ -6,7 +6,7 @@ import numpy as np
 
 import pygfx
 from pylinalg import vec_transform, vec_unproject
-from wgpu.gui import WgpuCanvasBase
+from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
 from ..graphics._base import Graphic
@@ -32,9 +32,8 @@ class PlotArea:
         camera: pygfx.PerspectiveCamera,
         controller: pygfx.Controller,
         scene: pygfx.Scene,
-        canvas: WgpuCanvasBase,
+        canvas: BaseRenderCanvas,
         renderer: pygfx.WgpuRenderer,
-        extra_renderers: dict = None,
         name: str = None,
     ):
         """
@@ -59,7 +58,7 @@ class PlotArea:
         scene: pygfx.Scene
             represents the root of a scene graph, will be viewed by the given ``camera``
 
-        canvas: WgpuCanvas
+        canvas: BaseRenderCanvas
             provides surface on which a scene will be rendered
 
         renderer: pygfx.WgpuRenderer
@@ -153,7 +152,7 @@ class PlotArea:
         return self._scene
 
     @property
-    def canvas(self) -> WgpuCanvasBase:
+    def canvas(self) -> BaseRenderCanvas:
         """Canvas associated to the plot area"""
         return self._canvas
 

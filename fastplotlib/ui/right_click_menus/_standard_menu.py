@@ -42,7 +42,6 @@ class StandardRightClickMenu(Popup):
 
     def cleanup(self):
         """called when the popup disappears"""
-        self.clear_event_filters()
         self.is_open = False
 
     def update(self):
@@ -65,9 +64,6 @@ class StandardRightClickMenu(Popup):
             self.cleanup()
 
         if imgui.begin_popup(f"right-click-menu"):
-            # set event filter so event in the popup region are not handled by pygfx.WgpuRenderer
-            self.set_event_filter("right-click-menu")
-
             if not self.get_subplot():
                 # for some reason it will still trigger at certain locations
                 # despite open_popup() only being called when an actual
@@ -143,7 +139,6 @@ class StandardRightClickMenu(Popup):
 
             # controller options
             if imgui.begin_menu("Controller"):
-                self.set_event_filter("controller-menu")
                 _, enabled = imgui.menu_item(
                     "Enabled", None, self.get_subplot().controller.enabled
                 )

@@ -33,10 +33,11 @@ if not already_imported:
 
 
 # Let wgpu do the auto gui selection
-from wgpu.gui.auto import WgpuCanvas, run
+from rendercanvas import BaseRenderCanvas
+from rendercanvas.auto import RenderCanvas, loop
 
 # Get the name of the backend ('qt', 'glfw', 'jupyter')
-GUI_BACKEND = WgpuCanvas.__module__.split(".")[-1]
+GUI_BACKEND = RenderCanvas.__module__.split(".")[-1]
 IS_JUPYTER = GUI_BACKEND == "jupyter"
 
 
@@ -123,10 +124,7 @@ if GUI_BACKEND == "jupyter":
     _notebook_print_banner()
 
 elif GUI_BACKEND == "qt":
-    from wgpu.gui.qt import get_app, libname
-
-    # create and store ref to qt app
-    _qt_app = get_app()
+    from rendercanvas.qt import libname
 
     # Import submodules of PySide6/PyQt6/PySid2/PyQt5
     # For the way that fpl uses Qt, the supported Qt libs seems compatible enough.
