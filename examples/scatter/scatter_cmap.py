@@ -36,15 +36,15 @@ cloud = np.vstack(
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
 # use an alpha value since this will be a lot of points
-figure[0,0].add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
+figure[0, 0].add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
 
 figure.show()
 
-figure[0,0].graphics[0].cmap = "viridis"
+figure[0, 0].graphics[0].cmap = "viridis"
 
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
-    fpl.run()
+    fpl.loop.run()

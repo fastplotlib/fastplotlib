@@ -87,4 +87,4 @@ zeros_graphic.cmap[75:] = "viridis"
 # please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
-    fpl.run()
+    fpl.loop.run()

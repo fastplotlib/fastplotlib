@@ -105,4 +105,4 @@ figure[0, 0].camera.set_state(camera_state)
 # please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
-    fpl.run()
+    fpl.loop.run()
