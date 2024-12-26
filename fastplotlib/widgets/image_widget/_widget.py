@@ -946,6 +946,8 @@ class ImageWidget:
         Show the widget.
 
         Parameters
+        ----------
+
         kwargs: Any
             passed to `Figure.show()`
 
