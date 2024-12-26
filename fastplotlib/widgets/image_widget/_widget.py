@@ -939,9 +939,7 @@ class ImageWidget:
         # force graphics to update
         self.current_index = self.current_index
 
-    def show(
-        self, **kwargs
-    ):
+    def show(self, **kwargs):
         """
         Show the widget.
 
@@ -959,9 +957,7 @@ class ImageWidget:
 
         """
 
-        return self.figure.show(
-            **kwargs
-        )
+        return self.figure.show(**kwargs)
 
     def close(self):
         """Close Widget"""
