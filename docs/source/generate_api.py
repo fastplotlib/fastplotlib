@@ -51,7 +51,9 @@ with open(API_DIR.joinpath("fastplotlib.rst"), "w") as f:
         
         ".. autofunction:: fastplotlib.print_wgpu_report\n\n"
         
-        ".. autofunction:: fastplotlib.run\n"
+        "fastplotlib.loop\n"
+        "------------------\n"
+        "See the rendercanvas docs: https://rendercanvas.readthedocs.io/stable/api.html#rendercanvas.BaseLoop "
     )
 
 with open(API_DIR.joinpath("utils.rst"), "w") as f:
