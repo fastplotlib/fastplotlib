@@ -51,4 +51,4 @@ def click_event(event_data):
 # please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
-    fpl.run()
+    fpl.loop.run()

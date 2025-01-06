@@ -35,4 +35,4 @@ scatter_graphic.colors[::2] = "blue"
 
 if __name__ == "__main__":
     print(__doc__)
-    fpl.run()
+    fpl.loop.run()

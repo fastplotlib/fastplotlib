@@ -3,7 +3,7 @@ from warnings import warn
 
 import numpy as np
 
-from wgpu.gui import WgpuCanvasBase
+from rendercanvas import BaseRenderCanvas
 
 from ... import Figure
 from ...graphics import ImageGraphic
@@ -939,23 +939,25 @@ class ImageWidget:
         # force graphics to update
         self.current_index = self.current_index
 
-    def show(
-        self, toolbar: bool = True, sidecar: bool = False, sidecar_kwargs: dict = None
-    ):
+    def show(self, **kwargs):
         """
         Show the widget.
 
+        Parameters
+        ----------
+
+        kwargs: Any
+            passed to `Figure.show()`
+
         Returns
         -------
-        WgpuCanvasBase
-            canvas used by the Figure
+        BaseRenderCanvas
+            In Qt or GLFW, the canvas window containing the Figure will be shown.
+            In jupyter, it will display the plot in the output cell or sidecar.
 
         """
 
-        return self.figure.show(
-            sidecar=sidecar,
-            sidecar_kwargs=sidecar_kwargs,
-        )
+        return self.figure.show(**kwargs)
 
     def close(self):
         """Close Widget"""

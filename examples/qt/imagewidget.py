@@ -36,7 +36,7 @@ rgb_video = iio.imread("imageio:cockatoo.mp4")
 iw_rgb = fpl.ImageWidget(rgb_video, rgb=[True], figure_kwargs={"size": (800, 500)})
 iw_rgb.show()
 
-fpl.run()
+fpl.loop.run()
 
 # You can also use Qt interactively/in a non-blocking manner in notebooks and ipython
-# by using %gui qt and NOT calling `fpl.run()`, see the user guide for more details
+# by using %gui qt and NOT calling `fpl.loop.run()`, see the user guide for more details

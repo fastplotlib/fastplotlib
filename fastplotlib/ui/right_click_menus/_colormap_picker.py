@@ -120,8 +120,6 @@ class ColormapPicker(Popup):
 
         self.is_open = False
 
-        self.clear_event_filters()
-
     def _add_cmap_menu_item(self, cmap_name: str):
         texture_id = self._texture_ids[cmap_name]
         imgui.image(
@@ -148,9 +146,6 @@ class ColormapPicker(Popup):
 
         if imgui.begin_popup("cmap-picker"):
             self.is_open = True
-
-            # event filter so click events in the menu aren't propagated down to pygfx
-            self.set_event_filter("cmap-picker-filter")
 
             # make the cmap image height the same as the text height
             self._texture_height = (

@@ -11,4 +11,6 @@ fastplotlib
 
 .. autofunction:: fastplotlib.print_wgpu_report
 
-.. autofunction:: fastplotlib.run
+fastplotlib.loop
+------------------
+See the rendercanvas docs: https://rendercanvas.readthedocs.io/stable/api.html#rendercanvas.BaseLoop 

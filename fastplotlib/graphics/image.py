@@ -132,27 +132,28 @@ class ImageGraphic(Graphic):
         self._vmin = ImageVmin(vmin)
         self._vmax = ImageVmax(vmax)
 
-        # set cmap to None for RGB images
+        self._interpolation = ImageInterpolation(interpolation)
+
+        # set map to None for RGB images
         if self._data.value.ndim > 2:
             self._cmap = None
-        else:
-            self._cmap = ImageCmap(cmap)
-
-        self._interpolation = ImageInterpolation(interpolation)
-        self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
-
-        # use cmap if not RGB
-        if self._data.value.ndim == 2:
-            _map = self._cmap.texture
-        else:
             _map = None
+        else:
+            # use TextureMap for grayscale images
+            self._cmap = ImageCmap(cmap)
+            self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
+
+            _map = pygfx.TextureMap(
+                self._cmap.texture,
+                filter=self._cmap_interpolation.value,
+                wrap="clamp-to-edge",
+            )
 
         # one common material is used for every Texture chunk
         self._material = pygfx.ImageBasicMaterial(
             clim=(vmin, vmax),
             map=_map,
             interpolation=self._interpolation.value,
-            map_interpolation=self._cmap_interpolation.value,
             pick_write=True,
         )
 

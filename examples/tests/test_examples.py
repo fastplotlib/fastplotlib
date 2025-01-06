@@ -12,7 +12,7 @@ import imageio.v3 as iio
 import pygfx
 
 MAX_TEXTURE_SIZE = 2048
-pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension2d": MAX_TEXTURE_SIZE})
+pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension-2d": MAX_TEXTURE_SIZE})
 
 from .testutils import (
     ROOT,

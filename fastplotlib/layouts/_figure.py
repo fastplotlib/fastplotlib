@@ -11,7 +11,7 @@ from warnings import warn
 
 import pygfx
 
-from wgpu.gui import WgpuCanvasBase
+from rendercanvas import BaseRenderCanvas
 
 from ._video_writer import VideoWriterAV
 from ._utils import make_canvas_and_renderer, create_controller, create_camera
@@ -41,7 +41,7 @@ class Figure:
             | Iterable[Iterable[str]]
         ) = None,
         controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
-        canvas: str | WgpuCanvasBase | pygfx.Texture = None,
+        canvas: str | BaseRenderCanvas | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
@@ -84,8 +84,8 @@ class Figure:
             plot/subplot. Other controller kwargs, i.e. ``controller_types`` and ``controller_ids`` are ignored if
             ``controllers`` are provided.
 
-        canvas: WgpuCanvas, optional
-            Canvas for drawing
+        canvas: str, BaseRenderCanvas, pygfx.Texture
+            Canvas to draw the figure onto, usually auto-selected based on running environment.
 
         renderer: pygfx.Renderer, optional
             pygfx renderer instance
@@ -334,13 +334,13 @@ class Figure:
         return self._shape
 
     @property
-    def canvas(self) -> WgpuCanvasBase:
-        """The canvas associated to this Figure"""
+    def canvas(self) -> BaseRenderCanvas:
+        """The canvas this Figure is drawn onto"""
         return self._canvas
 
     @property
     def renderer(self) -> pygfx.WgpuRenderer:
-        """The renderer associated to this Figure"""
+        """The renderer that renders this Figure"""
         return self._renderer
 
     @property
@@ -422,7 +422,7 @@ class Figure:
 
         Returns
         -------
-        WgpuCanvasBase
+        BaseRenderCanvas
             In Qt or GLFW, the canvas window containing the Figure will be shown.
             In jupyter, it will display the plot in the output cell or sidecar.
         """
@@ -452,7 +452,7 @@ class Figure:
                 subplot.auto_scale(maintain_aspect=maintain_aspect)
 
         # parse based on canvas type
-        if self.canvas.__class__.__name__ == "JupyterWgpuCanvas":
+        if self.canvas.__class__.__name__ == "JupyterRenderCanvas":
             if sidecar:
                 from sidecar import Sidecar
                 from IPython.display import display
@@ -464,12 +464,12 @@ class Figure:
             self._output = self.canvas
             return self._output
 
-        elif self.canvas.__class__.__name__ == "QWgpuCanvas":
+        elif self.canvas.__class__.__name__ == "QRenderCanvas":
             self._output = self.canvas
             self._output.show()
             return self.canvas
 
-        elif self.canvas.__class__.__name__ == "WgpuManualOffscreenCanvas":
+        elif self.canvas.__class__.__name__ == "OffscreenRenderCanvas":
             # for test and docs gallery screenshots
             for subplot in self:
                 subplot.set_viewport_rect()
@@ -493,18 +493,6 @@ class Figure:
         self._output.close()
         if self._sidecar:
             self._sidecar.close()
-
-    def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
-        """
-        Get rect for the portion of the canvas that the pygfx renderer draws to
-
-        Returns
-        -------
-        tuple[int, int, int, int]
-            x_pos, y_pos, width, height
-
-        """
-        return 0, 0, *self.canvas.get_logical_size()
 
     def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:

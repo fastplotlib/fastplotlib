@@ -21,7 +21,7 @@ class TextureArray(GraphicFeature):
         data = self._fix_data(data)
 
         shared = pygfx.renderers.wgpu.get_shared()
-        self._texture_limit_2d = shared.device.limits["max-texture-dimension2d"]
+        self._texture_limit_2d = shared.device.limits["max-texture-dimension-2d"]
 
         if isolated_buffer:
             # useful if data is read-only, example: memmaps
@@ -202,8 +202,8 @@ class ImageCmap(GraphicFeature):
 
     def set_value(self, graphic, value: str):
         new_colors = make_colors(256, value)
-        graphic._material.map.data[:] = new_colors
-        graphic._material.map.update_range((0, 0, 0), size=(256, 1, 1))
+        graphic._material.map.texture.data[:] = new_colors
+        graphic._material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
 
         self._value = value
         event = FeatureEvent(type="cmap", info={"value": value})
@@ -258,7 +258,8 @@ class ImageCmapInterpolation(GraphicFeature):
         self._validate(value)
 
         # common material for all image tiles
-        graphic._material.map_interpolation = value
+        graphic._material.map.min_filter = value
+        graphic._material.map.mag_filter = value
 
         self._value = value
         event = FeatureEvent(type="cmap_interpolation", info={"value": value})

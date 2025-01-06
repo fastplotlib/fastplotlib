@@ -4,10 +4,10 @@ from pygfx import print_wgpu_report as pygfx_print_wgpu_report
 
 
 def enumerate_adapters() -> list[wgpu.GPUAdapter]:
-    return wgpu.gpu.enumerate_adapters()
+    return wgpu.gpu.enumerate_adapters_sync()
 
 
-enumerate_adapters.__doc__ = wgpu.gpu.enumerate_adapters.__doc__
+enumerate_adapters.__doc__ = wgpu.gpu.enumerate_adapters_async.__doc__
 
 
 def select_adapter(adapter: wgpu.GPUAdapter):

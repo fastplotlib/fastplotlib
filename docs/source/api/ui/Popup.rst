@@ -26,8 +26,6 @@ Methods
 .. autosummary::
     :toctree: Popup_api
 
-    Popup.clear_event_filters
     Popup.open
-    Popup.set_event_filter
     Popup.update
 

@@ -92,14 +92,14 @@ def test_gray():
 
     new_colors = make_colors(256, "viridis")
     for child in ig.world_object.children:
-        npt.assert_almost_equal(child.material.map.data, new_colors)
+        npt.assert_almost_equal(child.material.map.texture.data, new_colors)
 
     ig.cmap = "jet"
     assert ig.cmap == "jet"
 
     new_colors = make_colors(256, "jet")
     for child in ig.world_object.children:
-        npt.assert_almost_equal(child.material.map.data, new_colors)
+        npt.assert_almost_equal(child.material.map.texture.data, new_colors)
 
     assert ig.interpolation == "nearest"
     for child in ig.world_object.children:
@@ -113,12 +113,15 @@ def test_gray():
 
     assert ig.cmap_interpolation == "linear"
     for child in ig.world_object.children:
-        assert child.material.map_interpolation == "linear"
+        assert child.material.map.min_filter == "linear"
+        assert child.material.map.mag_filter == "linear"
 
     ig.cmap_interpolation = "nearest"
     assert ig.cmap_interpolation == "nearest"
     for child in ig.world_object.children:
-        assert child.material.map_interpolation == "nearest"
+        assert child.material.map.min_filter == "nearest"
+        assert child.material.map.mag_filter == "nearest"
+
     check_event(graphic=ig, feature="cmap_interpolation", value="nearest")
 
     npt.assert_almost_equal(ig.vmin, GRAY_IMAGE.min())

@@ -60,7 +60,7 @@ main_window.resize(video.shape[2], video.shape[1])
 main_window.show()
 
 # execute Qt app
-fpl.run()
+fpl.loop.run()
 
 # You can also use Qt interactively/in a non-blocking manner in notebooks and ipython
-# by using %gui qt and NOT calling `fpl.run()`, see the user guide for more details
+# by using %gui qt and NOT calling `fpl.loop.run()`, see the user guide for more details

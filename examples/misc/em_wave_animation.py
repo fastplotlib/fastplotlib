@@ -112,4 +112,4 @@ print(figure[0, 0]._fpl_graphics_scene.children)
 # please see our docs for using fastplotlib interactively in ipython and jupyter
 if __name__ == "__main__":
     print(__doc__)
-    fpl.run()
+    fpl.loop.run()

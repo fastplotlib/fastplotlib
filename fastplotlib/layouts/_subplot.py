@@ -4,7 +4,7 @@ import numpy as np
 
 import pygfx
 
-from wgpu.gui import WgpuCanvasBase
+from rendercanvas import BaseRenderCanvas
 
 from ..graphics import TextGraphic
 from ._utils import create_camera, create_controller
@@ -25,7 +25,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         parent_dims: tuple[int, int],
         camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera,
         controller: pygfx.Controller,
-        canvas: WgpuCanvasBase | pygfx.Texture,
+        canvas: BaseRenderCanvas | pygfx.Texture,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
     ):
@@ -56,7 +56,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             | if ``str``, must be one of: `"panzoom", "fly", "trackball", or "orbit"`.
             | also accepts a pygfx.Controller instance
 
-        canvas: WgpuCanvas, or a pygfx.Texture
+        canvas: BaseRenderCanvas, or a pygfx.Texture
             Provides surface on which a scene will be rendered.
 
         renderer: WgpuRenderer
@@ -219,7 +219,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             # leave space for imgui toolbar
             height_subplot -= IMGUI_TOOLBAR_HEIGHT
 
-        rect = np.array([x_pos, y_pos, width_subplot, height_subplot])
+        # clip so that min values are always 1, otherwise JupyterRenderCanvas causes issues because it
+        # initializes with a width of (0, 0)
+        rect = np.array([x_pos, y_pos, width_subplot, height_subplot]).clip(1)
 
         for dv in self.docks.values():
             rect = rect + dv.get_parent_rect_adjust()

@@ -34,4 +34,4 @@ scatter_graphic.data[50:100:2] = scatter_graphic.data[100:150:2] + np.array([1, 
 
 if __name__ == "__main__":
     print(__doc__)
-    fpl.run()
+    fpl.loop.run()

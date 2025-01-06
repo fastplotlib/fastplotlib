@@ -252,31 +252,6 @@ class Popup(BaseGUI):
 
         self.is_open = False
 
-    def set_event_filter(self, name: str):
-        """Filter out events under the popup from being handled by pygfx renderer"""
-        # get popup window position & size
-        x1, y1 = imgui.get_window_pos()
-        width, height = imgui.get_window_size()
-        x2, y2 = x1 + width, y1 + height
-
-        # add or modify event filter
-        if name not in self._figure.renderer.event_filters.keys():
-            self._figure.renderer.event_filters[name] = np.array(
-                [[x1 - 1, y1 - 1], [x2 + 4, y2 + 4]]
-            )
-        else:
-            self._figure.renderer.event_filters[name][:] = [x1 - 1, y1 - 1], [
-                x2 + 4,
-                y2 + 4,
-            ]
-
-        self._event_filter_names.add(name)
-
-    def clear_event_filters(self):
-        """clear event filters when the popup is not shown"""
-        for name in self._event_filter_names:
-            self._figure.renderer.event_filters[name][:] = [-1, -1], [-1, -1]
-
     def open(self, pos: tuple[int, int], *args, **kwargs):
         """implement in subclass"""
         raise NotImplementedError
