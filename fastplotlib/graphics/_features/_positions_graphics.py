@@ -184,7 +184,7 @@ class UniformSize(GraphicFeature):
 
 # manages the coordinate space for scatter
 class SizeSpace(GraphicFeature):
-    def __init__(self, value):
+    def __init__(self, value: str):
         self._value = str(value)
         super().__init__()
 
@@ -196,7 +196,7 @@ class SizeSpace(GraphicFeature):
         graphic.world_object.material.size_space = str(value)
         self._value = value
 
-        event = FeatureEvent(type="sizes", info={"value": value})
+        event = FeatureEvent(type="size_space", info={"value": value})
         self._call_event_handlers(event)
 
 
