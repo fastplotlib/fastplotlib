@@ -75,7 +75,6 @@ class LineGraphic(PositionsGraphic):
         )
 
         self._thickness = Thickness(thickness)
-        self._size_space = SizeSpace(size_space)
 
         if thickness < 1.1:
             MaterialCls = pygfx.LineThinMaterial
@@ -105,14 +104,6 @@ class LineGraphic(PositionsGraphic):
         world_object: pygfx.Line = pygfx.Line(geometry=geometry, material=material)
 
         self._set_world_object(world_object)
-
-    @property
-    def size_space(self) -> str:
-        return self._size_space.value
-
-    @size_space.setter
-    def size_space(self, value: str):
-        self._size_space.set_value(self, value)
 
     @property
     def thickness(self) -> float:

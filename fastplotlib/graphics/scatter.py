@@ -112,14 +112,6 @@ class ScatterGraphic(PositionsGraphic):
         self._set_world_object(world_object)
 
     @property
-    def size_space(self) -> str:
-        return self._size_space.value
-
-    @size_space.setter
-    def size_space(self, value: str):
-        self._size_space.set_value(self, value)
-
-    @property
     def sizes(self) -> PointsSizesFeature | float:
         """Get or set the scatter point size(s)"""
         if isinstance(self._sizes, PointsSizesFeature):
