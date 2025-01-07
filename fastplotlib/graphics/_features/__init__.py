@@ -1,11 +1,14 @@
 from ._positions_graphics import (
     VertexColors,
     UniformColor,
+    UniformAlpha,
     UniformSize,
     Thickness,
     VertexPositions,
     PointsSizesFeature,
     VertexCmap,
+    VertexCmapTransform,
+    VertexAlpha,
 )
 from ._image import (
     TextureArray,
