@@ -182,7 +182,7 @@ class UniformSize(GraphicFeature):
         self._call_event_handlers(event)
 
 
-# manages the coordinate space for scatter
+# manages the coordinate space for scatter/line
 class SizeSpace(GraphicFeature):
     def __init__(self, value: str):
         self._value = str(value)
