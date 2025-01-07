@@ -182,6 +182,24 @@ class UniformSize(GraphicFeature):
         self._call_event_handlers(event)
 
 
+# manages the coordinate space for scatter
+class CoordSpace(GraphicFeature):
+    def __init__(self, value):
+        self._value = str(value)
+        super().__init__()
+
+    @property
+    def value(self) -> str:
+        return self._value
+
+    def set_value(self, graphic, value: str):
+        graphic.world_object.material.size_space = str(value)
+        self._value = value
+
+        event = FeatureEvent(type="sizes", info={"value": value})
+        self._call_event_handlers(event)
+
+
 class VertexPositions(BufferManager):
     """
     +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
