@@ -8,7 +8,7 @@ from ._features import PointsSizesFeature, UniformSize, SizeSpace
 
 
 class ScatterGraphic(PositionsGraphic):
-    _features = {"data", "sizes", "colors", "cmap"}
+    _features = {"data", "sizes", "colors", "cmap", "size_space"}
 
     def __init__(
         self,

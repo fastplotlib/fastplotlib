@@ -10,7 +10,7 @@ from ._features import Thickness, SizeSpace
 
 
 class LineGraphic(PositionsGraphic):
-    _features = {"data", "colors", "cmap", "thickness"}
+    _features = {"data", "colors", "cmap", "thickness", "size_space"}
 
     def __init__(
         self,
