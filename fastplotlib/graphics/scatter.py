@@ -21,6 +21,7 @@ class ScatterGraphic(PositionsGraphic):
         isolated_buffer: bool = True,
         sizes: float | np.ndarray | Iterable[float] = 1,
         uniform_size: bool = False,
+        size_space: str = "screen",
         **kwargs,
     ):
         """
@@ -60,6 +61,9 @@ class ScatterGraphic(PositionsGraphic):
             if True, uses a uniform buffer for the scatter point sizes,
             basically saves GPU VRAM when all scatter points are the same size
 
+        size_space: str, default "screen"
+            coordinate space in which the size is expressed (‘screen’, ‘world’, ‘model’)
+
         kwargs
             passed to Graphic
 
@@ -96,6 +100,8 @@ class ScatterGraphic(PositionsGraphic):
             material_kwargs["size_mode"] = "vertex"
             self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
             geo_kwargs["sizes"] = self.sizes.buffer
+
+        material_kwargs['size_space'] = size_space
 
         world_object = pygfx.Points(
             pygfx.Geometry(**geo_kwargs),
