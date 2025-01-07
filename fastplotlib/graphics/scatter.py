@@ -4,7 +4,7 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from ._features import PointsSizesFeature, UniformSize
+from ._features import PointsSizesFeature, UniformSize, CoordSpace
 
 
 class ScatterGraphic(PositionsGraphic):
@@ -101,6 +101,7 @@ class ScatterGraphic(PositionsGraphic):
             self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
             geo_kwargs["sizes"] = self.sizes.buffer
 
+		self._coord_space = CoordSpace(size_space)
         material_kwargs['size_space'] = size_space
 
         world_object = pygfx.Points(
