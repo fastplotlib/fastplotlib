@@ -4,7 +4,7 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from ._features import PointsSizesFeature, UniformSize, CoordSpace
+from ._features import PointsSizesFeature, UniformSize, SizeSpace
 
 
 class ScatterGraphic(PositionsGraphic):
@@ -85,6 +85,7 @@ class ScatterGraphic(PositionsGraphic):
 
         geo_kwargs = {"positions": self._data.buffer}
         material_kwargs = {"pick_write": True}
+        self._size_space = SizeSpace(size_space)
 
         if uniform_color:
             material_kwargs["color_mode"] = "uniform"
@@ -102,13 +103,21 @@ class ScatterGraphic(PositionsGraphic):
             self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
             geo_kwargs["sizes"] = self.sizes.buffer
 
-        material_kwargs['size_space'] = size_space
+        material_kwargs['size_space'] = self.size_space
         world_object = pygfx.Points(
             pygfx.Geometry(**geo_kwargs),
             material=pygfx.PointsMaterial(**material_kwargs),
         )
 
         self._set_world_object(world_object)
+
+    @property
+    def size_space(self) -> str:
+        return self._size_space.value
+
+    @size_space.setter
+    def size_space(self, value: str):
+        self._size_space.set_value(self, value)
 
     @property
     def sizes(self) -> PointsSizesFeature | float:
