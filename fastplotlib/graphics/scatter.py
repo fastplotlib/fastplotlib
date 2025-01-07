@@ -77,6 +77,7 @@ class ScatterGraphic(PositionsGraphic):
             cmap=cmap,
             cmap_transform=cmap_transform,
             isolated_buffer=isolated_buffer,
+            size_space=size_space,
             **kwargs,
         )
 
@@ -101,9 +102,7 @@ class ScatterGraphic(PositionsGraphic):
             self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
             geo_kwargs["sizes"] = self.sizes.buffer
 
-		self._coord_space = CoordSpace(size_space)
         material_kwargs['size_space'] = size_space
-
         world_object = pygfx.Points(
             pygfx.Geometry(**geo_kwargs),
             material=pygfx.PointsMaterial(**material_kwargs),
