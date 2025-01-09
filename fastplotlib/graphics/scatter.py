@@ -103,7 +103,7 @@ class ScatterGraphic(PositionsGraphic):
             self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
             geo_kwargs["sizes"] = self.sizes.buffer
 
-        material_kwargs['size_space'] = self.size_space
+        material_kwargs["size_space"] = self.size_space
         world_object = pygfx.Points(
             pygfx.Geometry(**geo_kwargs),
             material=pygfx.PointsMaterial(**material_kwargs),
