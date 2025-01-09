@@ -469,9 +469,9 @@ def test_size_space(graphic_type, size_space):
         assert graphic.size_space == size_space
 
         # test setter
-        graphic.size_space = 'world'
-        assert graphic.size_space == 'world'
-        assert graphic.world_object.material.thickness_space == 'world'
+        graphic.size_space = "world"
+        assert graphic.size_space == "world"
+        assert graphic.world_object.material.thickness_space == "world"
 
     elif graphic_type == "scatter":
 
@@ -481,6 +481,6 @@ def test_size_space(graphic_type, size_space):
         assert graphic.size_space == size_space
 
         # test setter
-        graphic.size_space = 'world'
-        assert graphic.size_space == 'world'
-        assert graphic.world_object.material.size_space == 'world'
+        graphic.size_space = "world"
+        assert graphic.size_space == "world"
+        assert graphic.world_object.material.size_space == "world"
