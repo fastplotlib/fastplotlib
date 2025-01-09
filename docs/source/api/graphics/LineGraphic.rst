@@ -31,6 +31,7 @@ Properties
     LineGraphic.offset
     LineGraphic.right_click_menu
     LineGraphic.rotation
+    LineGraphic.size_space
     LineGraphic.supported_events
     LineGraphic.thickness
     LineGraphic.visible

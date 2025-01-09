@@ -7,6 +7,7 @@ Graphic Features
     VertexColors
     UniformColor
     UniformSize
+    SizeSpace
     Thickness
     VertexPositions
     PointsSizesFeature
