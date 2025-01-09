@@ -460,9 +460,27 @@ def test_size_space(graphic_type, size_space):
     if size_space is None:
         size_space = "screen"  # default space
 
+    # size_space is really an alias for pygfx.utils.enums.CoordSpace
     if graphic_type == "line":
         graphic = fig[0, 0].add_line(data=data, **kwargs)
+
+        # test getter
         assert graphic.world_object.material.thickness_space == size_space
+        assert graphic.size_space == size_space
+
+        # test setter
+        graphic.size_space = 'world'
+        assert graphic.size_space == 'world'
+        assert graphic.world_object.material.thickness_space == 'world'
+
     elif graphic_type == "scatter":
+
+        # test getter
         graphic = fig[0, 0].add_scatter(data=data, **kwargs)
         assert graphic.world_object.material.size_space == size_space
+        assert graphic.size_space == size_space
+
+        # test setter
+        graphic.size_space = 'world'
+        assert graphic.size_space == 'world'
+        assert graphic.world_object.material.size_space == 'world'
