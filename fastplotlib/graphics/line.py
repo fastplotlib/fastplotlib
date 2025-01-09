@@ -95,7 +95,7 @@ class LineGraphic(PositionsGraphic):
                 thickness=self.thickness,
                 color_mode="vertex",
                 pick_write=True,
-                thickness_space=self.size_space
+                thickness_space=self.size_space,
             )
             geometry = pygfx.Geometry(
                 positions=self._data.buffer, colors=self._colors.buffer

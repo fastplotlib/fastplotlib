@@ -444,6 +444,7 @@ def test_thickness(thickness):
     else:
         assert isinstance(graphic.world_object.material, pygfx.LineMaterial)
 
+
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("size_space", ["screen", "world", "model"])
 def test_size_space(graphic_type, size_space):
