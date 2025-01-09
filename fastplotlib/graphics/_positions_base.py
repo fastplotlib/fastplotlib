@@ -62,11 +62,11 @@ class PositionsGraphic(Graphic):
         
         See https://docs.pygfx.org/stable/_autosummary/utils/utils/enums/pygfx.utils.enums.CoordSpace.html#pygfx.utils.enums.CoordSpace for available options.
         """
-        return self._size_space
+        return self._size_space.value
 
     @size_space.setter
     def size_space(self, value: str):
-        self._size_space = value
+        self._size_space.set_value(self, value)
 
     def __init__(
         self,
