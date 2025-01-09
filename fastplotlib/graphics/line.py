@@ -6,11 +6,11 @@ import pygfx
 
 from ._positions_base import PositionsGraphic
 from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
-from ._features import Thickness
+from ._features import Thickness, SizeSpace
 
 
 class LineGraphic(PositionsGraphic):
-    _features = {"data", "colors", "cmap", "thickness"}
+    _features = {"data", "colors", "cmap", "thickness", "size_space"}
 
     def __init__(
         self,
@@ -22,6 +22,7 @@ class LineGraphic(PositionsGraphic):
         cmap: str = None,
         cmap_transform: np.ndarray | Iterable = None,
         isolated_buffer: bool = True,
+        size_space: str = "screen",
         **kwargs,
     ):
         """
@@ -53,6 +54,9 @@ class LineGraphic(PositionsGraphic):
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        size_space: str, default "screen"
+            coordinate space in which the size is expressed (‘screen’, ‘world’, ‘model’)
+
         **kwargs
             passed to Graphic
 
@@ -66,6 +70,7 @@ class LineGraphic(PositionsGraphic):
             cmap=cmap,
             cmap_transform=cmap_transform,
             isolated_buffer=isolated_buffer,
+            size_space=size_space,
             **kwargs,
         )
 
@@ -83,10 +88,14 @@ class LineGraphic(PositionsGraphic):
                 color_mode="uniform",
                 color=self.colors,
                 pick_write=True,
+                thickness_space=self.size_space,
             )
         else:
             material = MaterialCls(
-                thickness=self.thickness, color_mode="vertex", pick_write=True
+                thickness=self.thickness,
+                color_mode="vertex",
+                pick_write=True,
+                thickness_space=self.size_space,
             )
             geometry = pygfx.Geometry(
                 positions=self._data.buffer, colors=self._colors.buffer

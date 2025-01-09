@@ -31,6 +31,7 @@ Properties
     ScatterGraphic.offset
     ScatterGraphic.right_click_menu
     ScatterGraphic.rotation
+    ScatterGraphic.size_space
     ScatterGraphic.sizes
     ScatterGraphic.supported_events
     ScatterGraphic.visible

@@ -10,6 +10,7 @@ from ._features import (
     UniformColor,
     VertexCmap,
     PointsSizesFeature,
+    SizeSpace,
 )
 
 
@@ -54,6 +55,19 @@ class PositionsGraphic(Graphic):
 
         self._cmap[:] = name
 
+    @property
+    def size_space(self):
+        """
+        The coordinate space in which the size is expressed (‘screen’, ‘world’, ‘model’)
+
+        See https://docs.pygfx.org/stable/_autosummary/utils/utils/enums/pygfx.utils.enums.CoordSpace.html#pygfx.utils.enums.CoordSpace for available options.
+        """
+        return self._size_space.value
+
+    @size_space.setter
+    def size_space(self, value: str):
+        self._size_space.set_value(self, value)
+
     def __init__(
         self,
         data: Any,
@@ -63,6 +77,7 @@ class PositionsGraphic(Graphic):
         cmap: str | VertexCmap = None,
         cmap_transform: np.ndarray = None,
         isolated_buffer: bool = True,
+        size_space: str = "screen",
         *args,
         **kwargs,
     ):
@@ -132,6 +147,7 @@ class PositionsGraphic(Graphic):
                         self._colors, cmap_name=None, transform=None, alpha=alpha
                     )
 
+        self._size_space = SizeSpace(size_space)
         super().__init__(*args, **kwargs)
 
     def unshare_property(self, property: str):
