@@ -443,3 +443,26 @@ def test_thickness(thickness):
 
     else:
         assert isinstance(graphic.world_object.material, pygfx.LineMaterial)
+
+@pytest.mark.parametrize("graphic_type", ["line", "scatter"])
+@pytest.mark.parametrize("size_space", ["screen", "world", "model"])
+def test_size_space(graphic_type, size_space):
+    fig = fpl.Figure()
+
+    kwargs = dict()
+    for kwarg in ["size_space"]:
+        if locals()[kwarg] is not None:
+            # add to dict of arguments that will be passed
+            kwargs[kwarg] = locals()[kwarg]
+
+    data = generate_positions_spiral_data("xy")
+
+    if size_space is None:
+        size_space = "screen"  # default space
+
+    if graphic_type == "line":
+        graphic = fig[0, 0].add_line(data=data, **kwargs)
+        assert graphic.world_object.material.thickness_space == size_space
+    elif graphic_type == "scatter":
+        graphic = fig[0, 0].add_scatter(data=data, **kwargs)
+        assert graphic.world_object.material.size_space == size_space
