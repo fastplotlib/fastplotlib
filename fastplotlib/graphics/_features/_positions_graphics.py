@@ -185,7 +185,7 @@ class UniformSize(GraphicFeature):
 # manages the coordinate space for scatter/line
 class SizeSpace(GraphicFeature):
     def __init__(self, value: str):
-        self._value = str(value)
+        self._value = value
         super().__init__()
 
     @property
@@ -193,7 +193,10 @@ class SizeSpace(GraphicFeature):
         return self._value
 
     def set_value(self, graphic, value: str):
-        graphic.world_object.material.size_space = str(value)
+        if "Line" in graphic.world_object.material.__class__.__name__:
+            graphic.world_object.material.thickness_space = value
+        else:
+            graphic.world_object.material.size_space = value
         self._value = value
 
         event = FeatureEvent(type="size_space", info={"value": value})
