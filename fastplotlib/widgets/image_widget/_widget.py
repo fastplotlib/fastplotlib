@@ -5,7 +5,7 @@ import numpy as np
 
 from rendercanvas import BaseRenderCanvas
 
-from ... import Figure
+from ...layouts import ImguiFigure as Figure
 from ...graphics import ImageGraphic
 from ...utils import calculate_figure_shape
 from ...tools import HistogramLUTTool
@@ -810,10 +810,6 @@ class ImageWidget:
                 continue
             hlut = subplot.docks["right"]["histogram_lut"]
             hlut.set_data(data, reset_vmin_vmax=True)
-
-        else:
-            for ig in self.managed_graphics:
-                ig.reset_vmin_vmax()
 
     def reset_vmin_vmax_frame(self):
         """
