@@ -26,7 +26,7 @@ zeros = np.zeros(image.shape)
 # create an ImageWidget to display all the images
 iw = fpl.ImageWidget(
     data=[image, log_abs_img_fft, zeros, zeros, zeros, zeros],
-    names=["image", "DFT", "selected", "IDFT of selected", "not-selected", "IDFT of not-selected"],
+    names=["image", "DFT", "selected", "FFT of selected", "not-selected", "IFFT of not-selected"],
     figure_shape=(3, 2),  # so we can see image and fft side by side
     figure_kwargs={"size": (700, 1024)},
     histogram_widget=False,
@@ -51,7 +51,7 @@ iw.figure["not-selected"].graphics[0].vmin, iw.figure["not-selected"].graphics[0
 iw.show()
 
 # create a rectangle selector
-rs = iw.managed_graphics[1].add_rectangle_selector()
+rs = iw.managed_graphics[1].add_rectangle_selector(edge_color="w", edge_thickness=2.0)
 
 
 @rs.add_event_handler("selection")
@@ -88,8 +88,8 @@ def update_images(ev):
     iw.managed_graphics[5].reset_vmin_vmax()
 
 
-# set initial selection to top right corner
-rs.selection = (400, 512, 0, 100)
+# set initial selection to the center
+rs.selection = (225, 285, 225, 285)
 
 
 figure = iw.figure
