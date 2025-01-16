@@ -28,9 +28,13 @@ iw = fpl.ImageWidget(
     data=[image, log_abs_img_fft, zeros, zeros, zeros, zeros],
     names=["image", "DFT", "selected", "IDFT of selected", "not-selected", "IDFT of not-selected"],
     figure_shape=(3, 2),  # so we can see image and fft side by side
-    figure_kwargs={"size": (700, 1340)},
+    figure_kwargs={"size": (700, 1024)},
     histogram_widget=False,
 )
+
+# we don't need the toolbars here, unclutter the figure
+for subplot in iw.figure:
+    subplot.toolbar = False
 
 # viridis cmap for the fft images
 iw.cmap = "viridis"
