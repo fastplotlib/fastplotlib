@@ -25,6 +25,7 @@ with open(Path(__file__).parent.joinpath("VERSION"), "r") as f:
 
 if len(enumerate_adapters()) < 1:
     from warnings import warn
+
     warn(
         f"WGPU could not enumerate any adapters, fastplotlib will not work.\n"
         f"This is caused by one of the following:\n"
