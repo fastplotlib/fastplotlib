@@ -59,10 +59,10 @@ def _notebook_print_banner():
     image = Image(value=logo_data, format="png", width=300, height=55)
 
     # get adapters and info
-    adapters = [a for a in wgpu.gpu.enumerate_adapters()]
+    adapters = [a for a in wgpu.gpu.enumerate_adapters_sync()]
     adapters_info = [a.info for a in adapters]
 
-    default_adapter_info = wgpu.gpu.request_adapter().info
+    default_adapter_info = wgpu.gpu.request_adapter_sync().info
     default_ix = adapters_info.index(default_adapter_info)
 
     if len(adapters) < 1:
