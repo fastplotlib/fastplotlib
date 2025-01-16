@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Callable
 from warnings import warn
 
@@ -5,9 +6,9 @@ import numpy as np
 
 from rendercanvas import BaseRenderCanvas
 
-from ... import Figure
+from ...layouts import ImguiFigure as Figure
 from ...graphics import ImageGraphic
-from ...utils import calculate_figure_shape
+from ...utils import calculate_figure_shape, quick_min_max
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
 
@@ -507,6 +508,12 @@ class ImageWidget:
 
         graphic_kwargs.update({"cmap": cmap})
 
+        vmin_specified, vmax_specified = None, None
+        if "vmin" in graphic_kwargs.keys():
+            vmin_specified = graphic_kwargs.pop("vmin")
+        if "vmax" in graphic_kwargs.keys():
+            vmax_specified = graphic_kwargs.pop("vmax")
+
         self._figure: Figure = Figure(**figure_kwargs_default)
 
         self._histogram_widget = histogram_widget
@@ -518,7 +525,34 @@ class ImageWidget:
 
             frame = self._process_indices(d, slice_indices=self._current_index)
             frame = self._process_frame_apply(frame, data_ix)
-            ig = ImageGraphic(frame, name="image_widget_managed", **graphic_kwargs)
+
+            if (vmin_specified is None) or (vmax_specified is None):
+                # if either vmin or vmax are not specified, calculate an estimate by subsampling
+                vmin_estimate, vmax_estimate = quick_min_max(d)
+
+                # decide vmin, vmax passed to ImageGraphic constructor based on whether it's user specified or now
+                if vmin_specified is None:
+                    # user hasn't specified vmin, use estimated value
+                    vmin = vmin_estimate
+                else:
+                    # user has provided a specific value, use that
+                    vmin = vmin_specified
+
+                if vmax_specified is None:
+                    vmax = vmax_estimate
+                else:
+                    vmax = vmax_specified
+            else:
+                # both vmin and vmax are specified
+                vmin, vmax = vmin_specified, vmax_specified
+
+            ig = ImageGraphic(
+                frame,
+                name="image_widget_managed",
+                vmin=vmin,
+                vmax=vmax,
+                **graphic_kwargs,
+            )
             subplot.add_graphic(ig)
             subplot.name = name
             subplot.set_title(name)
@@ -810,10 +844,6 @@ class ImageWidget:
                 continue
             hlut = subplot.docks["right"]["histogram_lut"]
             hlut.set_data(data, reset_vmin_vmax=True)
-
-        else:
-            for ig in self.managed_graphics:
-                ig.reset_vmin_vmax()
 
     def reset_vmin_vmax_frame(self):
         """
