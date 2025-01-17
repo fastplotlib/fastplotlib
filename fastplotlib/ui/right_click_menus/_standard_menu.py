@@ -98,7 +98,9 @@ class StandardRightClickMenu(Popup):
             # toggles to flip axes cameras
             for axis in ["x", "y", "z"]:
                 scale = getattr(self.get_subplot().camera.local, f"scale_{axis}")
-                changed, flip = imgui.menu_item(f"Flip {axis} axis", "", bool(scale < 0))
+                changed, flip = imgui.menu_item(
+                    f"Flip {axis} axis", "", bool(scale < 0)
+                )
 
                 if changed:
                     flip_axis(self.get_subplot(), axis, flip)
