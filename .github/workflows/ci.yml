@@ -47,10 +47,10 @@ jobs:
       run: |
         # create string with one of: tests,imgui,notebook; test,imgui; test,notebook ; tests
         # sed removes trailing comma
-        export DEPS=$(echo "tests,${{ matrix.imgui_dep }}${{ matrix.notebook_dep }}" | sed 's/,*$//g)
-        echo ${{ DEPS }}
+        echo "DEPS=$(echo "tests,${{ matrix.imgui_dep }}${{ matrix.notebook_dep }}" | sed 's/,*$//g)" >> $GITHUB_ENV
+        echo ${{ env.DEPS }}
         # install fastplotlib with given extras options from above
-        pip install -e ".["${{ DEPS }}"]"
+        pip install -e ".["${{ env.DEPS }}"]"
     - name: Show wgpu backend
       run:
         python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
