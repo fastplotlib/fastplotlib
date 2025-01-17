@@ -16,6 +16,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
+    strategy:
+      matrix:
+        imgui_dep: ["imgui", ""]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,7 +37,12 @@ jobs:
           # remove pygfx from install_requires, we install using pygfx@main
           sed -i "/pygfx/d" ./setup.py
           pip install git+https://github.com/pygfx/pygfx.git@main
-          pip install -e ".["tests,notebook,imgui"]"
+      - name: Install fastplotlib
+        run: |
+          # create string with one of: tests,imgui,notebook; test,imgui; test,notebook ; tests
+          # sed removes trailing comma
+          # install fastplotlib with with or without imgui depending on build matrix
+          pip install -e ".[$(echo "tests,notebook,${{ matrix.imgui_dep }}" | sed -e "s/,\+/,/g" -e "s/,$//")]"
       - name: Show wgpu backend
         run:
           python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
@@ -43,7 +51,7 @@ jobs:
           PYGFX_EXPECT_LAVAPIPE: true
         run: |
           # regenerate screenshots
-          REGENERATE_SCREENSHOTS=1 pytest -v examples
+          WGPU_FORCE_OFFSCREEN=1 REGENERATE_SCREENSHOTS=1 pytest -v examples
           FASTPLOTLIB_NB_TESTS=1 REGENERATE_SCREENSHOTS=1 pytest --nbmake examples/notebooks/
       - uses: actions/upload-artifact@v3
         if: always()
