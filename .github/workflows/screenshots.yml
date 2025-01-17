@@ -46,13 +46,17 @@ jobs:
       - name: Show wgpu backend
         run:
           python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
-      - name: Test examples
+      - name: Generate screenshots
         env:
           PYGFX_EXPECT_LAVAPIPE: true
         run: |
           # regenerate screenshots
           WGPU_FORCE_OFFSCREEN=1 REGENERATE_SCREENSHOTS=1 pytest -v examples
-          FASTPLOTLIB_NB_TESTS=1 REGENERATE_SCREENSHOTS=1 pytest --nbmake examples/notebooks/
+      - name: Generate screenshots notebook
+        if: ${{ matrix.notebook_dep == 'notebook' && matrix.imgui_dep == 'imgui' }}
+        env:
+          PYGFX_EXPECT_LAVAPIPE: true
+        run: FASTPLOTLIB_NB_TESTS=1 REGENERATE_SCREENSHOTS=1 pytest --nbmake examples/notebooks/
       - uses: actions/upload-artifact@v3
         if: always()
         with:
