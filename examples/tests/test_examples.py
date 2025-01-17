@@ -85,6 +85,12 @@ def test_example_screenshots(module, force_offscreen):
         # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
         # hacky but it works for now
         example.figure.imgui_renderer.render()
+    else:
+        # skip any imgui or ImageWidget tests
+        skip = ["image_widget", "imgui"]
+        for s in skip:
+            if s in module.stem:
+                return
 
     # render each subplot
     for subplot in example.figure:
