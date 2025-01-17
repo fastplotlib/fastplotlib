@@ -61,7 +61,7 @@ jobs:
         PYGFX_EXPECT_LAVAPIPE: true
       run: |
         WGPU_FORCE_OFFSCREEN=1 pytest -v tests/
-        pytest -v examples
+        WGPU_FORCE_OFFSCREEN=1 pytest -v examples/
     - name: Test examples notebooks
       if: ${{ matrix.notebook_dep == 'notebook' }}
       env:
