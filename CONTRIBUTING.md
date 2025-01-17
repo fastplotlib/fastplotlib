@@ -63,7 +63,7 @@ cd fastplotlib
 
 ```bash
 # install all extras in place
-pip install -e ".[notebook,docs,tests]"
+pip install -e ".[imgui, notebook, docs, tests]"
 ```
 
 5. Add the upstream remote branch:
@@ -280,7 +280,7 @@ to open source software packages.
 # after cloning
 cd fastplotlib
 # install dev dependencies 
-pip install -e ".[tests, docs, notebook]"
+pip install -e ".[imgui, tests, docs, notebook]"
 ```
 
 3) Check out a feature branch from `main`

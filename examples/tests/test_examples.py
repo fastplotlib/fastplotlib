@@ -10,6 +10,7 @@ import os
 import numpy as np
 import imageio.v3 as iio
 import pygfx
+import fastplotlib as fpl
 
 MAX_TEXTURE_SIZE = 2048
 pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension-2d": MAX_TEXTURE_SIZE})
@@ -107,7 +108,13 @@ def test_example_screenshots(module, force_offscreen):
     if not os.path.exists(screenshots_dir):
         os.mkdir(screenshots_dir)
 
-    screenshot_path = screenshots_dir / f"{module.stem}.png"
+    # test screenshots for both imgui and non-gui installs
+    if not fpl.IMGUI:
+        prefix = "no-imgui-"
+    else:
+        prefix = ""
+
+    screenshot_path = screenshots_dir / f"{prefix}{module.stem}.png"
 
     black = np.zeros(img.shape).astype(np.uint8)
     black[:, :, -1] = 255

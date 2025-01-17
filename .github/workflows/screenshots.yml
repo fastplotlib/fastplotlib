@@ -34,7 +34,7 @@ jobs:
           # remove pygfx from install_requires, we install using pygfx@main
           sed -i "/pygfx/d" ./setup.py
           pip install git+https://github.com/pygfx/pygfx.git@main
-          pip install -e ".["tests"]"
+          pip install -e ".["tests,notebook,imgui"]"
       - name: Show wgpu backend
         run:
           python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
