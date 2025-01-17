@@ -61,7 +61,7 @@ jobs:
       - uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: screenshots
+          name: screenshots-${{ matrix.imgui }}
           path: |
             examples/screenshots/
             examples/notebooks/screenshots/
