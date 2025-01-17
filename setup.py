@@ -26,7 +26,7 @@ extras_require = {
     ],
     "notebook": [
         "jupyterlab",
-        "jupyter-rfb>=0.4.4",
+        "jupyter-rfb>=0.5.1",
         "ipywidgets>=8.0.0,<9",
         "sidecar",
     ],
