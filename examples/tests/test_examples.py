@@ -79,12 +79,12 @@ def test_example_screenshots(module, force_offscreen):
     # import the example module
     example = import_from_path(module.stem, module)
 
-    # there doesn't seem to be a resize event for the manual offscreen canvas
-    example.figure.imgui_renderer._backend.io.display_size = example.figure.canvas.get_logical_size()
-
-    # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
-    # hacky but it works for now
-    example.figure.imgui_renderer.render()
+    if fpl.IMGUI:
+        # there doesn't seem to be a resize event for the manual offscreen canvas
+        example.figure.imgui_renderer._backend.io.display_size = example.figure.canvas.get_logical_size()
+        # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
+        # hacky but it works for now
+        example.figure.imgui_renderer.render()
 
     # render each subplot
     for subplot in example.figure:
@@ -95,8 +95,9 @@ def test_example_screenshots(module, force_offscreen):
     # flush pygfx renderer
     example.figure.renderer.flush()
 
-    # render imgui
-    example.figure.imgui_renderer.render()
+    if fpl.IMGUI:
+        # render imgui
+        example.figure.imgui_renderer.render()
 
     # render a frame
     img = np.asarray(example.figure.renderer.target.draw())

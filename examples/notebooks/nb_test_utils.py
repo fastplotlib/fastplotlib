@@ -105,11 +105,21 @@ def plot_test(name, fig: fpl.Figure):
 
 
 def regenerate_screenshot(name, data):
-        iio.imwrite(SCREENSHOTS_DIR.joinpath(f"nb-{name}.png"), data)
+    if fpl.IMGUI:
+        prefix = "imgui-"
+    else:
+        prefix = ""
+
+    iio.imwrite(SCREENSHOTS_DIR.joinpath(f"{prefix}nb-{name}.png"), data)
 
 
 def assert_screenshot_equal(name, data):
-    ground_truth = iio.imread(SCREENSHOTS_DIR.joinpath(f"nb-{name}.png"))
+    if fpl.IMGUI:
+        prefix = "imgui-"
+    else:
+        prefix = ""
+
+    ground_truth = iio.imread(SCREENSHOTS_DIR.joinpath(f"{prefix}nb-{name}.png"))
 
     img = normalize_image(data)
     ref_img = normalize_image(ground_truth)
@@ -140,9 +150,14 @@ def update_diffs(name, is_similar, img, ground_truth):
             diffs_rgba = diffs_rgba.astype("u1")
         return diffs_rgba[..., slicer]
 
+    if fpl.IMGUI:
+        prefix = "imgui-"
+    else:
+        prefix = ""
+
     # split into an rgb and an alpha diff
     diffs = {
-        DIFFS_DIR.joinpath(f"nb-diff-{name}-rgb.png"): slice(0, 3),
+        DIFFS_DIR.joinpath(f"{prefix}nb-diff-{name}-rgb.png"): slice(0, 3),
     }
 
     for path, slicer in diffs.items():
