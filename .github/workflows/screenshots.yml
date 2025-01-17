@@ -17,6 +17,7 @@ jobs:
     timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     strategy:
+      fail-fast: false
       matrix:
         imgui_dep: ["imgui", ""]
     steps:
