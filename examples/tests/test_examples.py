@@ -88,6 +88,11 @@ def import_from_path(module_name, filename):
 @pytest.mark.parametrize("module", examples_to_test, ids=lambda x: x.stem)
 def test_example_screenshots(module, force_offscreen):
     """Make sure that every example marked outputs the expected."""
+
+    if not fpl.IMGUI:
+        # skip any imgui or ImageWidget tests
+        check_skip_imgui(module)
+
     # import the example module
     example = import_from_path(module.stem, module)
 
@@ -97,10 +102,6 @@ def test_example_screenshots(module, force_offscreen):
         # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
         # hacky but it works for now
         example.figure.imgui_renderer.render()
-    else:
-        # skip any imgui or ImageWidget tests
-        if not fpl.IMGUI:
-            check_skip_imgui(module)
 
     # render each subplot
     for subplot in example.figure:
