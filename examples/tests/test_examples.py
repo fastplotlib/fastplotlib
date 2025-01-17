@@ -36,9 +36,21 @@ examples_to_run = find_examples(negative_query="# run_example = false")
 examples_to_test = find_examples(query="# test_example = true")
 
 
+def check_skip_imgui(module):
+    # skip any imgui or ImageWidget tests
+    with open(module, "r") as f:
+        contents = f.read()
+        if "ImageWidget" in contents:
+            pytest.skip("skipping ImageWidget tests since they require imgui")
+        elif "imgui" in contents or "imgui_bundle" in contents:
+            pytest.skip("skipping tests that require imgui")
+
+
 @pytest.mark.parametrize("module", examples_to_run, ids=lambda x: x.stem)
 def test_examples_run(module, force_offscreen):
     """Run every example marked to see if they run without error."""
+    if not fpl.IMGUI:
+        check_skip_imgui(module)
 
     runpy.run_path(module, run_name="__main__")
 
@@ -87,10 +99,8 @@ def test_example_screenshots(module, force_offscreen):
         example.figure.imgui_renderer.render()
     else:
         # skip any imgui or ImageWidget tests
-        skip = ["image_widget", "imgui"]
-        for s in skip:
-            if s in module.stem:
-                return
+        if not fpl.IMGUI:
+            check_skip_imgui(module)
 
     # render each subplot
     for subplot in example.figure:
