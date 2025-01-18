@@ -62,13 +62,18 @@ jobs:
       run: |
         WGPU_FORCE_OFFSCREEN=1 pytest -v tests/
         WGPU_FORCE_OFFSCREEN=1 pytest -v examples/
-    - name: Test examples notebooks
-      # test notebooks only if imgui is also installed, otherwise the ImageWidget
-      # notebook makes things too complicated to have this optional in CI
+    - name: Test examples notebooks, exclude ImageWidget notebook
+      if: ${{ matrix.notebook_dep == 'notebook' }}
+      env:
+        PYGFX_EXPECT_LAVAPIPE: true
+      # test notebooks, exclude ImageWidget notebooks
+      run: FASTPLOTLIB_NB_TESTS=1 pytest --nbmake $(find ./examples/notebooks/ -maxdepth 1 -type f -name "*.ipynb" ! -name "image_widget*.ipynb" -print | xargs)
+    - name: Test ImageWidget notebooks
+      # test image widget notebooks only if imgui is installed
       if: ${{ matrix.notebook_dep == 'notebook' && matrix.imgui_dep == 'imgui' }}
       env:
         PYGFX_EXPECT_LAVAPIPE: true
-      run: FASTPLOTLIB_NB_TESTS=1 pytest --nbmake examples/notebooks/
+      run: FASTPLOTLIB_NB_TESTS=1 pytest --nbmake $(find ./examples/notebooks/ -maxdepth 1 -type f -name "image_widget*.ipynb" -print | xargs)
     - uses: actions/upload-artifact@v4
       if: ${{ failure() }}
       with:
