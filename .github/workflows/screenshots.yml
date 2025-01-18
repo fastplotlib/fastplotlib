@@ -53,11 +53,16 @@ jobs:
         run: |
           # regenerate screenshots
           WGPU_FORCE_OFFSCREEN=1 REGENERATE_SCREENSHOTS=1 pytest -v examples
-      - name: Generate screenshots notebook
+      - name: Generate screenshots notebook, exclude image widget
+        if: ${{ matrix.notebook_dep == 'notebook' }}
+        env:
+          PYGFX_EXPECT_LAVAPIPE: true
+        run: FASTPLOTLIB_NB_TESTS=1 REGENERATE_SCREENSHOTS=1 pytest --nbmake $(find ./examples/notebooks/ -maxdepth 1 -type f -name "*.ipynb" ! -name "image_widget*.ipynb" -print | xargs)
+      - name: Generate screenshots notebook, include image widget
         if: ${{ matrix.notebook_dep == 'notebook' && matrix.imgui_dep == 'imgui' }}
         env:
           PYGFX_EXPECT_LAVAPIPE: true
-        run: FASTPLOTLIB_NB_TESTS=1 REGENERATE_SCREENSHOTS=1 pytest --nbmake examples/notebooks/
+        run: FASTPLOTLIB_NB_TESTS=1 REGENERATE_SCREENSHOTS=1 pytest --nbmake $(find ./examples/notebooks/ -maxdepth 1 -type f -name "image_widget*.ipynb" -print | xargs)
       - uses: actions/upload-artifact@v4
         if: always()
         with:
