@@ -299,7 +299,7 @@ class PlotArea:
 
     def map_screen_to_world(
         self, pos: tuple[float, float] | pygfx.PointerEvent
-    ) -> np.ndarray:
+    ) -> np.ndarray | None:
         """
         Map screen position to world position
 
