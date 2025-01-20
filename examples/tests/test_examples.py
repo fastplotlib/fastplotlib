@@ -10,6 +10,7 @@ import os
 import numpy as np
 import imageio.v3 as iio
 import pygfx
+import fastplotlib as fpl
 
 MAX_TEXTURE_SIZE = 2048
 pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension-2d": MAX_TEXTURE_SIZE})
@@ -35,9 +36,21 @@ examples_to_run = find_examples(negative_query="# run_example = false")
 examples_to_test = find_examples(query="# test_example = true")
 
 
+def check_skip_imgui(module):
+    # skip any imgui or ImageWidget tests
+    with open(module, "r") as f:
+        contents = f.read()
+        if "ImageWidget" in contents:
+            pytest.skip("skipping ImageWidget tests since they require imgui")
+        elif "imgui" in contents or "imgui_bundle" in contents:
+            pytest.skip("skipping tests that require imgui")
+
+
 @pytest.mark.parametrize("module", examples_to_run, ids=lambda x: x.stem)
 def test_examples_run(module, force_offscreen):
     """Run every example marked to see if they run without error."""
+    if not fpl.IMGUI:
+        check_skip_imgui(module)
 
     runpy.run_path(module, run_name="__main__")
 
@@ -75,15 +88,20 @@ def import_from_path(module_name, filename):
 @pytest.mark.parametrize("module", examples_to_test, ids=lambda x: x.stem)
 def test_example_screenshots(module, force_offscreen):
     """Make sure that every example marked outputs the expected."""
+
+    if not fpl.IMGUI:
+        # skip any imgui or ImageWidget tests
+        check_skip_imgui(module)
+
     # import the example module
     example = import_from_path(module.stem, module)
 
-    # there doesn't seem to be a resize event for the manual offscreen canvas
-    example.figure.imgui_renderer._backend.io.display_size = example.figure.canvas.get_logical_size()
-
-    # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
-    # hacky but it works for now
-    example.figure.imgui_renderer.render()
+    if fpl.IMGUI:
+        # there doesn't seem to be a resize event for the manual offscreen canvas
+        example.figure.imgui_renderer._backend.io.display_size = example.figure.canvas.get_logical_size()
+        # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
+        # hacky but it works for now
+        example.figure.imgui_renderer.render()
 
     # render each subplot
     for subplot in example.figure:
@@ -94,8 +112,9 @@ def test_example_screenshots(module, force_offscreen):
     # flush pygfx renderer
     example.figure.renderer.flush()
 
-    # render imgui
-    example.figure.imgui_renderer.render()
+    if fpl.IMGUI:
+        # render imgui
+        example.figure.imgui_renderer.render()
 
     # render a frame
     img = np.asarray(example.figure.renderer.target.draw())
@@ -107,7 +126,13 @@ def test_example_screenshots(module, force_offscreen):
     if not os.path.exists(screenshots_dir):
         os.mkdir(screenshots_dir)
 
-    screenshot_path = screenshots_dir / f"{module.stem}.png"
+    # test screenshots for both imgui and non-gui installs
+    if not fpl.IMGUI:
+        prefix = "no-imgui-"
+    else:
+        prefix = ""
+
+    screenshot_path = screenshots_dir / f"{prefix}{module.stem}.png"
 
     black = np.zeros(img.shape).astype(np.uint8)
     black[:, :, -1] = 255

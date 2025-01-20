@@ -15,20 +15,16 @@ on:
 
 jobs:
   test-build-full:
-    name: Test Linux, notebook + offscreen
+    name: Test Linux
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 10
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - name: Test py311
-            pyversion: '3.11'
-          - name: Test py312
-            pyversion: '3.12'
-          - name: Test py313
-            pyversion: '3.13'
+        python: ["3.11", "3.12", "3.13"]
+        imgui_dep: ["imgui", ""]
+        notebook_dep: ["notebook", ""]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -36,7 +32,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: ${{ matrix.pyversion }}
+        python-version: ${{ matrix.python }}
     - name: Install llvmpipe and lavapipe for offscreen canvas
       run: |
         sudo apt-get update -y -qq
@@ -47,7 +43,12 @@ jobs:
         # remove pygfx from install_requires, we install using pygfx@main
         sed -i "/pygfx/d" ./setup.py
         pip install git+https://github.com/pygfx/pygfx.git@main
-        pip install -e ".["tests"]"
+    - name: Install fastplotlib
+      run: |
+        # create string with one of: tests,imgui,notebook; test,imgui; test,notebook ; tests
+        # sed removes trailing comma
+        # install fastplotlib with given extras options from above
+        pip install -e ".[$(echo "tests,${{ matrix.imgui_dep }},${{ matrix.notebook_dep }}" | sed -e "s/,\+/,/g" -e "s/,$//")]"
     - name: Show wgpu backend
       run:
         python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
@@ -60,69 +61,27 @@ jobs:
         PYGFX_EXPECT_LAVAPIPE: true
       run: |
         WGPU_FORCE_OFFSCREEN=1 pytest -v tests/
-        pytest -v examples
-        FASTPLOTLIB_NB_TESTS=1 pytest --nbmake examples/notebooks/
+        WGPU_FORCE_OFFSCREEN=1 pytest -v examples/
+    - name: Test examples notebooks, exclude ImageWidget notebook
+      if: ${{ matrix.notebook_dep == 'notebook' }}
+      env:
+        PYGFX_EXPECT_LAVAPIPE: true
+      # test notebooks, exclude ImageWidget notebooks
+      run: FASTPLOTLIB_NB_TESTS=1 pytest --nbmake $(find ./examples/notebooks/ -maxdepth 1 -type f -name "*.ipynb" ! -name "image_widget*.ipynb" -print | xargs)
+    - name: Test ImageWidget notebooks
+      # test image widget notebooks only if imgui is installed
+      if: ${{ matrix.notebook_dep == 'notebook' && matrix.imgui_dep == 'imgui' }}
+      env:
+        PYGFX_EXPECT_LAVAPIPE: true
+      run: FASTPLOTLIB_NB_TESTS=1 pytest --nbmake $(find ./examples/notebooks/ -maxdepth 1 -type f -name "image_widget*.ipynb" -print | xargs)
     - uses: actions/upload-artifact@v4
       if: ${{ failure() }}
       with:
-        name: screenshot-diffs
+        name: screenshot-diffs-${{ matrix.pyversion }}-${{ matrix.imgui_dep }}-${{ matrix.notebook_dep }}
         path: |
           examples/diffs
           examples/notebooks/diffs
 
-  test-build-offscreen:
-    name: Test Linux, only offscreen
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    if: ${{ !github.event.pull_request.draft }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: Test py311
-            pyversion: '3.11'
-          - name: Test py312
-            pyversion: '3.12'
-          - name: Test py313
-            pyversion: '3.13'
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        lfs: true
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.pyversion }}
-    - name: Install llvmpipe and lavapipe for offscreen canvas
-      run: |
-        sudo apt-get update -y -qq
-        sudo apt-get install --no-install-recommends -y libegl1-mesa-dev libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers xorg-dev
-    - name: Install dev dependencies
-      run: |
-        python -m pip install --upgrade pip setuptools
-        # remove pygfx from install_requires, we install using pygfx@main
-        sed -i "/pygfx/d" ./setup.py
-        pip install git+https://github.com/pygfx/pygfx.git@main
-        pip install -e ".["tests-desktop"]"
-    - name: Show wgpu backend
-      run:
-        python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
-    - name: fetch git lfs files
-      run: |
-        git lfs fetch --all
-        git lfs pull
-    - name: Test examples
-      env:
-        PYGFX_EXPECT_LAVAPIPE: true
-      run: |
-        WGPU_FORCE_OFFSCREEN=1 pytest -v tests/
-        pytest -v examples
-    - uses: actions/upload-artifact@v4
-      if: ${{ failure() }}
-      with:
-        name: screenshot-diffs
-        path: |
-          examples/diffs
 
 #  test-build-full-mac:
 #    name: Test Mac, notebook + glfw
