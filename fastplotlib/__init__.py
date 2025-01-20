@@ -13,10 +13,10 @@ from .layouts import IMGUI
 if IMGUI:
     # default to imgui figure if imgui_bundle is installed
     from .layouts import ImguiFigure as Figure
-    from .widgets import ImageWidget
 else:
     from .layouts import Figure
 
+from .widgets import ImageWidget
 from .utils import config, enumerate_adapters, select_adapter, print_wgpu_report
 
 
