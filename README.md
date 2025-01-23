@@ -17,9 +17,8 @@
 
 Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that utilizes [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! `fastplotlib` is an expressive plotting library that enables rapid prototyping for large scale exploratory scientific visualization.
 
-> **Note**
-> 
-> `fastplotlib` is currently in the **late alpha stage**, but you're welcome to use it or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). See this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121
+> **Note:**
+> `fastplotlib` is currently in the **late alpha stage**, but you're welcome to use it or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). Also, see this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121
 
 ## insert gif here
 
@@ -48,11 +47,7 @@ Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pyg
 :heavy_check_mark: `glfw`\
 :heavy_check_mark: `wxPython`
 
-**Notes:**\
-:heavy_check_mark: Non-blocking interactive Qt/PySide output is supported in ipython and notebooks, see the [interactive shells section in the user guide](http://fastplotlib.org/ver/dev/user_guide/guide.html#using-fastplotlib-in-an-interactive-shell) \
-:grey_exclamation: We do not officially support `jupyter notebook` through `jupyter_rfb`, this may change with notebook v7\
-:grey_exclamation: We only support jupyterlab for use in notebooks. This means that we do not support VSCode notebooks or any other python notebook platform. Jupyterlab is the most reliable way to use widget-based libraries in notebooks.\
-:disappointed: [`jupyter_rfb`](https://github.com/vispy/jupyter_rfb) does not work in collab, see https://github.com/vispy/jupyter_rfb/pull/77 
+Write your code once and run it anywhere :smile: See the [FAQ](https://www.fastplotlib.org/ver/dev/user_guide/faq.html) for more details on where and how you can use `fastplotlib`.
 
 # Documentation
 

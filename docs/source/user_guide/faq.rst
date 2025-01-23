@@ -95,8 +95,12 @@ What frameworks does ``fastplotlib`` support?
         - `glfw`
         - `wxPython`
 
-    Note: Use in Google Colab is not highly functional. We recommend using an inexpensive alternative cloud provider
-    such as CodeOcean or Lambda Cloud. We have tested these and `fastplotlib` works very well.
+    Notes:
+        - Use in Google Colab is not highly functional. We recommend using an inexpensive alternative cloud provider such as CodeOcean or Lambda Cloud. We have tested these and `fastplotlib` works very well.
+        - Non-blocking interactive Qt/PySide output is supported in ipython and notebooks, see the `interactive shells section in the user guide <http://fastplotlib.org/ver/dev/user_guide/guide.html#using-fastplotlib-in-an-interactive-shell>`_
+        - We do not officially support `jupyter notebook` through `jupyter_rfb`, this may change with notebook v7
+        - We only support `jupyterlab` for use in notebooks. This means that we do not support VSCode notebooks or any other python notebook platform. Jupyterlab is the most reliable way to use widget-based libraries in notebooks.
+
 
 How can I use ``fastplotlib`` interactively?
 --------------------------------------------
