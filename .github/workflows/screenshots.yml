@@ -32,7 +32,7 @@ jobs:
         run: |
           sudo apt-get update -y -qq
           sudo apt-get install --no-install-recommends -y ffmpeg libegl1-mesa-dev libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
-      - name: Install dev dependencies
+      - name: Install pygx from main
         run: |
           python -m pip install --upgrade pip setuptools
           # remove pygfx from install_requires, we install using pygfx@main

@@ -37,7 +37,7 @@ jobs:
       run: |
         sudo apt-get update -y -qq
         sudo apt-get install --no-install-recommends -y ffmpeg libegl1-mesa-dev libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers xorg-dev
-    - name: Install dev dependencies
+    - name: Install pygx from main
       run: |
         python -m pip install --upgrade pip setuptools
         # remove pygfx from install_requires, we install using pygfx@main
@@ -52,15 +52,15 @@ jobs:
     - name: Show wgpu backend
       run:
         python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
-    - name: fetch git lfs files
-      run: |
-        git lfs fetch --all
-        git lfs pull
-    - name: Test examples
+    - name: Test components
       env:
         PYGFX_EXPECT_LAVAPIPE: true
       run: |
         WGPU_FORCE_OFFSCREEN=1 pytest -v tests/
+    - name: Test examples
+      env:
+        PYGFX_EXPECT_LAVAPIPE: true
+      run: |
         WGPU_FORCE_OFFSCREEN=1 pytest -v examples/
     - name: Test examples notebooks, exclude ImageWidget notebook
       if: ${{ matrix.notebook_dep == 'notebook' }}
