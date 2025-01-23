@@ -117,7 +117,7 @@ User guide: http://fastplotlib.org/ver/dev/user_guide/guide.html
 
 The `quickstart.ipynb` tutorial notebook is a great way to get familiar with the API: https://github.com/fastplotlib/fastplotlib/tree/main/examples/notebooks/quickstart.ipynb
 
-## GPU drivers and requirements
+# GPU drivers and requirements
 
 Generally if your GPU is from 2017 or later it should be fine. Modern integrated graphics are usually fine for many use cases. The exact requirements will depend on how complex your visualization is and how many objects you need to render.
 
