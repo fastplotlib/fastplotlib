@@ -76,7 +76,7 @@ pip install -U "fastplotlib[notebook]"
 We strongly recommend installing ``simplejpeg`` for use in notebooks, you must first install [libjpeg-turbo](https://libjpeg-turbo.org/)
 
 - If you use ``conda``, you can get ``libjpeg-turbo`` through conda.
-- If you are on linux you can get it through your distro's package manager.
+- If you are on linux, you can get it through your distro's package manager.
 - For Windows and Mac compiled binaries are available on their release page: https://github.com/libjpeg-turbo/libjpeg-turbo/releases
 
 Once you have ``libjpeg-turbo``:
@@ -85,8 +85,7 @@ Once you have ``libjpeg-turbo``:
 pip install simplejpeg
 ```
 
-> **Note**
->
+> **Note:**
 > `fastplotlib` and `pygfx` are fast evolving projects, the version available through pip might be outdated, you will need to follow the "For developers" instructions below if you want the latest features. You can find the release history here: https://github.com/fastplotlib/fastplotlib/releases
 
 ### For developers
@@ -126,13 +125,15 @@ More detailed information on GPUs and drivers is here: http://fastplotlib.org/ve
 
 For more detailed information, such as use on cloud computing infrastructure, see the WGPU docs: https://wgpu-py.readthedocs.io/en/stable/start.html#cloud-compute
 
-# :heart: Contributing
+# Contributing :heart:
 
 We welcome contributions! See the contributing guide: https://github.com/fastplotlib/fastplotlib/blob/main/CONTRIBUTING.md
 
 You can also take a look at our [**Roadmap for 2025**](https://github.com/fastplotlib/fastplotlib/issues/55) and [**Issues**](https://github.com/fastplotlib/fastplotlib/issues) for ideas on how to contribute!
 
-# Developers
+# Developers :brain:
+
+A special thanks to all of the `pygfx` developers and the amazing work they have done. 
 
 [**Kushal Kolar**](https://github.com/kushalkolar)
 
@@ -140,10 +141,7 @@ PhD Student, Tandon School of Engineering, New York University
 
 Guest Researcher, Flatiron Institute, Simons Foundation
 
-
-
 [**Caitlin Lewis**](https://github.com/clewis7)
 
 PhD Student, Pratt School of Engineering, Duke University
 
-A special thanks to all of the `pygfx` developers and the amazing work they have done. 
