@@ -47,7 +47,7 @@ Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pyg
 :heavy_check_mark: `glfw`\
 :heavy_check_mark: `wxPython`
 
-Write your code once and run it anywhere :smile: See the [FAQ](https://www.fastplotlib.org/ver/dev/user_guide/faq.html) for more details on where and how you can use `fastplotlib`.
+Write your code once and run it anywhere. Whether you are using `Qt`, `glfw`, `jupyter lab`, or doing offscreen rendering, `fastplotlib` works across all major platforms (Linux, Windows, Mac OS X) :smile: See the [FAQ](https://www.fastplotlib.org/ver/dev/user_guide/faq.html) for more details on where and how you can use `fastplotlib`.
 
 # Documentation
 
@@ -97,7 +97,7 @@ git clone https://github.com/fastplotlib/fastplotlib.git
 cd fastplotlib
 
 # install all extras in place
-pip install -e ".[notebook,docs,tests,imgui]"
+pip install -e ".[notebook,imgui]"
 
 # install latest pygfx
 pip install git+https://github.com/pygfx/pygfx.git@main
@@ -133,15 +133,12 @@ You can also take a look at our [**Roadmap for 2025**](https://github.com/fastpl
 
 # Developers :brain:
 
+- [**Kushal Kolar**](https://github.com/kushalkolar)
+
+- [**Caitlin Lewis**](https://github.com/clewis7)
+
+- [**Almar Klein**](https://github.com/almarklein)
+
+- [**Amol Pasarkar**](https://github.com/apasarkar)
+
 A special thanks to all of the `pygfx` developers and the amazing work they have done. 
-
-[**Kushal Kolar**](https://github.com/kushalkolar)
-
-PhD Student, Tandon School of Engineering, New York University 
-
-Guest Researcher, Flatiron Institute, Simons Foundation
-
-[**Caitlin Lewis**](https://github.com/clewis7)
-
-PhD Student, Pratt School of Engineering, Duke University
-
