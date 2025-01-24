@@ -97,7 +97,7 @@ git clone https://github.com/fastplotlib/fastplotlib.git
 cd fastplotlib
 
 # install all extras in place
-pip install -e ".[notebook,imgui]"
+pip install -e ".[notebook,docs,tests,imgui]"
 
 # install latest pygfx
 pip install git+https://github.com/pygfx/pygfx.git@main
