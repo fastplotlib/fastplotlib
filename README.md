@@ -21,9 +21,8 @@ Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pyg
 > `fastplotlib` is currently in the **late alpha stage**, but you're welcome to use it or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). Also, see this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121
 
 <div align="center">
-  <img src=https://github.com/user-attachments/assets/c9f00339-c7c1-4ffd-9959-b7a8fd3521ad width="1000" /> 
+  <img src=https://github.com/user-attachments/assets/5c6bede6-e0cb-4867-bb9b-f86cc5e98619 width="1000" /> 
 </div>
-
 
 
 # What can I do with `fastplotlib`?
