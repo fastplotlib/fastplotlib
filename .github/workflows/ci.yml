@@ -81,8 +81,7 @@ jobs:
         path: |
           examples/diffs
           examples/notebooks/diffs
-
-jobs:
+          
   test-using-pygfx-release:
     name: Test Linux pygfx release
     runs-on: ubuntu-latest
