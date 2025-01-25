@@ -17,17 +17,16 @@
 
 Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that utilizes [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! `fastplotlib` is an expressive plotting library that enables rapid prototyping for large scale exploratory scientific visualization.
 
-> **Note:**
-> `fastplotlib` is currently in the **late alpha stage**, but you're welcome to use it or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). Also, see this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121
-
 <div align="center">
   <img src=https://github.com/user-attachments/assets/5c6bede6-e0cb-4867-bb9b-f86cc5e98619 width="1000" /> 
 </div>
 
+> **Note:**
+> `fastplotlib` is currently in the **late alpha stage**, but you're welcome to use it or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). Also, see this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121
 
 # What can I do with `fastplotlib`?
 
-- GPU accelerated visualization
+- GPU-accelerated visualization
 
 - interactive visualization via an intuitive and expressive API
 
@@ -35,7 +34,7 @@ Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pyg
 
 - easy exploration and fast rendering of large-scale data
 
-- design, develop, evaluate and ship machine learning models
+- design, develop, evaluate, and ship machine learning models
 
 - create visualizations for real-time acquisition systems for scientific instruments (cameras, etc.)
 
