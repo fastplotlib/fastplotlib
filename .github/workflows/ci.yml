@@ -40,7 +40,7 @@ jobs:
       run: |
         sudo apt-get update -y -qq
         sudo apt-get install --no-install-recommends -y ffmpeg libegl1-mesa-dev libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers xorg-dev
-        run: echo "PYGFX_EXPECT_LAVAPIPE=true" >> "$GITHUB_ENV"
+        echo "PYGFX_EXPECT_LAVAPIPE=true" >> "$GITHUB_ENV"
     - name: Set up Homebrew
       if: ${{ matrix.os == 'macos-latest' }}
       id: set-up-homebrew
@@ -50,7 +50,7 @@ jobs:
       run: |
         brew install gnu-sed
         echo "/opt/homebrew/opt/gnu-sed/libexec/gnubin" >> "$GITHUB_PATH"
-        run: echo "PYGFX_EXPECT_LAVAPIPE=false" >> "$GITHUB_ENV"
+        echo "PYGFX_EXPECT_LAVAPIPE=false" >> "$GITHUB_ENV"
     - name: Install pygx from main
       if: ${{ matrix.pygfx_version == 'pygfx-main' }}
       run: |
