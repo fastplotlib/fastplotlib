@@ -40,6 +40,7 @@ jobs:
       run: |
         sudo apt-get update -y -qq
         sudo apt-get install --no-install-recommends -y ffmpeg libegl1-mesa-dev libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers xorg-dev
+        run: echo "PYGFX_EXPECT_LAVAPIPE=true" >> "$GITHUB_ENV"
     - name: Set up Homebrew
       if: ${{ matrix.os == 'macos-latest' }}
       id: set-up-homebrew
@@ -49,8 +50,7 @@ jobs:
       run: |
         brew install gnu-sed
         echo "/opt/homebrew/opt/gnu-sed/libexec/gnubin" >> "$GITHUB_PATH"
-        which sed
-        sed
+        run: echo "PYGFX_EXPECT_LAVAPIPE=false" >> "$GITHUB_ENV"
     - name: Install pygx from main
       if: ${{ matrix.pygfx_version == 'pygfx-main' }}
       run: |
@@ -69,25 +69,25 @@ jobs:
         python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
     - name: Test components
       env:
-        PYGFX_EXPECT_LAVAPIPE: true
+        PYGFX_EXPECT_LAVAPIPE: ${{ env.PYGFX_EXPECT_LAVAPIPE }}
       run: |
         WGPU_FORCE_OFFSCREEN=1 pytest -v tests/
     - name: Test examples
       env:
-        PYGFX_EXPECT_LAVAPIPE: true
+        PYGFX_EXPECT_LAVAPIPE: ${{ env.PYGFX_EXPECT_LAVAPIPE }}
       run: |
         WGPU_FORCE_OFFSCREEN=1 pytest -v examples/
     - name: Test examples notebooks, exclude ImageWidget notebook
       if: ${{ matrix.notebook_dep == 'notebook' }}
       env:
-        PYGFX_EXPECT_LAVAPIPE: true
+        PYGFX_EXPECT_LAVAPIPE: ${{ env.PYGFX_EXPECT_LAVAPIPE }}
       # test notebooks, exclude ImageWidget notebooks
       run: FASTPLOTLIB_NB_TESTS=1 pytest --nbmake $(find ./examples/notebooks/ -maxdepth 1 -type f -name "*.ipynb" ! -name "image_widget*.ipynb" -print | xargs)
     - name: Test ImageWidget notebooks
       # test image widget notebooks only if imgui is installed
       if: ${{ matrix.notebook_dep == 'notebook' && matrix.imgui_dep == 'imgui' }}
       env:
-        PYGFX_EXPECT_LAVAPIPE: true
+        PYGFX_EXPECT_LAVAPIPE: ${{ env.PYGFX_EXPECT_LAVAPIPE }}
       run: FASTPLOTLIB_NB_TESTS=1 pytest --nbmake $(find ./examples/notebooks/ -maxdepth 1 -type f -name "image_widget*.ipynb" -print | xargs)
     - uses: actions/upload-artifact@v4
       if: ${{ failure() }}
