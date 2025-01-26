@@ -5,9 +5,10 @@ import numpy as np
 from ..graphics._base import Graphic
 from ..graphics._collection_base import GraphicCollection
 
+
 def get_nearest_graphics_indices(
-        pos: tuple[float, float] | tuple[float, float, float],
-        graphics: Sequence[Graphic] | GraphicCollection,
+    pos: tuple[float, float] | tuple[float, float, float],
+    graphics: Sequence[Graphic] | GraphicCollection,
 ) -> np.ndarray[int]:
     """
     Returns indices of the nearest ``graphics`` to the passed position ``pos`` in world space
@@ -50,6 +51,7 @@ def get_nearest_graphics_indices(
 
     sort_indices = np.argsort(distances)
     return sort_indices
+
 
 def get_nearest_graphics(
     pos: tuple[float, float] | tuple[float, float, float],
