@@ -248,8 +248,6 @@ class Popup(BaseGUI):
         self._figure = figure
         self._fa_icons = self._figure._fa_icons
 
-        self._event_filter_names = set()
-
         self.is_open = False
 
     def open(self, pos: tuple[int, int], *args, **kwargs):

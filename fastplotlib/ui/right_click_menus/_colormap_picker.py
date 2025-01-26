@@ -153,7 +153,7 @@ class ColormapPicker(Popup):
                 * imgui.get_font().font_size
             ) - 2
 
-            if imgui.menu_item("Reset vmin-vmax", None, False)[0]:
+            if imgui.menu_item("Reset vmin-vmax", "", False)[0]:
                 self._lut_tool.image_graphic.reset_vmin_vmax()
 
             # add all the cmap options
