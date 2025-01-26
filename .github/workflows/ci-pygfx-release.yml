@@ -15,7 +15,7 @@ on:
 
 jobs:
   test-build-full:
-    name: Tests
+    name: Tests - pygfx release
     timeout-minutes: 25
     if: ${{ !github.event.pull_request.draft }}
     strategy:
@@ -48,12 +48,6 @@ jobs:
       run: |
         brew install gnu-sed
         echo "/opt/homebrew/opt/gnu-sed/libexec/gnubin" >> "$GITHUB_PATH"
-    - name: Install pygx from main
-      run: |
-        python -m pip install --upgrade pip setuptools
-        # remove pygfx from install_requires, we install using pygfx@main
-        sed -i "/pygfx/d" ./setup.py
-        pip install git+https://github.com/pygfx/pygfx.git@main
     - name: Install fastplotlib
       run: |
         # create string with one of: tests,imgui,notebook; test,imgui; test,notebook ; tests
