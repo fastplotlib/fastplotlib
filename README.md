@@ -24,7 +24,7 @@ Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pyg
 > **Note:**
 > `fastplotlib` is currently in the **late alpha stage**, but you're welcome to use it or contribute! See our [Roadmap](https://github.com/kushalkolar/fastplotlib/issues/55). Also, see this for a discussion on API stability: https://github.com/fastplotlib/fastplotlib/issues/121
 
-# What can I do with `fastplotlib`?
+# What are *some* things I can do with `fastplotlib`?
 
 - GPU-accelerated visualization
 
