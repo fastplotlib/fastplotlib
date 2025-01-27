@@ -289,7 +289,7 @@ def quick_min_max(data: np.ndarray) -> tuple[float, float]:
         ):
             return data.min, data.max
 
-    while data.size > 1e6:
+    while np.prod(data.shape) > 1e6:
         ax = np.argmax(data.shape)
         sl = [slice(None)] * data.ndim
         sl[ax] = slice(None, None, 2)
