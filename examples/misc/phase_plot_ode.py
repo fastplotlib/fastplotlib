@@ -46,6 +46,11 @@ def create_and_solve_ode(
 
     where p and q are constants that determine the initial conditions
 
+    References
+    ----------
+
+    https://tutorial.math.lamar.edu/Classes/DE/SolutionsToSystems.aspx
+
     Parameters
     ----------
     t_start: float
