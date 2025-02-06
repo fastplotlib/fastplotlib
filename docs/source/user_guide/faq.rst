@@ -44,8 +44,8 @@ How does ``fastplotlib`` relate to ``matplotlib``?
 How can I learn to use ``fastplotlib``?
 ---------------------------------------
 
-    We want `fastplotlib` to be easy to learn and use. To get started with the library we recommend taking a look at our `guide <https://fastplotlib.readthedocs.io/en/latest/user_guide/guide.html>`_ and
-    `examples gallery <https://fastplotlib.readthedocs.io/en/latest/_gallery/index.html>`_.
+    We want `fastplotlib` to be easy to learn and use. To get started with the library we recommend taking a look at our `guide <https://www.fastplotlib.org/ver/dev/user_guide/guide.html>`_ and
+    `examples gallery <https://www.fastplotlib.org/ver/dev/_gallery/index.html>`_.
 
     In general, if you are familiar with numpy and array notation you will already have a intuitive understanding of interacting
     with your data in `fastplotlib`. If you have any questions, please do not hesitate to post an issue or discussion forum post.
