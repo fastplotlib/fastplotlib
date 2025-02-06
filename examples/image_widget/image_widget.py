@@ -10,7 +10,7 @@ colorbar to pick colormaps.
 
 # test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
-import glfw
+
 import fastplotlib as fpl
 import imageio.v3 as iio  # not a fastplotlib dependency, only used for examples
 

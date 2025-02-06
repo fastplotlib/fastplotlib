@@ -568,6 +568,37 @@ class Figure:
         for subplot in self:
             subplot.clear()
 
+    def export_numpy(self, rgb: bool = False) -> np.ndarray:
+        """
+        Export a snapshot of the Figure as numpy array.
+
+        Parameters
+        ----------
+        rgb: bool, default ``False``
+            if True, use alpha blending to return an RGB image.
+            if False, returns an RGBA array
+
+        Returns
+        -------
+        np.ndarray
+            [n_rows, n_cols, 3] for RGB or [n_rows, n_cols, 4] for RGBA
+        """
+        snapshot = self.renderer.snapshot()
+
+        if rgb:
+            bg = np.zeros(snapshot.shape).astype(np.uint8)
+            bg[:, :, -1] = 255
+
+            img_alpha = snapshot[..., -1] / 255
+
+            rgb = snapshot[..., :-1] * img_alpha[..., None] + bg[..., :-1] * np.ones(
+                img_alpha.shape
+            )[..., None] * (1 - img_alpha[..., None])
+
+            return rgb.astype(np.uint8)
+
+        return snapshot
+
     def export(self, uri: str | Path | bytes, **kwargs):
         """
         Use ``imageio`` for writing the current Figure to a file, or return a byte string.
@@ -593,24 +624,18 @@ class Figure:
                 "conda install -c conda-forge imageio\n"
             )
         else:
-            snapshot = self.renderer.snapshot()
-            remove_alpha = True
-
             # image formats that support alpha channel:
             # https://en.wikipedia.org/wiki/Alpha_compositing#Image_formats_supporting_alpha_channels
             alpha_support = [".png", ".exr", ".tiff", ".tif", ".gif", ".jxl", ".svg"]
 
-            if isinstance(uri, str):
-                if any([uri.endswith(ext) for ext in alpha_support]):
-                    remove_alpha = False
+            uri = Path(uri)
 
-            elif isinstance(uri, Path):
-                if uri.suffix in alpha_support:
-                    remove_alpha = False
+            if uri.suffix in alpha_support:
+                rgb = False
+            else:
+                rgb = True
 
-            if remove_alpha:
-                # remove alpha channel if it's not supported
-                snapshot = snapshot[..., :-1].shape
+            snapshot = self.export_numpy(rgb=rgb)
 
             return iio.imwrite(uri, snapshot, **kwargs)
 
@@ -660,157 +685,3 @@ class Figure:
             f"\t{newline.join(subplot.__str__() for subplot in self)}"
             f"\n"
         )
-
-
-class FigureRecorder:
-    def __init__(self, figure: Figure):
-        self._figure = figure
-        self._video_writer: VideoWriterAV = None
-        self._video_writer_queue = Queue()
-        self._record_fps = 25
-        self._record_timer = 0
-        self._record_start_time = 0
-
-    def _record(self):
-        """
-        Sends frame to VideoWriter through video writer queue
-        """
-        # current time
-        t = time()
-
-        # put frame in queue only if enough time as passed according to the desired framerate
-        # otherwise it tries to record EVERY frame on every rendering cycle, which just blocks the rendering
-        if t - self._record_timer < (1 / self._record_fps):
-            return
-
-        # reset timer
-        self._record_timer = t
-
-        if self._video_writer is not None:
-            ss = self._figure.canvas.snapshot()
-            # exclude alpha channel
-            self._video_writer_queue.put(ss.data[..., :-1])
-
-    def start(
-        self,
-        path: str | Path,
-        fps: int = 25,
-        codec: str = "mpeg4",
-        pixel_format: str = "yuv420p",
-        options: dict = None,
-    ):
-        """
-        Start a recording, experimental. Call ``record_end()`` to end a recording.
-        Note: playback duration does not exactly match recording duration.
-
-        Requires PyAV: https://github.com/PyAV-Org/PyAV
-
-        **Do not resize canvas during a recording, the width and height must remain constant!**
-
-        Parameters
-        ----------
-        path: str or Path
-            path to save the recording
-
-        fps: int, default ``25``
-            framerate, do not use > 25 within jupyter
-
-        codec: str, default "mpeg4"
-            codec to use, see ``ffmpeg`` list: https://www.ffmpeg.org/ffmpeg-codecs.html .
-            In general, ``"mpeg4"`` should work on most systems. ``"libx264"`` is a
-            better option if you have it installed.
-
-        pixel_format: str, default "yuv420p"
-            pixel format
-
-        options: dict, optional
-            Codec options. For example, if using ``"mpeg4"`` you can use ``{"q:v": "20"}`` to set the quality between
-            1-31, where "1" is highest and "31" is lowest. If using ``"libx264"``` you can use ``{"crf": "30"}`` where
-            the "crf" value is between "0" (highest quality) and "50" (lowest quality). See ``ffmpeg`` docs for more
-            info on codec options
-
-        Examples
-        --------
-
-        With ``"mpeg4"``
-
-        .. code-block:: python
-
-            # start recording video
-            figure.recorder.start("./video.mp4", options={"q:v": "20"}
-
-            # do stuff like interacting with the plot, change things, etc.
-
-            # end recording
-            figure.recorder.stop()
-
-        With ``"libx264"``
-
-        .. code-block:: python
-
-            # start recording video
-            figure.recorder.start("./vid_x264.mp4", codec="libx264", options={"crf": "25"})
-
-            # do stuff like interacting with the plot, change things, etc.
-
-            # end recording
-            figure.recorder.stop()
-
-        """
-
-        if Path(path).exists():
-            raise FileExistsError(f"File already exists at given path: {path}")
-
-        # queue for sending frames to VideoWriterAV process
-        self._video_writer_queue = Queue()
-
-        # snapshot to get canvas width height
-        ss = self._figure.canvas.snapshot()
-
-        # writer process
-        self._video_writer = VideoWriterAV(
-            path=str(path),
-            queue=self._video_writer_queue,
-            fps=int(fps),
-            width=ss.width,
-            height=ss.height,
-            codec=codec,
-            pixel_format=pixel_format,
-            options=options,
-        )
-
-        # start writer process
-        self._video_writer.start()
-
-        # 1.3 seems to work well to reduce that difference between playback time and recording time
-        # will properly investigate later
-        self._record_fps = fps * 1.3
-        self._record_start_time = time()
-
-        # record timer used to maintain desired framerate
-        self._record_timer = time()
-
-        self._figure.add_animations(self._record)
-
-    def stop(self) -> float:
-        """
-        End a current recording. Returns the real duration of the recording
-
-        Returns
-        -------
-        float
-            recording duration
-        """
-
-        # tell video writer that recording has finished
-        self._video_writer_queue.put(None)
-
-        # wait for writer to finish
-        self._video_writer.join(timeout=5)
-
-        self._video_writer = None
-
-        # so self._record() is no longer called on every render cycle
-        self._figure.remove_animation(self._record)
-
-        return time() - self._record_start_time

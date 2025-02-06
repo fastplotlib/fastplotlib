@@ -116,6 +116,7 @@ Governance decisions, meeting minutes, and voting outcomes are publicly document
 
 ## Changes to this governance document
 
-### Until February 28, 2025
+**Effective until February 5, 2026**
 
-During early stages of fastplotlib development, changes to the governance document may be made directly through unanimous approval by the original maintainers, Kushal Kolar & Caitlin Lewis. They (Kushal & Caitlin) may also add new members to the advisory committee through unanimous approval.
+Moving forward, `fastplotlib` will maintain the governance model as outlined above. The core maintainers (Kushal Kolar & Caitlin Lewis) will revisit in
+one year to propose any necessary changes to the governance structure. 

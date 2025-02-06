@@ -63,7 +63,7 @@ cd fastplotlib
 
 ```bash
 # install all extras in place
-pip install -e ".[notebook,docs,tests]"
+pip install -e ".[imgui, notebook, docs, tests]"
 ```
 
 5. Add the upstream remote branch:
@@ -280,7 +280,7 @@ to open source software packages.
 # after cloning
 cd fastplotlib
 # install dev dependencies 
-pip install -e ".[tests, docs, notebook]"
+pip install -e ".[imgui, tests, docs, notebook]"
 ```
 
 3) Check out a feature branch from `main`
@@ -304,5 +304,8 @@ FASTPLOTLIB_NB_TESTS=1 pytest --nbmake examples/notebooks/
 
 5) Update screenshots if necessary ([see testing](#testing-details))
 
-6) Push and open a draft PR against `main`
+6) Push and open a PR (pull request) against the `main` branch
 
+> **Note:**
+> The tests labeled "CI / Tests" must pass, but the tests labeled "CI / Tests - pygfx release" do not necessarily need to pass. The difference between these two workflows is "CI / Tests" uses the `main` branch of [`pygfx`](https://github.com/pygfx/pygfx) whereas "CI / Tests - pygfx release" uses the latest release of `pygfx`.
+> Since `fastplotlib`, `pygfx`, and `wgpu` are all under rapid development we aim to keep `fastplotlib` up to date with `pygfx@main` until `pygfx` stabilizes. The workflow "CI / Tests - pygfx release" is to inform us if any test failures using the release version of `pygfx` are a significant release blocker for `fastplotlib`. Once you make a PR we will help guide you through any failures with "CI / Tests - pygfx release"!

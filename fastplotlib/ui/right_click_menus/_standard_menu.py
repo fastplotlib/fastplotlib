@@ -82,14 +82,14 @@ class StandardRightClickMenu(Popup):
             imgui.separator()
 
             # autoscale, center, maintain aspect
-            if imgui.menu_item(f"Autoscale", None, False)[0]:
+            if imgui.menu_item(f"Autoscale", "", False)[0]:
                 self.get_subplot().auto_scale()
 
-            if imgui.menu_item(f"Center", None, False)[0]:
+            if imgui.menu_item(f"Center", "", False)[0]:
                 self.get_subplot().center_scene()
 
             _, maintain_aspect = imgui.menu_item(
-                "Maintain Aspect", None, self.get_subplot().camera.maintain_aspect
+                "Maintain Aspect", "", self.get_subplot().camera.maintain_aspect
             )
             self.get_subplot().camera.maintain_aspect = maintain_aspect
 
@@ -98,7 +98,9 @@ class StandardRightClickMenu(Popup):
             # toggles to flip axes cameras
             for axis in ["x", "y", "z"]:
                 scale = getattr(self.get_subplot().camera.local, f"scale_{axis}")
-                changed, flip = imgui.menu_item(f"Flip {axis} axis", None, scale < 0)
+                changed, flip = imgui.menu_item(
+                    f"Flip {axis} axis", "", bool(scale < 0)
+                )
 
                 if changed:
                     flip_axis(self.get_subplot(), axis, flip)
@@ -109,7 +111,7 @@ class StandardRightClickMenu(Popup):
             for plane in ["xy", "xz", "yz"]:
                 grid = getattr(self.get_subplot().axes.grids, plane)
                 visible = grid.visible
-                changed, new_visible = imgui.menu_item(f"Grid {plane}", None, visible)
+                changed, new_visible = imgui.menu_item(f"Grid {plane}", "", visible)
 
                 if changed:
                     grid.visible = new_visible
@@ -140,7 +142,7 @@ class StandardRightClickMenu(Popup):
             # controller options
             if imgui.begin_menu("Controller"):
                 _, enabled = imgui.menu_item(
-                    "Enabled", None, self.get_subplot().controller.enabled
+                    "Enabled", "", self.get_subplot().controller.enabled
                 )
 
                 self.get_subplot().controller.enabled = enabled
@@ -163,7 +165,7 @@ class StandardRightClickMenu(Popup):
 
                     clicked, _ = imgui.menu_item(
                         label=name,
-                        shortcut=None,
+                        shortcut="",
                         p_selected=current_type is controller_type_iter,
                     )
 
