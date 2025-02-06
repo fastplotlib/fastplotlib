@@ -193,7 +193,17 @@ class HistogramLUTTool(Graphic):
         self._plot_area.controller.enabled = True
 
     def _calculate_histogram(self, data):
-        if data.ndim > 2:
+        if data.ndim > 3:
+            # subsample to a single z-slice, max of 500 x 100 x 100
+            # dim0 is usually time, allow max of 500 timepoints
+            # dim1 in a 4D dataset is usually z, take a single z
+            ss0 = max(1, int(data.shape[0] / 500))
+            ss2 = max(1, int(data.shape[2] / 100))
+            ss3 = max(1, int(data.shape[3] / 100))
+            data_ss = data[::ss0, 0, ::ss2, ::ss3]
+            hist, edges = np.histogram(data_ss, bins=self._nbins)
+
+        elif data.ndim > 2:
             # subsample to max of 500 x 100 x 100,
             # np.histogram takes ~30ms with this size on a 8 core Ryzen laptop
             # dim0 is usually time, allow max of 500 timepoints
