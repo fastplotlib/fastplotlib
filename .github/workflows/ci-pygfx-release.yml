@@ -59,12 +59,12 @@ jobs:
         python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
     - name: Test components
       env:
-        WGPU_FORCE_OFFSCREEN: 1
+        RENDERCANVAS_FORCE_OFFSCREEN: 1
       run: |
         pytest -v tests/
     - name: Test examples
       env:
-        WGPU_FORCE_OFFSCREEN: 1
+        RENDERCANVAS_FORCE_OFFSCREEN: 1
       run: |
         pytest -v examples/
     - name: Test examples notebooks, exclude ImageWidget notebook
