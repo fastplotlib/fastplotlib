@@ -142,8 +142,8 @@ class VertexColors(BufferManager):
         return len(self.buffer.data)
 
 
-# Manages uniform color for line or scatter material
 class UniformColor(GraphicFeature):
+    """Manages uniform color buffer for line or scatter material"""
     def __init__(
         self, value: str | np.ndarray | tuple | list | pygfx.Color, alpha: float = 1.0
     ):
@@ -161,6 +161,36 @@ class UniformColor(GraphicFeature):
         self._value = value
 
         event = FeatureEvent(type="colors", info={"value": value})
+        self._call_event_handlers(event)
+
+
+class UniformAlpha(GraphicFeature):
+    """
+    Manages alpha when colors are in a uniform buffer
+    """
+    def __init__(
+            self,
+            value: float,
+            uniform_colors: UniformColor,
+    ):
+        self._value = value
+        super().__init__()
+
+        self._uniform_colors = uniform_colors
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    def set_value(self, graphic, value: float):
+
+        color = (*tuple(self._uniform_colors.value)[:-1], value)  # apply alpha
+
+        self._uniform_colors._value = pygfx.Color(color)
+        graphic.world_object.material.color = color
+
+        self._value = value
+        event = FeatureEvent(type="alpha", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -352,10 +382,9 @@ class Thickness(GraphicFeature):
         self._call_event_handlers(event)
 
 
-class VertexCmap(BufferManager):
+class VertexCmap(GraphicFeature):
     """
-    Sliceable colormap feature, manages a VertexColors instance and
-    provides a way to set colormaps with arbitrary transforms
+    Provides a way to set colormaps
     """
 
     def __init__(
@@ -365,115 +394,135 @@ class VertexCmap(BufferManager):
         transform: np.ndarray | None,
         alpha: float = 1.0,
     ):
-        super().__init__(data=vertex_colors.buffer)
 
         self._vertex_colors = vertex_colors
-        self._cmap_name = cmap_name
-        self._transform = transform
-        self._alpha = alpha
+        self._value = cmap_name
 
-        if self._cmap_name is not None:
-            if not isinstance(self._cmap_name, str):
+        if self._value is not None:
+            if not isinstance(self._value, str):
                 raise TypeError(
-                    f"cmap name must be of type <str>, you have passed: {self._cmap_name} of type: {type(self._cmap_name)}"
+                    f"cmap name must be of type <str>, you have passed: {self._value} of type: {type(self._value)}"
                 )
 
-            if self._transform is not None:
-                self._transform = np.asarray(self._transform)
+            if transform is not None:
+                transform = np.asarray(transform)
 
             n_datapoints = vertex_colors.value.shape[0]
 
             colors = parse_cmap_values(
                 n_colors=n_datapoints,
-                cmap_name=self._cmap_name,
-                transform=self._transform,
+                cmap_name=self._value,
+                transform=transform,
             )
             colors[:, -1] = alpha
             # set vertex colors from cmap
             self._vertex_colors[:] = colors
 
-    def __setitem__(self, key: slice, cmap_name):
-        if not isinstance(key, slice):
-            raise TypeError(
-                "fancy indexing not supported for VertexCmap, only slices "
-                "of a continuous are supported for apply a cmap"
-            )
-        if key.step is not None:
-            raise TypeError(
-                "step sized indexing not currently supported for setting VertexCmap, "
-                "slices must be a continuous region"
-            )
-
-        # parse slice
-        start, stop, step = key.indices(self.value.shape[0])
-        n_elements = len(range(start, stop, step))
-
-        colors = parse_cmap_values(
-            n_colors=n_elements, cmap_name=cmap_name, transform=self._transform
-        )
-        colors[:, -1] = self.alpha
-
-        self._cmap_name = cmap_name
-        self._vertex_colors[key] = colors
-
-        # TODO: should we block vertex_colors from emitting an event?
-        #  Because currently this will result in 2 emitted events, one
-        #  for cmap and another from the colors
-        self._emit_event("cmap", key, cmap_name)
+        super().__init__()
 
     @property
-    def name(self) -> str:
-        return self._cmap_name
+    def value(self) -> str:
+        """The current cmap name"""
+        return self._value
 
-    @property
-    def transform(self) -> np.ndarray | None:
-        """Get or set the cmap transform. Maps values from the transform array to the cmap colors"""
-        return self._transform
+    def set_value(self, graphic, value: str):
+        if value is None:
+            # when cmap value is cleared, for example if vertex colors are set directly
+            self._value = None
+            return
 
-    @transform.setter
-    def transform(
-        self,
-        values: np.ndarray | list[float | int],
-        indices: slice | list | np.ndarray = None,
+        transform = graphic.cmap_transform
+        alpha = graphic.alpha
+
+        n_datapoints = graphic.colors.value.shape[0]
+
+        colors = parse_cmap_values(n_colors=n_datapoints, cmap_name=value, transform=transform)
+        colors[:, -1] = alpha
+
+        self._vertex_colors[:] = colors
+
+        self._value = value
+        event = FeatureEvent(type="cmap", info={"value": value})
+        self._call_event_handlers(event)
+
+
+class VertexCmapTransform(GraphicFeature):
+    """
+    Manages cmap transform
+    """
+    def __init__(
+            self,
+            value: np.ndarray | None,
+            vertex_colors: VertexColors,
     ):
-        if self._cmap_name is None:
-            raise AttributeError(
-                "cmap name is not set, set the cmap name before setting the transform"
-            )
+        # doesn't do any instantiation that touches the buffer, only allows changes after init
+        # VertexCmap instantiates does set the transform and alpha in its instantiation
+        self._value = value
+        self._vertex_colors = vertex_colors
 
-        values = np.asarray(values)
-
-        colors = parse_cmap_values(
-            n_colors=self.value.shape[0], cmap_name=self._cmap_name, transform=values
-        )
-
-        colors[:, -1] = self.alpha
-
-        self._transform = values
-
-        if indices is None:
-            indices = slice(None)
-
-        self._vertex_colors[indices] = colors
-
-        self._emit_event("cmap.transform", indices, values)
+        super().__init__()
 
     @property
-    def alpha(self) -> float:
-        """Get or set the alpha level"""
-        return self._alpha
+    def value(self) -> np.ndarray:
+        """The current transform on the cmap"""
+        return self._value
 
-    @alpha.setter
-    def alpha(self, value: float, indices: slice | list | np.ndarray = None):
-        self._vertex_colors[indices, -1] = value
-        self._alpha = value
+    def set_value(self, graphic, value: np.ndarray | tuple | list):
+        if value is None:
+            # when transform value is cleared, for example if vertex colors are set directly
+            self._value = None
+            return
+        value = np.asarray(value)
 
-        self._emit_event("cmap.alpha", indices, value)
+        cmap_name = graphic.cmap
 
-    def __len__(self):
-        raise NotImplementedError(
-            "len not implemented for `cmap`, use len(colors) instead"
-        )
+        if cmap_name is None:
+            raise AttributeError("No `cmap` has been set. Must set `cmap` before setting `cmap_transform`")
 
-    def __repr__(self):
-        return f"{self.__class__.__name__} | cmap: {self.name}\ntransform: {self.transform}"
+        alpha = graphic.alpha
+
+        n_datapoints = graphic.colors.value.shape[0]
+
+        colors = parse_cmap_values(n_colors=n_datapoints, cmap_name=cmap_name, transform=value)
+
+        colors[:, -1] = alpha
+
+        self._vertex_colors[:] = colors
+
+        self._value = value
+        event = FeatureEvent(type="cmap_transform", info={"value": value})
+        self._call_event_handlers(event)
+
+
+class VertexAlpha(GraphicFeature):
+    """
+    Manages alpha when colors are in a per-vertex buffer
+    """
+    def __init__(
+            self,
+            value: float,
+            vertex_colors: VertexColors,
+    ):
+        # doesn't do any instantiation that touches the buffer, only allows changes after init
+        # VertexCmap instantiates does set the transform and alpha in its instantiation
+        self._value = value
+        self._vertex_colors = vertex_colors
+
+        super().__init__()
+
+    @property
+    def value(self) -> float:
+        """The current alpha value"""
+        return self._value
+
+    def set_value(self, graphic, value: float):
+        if value is None:
+            # when alpha value is cleared, for example if vertex colors are set directly
+            self._value = None
+            return
+
+        self._vertex_colors[:, -1] = value
+
+        self._value = value
+        event = FeatureEvent(type="alpha", info={"value": value})
+        self._call_event_handlers(event)
