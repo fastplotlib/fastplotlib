@@ -52,7 +52,7 @@ jobs:
           PYGFX_EXPECT_LAVAPIPE: true
         run: |
           # regenerate screenshots
-          WGPU_FORCE_OFFSCREEN=1 REGENERATE_SCREENSHOTS=1 pytest -v examples
+          RENDERCANVAS_FORCE_OFFSCREEN=1 REGENERATE_SCREENSHOTS=1 pytest -v examples
       - name: Generate screenshots notebook, exclude image widget
         env:
           PYGFX_EXPECT_LAVAPIPE: true
