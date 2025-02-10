@@ -55,8 +55,8 @@ class Figure:
 
         Parameters
         ----------
-        shape: (int, int), default (1, 1)
-            (n_rows, n_cols)
+        shape: list[tuple[int, int, int, int]] | tuple[int, int], default (1, 1)
+            list of bounding boxes: [x, y, width, height], or a grid of shape [n_rows, n_cols]
 
         cameras: "2d", "3", list of "2d" | "3d", Iterable of camera instances, or Iterable of "2d" | "3d", optional
             | if str, one of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
@@ -122,7 +122,7 @@ class Figure:
 
         self._shape = shape
 
-        self.spacing = 10
+        self.spacing = 0
 
         if names is not None:
             if len(list(chain(*names))) != len(self):
@@ -703,8 +703,8 @@ class Figure:
                     + self.spacing
                     + y_start_render
             )
-            width_subplot = (width_canvas_render / ncols) - self.spacing
-            height_subplot = (height_canvas_render / nrows) - self.spacing
+            width_subplot = (width_canvas_render / ncols) - (self.spacing * 2)
+            height_subplot = (height_canvas_render / nrows) - (self.spacing * 2)
 
             if self.__class__.__name__ == "ImguiFigure" and subplot.toolbar:
             # leave space for imgui toolbar
@@ -779,8 +779,6 @@ class Figure:
                 self.get_pygfx_render_area()
             )
 
-            spacing = 2  # spacing in pixels
-
             if position == "right":
                 x_pos = (
                         (width_render_canvas / ncols)
@@ -791,9 +789,9 @@ class Figure:
                 y_pos = (
                                 (height_render_canvas / nrows)
                                 + ((row_ix - 1) * (height_render_canvas / nrows))
-                        ) + spacing
+                        ) + self.spacing
                 width_viewport = dock.size
-                height_viewport = (height_render_canvas / nrows) - spacing
+                height_viewport = (height_render_canvas / nrows) - self.spacing
 
             elif position == "left":
                 x_pos = (width_render_canvas / ncols) + (
@@ -802,28 +800,28 @@ class Figure:
                 y_pos = (
                                 (height_render_canvas / nrows)
                                 + ((row_ix - 1) * (height_render_canvas / nrows))
-                        ) + spacing
+                        ) + self.spacing
                 width_viewport = dock.size
-                height_viewport = (height_render_canvas / nrows) - spacing
+                height_viewport = (height_render_canvas / nrows) - self.spacing
 
             elif position == "top":
                 x_pos = (
                         (width_render_canvas / ncols)
                         + ((col_ix - 1) * (width_render_canvas / ncols))
-                        + spacing
+                        + self.spacing
                 )
                 y_pos = (
                                 (height_render_canvas / nrows)
                                 + ((row_ix - 1) * (height_render_canvas / nrows))
-                        ) + spacing
-                width_viewport = (width_render_canvas / ncols) - spacing
+                        ) + self.spacing
+                width_viewport = (width_render_canvas / ncols) - self.spacing
                 height_viewport = dock.size
 
             elif position == "bottom":
                 x_pos = (
                         (width_render_canvas / ncols)
                         + ((col_ix - 1) * (width_render_canvas / ncols))
-                        + spacing
+                        + self.spacing
                 )
                 y_pos = (
                         (
@@ -833,7 +831,7 @@ class Figure:
                         + (height_render_canvas / nrows)
                         - dock.size
                 )
-                width_viewport = (width_render_canvas / ncols) - spacing
+                width_viewport = (width_render_canvas / ncols) - self.spacing
                 height_viewport = dock.size
             else:
                 raise ValueError("invalid position")
@@ -851,7 +849,8 @@ class Figure:
 
             dock.viewport.rect = rect
 
-    def _set_viewport_rects(self):
+    def _set_viewport_rects(self, *ev):
+        """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
         for subplot in self:
             self._fpl_set_subplot_viewport_rect(subplot)
             for dock_pos in subplot.docks.keys():
@@ -873,11 +872,8 @@ class Figure:
 
         return 0, 0, width, height
 
-    def _get_iterator(self):
-        return range(len(self))
-
     def __iter__(self):
-        self._current_iter = self._get_iterator()
+        self._current_iter = iter(range(len(self)))
         return self
 
     def __next__(self) -> Subplot:

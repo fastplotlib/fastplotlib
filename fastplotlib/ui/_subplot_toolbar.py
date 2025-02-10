@@ -16,7 +16,7 @@ class SubplotToolbar(Window):
 
     def update(self):
         # get subplot rect
-        x, y, width, height = self._subplot.get_rect()
+        x, y, width, height = self._subplot.viewport.rect
 
         # place the toolbar window below the subplot
         pos = (x, y + height)
