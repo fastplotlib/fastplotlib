@@ -21,8 +21,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     def __init__(
         self,
         parent: Union["Figure"],
-        position: tuple[int, int],
-        parent_dims: tuple[int, int],
         camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera,
         controller: pygfx.Controller,
         canvas: BaseRenderCanvas | pygfx.Texture,
@@ -43,9 +41,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         position: (int, int), optional
             corresponds to the [row, column] position of the subplot within a ``Figure``
-
-        parent_dims: (int, int), optional
-            dimensions of the parent ``Figure``
 
         camera: str or pygfx.PerspectiveCamera, default '2d'
             indicates the FOV for the camera, '2d' sets ``fov = 0``, '3d' sets ``fov = 50``.
@@ -69,21 +64,11 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         super(GraphicMethodsMixin, self).__init__()
 
-        if position is None:
-            position = (0, 0)
-
-        if parent_dims is None:
-            parent_dims = (1, 1)
-
-        self.nrows, self.ncols = parent_dims
-
         camera = create_camera(camera)
 
         controller = create_controller(controller_type=controller, camera=camera)
 
         self._docks = dict()
-
-        self.spacing = 2
 
         self._title_graphic: TextGraphic = None
 
@@ -91,7 +76,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         super(Subplot, self).__init__(
             parent=parent,
-            position=position,
             camera=camera,
             controller=controller,
             scene=pygfx.Scene(),
@@ -148,7 +132,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     @toolbar.setter
     def toolbar(self, visible: bool):
         self._toolbar = bool(visible)
-        self.set_viewport_rect()
+        self.get_figure()._fpl_set_subplot_viewport_rect(self)
 
     def render(self):
         self.axes.update_using_camera()
@@ -180,54 +164,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self.docks["top"].center_graphic(self._title_graphic, zoom=1.5)
         self._title_graphic.world_object.position_y = -3.5
 
-    def get_rect(self) -> np.ndarray:
-        """
-        Returns the bounding box that defines the Subplot within the canvas.
-
-        Returns
-        -------
-        np.ndarray
-            x_position, y_position, width, height
-
-        """
-        row_ix, col_ix = self.position
-
-        x_start_render, y_start_render, width_canvas_render, height_canvas_render = (
-            self.parent.get_pygfx_render_area()
-        )
-
-        x_pos = (
-            (
-                (width_canvas_render / self.ncols)
-                + ((col_ix - 1) * (width_canvas_render / self.ncols))
-            )
-            + self.spacing
-            + x_start_render
-        )
-        y_pos = (
-            (
-                (height_canvas_render / self.nrows)
-                + ((row_ix - 1) * (height_canvas_render / self.nrows))
-            )
-            + self.spacing
-            + y_start_render
-        )
-        width_subplot = (width_canvas_render / self.ncols) - self.spacing
-        height_subplot = (height_canvas_render / self.nrows) - self.spacing
-
-        if self.parent.__class__.__name__ == "ImguiFigure" and self.toolbar:
-            # leave space for imgui toolbar
-            height_subplot -= IMGUI_TOOLBAR_HEIGHT
-
-        # clip so that min values are always 1, otherwise JupyterRenderCanvas causes issues because it
-        # initializes with a width of (0, 0)
-        rect = np.array([x_pos, y_pos, width_subplot, height_subplot]).clip(1)
-
-        for dv in self.docks.values():
-            rect = rect + dv.get_parent_rect_adjust()
-
-        return rect
-
 
 class Dock(PlotArea):
     _valid_positions = ["right", "left", "top", "bottom"]
@@ -244,16 +180,20 @@ class Dock(PlotArea):
             )
 
         self._size = size
+        self._position = position
 
         super().__init__(
             parent=parent,
-            position=position,
             camera=pygfx.OrthographicCamera(),
             controller=pygfx.PanZoomController(),
             scene=pygfx.Scene(),
             canvas=parent.canvas,
             renderer=parent.renderer,
         )
+
+    @property
+    def position(self) -> str:
+        return self._position
 
     @property
     def size(self) -> int:
@@ -263,138 +203,9 @@ class Dock(PlotArea):
     @size.setter
     def size(self, s: int):
         self._size = s
-        self.parent.set_viewport_rect()
-        self.set_viewport_rect()
 
-    def get_rect(self, *args):
-        """
-        Returns the bounding box that defines this dock area within the canvas.
-
-        Returns
-        -------
-        np.ndarray
-            x_position, y_position, width, height
-        """
-        if self.size == 0:
-            self.viewport.rect = None
-            return
-
-        row_ix_parent, col_ix_parent = self.parent.position
-
-        x_start_render, y_start_render, width_render_canvas, height_render_canvas = (
-            self.parent.parent.get_pygfx_render_area()
-        )
-
-        spacing = 2  # spacing in pixels
-
-        if self.position == "right":
-            x_pos = (
-                (width_render_canvas / self.parent.ncols)
-                + ((col_ix_parent - 1) * (width_render_canvas / self.parent.ncols))
-                + (width_render_canvas / self.parent.ncols)
-                - self.size
-            )
-            y_pos = (
-                (height_render_canvas / self.parent.nrows)
-                + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
-            ) + spacing
-            width_viewport = self.size
-            height_viewport = (height_render_canvas / self.parent.nrows) - spacing
-
-        elif self.position == "left":
-            x_pos = (width_render_canvas / self.parent.ncols) + (
-                (col_ix_parent - 1) * (width_render_canvas / self.parent.ncols)
-            )
-            y_pos = (
-                (height_render_canvas / self.parent.nrows)
-                + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
-            ) + spacing
-            width_viewport = self.size
-            height_viewport = (height_render_canvas / self.parent.nrows) - spacing
-
-        elif self.position == "top":
-            x_pos = (
-                (width_render_canvas / self.parent.ncols)
-                + ((col_ix_parent - 1) * (width_render_canvas / self.parent.ncols))
-                + spacing
-            )
-            y_pos = (
-                (height_render_canvas / self.parent.nrows)
-                + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
-            ) + spacing
-            width_viewport = (width_render_canvas / self.parent.ncols) - spacing
-            height_viewport = self.size
-
-        elif self.position == "bottom":
-            x_pos = (
-                (width_render_canvas / self.parent.ncols)
-                + ((col_ix_parent - 1) * (width_render_canvas / self.parent.ncols))
-                + spacing
-            )
-            y_pos = (
-                (
-                    (height_render_canvas / self.parent.nrows)
-                    + ((row_ix_parent - 1) * (height_render_canvas / self.parent.nrows))
-                )
-                + (height_render_canvas / self.parent.nrows)
-                - self.size
-            )
-            width_viewport = (width_render_canvas / self.parent.ncols) - spacing
-            height_viewport = self.size
-        else:
-            raise ValueError("invalid position")
-
-        if self.parent.__class__.__name__ == "ImguiFigure" and self.parent.toolbar:
-            # leave space for imgui toolbar
-            height_viewport -= IMGUI_TOOLBAR_HEIGHT
-
-        return [
-            x_pos + x_start_render,
-            y_pos + y_start_render,
-            width_viewport,
-            height_viewport,
-        ]
-
-    def get_parent_rect_adjust(self):
-        if self.position == "right":
-            return np.array(
-                [
-                    0,  # parent subplot x-position is same
-                    0,
-                    -self.size,  # width of parent subplot is `self.size` smaller
-                    0,
-                ]
-            )
-
-        elif self.position == "left":
-            return np.array(
-                [
-                    self.size,  # `self.size` added to parent subplot x-position
-                    0,
-                    -self.size,  # width of parent subplot is `self.size` smaller
-                    0,
-                ]
-            )
-
-        elif self.position == "top":
-            return np.array(
-                [
-                    0,
-                    self.size,  # `self.size` added to parent subplot y-position
-                    0,
-                    -self.size,  # height of parent subplot is `self.size` smaller
-                ]
-            )
-
-        elif self.position == "bottom":
-            return np.array(
-                [
-                    0,
-                    0,  # parent subplot y-position is same,
-                    0,
-                    -self.size,  # height of parent subplot is `self.size` smaller
-                ]
-            )
+        self.get_figure(self.parent)._fpl_set_subplot_viewport_rect(self.parent)
+        self.get_figure(self.parent)._fpl_set_subplot_dock_viewport_rect(self.parent, self._position, self.size)
 
     def render(self):
         if self.size == 0:

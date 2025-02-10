@@ -28,7 +28,6 @@ class PlotArea:
     def __init__(
         self,
         parent: Union["PlotArea", "Figure"],
-        position: tuple[int, int] | str,
         camera: pygfx.PerspectiveCamera,
         controller: pygfx.Controller,
         scene: pygfx.Scene,
@@ -70,7 +69,6 @@ class PlotArea:
         """
 
         self._parent = parent
-        self._position = position
 
         self._scene = scene
         self._canvas = canvas
@@ -87,8 +85,6 @@ class PlotArea:
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
-
-        self.renderer.add_event_handler(self.set_viewport_rect, "resize")
 
         # list of hex id strings for all graphics managed by this PlotArea
         # the real Graphic instances are managed by REFERENCES
@@ -120,8 +116,6 @@ class PlotArea:
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
 
-        self.set_viewport_rect()
-
     def get_figure(self, obj=None):
         """Get Figure instance that contains this plot area"""
         if obj is None:
@@ -140,11 +134,6 @@ class PlotArea:
     def parent(self):
         """A parent if relevant"""
         return self._parent
-
-    @property
-    def position(self) -> tuple[int, int] | str:
-        """Position of this plot area within a larger layout (such as a Figure) if relevant"""
-        return self._position
 
     @property
     def scene(self) -> pygfx.Scene:
@@ -284,19 +273,6 @@ class PlotArea:
         """1, 2, or 4 colors, each color must be acceptable by pygfx.Color"""
         self._background_material.set_colors(*colors)
 
-    def get_rect(self) -> tuple[float, float, float, float]:
-        """
-        Returns the viewport rect to define the rectangle
-        occupied by the viewport w.r.t. the Canvas.
-
-        If this is a subplot within a Figure, it returns the rectangle
-        for only this subplot w.r.t. the parent canvas.
-
-        Must return: [x_pos, y_pos, width_viewport, height_viewport]
-
-        """
-        raise NotImplementedError("Must be implemented in subclass")
-
     def map_screen_to_world(
         self, pos: tuple[float, float] | pygfx.PointerEvent
     ) -> np.ndarray:
@@ -332,9 +308,6 @@ class PlotArea:
 
         # default z is zero for now
         return np.array([*pos_world[:2], 0])
-
-    def set_viewport_rect(self, *args):
-        self.viewport.rect = self.get_rect()
 
     def render(self):
         self._call_animate_functions(self._animate_funcs_pre)

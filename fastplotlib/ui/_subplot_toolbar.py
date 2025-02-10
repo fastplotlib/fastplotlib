@@ -25,14 +25,14 @@ class SubplotToolbar(Window):
         imgui.set_next_window_pos(pos)
         flags = imgui.WindowFlags_.no_collapse | imgui.WindowFlags_.no_title_bar
 
-        imgui.begin(f"Toolbar-{self._subplot.position}", p_open=None, flags=flags)
+        imgui.begin(f"Toolbar-{self._subplot.name}", p_open=None, flags=flags)
 
         # icons for buttons
         imgui.push_font(self._fa_icons)
 
         # push ID to prevent conflict between multiple figs with same UI
         imgui.push_id(self._id_counter)
-        with imgui_ctx.begin_horizontal(f"toolbar-{self._subplot.position}"):
+        with imgui_ctx.begin_horizontal(f"toolbar-{self._subplot.name}"):
             # autoscale button
             if imgui.button(fa.ICON_FA_MAXIMIZE):
                 self._subplot.auto_scale()

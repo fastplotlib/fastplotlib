@@ -20,10 +20,14 @@ from ._subplot import Subplot
 from .. import ImageGraphic
 
 
+# number of pixels taken by the imgui toolbar when present
+IMGUI_TOOLBAR_HEIGHT = 39
+
+
 class Figure:
     def __init__(
         self,
-        shape: tuple[int, int] = (1, 1),
+        shape: list[tuple[int, int, int, int]] | tuple[int, int] = (1, 1),
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
@@ -97,7 +101,28 @@ class Figure:
             subplot names
         """
 
+        if isinstance(shape, list):
+            if not all(isinstance(v, (tuple, list)) for v in shape):
+                raise TypeError("shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]")
+            for item in shape:
+                if not all(isinstance(v, (int, np.integer)) for v in item):
+                    raise TypeError("shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]")
+            self._mode: str = "rect"
+
+        elif isinstance(shape, tuple):
+            if not all(isinstance(v, (int, np.integer)) for v in shape):
+                raise TypeError("shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]")
+            self._mode: str = "grid"
+
+            # shape is [n_subplots, row_col_index]
+            self._subplot_grid_positions: dict[Subplot, tuple[int, int]] = dict()
+
+        else:
+            raise TypeError("shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]")
+
         self._shape = shape
+
+        self.spacing = 10
 
         if names is not None:
             if len(list(chain(*names))) != len(self):
@@ -105,7 +130,7 @@ class Figure:
                     "must provide same number of subplot `names` as specified by Figure `shape`"
                 )
 
-            subplot_names = np.asarray(names).reshape(self.shape)
+            subplot_names = np.asarray(names)
         else:
             subplot_names = None
 
@@ -115,18 +140,18 @@ class Figure:
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
-            cameras = np.array([cameras] * len(self)).reshape(self.shape)
+            cameras = np.array([cameras] * len(self))
 
-        # list -> array if necessary
-        cameras = np.asarray(cameras).reshape(self.shape)
+        # list/tuple -> array if necessary
+        cameras = np.asarray(cameras).flatten()
 
-        if cameras.shape != self.shape:
-            raise ValueError("Number of cameras does not match the number of subplots")
+        if cameras.size != len(self):
+            raise ValueError(f"Number of cameras: {cameras.size} does not match the number of subplots: {len(self)}")
 
         # create the cameras
-        subplot_cameras = np.empty(self.shape, dtype=object)
-        for i, j in product(range(self.shape[0]), range(self.shape[1])):
-            subplot_cameras[i, j] = create_camera(camera_type=cameras[i, j])
+        subplot_cameras = np.empty(len(self), dtype=object)
+        for index in range(len(self)):
+            subplot_cameras[index] = create_camera(camera_type=cameras[index])
 
         # if controller instances have been specified for each subplot
         if controllers is not None:
@@ -134,8 +159,6 @@ class Figure:
             # one controller for all subplots
             if isinstance(controllers, pygfx.Controller):
                 controllers = [controllers] * len(self)
-                # subplot_controllers[:] = controllers
-                # # subplot_controllers = np.asarray([controllers] * len(self), dtype=object)
 
             # individual controller instance specified for each subplot
             else:
@@ -153,31 +176,31 @@ class Figure:
                         )
 
             try:
-                controllers = np.asarray(controllers).reshape(shape)
+                controllers = np.asarray(controllers).flatten()
             except ValueError:
                 raise ValueError(
                     f"number of controllers passed must be the same as the number of subplots specified "
-                    f"by shape: {self.shape}. You have passed: <{controllers.size}> controllers"
+                    f"by shape: {len(self)}. You have passed: {controllers.size} controllers"
                 ) from None
 
             subplot_controllers: np.ndarray[pygfx.Controller] = np.empty(
-                self.shape, dtype=object
+                len(self), dtype=object
             )
 
-            for i, j in product(range(self.shape[0]), range(self.shape[1])):
-                subplot_controllers[i, j] = controllers[i, j]
-                subplot_controllers[i, j].add_camera(subplot_cameras[i, j])
+            for index in range(len(self)):
+                subplot_controllers[index] = controllers[index]
+                subplot_controllers[index].add_camera(subplot_cameras[index])
 
         # parse controller_ids and controller_types to make desired controller for each supblot
         else:
             if controller_ids is None:
                 # individual controller for each subplot
-                controller_ids = np.arange(len(self)).reshape(self.shape)
+                controller_ids = np.arange(len(self))
 
             elif isinstance(controller_ids, str):
                 if controller_ids == "sync":
-                    # this will eventually make one controller for all subplots
-                    controller_ids = np.zeros(self.shape, dtype=int)
+                    # this will end up creating one controller to control the camera of every subplot
+                    controller_ids = np.zeros(len(self), dtype=int)
                 else:
                     raise ValueError(
                         f"`controller_ids` must be one of 'sync', an array/list of subplot names, or an array/list of "
@@ -207,20 +230,20 @@ class Figure:
                         )
 
                     # initialize controller_ids array
-                    ids_init = np.arange(len(self)).reshape(self.shape)
+                    ids_init = np.arange(len(self))
 
                     # set id based on subplot position for each synced sublist
-                    for i, sublist in enumerate(controller_ids):
+                    for row_ix, sublist in enumerate(controller_ids):
                         for name in sublist:
                             ids_init[subplot_names == name] = -(
-                                i + 1
+                                row_ix + 1
                             )  # use negative numbers because why not
 
                     controller_ids = ids_init
 
                 # integer ids
                 elif all([isinstance(item, (int, np.integer)) for item in ids_flat]):
-                    controller_ids = np.asarray(controller_ids).reshape(self.shape)
+                    controller_ids = np.asarray(controller_ids).flatten()
 
                 else:
                     raise TypeError(
@@ -228,20 +251,20 @@ class Figure:
                         f"you have passed: {controller_ids}"
                     )
 
-            if controller_ids.shape != self.shape:
+            if controller_ids.size != len(self):
                 raise ValueError(
                     "Number of controller_ids does not match the number of subplots"
                 )
 
             if controller_types is None:
                 # `create_controller()` will auto-determine controller for each subplot based on defaults
-                controller_types = np.array(["default"] * len(self)).reshape(self.shape)
+                controller_types = np.array(["default"] * len(self))
 
             # valid controller types
             if isinstance(controller_types, str):
                 controller_types = [[controller_types]]
 
-            types_flat = list(chain(*controller_types))
+            types_flat = np.asarray(controller_types).flatten()
             # str controller_type or pygfx instances
             valid_str = list(valid_controller_types.keys()) + ["default"]
 
@@ -258,10 +281,10 @@ class Figure:
 
             controller_types: np.ndarray[pygfx.Controller] = np.asarray(
                 controller_types
-            ).reshape(self.shape)
+            )
 
             # make the real controllers for each subplot
-            subplot_controllers = np.empty(shape=self.shape, dtype=object)
+            subplot_controllers = np.empty(shape=len(self), dtype=object)
             for cid in np.unique(controller_ids):
                 cont_type = controller_types[controller_ids == cid]
                 if np.unique(cont_type).size > 1:
@@ -292,32 +315,34 @@ class Figure:
         self._canvas = canvas
         self._renderer = renderer
 
-        nrows, ncols = self.shape
+        if self.mode == "grid":
+            nrows, ncols = self.shape
 
-        self._subplots: np.ndarray[Subplot] = np.ndarray(
-            shape=(nrows, ncols), dtype=object
-        )
-
-        for i, j in self._get_iterator():
-            position = (i, j)
-            camera = subplot_cameras[i, j]
-            controller = subplot_controllers[i, j]
-
-            if subplot_names is not None:
-                name = subplot_names[i, j]
-            else:
-                name = None
-
-            self._subplots[i, j] = Subplot(
-                parent=self,
-                position=position,
-                parent_dims=(nrows, ncols),
-                camera=camera,
-                controller=controller,
-                canvas=canvas,
-                renderer=renderer,
-                name=name,
+            self._subplots: np.ndarray[Subplot] = np.ndarray(
+                shape=(nrows, ncols), dtype=object
             )
+
+            for i, (row_ix, col_ix) in enumerate(product(range(nrows), range(ncols))):
+                camera = subplot_cameras[i]
+                controller = subplot_controllers[i]
+
+                if subplot_names is not None:
+                    name = subplot_names[i]
+                else:
+                    name = None
+
+                subplot = Subplot(
+                    parent=self,
+                    camera=camera,
+                    controller=controller,
+                    canvas=canvas,
+                    renderer=renderer,
+                    name=name,
+                )
+
+                self._subplots[row_ix, col_ix] = subplot
+
+                self._subplot_grid_positions[subplot] = (row_ix, col_ix)
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
@@ -328,10 +353,16 @@ class Figure:
 
         self._output = None
 
+        self.renderer.add_event_handler(self._set_viewport_rects, "resize")
+
     @property
-    def shape(self) -> tuple[int, int]:
+    def shape(self) -> list[tuple[int, int, int, int]] | tuple[int, int]:
         """[n_rows, n_cols]"""
         return self._shape
+
+    @property
+    def mode(self) -> str:
+        return self._mode
 
     @property
     def canvas(self) -> BaseRenderCanvas:
@@ -472,7 +503,7 @@ class Figure:
         elif self.canvas.__class__.__name__ == "OffscreenRenderCanvas":
             # for test and docs gallery screenshots
             for subplot in self:
-                subplot.set_viewport_rect()
+                self._fpl_set_subplot_viewport_rect(subplot)
                 subplot.axes.update_using_camera()
 
                 # render call is blocking only on github actions for some reason,
@@ -642,6 +673,190 @@ class Figure:
     def open_popup(self, *args, **kwargs):
         warn("popups only supported by ImguiFigure")
 
+    def _fpl_set_subplot_viewport_rect(self, subplot: Subplot):
+        """
+        Sets the viewport rect for the given subplot
+        """
+
+        if self.mode == "grid":
+            row_ix, col_ix = self._subplot_grid_positions[subplot]
+
+            nrows, ncols = self.shape
+
+            x_start_render, y_start_render, width_canvas_render, height_canvas_render = (
+                self.get_pygfx_render_area()
+            )
+
+            x_pos = (
+                    (
+                            (width_canvas_render / ncols)
+                            + ((col_ix - 1) * (width_canvas_render / ncols))
+                    )
+                    + self.spacing
+                    + x_start_render
+            )
+            y_pos = (
+                    (
+                            (height_canvas_render / nrows)
+                            + ((row_ix - 1) * (height_canvas_render / nrows))
+                    )
+                    + self.spacing
+                    + y_start_render
+            )
+            width_subplot = (width_canvas_render / ncols) - self.spacing
+            height_subplot = (height_canvas_render / nrows) - self.spacing
+
+            if self.__class__.__name__ == "ImguiFigure" and subplot.toolbar:
+            # leave space for imgui toolbar
+                height_subplot -= IMGUI_TOOLBAR_HEIGHT
+
+            # clip so that min values are always 1, otherwise JupyterRenderCanvas causes issues because it
+            # initializes with a width of (0, 0)
+            rect = np.array([x_pos, y_pos, width_subplot, height_subplot]).clip(1)
+
+            for dock in subplot.docks.values():
+                if dock.position == "right":
+                    adjust = np.array(
+                        [
+                            0,  # parent subplot x-position is same
+                            0,
+                            -dock.size,  # width of parent subplot is `self.size` smaller
+                            0,
+                        ]
+                    )
+
+                elif dock.position == "left":
+                    adjust = np.array(
+                        [
+                            dock.size,  # `self.size` added to parent subplot x-position
+                            0,
+                            -dock.size,  # width of parent subplot is `self.size` smaller
+                            0,
+                        ]
+                    )
+
+                elif dock.position == "top":
+                    adjust = np.array(
+                        [
+                            0,
+                            dock.size,  # `self.size` added to parent subplot y-position
+                            0,
+                            -dock.size,  # height of parent subplot is `self.size` smaller
+                        ]
+                    )
+
+                elif dock.position == "bottom":
+                    adjust = np.array(
+                        [
+                            0,
+                            0,  # parent subplot y-position is same,
+                            0,
+                            -dock.size,  # height of parent subplot is `self.size` smaller
+                        ]
+                    )
+
+                rect = rect + adjust
+
+            subplot.viewport.rect = rect
+
+    def _fpl_set_subplot_dock_viewport_rect(self, subplot, position):
+        """
+        Sets the viewport rect for the given subplot dock
+        """
+
+        if self.mode == "grid":
+            row_ix, col_ix = self._subplot_grid_positions[subplot]
+
+            nrows, ncols = self.shape
+
+            dock = subplot.docks[position]
+
+            if dock.size == 0:
+                dock.viewport.rect = None
+                return
+
+            x_start_render, y_start_render, width_render_canvas, height_render_canvas = (
+                self.get_pygfx_render_area()
+            )
+
+            spacing = 2  # spacing in pixels
+
+            if position == "right":
+                x_pos = (
+                        (width_render_canvas / ncols)
+                        + ((col_ix - 1) * (width_render_canvas / ncols))
+                        + (width_render_canvas / ncols)
+                        - dock.size
+                )
+                y_pos = (
+                                (height_render_canvas / nrows)
+                                + ((row_ix - 1) * (height_render_canvas / nrows))
+                        ) + spacing
+                width_viewport = dock.size
+                height_viewport = (height_render_canvas / nrows) - spacing
+
+            elif position == "left":
+                x_pos = (width_render_canvas / ncols) + (
+                        (col_ix - 1) * (width_render_canvas / ncols)
+                )
+                y_pos = (
+                                (height_render_canvas / nrows)
+                                + ((row_ix - 1) * (height_render_canvas / nrows))
+                        ) + spacing
+                width_viewport = dock.size
+                height_viewport = (height_render_canvas / nrows) - spacing
+
+            elif position == "top":
+                x_pos = (
+                        (width_render_canvas / ncols)
+                        + ((col_ix - 1) * (width_render_canvas / ncols))
+                        + spacing
+                )
+                y_pos = (
+                                (height_render_canvas / nrows)
+                                + ((row_ix - 1) * (height_render_canvas / nrows))
+                        ) + spacing
+                width_viewport = (width_render_canvas / ncols) - spacing
+                height_viewport = dock.size
+
+            elif position == "bottom":
+                x_pos = (
+                        (width_render_canvas / ncols)
+                        + ((col_ix - 1) * (width_render_canvas / ncols))
+                        + spacing
+                )
+                y_pos = (
+                        (
+                                (height_render_canvas / nrows)
+                                + ((row_ix - 1) * (height_render_canvas / nrows))
+                        )
+                        + (height_render_canvas / nrows)
+                        - dock.size
+                )
+                width_viewport = (width_render_canvas / ncols) - spacing
+                height_viewport = dock.size
+            else:
+                raise ValueError("invalid position")
+
+            if self.__class__.__name__ == "ImguiFigure" and subplot.toolbar:
+                # leave space for imgui toolbar
+                height_viewport -= IMGUI_TOOLBAR_HEIGHT
+
+            rect = [
+                x_pos + x_start_render,
+                y_pos + y_start_render,
+                width_viewport,
+                height_viewport,
+            ]
+
+            dock.viewport.rect = rect
+
+    def _set_viewport_rects(self):
+        for subplot in self:
+            self._fpl_set_subplot_viewport_rect(subplot)
+            for dock_pos in subplot.docks.keys():
+                self._fpl_set_subplot_dock_viewport_rect(subplot, dock_pos)
+
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
         Fet rect for the portion of the canvas that the pygfx renderer draws to,
@@ -659,7 +874,7 @@ class Figure:
         return 0, 0, width, height
 
     def _get_iterator(self):
-        return product(range(self.shape[0]), range(self.shape[1]))
+        return range(len(self))
 
     def __iter__(self):
         self._current_iter = self._get_iterator()
@@ -667,11 +882,14 @@ class Figure:
 
     def __next__(self) -> Subplot:
         pos = self._current_iter.__next__()
-        return self._subplots[pos]
+        return self._subplots.ravel()[pos]
 
     def __len__(self):
         """number of subplots"""
-        return self.shape[0] * self.shape[1]
+        if isinstance(self._shape, tuple):
+            return self.shape[0] * self.shape[1]
+        if isinstance(self._shape, list):
+            return len(self._shape)
 
     def __str__(self):
         return f"{self.__class__.__name__} @ {hex(id(self))}"
