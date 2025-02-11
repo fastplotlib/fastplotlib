@@ -1,7 +1,5 @@
 from typing import Literal, Union
 
-import numpy as np
-
 import pygfx
 
 from rendercanvas import BaseRenderCanvas
@@ -11,10 +9,6 @@ from ._utils import create_camera, create_controller
 from ._plot_area import PlotArea
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..graphics._axes import Axes
-
-
-# number of pixels taken by the imgui toolbar when present
-IMGUI_TOOLBAR_HEIGHT = 39
 
 
 class Subplot(PlotArea, GraphicMethodsMixin):
@@ -106,8 +100,17 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
     @name.setter
     def name(self, name: str):
+        if name is None:
+            self._name = None
+            return
+
+        for subplot in self.get_figure(self):
+            if (subplot is self) or (subplot is None):
+                continue
+            if subplot.name == name:
+                raise ValueError("subplot names must be unique")
+
         self._name = name
-        self.set_title(name)
 
     @property
     def docks(self) -> dict:
@@ -134,9 +137,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._toolbar = bool(visible)
         self.get_figure()._fpl_set_subplot_viewport_rect(self)
 
-    def render(self):
+    def _render(self):
         self.axes.update_using_camera()
-        super().render()
+        super()._render()
 
     def set_title(self, text: str):
         """Sets the plot title, stored as a ``TextGraphic`` in the "top" dock area"""
@@ -203,12 +206,15 @@ class Dock(PlotArea):
     @size.setter
     def size(self, s: int):
         self._size = s
+        if self.position == "top":
+            # TODO: treat title dock separately, do not allow user to change viewport stuff
+            return
 
         self.get_figure(self.parent)._fpl_set_subplot_viewport_rect(self.parent)
-        self.get_figure(self.parent)._fpl_set_subplot_dock_viewport_rect(self.parent, self._position, self.size)
+        self.get_figure(self.parent)._fpl_set_subplot_dock_viewport_rect(self.parent, self._position)
 
-    def render(self):
+    def _render(self):
         if self.size == 0:
             return
 
-        super().render()
+        super()._render()

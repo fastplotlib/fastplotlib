@@ -309,14 +309,14 @@ class PlotArea:
         # default z is zero for now
         return np.array([*pos_world[:2], 0])
 
-    def render(self):
+    def _render(self):
         self._call_animate_functions(self._animate_funcs_pre)
 
         # does not flush, flush must be implemented in user-facing Plot objects
         self.viewport.render(self.scene, self.camera)
 
         for child in self.children:
-            child.render()
+            child._render()
 
         self._call_animate_functions(self._animate_funcs_post)
 

@@ -105,8 +105,8 @@ class ImguiFigure(Figure):
         """imgui renderer"""
         return self._imgui_renderer
 
-    def render(self, draw=False):
-        super().render(draw)
+    def _render(self, draw=False):
+        super()._render(draw)
 
         self.imgui_renderer.render()
         self.canvas.request_draw()

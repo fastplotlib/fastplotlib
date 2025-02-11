@@ -56,7 +56,7 @@ class Figure:
         Parameters
         ----------
         shape: list[tuple[int, int, int, int]] | tuple[int, int], default (1, 1)
-            list of bounding boxes: [x, y, width, height], or a grid of shape [n_rows, n_cols]
+            grid of shape [n_rows, n_cols] or list of bounding boxes: [x, y, width, height] (NOT YET IMPLEMENTED)
 
         cameras: "2d", "3", list of "2d" | "3d", Iterable of camera instances, or Iterable of "2d" | "3d", optional
             | if str, one of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
@@ -102,6 +102,7 @@ class Figure:
         """
 
         if isinstance(shape, list):
+            raise NotImplementedError("bounding boxes for shape not yet implemented")
             if not all(isinstance(v, (tuple, list)) for v in shape):
                 raise TypeError("shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]")
             for item in shape:
@@ -122,21 +123,22 @@ class Figure:
 
         self._shape = shape
 
-        self.spacing = 0
+        self._spacing = 2
 
         if names is not None:
-            if len(list(chain(*names))) != len(self):
+            subplot_names = np.asarray(names)
+            if subplot_names.size != len(self):
                 raise ValueError(
                     "must provide same number of subplot `names` as specified by Figure `shape`"
                 )
-
-            subplot_names = np.asarray(names)
         else:
             subplot_names = None
 
         canvas, renderer = make_canvas_and_renderer(
             canvas, renderer, canvas_kwargs={"size": size}
         )
+
+        renderer.add_event_handler(self._set_viewport_rects, "resize")
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
@@ -353,7 +355,7 @@ class Figure:
 
         self._output = None
 
-        self.renderer.add_event_handler(self._set_viewport_rects, "resize")
+        self._pause_render = False
 
     @property
     def shape(self) -> list[tuple[int, int, int, int]] | tuple[int, int]:
@@ -362,7 +364,20 @@ class Figure:
 
     @property
     def mode(self) -> str:
+        """one of 'grid' or 'rect'"""
         return self._mode
+
+    @property
+    def spacing(self) -> int:
+        return self._spacing
+
+    @spacing.setter
+    def spacing(self, value: int):
+        if not isinstance(value, (int, np.integer)):
+            raise TypeError("spacing must be of type <int>")
+
+        self._spacing = value
+        self._set_viewport_rects()
 
     @property
     def canvas(self) -> BaseRenderCanvas:
@@ -399,21 +414,27 @@ class Figure:
         names.flags.writeable = False
         return names
 
-    def __getitem__(self, index: tuple[int, int] | str) -> Subplot:
+    def __getitem__(self, index: str | int | tuple[int, int]) -> Subplot:
         if isinstance(index, str):
             for subplot in self._subplots.ravel():
                 if subplot.name == index:
                     return subplot
             raise IndexError(f"no subplot with given name: {index}")
-        else:
+
+        if self.mode == "grid":
             return self._subplots[index[0], index[1]]
 
-    def render(self, draw=True):
+        return self._subplots[index]
+
+    def _render(self, draw=True):
+        if self._pause_render:
+            return
+
         # call the animation functions before render
         self._call_animate_functions(self._animate_funcs_pre)
-
+        self._set_viewport_rects()
         for subplot in self:
-            subplot.render()
+            subplot._render()
 
         self.renderer.flush()
         if draw:
@@ -422,9 +443,9 @@ class Figure:
         # call post-render animate functions
         self._call_animate_functions(self._animate_funcs_post)
 
-    def start_render(self):
+    def _start_render(self):
         """start render cycle"""
-        self.canvas.request_draw(self.render)
+        self.canvas.request_draw(self._render)
 
     def show(
         self,
@@ -462,7 +483,7 @@ class Figure:
         if self._output:
             return self._output
 
-        self.start_render()
+        self._start_render()
 
         if sidecar_kwargs is None:
             sidecar_kwargs = dict()
@@ -502,8 +523,8 @@ class Figure:
 
         elif self.canvas.__class__.__name__ == "OffscreenRenderCanvas":
             # for test and docs gallery screenshots
+            self._set_viewport_rects()
             for subplot in self:
-                self._fpl_set_subplot_viewport_rect(subplot)
                 subplot.axes.update_using_camera()
 
                 # render call is blocking only on github actions for some reason,
@@ -512,7 +533,7 @@ class Figure:
                 # but it is necessary for the gallery images too so that's why this check is here
                 if "RTD_BUILD" in os.environ.keys():
                     if os.environ["RTD_BUILD"] == "1":
-                        self.render()
+                        self._render()
 
         else:  # assume GLFW
             self._output = self.canvas
@@ -679,182 +700,123 @@ class Figure:
         """
 
         if self.mode == "grid":
+            # row, col position of this subplot within the grid
             row_ix, col_ix = self._subplot_grid_positions[subplot]
 
+            # number of rows, cols in the grid
             nrows, ncols = self.shape
 
-            x_start_render, y_start_render, width_canvas_render, height_canvas_render = (
+            # get starting positions and dimensions for the pygfx portion of the canvas
+            # anything outside the pygfx portion of the canvas is for imgui
+            x0_canvas, y0_canvas, width_canvas, height_canvas = (
                 self.get_pygfx_render_area()
             )
 
-            x_pos = (
-                    (
-                            (width_canvas_render / ncols)
-                            + ((col_ix - 1) * (width_canvas_render / ncols))
-                    )
-                    + self.spacing
-                    + x_start_render
-            )
-            y_pos = (
-                    (
-                            (height_canvas_render / nrows)
-                            + ((row_ix - 1) * (height_canvas_render / nrows))
-                    )
-                    + self.spacing
-                    + y_start_render
-            )
-            width_subplot = (width_canvas_render / ncols) - (self.spacing * 2)
-            height_subplot = (height_canvas_render / nrows) - (self.spacing * 2)
+            # width of an individual subplot
+            width_subplot = width_canvas / ncols
+            # height of an individual subplot
+            height_subplot = height_canvas / nrows
+
+            # x position of this subplot
+            x_pos = ((col_ix - 1) * width_subplot) + width_subplot + x0_canvas + self.spacing
+            # y position of this subplot
+            y_pos = ((row_ix - 1) * height_subplot) + height_subplot + y0_canvas + self.spacing
 
             if self.__class__.__name__ == "ImguiFigure" and subplot.toolbar:
-            # leave space for imgui toolbar
+                # leave space for imgui toolbar
                 height_subplot -= IMGUI_TOOLBAR_HEIGHT
 
-            # clip so that min values are always 1, otherwise JupyterRenderCanvas causes issues because it
-            # initializes with a width of (0, 0)
-            rect = np.array([x_pos, y_pos, width_subplot, height_subplot]).clip(1)
+            # clip so that min (w, h) is always 1, otherwise JupyterRenderCanvas causes issues because it
+            # initializes with a width, height of (0, 0)
+            rect = np.array([
+                x_pos, y_pos, width_subplot - self.spacing, height_subplot - self.spacing
+            ]).clip(min=[0, 0, 1, 1])
 
-            for dock in subplot.docks.values():
-                if dock.position == "right":
-                    adjust = np.array(
-                        [
-                            0,  # parent subplot x-position is same
-                            0,
-                            -dock.size,  # width of parent subplot is `self.size` smaller
-                            0,
-                        ]
-                    )
+            # adjust if a subplot dock is present
+            adjust = np.array([
+                # add left dock size to x_pos
+                subplot.docks["left"].size,
+                # add top dock size to y_pos
+                subplot.docks["top"].size,
+                # remove left and right dock sizes from width
+                -subplot.docks["right"].size - subplot.docks["left"].size,
+                # remove top and bottom dock sizes from height
+                -subplot.docks["top"].size - subplot.docks["bottom"].size,
+            ])
 
-                elif dock.position == "left":
-                    adjust = np.array(
-                        [
-                            dock.size,  # `self.size` added to parent subplot x-position
-                            0,
-                            -dock.size,  # width of parent subplot is `self.size` smaller
-                            0,
-                        ]
-                    )
-
-                elif dock.position == "top":
-                    adjust = np.array(
-                        [
-                            0,
-                            dock.size,  # `self.size` added to parent subplot y-position
-                            0,
-                            -dock.size,  # height of parent subplot is `self.size` smaller
-                        ]
-                    )
-
-                elif dock.position == "bottom":
-                    adjust = np.array(
-                        [
-                            0,
-                            0,  # parent subplot y-position is same,
-                            0,
-                            -dock.size,  # height of parent subplot is `self.size` smaller
-                        ]
-                    )
-
-                rect = rect + adjust
-
-            subplot.viewport.rect = rect
+            subplot.viewport.rect = rect + adjust
 
     def _fpl_set_subplot_dock_viewport_rect(self, subplot, position):
         """
         Sets the viewport rect for the given subplot dock
         """
 
+        dock = subplot.docks[position]
+
+        if dock.size == 0:
+            dock.viewport.rect = None
+            return
+
         if self.mode == "grid":
+            # row, col position of this subplot within the grid
             row_ix, col_ix = self._subplot_grid_positions[subplot]
 
+            # number of rows, cols in the grid
             nrows, ncols = self.shape
 
-            dock = subplot.docks[position]
-
-            if dock.size == 0:
-                dock.viewport.rect = None
-                return
-
-            x_start_render, y_start_render, width_render_canvas, height_render_canvas = (
+            x0_canvas, y0_canvas, width_canvas, height_canvas = (
                 self.get_pygfx_render_area()
             )
 
-            if position == "right":
-                x_pos = (
-                        (width_render_canvas / ncols)
-                        + ((col_ix - 1) * (width_render_canvas / ncols))
-                        + (width_render_canvas / ncols)
-                        - dock.size
-                )
-                y_pos = (
-                                (height_render_canvas / nrows)
-                                + ((row_ix - 1) * (height_render_canvas / nrows))
-                        ) + self.spacing
-                width_viewport = dock.size
-                height_viewport = (height_render_canvas / nrows) - self.spacing
+            # width of an individual subplot
+            width_subplot = (width_canvas / ncols)
+            # height of an individual subplot
+            height_subplot = (height_canvas / nrows)
 
-            elif position == "left":
-                x_pos = (width_render_canvas / ncols) + (
-                        (col_ix - 1) * (width_render_canvas / ncols)
-                )
-                y_pos = (
-                                (height_render_canvas / nrows)
-                                + ((row_ix - 1) * (height_render_canvas / nrows))
-                        ) + self.spacing
-                width_viewport = dock.size
-                height_viewport = (height_render_canvas / nrows) - self.spacing
+            # calculate the rect based on the dock position
+            match position:
+                case "right":
+                    x_pos = ((col_ix - 1) * width_subplot) + (width_subplot * 2) - dock.size
+                    y_pos = ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
+                    width_viewport = dock.size
+                    height_viewport = height_subplot - self.spacing
 
-            elif position == "top":
-                x_pos = (
-                        (width_render_canvas / ncols)
-                        + ((col_ix - 1) * (width_render_canvas / ncols))
-                        + self.spacing
-                )
-                y_pos = (
-                                (height_render_canvas / nrows)
-                                + ((row_ix - 1) * (height_render_canvas / nrows))
-                        ) + self.spacing
-                width_viewport = (width_render_canvas / ncols) - self.spacing
-                height_viewport = dock.size
+                case "left":
+                    x_pos = ((col_ix - 1) * width_subplot) + width_subplot
+                    y_pos = ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
+                    width_viewport = dock.size
+                    height_viewport = height_subplot - self.spacing
 
-            elif position == "bottom":
-                x_pos = (
-                        (width_render_canvas / ncols)
-                        + ((col_ix - 1) * (width_render_canvas / ncols))
-                        + self.spacing
-                )
-                y_pos = (
-                        (
-                                (height_render_canvas / nrows)
-                                + ((row_ix - 1) * (height_render_canvas / nrows))
-                        )
-                        + (height_render_canvas / nrows)
-                        - dock.size
-                )
-                width_viewport = (width_render_canvas / ncols) - self.spacing
-                height_viewport = dock.size
-            else:
-                raise ValueError("invalid position")
+                case "top":
+                    x_pos = ((col_ix - 1) * width_subplot) + width_subplot + self.spacing
+                    y_pos = ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
+                    width_viewport = width_subplot - self.spacing
+                    height_viewport = dock.size
 
-            if self.__class__.__name__ == "ImguiFigure" and subplot.toolbar:
-                # leave space for imgui toolbar
-                height_viewport -= IMGUI_TOOLBAR_HEIGHT
+                case "bottom":
+                    x_pos = ((col_ix - 1) * width_subplot) + width_subplot + self.spacing
+                    y_pos = ((row_ix - 1) * height_subplot) + (height_subplot * 2) - dock.size
+                    width_viewport = width_subplot - self.spacing
+                    height_viewport = dock.size
 
-            rect = [
-                x_pos + x_start_render,
-                y_pos + y_start_render,
+                case _:
+                    raise ValueError("invalid position")
+
+            dock.viewport.rect = [
+                x_pos + x0_canvas,
+                y_pos + y0_canvas,
                 width_viewport,
                 height_viewport,
             ]
 
-            dock.viewport.rect = rect
-
     def _set_viewport_rects(self, *ev):
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
+        self._pause_render = True
         for subplot in self:
             self._fpl_set_subplot_viewport_rect(subplot)
             for dock_pos in subplot.docks.keys():
                 self._fpl_set_subplot_dock_viewport_rect(subplot, dock_pos)
+        self._pause_render = False
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
