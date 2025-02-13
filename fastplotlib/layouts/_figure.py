@@ -103,22 +103,30 @@ class Figure:
         if isinstance(shape, list):
             raise NotImplementedError("bounding boxes for shape not yet implemented")
             if not all(isinstance(v, (tuple, list)) for v in shape):
-                raise TypeError("shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]")
+                raise TypeError(
+                    "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
+                )
             for item in shape:
                 if not all(isinstance(v, (int, np.integer)) for v in item):
-                    raise TypeError("shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]")
+                    raise TypeError(
+                        "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
+                    )
             self._mode: str = "rect"
 
         elif isinstance(shape, tuple):
             if not all(isinstance(v, (int, np.integer)) for v in shape):
-                raise TypeError("shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]")
+                raise TypeError(
+                    "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
+                )
             self._mode: str = "grid"
 
             # shape is [n_subplots, row_col_index]
             self._subplot_grid_positions: dict[Subplot, tuple[int, int]] = dict()
 
         else:
-            raise TypeError("shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]")
+            raise TypeError(
+                "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
+            )
 
         self._shape = shape
 
@@ -147,7 +155,9 @@ class Figure:
         cameras = np.asarray(cameras).flatten()
 
         if cameras.size != len(self):
-            raise ValueError(f"Number of cameras: {cameras.size} does not match the number of subplots: {len(self)}")
+            raise ValueError(
+                f"Number of cameras: {cameras.size} does not match the number of subplots: {len(self)}"
+            )
 
         # create the cameras
         subplot_cameras = np.empty(len(self), dtype=object)
@@ -175,7 +185,9 @@ class Figure:
                             "pygfx.Controller instances"
                         )
 
-            subplot_controllers: np.ndarray[pygfx.Controller] = np.asarray(controllers).flatten()
+            subplot_controllers: np.ndarray[pygfx.Controller] = np.asarray(
+                controllers
+            ).flatten()
             if not subplot_controllers.size == len(self):
                 raise ValueError(
                     f"number of controllers passed must be the same as the number of subplots specified "
@@ -262,7 +274,9 @@ class Figure:
             if isinstance(controller_types, str):
                 controller_types = np.array([controller_types] * len(self))
 
-            controller_types: np.ndarray[pygfx.Controller] = np.asarray(controller_types).flatten()
+            controller_types: np.ndarray[pygfx.Controller] = np.asarray(
+                controller_types
+            ).flatten()
             # str controller_type or pygfx instances
             valid_str = list(valid_controller_types.keys()) + ["default"]
 
@@ -384,9 +398,7 @@ class Figure:
     @property
     def controllers(self) -> np.ndarray[pygfx.Controller]:
         """controllers, read-only array, access individual subplots to change a controller"""
-        controllers = np.asarray(
-            [subplot.controller for subplot in self], dtype=object
-        )
+        controllers = np.asarray([subplot.controller for subplot in self], dtype=object)
 
         if self.mode == "grid":
             controllers = controllers.reshape(self.shape)
@@ -397,9 +409,7 @@ class Figure:
     @property
     def cameras(self) -> np.ndarray[pygfx.Camera]:
         """cameras, read-only array, access individual subplots to change a camera"""
-        cameras = np.asarray(
-            [subplot.camera for subplot in self], dtype=object
-        )
+        cameras = np.asarray([subplot.camera for subplot in self], dtype=object)
 
         if self.mode == "grid":
             cameras = cameras.reshape(self.shape)
@@ -719,9 +729,19 @@ class Figure:
             height_subplot = height_canvas / nrows
 
             # x position of this subplot
-            x_pos = ((col_ix - 1) * width_subplot) + width_subplot + x0_canvas + self.spacing
+            x_pos = (
+                ((col_ix - 1) * width_subplot)
+                + width_subplot
+                + x0_canvas
+                + self.spacing
+            )
             # y position of this subplot
-            y_pos = ((row_ix - 1) * height_subplot) + height_subplot + y0_canvas + self.spacing
+            y_pos = (
+                ((row_ix - 1) * height_subplot)
+                + height_subplot
+                + y0_canvas
+                + self.spacing
+            )
 
             if self.__class__.__name__ == "ImguiFigure" and subplot.toolbar:
                 # leave space for imgui toolbar
@@ -729,21 +749,28 @@ class Figure:
 
             # clip so that min (w, h) is always 1, otherwise JupyterRenderCanvas causes issues because it
             # initializes with a width, height of (0, 0)
-            rect = np.array([
-                x_pos, y_pos, width_subplot - self.spacing, height_subplot - self.spacing
-            ]).clip(min=[0, 0, 1, 1])
+            rect = np.array(
+                [
+                    x_pos,
+                    y_pos,
+                    width_subplot - self.spacing,
+                    height_subplot - self.spacing,
+                ]
+            ).clip(min=[0, 0, 1, 1])
 
             # adjust if a subplot dock is present
-            adjust = np.array([
-                # add left dock size to x_pos
-                subplot.docks["left"].size,
-                # add top dock size to y_pos
-                subplot.docks["top"].size,
-                # remove left and right dock sizes from width
-                -subplot.docks["right"].size - subplot.docks["left"].size,
-                # remove top and bottom dock sizes from height
-                -subplot.docks["top"].size - subplot.docks["bottom"].size,
-            ])
+            adjust = np.array(
+                [
+                    # add left dock size to x_pos
+                    subplot.docks["left"].size,
+                    # add top dock size to y_pos
+                    subplot.docks["top"].size,
+                    # remove left and right dock sizes from width
+                    -subplot.docks["right"].size - subplot.docks["left"].size,
+                    # remove top and bottom dock sizes from height
+                    -subplot.docks["top"].size - subplot.docks["bottom"].size,
+                ]
+            )
 
             subplot.viewport.rect = rect + adjust
 
@@ -770,33 +797,49 @@ class Figure:
             )
 
             # width of an individual subplot
-            width_subplot = (width_canvas / ncols)
+            width_subplot = width_canvas / ncols
             # height of an individual subplot
-            height_subplot = (height_canvas / nrows)
+            height_subplot = height_canvas / nrows
 
             # calculate the rect based on the dock position
             match position:
                 case "right":
-                    x_pos = ((col_ix - 1) * width_subplot) + (width_subplot * 2) - dock.size
-                    y_pos = ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
+                    x_pos = (
+                        ((col_ix - 1) * width_subplot) + (width_subplot * 2) - dock.size
+                    )
+                    y_pos = (
+                        ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
+                    )
                     width_viewport = dock.size
                     height_viewport = height_subplot - self.spacing
 
                 case "left":
                     x_pos = ((col_ix - 1) * width_subplot) + width_subplot
-                    y_pos = ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
+                    y_pos = (
+                        ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
+                    )
                     width_viewport = dock.size
                     height_viewport = height_subplot - self.spacing
 
                 case "top":
-                    x_pos = ((col_ix - 1) * width_subplot) + width_subplot + self.spacing
-                    y_pos = ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
+                    x_pos = (
+                        ((col_ix - 1) * width_subplot) + width_subplot + self.spacing
+                    )
+                    y_pos = (
+                        ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
+                    )
                     width_viewport = width_subplot - self.spacing
                     height_viewport = dock.size
 
                 case "bottom":
-                    x_pos = ((col_ix - 1) * width_subplot) + width_subplot + self.spacing
-                    y_pos = ((row_ix - 1) * height_subplot) + (height_subplot * 2) - dock.size
+                    x_pos = (
+                        ((col_ix - 1) * width_subplot) + width_subplot + self.spacing
+                    )
+                    y_pos = (
+                        ((row_ix - 1) * height_subplot)
+                        + (height_subplot * 2)
+                        - dock.size
+                    )
                     width_viewport = width_subplot - self.spacing
                     height_viewport = dock.size
 

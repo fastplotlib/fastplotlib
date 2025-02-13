@@ -211,7 +211,9 @@ class Dock(PlotArea):
             return
 
         self.get_figure(self.parent)._fpl_set_subplot_viewport_rect(self.parent)
-        self.get_figure(self.parent)._fpl_set_subplot_dock_viewport_rect(self.parent, self._position)
+        self.get_figure(self.parent)._fpl_set_subplot_dock_viewport_rect(
+            self.parent, self._position
+        )
 
     def _render(self):
         if self.size == 0:
