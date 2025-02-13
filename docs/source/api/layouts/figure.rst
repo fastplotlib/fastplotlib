@@ -23,9 +23,11 @@ Properties
     Figure.cameras
     Figure.canvas
     Figure.controllers
+    Figure.mode
     Figure.names
     Figure.renderer
     Figure.shape
+    Figure.spacing
 
 Methods
 ~~~~~~~
@@ -36,10 +38,9 @@ Methods
     Figure.clear
     Figure.close
     Figure.export
+    Figure.export_numpy
     Figure.get_pygfx_render_area
     Figure.open_popup
     Figure.remove_animation
-    Figure.render
     Figure.show
-    Figure.start_render
 
