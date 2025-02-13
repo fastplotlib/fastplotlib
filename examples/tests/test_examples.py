@@ -58,11 +58,11 @@ def test_examples_run(module, force_offscreen):
 @pytest.fixture
 def force_offscreen():
     """Force the offscreen canvas to be selected by the auto gui module."""
-    os.environ["WGPU_FORCE_OFFSCREEN"] = "true"
+    os.environ["RENDERCANVAS_FORCE_OFFSCREEN"] = "true"
     try:
         yield
     finally:
-        del os.environ["WGPU_FORCE_OFFSCREEN"]
+        del os.environ["RENDERCANVAS_FORCE_OFFSCREEN"]
 
 
 def test_that_we_are_on_lavapipe():
@@ -103,11 +103,10 @@ def test_example_screenshots(module, force_offscreen):
         # hacky but it works for now
         example.figure.imgui_renderer.render()
 
+    example.figure._set_viewport_rects()
     # render each subplot
     for subplot in example.figure:
         subplot.viewport.render(subplot.scene, subplot.camera)
-        for dock in subplot.docks.values():
-            dock.set_viewport_rect()
 
     # flush pygfx renderer
     example.figure.renderer.flush()
