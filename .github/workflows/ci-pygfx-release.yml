@@ -82,7 +82,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: ${{ failure() }}
       with:
-        name: screenshot-diffs-${{ matrix.pyversion }}-${{ matrix.imgui_dep }}-${{ matrix.notebook_dep }}
+        name: screenshot-diffs-${{ matrix.os }}-${{ matrix.pyversion }}-${{ matrix.imgui_dep }}-${{ matrix.notebook_dep }}
         path: |
           examples/diffs
           examples/notebooks/diffs
