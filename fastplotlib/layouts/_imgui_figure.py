@@ -20,7 +20,7 @@ from ..ui import ColormapPicker
 class ImguiFigure(Figure):
     def __init__(
         self,
-        shape: tuple[int, int] = (1, 1),
+        shape: list[tuple[int, int, int, int]] | tuple[int, int] = (1, 1),
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
