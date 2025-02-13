@@ -2,7 +2,7 @@
 ImageWidget test viewport rects
 ===============================
 
-Test figure to test that viewport rects are positioned correctly in an image widget
+Test Figure to test that viewport rects are positioned correctly in an image widget
 """
 
 # test_example = true
