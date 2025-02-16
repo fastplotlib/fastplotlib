@@ -516,7 +516,7 @@ class Axes:
             return
 
         if self._plot_area.camera.fov == 0:
-            xpos, ypos, width, height = self._plot_area.get_rect()
+            xpos, ypos, width, height = self._plot_area.viewport.rect
             # orthographic projection, get ranges using inverse
 
             # get range of screen space by getting the corners

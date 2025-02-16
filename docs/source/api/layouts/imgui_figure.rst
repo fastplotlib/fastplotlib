@@ -25,9 +25,11 @@ Properties
     ImguiFigure.controllers
     ImguiFigure.guis
     ImguiFigure.imgui_renderer
+    ImguiFigure.mode
     ImguiFigure.names
     ImguiFigure.renderer
     ImguiFigure.shape
+    ImguiFigure.spacing
 
 Methods
 ~~~~~~~
@@ -39,11 +41,10 @@ Methods
     ImguiFigure.clear
     ImguiFigure.close
     ImguiFigure.export
+    ImguiFigure.export_numpy
     ImguiFigure.get_pygfx_render_area
     ImguiFigure.open_popup
     ImguiFigure.register_popup
     ImguiFigure.remove_animation
-    ImguiFigure.render
     ImguiFigure.show
-    ImguiFigure.start_render
 
