@@ -28,14 +28,15 @@ labels = mnist['target'] # (1797,)
 # the more interesting visualization is below :D
 fig_data = fpl.Figure(shape=(1, 5), size=(900, 300))
 
-for i in range(5):
+# iterate through each subplot
+for i, subplot in enumerate(fig_data):
     # reshape each image to (8, 8)
-    fig_data[0, i].add_image(data[i].reshape(8,8), cmap="gray")
+    subplot.add_image(data[i].reshape(8,8), cmap="gray")
     # add the label as a title
-    fig_data[0, i].set_title(f"Label: {labels[i]}")
+    subplot.set_title(f"Label: {labels[i]}")
     # turn off the axes and toolbar
-    fig_data[0, i].axes.visible = False
-    fig_data[0, i].toolbar  = False
+    subplot.axes.visible = False
+    subplot.toolbar  = False
 
 fig_data.show()
 
@@ -87,7 +88,7 @@ digit_scatter.colors[ix] = "magenta"
 digit_scatter.sizes[ix] = 10
 
 # define event handler to update the selected data point
-@digit_scatter.add_event_handler("click")
+@digit_scatter.add_event_handler("pointer_enter")
 def update(ev):
     # reset colors and sizes
     digit_scatter.cmap = "tab10"
