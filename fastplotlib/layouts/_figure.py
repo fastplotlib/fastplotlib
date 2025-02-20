@@ -111,6 +111,7 @@ class Figure:
                     raise TypeError(
                         "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
                     )
+            # constant that sets the Figure to be in "rect" mode
             self._mode: str = "rect"
 
         elif isinstance(shape, tuple):
@@ -118,6 +119,7 @@ class Figure:
                 raise TypeError(
                     "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
                 )
+            # constant that sets the Figure to be in "grid" mode
             self._mode: str = "grid"
 
             # shape is [n_subplots, row_col_index]
@@ -130,6 +132,7 @@ class Figure:
 
         self._shape = shape
 
+        # default spacing of 2 pixels between subplots
         self._spacing = 2
 
         if names is not None:
@@ -370,15 +373,22 @@ class Figure:
 
     @property
     def mode(self) -> str:
-        """one of 'grid' or 'rect'"""
+        """
+        one of 'grid' or 'rect'
+
+        Used by Figure to determine certain aspects, such as how to calculate
+        rects and shapes of properties for cameras, controllers, and subplots arrays
+        """
         return self._mode
 
     @property
     def spacing(self) -> int:
+        """spacing between subplots, in pixels"""
         return self._spacing
 
     @spacing.setter
     def spacing(self, value: int):
+        """set the spacing between subplots, in pixels"""
         if not isinstance(value, (int, np.integer)):
             raise TypeError("spacing must be of type <int>")
 
