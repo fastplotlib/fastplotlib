@@ -94,6 +94,9 @@ def plot_test(name, fig: fpl.Figure):
     if not TESTING:
         return
 
+    # otherwise the first render is wrong
+    fig._set_viewport_rects()
+
     snapshot = fig.canvas.snapshot()
     rgb_img = rgba_to_rgb(snapshot.data)
 
