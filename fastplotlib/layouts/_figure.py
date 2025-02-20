@@ -451,9 +451,6 @@ class Figure:
         return self._subplots[index]
 
     def _render(self, draw=True):
-        if self._pause_render:
-            return
-
         # call the animation functions before render
         self._call_animate_functions(self._animate_funcs_pre)
         for subplot in self:
