@@ -1,8 +1,6 @@
 import os
 from itertools import product, chain
-from multiprocessing import Queue
 from pathlib import Path
-from time import time
 
 import numpy as np
 from typing import Literal, Iterable
@@ -13,7 +11,6 @@ import pygfx
 
 from rendercanvas import BaseRenderCanvas
 
-from ._video_writer import VideoWriterAV
 from ._utils import make_canvas_and_renderer, create_controller, create_camera
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
