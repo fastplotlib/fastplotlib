@@ -45,7 +45,7 @@ class GraphicMethodsMixin:
         ----------
         data: array-like
             array-like, usually numpy.ndarray, must support ``memoryview()``
-            | shape must be ``[x_dim, y_dim]``
+            | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
@@ -185,6 +185,7 @@ class GraphicMethodsMixin:
         cmap: str = None,
         cmap_transform: Union[numpy.ndarray, Iterable] = None,
         isolated_buffer: bool = True,
+        size_space: str = "screen",
         **kwargs
     ) -> LineGraphic:
         """
@@ -217,6 +218,9 @@ class GraphicMethodsMixin:
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        size_space: str, default "screen"
+            coordinate space in which the size is expressed ("screen", "world", "model")
+
         **kwargs
             passed to Graphic
 
@@ -232,6 +236,7 @@ class GraphicMethodsMixin:
             cmap,
             cmap_transform,
             isolated_buffer,
+            size_space,
             **kwargs
         )
 
@@ -346,6 +351,7 @@ class GraphicMethodsMixin:
         isolated_buffer: bool = True,
         sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
         uniform_size: bool = False,
+        size_space: str = "screen",
         **kwargs
     ) -> ScatterGraphic:
         """
@@ -386,6 +392,9 @@ class GraphicMethodsMixin:
             if True, uses a uniform buffer for the scatter point sizes,
             basically saves GPU VRAM when all scatter points are the same size
 
+        size_space: str, default "screen"
+            coordinate space in which the size is expressed ("screen", "world", "model")
+
         kwargs
             passed to Graphic
 
@@ -402,6 +411,7 @@ class GraphicMethodsMixin:
             isolated_buffer,
             sizes,
             uniform_size,
+            size_space,
             **kwargs
         )
 
