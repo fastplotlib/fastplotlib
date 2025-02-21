@@ -10,8 +10,6 @@ Example showing how you can perform K-Means clustering on the MNIST dataset.
 
 import fastplotlib as fpl
 import numpy as np
-import random
-import time
 from sklearn.datasets import load_digits
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
@@ -31,7 +29,7 @@ fig_data = fpl.Figure(shape=(1, 5), size=(900, 300))
 # iterate through each subplot
 for i, subplot in enumerate(fig_data):
     # reshape each image to (8, 8)
-    subplot.add_image(data[i].reshape(8,8), cmap="gray")
+    subplot.add_image(data[i].reshape(8,8), cmap="gray", interpolation="linear")
     # add the label as a title
     subplot.set_title(f"Label: {labels[i]}")
     # turn off the axes and toolbar
@@ -53,25 +51,29 @@ kmeans.fit(reduced_data)
 # get the centroids (center of the clusters)
 centroids = kmeans.cluster_centers_
 
-# plot the reduced and original data
-figure = fpl.Figure(shape=(1,2), size=(700, 400))
+# plot the kmeans result and corresponding original image
+figure = fpl.Figure(
+    shape=(1,2),
+    size=(700, 400),
+    cameras=["3d", "2d"],
+    controller_types=[["fly", "panzoom"]]
+)
 
 # set the axes to False
 figure[0, 0].axes.visible = False
 figure[0, 1].axes.visible = False
 
-
 figure[0, 0].set_title(f"K-means clustering of PCA-reduced data")
 
 # plot the centroids
 figure[0, 0].add_scatter(
-    data=np.vstack((centroids[:, 0], centroids[:, 1])).T,
+    data=np.vstack((centroids[:, 0], centroids[:, 1], centroids[:, 2])).T,
     colors="white",
     sizes=15
 )
 # plot the down-projected data
 digit_scatter = figure[0,0].add_scatter(
-    data=np.vstack((reduced_data[:, 0], reduced_data[:, 1])).T,
+    data=np.vstack((reduced_data[:, 0], reduced_data[:, 1], reduced_data[:, 2])).T,
     sizes=5,
     cmap="tab10", # use a qualitative cmap
     cmap_transform=kmeans.labels_, # color by the predicted cluster
@@ -81,7 +83,7 @@ digit_scatter = figure[0,0].add_scatter(
 ix = 0
 
 # plot the initial image
-digit_img = figure[0, 1].add_image(data[ix].reshape(8,8), cmap="gray", name="digit")
+digit_img = figure[0, 1].add_image(data[ix].reshape(8,8), cmap="gray", name="digit", interpolation="linear")
 
 # change the color and size of the initial selected data point
 digit_scatter.colors[ix] = "magenta"
