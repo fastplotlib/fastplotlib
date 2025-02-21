@@ -55,7 +55,7 @@ class LineGraphic(PositionsGraphic):
             if provided, these values are used to map the colors from the cmap
 
         size_space: str, default "screen"
-            coordinate space in which the size is expressed (‘screen’, ‘world’, ‘model’)
+            coordinate space in which the size is expressed ("screen", "world", "model")
 
         **kwargs
             passed to Graphic

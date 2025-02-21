@@ -62,7 +62,7 @@ class ScatterGraphic(PositionsGraphic):
             basically saves GPU VRAM when all scatter points are the same size
 
         size_space: str, default "screen"
-            coordinate space in which the size is expressed (‘screen’, ‘world’, ‘model’)
+            coordinate space in which the size is expressed ("screen", "world", "model")
 
         kwargs
             passed to Graphic
