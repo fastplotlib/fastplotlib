@@ -74,12 +74,11 @@ class StandardRightClickMenu(Popup):
                 return
 
             name = self.get_subplot().name
-            if name is None:
-                name = self.get_subplot().position
 
-            # text label at the top of the menu
-            imgui.text(f"subplot: {name}")
-            imgui.separator()
+            if name is not None:
+                # text label at the top of the menu
+                imgui.text(f"subplot: {name}")
+                imgui.separator()
 
             # autoscale, center, maintain aspect
             if imgui.menu_item(f"Autoscale", "", False)[0]:

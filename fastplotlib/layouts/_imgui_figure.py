@@ -20,7 +20,7 @@ from ..ui import ColormapPicker
 class ImguiFigure(Figure):
     def __init__(
         self,
-        shape: tuple[int, int] = (1, 1),
+        shape: list[tuple[int, int, int, int]] | tuple[int, int] = (1, 1),
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
@@ -80,12 +80,12 @@ class ImguiFigure(Figure):
         self.imgui_renderer.set_gui(self._draw_imgui)
 
         self._subplot_toolbars: np.ndarray[SubplotToolbar] = np.empty(
-            shape=self._subplots.shape, dtype=object
+            shape=self._subplots.size, dtype=object
         )
 
-        for subplot in self._subplots.ravel():
+        for i, subplot in enumerate(self._subplots.ravel()):
             toolbar = SubplotToolbar(subplot=subplot, fa_icons=self._fa_icons)
-            self._subplot_toolbars[subplot.position] = toolbar
+            self._subplot_toolbars[i] = toolbar
 
         self._right_click_menu = StandardRightClickMenu(
             figure=self, fa_icons=self._fa_icons
@@ -105,8 +105,8 @@ class ImguiFigure(Figure):
         """imgui renderer"""
         return self._imgui_renderer
 
-    def render(self, draw=False):
-        super().render(draw)
+    def _render(self, draw=False):
+        super()._render(draw)
 
         self.imgui_renderer.render()
         self.canvas.request_draw()
@@ -164,7 +164,7 @@ class ImguiFigure(Figure):
 
         self.guis[location] = gui
 
-        self._reset_viewports()
+        self._set_viewport_rects()
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
@@ -199,15 +199,6 @@ class ImguiFigure(Figure):
             ypos = 0
 
         return xpos, ypos, max(1, width), max(1, height)
-
-    def _reset_viewports(self):
-        # TODO: think about moving this to Figure later,
-        #  maybe also refactor Subplot and PlotArea so that
-        #  the resize event is handled at the Figure level instead
-        for subplot in self:
-            subplot.set_viewport_rect()
-            for dock in subplot.docks.values():
-                dock.set_viewport_rect()
 
     def register_popup(self, popup: Popup.__class__):
         """

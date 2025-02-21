@@ -94,6 +94,26 @@ def plot_test(name, fig: fpl.Figure):
     if not TESTING:
         return
 
+    # otherwise the first render is wrong
+    if fpl.IMGUI:
+        # there doesn't seem to be a resize event for the manual offscreen canvas
+        fig.imgui_renderer._backend.io.display_size = fig.canvas.get_logical_size()
+        # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
+        # hacky but it works for now
+        fig.imgui_renderer.render()
+
+    fig._set_viewport_rects()
+    # render each subplot
+    for subplot in fig:
+        subplot.viewport.render(subplot.scene, subplot.camera)
+
+    # flush pygfx renderer
+    fig.renderer.flush()
+
+    if fpl.IMGUI:
+        # render imgui
+        fig.imgui_renderer.render()
+
     snapshot = fig.canvas.snapshot()
     rgb_img = rgba_to_rgb(snapshot.data)
 
