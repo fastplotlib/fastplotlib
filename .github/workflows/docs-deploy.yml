@@ -98,6 +98,7 @@ jobs:
           server: ${{ secrets.DOCS_SERVER }}
           username: ${{ secrets.DOCS_USERNAME }}
           password: ${{ secrets.DOCS_PASSWORD }}
+          timeout: 190000
           local-dir: docs/build/html/
           server-dir: ./  # deploy to the root dir
           exclude: |  # don't delete the /ver/ dir
