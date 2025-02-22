@@ -405,3 +405,42 @@ def parse_cmap_values(
         colors = np.vstack([colormap[val] for val in norm_cmap_values])
 
         return colors
+
+
+def subsample_array(arr, max_items=1e6):
+    """
+    Subsamples an input array while preserving its relative dimensional proportions.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        Input array of any dimensionality to be subsampled.
+
+    max_items : int, optional
+        Largest bytesize allowed for the total size of the subsampled array. Default is 1e6.
+
+    Returns
+    -------
+    np.ndarray
+        subsampled version of the input array
+    """
+    shape = np.array(arr.shape)
+    total_elements = np.prod(shape)
+
+    if total_elements <= max_items:
+        return arr  # no need to subsample if already below the threshold
+
+    # relative proportions based on the shape
+    proportions = shape / shape.sum()
+
+    target_elements = min(total_elements, max_items)
+    target_shape = np.maximum((proportions * target_elements).astype(int), 1)
+
+    # keep total elements within limit
+    scale_factor = (target_elements / np.prod(target_shape)) ** (1 / len(shape))
+    target_shape = np.maximum((target_shape * scale_factor).astype(int), 1)
+
+    steps = np.ceil(shape / target_shape).astype(int)
+    slices = tuple(slice(None, None, step) for step in steps)
+
+    return arr[slices]
