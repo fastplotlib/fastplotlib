@@ -267,7 +267,7 @@ def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
     return OrderedDict(zip(labels, colors))
 
 
-def quick_min_max(data: np.ndarray) -> tuple[float, float]:
+def quick_min_max(data: np.ndarray, max_size=1e6) -> tuple[float, float]:
     """
     Adapted from pyqtgraph.ImageView.
     Estimate the min/max values of *data* by subsampling.
@@ -275,6 +275,9 @@ def quick_min_max(data: np.ndarray) -> tuple[float, float]:
     Parameters
     ----------
     data: np.ndarray or array-like with `min` and `max` attributes
+
+    max_size : int, optional
+        largest array size allowed in the subsampled array. Default is 1e6.
 
     Returns
     -------
@@ -289,11 +292,7 @@ def quick_min_max(data: np.ndarray) -> tuple[float, float]:
         ):
             return data.min, data.max
 
-    while np.prod(data.shape) > 1e6:
-        ax = np.argmax(data.shape)
-        sl = [slice(None)] * data.ndim
-        sl[ax] = slice(None, None, 2)
-        data = data[tuple(sl)]
+    data = subsample_array(data, max_size=max_size)
 
     return float(np.nanmin(data)), float(np.nanmax(data))
 
