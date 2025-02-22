@@ -432,12 +432,10 @@ def subsample_array(arr, max_items=1e6):
 
     # relative proportions based on the shape
     proportions = shape / shape.sum()
-
-    target_elements = min(total_elements, max_items)
-    target_shape = np.maximum((proportions * target_elements).astype(int), 1)
+    target_shape = np.maximum((proportions * total_elements).astype(int), 1)
 
     # keep total elements within limit
-    scale_factor = (target_elements / np.prod(target_shape)) ** (1 / len(shape))
+    scale_factor = (total_elements / np.prod(target_shape)) ** (1 / len(shape))
     target_shape = np.maximum((target_shape * scale_factor).astype(int), 1)
 
     steps = np.ceil(shape / target_shape).astype(int)
