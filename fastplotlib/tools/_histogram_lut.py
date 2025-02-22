@@ -196,7 +196,7 @@ class HistogramLUTTool(Graphic):
     def _calculate_histogram(self, data):
 
         # get a subsampled view of this array
-        data_ss = subsample_array(data, max_size=1e6)  # 1e6 is default
+        data_ss = subsample_array(data, max_size=int(1e6))  # 1e6 is default
         hist, edges = np.histogram(data_ss, bins=self._nbins)
 
         # used if data ptp <= 10 because event things get weird
