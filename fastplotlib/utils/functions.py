@@ -407,7 +407,7 @@ def parse_cmap_values(
         return colors
 
 
-def subsample_array(arr, max_items=1e6):
+def subsample_array(arr, max_size=1e6):
     """
     Subsamples an input array while preserving its relative dimensional proportions.
 
@@ -416,7 +416,7 @@ def subsample_array(arr, max_items=1e6):
     arr : np.ndarray
         Input array of any dimensionality to be subsampled.
 
-    max_items : int, optional
+    max_size : int, optional
         Largest bytesize allowed for the total size of the subsampled array. Default is 1e6.
 
     Returns
@@ -427,7 +427,7 @@ def subsample_array(arr, max_items=1e6):
     array_shape = np.array(arr.shape)
     array_size = np.prod(array_shape)
 
-    if array_size <= max_items:
+    if array_size <= max_size:
         return arr  # no need to subsample if already below the threshold
 
     # relative proportions based on the shape
