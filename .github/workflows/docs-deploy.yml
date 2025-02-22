@@ -98,6 +98,8 @@ jobs:
           server: ${{ secrets.DOCS_SERVER }}
           username: ${{ secrets.DOCS_USERNAME }}
           password: ${{ secrets.DOCS_PASSWORD }}
+          log-level: verbose
+          timeout: 60000
           local-dir: docs/build/html/
           server-dir: ./  # deploy to the root dir
           exclude: |  # don't delete the /ver/ dir
