@@ -409,15 +409,15 @@ def parse_cmap_values(
 
 def subsample_array(arr, max_size=1e6):
     """
-    Subsamples an input array while preserving its relative dimensional proportions.
+    subsamples an input array while preserving its relative dimensional proportions.
 
     Parameters
     ----------
     arr : np.ndarray
-        Input array of any dimensionality to be subsampled.
+        input array of any dimensionality to be subsampled.
 
     max_size : int, optional
-        Largest bytesize allowed for the total size of the subsampled array. Default is 1e6.
+        largest array size allowed in the subsampled array. Default is 1e6.
 
     Returns
     -------
