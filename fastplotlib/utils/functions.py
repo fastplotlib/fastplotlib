@@ -424,21 +424,21 @@ def subsample_array(arr, max_items=1e6):
     np.ndarray
         subsampled version of the input array
     """
-    shape = np.array(arr.shape)
-    total_elements = np.prod(shape)
+    array_shape = np.array(arr.shape)
+    array_size = np.prod(array_shape)
 
-    if total_elements <= max_items:
+    if array_size <= max_items:
         return arr  # no need to subsample if already below the threshold
 
     # relative proportions based on the shape
-    proportions = shape / shape.sum()
-    target_shape = np.maximum((proportions * total_elements).astype(int), 1)
+    proportions = array_shape / array_shape.sum()
+    target_shape = np.maximum((proportions * array_size).astype(int), 1)
 
     # keep total elements within limit
-    scale_factor = (total_elements / np.prod(target_shape)) ** (1 / len(shape))
+    scale_factor = (array_size / np.prod(target_shape)) ** (1 / len(array_shape))
     target_shape = np.maximum((target_shape * scale_factor).astype(int), 1)
 
-    steps = np.ceil(shape / target_shape).astype(int)
+    steps = np.ceil(array_shape / target_shape).astype(int)
     slices = tuple(slice(None, None, step) for step in steps)
 
     return arr[slices]
