@@ -5,7 +5,7 @@ import numpy as np
 
 import pygfx
 
-from ..utils.functions import subsample_array
+from ..utils import subsample_array
 from ..graphics import LineGraphic, ImageGraphic, TextGraphic
 from ..graphics.utils import pause_events
 from ..graphics._base import Graphic
