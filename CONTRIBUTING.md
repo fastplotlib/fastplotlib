@@ -100,11 +100,11 @@ git checkout -b my_feature_branch
 After you have made changes on this branch, add and commit them when you are ready:
 
 ```bash
-# lint your code
-black . 
+# black format only the source code
+black fastplotlib/
 
 # run tests from the repo root dir
-WGPU_FORCE_OFFSCREEN=1 pytest tests/
+RENDERCANVAS_FORCE_OFFSCREEN=1 pytest tests/
 
 # desktop examples
 pytest -v examples
@@ -288,12 +288,12 @@ pip install -e ".[imgui, tests, docs, notebook]"
 4) Lint codebase and make sure tests pass 
 
 ```bash
-# lint codebase 
-black .
+# black format only the source code
+black fastplotlib/
 
 # run tests 
 # backend tests 
-WGPU_FORCE_OFFSCREEN=1 pytest tests/
+RENDERCANVAS_FORCE_OFFSCREEN=1 pytest tests/
 
 # desktop examples
 pytest -v examples
