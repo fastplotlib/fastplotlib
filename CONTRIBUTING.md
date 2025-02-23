@@ -195,6 +195,13 @@ The tests will produce slightly different imperceptible (to a human) results on 
 ground-truth. A small RMSE tolerance has been chosen, `0.025` for most examples. If the output image and 
 ground-truth image are within that tolerance the test will pass. 
 
+If the test image and ground-truth image are above the threshold, the test will fail and a difference image will be located in the follow directory:
+
+```
+examples/desktop/diffs
+examples/notebooks/diffs
+```
+
 Some feature development may require the ground-truth screenshots to be updated. In the event that your changes require
 this, please do the following: 
 
