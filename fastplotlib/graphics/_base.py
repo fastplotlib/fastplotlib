@@ -361,6 +361,47 @@ class Graphic:
                 feature = getattr(self, f"_{t}")
                 feature.remove_event_handler(wrapper)
 
+    def _get_corner(self, location: str, location_z) -> tuple[float, float, float]:
+        valid = ["center", "top-left", "top-right", "bottom-right", "bottom-left"]
+        if not isinstance(location, str):
+            raise TypeError("`location` must be of type <str>")
+        if location not in valid:
+            raise ValueError(
+                f"`location` must be one of : {valid}, you have passed: {location}"
+            )
+
+        if location == "center":
+            x, y, z, r = self.world_object.get_world_bounding_sphere()
+
+            return (x, y, z)
+
+        else:
+            bbox = self.world_object.get_world_bounding_box()
+
+            for i, axis in enumerate(["x", "y", "z"]):
+                if getattr(self._plot_area.camera.local, f"scale_{axis}") < 0:
+                    # swap boundary values for this axis
+                    bbox[0, i], bbox[1, i] = bbox[1, i], bbox[0, i]
+                    print(f"flipped: {i}")
+
+            [[x1, y1, z1], [x2, y2, z2]] = bbox
+
+            # set (x, y, z) location of text based on user str
+            if "top" in location:
+                y = y2
+            elif "bottom" in location:
+                y = y1
+            if "left" in location:
+                x = x1
+            elif "right" in location:
+                x = x2
+            if location_z == "front":
+                z = z1
+            elif location_z == "back":
+                z = z2
+
+            return (x, y, z)
+
     def add_text(
         self, text: str, location: str = "center", location_z: str = "front", **kwargs
     ):
@@ -392,44 +433,23 @@ class Graphic:
             TextGraphic
 
         """
-        valid = ["center", "top-left", "top-right", "bottom-right", "bottom-left"]
-        if not isinstance(location, str):
-            raise TypeError("`location` must be of type <str>")
-        if location not in valid:
-            raise ValueError(
-                f"`location` must be one of : {valid}, you have passed: {location}"
-            )
+        offset = self._get_corner(location, location_z)
 
-        if location == "center":
-            x, y, z, r = self.world_object.get_world_bounding_sphere()
+        def update_offset(ev):
+            new_offset = self._get_corner(*ev.graphic._location)
+            ev.graphic.offset = new_offset
 
-            return self._plot_area.add_text(text, offset=(x, y, z), **kwargs)
+        text_graphic = self._plot_area.add_text(text, offset=offset, metadata=(location, location_z), **kwargs)
+        text_graphic._location = (location, location_z)
 
-        bbox = self.world_object.get_world_bounding_box()
+        text_graphic.add_event_handler(update_offset, "offset")
 
-        for i, axis in enumerate(["x", "y", "z"]):
-            if getattr(self._plot_area.camera.local, f"scale_{axis}") < 0:
-                # swap boundary values for this axis
-                bbox[0, i], bbox[1, i] = bbox[1, i], bbox[0, i]
-                print(f"flipped: {i}")
+        class_name = self.__class__.__name__
 
-        [[x1, y1, z1], [x2, y2, z2]] = bbox
+        if "Line" in class_name or "Scatter" in class_name:
+            text_graphic.add_event_handler(update_offset, "data")
 
-        # set (x, y, z) location of text based on user str
-        if "top" in location:
-            y = y2
-        elif "bottom" in location:
-            y = y1
-        if "left" in location:
-            x = x1
-        elif "right" in location:
-            x = x2
-        if location_z == "front":
-            z = z1
-        elif location_z == "back":
-            z = z2
-
-        return self._plot_area.add_text(text, offset=(x, y, z), **kwargs)
+        return text_graphic
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
