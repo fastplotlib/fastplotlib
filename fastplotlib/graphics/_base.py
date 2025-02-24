@@ -49,6 +49,12 @@ PYGFX_EVENTS = [
 ]
 
 
+def _update_text_offset(parent, tg, ev):
+    # helper function
+    new_offset = parent._fpl_get_corner(*tg._location)
+    tg.offset = new_offset
+
+
 class Graphic:
     _features: set[str] = {}
 
@@ -361,7 +367,8 @@ class Graphic:
                 feature = getattr(self, f"_{t}")
                 feature.remove_event_handler(wrapper)
 
-    def _get_corner(self, location: str, location_z) -> tuple[float, float, float]:
+    def _fpl_get_corner(self, location: str, location_z) -> tuple[float, float, float]:
+        """Get the (x, y, z) corner of a graphic relative to the rendered view"""
         valid = ["center", "top-left", "top-right", "bottom-right", "bottom-left"]
         if not isinstance(location, str):
             raise TypeError("`location` must be of type <str>")
@@ -382,7 +389,6 @@ class Graphic:
                 if getattr(self._plot_area.camera.local, f"scale_{axis}") < 0:
                     # swap boundary values for this axis
                     bbox[0, i], bbox[1, i] = bbox[1, i], bbox[0, i]
-                    print(f"flipped: {i}")
 
             [[x1, y1, z1], [x2, y2, z2]] = bbox
 
@@ -433,21 +439,19 @@ class Graphic:
             TextGraphic
 
         """
-        offset = self._get_corner(location, location_z)
-
-        def update_offset(ev):
-            new_offset = self._get_corner(*ev.graphic._location)
-            ev.graphic.offset = new_offset
+        offset = self._fpl_get_corner(location, location_z)
 
         text_graphic = self._plot_area.add_text(text, offset=offset, metadata=(location, location_z), **kwargs)
         text_graphic._location = (location, location_z)
 
-        text_graphic.add_event_handler(update_offset, "offset")
+        events = ["offset"]
 
         class_name = self.__class__.__name__
 
         if "Line" in class_name or "Scatter" in class_name:
-            text_graphic.add_event_handler(update_offset, "data")
+            events.append("data")
+
+        self.add_event_handler(partial(_update_text_offset, self, text_graphic), *events)
 
         return text_graphic
 
