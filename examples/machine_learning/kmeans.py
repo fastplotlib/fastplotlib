@@ -67,13 +67,13 @@ figure[0, 0].set_title(f"K-means clustering of PCA-reduced data")
 
 # plot the centroids
 figure[0, 0].add_scatter(
-    data=np.vstack((centroids[:, 0], centroids[:, 1], centroids[:, 2])).T,
+    data=np.vstack([centroids[:, 0], centroids[:, 1], centroids[:, 2]]).T,
     colors="white",
     sizes=15
 )
 # plot the down-projected data
 digit_scatter = figure[0,0].add_scatter(
-    data=np.vstack((reduced_data[:, 0], reduced_data[:, 1], reduced_data[:, 2])).T,
+    data=np.vstack([reduced_data[:, 0], reduced_data[:, 1], reduced_data[:, 2]]).T,
     sizes=5,
     cmap="tab10", # use a qualitative cmap
     cmap_transform=kmeans.labels_, # color by the predicted cluster
@@ -83,7 +83,12 @@ digit_scatter = figure[0,0].add_scatter(
 ix = 0
 
 # plot the initial image
-digit_img = figure[0, 1].add_image(data[ix].reshape(8,8), cmap="gray", name="digit", interpolation="linear")
+digit_img = figure[0, 1].add_image(
+    data=data[ix].reshape(8,8),
+    cmap="gray",
+    name="digit",
+    interpolation="linear"
+)
 
 # change the color and size of the initial selected data point
 digit_scatter.colors[ix] = "magenta"
