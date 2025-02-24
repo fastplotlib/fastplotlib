@@ -361,11 +361,13 @@ class Graphic:
                 feature = getattr(self, f"_{t}")
                 feature.remove_event_handler(wrapper)
 
-    def add_text(self, text: str, location: str = "center", location_z: str = "front", **kwargs):
+    def add_text(
+        self, text: str, location: str = "center", location_z: str = "front", **kwargs
+    ):
         """
         Add a TextGraphic at one of the corners or center of this graphic.
 
-        Note 1:
+        Note 1: If an axis is flipped, location is relative to the rendered view not the location in world space
         Note 2: Uses axis aligned bounding box to get corners, does not account for any rotation set on the graphic.
 
         Parameters
@@ -394,7 +396,9 @@ class Graphic:
         if not isinstance(location, str):
             raise TypeError("`location` must be of type <str>")
         if location not in valid:
-            raise ValueError(f"`location` must be one of : {valid}, you have passed: {location}")
+            raise ValueError(
+                f"`location` must be one of : {valid}, you have passed: {location}"
+            )
 
         if location == "center":
             x, y, z, r = self.world_object.get_world_bounding_sphere()
