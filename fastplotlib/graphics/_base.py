@@ -361,6 +361,72 @@ class Graphic:
                 feature = getattr(self, f"_{t}")
                 feature.remove_event_handler(wrapper)
 
+    def add_text(self, text: str, location: str = "center", location_z: str = "front", **kwargs):
+        """
+        Add a TextGraphic at one of the corners or center of this graphic.
+
+        Note 1:
+        Note 2: Uses axis aligned bounding box to get corners, does not account for any rotation set on the graphic.
+
+        Parameters
+        ----------
+        text: str
+            text to display in the ``TextGraphic``
+
+        location: str, default "center"
+            one of "center", "top-left", "top-right", "bottom-right", or "bottom-left"
+
+        location_z: str, default "front"
+            one of "front" or "back"
+
+        spacing: float, default 2.0
+            number of pixels from the corner of the graphic to the TextGraphic position, ignored if location = "center"
+
+        kwargs
+            passed to ``TextGraphic``
+
+        Returns
+        -------
+            TextGraphic
+
+        """
+        valid = ["center", "top-left", "top-right", "bottom-right", "bottom-left"]
+        if not isinstance(location, str):
+            raise TypeError("`location` must be of type <str>")
+        if location not in valid:
+            raise ValueError(f"`location` must be one of : {valid}, you have passed: {location}")
+
+        if location == "center":
+            x, y, z, r = self.world_object.get_world_bounding_sphere()
+
+            return self._plot_area.add_text(text, offset=(x, y, z), **kwargs)
+
+        bbox = self.world_object.get_world_bounding_box()
+
+        for i, axis in enumerate(["x", "y", "z"]):
+            if getattr(self._plot_area.camera.local, f"scale_{axis}") < 0:
+                # swap boundary values for this axis
+                bbox[0, i], bbox[1, i] = bbox[1, i], bbox[0, i]
+                print(f"flipped: {i}")
+
+        [[x1, y1, z1], [x2, y2, z2]] = bbox
+
+        # set (x, y, z) location of text based on user str
+        if "top" in location:
+            y = y2
+        elif "bottom" in location:
+            y = y1
+        if "left" in location:
+            x = x1
+        elif "right" in location:
+            x = x2
+        if location_z == "front":
+            z = z1
+        elif location_z == "back":
+            z = z2
+
+        return self._plot_area.add_text(text, offset=(x, y, z), **kwargs)
+
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
