@@ -63,39 +63,38 @@ class _LineCollectionProperties:
             g.data = v
 
     @property
-    def cmap(self) -> CollectionFeature:
+    def cmap(self) -> str:
         """
         Get or set a cmap along the line collection.
-
-        Optionally set using a tuple ("cmap", <transform>, <alpha>) to set the transform and/or alpha.
-        Example:
-
-        line_collection.cmap = ("jet", sine_transform_vals, 0.7)
-
         """
-        return CollectionFeature(self.graphics, "cmap")
+        return self._cmap
 
     @cmap.setter
-    def cmap(self, args):
-        if isinstance(args, str):
-            name = args
-            transform, alpha = None, 1.0
-        elif len(args) == 1:
-            name = args[0]
-            transform, alpha = None, None
+    def cmap(self, name):
+        if not isinstance(name, str):
+            raise TypeError("cmap must be of type <str>")
 
-        elif len(args) == 2:
-            name, transform = args
-            alpha = None
+        colors = parse_cmap_values(
+            n_colors=len(self), cmap_name=name, transform=self.cmap_transform
+        )
+        colors[:, -1] = self.alpha
+        self.colors = colors
 
-        elif len(args) == 3:
-            name, transform, alpha = args
+
+
+    @property
+    def cmap_transform(self) -> np.ndarray:
+        return self._cmap_transform
+
+    @cmap_transform.setter
+    def cmap_transform(self, transform: np.ndarray):
+        transform = np.asarray(transform)
 
         colors = parse_cmap_values(
             n_colors=len(self), cmap_name=name, transform=transform
         )
-        colors[:, -1] = alpha
-        self.colors = colors
+
+
 
     @property
     def thickness(self) -> np.ndarray:
@@ -127,7 +126,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         thickness: float | Sequence[float] = 2.0,
         colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
         uniform_colors: bool = False,
-        alpha: float = 1.0,
+        alpha: float = None,
         cmap: Sequence[str] | str = None,
         cmap_transform: np.ndarray | List = None,
         name: str = None,
@@ -155,22 +154,22 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
             | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
+            | if "random", generates a random color for each line
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
         alpha: float, optional
-            alpha value for colors, if colors is a ``str``
+            alpha value for colors
 
-        cmap: Iterable of str or str, optional
-            | if ``str``, single cmap will be used for all lines
-            | if ``list`` of ``str``, each cmap will apply to the individual lines
+        cmap: str, optional
+            apply a cmap *across* the lines in the collection. `colors` argument is ignored if cmap is provided.
 
             .. note::
                 ``cmap`` overrides any arguments passed to ``colors``
 
         cmap_transform: 1D array-like of numerical values, optional
-            if provided, these values are used to map the colors from the cmap
+            if provided, these values are used to map the colors from the cmap *across* the collection
 
         name: str, optional
             name of the line collection as a whole
@@ -220,9 +219,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                     f"{len(kwargs_lines)} != {len(data)}"
                 )
 
-        self._cmap_transform = cmap_transform
-        self._cmap_str = cmap
-
         # cmap takes priority over colors
         if cmap is not None:
             # cmap across lines
@@ -231,19 +227,11 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                     n_colors=len(data), cmap_name=cmap, transform=cmap_transform
                 )
                 single_color = False
-                cmap = None
-
-            elif isinstance(cmap, (tuple, list)):
-                if len(cmap) != len(data):
-                    raise ValueError(
-                        "cmap argument must be a single cmap or a list of cmaps "
-                        "with the same length as the data"
-                    )
-                single_color = False
+                self._cmap = cmap
+                self._cmap_transform = cmap_transform
             else:
                 raise ValueError(
-                    "cmap argument must be a single cmap or a list of cmaps "
-                    "with the same length as the data"
+                    "cmap argument must be of type <str>"
                 )
         else:
             if isinstance(colors, np.ndarray):
@@ -264,7 +252,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             elif isinstance(colors, str):
                 if colors == "random":
                     colors = np.random.rand(len(data), 4)
-                    colors[:, -1] = alpha
                     single_color = False
                 else:
                     # parse string color
@@ -286,6 +273,12 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                         "tuple or list colors argument must be a single color represented as [R, G, B, A], "
                         "or must be a tuple/list of colors represented by a string with the same length as the data"
                     )
+
+        self._alpha = alpha
+        if alpha is not None:
+            colors[:, -1] = alpha
+
+
 
         if kwargs_lines is None:
             kwargs_lines = dict()
