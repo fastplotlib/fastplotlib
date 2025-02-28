@@ -1,4 +1,3 @@
-import fastplotlib as fpl
 import pygfx
 import numpy as np
 
@@ -33,7 +32,7 @@ Illustration:
 (0, 0) ---------------------------------------------------
 ----------------------------------------------------------
 ----------------------------------------------------------
---------------(x1, -y1) --------------- (x2, -y1) --------
+--------------(x0, -y0) --------------- (x1, -y0) --------
 ------------------------|||||||||||||||-------------------
 ------------------------|||||||||||||||-------------------
 ------------------------|||||||||||||||-------------------
@@ -41,7 +40,7 @@ Illustration:
 ------------------------|||||||||||||||-------------------
 ------------------------|||||||||||||||-------------------
 ------------------------|||||||||||||||-------------------
---------------(x1, -y2) --------------- (x2, -y2)---------
+--------------(x0, -y1) --------------- (x1, -y1)---------
 ----------------------------------------------------------
 ------------------------------------------- (canvas_width, canvas_height)
 
@@ -49,29 +48,29 @@ Illustration:
 
 
 class MeshMasks:
-    """Used set the x1, x2, y1, y2 positions of the mesh"""
-    x1 = np.array([
+    """Used set the x1, x1, y0, y1 positions of the mesh"""
+    x0 = np.array([
         [False, False, False],
         [True, False, False],
         [False, False, False],
         [True, False, False],
     ])
 
-    x2 = np.array([
+    x1 = np.array([
         [True, False, False],
         [False, False, False],
         [True, False, False],
+        [False, False, False],
+    ])
+
+    y0 = np.array([
+        [False, True, False],
+        [False, True, False],
+        [False, False, False],
         [False, False, False],
     ])
 
     y1 = np.array([
-        [False, True, False],
-        [False, True, False],
-        [False, False, False],
-        [False, False, False],
-    ])
-
-    y2 = np.array([
         [False, False, False],
         [False, False, False],
         [False, True, False],
@@ -83,14 +82,22 @@ masks = MeshMasks
 
 
 class SubplotFrame:
-    def __init__(self, bbox: tuple):
-        x1, y1, w, h = bbox
+    def __init__(self, figure, bbox: np.ndarray = None, ranges: np.ndarray = None):
+        self.figure = figure
+        self._canvas_rect = figure.get_pygfx_render_area()
+        figure.canvas.add_event_handler(self._canvas_resized, "resize")
+
+        bbox = self._get_bbox_screen_coords(bbox)
+
+        x0, y0, w, h = bbox
+        self._bbox_screen = np.array(bbox, dtype=np.int64)
+
         geometry = pygfx.plane_geometry(1, 1)
         material = pygfx.MeshBasicMaterial()
         self._plane = pygfx.Mesh(geometry, material)
 
         self._resize_handler = pygfx.Points(
-            pygfx.Geometry(positions=[[x1, -y1, 0]]),
+            pygfx.Geometry(positions=[[x0, -y0, 0]]),
             pygfx.PointsMarkerMaterial(marker="square", size=4, size_space="screen")
         )
 
@@ -99,45 +106,117 @@ class SubplotFrame:
         self._world_object = pygfx.Group()
         self._world_object.add(self._plane, self._resize_handler)
 
-    def validate_bbox(self, bbox):
+    def _get_bbox_screen_coords(self, bbox) -> np.ndarray[int]:
         for val, name in zip(bbox, ["x-position", "y-position", "width", "height"]):
             if val < 0:
                 raise ValueError(f"Invalid bbox value < 0 for: {name}")
 
+        bbox = np.asarray(bbox)
+
+        _, _, cw, ch = self._canvas_rect
+        mult = np.array([cw, ch, cw, ch])
+
+        if (bbox < 1).all():  # fractional bbox
+            # check that widths, heights are valid:
+            if bbox[0] + bbox[2] > 1:
+                raise ValueError("invalid fractional value: x + width > 1")
+            if bbox[1] + bbox[3] > 1:
+                raise ValueError("invalid fractional value: y + height > 1")
+
+            self._bbox_frac = bbox.copy()
+            bbox = self._bbox_frac * mult
+
+        elif (bbox > 1).all():  # bbox in already in screen coords coordinates
+            # check that widths, heights are valid
+            if bbox[0] + bbox[2] > cw:
+                raise ValueError("invalid value: x + width > 1")
+            if bbox[1] + bbox[3] > ch:
+                raise ValueError("invalid value: y + height > 1")
+
+            self._bbox_frac = bbox / mult
+
+        return bbox.astype(np.int64)
+
     @property
-    def rect(self) -> tuple[float, float, float, float]:
-        x = self.plane.geometry.positions.data[masks.x1][0]
-        y = self.plane.geometry.positions.data[masks.y1][0]
+    def x(self) -> tuple[np.int64, np.int64]:
+        return self.rect[0], self.rect[0] + self.rect[2]
 
-        w = self.plane.geometry.positions.data[masks.x2][0] - x
-        h = self.plane.geometry.positions.data[masks.y2][0] - y
+    @property
+    def y(self) -> tuple[np.int64, np.int64]:
+        return self.rect[1], self.rect[1] + self.rect[3]
 
-        return x, -y, w, -h  # remember y is inverted
+    @property
+    def x_frac(self):
+        pass
+
+    @property
+    def y_frac(self):
+        pass
+
+    @property
+    def rect(self) -> np.ndarray[int]:
+        return self._bbox_screen
 
     @rect.setter
-    def rect(self, bbox: tuple[float, float, float, float]):
-        self.validate_bbox(bbox)
-        x1, y1, w, h = bbox
+    def rect(self, bbox: np.ndarray):
+        bbox = self._get_bbox_screen_coords(bbox)
+        self._set_plane(bbox)
 
-        x2 = x1 + w
-        y2 = y1 + h
+    def _set_plane(self, bbox: np.ndarray):
+        """bbox is in screen coordinates, not fractional"""
 
+        x0, y0, w, h = bbox
+
+        x1 = x0 + w
+        y1 = y0 + h
+
+        self._plane.geometry.positions.data[masks.x0] = x0
         self._plane.geometry.positions.data[masks.x1] = x1
-        self._plane.geometry.positions.data[masks.x2] = x2
-        self._plane.geometry.positions.data[masks.y1] = -y1  # negative because UnderlayCamera y is inverted
-        self._plane.geometry.positions.data[masks.y2] = -y2
+        self._plane.geometry.positions.data[masks.y0] = -y0  # negative because UnderlayCamera y is inverted
+        self._plane.geometry.positions.data[masks.y1] = -y1
 
         self._plane.geometry.positions.update_full()
 
-        self._resize_handler.geometry.positions.data[0] = [x2, -y2, 0]
+        self._resize_handler.geometry.positions.data[0] = [x1, -y1, 0]
         self._resize_handler.geometry.positions.update_full()
+
+        self._bbox_screen[:] = bbox
 
     @property
     def plane(self) -> pygfx.Mesh:
         return self._plane
 
+    def _canvas_resized(self, *ev):
+        # render area, to account for any edge windows that might be present
+        # remember this frame also encapsulates the imgui toolbar which is
+        # part of the subplot so we do not subtract the toolbar height!
+        self._canvas_rect = self.figure.get_pygfx_render_area()
+
+        # set rect using existing fractional bbox
+        self.rect = self._bbox_frac
+
+    def __repr__(self):
+        s = f"{self._bbox_frac}\n{self.rect}"
+
+        return s
 
 
+class FlexLayoutManager:
+    def __init__(self, figure, *frames: SubplotFrame):
+        self.figure = figure
+        self.figure.renderer.add_event_handler(self._figure_resized, "resize")
+
+        # for subplot in
+
+    def _subplot_changed(self):
+        """
+        Check that this subplot x_range, y_range does not overlap with any other
+
+        Check that this x_min > all other x_
+        """
+
+    def _figure_resized(self, ev):
+        w, h = ev["width"], ev["height"]
 
 
 
