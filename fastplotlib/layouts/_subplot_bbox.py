@@ -99,24 +99,31 @@ class SubplotFrame:
         self._canvas_rect = figure.get_pygfx_render_area()
         figure.canvas.add_event_handler(self._canvas_resized, "resize")
 
+        # initialize rect state arrays
+        # used to store internal state of the rect in both fractional screen space and absolute screen space
+        # the purpose of storing the fractional rect is that it remains constant when the canvas resizes
         self._rect_frac = np.zeros(4, dtype=np.float64)
         self._rect_screen_space = np.zeros(4, dtype=np.float64)
 
         if rect is None:
             if ranges is None:
-                raise ValueError
+                raise ValueError("Must provide rect or ranges")
+
+            # convert ranges to rect
             rect = self._ranges_to_rect(ranges)
 
+        # assign the internal state of the rect by parsing the user passed rect
         self._assign_rect(rect)
 
-        x0, y0, w, h = self.rect
-
+        # init mesh of size 1 to graphically represent rect
         geometry = pygfx.plane_geometry(1, 1)
         material = pygfx.MeshBasicMaterial()
         self._plane = pygfx.Mesh(geometry, material)
 
+        # create resize handler at point (x1, y1)
+        x1, y1 = self.ranges[[1, 3]]
         self._resize_handler = pygfx.Points(
-            pygfx.Geometry(positions=[[x0, -y0, 0]]),
+            pygfx.Geometry(positions=[[x1, -y1, 0]]),  # y is inverted in UnderlayCamera
             pygfx.PointsMarkerMaterial(marker="square", size=4, size_space="screen")
         )
 
@@ -143,6 +150,10 @@ class SubplotFrame:
         return np.array([x, y, w, h])
 
     def _assign_rect(self, rect) -> np.ndarray[int]:
+        """
+        Using the passed rect which is either absolute screen space or fractional,
+        set the internal fractional and absolute screen space rects
+        """
         for val, name in zip(rect, ["x-position", "y-position", "width", "height"]):
             if val < 0:
                 raise ValueError(f"Invalid rect value < 0 for: {name}")
@@ -178,8 +189,10 @@ class SubplotFrame:
             raise ValueError(f"Invalid rect: {rect}")
 
     @property
-    def ranges(self) -> tuple[np.int64, np.int64, np.int64, np.int64]:
-        return self.rect[0], self.rect[0] + self.rect[2], self.rect[1], self.rect[1] + self.rect[3]
+    def ranges(self) -> np.ndarray:
+        """ranges, (xmin, xmax, ymin, ymax)"""
+        # not actually stored, computed when needed
+        return np.asarray([self.rect[0], self.rect[0] + self.rect[2], self.rect[1], self.rect[1] + self.rect[3]])
 
     @ranges.setter
     def ranges(self, ranges: np.ndarray):
@@ -188,7 +201,7 @@ class SubplotFrame:
 
     @property
     def rect(self) -> np.ndarray[int]:
-        """rect in absolute screen space"""
+        """rect in absolute screen space, (x, y, w, h)"""
         return self._rect_screen_space
 
     @rect.setter
@@ -197,7 +210,7 @@ class SubplotFrame:
         self._reset_plane()
 
     def _reset_plane(self):
-        """bbox is in screen coordinates, not fractional"""
+        """reset the plane mesh using the current rect state"""
 
         x0, y0, w, h = self.rect
 
@@ -206,25 +219,28 @@ class SubplotFrame:
 
         self._plane.geometry.positions.data[masks.x0] = x0
         self._plane.geometry.positions.data[masks.x1] = x1
-        self._plane.geometry.positions.data[masks.y0] = -y0  # negative because UnderlayCamera y is inverted
+        self._plane.geometry.positions.data[masks.y0] = -y0  # negative y because UnderlayCamera y is inverted
         self._plane.geometry.positions.data[masks.y1] = -y1
 
         self._plane.geometry.positions.update_full()
 
+        # note the negative y because UnderlayCamera y is inverted
         self._resize_handler.geometry.positions.data[0] = [x1, -y1, 0]
         self._resize_handler.geometry.positions.update_full()
 
     @property
     def plane(self) -> pygfx.Mesh:
+        """the plane mesh"""
         return self._plane
 
     def _canvas_resized(self, *ev):
+        """triggered when canvas is resized"""
         # render area, to account for any edge windows that might be present
         # remember this frame also encapsulates the imgui toolbar which is
         # part of the subplot so we do not subtract the toolbar height!
         self._canvas_rect = self.figure.get_pygfx_render_area()
 
-        # set rect using existing rect_frac since this remains constant regardless of resize
+        # set new rect using existing rect_frac since this remains constant regardless of resize
         self.rect = self._rect_frac
 
     def __repr__(self):
@@ -238,7 +254,7 @@ class FlexLayoutManager:
         self.figure = figure
         self.figure.renderer.add_event_handler(self._figure_resized, "resize")
 
-        # for subplot in
+        self._frames = frames
 
     def _subplot_changed(self):
         """
@@ -246,6 +262,7 @@ class FlexLayoutManager:
 
         Check that this x_min > all other x_
         """
+        pass
 
     def _figure_resized(self, ev):
         w, h = ev["width"], ev["height"]
