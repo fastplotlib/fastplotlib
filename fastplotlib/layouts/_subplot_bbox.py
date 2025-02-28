@@ -82,15 +82,34 @@ masks = MeshMasks
 
 
 class SubplotFrame:
-    def __init__(self, figure, bbox: np.ndarray = None, ranges: np.ndarray = None):
+    def __init__(self, figure, rect: np.ndarray = None, ranges: np.ndarray = None):
+        """
+
+        Parameters
+        ----------
+        figure
+        rect: (x, y, w, h)
+            in absolute screen space or fractional screen space, example if the canvas w, h is (100, 200)
+            a fractional rect of (0.1, 0.1, 0.5, 0.5) is (10, 10, 50, 100) in absolute screen space
+
+        ranges (xmin, xmax, ymin, ymax)
+            in absolute screen coordinates or fractional screen coordinates
+        """
         self.figure = figure
         self._canvas_rect = figure.get_pygfx_render_area()
         figure.canvas.add_event_handler(self._canvas_resized, "resize")
 
-        bbox = self._get_bbox_screen_coords(bbox)
+        self._rect_frac = np.zeros(4, dtype=np.float64)
+        self._rect_screen_space = np.zeros(4, dtype=np.float64)
 
-        x0, y0, w, h = bbox
-        self._bbox_screen = np.array(bbox, dtype=np.int64)
+        if rect is None:
+            if ranges is None:
+                raise ValueError
+            rect = self._ranges_to_rect(ranges)
+
+        self._assign_rect(rect)
+
+        x0, y0, w, h = self.rect
 
         geometry = pygfx.plane_geometry(1, 1)
         material = pygfx.MeshBasicMaterial()
@@ -101,71 +120,86 @@ class SubplotFrame:
             pygfx.PointsMarkerMaterial(marker="square", size=4, size_space="screen")
         )
 
-        self.rect = bbox
+        self._reset_plane()
 
         self._world_object = pygfx.Group()
         self._world_object.add(self._plane, self._resize_handler)
 
-    def _get_bbox_screen_coords(self, bbox) -> np.ndarray[int]:
-        for val, name in zip(bbox, ["x-position", "y-position", "width", "height"]):
-            if val < 0:
-                raise ValueError(f"Invalid bbox value < 0 for: {name}")
+    def _ranges_to_rect(self, ranges) -> np.ndarray:
+        """convert ranges to rect"""
+        x0, x1, y0, y1 = ranges
 
-        bbox = np.asarray(bbox)
+        # width and height
+        w = x1 - x0
+        h = y1 - y0
+
+        if x1 - x0 <= 0:
+            raise ValueError
+        if y1 - y0 <= 0:
+            raise ValueError
+
+        x, y, w, h = x0, y0, w, h
+
+        return np.array([x, y, w, h])
+
+    def _assign_rect(self, rect) -> np.ndarray[int]:
+        for val, name in zip(rect, ["x-position", "y-position", "width", "height"]):
+            if val < 0:
+                raise ValueError(f"Invalid rect value < 0 for: {name}")
+
+        rect = np.asarray(rect)
 
         _, _, cw, ch = self._canvas_rect
         mult = np.array([cw, ch, cw, ch])
 
-        if (bbox < 1).all():  # fractional bbox
+        if (rect[2:] <= 1).all():  # fractional bbox
             # check that widths, heights are valid:
-            if bbox[0] + bbox[2] > 1:
+            if rect[0] + rect[2] > 1:
                 raise ValueError("invalid fractional value: x + width > 1")
-            if bbox[1] + bbox[3] > 1:
+            if rect[1] + rect[3] > 1:
                 raise ValueError("invalid fractional value: y + height > 1")
 
-            self._bbox_frac = bbox.copy()
-            bbox = self._bbox_frac * mult
+            # assign values, don't just change the reference
+            self._rect_frac[:] = rect
+            self._rect_screen_space[:] = self._rect_frac * mult
 
-        elif (bbox > 1).all():  # bbox in already in screen coords coordinates
+        # for screen coords allow (x, y) = 1 or 0, but w, h must be > 1
+        elif (rect[2:] > 1).all():  # bbox in already in screen coords coordinates
             # check that widths, heights are valid
-            if bbox[0] + bbox[2] > cw:
+            if rect[0] + rect[2] > cw:
                 raise ValueError("invalid value: x + width > 1")
-            if bbox[1] + bbox[3] > ch:
+            if rect[1] + rect[3] > ch:
                 raise ValueError("invalid value: y + height > 1")
 
-            self._bbox_frac = bbox / mult
+            self._rect_frac[:] = rect / mult
+            self._rect_screen_space[:] = rect
 
-        return bbox.astype(np.int64)
-
-    @property
-    def x(self) -> tuple[np.int64, np.int64]:
-        return self.rect[0], self.rect[0] + self.rect[2]
+        else:
+            raise ValueError(f"Invalid rect: {rect}")
 
     @property
-    def y(self) -> tuple[np.int64, np.int64]:
-        return self.rect[1], self.rect[1] + self.rect[3]
+    def ranges(self) -> tuple[np.int64, np.int64, np.int64, np.int64]:
+        return self.rect[0], self.rect[0] + self.rect[2], self.rect[1], self.rect[1] + self.rect[3]
 
-    @property
-    def x_frac(self):
-        pass
-
-    @property
-    def y_frac(self):
-        pass
+    @ranges.setter
+    def ranges(self, ranges: np.ndarray):
+        rect = self._ranges_to_rect(ranges)
+        self.rect = rect
 
     @property
     def rect(self) -> np.ndarray[int]:
-        return self._bbox_screen
+        """rect in absolute screen space"""
+        return self._rect_screen_space
 
     @rect.setter
-    def rect(self, bbox: np.ndarray):
-        bbox = self._get_bbox_screen_coords(bbox)
-        self._set_plane(bbox)
+    def rect(self, rect: np.ndarray):
+        self._assign_rect(rect)
+        self._reset_plane()
 
-    def _set_plane(self, bbox: np.ndarray):
+    def _reset_plane(self):
         """bbox is in screen coordinates, not fractional"""
 
-        x0, y0, w, h = bbox
+        x0, y0, w, h = self.rect
 
         x1 = x0 + w
         y1 = y0 + h
@@ -180,8 +214,6 @@ class SubplotFrame:
         self._resize_handler.geometry.positions.data[0] = [x1, -y1, 0]
         self._resize_handler.geometry.positions.update_full()
 
-        self._bbox_screen[:] = bbox
-
     @property
     def plane(self) -> pygfx.Mesh:
         return self._plane
@@ -192,11 +224,11 @@ class SubplotFrame:
         # part of the subplot so we do not subtract the toolbar height!
         self._canvas_rect = self.figure.get_pygfx_render_area()
 
-        # set rect using existing fractional bbox
-        self.rect = self._bbox_frac
+        # set rect using existing rect_frac since this remains constant regardless of resize
+        self.rect = self._rect_frac
 
     def __repr__(self):
-        s = f"{self._bbox_frac}\n{self.rect}"
+        s = f"{self._rect_frac}\n{self.rect}"
 
         return s
 
@@ -217,6 +249,7 @@ class FlexLayoutManager:
 
     def _figure_resized(self, ev):
         w, h = ev["width"], ev["height"]
+
 
 
 
