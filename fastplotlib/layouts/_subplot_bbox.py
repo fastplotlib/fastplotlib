@@ -131,7 +131,7 @@ class SubplotFrame:
         x1, y1 = self.extent[[1, 3]]
         self._resize_handler = pygfx.Points(
             pygfx.Geometry(positions=[[x1, -y1, 0]]),  # y is inverted in UnderlayCamera
-            pygfx.PointsMarkerMaterial(marker="square", size=4, size_space="screen", pick_write=True)
+            pygfx.PointsMarkerMaterial(marker="square", size=12, size_space="screen", pick_write=True)
         )
 
         self._reset_plane()
@@ -438,5 +438,5 @@ class FlexLayoutManager:
     def _action_end(self, ev):
         self._moving = False
         self._resizing = False
-        self._active_frame.resize_handler.material.color = (0, 0, 0)
+        self._active_frame.resize_handler.material.color = (1, 1, 1)
         self._last_pointer_pos[:] = np.nan
