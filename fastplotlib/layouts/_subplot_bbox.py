@@ -326,7 +326,7 @@ class SubplotFrame:
 
 
 class FlexLayoutManager:
-    def __init__(self, figure, frames: SubplotFrame):
+    def __init__(self, figure, frames: tuple[SubplotFrame]):
         self.figure = figure
         # self.figure.renderer.add_event_handler(self._figure_resized, "resize")
 
@@ -344,17 +344,6 @@ class FlexLayoutManager:
 
         self.figure.renderer.add_event_handler(self._action_iter, "pointer_move")
         self.figure.renderer.add_event_handler(self._action_end, "pointer_up")
-
-    def _subplot_changed(self):
-        """
-        Check that this subplot x_range, y_range does not overlap with any other
-
-        Check that this x_min > all other x_
-        """
-        pass
-
-    # def _figure_resized(self, ev):
-    #     w, h = ev["width"], ev["height"]
 
     def _new_extent_from_delta(self, delta: tuple[int, int]) -> np.ndarray:
         delta_x, delta_y = delta
