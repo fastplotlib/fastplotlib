@@ -344,12 +344,45 @@ class Frame:
         return s
 
 
-class FlexLayoutManager:
+class BaseLayoutManager:
     def __init__(self, figure, frames: tuple[Frame]):
-        self.figure = figure
-        # self.figure.renderer.add_event_handler(self._figure_resized, "resize")
-
+        self._figure = figure
         self._frames = frames
+
+    def set_rect(self, subplot, rect: np.ndarray | list | tuple):
+        raise NotImplementedError
+
+    def set_extent(self, subplot, extent: np.ndarray | list | tuple):
+        raise NotImplementedError
+
+    def _canvas_resize_handler(self, ev):
+        pass
+
+    @property
+    def spacing(self) -> int:
+        pass
+
+
+class GridLayout(BaseLayoutManager):
+    def __init__(self, figure, frames: tuple[Frame]):
+        super().__init__(figure, frames)
+
+    def set_rect(self, subplot, rect: np.ndarray | list | tuple):
+        raise NotImplementedError("set_rect() not implemented for GridLayout which is an auto layout manager")
+
+    def set_extent(self, subplot, extent: np.ndarray | list | tuple):
+        raise NotImplementedError("set_extent() not implemented for GridLayout which is an auto layout manager")
+
+    def _fpl_set_subplot_viewport_rect(self):
+        pass
+
+    def _fpl_set_subplot_dock_viewport_rect(self):
+        pass
+
+
+class FlexLayout(BaseLayoutManager):
+    def __init__(self, figure, frames: tuple[Frame]):
+        super().__init__(figure, frames)
 
         self._last_pointer_pos: np.ndarray[np.float64, np.float64] = np.array([np.nan, np.nan])
 
@@ -363,8 +396,8 @@ class FlexLayoutManager:
             frame.resize_handler.add_event_handler(self._highlight_resize_handler, "pointer_enter")
             frame.resize_handler.add_event_handler(self._unhighlight_resize_handler, "pointer_leave")
 
-        self.figure.renderer.add_event_handler(self._action_iter, "pointer_move")
-        self.figure.renderer.add_event_handler(self._action_end, "pointer_up")
+        self._figure.renderer.add_event_handler(self._action_iter, "pointer_move")
+        self._figure.renderer.add_event_handler(self._action_end, "pointer_up")
 
     def _new_extent_from_delta(self, delta: tuple[int, int]) -> np.ndarray:
         delta_x, delta_y = delta
