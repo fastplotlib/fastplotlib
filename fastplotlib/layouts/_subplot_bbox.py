@@ -85,6 +85,41 @@ class MeshMasks:
 masks = MeshMasks
 
 
+class Rect:
+    def __init__(self, x, y, w, h):
+        pass
+
+    def fractional(self) -> bool:
+        pass
+
+    @property
+    def x(self) -> int:
+        pass
+
+    def to_extent(self):
+        pass
+
+    def set_from_extent(self, extent):
+        pass
+
+
+class Extent:
+    def __init__(self, x0, x1, y0, y1):
+        pass
+
+    def fractional(self) -> bool:
+        pass
+
+    def x1(self) -> int:
+        pass
+
+    def to_rect(self):
+        pass
+
+    def set_from_rect(self):
+        pass
+
+
 class Frame:
     def __init__(self, figure, rect: np.ndarray = None, extent: np.ndarray = None, subplot_title: str = None):
         """
