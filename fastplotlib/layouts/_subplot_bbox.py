@@ -3,6 +3,8 @@ from functools import partial
 import numpy as np
 import pygfx
 
+from ..graphics import TextGraphic
+
 
 class UnderlayCamera(pygfx.Camera):
     """
@@ -83,8 +85,8 @@ class MeshMasks:
 masks = MeshMasks
 
 
-class SubplotFrame:
-    def __init__(self, figure, rect: np.ndarray = None, extent: np.ndarray = None):
+class Frame:
+    def __init__(self, figure, rect: np.ndarray = None, extent: np.ndarray = None, subplot_title: str = None):
         """
 
         Parameters
@@ -95,7 +97,7 @@ class SubplotFrame:
             a fractional rect of (0.1, 0.1, 0.5, 0.5) is (10, 10, 50, 100) in absolute screen space
 
         extent: (xmin, xmax, ymin, ymax)
-            range in absolute screen coordinates or fractional screen coordinates
+            extent of the frame in absolute screen coordinates or fractional screen coordinates
         """
         self.figure = figure
 
@@ -119,6 +121,10 @@ class SubplotFrame:
             # convert ranges to rect
             rect = self._extent_to_rect(extent)
 
+        if subplot_title is None:
+            subplot_title = ""
+        self._subplot_title = TextGraphic(subplot_title, face_color="black")
+
         # assign the internal state of the rect by parsing the user passed rect
         self._assign_rect(rect)
 
@@ -126,6 +132,9 @@ class SubplotFrame:
         geometry = pygfx.plane_geometry(1, 1)
         material = pygfx.MeshBasicMaterial(pick_write=True)
         self._plane = pygfx.Mesh(geometry, material)
+
+        # otherwise text isn't visible
+        self._plane.world.z = 0.5
 
         # create resize handler at point (x1, y1)
         x1, y1 = self.extent[[1, 3]]
@@ -137,7 +146,7 @@ class SubplotFrame:
         self._reset_plane()
 
         self._world_object = pygfx.Group()
-        self._world_object.add(self._plane, self._resize_handler)
+        self._world_object.add(self._plane, self._resize_handler, self._subplot_title.world_object)
 
     def _extent_to_rect(self, extent) -> np.ndarray:
         """convert extent to rect"""
@@ -277,6 +286,12 @@ class SubplotFrame:
         self._resize_handler.geometry.positions.data[0] = [x1, -y1, 0]
         self._resize_handler.geometry.positions.update_full()
 
+        # set subplot title position
+        x = x0 + (w / 2)
+        y = y0 + (self.subplot_title.font_size / 2)
+        self.subplot_title.world_object.world.x = x
+        self.subplot_title.world_object.world.y = -y
+
     @property
     def plane(self) -> pygfx.Mesh:
         """the plane mesh"""
@@ -319,6 +334,10 @@ class SubplotFrame:
         x0, x1, y0, y1 = extent
         return not any([self.is_above(y0), self.is_below(y1), self.is_left_of(x0), self.is_right_of(x1)])
 
+    @property
+    def subplot_title(self) -> TextGraphic:
+        return self._subplot_title
+
     def __repr__(self):
         s = f"{self._rect_frac}\n{self.rect}"
 
@@ -326,7 +345,7 @@ class SubplotFrame:
 
 
 class FlexLayoutManager:
-    def __init__(self, figure, frames: tuple[SubplotFrame]):
+    def __init__(self, figure, frames: tuple[Frame]):
         self.figure = figure
         # self.figure.renderer.add_event_handler(self._figure_resized, "resize")
 
@@ -336,7 +355,7 @@ class FlexLayoutManager:
 
         self._moving = False
         self._resizing = False
-        self._active_frame: SubplotFrame | None = None
+        self._active_frame: Frame | None = None
 
         for frame in self._frames:
             frame.plane.add_event_handler(partial(self._action_start, frame, "move"), "pointer_down")
@@ -405,7 +424,7 @@ class FlexLayoutManager:
 
         return new_extent
 
-    def _action_start(self, frame: SubplotFrame, action: str, ev):
+    def _action_start(self, frame: Frame, action: str, ev):
         if ev.button == 1:
             if action == "move":
                 self._moving = True
