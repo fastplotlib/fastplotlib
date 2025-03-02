@@ -386,8 +386,7 @@ class FlexLayout(BaseLayoutManager):
 
         self._last_pointer_pos: np.ndarray[np.float64, np.float64] = np.array([np.nan, np.nan])
 
-        self._moving = False
-        self._resizing = False
+        self._active_action: str | None = None
         self._active_frame: Frame | None = None
 
         for frame in self._frames:
@@ -401,7 +400,7 @@ class FlexLayout(BaseLayoutManager):
 
     def _new_extent_from_delta(self, delta: tuple[int, int]) -> np.ndarray:
         delta_x, delta_y = delta
-        if self._resizing:
+        if self._active_action == "resize":
             # subtract only from x1, y1
             new_extent = self._active_frame.extent - np.asarray([0, delta_x, 0, delta_y])
         else:
@@ -459,10 +458,8 @@ class FlexLayout(BaseLayoutManager):
 
     def _action_start(self, frame: Frame, action: str, ev):
         if ev.button == 1:
-            if action == "move":
-                self._moving = True
-            elif action == "resize":
-                self._resizing = True
+            self._active_action = action
+            if action == "resize":
                 frame.resize_handler.material.color = (1, 0, 0)
             else:
                 raise ValueError
@@ -471,7 +468,7 @@ class FlexLayout(BaseLayoutManager):
             self._last_pointer_pos[:] = ev.x, ev.y
 
     def _action_iter(self, ev):
-        if not any((self._moving, self._resizing)):
+        if self._active_action is None:
             return
 
         delta_x, delta_y = self._last_pointer_pos - (ev.x, ev.y)
@@ -480,19 +477,18 @@ class FlexLayout(BaseLayoutManager):
         self._last_pointer_pos[:] = ev.x, ev.y
 
     def _action_end(self, ev):
-        self._moving = False
-        self._resizing = False
+        self._active_action = None
         self._active_frame.resize_handler.material.color = (1, 1, 1)
         self._last_pointer_pos[:] = np.nan
 
     def _highlight_resize_handler(self, ev):
-        if self._resizing:
+        if self._active_action == "resize":
             return
 
         ev.target.material.color = (1, 1, 0)
 
     def _unhighlight_resize_handler(self, ev):
-        if self._resizing:
+        if self._active_action == "resize":
             return
 
         ev.target.material.color = (1, 1, 1)
