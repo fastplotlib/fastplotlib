@@ -341,6 +341,8 @@ class FlexLayoutManager:
         for frame in self._frames:
             frame.plane.add_event_handler(partial(self._action_start, frame, "move"), "pointer_down")
             frame.resize_handler.add_event_handler(partial(self._action_start, frame, "resize"), "pointer_down")
+            frame.resize_handler.add_event_handler(self._highlight_resize_handler, "pointer_enter")
+            frame.resize_handler.add_event_handler(self._unhighlight_resize_handler, "pointer_leave")
 
         self.figure.renderer.add_event_handler(self._action_iter, "pointer_move")
         self.figure.renderer.add_event_handler(self._action_end, "pointer_up")
@@ -359,10 +361,11 @@ class FlexLayoutManager:
         h = y1 - y0
 
         # make sure width and height are valid
-        if w <= 0:  # width > 0
+        # min width, height is 50px
+        if w <= 50:  # width > 0
             new_extent[:2] = self._active_frame.extent[:2]
 
-        if h <= 0:  # height > 0
+        if h <= 50:  # height > 0
             new_extent[2:] = self._active_frame.extent[2:]
 
         # ignore movement if this would cause an overlap
@@ -429,3 +432,15 @@ class FlexLayoutManager:
         self._resizing = False
         self._active_frame.resize_handler.material.color = (1, 1, 1)
         self._last_pointer_pos[:] = np.nan
+
+    def _highlight_resize_handler(self, ev):
+        if self._resizing:
+            return
+
+        ev.target.material.color = (1, 1, 0)
+
+    def _unhighlight_resize_handler(self, ev):
+        if self._resizing:
+            return
+
+        ev.target.material.color = (1, 1, 1)
