@@ -29,7 +29,8 @@ Each subplot is defined by a 2D plane mesh, a rectangle.
 The rectangles are viewed using the UnderlayCamera  where (0, 0) is the top left corner.
 We can control the bbox of this rectangle by changing the x and y boundaries of the rectangle.
 
-Note how the y values are negative.
+Note how the y values of the plane mesh are negative, this is because of the UnderlayCamera.
+We always just keep the positive y value, and make it negative only when setting the plane mesh.
 
 Illustration:
 
@@ -86,38 +87,140 @@ masks = MeshMasks
 
 
 class Rect:
-    def __init__(self, x, y, w, h):
-        pass
+    def __init__(self, x: float, y: float, w: float, h: float, canvas_rect: tuple):
+        self._rect_frac = np.zeros(4, dtype=np.float64)
+        self._rect_screen_space = np.zeros(4, dtype=np.float64)
+        self._canvas_rect = canvas_rect
 
-    def fractional(self) -> bool:
-        pass
+        self._set(np.asarray([x, y, w, h]))
+
+    def _set(self, rect):
+        for val, name in zip(rect, ["x-position", "y-position", "width", "height"]):
+            if val < 0:
+                raise ValueError(f"Invalid rect value < 0 for: {name}")
+
+        if (rect[2:] <= 1).all():  # fractional bbox
+            self._set_from_fract(rect)
+
+        elif (rect[2:] > 1).all():  # bbox in already in screen coords coordinates
+            self._set_from_screen_space(rect)
+
+        else:
+            raise ValueError(f"Invalid rect: {rect}")
+
+    def _set_from_fract(self, rect):
+        _, _, cw, ch = self._canvas_rect
+        mult = np.array([cw, ch, cw, ch])
+
+        # check that widths, heights are valid:
+        if rect[0] + rect[2] > 1:
+            raise ValueError("invalid fractional value: x + width > 1")
+        if rect[1] + rect[3] > 1:
+            raise ValueError("invalid fractional value: y + height > 1")
+
+        # assign values, don't just change the reference
+        self._rect_frac[:] = rect
+        self._rect_screen_space[:] = self._rect_frac * mult
+
+    def _set_from_screen_space(self, rect):
+        _, _, cw, ch = self._canvas_rect
+        mult = np.array([cw, ch, cw, ch])
+        # for screen coords allow (x, y) = 1 or 0, but w, h must be > 1
+        # check that widths, heights are valid
+        if rect[0] + rect[2] > cw:
+            raise ValueError(f"invalid value: x + width > 1: {rect}")
+        if rect[1] + rect[3] > ch:
+            raise ValueError(f"invalid value: y + height > 1: {rect}")
+
+        self._rect_frac[:] = rect / mult
+        self._rect_screen_space[:] = rect
 
     @property
-    def x(self) -> int:
-        pass
+    def x(self) -> np.float64:
+        return self._rect_screen_space[0]
 
-    def to_extent(self):
-        pass
+    @property
+    def y(self) -> float:
+        return self._rect_screen_space[1]
 
-    def set_from_extent(self, extent):
-        pass
+    @property
+    def w(self) -> float:
+        return self._rect_screen_space[2]
 
+    @property
+    def h(self) -> float:
+        return self._rect_screen_space[3]
 
-class Extent:
-    def __init__(self, x0, x1, y0, y1):
-        pass
+    def _set_canvas_rect(self, rect: tuple):
+        self._canvas_rect = rect
+        self._set(self._rect_frac)
 
-    def fractional(self) -> bool:
-        pass
+    @classmethod
+    def from_extent(cls, extent, canvas_rect):
+        rect = cls.extent_to_rect(extent, canvas_rect)
 
-    def x1(self) -> int:
-        pass
+    @property
+    def extent(self) -> np.ndarray:
+        return np.asarray([self.x, self.x + self.w, self.y, self.y + self.h])
 
-    def to_rect(self):
-        pass
+    @extent.setter
+    def extent(self, extent):
+        """convert extent to rect"""
+        valid, error = Rect.validate_extent(extent, self._canvas_rect)
+        if not valid:
+            raise ValueError(error)
 
-    def set_from_rect(self):
-        pass
+        rect = Rect.extent_to_rect(extent, canvas_rect=self._canvas_rect)
+
+        self._set(*rect)
+
+    @staticmethod
+    def extent_to_rect(extent, canvas_rect):
+        Rect.validate_extent(extent, canvas_rect)
+        x0, x1, y0, y1 = extent
+
+        # width and height
+        w = x1 - x0
+        h = y1 - y0
+
+        x, y, w, h = x0, y0, w, h
+
+        return x, y, w, h
+
+    @staticmethod
+    def validate_extent(extent: np.ndarray | tuple, canvas_rect: tuple) -> tuple[bool, None | str]:
+        x0, x1, y0, y1 = extent
+
+        # width and height
+        w = x1 - x0
+        h = y1 - y0
+
+        # make sure extent is valid
+        if (np.asarray(extent) < 0).any():
+            return False, f"extent ranges must be non-negative, you have passed: {extent}"
+
+        # check if x1 - x0 <= 0
+        if w <= 0:
+            return False, f"extent x-range is invalid: {extent}"
+
+        # check if y1 - y0 <= 0
+        if h <= 0:
+            return False, f"extent y-range is invalid: {extent}"
+
+        # # calc canvas extent
+        # cx0, cy0, cw, ch = self._canvas_rect
+        # cx1 = cx0 + cw
+        # cy1 = cy0 + ch
+        # canvas_extent = np.asarray([cx0, cx1, cy0, cy1])
+
+        # # check that extent is within the bounds of the canvas
+        # if (x0 > canvas_extent[:2]).any() or (x1 > canvas_extent[:2]).any():  # is x0, x1 beyond canvas x-range
+        #     return False, f"extent x-range is beyond the bounds of the canvas: {extent}"
+        #
+        # if (y0 > canvas_extent[2:]).any() or (y1 > canvas_extent[2:]).any():  # is y0, y1 beyond canvas x-range
+        #     return False, f"extent y-range is beyond the bounds of the canvas: {extent}"
+
+        return True, None
 
 
 class Frame:
