@@ -1,6 +1,6 @@
 import numpy as np
 
-from ._base import GraphicFeature, FeatureEvent
+from ._base import GraphicFeature, FeatureEvent, block_reentrance
 
 
 class Name(GraphicFeature):
@@ -14,6 +14,7 @@ class Name(GraphicFeature):
     def value(self) -> str:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str):
         if not isinstance(value, str):
             raise TypeError("`Graphic` name must be of type <str>")
@@ -44,6 +45,7 @@ class Offset(GraphicFeature):
     def value(self) -> np.ndarray:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: np.ndarray | list | tuple):
         self._validate(value)
 
@@ -74,6 +76,7 @@ class Rotation(GraphicFeature):
     def value(self) -> np.ndarray:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: np.ndarray | list | tuple):
         self._validate(value)
 
@@ -96,6 +99,7 @@ class Visible(GraphicFeature):
     def value(self) -> bool:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: bool):
         graphic.world_object.visible = value
         self._value = value
@@ -117,6 +121,7 @@ class Deleted(GraphicFeature):
     def value(self) -> bool:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: bool):
         self._value = value
         event = FeatureEvent(type="deleted", info={"value": value})

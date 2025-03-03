@@ -5,7 +5,7 @@ from math import ceil
 import numpy as np
 
 import pygfx
-from ._base import GraphicFeature, FeatureEvent
+from ._base import GraphicFeature, FeatureEvent, block_reentrance
 
 from ...utils import (
     make_colors,
@@ -135,6 +135,7 @@ class TextureArray(GraphicFeature):
     def __getitem__(self, item):
         return self.value[item]
 
+    @block_reentrance
     def __setitem__(self, key, value):
         self.value[key] = value
 
@@ -159,6 +160,7 @@ class ImageVmin(GraphicFeature):
     def value(self) -> float:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: float):
         vmax = graphic._material.clim[1]
         graphic._material.clim = (value, vmax)
@@ -179,6 +181,7 @@ class ImageVmax(GraphicFeature):
     def value(self) -> float:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: float):
         vmin = graphic._material.clim[0]
         graphic._material.clim = (vmin, value)
@@ -200,6 +203,7 @@ class ImageCmap(GraphicFeature):
     def value(self) -> str:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str):
         new_colors = make_colors(256, value)
         graphic._material.map.texture.data[:] = new_colors
@@ -226,6 +230,7 @@ class ImageInterpolation(GraphicFeature):
     def value(self) -> str:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str):
         self._validate(value)
 
@@ -254,6 +259,7 @@ class ImageCmapInterpolation(GraphicFeature):
     def value(self) -> str:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str):
         self._validate(value)
 

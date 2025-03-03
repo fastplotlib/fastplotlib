@@ -1,5 +1,6 @@
 from warnings import warn
 from typing import Any, Literal
+from traceback import format_exc
 
 import numpy as np
 from numpy.typing import NDArray
@@ -52,6 +53,8 @@ class GraphicFeature:
     def __init__(self, **kwargs):
         self._event_handlers = list()
         self._block_events = False
+
+        self._reentrant_block: bool = False
 
     @property
     def value(self) -> Any:
@@ -316,3 +319,29 @@ class BufferManager(GraphicFeature):
 
     def __repr__(self):
         return f"{self.__class__.__name__} buffer data:\n" f"{self.value.__repr__()}"
+
+
+def block_reentrance(set_value):
+    # decorator to block re-entrant set_value methods
+    # useful when creating complex, circular, bidirectional event graphics
+    def wrap(self: GraphicFeature, graphic_or_key, value):
+        """
+        wraps GraphicFeature.set_value
+
+        self: GraphicFeature instance
+
+        graphic_or_key: graphic, or key if a BufferManager
+
+        value: the value passed to set_value()
+        """
+        if self._reentrant_block:
+            return
+        try:
+            self._reentrant_block = True
+            set_value(self, graphic_or_key, value)
+        except Exception as e:
+            raise e(format_exc())
+        finally:
+            self._reentrant_block = False
+
+    return wrap
