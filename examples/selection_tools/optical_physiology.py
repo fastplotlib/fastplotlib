@@ -99,7 +99,7 @@ def decomposition(movie, n_components=5):
         vertices = np.vstack([hull.points[hull.vertices], hull.points[hull.vertices][0]])
         contours.append(vertices)
 
-    return contours, temporal_components
+    return contours, temporal_components.T
 
 
 n_components = 5
@@ -123,6 +123,9 @@ figure = fpl.Figure(
     size=(700, 1024),
     names=["movie", "heatmap", "selected"]
 )
+
+figure["heatmap"].camera.maintain_aspect = False
+figure["selected"].camera.maintain_aspect = False
 
 movie_graphic = figure["movie"].add_image(movie[0], cmap="viridis")
 contours_graphic = figure["movie"].add_line_collection(contours, cmap="tab10")
