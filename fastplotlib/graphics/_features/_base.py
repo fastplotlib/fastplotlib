@@ -1,6 +1,5 @@
 from warnings import warn
 from typing import Any, Literal
-from traceback import format_exc
 
 import numpy as np
 from numpy.typing import NDArray
@@ -54,6 +53,7 @@ class GraphicFeature:
         self._event_handlers = list()
         self._block_events = False
 
+        # used by @block_reentrance decorator to block re-entrance into set_value functions
         self._reentrant_block: bool = False
 
     @property
