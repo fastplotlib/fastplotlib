@@ -89,8 +89,10 @@ def decomposition(movie, n_components=5):
 
     ica = FastICA(n_components=n_components, fun="exp", random_state=0)
 
-    spatial_components = np.abs(ica.fit_transform(X).reshape(*dims, n_components).T)
+    spatial_components = np.abs(ica.fit_transform(X))
     temporal_components = np.abs(ica.mixing_)
+    temporal_components *= spatial_components.max(axis=0)
+    spatial_components = spatial_components.reshape(*dims, n_components).T
 
     contours = list()
     for index in range(n_components):
@@ -121,13 +123,13 @@ contours, time_series = decomposition(movie, n_components=n_components)
 figure = fpl.Figure(
     (3, 1),
     size=(700, 1024),
-    names=["movie", "heatmap", "selected"]
+    names=["movie", "heatmap", "selected"],
 )
 
 figure["heatmap"].camera.maintain_aspect = False
 figure["selected"].camera.maintain_aspect = False
 
-movie_graphic = figure["movie"].add_image(movie[0], cmap="viridis")
+movie_graphic = figure["movie"].add_image(movie[0], cmap="viridis", vmin=movie.min(), vmax=movie.max())
 contours_graphic = figure["movie"].add_line_collection(contours, cmap="tab10")
 
 heatmap_graphic = figure["heatmap"].add_image(time_series, cmap="viridis")
@@ -138,17 +140,22 @@ temporal_selected_graphic = figure["selected"].add_line(time_series[0])
 selector_time_line = temporal_selected_graphic.add_linear_selector()
 
 def set_timepoint(ev):
-    timepoint = ev.info["selection"]
-    movie_graphic.data[:] = movie[round(timepoint)]
+    timepoint = ev.info["value"]
+    movie_graphic.data[:] = movie[int(timepoint)]
     selector_time_heatmap.selection = timepoint
     selector_time_line.selection = timepoint
 
+selector_time_line.add_event_handler(set_timepoint, "selection")
+selector_time_heatmap.add_event_handler(set_timepoint, "selection")
 
 @movie_graphic.add_event_handler("click")
 def image_clicked(ev):
     contours_graphic.cmap = "tab10"
-    nearest_contour = fpl.utils.get_nearest_graphics((ev.x, ev.y), contours_graphic)[0]
+    pos = figure["movie"].map_screen_to_world(ev)
+    index = fpl.utils.get_nearest_graphics_indices(pos, contours_graphic)[0]
+    nearest_contour = contours_graphic.graphics[index]
     nearest_contour.colors = "w"
+    selector_component_heatmap.selection = index
 
 
 @selector_component_heatmap.add_event_handler("selection")
@@ -156,6 +163,8 @@ def heatmap_component_changed(ev):
     index = ev.get_selected_index()
     contours_graphic.cmap = "tab10"
     contours_graphic.graphics[index].colors = "w"
+
+    temporal_selected_graphic.data[:, 1] = time_series[index]
 
 
 figure.show()
