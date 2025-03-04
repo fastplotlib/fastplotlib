@@ -117,3 +117,43 @@ movie = generate_movie(time_components, dims=dims, noise_sigma=0.1)
 
 contours, time_series = decomposition(movie, n_components=n_components)
 
+
+figure = fpl.Figure(
+    (3, 1),
+    size=(700, 1024),
+    names=["movie", "heatmap", "selected"]
+)
+
+movie_graphic = figure["movie"].add_image(movie[0], cmap="viridis")
+contours_graphic = figure["movie"].add_line_collection(contours, cmap="tab10")
+
+heatmap_graphic = figure["heatmap"].add_image(time_series, cmap="viridis")
+selector_time_heatmap = heatmap_graphic.add_linear_selector()
+selector_component_heatmap = heatmap_graphic.add_linear_selector(axis="y")
+
+temporal_selected_graphic = figure["selected"].add_line(time_series[0])
+selector_time_line = temporal_selected_graphic.add_linear_selector()
+
+def set_timepoint(ev):
+    timepoint = ev.info["selection"]
+    movie_graphic.data[:] = movie[round(timepoint)]
+    selector_time_heatmap.selection = timepoint
+    selector_time_line.selection = timepoint
+
+
+@movie_graphic.add_event_handler("click")
+def image_clicked(ev):
+    contours_graphic.cmap = "tab10"
+    nearest_contour = fpl.utils.get_nearest_graphics((ev.x, ev.y), contours_graphic)[0]
+    nearest_contour.colors = "w"
+
+
+@selector_component_heatmap.add_event_handler("selection")
+def heatmap_component_changed(ev):
+    index = ev.get_selected_index()
+    contours_graphic.cmap = "tab10"
+    contours_graphic.graphics[index].colors = "w"
+
+
+figure.show()
+fpl.loop.run()
