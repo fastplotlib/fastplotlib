@@ -105,7 +105,7 @@ class RectManager:
         rect = np.asarray(rect)
         for val, name in zip(rect, ["x-position", "y-position", "width", "height"]):
             if val < 0:
-                raise ValueError(f"Invalid rect value < 0 for: {name}")
+                raise ValueError(f"Invalid rect value < 0: {rect}")
 
         if (rect[2:] <= 1).all():  # fractional bbox
             self._set_from_fract(rect)
@@ -147,22 +147,27 @@ class RectManager:
 
     @property
     def x(self) -> np.float64:
+        """x position"""
         return self._rect_screen_space[0]
 
     @property
     def y(self) -> np.float64:
+        """y position"""
         return self._rect_screen_space[1]
 
     @property
     def w(self) -> np.float64:
+        """width"""
         return self._rect_screen_space[2]
 
     @property
     def h(self) -> np.float64:
+        """height"""
         return self._rect_screen_space[3]
 
     @property
     def rect(self) -> np.ndarray:
+        """rect, (x, y, w, h)"""
         return self._rect_screen_space
 
     @rect.setter
@@ -177,22 +182,27 @@ class RectManager:
 
     @property
     def x0(self) -> np.float64:
+        """x0 position"""
         return self.x
 
     @property
     def x1(self) -> np.float64:
+        """x1 position"""
         return self.x + self.w
 
     @property
     def y0(self) -> np.float64:
+        """y0 position"""
         return self.y
 
     @property
     def y1(self) -> np.float64:
+        """y1 position"""
         return self.y + self.h
 
     @classmethod
     def from_extent(cls, extent, canvas_rect):
+        """create a RectManager from an extent"""
         rect = cls.extent_to_rect(extent, canvas_rect)
         return cls(*rect, canvas_rect)
 
@@ -205,10 +215,6 @@ class RectManager:
     @extent.setter
     def extent(self, extent):
         """convert extent to rect"""
-        valid, error = RectManager.validate_extent(extent, self._canvas_rect)
-        if not valid:
-            raise ValueError(error)
-
         rect = RectManager.extent_to_rect(extent, canvas_rect=self._canvas_rect)
 
         self._set(rect)
@@ -227,39 +233,44 @@ class RectManager:
         return x, y, w, h
 
     @staticmethod
-    def validate_extent(extent: np.ndarray | tuple, canvas_rect: tuple) -> tuple[bool, None | str]:
+    def validate_extent(extent: np.ndarray | tuple, canvas_rect: tuple):
+        extent = np.asarray(extent)
+        cx0, cy0, cw, ch = canvas_rect
+
+        # make sure extent is valid
+        if (extent < 0).any():
+            raise ValueError(f"extent must be non-negative, you have passed: {extent}")
+
+        if extent[1] < 1 or extent[3] < 1:  # if x1 < 1, or y1 < 1
+            # if fractional rect, convert to full
+            if not (extent < 1).all():  # if x1 and y1 < 1, then all vals must be < 1
+                raise ValueError(
+                    f"if passing a fractional extent, all values must be fractional, you have passed: {extent}")
+            extent *= np.asarray([cw, cw, ch, ch])
+
         x0, x1, y0, y1 = extent
 
         # width and height
         w = x1 - x0
         h = y1 - y0
 
-        # make sure extent is valid
-        if (np.asarray(extent) < 0).any():
-            return False, f"extent ranges must be non-negative, you have passed: {extent}"
-
         # check if x1 - x0 <= 0
         if w <= 0:
-            return False, f"extent x-range is invalid: {extent}"
+            raise ValueError(f"extent x-range must be non-negative: {extent}")
 
         # check if y1 - y0 <= 0
         if h <= 0:
-            return False, f"extent y-range is invalid: {extent}"
+            raise ValueError(f"extent y-range must be non-negative: {extent}")
 
-        # # calc canvas extent
-        # cx0, cy0, cw, ch = self._canvas_rect
-        # cx1 = cx0 + cw
-        # cy1 = cy0 + ch
-        # canvas_extent = np.asarray([cx0, cx1, cy0, cy1])
+        # calc canvas extent
+        cx1 = cx0 + cw
+        cy1 = cy0 + ch
+        canvas_extent = np.asarray([cx0, cx1, cy0, cy1])
 
-        # # check that extent is within the bounds of the canvas
-        # if (x0 > canvas_extent[:2]).any() or (x1 > canvas_extent[:2]).any():  # is x0, x1 beyond canvas x-range
-        #     return False, f"extent x-range is beyond the bounds of the canvas: {extent}"
-        #
-        # if (y0 > canvas_extent[2:]).any() or (y1 > canvas_extent[2:]).any():  # is y0, y1 beyond canvas x-range
-        #     return False, f"extent y-range is beyond the bounds of the canvas: {extent}"
-
-        return True, None
+        if x0 < cx0 or x1 < cx0 or x0 > cx1 or x1 > cx1:
+            raise ValueError(f"extent: {extent} x-range is beyond the bounds of the canvas: {canvas_extent}")
+        if y0 < cy0 or y1 < cy0 or y0 > cy1 or y1 > cy1:
+            raise ValueError(f"extent: {extent} y-range is beyond the bounds of the canvas: {canvas_extent}")
 
     def __repr__(self):
         s = f"{self._rect_frac}\n{self.rect}"
