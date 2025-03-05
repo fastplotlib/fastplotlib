@@ -53,6 +53,9 @@ class GraphicFeature:
         self._event_handlers = list()
         self._block_events = False
 
+        # used by @block_reentrance decorator to block re-entrance into set_value functions
+        self._reentrant_block: bool = False
+
     @property
     def value(self) -> Any:
         """Graphic Feature value, must be implemented in subclass"""
@@ -316,3 +319,33 @@ class BufferManager(GraphicFeature):
 
     def __repr__(self):
         return f"{self.__class__.__name__} buffer data:\n" f"{self.value.__repr__()}"
+
+
+def block_reentrance(set_value):
+    # decorator to block re-entrant set_value methods
+    # useful when creating complex, circular, bidirectional event graphs
+    def set_value_wrapper(self: GraphicFeature, graphic_or_key, value):
+        """
+        wraps GraphicFeature.set_value
+
+        self: GraphicFeature instance
+
+        graphic_or_key: graphic, or key if a BufferManager
+
+        value: the value passed to set_value()
+        """
+        # set_value is already in the middle of an execution, block re-entrance
+        if self._reentrant_block:
+            return
+        try:
+            # block re-execution of set_value until it has *fully* finished executing
+            self._reentrant_block = True
+            set_value(self, graphic_or_key, value)
+        except Exception as exc:
+            # raise original exception
+            raise exc  # set_value has raised. The line above and the lines 2+ steps below are probably more relevant!
+        finally:
+            # set_value has finished executing, now allow future executions
+            self._reentrant_block = False
+
+    return set_value_wrapper

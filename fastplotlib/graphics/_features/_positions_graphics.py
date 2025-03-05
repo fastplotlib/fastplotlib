@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 import numpy as np
 import pygfx
@@ -11,6 +11,7 @@ from ._base import (
     BufferManager,
     FeatureEvent,
     to_gpu_supported_dtype,
+    block_reentrance,
 )
 from .utils import parse_colors
 
@@ -58,6 +59,7 @@ class VertexColors(BufferManager):
 
         super().__init__(data=data, isolated_buffer=isolated_buffer)
 
+    @block_reentrance
     def __setitem__(
         self,
         key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
@@ -155,6 +157,7 @@ class UniformColor(GraphicFeature):
     def value(self) -> pygfx.Color:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str | np.ndarray | tuple | list | pygfx.Color):
         value = pygfx.Color(value)
         graphic.world_object.material.color = value
@@ -174,6 +177,7 @@ class UniformSize(GraphicFeature):
     def value(self) -> float:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: float | int):
         graphic.world_object.material.size = float(value)
         self._value = value
@@ -192,6 +196,7 @@ class SizeSpace(GraphicFeature):
     def value(self) -> str:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str):
         if "Line" in graphic.world_object.material.__class__.__name__:
             graphic.world_object.material.thickness_space = value
@@ -243,6 +248,7 @@ class VertexPositions(BufferManager):
 
         return to_gpu_supported_dtype(data)
 
+    @block_reentrance
     def __setitem__(
         self,
         key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
@@ -318,6 +324,7 @@ class PointsSizesFeature(BufferManager):
 
         return sizes
 
+    @block_reentrance
     def __setitem__(
         self,
         key: int | slice | np.ndarray[int | bool] | list[int | bool],
@@ -344,6 +351,7 @@ class Thickness(GraphicFeature):
     def value(self) -> float:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: float):
         graphic.world_object.material.thickness = value
         self._value = value
@@ -392,6 +400,7 @@ class VertexCmap(BufferManager):
             # set vertex colors from cmap
             self._vertex_colors[:] = colors
 
+    @block_reentrance
     def __setitem__(self, key: slice, cmap_name):
         if not isinstance(key, slice):
             raise TypeError(

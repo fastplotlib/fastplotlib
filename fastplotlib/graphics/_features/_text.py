@@ -2,7 +2,7 @@ import numpy as np
 
 import pygfx
 
-from ._base import GraphicFeature, FeatureEvent
+from ._base import GraphicFeature, FeatureEvent, block_reentrance
 
 
 class TextData(GraphicFeature):
@@ -14,6 +14,7 @@ class TextData(GraphicFeature):
     def value(self) -> str:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str):
         graphic.world_object.geometry.set_text(value)
         self._value = value
@@ -31,6 +32,7 @@ class FontSize(GraphicFeature):
     def value(self) -> float | int:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: float | int):
         graphic.world_object.geometry.font_size = value
         self._value = graphic.world_object.geometry.font_size
@@ -48,6 +50,7 @@ class TextFaceColor(GraphicFeature):
     def value(self) -> pygfx.Color:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str | np.ndarray | list[float] | tuple[float]):
         value = pygfx.Color(value)
         graphic.world_object.material.color = value
@@ -66,6 +69,7 @@ class TextOutlineColor(GraphicFeature):
     def value(self) -> pygfx.Color:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str | np.ndarray | list[float] | tuple[float]):
         value = pygfx.Color(value)
         graphic.world_object.material.outline_color = value
@@ -84,6 +88,7 @@ class TextOutlineThickness(GraphicFeature):
     def value(self) -> float:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: float):
         graphic.world_object.material.outline_thickness = value
         self._value = graphic.world_object.material.outline_thickness

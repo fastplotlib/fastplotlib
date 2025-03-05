@@ -1,9 +1,9 @@
-from typing import Sequence, Tuple
+from typing import Sequence
 
 import numpy as np
 
 from ...utils import mesh_masks
-from ._base import GraphicFeature, FeatureEvent
+from ._base import GraphicFeature, FeatureEvent, block_reentrance
 
 
 class LinearSelectionFeature(GraphicFeature):
@@ -54,6 +54,7 @@ class LinearSelectionFeature(GraphicFeature):
         """
         return self._value
 
+    @block_reentrance
     def set_value(self, selector, value: float):
         # clip value between limits
         value = np.clip(value, self._limits[0], self._limits[1], dtype=np.float32)
@@ -117,6 +118,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
         """one of "x" | "y" """
         return self._axis
 
+    @block_reentrance
     def set_value(self, selector, value: Sequence[float]):
         """
         Set start, stop range of selector
@@ -231,6 +233,7 @@ class RectangleSelectionFeature(GraphicFeature):
         """
         return self._value
 
+    @block_reentrance
     def set_value(self, selector, value: Sequence[float]):
         """
         Set the selection of the rectangle selector.
