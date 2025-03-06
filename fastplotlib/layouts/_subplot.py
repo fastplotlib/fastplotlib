@@ -1,14 +1,78 @@
 from typing import Literal, Union
 
-import pygfx
+import numpy as np
 
+import pygfx
 from rendercanvas import BaseRenderCanvas
 
+from ._rect import RectManager
 from ..graphics import TextGraphic
 from ._utils import create_camera, create_controller
 from ._plot_area import PlotArea
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..graphics._axes import Axes
+
+
+"""
+Each subplot is defined by a 2D plane mesh, a rectangle.
+The rectangles are viewed using the UnderlayCamera  where (0, 0) is the top left corner.
+We can control the bbox of this rectangle by changing the x and y boundaries of the rectangle.
+
+Note how the y values of the plane mesh are negative, this is because of the UnderlayCamera.
+We always just keep the positive y value, and make it negative only when setting the plane mesh.
+
+Illustration:
+
+(0, 0) ---------------------------------------------------
+----------------------------------------------------------
+----------------------------------------------------------
+--------------(x0, -y0) --------------- (x1, -y0) --------
+------------------------|||||||||||||||-------------------
+------------------------|||||||||||||||-------------------
+------------------------|||||||||||||||-------------------
+------------------------|||rectangle|||-------------------
+------------------------|||||||||||||||-------------------
+------------------------|||||||||||||||-------------------
+------------------------|||||||||||||||-------------------
+--------------(x0, -y1) --------------- (x1, -y1)---------
+----------------------------------------------------------
+------------------------------------------- (canvas_width, canvas_height)
+
+"""
+
+
+class MeshMasks:
+    """Used set the x1, x1, y0, y1 positions of the mesh"""
+    x0 = np.array([
+        [False, False, False],
+        [True, False, False],
+        [False, False, False],
+        [True, False, False],
+    ])
+
+    x1 = np.array([
+        [True, False, False],
+        [False, False, False],
+        [True, False, False],
+        [False, False, False],
+    ])
+
+    y0 = np.array([
+        [False, True, False],
+        [False, True, False],
+        [False, False, False],
+        [False, False, False],
+    ])
+
+    y1 = np.array([
+        [False, False, False],
+        [False, False, False],
+        [False, True, False],
+        [False, True, False],
+    ])
+
+
+masks = MeshMasks
 
 
 class Subplot(PlotArea, GraphicMethodsMixin):
@@ -18,6 +82,8 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera,
         controller: pygfx.Controller,
         canvas: BaseRenderCanvas | pygfx.Texture,
+        rect: np.ndarray = None,
+        extent: np.ndarray = None,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
     ):
@@ -64,8 +130,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self._docks = dict()
 
-        self._title_graphic: TextGraphic = None
-
         self._toolbar = True
 
         super(Subplot, self).__init__(
@@ -84,11 +148,41 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             self.docks[pos] = dv
             self.children.append(dv)
 
-        if self.name is not None:
-            self.set_title(self.name)
-
         self._axes = Axes(self)
         self.scene.add(self.axes.world_object)
+
+        if rect is not None:
+            self._rect = RectManager(*rect, self.get_figure().get_pygfx_render_area())
+        elif extent is not None:
+            self._rect = RectManager.from_extent(extent, self.get_figure().get_pygfx_render_area())
+        else:
+            raise ValueError("Must provide `rect` or `extent`")
+
+        if name is None:
+            title_text = ""
+        else:
+            title_text = name
+        self._title_graphic = TextGraphic(title_text, face_color="black")
+
+        # init mesh of size 1 to graphically represent rect
+        geometry = pygfx.plane_geometry(1, 1)
+        material = pygfx.MeshBasicMaterial(pick_write=True)
+        self._plane = pygfx.Mesh(geometry, material)
+
+        # otherwise text isn't visible
+        self._plane.world.z = 0.5
+
+        # create resize handler at point (x1, y1)
+        x1, y1 = self.extent[[1, 3]]
+        self._resize_handler = pygfx.Points(
+            pygfx.Geometry(positions=[[x1, -y1, 0]]),  # y is inverted in UnderlayCamera
+            pygfx.PointsMarkerMaterial(marker="square", size=12, size_space="screen", pick_write=True)
+        )
+
+        self._reset_plane()
+
+        self._world_object = pygfx.Group()
+        self._world_object.add(self._plane, self._resize_handler, self._title_graphic.world_object)
 
     @property
     def axes(self) -> Axes:
@@ -141,31 +235,105 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self.axes.update_using_camera()
         super()._render()
 
-    def set_title(self, text: str):
-        """Sets the plot title, stored as a ``TextGraphic`` in the "top" dock area"""
-        if text is None:
-            return
+    @property
+    def title(self) -> TextGraphic:
+        """subplot title"""
+        return self._title_graphic
 
+    @title.setter
+    def title(self, text: str):
         text = str(text)
-        if self._title_graphic is not None:
-            self._title_graphic.text = text
-        else:
-            tg = TextGraphic(text=text, font_size=18)
-            self._title_graphic = tg
+        self._title_graphic.text = text
 
-            self.docks["top"].size = 35
-            self.docks["top"].add_graphic(tg)
+    @property
+    def extent(self) -> np.ndarray:
+        """extent, (xmin, xmax, ymin, ymax)"""
+        # not actually stored, computed when needed
+        return self._rect.extent
 
-            self.center_title()
+    @extent.setter
+    def extent(self, extent):
+        self._rect.extent = extent
+        self._reset_plane()
 
-    def center_title(self):
-        """Centers name of subplot."""
-        if self._title_graphic is None:
-            raise AttributeError("No title graphic is set")
+    @property
+    def rect(self) -> np.ndarray[int]:
+        """rect in absolute screen space, (x, y, w, h)"""
+        return self._rect.rect
 
-        self._title_graphic.world_object.position = (0, 0, 0)
-        self.docks["top"].center_graphic(self._title_graphic, zoom=1.5)
-        self._title_graphic.world_object.position_y = -3.5
+    @rect.setter
+    def rect(self, rect: np.ndarray):
+        self._rect.rect = rect
+        self._reset_plane()
+
+    def _reset_plane(self):
+        """reset the plane mesh using the current rect state"""
+
+        x0, x1, y0, y1 = self._rect.extent
+        w = self._rect.w
+
+        self._plane.geometry.positions.data[masks.x0] = x0
+        self._plane.geometry.positions.data[masks.x1] = x1
+        self._plane.geometry.positions.data[masks.y0] = -y0  # negative y because UnderlayCamera y is inverted
+        self._plane.geometry.positions.data[masks.y1] = -y1
+
+        self._plane.geometry.positions.update_full()
+
+        # note the negative y because UnderlayCamera y is inverted
+        self._resize_handler.geometry.positions.data[0] = [x1, -y1, 0]
+        self._resize_handler.geometry.positions.update_full()
+
+        # set subplot title position
+        x = x0 + (w / 2)
+        y = y0 + (self.subplot_title.font_size / 2)
+        self.subplot_title.world_object.world.x = x
+        self.subplot_title.world_object.world.y = -y
+
+    @property
+    def _fpl_plane(self) -> pygfx.Mesh:
+        """the plane mesh"""
+        return self._plane
+
+    @property
+    def _fpl_resize_handler(self) -> pygfx.Points:
+        """resize handler point"""
+        return self._resize_handler
+
+    def _canvas_resize_handler(self, *ev):
+        """triggered when canvas is resized"""
+        # render area, to account for any edge windows that might be present
+        # remember this frame also encapsulates the imgui toolbar which is
+        # part of the subplot so we do not subtract the toolbar height!
+        canvas_rect = self.figure.get_pygfx_render_area()
+
+        self._rect._fpl_canvas_resized(canvas_rect)
+        self._reset_plane()
+
+    @property
+    def subplot_title(self) -> TextGraphic:
+        return self._subplot_title
+
+    def is_above(self, y0) -> bool:
+        # our bottom < other top
+        return self._rect.y1 < y0
+
+    def is_below(self, y1) -> bool:
+        # our top > other bottom
+        return self._rect.y0 > y1
+
+    def is_left_of(self, x0) -> bool:
+        # our right_edge < other left_edge
+        # self.x1 < other.x0
+        return self._rect.x1 < x0
+
+    def is_right_of(self, x1) -> bool:
+        # self.x0 > other.x1
+        return self._rect.x0 > x1
+
+    def overlaps(self, extent: np.ndarray) -> bool:
+        """returns whether this subplot overlaps with the given extent"""
+        x0, x1, y0, y1 = extent
+        return not any([self.is_above(y0), self.is_below(y1), self.is_left_of(x0), self.is_right_of(x1)])
 
 
 class Dock(PlotArea):
