@@ -174,15 +174,16 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         # create resize handler at point (x1, y1)
         x1, y1 = self.extent[[1, 3]]
-        self._resize_handler = pygfx.Points(
+        self._resize_handle = pygfx.Points(
             pygfx.Geometry(positions=[[x1, -y1, 0]]),  # y is inverted in UnderlayCamera
             pygfx.PointsMarkerMaterial(marker="square", size=12, size_space="screen", pick_write=True)
         )
 
         self._reset_plane()
+        self._reset_viewport_rect()
 
         self._world_object = pygfx.Group()
-        self._world_object.add(self._plane, self._resize_handler, self._title_graphic.world_object)
+        self._world_object.add(self._plane, self._resize_handle, self._title_graphic.world_object)
 
     @property
     def axes(self) -> Axes:
@@ -270,7 +271,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
     def _reset_viewport_rect(self):
         rect = self.rect
-        viewport_rect = rect - np.array([1, self.title.font_size - 1, 1, self.title.font_size - 2])
+        viewport_rect = rect - np.array([1, -self.title.font_size - 1, 1, -self.title.font_size - 2])
         self.viewport.rect = viewport_rect
 
     def _reset_plane(self):
@@ -287,14 +288,14 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._plane.geometry.positions.update_full()
 
         # note the negative y because UnderlayCamera y is inverted
-        self._resize_handler.geometry.positions.data[0] = [x1, -y1, 0]
-        self._resize_handler.geometry.positions.update_full()
+        self._resize_handle.geometry.positions.data[0] = [x1, -y1, 0]
+        self._resize_handle.geometry.positions.update_full()
 
         # set subplot title position
         x = x0 + (w / 2)
-        y = y0 + (self.subplot_title.font_size / 2)
-        self.subplot_title.world_object.world.x = x
-        self.subplot_title.world_object.world.y = -y
+        y = y0 + (self.title.font_size / 2)
+        self.title.world_object.world.x = x
+        self.title.world_object.world.y = -y
 
     @property
     def _fpl_plane(self) -> pygfx.Mesh:
@@ -302,19 +303,15 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         return self._plane
 
     @property
-    def _fpl_resize_handler(self) -> pygfx.Points:
+    def _fpl_resize_handle(self) -> pygfx.Points:
         """resize handler point"""
-        return self._resize_handler
+        return self._resize_handle
 
     def _fpl_canvas_resized(self, canvas_rect):
         """called by layout is resized"""
         self._rect._fpl_canvas_resized(canvas_rect)
         self._reset_plane()
         self._reset_viewport_rect()
-
-    @property
-    def subplot_title(self) -> TextGraphic:
-        return self._subplot_title
 
     def is_above(self, y0) -> bool:
         # our bottom < other top

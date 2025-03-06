@@ -190,23 +190,21 @@ class BaseLayout:
 
 
 class FlexLayout(BaseLayout):
-    def __init__(self, renderer, get_canvas_rect: callable, subplots: list[Subplot]):
-        super().__init__(renderer, subplots)
+    def __init__(self, renderer, subplots: list[Subplot], canvas_rect: tuple):
+        super().__init__(renderer, subplots, canvas_rect)
 
         self._last_pointer_pos: np.ndarray[np.float64, np.float64] = np.array([np.nan, np.nan])
-
-        self._get_canvas_rect = get_canvas_rect
 
         self._active_action: str | None = None
         self._active_subplot: Subplot | None = None
 
         for frame in self._subplots:
             frame._fpl_plane.add_event_handler(partial(self._action_start, frame, "move"), "pointer_down")
-            frame._fpl_resize_handler.add_event_handler(
+            frame._fpl_resize_handle.add_event_handler(
                 partial(self._action_start, frame, "resize"), "pointer_down"
             )
-            frame._fpl_resize_handler.add_event_handler(self._highlight_resize_handler, "pointer_enter")
-            frame._fpl_resize_handler.add_event_handler(self._unhighlight_resize_handler, "pointer_leave")
+            frame._fpl_resize_handle.add_event_handler(self._highlight_resize_handler, "pointer_enter")
+            frame._fpl_resize_handle.add_event_handler(self._unhighlight_resize_handler, "pointer_leave")
 
         self._renderer.add_event_handler(self._action_iter, "pointer_move")
         self._renderer.add_event_handler(self._action_end, "pointer_up")
@@ -257,7 +255,7 @@ class FlexLayout(BaseLayout):
             new_extent[2:] = self._active_subplot.extent[2:]
 
         # canvas extent
-        cx0, cy0, cw, ch = self._get_canvas_rect()
+        cx0, cy0, cw, ch = self._canvas_rect
 
         # check if new x-range is beyond canvas x-max
         if (new_extent[:2] > cx0 + cw).any():
@@ -273,7 +271,7 @@ class FlexLayout(BaseLayout):
         if ev.button == 1:
             self._active_action = action
             if action == "resize":
-                subplot._fpl_resize_handler.material.color = (1, 0, 0)
+                subplot._fpl_resize_handle.material.color = (1, 0, 0)
             elif action == "move":
                 pass
             else:
@@ -293,7 +291,7 @@ class FlexLayout(BaseLayout):
 
     def _action_end(self, ev):
         self._active_action = None
-        self._active_subplot._fpl_resize_handler.material.color = (1, 1, 1)
+        self._active_subplot._fpl_resize_handle.material.color = (1, 1, 1)
         self._last_pointer_pos[:] = np.nan
 
     def _highlight_resize_handler(self, ev):
@@ -316,8 +314,8 @@ class FlexLayout(BaseLayout):
 
 
 class GridLayout(FlexLayout):
-    def __init__(self, renderer, get_canvas_rect: callable, subplots: list[Subplot]):
-        super().__init__(renderer, subplots)
+    def __init__(self, renderer, subplots: list[Subplot], canvas_rect: tuple):
+        super().__init__(renderer, subplots, canvas_rect)
 
         # {Subplot: (row_ix, col_ix)}, dict mapping subplots to their row and col index in the grid layout
         self._subplot_grid_position: dict[Subplot, tuple[int, int]]
