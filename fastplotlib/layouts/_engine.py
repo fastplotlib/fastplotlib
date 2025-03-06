@@ -166,9 +166,10 @@ class UnderlayCamera(pygfx.Camera):
 
 
 class BaseLayout:
-    def __init__(self, renderer: pygfx.WgpuRenderer, subplots: list[Subplot]):
+    def __init__(self, renderer: pygfx.WgpuRenderer, subplots: list[Subplot], canvas_rect: tuple):
         self._renderer = renderer
         self._subplots = subplots
+        self._canvas_rect = canvas_rect
 
     def set_rect(self, subplot, rect: np.ndarray | list | tuple):
         raise NotImplementedError
@@ -176,8 +177,9 @@ class BaseLayout:
     def set_extent(self, subplot, extent: np.ndarray | list | tuple):
         raise NotImplementedError
 
-    def _canvas_resize_handler(self, ev):
-        pass
+    def _fpl_canvas_resized(self, canvas_rect: tuple):
+        for subplot in self._subplots:
+            subplot._fpl_canvas_resized(canvas_rect)
 
     @property
     def spacing(self) -> int:

@@ -90,7 +90,7 @@ class RectManager:
         self._set(rect)
 
     def _fpl_canvas_resized(self, canvas_rect: tuple):
-        # called by subplot when canvas is resized
+        # called by layout when canvas is resized
         self._canvas_rect[:] = canvas_rect
         # set new rect using existing rect_frac since this remains constant regardless of resize
         self._set(self._rect_frac)

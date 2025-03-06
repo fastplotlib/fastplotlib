@@ -21,6 +21,8 @@ class ImguiFigure(Figure):
     def __init__(
         self,
         shape: list[tuple[int, int, int, int]] | tuple[int, int] = (1, 1),
+        rects=None,
+        extents=None,
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
@@ -52,6 +54,8 @@ class ImguiFigure(Figure):
 
         super().__init__(
             shape=shape,
+            rects=rects,
+            extents=extents,
             cameras=cameras,
             controller_types=controller_types,
             controller_ids=controller_ids,
