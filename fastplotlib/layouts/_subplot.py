@@ -255,6 +255,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     def extent(self, extent):
         self._rect.extent = extent
         self._reset_plane()
+        self._reset_viewport_rect()
 
     @property
     def rect(self) -> np.ndarray[int]:
@@ -265,6 +266,12 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     def rect(self, rect: np.ndarray):
         self._rect.rect = rect
         self._reset_plane()
+        self._reset_viewport_rect()
+
+    def _reset_viewport_rect(self):
+        rect = self.rect
+        viewport_rect = rect - np.array([1, self.title.font_size - 1, 1, self.title.font_size - 2])
+        self.viewport.rect = viewport_rect
 
     def _reset_plane(self):
         """reset the plane mesh using the current rect state"""
@@ -299,15 +306,11 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         """resize handler point"""
         return self._resize_handler
 
-    def _canvas_resize_handler(self, *ev):
-        """triggered when canvas is resized"""
-        # render area, to account for any edge windows that might be present
-        # remember this frame also encapsulates the imgui toolbar which is
-        # part of the subplot so we do not subtract the toolbar height!
-        canvas_rect = self.figure.get_pygfx_render_area()
-
+    def _fpl_canvas_resized(self, canvas_rect):
+        """called by layout is resized"""
         self._rect._fpl_canvas_resized(canvas_rect)
         self._reset_plane()
+        self._reset_viewport_rect()
 
     @property
     def subplot_title(self) -> TextGraphic:
