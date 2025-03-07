@@ -7,7 +7,7 @@ from rendercanvas import BaseRenderCanvas
 
 from ._rect import RectManager
 from ..graphics import TextGraphic
-from ._utils import create_camera, create_controller
+from ._utils import create_camera, create_controller, IMGUI_TOOLBAR_HEIGHT
 from ._plot_area import PlotArea
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..graphics._axes import Axes
@@ -162,11 +162,12 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             title_text = ""
         else:
             title_text = name
-        self._title_graphic = TextGraphic(title_text, face_color="black")
+        self._title_graphic = TextGraphic(title_text, font_size=16, face_color="white")
+        # self._title_graphic.world_object.material.weight_offset = 50
 
         # init mesh of size 1 to graphically represent rect
         geometry = pygfx.plane_geometry(1, 1)
-        material = pygfx.MeshBasicMaterial(pick_write=True)
+        material = pygfx.MeshBasicMaterial(color=(0.1, 0.1, 0.1), pick_write=True)
         self._plane = pygfx.Mesh(geometry, material)
 
         # otherwise text isn't visible
@@ -270,9 +271,11 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._reset_viewport_rect()
 
     def _reset_viewport_rect(self):
+        self.viewport.rect = self._fpl_get_render_rect()
+
+    def _fpl_get_render_rect(self):
         rect = self.rect
-        viewport_rect = rect - np.array([1, -self.title.font_size - 1, 1, -self.title.font_size - 2])
-        self.viewport.rect = viewport_rect
+        return rect + np.array([1, self.title.font_size + 2 + 4, -2, -self.title.font_size - 2 - 4 - IMGUI_TOOLBAR_HEIGHT - 1])
 
     def _reset_plane(self):
         """reset the plane mesh using the current rect state"""
@@ -295,7 +298,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         x = x0 + (w / 2)
         y = y0 + (self.title.font_size / 2)
         self.title.world_object.world.x = x
-        self.title.world_object.world.y = -y
+        self.title.world_object.world.y = -y - 2
 
     @property
     def _fpl_plane(self) -> pygfx.Mesh:
