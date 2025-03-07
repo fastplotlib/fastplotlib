@@ -339,7 +339,9 @@ class Figure:
             )
 
         else:
-            self._subplots: np.ndarray[Subplot] = np.empty(shape=n_subplots, dtype=object)
+            self._subplots: np.ndarray[Subplot] = np.empty(
+                shape=n_subplots, dtype=object
+            )
 
         for i in range(n_subplots):
             camera = subplot_cameras[i]
@@ -369,10 +371,18 @@ class Figure:
                 self._subplots[i] = subplot
 
         if layout_mode == "grid":
-            self._layout = GridLayout(self.renderer, subplots=self._subplots, canvas_rect=self.get_pygfx_render_area())
+            self._layout = GridLayout(
+                self.renderer,
+                subplots=self._subplots,
+                canvas_rect=self.get_pygfx_render_area(),
+            )
 
         elif layout_mode == "rect" or layout_mode == "extent":
-            self._layout = FlexLayout(self.renderer, subplots=self._subplots, canvas_rect=self.get_pygfx_render_area())
+            self._layout = FlexLayout(
+                self.renderer,
+                subplots=self._subplots,
+                canvas_rect=self.get_pygfx_render_area(),
+            )
 
         self._underlay_camera = UnderlayCamera()
 
@@ -491,7 +501,6 @@ class Figure:
     def _start_render(self):
         """start render cycle"""
         self.canvas.request_draw(self._render)
-
 
     def show(
         self,
