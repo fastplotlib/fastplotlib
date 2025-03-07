@@ -24,7 +24,11 @@ class SubplotToolbar(Window):
 
         imgui.set_next_window_size((width - 16, 0))
         imgui.set_next_window_pos(pos)
-        flags = imgui.WindowFlags_.no_collapse | imgui.WindowFlags_.no_title_bar | imgui.WindowFlags_.no_background
+        flags = (
+            imgui.WindowFlags_.no_collapse
+            | imgui.WindowFlags_.no_title_bar
+            | imgui.WindowFlags_.no_background
+        )
 
         imgui.begin(f"Toolbar-{hex(id(self._subplot))}", p_open=None, flags=flags)
 

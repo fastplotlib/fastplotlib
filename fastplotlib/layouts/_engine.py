@@ -166,7 +166,9 @@ class UnderlayCamera(pygfx.Camera):
 
 
 class BaseLayout:
-    def __init__(self, renderer: pygfx.WgpuRenderer, subplots: list[Subplot], canvas_rect: tuple):
+    def __init__(
+        self, renderer: pygfx.WgpuRenderer, subplots: list[Subplot], canvas_rect: tuple
+    ):
         self._renderer = renderer
         self._subplots = subplots
         self._canvas_rect = canvas_rect
@@ -184,7 +186,6 @@ class BaseLayout:
             return True
 
         return False
-
 
     def set_rect(self, subplot, rect: np.ndarray | list | tuple):
         raise NotImplementedError
@@ -209,18 +210,26 @@ class FlexLayout(BaseLayout):
     def __init__(self, renderer, subplots: list[Subplot], canvas_rect: tuple):
         super().__init__(renderer, subplots, canvas_rect)
 
-        self._last_pointer_pos: np.ndarray[np.float64, np.float64] = np.array([np.nan, np.nan])
+        self._last_pointer_pos: np.ndarray[np.float64, np.float64] = np.array(
+            [np.nan, np.nan]
+        )
 
         self._active_action: str | None = None
         self._active_subplot: Subplot | None = None
 
         for frame in self._subplots:
-            frame._fpl_plane.add_event_handler(partial(self._action_start, frame, "move"), "pointer_down")
+            frame._fpl_plane.add_event_handler(
+                partial(self._action_start, frame, "move"), "pointer_down"
+            )
             frame._fpl_resize_handle.add_event_handler(
                 partial(self._action_start, frame, "resize"), "pointer_down"
             )
-            frame._fpl_resize_handle.add_event_handler(self._highlight_resize_handler, "pointer_enter")
-            frame._fpl_resize_handle.add_event_handler(self._unhighlight_resize_handler, "pointer_leave")
+            frame._fpl_resize_handle.add_event_handler(
+                self._highlight_resize_handler, "pointer_enter"
+            )
+            frame._fpl_resize_handle.add_event_handler(
+                self._unhighlight_resize_handler, "pointer_leave"
+            )
 
         self._renderer.add_event_handler(self._action_iter, "pointer_move")
         self._renderer.add_event_handler(self._action_end, "pointer_up")
@@ -229,10 +238,14 @@ class FlexLayout(BaseLayout):
         delta_x, delta_y = delta
         if self._active_action == "resize":
             # subtract only from x1, y1
-            new_extent = self._active_subplot.extent - np.asarray([0, delta_x, 0, delta_y])
+            new_extent = self._active_subplot.extent - np.asarray(
+                [0, delta_x, 0, delta_y]
+            )
         else:
             # moving
-            new_extent = self._active_subplot.extent - np.asarray([delta_x, delta_x, delta_y, delta_y])
+            new_extent = self._active_subplot.extent - np.asarray(
+                [delta_x, delta_x, delta_y, delta_y]
+            )
 
         x0, x1, y0, y1 = new_extent
         w = x1 - x0
@@ -311,7 +324,7 @@ class FlexLayout(BaseLayout):
     def _action_end(self, ev):
         self._active_action = None
         if self._active_subplot is not None:
-            self._active_subplot._fpl_resize_handle.material.color = (1, 1, 1)
+            self._active_subplot._fpl_resize_handle.material.color = (0.5, 0.5, 0.5)
         self._active_subplot = None
 
         self._last_pointer_pos[:] = np.nan
@@ -320,13 +333,13 @@ class FlexLayout(BaseLayout):
         if self._active_action == "resize":
             return
 
-        ev.target.material.color = (1, 1, 0)
+        ev.target.material.color = (1, 1, 1)
 
     def _unhighlight_resize_handler(self, ev):
         if self._active_action == "resize":
             return
 
-        ev.target.material.color = (1, 1, 1)
+        ev.target.material.color = (0.5, 0.5, 0.5)
 
     def add_subplot(self):
         pass
@@ -347,10 +360,14 @@ class GridLayout(FlexLayout):
         pass
 
     def set_rect(self, subplot, rect: np.ndarray | list | tuple):
-        raise NotImplementedError("set_rect() not implemented for GridLayout which is an auto layout manager")
+        raise NotImplementedError(
+            "set_rect() not implemented for GridLayout which is an auto layout manager"
+        )
 
     def set_extent(self, subplot, extent: np.ndarray | list | tuple):
-        raise NotImplementedError("set_extent() not implemented for GridLayout which is an auto layout manager")
+        raise NotImplementedError(
+            "set_extent() not implemented for GridLayout which is an auto layout manager"
+        )
 
     def _fpl_set_subplot_viewport_rect(self):
         pass

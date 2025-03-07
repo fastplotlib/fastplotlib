@@ -43,33 +43,42 @@ Illustration:
 
 class MeshMasks:
     """Used set the x1, x1, y0, y1 positions of the mesh"""
-    x0 = np.array([
-        [False, False, False],
-        [True, False, False],
-        [False, False, False],
-        [True, False, False],
-    ])
 
-    x1 = np.array([
-        [True, False, False],
-        [False, False, False],
-        [True, False, False],
-        [False, False, False],
-    ])
+    x0 = np.array(
+        [
+            [False, False, False],
+            [True, False, False],
+            [False, False, False],
+            [True, False, False],
+        ]
+    )
 
-    y0 = np.array([
-        [False, True, False],
-        [False, True, False],
-        [False, False, False],
-        [False, False, False],
-    ])
+    x1 = np.array(
+        [
+            [True, False, False],
+            [False, False, False],
+            [True, False, False],
+            [False, False, False],
+        ]
+    )
 
-    y1 = np.array([
-        [False, False, False],
-        [False, False, False],
-        [False, True, False],
-        [False, True, False],
-    ])
+    y0 = np.array(
+        [
+            [False, True, False],
+            [False, True, False],
+            [False, False, False],
+            [False, False, False],
+        ]
+    )
+
+    y1 = np.array(
+        [
+            [False, False, False],
+            [False, False, False],
+            [False, True, False],
+            [False, True, False],
+        ]
+    )
 
 
 masks = MeshMasks
@@ -154,7 +163,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         if rect is not None:
             self._rect = RectManager(*rect, self.get_figure().get_pygfx_render_area())
         elif extent is not None:
-            self._rect = RectManager.from_extent(extent, self.get_figure().get_pygfx_render_area())
+            self._rect = RectManager.from_extent(
+                extent, self.get_figure().get_pygfx_render_area()
+            )
         else:
             raise ValueError("Must provide `rect` or `extent`")
 
@@ -177,14 +188,18 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         x1, y1 = self.extent[[1, 3]]
         self._resize_handle = pygfx.Points(
             pygfx.Geometry(positions=[[x1, -y1, 0]]),  # y is inverted in UnderlayCamera
-            pygfx.PointsMarkerMaterial(marker="square", size=12, size_space="screen", pick_write=True)
+            pygfx.PointsMarkerMaterial(
+                color=(0.5, 0.5, 0.5), marker="square", size=8, size_space="screen", pick_write=True
+            ),
         )
 
         self._reset_plane()
         self._reset_viewport_rect()
 
         self._world_object = pygfx.Group()
-        self._world_object.add(self._plane, self._resize_handle, self._title_graphic.world_object)
+        self._world_object.add(
+            self._plane, self._resize_handle, self._title_graphic.world_object
+        )
 
     @property
     def axes(self) -> Axes:
@@ -274,8 +289,16 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self.viewport.rect = self._fpl_get_render_rect()
 
     def _fpl_get_render_rect(self):
-        rect = self.rect
-        return rect + np.array([1, self.title.font_size + 2 + 4, -2, -self.title.font_size - 2 - 4 - IMGUI_TOOLBAR_HEIGHT - 1])
+        x, y, w, h = self.rect
+
+        x += 1  # add 1 so a 1 pixel edge is visible
+        w -= 2  # subtract 2, so we get a 1 pixel edge on both sides
+
+        y = y + 4 + self.title.font_size + 4  # add 4 pixels above and below title for better spacing
+        # adjust for spacing and 3 pixels for toolbar spacing
+        h = h - 4 - self.title.font_size - IMGUI_TOOLBAR_HEIGHT - 4 - 3
+
+        return x, y, w, h
 
     def _reset_plane(self):
         """reset the plane mesh using the current rect state"""
@@ -285,7 +308,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self._plane.geometry.positions.data[masks.x0] = x0
         self._plane.geometry.positions.data[masks.x1] = x1
-        self._plane.geometry.positions.data[masks.y0] = -y0  # negative y because UnderlayCamera y is inverted
+        self._plane.geometry.positions.data[masks.y0] = (
+            -y0
+        )  # negative y because UnderlayCamera y is inverted
         self._plane.geometry.positions.data[masks.y1] = -y1
 
         self._plane.geometry.positions.update_full()
@@ -298,7 +323,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         x = x0 + (w / 2)
         y = y0 + (self.title.font_size / 2)
         self.title.world_object.world.x = x
-        self.title.world_object.world.y = -y - 2
+        self.title.world_object.world.y = -y - 4  # add 4 pixels for spacing
 
     @property
     def _fpl_plane(self) -> pygfx.Mesh:
@@ -336,7 +361,14 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     def overlaps(self, extent: np.ndarray) -> bool:
         """returns whether this subplot overlaps with the given extent"""
         x0, x1, y0, y1 = extent
-        return not any([self.is_above(y0), self.is_below(y1), self.is_left_of(x0), self.is_right_of(x1)])
+        return not any(
+            [
+                self.is_above(y0),
+                self.is_below(y1),
+                self.is_left_of(x0),
+                self.is_right_of(x1),
+            ]
+        )
 
 
 class Dock(PlotArea):

@@ -160,7 +160,8 @@ class RectManager:
             # if fractional rect, convert to full
             if not (extent < 1).all():  # if x1 and y1 < 1, then all vals must be < 1
                 raise ValueError(
-                    f"if passing a fractional extent, all values must be fractional, you have passed: {extent}")
+                    f"if passing a fractional extent, all values must be fractional, you have passed: {extent}"
+                )
             extent *= np.asarray([cw, cw, ch, ch])
 
         x0, x1, y0, y1 = extent
@@ -183,9 +184,13 @@ class RectManager:
         canvas_extent = np.asarray([cx0, cx1, cy0, cy1])
 
         if x0 < cx0 or x1 < cx0 or x0 > cx1 or x1 > cx1:
-            raise ValueError(f"extent: {extent} x-range is beyond the bounds of the canvas: {canvas_extent}")
+            raise ValueError(
+                f"extent: {extent} x-range is beyond the bounds of the canvas: {canvas_extent}"
+            )
         if y0 < cy0 or y1 < cy0 or y0 > cy1 or y1 > cy1:
-            raise ValueError(f"extent: {extent} y-range is beyond the bounds of the canvas: {canvas_extent}")
+            raise ValueError(
+                f"extent: {extent} y-range is beyond the bounds of the canvas: {canvas_extent}"
+            )
 
     def __repr__(self):
         s = f"{self._rect_frac}\n{self.rect}"
