@@ -18,10 +18,6 @@ from ._engine import GridLayout, FlexLayout, UnderlayCamera
 from .. import ImageGraphic
 
 
-# number of pixels taken by the imgui toolbar when present
-IMGUI_TOOLBAR_HEIGHT = 39
-
-
 class Figure:
     def __init__(
         self,

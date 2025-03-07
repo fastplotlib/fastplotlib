@@ -6,6 +6,10 @@ from pygfx import WgpuRenderer, Texture, Renderer
 from ..utils.gui import BaseRenderCanvas, RenderCanvas
 
 
+# number of pixels taken by the imgui toolbar when present
+IMGUI_TOOLBAR_HEIGHT = 39
+
+
 def make_canvas_and_renderer(
     canvas: str | BaseRenderCanvas | Texture | None,
     renderer: Renderer | None,

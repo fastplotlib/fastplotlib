@@ -171,6 +171,21 @@ class BaseLayout:
         self._subplots = subplots
         self._canvas_rect = canvas_rect
 
+    def _inside_render_rect(self, subplot: Subplot, pos: tuple[int, int]) -> bool:
+        """whether the pos is within the render area, used for filtering out pointer events"""
+        rect = subplot._fpl_get_render_rect()
+
+        x0, y0 = rect[:2]
+
+        x1 = x0 + rect[2]
+        y1 = y0 + rect[3]
+
+        if (x0 < pos[0] < x1) and (y0 < pos[1] < y1):
+            return True
+
+        return False
+
+
     def set_rect(self, subplot, rect: np.ndarray | list | tuple):
         raise NotImplementedError
 
@@ -178,6 +193,7 @@ class BaseLayout:
         raise NotImplementedError
 
     def _fpl_canvas_resized(self, canvas_rect: tuple):
+        self._canvas_rect = canvas_rect
         for subplot in self._subplots:
             subplot._fpl_canvas_resized(canvas_rect)
 
@@ -268,6 +284,9 @@ class FlexLayout(BaseLayout):
         return new_extent
 
     def _action_start(self, subplot: Subplot, action: str, ev):
+        if self._inside_render_rect(subplot, pos=(ev.x, ev.y)):
+            return
+
         if ev.button == 1:
             self._active_action = action
             if action == "resize":
@@ -291,7 +310,10 @@ class FlexLayout(BaseLayout):
 
     def _action_end(self, ev):
         self._active_action = None
-        self._active_subplot._fpl_resize_handle.material.color = (1, 1, 1)
+        if self._active_subplot is not None:
+            self._active_subplot._fpl_resize_handle.material.color = (1, 1, 1)
+        self._active_subplot = None
+
         self._last_pointer_pos[:] = np.nan
 
     def _highlight_resize_handler(self, ev):
