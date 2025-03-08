@@ -143,9 +143,7 @@ class RectManager:
         w = x1 - x0
         h = y1 - y0
 
-        x, y, w, h = x0, y0, w, h
-
-        return x, y, w, h
+        return x0, y0, w, h
 
     @staticmethod
     def validate_extent(extent: np.ndarray | tuple, canvas_rect: tuple):
