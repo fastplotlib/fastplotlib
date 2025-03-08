@@ -41,6 +41,18 @@ Illustration:
 
 """
 
+# wgsl shader snipper for SDF function that defines the resize handler, a lower right triangle.
+sdf_wgsl_resize_handler = """
+// hardcode square root of 2 
+let m_sqrt_2 = 1.4142135;
+
+// given a distance from an origin point, this defines the hypotenuse of a lower right triangle
+let distance = (-coord.x + coord.y) / m_sqrt_2;
+
+// return distance for this position
+return distance * size;
+"""
+
 
 class MeshMasks:
     """Used set the x1, x1, y0, y1 positions of the mesh"""
@@ -87,9 +99,9 @@ masks = MeshMasks
 
 class Subplot(PlotArea, GraphicMethodsMixin):
     resize_handle_color = SelectorColorStates(
-        idle=(0.5, 0.5, 0.5, 1),  # gray
+        idle=(0.6, 0.6, 0.6, 1),  # gray
         highlight=(1, 1, 1, 1),  # white
-        action=(1, 1, 0, 1)  # yellow
+        action=(1, 0, 1, 1)  # magenta
     )
 
     plane_color = SelectorColorStates(
@@ -197,7 +209,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         # init mesh of size 1 to graphically represent rect
         geometry = pygfx.plane_geometry(1, 1)
-        material = pygfx.MeshBasicMaterial(color=(0.1, 0.1, 0.1), pick_write=True)
+        material = pygfx.MeshBasicMaterial(color=self.plane_color.idle, pick_write=True)
         self._plane = pygfx.Mesh(geometry, material)
         wobjects.append(self._plane)
 
@@ -207,9 +219,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         # create resize handler at point (x1, y1)
         x1, y1 = self.extent[[1, 3]]
         self._resize_handle = pygfx.Points(
-            pygfx.Geometry(positions=[[x1, -y1, 0]]),  # y is inverted in UnderlayCamera
+            pygfx.Geometry(positions=[[x1 - 7, -y1 + 7, 0]]),  # y is inverted in UnderlayCamera
             pygfx.PointsMarkerMaterial(
-                color=(0.5, 0.5, 0.5, 1), marker="square", size=8, size_space="screen", pick_write=True
+                color=self.resize_handle_color.idle, marker="custom", custom_sdf=sdf_wgsl_resize_handler, size=12, size_space="screen", pick_write=True
             ),
         )
         if not resizeable:
@@ -358,8 +370,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         else:
             toolbar_space = 0
 
-        # adjust for spacing and 4 pixels for more spacing
-        h = h - 4 - self.title.font_size - toolbar_space - 4 - 4
+        # adjust for the 4 pixels from the line above
+        # also adjust for toolbar space and 13 pixels for the resize handler
+        h = h - 4 - self.title.font_size - toolbar_space - 4 - 13
 
         return x, y, w, h
 
@@ -379,7 +392,8 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._plane.geometry.positions.update_full()
 
         # note the negative y because UnderlayCamera y is inverted
-        self._resize_handle.geometry.positions.data[0] = [x1, -y1, 0]
+        # shifted by 8 so lower right of triangle is at the edge of the subplot plane
+        self._resize_handle.geometry.positions.data[0] = [x1 - 7, -y1 + 7, 0]
         self._resize_handle.geometry.positions.update_full()
 
         # set subplot title position
@@ -404,22 +418,22 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._reset_plane()
         self._reset_viewport_rect()
 
-    def is_above(self, y0) -> bool:
-        # our bottom < other top
-        return self._rect.y1 < y0
+    def is_above(self, y0, dist: int = 1) -> bool:
+        # our bottom < other top within given distance
+        return self._rect.y1 < y0 + dist
 
-    def is_below(self, y1) -> bool:
+    def is_below(self, y1, dist: int = 1) -> bool:
         # our top > other bottom
-        return self._rect.y0 > y1
+        return self._rect.y0 > y1 - dist
 
-    def is_left_of(self, x0) -> bool:
+    def is_left_of(self, x0, dist: int = 1) -> bool:
         # our right_edge < other left_edge
         # self.x1 < other.x0
-        return self._rect.x1 < x0
+        return self._rect.x1 < x0 + dist
 
-    def is_right_of(self, x1) -> bool:
+    def is_right_of(self, x1, dist: int = 1) -> bool:
         # self.x0 > other.x1
-        return self._rect.x0 > x1
+        return self._rect.x0 > x1 - dist
 
     def overlaps(self, extent: np.ndarray) -> bool:
         """returns whether this subplot overlaps with the given extent"""
