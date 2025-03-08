@@ -3,7 +3,6 @@ from functools import partial
 import numpy as np
 import pygfx
 
-from ._utils import get_extents_from_grid
 from ._subplot import Subplot
 
 
@@ -228,12 +227,6 @@ class FlexLayout(BaseLayout):
             return
 
         ev.target.material.color = subplot.plane_color.idle
-
-    def add_subplot(self):
-        pass
-
-    def remove_subplot(self, subplot: Subplot):
-        pass
 
 
 class GridLayout(FlexLayout):
