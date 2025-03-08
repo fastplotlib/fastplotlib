@@ -5,8 +5,6 @@ import pygfx
 
 from ._subplot import Subplot
 
-# from ..graphics import TextGraphic
-
 
 class UnderlayCamera(pygfx.Camera):
     """
@@ -164,7 +162,7 @@ class FlexLayout(BaseLayout):
         if ev.button == 1:
             self._active_action = action
             if action == "resize":
-                subplot._fpl_resize_handle.material.color = (1, 0, 0)
+                subplot._fpl_resize_handle.material.color = (1, 0, 1)
             elif action == "move":
                 pass
             else:
