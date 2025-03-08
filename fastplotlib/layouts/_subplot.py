@@ -101,13 +101,13 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     resize_handle_color = SelectorColorStates(
         idle=(0.6, 0.6, 0.6, 1),  # gray
         highlight=(1, 1, 1, 1),  # white
-        action=(1, 0, 1, 1)  # magenta
+        action=(1, 0, 1, 1),  # magenta
     )
 
     plane_color = SelectorColorStates(
         idle=(0.1, 0.1, 0.1),  # dark grey
         highlight=(0.2, 0.2, 0.2),  # less dark grey
-        action=(0.1, 0.1, 0.2)  # dark gray-blue
+        action=(0.1, 0.1, 0.2),  # dark gray-blue
     )
 
     def __init__(
@@ -223,7 +223,12 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             # subtract 7 so that the bottom right corner of the triangle is at the center
             pygfx.Geometry(positions=[[x1 - 7, -y1 + 7, 0]]),
             pygfx.PointsMarkerMaterial(
-                color=self.resize_handle_color.idle, marker="custom", custom_sdf=sdf_wgsl_resize_handler, size=12, size_space="screen", pick_write=True
+                color=self.resize_handle_color.idle,
+                marker="custom",
+                custom_sdf=sdf_wgsl_resize_handler,
+                size=12,
+                size_space="screen",
+                pick_write=True,
             ),
         )
         if not resizeable:
@@ -342,7 +347,12 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         # set dock rects
         self.docks["left"].viewport.rect = x, y, s_left, h
         self.docks["top"].viewport.rect = x_top_bottom, y, w_top_bottom, s_top
-        self.docks["bottom"].viewport.rect = x_top_bottom, y + h - s_bottom, w_top_bottom, s_bottom
+        self.docks["bottom"].viewport.rect = (
+            x_top_bottom,
+            y + h - s_bottom,
+            w_top_bottom,
+            s_bottom,
+        )
         self.docks["right"].viewport.rect = x + w - s_right, y, s_right, h
 
         # calc subplot rect by adjusting for dock sizes
@@ -365,7 +375,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         x += 1  # add 1 so a 1 pixel edge is visible
         w -= 2  # subtract 2, so we get a 1 pixel edge on both sides
 
-        y = y + 4 + self.title.font_size + 4  # add 4 pixels above and below title for better spacing
+        y = (
+            y + 4 + self.title.font_size + 4
+        )  # add 4 pixels above and below title for better spacing
 
         if self.toolbar:
             toolbar_space = IMGUI_TOOLBAR_HEIGHT

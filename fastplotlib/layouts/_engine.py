@@ -28,7 +28,8 @@ class BaseLayout:
     def __init__(
         self,
         renderer: pygfx.WgpuRenderer,
-            subplots: np.ndarray[Subplot], canvas_rect: tuple,
+        subplots: np.ndarray[Subplot],
+        canvas_rect: tuple,
     ):
         self._renderer = renderer
         self._subplots: np.ndarray[Subplot] = subplots.ravel()
@@ -70,7 +71,14 @@ class BaseLayout:
 
 
 class FlexLayout(BaseLayout):
-    def __init__(self, renderer, subplots: list[Subplot], canvas_rect: tuple, moveable=True, resizeable=True):
+    def __init__(
+        self,
+        renderer,
+        subplots: list[Subplot],
+        canvas_rect: tuple,
+        moveable=True,
+        resizeable=True,
+    ):
         super().__init__(renderer, subplots, canvas_rect)
 
         self._last_pointer_pos: np.ndarray[np.float64, np.float64] = np.array(
@@ -188,7 +196,9 @@ class FlexLayout(BaseLayout):
         if ev.button == 1:
             self._active_action = action
             if action == "resize":
-                subplot._fpl_resize_handle.material.color = subplot.resize_handle_color.action
+                subplot._fpl_resize_handle.material.color = (
+                    subplot.resize_handle_color.action
+                )
             elif action == "move":
                 subplot._fpl_plane.material.color = subplot.plane_color.action
             else:
@@ -209,8 +219,12 @@ class FlexLayout(BaseLayout):
     def _action_end(self, ev):
         self._active_action = None
         if self._active_subplot is not None:
-            self._active_subplot._fpl_resize_handle.material.color = self._active_subplot.resize_handle_color.idle
-            self._active_subplot._fpl_plane.material.color = self._active_subplot.plane_color.idle
+            self._active_subplot._fpl_resize_handle.material.color = (
+                self._active_subplot.resize_handle_color.idle
+            )
+            self._active_subplot._fpl_plane.material.color = (
+                self._active_subplot.plane_color.idle
+            )
         self._active_subplot = None
 
         self._last_pointer_pos[:] = np.nan
@@ -241,13 +255,15 @@ class FlexLayout(BaseLayout):
 
 class GridLayout(FlexLayout):
     def __init__(
-            self,
-            renderer,
-            subplots: list[Subplot],
-            canvas_rect: tuple[float, float, float, float],
-            shape: tuple[int, int]
+        self,
+        renderer,
+        subplots: list[Subplot],
+        canvas_rect: tuple[float, float, float, float],
+        shape: tuple[int, int],
     ):
-        super().__init__(renderer, subplots, canvas_rect, moveable=False, resizeable=False)
+        super().__init__(
+            renderer, subplots, canvas_rect, moveable=False, resizeable=False
+        )
 
         # {Subplot: (row_ix, col_ix)}, dict mapping subplots to their row and col index in the grid layout
         self._subplot_grid_position: dict[Subplot, tuple[int, int]]
