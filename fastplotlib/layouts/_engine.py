@@ -31,7 +31,7 @@ class BaseLayout:
             subplots: np.ndarray[Subplot], canvas_rect: tuple,
     ):
         self._renderer = renderer
-        self._subplots = subplots.ravel()
+        self._subplots: np.ndarray[Subplot] = subplots.ravel()
         self._canvas_rect = canvas_rect
 
     def _inside_render_rect(self, subplot: Subplot, pos: tuple[int, int]) -> bool:
@@ -237,6 +237,7 @@ class FlexLayout(BaseLayout):
 
         self._subplot_focus = subplot
         ev.target.material.color = subplot.plane_color.highlight
+
 
 class GridLayout(FlexLayout):
     def __init__(
