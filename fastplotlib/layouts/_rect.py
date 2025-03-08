@@ -156,9 +156,9 @@ class RectManager:
         if (extent < 0).any():
             raise ValueError(f"extent must be non-negative, you have passed: {extent}")
 
-        if extent[1] < 1 or extent[3] < 1:  # if x1 < 1, or y1 < 1
+        if extent[1] <= 1 or extent[3] <= 1:  # if x1 <= 1, or y1 <= 1
             # if fractional rect, convert to full
-            if not (extent < 1).all():  # if x1 and y1 < 1, then all vals must be < 1
+            if not (extent <= 1).all():  # if x1 and y1 <= 1, then all vals must be <= 1
                 raise ValueError(
                     f"if passing a fractional extent, all values must be fractional, you have passed: {extent}"
                 )
