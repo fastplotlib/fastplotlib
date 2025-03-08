@@ -449,18 +449,6 @@ class Figure:
         names.flags.writeable = False
         return names
 
-    def __getitem__(self, index: str | int | tuple[int, int]) -> Subplot:
-        if isinstance(index, str):
-            for subplot in self._subplots.ravel():
-                if subplot.name == index:
-                    return subplot
-            raise IndexError(f"no subplot with given name: {index}")
-
-        if isinstance(self.layout, GridLayout):
-            return self._subplots[index[0], index[1]]
-
-        return self._subplots[index]
-
     def _render(self, draw=True):
         # draw the underlay planes
         self.renderer.render(self._underlay_scene, self._underlay_camera, flush=False)
@@ -726,154 +714,6 @@ class Figure:
     def open_popup(self, *args, **kwargs):
         warn("popups only supported by ImguiFigure")
 
-    # def _fpl_set_subplot_viewport_rect(self, subplot: Subplot):
-    #     """
-    #     Sets the viewport rect for the given subplot
-    #     """
-    #
-    #     if self.mode == "grid":
-    #         # row, col position of this subplot within the grid
-    #         row_ix, col_ix = self._subplot_grid_positions[subplot]
-    #
-    #         # number of rows, cols in the grid
-    #         nrows, ncols = self.shape
-    #
-    #         # get starting positions and dimensions for the pygfx portion of the canvas
-    #         # anything outside the pygfx portion of the canvas is for imgui
-    #         x0_canvas, y0_canvas, width_canvas, height_canvas = (
-    #             self.get_pygfx_render_area()
-    #         )
-    #
-    #         # width of an individual subplot
-    #         width_subplot = width_canvas / ncols
-    #         # height of an individual subplot
-    #         height_subplot = height_canvas / nrows
-    #
-    #         # x position of this subplot
-    #         x_pos = (
-    #             ((col_ix - 1) * width_subplot)
-    #             + width_subplot
-    #             + x0_canvas
-    #             + self.spacing
-    #         )
-    #         # y position of this subplot
-    #         y_pos = (
-    #             ((row_ix - 1) * height_subplot)
-    #             + height_subplot
-    #             + y0_canvas
-    #             + self.spacing
-    #         )
-    #
-    #         if self.__class__.__name__ == "ImguiFigure" and subplot.toolbar:
-    #             # leave space for imgui toolbar
-    #             height_subplot -= IMGUI_TOOLBAR_HEIGHT
-    #
-    #         # clip so that min (w, h) is always 1, otherwise JupyterRenderCanvas causes issues because it
-    #         # initializes with a width, height of (0, 0)
-    #         rect = np.array(
-    #             [
-    #                 x_pos,
-    #                 y_pos,
-    #                 width_subplot - self.spacing,
-    #                 height_subplot - self.spacing,
-    #             ]
-    #         ).clip(min=[0, 0, 1, 1])
-    #
-    #         # adjust if a subplot dock is present
-    #         adjust = np.array(
-    #             [
-    #                 # add left dock size to x_pos
-    #                 subplot.docks["left"].size,
-    #                 # add top dock size to y_pos
-    #                 subplot.docks["top"].size,
-    #                 # remove left and right dock sizes from width
-    #                 -subplot.docks["right"].size - subplot.docks["left"].size,
-    #                 # remove top and bottom dock sizes from height
-    #                 -subplot.docks["top"].size - subplot.docks["bottom"].size,
-    #             ]
-    #         )
-    #
-    #         subplot.viewport.rect = rect + adjust
-
-    # def _fpl_set_subplot_dock_viewport_rect(self, subplot, position):
-    #     """
-    #     Sets the viewport rect for the given subplot dock
-    #     """
-    #
-    #     dock = subplot.docks[position]
-    #
-    #     if dock.size == 0:
-    #         dock.viewport.rect = None
-    #         return
-    #
-    #     if self.mode == "grid":
-    #         # row, col position of this subplot within the grid
-    #         row_ix, col_ix = self._subplot_grid_positions[subplot]
-    #
-    #         # number of rows, cols in the grid
-    #         nrows, ncols = self.shape
-    #
-    #         x0_canvas, y0_canvas, width_canvas, height_canvas = (
-    #             self.get_pygfx_render_area()
-    #         )
-    #
-    #         # width of an individual subplot
-    #         width_subplot = width_canvas / ncols
-    #         # height of an individual subplot
-    #         height_subplot = height_canvas / nrows
-    #
-    #         # calculate the rect based on the dock position
-    #         match position:
-    #             case "right":
-    #                 x_pos = (
-    #                     ((col_ix - 1) * width_subplot) + (width_subplot * 2) - dock.size
-    #                 )
-    #                 y_pos = (
-    #                     ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
-    #                 )
-    #                 width_viewport = dock.size
-    #                 height_viewport = height_subplot - self.spacing
-    #
-    #             case "left":
-    #                 x_pos = ((col_ix - 1) * width_subplot) + width_subplot
-    #                 y_pos = (
-    #                     ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
-    #                 )
-    #                 width_viewport = dock.size
-    #                 height_viewport = height_subplot - self.spacing
-    #
-    #             case "top":
-    #                 x_pos = (
-    #                     ((col_ix - 1) * width_subplot) + width_subplot + self.spacing
-    #                 )
-    #                 y_pos = (
-    #                     ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
-    #                 )
-    #                 width_viewport = width_subplot - self.spacing
-    #                 height_viewport = dock.size
-    #
-    #             case "bottom":
-    #                 x_pos = (
-    #                     ((col_ix - 1) * width_subplot) + width_subplot + self.spacing
-    #                 )
-    #                 y_pos = (
-    #                     ((row_ix - 1) * height_subplot)
-    #                     + (height_subplot * 2)
-    #                     - dock.size
-    #                 )
-    #                 width_viewport = width_subplot - self.spacing
-    #                 height_viewport = dock.size
-    #
-    #             case _:
-    #                 raise ValueError("invalid position")
-    #
-    #         dock.viewport.rect = [
-    #             x_pos + x0_canvas,
-    #             y_pos + y0_canvas,
-    #             width_viewport,
-    #             height_viewport,
-    #         ]
-
     def _set_viewport_rects(self, *ev):
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
         self.layout._fpl_canvas_resized(self.get_pygfx_render_area())
@@ -893,6 +733,51 @@ class Figure:
         width, height = self.canvas.get_logical_size()
 
         return 0, 0, width, height
+
+    def add_subplot(self, rect=None, extent=None, camera: str | pygfx.PerspectiveCamera = "2d", controller: str | pygfx.Controller = None, name: str = None) -> Subplot:
+        if isinstance(self.layout, GridLayout):
+            raise NotImplementedError("`add_subplot()` is not implemented for Figures using a GridLayout")
+
+        camera = create_camera(camera)
+        controller = create_controller(controller, camera)
+
+        subplot = Subplot(
+            parent=self,
+            camera=camera,
+            controller=controller,
+            canvas=self.canvas,
+            renderer=self.renderer,
+            name=name,
+            rect=rect,
+            extent=extent,  # figure created extents for grid layout
+            resizeable=True,
+        )
+
+        return subplot
+
+    def remove_subplot(self, subplot: Subplot):
+        if isinstance(self.layout, GridLayout):
+            raise NotImplementedError("`remove_subplot()` is not implemented for Figures using a GridLayout")
+
+        if subplot not in self._subplots.tolist():
+            raise KeyError(f"given subplot: {subplot} not found in the layout.")
+
+        subplot.clear()
+        self._underlay_scene.remove(subplot._world_object)
+        subplot._world_object.clear()
+        del subplot
+
+    def __getitem__(self, index: str | int | tuple[int, int]) -> Subplot:
+        if isinstance(index, str):
+            for subplot in self._subplots.ravel():
+                if subplot.name == index:
+                    return subplot
+            raise IndexError(f"no subplot with given name: {index}")
+
+        if isinstance(self.layout, GridLayout):
+            return self._subplots[index[0], index[1]]
+
+        return self._subplots[index]
 
     def __iter__(self):
         self._current_iter = iter(range(len(self)))
