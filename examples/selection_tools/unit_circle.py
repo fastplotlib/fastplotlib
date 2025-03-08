@@ -28,12 +28,39 @@ def make_circle(center, radius: float, n_points: int) -> np.ndarray:
     return np.column_stack([xs, ys]) + center
 
 
+# We will have 3 subplots in a layout like this:
+"""
+|========|========|
+|        |        |
+|        |  sine  |
+|        |        |
+| circle |========|
+|        |        |
+|        | cosine |
+|        |        |
+|========|========|
+"""
+
+# we can define this layout using "extents", i.e. min and max ranges on the canvas
+# (x_min, x_max, y_min, y_max)
+# extents can be defined as fractions as shown here
+extents = [
+    (0, 0.5, 0, 1),  # circle subplot
+    (0.5, 1, 0, 0.5),  # sine subplot
+    (0.5, 1, 0.5, 1),  # cosine subplot
+]
+
 # create a figure with 3 subplots
-figure = fpl.Figure((3, 1), names=["unit circle", "sin(x)", "cos(x)"], size=(700, 1024))
+figure = fpl.Figure(
+    extents=extents,
+    names=["unit circle", "sin(x)", "cos(x)"],
+    size=(700, 560)
+)
 
 # set the axes to intersect at (0, 0, 0) to better illustrate the unit circle
 for subplot in figure:
     subplot.axes.intersection = (0, 0, 0)
+    subplot.toolbar = False  # reduce clutter
 
 figure["sin(x)"].camera.maintain_aspect = False
 figure["cos(x)"].camera.maintain_aspect = False
@@ -72,6 +99,7 @@ cosine_graphic = figure["cos(x)"].add_line(
 # add linear selectors to the sine and cosine line graphics
 sine_selector = sine_graphic.add_linear_selector()
 cosine_selector = cosine_graphic.add_linear_selector()
+
 
 def set_circle_cmap(ev):
     # sets the cmap transforms
