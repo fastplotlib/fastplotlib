@@ -41,7 +41,7 @@ Illustration:
 
 """
 
-# wgsl shader snipper for SDF function that defines the resize handler, a lower right triangle.
+# wgsl shader snippet for SDF function that defines the resize handler, a lower right triangle.
 sdf_wgsl_resize_handler = """
 // hardcode square root of 2 
 let m_sqrt_2 = 1.4142135;
@@ -219,7 +219,9 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         # create resize handler at point (x1, y1)
         x1, y1 = self.extent[[1, 3]]
         self._resize_handle = pygfx.Points(
-            pygfx.Geometry(positions=[[x1 - 7, -y1 + 7, 0]]),  # y is inverted in UnderlayCamera
+            # note negative y since y is inverted in UnderlayCamera
+            # subtract 7 so that the bottom right corner of the triangle is at the center
+            pygfx.Geometry(positions=[[x1 - 7, -y1 + 7, 0]]),
             pygfx.PointsMarkerMaterial(
                 color=self.resize_handle_color.idle, marker="custom", custom_sdf=sdf_wgsl_resize_handler, size=12, size_space="screen", pick_write=True
             ),
@@ -367,12 +369,15 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         if self.toolbar:
             toolbar_space = IMGUI_TOOLBAR_HEIGHT
+            resize_handle_space = 0
         else:
             toolbar_space = 0
+            # need some space for resize handler if imgui toolbar isn't present
+            resize_handle_space = 13
 
         # adjust for the 4 pixels from the line above
-        # also adjust for toolbar space and 13 pixels for the resize handler
-        h = h - 4 - self.title.font_size - toolbar_space - 4 - 13
+        # also give space for resize handler if imgui toolbar is not present
+        h = h - 4 - self.title.font_size - toolbar_space - 4 - resize_handle_space
 
         return x, y, w, h
 
@@ -391,8 +396,8 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self._plane.geometry.positions.update_full()
 
-        # note the negative y because UnderlayCamera y is inverted
-        # shifted by 8 so lower right of triangle is at the edge of the subplot plane
+        # note negative y since y is inverted in UnderlayCamera
+        # subtract 7 so that the bottom right corner of the triangle is at the center
         self._resize_handle.geometry.positions.data[0] = [x1 - 7, -y1 + 7, 0]
         self._resize_handle.geometry.positions.update_full()
 
