@@ -11,7 +11,12 @@ import pygfx
 
 from rendercanvas import BaseRenderCanvas
 
-from ._utils import make_canvas_and_renderer, create_controller, create_camera, get_extents_from_grid
+from ._utils import (
+    make_canvas_and_renderer,
+    create_controller,
+    create_camera,
+    get_extents_from_grid,
+)
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, FlexLayout, UnderlayCamera
@@ -327,9 +332,7 @@ class Figure:
         if layout_mode == "grid":
             n_rows, n_cols = shape
             grid_index_iterator = list(product(range(n_rows), range(n_cols)))
-            self._subplots: np.ndarray[Subplot] = np.empty(
-                shape=shape, dtype=object
-            )
+            self._subplots: np.ndarray[Subplot] = np.empty(shape=shape, dtype=object)
             resizeable = False
 
         else:
@@ -739,9 +742,18 @@ class Figure:
 
         return 0, 0, width, height
 
-    def add_subplot(self, rect=None, extent=None, camera: str | pygfx.PerspectiveCamera = "2d", controller: str | pygfx.Controller = None, name: str = None) -> Subplot:
+    def add_subplot(
+        self,
+        rect=None,
+        extent=None,
+        camera: str | pygfx.PerspectiveCamera = "2d",
+        controller: str | pygfx.Controller = None,
+        name: str = None,
+    ) -> Subplot:
         if isinstance(self.layout, GridLayout):
-            raise NotImplementedError("`add_subplot()` is not implemented for Figures using a GridLayout")
+            raise NotImplementedError(
+                "`add_subplot()` is not implemented for Figures using a GridLayout"
+            )
 
         camera = create_camera(camera)
         controller = create_controller(controller, camera)
@@ -762,7 +774,9 @@ class Figure:
 
     def remove_subplot(self, subplot: Subplot):
         if isinstance(self.layout, GridLayout):
-            raise NotImplementedError("`remove_subplot()` is not implemented for Figures using a GridLayout")
+            raise NotImplementedError(
+                "`remove_subplot()` is not implemented for Figures using a GridLayout"
+            )
 
         if subplot not in self._subplots.tolist():
             raise KeyError(f"given subplot: {subplot} not found in the layout.")

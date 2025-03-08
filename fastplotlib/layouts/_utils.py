@@ -108,7 +108,9 @@ def create_controller(
     return controller_types[controller_type](camera)
 
 
-def get_extents_from_grid(shape: tuple[int, int]) -> list[tuple[float, float, float, float]]:
+def get_extents_from_grid(
+    shape: tuple[int, int]
+) -> list[tuple[float, float, float, float]]:
     """create fractional extents from a given grid shape"""
     x_min = np.arange(0, 1, (1 / shape[1]))
     x_max = x_min + 1 / shape[1]
