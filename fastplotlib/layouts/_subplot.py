@@ -7,7 +7,7 @@ from rendercanvas import BaseRenderCanvas
 
 from ._rect import RectManager
 from ..graphics import TextGraphic
-from ._utils import create_camera, create_controller, IMGUI_TOOLBAR_HEIGHT
+from ._utils import create_camera, create_controller, IMGUI, IMGUI_TOOLBAR_HEIGHT
 from ._plot_area import PlotArea
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..graphics._axes import Axes
@@ -139,7 +139,10 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         self._docks = dict()
 
-        self._toolbar = True
+        if IMGUI:
+            self._toolbar = True
+        else:
+            self._toolbar = False
 
         super(Subplot, self).__init__(
             parent=parent,
@@ -246,7 +249,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     @toolbar.setter
     def toolbar(self, visible: bool):
         self._toolbar = bool(visible)
-        self.get_figure()._fpl_set_subplot_viewport_rect(self)
+        self.get_figure()._set_viewport_rects(self)
 
     def _render(self):
         self.axes.update_using_camera()
@@ -286,17 +289,55 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._reset_viewport_rect()
 
     def _reset_viewport_rect(self):
-        self.viewport.rect = self._fpl_get_render_rect()
+        # get rect of the render area
+        x, y, w, h = self._fpl_get_render_rect()
 
-    def _fpl_get_render_rect(self):
+        s_left = self.docks["left"].size
+        s_top = self.docks["top"].size
+        s_right = self.docks["right"].size
+        s_bottom = self.docks["bottom"].size
+
+        # top and bottom have same width
+        # subtract left and right dock sizes
+        w_top_bottom = w - s_left - s_right
+        # top and bottom have same x pos
+        x_top_bottom = x + s_left
+
+        # set dock rects
+        self.docks["left"].viewport.rect = x, y, s_left, h
+        self.docks["top"].viewport.rect = x_top_bottom, y, w_top_bottom, s_top
+        self.docks["bottom"].viewport.rect = x_top_bottom, y + h - s_bottom, w_top_bottom, s_bottom
+        self.docks["right"].viewport.rect = x + w - s_right, y, s_right, h
+
+        # calc subplot rect by adjusting for dock sizes
+        x += s_left
+        y += s_top
+        w -= s_left + s_right
+        h -= s_top + s_bottom
+
+        # set subplot rect
+        self.viewport.rect = x, y, w, h
+
+    def _fpl_get_render_rect(self) -> tuple[float, float, float, float]:
+        """
+        Get the actual render area of the subplot, including the docks.
+
+        Excludes area taken by the subplot title and toolbar. Also adds a small amount of spacing around the subplot.
+        """
         x, y, w, h = self.rect
 
         x += 1  # add 1 so a 1 pixel edge is visible
         w -= 2  # subtract 2, so we get a 1 pixel edge on both sides
 
         y = y + 4 + self.title.font_size + 4  # add 4 pixels above and below title for better spacing
-        # adjust for spacing and 3 pixels for toolbar spacing
-        h = h - 4 - self.title.font_size - IMGUI_TOOLBAR_HEIGHT - 4 - 3
+
+        if self.toolbar:
+            toolbar_space = IMGUI_TOOLBAR_HEIGHT
+        else:
+            toolbar_space = 0
+
+        # adjust for spacing and 4 pixels for more spacing
+        h = h - 4 - self.title.font_size - toolbar_space - 4 - 4
 
         return x, y, w, h
 
@@ -409,14 +450,7 @@ class Dock(PlotArea):
     @size.setter
     def size(self, s: int):
         self._size = s
-        if self.position == "top":
-            # TODO: treat title dock separately, do not allow user to change viewport stuff
-            return
-
-        self.get_figure(self.parent)._fpl_set_subplot_viewport_rect(self.parent)
-        self.get_figure(self.parent)._fpl_set_subplot_dock_viewport_rect(
-            self.parent, self._position
-        )
+        self.parent._reset_viewport_rect()
 
     def _render(self):
         if self.size == 0:
