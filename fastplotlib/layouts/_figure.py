@@ -135,7 +135,12 @@ class Figure:
                     "must provide same number of subplot `names` as specified by Figure `shape`"
                 )
         else:
-            subplot_names = None
+            if layout_mode == "grid":
+                subplot_names = np.asarray(
+                    list(map(str, product(range(shape[0]), range(shape[1]))))
+                )
+            else:
+                subplot_names = None
 
         canvas, renderer = make_canvas_and_renderer(
             canvas, renderer, canvas_kwargs={"size": size}
@@ -765,7 +770,14 @@ class Figure:
         subplot.clear()
         self._underlay_scene.remove(subplot._world_object)
         subplot._world_object.clear()
+        self.layout._subplots = None
+        subplots = self._subplots.tolist()
+        subplots.remove(subplot)
+        self.layout.remove_subplot(subplot)
         del subplot
+
+        self._subplots = np.asarray(subplots)
+        self.layout._subplots = self._subplots.ravel()
 
     def __getitem__(self, index: str | int | tuple[int, int]) -> Subplot:
         if isinstance(index, str):

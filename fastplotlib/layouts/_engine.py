@@ -48,6 +48,12 @@ class BaseLayout:
 
         return False
 
+    def add_subplot(self):
+        raise NotImplementedError
+
+    def remove_subplot(self, subplot):
+        raise NotImplementedError
+
     def set_rect(self, subplot, rect: np.ndarray | list | tuple):
         raise NotImplementedError
 
@@ -73,8 +79,14 @@ class FlexLayout(BaseLayout):
 
         self._active_action: str | None = None
         self._active_subplot: Subplot | None = None
+        self._subplot_focus: Subplot | None = None
 
         for subplot in self._subplots:
+            # highlight plane when pointer enters it
+            subplot._fpl_plane.add_event_handler(
+                partial(self._highlight_plane, subplot), "pointer_enter"
+            )
+
             if moveable:
                 # start a move action
                 subplot._fpl_plane.add_event_handler(
@@ -85,13 +97,6 @@ class FlexLayout(BaseLayout):
                     partial(self._action_start, subplot, "resize"), "pointer_down"
                 )
 
-                # highlight plane when pointer enters
-                subplot._fpl_plane.add_event_handler(
-                    partial(self._highlight_plane, subplot), "pointer_enter"
-                )  # unhighlight plane when pointer leaves
-                subplot._fpl_plane.add_event_handler(
-                    partial(self._unhighlight_plane, subplot), "pointer_leave"
-                )
             if resizeable:
                 # highlight/unhighlight resize handler when pointer enters/leaves
                 subplot._fpl_resize_handle.add_event_handler(
@@ -107,6 +112,12 @@ class FlexLayout(BaseLayout):
 
             # end the action when pointer button goes up
             self._renderer.add_event_handler(self._action_end, "pointer_up")
+
+    def remove_subplot(self, subplot):
+        if subplot is self._active_subplot:
+            self._active_subplot = None
+        if subplot is self._subplot_focus:
+            self._subplot_focus = None
 
     def _new_extent_from_delta(self, delta: tuple[int, int]) -> np.ndarray:
         delta_x, delta_y = delta
@@ -220,14 +231,12 @@ class FlexLayout(BaseLayout):
         if self._active_action is not None:
             return
 
+        # reset color of previous focus
+        if self._subplot_focus is not None:
+            self._subplot_focus._fpl_plane.material.color = subplot.plane_color.idle
+
+        self._subplot_focus = subplot
         ev.target.material.color = subplot.plane_color.highlight
-
-    def _unhighlight_plane(self, subplot: Subplot, ev):
-        if self._active_action is not None:
-            return
-
-        ev.target.material.color = subplot.plane_color.idle
-
 
 class GridLayout(FlexLayout):
     def __init__(
