@@ -1,4 +1,7 @@
 import importlib
+from itertools import product
+
+import numpy as np
 
 import pygfx
 from pygfx import WgpuRenderer, Texture, Renderer
@@ -103,3 +106,18 @@ def create_controller(
         )
 
     return controller_types[controller_type](camera)
+
+
+def get_extents_from_grid(shape: tuple[int, int]) -> list[tuple[float, float, float, float]]:
+    """create fractional extents from a given grid shape"""
+    x_min = np.arange(0, 1, (1 / shape[1]))
+    x_max = x_min + 1 / shape[1]
+    y_min = np.arange(0, 1, (1 / shape[0]))
+    y_max = y_min + 1 / shape[0]
+
+    extents = list()
+    for row_ix, col_ix in product(range(shape[0]), range(shape[1])):
+        extent = x_min[col_ix], x_max[col_ix], y_min[row_ix], y_max[row_ix]
+        extents.append(extent)
+
+    return extents

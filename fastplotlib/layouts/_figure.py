@@ -11,7 +11,7 @@ import pygfx
 
 from rendercanvas import BaseRenderCanvas
 
-from ._utils import make_canvas_and_renderer, create_controller, create_camera
+from ._utils import make_canvas_and_renderer, create_controller, create_camera, get_extents_from_grid
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, FlexLayout, UnderlayCamera
@@ -121,24 +121,12 @@ class Figure:
                     "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
                 )
             n_subplots = shape[0] * shape[1]
-            # shape is [n_subplots, row_col_index]
-            self._subplot_grid_positions: dict[Subplot, tuple[int, int]] = dict()
             layout_mode = "grid"
 
             # create fractional extents from the grid
-            x_mins = np.arange(0, 1, (1 / shape[0]))
-            x_maxs = x_mins + 1 / shape[0]
-            y_mins = np.arange(0, 1, (1 / shape[1]))
-            y_maxs = y_mins + 1 / shape[1]
-
-            extents = np.column_stack([x_mins, x_maxs, y_mins, y_maxs])
+            extents = get_extents_from_grid(shape)
             # empty rects
             rects = [None] * n_subplots
-
-        self._shape = shape
-
-        # default spacing of 2 pixels between subplots
-        self._spacing = 2
 
         if names is not None:
             subplot_names = np.asarray(names).flatten()
@@ -332,16 +320,18 @@ class Figure:
         self._renderer = renderer
 
         if layout_mode == "grid":
-            n_rows, n_cols = self._shape
+            n_rows, n_cols = shape
             grid_index_iterator = list(product(range(n_rows), range(n_cols)))
             self._subplots: np.ndarray[Subplot] = np.empty(
-                shape=self._shape, dtype=object
+                shape=shape, dtype=object
             )
+            resizeable = False
 
         else:
             self._subplots: np.ndarray[Subplot] = np.empty(
                 shape=n_subplots, dtype=object
             )
+            resizeable = True
 
         for i in range(n_subplots):
             camera = subplot_cameras[i]
@@ -361,12 +351,12 @@ class Figure:
                 name=name,
                 rect=rects[i],
                 extent=extents[i],  # figure created extents for grid layout
+                resizeable=resizeable,
             )
 
             if layout_mode == "grid":
                 row_ix, col_ix = grid_index_iterator[i]
                 self._subplots[row_ix, col_ix] = subplot
-                self._subplot_grid_positions[subplot] = (row_ix, col_ix)
             else:
                 self._subplots[i] = subplot
 
@@ -375,6 +365,7 @@ class Figure:
                 self.renderer,
                 subplots=self._subplots,
                 canvas_rect=self.get_pygfx_render_area(),
+                shape=shape,
             )
 
         elif layout_mode == "rect" or layout_mode == "extent":
@@ -388,7 +379,7 @@ class Figure:
 
         self._underlay_scene = pygfx.Scene()
 
-        for subplot in self._subplots:
+        for subplot in self._subplots.ravel():
             self._underlay_scene.add(subplot._world_object)
 
         self._animate_funcs_pre: list[callable] = list()
@@ -414,20 +405,6 @@ class Figure:
         Layout engine
         """
         return self._layout
-
-    @property
-    def spacing(self) -> int:
-        """spacing between subplots, in pixels"""
-        return self._spacing
-
-    @spacing.setter
-    def spacing(self, value: int):
-        """set the spacing between subplots, in pixels"""
-        if not isinstance(value, (int, np.integer)):
-            raise TypeError("spacing must be of type <int>")
-
-        self._spacing = value
-        self._set_viewport_rects()
 
     @property
     def canvas(self) -> BaseRenderCanvas:
@@ -901,14 +878,14 @@ class Figure:
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
         self.layout._fpl_canvas_resized(self.get_pygfx_render_area())
 
-    def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
+    def get_pygfx_render_area(self, *args) -> tuple[float, float, float, float]:
         """
         Fet rect for the portion of the canvas that the pygfx renderer draws to,
         i.e. non-imgui, part of canvas
 
         Returns
         -------
-        tuple[int, int, int, int]
+        tuple[float, float, float, float]
             x_pos, y_pos, width, height
 
         """
@@ -930,13 +907,13 @@ class Figure:
         return len(self._layout)
 
     def __str__(self):
-        return f"{self.__class__.__name__} @ {hex(id(self))}"
+        return f"{self.__class__.__name__}"
 
     def __repr__(self):
         newline = "\n\t"
 
         return (
-            f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n"
+            f"fastplotlib.{self.__class__.__name__}"
             f"  Subplots:\n"
             f"\t{newline.join(subplot.__str__() for subplot in self)}"
             f"\n"

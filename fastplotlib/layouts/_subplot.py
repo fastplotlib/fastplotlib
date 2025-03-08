@@ -11,6 +11,7 @@ from ._utils import create_camera, create_controller, IMGUI, IMGUI_TOOLBAR_HEIGH
 from ._plot_area import PlotArea
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..graphics._axes import Axes
+from ..utils._types import SelectorColorStates
 
 
 """
@@ -85,6 +86,18 @@ masks = MeshMasks
 
 
 class Subplot(PlotArea, GraphicMethodsMixin):
+    resize_handle_color = SelectorColorStates(
+        idle=(0.5, 0.5, 0.5, 1),  # gray
+        highlight=(1, 1, 1, 1),  # white
+        action=(1, 1, 0, 1)  # yellow
+    )
+
+    plane_color = SelectorColorStates(
+        idle=(0.1, 0.1, 0.1),  # dark grey
+        highlight=(0.2, 0.2, 0.2),  # less dark grey
+        action=(0.1, 0.1, 0.2)  # dark gray-blue
+    )
+
     def __init__(
         self,
         parent: Union["Figure"],
@@ -93,6 +106,7 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         canvas: BaseRenderCanvas | pygfx.Texture,
         rect: np.ndarray = None,
         extent: np.ndarray = None,
+        resizeable: bool = True,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
     ):
@@ -172,17 +186,20 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         else:
             raise ValueError("Must provide `rect` or `extent`")
 
+        wobjects = list()
+
         if name is None:
             title_text = ""
         else:
             title_text = name
         self._title_graphic = TextGraphic(title_text, font_size=16, face_color="white")
-        # self._title_graphic.world_object.material.weight_offset = 50
+        wobjects.append(self._title_graphic.world_object)
 
         # init mesh of size 1 to graphically represent rect
         geometry = pygfx.plane_geometry(1, 1)
         material = pygfx.MeshBasicMaterial(color=(0.1, 0.1, 0.1), pick_write=True)
         self._plane = pygfx.Mesh(geometry, material)
+        wobjects.append(self._plane)
 
         # otherwise text isn't visible
         self._plane.world.z = 0.5
@@ -192,17 +209,22 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._resize_handle = pygfx.Points(
             pygfx.Geometry(positions=[[x1, -y1, 0]]),  # y is inverted in UnderlayCamera
             pygfx.PointsMarkerMaterial(
-                color=(0.5, 0.5, 0.5), marker="square", size=8, size_space="screen", pick_write=True
+                color=(0.5, 0.5, 0.5, 1), marker="square", size=8, size_space="screen", pick_write=True
             ),
         )
+        if not resizeable:
+            c = (0, 0, 0, 0)
+            self._resize_handle.material.color = c
+            self._resize_handle.material.edge_width = 0
+            self.resize_handle_color = SelectorColorStates(c, c, c)
+
+        wobjects.append(self._resize_handle)
 
         self._reset_plane()
         self._reset_viewport_rect()
 
         self._world_object = pygfx.Group()
-        self._world_object.add(
-            self._plane, self._resize_handle, self._title_graphic.world_object
-        )
+        self._world_object.add(*wobjects)
 
     @property
     def axes(self) -> Axes:

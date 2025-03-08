@@ -712,7 +712,7 @@ class PlotArea:
         else:
             name = self.name
 
-        return f"{name}: {self.__class__.__name__} @ {hex(id(self))}"
+        return f"{name}: {self.__class__.__name__}"
 
     def __repr__(self):
         newline = "\n\t"

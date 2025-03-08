@@ -3,6 +3,7 @@ from functools import partial
 import numpy as np
 import pygfx
 
+from ._utils import get_extents_from_grid
 from ._subplot import Subplot
 
 
@@ -26,10 +27,12 @@ class UnderlayCamera(pygfx.Camera):
 
 class BaseLayout:
     def __init__(
-        self, renderer: pygfx.WgpuRenderer, subplots: list[Subplot], canvas_rect: tuple
+        self,
+        renderer: pygfx.WgpuRenderer,
+            subplots: np.ndarray[Subplot], canvas_rect: tuple,
     ):
         self._renderer = renderer
-        self._subplots = subplots
+        self._subplots = subplots.ravel()
         self._canvas_rect = canvas_rect
 
     def _inside_render_rect(self, subplot: Subplot, pos: tuple[int, int]) -> bool:
@@ -57,16 +60,12 @@ class BaseLayout:
         for subplot in self._subplots:
             subplot._fpl_canvas_resized(canvas_rect)
 
-    @property
-    def spacing(self) -> int:
-        pass
-
     def __len__(self):
         return len(self._subplots)
 
 
 class FlexLayout(BaseLayout):
-    def __init__(self, renderer, subplots: list[Subplot], canvas_rect: tuple):
+    def __init__(self, renderer, subplots: list[Subplot], canvas_rect: tuple, moveable=True, resizeable=True):
         super().__init__(renderer, subplots, canvas_rect)
 
         self._last_pointer_pos: np.ndarray[np.float64, np.float64] = np.array(
@@ -76,22 +75,39 @@ class FlexLayout(BaseLayout):
         self._active_action: str | None = None
         self._active_subplot: Subplot | None = None
 
-        for frame in self._subplots:
-            frame._fpl_plane.add_event_handler(
-                partial(self._action_start, frame, "move"), "pointer_down"
-            )
-            frame._fpl_resize_handle.add_event_handler(
-                partial(self._action_start, frame, "resize"), "pointer_down"
-            )
-            frame._fpl_resize_handle.add_event_handler(
-                self._highlight_resize_handler, "pointer_enter"
-            )
-            frame._fpl_resize_handle.add_event_handler(
-                self._unhighlight_resize_handler, "pointer_leave"
-            )
+        for subplot in self._subplots:
+            if moveable:
+                # start a move action
+                subplot._fpl_plane.add_event_handler(
+                    partial(self._action_start, subplot, "move"), "pointer_down"
+                )
+                # start a resize action
+                subplot._fpl_resize_handle.add_event_handler(
+                    partial(self._action_start, subplot, "resize"), "pointer_down"
+                )
 
-        self._renderer.add_event_handler(self._action_iter, "pointer_move")
-        self._renderer.add_event_handler(self._action_end, "pointer_up")
+                # highlight plane when pointer enters
+                subplot._fpl_plane.add_event_handler(
+                    partial(self._highlight_plane, subplot), "pointer_enter"
+                )  # unhighlight plane when pointer leaves
+                subplot._fpl_plane.add_event_handler(
+                    partial(self._unhighlight_plane, subplot), "pointer_leave"
+                )
+            if resizeable:
+                # highlight/unhighlight resize handler when pointer enters/leaves
+                subplot._fpl_resize_handle.add_event_handler(
+                    partial(self._highlight_resize_handler, subplot), "pointer_enter"
+                )
+                subplot._fpl_resize_handle.add_event_handler(
+                    partial(self._unhighlight_resize_handler, subplot), "pointer_leave"
+                )
+
+        if moveable or resizeable:
+            # when pointer moves, do an iteration of move or resize action
+            self._renderer.add_event_handler(self._action_iter, "pointer_move")
+
+            # end the action when pointer button goes up
+            self._renderer.add_event_handler(self._action_end, "pointer_up")
 
     def _new_extent_from_delta(self, delta: tuple[int, int]) -> np.ndarray:
         delta_x, delta_y = delta
@@ -162,9 +178,9 @@ class FlexLayout(BaseLayout):
         if ev.button == 1:
             self._active_action = action
             if action == "resize":
-                subplot._fpl_resize_handle.material.color = (1, 0, 1)
+                subplot._fpl_resize_handle.material.color = subplot.resize_handle_color.action
             elif action == "move":
-                pass
+                subplot._fpl_plane.material.color = subplot.plane_color.action
             else:
                 raise ValueError
 
@@ -183,40 +199,60 @@ class FlexLayout(BaseLayout):
     def _action_end(self, ev):
         self._active_action = None
         if self._active_subplot is not None:
-            self._active_subplot._fpl_resize_handle.material.color = (0.5, 0.5, 0.5)
+            self._active_subplot._fpl_resize_handle.material.color = self._active_subplot.resize_handle_color.idle
+            self._active_subplot._fpl_plane.material.color = self._active_subplot.plane_color.idle
         self._active_subplot = None
 
         self._last_pointer_pos[:] = np.nan
 
-    def _highlight_resize_handler(self, ev):
+    def _highlight_resize_handler(self, subplot: Subplot, ev):
         if self._active_action == "resize":
             return
 
-        ev.target.material.color = (1, 1, 1)
+        ev.target.material.color = subplot.resize_handle_color.highlight
 
-    def _unhighlight_resize_handler(self, ev):
+    def _unhighlight_resize_handler(self, subplot: Subplot, ev):
         if self._active_action == "resize":
             return
 
-        ev.target.material.color = (0.5, 0.5, 0.5)
+        ev.target.material.color = subplot.resize_handle_color.idle
+
+    def _highlight_plane(self, subplot: Subplot, ev):
+        if self._active_action is not None:
+            return
+
+        ev.target.material.color = subplot.plane_color.highlight
+
+    def _unhighlight_plane(self, subplot: Subplot, ev):
+        if self._active_action is not None:
+            return
+
+        ev.target.material.color = subplot.plane_color.idle
 
     def add_subplot(self):
         pass
 
-    def remove_subplot(self):
+    def remove_subplot(self, subplot: Subplot):
         pass
 
 
 class GridLayout(FlexLayout):
-    def __init__(self, renderer, subplots: list[Subplot], canvas_rect: tuple):
-        super().__init__(renderer, subplots, canvas_rect)
+    def __init__(
+            self,
+            renderer,
+            subplots: list[Subplot],
+            canvas_rect: tuple[float, float, float, float],
+            shape: tuple[int, int]
+    ):
+        super().__init__(renderer, subplots, canvas_rect, moveable=False, resizeable=False)
 
         # {Subplot: (row_ix, col_ix)}, dict mapping subplots to their row and col index in the grid layout
         self._subplot_grid_position: dict[Subplot, tuple[int, int]]
+        self._shape = shape
 
     @property
     def shape(self) -> tuple[int, int]:
-        pass
+        return self._shape
 
     def set_rect(self, subplot, rect: np.ndarray | list | tuple):
         raise NotImplementedError(
@@ -228,14 +264,12 @@ class GridLayout(FlexLayout):
             "set_extent() not implemented for GridLayout which is an auto layout manager"
         )
 
-    def _fpl_set_subplot_viewport_rect(self):
-        pass
-
-    def _fpl_set_subplot_dock_viewport_rect(self):
-        pass
-
     def add_row(self):
         pass
+        # new_shape = (self.shape[0] + 1, self.shape[1])
+        # extents = get_extents_from_grid(new_shape)
+        # for subplot, extent in zip(self._subplots, extents):
+        #     subplot.extent = extent
 
     def add_column(self):
         pass
@@ -245,3 +279,9 @@ class GridLayout(FlexLayout):
 
     def remove_column(self):
         pass
+
+    def add_subplot(self):
+        raise NotImplementedError
+
+    def remove_subplot(self, subplot):
+        raise NotImplementedError
