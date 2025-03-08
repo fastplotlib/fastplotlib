@@ -22,7 +22,7 @@ class SubplotToolbar(Window):
         # place the toolbar window below the subplot
         pos = (x + 1, y + height - IMGUI_TOOLBAR_HEIGHT)
 
-        imgui.set_next_window_size((width - 16, 0))
+        imgui.set_next_window_size((width - 18, 0))
         imgui.set_next_window_pos(pos)
         flags = (
             imgui.WindowFlags_.no_collapse
