@@ -151,7 +151,7 @@ class Figure:
             canvas, renderer, canvas_kwargs={"size": size}
         )
 
-        canvas.add_event_handler(self._reset_layout, "resize")
+        canvas.add_event_handler(self._fpl_reset_layout, "resize")
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
@@ -551,7 +551,7 @@ class Figure:
 
         elif self.canvas.__class__.__name__ == "OffscreenRenderCanvas":
             # for test and docs gallery screenshots
-            self._reset_layout()
+            self._fpl_reset_layout()
             for subplot in self:
                 subplot.axes.update_using_camera()
 
@@ -722,7 +722,7 @@ class Figure:
     def open_popup(self, *args, **kwargs):
         warn("popups only supported by ImguiFigure")
 
-    def _reset_layout(self, *ev):
+    def _fpl_reset_layout(self, *ev):
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
         self.layout.canvas_resized(self.get_pygfx_render_area())
 
