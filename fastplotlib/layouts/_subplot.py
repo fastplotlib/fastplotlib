@@ -206,7 +206,7 @@ class Dock(PlotArea):
     @size.setter
     def size(self, s: int):
         self._size = s
-        self.parent.reset_viewport()
+        self.get_figure()._fpl_reset_layout()
 
     def _render(self):
         if self.size == 0:
