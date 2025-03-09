@@ -98,7 +98,9 @@ class BaseLayout:
 
         # reset color of previous focus
         if self._subplot_focus is not None:
-            self._subplot_focus.frame.plane.material.color = subplot.frame.plane_color.idle
+            self._subplot_focus.frame.plane.material.color = (
+                subplot.frame.plane_color.idle
+            )
 
         self._subplot_focus = subplot
         ev.target.material.color = subplot.frame.plane_color.highlight
@@ -177,11 +179,15 @@ class FlexLayout(BaseLayout):
             if subplot.frame.rect_manager.overlaps(new_extent):
                 # we have an overlap, need to ignore one or more deltas
                 # ignore x
-                if not subplot.frame.rect_manager.is_left_of(x0) or not subplot.frame.rect_manager.is_right_of(x1):
+                if not subplot.frame.rect_manager.is_left_of(
+                    x0
+                ) or not subplot.frame.rect_manager.is_right_of(x1):
                     new_extent[:2] = self._active_subplot.frame.extent[:2]
 
                 # ignore y
-                if not subplot.frame.rect_manager.is_above(y0) or not subplot.frame.rect_manager.is_below(y1):
+                if not subplot.frame.rect_manager.is_above(
+                    y0
+                ) or not subplot.frame.rect_manager.is_below(y1):
                     new_extent[2:] = self._active_subplot.frame.extent[2:]
 
         # make sure all vals are non-negative
@@ -292,7 +298,9 @@ class FlexLayout(BaseLayout):
                 continue
 
             if s.frame.rect_manager.overlaps(extent):
-                raise ValueError(f"Given extent: {extent} overlaps with another subplot.")
+                raise ValueError(
+                    f"Given extent: {extent} overlaps with another subplot."
+                )
 
 
 class GridLayout(FlexLayout):
@@ -338,7 +346,11 @@ class GridLayout(FlexLayout):
         raise NotImplementedError("Not yet implemented")
 
     def add_subplot(self):
-        raise NotImplementedError("Not implemented for GridLayout which is an auto layout manager")
+        raise NotImplementedError(
+            "Not implemented for GridLayout which is an auto layout manager"
+        )
 
     def remove_subplot(self, subplot):
-        raise NotImplementedError("Not implemented for GridLayout which is an auto layout manager")
+        raise NotImplementedError(
+            "Not implemented for GridLayout which is an auto layout manager"
+        )
