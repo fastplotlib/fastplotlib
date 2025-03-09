@@ -103,7 +103,7 @@ def test_example_screenshots(module, force_offscreen):
         # hacky but it works for now
         example.figure.imgui_renderer.render()
 
-    example.figure._set_viewport_rects()
+    example.figure._fpl_reset_layout()
     # render each subplot
     for subplot in example.figure:
         subplot.viewport.render(subplot.scene, subplot.camera)
