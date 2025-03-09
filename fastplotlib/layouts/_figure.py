@@ -151,7 +151,7 @@ class Figure:
             canvas, renderer, canvas_kwargs={"size": size}
         )
 
-        canvas.add_event_handler(self._set_viewport_rects, "resize")
+        canvas.add_event_handler(self._reset_layout, "resize")
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
@@ -388,7 +388,7 @@ class Figure:
         self._underlay_scene = pygfx.Scene()
 
         for subplot in self._subplots.ravel():
-            self._underlay_scene.add(subplot._world_object)
+            self._underlay_scene.add(subplot.frame._world_object)
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
@@ -551,7 +551,7 @@ class Figure:
 
         elif self.canvas.__class__.__name__ == "OffscreenRenderCanvas":
             # for test and docs gallery screenshots
-            self._set_viewport_rects()
+            self._reset_layout()
             for subplot in self:
                 subplot.axes.update_using_camera()
 
@@ -722,9 +722,9 @@ class Figure:
     def open_popup(self, *args, **kwargs):
         warn("popups only supported by ImguiFigure")
 
-    def _set_viewport_rects(self, *ev):
+    def _reset_layout(self, *ev):
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
-        self.layout._fpl_canvas_resized(self.get_pygfx_render_area())
+        self.layout.canvas_resized(self.get_pygfx_render_area())
 
     def get_pygfx_render_area(self, *args) -> tuple[float, float, float, float]:
         """
@@ -782,8 +782,8 @@ class Figure:
             raise KeyError(f"given subplot: {subplot} not found in the layout.")
 
         subplot.clear()
-        self._underlay_scene.remove(subplot._world_object)
-        subplot._world_object.clear()
+        self._underlay_scene.remove(subplot.frame._world_object)
+        subplot.frame._world_object.clear()
         self.layout._subplots = None
         subplots = self._subplots.tolist()
         subplots.remove(subplot)

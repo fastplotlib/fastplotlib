@@ -89,7 +89,7 @@ class RectManager:
     def rect(self, rect: np.ndarray | tuple):
         self._set(rect)
 
-    def _fpl_canvas_resized(self, canvas_rect: tuple):
+    def canvas_resized(self, canvas_rect: tuple):
         # called by layout when canvas is resized
         self._canvas_rect[:] = canvas_rect
         # set new rect using existing rect_frac since this remains constant regardless of resize
@@ -189,6 +189,35 @@ class RectManager:
             raise ValueError(
                 f"extent: {extent} y-range is beyond the bounds of the canvas: {canvas_extent}"
             )
+
+    def is_above(self, y0, dist: int = 1) -> bool:
+        # our bottom < other top within given distance
+        return self.y1 < y0 + dist
+
+    def is_below(self, y1, dist: int = 1) -> bool:
+        # our top > other bottom
+        return self.y0 > y1 - dist
+
+    def is_left_of(self, x0, dist: int = 1) -> bool:
+        # our right_edge < other left_edge
+        # self.x1 < other.x0
+        return self.x1 < x0 + dist
+
+    def is_right_of(self, x1, dist: int = 1) -> bool:
+        # self.x0 > other.x1
+        return self.x0 > x1 - dist
+
+    def overlaps(self, extent: np.ndarray) -> bool:
+        """returns whether this subplot overlaps with the given extent"""
+        x0, x1, y0, y1 = extent
+        return not any(
+            [
+                self.is_above(y0),
+                self.is_below(y1),
+                self.is_left_of(x0),
+                self.is_right_of(x1),
+            ]
+        )
 
     def __repr__(self):
         s = f"{self._rect_frac}\n{self.rect}"

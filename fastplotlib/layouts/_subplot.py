@@ -5,111 +5,14 @@ import numpy as np
 import pygfx
 from rendercanvas import BaseRenderCanvas
 
-from ._rect import RectManager
 from ..graphics import TextGraphic
-from ._utils import create_camera, create_controller, IMGUI, IMGUI_TOOLBAR_HEIGHT
+from ._utils import create_camera, create_controller, IMGUI
 from ._plot_area import PlotArea
-from ._graphic_methods_mixin import GraphicMethodsMixin
+from ._frame import Frame
 from ..graphics._axes import Axes
-from ..utils._types import SelectorColorStates
 
 
-"""
-Each subplot is defined by a 2D plane mesh, a rectangle.
-The rectangles are viewed using the UnderlayCamera  where (0, 0) is the top left corner.
-We can control the bbox of this rectangle by changing the x and y boundaries of the rectangle.
-
-Note how the y values of the plane mesh are negative, this is because of the UnderlayCamera.
-We always just keep the positive y value, and make it negative only when setting the plane mesh.
-
-Illustration:
-
-(0, 0) ---------------------------------------------------
-----------------------------------------------------------
-----------------------------------------------------------
---------------(x0, -y0) --------------- (x1, -y0) --------
-------------------------|||||||||||||||-------------------
-------------------------|||||||||||||||-------------------
-------------------------|||||||||||||||-------------------
-------------------------|||rectangle|||-------------------
-------------------------|||||||||||||||-------------------
-------------------------|||||||||||||||-------------------
-------------------------|||||||||||||||-------------------
---------------(x0, -y1) --------------- (x1, -y1)---------
-----------------------------------------------------------
-------------------------------------------- (canvas_width, canvas_height)
-
-"""
-
-# wgsl shader snippet for SDF function that defines the resize handler, a lower right triangle.
-sdf_wgsl_resize_handler = """
-// hardcode square root of 2 
-let m_sqrt_2 = 1.4142135;
-
-// given a distance from an origin point, this defines the hypotenuse of a lower right triangle
-let distance = (-coord.x + coord.y) / m_sqrt_2;
-
-// return distance for this position
-return distance * size;
-"""
-
-
-class MeshMasks:
-    """Used set the x1, x1, y0, y1 positions of the mesh"""
-
-    x0 = np.array(
-        [
-            [False, False, False],
-            [True, False, False],
-            [False, False, False],
-            [True, False, False],
-        ]
-    )
-
-    x1 = np.array(
-        [
-            [True, False, False],
-            [False, False, False],
-            [True, False, False],
-            [False, False, False],
-        ]
-    )
-
-    y0 = np.array(
-        [
-            [False, True, False],
-            [False, True, False],
-            [False, False, False],
-            [False, False, False],
-        ]
-    )
-
-    y1 = np.array(
-        [
-            [False, False, False],
-            [False, False, False],
-            [False, True, False],
-            [False, True, False],
-        ]
-    )
-
-
-masks = MeshMasks
-
-
-class Subplot(PlotArea, GraphicMethodsMixin):
-    resize_handle_color = SelectorColorStates(
-        idle=(0.6, 0.6, 0.6, 1),  # gray
-        highlight=(1, 1, 1, 1),  # white
-        action=(1, 0, 1, 1),  # magenta
-    )
-
-    plane_color = SelectorColorStates(
-        idle=(0.1, 0.1, 0.1),  # dark grey
-        highlight=(0.2, 0.2, 0.2),  # less dark grey
-        action=(0.1, 0.1, 0.2),  # dark gray-blue
-    )
-
+class Subplot(PlotArea):
     def __init__(
         self,
         parent: Union["Figure"],
@@ -157,8 +60,6 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         """
 
-        super(GraphicMethodsMixin, self).__init__()
-
         camera = create_camera(camera)
 
         controller = create_controller(controller_type=controller, camera=camera)
@@ -166,11 +67,11 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._docks = dict()
 
         if IMGUI:
-            self._toolbar = True
+            toolbar_visible = True
         else:
-            self._toolbar = False
+            toolbar_visible = False
 
-        super(Subplot, self).__init__(
+        super().__init__(
             parent=parent,
             camera=camera,
             controller=controller,
@@ -189,61 +90,16 @@ class Subplot(PlotArea, GraphicMethodsMixin):
         self._axes = Axes(self)
         self.scene.add(self.axes.world_object)
 
-        if rect is not None:
-            self._rect = RectManager(*rect, self.get_figure().get_pygfx_render_area())
-        elif extent is not None:
-            self._rect = RectManager.from_extent(
-                extent, self.get_figure().get_pygfx_render_area()
-            )
-        else:
-            raise ValueError("Must provide `rect` or `extent`")
-
-        wobjects = list()
-
-        if name is None:
-            title_text = ""
-        else:
-            title_text = name
-        self._title_graphic = TextGraphic(title_text, font_size=16, face_color="white")
-        wobjects.append(self._title_graphic.world_object)
-
-        # init mesh of size 1 to graphically represent rect
-        geometry = pygfx.plane_geometry(1, 1)
-        material = pygfx.MeshBasicMaterial(color=self.plane_color.idle, pick_write=True)
-        self._plane = pygfx.Mesh(geometry, material)
-        wobjects.append(self._plane)
-
-        # otherwise text isn't visible
-        self._plane.world.z = 0.5
-
-        # create resize handler at point (x1, y1)
-        x1, y1 = self.extent[[1, 3]]
-        self._resize_handle = pygfx.Points(
-            # note negative y since y is inverted in UnderlayCamera
-            # subtract 7 so that the bottom right corner of the triangle is at the center
-            pygfx.Geometry(positions=[[x1 - 7, -y1 + 7, 0]]),
-            pygfx.PointsMarkerMaterial(
-                color=self.resize_handle_color.idle,
-                marker="custom",
-                custom_sdf=sdf_wgsl_resize_handler,
-                size=12,
-                size_space="screen",
-                pick_write=True,
-            ),
+        self._frame = Frame(
+            viewport=self.viewport,
+            rect=rect,
+            extent=extent,
+            resizeable=resizeable,
+            title=name,
+            docks=self.docks,
+            toolbar_visible=toolbar_visible,
+            canvas_rect=parent.get_pygfx_render_area()
         )
-        if not resizeable:
-            c = (0, 0, 0, 0)
-            self._resize_handle.material.color = c
-            self._resize_handle.material.edge_width = 0
-            self.resize_handle_color = SelectorColorStates(c, c, c)
-
-        wobjects.append(self._resize_handle)
-
-        self._reset_plane()
-        self._reset_viewport_rect()
-
-        self._world_object = pygfx.Group()
-        self._world_object.add(*wobjects)
 
     @property
     def axes(self) -> Axes:
@@ -285,12 +141,12 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     @property
     def toolbar(self) -> bool:
         """show/hide toolbar"""
-        return self._toolbar
+        return self.frame.toolbar_visible
 
     @toolbar.setter
     def toolbar(self, visible: bool):
-        self._toolbar = bool(visible)
-        self.get_figure()._set_viewport_rects(self)
+        self.frame.toolbar_visible = visible
+        self.frame.reset_viewport()
 
     def _render(self):
         self.axes.update_using_camera()
@@ -299,170 +155,17 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     @property
     def title(self) -> TextGraphic:
         """subplot title"""
-        return self._title_graphic
+        return self._frame.title_graphic
 
     @title.setter
     def title(self, text: str):
         text = str(text)
-        self._title_graphic.text = text
+        self.title.text = text
 
     @property
-    def extent(self) -> np.ndarray:
-        """extent, (xmin, xmax, ymin, ymax)"""
-        # not actually stored, computed when needed
-        return self._rect.extent
-
-    @extent.setter
-    def extent(self, extent):
-        self._rect.extent = extent
-        self._reset_plane()
-        self._reset_viewport_rect()
-
-    @property
-    def rect(self) -> np.ndarray[int]:
-        """rect in absolute screen space, (x, y, w, h)"""
-        return self._rect.rect
-
-    @rect.setter
-    def rect(self, rect: np.ndarray):
-        self._rect.rect = rect
-        self._reset_plane()
-        self._reset_viewport_rect()
-
-    def _reset_viewport_rect(self):
-        # get rect of the render area
-        x, y, w, h = self._fpl_get_render_rect()
-
-        s_left = self.docks["left"].size
-        s_top = self.docks["top"].size
-        s_right = self.docks["right"].size
-        s_bottom = self.docks["bottom"].size
-
-        # top and bottom have same width
-        # subtract left and right dock sizes
-        w_top_bottom = w - s_left - s_right
-        # top and bottom have same x pos
-        x_top_bottom = x + s_left
-
-        # set dock rects
-        self.docks["left"].viewport.rect = x, y, s_left, h
-        self.docks["top"].viewport.rect = x_top_bottom, y, w_top_bottom, s_top
-        self.docks["bottom"].viewport.rect = (
-            x_top_bottom,
-            y + h - s_bottom,
-            w_top_bottom,
-            s_bottom,
-        )
-        self.docks["right"].viewport.rect = x + w - s_right, y, s_right, h
-
-        # calc subplot rect by adjusting for dock sizes
-        x += s_left
-        y += s_top
-        w -= s_left + s_right
-        h -= s_top + s_bottom
-
-        # set subplot rect
-        self.viewport.rect = x, y, w, h
-
-    def _fpl_get_render_rect(self) -> tuple[float, float, float, float]:
-        """
-        Get the actual render area of the subplot, including the docks.
-
-        Excludes area taken by the subplot title and toolbar. Also adds a small amount of spacing around the subplot.
-        """
-        x, y, w, h = self.rect
-
-        x += 1  # add 1 so a 1 pixel edge is visible
-        w -= 2  # subtract 2, so we get a 1 pixel edge on both sides
-
-        y = (
-            y + 4 + self.title.font_size + 4
-        )  # add 4 pixels above and below title for better spacing
-
-        if self.toolbar:
-            toolbar_space = IMGUI_TOOLBAR_HEIGHT
-            resize_handle_space = 0
-        else:
-            toolbar_space = 0
-            # need some space for resize handler if imgui toolbar isn't present
-            resize_handle_space = 13
-
-        # adjust for the 4 pixels from the line above
-        # also give space for resize handler if imgui toolbar is not present
-        h = h - 4 - self.title.font_size - toolbar_space - 4 - resize_handle_space
-
-        return x, y, w, h
-
-    def _reset_plane(self):
-        """reset the plane mesh using the current rect state"""
-
-        x0, x1, y0, y1 = self._rect.extent
-        w = self._rect.w
-
-        self._plane.geometry.positions.data[masks.x0] = x0
-        self._plane.geometry.positions.data[masks.x1] = x1
-        self._plane.geometry.positions.data[masks.y0] = (
-            -y0
-        )  # negative y because UnderlayCamera y is inverted
-        self._plane.geometry.positions.data[masks.y1] = -y1
-
-        self._plane.geometry.positions.update_full()
-
-        # note negative y since y is inverted in UnderlayCamera
-        # subtract 7 so that the bottom right corner of the triangle is at the center
-        self._resize_handle.geometry.positions.data[0] = [x1 - 7, -y1 + 7, 0]
-        self._resize_handle.geometry.positions.update_full()
-
-        # set subplot title position
-        x = x0 + (w / 2)
-        y = y0 + (self.title.font_size / 2)
-        self.title.world_object.world.x = x
-        self.title.world_object.world.y = -y - 4  # add 4 pixels for spacing
-
-    @property
-    def _fpl_plane(self) -> pygfx.Mesh:
-        """the plane mesh"""
-        return self._plane
-
-    @property
-    def _fpl_resize_handle(self) -> pygfx.Points:
-        """resize handler point"""
-        return self._resize_handle
-
-    def _fpl_canvas_resized(self, canvas_rect):
-        """called by layout is resized"""
-        self._rect._fpl_canvas_resized(canvas_rect)
-        self._reset_plane()
-        self._reset_viewport_rect()
-
-    def is_above(self, y0, dist: int = 1) -> bool:
-        # our bottom < other top within given distance
-        return self._rect.y1 < y0 + dist
-
-    def is_below(self, y1, dist: int = 1) -> bool:
-        # our top > other bottom
-        return self._rect.y0 > y1 - dist
-
-    def is_left_of(self, x0, dist: int = 1) -> bool:
-        # our right_edge < other left_edge
-        # self.x1 < other.x0
-        return self._rect.x1 < x0 + dist
-
-    def is_right_of(self, x1, dist: int = 1) -> bool:
-        # self.x0 > other.x1
-        return self._rect.x0 > x1 - dist
-
-    def overlaps(self, extent: np.ndarray) -> bool:
-        """returns whether this subplot overlaps with the given extent"""
-        x0, x1, y0, y1 = extent
-        return not any(
-            [
-                self.is_above(y0),
-                self.is_below(y1),
-                self.is_left_of(x0),
-                self.is_right_of(x1),
-            ]
-        )
+    def frame(self) -> Frame:
+        """Frame that the subplot lives in"""
+        return self._frame
 
 
 class Dock(PlotArea):
@@ -503,7 +206,7 @@ class Dock(PlotArea):
     @size.setter
     def size(self, s: int):
         self._size = s
-        self.parent._reset_viewport_rect()
+        self.parent.reset_viewport()
 
     def _render(self):
         if self.size == 0:

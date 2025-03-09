@@ -168,7 +168,7 @@ class ImguiFigure(Figure):
 
         self.guis[location] = gui
 
-        self._set_viewport_rects()
+        self._reset_layout()
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """

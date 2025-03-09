@@ -9,9 +9,6 @@ from ..graphics._base import Graphic
 
 
 class GraphicMethodsMixin:
-    def __init__(self):
-        pass
-
     def _create_graphic(self, graphic_class, *args, **kwargs) -> Graphic:
         if "center" in kwargs.keys():
             center = kwargs.pop("center")
