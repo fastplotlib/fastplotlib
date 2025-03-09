@@ -7,6 +7,9 @@ separate subplots
 
 """
 
+# test_example = true
+# sphinx_gallery_pygfx_docs = 'screenshot'
+
 import numpy as np
 import imageio.v3 as iio
 import fastplotlib as fpl
