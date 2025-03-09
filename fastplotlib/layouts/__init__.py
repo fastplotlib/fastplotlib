@@ -1,11 +1,5 @@
 from ._figure import Figure
-
-try:
-    import imgui_bundle
-except ImportError:
-    IMGUI = False
-else:
-    IMGUI = True
+from ._utils import IMGUI
 
 if IMGUI:
     from ._imgui_figure import ImguiFigure

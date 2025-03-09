@@ -1,23 +1,27 @@
 from typing import Literal, Union
 
-import pygfx
+import numpy as np
 
+import pygfx
 from rendercanvas import BaseRenderCanvas
 
 from ..graphics import TextGraphic
-from ._utils import create_camera, create_controller
+from ._utils import create_camera, create_controller, IMGUI
 from ._plot_area import PlotArea
-from ._graphic_methods_mixin import GraphicMethodsMixin
+from ._frame import Frame
 from ..graphics._axes import Axes
 
 
-class Subplot(PlotArea, GraphicMethodsMixin):
+class Subplot(PlotArea):
     def __init__(
         self,
         parent: Union["Figure"],
         camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera,
         controller: pygfx.Controller,
         canvas: BaseRenderCanvas | pygfx.Texture,
+        rect: np.ndarray = None,
+        extent: np.ndarray = None,
+        resizeable: bool = True,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
     ):
@@ -56,19 +60,18 @@ class Subplot(PlotArea, GraphicMethodsMixin):
 
         """
 
-        super(GraphicMethodsMixin, self).__init__()
-
         camera = create_camera(camera)
 
         controller = create_controller(controller_type=controller, camera=camera)
 
         self._docks = dict()
 
-        self._title_graphic: TextGraphic = None
+        if IMGUI:
+            toolbar_visible = True
+        else:
+            toolbar_visible = False
 
-        self._toolbar = True
-
-        super(Subplot, self).__init__(
+        super().__init__(
             parent=parent,
             camera=camera,
             controller=controller,
@@ -84,11 +87,19 @@ class Subplot(PlotArea, GraphicMethodsMixin):
             self.docks[pos] = dv
             self.children.append(dv)
 
-        if self.name is not None:
-            self.set_title(self.name)
-
         self._axes = Axes(self)
         self.scene.add(self.axes.world_object)
+
+        self._frame = Frame(
+            viewport=self.viewport,
+            rect=rect,
+            extent=extent,
+            resizeable=resizeable,
+            title=name,
+            docks=self.docks,
+            toolbar_visible=toolbar_visible,
+            canvas_rect=parent.get_pygfx_render_area(),
+        )
 
     @property
     def axes(self) -> Axes:
@@ -130,42 +141,31 @@ class Subplot(PlotArea, GraphicMethodsMixin):
     @property
     def toolbar(self) -> bool:
         """show/hide toolbar"""
-        return self._toolbar
+        return self.frame.toolbar_visible
 
     @toolbar.setter
     def toolbar(self, visible: bool):
-        self._toolbar = bool(visible)
-        self.get_figure()._fpl_set_subplot_viewport_rect(self)
+        self.frame.toolbar_visible = visible
+        self.frame.reset_viewport()
 
     def _render(self):
         self.axes.update_using_camera()
         super()._render()
 
-    def set_title(self, text: str):
-        """Sets the plot title, stored as a ``TextGraphic`` in the "top" dock area"""
-        if text is None:
-            return
+    @property
+    def title(self) -> TextGraphic:
+        """subplot title"""
+        return self._frame.title_graphic
 
+    @title.setter
+    def title(self, text: str):
         text = str(text)
-        if self._title_graphic is not None:
-            self._title_graphic.text = text
-        else:
-            tg = TextGraphic(text=text, font_size=18)
-            self._title_graphic = tg
+        self.title.text = text
 
-            self.docks["top"].size = 35
-            self.docks["top"].add_graphic(tg)
-
-            self.center_title()
-
-    def center_title(self):
-        """Centers name of subplot."""
-        if self._title_graphic is None:
-            raise AttributeError("No title graphic is set")
-
-        self._title_graphic.world_object.position = (0, 0, 0)
-        self.docks["top"].center_graphic(self._title_graphic, zoom=1.5)
-        self._title_graphic.world_object.position_y = -3.5
+    @property
+    def frame(self) -> Frame:
+        """Frame that the subplot lives in"""
+        return self._frame
 
 
 class Dock(PlotArea):
@@ -206,14 +206,7 @@ class Dock(PlotArea):
     @size.setter
     def size(self, s: int):
         self._size = s
-        if self.position == "top":
-            # TODO: treat title dock separately, do not allow user to change viewport stuff
-            return
-
-        self.get_figure(self.parent)._fpl_set_subplot_viewport_rect(self.parent)
-        self.get_figure(self.parent)._fpl_set_subplot_dock_viewport_rect(
-            self.parent, self._position
-        )
+        self.get_figure()._fpl_reset_layout()
 
     def _render(self):
         if self.size == 0:
