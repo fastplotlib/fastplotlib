@@ -104,7 +104,17 @@ class Frame:
         action=(0.1, 0.1, 0.2),  # dark gray-blue
     )
 
-    def __init__(self, viewport, rect, extent, resizeable, title, docks, toolbar_visible, canvas_rect):
+    def __init__(
+        self,
+        viewport,
+        rect,
+        extent,
+        resizeable,
+        title,
+        docks,
+        toolbar_visible,
+        canvas_rect,
+    ):
         self.viewport = viewport
         self.docks = docks
         self._toolbar_visible = toolbar_visible
@@ -112,9 +122,7 @@ class Frame:
         if rect is not None:
             self._rect_manager = RectManager(*rect, canvas_rect)
         elif extent is not None:
-            self._rect_manager = RectManager.from_extent(
-                extent, canvas_rect
-            )
+            self._rect_manager = RectManager.from_extent(extent, canvas_rect)
         else:
             raise ValueError("Must provide `rect` or `extent`")
 
@@ -165,7 +173,7 @@ class Frame:
 
         self._world_object = pygfx.Group()
         self._world_object.add(*wobjects)
-        
+
     @property
     def rect_manager(self) -> RectManager:
         return self._rect_manager
@@ -240,7 +248,7 @@ class Frame:
         w -= 2  # subtract 2, so we get a 1 pixel edge on both sides
 
         y = (
-                y + 4 + self._title_graphic.font_size + 4
+            y + 4 + self._title_graphic.font_size + 4
         )  # add 4 pixels above and below title for better spacing
 
         if self.toolbar_visible:
@@ -253,7 +261,14 @@ class Frame:
 
         # adjust for the 4 pixels from the line above
         # also give space for resize handler if imgui toolbar is not present
-        h = h - 4 - self._title_graphic.font_size - toolbar_space - 4 - resize_handle_space
+        h = (
+            h
+            - 4
+            - self._title_graphic.font_size
+            - toolbar_space
+            - 4
+            - resize_handle_space
+        )
 
         return x, y, w, h
 
