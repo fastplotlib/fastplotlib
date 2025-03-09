@@ -17,7 +17,7 @@ class SubplotToolbar(Window):
 
     def update(self):
         # get subplot rect
-        x, y, width, height = self._subplot.rect
+        x, y, width, height = self._subplot.frame.rect
 
         # place the toolbar window below the subplot
         pos = (x + 1, y + height - IMGUI_TOOLBAR_HEIGHT)
