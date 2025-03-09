@@ -755,6 +755,8 @@ class Figure:
                 "`add_subplot()` is not implemented for Figures using a GridLayout"
             )
 
+        raise NotImplementedError("Not yet implemented")
+
         camera = create_camera(camera)
         controller = create_controller(controller, camera)
 
@@ -773,6 +775,8 @@ class Figure:
         return subplot
 
     def remove_subplot(self, subplot: Subplot):
+        raise NotImplementedError("Not yet implemented")
+
         if isinstance(self.layout, GridLayout):
             raise NotImplementedError(
                 "`remove_subplot()` is not implemented for Figures using a GridLayout"

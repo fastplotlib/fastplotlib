@@ -4,6 +4,7 @@ import numpy as np
 import pygfx
 
 from ._subplot import Subplot
+from ._rect import RectManager
 
 
 class UnderlayCamera(pygfx.Camera):
@@ -29,7 +30,7 @@ class BaseLayout:
         self,
         renderer: pygfx.WgpuRenderer,
         subplots: np.ndarray[Subplot],
-        canvas_rect: tuple,
+        canvas_rect: tuple[float, float],
         moveable: bool,
         resizeable: bool,
     ):
@@ -73,18 +74,6 @@ class BaseLayout:
             return True
 
         return False
-
-    def add_subplot(self):
-        raise NotImplementedError
-
-    def remove_subplot(self, subplot):
-        raise NotImplementedError
-
-    def set_rect(self, subplot, rect: np.ndarray | list | tuple):
-        raise NotImplementedError
-
-    def set_extent(self, subplot, extent: np.ndarray | list | tuple):
-        raise NotImplementedError
 
     def canvas_resized(self, canvas_rect: tuple):
         self._canvas_rect = canvas_rect
@@ -154,12 +143,6 @@ class FlexLayout(BaseLayout):
 
             # end the action when pointer button goes up
             self._renderer.add_event_handler(self._action_end, "pointer_up")
-
-    def remove_subplot(self, subplot):
-        if subplot is self._active_subplot:
-            self._active_subplot = None
-        if subplot is self._subplot_focus:
-            self._subplot_focus = None
 
     def _new_extent_from_delta(self, delta: tuple[int, int]) -> np.ndarray:
         delta_x, delta_y = delta
@@ -263,6 +246,54 @@ class FlexLayout(BaseLayout):
 
         self._last_pointer_pos[:] = np.nan
 
+    def set_rect(self, subplot: Subplot, rect: tuple | list | np.ndarray):
+        """
+        Set the rect of a Subplot
+
+        Parameters
+        ----------
+        subplot: Subplot
+            the subplot to set the rect of
+
+        rect: (x, y, w, h)
+            as absolute pixels or fractional
+
+        """
+
+        new_rect = RectManager(*rect, self._canvas_rect)
+        extent = new_rect.extent
+        # check for overlaps
+        for s in self._subplots:
+            if s is subplot:
+                continue
+
+            if s.frame.rect_manager.overlaps(extent):
+                raise ValueError(f"Given rect: {rect} overlaps with another subplot.")
+
+    def set_extent(self, subplot: Subplot, extent: tuple | list | np.ndarray):
+        """
+        Set the extent of a Subplot
+
+        Parameters
+        ----------
+        subplot: Subplot
+            the subplot to set the extent of
+
+        extent: (xmin, xmax, ymin, ymax)
+            as absolute pixels or fractional
+
+        """
+
+        new_rect = RectManager.from_extent(extent, self._canvas_rect)
+        extent = new_rect.extent
+        # check for overlaps
+        for s in self._subplots:
+            if s is subplot:
+                continue
+
+            if s.frame.rect_manager.overlaps(extent):
+                raise ValueError(f"Given extent: {extent} overlaps with another subplot.")
+
 
 class GridLayout(FlexLayout):
     def __init__(
@@ -295,23 +326,19 @@ class GridLayout(FlexLayout):
         )
 
     def add_row(self):
-        pass
-        # new_shape = (self.shape[0] + 1, self.shape[1])
-        # extents = get_extents_from_grid(new_shape)
-        # for subplot, extent in zip(self._subplots, extents):
-        #     subplot.extent = extent
+        raise NotImplementedError("Not yet implemented")
 
     def add_column(self):
-        pass
+        raise NotImplementedError("Not yet implemented")
 
     def remove_row(self):
-        pass
+        raise NotImplementedError("Not yet implemented")
 
     def remove_column(self):
-        pass
+        raise NotImplementedError("Not yet implemented")
 
     def add_subplot(self):
-        raise NotImplementedError
+        raise NotImplementedError("Not implemented for GridLayout which is an auto layout manager")
 
     def remove_subplot(self, subplot):
-        raise NotImplementedError
+        raise NotImplementedError("Not implemented for GridLayout which is an auto layout manager")
