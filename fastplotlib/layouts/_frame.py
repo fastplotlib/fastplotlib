@@ -36,7 +36,7 @@ Illustration:
 
 
 # wgsl shader snippet for SDF function that defines the resize handler, a lower right triangle.
-sdf_wgsl_resize_handler = """
+sdf_wgsl_resize_handle = """
 // hardcode square root of 2 
 let m_sqrt_2 = 1.4142135;
 
@@ -49,7 +49,7 @@ return distance * size;
 
 
 class MeshMasks:
-    """Used set the x1, x1, y0, y1 positions of the mesh"""
+    """Used set the x1, x1, y0, y1 positions of the plane mesh"""
 
     x0 = np.array(
         [
@@ -92,12 +92,14 @@ masks = MeshMasks
 
 
 class Frame:
+    # resize handle color states
     resize_handle_color = SelectorColorStates(
         idle=(0.6, 0.6, 0.6, 1),  # gray
         highlight=(1, 1, 1, 1),  # white
         action=(1, 0, 1, 1),  # magenta
     )
 
+    # plane color states
     plane_color = SelectorColorStates(
         idle=(0.1, 0.1, 0.1),  # dark grey
         highlight=(0.2, 0.2, 0.2),  # less dark grey
@@ -115,10 +117,45 @@ class Frame:
         toolbar_visible,
         canvas_rect,
     ):
+        """
+        Manages the plane mesh, resize handle point, and subplot title.
+        It also sets the viewport rects for the subplot rect and the rects of the docks.
+
+        Note: This is a backend class not meant to be user-facing.
+
+        Parameters
+        ----------
+        viewport: pygfx.Viewport
+            Subplot viewport
+
+        rect: tuple | np.ndarray
+            rect of this subplot
+
+        extent: tuple | np.ndarray
+            extent of this subplot
+
+        resizeable: bool
+            if the Frame is resizeable or not
+
+        title: str
+            subplot title
+
+        docks: dict[str, PlotArea]
+            subplot dock
+
+        toolbar_visible: bool
+            toolbar visibility
+
+        canvas_rect: tuple
+            figure canvas rect, the render area excluding any areas taken by imgui edge windows
+
+        """
+
         self.viewport = viewport
         self.docks = docks
         self._toolbar_visible = toolbar_visible
 
+        # create rect manager to handle all the backend rect calculations
         if rect is not None:
             self._rect_manager = RectManager(*rect, canvas_rect)
         elif extent is not None:
@@ -128,6 +165,7 @@ class Frame:
 
         wobjects = list()
 
+        # make title graphic
         if title is None:
             title_text = ""
         else:
@@ -153,7 +191,7 @@ class Frame:
             pygfx.PointsMarkerMaterial(
                 color=self.resize_handle_color.idle,
                 marker="custom",
-                custom_sdf=sdf_wgsl_resize_handler,
+                custom_sdf=sdf_wgsl_resize_handle,
                 size=12,
                 size_space="screen",
                 pick_write=True,
@@ -161,6 +199,7 @@ class Frame:
         )
 
         if not resizeable:
+            # set all color states to transparent if Frame isn't resizeable
             c = (0, 0, 0, 0)
             self._resize_handle.material.color = c
             self._resize_handle.material.edge_width = 0
@@ -168,11 +207,11 @@ class Frame:
 
         wobjects.append(self._resize_handle)
 
-        self._reset_plane()
-        self.reset_viewport()
-
         self._world_object = pygfx.Group()
         self._world_object.add(*wobjects)
+
+        self._reset()
+        self.reset_viewport()
 
     @property
     def rect_manager(self) -> RectManager:
@@ -187,7 +226,7 @@ class Frame:
     @extent.setter
     def extent(self, extent):
         self._rect_manager.extent = extent
-        self._reset_plane()
+        self._reset()
         self.reset_viewport()
 
     @property
@@ -198,13 +237,16 @@ class Frame:
     @rect.setter
     def rect(self, rect: np.ndarray):
         self._rect_manager.rect = rect
-        self._reset_plane()
+        self._reset()
         self.reset_viewport()
 
     def reset_viewport(self):
+        """reset the viewport rect for the subplot and docks"""
+
         # get rect of the render area
         x, y, w, h = self.get_render_rect()
 
+        # dock sizes
         s_left = self.docks["left"].size
         s_top = self.docks["top"].size
         s_right = self.docks["right"].size
@@ -242,15 +284,16 @@ class Frame:
 
         Excludes area taken by the subplot title and toolbar. Also adds a small amount of spacing around the subplot.
         """
+        # the rect of the entire Frame
         x, y, w, h = self.rect
 
         x += 1  # add 1 so a 1 pixel edge is visible
         w -= 2  # subtract 2, so we get a 1 pixel edge on both sides
 
-        y = (
-            y + 4 + self._title_graphic.font_size + 4
-        )  # add 4 pixels above and below title for better spacing
+        # add 4 pixels above and below title for better spacing
+        y = y + 4 + self._title_graphic.font_size + 4
 
+        # spacing on the bottom if imgui toolbar is visible
         if self.toolbar_visible:
             toolbar_space = IMGUI_TOOLBAR_HEIGHT
             resize_handle_space = 0
@@ -272,7 +315,7 @@ class Frame:
 
         return x, y, w, h
 
-    def _reset_plane(self):
+    def _reset(self):
         """reset the plane mesh using the current rect state"""
 
         x0, x1, y0, y1 = self._rect_manager.extent
@@ -280,9 +323,9 @@ class Frame:
 
         self._plane.geometry.positions.data[masks.x0] = x0
         self._plane.geometry.positions.data[masks.x1] = x1
-        self._plane.geometry.positions.data[masks.y0] = (
-            -y0
-        )  # negative y because UnderlayCamera y is inverted
+
+        # negative y because UnderlayCamera y is inverted
+        self._plane.geometry.positions.data[masks.y0] = -y0
         self._plane.geometry.positions.data[masks.y1] = -y1
 
         self._plane.geometry.positions.update_full()
@@ -324,5 +367,5 @@ class Frame:
     def canvas_resized(self, canvas_rect):
         """called by layout is resized"""
         self._rect_manager.canvas_resized(canvas_rect)
-        self._reset_plane()
+        self._reset()
         self.reset_viewport()

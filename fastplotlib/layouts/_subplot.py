@@ -17,7 +17,7 @@ class Subplot(PlotArea):
         self,
         parent: Union["Figure"],
         camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera,
-        controller: pygfx.Controller,
+        controller: pygfx.Controller | str,
         canvas: BaseRenderCanvas | pygfx.Texture,
         rect: np.ndarray = None,
         extent: np.ndarray = None,
@@ -26,8 +26,7 @@ class Subplot(PlotArea):
         name: str = None,
     ):
         """
-        General plot object is found within a ``Figure``. Each ``Figure`` instance will have [n rows, n columns]
-        of subplots.
+        Subplot class.
 
         .. important::
             ``Subplot`` is not meant to be constructed directly, it only exists as part of a ``Figure``
@@ -36,9 +35,6 @@ class Subplot(PlotArea):
         ----------
         parent: 'Figure' | None
             parent Figure instance
-
-        position: (int, int), optional
-            corresponds to the [row, column] position of the subplot within a ``Figure``
 
         camera: str or pygfx.PerspectiveCamera, default '2d'
             indicates the FOV for the camera, '2d' sets ``fov = 0``, '3d' sets ``fov = 50``.
@@ -103,10 +99,12 @@ class Subplot(PlotArea):
 
     @property
     def axes(self) -> Axes:
+        """Axes object"""
         return self._axes
 
     @property
     def name(self) -> str:
+        """Subplot name"""
         return self._name
 
     @name.setter
@@ -169,21 +167,12 @@ class Subplot(PlotArea):
 
 
 class Dock(PlotArea):
-    _valid_positions = ["right", "left", "top", "bottom"]
-
     def __init__(
         self,
         parent: Subplot,
-        position: str,
         size: int,
     ):
-        if position not in self._valid_positions:
-            raise ValueError(
-                f"the `position` of an AnchoredViewport must be one of: {self._valid_positions}"
-            )
-
         self._size = size
-        self._position = position
 
         super().__init__(
             parent=parent,
@@ -193,10 +182,6 @@ class Dock(PlotArea):
             canvas=parent.canvas,
             renderer=parent.renderer,
         )
-
-    @property
-    def position(self) -> str:
-        return self._position
 
     @property
     def size(self) -> int:

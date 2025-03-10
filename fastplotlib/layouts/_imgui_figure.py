@@ -20,7 +20,7 @@ from ..ui import ColormapPicker
 class ImguiFigure(Figure):
     def __init__(
         self,
-        shape: list[tuple[int, int, int, int]] | tuple[int, int] = (1, 1),
+        shape: tuple[int, int] = (1, 1),
         rects=None,
         extents=None,
         cameras: (
@@ -172,7 +172,7 @@ class ImguiFigure(Figure):
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
-        Fet rect for the portion of the canvas that the pygfx renderer draws to,
+        Get rect for the portion of the canvas that the pygfx renderer draws to,
         i.e. non-imgui, part of canvas
 
         Returns

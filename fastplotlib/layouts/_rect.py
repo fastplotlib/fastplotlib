@@ -2,6 +2,9 @@ import numpy as np
 
 
 class RectManager:
+    """
+    Backend management of a rect. Allows converting between rects and extents, also works with fractional inputs.
+    """
     def __init__(self, x: float, y: float, w: float, h: float, canvas_rect: tuple):
         # initialize rect state arrays
         # used to store internal state of the rect in both fractional screen space and absolute screen space
@@ -42,7 +45,7 @@ class RectManager:
         if rect[1] + rect[3] > 1:
             raise ValueError("invalid fractional value: y + height > 1")
 
-        # assign values, don't just change the reference
+        # assign values to the arrays, don't just change the reference
         self._rect_frac[:] = rect
         self._rect_screen_space[:] = self._rect_frac * mult
 
@@ -90,7 +93,7 @@ class RectManager:
         self._set(rect)
 
     def canvas_resized(self, canvas_rect: tuple):
-        # called by layout when canvas is resized
+        # called by Frame when canvas is resized
         self._canvas_rect[:] = canvas_rect
         # set new rect using existing rect_frac since this remains constant regardless of resize
         self._set(self._rect_frac)
@@ -129,13 +132,13 @@ class RectManager:
 
     @extent.setter
     def extent(self, extent):
-        """convert extent to rect"""
         rect = RectManager.extent_to_rect(extent, canvas_rect=self._canvas_rect)
 
         self._set(rect)
 
     @staticmethod
     def extent_to_rect(extent, canvas_rect):
+        """convert an extent to a rect"""
         RectManager.validate_extent(extent, canvas_rect)
         x0, x1, y0, y1 = extent
 
@@ -208,7 +211,7 @@ class RectManager:
         return self.x0 > x1 - dist
 
     def overlaps(self, extent: np.ndarray) -> bool:
-        """returns whether this subplot overlaps with the given extent"""
+        """returns whether this rect overlaps with the given extent"""
         x0, x1, y0, y1 = extent
         return not any(
             [
