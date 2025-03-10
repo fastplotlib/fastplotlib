@@ -76,6 +76,8 @@ jobs:
           server: ${{ secrets.DOCS_SERVER }}
           username: ${{ secrets.DOCS_USERNAME }}
           password: ${{ secrets.DOCS_PASSWORD }}
+          log-level: verbose
+          timeout: 60000
           # built docs
           local-dir: docs/build/html/
           # output subdir based on the previous if statements
