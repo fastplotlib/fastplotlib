@@ -78,7 +78,7 @@ class Subplot(PlotArea):
         )
 
         for pos in ["left", "top", "right", "bottom"]:
-            dv = Dock(self, pos, size=0)
+            dv = Dock(self, size=0)
             dv.name = pos
             self.docks[pos] = dv
             self.children.append(dv)
