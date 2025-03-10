@@ -267,7 +267,7 @@ def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
     return OrderedDict(zip(labels, colors))
 
 
-def quick_min_max(data: np.ndarray) -> tuple[float, float]:
+def quick_min_max(data: np.ndarray, max_size=1e6) -> tuple[float, float]:
     """
     Adapted from pyqtgraph.ImageView.
     Estimate the min/max values of *data* by subsampling.
@@ -275,6 +275,9 @@ def quick_min_max(data: np.ndarray) -> tuple[float, float]:
     Parameters
     ----------
     data: np.ndarray or array-like with `min` and `max` attributes
+
+    max_size : int, optional
+        largest array size allowed in the subsampled array. Default is 1e6.
 
     Returns
     -------
@@ -289,11 +292,7 @@ def quick_min_max(data: np.ndarray) -> tuple[float, float]:
         ):
             return data.min, data.max
 
-    while np.prod(data.shape) > 1e6:
-        ax = np.argmax(data.shape)
-        sl = [slice(None)] * data.ndim
-        sl[ax] = slice(None, None, 2)
-        data = data[tuple(sl)]
+    data = subsample_array(data, max_size=max_size)
 
     return float(np.nanmin(data)), float(np.nanmax(data))
 
@@ -405,3 +404,40 @@ def parse_cmap_values(
         colors = np.vstack([colormap[val] for val in norm_cmap_values])
 
         return colors
+
+
+def subsample_array(arr, max_size=1e6):
+    """
+    subsamples an input array while preserving its relative dimensional proportions.
+
+    Parameters
+    ----------
+    arr : np.ndarray
+        input array of any dimensionality to be subsampled.
+
+    max_size : int, optional
+        largest array size allowed in the subsampled array. Default is 1e6.
+
+    Returns
+    -------
+    np.ndarray
+        subsampled version of the input array
+    """
+    array_shape = np.array(arr.shape)
+    array_size = np.prod(array_shape)
+
+    if array_size <= max_size:
+        return arr  # no need to subsample if already below the threshold
+
+    # relative proportions based on the shape
+    proportions = array_shape / array_shape.sum()
+    target_shape = np.maximum((proportions * array_size).astype(int), 1)
+
+    # keep total elements within limit
+    scale_factor = (array_size / np.prod(target_shape)) ** (1 / len(array_shape))
+    target_shape = np.maximum((target_shape * scale_factor).astype(int), 1)
+
+    steps = np.ceil(array_shape / target_shape).astype(int)
+    slices = tuple(slice(None, None, step) for step in steps)
+
+    return arr[slices]
