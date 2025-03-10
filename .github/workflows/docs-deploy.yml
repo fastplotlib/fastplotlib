@@ -79,6 +79,7 @@ jobs:
           key: ${{ secrets.DOCS_KEY }}
           passphrase: ${{ secrets.DOCS_PASS }}
           source: "docs/build/html/*"
+          strip_components: 3
           target: /home/${{ secrets.DOCS_USERNAME }}/public_html/ver/${{ env.DOCS_VERSION_DIR }}/
 
       # comment on PR to provide link to built docs
