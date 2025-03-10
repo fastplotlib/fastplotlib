@@ -68,18 +68,18 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         # any push to main goes to fastplotlib.org/ver/dev
         run: echo "DOCS_VERSION_DIR=dev" >> "$GITHUB_ENV"
-
-        # upload docs via FTP
-      - name: Deploy docs
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        
+      # upload docs via SCP
+      - name: copy file via ssh key
+        uses: appleboy/scp-action@v0.1.7
         with:
-          server: ${{ secrets.DOCS_SERVER }}
+          host: ${{ secrets.DOCS_SERVER }}
           username: ${{ secrets.DOCS_USERNAME }}
-          password: ${{ secrets.DOCS_PASSWORD }}
-          # built docs
-          local-dir: docs/build/html/
-          # output subdir based on the previous if statements
-          server-dir: ./ver/${{ env.DOCS_VERSION_DIR }}/
+          port: ${{ secrets.DOCS_PORT }}
+          key: ${{ secrets.DOCS_KEY }}
+          passphrase: ${{ secrets.DOCS_PASS }}
+          source: "docs/build/html/*"
+          target: /home/${{ secrets.DOCS_USERNAME }}/public_html/ver/${{ env.DOCS_VERSION_DIR }}/
 
       # comment on PR to provide link to built docs
       - name: Add PR link in comment
@@ -88,19 +88,3 @@ jobs:
         with:
           message: |
             📚 Docs preview built and uploaded! https://www.fastplotlib.org/ver/${{ env.DOCS_VERSION_DIR }}
-
-      # also deploy to root if this is a new release
-      # i.e., fastplotlib.org/ points to docs for the latest release
-      - name: Deploy docs
-        if: ${{ github.ref_type == 'tag' }}
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.DOCS_SERVER }}
-          username: ${{ secrets.DOCS_USERNAME }}
-          password: ${{ secrets.DOCS_PASSWORD }}
-          log-level: verbose
-          timeout: 60000
-          local-dir: docs/build/html/
-          server-dir: ./  # deploy to the root dir
-          exclude: |  # don't delete the /ver/ dir
-            **/ver/**
