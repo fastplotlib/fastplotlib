@@ -57,7 +57,6 @@ class StandardRightClickMenu(Popup):
             if self._last_right_click_pos == imgui.get_mouse_pos():
                 if self.get_subplot() is not False:  # must explicitly check for False
                     # open only if right click was inside a subplot
-                    print("opening right click menu")
                     imgui.open_popup(f"right-click-menu")
 
         # TODO: call this just once when going from open -> closed state
