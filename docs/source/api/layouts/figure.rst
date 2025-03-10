@@ -23,11 +23,10 @@ Properties
     Figure.cameras
     Figure.canvas
     Figure.controllers
-    Figure.mode
+    Figure.layout
     Figure.names
     Figure.renderer
     Figure.shape
-    Figure.spacing
 
 Methods
 ~~~~~~~
@@ -35,6 +34,7 @@ Methods
     :toctree: Figure_api
 
     Figure.add_animations
+    Figure.add_subplot
     Figure.clear
     Figure.close
     Figure.export
@@ -42,5 +42,6 @@ Methods
     Figure.get_pygfx_render_area
     Figure.open_popup
     Figure.remove_animation
+    Figure.remove_subplot
     Figure.show
 
