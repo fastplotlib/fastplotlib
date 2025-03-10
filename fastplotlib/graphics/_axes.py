@@ -141,108 +141,6 @@ class Grids(pygfx.Group):
         return self._yz
 
 
-class Ruler(pygfx.Ruler):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.tick_text_mapper = None
-        self.font_size = 14
-
-    def _update_sub_objects(self, ticks, tick_auto_step):
-        """Update the sub-objects to show the given ticks."""
-        assert isinstance(ticks, dict)
-
-        tick_size = 5
-        min_n_slots = 8  # todo: can be (much) higher when we use a single text object!
-
-        # Load config
-        start_pos = self._start_pos
-        end_pos = self._end_pos
-        start_value = self._start_value
-        end_value = self.end_value
-
-        # Derive some more variables
-        length = end_value - start_value
-        vec = end_pos - start_pos
-        if length:
-            vec /= length
-
-        # Get array to store positions
-        n_slots = self.points.geometry.positions.nitems
-        n_positions = len(ticks) + 2
-        if n_positions <= n_slots <= max(min_n_slots, 2 * n_positions):
-            # Re-use existing buffers
-            positions = self.points.geometry.positions.data
-            sizes = self.points.geometry.sizes.data
-            self.points.geometry.positions.update_range()
-            self.points.geometry.sizes.update_range()
-        else:
-            # Allocate new buffers
-            new_n_slots = max(min_n_slots, int(n_positions * 1.2))
-            positions = np.zeros((new_n_slots, 3), np.float32)
-            sizes = np.zeros((new_n_slots,), np.float32)
-            self.points.geometry.positions = pygfx.Buffer(positions)
-            self.points.geometry.sizes = pygfx.Buffer(sizes)
-            # Allocate text objects
-            while len(self._text_object_pool) < new_n_slots:
-                ob = pygfx.Text(
-                    pygfx.TextGeometry("", screen_space=True, font_size=self.font_size),
-                    pygfx.TextMaterial(aa=False),
-                )
-                self._text_object_pool.append(ob)
-            self._text_object_pool[new_n_slots:] = []
-            # Reset children
-            self.clear()
-            self.add(self._line, self._points, *self._text_object_pool)
-
-        def define_text(pos, text):
-            if self.tick_text_mapper is not None and text != "":
-                text = self.tick_text_mapper(text)
-
-            ob = self._text_object_pool[index]
-            ob.geometry.anchor = self._text_anchor
-            ob.geometry.anchor_offset = self._text_anchor_offset
-            ob.geometry.set_text(text)
-            ob.local.position = pos
-
-        # Apply start point
-        index = 0
-        positions[0] = start_pos
-        if self._ticks_at_end_points:
-            sizes[0] = tick_size
-            define_text(start_pos, f"{self._start_value:0.4g}")
-        else:
-            sizes[0] = 0
-            define_text(start_pos, f"")
-
-        # Collect ticks
-        index += 1
-        for value, text in ticks.items():
-            pos = start_pos + vec * (value - start_value)
-            positions[index] = pos
-            sizes[index] = tick_size
-            define_text(pos, text)
-            index += 1
-
-        # Handle end point, and nullify remaining slots
-        positions[index:] = end_pos
-        sizes[index:] = 0
-        for ob in self._text_object_pool[index:]:
-            ob.geometry.set_text("")
-
-        # Show last tick?
-        if self._ticks_at_end_points:
-            sizes[index] = tick_size
-            define_text(end_pos, f"{end_value:0.4g}")
-
-        # Hide the ticks close to the ends?
-        if self._ticks_at_end_points and ticks:
-            tick_values = list(ticks.keys())
-            if abs(tick_values[0] - start_value) < 0.5 * tick_auto_step:
-                self._text_object_pool[1].geometry.set_text("")
-            if abs(tick_values[-1] - end_value) < 0.5 * tick_auto_step:
-                self._text_object_pool[index - 1].geometry.set_text("")
-
-
 class Axes:
     def __init__(
         self,
@@ -283,9 +181,9 @@ class Axes:
         }
 
         # create ruler for each dim
-        self._x = Ruler(**x_kwargs)
-        self._y = Ruler(**y_kwargs)
-        self._z = Ruler(**z_kwargs)
+        self._x = pygfx.Ruler(**x_kwargs)
+        self._y = pygfx.Ruler(**y_kwargs)
+        self._z = pygfx.Ruler(**z_kwargs)
 
         self._offset = offset
 
