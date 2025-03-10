@@ -19,7 +19,7 @@ from ._utils import (
 )
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
-from ._engine import GridLayout, FlexLayout, UnderlayCamera
+from ._engine import BaseLayout, GridLayout, FlexLayout, UnderlayCamera
 from .. import ImageGraphic
 
 
@@ -52,12 +52,20 @@ class Figure:
         names: list | np.ndarray = None,
     ):
         """
-        A grid of subplots.
+        Create a Figure containing Subplots.
 
         Parameters
         ----------
-        shape: list[tuple[int, int, int, int]] | tuple[int, int], default (1, 1)
-            grid of shape [n_rows, n_cols] or list of bounding boxes: [x, y, width, height] (NOT YET IMPLEMENTED)
+        shape: tuple[int, int], default (1, 1)
+            shape [n_rows, n_cols] that defines a grid of subplots
+
+        rects: list of tuples or arrays
+            list of rects (x, y, width, height) that define the subplots.
+            rects can be defined in absolute pixels or as a fraction of the canvas
+
+        extents: list of tuples or arrays
+            list of extents (xmin, xmax, ymin, ymax) that define the subplots.
+            extents can be defined in absolute pixels or as a fraction of the canvas
 
         cameras: "2d", "3", list of "2d" | "3d", Iterable of camera instances, or Iterable of "2d" | "3d", optional
             | if str, one of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
@@ -95,10 +103,11 @@ class Figure:
             pygfx renderer instance
 
         size: (int, int), optional
-            starting size of canvas, default (500, 300)
+            starting size of canvas in absolute pixels, default (500, 300)
 
         names: list or array of str, optional
             subplot names
+
         """
 
         if rects is not None:
