@@ -5,6 +5,7 @@ class RectManager:
     """
     Backend management of a rect. Allows converting between rects and extents, also works with fractional inputs.
     """
+
     def __init__(self, x: float, y: float, w: float, h: float, canvas_rect: tuple):
         # initialize rect state arrays
         # used to store internal state of the rect in both fractional screen space and absolute screen space
