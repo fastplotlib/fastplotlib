@@ -74,8 +74,8 @@ jobs:
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.DOCS_SERVER }}
-          username: ${{ secrets.DOCS_USERNAME }}
-          password: ${{ secrets.DOCS_PASSWORD }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASS }}
           log-level: verbose
           timeout: 60000
           # built docs
