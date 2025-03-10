@@ -70,7 +70,7 @@ jobs:
         run: echo "DOCS_VERSION_DIR=dev" >> "$GITHUB_ENV"
         
       # upload docs via SCP
-      - name: copy file via ssh key
+      - name: Deploy docs
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DOCS_SERVER }}
@@ -79,6 +79,7 @@ jobs:
           key: ${{ secrets.DOCS_KEY }}
           passphrase: ${{ secrets.DOCS_PASS }}
           source: "docs/build/html/*"
+          # without strip_components it creates dirs docs/build/html within /ver on the server
           strip_components: 3
           target: /home/${{ secrets.DOCS_USERNAME }}/public_html/ver/${{ env.DOCS_VERSION_DIR }}/
 
@@ -89,3 +90,18 @@ jobs:
         with:
           message: |
             📚 Docs preview built and uploaded! https://www.fastplotlib.org/ver/${{ env.DOCS_VERSION_DIR }}
+            
+      # upload docs via SCP
+      - name: Deploy docs release
+        if: ${{ github.ref_type == 'tag' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DOCS_SERVER }}
+          username: ${{ secrets.DOCS_USERNAME }}
+          port: ${{ secrets.DOCS_PORT }}
+          key: ${{ secrets.DOCS_KEY }}
+          passphrase: ${{ secrets.DOCS_PASS }}
+          source: "docs/build/html/*"
+          # without strip_components it creates dirs docs/build/html within /ver on the server
+          strip_components: 3
+          target: /home/${{ secrets.DOCS_USERNAME }}/public_html/
