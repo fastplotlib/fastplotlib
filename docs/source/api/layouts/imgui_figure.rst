@@ -25,11 +25,10 @@ Properties
     ImguiFigure.controllers
     ImguiFigure.guis
     ImguiFigure.imgui_renderer
-    ImguiFigure.mode
+    ImguiFigure.layout
     ImguiFigure.names
     ImguiFigure.renderer
     ImguiFigure.shape
-    ImguiFigure.spacing
 
 Methods
 ~~~~~~~
@@ -38,6 +37,7 @@ Methods
 
     ImguiFigure.add_animations
     ImguiFigure.add_gui
+    ImguiFigure.add_subplot
     ImguiFigure.clear
     ImguiFigure.close
     ImguiFigure.export
@@ -46,5 +46,6 @@ Methods
     ImguiFigure.open_popup
     ImguiFigure.register_popup
     ImguiFigure.remove_animation
+    ImguiFigure.remove_subplot
     ImguiFigure.show
 

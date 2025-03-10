@@ -26,6 +26,7 @@ Properties
     Subplot.canvas
     Subplot.controller
     Subplot.docks
+    Subplot.frame
     Subplot.graphics
     Subplot.legends
     Subplot.name
@@ -34,6 +35,7 @@ Properties
     Subplot.renderer
     Subplot.scene
     Subplot.selectors
+    Subplot.title
     Subplot.toolbar
     Subplot.viewport
 
@@ -53,7 +55,6 @@ Methods
     Subplot.auto_scale
     Subplot.center_graphic
     Subplot.center_scene
-    Subplot.center_title
     Subplot.clear
     Subplot.delete_graphic
     Subplot.get_figure
@@ -61,5 +62,4 @@ Methods
     Subplot.map_screen_to_world
     Subplot.remove_animation
     Subplot.remove_graphic
-    Subplot.set_title
 
