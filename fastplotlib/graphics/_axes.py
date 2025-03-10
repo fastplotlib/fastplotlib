@@ -298,17 +298,17 @@ class Axes:
         self._offset = value
 
     @property
-    def x(self) -> Ruler:
+    def x(self) -> pygfx.Ruler:
         """x axis ruler"""
         return self._x
 
     @property
-    def y(self) -> Ruler:
+    def y(self) -> pygfx.Ruler:
         """y axis ruler"""
         return self._y
 
     @property
-    def z(self) -> Ruler:
+    def z(self) -> pygfx.Ruler:
         """z axis ruler"""
         return self._z
 
