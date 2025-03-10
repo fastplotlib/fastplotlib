@@ -29,7 +29,7 @@ iw = fpl.ImageWidget(
     [random_data, cockatoo_sub],
     rgb=[False, True],
     figure_shape=(2, 1),  # 2 rows, 1 column
-    figure_kwargs={"size": (700, 560)}
+    figure_kwargs={"size": (700, 940)}
 )
 
 iw.show()

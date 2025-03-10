@@ -102,7 +102,7 @@ def plot_test(name, fig: fpl.Figure):
         # hacky but it works for now
         fig.imgui_renderer.render()
 
-    fig._set_viewport_rects()
+    fig._fpl_reset_layout()
     # render each subplot
     for subplot in fig:
         subplot.viewport.render(subplot.scene, subplot.camera)
