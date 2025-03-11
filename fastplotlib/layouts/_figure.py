@@ -737,7 +737,7 @@ class Figure:
 
     def get_pygfx_render_area(self, *args) -> tuple[float, float, float, float]:
         """
-        Fet rect for the portion of the canvas that the pygfx renderer draws to,
+        Get rect for the portion of the canvas that the pygfx renderer draws to,
         i.e. non-imgui, part of canvas
 
         Returns

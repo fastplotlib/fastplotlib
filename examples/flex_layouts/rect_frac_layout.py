@@ -2,8 +2,8 @@
 Rect Fractional Layout
 ======================
 
-Create subplots using rects given as fractions of the canvas. This example plots two images and their histograms in
-separate subplots
+Create subplots using rects given as fractions of the canvas.
+This example plots two images and their histograms in separate subplots
 
 """
 

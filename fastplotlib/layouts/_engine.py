@@ -11,8 +11,9 @@ class UnderlayCamera(pygfx.Camera):
     """
     Same as pygfx.ScreenCoordsCamera but y-axis is inverted.
 
-    So top right is (0, 0). This is easier to manage because we
+    So top left corner is (0, 0). This is easier to manage because we
     often resize using the bottom right corner.
+
     """
 
     def _update_projection_matrix(self):
@@ -34,6 +35,9 @@ class BaseLayout:
         moveable: bool,
         resizeable: bool,
     ):
+        """
+        Base layout engine, subclass to create a useable layout engine.
+        """
         self._renderer = renderer
         self._subplots: np.ndarray[Subplot] = subplots.ravel()
         self._canvas_rect = canvas_rect
@@ -42,8 +46,11 @@ class BaseLayout:
             [np.nan, np.nan]
         )
 
+        # the current user action, move or resize
         self._active_action: str | None = None
+        # subplot that is currently in action, i.e. currently being moved or resized
         self._active_subplot: Subplot | None = None
+        # subplot that is in focus, i.e. being hovered by the pointer
         self._subplot_focus: Subplot | None = None
 
         for subplot in self._subplots:
@@ -76,6 +83,16 @@ class BaseLayout:
         return False
 
     def canvas_resized(self, canvas_rect: tuple):
+        """
+        called by figure when canvas is resized
+
+        Parameters
+        ----------
+        canvas_rect: (x, y, w, h)
+            the rect that pygfx can render to, excludes any areas used by imgui.
+
+        """
+
         self._canvas_rect = canvas_rect
         for subplot in self._subplots:
             subplot.frame.canvas_resized(canvas_rect)
@@ -118,15 +135,20 @@ class FlexLayout(BaseLayout):
         moveable=True,
         resizeable=True,
     ):
+        """
+        Flexible layout engine that allows freely moving and resizing subplots.
+        Subplots are not allowed to overlap.
+
+        We use a screenspace camera to perform an underlay render pass to draw the
+        subplot frames, there is no depth rendering so we do not allow overlaps.
+
+        """
+
         super().__init__(renderer, subplots, canvas_rect, moveable, resizeable)
 
         self._last_pointer_pos: np.ndarray[np.float64, np.float64] = np.array(
             [np.nan, np.nan]
         )
-
-        self._active_action: str | None = None
-        self._active_subplot: Subplot | None = None
-        self._subplot_focus: Subplot | None = None
 
         for subplot in self._subplots:
             if moveable:
@@ -216,7 +238,7 @@ class FlexLayout(BaseLayout):
         if self._inside_render_rect(subplot, pos=(ev.x, ev.y)):
             return
 
-        if ev.button == 1:
+        if ev.button == 1:  # left mouse button
             self._active_action = action
             if action == "resize":
                 subplot.frame.resize_handle.material.color = (
@@ -311,6 +333,12 @@ class GridLayout(FlexLayout):
         canvas_rect: tuple[float, float, float, float],
         shape: tuple[int, int],
     ):
+        """
+        Grid layout engine that auto-sets Frame and Subplot rects such that they maintain
+        a fixed grid layout. Does not allow freely moving or resizing subplots.
+
+        """
+
         super().__init__(
             renderer, subplots, canvas_rect, moveable=False, resizeable=False
         )

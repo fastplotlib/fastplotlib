@@ -2,8 +2,8 @@
 Rect Layout
 ===========
 
-Create subplots using given rects in absolute pixels. This example plots two images and their histograms in
-separate subplots
+Create subplots using given rects in absolute pixels.
+This example plots two images and their histograms in separate subplots
 
 """
 
