@@ -96,6 +96,11 @@ class TextGraphic(Graphic):
         self.offset = offset
 
     @property
+    def world_object(self) -> pygfx.Text:
+        """Text world object"""
+        return super(TextGraphic, self).world_object
+
+    @property
     def text(self) -> str:
         """the text displayed"""
         return self._text.value
