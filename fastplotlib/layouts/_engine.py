@@ -113,7 +113,7 @@ class FlexLayout(BaseLayout):
     def __init__(
         self,
         renderer,
-        subplots: list[Subplot],
+        subplots: np.ndarray[Subplot],
         canvas_rect: tuple,
         moveable=True,
         resizeable=True,
@@ -307,7 +307,7 @@ class GridLayout(FlexLayout):
     def __init__(
         self,
         renderer,
-        subplots: list[Subplot],
+        subplots: np.ndarray[Subplot],
         canvas_rect: tuple[float, float, float, float],
         shape: tuple[int, int],
     ):
