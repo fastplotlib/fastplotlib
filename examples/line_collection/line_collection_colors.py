@@ -2,7 +2,7 @@
 Line Collection Colors
 ======================
 
-Example showing one way ot setting colors for individual lines in a collection
+Example showing one way of setting colors for individual lines in a collection
 """
 
 # test_example = true

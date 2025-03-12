@@ -12,7 +12,7 @@ def get_nearest_graphics_indices(
 ) -> np.ndarray[int]:
     """
     Returns indices of the nearest ``graphics`` to the passed position ``pos`` in world space
-    in order of closest to furtherst. Uses the distance between ``pos`` and the center of the
+    in order of closest to furthest. Uses the distance between ``pos`` and the center of the
     bounding sphere for each graphic.
 
     Parameters

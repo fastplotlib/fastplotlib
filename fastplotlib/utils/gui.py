@@ -89,16 +89,16 @@ def _notebook_print_banner():
         device = adapter["device"]
 
         if atype in ("DiscreteGPU", "IntegratedGPU") and backend != "OpenGL":
-            charactor = chr(0x2705)  # green checkmark
+            character = chr(0x2705)  # green checkmark
             tooltip = "This adapter can be used with fastplotlib"
         elif backend == "OpenGL":
-            charactor = chr(0x0000274C)  # red x
+            character = chr(0x0000274C)  # red x
             tooltip = "This adapter cannot be used with fastplotlib"
         elif device.startswith("llvmpipe") or atype == "CPU":
-            charactor = f"{chr(0x00002757)} limited"  # red !
+            character = f"{chr(0x00002757)} limited"  # red !
             tooltip = "CPU rendering support is limited and mainly for testing purposes"
         else:
-            charactor = f"{chr(0x00002757)} unknown"  # red !
+            character = f"{chr(0x00002757)} unknown"  # red !
             tooltip = "Unknown adapter type and backend"
 
         if ix == default_ix:
@@ -109,7 +109,7 @@ def _notebook_print_banner():
         # add row to HTML table
         table_str += f'<tr title="{tooltip}">'
         # add each element to this row
-        for s in [f"{charactor}{default}", device, atype, backend, driver]:
+        for s in [f"{character}{default}", device, atype, backend, driver]:
             table_str += f"<td>{s}</td>"
         table_str += "</tr>"
 

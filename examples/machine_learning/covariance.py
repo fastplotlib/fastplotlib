@@ -31,7 +31,7 @@ X = StandardScaler().fit_transform(X)
 X = X.T
 cov = X @ X.T / X.shape[1]
 
-# reshaped image for each sample wil be 64 x 64 pixels
+# reshaped image for each sample will be 64 x 64 pixels
 img = cov[0].reshape(64, 64)
 
 # figure kwargs for image widget

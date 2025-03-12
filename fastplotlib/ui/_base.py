@@ -97,7 +97,7 @@ class EdgeWindow(Window):
             additional args for the GUI
 
         **kwargs
-            additional kwargs for teh GUI
+            additional kwargs for the GUI
         """
         super().__init__()
 

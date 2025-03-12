@@ -124,7 +124,7 @@ git push origin my_feature_branch
 > **_NOTE:_** If your contributions modify how visualizations _look_, see the [Testing details](#testing-details) section at the very bottom.
 
 > **_NOTE:_** If your contributions modify the API, you must regenerate the API docs before making a PR, see
-> the [Documenation](#documentation) section below.
+> the [Documentation](#documentation) section below.
 
 ### Contributing your changes back to `fastplotlib`
 

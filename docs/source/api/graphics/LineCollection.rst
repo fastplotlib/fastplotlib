@@ -59,4 +59,3 @@ Methods
     LineCollection.rotate
     LineCollection.share_property
     LineCollection.unshare_property
-
