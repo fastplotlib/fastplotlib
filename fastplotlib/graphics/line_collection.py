@@ -179,7 +179,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
 
         metadata: Any
-            meatadata associated with the collection as a whole
+            metadata associated with the collection as a whole
 
         metadatas: Iterable or array
             metadata for each individual line associated with this collection, this is for the user to manage.

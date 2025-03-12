@@ -2,11 +2,11 @@
 
 # Introduction
 
-This code of conduct applies to all spaces managed by the fastplotlib project, 
-including all public and private mailing lists, issue trackers, wikis, blogs, 
-Twitter, and any other communication channel used by our community, including 
-any in-person events, whether directly organized by fastplotlib developers 
-or associated people. 
+This code of conduct applies to all spaces managed by the fastplotlib project,
+including all public and private mailing lists, issue trackers, wikis, blogs,
+Twitter, and any other communication channel used by our community, including
+any in-person events, whether directly organized by fastplotlib developers
+or associated people.
 
 This code of conduct should be honored by everyone who participates in
 the fastplotlib community formally or informally, or claims any affiliation with the
@@ -102,7 +102,7 @@ most appropriate). If you would prefer not to do that, please feel free to
 report to the Code of Conduct committee directly, or ask the committee for
 advice, in confidence.
 
-You can report issues to the fastplotlib core team: 
+You can report issues to the fastplotlib core team:
 
 [Kushal Kolar](https://github.com/kushalkolar)
 [Caitlin Lewis](https://github.com/clewis7)

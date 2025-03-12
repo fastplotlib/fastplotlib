@@ -19,7 +19,7 @@ import numpy as np
 import fastplotlib as fpl
 
 
-# helper function to make a cirlce
+# helper function to make a circle
 def make_circle(center, radius: float, n_points: int) -> np.ndarray:
     theta = np.linspace(0, 2 * np.pi, n_points)
     xs = radius * np.cos(theta)
@@ -52,7 +52,7 @@ circle_graphic = figure["unit circle"].add_line(
 )
 
 # line to show the circle radius
-# use it to indicate the current position of the sine and cosine selctors (below)
+# use it to indicate the current position of the sine and cosine selectors (below)
 radius_data = np.array([[0, 0, 0], [*circle_data[0], 0]])
 circle_radius = figure["unit circle"].add_line(
     radius_data, thickness=6, colors="magenta"

@@ -68,7 +68,7 @@ Responsibilities:
 1. Only individuals, not organizations, may be added to the leadership team. A candidate individual must be nominated by a current member of the leadership team.
 2. A candidate must:
   * Be committed to the fastplotlib mission.
-  * Have demonstrated contibutions to `fastplotlib` through one of:
+  * Have demonstrated contributions to `fastplotlib` through one of:
     * Significant contributions to the codebase.
     * Significant application of fastplotlib in a dependent package.
     * Significant technical guidance or feedback on the development of `fastplotlib`.

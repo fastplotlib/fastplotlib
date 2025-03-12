@@ -76,12 +76,12 @@ def find_examples(query=None, negative_query=None, return_stems=False):
 def image_similarity(src, target, threshold=0.2):
     """Compute normalized RMSE 0..1 and decide if similar based on threshold.
 
-    For every pixel, the euclidian distance between RGB values is computed,
+    For every pixel, the euclidean distance between RGB values is computed,
     and normalized by the maximum possible distance (between black and white).
     The RMSE is then computed from those errors.
 
     The normalized RMSE is used to compute the
-    similarity metric, so larger errors (euclidian distance
+    similarity metric, so larger errors (euclidean distance
     between two RGB colors) will have a disproportionately
     larger effect on the score than smaller errors.
 
@@ -227,11 +227,11 @@ def generate_diff(src, target, fuzz=0.05):
     """
     Generate an image that
     highlights the differences between src and target image
-    any pixels with a euclidian color distance < fuzz will be ignored
+    any pixels with a euclidean color distance < fuzz will be ignored
     fuzz is expressed as a percentage of the maximum possible distance
     which is the distance between (0,0,0) and (1,1,1) = sqrt(3).
     """
-    # compute euclidian distance between pixels
+    # compute euclidean distance between pixels
     # and normalize to 0..1
     max_dist = np.linalg.norm([1, 1, 1], axis=-1)
     error = np.linalg.norm(np.abs(target - src), axis=-1) / max_dist
