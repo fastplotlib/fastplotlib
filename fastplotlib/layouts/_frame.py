@@ -49,7 +49,7 @@ return distance * size;
 
 
 class MeshMasks:
-    """Used set the x1, x1, y0, y1 positions of the plane mesh"""
+    """Used set the x0, x1, y0, y1 positions of the plane mesh"""
 
     x0 = np.array(
         [
