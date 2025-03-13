@@ -36,7 +36,7 @@ class BaseLayout:
         resizeable: bool,
     ):
         """
-        Base layout engine, subclass to create a useable layout engine.
+        Base layout engine, subclass to create a usable layout engine.
         """
         self._renderer = renderer
         self._subplots: np.ndarray[Subplot] = subplots.ravel()
