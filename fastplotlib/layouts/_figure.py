@@ -132,7 +132,7 @@ class Figure:
         else:
             if not all(isinstance(v, (int, np.integer)) for v in shape):
                 raise TypeError(
-                    "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
+                    "shape argument must be a tuple[n_rows, n_cols]"
                 )
             n_subplots = shape[0] * shape[1]
             layout_mode = "grid"
