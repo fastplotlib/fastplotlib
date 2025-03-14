@@ -26,15 +26,15 @@ hist_2, edges_2 = np.histogram(img2)
 centers_2 = edges_2[:-1] + np.diff(edges_2) / 2
 
 # figure size in pixels
-size = (700, 560)
+size = (640, 480)
 
 # a rect is (x, y, width, height)
 # here it is defined in absolute pixels
 rects = [
-    (0, 0, 200, 280),  # for image1
-    (0, 280, 200, 280),  # for image2
-    (200, 0, 500, 280),  # for image1 histogram
-    (200, 280, 500, 280),  # for image2 histogram
+    (0, 0, 200, 240),  # for image1
+    (0, 240, 200, 240),  # for image2
+    (200, 0, 440, 240),  # for image1 histogram
+    (200, 240, 440, 240),  # for image2 histogram
 ]
 
 # create a figure using the rects and size
