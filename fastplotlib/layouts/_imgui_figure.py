@@ -113,6 +113,8 @@ class ImguiFigure(Figure):
         super()._render(draw)
 
         self.imgui_renderer.render()
+
+        # needs to be here else events don't get processed
         self.canvas.request_draw()
 
     def _draw_imgui(self) -> imgui.ImDrawData:
