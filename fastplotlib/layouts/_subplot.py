@@ -6,7 +6,7 @@ import pygfx
 from rendercanvas import BaseRenderCanvas
 
 from ..graphics import TextGraphic
-from ._utils import create_camera, create_controller, IMGUI
+from ._utils import create_camera, create_controller
 from ._plot_area import PlotArea
 from ._frame import Frame
 from ..graphics._axes import Axes
@@ -62,7 +62,7 @@ class Subplot(PlotArea):
 
         self._docks = dict()
 
-        if IMGUI:
+        if "Imgui" in parent.__class__.__name__:
             toolbar_visible = True
         else:
             toolbar_visible = False
