@@ -59,7 +59,7 @@ sphinx_gallery_conf = {
             "../../examples/heatmap",
             "../../examples/image_widget",
             "../../examples/gridplot",
-            "../../examples/flex_layouts",
+            "../../examples/window_layouts",
             "../../examples/line",
             "../../examples/line_collection",
             "../../examples/scatter",
