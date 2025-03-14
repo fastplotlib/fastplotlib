@@ -2,8 +2,8 @@ import numpy as np
 import pygfx
 
 from ._rect import RectManager
-from ._utils import IMGUI, IMGUI_TOOLBAR_HEIGHT
-from ..utils._types import SelectorColorStates
+from ._utils import IMGUI_TOOLBAR_HEIGHT
+from ..utils.types import SelectorColorStates
 from ..graphics import TextGraphic
 
 
