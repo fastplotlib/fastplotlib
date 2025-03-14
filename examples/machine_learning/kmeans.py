@@ -3,6 +3,9 @@ K-Means Clustering of MNIST Dataset
 ===================================
 
 Example showing how you can perform K-Means clustering on the MNIST dataset.
+
+Use WASD keys on your keyboard to fly through the data in PCA space.
+Use the mouse pointer to select points.
 """
 
 # test_example = false
@@ -29,17 +32,17 @@ fig_data = fpl.Figure(shape=(1, 5), size=(900, 300))
 # iterate through each subplot
 for i, subplot in enumerate(fig_data):
     # reshape each image to (8, 8)
-    subplot.add_image(data[i].reshape(8,8), cmap="gray", interpolation="linear")
+    subplot.add_image(data[i].reshape(8, 8), cmap="gray", interpolation="linear")
     # add the label as a title
-    subplot.set_title(f"Label: {labels[i]}")
+    subplot.title = f"Label: {labels[i]}"
     # turn off the axes and toolbar
     subplot.axes.visible = False
-    subplot.toolbar  = False
+    subplot.toolbar = False
 
 fig_data.show()
 
 # project the data from 64 dimensions down to the number of unique digits
-n_digits = len(np.unique(labels)) # 10
+n_digits = len(np.unique(labels))  # 10
 
 reduced_data = PCA(n_components=n_digits).fit_transform(data) # (1797, 10)
 
@@ -53,17 +56,17 @@ centroids = kmeans.cluster_centers_
 
 # plot the kmeans result and corresponding original image
 figure = fpl.Figure(
-    shape=(1,2),
-    size=(700, 400),
+    shape=(1, 2),
+    size=(700, 560),
     cameras=["3d", "2d"],
-    controller_types=[["fly", "panzoom"]]
+    controller_types=["fly", "panzoom"]
 )
 
-# set the axes to False
-figure[0, 0].axes.visible = False
+# set the axes to False in the image subplot
 figure[0, 1].axes.visible = False
 
-figure[0, 0].set_title(f"K-means clustering of PCA-reduced data")
+figure[0, 0].title = "k-means clustering of PCA-reduced data"
+figure[0, 1].title = "handwritten digit"
 
 # plot the centroids
 figure[0, 0].add_scatter(
@@ -94,6 +97,7 @@ digit_img = figure[0, 1].add_image(
 digit_scatter.colors[ix] = "magenta"
 digit_scatter.sizes[ix] = 10
 
+
 # define event handler to update the selected data point
 @digit_scatter.add_event_handler("pointer_enter")
 def update(ev):
@@ -110,7 +114,9 @@ def update(ev):
     # update digit fig
     figure[0, 1]["digit"].data = data[ix].reshape(8, 8)
 
+
 figure.show()
+
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter

@@ -11,6 +11,7 @@ from rendercanvas import BaseRenderCanvas
 from ._utils import create_controller
 from ..graphics._base import Graphic
 from ..graphics.selectors._base_selector import BaseSelector
+from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
 
 
@@ -24,7 +25,7 @@ else:
     IPYTHON = get_ipython()
 
 
-class PlotArea:
+class PlotArea(GraphicMethodsMixin):
     def __init__(
         self,
         parent: Union["PlotArea", "Figure"],
@@ -712,7 +713,7 @@ class PlotArea:
         else:
             name = self.name
 
-        return f"{name}: {self.__class__.__name__} @ {hex(id(self))}"
+        return f"{name}: {self.__class__.__name__}"
 
     def __repr__(self):
         newline = "\n\t"

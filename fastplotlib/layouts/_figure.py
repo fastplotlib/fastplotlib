@@ -11,20 +11,24 @@ import pygfx
 
 from rendercanvas import BaseRenderCanvas
 
-from ._utils import make_canvas_and_renderer, create_controller, create_camera
+from ._utils import (
+    make_canvas_and_renderer,
+    create_controller,
+    create_camera,
+    get_extents_from_grid,
+)
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
+from ._engine import GridLayout, WindowLayout, UnderlayCamera
 from .. import ImageGraphic
-
-
-# number of pixels taken by the imgui toolbar when present
-IMGUI_TOOLBAR_HEIGHT = 39
 
 
 class Figure:
     def __init__(
         self,
-        shape: list[tuple[int, int, int, int]] | tuple[int, int] = (1, 1),
+        shape: tuple[int, int] = (1, 1),
+        rects: list[tuple | np.ndarray] = None,
+        extents: list[tuple | np.ndarray] = None,
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
@@ -48,14 +52,31 @@ class Figure:
         names: list | np.ndarray = None,
     ):
         """
-        A grid of subplots.
+        Create a Figure containing Subplots.
 
         Parameters
         ----------
-        shape: list[tuple[int, int, int, int]] | tuple[int, int], default (1, 1)
-            grid of shape [n_rows, n_cols] or list of bounding boxes: [x, y, width, height] (NOT YET IMPLEMENTED)
+        shape: tuple[int, int], default (1, 1)
+            shape [n_rows, n_cols] that defines a grid of subplots
 
-        cameras: "2d", "3", list of "2d" | "3d", Iterable of camera instances, or Iterable of "2d" | "3d", optional
+        rects: list of tuples or arrays
+            list of rects (x, y, width, height) that define the subplots.
+            rects can be defined in absolute pixels or as a fraction of the canvas.
+            If width & height <= 1 the rect is assumed to be fractional.
+            Conversely, if width & height > 1 the rect is assumed to be in absolute pixels.
+            width & height must be > 0. Negative values are not allowed.
+
+        extents: list of tuples or arrays
+            list of extents (xmin, xmax, ymin, ymax) that define the subplots.
+            extents can be defined in absolute pixels or as a fraction of the canvas.
+            If xmax & ymax <= 1 the extent is assumed to be fractional.
+            Conversely, if xmax & ymax > 1 the extent is assumed to be in absolute pixels.
+            Negative values are not allowed. xmax - xmin & ymax - ymin must be > 0.
+
+            If both ``rects`` and  ``extents`` are provided, then ``rects`` takes precedence over ``extents``, i.e.
+            ``extents`` is ignored when ``rects`` are also provided.
+
+        cameras: "2d", "3d", list of "2d" | "3d", Iterable of camera instances, or Iterable of "2d" | "3d", optional
             | if str, one of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
             | Iterable/list/array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot
             | Iterable/list/array of pygfx.PerspectiveCamera instances
@@ -91,84 +112,85 @@ class Figure:
             pygfx renderer instance
 
         size: (int, int), optional
-            starting size of canvas, default (500, 300)
+            starting size of canvas in absolute pixels, default (500, 300)
 
         names: list or array of str, optional
             subplot names
+
         """
 
-        if isinstance(shape, list):
-            raise NotImplementedError("bounding boxes for shape not yet implemented")
-            if not all(isinstance(v, (tuple, list)) for v in shape):
+        if rects is not None:
+            if not all(isinstance(v, (np.ndarray, tuple, list)) for v in rects):
                 raise TypeError(
-                    "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
+                    f"rects must a list of arrays, tuples, or lists of rects (x, y, w, h), you have passed: {rects}"
                 )
-            for item in shape:
-                if not all(isinstance(v, (int, np.integer)) for v in item):
-                    raise TypeError(
-                        "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
-                    )
-            # constant that sets the Figure to be in "rect" mode
-            self._mode: str = "rect"
+            n_subplots = len(rects)
+            layout_mode = "rect"
+            extents = [None] * n_subplots
 
-        elif isinstance(shape, tuple):
-            if not all(isinstance(v, (int, np.integer)) for v in shape):
+        elif extents is not None:
+            if not all(isinstance(v, (np.ndarray, tuple, list)) for v in extents):
                 raise TypeError(
-                    "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
+                    f"extents must a list of arrays, tuples, or lists of extents (xmin, xmax, ymin, ymax), "
+                    f"you have passed: {extents}"
                 )
-            # constant that sets the Figure to be in "grid" mode
-            self._mode: str = "grid"
-
-            # shape is [n_subplots, row_col_index]
-            self._subplot_grid_positions: dict[Subplot, tuple[int, int]] = dict()
+            n_subplots = len(extents)
+            layout_mode = "extent"
+            rects = [None] * n_subplots
 
         else:
-            raise TypeError(
-                "shape argument must be a list of bounding boxes or a tuple[n_rows, n_cols]"
-            )
+            if not all(isinstance(v, (int, np.integer)) for v in shape):
+                raise TypeError("shape argument must be a tuple[n_rows, n_cols]")
+            n_subplots = shape[0] * shape[1]
+            layout_mode = "grid"
 
-        self._shape = shape
-
-        # default spacing of 2 pixels between subplots
-        self._spacing = 2
+            # create fractional extents from the grid
+            extents = get_extents_from_grid(shape)
+            # empty rects
+            rects = [None] * n_subplots
 
         if names is not None:
             subplot_names = np.asarray(names).flatten()
-            if subplot_names.size != len(self):
+            if subplot_names.size != n_subplots:
                 raise ValueError(
-                    "must provide same number of subplot `names` as specified by Figure `shape`"
+                    f"must provide same number of subplot `names` as specified by shape, extents, or rects: {n_subplots}"
                 )
         else:
-            subplot_names = None
+            if layout_mode == "grid":
+                subplot_names = np.asarray(
+                    list(map(str, product(range(shape[0]), range(shape[1]))))
+                )
+            else:
+                subplot_names = None
 
         canvas, renderer = make_canvas_and_renderer(
             canvas, renderer, canvas_kwargs={"size": size}
         )
 
-        canvas.add_event_handler(self._set_viewport_rects, "resize")
+        canvas.add_event_handler(self._fpl_reset_layout, "resize")
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
-            cameras = np.array([cameras] * len(self))
+            cameras = np.array([cameras] * n_subplots)
 
         # list/tuple -> array if necessary
         cameras = np.asarray(cameras).flatten()
 
-        if cameras.size != len(self):
+        if cameras.size != n_subplots:
             raise ValueError(
-                f"Number of cameras: {cameras.size} does not match the number of subplots: {len(self)}"
+                f"Number of cameras: {cameras.size} does not match the number of subplots: {n_subplots}"
             )
 
         # create the cameras
-        subplot_cameras = np.empty(len(self), dtype=object)
-        for index in range(len(self)):
+        subplot_cameras = np.empty(n_subplots, dtype=object)
+        for index in range(n_subplots):
             subplot_cameras[index] = create_camera(camera_type=cameras[index])
 
         # if controller instances have been specified for each subplot
         if controllers is not None:
             # one controller for all subplots
             if isinstance(controllers, pygfx.Controller):
-                controllers = [controllers] * len(self)
+                controllers = [controllers] * n_subplots
 
             # individual controller instance specified for each subplot
             else:
@@ -188,25 +210,25 @@ class Figure:
             subplot_controllers: np.ndarray[pygfx.Controller] = np.asarray(
                 controllers
             ).flatten()
-            if not subplot_controllers.size == len(self):
+            if not subplot_controllers.size == n_subplots:
                 raise ValueError(
                     f"number of controllers passed must be the same as the number of subplots specified "
-                    f"by shape: {len(self)}. You have passed: {subplot_controllers.size} controllers"
+                    f"by shape, extents, or rects: {n_subplots}. You have passed: {subplot_controllers.size} controllers"
                 ) from None
 
-            for index in range(len(self)):
+            for index in range(n_subplots):
                 subplot_controllers[index].add_camera(subplot_cameras[index])
 
         # parse controller_ids and controller_types to make desired controller for each subplot
         else:
             if controller_ids is None:
                 # individual controller for each subplot
-                controller_ids = np.arange(len(self))
+                controller_ids = np.arange(n_subplots)
 
             elif isinstance(controller_ids, str):
                 if controller_ids == "sync":
                     # this will end up creating one controller to control the camera of every subplot
-                    controller_ids = np.zeros(len(self), dtype=int)
+                    controller_ids = np.zeros(n_subplots, dtype=int)
                 else:
                     raise ValueError(
                         f"`controller_ids` must be one of 'sync', an array/list of subplot names, or an array/list of "
@@ -236,7 +258,7 @@ class Figure:
                         )
 
                     # initialize controller_ids array
-                    ids_init = np.arange(len(self))
+                    ids_init = np.arange(n_subplots)
 
                     # set id based on subplot position for each synced sublist
                     for row_ix, sublist in enumerate(controller_ids):
@@ -261,18 +283,18 @@ class Figure:
                         f"you have passed: {controller_ids}"
                     )
 
-            if controller_ids.size != len(self):
+            if controller_ids.size != n_subplots:
                 raise ValueError(
-                    "Number of controller_ids does not match the number of subplots"
+                    f"Number of controller_ids does not match the number of subplots: {n_subplots}"
                 )
 
             if controller_types is None:
                 # `create_controller()` will auto-determine controller for each subplot based on defaults
-                controller_types = np.array(["default"] * len(self))
+                controller_types = np.array(["default"] * n_subplots)
 
             # valid controller types
             if isinstance(controller_types, str):
-                controller_types = np.array([controller_types] * len(self))
+                controller_types = np.array([controller_types] * n_subplots)
 
             controller_types: np.ndarray[pygfx.Controller] = np.asarray(
                 controller_types
@@ -292,7 +314,7 @@ class Figure:
                     )
 
             # make the real controllers for each subplot
-            subplot_controllers = np.empty(shape=len(self), dtype=object)
+            subplot_controllers = np.empty(shape=n_subplots, dtype=object)
             for cid in np.unique(controller_ids):
                 cont_type = controller_types[controller_ids == cid]
                 if np.unique(cont_type).size > 1:
@@ -323,34 +345,66 @@ class Figure:
         self._canvas = canvas
         self._renderer = renderer
 
-        if self.mode == "grid":
-            nrows, ncols = self.shape
+        if layout_mode == "grid":
+            n_rows, n_cols = shape
+            grid_index_iterator = list(product(range(n_rows), range(n_cols)))
+            self._subplots: np.ndarray[Subplot] = np.empty(shape=shape, dtype=object)
+            resizeable = False
 
-            self._subplots: np.ndarray[Subplot] = np.ndarray(
-                shape=(nrows, ncols), dtype=object
+        else:
+            self._subplots: np.ndarray[Subplot] = np.empty(
+                shape=n_subplots, dtype=object
+            )
+            resizeable = True
+
+        for i in range(n_subplots):
+            camera = subplot_cameras[i]
+            controller = subplot_controllers[i]
+
+            if subplot_names is not None:
+                name = subplot_names[i]
+            else:
+                name = None
+
+            subplot = Subplot(
+                parent=self,
+                camera=camera,
+                controller=controller,
+                canvas=canvas,
+                renderer=renderer,
+                name=name,
+                rect=rects[i],
+                extent=extents[i],  # figure created extents for grid layout
+                resizeable=resizeable,
             )
 
-            for i, (row_ix, col_ix) in enumerate(product(range(nrows), range(ncols))):
-                camera = subplot_cameras[i]
-                controller = subplot_controllers[i]
-
-                if subplot_names is not None:
-                    name = subplot_names[i]
-                else:
-                    name = None
-
-                subplot = Subplot(
-                    parent=self,
-                    camera=camera,
-                    controller=controller,
-                    canvas=canvas,
-                    renderer=renderer,
-                    name=name,
-                )
-
+            if layout_mode == "grid":
+                row_ix, col_ix = grid_index_iterator[i]
                 self._subplots[row_ix, col_ix] = subplot
+            else:
+                self._subplots[i] = subplot
 
-                self._subplot_grid_positions[subplot] = (row_ix, col_ix)
+        if layout_mode == "grid":
+            self._layout = GridLayout(
+                self.renderer,
+                subplots=self._subplots,
+                canvas_rect=self.get_pygfx_render_area(),
+                shape=shape,
+            )
+
+        elif layout_mode == "rect" or layout_mode == "extent":
+            self._layout = WindowLayout(
+                self.renderer,
+                subplots=self._subplots,
+                canvas_rect=self.get_pygfx_render_area(),
+            )
+
+        self._underlay_camera = UnderlayCamera()
+
+        self._underlay_scene = pygfx.Scene()
+
+        for subplot in self._subplots.ravel():
+            self._underlay_scene.add(subplot.frame._world_object)
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
@@ -366,31 +420,15 @@ class Figure:
     @property
     def shape(self) -> list[tuple[int, int, int, int]] | tuple[int, int]:
         """[n_rows, n_cols]"""
-        return self._shape
+        if isinstance(self.layout, GridLayout):
+            return self.layout.shape
 
     @property
-    def mode(self) -> str:
+    def layout(self) -> WindowLayout | GridLayout:
         """
-        one of 'grid' or 'rect'
-
-        Used by Figure to determine certain aspects, such as how to calculate
-        rects and shapes of properties for cameras, controllers, and subplots arrays
+        Layout engine
         """
-        return self._mode
-
-    @property
-    def spacing(self) -> int:
-        """spacing between subplots, in pixels"""
-        return self._spacing
-
-    @spacing.setter
-    def spacing(self, value: int):
-        """set the spacing between subplots, in pixels"""
-        if not isinstance(value, (int, np.integer)):
-            raise TypeError("spacing must be of type <int>")
-
-        self._spacing = value
-        self._set_viewport_rects()
+        return self._layout
 
     @property
     def canvas(self) -> BaseRenderCanvas:
@@ -407,7 +445,7 @@ class Figure:
         """controllers, read-only array, access individual subplots to change a controller"""
         controllers = np.asarray([subplot.controller for subplot in self], dtype=object)
 
-        if self.mode == "grid":
+        if isinstance(self.layout, GridLayout):
             controllers = controllers.reshape(self.shape)
 
         controllers.flags.writeable = False
@@ -418,7 +456,7 @@ class Figure:
         """cameras, read-only array, access individual subplots to change a camera"""
         cameras = np.asarray([subplot.camera for subplot in self], dtype=object)
 
-        if self.mode == "grid":
+        if isinstance(self.layout, GridLayout):
             cameras = cameras.reshape(self.shape)
 
         cameras.flags.writeable = False
@@ -429,25 +467,16 @@ class Figure:
         """subplot names, read-only array, access individual subplots to change a name"""
         names = np.asarray([subplot.name for subplot in self])
 
-        if self.mode == "grid":
+        if isinstance(self.layout, GridLayout):
             names = names.reshape(self.shape)
 
         names.flags.writeable = False
         return names
 
-    def __getitem__(self, index: str | int | tuple[int, int]) -> Subplot:
-        if isinstance(index, str):
-            for subplot in self._subplots.ravel():
-                if subplot.name == index:
-                    return subplot
-            raise IndexError(f"no subplot with given name: {index}")
-
-        if self.mode == "grid":
-            return self._subplots[index[0], index[1]]
-
-        return self._subplots[index]
-
     def _render(self, draw=True):
+        # draw the underlay planes
+        self.renderer.render(self._underlay_scene, self._underlay_camera, flush=False)
+
         # call the animation functions before render
         self._call_animate_functions(self._animate_funcs_pre)
         for subplot in self:
@@ -457,6 +486,10 @@ class Figure:
 
         # call post-render animate functions
         self._call_animate_functions(self._animate_funcs_post)
+
+        if draw:
+            # needs to be here else events don't get processed
+            self.canvas.request_draw()
 
     def _start_render(self):
         """start render cycle"""
@@ -538,7 +571,7 @@ class Figure:
 
         elif self.canvas.__class__.__name__ == "OffscreenRenderCanvas":
             # for test and docs gallery screenshots
-            self._set_viewport_rects()
+            self._fpl_reset_layout()
             for subplot in self:
                 subplot.axes.update_using_camera()
 
@@ -709,169 +742,18 @@ class Figure:
     def open_popup(self, *args, **kwargs):
         warn("popups only supported by ImguiFigure")
 
-    def _fpl_set_subplot_viewport_rect(self, subplot: Subplot):
-        """
-        Sets the viewport rect for the given subplot
-        """
-
-        if self.mode == "grid":
-            # row, col position of this subplot within the grid
-            row_ix, col_ix = self._subplot_grid_positions[subplot]
-
-            # number of rows, cols in the grid
-            nrows, ncols = self.shape
-
-            # get starting positions and dimensions for the pygfx portion of the canvas
-            # anything outside the pygfx portion of the canvas is for imgui
-            x0_canvas, y0_canvas, width_canvas, height_canvas = (
-                self.get_pygfx_render_area()
-            )
-
-            # width of an individual subplot
-            width_subplot = width_canvas / ncols
-            # height of an individual subplot
-            height_subplot = height_canvas / nrows
-
-            # x position of this subplot
-            x_pos = (
-                ((col_ix - 1) * width_subplot)
-                + width_subplot
-                + x0_canvas
-                + self.spacing
-            )
-            # y position of this subplot
-            y_pos = (
-                ((row_ix - 1) * height_subplot)
-                + height_subplot
-                + y0_canvas
-                + self.spacing
-            )
-
-            if self.__class__.__name__ == "ImguiFigure" and subplot.toolbar:
-                # leave space for imgui toolbar
-                height_subplot -= IMGUI_TOOLBAR_HEIGHT
-
-            # clip so that min (w, h) is always 1, otherwise JupyterRenderCanvas causes issues because it
-            # initializes with a width, height of (0, 0)
-            rect = np.array(
-                [
-                    x_pos,
-                    y_pos,
-                    width_subplot - self.spacing,
-                    height_subplot - self.spacing,
-                ]
-            ).clip(min=[0, 0, 1, 1])
-
-            # adjust if a subplot dock is present
-            adjust = np.array(
-                [
-                    # add left dock size to x_pos
-                    subplot.docks["left"].size,
-                    # add top dock size to y_pos
-                    subplot.docks["top"].size,
-                    # remove left and right dock sizes from width
-                    -subplot.docks["right"].size - subplot.docks["left"].size,
-                    # remove top and bottom dock sizes from height
-                    -subplot.docks["top"].size - subplot.docks["bottom"].size,
-                ]
-            )
-
-            subplot.viewport.rect = rect + adjust
-
-    def _fpl_set_subplot_dock_viewport_rect(self, subplot, position):
-        """
-        Sets the viewport rect for the given subplot dock
-        """
-
-        dock = subplot.docks[position]
-
-        if dock.size == 0:
-            dock.viewport.rect = None
-            return
-
-        if self.mode == "grid":
-            # row, col position of this subplot within the grid
-            row_ix, col_ix = self._subplot_grid_positions[subplot]
-
-            # number of rows, cols in the grid
-            nrows, ncols = self.shape
-
-            x0_canvas, y0_canvas, width_canvas, height_canvas = (
-                self.get_pygfx_render_area()
-            )
-
-            # width of an individual subplot
-            width_subplot = width_canvas / ncols
-            # height of an individual subplot
-            height_subplot = height_canvas / nrows
-
-            # calculate the rect based on the dock position
-            match position:
-                case "right":
-                    x_pos = (
-                        ((col_ix - 1) * width_subplot) + (width_subplot * 2) - dock.size
-                    )
-                    y_pos = (
-                        ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
-                    )
-                    width_viewport = dock.size
-                    height_viewport = height_subplot - self.spacing
-
-                case "left":
-                    x_pos = ((col_ix - 1) * width_subplot) + width_subplot
-                    y_pos = (
-                        ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
-                    )
-                    width_viewport = dock.size
-                    height_viewport = height_subplot - self.spacing
-
-                case "top":
-                    x_pos = (
-                        ((col_ix - 1) * width_subplot) + width_subplot + self.spacing
-                    )
-                    y_pos = (
-                        ((row_ix - 1) * height_subplot) + height_subplot + self.spacing
-                    )
-                    width_viewport = width_subplot - self.spacing
-                    height_viewport = dock.size
-
-                case "bottom":
-                    x_pos = (
-                        ((col_ix - 1) * width_subplot) + width_subplot + self.spacing
-                    )
-                    y_pos = (
-                        ((row_ix - 1) * height_subplot)
-                        + (height_subplot * 2)
-                        - dock.size
-                    )
-                    width_viewport = width_subplot - self.spacing
-                    height_viewport = dock.size
-
-                case _:
-                    raise ValueError("invalid position")
-
-            dock.viewport.rect = [
-                x_pos + x0_canvas,
-                y_pos + y0_canvas,
-                width_viewport,
-                height_viewport,
-            ]
-
-    def _set_viewport_rects(self, *ev):
+    def _fpl_reset_layout(self, *ev):
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
-        for subplot in self:
-            self._fpl_set_subplot_viewport_rect(subplot)
-            for dock_pos in subplot.docks.keys():
-                self._fpl_set_subplot_dock_viewport_rect(subplot, dock_pos)
+        self.layout.canvas_resized(self.get_pygfx_render_area())
 
-    def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
+    def get_pygfx_render_area(self, *args) -> tuple[float, float, float, float]:
         """
-        Fet rect for the portion of the canvas that the pygfx renderer draws to,
+        Get rect for the portion of the canvas that the pygfx renderer draws to,
         i.e. non-imgui, part of canvas
 
         Returns
         -------
-        tuple[int, int, int, int]
+        tuple[float, float, float, float]
             x_pos, y_pos, width, height
 
         """
@@ -879,6 +761,73 @@ class Figure:
         width, height = self.canvas.get_logical_size()
 
         return 0, 0, width, height
+
+    def add_subplot(
+        self,
+        rect=None,
+        extent=None,
+        camera: str | pygfx.PerspectiveCamera = "2d",
+        controller: str | pygfx.Controller = None,
+        name: str = None,
+    ) -> Subplot:
+        if isinstance(self.layout, GridLayout):
+            raise NotImplementedError(
+                "`add_subplot()` is not implemented for Figures using a GridLayout"
+            )
+
+        raise NotImplementedError("Not yet implemented")
+
+        camera = create_camera(camera)
+        controller = create_controller(controller, camera)
+
+        subplot = Subplot(
+            parent=self,
+            camera=camera,
+            controller=controller,
+            canvas=self.canvas,
+            renderer=self.renderer,
+            name=name,
+            rect=rect,
+            extent=extent,  # figure created extents for grid layout
+            resizeable=True,
+        )
+
+        return subplot
+
+    def remove_subplot(self, subplot: Subplot):
+        raise NotImplementedError("Not yet implemented")
+
+        if isinstance(self.layout, GridLayout):
+            raise NotImplementedError(
+                "`remove_subplot()` is not implemented for Figures using a GridLayout"
+            )
+
+        if subplot not in self._subplots.tolist():
+            raise KeyError(f"given subplot: {subplot} not found in the layout.")
+
+        subplot.clear()
+        self._underlay_scene.remove(subplot.frame._world_object)
+        subplot.frame._world_object.clear()
+        self.layout._subplots = None
+        subplots = self._subplots.tolist()
+        subplots.remove(subplot)
+        self.layout.remove_subplot(subplot)
+        del subplot
+
+        self._subplots = np.asarray(subplots)
+        self.layout._subplots = self._subplots.ravel()
+
+    def __getitem__(self, index: str | int | tuple[int, int]) -> Subplot:
+        if isinstance(index, str):
+            for subplot in self._subplots.ravel():
+                if subplot.name == index:
+                    return subplot
+            raise IndexError(f"no subplot with given name: {index}")
+
+        if isinstance(self.layout, GridLayout):
+            return self._subplots[index[0], index[1]]
+
+        return self._subplots[index]
 
     def __iter__(self):
         self._current_iter = iter(range(len(self)))
@@ -890,19 +839,16 @@ class Figure:
 
     def __len__(self):
         """number of subplots"""
-        if isinstance(self._shape, tuple):
-            return self.shape[0] * self.shape[1]
-        if isinstance(self._shape, list):
-            return len(self._shape)
+        return len(self._layout)
 
     def __str__(self):
-        return f"{self.__class__.__name__} @ {hex(id(self))}"
+        return f"{self.__class__.__name__}"
 
     def __repr__(self):
         newline = "\n\t"
 
         return (
-            f"fastplotlib.{self.__class__.__name__} @ {hex(id(self))}\n"
+            f"fastplotlib.{self.__class__.__name__}"
             f"  Subplots:\n"
             f"\t{newline.join(subplot.__str__() for subplot in self)}"
             f"\n"

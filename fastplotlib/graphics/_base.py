@@ -365,7 +365,7 @@ class Graphic:
         self._plot_area = plot_area
 
     def __repr__(self):
-        rval = f"{self.__class__.__name__} @ {hex(id(self))}"
+        rval = f"{self.__class__.__name__}"
         if self.name is not None:
             return f"'{self.name}': {rval}"
         else:

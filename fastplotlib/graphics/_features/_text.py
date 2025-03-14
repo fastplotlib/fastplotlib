@@ -16,7 +16,7 @@ class TextData(GraphicFeature):
 
     @block_reentrance
     def set_value(self, graphic, value: str):
-        graphic.world_object.geometry.set_text(value)
+        graphic.world_object.set_text(value)
         self._value = value
 
         event = FeatureEvent(type="text", info={"value": value})
@@ -34,8 +34,8 @@ class FontSize(GraphicFeature):
 
     @block_reentrance
     def set_value(self, graphic, value: float | int):
-        graphic.world_object.geometry.font_size = value
-        self._value = graphic.world_object.geometry.font_size
+        graphic.world_object.font_size = value
+        self._value = graphic.world_object.font_size
 
         event = FeatureEvent(type="font_size", info={"value": value})
         self._call_event_handlers(event)

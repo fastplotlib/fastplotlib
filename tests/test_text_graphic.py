@@ -25,7 +25,7 @@ def test_create_graphic():
 
     assert text.font_size == 14
     assert isinstance(text._font_size, FontSize)
-    assert text.world_object.geometry.font_size == 14
+    assert text.world_object.font_size == 14
 
     assert text.face_color == pygfx.Color("w")
     assert isinstance(text._face_color, TextFaceColor)
@@ -82,7 +82,7 @@ def test_text_changes_events():
 
     text.font_size = 10.0
     assert text.font_size == 10.0
-    assert text.world_object.geometry.font_size == 10
+    assert text.world_object.font_size == 10
     check_event(text, "font_size", 10)
 
     text.face_color = "r"
