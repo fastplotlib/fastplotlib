@@ -109,7 +109,7 @@ def create_controller(
 
 
 def get_extents_from_grid(
-    shape: tuple[int, int]
+    shape: tuple[int, int],
 ) -> list[tuple[float, float, float, float]]:
     """create fractional extents from a given grid shape"""
     x_min = np.arange(0, 1, (1 / shape[1]))
