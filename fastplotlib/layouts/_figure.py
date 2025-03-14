@@ -61,11 +61,18 @@ class Figure:
 
         rects: list of tuples or arrays
             list of rects (x, y, width, height) that define the subplots.
-            rects can be defined in absolute pixels or as a fraction of the canvas
+            rects can be defined in absolute pixels or as a fraction of the canvas.
+            If width & height <= 1 the rect is assumed to be fractional.
+            Conversely, if width & height > 1 the rect is assumed to be in absolute pixels.
+            width & height must be > 0. Negative values are not allowed.
 
         extents: list of tuples or arrays
             list of extents (xmin, xmax, ymin, ymax) that define the subplots.
             extents can be defined in absolute pixels or as a fraction of the canvas.
+            If xmax & ymax <= 1 the extent is assumed to be fractional.
+            Conversely, if xmax & ymax > 1 the extent is assumed to be in absolute pixels.
+            Negative values are not allowed. xmax - xmin & ymax - ymin must be > 0.
+
             If both ``rects`` and  ``extents`` are provided, then ``rects`` takes precedence over ``extents``, i.e.
             ``extents`` is ignored when ``rects`` are also provided.
 
@@ -146,7 +153,7 @@ class Figure:
             subplot_names = np.asarray(names).flatten()
             if subplot_names.size != n_subplots:
                 raise ValueError(
-                    "must provide same number of subplot `names` as specified by Figure `shape`"
+                    f"must provide same number of subplot `names` as specified by shape, extents, or rects: {n_subplots}"
                 )
         else:
             if layout_mode == "grid":
@@ -206,7 +213,7 @@ class Figure:
             if not subplot_controllers.size == n_subplots:
                 raise ValueError(
                     f"number of controllers passed must be the same as the number of subplots specified "
-                    f"by shape: {n_subplots}. You have passed: {subplot_controllers.size} controllers"
+                    f"by shape, extents, or rects: {n_subplots}. You have passed: {subplot_controllers.size} controllers"
                 ) from None
 
             for index in range(n_subplots):
@@ -278,7 +285,7 @@ class Figure:
 
             if controller_ids.size != n_subplots:
                 raise ValueError(
-                    "Number of controller_ids does not match the number of subplots"
+                    f"Number of controller_ids does not match the number of subplots: {n_subplots}"
                 )
 
             if controller_types is None:

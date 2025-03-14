@@ -284,7 +284,10 @@ class WindowLayout(BaseLayout):
             the subplot to set the rect of
 
         rect: (x, y, w, h)
-            as absolute pixels or fractional
+            as absolute pixels or fractional.
+            If width & height <= 1 the rect is assumed to be fractional.
+            Conversely, if width & height > 1 the rect is assumed to be in absolute pixels.
+            width & height must be > 0. Negative values are not allowed.
 
         """
 
@@ -308,7 +311,10 @@ class WindowLayout(BaseLayout):
             the subplot to set the extent of
 
         extent: (xmin, xmax, ymin, ymax)
-            as absolute pixels or fractional
+            as absolute pixels or fractional.
+            If xmax & ymax <= 1 the extent is assumed to be fractional.
+            Conversely, if xmax & ymax > 1 the extent is assumed to be in absolute pixels.
+            Negative values are not allowed. xmax - xmin & ymax - ymin must be > 0.
 
         """
 
