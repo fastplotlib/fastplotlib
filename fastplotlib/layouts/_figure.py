@@ -19,7 +19,7 @@ from ._utils import (
 )
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
-from ._engine import BaseLayout, GridLayout, FlexLayout, UnderlayCamera
+from ._engine import GridLayout, WindowLayout, UnderlayCamera
 from .. import ImageGraphic
 
 
@@ -65,9 +65,11 @@ class Figure:
 
         extents: list of tuples or arrays
             list of extents (xmin, xmax, ymin, ymax) that define the subplots.
-            extents can be defined in absolute pixels or as a fraction of the canvas
+            extents can be defined in absolute pixels or as a fraction of the canvas.
+            If both ``rects`` and  ``extents`` are provided, then ``rects`` takes precedence over ``extents``, i.e.
+            ``extents`` is ignored when ``rects`` are also provided.
 
-        cameras: "2d", "3", list of "2d" | "3d", Iterable of camera instances, or Iterable of "2d" | "3d", optional
+        cameras: "2d", "3d", list of "2d" | "3d", Iterable of camera instances, or Iterable of "2d" | "3d", optional
             | if str, one of ``"2d"`` or ``"3d"`` indicating 2D or 3D cameras for all subplots
             | Iterable/list/array of ``2d`` and/or ``3d`` that specifies the camera type for each subplot
             | Iterable/list/array of pygfx.PerspectiveCamera instances
@@ -386,7 +388,7 @@ class Figure:
             )
 
         elif layout_mode == "rect" or layout_mode == "extent":
-            self._layout = FlexLayout(
+            self._layout = WindowLayout(
                 self.renderer,
                 subplots=self._subplots,
                 canvas_rect=self.get_pygfx_render_area(),
@@ -417,7 +419,7 @@ class Figure:
             return self.layout.shape
 
     @property
-    def layout(self) -> FlexLayout | GridLayout:
+    def layout(self) -> WindowLayout | GridLayout:
         """
         Layout engine
         """
@@ -479,6 +481,10 @@ class Figure:
 
         # call post-render animate functions
         self._call_animate_functions(self._animate_funcs_post)
+
+        if draw:
+            # needs to be here else events don't get processed
+            self.canvas.request_draw()
 
     def _start_render(self):
         """start render cycle"""

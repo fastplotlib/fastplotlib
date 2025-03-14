@@ -126,7 +126,7 @@ class BaseLayout:
         return len(self._subplots)
 
 
-class FlexLayout(BaseLayout):
+class WindowLayout(BaseLayout):
     def __init__(
         self,
         renderer,
@@ -325,7 +325,7 @@ class FlexLayout(BaseLayout):
                 )
 
 
-class GridLayout(FlexLayout):
+class GridLayout(WindowLayout):
     def __init__(
         self,
         renderer,
