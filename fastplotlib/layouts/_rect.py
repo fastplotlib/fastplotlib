@@ -24,7 +24,9 @@ class RectManager:
         rect = np.asarray(rect)
         for val, name in zip(rect, ["x-position", "y-position", "width", "height"]):
             if val < 0:
-                raise ValueError(f"Invalid rect value < 0: {rect}\n All values must be non-negative.")
+                raise ValueError(
+                    f"Invalid rect value < 0: {rect}\n All values must be non-negative."
+                )
 
         if (rect[2:] <= 1).all():  # fractional bbox
             self._set_from_fract(rect)
@@ -42,9 +44,13 @@ class RectManager:
 
         # check that widths, heights are valid:
         if rect[0] + rect[2] > 1:
-            raise ValueError(f"invalid fractional rect: {rect}\n x + width > 1: {rect[0]} + {rect[2]} > 1")
+            raise ValueError(
+                f"invalid fractional rect: {rect}\n x + width > 1: {rect[0]} + {rect[2]} > 1"
+            )
         if rect[1] + rect[3] > 1:
-            raise ValueError(f"invalid fractional rect: {rect}\n y + height > 1: {rect[1]} + {rect[3]} > 1")
+            raise ValueError(
+                f"invalid fractional rect: {rect}\n y + height > 1: {rect[1]} + {rect[3]} > 1"
+            )
 
         # assign values to the arrays, don't just change the reference
         self._rect_frac[:] = rect
@@ -57,9 +63,13 @@ class RectManager:
         # for screen coords allow (x, y) = 1 or 0, but w, h must be > 1
         # check that widths, heights are valid
         if rect[0] + rect[2] > cw:
-            raise ValueError(f"invalid rect: {rect}\n x + width > canvas width: {rect[0]} + {rect[2]} > {cw}")
+            raise ValueError(
+                f"invalid rect: {rect}\n x + width > canvas width: {rect[0]} + {rect[2]} > {cw}"
+            )
         if rect[1] + rect[3] > ch:
-            raise ValueError(f"invalid rect: {rect}\n y + height > canvas height: {rect[1]} + {rect[3]} >{ch}")
+            raise ValueError(
+                f"invalid rect: {rect}\n y + height > canvas height: {rect[1]} + {rect[3]} >{ch}"
+            )
 
         self._rect_frac[:] = rect / mult
         self._rect_screen_space[:] = rect
