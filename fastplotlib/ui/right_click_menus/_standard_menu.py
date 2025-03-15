@@ -55,7 +55,7 @@ class StandardRightClickMenu(Popup):
 
             # open popup only if mouse was not moved between mouse_down and mouse_up events
             if self._last_right_click_pos == imgui.get_mouse_pos():
-                if self.get_subplot():
+                if self.get_subplot() is not False:  # must explicitly check for False
                     # open only if right click was inside a subplot
                     imgui.open_popup(f"right-click-menu")
 
@@ -64,7 +64,7 @@ class StandardRightClickMenu(Popup):
             self.cleanup()
 
         if imgui.begin_popup(f"right-click-menu"):
-            if not self.get_subplot():
+            if self.get_subplot() is False:  # must explicitly check for False
                 # for some reason it will still trigger at certain locations
                 # despite open_popup() only being called when an actual
                 # subplot is returned

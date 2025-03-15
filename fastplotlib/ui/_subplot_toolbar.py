@@ -2,6 +2,7 @@ from imgui_bundle import imgui, icons_fontawesome_6 as fa, imgui_ctx
 
 from ..layouts._subplot import Subplot
 from ._base import Window
+from ..layouts._utils import IMGUI_TOOLBAR_HEIGHT
 
 
 class SubplotToolbar(Window):
@@ -16,15 +17,18 @@ class SubplotToolbar(Window):
 
     def update(self):
         # get subplot rect
-        x, y, width, height = self._subplot.viewport.rect
-        y += self._subplot.docks["bottom"].size
+        x, y, width, height = self._subplot.frame.rect
 
         # place the toolbar window below the subplot
-        pos = (x, y + height)
+        pos = (x + 1, y + height - IMGUI_TOOLBAR_HEIGHT)
 
-        imgui.set_next_window_size((width, 0))
+        imgui.set_next_window_size((width - 18, 0))
         imgui.set_next_window_pos(pos)
-        flags = imgui.WindowFlags_.no_collapse | imgui.WindowFlags_.no_title_bar
+        flags = (
+            imgui.WindowFlags_.no_collapse
+            | imgui.WindowFlags_.no_title_bar
+            | imgui.WindowFlags_.no_background
+        )
 
         imgui.begin(f"Toolbar-{hex(id(self._subplot))}", p_open=None, flags=flags)
 

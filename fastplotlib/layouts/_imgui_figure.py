@@ -20,7 +20,9 @@ from ..ui import ColormapPicker
 class ImguiFigure(Figure):
     def __init__(
         self,
-        shape: list[tuple[int, int, int, int]] | tuple[int, int] = (1, 1),
+        shape: tuple[int, int] = (1, 1),
+        rects=None,
+        extents=None,
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
@@ -52,6 +54,8 @@ class ImguiFigure(Figure):
 
         super().__init__(
             shape=shape,
+            rects=rects,
+            extents=extents,
             cameras=cameras,
             controller_types=controller_types,
             controller_ids=controller_ids,
@@ -109,6 +113,8 @@ class ImguiFigure(Figure):
         super()._render(draw)
 
         self.imgui_renderer.render()
+
+        # needs to be here else events don't get processed
         self.canvas.request_draw()
 
     def _draw_imgui(self) -> imgui.ImDrawData:
@@ -164,11 +170,11 @@ class ImguiFigure(Figure):
 
         self.guis[location] = gui
 
-        self._set_viewport_rects()
+        self._fpl_reset_layout()
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
-        Fet rect for the portion of the canvas that the pygfx renderer draws to,
+        Get rect for the portion of the canvas that the pygfx renderer draws to,
         i.e. non-imgui, part of canvas
 
         Returns
