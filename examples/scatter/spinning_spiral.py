@@ -2,7 +2,7 @@
 Spinning spiral scatter
 =======================
 
-Example of a spinning spiral scatter
+Example of a spinning spiral scatter. Runs at 125 fps on an AMD RX 570.
 """
 
 # test_example = false
@@ -12,7 +12,7 @@ import numpy as np
 import fastplotlib as fpl
 
 # number of points
-n = 100_000
+n = 1_000_000
 
 # create data in the shape of a spiral
 phi = np.linspace(0, 30, n)
@@ -23,16 +23,27 @@ zs = phi * np.sin(phi) + np.random.normal(scale=1.5, size=n)
 
 data = np.column_stack([xs, ys, zs])
 
-figure = fpl.Figure(cameras="3d", size=(700, 560))
+figure = fpl.Figure(
+    cameras="3d",
+    size=(700, 560),
+    canvas_kwargs={"max_fps": 500, "vsync": False}
+)
 
 spiral = figure[0, 0].add_scatter(data, cmap="viridis_r", alpha=0.8)
+
+jitter = np.random.normal(scale=0.01, size=n * 3).reshape((n, 3))
 
 
 def update():
     # rotate around y axis
     spiral.rotate(0.005, axis="y")
+
     # add small jitter
-    spiral.data[:] += np.random.normal(scale=0.01, size=n * 3).reshape((n, 3))
+    spiral.data[:] += jitter
+    # shift array to provide a random-sampling effect
+    # without re-running a random generator on each iteration
+    jitter[1000:] = jitter[:-1000]
+    jitter[:1000] = jitter[-1000:]
 
 
 figure.add_animations(update)
@@ -51,8 +62,14 @@ camera_state = {
     'maintain_aspect': True,
     'depth_range': None
 }
+
 figure[0, 0].camera.set_state(camera_state)
 figure[0, 0].axes.visible = False
+
+
+if fpl.IMGUI:
+    # show fps with imgui overlay
+    figure.imgui_show_fps = True
 
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
