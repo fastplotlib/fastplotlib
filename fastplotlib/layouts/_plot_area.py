@@ -87,12 +87,10 @@ class PlotArea(GraphicMethodsMixin):
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
 
-        # list of hex id strings for all graphics managed by this PlotArea
-        # the real Graphic instances are managed by REFERENCES
+        # list of all graphics managed by this PlotArea
         self._graphics: list[Graphic] = list()
 
         # selectors are in their own list so they can be excluded from scene bbox calculations
-        # managed similar to GRAPHICS for garbage collection etc.
         self._selectors: list[BaseSelector] = list()
 
         # legends, managed just like other graphics as explained above
