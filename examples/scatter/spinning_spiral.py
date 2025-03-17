@@ -2,17 +2,19 @@
 Spinning spiral scatter
 =======================
 
-Example of a spinning spiral scatter. Runs at 125 fps on an AMD RX 570.
+Example of a spinning spiral scatter.
+
+This example with 1 million points runs at 125 fps on an AMD RX 570.
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'animate 10s'
+# sphinx_gallery_pygfx_docs = 'animate 15s'
 
 import numpy as np
 import fastplotlib as fpl
 
 # number of points
-n = 1_000_000
+n = 100_000
 
 # create data in the shape of a spiral
 phi = np.linspace(0, 30, n)
@@ -29,18 +31,18 @@ sizes = np.abs(np.random.normal(loc=0, scale=1, size=n))
 figure = fpl.Figure(
     cameras="3d",
     size=(700, 560),
-    canvas_kwargs={"max_fps": 500, "vsync": False}
+    canvas_kwargs={"max_fps": 600, "vsync": False}
 )
 
-spiral = figure[0, 0].add_scatter(data, cmap="viridis_r", alpha=0.1, sizes=sizes)
+spiral = figure[0, 0].add_scatter(data, cmap="viridis_r", alpha=0.5, sizes=sizes)
 
 # pre-generate normally distributed data to jitter the points before each render
-jitter = np.random.normal(scale=0.01, size=n * 3).reshape((n, 3))
+jitter = np.random.normal(scale=0.001, size=n * 3).reshape((n, 3))
 
 
 def update():
     # rotate around y axis
-    spiral.rotate(0.005, axis="y")
+    spiral.rotate(0.0005, axis="y")
 
     # add small jitter
     spiral.data[:] += jitter
