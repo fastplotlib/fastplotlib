@@ -31,7 +31,7 @@ sizes = np.abs(np.random.normal(loc=0, scale=1, size=n))
 figure = fpl.Figure(
     cameras="3d",
     size=(700, 560),
-    canvas_kwargs={"max_fps": 600, "vsync": False}
+    canvas_kwargs={"max_fps": 500, "vsync": False}
 )
 
 spiral = figure[0, 0].add_scatter(data, cmap="viridis_r", alpha=0.5, sizes=sizes)
@@ -42,7 +42,7 @@ jitter = np.random.normal(scale=0.001, size=n * 3).reshape((n, 3))
 
 def update():
     # rotate around y axis
-    spiral.rotate(0.0005, axis="y")
+    spiral.rotate(0.005, axis="y")
 
     # add small jitter
     spiral.data[:] += jitter
