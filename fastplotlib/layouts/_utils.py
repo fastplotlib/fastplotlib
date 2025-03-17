@@ -31,12 +31,12 @@ def make_canvas_and_renderer(
     """
 
     if canvas is None:
-        canvas = RenderCanvas(max_fps=60, **canvas_kwargs)
+        canvas = RenderCanvas(**canvas_kwargs)
     elif isinstance(canvas, str):
         import rendercanvas
 
         m = importlib.import_module("rendercanvas." + canvas)
-        canvas = m.RenderCanvas(max_fps=60, **canvas_kwargs)
+        canvas = m.RenderCanvas(**canvas_kwargs)
     elif not isinstance(canvas, (BaseRenderCanvas, Texture)):
         raise TypeError(
             f"canvas option must either be a valid BaseRenderCanvas implementation, a pygfx Texture"

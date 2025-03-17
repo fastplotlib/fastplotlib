@@ -48,6 +48,7 @@ class Figure:
         controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
         canvas: str | BaseRenderCanvas | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
+        canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
     ):
@@ -111,6 +112,9 @@ class Figure:
         renderer: pygfx.Renderer, optional
             pygfx renderer instance
 
+        canvas_kwargs: dict, optional
+            kwargs to pass to the canvas
+
         size: (int, int), optional
             starting size of canvas in absolute pixels, default (500, 300)
 
@@ -163,8 +167,14 @@ class Figure:
             else:
                 subplot_names = None
 
+        if canvas_kwargs is not None:
+            if size not in canvas_kwargs.keys():
+                canvas_kwargs["size"] = size
+        else:
+            canvas_kwargs = {"size": size, "max_fps": 60.0, "vsync": True}
+
         canvas, renderer = make_canvas_and_renderer(
-            canvas, renderer, canvas_kwargs={"size": size}
+            canvas, renderer, canvas_kwargs=canvas_kwargs
         )
 
         canvas.add_event_handler(self._fpl_reset_layout, "resize")
