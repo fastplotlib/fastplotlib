@@ -6,13 +6,12 @@ import numpy as np
 import imgui_bundle
 from imgui_bundle import imgui, icons_fontawesome_6 as fa
 
-from wgpu.utils.imgui import ImguiRenderer
+from wgpu.utils.imgui import ImguiRenderer, Stats
 from rendercanvas import BaseRenderCanvas
 
 import pygfx
 
 from ._figure import Figure
-from ._utils import make_canvas_and_renderer
 from ..ui import EdgeWindow, SubplotToolbar, StandardRightClickMenu, Popup, GUI_EDGES
 from ..ui import ColormapPicker
 
@@ -21,8 +20,8 @@ class ImguiFigure(Figure):
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),
-        rects=None,
-        extents=None,
+        rects: list[tuple | np.ndarray] = None,
+        extents: list[tuple | np.ndarray] = None,
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
@@ -42,15 +41,11 @@ class ImguiFigure(Figure):
         controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
         canvas: str | BaseRenderCanvas | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
+        canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
     ):
         self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
-
-        canvas, renderer = make_canvas_and_renderer(
-            canvas, renderer, canvas_kwargs={"size": size}
-        )
-        self._imgui_renderer = ImguiRenderer(renderer.device, canvas)
 
         super().__init__(
             shape=shape,
@@ -62,9 +57,12 @@ class ImguiFigure(Figure):
             controllers=controllers,
             canvas=canvas,
             renderer=renderer,
+            canvas_kwargs=canvas_kwargs,
             size=size,
             names=names,
         )
+
+        self._imgui_renderer = ImguiRenderer(self.renderer.device, self.canvas)
 
         fronts_path = str(
             Path(imgui_bundle.__file__).parent.joinpath(
@@ -97,6 +95,9 @@ class ImguiFigure(Figure):
 
         self._popups: dict[str, Popup] = {}
 
+        self.imgui_show_fps = False
+        self._stats = Stats(self.renderer.device, self.canvas)
+
         self.register_popup(ColormapPicker)
 
     @property
@@ -110,7 +111,11 @@ class ImguiFigure(Figure):
         return self._imgui_renderer
 
     def _render(self, draw=False):
-        super()._render(draw)
+        if self.imgui_show_fps:
+            with self._stats:
+                super()._render(draw)
+        else:
+            super()._render(draw)
 
         self.imgui_renderer.render()
 
