@@ -19,7 +19,7 @@ figure = fpl.Figure(
 
 start, stop = 0, 4 * np.pi
 
-# let's define the x, y and z axes for each with direction of wave propogation along the z-axis
+# let's define the x, y and z axes for each with direction of wave propagation along the z-axis
 # electric field in the xz plane travelling along
 zs = np.linspace(start, stop, 200)
 e_ys = np.zeros(200)

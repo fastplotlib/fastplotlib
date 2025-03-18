@@ -59,4 +59,3 @@ Methods
     LineStack.rotate
     LineStack.share_property
     LineStack.unshare_property
-

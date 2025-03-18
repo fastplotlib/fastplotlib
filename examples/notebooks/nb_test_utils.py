@@ -48,12 +48,12 @@ def rgba_to_rgb(img: np.ndarray) -> np.ndarray:
 def image_similarity(src, target, threshold=0.2):
     """Compute normalized RMSE 0..1 and decide if similar based on threshold.
 
-    For every pixel, the euclidian distance between RGB values is computed,
+    For every pixel, the euclidean distance between RGB values is computed,
     and normalized by the maximum possible distance (between black and white).
     The RMSE is then computed from those errors.
 
     The normalized RMSE is used to compute the
-    similarity metric, so larger errors (euclidian distance
+    similarity metric, so larger errors (euclidean distance
     between two RGB colors) will have a disproportionately
     larger effect on the score than smaller errors.
 
