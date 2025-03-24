@@ -278,7 +278,7 @@ There are two ways to add events to a graphic:
 ..
 
 
-The ``event_handler`` is a user-defined function that accepts an event instance as the first and only positional argument.
+The ``event_handler`` is a user-defined callback function that accepts an event instance as the first and only positional argument.
 Information about the structure of event instances are described below. The ``"event_type"``
 is a string that identifies the type of event.
 
