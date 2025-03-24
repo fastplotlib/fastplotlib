@@ -2,7 +2,7 @@ import pygfx
 import numpy as np
 
 from ._base import Graphic
-from ._features import (
+from .features import (
     TextData,
     FontSize,
     TextFaceColor,

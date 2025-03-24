@@ -4,7 +4,7 @@ import numpy as np
 
 import pygfx
 from ._base import Graphic
-from ._features import (
+from .features import (
     VertexPositions,
     VertexColors,
     UniformColor,

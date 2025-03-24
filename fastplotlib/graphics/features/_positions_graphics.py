@@ -19,7 +19,6 @@ from .utils import parse_colors
 class VertexColors(BufferManager):
     """
 
-    **info dict**
     +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
     | dict key   | value type                                                | value description                                                                |
     +============+===========================================================+==================================================================================+
@@ -405,12 +404,12 @@ class VertexCmap(BufferManager):
         if not isinstance(key, slice):
             raise TypeError(
                 "fancy indexing not supported for VertexCmap, only slices "
-                "of a continuous are supported for apply a cmap"
+                "of a continuous range are supported for applying a cmap"
             )
         if key.step is not None:
             raise TypeError(
                 "step sized indexing not currently supported for setting VertexCmap, "
-                "slices must be a continuous region"
+                "slices must be a continuous range"
             )
 
         # parse slice

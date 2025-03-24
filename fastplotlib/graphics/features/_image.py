@@ -15,6 +15,16 @@ from ...utils import (
 
 # manages an array of 8192x8192 Textures representing chunks of an image
 class TextureArray(GraphicFeature):
+    """
+    +----------+--------------------------------------+--------------------------------------------------+
+    | dict key | value type                           | value description                                |
+    +==========+======================================+==================================================+
+    | key      | slice, index, numpy-like fancy index | key at which image data was sliced/fancy indexed |
+    +----------+--------------------------------------+--------------------------------------------------+
+    | value    | np.ndarray | float                   | new data values                                  |
+    +----------+--------------------------------------+--------------------------------------------------+
+
+    """
     def __init__(self, data, isolated_buffer: bool = True):
         super().__init__()
 

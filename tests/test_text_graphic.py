@@ -1,7 +1,7 @@
 from numpy import testing as npt
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import (
+from fastplotlib.graphics.features import (
     FeatureEvent,
     TextData,
     FontSize,

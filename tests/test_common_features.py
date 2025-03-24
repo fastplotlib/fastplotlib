@@ -4,7 +4,7 @@ from numpy import testing as npt
 import pytest
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import FeatureEvent, Name, Offset, Rotation, Visible
+from fastplotlib.graphics.features import FeatureEvent, Name, Offset, Rotation, Visible
 
 
 def make_graphic(kind: str, **kwargs):

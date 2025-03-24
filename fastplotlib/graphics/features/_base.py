@@ -1,5 +1,5 @@
 from warnings import warn
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -57,7 +57,7 @@ class GraphicFeature:
         self._reentrant_block: bool = False
 
     @property
-    def value(self) -> Any:
+    def value(self):
         """Graphic Feature value, must be implemented in subclass"""
         raise NotImplemented
 

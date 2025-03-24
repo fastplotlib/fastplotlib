@@ -7,7 +7,7 @@ import pygfx
 
 from .._base import Graphic
 from .._collection_base import GraphicCollection
-from .._features._selection_features import LinearSelectionFeature
+from ..features._selection_features import LinearSelectionFeature
 from ._base_selector import BaseSelector
 
 

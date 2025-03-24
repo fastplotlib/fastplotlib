@@ -5,7 +5,7 @@ import imageio.v3 as iio
 import pygfx
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import FeatureEvent
+from fastplotlib.graphics.features import FeatureEvent
 from fastplotlib.utils import make_colors
 
 GRAY_IMAGE = iio.imread("imageio:camera.png")

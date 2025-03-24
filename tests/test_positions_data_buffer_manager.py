@@ -3,7 +3,7 @@ from numpy import testing as npt
 import pytest
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import VertexPositions, FeatureEvent
+from fastplotlib.graphics.features import VertexPositions, FeatureEvent
 from .utils import (
     generate_slice_indices,
     generate_positions_spiral_data,

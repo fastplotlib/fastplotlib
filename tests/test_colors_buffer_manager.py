@@ -5,7 +5,7 @@ import pytest
 import pygfx
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import VertexColors, FeatureEvent
+from fastplotlib.graphics.features import VertexColors, FeatureEvent
 from .utils import (
     generate_slice_indices,
     generate_color_inputs,

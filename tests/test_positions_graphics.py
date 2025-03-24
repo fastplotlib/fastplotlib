@@ -5,7 +5,7 @@ import pytest
 import pygfx
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import (
+from fastplotlib.graphics.features import (
     VertexPositions,
     VertexColors,
     VertexCmap,

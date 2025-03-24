@@ -5,7 +5,7 @@ from numpy import testing as npt
 import pygfx
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import FeatureEvent
+from fastplotlib.graphics.features import FeatureEvent
 
 
 def make_positions_data() -> np.ndarray:
