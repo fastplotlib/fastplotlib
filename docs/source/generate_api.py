@@ -258,7 +258,7 @@ def main():
         generate_page(
             page_name=feature_cls.__name__,
             classes=[feature_cls],
-            modules=["fastplotlib.graphics._features"],
+            modules=["fastplotlib.graphics.features"],
             source_path=GRAPHIC_FEATURES_DIR.joinpath(f"{feature_cls.__name__}.rst"),
         )
     ##############################################################################
