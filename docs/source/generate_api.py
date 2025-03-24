@@ -4,9 +4,9 @@ from pathlib import Path
 import os
 
 import fastplotlib
-from fastplotlib.layouts._subplot import Subplot
+from fastplotlib.layouts import Subplot
 from fastplotlib import graphics
-from fastplotlib.graphics import _features, selectors
+from fastplotlib.graphics import features, selectors
 from fastplotlib import widgets
 from fastplotlib import utils
 from fastplotlib import ui
@@ -238,7 +238,7 @@ def main():
         )
     ##############################################################################
 
-    feature_classes = [getattr(_features, f) for f in _features.__all__]
+    feature_classes = [getattr(features, f) for f in features.__all__]
 
     feature_class_names = [f.__name__ for f in feature_classes]
 
@@ -361,6 +361,7 @@ def main():
             "    fastplotlib\n"
             "    utils\n"
         )
+
 
 if __name__ == "__main__":
     main()
