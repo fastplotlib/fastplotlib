@@ -5,7 +5,7 @@ from numpy import testing as npt
 import pygfx
 
 import fastplotlib as fpl
-from fastplotlib.graphics.features import FeatureEvent
+from fastplotlib.graphics.features import PropertyEvent
 
 
 def make_positions_data() -> np.ndarray:
@@ -22,7 +22,7 @@ def make_scatter_graphic() -> fpl.ScatterGraphic:
     return fpl.ScatterGraphic(make_positions_data())
 
 
-event_instance: FeatureEvent = None
+event_instance: PropertyEvent = None
 
 
 def event_handler(event):
@@ -30,7 +30,7 @@ def event_handler(event):
     event_instance = event
 
 
-decorated_event_instance: FeatureEvent = None
+decorated_event_instance: PropertyEvent = None
 
 
 @pytest.mark.parametrize("graphic", [make_line_graphic(), make_scatter_graphic()])
@@ -42,7 +42,7 @@ def test_positions_data_event(graphic: fpl.LineGraphic | fpl.ScatterGraphic):
 
     info = {"key": (slice(3, 8, None), 1), "value": value}
 
-    expected = FeatureEvent(type="data", info=info)
+    expected = PropertyEvent(type="data", info=info)
 
     def validate(graphic, handler, expected_feature_event, event_to_test):
         assert expected_feature_event.type == event_to_test.type

@@ -13,7 +13,7 @@ from fastplotlib.graphics.features import (
     UniformSize,
     PointsSizesFeature,
     Thickness,
-    FeatureEvent,
+    PropertyEvent,
 )
 
 from .utils import (
@@ -58,7 +58,7 @@ TRUTH_CMAPS = {
 }
 
 
-EVENT_RETURN_VALUE: FeatureEvent = None
+EVENT_RETURN_VALUE: PropertyEvent = None
 
 
 def event_handler(ev):

@@ -4,7 +4,7 @@ from numpy import testing as npt
 import pytest
 
 import fastplotlib as fpl
-from fastplotlib.graphics.features import FeatureEvent, Name, Offset, Rotation, Visible
+from fastplotlib.graphics.features import PropertyEvent, Name, Offset, Rotation, Visible
 
 
 def make_graphic(kind: str, **kwargs):
@@ -29,11 +29,11 @@ graphic_kinds = [
 ]
 
 
-RETURN_EVENT_VALUE: FeatureEvent = None
-DECORATED_EVENT_VALUE: FeatureEvent = None
+RETURN_EVENT_VALUE: PropertyEvent = None
+DECORATED_EVENT_VALUE: PropertyEvent = None
 
 
-def return_event(ev: FeatureEvent):
+def return_event(ev: PropertyEvent):
     global RETURN_EVENT_VALUE
     RETURN_EVENT_VALUE = ev
 
