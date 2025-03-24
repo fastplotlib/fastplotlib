@@ -5,8 +5,8 @@ from typing import Iterable
 import numpy as np
 import pygfx
 
-from ..graphics._base import Graphic
-from ..graphics.features import FeatureEvent
+from ..graphics import Graphic
+from ..graphics.features import PropertyEvent
 from ..graphics import LineGraphic, ScatterGraphic, ImageGraphic
 from ..utils import mesh_masks
 
@@ -116,7 +116,7 @@ class LineLegendItem(LegendItem):
         self._parent._check_label_unique(text)
         self._label_world_object.geometry.set_text(text)
 
-    def _update_color(self, ev: FeatureEvent):
+    def _update_color(self, ev: PropertyEvent):
         new_color = ev.info["value"]
         if np.unique(new_color, axis=0).shape[0] > 1:
             raise ValueError(
