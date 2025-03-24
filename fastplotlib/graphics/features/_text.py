@@ -2,7 +2,7 @@ import numpy as np
 
 import pygfx
 
-from ._base import GraphicFeature, FeatureEvent, block_reentrance
+from ._base import GraphicFeature, PropertyEvent, block_reentrance
 
 
 class TextData(GraphicFeature):
@@ -19,7 +19,7 @@ class TextData(GraphicFeature):
         graphic.world_object.set_text(value)
         self._value = value
 
-        event = FeatureEvent(type="text", info={"value": value})
+        event = PropertyEvent(type="text", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -37,7 +37,7 @@ class FontSize(GraphicFeature):
         graphic.world_object.font_size = value
         self._value = graphic.world_object.font_size
 
-        event = FeatureEvent(type="font_size", info={"value": value})
+        event = PropertyEvent(type="font_size", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -56,7 +56,7 @@ class TextFaceColor(GraphicFeature):
         graphic.world_object.material.color = value
         self._value = graphic.world_object.material.color
 
-        event = FeatureEvent(type="face_color", info={"value": value})
+        event = PropertyEvent(type="face_color", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -75,7 +75,7 @@ class TextOutlineColor(GraphicFeature):
         graphic.world_object.material.outline_color = value
         self._value = graphic.world_object.material.outline_color
 
-        event = FeatureEvent(type="outline_color", info={"value": value})
+        event = PropertyEvent(type="outline_color", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -93,5 +93,5 @@ class TextOutlineThickness(GraphicFeature):
         graphic.world_object.material.outline_thickness = value
         self._value = graphic.world_object.material.outline_thickness
 
-        event = FeatureEvent(type="outline_thickness", info={"value": value})
+        event = PropertyEvent(type="outline_thickness", info={"value": value})
         self._call_event_handlers(event)

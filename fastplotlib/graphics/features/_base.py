@@ -23,7 +23,7 @@ def to_gpu_supported_dtype(array):
     return np.asarray(array).astype(np.float32)
 
 
-class FeatureEvent(pygfx.Event):
+class PropertyEvent(pygfx.Event):
     """
     **All event instances have the following attributes**
 
@@ -120,7 +120,7 @@ class GraphicFeature:
         """Clear all event handlers"""
         self._event_handlers.clear()
 
-    def _call_event_handlers(self, event_data: FeatureEvent):
+    def _call_event_handlers(self, event_data: PropertyEvent):
         if self._block_events:
             return
 
@@ -310,7 +310,7 @@ class BufferManager(GraphicFeature):
             "key": key,
             "value": value,
         }
-        event = FeatureEvent(type, info=event_info)
+        event = PropertyEvent(type, info=event_info)
 
         self._call_event_handlers(event)
 

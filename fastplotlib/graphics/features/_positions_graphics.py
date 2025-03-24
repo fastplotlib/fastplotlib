@@ -9,7 +9,7 @@ from ...utils import (
 from ._base import (
     GraphicFeature,
     BufferManager,
-    FeatureEvent,
+    PropertyEvent,
     to_gpu_supported_dtype,
     block_reentrance,
 )
@@ -134,7 +134,7 @@ class VertexColors(BufferManager):
             "user_value": user_value,
         }
 
-        event = FeatureEvent("colors", info=event_info)
+        event = PropertyEvent("colors", info=event_info)
         self._call_event_handlers(event)
 
     def __len__(self):
@@ -160,7 +160,7 @@ class UniformColor(GraphicFeature):
         graphic.world_object.material.color = value
         self._value = value
 
-        event = FeatureEvent(type="colors", info={"value": value})
+        event = PropertyEvent(type="colors", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -179,7 +179,7 @@ class UniformSize(GraphicFeature):
         graphic.world_object.material.size = float(value)
         self._value = value
 
-        event = FeatureEvent(type="sizes", info={"value": value})
+        event = PropertyEvent(type="sizes", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -201,7 +201,7 @@ class SizeSpace(GraphicFeature):
             graphic.world_object.material.size_space = value
         self._value = value
 
-        event = FeatureEvent(type="size_space", info={"value": value})
+        event = PropertyEvent(type="size_space", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -352,7 +352,7 @@ class Thickness(GraphicFeature):
         graphic.world_object.material.thickness = value
         self._value = value
 
-        event = FeatureEvent(type="thickness", info={"value": value})
+        event = PropertyEvent(type="thickness", info={"value": value})
         self._call_event_handlers(event)
 
 
