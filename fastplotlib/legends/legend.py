@@ -6,7 +6,7 @@ import numpy as np
 import pygfx
 
 from ..graphics._base import Graphic
-from ..graphics._features._base import FeatureEvent
+from ..graphics.features import FeatureEvent
 from ..graphics import LineGraphic, ScatterGraphic, ImageGraphic
 from ..utils import mesh_masks
 
