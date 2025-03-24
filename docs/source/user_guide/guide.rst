@@ -74,13 +74,16 @@ Next, let's take a look at the building blocks of ``fastplotlib`` and how they c
 Figure
 ------
 
-The starting point for creating any visualization in ``fastplotlib`` is a ``Figure`` object. This can be a single plot or a grid of subplots.
+The starting point for creating any visualization in ``fastplotlib`` is a ``Figure`` object. This can be a single subplot or many subplots.
 The ``Figure`` object houses and takes care of the underlying rendering components such as the camera, controller, renderer, and canvas.
 Most users won't need to use these directly; however, the ability to directly interact with the rendering engine is still available if
 needed.
 
-By default, if no ``shape`` argument is provided when creating a ``Figure``, there will be a single subplot. All subplots in a ``Figure`` can be accessed using
-indexing (i.e. ``fig_object[i ,j]``).
+By default, if no ``shape`` argument is provided when creating a ``Figure``, there will be a single ``Subplot``.
+
+If a shape argument is provided, all subplots in a ``Figure`` can be accessed by indexing (i.e. ``fig_object[i ,j]``). A "window layout"
+with customizable subplot positions and sizes can also be set by providing a ``rects`` or ``extents`` argument. The Examples Gallery
+has a few examples that show how to create a "Window Layout".
 
 After defining a ``Figure``, we can begin to add ``Graphic`` objects.
 
@@ -99,18 +102,22 @@ to be easily accessed from figures::
     add image graphic
     image_graphic = fig[0, 0].add_image(data=data, name="astronaut")
 
-    # show plot
+    # show figure
     fig.show()
 
-    # index plot to get graphic
+    # index subplot to get graphic
     fig[0, 0]["astronaut"]
+
+    # another way to index graphics in a subplot
+    fig[0, 0].graphics[0] is fig[0, 0]["astronaut"]  # will return `True`
 
 ..
 
 See the examples gallery for examples on how to create and interactive with all the various types of graphics.
 
-Graphics also have mutable properties that can be linked to events. Some of these properties, such as the ``data`` or ``colors`` of a line can even be indexed,
-allowing for the creation of very powerful visualizations.
+Graphics also have mutable properties. Some of these properties, such as the ``data`` or ``colors`` of a line can even be sliced,
+allowing for the creation of very powerful visualizations. Event handlers can be added to a graphic to capture changes to
+any of these properties.
 
 (1) Common properties that all graphics have
 
@@ -132,17 +139,17 @@ allowing for the creation of very powerful visualizations.
 
     (a) ``ImageGraphic``
 
-    +------------------------+------------------------------------+
-    | Feature Name           | Description                        |
-    +========================+====================================+
-    | data                   | Underlying image data              |
-    +------------------------+------------------------------------+
-    | vmin                   | Lower contrast limit of an image   |
-    +------------------------+------------------------------------+
-    | vmax                   | Upper contrast limit of an image   |
-    +------------------------+------------------------------------+
-    | cmap                   | Colormap of an image               |
-    +------------------------+------------------------------------+
+    +------------------------+---------------------------------------------------+
+    | Feature Name           | Description                                       |
+    +========================+===================================================+
+    | data                   | Underlying image data                             |
+    +------------------------+---------------------------------------------------+
+    | vmin                   | Lower contrast limit of an image                  |
+    +------------------------+---------------------------------------------------+
+    | vmax                   | Upper contrast limit of an image                  |
+    +------------------------+---------------------------------------------------+
+    | cmap                   | Colormap for a grayscale image, ignored if RGB(A) |
+    +------------------------+---------------------------------------------------+
 
     (b) ``LineGraphic``, ``LineCollection``, ``LineStack``
 
@@ -244,14 +251,13 @@ your data, you are able to select an entire region.
 See the examples gallery for more in-depth examples with selector tools.
 
 Now we have the basics of creating a ``Figure``, adding ``Graphics`` to a ``Figure``, and working with ``Graphic`` properties to dynamically change or alter them.
-Let's take a look at how we can define events to link ``Graphics`` and their properties together.
 
 Events
 ------
 
-Events can be a multitude of things: traditional events such as mouse or keyboard events, or events related to ``Graphic`` properties.
+Events can be a multitude of things: canvas events such as mouse or keyboard events, or events related to ``Graphic`` properties.
 
-There are two ways to add events in ``fastplotlib``.
+There are two ways to add events to a graphic:
 
 1) Use the method `add_event_handler()` ::
 
@@ -274,22 +280,22 @@ There are two ways to add events in ``fastplotlib``.
 
 The ``event_handler`` is a user-defined function that accepts an event instance as the first and only positional argument.
 Information about the structure of event instances are described below. The ``"event_type"``
-is a string that identifies the type of event; this can be either a ``pygfx.Event`` or a ``Graphic`` property event.
+is a string that identifies the type of event.
 
 ``graphic.supported_events`` will return a tuple of all ``event_type`` strings that this graphic supports.
 
 When an event occurs, the user-defined event handler will receive an event object. Depending on the type of event, the
-event object will have relevant information that can be used in the callback. See below for event tables.
+event object will have relevant information that can be used in the callback. See the next section for details.
 
 Graphic property events
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-All ``Graphic`` events have the following attributes:
+All ``Graphic`` events are instances of ``fastplotlib.graphics.features.PropertyEvent`` and have the following attributes:
 
     +------------+-------------+-----------------------------------------------+
     | attribute  | type        | description                                   |
     +============+=============+===============================================+
-    | type       | str         | "colors" - name of the event                  |
+    | type       | str         | name of the event type                        |
     +------------+-------------+-----------------------------------------------+
     | graphic    | Graphic     | graphic instance that the event is from       |
     +------------+-------------+-----------------------------------------------+
@@ -300,143 +306,130 @@ All ``Graphic`` events have the following attributes:
     | time_stamp | float       | time when the event occurred, in ms           |
     +------------+-------------+-----------------------------------------------+
 
-The ``info`` attribute will house additional information for different ``Graphic`` property events:
+Selectors have one event called ``selection`` which has extra attributes in addition to those listed in the table above.
+The selection event section covers these.
 
-event_type: "colors"
+The ``info`` attribute for most graphic property events will have one key, ``"value"``, which is the new value
+of the graphic property. Events for graphic properties that represent arrays, such the ``data`` properties for
+images, lines, and scatters will contain more entries. Here are a list of all graphic properties that have such
+additional entries:
 
-    Vertex Colors
+* ``ImageGraphic``
+    * data
 
-    **info dict**
+* ``LineGraphic``
+    * data, colors, cmap
 
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | dict key   | value type                                                | value description                                                                |
-    +============+===========================================================+==================================================================================+
-    | key        | int | slice | np.ndarray[int | bool] | tuple[slice, ...]  | key at which colors were indexed/sliced                                          |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | value      | np.ndarray                                                | new color values for points that were changed, shape is [n_points_changed, RGBA] |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | user_value | str | np.ndarray | tuple[float] | list[float] | list[str] | user input value that was parsed into the RGBA array                             |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+* ``ScatterGraphic``
+    * data, colors, cmap, sizes
 
-    Uniform Colors
+You can understand an event's attributes by adding a simple event handler::
 
-    **info dict**
+    @graphic.add_event_handler("event_type")
+    def handler(ev):
+        print(ev.type)
+        print(ev.graphic)
+        print(ev.info)
 
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | dict key   | value type                                                | value description                                                                |
-    +============+===========================================================+==================================================================================+
-    | value      | np.ndarray                                                | new color values for points that were changed, shape is [n_points_changed, RGBA] |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+    # trigger the event
+    graphic.event_type = <new data>
 
-event_type: "sizes"
+    # direct example
+    @image_graphic.add_event_handler("cmap")
+    def cmap_changed(ev):
+        print(ev.type)
+        print(ev.info)
 
-    **info dict**
+    image_graphic.cmap = "viridis"
+    # this will trigger the cmap event and print the following:
+    # 'cmap'
+    # {"value": "viridis"}
 
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
-    | dict key | value type                                               | value description                                                                        |
-    +==========+==========================================================+==========================================================================================+
-    | key      | int | slice | np.ndarray[int | bool] | tuple[slice, ...] | key at which vertex positions data were indexed/sliced                                   |
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
-    | value    | np.ndarray | float | list[float]                         | new data values for points that were changed, shape depends on the indices that were set |
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+..
 
-event_type: "data"
+info dicts for array-like properties
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    **info dict**
+**ImageGraphic**
 
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
-    | dict key | value type                                               | value description                                                                        |
-    +==========+==========================================================+==========================================================================================+
-    | key      | int | slice | np.ndarray[int | bool] | tuple[slice, ...] | key at which vertex positions data were indexed/sliced                                   |
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
-    | value    | np.ndarray | float | list[float]                         | new data values for points that were changed, shape depends on the indices that were set |
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
+**data**
 
-event_type: "thickness"
+.. autoclass:: fastplotlib.graphics.features.TextureArray
+   :noindex:
+   :members:
 
-    **info dict**
+**LineGraphic and ScatterGraphic**
 
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | dict key   | value type                                                | value description                                                                |
-    +============+===========================================================+==================================================================================+
-    | value      | float                                                     | new thickness value                                                              |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+**data**
 
-event_type: "cmap"
+.. autoclass:: fastplotlib.graphics.features.VertexPositions
+   :noindex:
+   :members:
 
-    **info dict**
+**colors**
 
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | dict key   | value type                                                | value description                                                                |
-    +============+===========================================================+==================================================================================+
-    | value      | string                                                    | new colormap value                                                               |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
+.. note:: only if ``uniform_color`` is ``False``
 
-event_type: "selection"
+.. autoclass:: fastplotlib.graphics.features.VertexColors
+   :noindex:
+   :members:
 
-    ``LinearSelector``
+**cmap**
 
-    **additional event attributes:**
+Same as colors above.
 
-    +--------------------+----------+------------------------------------+
-    | attribute          | type     | description                        |
-    +====================+==========+====================================+
-    | get_selected_index | callable | returns indices under the selector |
-    +--------------------+----------+------------------------------------+
+**sizes**
 
-    **info dict:**
+Only for ``ScatterGraphic``
 
-    +----------+------------+-------------------------------+
-    | dict key | value type | value description             |
-    +==========+============+===============================+
-    | value    | np.ndarray | new x or y value of selection |
-    +----------+------------+-------------------------------+
+.. autoclass:: fastplotlib.graphics.features.PointsSizesFeature
+   :noindex:
+   :members:
 
-    ``LinearRegionSelector``
+Selection event
+~~~~~~~~~~~~~~~
 
-    **additional event attributes:**
+The ``selection`` event for selectors has additional attributes, mostly ``callable`` methods, that aid in using the
+selector tool, such as getting the indices or data under the selection. The ``info`` dict will contain one entry ``value``
+which is the new selection value.
 
-    +----------------------+----------+------------------------------------+
-    | attribute            | type     | description                        |
-    +======================+==========+====================================+
-    | get_selected_indices | callable | returns indices under the selector |
-    +----------------------+----------+------------------------------------+
-    | get_selected_data    | callable | returns data under the selector    |
-    +----------------------+----------+------------------------------------+
+**LinearSelector**
 
-    **info dict:**
+.. autoclass:: fastplotlib.graphics.features.LinearSelectionFeature
+   :noindex:
+   :members:
 
-    +----------+------------+-----------------------------+
-    | dict key | value type | value description           |
-    +==========+============+=============================+
-    | value    | np.ndarray | new [min, max] of selection |
-    +----------+------------+-----------------------------+
+**LiearRegionSelector**
 
-Rendering engine events from a Graphic
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: fastplotlib.graphics.features.LinearRegionSelectionFeature
+   :noindex:
+   :members:
 
-Rendering engine event handlers can be added to a graphic or to a Figure (see next section).
-Here is a description of all rendering engine events and their attributes.
+**RectangleSelector**
+
+.. autoclass:: fastplotlib.graphics.features.RectangleSelectionFeature
+   :noindex:
+   :members:
+
+Canvas Events
+^^^^^^^^^^^^^
+
+Canvas events can be added to a graphic or to a Figure (see next section).
+Here is a description of all canvas events and their attributes.
+
+Pointer events
+~~~~~~~~~~~~~~
+
+**List of pointer events:**
 
 * **pointer_down**: emitted when the user interacts with mouse,
-  touch or other pointer devices, by pressing it down.
-
-    * *x*: horizontal position of the pointer within the widget.
-    * *y*: vertical position of the pointer within the widget.
-    * *button*: the button to which this event applies. See "Mouse buttons" section below for details.
-    * *buttons*: a tuple of buttons being pressed down.
-    * *modifiers*: a tuple of modifier keys being pressed down. See section below for details.
-    * *ntouches*: the number of simultaneous pointers being down.
-    * *touches*: a dict with int keys (pointer id's), and values that are dicts
-      that contain "x", "y", and "pressure".
-    * *time_stamp*: a timestamp in seconds.
 
 * **pointer_up**: emitted when the user releases a pointer.
-  This event has the same keys as the pointer down event.
 
 * **pointer_move**: emitted when the user moves a pointer.
-  This event has the same keys as the pointer down event.
   This event is throttled.
+
+* **click**: emmitted when a mouse button is clicked.
 
 * **double_click**: emitted on a double-click.
   This event looks like a pointer event, but without the touches.
@@ -465,25 +458,19 @@ Here is a description of all rendering engine events and their attributes.
     * *modifiers*: a tuple of modifier keys being pressed down.
     * *time_stamp*: a timestamp in seconds.
 
-* **key_down**: emitted when a key is pressed down.
+All pointer events have the following attributes:
 
-    * *key*: the key being pressed as a string. See section below for details.
-    * *modifiers*: a tuple of modifier keys being pressed down.
-    * *time_stamp*: a timestamp in seconds.
+* *x*: horizontal position of the pointer within the widget.
+* *y*: vertical position of the pointer within the widget.
+* *button*: the button to which this event applies. See "Mouse buttons" section below for details.
+* *buttons*: a tuple of buttons being pressed down (see below)
+* *modifiers*: a tuple of modifier keys being pressed down. See section below for details.
+* *ntouches*: the number of simultaneous pointers being down.
+* *touches*: a dict with int keys (pointer id's), and values that are dicts
+  that contain "x", "y", and "pressure".
+* *time_stamp*: a timestamp in seconds.
 
-* **key_up**: emitted when a key is released.
-  This event has the same keys as the key down event.
-
-
-Time stamps
-~~~~~~~~~~~
-
-Since the time origin of ``time_stamp`` values is undefined,
-time stamp values only make sense in relation to other time stamps.
-
-
-Mouse buttons
-~~~~~~~~~~~~~
+**Mouse buttons:**
 
 * 0: No button.
 * 1: Left button.
@@ -491,9 +478,20 @@ Mouse buttons
 * 3: Middle button
 * 4-9: etc.
 
+Key events
+~~~~~~~~~~
 
-Keys
-~~~~
+**List of key (keyboard keys) events:**
+
+* **key_down**: emitted when a key is pressed down.
+
+* **key_up**: emitted when a key is released.
+
+Key events have the following attributes:
+
+* *key*: the key being pressed as a string. See section below for details.
+* *modifiers*: a tuple of modifier keys being pressed down.
+* *time_stamp*: a timestamp in seconds.
 
 The key names follow the `browser spec <https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent>`_.
 
@@ -504,13 +502,18 @@ The key names follow the `browser spec <https://developer.mozilla.org/en-US/docs
 * Some example keys that do not represent a character:
   "ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "F1", "Backspace", etc.
 
+Time stamps
+~~~~~~~~~~~
 
-Add renderer event handlers to a Figure
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Since the time origin of ``time_stamp`` values is undefined,
+time stamp values only make sense in relation to other time stamps.
+
+Add canvas event handlers to a Figure
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can add event handlers to a ``Figure`` object's renderer. For example, this is useful for defining click events
 where you want to map click positions to the nearest graphic object. See the previous section for a description
-of all the renderer events.
+of all the canvas events.
 
 Renderer event handlers can be added using a method or a decorator.
 
@@ -558,6 +561,70 @@ For example: ::
 
 .. image:: ../_static/guide_click_event.webp
 
+Integrating with UI libraries
+-----------------------------
+
+After you are comfortable with creating graphics, changing their properties, and creating events, you can easily integrate
+``fastplotlib`` with common UI libraries such as ``ipywidgets``, ``Qt``, and ``imgui``. ``wx`` should also work but this
+is not thoroughly tested.
+
+ipywidgets
+^^^^^^^^^^
+
+The `ipywidgets <https://ipywidgets.readthedocs.io/en/stable/>`_ library is great for rapidly building UIs for prototyping
+in jupyter. It is particularly useful for scientific and engineering applications since we can rapidly create a UI to
+interact with our ``fastplotlib`` visualization. The main downside is that it only works in jupyter.
+
+
+Examples
+~~~~~~~~
+
+Play with a sine wave
+
+change data (amplitude, freq)
+change line thickness
+change alpha
+
+Change image cmap, vmin, vmax
+
+Set a gaussian cloud of scatter data
+change n_datapoints, loc (mean), sigma
+change sizes
+change alpha
+change cmap
+
+Qt
+^^
+
+Qt is a very popular UI library written in C++, ``PyQt6`` and ``PySide6`` provide python bindings. There are countless
+tutorials on how to build a UI using Qt which you can easily find if you google ``PyQt``. You can embed a ``Figure`` as
+a Qt widget within a Qt application.
+
+For examples please see the examples gallery.
+
+imgui
+^^^^^
+
+`Imgui <https://github.com/pthom/imgui_bundle>`_ is also a very popular library used for building UIs. The difference
+between imgui and ipywidgets, Qt, and wx is the imgui UI can be rendered directly on the same canvas as a fastplotlib
+``Figure``. This is hugely advantageous, it means that you can write an imgui UI and it will run on any GUI backend,
+i.e. it will work in jupyter, Qt, glfw and wx windows! The programming model is different from Qt and ipywidgets, there
+are no callbacks, but it is easy to learn if you see a few examples.
+
+We specifically use `imgui-bundle <https://github.com/pthom/imgui_bundle>`_ for the python bindings in fastplotlib.
+There is large community and many resources out there on building UIs using imgui.
+
+For examples on integrating imgui with a fastplotlib Figure please see the examples gallery.
+
+The ``imgui-bundle`` docs as of March 2025 don't have a nice API list (as far as I know), here is how we go about developing UIs with imgui:
+
+1. Use the ``pyimgui`` API docs to locate the type of UI element we want, for example if we want a ``slider_int``: https://pyimgui.readthedocs.io/en/latest/reference/imgui.core.html#imgui.core.slider_int
+
+2. Look at the function signature in the ``imgui-bundle`` sources. You can usually access this easily with your IDE: https://github.com/pthom/imgui_bundle/blob/a5e7d46555832c40e9be277d4747eac5a303dbfc/bindings/imgui_bundle/imgui/__init__.pyi#L1693-L1696
+
+3. ``pyimgui`` and ``imgui-bundle`` sometimes don't have the same function signature, so we use a combination of the pyimgui docs and
+imgui-bundle function signature to understand and implement the UI element.
+
 ImageWidget
 -----------
 
@@ -576,8 +643,8 @@ Let's look at an example: ::
     gray_movie = np.dot(movie[..., :3], [0.299, 0.587, 0.114])
 
     iw_movie = ImageWidget(
-    data=gray_movie,
-    cmap="gray"
+        data=gray_movie,
+        cmap="gray"
     )
 
     iw_movie.show()
