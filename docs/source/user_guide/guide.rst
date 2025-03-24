@@ -41,8 +41,8 @@ The fundamental goal of ``fastplotlib`` is to provide a high-level, expressive A
 make it easy and intuitive to produce interactive visualizations that are as performant and vibrant as a modern video game 😄
 
 
-How to use ``fastplotlib``
---------------------------
+``fastplotlib`` basics
+----------------------
 
 Before giving a detailed overview of the library, here is a minimal example::
 
@@ -70,6 +70,9 @@ Before giving a detailed overview of the library, here is a minimal example::
 This is just a simple example of how the ``fastplotlib`` API works to create a plot, add some image data to the plot, and then visualize it.
 However, we are just scratching the surface of what is possible with ``fastplotlib``.
 Next, let's take a look at the building blocks of ``fastplotlib`` and how they can be used to create more complex visualizations.
+
+Aside from this user guide, the Examples Gallery is the best place to learn specific things in fastplotlib.
+If you still need help don't hesitate to post an issue or discussion post!
 
 Figure
 ------
