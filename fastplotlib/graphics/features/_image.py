@@ -25,6 +25,7 @@ class TextureArray(GraphicFeature):
     +----------+--------------------------------------+--------------------------------------------------+
 
     """
+
     def __init__(self, data, isolated_buffer: bool = True):
         super().__init__()
 
