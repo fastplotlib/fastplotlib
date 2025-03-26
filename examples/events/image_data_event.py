@@ -9,6 +9,7 @@ Example showing how to add an event handler to an ImageGraphic to capture when t
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
+from fastplotlib.graphics.features import PropertyEvent
 import imageio.v3 as iio
 from scipy.ndimage import gaussian_filter
 
@@ -35,9 +36,9 @@ figure.show()
 
 # add event handler
 @image_raw.add_event_handler("data")
-def data_changed(event_data):
+def data_changed(ev: PropertyEvent):
     # get the new image data
-    new_img = event_data.info["value"]
+    new_img = ev.info["value"]
 
     # set the filtered image graphic
     image_filt.data = gaussian_filter(new_img, sigma=5)

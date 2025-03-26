@@ -34,7 +34,7 @@ class PropertyEvent(pygfx.Event):
     +------------+-------------+-----------------------------------------------+
     | graphic    | Graphic     | graphic instance that the event is from       |
     +------------+-------------+-----------------------------------------------+
-    | info       | dict        | event info dictionary (see below)             |
+    | info       | dict        | event info dictionary                         |
     +------------+-------------+-----------------------------------------------+
     | target     | WorldObject | pygfx rendering engine object for the graphic |
     +------------+-------------+-----------------------------------------------+

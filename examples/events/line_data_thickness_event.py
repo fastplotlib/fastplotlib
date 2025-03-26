@@ -9,6 +9,7 @@ Simple example of adding event handlers for line data and thickness.
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
+from fastplotlib.graphics.features import PropertyEvent
 import numpy as np
 
 figure = fpl.Figure(size=(700, 560))
@@ -30,7 +31,7 @@ cosine_graphic = figure[0, 0].add_line(data=cosine, offset=(0, 4, 0))
 lines = [sine_graphic, cosine_graphic]
 
 
-def change_thickness(ev):
+def change_thickness(ev: PropertyEvent):
     # sets thickness of all the lines
     new_value = ev.info["value"]
 
@@ -38,7 +39,7 @@ def change_thickness(ev):
         g.thickness = new_value
 
 
-def change_data(ev):
+def change_data(ev: PropertyEvent):
     # sets data of all the lines using the given event and value from the event
 
     # the user's slice/index

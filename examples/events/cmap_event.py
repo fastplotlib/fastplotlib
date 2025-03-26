@@ -13,6 +13,7 @@ This also shows how bidirectional events are supported.
 
 import numpy as np
 import fastplotlib as fpl
+from fastplotlib.graphics.features import PropertyEvent
 import imageio.v3 as iio
 
 # load images
@@ -51,9 +52,9 @@ figure.show()
 
 
 # event handler to change the cmap of all graphics when the cmap of any one graphic changes
-def cmap_changed(event_data):
+def cmap_changed(ev: PropertyEvent):
     # get the new cmap
-    new_cmap = event_data.info["value"]
+    new_cmap = ev.info["value"]
 
     # set cmap of the graphics in the other subplots
     for subplot in figure:

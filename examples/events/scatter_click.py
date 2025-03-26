@@ -11,6 +11,7 @@ Fly around the 3D scatter using WASD keys and click on points to highlight them
 
 import numpy as np
 import fastplotlib as fpl
+import pygfx
 
 # make a gaussian cloud
 data = np.random.normal(loc=0, scale=3, size=1500).reshape(500, 3)
@@ -30,7 +31,7 @@ old_props = {"index": None, "size": None, "color": None}
 
 
 @scatter.add_event_handler("click")
-def highlight_point(ev):
+def highlight_point(ev: pygfx.PointerEvent):
     global old_props
 
     # the index of the point that was just clicked

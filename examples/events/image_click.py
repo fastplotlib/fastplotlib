@@ -9,6 +9,7 @@ Example showing how to use a click event on an image.
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
+import pygfx
 import imageio.v3 as iio
 
 data = iio.imread("imageio:camera.png")
@@ -25,9 +26,9 @@ figure.show()
 
 # adding a click event, we can also use decorators to add event handlers
 @image_graphic.add_event_handler("click")
-def click_event(event_data):
+def click_event(ev: pygfx.PointerEvent):
     # get the click location in screen coordinates
-    xy = (event_data.x, event_data.y)
+    xy = (ev.x, ev.y)
 
     # map the screen coordinates to world coordinates
     xy = figure[0, 0].map_screen_to_world(xy)[:-1]

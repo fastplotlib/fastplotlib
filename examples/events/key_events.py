@@ -23,6 +23,7 @@ We use the ImageWidget here because the histogram LUT tool makes it easy to see 
 
 import numpy as np
 import fastplotlib as fpl
+import pygfx
 import imageio.v3 as iio
 
 data = iio.imread("imageio:camera.png")
@@ -33,7 +34,7 @@ image = iw.managed_graphics[0]
 
 
 @iw.figure.renderer.add_event_handler("key_down")
-def handle_event(ev):
+def handle_event(ev: pygfx.KeyboardEvent):
     match ev.key:
         # change the cmap
         case "v":
@@ -69,7 +70,11 @@ def handle_event(ev):
         case "ArrowRight":
             image.offset = image.offset + [10, 0, 0]
 
+
 iw.show()
+
+
+figure = iw.figure  # ignore, this is just so the docs gallery scraper picks up the figure
 
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
