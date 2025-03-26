@@ -39,7 +39,7 @@ class HistogramLUTTool(Graphic):
         ----------
         data
         image_graphic
-        nbins: int, defaut 100.
+        nbins: int, default 100.
             Total number of bins used in the histogram
         flank_divisor: float, default 5.0.
             Fraction of empty histogram bins on the tails of the distribution set `np.inf` for no flanks

@@ -661,7 +661,7 @@ For more information on the various spaces used by rendering engines please see 
 Imgui
 -----
 
-Fastplotlib uses `imgui_bundle <https://github.com/pthom/imgui_bundle>`_ to provide within-canvas UI elemenents if you
+Fastplotlib uses `imgui_bundle <https://github.com/pthom/imgui_bundle>`_ to provide within-canvas UI elements if you
 installed ``fastplotlib`` using the ``imgui`` toggle, i.e. ``fastplotlib[imgui]``, or installed ``imgui_bundle`` afterwards.
 
 Fastplotlib comes built-in with imgui UIs for subplot toolbars and a standard right-click menu with a number of options.
