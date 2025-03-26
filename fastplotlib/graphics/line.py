@@ -295,9 +295,9 @@ class LineGraphic(PositionsGraphic):
         limits = axis_vals[0], axis_vals[-1]
 
         # width or height of selector
-        size = int(np.ptp(magn_vals) * 1.5 + padding)
+        size = np.ptp(magn_vals) * 1.5 + padding
 
         # center of selector along the other axis
-        center = np.nanmean(magn_vals)
+        center = np.ptp(magn_vals) / 2#np.nanmean(magn_vals)
 
         return bounds_init, limits, size, center
