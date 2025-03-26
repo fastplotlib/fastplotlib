@@ -6,7 +6,7 @@ Add an event handler to click on scatter points and highlight them, i.e. change 
 Fly around the 3D scatter using WASD keys and click on points to highlight them
 """
 
-# test_example = true
+# test_example = false
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np
@@ -15,9 +15,9 @@ import fastplotlib as fpl
 # make a gaussian cloud
 data = np.random.normal(loc=0, scale=3, size=1500).reshape(500, 3)
 
-fig = fpl.Figure(cameras="3d", size=(700, 560))
+figure = fpl.Figure(cameras="3d", size=(700, 560))
 
-scatter = fig[0, 0].add_scatter(
+scatter = figure[0, 0].add_scatter(
     data,  # the gaussian cloud
     sizes=10,  # some big points that are easy to click
     cmap="viridis",
@@ -55,7 +55,12 @@ def highlight_point(ev):
     scatter.sizes[new_index] = 20
 
 
-fig.show()
+figure.show()
 
 
-fpl.loop.run()
+# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# please see our docs for using fastplotlib interactively in ipython and jupyter
+if __name__ == "__main__":
+    print(__doc__)
+    fpl.loop.run()
+

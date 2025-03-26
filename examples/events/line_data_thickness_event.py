@@ -5,7 +5,7 @@ Events line data thickness
 Simple example of adding event handlers for line data and thickness.
 """
 
-# test_example = true
+# test_example = false
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
