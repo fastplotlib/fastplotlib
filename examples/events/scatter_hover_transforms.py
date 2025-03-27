@@ -8,6 +8,8 @@ transformed by the various scalers.
 This is another example that uses bi-directional events.
 """
 
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 from sklearn.datasets import fetch_california_housing
 from sklearn.preprocessing import (

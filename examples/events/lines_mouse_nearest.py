@@ -6,6 +6,9 @@ Shows how to use the "pointer_move" event to get the nearest circle and highligh
 
 """
 
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'screenshot'
+
 from itertools import product
 import numpy as np
 import fastplotlib as fpl
