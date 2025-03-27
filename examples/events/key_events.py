@@ -4,16 +4,16 @@ Key Events
 
 Move an image around using and change some of its properties using keyboard events.
 
-Use the arrows keys to move the image by changing its offset
+- Use the arrows keys to move the image by changing its offset
 
-Press "v", "g", "p" to change the colormaps (viridis, grey, plasma).
+- Press "v", "g", "p" to change the colormaps (viridis, grey, plasma).
 
-Press "r" to rotate the image +18 degrees (pi / 10 radians)
-Press "Shift + R" to rotate the image -18 degrees
-Axis of rotation is the origin
+- Press "r" to rotate the image +18 degrees (pi / 10 radians)
+- Press "Shift + R" to rotate the image -18 degrees
+- Axis of rotation is the origin
 
-Press "-", "=" to decrease/increase the vmin
-Press "_", "+" to decrease/increase the vmax
+- Press "-", "=" to decrease/increase the vmin
+- Press "_", "+" to decrease/increase the vmax
 
 We use the ImageWidget here because the histogram LUT tool makes it easy to see the changes in vmin and vmax.
 """
@@ -28,7 +28,7 @@ import imageio.v3 as iio
 
 data = iio.imread("imageio:camera.png")
 
-iw = fpl.ImageWidget(data)
+iw = fpl.ImageWidget(data, figure_kwargs={"size": (700, 560)})
 
 image = iw.managed_graphics[0]
 

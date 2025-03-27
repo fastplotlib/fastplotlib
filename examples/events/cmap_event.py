@@ -2,8 +2,8 @@
 cmap event
 ==========
 
-Example showing how to add an event handler to a Graphic to capture when the cmap changes and then
-change the cmap of other graphics.
+Add a cmap event handler to multiple graphics. When any one graphic changes the cmap, the cmap of all other graphics
+is also changed.
 
 This also shows how bidirectional events are supported.
 """
