@@ -52,7 +52,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools
         # remove pygfx from install_requires, we install using pygfx@main
-        sed -i "/pygfx/d" ./setup.py
+        sed -i "/pygfx/d" ./pyproject.toml
         pip install git+https://github.com/pygfx/pygfx.git@main
     - name: Install fastplotlib
       run: |
