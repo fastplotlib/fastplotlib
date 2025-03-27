@@ -5,7 +5,7 @@ Scatter hover
 Add an event handler to hover on scatter points and highlight them, i.e. change the color and size of the clicked point.
 Fly around the 3D scatter using WASD keys and click on points to highlight them.
 
-There is no "hover" event, you can create a hover effect by combining "pointer_enter" and "pointer_leave" events.
+There is no "hover" event, you can create a hover effect by using "pointer_move" events.
 """
 
 # test_example = false
@@ -32,7 +32,7 @@ scatter = figure[0, 0].add_scatter(
 old_props = {"index": None, "size": None, "color": None}
 
 
-@scatter.add_event_handler("pointer_enter")
+@scatter.add_event_handler("pointer_move")
 def highlight_point(ev: pygfx.PointerEvent):
     global old_props
 
@@ -57,19 +57,6 @@ def highlight_point(ev: pygfx.PointerEvent):
     # highlight this new point
     scatter.colors[new_index] = "magenta"
     scatter.sizes[new_index] = 20
-
-
-@scatter.add_event_handler("pointer_leave")
-def unhighlight_point(ev: pygfx.PointerEvent):
-    global old_props
-
-    # restore point's properties
-    if old_props["index"] is not None:
-        old_index = old_props["index"]
-        scatter.colors[old_index] = old_props["color"]
-        scatter.sizes[old_index] = old_props["size"]
-
-    old_props = {"index": None, "size": None, "color": None}
 
 
 figure.show()
