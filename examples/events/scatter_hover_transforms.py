@@ -51,7 +51,7 @@ scalers = [PowerTransformer, QuantileTransformer, Normalizer]
 names = ["Original Data", *[s.__name__ for s in scalers]]
 
 # fastplotlib code starts here, make a figure
-fig = fpl.Figure(
+figure = fpl.Figure(
     shape=(2, 2),
     names=names,
     size=(700, 780),
@@ -60,7 +60,7 @@ fig = fpl.Figure(
 scatters = list()  # list to store our 4 scatter graphics for convenience
 
 # add a scatter of the original data
-s = fig["Original Data"].add_scatter(
+s = figure["Original Data"].add_scatter(
     data=X,
     cmap="viridis",
     cmap_transform=y,
@@ -73,7 +73,7 @@ scatters.append(s)
 # add the scaled data as scatter graphics
 for scaler in scalers:
     name = scaler.__name__
-    s = fig[name].add_scatter(scaler().fit_transform(X), cmap="viridis", cmap_transform=y, sizes=3)
+    s = figure[name].add_scatter(scaler().fit_transform(X), cmap="viridis", cmap_transform=y, sizes=3)
     scatters.append(s)
 
 
@@ -117,7 +117,7 @@ for s in scatters:
     s.add_event_handler(highlight_point, "pointer_move")
 
 
-fig.show(maintain_aspect=False)
+figure.show(maintain_aspect=False)
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # please see our docs for using fastplotlib interactively in ipython and jupyter
