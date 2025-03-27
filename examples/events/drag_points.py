@@ -9,7 +9,7 @@ data of the other graphic is also changed simultaneously since they use the same
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'screenshot'.
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np
 import fastplotlib as fpl
