@@ -6,7 +6,7 @@ ImageVmax
 =========
 ImageVmax
 =========
-.. currentmodule:: fastplotlib.graphics._features
+.. currentmodule:: fastplotlib.graphics.features
 
 Constructor
 ~~~~~~~~~~~

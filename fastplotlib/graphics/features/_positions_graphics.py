@@ -9,7 +9,7 @@ from ...utils import (
 from ._base import (
     GraphicFeature,
     BufferManager,
-    FeatureEvent,
+    PropertyEvent,
     to_gpu_supported_dtype,
     block_reentrance,
 )
@@ -18,18 +18,15 @@ from .utils import parse_colors
 
 class VertexColors(BufferManager):
     """
-
-    **info dict**
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | dict key   | value type                                                | value description                                                                |
-    +============+===========================================================+==================================================================================+
-    | key        | int | slice | np.ndarray[int | bool] | tuple[slice, ...]  | key at which colors were indexed/sliced                                          |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | value      | np.ndarray                                                | new color values for points that were changed, shape is [n_points_changed, RGBA] |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | user_value | str | np.ndarray | tuple[float] | list[float] | list[str] | user input value that was parsed into the RGBA array                             |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-
+    +------------+--------------------------------------+------------------------------------------------------+
+    | dict key   | value type                           | value description                                    |
+    +============+======================================+======================================================+
+    | key        | slice, index, numpy-like fancy index | key at which colors were indexed/sliced              |
+    +------------+-----------------------------------------------------------+---------------------------------+
+    | value      | np.ndarray [n_points_changed, RGBA]  | new color values for points that were changed        |
+    +------------+--------------------------------------+------------------------------------------------------+
+    | user_value | str or array-like                    | user input value that was parsed into the RGBA array |
+    +------------+--------------------------------------+------------------------------------------------------+
     """
 
     def __init__(
@@ -137,7 +134,7 @@ class VertexColors(BufferManager):
             "user_value": user_value,
         }
 
-        event = FeatureEvent("colors", info=event_info)
+        event = PropertyEvent("colors", info=event_info)
         self._call_event_handlers(event)
 
     def __len__(self):
@@ -163,7 +160,7 @@ class UniformColor(GraphicFeature):
         graphic.world_object.material.color = value
         self._value = value
 
-        event = FeatureEvent(type="colors", info={"value": value})
+        event = PropertyEvent(type="colors", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -182,7 +179,7 @@ class UniformSize(GraphicFeature):
         graphic.world_object.material.size = float(value)
         self._value = value
 
-        event = FeatureEvent(type="sizes", info={"value": value})
+        event = PropertyEvent(type="sizes", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -204,20 +201,19 @@ class SizeSpace(GraphicFeature):
             graphic.world_object.material.size_space = value
         self._value = value
 
-        event = FeatureEvent(type="size_space", info={"value": value})
+        event = PropertyEvent(type="size_space", info={"value": value})
         self._call_event_handlers(event)
 
 
 class VertexPositions(BufferManager):
     """
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
-    | dict key | value type                                               | value description                                                                        |
-    +==========+==========================================================+==========================================================================================+
-    | key      | int | slice | np.ndarray[int | bool] | tuple[slice, ...] | key at which vertex positions data were indexed/sliced                                   |
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
-    | value    | np.ndarray | float | list[float]                         | new data values for points that were changed, shape depends on the indices that were set |
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
-
+    +----------+--------------------------------------+--------------------------------------------------------+
+    | dict key | value type                           | value description                                      |
+    +==========+======================================+========================================================+
+    | key      | slice, index, numpy-like fancy index | key at which vertex positions data were indexed/sliced |
+    +----------+----------------------------------------------------------+------------------------------------+
+    | value    | np.ndarray | float | list[float]     | new data values for points that were changed           |
+    +----------+----------------------------------------------------------+------------------------------------+
     """
 
     def __init__(self, data: Any, isolated_buffer: bool = True):
@@ -269,13 +265,13 @@ class VertexPositions(BufferManager):
 
 class PointsSizesFeature(BufferManager):
     """
-    +----------+-------------------------------------------------------------------+----------------------------------------------+
-    | dict key | value type                                                        | value description                            |
-    +==========+===================================================================+==============================================+
-    | key      | int | slice | np.ndarray[int | bool] | list[int | bool]           | key at which point sizes indexed/sliced      |
-    +----------+-------------------------------------------------------------------+----------------------------------------------+
-    | value    | int | float | np.ndarray | list[int | float] | tuple[int | float] | new size values for points that were changed |
-    +----------+-------------------------------------------------------------------+----------------------------------------------+
+    +----------+--------------------------------------+----------------------------------------------+
+    | dict key | value type                           | value description                            |
+    +==========+======================================+==============================================+
+    | key      | slice, index, numpy-like fancy index | key at which point sizes indexed/sliced      |
+    +----------+--------------------------------------+----------------------------------------------+
+    | value    | int | float | array-like             | new size values for points that were changed |
+    +----------+--------------------------------------+----------------------------------------------+
     """
 
     def __init__(
@@ -356,7 +352,7 @@ class Thickness(GraphicFeature):
         graphic.world_object.material.thickness = value
         self._value = value
 
-        event = FeatureEvent(type="thickness", info={"value": value})
+        event = PropertyEvent(type="thickness", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -405,12 +401,12 @@ class VertexCmap(BufferManager):
         if not isinstance(key, slice):
             raise TypeError(
                 "fancy indexing not supported for VertexCmap, only slices "
-                "of a continuous are supported for apply a cmap"
+                "of a continuous range are supported for applying a cmap"
             )
         if key.step is not None:
             raise TypeError(
                 "step sized indexing not currently supported for setting VertexCmap, "
-                "slices must be a continuous region"
+                "slices must be a continuous range"
             )
 
         # parse slice

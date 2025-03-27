@@ -7,7 +7,7 @@ import pygfx
 from .._collection_base import GraphicCollection
 
 from .._base import Graphic
-from .._features import RectangleSelectionFeature
+from ..features import RectangleSelectionFeature
 from ._base_selector import BaseSelector
 
 

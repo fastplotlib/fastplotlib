@@ -1,3 +1,4 @@
+from ._base import Graphic
 from .line import LineGraphic
 from .scatter import ScatterGraphic
 from .image import ImageGraphic

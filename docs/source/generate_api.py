@@ -4,9 +4,9 @@ from pathlib import Path
 import os
 
 import fastplotlib
-from fastplotlib.layouts._subplot import Subplot
+from fastplotlib.layouts import Subplot
 from fastplotlib import graphics
-from fastplotlib.graphics import _features, selectors
+from fastplotlib.graphics import features, selectors
 from fastplotlib import widgets
 from fastplotlib import utils
 from fastplotlib import ui
@@ -54,16 +54,6 @@ with open(API_DIR.joinpath("fastplotlib.rst"), "w") as f:
         "fastplotlib.loop\n"
         "------------------\n"
         "See the rendercanvas docs: https://rendercanvas.readthedocs.io/stable/api.html#rendercanvas.BaseLoop "
-    )
-
-with open(API_DIR.joinpath("utils.rst"), "w") as f:
-    f.write(
-        "fastplotlib.utils\n"
-        "*****************\n\n"
-        
-        "..currentmodule:: fastplotlib.utils\n"
-        "..automodule:: fastplotlib.utils.functions\n"
-        "    : members:\n"
     )
 
 
@@ -238,7 +228,7 @@ def main():
         )
     ##############################################################################
 
-    feature_classes = [getattr(_features, f) for f in _features.__all__]
+    feature_classes = [getattr(features, f) for f in features.__all__]
 
     feature_class_names = [f.__name__ for f in feature_classes]
 
@@ -258,7 +248,7 @@ def main():
         generate_page(
             page_name=feature_cls.__name__,
             classes=[feature_cls],
-            modules=["fastplotlib.graphics._features"],
+            modules=["fastplotlib.graphics.features"],
             source_path=GRAPHIC_FEATURES_DIR.joinpath(f"{feature_cls.__name__}.rst"),
         )
     ##############################################################################
@@ -339,7 +329,7 @@ def main():
 
     ##############################################################################
 
-    utils_str = generate_functions_module(utils.functions, "fastplotlib.utils")
+    utils_str = generate_functions_module(utils, "fastplotlib.utils")
 
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
@@ -361,6 +351,7 @@ def main():
             "    fastplotlib\n"
             "    utils\n"
         )
+
 
 if __name__ == "__main__":
     main()

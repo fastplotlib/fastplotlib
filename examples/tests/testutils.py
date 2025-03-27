@@ -25,8 +25,9 @@ example_globs = [
     "line_collection/*.py",
     "gridplot/*.py",
     "window_layouts/*.py",
-    "misc/*.py",
+    "events/*.py",
     "selection_tools/*.py",
+    "misc/*.py",
     "guis/*.py",
 ]
 
