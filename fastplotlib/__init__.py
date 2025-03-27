@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from ._version import __version__, version_info
 # this must be the first import for auto-canvas detection
 from .utils import loop  # noqa
 from .graphics import *
@@ -19,9 +20,6 @@ else:
 from .widgets import ImageWidget
 from .utils import config, enumerate_adapters, select_adapter, print_wgpu_report
 
-
-with open(Path(__file__).parent.joinpath("VERSION"), "r") as f:
-    __version__ = f.read().split("\n")[0]
 
 if len(enumerate_adapters()) < 1:
     from warnings import warn

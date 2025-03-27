@@ -40,7 +40,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools
           # remove pygfx from install_requires, we install using pygfx@main
-          sed -i "/pygfx/d" ./setup.py
+          sed -i "/pygfx/d" ./pyproject.toml
           pip install git+https://github.com/pygfx/pygfx.git@main
           pip install -e ".[docs,notebook,imgui]"
       - name: Show wgpu backend
@@ -68,7 +68,7 @@ jobs:
         if: ${{ github.ref == 'refs/heads/main' }}
         # any push to main goes to fastplotlib.org/ver/dev
         run: echo "DOCS_VERSION_DIR=dev" >> "$GITHUB_ENV"
-        
+
       # upload docs via SCP
       - name: Deploy docs
         uses: appleboy/scp-action@v0.1.7
@@ -90,7 +90,7 @@ jobs:
         with:
           message: |
             📚 Docs preview built and uploaded! https://www.fastplotlib.org/ver/${{ env.DOCS_VERSION_DIR }}
-            
+
       # upload docs via SCP
       - name: Deploy docs release
         if: ${{ github.ref_type == 'tag' }}
