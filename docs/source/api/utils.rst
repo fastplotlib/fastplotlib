@@ -2,5 +2,5 @@ fastplotlib.utils
 *****************
 
 .. currentmodule:: fastplotlib.utils
-.. automodule:: fastplotlib.utils.functions
+.. automodule:: fastplotlib.utils
     :members:

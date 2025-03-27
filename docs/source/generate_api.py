@@ -56,16 +56,6 @@ with open(API_DIR.joinpath("fastplotlib.rst"), "w") as f:
         "See the rendercanvas docs: https://rendercanvas.readthedocs.io/stable/api.html#rendercanvas.BaseLoop "
     )
 
-with open(API_DIR.joinpath("utils.rst"), "w") as f:
-    f.write(
-        "fastplotlib.utils\n"
-        "*****************\n\n"
-        
-        "..currentmodule:: fastplotlib.utils\n"
-        "..automodule:: fastplotlib.utils.functions\n"
-        "    : members:\n"
-    )
-
 
 def get_public_members(cls) -> Tuple[List[str], List[str]]:
     """
@@ -339,7 +329,7 @@ def main():
 
     ##############################################################################
 
-    utils_str = generate_functions_module(utils.functions, "fastplotlib.utils")
+    utils_str = generate_functions_module(utils, "fastplotlib.utils")
 
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
