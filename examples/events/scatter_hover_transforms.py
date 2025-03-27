@@ -5,6 +5,8 @@ Scatter data explore scalers
 Based on the sklearn preprocessing scalers example. Hover points to highlight the corresponding point of the dataset
 transformed by the various scalers.
 
+See: https://scikit-learn.org/stable/auto_examples/preprocessing/plot_all_scaling.html
+
 This is another example that uses bi-directional events.
 """
 
