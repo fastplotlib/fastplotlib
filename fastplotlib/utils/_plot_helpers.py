@@ -39,7 +39,9 @@ def get_nearest_graphics_indices(
     pos = np.asarray(pos).ravel()
 
     if pos.shape != (2,) and pos.shape != (3,):
-        raise TypeError(f"pos.shape must be (2,) or (3,), the shape of pos you have passed is: {pos.shape}")
+        raise TypeError(
+            f"pos.shape must be (2,) or (3,), the shape of pos you have passed is: {pos.shape}"
+        )
 
     # get centers
     centers = np.empty(shape=(len(graphics), len(pos)))
