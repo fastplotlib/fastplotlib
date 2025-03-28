@@ -1,4 +1,0 @@
-recursive-include fastplotlib/utils/colormaps/ *
-include fastplotlib/VERSION
-recursive-include fastplotlib/assets/ *
-
