@@ -6,7 +6,8 @@ import pygfx
 
 from ._positions_base import PositionsGraphic
 from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
-from .features import Thickness, SizeSpace
+from .features import Thickness
+from ..utils import quick_min_max
 
 
 class LineGraphic(PositionsGraphic):
@@ -298,6 +299,6 @@ class LineGraphic(PositionsGraphic):
         size = int(np.ptp(magn_vals) * 1.5 + padding)
 
         # center of selector along the other axis
-        center = np.nanmean(magn_vals)
+        center = sum(quick_min_max(magn_vals)) / 2
 
         return bounds_init, limits, size, center
