@@ -280,11 +280,11 @@ class ImageGraphic(Graphic):
         if axis == "x":
             size = self._data.value.shape[0]
             center = size / 2
-            limits = (0, self._data.value.shape[1])
+            limits = (0, self._data.value.shape[1] - 1)
         elif axis == "y":
             size = self._data.value.shape[1]
             center = size / 2
-            limits = (0, self._data.value.shape[0])
+            limits = (0, self._data.value.shape[0] - 1)
         else:
             raise ValueError("`axis` must be one of 'x' | 'y'")
 
