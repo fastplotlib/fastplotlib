@@ -77,4 +77,13 @@ line-length = 88
 
 [tool.ruff.lint]
 select = ["F", "E", "W", "N", "B", "RUF", "TC"]
-ignore = []
+ignore = [
+    "F403",   # `from typing import *` used; unable to detect undefined names -> Would be good to fix this one and the next
+    "F405",   # X may be undefined, or defined from star imports
+    "F841",   # Local variable X is assigned to but never used"
+    "E501",   # Line too long
+    "B007",   # Loop control variable X not used within loop body
+    "B028",   # No explicit X keyword argument found
+    "B905",   # `zip()` without an explicit `strict=` parameter
+    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
+]
