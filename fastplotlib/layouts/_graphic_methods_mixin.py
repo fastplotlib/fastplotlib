@@ -32,7 +32,7 @@ class GraphicMethodsMixin:
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
         isolated_buffer: bool = True,
-        **kwargs
+        **kwargs,
     ) -> ImageGraphic:
         """
 
@@ -78,7 +78,7 @@ class GraphicMethodsMixin:
             interpolation,
             cmap_interpolation,
             isolated_buffer,
-            **kwargs
+            **kwargs,
         )
 
     def add_line_collection(
@@ -96,7 +96,7 @@ class GraphicMethodsMixin:
         metadatas: Union[Sequence[Any], numpy.ndarray] = None,
         isolated_buffer: bool = True,
         kwargs_lines: list[dict] = None,
-        **kwargs
+        **kwargs,
     ) -> LineCollection:
         """
 
@@ -169,7 +169,7 @@ class GraphicMethodsMixin:
             metadatas,
             isolated_buffer,
             kwargs_lines,
-            **kwargs
+            **kwargs,
         )
 
     def add_line(
@@ -183,7 +183,7 @@ class GraphicMethodsMixin:
         cmap_transform: Union[numpy.ndarray, Iterable] = None,
         isolated_buffer: bool = True,
         size_space: str = "screen",
-        **kwargs
+        **kwargs,
     ) -> LineGraphic:
         """
 
@@ -234,7 +234,7 @@ class GraphicMethodsMixin:
             cmap_transform,
             isolated_buffer,
             size_space,
-            **kwargs
+            **kwargs,
         )
 
     def add_line_stack(
@@ -253,7 +253,7 @@ class GraphicMethodsMixin:
         separation: float = 10.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
-        **kwargs
+        **kwargs,
     ) -> LineStack:
         """
 
@@ -334,7 +334,7 @@ class GraphicMethodsMixin:
             separation,
             separation_axis,
             kwargs_lines,
-            **kwargs
+            **kwargs,
         )
 
     def add_scatter(
@@ -349,7 +349,7 @@ class GraphicMethodsMixin:
         sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
         uniform_size: bool = False,
         size_space: str = "screen",
-        **kwargs
+        **kwargs,
     ) -> ScatterGraphic:
         """
 
@@ -409,7 +409,7 @@ class GraphicMethodsMixin:
             sizes,
             uniform_size,
             size_space,
-            **kwargs
+            **kwargs,
         )
 
     def add_text(
@@ -422,7 +422,7 @@ class GraphicMethodsMixin:
         screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
-        **kwargs
+        **kwargs,
     ) -> TextGraphic:
         """
 
@@ -473,5 +473,5 @@ class GraphicMethodsMixin:
             screen_space,
             offset,
             anchor,
-            **kwargs
+            **kwargs,
         )
