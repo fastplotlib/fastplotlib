@@ -628,12 +628,9 @@ Let's look at an example: ::
 
     movie = iio.imread("imageio:cockatoo.mp4")
 
-    # convert RGB movie to grayscale
-    gray_movie = np.dot(movie[..., :3], [0.299, 0.587, 0.114])
-
     iw_movie = ImageWidget(
-        data=gray_movie,
-        cmap="gray"
+        data=movie,
+        rgb=True
     )
 
     iw_movie.show()
