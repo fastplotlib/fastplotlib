@@ -578,6 +578,8 @@ The `ipywidgets <https://ipywidgets.readthedocs.io/en/stable/>`_ library is grea
 in jupyter. It is particularly useful for scientific and engineering applications since we can rapidly create a UI to
 interact with our ``fastplotlib`` visualization. The main downside is that it only works in jupyter.
 
+.. image:: ../_static/guide_ipywidgets.webp
+
 For examples please see the examples gallery.
 
 Qt
