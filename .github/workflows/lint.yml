@@ -1,4 +1,4 @@
-name: black
+name: lint
 
 on:
   push:
@@ -15,10 +15,24 @@ on:
 
 jobs:
   lint:
+    name: Test Linting
+    timeout-minutes: 5
     runs-on: ubuntu-latest
-    if: ${{ !github.event.pull_request.draft }}
+    strategy:
+      fail-fast: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: psf/black@stable
-        with:
-          src: "./fastplotlib"
+    - uses: actions/checkout@v4
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+    - name: Install dependencies
+      run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+    - name: Ruff lint
+      run: |
+          ruff check --output-format=github .
+    - name: Ruff format
+      run: |
+          ruff format --check .
