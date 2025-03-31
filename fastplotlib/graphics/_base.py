@@ -466,8 +466,7 @@ class Graphic:
     def right_click_menu(self, menu):
         if not IMGUI:
             raise ImportError(
-                "imgui is required to set right-click menus:\n"
-                "pip install imgui_bundle"
+                "imgui is required to set right-click menus:\npip install imgui_bundle"
             )
 
         self._right_click_menu = menu

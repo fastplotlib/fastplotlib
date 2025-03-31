@@ -11,11 +11,7 @@ Example showing animation of an electromagnetic wave.
 import fastplotlib as fpl
 import numpy as np
 
-figure = fpl.Figure(
-    cameras="3d",
-    controller_types="orbit",
-    size=(700, 560)
-)
+figure = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
 
 start, stop = 0, 4 * np.pi
 
@@ -37,28 +33,36 @@ figure[0, 0].add_line(electric, colors="blue", thickness=2, name="e")
 figure[0, 0].add_line(magnetic, colors="red", thickness=2, name="m")
 
 # draw vector line at every 10th position
-electric_vectors = [np.array([[0, 0, z], [x, 0, z]]) for (x, z) in zip(e_xs[::10], zs[::10])]
-magnetic_vectors = [np.array([[0, 0, z], [0, y, z]]) for (y, z) in zip(m_ys[::10], zs[::10])]
+electric_vectors = [
+    np.array([[0, 0, z], [x, 0, z]]) for (x, z) in zip(e_xs[::10], zs[::10])
+]
+magnetic_vectors = [
+    np.array([[0, 0, z], [0, y, z]]) for (y, z) in zip(m_ys[::10], zs[::10])
+]
 
 # add as a line collection
-figure[0, 0].add_line_collection(electric_vectors, colors="blue", thickness=1.5, name="e-vec")
-figure[0, 0].add_line_collection(magnetic_vectors, colors="red", thickness=1.5, name="m-vec")
+figure[0, 0].add_line_collection(
+    electric_vectors, colors="blue", thickness=1.5, name="e-vec"
+)
+figure[0, 0].add_line_collection(
+    magnetic_vectors, colors="red", thickness=1.5, name="m-vec"
+)
 # note that the z_offset in `add_line_collection` is not data-related
 # it is the z-offset for where to place the *graphic*, by default with Orthographic cameras (i.e. 2D views)
 # it will increment by 1 for each line in the collection, we want to disable this so set z_position=0
 
 # just a pre-saved camera state
 state = {
-    'position': np.array([-8.0 ,  6.0, -2.0]),
-    'rotation': np.array([0.09,  0.9 ,  0.2, -0.5]),
-    'scale': np.array([1., 1., 1.]),
-    'reference_up': np.array([0., 1., 0.]),
-    'fov': 50.0,
-    'width': 12,
-    'height': 12,
-    'zoom': 1.35,
-    'maintain_aspect': True,
-    'depth_range': None
+    "position": np.array([-8.0, 6.0, -2.0]),
+    "rotation": np.array([0.09, 0.9, 0.2, -0.5]),
+    "scale": np.array([1.0, 1.0, 1.0]),
+    "reference_up": np.array([0.0, 1.0, 0.0]),
+    "fov": 50.0,
+    "width": 12,
+    "height": 12,
+    "zoom": 1.35,
+    "maintain_aspect": True,
+    "depth_range": None,
 }
 
 

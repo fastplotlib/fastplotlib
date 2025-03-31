@@ -29,10 +29,14 @@ data = np.column_stack([xs, ys])
 figure = fpl.Figure(size=(700, 560))
 
 # make some scatter points at every 10th point
-figure[0, 0].add_scatter(data[::10], colors="cyan", sizes=15, name="sine-scatter", uniform_color=True)
+figure[0, 0].add_scatter(
+    data[::10], colors="cyan", sizes=15, name="sine-scatter", uniform_color=True
+)
 
 # place a line above the scatter
-figure[0, 0].add_line(data, thickness=3, colors="r", name="sine-wave", uniform_color=True)
+figure[0, 0].add_line(
+    data, thickness=3, colors="r", name="sine-wave", uniform_color=True
+)
 
 
 class ImguiExample(EdgeWindow):
@@ -60,7 +64,9 @@ class ImguiExample(EdgeWindow):
         # get current line color alpha value
         alpha = self._line.colors[-1]
         # make float slider
-        changed_alpha, new_alpha = imgui.slider_float("alpha", v=alpha, v_min=0.0, v_max=1.0)
+        changed_alpha, new_alpha = imgui.slider_float(
+            "alpha", v=alpha, v_min=0.0, v_max=1.0
+        )
 
         # if RGB or alpha changed
         if changed_color | changed_alpha:
@@ -68,19 +74,25 @@ class ImguiExample(EdgeWindow):
             self._line.colors = [*rgb, new_alpha]
 
         # example of a slider, you can also use input_float
-        changed, amplitude = imgui.slider_float("amplitude", v=self._amplitude, v_max=10, v_min=0.1)
+        changed, amplitude = imgui.slider_float(
+            "amplitude", v=self._amplitude, v_max=10, v_min=0.1
+        )
         if changed:
             # set y values
             self._amplitude = amplitude
             self._set_data()
 
         # slider for thickness
-        changed, thickness = imgui.slider_float("thickness", v=self._line.thickness, v_max=50.0, v_min=2.0)
+        changed, thickness = imgui.slider_float(
+            "thickness", v=self._line.thickness, v_max=50.0, v_min=2.0
+        )
         if changed:
             self._line.thickness = thickness
 
         # slider for gaussian noise
-        changed, sigma = imgui.slider_float("noise-sigma", v=self._sigma, v_max=1.0, v_min=0.0)
+        changed, sigma = imgui.slider_float(
+            "noise-sigma", v=self._sigma, v_max=1.0, v_min=0.0
+        )
         if changed:
             self._sigma = sigma
             self._set_data()
@@ -99,7 +111,9 @@ class ImguiExample(EdgeWindow):
             self._set_data()
 
     def _set_data(self):
-        self._line.data[:, 1] = (np.sin(xs) * self._amplitude) + np.random.normal(scale=self._sigma, size=100)
+        self._line.data[:, 1] = (np.sin(xs) * self._amplitude) + np.random.normal(
+            scale=self._sigma, size=100
+        )
 
 
 # make GUI instance

@@ -44,7 +44,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "sphinx_design",
-    "sphinx_gallery.gen_gallery"
+    "sphinx_gallery.gen_gallery",
 ]
 
 sphinx_gallery_conf = {
@@ -70,9 +70,9 @@ sphinx_gallery_conf = {
             "../../examples/qt",
         ]
     ),
-    "ignore_pattern": r'__init__\.py',
+    "ignore_pattern": r"__init__\.py",
     "nested_sections": False,
-    "thumbnail_size": (250, 250)
+    "thumbnail_size": (250, 250),
 }
 
 extra_conf = find_examples_for_gallery(EXAMPLES_DIR)
@@ -100,8 +100,8 @@ html_theme_options = {
     "check_switcher": True,
     "switcher": {
         "json_url": "http://www.fastplotlib.org/_static/switcher.json",
-        "version_match": release
-    }
+        "version_match": release,
+    },
 }
 
 html_static_path = ["_static"]

@@ -42,10 +42,7 @@ dock = QtWidgets.QDockWidget()
 dock.setWidget(slider)
 
 # put the dock in the main window
-main_window.addDockWidget(
-    QtCore.Qt.DockWidgetArea.BottomDockWidgetArea,
-    dock
-)
+main_window.addDockWidget(QtCore.Qt.DockWidgetArea.BottomDockWidgetArea, dock)
 
 # calling fig.show() is required to start the rendering loop
 qwidget = fig.show()

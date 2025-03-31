@@ -8,7 +8,6 @@ Example showing how you can explore a covariance matrix with a selector tool.
 # test_example = false
 # sphinx_gallery_pygfx_docs = 'animate 10s'
 
-
 import fastplotlib as fpl
 from sklearn import datasets
 from sklearn.preprocessing import StandardScaler

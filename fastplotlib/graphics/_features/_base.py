@@ -318,7 +318,7 @@ class BufferManager(GraphicFeature):
         raise NotImplementedError
 
     def __repr__(self):
-        return f"{self.__class__.__name__} buffer data:\n" f"{self.value.__repr__()}"
+        return f"{self.__class__.__name__} buffer data:\n{self.value.__repr__()}"
 
 
 def block_reentrance(set_value):

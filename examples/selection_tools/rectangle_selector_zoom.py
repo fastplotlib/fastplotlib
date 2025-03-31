@@ -12,10 +12,7 @@ import imageio.v3 as iio
 import fastplotlib as fpl
 
 # create a figure
-figure = fpl.Figure(
-    shape=(2, 1),
-    size=(700, 560)
-)
+figure = fpl.Figure(shape=(2, 1), size=(700, 560))
 
 # add image
 image_graphic = figure[0, 0].add_image(data=iio.imread("imageio:camera.png"))
@@ -43,6 +40,7 @@ def update_data(ev):
 
     # autoscale the plot
     figure[1, 0].auto_scale()
+
 
 figure.show()
 

@@ -336,7 +336,6 @@ class RectangleSelector(BaseSelector):
                 f"`mode` must be one of 'full', 'partial', or 'ignore', you have passed {mode}"
             )
         if "Line" in source.__class__.__name__:
-
             if isinstance(source, GraphicCollection):
                 data_selections: List[np.ndarray] = list()
 
@@ -478,7 +477,6 @@ class RectangleSelector(BaseSelector):
             return ixs
 
     def _move_graphic(self, delta: np.ndarray):
-
         # new selection positions
         xmin_new = self.selection[0] + delta[0]
         xmax_new = self.selection[1] + delta[0]

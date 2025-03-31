@@ -26,7 +26,9 @@ figure = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
 # make grid invisible to remove clutter
 figure[0, 0].axes.grids.visible = False
 
-line_stack = figure[0, 0].add_line_stack(
+line_stack = figure[
+    0, 0
+].add_line_stack(
     multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
     cmap="jet",  # applied along n_lines
     thickness=3,

@@ -28,7 +28,11 @@ def draw():
 def print_nvidia(msg=""):
     print(msg)
     print(
-        subprocess.check_output(["nvidia-smi", "--format=csv", "--query-gpu=memory.used"]).decode().split("\n")[1]
+        subprocess.check_output(
+            ["nvidia-smi", "--format=csv", "--query-gpu=memory.used"]
+        )
+        .decode()
+        .split("\n")[1]
     )
     print()
 

@@ -26,7 +26,14 @@ zeros = np.zeros(image.shape)
 # create an ImageWidget to display all the images
 iw = fpl.ImageWidget(
     data=[image, log_abs_img_fft, zeros, zeros, zeros, zeros],
-    names=["image", "DFT", "selected", "FFT of selected", "not-selected", "IFFT of not-selected"],
+    names=[
+        "image",
+        "DFT",
+        "selected",
+        "FFT of selected",
+        "not-selected",
+        "IFFT of not-selected",
+    ],
     figure_shape=(3, 2),  # so we can see image and fft side by side
     figure_kwargs={"size": (700, 1024)},
     histogram_widget=False,
@@ -45,8 +52,14 @@ iw.managed_graphics[3].cmap = "gray"
 iw.managed_graphics[-1].cmap = "gray"
 
 # set contrast limits based on the full DFT for the DFT-selection images
-iw.figure["selected"].graphics[0].vmin, iw.figure["selected"].graphics[0].vmax = log_abs_img_fft.min(), log_abs_img_fft.max()
-iw.figure["not-selected"].graphics[0].vmin, iw.figure["not-selected"].graphics[0].vmax = log_abs_img_fft.min(), log_abs_img_fft.max()
+iw.figure["selected"].graphics[0].vmin, iw.figure["selected"].graphics[0].vmax = (
+    log_abs_img_fft.min(),
+    log_abs_img_fft.max(),
+)
+(
+    iw.figure["not-selected"].graphics[0].vmin,
+    iw.figure["not-selected"].graphics[0].vmax,
+) = log_abs_img_fft.min(), log_abs_img_fft.max()
 
 iw.show()
 

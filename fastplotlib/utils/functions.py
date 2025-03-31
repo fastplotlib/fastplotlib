@@ -381,7 +381,6 @@ def parse_cmap_values(
 
         # can also use cm.category == "qualitative"
         if cmap_lib.Colormap(cmap_name).interpolation == "nearest":
-
             # check that cmap_values are <int> and within the number of colors `n_colors`
 
             # do not scale, use directly

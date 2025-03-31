@@ -160,7 +160,6 @@ class ImageGraphic(Graphic):
         # iterate through each texture chunk and create
         # an _ImageTIle, offset the tile using the data indices
         for texture, chunk_index, data_slice in self._data:
-
             # create an ImageTile using the texture for this chunk
             img = _ImageTile(
                 geometry=pygfx.Geometry(grid=texture),

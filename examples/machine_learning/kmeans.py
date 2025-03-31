@@ -21,8 +21,8 @@ from sklearn.decomposition import PCA
 mnist = load_digits()
 
 # get the data and labels
-data = mnist['data'] # (1797, 64)
-labels = mnist['target'] # (1797,)
+data = mnist["data"]  # (1797, 64)
+labels = mnist["target"]  # (1797,)
 
 # visualize the first 5 digits
 # NOTE: this is just to give a sense of the dataset if you are unfamiliar,
@@ -44,7 +44,7 @@ fig_data.show()
 # project the data from 64 dimensions down to the number of unique digits
 n_digits = len(np.unique(labels))  # 10
 
-reduced_data = PCA(n_components=n_digits).fit_transform(data) # (1797, 10)
+reduced_data = PCA(n_components=n_digits).fit_transform(data)  # (1797, 10)
 
 # performs K-Means clustering, take the best of 4 runs
 kmeans = KMeans(n_clusters=n_digits, n_init=4)
@@ -59,7 +59,7 @@ figure = fpl.Figure(
     shape=(1, 2),
     size=(700, 560),
     cameras=["3d", "2d"],
-    controller_types=["fly", "panzoom"]
+    controller_types=["fly", "panzoom"],
 )
 
 # set the axes to False in the image subplot
@@ -72,14 +72,14 @@ figure[0, 1].title = "handwritten digit"
 figure[0, 0].add_scatter(
     data=np.vstack([centroids[:, 0], centroids[:, 1], centroids[:, 2]]).T,
     colors="white",
-    sizes=15
+    sizes=15,
 )
 # plot the down-projected data
-digit_scatter = figure[0,0].add_scatter(
+digit_scatter = figure[0, 0].add_scatter(
     data=np.vstack([reduced_data[:, 0], reduced_data[:, 1], reduced_data[:, 2]]).T,
     sizes=5,
-    cmap="tab10", # use a qualitative cmap
-    cmap_transform=kmeans.labels_, # color by the predicted cluster
+    cmap="tab10",  # use a qualitative cmap
+    cmap_transform=kmeans.labels_,  # color by the predicted cluster
 )
 
 # initial index
@@ -87,10 +87,7 @@ ix = 0
 
 # plot the initial image
 digit_img = figure[0, 1].add_image(
-    data=data[ix].reshape(8,8),
-    cmap="gray",
-    name="digit",
-    interpolation="linear"
+    data=data[ix].reshape(8, 8), cmap="gray", name="digit", interpolation="linear"
 )
 
 # change the color and size of the initial selected data point

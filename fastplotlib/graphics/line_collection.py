@@ -198,19 +198,19 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
                 raise ValueError(
-                    f"len(thickness) != len(data)\n" f"{len(thickness)} != {len(data)}"
+                    f"len(thickness) != len(data)\n{len(thickness)} != {len(data)}"
                 )
 
         if names is not None:
             if len(names) != len(data):
                 raise ValueError(
-                    f"len(names) != len(data)\n" f"{len(names)} != {len(data)}"
+                    f"len(names) != len(data)\n{len(names)} != {len(data)}"
                 )
 
         if metadatas is not None:
             if len(metadatas) != len(data):
                 raise ValueError(
-                    f"len(metadata) != len(data)\n" f"{len(metadatas)} != {len(data)}"
+                    f"len(metadata) != len(data)\n{len(metadatas)} != {len(data)}"
                 )
 
         if kwargs_lines is not None:

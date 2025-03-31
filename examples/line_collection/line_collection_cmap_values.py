@@ -12,6 +12,7 @@ from itertools import product
 import numpy as np
 import fastplotlib as fpl
 
+
 def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
     theta = np.linspace(0, 2 * np.pi, n_points)
     xs = radius * np.sin(theta)

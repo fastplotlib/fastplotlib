@@ -19,7 +19,7 @@ import numpy as np
 # names for out subplots
 names = [
     ["y = sine(x)", "x = sine(y), sine(y) > 0 = 0"],
-    ["zoomed sine(x)", "zoomed sine(y)"]
+    ["zoomed sine(x)", "zoomed sine(y)"],
 ]
 
 # 2 rows, 2 columns

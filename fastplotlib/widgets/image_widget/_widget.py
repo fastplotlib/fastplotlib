@@ -515,7 +515,6 @@ class ImageWidget:
 
         self._histogram_widget = histogram_widget
         for data_ix, (d, subplot) in enumerate(zip(self.data, self.figure)):
-
             frame = self._process_indices(d, slice_indices=self._current_index)
             frame = self._process_frame_apply(frame, data_ix)
 

@@ -29,9 +29,7 @@ data = np.column_stack([xs, ys, zs])
 sizes = np.abs(np.random.normal(loc=0, scale=1, size=n))
 
 figure = fpl.Figure(
-    cameras="3d",
-    size=(700, 560),
-    canvas_kwargs={"max_fps": 500, "vsync": False}
+    cameras="3d", size=(700, 560), canvas_kwargs={"max_fps": 500, "vsync": False}
 )
 
 spiral = figure[0, 0].add_scatter(data, cmap="viridis_r", alpha=0.5, sizes=sizes)
@@ -58,16 +56,16 @@ figure.show()
 
 # pre-saved camera state
 camera_state = {
-    'position': np.array([-0.13046005, 20.09142224, 29.03347696]),
-    'rotation': np.array([-0.44485092,  0.05335406,  0.11586037,  0.88647469]),
-    'scale': np.array([1., 1., 1.]),
-    'reference_up': np.array([0., 1., 0.]),
-    'fov': 50.0,
-    'width': 62.725074768066406,
-    'height': 8.856056690216064,
-    'zoom': 0.75,
-    'maintain_aspect': True,
-    'depth_range': None
+    "position": np.array([-0.13046005, 20.09142224, 29.03347696]),
+    "rotation": np.array([-0.44485092, 0.05335406, 0.11586037, 0.88647469]),
+    "scale": np.array([1.0, 1.0, 1.0]),
+    "reference_up": np.array([0.0, 1.0, 0.0]),
+    "fov": 50.0,
+    "width": 62.725074768066406,
+    "height": 8.856056690216064,
+    "zoom": 0.75,
+    "maintain_aspect": True,
+    "depth_range": None,
 }
 
 figure[0, 0].camera.set_state(camera_state)

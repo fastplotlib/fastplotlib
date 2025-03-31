@@ -35,7 +35,6 @@ def check_texture_array(
     row_indices_values: np.ndarray,
     col_indices_values: np.ndarray,
 ):
-
     npt.assert_almost_equal(ta.value, data)
 
     assert ta.buffer.size == buffer_size

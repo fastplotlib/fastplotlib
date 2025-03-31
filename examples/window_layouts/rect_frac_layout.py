@@ -41,8 +41,13 @@ rects = [
 # also give each subplot a name
 figure = fpl.Figure(
     rects=rects,
-    names=["astronaut image", "wikkie image", "astronaut histogram", "wikkie histogram"],
-    size=size
+    names=[
+        "astronaut image",
+        "wikkie image",
+        "astronaut histogram",
+        "wikkie histogram",
+    ],
+    size=size,
 )
 
 # add image to the corresponding subplots

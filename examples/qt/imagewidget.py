@@ -24,10 +24,7 @@ widget.resize(800, 800)
 # another image widget with multiple images
 images_list = [np.random.rand(100, 512, 512) for i in range(4)]
 
-iw_mult = fpl.ImageWidget(
-    images_list,
-    cmap="viridis"
-)
+iw_mult = fpl.ImageWidget(images_list, cmap="viridis")
 widget_multi = iw_mult.show()
 widget_multi.resize(800, 800)
 
