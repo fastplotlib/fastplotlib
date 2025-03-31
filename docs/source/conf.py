@@ -60,6 +60,7 @@ sphinx_gallery_conf = {
             "../../examples/image_widget",
             "../../examples/gridplot",
             "../../examples/window_layouts",
+            "../../examples/controllers",
             "../../examples/line",
             "../../examples/line_collection",
             "../../examples/scatter",
