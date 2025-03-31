@@ -63,6 +63,7 @@ sphinx_gallery_conf = {
             "../../examples/line",
             "../../examples/line_collection",
             "../../examples/scatter",
+            "../../examples/text",
             "../../examples/events",
             "../../examples/selection_tools",
             "../../examples/machine_learning",
