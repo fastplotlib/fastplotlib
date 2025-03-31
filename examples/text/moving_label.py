@@ -18,16 +18,16 @@ ys = np.sinc(xs)
 data = np.column_stack([xs, ys])
 
 # create a figure
-fig = fpl.Figure(size=(700, 450))
+figure = fpl.Figure(size=(700, 450))
 
 # sinc wave
-line = fig[0, 0].add_line(data, thickness=2)
+line = figure[0, 0].add_line(data, thickness=2)
 
 # position for the text label on the peak
 pos = (0, max(ys), 0)
 
 # create label for the peak
-text_peak = fig[0, 0].add_text(
+text_peak = figure[0, 0].add_text(
     f"peak  ",
     font_size=20,
     anchor="bottom-right",
@@ -35,10 +35,10 @@ text_peak = fig[0, 0].add_text(
 )
 
 # add a point on the peak
-point_peak = fig[0, 0].add_scatter(np.asarray([pos]), sizes=10, colors="r")
+point_peak = figure[0, 0].add_scatter(np.asarray([pos]), sizes=10, colors="r")
 
 # create a text that will move along the line
-text_moving = fig[0, 0].add_text(
+text_moving = figure[0, 0].add_text(
     f"({xs[0]:.2f}, {ys[0]:.2f})  ",
     font_size=16,
     outline_color="k",
@@ -47,7 +47,7 @@ text_moving = fig[0, 0].add_text(
     offset=(*data[0], 0)
 )
 # a point that will move on the line
-point_moving = fig[0, 0].add_scatter(np.asarray([data[0]]), sizes=10, colors="magenta")
+point_moving = figure[0, 0].add_scatter(np.asarray([data[0]]), sizes=10, colors="magenta")
 
 
 index = 0
@@ -71,10 +71,10 @@ def update():
 
 
 # add update as an animation functions
-fig.add_animations(update)
+figure.add_animations(update)
 
-fig[0, 0].axes.visible = False
-fig.show(maintain_aspect=False)
+figure[0, 0].axes.visible = False
+figure.show(maintain_aspect=False)
 
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
