@@ -69,6 +69,7 @@ sphinx_gallery_conf = {
             "../../examples/selection_tools",
             "../../examples/machine_learning",
             "../../examples/guis",
+            "../../examples/ipywidgets",
             "../../examples/misc",
             "../../examples/qt",
         ]

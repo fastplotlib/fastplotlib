@@ -578,23 +578,7 @@ The `ipywidgets <https://ipywidgets.readthedocs.io/en/stable/>`_ library is grea
 in jupyter. It is particularly useful for scientific and engineering applications since we can rapidly create a UI to
 interact with our ``fastplotlib`` visualization. The main downside is that it only works in jupyter.
 
-
-Examples
-~~~~~~~~
-
-Play with a sine wave
-
-change data (amplitude, freq)
-change line thickness
-change alpha
-
-Change image cmap, vmin, vmax
-
-Set a gaussian cloud of scatter data
-change n_datapoints, loc (mean), sigma
-change sizes
-change alpha
-change cmap
+For examples please see the examples gallery.
 
 Qt
 ^^
@@ -618,6 +602,8 @@ We specifically use `imgui-bundle <https://github.com/pthom/imgui_bundle>`_ for 
 There is large community and many resources out there on building UIs using imgui.
 
 For examples on integrating imgui with a fastplotlib Figure please see the examples gallery.
+
+**Some tips:**
 
 The ``imgui-bundle`` docs as of March 2025 don't have a nice API list (as far as I know), here is how we go about developing UIs with imgui:
 
