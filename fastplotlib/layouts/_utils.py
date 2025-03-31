@@ -33,21 +33,20 @@ def make_canvas_and_renderer(
     if canvas is None:
         canvas = RenderCanvas(**canvas_kwargs)
     elif isinstance(canvas, str):
-        import rendercanvas
 
         m = importlib.import_module("rendercanvas." + canvas)
         canvas = m.RenderCanvas(**canvas_kwargs)
     elif not isinstance(canvas, (BaseRenderCanvas, Texture)):
         raise TypeError(
-            f"canvas option must either be a valid BaseRenderCanvas implementation, a pygfx Texture"
-            f" or a str with the gui backend name, valid str are: 'qt', 'glfw', 'jupyter', 'wx', and 'offscreen'"
+            "canvas option must either be a valid BaseRenderCanvas implementation, a pygfx Texture"
+            " or a str with the gui backend name, valid str are: 'qt', 'glfw', 'jupyter', 'wx', and 'offscreen'"
         )
 
     if renderer is None:
         renderer = WgpuRenderer(canvas)
     elif not isinstance(renderer, Renderer):
         raise TypeError(
-            f"renderer option must be a pygfx.Renderer instance such as pygfx.WgpuRenderer"
+            "renderer option must be a pygfx.Renderer instance such as pygfx.WgpuRenderer"
         )
 
     return canvas, renderer

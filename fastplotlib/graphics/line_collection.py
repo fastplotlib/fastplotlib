@@ -31,7 +31,7 @@ class _LineCollectionProperties:
             if not len(values) == len(self):
                 raise IndexError
 
-            for g, v in zip(self.graphics, values):
+            for g, v in zip(self.graphics, values, strict=False):
                 g.colors = v
 
             return
@@ -39,7 +39,7 @@ class _LineCollectionProperties:
         if isinstance(values, np.ndarray):
             if values.ndim == 2:
                 # assume individual colors for each
-                for g, v in zip(self, values):
+                for g, v in zip(self, values, strict=False):
                     g.colors = v
                 return
 
@@ -49,7 +49,7 @@ class _LineCollectionProperties:
 
         else:
             # assume individual colors for each
-            for g, v in zip(self, values):
+            for g, v in zip(self, values, strict=False):
                 g.colors = v
 
     @property
@@ -59,7 +59,7 @@ class _LineCollectionProperties:
 
     @data.setter
     def data(self, values):
-        for g, v in zip(self, values):
+        for g, v in zip(self, values, strict=False):
             g.data = v
 
     @property
@@ -107,7 +107,7 @@ class _LineCollectionProperties:
         if not len(values) == len(self):
             raise IndexError
 
-        for g, v in zip(self, values):
+        for g, v in zip(self, values, strict=False):
             g.thickness = v
 
 

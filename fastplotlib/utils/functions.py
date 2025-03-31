@@ -264,7 +264,7 @@ def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
 
     colors = make_colors(len(labels), cmap, **kwargs)
 
-    return OrderedDict(zip(labels, colors))
+    return OrderedDict(zip(labels, colors, strict=False))
 
 
 def quick_min_max(data: np.ndarray) -> tuple[float, float]:

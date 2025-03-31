@@ -1,4 +1,3 @@
-from contextlib import suppress
 from typing import Any
 
 import numpy as np
@@ -17,7 +16,7 @@ class CollectionProperties:
         if not len(values) == len(self):
             raise IndexError
 
-        for g, v in zip(self, values):
+        for g, v in zip(self, values, strict=False):
             setattr(g, feature, v)
 
     @property

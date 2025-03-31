@@ -59,7 +59,7 @@ class GraphicFeature:
     @property
     def value(self) -> Any:
         """Graphic Feature value, must be implemented in subclass"""
-        raise NotImplemented
+        raise NotImplementedError
 
     def set_value(self, graphic, value: float):
         """Graphic Feature value setter, must be implemented in subclass"""
@@ -191,8 +191,8 @@ class BufferManager(GraphicFeature):
     @property
     def __array_interface__(self):
         raise BufferError(
-            f"Cannot use graphic feature buffer as an array, use <feature-name>.value instead.\n"
-            f"Examples: line.data.value, line.colors.value, scatter.data.value, scatter.sizes.value"
+            "Cannot use graphic feature buffer as an array, use <feature-name>.value instead.\n"
+            "Examples: line.data.value, line.colors.value, scatter.data.value, scatter.sizes.value"
         )
 
     def __getitem__(self, item):

@@ -131,7 +131,7 @@ class PositionsGraphic(Graphic):
             else:
                 if uniform_color:
                     if not isinstance(colors, str):  # not a single color
-                        if not len(colors) in [3, 4]:  # not an RGB(A) array
+                        if len(colors) not in [3, 4]:  # not an RGB(A) array
                             raise TypeError(
                                 "must pass a single color if using `uniform_colors=True`"
                             )

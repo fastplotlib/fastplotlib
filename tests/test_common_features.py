@@ -1,10 +1,9 @@
-import numpy
 import numpy as np
 from numpy import testing as npt
 import pytest
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import FeatureEvent, Name, Offset, Rotation, Visible
+from fastplotlib.graphics._features import FeatureEvent
 
 
 def make_graphic(kind: str, **kwargs):

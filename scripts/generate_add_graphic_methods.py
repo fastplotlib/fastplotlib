@@ -10,7 +10,7 @@ filename = root.joinpath("fastplotlib", "layouts", "_graphic_methods_mixin.py")
 # so that fastplotlib will import
 # hacky but it works
 with open(filename, "w") as f:
-    f.write(f"class GraphicMethodsMixin:\n    pass")
+    f.write("class GraphicMethodsMixin:\n    pass")
 
 from fastplotlib import graphics
 

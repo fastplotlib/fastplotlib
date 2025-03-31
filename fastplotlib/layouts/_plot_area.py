@@ -510,8 +510,8 @@ class PlotArea(GraphicMethodsMixin):
     def _check_graphic_name_exists(self, name):
         if name in self:
             raise ValueError(
-                f"Graphic with given name already exists in subplot or plot area. "
-                f"All graphics within a subplot or plot area must have a unique name."
+                "Graphic with given name already exists in subplot or plot area. "
+                "All graphics within a subplot or plot area must have a unique name."
             )
 
     def center_graphic(self, graphic: Graphic, zoom: float = 1.0):
@@ -683,7 +683,7 @@ class PlotArea(GraphicMethodsMixin):
             if graphic.name == name:
                 return graphic
 
-        raise IndexError(f"No graphic or selector of given name in plot area.\n")
+        raise IndexError("No graphic or selector of given name in plot area.\n")
 
     def __contains__(self, item: str | Graphic):
         if isinstance(item, Graphic):

@@ -75,7 +75,7 @@ def animate(subplot):
     if time >= xyzs.shape[0]:
         time = 0
 
-    for scatter, g in zip(scatter_markers, lorenz_line):
+    for scatter, g in zip(scatter_markers, lorenz_line, strict=False):
         scatter.data = g.data.value[time]
 
 

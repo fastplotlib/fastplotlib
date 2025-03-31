@@ -9,7 +9,6 @@ This example opens multiple windows to show multiple ImageWidgets.
 # sphinx_gallery_pygfx_docs = 'code'
 
 import numpy as np
-from PyQt6 import QtWidgets
 import fastplotlib as fpl
 import imageio.v3 as iio
 

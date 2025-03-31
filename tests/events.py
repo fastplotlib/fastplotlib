@@ -2,7 +2,6 @@ from functools import partial
 import pytest
 import numpy as np
 from numpy import testing as npt
-import pygfx
 
 import fastplotlib as fpl
 from fastplotlib.graphics._features import FeatureEvent

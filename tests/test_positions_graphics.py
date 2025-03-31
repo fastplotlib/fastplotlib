@@ -20,7 +20,6 @@ from .utils import (
     generate_positions_spiral_data,
     generate_color_inputs,
     MULTI_COLORS_TRUTH,
-    generate_slice_indices,
 )
 
 

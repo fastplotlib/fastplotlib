@@ -34,10 +34,10 @@ figure[0, 0].add_line(magnetic, colors="red", thickness=2, name="m")
 
 # draw vector line at every 10th position
 electric_vectors = [
-    np.array([[0, 0, z], [x, 0, z]]) for (x, z) in zip(e_xs[::10], zs[::10])
+    np.array([[0, 0, z], [x, 0, z]]) for (x, z) in zip(e_xs[::10], zs[::10], strict=False)
 ]
 magnetic_vectors = [
-    np.array([[0, 0, z], [0, y, z]]) for (y, z) in zip(m_ys[::10], zs[::10])
+    np.array([[0, 0, z], [0, y, z]]) for (y, z) in zip(m_ys[::10], zs[::10], strict=False)
 ]
 
 # add as a line collection
@@ -92,7 +92,7 @@ def tick(subplot):
     subplot["m"].data[:, 2] = new_zs
 
     # update the vector lines
-    for i, (value, z) in enumerate(zip(new_data[::10], new_zs[::10])):
+    for i, (value, z) in enumerate(zip(new_data[::10], new_zs[::10], strict=False)):
         subplot["e-vec"].graphics[i].data = np.array([[0, 0, z], [value, 0, z]])
         subplot["m-vec"].graphics[i].data = np.array([[0, 0, z], [0, value, z]])
 

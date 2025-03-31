@@ -33,8 +33,7 @@ if not already_imported:
 
 
 # Let wgpu do the auto gui selection
-from rendercanvas import BaseRenderCanvas
-from rendercanvas.auto import RenderCanvas, loop
+from rendercanvas.auto import RenderCanvas
 
 # Get the name of the backend ('qt', 'glfw', 'jupyter')
 GUI_BACKEND = RenderCanvas.__module__.split(".")[-1]

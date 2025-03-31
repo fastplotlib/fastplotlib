@@ -4,4 +4,4 @@ from ._polygon import PolygonSelector
 from ._rectangle import RectangleSelector
 
 
-__all__ = ["LinearSelector", "LinearRegionSelector", "RectangleSelector"]
+__all__ = ["LinearRegionSelector", "LinearSelector", "RectangleSelector"]

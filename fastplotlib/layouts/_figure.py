@@ -241,8 +241,8 @@ class Figure:
                     controller_ids = np.zeros(n_subplots, dtype=int)
                 else:
                     raise ValueError(
-                        f"`controller_ids` must be one of 'sync', an array/list of subplot names, or an array/list of "
-                        f"integer ids. See the docstring for more details."
+                        "`controller_ids` must be one of 'sync', an array/list of subplot names, or an array/list of "
+                        "integer ids. See the docstring for more details."
                     )
 
             # list controller_ids
@@ -259,7 +259,7 @@ class Figure:
                     # make sure each controller_id str is a subplot name
                     if not all([n in subplot_names for n in ids_flat]):
                         raise KeyError(
-                            f"all `controller_ids` strings must be one of the subplot names"
+                            "all `controller_ids` strings must be one of the subplot names"
                         )
 
                     if len(ids_flat) > len(set(ids_flat)):

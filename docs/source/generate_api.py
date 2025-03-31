@@ -157,7 +157,7 @@ def generate_page(
     with open(source_path, "w") as f:
         f.write(f".. _api.{page_name}:\n\n{page_name}\n{page_name_underline}\n\n")
 
-        for cls, module in zip(classes, modules):
+        for cls, module in zip(classes, modules, strict=False):
             to_write = generate_class(cls, module)
             f.write(to_write)
 
@@ -187,15 +187,15 @@ def main():
     # layouts classes index file
     with open(LAYOUTS_DIR.joinpath("index.rst"), "w") as f:
         f.write(
-            f"Layouts\n"
-            f"********\n"
-            f"\n"
-            f".. toctree::\n"
-            f"    :maxdepth: 1\n"
-            f"\n"
-            f"    imgui_figure\n"
-            f"    figure\n"
-            f"    subplot\n"
+            "Layouts\n"
+            "********\n"
+            "\n"
+            ".. toctree::\n"
+            "    :maxdepth: 1\n"
+            "\n"
+            "    imgui_figure\n"
+            "    figure\n"
+            "    subplot\n"
         )
 
     # the rest of this is a mess and can be refactored later

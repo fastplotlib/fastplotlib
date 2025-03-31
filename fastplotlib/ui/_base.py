@@ -1,5 +1,4 @@
 from typing import Literal
-import numpy as np
 
 from imgui_bundle import imgui
 

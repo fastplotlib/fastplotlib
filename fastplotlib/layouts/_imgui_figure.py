@@ -126,7 +126,7 @@ class ImguiFigure(Figure):
         imgui.new_frame()
 
         for subplot, toolbar in zip(
-            self._subplots.ravel(), self._subplot_toolbars.ravel()
+            self._subplots.ravel(), self._subplot_toolbars.ravel(), strict=False
         ):
             if not subplot.toolbar:
                 # if subplot.toolbar is False

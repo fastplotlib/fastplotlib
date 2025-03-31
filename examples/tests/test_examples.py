@@ -17,16 +17,13 @@ pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension-2d": MAX_TEXTURE_
 
 from .testutils import (
     ROOT,
-    examples_dir,
     screenshots_dir,
     find_examples,
     wgpu_backend,
     is_lavapipe,
     diffs_dir,
-    generate_diff,
     image_similarity,
     normalize_image,
-    prep_for_write,
 )
 
 # run all tests unless they opt-out

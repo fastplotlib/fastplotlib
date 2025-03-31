@@ -6,10 +6,10 @@ from .line_collection import LineCollection, LineStack
 
 
 __all__ = [
-    "LineGraphic",
     "ImageGraphic",
+    "LineCollection",
+    "LineGraphic",
+    "LineStack",
     "ScatterGraphic",
     "TextGraphic",
-    "LineCollection",
-    "LineStack",
 ]

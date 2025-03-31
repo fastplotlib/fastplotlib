@@ -120,8 +120,8 @@ class VertexColors(BufferManager):
 
         else:
             raise TypeError(
-                f"invalid key for setting colors, you may set colors using integer indices, slices, or "
-                f"fancy indexing using an array of integers or bool"
+                "invalid key for setting colors, you may set colors using integer indices, slices, or "
+                "fancy indexing using an array of integers or bool"
             )
 
         self.buffer.data[key] = value
@@ -238,7 +238,7 @@ class VertexPositions(BufferManager):
 
         if data.shape[1] != 3:
             if data.shape[1] != 2:
-                raise ValueError(f"Must pass 1D, 2D or 3D data")
+                raise ValueError("Must pass 1D, 2D or 3D data")
 
             # zeros for z
             zs = np.zeros(data.shape[0], dtype=data.dtype)
@@ -307,8 +307,8 @@ class PointsSizesFeature(BufferManager):
             sizes = np.asarray(sizes, dtype=np.float32)  # read it in as a numpy.float32
             if (sizes.ndim != 1) or (sizes.size != n_datapoints):
                 raise ValueError(
-                    f"sequence of `sizes` must be 1 dimensional with "
-                    f"the same length as the number of datapoints"
+                    "sequence of `sizes` must be 1 dimensional with "
+                    "the same length as the number of datapoints"
                 )
 
         else:
