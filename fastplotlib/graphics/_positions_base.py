@@ -58,7 +58,7 @@ class PositionsGraphic(Graphic):
     @property
     def size_space(self):
         """
-        The coordinate space in which the size is expressed (‘screen’, ‘world’, ‘model’)
+        The coordinate space in which the size is expressed ('screen', 'world', 'model')
 
         See https://docs.pygfx.org/stable/_autosummary/utils/utils/enums/pygfx.utils.enums.CoordSpace.html#pygfx.utils.enums.CoordSpace for available options.
         """
