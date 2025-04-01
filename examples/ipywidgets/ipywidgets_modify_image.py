@@ -2,7 +2,7 @@
 ipwidgets modify an ImageGraphic
 ================================
 
-Use ipywidgets to modify some features of an ImageGraphic.
+Use ipywidgets to modify some features of an ImageGraphic. Run in jupyterlab.
 """
 
 # test_example = false
@@ -54,15 +54,16 @@ def update_image(change):
 
     iw.set_data(data)
 
-    # set vmin, vmax sliders
+    # set vmin, vmax sliders w.r.t. this new image
     image = iw.managed_graphics[0]
     vmin_vmax_slider.value = image.vmin, image.vmax
     vmin_vmax_slider.min, vmin_vmax_slider.max = fpl.utils.quick_min_max(data)
 
 
+# connect the ipywidgets to the handler functions
 vmin_vmax_slider.observe(update_vmin_vmax, "value")
 slider_sigma.observe(update_sigma, "value")
 select_image.observe(update_image, "value")
 
-
+# display in a vbox
 VBox([iw.show(), vmin_vmax_slider, slider_sigma, select_image])
