@@ -129,12 +129,18 @@ def generate_class(
     return out
 
 
-def generate_functions_module(module, name: str):
+def generate_functions_module(module, name: str, generate_header: bool = True):
     underline = "*" * len(name)
+    if generate_header:
+        header = (
+            f"{name}\n"
+            f"{underline}\n"
+            f"\n"
+        )
+    else:
+        header = "\n"
     out = (
-        f"{name}\n"
-        f"{underline}\n"
-        f"\n"
+        f"{header}"
         f".. currentmodule:: {name}\n"
         f".. automodule:: {module.__name__}\n"
         f"    :members:\n"
@@ -329,7 +335,8 @@ def main():
 
     ##############################################################################
 
-    utils_str = generate_functions_module(utils, "fastplotlib.utils")
+    utils_str = generate_functions_module(utils.functions, "fastplotlib.utils")
+    utils_str += generate_functions_module(utils._plot_helpers, "fastplotlib.utils", generate_header=False)
 
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
