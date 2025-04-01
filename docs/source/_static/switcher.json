@@ -1,7 +1,7 @@
 [
     {
         "name": "release",
-        "version": "release",
+        "version": "v0.4.0",
         "url": "http://www.fastplotlib.org/"
     },
     {
