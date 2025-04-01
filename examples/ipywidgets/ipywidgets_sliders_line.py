@@ -1,6 +1,6 @@
 """
-LinearRegionSelectors
-=====================
+ipywidget sliders to modify a sine wave
+=======================================
 
 Example with ipywidgets sliders to change a sine wave and view the frequency spectra. You can run this in jupyterlab
 """
