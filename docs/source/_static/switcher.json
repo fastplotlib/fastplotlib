@@ -1,7 +1,22 @@
 [
     {
+        "name": "release",
+        "version": "release",
+        "url": "http://www.fastplotlib.org/"
+    },
+    {
         "name": "dev/main",
         "version": "dev",
-        "url": "http://www.fastplotlib.org/versions/dev"
+        "url": "http://www.fastplotlib.org/ver/dev"
+    },
+    {
+        "name": "v0.3.0",
+        "version": "v0.3.0",
+        "url": "http://www.fastplotlib.org/ver/0.3.0"
+    },
+    {
+        "name": "v0.4.0",
+        "version": "v0.4.0",
+        "url": "http://www.fastplotlib.org/ver/0.4.0"
     }
 ]
