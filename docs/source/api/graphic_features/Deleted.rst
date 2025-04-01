@@ -6,7 +6,7 @@ Deleted
 =======
 Deleted
 =======
-.. currentmodule:: fastplotlib.graphics._features
+.. currentmodule:: fastplotlib.graphics.features
 
 Constructor
 ~~~~~~~~~~~

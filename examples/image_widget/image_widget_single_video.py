@@ -20,7 +20,7 @@ movie = iio.imread("imageio:cockatoo.mp4")
 movie_sub = movie[:15, ::12, ::12].copy()
 del movie
 
-iw = fpl.ImageWidget(movie_sub, rgb=[True], figure_kwargs={"size": (700, 560)})
+iw = fpl.ImageWidget(movie_sub, rgb=True, figure_kwargs={"size": (700, 560)})
 
 # ImageWidget supports setting window functions the `time` "t" or `volume` "z" dimension
 # These can also be given as kwargs to `ImageWidget` during instantiation

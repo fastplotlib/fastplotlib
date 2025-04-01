@@ -56,6 +56,8 @@ Should I use ``fastplotlib`` for making publication figures?
     While `fastplotlib` figures can be exported to PNG using ``figure.export()``, `fastplotlib` is not intended for creating *static*
     publication figures. There are many other libraries that are well-suited for this task.
 
+    The rendering engine pygfx has a starting point for an svg renderer, you may try and expand upon it: https://github.com/pygfx/pygfx/tree/main/pygfx/renderers/svg
+
 How does ``fastplotlib`` handle data loading?
 ---------------------------------------------
 

@@ -6,7 +6,7 @@ TextFaceColor
 =============
 TextFaceColor
 =============
-.. currentmodule:: fastplotlib.graphics._features
+.. currentmodule:: fastplotlib.graphics.features
 
 Constructor
 ~~~~~~~~~~~

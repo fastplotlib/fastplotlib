@@ -4,7 +4,7 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from ._features import PointsSizesFeature, UniformSize, SizeSpace
+from .features import PointsSizesFeature, UniformSize, SizeSpace
 
 
 class ScatterGraphic(PositionsGraphic):

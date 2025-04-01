@@ -5,7 +5,7 @@ import pytest
 import pygfx
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import TextureArray
+from fastplotlib.graphics.features import TextureArray
 from fastplotlib.graphics.image import _ImageTile
 
 

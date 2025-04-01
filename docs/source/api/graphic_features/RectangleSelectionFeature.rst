@@ -6,7 +6,7 @@ RectangleSelectionFeature
 =========================
 RectangleSelectionFeature
 =========================
-.. currentmodule:: fastplotlib.graphics._features
+.. currentmodule:: fastplotlib.graphics.features
 
 Constructor
 ~~~~~~~~~~~

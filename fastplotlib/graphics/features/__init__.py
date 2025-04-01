@@ -19,7 +19,7 @@ from ._image import (
 from ._base import (
     GraphicFeature,
     BufferManager,
-    FeatureEvent,
+    PropertyEvent,
     to_gpu_supported_dtype,
 )
 

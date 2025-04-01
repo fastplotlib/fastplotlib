@@ -6,7 +6,7 @@ TextData
 ========
 TextData
 ========
-.. currentmodule:: fastplotlib.graphics._features
+.. currentmodule:: fastplotlib.graphics.features
 
 Constructor
 ~~~~~~~~~~~

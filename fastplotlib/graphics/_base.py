@@ -16,7 +16,7 @@ else:
 
 import pygfx
 
-from ._features import (
+from .features import (
     BufferManager,
     Deleted,
     Name,

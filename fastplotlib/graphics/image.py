@@ -6,7 +6,7 @@ import pygfx
 from ..utils import quick_min_max
 from ._base import Graphic
 from .selectors import LinearSelector, LinearRegionSelector, RectangleSelector
-from ._features import (
+from .features import (
     TextureArray,
     ImageCmap,
     ImageVmin,
