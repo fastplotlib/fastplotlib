@@ -53,7 +53,6 @@ class Offset(GraphicFeature):
         self._validate(value)
         # initialize zeros array
         self._value = np.zeros(3)
-        self._value.flags.writeable = False
 
         # set values
         self._value[:] = value
@@ -100,7 +99,6 @@ class Rotation(GraphicFeature):
         self._validate(value)
         # create zeros array
         self._value = np.zeros(4)
-        self._value.flags.writeable = False
 
         self._value[:] = value
         super().__init__()
