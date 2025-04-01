@@ -37,17 +37,22 @@ colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 figure = fpl.Figure(size=(700, 560))
 subplot_scatter = figure[0, 0]
 # use an alpha value since this will be a lot of points
-scatter_graphic = subplot_scatter.add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
+scatter_graphic = subplot_scatter.add_scatter(
+    data=cloud, sizes=3, colors=colors, alpha=0.6
+)
 
 
 i = 0.05
+
+
 def cycle_colors(subplot):
     global i
     # cycle the red values
-    scatter_graphic.colors[n_points * 2:, 0] = np.abs(np.sin(i))
-    scatter_graphic.colors[n_points * 2:, 1] = np.abs(np.sin(i + (np.pi / 4)))
-    scatter_graphic.colors[n_points * 2:, 2] = np.abs(np.cos(i))
+    scatter_graphic.colors[n_points * 2 :, 0] = np.abs(np.sin(i))
+    scatter_graphic.colors[n_points * 2 :, 1] = np.abs(np.sin(i + (np.pi / 4)))
+    scatter_graphic.colors[n_points * 2 :, 2] = np.abs(np.cos(i))
     i += 0.05
+
 
 subplot_scatter.add_animations(cycle_colors)
 

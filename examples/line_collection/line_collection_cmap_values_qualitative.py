@@ -34,20 +34,12 @@ pos_xy = np.vstack(circles)
 
 # qualitative colormap used for mapping 16 cmap values for each line
 # for example, these could be cluster labels
-cmap_values = [
-    0, 1, 1, 2,
-    0, 0, 1, 1,
-    2, 2, 3, 3,
-    1, 1, 1, 5
-]
+cmap_values = [0, 1, 1, 2, 0, 0, 1, 1, 2, 2, 3, 3, 1, 1, 1, 5]
 
 figure = fpl.Figure(size=(700, 560))
 
 figure[0, 0].add_line_collection(
-    circles,
-    cmap="tab10",
-    cmap_transform=cmap_values,
-    thickness=10
+    circles, cmap="tab10", cmap_transform=cmap_values, thickness=10
 )
 
 # remove clutter

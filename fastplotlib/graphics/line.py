@@ -6,7 +6,7 @@ import pygfx
 
 from ._positions_base import PositionsGraphic
 from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
-from ._features import Thickness, SizeSpace
+from ._features import Thickness
 
 
 class LineGraphic(PositionsGraphic):

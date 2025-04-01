@@ -21,10 +21,11 @@ for subplot in figure:
     # add an image to the subplot
     subplot.add_image(data, name="rand-img")
 
-figure[0,1]["rand-img"].cmap = "viridis"
-figure[1,0]["rand-img"].cmap = "Wistia"
-figure[0,2]["rand-img"].cmap = "gray"
-figure[1,1]["rand-img"].cmap = "spring"
+figure[0, 1]["rand-img"].cmap = "viridis"
+figure[1, 0]["rand-img"].cmap = "Wistia"
+figure[0, 2]["rand-img"].cmap = "gray"
+figure[1, 1]["rand-img"].cmap = "spring"
+
 
 # Define a function to update the image graphics with new data
 # add_animations will pass the gridplot to the animation function
@@ -33,6 +34,7 @@ def update_data(f):
         new_data = np.random.rand(512, 512)
         # index the image graphic by name and set the data
         subplot["rand-img"].data = new_data
+
 
 # add the animation function
 figure.add_animations(update_data)

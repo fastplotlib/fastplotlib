@@ -24,19 +24,13 @@ cosine = np.dstack([xs, ys])[0]
 
 # cmap_transform from an array, so the colors on the sine line will be based on the sine y-values
 sine_graphic = figure[0, 0].add_line(
-    data=sine,
-    thickness=10,
-    cmap="plasma",
-    cmap_transform=sine[:, 1]
+    data=sine, thickness=10, cmap="plasma", cmap_transform=sine[:, 1]
 )
 
 # qualitative colormaps, useful for cluster labels or other types of categorical labels
 labels = [0] * 25 + [5] * 10 + [1] * 35 + [2] * 30
 cosine_graphic = figure[0, 0].add_line(
-    data=cosine,
-    thickness=10,
-    cmap="tab10",
-    cmap_transform=labels
+    data=cosine, thickness=10, cmap="tab10", cmap_transform=labels
 )
 
 figure.show()

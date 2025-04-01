@@ -17,16 +17,13 @@ pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension-2d": MAX_TEXTURE_
 
 from .testutils import (
     ROOT,
-    examples_dir,
     screenshots_dir,
     find_examples,
     wgpu_backend,
     is_lavapipe,
     diffs_dir,
-    generate_diff,
     image_similarity,
     normalize_image,
-    prep_for_write,
 )
 
 # run all tests unless they opt-out
@@ -98,7 +95,9 @@ def test_example_screenshots(module, force_offscreen):
 
     if fpl.IMGUI:
         # there doesn't seem to be a resize event for the manual offscreen canvas
-        example.figure.imgui_renderer._backend.io.display_size = example.figure.canvas.get_logical_size()
+        example.figure.imgui_renderer._backend.io.display_size = (
+            example.figure.canvas.get_logical_size()
+        )
         # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
         # hacky but it works for now
         example.figure.imgui_renderer.render()
@@ -148,9 +147,9 @@ def test_example_screenshots(module, force_offscreen):
         if os.environ["REGENERATE_SCREENSHOTS"] == "1":
             iio.imwrite(screenshot_path, rgb)
 
-    assert (
-        screenshot_path.exists()
-    ), "found # test_example = true but no reference screenshot available"
+    assert screenshot_path.exists(), (
+        "found # test_example = true but no reference screenshot available"
+    )
 
     ref_img = iio.imread(screenshot_path)
 

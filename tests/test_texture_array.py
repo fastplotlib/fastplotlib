@@ -35,7 +35,6 @@ def check_texture_array(
     row_indices_values: np.ndarray,
     col_indices_values: np.ndarray,
 ):
-
     npt.assert_almost_equal(ta.value, data)
 
     assert ta.buffer.size == buffer_size
@@ -88,7 +87,7 @@ def make_image_graphic(data) -> fpl.ImageGraphic:
 def check_image_graphic(texture_array, graphic):
     # make sure each ImageTile has the right texture
     for (texture, chunk_index, data_slice), img in zip(
-        texture_array, graphic.world_object.children
+        texture_array, graphic.world_object.children, strict=False
     ):
         assert isinstance(img, _ImageTile)
         assert img.geometry.grid is texture

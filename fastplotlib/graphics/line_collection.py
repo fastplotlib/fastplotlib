@@ -31,7 +31,7 @@ class _LineCollectionProperties:
             if not len(values) == len(self):
                 raise IndexError
 
-            for g, v in zip(self.graphics, values):
+            for g, v in zip(self.graphics, values, strict=False):
                 g.colors = v
 
             return
@@ -39,7 +39,7 @@ class _LineCollectionProperties:
         if isinstance(values, np.ndarray):
             if values.ndim == 2:
                 # assume individual colors for each
-                for g, v in zip(self, values):
+                for g, v in zip(self, values, strict=False):
                     g.colors = v
                 return
 
@@ -49,7 +49,7 @@ class _LineCollectionProperties:
 
         else:
             # assume individual colors for each
-            for g, v in zip(self, values):
+            for g, v in zip(self, values, strict=False):
                 g.colors = v
 
     @property
@@ -59,7 +59,7 @@ class _LineCollectionProperties:
 
     @data.setter
     def data(self, values):
-        for g, v in zip(self, values):
+        for g, v in zip(self, values, strict=False):
             g.data = v
 
     @property
@@ -107,7 +107,7 @@ class _LineCollectionProperties:
         if not len(values) == len(self):
             raise IndexError
 
-        for g, v in zip(self, values):
+        for g, v in zip(self, values, strict=False):
             g.thickness = v
 
 
@@ -198,19 +198,19 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
                 raise ValueError(
-                    f"len(thickness) != len(data)\n" f"{len(thickness)} != {len(data)}"
+                    f"len(thickness) != len(data)\n{len(thickness)} != {len(data)}"
                 )
 
         if names is not None:
             if len(names) != len(data):
                 raise ValueError(
-                    f"len(names) != len(data)\n" f"{len(names)} != {len(data)}"
+                    f"len(names) != len(data)\n{len(names)} != {len(data)}"
                 )
 
         if metadatas is not None:
             if len(metadatas) != len(data):
                 raise ValueError(
-                    f"len(metadata) != len(data)\n" f"{len(metadatas)} != {len(data)}"
+                    f"len(metadata) != len(data)\n{len(metadatas)} != {len(data)}"
                 )
 
         if kwargs_lines is not None:

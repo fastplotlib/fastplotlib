@@ -52,8 +52,8 @@ def parse_colors(
         if all([isinstance(val, str) for val in colors]):
             if not len(colors) == n_colors:
                 raise ValueError(
-                    f"Valid iterable color arguments must be a `tuple` or `list` of `str` "
-                    f"where the length of the iterable is the same as the number of datapoints."
+                    "Valid iterable color arguments must be a `tuple` or `list` of `str` "
+                    "where the length of the iterable is the same as the number of datapoints."
                 )
 
             data = np.vstack([np.array(pygfx.Color(c)) for c in colors])
@@ -65,8 +65,8 @@ def parse_colors(
 
         else:
             raise ValueError(
-                f"Valid iterable color arguments must be a `tuple` or `list` representing RGBA values or "
-                f"an iterable of `str` with the same length as the number of datapoints."
+                "Valid iterable color arguments must be a `tuple` or `list` representing RGBA values or "
+                "an iterable of `str` with the same length as the number of datapoints."
             )
     elif isinstance(colors, str):
         if colors == "random":

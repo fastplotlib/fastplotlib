@@ -25,6 +25,7 @@ def update_data(figure_instance):
     new_data = np.random.rand(512, 512)
     figure_instance[0, 0]["random-image"].data = new_data
 
+
 figure.add_animations(update_data)
 
 figure.show()

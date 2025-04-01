@@ -41,7 +41,7 @@ lorenz_data = np.empty((5, num_steps + 1, 3))
 
 for i in range(5):
     xyzs = np.empty((num_steps + 1, 3))  # Need one more for the initial values
-    xyzs[0] = (0., (i * 0.3) + 1, 1.05)  # Set initial values
+    xyzs[0] = (0.0, (i * 0.3) + 1, 1.05)  # Set initial values
     # Step through "time", calculating the partial derivatives at the current point
     # and using them to estimate the next point
     for j in range(num_steps):
@@ -49,18 +49,18 @@ for i in range(5):
 
     lorenz_data[i] = xyzs
 
-figure = fpl.Figure(
-    cameras="3d",
-    controller_types="fly",
-    size=(700, 560)
-)
+figure = fpl.Figure(cameras="3d", controller_types="fly", size=(700, 560))
 
-lorenz_line = figure[0, 0].add_line_collection(data=lorenz_data, thickness=.1, cmap="tab10")
+lorenz_line = figure[0, 0].add_line_collection(
+    data=lorenz_data, thickness=0.1, cmap="tab10"
+)
 
 scatter_markers = list()
 
 for graphic in lorenz_line:
-    marker = figure[0, 0].add_scatter(graphic.data.value[0], sizes=16, colors=graphic.colors[0])
+    marker = figure[0, 0].add_scatter(
+        graphic.data.value[0], sizes=16, colors=graphic.colors[0]
+    )
     scatter_markers.append(marker)
 
 # initialize time
@@ -75,7 +75,7 @@ def animate(subplot):
     if time >= xyzs.shape[0]:
         time = 0
 
-    for scatter, g in zip(scatter_markers, lorenz_line):
+    for scatter, g in zip(scatter_markers, lorenz_line, strict=False):
         scatter.data = g.data.value[time]
 
 

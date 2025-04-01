@@ -17,7 +17,7 @@ data = iio.imread("imageio:camera.png")
 figure = fpl.Figure(size=(700, 560))
 
 # plot sine wave, use a single color
-image_graphic = figure[0,0].add_image(data=data)
+image_graphic = figure[0, 0].add_image(data=data)
 
 # show the plot
 figure.show()
@@ -41,7 +41,7 @@ def click_event(event_data):
     xy = (event_data.x, event_data.y)
 
     # map the screen coordinates to world coordinates
-    xy = figure[0,0].map_screen_to_world(xy)[:-1]
+    xy = figure[0, 0].map_screen_to_world(xy)[:-1]
 
     # print the click location
     print(xy)

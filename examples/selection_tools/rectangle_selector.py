@@ -13,9 +13,7 @@ import fastplotlib as fpl
 from itertools import product
 
 # create a figure
-figure = fpl.Figure(
-    size=(700, 560)
-)
+figure = fpl.Figure(size=(700, 560))
 
 
 # generate some data

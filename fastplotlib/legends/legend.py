@@ -7,7 +7,7 @@ import pygfx
 
 from ..graphics._base import Graphic
 from ..graphics._features._base import FeatureEvent
-from ..graphics import LineGraphic, ScatterGraphic, ImageGraphic
+from ..graphics import LineGraphic
 from ..utils import mesh_masks
 
 

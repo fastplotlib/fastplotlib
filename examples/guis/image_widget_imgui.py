@@ -41,14 +41,18 @@ class ImageProcessingWindow(EdgeWindow):
         something_changed = False
 
         # slider for gaussian filter sigma value
-        changed, value = imgui.slider_float(label="sigma", v=self.sigma, v_min=0.0, v_max=20.0)
+        changed, value = imgui.slider_float(
+            label="sigma", v=self.sigma, v_min=0.0, v_max=20.0
+        )
         if changed:
             self.sigma = value
             something_changed = True
 
         # int entries for gaussian filter order
         for axis in ["x", "y"]:
-            changed, value = imgui.input_int(f"order {axis}", v=getattr(self, f"order_{axis}"))
+            changed, value = imgui.input_int(
+                f"order {axis}", v=getattr(self, f"order_{axis}")
+            )
             if changed:
                 if value < 0:
                     value = 0
@@ -63,11 +67,15 @@ class ImageProcessingWindow(EdgeWindow):
         # do not call imgui.end_frame(), this is handled by Figure
 
     def process_image(self):
-        processed = gaussian_filter(a, sigma=self.sigma, order=(self.order_y, self.order_x))
+        processed = gaussian_filter(
+            a, sigma=self.sigma, order=(self.order_y, self.order_x)
+        )
         iw.set_data(processed)
 
 
-gui = ImageProcessingWindow(iw.figure, size=200, location="right", title="Gaussian Filter")
+gui = ImageProcessingWindow(
+    iw.figure, size=200, location="right", title="Gaussian Filter"
+)
 
 
 iw.figure.add_gui(gui)

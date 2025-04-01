@@ -42,15 +42,10 @@ with open(API_DIR.joinpath("fastplotlib.rst"), "w") as f:
         "fastplotlib\n"
         "***********\n\n"
         ".. currentmodule:: fastplotlib\n\n"
-
         ".. autofunction:: fastplotlib.pause_events\n\n"
-        
         ".. autofunction:: fastplotlib.enumerate_adapters\n\n"
-        
         ".. autofunction:: fastplotlib.select_adapter\n\n"
-        
         ".. autofunction:: fastplotlib.print_wgpu_report\n\n"
-        
         "fastplotlib.loop\n"
         "------------------\n"
         "See the rendercanvas docs: https://rendercanvas.readthedocs.io/stable/api.html#rendercanvas.BaseLoop "
@@ -60,7 +55,6 @@ with open(API_DIR.joinpath("utils.rst"), "w") as f:
     f.write(
         "fastplotlib.utils\n"
         "*****************\n\n"
-        
         "..currentmodule:: fastplotlib.utils\n"
         "..automodule:: fastplotlib.utils.functions\n"
         "    : members:\n"
@@ -161,15 +155,9 @@ def generate_page(
 ):
     page_name_underline = "*" * len(page_name)
     with open(source_path, "w") as f:
-        f.write(
-            f".. _api.{page_name}:\n"
-            f"\n"
-            f"{page_name}\n"
-            f"{page_name_underline}\n"
-            f"\n"
-        )
+        f.write(f".. _api.{page_name}:\n\n{page_name}\n{page_name_underline}\n\n")
 
-        for cls, module in zip(classes, modules):
+        for cls, module in zip(classes, modules, strict=False):
             to_write = generate_class(cls, module)
             f.write(to_write)
 
@@ -199,15 +187,15 @@ def main():
     # layouts classes index file
     with open(LAYOUTS_DIR.joinpath("index.rst"), "w") as f:
         f.write(
-            f"Layouts\n"
-            f"********\n"
-            f"\n"
-            f".. toctree::\n"
-            f"    :maxdepth: 1\n"
-            f"\n"
-            f"    imgui_figure\n"
-            f"    figure\n"
-            f"    subplot\n"
+            "Layouts\n"
+            "********\n"
+            "\n"
+            ".. toctree::\n"
+            "    :maxdepth: 1\n"
+            "\n"
+            "    imgui_figure\n"
+            "    figure\n"
+            "    subplot\n"
         )
 
     # the rest of this is a mess and can be refactored later
@@ -361,6 +349,7 @@ def main():
             "    fastplotlib\n"
             "    utils\n"
         )
+
 
 if __name__ == "__main__":
     main()

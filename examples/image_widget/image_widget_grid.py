@@ -18,7 +18,7 @@ img4 = iio.imread("imageio:wikkie.png")
 
 iw = fpl.ImageWidget(
     data=[img1, img2, img3, img4],
-    rgb=[False, True, True, True], # mix of grayscale and RGB images
+    rgb=[False, True, True, True],  # mix of grayscale and RGB images
     names=["cameraman", "astronaut", "chelsea", "Almar's cat"],
     # ImageWidget will sync controllers by default
     # by setting `controller_ids=None` we can have independent controllers for each subplot

@@ -11,7 +11,6 @@ Minimal PyQt example that displays an image.
 # sphinx_gallery_pygfx_docs = 'code'
 
 # import Qt or PySide
-from PyQt6 import QtWidgets
 import fastplotlib as fpl
 import imageio.v3 as iio
 

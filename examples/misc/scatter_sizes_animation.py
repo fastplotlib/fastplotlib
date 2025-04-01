@@ -24,6 +24,8 @@ figure[0, 0].add_scatter(data, sizes=sizes, name="sine")
 
 
 i = 0
+
+
 def update_sizes(subplot):
     global i
 

@@ -22,7 +22,7 @@ class RectManager:
         set the internal fractional and absolute screen space rects
         """
         rect = np.asarray(rect)
-        for val, name in zip(rect, ["x-position", "y-position", "width", "height"]):
+        for val, name in zip(rect, ["x-position", "y-position", "width", "height"], strict=False):
             if val < 0:
                 raise ValueError(
                     f"Invalid rect value < 0: {rect}\n All values must be non-negative."

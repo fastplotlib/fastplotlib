@@ -25,14 +25,14 @@ def test_cameras_controller_properties():
     subplot_cameras = [subplot.camera for subplot in fig]
     subplot_controllers = [subplot.controller for subplot in fig]
 
-    for c1, c2 in zip(subplot_cameras, fig.cameras.ravel()):
+    for c1, c2 in zip(subplot_cameras, fig.cameras.ravel(), strict=False):
         assert c1 is c2
 
-    for c1, c2 in zip(subplot_controllers, fig.controllers.ravel()):
+    for c1, c2 in zip(subplot_controllers, fig.controllers.ravel(), strict=False):
         assert c1 is c2
 
     for camera_type, subplot_camera in zip(
-        np.asarray(cameras).ravel(), fig.cameras.ravel()
+        np.asarray(cameras).ravel(), fig.cameras.ravel(), strict=False
     ):
         if camera_type == "2d":
             assert subplot_camera.fov == 0
@@ -40,7 +40,7 @@ def test_cameras_controller_properties():
             assert subplot_camera.fov == 50
 
     for controller_type, subplot_controller in zip(
-        np.asarray(controller_types).ravel(), fig.controllers.ravel()
+        np.asarray(controller_types).ravel(), fig.controllers.ravel(), strict=False
     ):
         match controller_type:
             case "panzoom":
@@ -148,7 +148,7 @@ def test_set_controllers_from_existing_controllers():
             shape=fig.shape, controllers=fig.controllers[:-1], canvas="offscreen"
         )
 
-    for fig1_subplot, fig2_subplot in zip(fig, fig2):
+    for fig1_subplot, fig2_subplot in zip(fig, fig2, strict=False):
         assert fig1_subplot.controller is fig2_subplot.controller
 
     cameras = [[pygfx.PerspectiveCamera(), "3d"], ["3d", "2d"]]

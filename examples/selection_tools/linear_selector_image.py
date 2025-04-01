@@ -17,7 +17,7 @@ image_data = iio.imread("imageio:coins.png")
 figure = fpl.Figure(
     (1, 3),
     size=(700, 300),
-    names=[["image", "selected row data", "selected column data"]]
+    names=[["image", "selected row data", "selected column data"]],
 )
 
 # create an image

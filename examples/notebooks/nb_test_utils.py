@@ -31,6 +31,7 @@ else:
 
 # TODO: consolidate testing functions into one module so we don't have this separate one for notebooks
 
+
 def rgba_to_rgb(img: np.ndarray) -> np.ndarray:
     black = np.zeros(img.shape).astype(np.uint8)
     black[:, :, -1] = 255
@@ -149,9 +150,7 @@ def assert_screenshot_equal(name, data):
     update_diffs(name, similar, data, ground_truth)
 
     if not similar:
-        FAILURES.append(
-            (name, rmse)
-        )
+        FAILURES.append((name, rmse))
 
 
 def update_diffs(name, is_similar, img, ground_truth):
@@ -193,6 +192,4 @@ def notebook_finished():
         return
 
     if len(FAILURES) > 0:
-        raise AssertionError(
-            f"Failures for plots:\n{FAILURES}"
-        )
+        raise AssertionError(f"Failures for plots:\n{FAILURES}")

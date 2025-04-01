@@ -1,7 +1,7 @@
 import numpy as np
 
 import pygfx
-from pylinalg import quat_from_vecs, vec_transform_quat
+from pylinalg import quat_from_vecs
 
 
 GRID_PLANES = ["xy", "xz", "yz"]
@@ -284,7 +284,7 @@ class Axes:
             raise ValueError
 
         # apply quaternion to each of x, y, z rulers
-        for dim, cbasis, new_basis in zip(["x", "y", "z"], CANONICAL_BAIS, basis):
+        for dim, cbasis, new_basis in zip(["x", "y", "z"], CANONICAL_BAIS, basis, strict=False):
             ruler: pygfx.Ruler = getattr(self, dim)
             ruler.local.rotation = quat_from_vecs(cbasis, new_basis)
 
@@ -327,7 +327,7 @@ class Axes:
         if len(colors) != 3:
             raise ValueError
 
-        for dim, color in zip(["x", "y", "z"], colors):
+        for dim, color in zip(["x", "y", "z"], colors, strict=False):
             getattr(self, dim).line.material.color = color
 
     @property

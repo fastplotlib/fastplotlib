@@ -264,7 +264,7 @@ def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
 
     colors = make_colors(len(labels), cmap, **kwargs)
 
-    return OrderedDict(zip(labels, colors))
+    return OrderedDict(zip(labels, colors, strict=False))
 
 
 def quick_min_max(data: np.ndarray) -> tuple[float, float]:
@@ -381,7 +381,6 @@ def parse_cmap_values(
 
         # can also use cm.category == "qualitative"
         if cmap_lib.Colormap(cmap_name).interpolation == "nearest":
-
             # check that cmap_values are <int> and within the number of colors `n_colors`
 
             # do not scale, use directly

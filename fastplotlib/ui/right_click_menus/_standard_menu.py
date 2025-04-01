@@ -57,13 +57,13 @@ class StandardRightClickMenu(Popup):
             if self._last_right_click_pos == imgui.get_mouse_pos():
                 if self.get_subplot() is not False:  # must explicitly check for False
                     # open only if right click was inside a subplot
-                    imgui.open_popup(f"right-click-menu")
+                    imgui.open_popup("right-click-menu")
 
         # TODO: call this just once when going from open -> closed state
         if not imgui.is_popup_open("right-click-menu"):
             self.cleanup()
 
-        if imgui.begin_popup(f"right-click-menu"):
+        if imgui.begin_popup("right-click-menu"):
             if self.get_subplot() is False:  # must explicitly check for False
                 # for some reason it will still trigger at certain locations
                 # despite open_popup() only being called when an actual
@@ -81,10 +81,10 @@ class StandardRightClickMenu(Popup):
                 imgui.separator()
 
             # autoscale, center, maintain aspect
-            if imgui.menu_item(f"Autoscale", "", False)[0]:
+            if imgui.menu_item("Autoscale", "", False)[0]:
                 self.get_subplot().auto_scale()
 
-            if imgui.menu_item(f"Center", "", False)[0]:
+            if imgui.menu_item("Center", "", False)[0]:
                 self.get_subplot().center_scene()
 
             _, maintain_aspect = imgui.menu_item(

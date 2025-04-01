@@ -20,7 +20,6 @@ from .utils import (
     generate_positions_spiral_data,
     generate_color_inputs,
     MULTI_COLORS_TRUTH,
-    generate_slice_indices,
 )
 
 
@@ -309,7 +308,8 @@ def test_cmap(
     "colors", [None, *generate_color_inputs("multi")]
 )  # cmap arg overrides colors
 @pytest.mark.parametrize(
-    "uniform_color", [True]  # none of these will work with a uniform buffer
+    "uniform_color",
+    [True],  # none of these will work with a uniform buffer
 )
 def test_incompatible_cmap_color_args(graphic_type, cmap, colors, uniform_color):
     # test incompatible cmap args
@@ -334,7 +334,8 @@ def test_incompatible_cmap_color_args(graphic_type, cmap, colors, uniform_color)
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("colors", [*generate_color_inputs("multi")])
 @pytest.mark.parametrize(
-    "uniform_color", [True]  # none of these will work with a uniform buffer
+    "uniform_color",
+    [True],  # none of these will work with a uniform buffer
 )
 def test_incompatible_color_args(graphic_type, colors, uniform_color):
     # test incompatible color args
@@ -475,7 +476,6 @@ def test_size_space(graphic_type, size_space):
         assert graphic.world_object.material.thickness_space == "world"
 
     elif graphic_type == "scatter":
-
         # test getter
         graphic = fig[0, 0].add_scatter(data=data, **kwargs)
         assert graphic.world_object.material.size_space == size_space

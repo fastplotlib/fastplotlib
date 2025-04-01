@@ -23,7 +23,7 @@ scatter_graphic = figure[0, 0].add_scatter(
     data=data[:, :-1],
     sizes=6,
     alpha=0.7,
-    colors=colors  # use colors from the list of strings
+    colors=colors,  # use colors from the list of strings
 )
 
 figure.show()

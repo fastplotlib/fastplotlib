@@ -14,7 +14,6 @@ cosine function output values on the unit circle.
 # test_example = false
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
-
 import numpy as np
 import fastplotlib as fpl
 
@@ -52,9 +51,7 @@ extents = [
 
 # create a figure with 3 subplots
 figure = fpl.Figure(
-    extents=extents,
-    names=["unit circle", "sin(x)", "cos(x)"],
-    size=(700, 560)
+    extents=extents, names=["unit circle", "sin(x)", "cos(x)"], size=(700, 560)
 )
 
 # set the axes to intersect at (0, 0, 0) to better illustrate the unit circle
@@ -111,6 +108,7 @@ def set_circle_cmap(ev):
     # set circle cmap transform
     circle_graphic.cmap.transform = cmap_transform
 
+
 # when the sine or cosine graphic is clicked, the cmap_transform
 # of the sine, cosine and circle line graphics are all set from
 # the y-values of the clicked line
@@ -127,6 +125,7 @@ def set_x_val(ev):
     cosine_selector.selection = value
 
     circle_radius.data[1, :-1] = circle_data[index]
+
 
 # add same event handler to both graphics
 sine_selector.add_event_handler(set_x_val, "selection")
