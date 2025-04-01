@@ -138,7 +138,7 @@ def test_offset(graphic):
     assert DECORATED_EVENT_VALUE.type == "offset"
     assert DECORATED_EVENT_VALUE.graphic is graphic
     assert DECORATED_EVENT_VALUE.target is graphic.world_object
-    assert DECORATED_EVENT_VALUE.info["value"] == (7.0, 8.0, 9.0)
+    npt.assert_almost_equal(DECORATED_EVENT_VALUE.info["value"], (7.0, 8.0, 9.0))
 
 
 @pytest.mark.parametrize(
@@ -202,7 +202,7 @@ def test_rotation(graphic):
     assert DECORATED_EVENT_VALUE.type == "rotation"
     assert DECORATED_EVENT_VALUE.graphic is graphic
     assert DECORATED_EVENT_VALUE.target is graphic.world_object
-    assert DECORATED_EVENT_VALUE.info["value"] == (0, 0, 0.6, 0.8)
+    npt.assert_almost_equal(DECORATED_EVENT_VALUE.info["value"], (0, 0, 0.6, 0.8))
 
 
 @pytest.mark.parametrize(
