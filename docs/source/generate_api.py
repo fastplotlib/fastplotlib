@@ -1,7 +1,9 @@
-from typing import *
+from collections import defaultdict
 import inspect
-from pathlib import Path
+from io import StringIO
 import os
+from pathlib import Path
+from typing import *
 
 import fastplotlib
 from fastplotlib.layouts import Subplot
@@ -168,6 +170,57 @@ def generate_page(
         for cls, module in zip(classes, modules):
             to_write = generate_class(cls, module)
             f.write(to_write)
+
+#######################################################
+# Used for GraphicFeature class event table
+# copy-pasted from https://pablofernandez.tech/2019/03/21/turning-a-list-of-dicts-into-a-restructured-text-table/
+
+def _generate_header(field_names, column_widths):
+    with StringIO() as output:
+        for field_name in field_names:
+            output.write(f"+-{'-' * column_widths[field_name]}-")
+        output.write("+\n")
+        for field_name in field_names:
+            output.write(f"| {field_name} {' ' * (column_widths[field_name] - len(field_name))}")
+        output.write("|\n")
+        for field_name in field_names:
+            output.write(f"+={'=' * column_widths[field_name]}=")
+        output.write("+\n")
+        return output.getvalue()
+
+
+def _generate_row(row, field_names, column_widths):
+    with StringIO() as output:
+        for field_name in field_names:
+            output.write(f"| {row[field_name]}{' ' * (column_widths[field_name] - len(str(row[field_name])))} ")
+        output.write("|\n")
+        for field_name in field_names:
+            output.write(f"+-{'-' * column_widths[field_name]}-")
+        output.write("+\n")
+        return output.getvalue()
+
+
+def _get_fields(data):
+    field_names = []
+    column_widths = defaultdict(lambda: 0)
+    for row in data:
+        for field_name in row:
+            if field_name not in field_names:
+                field_names.append(field_name)
+            column_widths[field_name] = max(column_widths[field_name], len(field_name), len(str(row[field_name])))
+    return field_names, column_widths
+
+
+def dict_to_rst_table(data):
+    """convert a list of dicts to an RST table"""
+    field_names, column_widths = _get_fields(data)
+    with StringIO() as output:
+        output.write(_generate_header(field_names, column_widths))
+        for row in data:
+            output.write(_generate_row(row, field_names, column_widths))
+        return output.getvalue()
+
+#######################################################
 
 
 def main():
