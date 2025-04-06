@@ -406,7 +406,7 @@ def parse_cmap_values(
         return colors
 
 
-def subsample_array(arr, max_size=1e6):
+def subsample_array(arr: np.ndarray, max_size: int=1e6):
     """
     subsamples an input array while preserving its relative dimensional proportions.
 
@@ -415,29 +415,15 @@ def subsample_array(arr, max_size=1e6):
     arr : np.ndarray
         input array of any dimensionality to be subsampled.
 
-    max_size : int, optional
-        largest array size allowed in the subsampled array. Default is 1e6.
-
     Returns
     -------
     np.ndarray
         subsampled version of the input array
     """
-    array_shape = np.array(arr.shape)
-    array_size = np.prod(array_shape)
-
-    if array_size <= max_size:
+    if np.prod(arr.shape) <= max_size:
         return arr  # no need to subsample if already below the threshold
 
-    # relative proportions based on the shape
-    proportions = array_shape / array_shape.sum()
-    target_shape = np.maximum((proportions * array_size).astype(int), 1)
-
-    # keep total elements within limit
-    scale_factor = (array_size / np.prod(target_shape)) ** (1 / len(array_shape))
-    target_shape = np.maximum((target_shape * scale_factor).astype(int), 1)
-
-    steps = np.ceil(array_shape / target_shape).astype(int)
-    slices = tuple(slice(None, None, step) for step in steps)
-
-    return arr[slices]
+    f = np.power((np.prod(arr.shape) / 1e6), 1.0 / arr.ndim)
+    ns = np.floor(np.array(arr.shape) / f).clip(min=1)
+    slices = tuple(slice(None, None, int(s)) for s in np.floor(arr.shape / ns).astype(int))
+    return np.asarray(arr[slices])
