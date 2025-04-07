@@ -59,12 +59,12 @@ class CollectionProperties:
     # TODO: how to work with deleted feature in a collection
 
     @property
-    def visibles(self) -> np.ndarray[bool]:
+    def visible(self) -> np.ndarray[bool]:
         """get or set the offsets of the individual graphics in the collection"""
         return np.asarray([g.visible for g in self])
 
-    @visibles.setter
-    def visibles(self, values: np.ndarray[bool] | list[bool]):
+    @visible.setter
+    def visible(self, values: np.ndarray[bool] | list[bool]):
         self._set_feature("visible", values)
 
 

@@ -33,7 +33,7 @@ line1 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", offset=(0, 2, 0))
 # i.e., the color is a function of sine(x)
 line2 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", cmap_transform=sine[:, 1], offset=(0, 4, 0))
 
-# make a line and change the cmap afterward, here we are using the cosine instead fot the transform
+# make a line and change the cmap afterward, here we are using the cosine instead for the transform
 line3 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", cmap_transform=cosine[:, 1], offset=(0, 6, 0))
 # change the cmap
 line3.cmap = "bwr"

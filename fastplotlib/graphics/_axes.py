@@ -473,7 +473,7 @@ class Axes:
                     (xscreen_10, yscreen_10)
                 )
             else:
-                # force origin since None is not supported for Persepctive projections
+                # force origin since None is not supported for Perspective projections
                 self._intersection = (0, 0, 0)
                 intersection = self._intersection
 
