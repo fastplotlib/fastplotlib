@@ -38,7 +38,7 @@ class GraphicFeatureEvent(pygfx.Event):
     +------------+-------------+-----------------------------------------------+
     | target     | WorldObject | pygfx rendering engine object for the graphic |
     +------------+-------------+-----------------------------------------------+
-    | time_stamp | float       | time when the event occurred, in ms            |
+    | time_stamp | float       | time when the event occurred, in ms           |
     +------------+-------------+-----------------------------------------------+
 
     """
