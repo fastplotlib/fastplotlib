@@ -4,7 +4,15 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from .features import PointsSizesFeature, UniformSize, SizeSpace, VertexPositions, VertexColors, UniformColor, VertexCmap
+from .features import (
+    PointsSizesFeature,
+    UniformSize,
+    SizeSpace,
+    VertexPositions,
+    VertexColors,
+    UniformColor,
+    VertexCmap,
+)
 
 
 class ScatterGraphic(PositionsGraphic):

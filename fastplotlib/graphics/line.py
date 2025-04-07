@@ -6,7 +6,14 @@ import pygfx
 
 from ._positions_base import PositionsGraphic
 from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
-from .features import Thickness, VertexPositions, VertexColors, UniformColor, VertexCmap, SizeSpace
+from .features import (
+    Thickness,
+    VertexPositions,
+    VertexColors,
+    UniformColor,
+    VertexCmap,
+    SizeSpace,
+)
 from ..utils import quick_min_max
 
 

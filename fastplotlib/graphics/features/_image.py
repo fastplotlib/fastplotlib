@@ -164,6 +164,7 @@ class TextureArray(GraphicFeature):
 
 class ImageVmin(GraphicFeature):
     """lower contrast limit"""
+
     event_info_spec = [
         {
             "dict key": "value",
