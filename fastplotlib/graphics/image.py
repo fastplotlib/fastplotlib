@@ -188,7 +188,6 @@ class ImageGraphic(Graphic):
             world_object.add(img)
 
         self._set_world_object(world_object)
-        self._verify_features()
 
     @property
     def data(self) -> TextureArray:
