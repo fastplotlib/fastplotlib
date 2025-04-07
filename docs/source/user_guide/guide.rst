@@ -293,7 +293,7 @@ event object will have relevant information that can be used in the callback. Se
 Graphic property events
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-All ``Graphic`` events are instances of ``fastplotlib.graphics.features.GraphicFeatureEvent`` and have the following attributes:
+All ``Graphic`` events are instances of ``fastplotlib.GraphicFeatureEvent`` and have the following attributes:
 
     +------------+-------------+-----------------------------------------------+
     | attribute  | type        | description                                   |
@@ -350,44 +350,7 @@ You can understand an event's attributes by adding a simple event handler::
 
 ..
 
-info dicts for array-like properties
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-**ImageGraphic**
-
-**data**
-
-.. autoclass:: fastplotlib.graphics.features.TextureArray
-   :noindex:
-   :members:
-
-**LineGraphic and ScatterGraphic**
-
-**data**
-
-.. autoclass:: fastplotlib.graphics.features.VertexPositions
-   :noindex:
-   :members:
-
-**colors**
-
-.. note:: only if ``uniform_color`` is ``False``
-
-.. autoclass:: fastplotlib.graphics.features.VertexColors
-   :noindex:
-   :members:
-
-**cmap**
-
-Same as colors above.
-
-**sizes**
-
-Only for ``ScatterGraphic``
-
-.. autoclass:: fastplotlib.graphics.features.PointsSizesFeature
-   :noindex:
-   :members:
+The :ref:`event_tables` provide a description of the event info dicts for all Graphic Feature Events.
 
 Selection event
 ~~~~~~~~~~~~~~~
@@ -396,29 +359,15 @@ The ``selection`` event for selectors has additional attributes, mostly ``callab
 selector tool, such as getting the indices or data under the selection. The ``info`` dict will contain one entry ``value``
 which is the new selection value.
 
-**LinearSelector**
-
-.. autoclass:: fastplotlib.graphics.features.LinearSelectionFeature
-   :noindex:
-   :members:
-
-**LiearRegionSelector**
-
-.. autoclass:: fastplotlib.graphics.features.LinearRegionSelectionFeature
-   :noindex:
-   :members:
-
-**RectangleSelector**
-
-.. autoclass:: fastplotlib.graphics.features.RectangleSelectionFeature
-   :noindex:
-   :members:
+The :ref:`event_tables` provide a description of the additional attributes as well as the event info dicts for selector events.
 
 Canvas Events
 ^^^^^^^^^^^^^
 
 Canvas events can be added to a graphic or to a Figure (see next section).
 Here is a description of all canvas events and their attributes.
+
+The examples gallery provides several examples using pointer and key events.
 
 Pointer events
 ~~~~~~~~~~~~~~

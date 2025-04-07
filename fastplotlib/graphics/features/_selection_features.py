@@ -7,24 +7,21 @@ from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
 
 class LinearSelectionFeature(GraphicFeature):
-    """
-    **additional event attributes:**
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float",
+            "description": "new x or y value of selection",
+        },
+    ]
 
-    +--------------------+----------+------------------------------------+
-    | attribute          | type     | description                        |
-    +====================+==========+====================================+
-    | get_selected_index | callable | returns indices under the selector |
-    +--------------------+----------+------------------------------------+
-
-    **info dict:**
-
-    +----------+------------+-------------------------------+
-    | dict key | value type | value description             |
-    +==========+============+===============================+
-    | value    | np.ndarray | new x or y value of selection |
-    +----------+------------+-------------------------------+
-
-    """
+    event_extra_attrs = [
+        {
+            "attribute": "get_selected_index",
+            "type": "callable",
+            "description": "returns index under the selector",
+        }
+    ]
 
     def __init__(self, axis: str, value: float, limits: tuple[float, float]):
         """
@@ -78,26 +75,26 @@ class LinearSelectionFeature(GraphicFeature):
 
 
 class LinearRegionSelectionFeature(GraphicFeature):
-    """
-    **additional event attributes:**
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "np.ndarray",
+            "description": "new [min, max] of selection",
+        },
+    ]
 
-    +----------------------+----------+------------------------------------+
-    | attribute            | type     | description                        |
-    +======================+==========+====================================+
-    | get_selected_indices | callable | returns indices under the selector |
-    +----------------------+----------+------------------------------------+
-    | get_selected_data    | callable | returns data under the selector    |
-    +----------------------+----------+------------------------------------+
-
-    **info dict:**
-
-    +----------+------------+-----------------------------+
-    | dict key | value type | value description           |
-    +==========+============+=============================+
-    | value    | np.ndarray | new [min, max] of selection |
-    +----------+------------+-----------------------------+
-
-    """
+    event_extra_attrs = [
+        {
+            "attribute": "get_selected_indices",
+            "type": "callable",
+            "description": "returns indices under the selector",
+        },
+        {
+            "attribute": "get_selected_data",
+            "type": "callable",
+            "description": "returns data under the selector",
+        },
+    ]
 
     def __init__(self, value: tuple[int, int], axis: str, limits: tuple[float, float]):
         super().__init__()
@@ -195,26 +192,26 @@ class LinearRegionSelectionFeature(GraphicFeature):
 
 
 class RectangleSelectionFeature(GraphicFeature):
-    """
-    **additional event attributes:**
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "np.ndarray",
+            "description": "new [xmin, xmax, ymin, ymax] of selection",
+        },
+    ]
 
-    +----------------------+----------+------------------------------------+
-    | attribute            | type     | description                        |
-    +======================+==========+====================================+
-    | get_selected_indices | callable | returns indices under the selector |
-    +----------------------+----------+------------------------------------+
-    | get_selected_data    | callable | returns data under the selector    |
-    +----------------------+----------+------------------------------------+
-
-    **info dict:**
-
-    +----------+------------+-------------------------------------------+
-    | dict key | value type | value description                         |
-    +==========+============+===========================================+
-    | value    | np.ndarray | new [xmin, xmax, ymin, ymax] of selection |
-    +----------+------------+-------------------------------------------+
-
-    """
+    event_extra_attrs = [
+        {
+            "attribute": "get_selected_indices",
+            "type": "callable",
+            "description": "returns indices under the selector",
+        },
+        {
+            "attribute": "get_selected_data",
+            "type": "callable",
+            "description": "returns data under the selector",
+        },
+    ]
 
     def __init__(
         self,

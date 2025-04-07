@@ -12,6 +12,8 @@ from ._base_selector import BaseSelector
 
 
 class RectangleSelector(BaseSelector):
+    _features = {"selection": RectangleSelectionFeature}
+
     @property
     def parent(self) -> Graphic | None:
         """Graphic that selector is associated with."""

@@ -12,6 +12,8 @@ from ._base_selector import BaseSelector
 
 
 class LinearSelector(BaseSelector):
+    _features = {"selection": LinearSelectionFeature}
+
     @property
     def parent(self) -> Graphic:
         return self._parent

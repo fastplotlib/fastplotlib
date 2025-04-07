@@ -23,6 +23,7 @@ GRAPHIC_FEATURES_DIR = API_DIR.joinpath("graphic_features")
 SELECTORS_DIR = API_DIR.joinpath("selectors")
 WIDGETS_DIR = API_DIR.joinpath("widgets")
 UI_DIR = API_DIR.joinpath("ui")
+GUIDE_DIR = current_dir.joinpath("user_guide")
 
 doc_sources = [
     API_DIR,
@@ -218,6 +219,9 @@ def dict_to_rst_table(data):
         output.write(_generate_header(field_names, column_widths))
         for row in data:
             output.write(_generate_row(row, field_names, column_widths))
+
+        output.write("\n")
+
         return output.getvalue()
 
 #######################################################
@@ -394,7 +398,7 @@ def main():
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
 
-    # nake API index file
+    # make API index file
     with open(API_DIR.joinpath("index.rst"), "w") as f:
         f.write(
             "API Reference\n"
@@ -411,6 +415,39 @@ def main():
             "    fastplotlib\n"
             "    utils\n"
         )
+
+    ##############################################################################
+    # graphic feature event tables
+
+    def write_table(name, feature_cls):
+        s = f"{name}\n"
+        s += "^" * len(name) + "\n\n"
+
+        if hasattr(feature_cls, "event_extra_attrs"):
+            s += "**extra attributes**\n\n"
+            s += dict_to_rst_table(feature_cls.event_extra_attrs)
+
+        s += "**event info dict**\n\n"
+        s += dict_to_rst_table(feature_cls.event_info_spec)
+
+        return s
+
+    with open(GUIDE_DIR.joinpath("event_tables.rst"), "w") as f:
+        f.write(".. _event_tables:\n\n")
+        f.write("Event Tables\n")
+        f.write("============\n\n")
+
+        for graphic_cls in [*graphic_classes, *selector_classes]:
+            f.write(f"{graphic_cls.__name__}\n")
+            f.write("-" * len(graphic_cls.__name__) + "\n\n")
+            for name, type_ in graphic_cls._features.items():
+                if isinstance(type_, tuple):
+                    for t in type_:
+                        if t is None:
+                            continue
+                        f.write(write_table(name, t))
+                else:
+                    f.write(write_table(name, type_))
 
 
 if __name__ == "__main__":

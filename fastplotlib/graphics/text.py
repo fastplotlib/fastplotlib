@@ -13,11 +13,11 @@ from .features import (
 
 class TextGraphic(Graphic):
     _features = {
-        "text",
-        "font_size",
-        "face_color",
-        "outline_color",
-        "outline_thickness",
+        "text": TextData,
+        "font_size": FontSize,
+        "face_color": TextFaceColor,
+        "outline_color": TextOutlineColor,
+        "outline_thickness": TextOutlineThickness,
     }
 
     def __init__(

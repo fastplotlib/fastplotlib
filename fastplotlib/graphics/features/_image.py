@@ -15,16 +15,18 @@ from ...utils import (
 
 # manages an array of 8192x8192 Textures representing chunks of an image
 class TextureArray(GraphicFeature):
-    """
-    +----------+--------------------------------------+--------------------------------------------------+
-    | dict key | value type                           | value description                                |
-    +==========+======================================+==================================================+
-    | key      | slice, index, numpy-like fancy index | key at which image data was sliced/fancy indexed |
-    +----------+--------------------------------------+--------------------------------------------------+
-    | value    | np.ndarray | float                   | new data values                                  |
-    +----------+--------------------------------------+--------------------------------------------------+
-
-    """
+    event_info_spec = [
+        {
+            "dict key": "key",
+            "type": "slice, index, numpy-like fancy index",
+            "description": "key at which image data was sliced/fancy indexed",
+        },
+        {
+            "dict key": "value",
+            "type": "np.ndarray | float",
+            "description": "new data values",
+        },
+    ]
 
     def __init__(self, data, isolated_buffer: bool = True):
         super().__init__()
@@ -162,6 +164,13 @@ class TextureArray(GraphicFeature):
 
 class ImageVmin(GraphicFeature):
     """lower contrast limit"""
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float",
+            "description": "new vmin value",
+        },
+    ]
 
     def __init__(self, value: float):
         self._value = value
@@ -184,6 +193,14 @@ class ImageVmin(GraphicFeature):
 class ImageVmax(GraphicFeature):
     """upper contrast limit"""
 
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float",
+            "description": "new vmax value",
+        },
+    ]
+
     def __init__(self, value: float):
         self._value = value
         super().__init__()
@@ -204,6 +221,14 @@ class ImageVmax(GraphicFeature):
 
 class ImageCmap(GraphicFeature):
     """colormap for texture"""
+
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str",
+            "description": "new cmap name",
+        },
+    ]
 
     def __init__(self, value: str):
         self._value = value
@@ -227,6 +252,14 @@ class ImageCmap(GraphicFeature):
 
 class ImageInterpolation(GraphicFeature):
     """Image interpolation method"""
+
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str",
+            "description": "new interpolation method, nearest | linear",
+        },
+    ]
 
     def __init__(self, value: str):
         self._validate(value)
@@ -254,6 +287,14 @@ class ImageInterpolation(GraphicFeature):
 
 class ImageCmapInterpolation(GraphicFeature):
     """Image cmap interpolation method"""
+
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str",
+            "description": "new cmap interpolatio method, nearest | linear",
+        },
+    ]
 
     def __init__(self, value: str):
         self._validate(value)

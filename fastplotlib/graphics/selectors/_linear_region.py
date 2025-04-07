@@ -11,6 +11,8 @@ from ._base_selector import BaseSelector
 
 
 class LinearRegionSelector(BaseSelector):
+    _features = {"selection": LinearRegionSelectionFeature}
+
     @property
     def parent(self) -> Graphic | None:
         """graphic that the selector is associated with"""

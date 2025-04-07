@@ -6,12 +6,18 @@ import pygfx
 
 from ._positions_base import PositionsGraphic
 from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
-from .features import Thickness
+from .features import Thickness, VertexPositions, VertexColors, UniformColor, VertexCmap, SizeSpace
 from ..utils import quick_min_max
 
 
 class LineGraphic(PositionsGraphic):
-    _features = {"data", "colors", "cmap", "thickness", "size_space"}
+    _features = {
+        "data": VertexPositions,
+        "colors": (VertexColors, UniformColor),
+        "cmap": (VertexCmap, None),  # none if UniformColor
+        "thickness": Thickness,
+        "size_space": SizeSpace,
+    }
 
     def __init__(
         self,
