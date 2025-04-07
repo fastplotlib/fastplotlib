@@ -406,24 +406,58 @@ def parse_cmap_values(
         return colors
 
 
-def subsample_array(arr: np.ndarray, max_size: int=1e6):
+def subsample_array(arr: np.ndarray, max_size: int = 1e6):
     """
-    subsamples an input array while preserving its relative dimensional proportions.
+    Subsamples an input array while preserving its relative dimensional proportions.
 
+    The dimensions (shape) of the array can be represented as:
+
+    .. math::
+
+        [d_1, d_2, \\dots d_n]
+
+    The product of the dimensions can be represented as:
+
+    .. math::
+
+        \\prod_{i=1}^{n} d_i
+
+    To find the factor ``f`` by which to divide the size of each dimension in order to 
+    get max_size ``s`` we must solve for ``f`` in the following expression:
+
+    .. math::
+
+        \\prod_{i=1}^{n} \\frac{d_i}{\\mathbf{f}} = \\mathbf{s}
+
+    The solution for ``f`` is is simply the nth root of the product of the dims divided by the max_size 
+    where n is the number of dimensions
+
+    .. math::
+
+        \\mathbf{f} = \\sqrt[n]{\\frac{\\prod_{i=1}^{n} d_i}{\\mathbf{s}}}
+        
     Parameters
     ----------
-    arr : np.ndarray
+    arr: np.ndarray
         input array of any dimensionality to be subsampled.
+
+    max_size: int, default 1e6
+        maximum number of elements in subsampled array
 
     Returns
     -------
     np.ndarray
-        subsampled version of the input array
+        subsample of the input array
     """
     if np.prod(arr.shape) <= max_size:
         return arr  # no need to subsample if already below the threshold
 
-    f = np.power((np.prod(arr.shape) / 1e6), 1.0 / arr.ndim)
+    # get factor by which to divide all dims
+    f = np.power((np.prod(arr.shape) / max_size), 1.0 / arr.ndim)
+
+    # new shape for subsampled array
     ns = np.floor(np.array(arr.shape) / f).clip(min=1)
+
+    # get the step size for the slices
     slices = tuple(slice(None, None, int(s)) for s in np.floor(arr.shape / ns).astype(int))
     return np.asarray(arr[slices])
