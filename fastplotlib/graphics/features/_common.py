@@ -6,11 +6,7 @@ from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 class Name(GraphicFeature):
     property_name = "name"
     event_info_spec = [
-        {
-            "dict key": "value",
-            "type": "str",
-            "description": "user provided name"
-        },
+        {"dict key": "value", "type": "str", "description": "user provided name"},
     ]
 
     def __init__(self, value: str):
@@ -43,7 +39,7 @@ class Offset(GraphicFeature):
         {
             "dict key": "value",
             "type": "np.ndarray[float, float, float]",
-            "description": "new offset (x, y, z)"
+            "description": "new offset (x, y, z)",
         },
     ]
 
@@ -89,7 +85,7 @@ class Rotation(GraphicFeature):
         {
             "dict key": "value",
             "type": "np.ndarray[float, float, float, float]",
-            "description": "new rotation quaternion"
+            "description": "new rotation quaternion",
         },
     ]
 
@@ -136,11 +132,7 @@ class Visible(GraphicFeature):
 
     property_name = "offset"
     event_info_spec = [
-        {
-            "dict key": "value",
-            "type": "bool",
-            "description": "new visibility bool"
-        },
+        {"dict key": "value", "type": "bool", "description": "new visibility bool"},
     ]
 
     def __init__(self, value: bool):
@@ -170,7 +162,7 @@ class Deleted(GraphicFeature):
         {
             "dict key": "value",
             "type": "bool",
-            "description": "True when graphic was deleted"
+            "description": "True when graphic was deleted",
         },
     ]
 

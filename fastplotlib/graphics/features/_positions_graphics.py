@@ -22,18 +22,18 @@ class VertexColors(BufferManager):
         {
             "dict key": "key",
             "type": "slice, index, numpy-like fancy index",
-            "description": "index/slice at which colors were indexed/sliced"
+            "description": "index/slice at which colors were indexed/sliced",
         },
         {
             "dict key": "value",
             "type": "np.ndarray [n_points_changed, RGBA]",
-            "description": "new color values for points that were changed"
+            "description": "new color values for points that were changed",
         },
         {
             "dict key": "user_value",
             "type": "str or array-like",
-            "description": "user input value that was parsed into the RGBA array"
-        }
+            "description": "user input value that was parsed into the RGBA array",
+        },
     ]
 
     def __init__(
@@ -154,7 +154,7 @@ class UniformColor(GraphicFeature):
         {
             "dict key": "value",
             "type": "np.ndarray [RGBA]",
-            "description": "new color value"
+            "description": "new color value",
         },
     ]
 
@@ -184,11 +184,7 @@ class UniformColor(GraphicFeature):
 class UniformSize(GraphicFeature):
     property_name = "sizes"
     event_info_spec = [
-        {
-            "dict key": "value",
-            "type": "float",
-            "description": "new size value"
-        },
+        {"dict key": "value", "type": "float", "description": "new size value"},
     ]
 
     def __init__(self, value: int | float):
@@ -217,7 +213,7 @@ class SizeSpace(GraphicFeature):
         {
             "dict key": "value",
             "type": "str",
-            "description": "'screen' | 'world' | 'model'"
+            "description": "'screen' | 'world' | 'model'",
         },
     ]
 
@@ -234,7 +230,9 @@ class SizeSpace(GraphicFeature):
     @block_reentrance
     def set_value(self, graphic, value: str):
         if value not in ["screen", "world", "model"]:
-            raise ValueError(f"`size_space` must be one of: {['screen', 'world', 'model']}")
+            raise ValueError(
+                f"`size_space` must be one of: {['screen', 'world', 'model']}"
+            )
 
         if "Line" in graphic.world_object.material.__class__.__name__:
             graphic.world_object.material.thickness_space = value
@@ -252,12 +250,12 @@ class VertexPositions(BufferManager):
         {
             "dict key": "key",
             "type": "slice, index (int) or numpy-like fancy index",
-            "description": "key at which vertex positions data were indexed/sliced"
+            "description": "key at which vertex positions data were indexed/sliced",
         },
         {
             "dict key": "value",
             "type": "int | float | array-like",
-            "description": "new data values for points that were changed"
+            "description": "new data values for points that were changed",
         },
     ]
 
@@ -314,12 +312,12 @@ class PointsSizesFeature(BufferManager):
         {
             "dict key": "key",
             "type": "slice, index (int) or numpy-like fancy index",
-            "description": "key at which point sizes were indexed/sliced"
+            "description": "key at which point sizes were indexed/sliced",
         },
         {
             "dict key": "value",
             "type": "int | float | array-like",
-            "description": "new size values for points that were changed"
+            "description": "new size values for points that were changed",
         },
     ]
 
@@ -388,11 +386,7 @@ class PointsSizesFeature(BufferManager):
 class Thickness(GraphicFeature):
     property_name = "thickness"
     event_info_spec = [
-        {
-            "dict key": "value",
-            "type": "float",
-            "description": "new thickness value"
-        },
+        {"dict key": "value", "type": "float", "description": "new thickness value"},
     ]
 
     def __init__(self, value: float):
@@ -419,12 +413,12 @@ class VertexCmap(BufferManager):
         {
             "dict key": "key",
             "type": "slice",
-            "description": "key at cmap colors were sliced"
+            "description": "key at cmap colors were sliced",
         },
         {
             "dict key": "value",
             "type": "str",
-            "description": "new cmap to set at given slice"
+            "description": "new cmap to set at given slice",
         },
     ]
 
