@@ -67,4 +67,5 @@ __all__ = [
     "Rotation",
     "Visible",
     "Deleted",
+    "GraphicFeatureEvent"
 ]
