@@ -1,8 +1,8 @@
 from numpy import testing as npt
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import (
-    FeatureEvent,
+from fastplotlib.graphics.features import (
+    GraphicFeatureEvent,
     TextData,
     FontSize,
     TextFaceColor,
@@ -40,7 +40,7 @@ def test_create_graphic():
     assert text.world_object.material.outline_thickness == 0
 
 
-EVENT_RETURN_VALUE: FeatureEvent = None
+EVENT_RETURN_VALUE: GraphicFeatureEvent = None
 
 
 def event_handler(ev):
@@ -50,7 +50,7 @@ def event_handler(ev):
 
 def check_event(graphic, feature, value):
     global EVENT_RETURN_VALUE
-    assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+    assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
     assert EVENT_RETURN_VALUE.type == feature
     assert EVENT_RETURN_VALUE.graphic == graphic
     assert EVENT_RETURN_VALUE.target == graphic.world_object

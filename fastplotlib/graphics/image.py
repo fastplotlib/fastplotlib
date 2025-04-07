@@ -6,7 +6,7 @@ import pygfx
 from ..utils import quick_min_max
 from ._base import Graphic
 from .selectors import LinearSelector, LinearRegionSelector, RectangleSelector
-from ._features import (
+from .features import (
     TextureArray,
     ImageCmap,
     ImageVmin,
@@ -71,7 +71,14 @@ class _ImageTile(pygfx.Image):
 
 
 class ImageGraphic(Graphic):
-    _features = {"data", "cmap", "vmin", "vmax", "interpolation", "cmap_interpolation"}
+    _features = {
+        "data": TextureArray,
+        "cmap": ImageCmap,
+        "vmin": ImageVmin,
+        "vmax": ImageVmax,
+        "interpolation": ImageInterpolation,
+        "cmap_interpolation": ImageCmapInterpolation,
+    }
 
     def __init__(
         self,

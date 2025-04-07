@@ -2,10 +2,18 @@ import numpy as np
 
 import pygfx
 
-from ._base import GraphicFeature, FeatureEvent, block_reentrance
+from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
 
 class TextData(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str",
+            "description": "new text data",
+        },
+    ]
+
     def __init__(self, value: str):
         self._value = value
         super().__init__()
@@ -19,11 +27,19 @@ class TextData(GraphicFeature):
         graphic.world_object.set_text(value)
         self._value = value
 
-        event = FeatureEvent(type="text", info={"value": value})
+        event = GraphicFeatureEvent(type="text", info={"value": value})
         self._call_event_handlers(event)
 
 
 class FontSize(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float | int",
+            "description": "new font size",
+        },
+    ]
+
     def __init__(self, value: float | int):
         self._value = value
         super().__init__()
@@ -37,11 +53,19 @@ class FontSize(GraphicFeature):
         graphic.world_object.font_size = value
         self._value = graphic.world_object.font_size
 
-        event = FeatureEvent(type="font_size", info={"value": value})
+        event = GraphicFeatureEvent(type="font_size", info={"value": value})
         self._call_event_handlers(event)
 
 
 class TextFaceColor(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str | np.ndarray",
+            "description": "new text color",
+        },
+    ]
+
     def __init__(self, value: str | np.ndarray | list[float] | tuple[float]):
         self._value = pygfx.Color(value)
         super().__init__()
@@ -56,11 +80,19 @@ class TextFaceColor(GraphicFeature):
         graphic.world_object.material.color = value
         self._value = graphic.world_object.material.color
 
-        event = FeatureEvent(type="face_color", info={"value": value})
+        event = GraphicFeatureEvent(type="face_color", info={"value": value})
         self._call_event_handlers(event)
 
 
 class TextOutlineColor(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str | np.ndarray",
+            "description": "new outline color",
+        },
+    ]
+
     def __init__(self, value: str | np.ndarray | list[float] | tuple[float]):
         self._value = pygfx.Color(value)
         super().__init__()
@@ -75,11 +107,19 @@ class TextOutlineColor(GraphicFeature):
         graphic.world_object.material.outline_color = value
         self._value = graphic.world_object.material.outline_color
 
-        event = FeatureEvent(type="outline_color", info={"value": value})
+        event = GraphicFeatureEvent(type="outline_color", info={"value": value})
         self._call_event_handlers(event)
 
 
 class TextOutlineThickness(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float",
+            "description": "new text outline thickness",
+        },
+    ]
+
     def __init__(self, value: float):
         self._value = value
         super().__init__()
@@ -93,5 +133,5 @@ class TextOutlineThickness(GraphicFeature):
         graphic.world_object.material.outline_thickness = value
         self._value = graphic.world_object.material.outline_thickness
 
-        event = FeatureEvent(type="outline_thickness", info={"value": value})
+        event = GraphicFeatureEvent(type="outline_thickness", info={"value": value})
         self._call_event_handlers(event)

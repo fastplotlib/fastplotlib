@@ -5,8 +5,8 @@ Graphics
     :maxdepth: 1
 
     LineGraphic
-    ImageGraphic
     ScatterGraphic
+    ImageGraphic
     TextGraphic
     LineCollection
     LineStack

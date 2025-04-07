@@ -2,7 +2,7 @@ import numpy as np
 from numpy import testing as npt
 import pytest
 
-from fastplotlib.graphics._features import PointsSizesFeature
+from fastplotlib.graphics.features import PointsSizesFeature
 from .utils import generate_slice_indices
 
 

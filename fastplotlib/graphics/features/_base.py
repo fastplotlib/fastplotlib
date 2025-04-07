@@ -1,5 +1,5 @@
 from warnings import warn
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -23,7 +23,7 @@ def to_gpu_supported_dtype(array):
     return np.asarray(array).astype(np.float32)
 
 
-class FeatureEvent(pygfx.Event):
+class GraphicFeatureEvent(pygfx.Event):
     """
     **All event instances have the following attributes**
 
@@ -34,11 +34,11 @@ class FeatureEvent(pygfx.Event):
     +------------+-------------+-----------------------------------------------+
     | graphic    | Graphic     | graphic instance that the event is from       |
     +------------+-------------+-----------------------------------------------+
-    | info       | dict        | event info dictionary (see below)             |
+    | info       | dict        | event info dictionary                         |
     +------------+-------------+-----------------------------------------------+
     | target     | WorldObject | pygfx rendering engine object for the graphic |
     +------------+-------------+-----------------------------------------------+
-    | time_stamp | float       | time when the event occured, in ms            |
+    | time_stamp | float       | time when the event occurred, in ms           |
     +------------+-------------+-----------------------------------------------+
 
     """
@@ -57,7 +57,7 @@ class GraphicFeature:
         self._reentrant_block: bool = False
 
     @property
-    def value(self) -> Any:
+    def value(self):
         """Graphic Feature value, must be implemented in subclass"""
         raise NotImplemented
 
@@ -120,7 +120,7 @@ class GraphicFeature:
         """Clear all event handlers"""
         self._event_handlers.clear()
 
-    def _call_event_handlers(self, event_data: FeatureEvent):
+    def _call_event_handlers(self, event_data: GraphicFeatureEvent):
         if self._block_events:
             return
 
@@ -310,7 +310,7 @@ class BufferManager(GraphicFeature):
             "key": key,
             "value": value,
         }
-        event = FeatureEvent(type, info=event_info)
+        event = GraphicFeatureEvent(type, info=event_info)
 
         self._call_event_handlers(event)
 

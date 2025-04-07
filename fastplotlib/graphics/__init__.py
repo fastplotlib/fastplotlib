@@ -1,3 +1,4 @@
+from ._base import Graphic
 from .line import LineGraphic
 from .scatter import ScatterGraphic
 from .image import ImageGraphic
@@ -7,8 +8,8 @@ from .line_collection import LineCollection, LineStack
 
 __all__ = [
     "LineGraphic",
-    "ImageGraphic",
     "ScatterGraphic",
+    "ImageGraphic",
     "TextGraphic",
     "LineCollection",
     "LineStack",

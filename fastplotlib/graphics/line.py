@@ -6,11 +6,25 @@ import pygfx
 
 from ._positions_base import PositionsGraphic
 from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
-from ._features import Thickness, SizeSpace
+from .features import (
+    Thickness,
+    VertexPositions,
+    VertexColors,
+    UniformColor,
+    VertexCmap,
+    SizeSpace,
+)
+from ..utils import quick_min_max
 
 
 class LineGraphic(PositionsGraphic):
-    _features = {"data", "colors", "cmap", "thickness", "size_space"}
+    _features = {
+        "data": VertexPositions,
+        "colors": (VertexColors, UniformColor),
+        "cmap": (VertexCmap, None),  # none if UniformColor
+        "thickness": Thickness,
+        "size_space": SizeSpace,
+    }
 
     def __init__(
         self,
@@ -298,6 +312,6 @@ class LineGraphic(PositionsGraphic):
         size = int(np.ptp(magn_vals) * 1.5 + padding)
 
         # center of selector along the other axis
-        center = np.nanmean(magn_vals)
+        center = sum(quick_min_max(magn_vals)) / 2
 
         return bounds_init, limits, size, center

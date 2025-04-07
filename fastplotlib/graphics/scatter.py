@@ -4,11 +4,25 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from ._features import PointsSizesFeature, UniformSize, SizeSpace
+from .features import (
+    PointsSizesFeature,
+    UniformSize,
+    SizeSpace,
+    VertexPositions,
+    VertexColors,
+    UniformColor,
+    VertexCmap,
+)
 
 
 class ScatterGraphic(PositionsGraphic):
-    _features = {"data", "sizes", "colors", "cmap", "size_space"}
+    _features = {
+        "data": VertexPositions,
+        "sizes": (PointsSizesFeature, UniformSize),
+        "colors": (VertexColors, UniformColor),
+        "cmap": (VertexCmap, None),
+        "size_space": SizeSpace,
+    }
 
     def __init__(
         self,

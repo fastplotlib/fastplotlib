@@ -5,7 +5,7 @@ import pytest
 import pygfx
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import (
+from fastplotlib.graphics.features import (
     VertexPositions,
     VertexColors,
     VertexCmap,
@@ -13,7 +13,7 @@ from fastplotlib.graphics._features import (
     UniformSize,
     PointsSizesFeature,
     Thickness,
-    FeatureEvent,
+    GraphicFeatureEvent,
 )
 
 from .utils import (
@@ -58,7 +58,7 @@ TRUTH_CMAPS = {
 }
 
 
-EVENT_RETURN_VALUE: FeatureEvent = None
+EVENT_RETURN_VALUE: GraphicFeatureEvent = None
 
 
 def event_handler(ev):
