@@ -5,7 +5,7 @@ from math import ceil
 import numpy as np
 
 import pygfx
-from ._base import GraphicFeature, PropertyEvent, block_reentrance
+from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
 from ...utils import (
     make_colors,
@@ -153,7 +153,7 @@ class TextureArray(GraphicFeature):
         for texture in self.buffer.ravel():
             texture.update_range((0, 0, 0), texture.size)
 
-        event = PropertyEvent("data", info={"key": key, "value": value})
+        event = GraphicFeatureEvent("data", info={"key": key, "value": value})
         self._call_event_handlers(event)
 
     def __len__(self):
@@ -177,7 +177,7 @@ class ImageVmin(GraphicFeature):
         graphic._material.clim = (value, vmax)
         self._value = value
 
-        event = PropertyEvent(type="vmin", info={"value": value})
+        event = GraphicFeatureEvent(type="vmin", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -198,7 +198,7 @@ class ImageVmax(GraphicFeature):
         graphic._material.clim = (vmin, value)
         self._value = value
 
-        event = PropertyEvent(type="vmax", info={"value": value})
+        event = GraphicFeatureEvent(type="vmax", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -221,7 +221,7 @@ class ImageCmap(GraphicFeature):
         graphic._material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
 
         self._value = value
-        event = PropertyEvent(type="cmap", info={"value": value})
+        event = GraphicFeatureEvent(type="cmap", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -248,7 +248,7 @@ class ImageInterpolation(GraphicFeature):
         graphic._material.interpolation = value
 
         self._value = value
-        event = PropertyEvent(type="interpolation", info={"value": value})
+        event = GraphicFeatureEvent(type="interpolation", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -279,5 +279,5 @@ class ImageCmapInterpolation(GraphicFeature):
         graphic._material.map.mag_filter = value
 
         self._value = value
-        event = PropertyEvent(type="cmap_interpolation", info={"value": value})
+        event = GraphicFeatureEvent(type="cmap_interpolation", info={"value": value})
         self._call_event_handlers(event)

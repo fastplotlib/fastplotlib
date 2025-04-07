@@ -3,7 +3,7 @@ from typing import Sequence
 import numpy as np
 
 from ...utils import mesh_masks
-from ._base import GraphicFeature, PropertyEvent, block_reentrance
+from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
 
 class LinearSelectionFeature(GraphicFeature):
@@ -71,7 +71,7 @@ class LinearSelectionFeature(GraphicFeature):
 
         self._value = value
 
-        event = PropertyEvent("selection", {"value": value})
+        event = GraphicFeatureEvent("selection", {"value": value})
         event.get_selected_index = selector.get_selected_index
 
         self._call_event_handlers(event)
@@ -183,7 +183,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
         if len(self._event_handlers) < 1:
             return
 
-        event = PropertyEvent("selection", {"value": self.value})
+        event = GraphicFeatureEvent("selection", {"value": self.value})
 
         event.get_selected_indices = selector.get_selected_indices
         event.get_selected_data = selector.get_selected_data
@@ -336,7 +336,7 @@ class RectangleSelectionFeature(GraphicFeature):
         if len(self._event_handlers) < 1:
             return
 
-        event = PropertyEvent("selection", {"value": self.value})
+        event = GraphicFeatureEvent("selection", {"value": self.value})
 
         event.get_selected_indices = selector.get_selected_indices
         event.get_selected_data = selector.get_selected_data

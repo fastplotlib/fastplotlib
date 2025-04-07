@@ -1,6 +1,6 @@
 import numpy as np
 
-from ._base import GraphicFeature, PropertyEvent, block_reentrance
+from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
 
 class Name(GraphicFeature):
@@ -33,7 +33,7 @@ class Name(GraphicFeature):
 
         self._value = value
 
-        event = PropertyEvent(type="name", info={"value": value})
+        event = GraphicFeatureEvent(type="name", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -79,7 +79,7 @@ class Offset(GraphicFeature):
         # set value of existing feature value array
         self._value[:] = value
 
-        event = PropertyEvent(type="offset", info={"value": value})
+        event = GraphicFeatureEvent(type="offset", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -127,7 +127,7 @@ class Rotation(GraphicFeature):
         # set value of existing feature value array
         self._value[:] = value
 
-        event = PropertyEvent(type="rotation", info={"value": value})
+        event = GraphicFeatureEvent(type="rotation", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -156,7 +156,7 @@ class Visible(GraphicFeature):
         graphic.world_object.visible = value
         self._value = value
 
-        event = PropertyEvent(type="visible", info={"value": value})
+        event = GraphicFeatureEvent(type="visible", info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -185,5 +185,5 @@ class Deleted(GraphicFeature):
     @block_reentrance
     def set_value(self, graphic, value: bool):
         self._value = value
-        event = PropertyEvent(type="deleted", info={"value": value})
+        event = GraphicFeatureEvent(type="deleted", info={"value": value})
         self._call_event_handlers(event)

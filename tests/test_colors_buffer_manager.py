@@ -5,7 +5,7 @@ import pytest
 import pygfx
 
 import fastplotlib as fpl
-from fastplotlib.graphics.features import VertexColors, PropertyEvent
+from fastplotlib.graphics.features import VertexColors, GraphicFeatureEvent
 from .utils import (
     generate_slice_indices,
     generate_color_inputs,
@@ -18,7 +18,7 @@ def make_colors_buffer() -> VertexColors:
     return colors
 
 
-EVENT_RETURN_VALUE: PropertyEvent = None
+EVENT_RETURN_VALUE: GraphicFeatureEvent = None
 
 
 def event_handler(ev):
@@ -65,7 +65,7 @@ def test_int(test_graphic):
 
     if test_graphic:
         # test event
-        assert isinstance(EVENT_RETURN_VALUE, PropertyEvent)
+        assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
         assert EVENT_RETURN_VALUE.graphic == graphic
         assert EVENT_RETURN_VALUE.target is graphic.world_object
         assert EVENT_RETURN_VALUE.info["key"] == 3
@@ -120,7 +120,7 @@ def test_tuple(test_graphic, slice_method):
 
     if test_graphic:
         # test event
-        assert isinstance(EVENT_RETURN_VALUE, PropertyEvent)
+        assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
         assert EVENT_RETURN_VALUE.graphic == graphic
         assert EVENT_RETURN_VALUE.target is graphic.world_object
         assert EVENT_RETURN_VALUE.info["key"] == (s, slice(None))
@@ -142,7 +142,7 @@ def test_tuple(test_graphic, slice_method):
 
     if test_graphic:
         # test event
-        assert isinstance(EVENT_RETURN_VALUE, PropertyEvent)
+        assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
         assert EVENT_RETURN_VALUE.graphic == graphic
         assert EVENT_RETURN_VALUE.target is graphic.world_object
         assert EVENT_RETURN_VALUE.info["key"] == slice(None)
@@ -218,7 +218,7 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
     if test_graphic:
         global EVENT_RETURN_VALUE
 
-        assert isinstance(EVENT_RETURN_VALUE, PropertyEvent)
+        assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
         assert EVENT_RETURN_VALUE.graphic == graphic
         assert EVENT_RETURN_VALUE.target is graphic.world_object
         if isinstance(s, slice):

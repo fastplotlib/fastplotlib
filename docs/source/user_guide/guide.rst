@@ -293,7 +293,7 @@ event object will have relevant information that can be used in the callback. Se
 Graphic property events
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-All ``Graphic`` events are instances of ``fastplotlib.graphics.features.PropertyEvent`` and have the following attributes:
+All ``Graphic`` events are instances of ``fastplotlib.graphics.features.GraphicFeatureEvent`` and have the following attributes:
 
     +------------+-------------+-----------------------------------------------+
     | attribute  | type        | description                                   |
