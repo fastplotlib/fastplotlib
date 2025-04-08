@@ -6,11 +6,13 @@ import pygfx
 
 from .._base import Graphic
 from .._collection_base import GraphicCollection
-from .._features._selection_features import LinearRegionSelectionFeature
+from ..features._selection_features import LinearRegionSelectionFeature
 from ._base_selector import BaseSelector
 
 
 class LinearRegionSelector(BaseSelector):
+    _features = {"selection": LinearRegionSelectionFeature}
+
     @property
     def parent(self) -> Graphic | None:
         """graphic that the selector is associated with"""

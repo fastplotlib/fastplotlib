@@ -59,12 +59,17 @@ sphinx_gallery_conf = {
             "../../examples/heatmap",
             "../../examples/image_widget",
             "../../examples/gridplot",
+            "../../examples/window_layouts",
+            "../../examples/controllers",
             "../../examples/line",
             "../../examples/line_collection",
             "../../examples/scatter",
+            "../../examples/text",
+            "../../examples/events",
             "../../examples/selection_tools",
             "../../examples/machine_learning",
             "../../examples/guis",
+            "../../examples/ipywidgets",
             "../../examples/misc",
             "../../examples/qt",
         ]
@@ -87,8 +92,6 @@ autosummary_generate = True
 
 templates_path = ["_templates"]
 exclude_patterns = []
-
-napoleon_custom_sections = ["Features"]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

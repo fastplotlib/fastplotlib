@@ -2,8 +2,10 @@ import numpy as np
 from numpy import testing as npt
 import imageio.v3 as iio
 
+import pygfx
+
 import fastplotlib as fpl
-from fastplotlib.graphics._features import FeatureEvent
+from fastplotlib.graphics.features import GraphicFeatureEvent
 from fastplotlib.utils import make_colors
 
 GRAY_IMAGE = iio.imread("imageio:camera.png")
@@ -16,7 +18,7 @@ COFFEE_IMAGE = iio.imread("imageio:coffee.png")
 # new screenshot tests too for these when in graphics
 
 
-EVENT_RETURN_VALUE: FeatureEvent = None
+EVENT_RETURN_VALUE: GraphicFeatureEvent = None
 
 
 def event_handler(ev):
@@ -26,7 +28,7 @@ def event_handler(ev):
 
 def check_event(graphic, feature, value):
     global EVENT_RETURN_VALUE
-    assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+    assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
     assert EVENT_RETURN_VALUE.type == feature
     assert EVENT_RETURN_VALUE.graphic == graphic
     assert EVENT_RETURN_VALUE.target == graphic.world_object
@@ -56,7 +58,7 @@ def check_set_slice(
     npt.assert_almost_equal(data_values[:, col_slice.stop :], data[:, col_slice.stop :])
 
     global EVENT_RETURN_VALUE
-    assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+    assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
     assert EVENT_RETURN_VALUE.type == "data"
     assert EVENT_RETURN_VALUE.graphic == image_graphic
     assert EVENT_RETURN_VALUE.target == image_graphic.world_object
@@ -85,6 +87,10 @@ def test_gray():
     # since this entire image is under the wgpu max texture limit,
     # the entire image should be in the single Texture buffer
     npt.assert_almost_equal(ig.data.buffer[0, 0].data, GRAY_IMAGE)
+
+    assert isinstance(ig._material, pygfx.ImageBasicMaterial)
+    assert isinstance(ig._material.map, pygfx.TextureMap)
+    assert isinstance(ig._material.map.texture, pygfx.Texture)
 
     ig.cmap = "viridis"
     assert ig.cmap == "viridis"

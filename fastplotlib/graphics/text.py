@@ -2,7 +2,7 @@ import pygfx
 import numpy as np
 
 from ._base import Graphic
-from ._features import (
+from .features import (
     TextData,
     FontSize,
     TextFaceColor,
@@ -13,11 +13,11 @@ from ._features import (
 
 class TextGraphic(Graphic):
     _features = {
-        "text",
-        "font_size",
-        "face_color",
-        "outline_color",
-        "outline_thickness",
+        "text": TextData,
+        "font_size": FontSize,
+        "face_color": TextFaceColor,
+        "outline_color": TextOutlineColor,
+        "outline_thickness": TextOutlineThickness,
     }
 
     def __init__(
@@ -79,13 +79,11 @@ class TextGraphic(Graphic):
         self._outline_thickness = TextOutlineThickness(outline_thickness)
 
         world_object = pygfx.Text(
-            pygfx.TextGeometry(
-                text=self.text,
-                font_size=self.font_size,
-                screen_space=screen_space,
-                anchor=anchor,
-            ),
-            pygfx.TextMaterial(
+            text=self.text,
+            font_size=self.font_size,
+            screen_space=screen_space,
+            anchor=anchor,
+            material=pygfx.TextMaterial(
                 color=self.face_color,
                 outline_color=self.outline_color,
                 outline_thickness=self.outline_thickness,
@@ -96,6 +94,11 @@ class TextGraphic(Graphic):
         self._set_world_object(world_object)
 
         self.offset = offset
+
+    @property
+    def world_object(self) -> pygfx.Text:
+        """Text world object"""
+        return super(TextGraphic, self).world_object
 
     @property
     def text(self) -> str:

@@ -205,7 +205,7 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
 
 
 def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
-    return cmap_lib.Colormap(name).to_pygfx()
+    return Texture(get_cmap(name, alpha), dim=1)
 
 
 def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:

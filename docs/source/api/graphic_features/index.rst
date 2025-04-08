@@ -31,3 +31,4 @@ Graphic Features
     Rotation
     Visible
     Deleted
+    GraphicFeatureEvent

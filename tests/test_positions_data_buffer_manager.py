@@ -3,14 +3,14 @@ from numpy import testing as npt
 import pytest
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import VertexPositions, FeatureEvent
+from fastplotlib.graphics.features import VertexPositions, GraphicFeatureEvent
 from .utils import (
     generate_slice_indices,
     generate_positions_spiral_data,
 )
 
 
-EVENT_RETURN_VALUE: FeatureEvent = None
+EVENT_RETURN_VALUE: GraphicFeatureEvent = None
 
 
 def event_handler(ev):
@@ -72,7 +72,7 @@ def test_int(test_graphic):
 
     # check event
     if test_graphic:
-        assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+        assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
         assert EVENT_RETURN_VALUE.graphic == graphic
         assert EVENT_RETURN_VALUE.target is graphic.world_object
         assert EVENT_RETURN_VALUE.info["key"] == 2
@@ -87,7 +87,7 @@ def test_int(test_graphic):
 
     # check event
     if test_graphic:
-        assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+        assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
         assert EVENT_RETURN_VALUE.graphic == graphic
         assert EVENT_RETURN_VALUE.target is graphic.world_object
         assert EVENT_RETURN_VALUE.info["key"] == slice(None)
@@ -148,7 +148,7 @@ def test_slice(test_graphic, slice_method: dict, test_axis: str):
 
             # check event
             if test_graphic:
-                assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+                assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
                 assert EVENT_RETURN_VALUE.graphic == graphic
                 assert EVENT_RETURN_VALUE.target is graphic.world_object
                 if isinstance(s, slice):
@@ -172,7 +172,7 @@ def test_slice(test_graphic, slice_method: dict, test_axis: str):
 
             # check event
             if test_graphic:
-                assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+                assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
                 assert EVENT_RETURN_VALUE.graphic == graphic
                 assert EVENT_RETURN_VALUE.target is graphic.world_object
                 if isinstance(s, slice):
@@ -191,7 +191,7 @@ def test_slice(test_graphic, slice_method: dict, test_axis: str):
 
             # check event
             if test_graphic:
-                assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+                assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
                 assert EVENT_RETURN_VALUE.graphic == graphic
                 assert EVENT_RETURN_VALUE.target is graphic.world_object
                 if isinstance(s, slice):

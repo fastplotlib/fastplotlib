@@ -4,7 +4,7 @@ from numpy import testing as npt
 import pytest
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import FeatureEvent, Name, Offset, Rotation, Visible
+from fastplotlib.graphics.features import GraphicFeatureEvent, Name, Offset, Rotation, Visible
 
 
 def make_graphic(kind: str, **kwargs):
@@ -29,11 +29,11 @@ graphic_kinds = [
 ]
 
 
-RETURN_EVENT_VALUE: FeatureEvent = None
-DECORATED_EVENT_VALUE: FeatureEvent = None
+RETURN_EVENT_VALUE: GraphicFeatureEvent = None
+DECORATED_EVENT_VALUE: GraphicFeatureEvent = None
 
 
-def return_event(ev: FeatureEvent):
+def return_event(ev: GraphicFeatureEvent):
     global RETURN_EVENT_VALUE
     RETURN_EVENT_VALUE = ev
 
@@ -138,7 +138,7 @@ def test_offset(graphic):
     assert DECORATED_EVENT_VALUE.type == "offset"
     assert DECORATED_EVENT_VALUE.graphic is graphic
     assert DECORATED_EVENT_VALUE.target is graphic.world_object
-    assert DECORATED_EVENT_VALUE.info["value"] == (7.0, 8.0, 9.0)
+    npt.assert_almost_equal(DECORATED_EVENT_VALUE.info["value"], (7.0, 8.0, 9.0))
 
 
 @pytest.mark.parametrize(
@@ -202,7 +202,7 @@ def test_rotation(graphic):
     assert DECORATED_EVENT_VALUE.type == "rotation"
     assert DECORATED_EVENT_VALUE.graphic is graphic
     assert DECORATED_EVENT_VALUE.target is graphic.world_object
-    assert DECORATED_EVENT_VALUE.info["value"] == (0, 0, 0.6, 0.8)
+    npt.assert_almost_equal(DECORATED_EVENT_VALUE.info["value"], (0, 0, 0.6, 0.8))
 
 
 @pytest.mark.parametrize(

@@ -26,15 +26,16 @@ Properties
     Subplot.canvas
     Subplot.controller
     Subplot.docks
+    Subplot.frame
     Subplot.graphics
     Subplot.legends
     Subplot.name
     Subplot.objects
     Subplot.parent
-    Subplot.position
     Subplot.renderer
     Subplot.scene
     Subplot.selectors
+    Subplot.title
     Subplot.toolbar
     Subplot.viewport
 
@@ -54,16 +55,11 @@ Methods
     Subplot.auto_scale
     Subplot.center_graphic
     Subplot.center_scene
-    Subplot.center_title
     Subplot.clear
     Subplot.delete_graphic
     Subplot.get_figure
-    Subplot.get_rect
     Subplot.insert_graphic
     Subplot.map_screen_to_world
     Subplot.remove_animation
     Subplot.remove_graphic
-    Subplot.render
-    Subplot.set_title
-    Subplot.set_viewport_rect
 

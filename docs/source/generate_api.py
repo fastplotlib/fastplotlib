@@ -1,12 +1,14 @@
-from typing import *
+from collections import defaultdict
 import inspect
-from pathlib import Path
+from io import StringIO
 import os
+from pathlib import Path
+from typing import *
 
 import fastplotlib
-from fastplotlib.layouts._subplot import Subplot
+from fastplotlib.layouts import Subplot
 from fastplotlib import graphics
-from fastplotlib.graphics import _features, selectors
+from fastplotlib.graphics import features, selectors
 from fastplotlib import widgets
 from fastplotlib import utils
 from fastplotlib import ui
@@ -21,6 +23,7 @@ GRAPHIC_FEATURES_DIR = API_DIR.joinpath("graphic_features")
 SELECTORS_DIR = API_DIR.joinpath("selectors")
 WIDGETS_DIR = API_DIR.joinpath("widgets")
 UI_DIR = API_DIR.joinpath("ui")
+GUIDE_DIR = current_dir.joinpath("user_guide")
 
 doc_sources = [
     API_DIR,
@@ -54,16 +57,6 @@ with open(API_DIR.joinpath("fastplotlib.rst"), "w") as f:
         "fastplotlib.loop\n"
         "------------------\n"
         "See the rendercanvas docs: https://rendercanvas.readthedocs.io/stable/api.html#rendercanvas.BaseLoop "
-    )
-
-with open(API_DIR.joinpath("utils.rst"), "w") as f:
-    f.write(
-        "fastplotlib.utils\n"
-        "*****************\n\n"
-        
-        "..currentmodule:: fastplotlib.utils\n"
-        "..automodule:: fastplotlib.utils.functions\n"
-        "    : members:\n"
     )
 
 
@@ -139,12 +132,18 @@ def generate_class(
     return out
 
 
-def generate_functions_module(module, name: str):
+def generate_functions_module(module, name: str, generate_header: bool = True):
     underline = "*" * len(name)
+    if generate_header:
+        header = (
+            f"{name}\n"
+            f"{underline}\n"
+            f"\n"
+        )
+    else:
+        header = "\n"
     out = (
-        f"{name}\n"
-        f"{underline}\n"
-        f"\n"
+        f"{header}"
         f".. currentmodule:: {name}\n"
         f".. automodule:: {module.__name__}\n"
         f"    :members:\n"
@@ -172,6 +171,60 @@ def generate_page(
         for cls, module in zip(classes, modules):
             to_write = generate_class(cls, module)
             f.write(to_write)
+
+#######################################################
+# Used for GraphicFeature class event table
+# copy-pasted from https://pablofernandez.tech/2019/03/21/turning-a-list-of-dicts-into-a-restructured-text-table/
+
+def _generate_header(field_names, column_widths):
+    with StringIO() as output:
+        for field_name in field_names:
+            output.write(f"+-{'-' * column_widths[field_name]}-")
+        output.write("+\n")
+        for field_name in field_names:
+            output.write(f"| {field_name} {' ' * (column_widths[field_name] - len(field_name))}")
+        output.write("|\n")
+        for field_name in field_names:
+            output.write(f"+={'=' * column_widths[field_name]}=")
+        output.write("+\n")
+        return output.getvalue()
+
+
+def _generate_row(row, field_names, column_widths):
+    with StringIO() as output:
+        for field_name in field_names:
+            output.write(f"| {row[field_name]}{' ' * (column_widths[field_name] - len(str(row[field_name])))} ")
+        output.write("|\n")
+        for field_name in field_names:
+            output.write(f"+-{'-' * column_widths[field_name]}-")
+        output.write("+\n")
+        return output.getvalue()
+
+
+def _get_fields(data):
+    field_names = []
+    column_widths = defaultdict(lambda: 0)
+    for row in data:
+        for field_name in row:
+            if field_name not in field_names:
+                field_names.append(field_name)
+            column_widths[field_name] = max(column_widths[field_name], len(field_name), len(str(row[field_name])))
+    return field_names, column_widths
+
+
+def dict_to_rst_table(data):
+    """convert a list of dicts to an RST table"""
+    field_names, column_widths = _get_fields(data)
+    with StringIO() as output:
+        output.write(_generate_header(field_names, column_widths))
+        for row in data:
+            output.write(_generate_row(row, field_names, column_widths))
+
+        output.write("\n")
+
+        return output.getvalue()
+
+#######################################################
 
 
 def main():
@@ -238,7 +291,7 @@ def main():
         )
     ##############################################################################
 
-    feature_classes = [getattr(_features, f) for f in _features.__all__]
+    feature_classes = [getattr(features, f) for f in features.__all__]
 
     feature_class_names = [f.__name__ for f in feature_classes]
 
@@ -258,7 +311,7 @@ def main():
         generate_page(
             page_name=feature_cls.__name__,
             classes=[feature_cls],
-            modules=["fastplotlib.graphics._features"],
+            modules=["fastplotlib.graphics.features"],
             source_path=GRAPHIC_FEATURES_DIR.joinpath(f"{feature_cls.__name__}.rst"),
         )
     ##############################################################################
@@ -340,11 +393,12 @@ def main():
     ##############################################################################
 
     utils_str = generate_functions_module(utils.functions, "fastplotlib.utils")
+    utils_str += generate_functions_module(utils._plot_helpers, "fastplotlib.utils", generate_header=False)
 
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
 
-    # nake API index file
+    # make API index file
     with open(API_DIR.joinpath("index.rst"), "w") as f:
         f.write(
             "API Reference\n"
@@ -361,6 +415,40 @@ def main():
             "    fastplotlib\n"
             "    utils\n"
         )
+
+    ##############################################################################
+    # graphic feature event tables
+
+    def write_table(name, feature_cls):
+        s = f"{name}\n"
+        s += "^" * len(name) + "\n\n"
+
+        if hasattr(feature_cls, "event_extra_attrs"):
+            s += "**extra attributes**\n\n"
+            s += dict_to_rst_table(feature_cls.event_extra_attrs)
+
+        s += "**event info dict**\n\n"
+        s += dict_to_rst_table(feature_cls.event_info_spec)
+
+        return s
+
+    with open(GUIDE_DIR.joinpath("event_tables.rst"), "w") as f:
+        f.write(".. _event_tables:\n\n")
+        f.write("Event Tables\n")
+        f.write("============\n\n")
+
+        for graphic_cls in [*graphic_classes, *selector_classes]:
+            f.write(f"{graphic_cls.__name__}\n")
+            f.write("-" * len(graphic_cls.__name__) + "\n\n")
+            for name, type_ in graphic_cls._features.items():
+                if isinstance(type_, tuple):
+                    for t in type_:
+                        if t is None:
+                            continue
+                        f.write(write_table(name, t))
+                else:
+                    f.write(write_table(name, type_))
+
 
 if __name__ == "__main__":
     main()

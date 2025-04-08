@@ -25,6 +25,7 @@ Properties
     ImguiFigure.controllers
     ImguiFigure.guis
     ImguiFigure.imgui_renderer
+    ImguiFigure.layout
     ImguiFigure.names
     ImguiFigure.renderer
     ImguiFigure.shape
@@ -36,14 +37,15 @@ Methods
 
     ImguiFigure.add_animations
     ImguiFigure.add_gui
+    ImguiFigure.add_subplot
     ImguiFigure.clear
     ImguiFigure.close
     ImguiFigure.export
+    ImguiFigure.export_numpy
     ImguiFigure.get_pygfx_render_area
     ImguiFigure.open_popup
     ImguiFigure.register_popup
     ImguiFigure.remove_animation
-    ImguiFigure.render
+    ImguiFigure.remove_subplot
     ImguiFigure.show
-    ImguiFigure.start_render
 

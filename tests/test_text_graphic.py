@@ -1,8 +1,8 @@
 from numpy import testing as npt
 
 import fastplotlib as fpl
-from fastplotlib.graphics._features import (
-    FeatureEvent,
+from fastplotlib.graphics.features import (
+    GraphicFeatureEvent,
     TextData,
     FontSize,
     TextFaceColor,
@@ -25,7 +25,7 @@ def test_create_graphic():
 
     assert text.font_size == 14
     assert isinstance(text._font_size, FontSize)
-    assert text.world_object.geometry.font_size == 14
+    assert text.world_object.font_size == 14
 
     assert text.face_color == pygfx.Color("w")
     assert isinstance(text._face_color, TextFaceColor)
@@ -40,7 +40,7 @@ def test_create_graphic():
     assert text.world_object.material.outline_thickness == 0
 
 
-EVENT_RETURN_VALUE: FeatureEvent = None
+EVENT_RETURN_VALUE: GraphicFeatureEvent = None
 
 
 def event_handler(ev):
@@ -50,7 +50,7 @@ def event_handler(ev):
 
 def check_event(graphic, feature, value):
     global EVENT_RETURN_VALUE
-    assert isinstance(EVENT_RETURN_VALUE, FeatureEvent)
+    assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
     assert EVENT_RETURN_VALUE.type == feature
     assert EVENT_RETURN_VALUE.graphic == graphic
     assert EVENT_RETURN_VALUE.target == graphic.world_object
@@ -82,7 +82,7 @@ def test_text_changes_events():
 
     text.font_size = 10.0
     assert text.font_size == 10.0
-    assert text.world_object.geometry.font_size == 10
+    assert text.world_object.font_size == 10
     check_event(text, "font_size", 10)
 
     text.face_color = "r"

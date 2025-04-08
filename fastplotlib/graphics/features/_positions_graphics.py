@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 import numpy as np
 import pygfx
@@ -9,27 +9,32 @@ from ...utils import (
 from ._base import (
     GraphicFeature,
     BufferManager,
-    FeatureEvent,
+    GraphicFeatureEvent,
     to_gpu_supported_dtype,
+    block_reentrance,
 )
 from .utils import parse_colors
 
 
 class VertexColors(BufferManager):
-    """
-
-    **info dict**
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | dict key   | value type                                                | value description                                                                |
-    +============+===========================================================+==================================================================================+
-    | key        | int | slice | np.ndarray[int | bool] | tuple[slice, ...]  | key at which colors were indexed/sliced                                          |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | value      | np.ndarray                                                | new color values for points that were changed, shape is [n_points_changed, RGBA] |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-    | user_value | str | np.ndarray | tuple[float] | list[float] | list[str] | user input value that was parsed into the RGBA array                             |
-    +------------+-----------------------------------------------------------+----------------------------------------------------------------------------------+
-
-    """
+    property_name = "colors"
+    event_info_spec = [
+        {
+            "dict key": "key",
+            "type": "slice, index, numpy-like fancy index",
+            "description": "index/slice at which colors were indexed/sliced",
+        },
+        {
+            "dict key": "value",
+            "type": "np.ndarray [n_points_changed, RGBA]",
+            "description": "new color values for points that were changed",
+        },
+        {
+            "dict key": "user_value",
+            "type": "str or array-like",
+            "description": "user input value that was parsed into the RGBA array",
+        },
+    ]
 
     def __init__(
         self,
@@ -58,6 +63,7 @@ class VertexColors(BufferManager):
 
         super().__init__(data=data, isolated_buffer=isolated_buffer)
 
+    @block_reentrance
     def __setitem__(
         self,
         key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
@@ -135,18 +141,28 @@ class VertexColors(BufferManager):
             "user_value": user_value,
         }
 
-        event = FeatureEvent("colors", info=event_info)
+        event = GraphicFeatureEvent("colors", info=event_info)
         self._call_event_handlers(event)
 
     def __len__(self):
         return len(self.buffer.data)
 
 
-# Manages uniform color for line or scatter material
 class UniformColor(GraphicFeature):
+    property_name = "colors"
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "np.ndarray [RGBA]",
+            "description": "new color value",
+        },
+    ]
+
     def __init__(
         self, value: str | np.ndarray | tuple | list | pygfx.Color, alpha: float = 1.0
     ):
+        """Manages uniform color for line or scatter material"""
+
         v = (*tuple(pygfx.Color(value))[:-1], alpha)  # apply alpha
         self._value = pygfx.Color(v)
         super().__init__()
@@ -155,18 +171,25 @@ class UniformColor(GraphicFeature):
     def value(self) -> pygfx.Color:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str | np.ndarray | tuple | list | pygfx.Color):
         value = pygfx.Color(value)
         graphic.world_object.material.color = value
         self._value = value
 
-        event = FeatureEvent(type="colors", info={"value": value})
+        event = GraphicFeatureEvent(type="colors", info={"value": value})
         self._call_event_handlers(event)
 
 
-# manages uniform size for scatter material
 class UniformSize(GraphicFeature):
+    property_name = "sizes"
+    event_info_spec = [
+        {"dict key": "value", "type": "float", "description": "new size value"},
+    ]
+
     def __init__(self, value: int | float):
+        """Manages uniform size for scatter material"""
+
         self._value = float(value)
         super().__init__()
 
@@ -174,17 +197,29 @@ class UniformSize(GraphicFeature):
     def value(self) -> float:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: float | int):
-        graphic.world_object.material.size = float(value)
+        value = float(value)
+        graphic.world_object.material.size = value
         self._value = value
 
-        event = FeatureEvent(type="sizes", info={"value": value})
+        event = GraphicFeatureEvent(type="sizes", info={"value": value})
         self._call_event_handlers(event)
 
 
-# manages the coordinate space for scatter/line
 class SizeSpace(GraphicFeature):
+    property_name = "size_space"
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str",
+            "description": "'screen' | 'world' | 'model'",
+        },
+    ]
+
     def __init__(self, value: str):
+        """Manages the coordinate space for scatter/line graphic"""
+
         self._value = value
         super().__init__()
 
@@ -192,28 +227,37 @@ class SizeSpace(GraphicFeature):
     def value(self) -> str:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str):
+        if value not in ["screen", "world", "model"]:
+            raise ValueError(
+                f"`size_space` must be one of: {['screen', 'world', 'model']}"
+            )
+
         if "Line" in graphic.world_object.material.__class__.__name__:
             graphic.world_object.material.thickness_space = value
         else:
             graphic.world_object.material.size_space = value
         self._value = value
 
-        event = FeatureEvent(type="size_space", info={"value": value})
+        event = GraphicFeatureEvent(type="size_space", info={"value": value})
         self._call_event_handlers(event)
 
 
 class VertexPositions(BufferManager):
-    """
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
-    | dict key | value type                                               | value description                                                                        |
-    +==========+==========================================================+==========================================================================================+
-    | key      | int | slice | np.ndarray[int | bool] | tuple[slice, ...] | key at which vertex positions data were indexed/sliced                                   |
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
-    | value    | np.ndarray | float | list[float]                         | new data values for points that were changed, shape depends on the indices that were set |
-    +----------+----------------------------------------------------------+------------------------------------------------------------------------------------------+
-
-    """
+    property_name = "data"
+    event_info_spec = [
+        {
+            "dict key": "key",
+            "type": "slice, index (int) or numpy-like fancy index",
+            "description": "key at which vertex positions data were indexed/sliced",
+        },
+        {
+            "dict key": "value",
+            "type": "int | float | array-like",
+            "description": "new data values for points that were changed",
+        },
+    ]
 
     def __init__(self, data: Any, isolated_buffer: bool = True):
         """
@@ -243,6 +287,7 @@ class VertexPositions(BufferManager):
 
         return to_gpu_supported_dtype(data)
 
+    @block_reentrance
     def __setitem__(
         self,
         key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
@@ -262,15 +307,19 @@ class VertexPositions(BufferManager):
 
 
 class PointsSizesFeature(BufferManager):
-    """
-    +----------+-------------------------------------------------------------------+----------------------------------------------+
-    | dict key | value type                                                        | value description                            |
-    +==========+===================================================================+==============================================+
-    | key      | int | slice | np.ndarray[int | bool] | list[int | bool]           | key at which point sizes indexed/sliced      |
-    +----------+-------------------------------------------------------------------+----------------------------------------------+
-    | value    | int | float | np.ndarray | list[int | float] | tuple[int | float] | new size values for points that were changed |
-    +----------+-------------------------------------------------------------------+----------------------------------------------+
-    """
+    property_name = "sizes"
+    event_info_spec = [
+        {
+            "dict key": "key",
+            "type": "slice, index (int) or numpy-like fancy index",
+            "description": "key at which point sizes were indexed/sliced",
+        },
+        {
+            "dict key": "value",
+            "type": "int | float | array-like",
+            "description": "new size values for points that were changed",
+        },
+    ]
 
     def __init__(
         self,
@@ -318,6 +367,7 @@ class PointsSizesFeature(BufferManager):
 
         return sizes
 
+    @block_reentrance
     def __setitem__(
         self,
         key: int | slice | np.ndarray[int | bool] | list[int | bool],
@@ -334,7 +384,10 @@ class PointsSizesFeature(BufferManager):
 
 
 class Thickness(GraphicFeature):
-    """line thickness"""
+    property_name = "thickness"
+    event_info_spec = [
+        {"dict key": "value", "type": "float", "description": "new thickness value"},
+    ]
 
     def __init__(self, value: float):
         self._value = value
@@ -344,19 +397,30 @@ class Thickness(GraphicFeature):
     def value(self) -> float:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: float):
+        value = float(value)
         graphic.world_object.material.thickness = value
         self._value = value
 
-        event = FeatureEvent(type="thickness", info={"value": value})
+        event = GraphicFeatureEvent(type="thickness", info={"value": value})
         self._call_event_handlers(event)
 
 
 class VertexCmap(BufferManager):
-    """
-    Sliceable colormap feature, manages a VertexColors instance and
-    provides a way to set colormaps with arbitrary transforms
-    """
+    property_name = "cmap"
+    event_info_spec = [
+        {
+            "dict key": "key",
+            "type": "slice",
+            "description": "key at cmap colors were sliced",
+        },
+        {
+            "dict key": "value",
+            "type": "str",
+            "description": "new cmap to set at given slice",
+        },
+    ]
 
     def __init__(
         self,
@@ -365,6 +429,11 @@ class VertexCmap(BufferManager):
         transform: np.ndarray | None,
         alpha: float = 1.0,
     ):
+        """
+        Sliceable colormap feature, manages a VertexColors instance and
+        provides a way to set colormaps with arbitrary transforms
+        """
+
         super().__init__(data=vertex_colors.buffer)
 
         self._vertex_colors = vertex_colors
@@ -392,16 +461,17 @@ class VertexCmap(BufferManager):
             # set vertex colors from cmap
             self._vertex_colors[:] = colors
 
+    @block_reentrance
     def __setitem__(self, key: slice, cmap_name):
         if not isinstance(key, slice):
             raise TypeError(
                 "fancy indexing not supported for VertexCmap, only slices "
-                "of a continuous are supported for apply a cmap"
+                "of a continuous range are supported for applying a cmap"
             )
         if key.step is not None:
             raise TypeError(
                 "step sized indexing not currently supported for setting VertexCmap, "
-                "slices must be a continuous region"
+                "slices must be a continuous range"
             )
 
         # parse slice

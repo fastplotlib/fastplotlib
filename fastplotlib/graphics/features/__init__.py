@@ -19,7 +19,7 @@ from ._image import (
 from ._base import (
     GraphicFeature,
     BufferManager,
-    FeatureEvent,
+    GraphicFeatureEvent,
     to_gpu_supported_dtype,
 )
 
@@ -67,4 +67,5 @@ __all__ = [
     "Rotation",
     "Visible",
     "Deleted",
+    "GraphicFeatureEvent",
 ]

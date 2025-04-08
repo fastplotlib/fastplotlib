@@ -9,9 +9,6 @@ from ..graphics._base import Graphic
 
 
 class GraphicMethodsMixin:
-    def __init__(self):
-        pass
-
     def _create_graphic(self, graphic_class, *args, **kwargs) -> Graphic:
         if "center" in kwargs.keys():
             center = kwargs.pop("center")
@@ -35,7 +32,7 @@ class GraphicMethodsMixin:
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
         isolated_buffer: bool = True,
-        **kwargs
+        **kwargs,
     ) -> ImageGraphic:
         """
 
@@ -45,7 +42,7 @@ class GraphicMethodsMixin:
         ----------
         data: array-like
             array-like, usually numpy.ndarray, must support ``memoryview()``
-            | shape must be ``[x_dim, y_dim]``
+            | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
         vmin: int, optional
             minimum value for color scaling, calculated from data if not provided
@@ -81,7 +78,7 @@ class GraphicMethodsMixin:
             interpolation,
             cmap_interpolation,
             isolated_buffer,
-            **kwargs
+            **kwargs,
         )
 
     def add_line_collection(
@@ -99,7 +96,7 @@ class GraphicMethodsMixin:
         metadatas: Union[Sequence[Any], numpy.ndarray] = None,
         isolated_buffer: bool = True,
         kwargs_lines: list[dict] = None,
-        **kwargs
+        **kwargs,
     ) -> LineCollection:
         """
 
@@ -172,7 +169,7 @@ class GraphicMethodsMixin:
             metadatas,
             isolated_buffer,
             kwargs_lines,
-            **kwargs
+            **kwargs,
         )
 
     def add_line(
@@ -185,7 +182,8 @@ class GraphicMethodsMixin:
         cmap: str = None,
         cmap_transform: Union[numpy.ndarray, Iterable] = None,
         isolated_buffer: bool = True,
-        **kwargs
+        size_space: str = "screen",
+        **kwargs,
     ) -> LineGraphic:
         """
 
@@ -217,6 +215,9 @@ class GraphicMethodsMixin:
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        size_space: str, default "screen"
+            coordinate space in which the size is expressed ("screen", "world", "model")
+
         **kwargs
             passed to Graphic
 
@@ -232,7 +233,8 @@ class GraphicMethodsMixin:
             cmap,
             cmap_transform,
             isolated_buffer,
-            **kwargs
+            size_space,
+            **kwargs,
         )
 
     def add_line_stack(
@@ -251,7 +253,7 @@ class GraphicMethodsMixin:
         separation: float = 10.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
-        **kwargs
+        **kwargs,
     ) -> LineStack:
         """
 
@@ -332,7 +334,7 @@ class GraphicMethodsMixin:
             separation,
             separation_axis,
             kwargs_lines,
-            **kwargs
+            **kwargs,
         )
 
     def add_scatter(
@@ -346,7 +348,8 @@ class GraphicMethodsMixin:
         isolated_buffer: bool = True,
         sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
         uniform_size: bool = False,
-        **kwargs
+        size_space: str = "screen",
+        **kwargs,
     ) -> ScatterGraphic:
         """
 
@@ -386,6 +389,9 @@ class GraphicMethodsMixin:
             if True, uses a uniform buffer for the scatter point sizes,
             basically saves GPU VRAM when all scatter points are the same size
 
+        size_space: str, default "screen"
+            coordinate space in which the size is expressed ("screen", "world", "model")
+
         kwargs
             passed to Graphic
 
@@ -402,7 +408,8 @@ class GraphicMethodsMixin:
             isolated_buffer,
             sizes,
             uniform_size,
-            **kwargs
+            size_space,
+            **kwargs,
         )
 
     def add_text(
@@ -415,7 +422,7 @@ class GraphicMethodsMixin:
         screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
-        **kwargs
+        **kwargs,
     ) -> TextGraphic:
         """
 
@@ -466,5 +473,5 @@ class GraphicMethodsMixin:
             screen_space,
             offset,
             anchor,
-            **kwargs
+            **kwargs,
         )

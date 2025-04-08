@@ -36,7 +36,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools
           # remove pygfx from install_requires, we install using pygfx@main
-          sed -i "/pygfx/d" ./setup.py
+          sed -i "/pygfx/d" ./pyproject.toml
           pip install git+https://github.com/pygfx/pygfx.git@main
       - name: Install fastplotlib
         run: |
@@ -52,7 +52,7 @@ jobs:
           PYGFX_EXPECT_LAVAPIPE: true
         run: |
           # regenerate screenshots
-          WGPU_FORCE_OFFSCREEN=1 REGENERATE_SCREENSHOTS=1 pytest -v examples
+          RENDERCANVAS_FORCE_OFFSCREEN=1 REGENERATE_SCREENSHOTS=1 pytest -v examples
       - name: Generate screenshots notebook, exclude image widget
         env:
           PYGFX_EXPECT_LAVAPIPE: true

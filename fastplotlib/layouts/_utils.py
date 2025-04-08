@@ -1,9 +1,23 @@
 import importlib
+from itertools import product
+
+import numpy as np
 
 import pygfx
 from pygfx import WgpuRenderer, Texture, Renderer
 
 from ..utils.gui import BaseRenderCanvas, RenderCanvas
+
+try:
+    import imgui_bundle
+except ImportError:
+    IMGUI = False
+else:
+    IMGUI = True
+
+
+# number of pixels taken by the imgui toolbar when present
+IMGUI_TOOLBAR_HEIGHT = 39
 
 
 def make_canvas_and_renderer(
@@ -17,12 +31,12 @@ def make_canvas_and_renderer(
     """
 
     if canvas is None:
-        canvas = RenderCanvas(max_fps=60, **canvas_kwargs)
+        canvas = RenderCanvas(**canvas_kwargs)
     elif isinstance(canvas, str):
         import rendercanvas
 
         m = importlib.import_module("rendercanvas." + canvas)
-        canvas = m.RenderCanvas(max_fps=60, **canvas_kwargs)
+        canvas = m.RenderCanvas(**canvas_kwargs)
     elif not isinstance(canvas, (BaseRenderCanvas, Texture)):
         raise TypeError(
             f"canvas option must either be a valid BaseRenderCanvas implementation, a pygfx Texture"
@@ -92,3 +106,20 @@ def create_controller(
         )
 
     return controller_types[controller_type](camera)
+
+
+def get_extents_from_grid(
+    shape: tuple[int, int],
+) -> list[tuple[float, float, float, float]]:
+    """create fractional extents from a given grid shape"""
+    x_min = np.arange(0, 1, (1 / shape[1]))
+    x_max = x_min + 1 / shape[1]
+    y_min = np.arange(0, 1, (1 / shape[0]))
+    y_max = y_min + 1 / shape[0]
+
+    extents = list()
+    for row_ix, col_ix in product(range(shape[0]), range(shape[1])):
+        extent = x_min[col_ix], x_max[col_ix], y_min[row_ix], y_max[row_ix]
+        extents.append(extent)
+
+    return extents

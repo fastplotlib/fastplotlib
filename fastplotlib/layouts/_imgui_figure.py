@@ -6,13 +6,12 @@ import numpy as np
 import imgui_bundle
 from imgui_bundle import imgui, icons_fontawesome_6 as fa
 
-from wgpu.utils.imgui import ImguiRenderer
+from wgpu.utils.imgui import ImguiRenderer, Stats
 from rendercanvas import BaseRenderCanvas
 
 import pygfx
 
 from ._figure import Figure
-from ._utils import make_canvas_and_renderer
 from ..ui import EdgeWindow, SubplotToolbar, StandardRightClickMenu, Popup, GUI_EDGES
 from ..ui import ColormapPicker
 
@@ -21,6 +20,8 @@ class ImguiFigure(Figure):
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),
+        rects: list[tuple | np.ndarray] = None,
+        extents: list[tuple | np.ndarray] = None,
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
@@ -40,27 +41,28 @@ class ImguiFigure(Figure):
         controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
         canvas: str | BaseRenderCanvas | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
+        canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
     ):
         self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
 
-        canvas, renderer = make_canvas_and_renderer(
-            canvas, renderer, canvas_kwargs={"size": size}
-        )
-        self._imgui_renderer = ImguiRenderer(renderer.device, canvas)
-
         super().__init__(
             shape=shape,
+            rects=rects,
+            extents=extents,
             cameras=cameras,
             controller_types=controller_types,
             controller_ids=controller_ids,
             controllers=controllers,
             canvas=canvas,
             renderer=renderer,
+            canvas_kwargs=canvas_kwargs,
             size=size,
             names=names,
         )
+
+        self._imgui_renderer = ImguiRenderer(self.renderer.device, self.canvas)
 
         fronts_path = str(
             Path(imgui_bundle.__file__).parent.joinpath(
@@ -80,18 +82,21 @@ class ImguiFigure(Figure):
         self.imgui_renderer.set_gui(self._draw_imgui)
 
         self._subplot_toolbars: np.ndarray[SubplotToolbar] = np.empty(
-            shape=self._subplots.shape, dtype=object
+            shape=self._subplots.size, dtype=object
         )
 
-        for subplot in self._subplots.ravel():
+        for i, subplot in enumerate(self._subplots.ravel()):
             toolbar = SubplotToolbar(subplot=subplot, fa_icons=self._fa_icons)
-            self._subplot_toolbars[subplot.position] = toolbar
+            self._subplot_toolbars[i] = toolbar
 
         self._right_click_menu = StandardRightClickMenu(
             figure=self, fa_icons=self._fa_icons
         )
 
         self._popups: dict[str, Popup] = {}
+
+        self.imgui_show_fps = False
+        self._stats = Stats(self.renderer.device, self.canvas)
 
         self.register_popup(ColormapPicker)
 
@@ -105,10 +110,16 @@ class ImguiFigure(Figure):
         """imgui renderer"""
         return self._imgui_renderer
 
-    def render(self, draw=False):
-        super().render(draw)
+    def _render(self, draw=False):
+        if self.imgui_show_fps:
+            with self._stats:
+                super()._render(draw)
+        else:
+            super()._render(draw)
 
         self.imgui_renderer.render()
+
+        # needs to be here else events don't get processed
         self.canvas.request_draw()
 
     def _draw_imgui(self) -> imgui.ImDrawData:
@@ -164,11 +175,11 @@ class ImguiFigure(Figure):
 
         self.guis[location] = gui
 
-        self._reset_viewports()
+        self._fpl_reset_layout()
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
-        Fet rect for the portion of the canvas that the pygfx renderer draws to,
+        Get rect for the portion of the canvas that the pygfx renderer draws to,
         i.e. non-imgui, part of canvas
 
         Returns
@@ -199,15 +210,6 @@ class ImguiFigure(Figure):
             ypos = 0
 
         return xpos, ypos, max(1, width), max(1, height)
-
-    def _reset_viewports(self):
-        # TODO: think about moving this to Figure later,
-        #  maybe also refactor Subplot and PlotArea so that
-        #  the resize event is handled at the Figure level instead
-        for subplot in self:
-            subplot.set_viewport_rect()
-            for dock in subplot.docks.values():
-                dock.set_viewport_rect()
 
     def register_popup(self, popup: Popup.__class__):
         """

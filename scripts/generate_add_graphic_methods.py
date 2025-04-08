@@ -34,8 +34,6 @@ def generate_add_graphics_methods():
     f.write("from ..graphics._base import Graphic\n\n")
 
     f.write("\nclass GraphicMethodsMixin:\n")
-    f.write("    def __init__(self):\n")
-    f.write("        pass\n\n")
 
     f.write(
         "    def _create_graphic(self, graphic_class, *args, **kwargs) -> Graphic:\n"

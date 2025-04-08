@@ -4,11 +4,25 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from ._features import PointsSizesFeature, UniformSize, SizeSpace
+from .features import (
+    PointsSizesFeature,
+    UniformSize,
+    SizeSpace,
+    VertexPositions,
+    VertexColors,
+    UniformColor,
+    VertexCmap,
+)
 
 
 class ScatterGraphic(PositionsGraphic):
-    _features = {"data", "sizes", "colors", "cmap", "size_space"}
+    _features = {
+        "data": VertexPositions,
+        "sizes": (PointsSizesFeature, UniformSize),
+        "colors": (VertexColors, UniformColor),
+        "cmap": (VertexCmap, None),
+        "size_space": SizeSpace,
+    }
 
     def __init__(
         self,
@@ -62,7 +76,7 @@ class ScatterGraphic(PositionsGraphic):
             basically saves GPU VRAM when all scatter points are the same size
 
         size_space: str, default "screen"
-            coordinate space in which the size is expressed (‘screen’, ‘world’, ‘model’)
+            coordinate space in which the size is expressed ("screen", "world", "model")
 
         kwargs
             passed to Graphic

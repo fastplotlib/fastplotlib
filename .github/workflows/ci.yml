@@ -52,7 +52,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip setuptools
         # remove pygfx from install_requires, we install using pygfx@main
-        sed -i "/pygfx/d" ./setup.py
+        sed -i "/pygfx/d" ./pyproject.toml
         pip install git+https://github.com/pygfx/pygfx.git@main
     - name: Install fastplotlib
       run: |
@@ -65,12 +65,12 @@ jobs:
         python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
     - name: Test components
       env:
-        WGPU_FORCE_OFFSCREEN: 1
+        RENDERCANVAS_FORCE_OFFSCREEN: 1
       run: |
         pytest -v tests/
     - name: Test examples
       env:
-        WGPU_FORCE_OFFSCREEN: 1
+        RENDERCANVAS_FORCE_OFFSCREEN: 1
       run: |
         pytest -v examples/
     - name: Test examples notebooks, exclude ImageWidget notebook
@@ -88,7 +88,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: ${{ failure() }}
       with:
-        name: screenshot-diffs-${{ matrix.pyversion }}-${{ matrix.imgui_dep }}-${{ matrix.notebook_dep }}
+        name: screenshot-diffs-${{ matrix.os }}-${{ matrix.pyversion }}-${{ matrix.imgui_dep }}-${{ matrix.notebook_dep }}
         path: |
           examples/diffs
           examples/notebooks/diffs

@@ -1,5 +1,5 @@
 from warnings import warn
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -23,7 +23,7 @@ def to_gpu_supported_dtype(array):
     return np.asarray(array).astype(np.float32)
 
 
-class FeatureEvent(pygfx.Event):
+class GraphicFeatureEvent(pygfx.Event):
     """
     **All event instances have the following attributes**
 
@@ -34,11 +34,11 @@ class FeatureEvent(pygfx.Event):
     +------------+-------------+-----------------------------------------------+
     | graphic    | Graphic     | graphic instance that the event is from       |
     +------------+-------------+-----------------------------------------------+
-    | info       | dict        | event info dictionary (see below)             |
+    | info       | dict        | event info dictionary                         |
     +------------+-------------+-----------------------------------------------+
     | target     | WorldObject | pygfx rendering engine object for the graphic |
     +------------+-------------+-----------------------------------------------+
-    | time_stamp | float       | time when the event occured, in ms            |
+    | time_stamp | float       | time when the event occurred, in ms           |
     +------------+-------------+-----------------------------------------------+
 
     """
@@ -53,8 +53,11 @@ class GraphicFeature:
         self._event_handlers = list()
         self._block_events = False
 
+        # used by @block_reentrance decorator to block re-entrance into set_value functions
+        self._reentrant_block: bool = False
+
     @property
-    def value(self) -> Any:
+    def value(self):
         """Graphic Feature value, must be implemented in subclass"""
         raise NotImplemented
 
@@ -117,7 +120,7 @@ class GraphicFeature:
         """Clear all event handlers"""
         self._event_handlers.clear()
 
-    def _call_event_handlers(self, event_data: FeatureEvent):
+    def _call_event_handlers(self, event_data: GraphicFeatureEvent):
         if self._block_events:
             return
 
@@ -307,7 +310,7 @@ class BufferManager(GraphicFeature):
             "key": key,
             "value": value,
         }
-        event = FeatureEvent(type, info=event_info)
+        event = GraphicFeatureEvent(type, info=event_info)
 
         self._call_event_handlers(event)
 
@@ -316,3 +319,33 @@ class BufferManager(GraphicFeature):
 
     def __repr__(self):
         return f"{self.__class__.__name__} buffer data:\n" f"{self.value.__repr__()}"
+
+
+def block_reentrance(set_value):
+    # decorator to block re-entrant set_value methods
+    # useful when creating complex, circular, bidirectional event graphs
+    def set_value_wrapper(self: GraphicFeature, graphic_or_key, value):
+        """
+        wraps GraphicFeature.set_value
+
+        self: GraphicFeature instance
+
+        graphic_or_key: graphic, or key if a BufferManager
+
+        value: the value passed to set_value()
+        """
+        # set_value is already in the middle of an execution, block re-entrance
+        if self._reentrant_block:
+            return
+        try:
+            # block re-execution of set_value until it has *fully* finished executing
+            self._reentrant_block = True
+            set_value(self, graphic_or_key, value)
+        except Exception as exc:
+            # raise original exception
+            raise exc  # set_value has raised. The line above and the lines 2+ steps below are probably more relevant!
+        finally:
+            # set_value has finished executing, now allow future executions
+            self._reentrant_block = False
+
+    return set_value_wrapper

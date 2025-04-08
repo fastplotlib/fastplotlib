@@ -16,7 +16,7 @@ else:
 
 import pygfx
 
-from ._features import (
+from .features import (
     BufferManager,
     Deleted,
     Name,
@@ -50,7 +50,7 @@ PYGFX_EVENTS = [
 
 
 class Graphic:
-    _features: set[str] = {}
+    _features: dict[str, type] = dict()
 
     def __init_subclass__(cls, **kwargs):
         # set the type of the graphic in lower case like "image", "line_collection", etc.
@@ -63,12 +63,12 @@ class Graphic:
 
         # set of all features
         cls._features = {
-            *cls._features,
-            "name",
-            "offset",
-            "rotation",
-            "visible",
-            "deleted",
+            **cls._features,
+            "name": Name,
+            "offset": Offset,
+            "rotation": Rotation,
+            "visible": Visible,
+            "deleted": Deleted,
         }
         super().__init_subclass__(**kwargs)
 
@@ -129,7 +129,7 @@ class Graphic:
     @property
     def supported_events(self) -> tuple[str]:
         """events supported by this graphic"""
-        return (*tuple(self._features), *PYGFX_EVENTS)
+        return (*tuple(self._features.keys()), *PYGFX_EVENTS)
 
     @property
     def name(self) -> str | None:
@@ -273,7 +273,7 @@ class Graphic:
                 # add to our record
                 self._event_handlers[t].add(_callback)
 
-                if t in self._features:
+                if t in self._features.keys():
                     # fpl feature event
                     feature = getattr(self, f"_{t}")
                     feature.add_event_handler(_callback_wrapper)
@@ -365,7 +365,7 @@ class Graphic:
         self._plot_area = plot_area
 
     def __repr__(self):
-        rval = f"{self.__class__.__name__} @ {hex(id(self))}"
+        rval = f"{self.__class__.__name__}"
         if self.name is not None:
             return f"'{self.name}': {rval}"
         else:

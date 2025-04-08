@@ -347,8 +347,6 @@ class ImageWidget:
         """
         self._initialized = False
 
-        self._names = None
-
         if figure_kwargs is None:
             figure_kwargs = dict()
 
@@ -425,7 +423,6 @@ class ImageWidget:
                         raise ValueError(
                             "number of `names` for subplots must be same as the number of data arrays"
                         )
-                    self._names = names
 
             else:
                 raise TypeError(
@@ -496,7 +493,7 @@ class ImageWidget:
                             self._dims_max_bounds[_dim], array.shape[i]
                         )
 
-        figure_kwargs_default = {"controller_ids": "sync"}
+        figure_kwargs_default = {"controller_ids": "sync", "names": names}
 
         # update the default kwargs with any user-specified kwargs
         # user specified kwargs will overwrite the defaults
@@ -518,10 +515,6 @@ class ImageWidget:
 
         self._histogram_widget = histogram_widget
         for data_ix, (d, subplot) in enumerate(zip(self.data, self.figure)):
-            if self._names is not None:
-                name = self._names[data_ix]
-            else:
-                name = None
 
             frame = self._process_indices(d, slice_indices=self._current_index)
             frame = self._process_frame_apply(frame, data_ix)
@@ -554,8 +547,6 @@ class ImageWidget:
                 **graphic_kwargs,
             )
             subplot.add_graphic(ig)
-            subplot.name = name
-            subplot.set_title(name)
 
             if self._histogram_widget:
                 hlut = HistogramLUTTool(data=d, image_graphic=ig, name="histogram_lut")

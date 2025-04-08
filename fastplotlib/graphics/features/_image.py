@@ -5,7 +5,7 @@ from math import ceil
 import numpy as np
 
 import pygfx
-from ._base import GraphicFeature, FeatureEvent
+from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
 from ...utils import (
     make_colors,
@@ -15,6 +15,19 @@ from ...utils import (
 
 # manages an array of 8192x8192 Textures representing chunks of an image
 class TextureArray(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "key",
+            "type": "slice, index, numpy-like fancy index",
+            "description": "key at which image data was sliced/fancy indexed",
+        },
+        {
+            "dict key": "value",
+            "type": "np.ndarray | float",
+            "description": "new data values",
+        },
+    ]
+
     def __init__(self, data, isolated_buffer: bool = True):
         super().__init__()
 
@@ -135,13 +148,14 @@ class TextureArray(GraphicFeature):
     def __getitem__(self, item):
         return self.value[item]
 
+    @block_reentrance
     def __setitem__(self, key, value):
         self.value[key] = value
 
         for texture in self.buffer.ravel():
             texture.update_range((0, 0, 0), texture.size)
 
-        event = FeatureEvent("data", info={"key": key, "value": value})
+        event = GraphicFeatureEvent("data", info={"key": key, "value": value})
         self._call_event_handlers(event)
 
     def __len__(self):
@@ -151,6 +165,14 @@ class TextureArray(GraphicFeature):
 class ImageVmin(GraphicFeature):
     """lower contrast limit"""
 
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float",
+            "description": "new vmin value",
+        },
+    ]
+
     def __init__(self, value: float):
         self._value = value
         super().__init__()
@@ -159,18 +181,27 @@ class ImageVmin(GraphicFeature):
     def value(self) -> float:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: float):
         vmax = graphic._material.clim[1]
         graphic._material.clim = (value, vmax)
         self._value = value
 
-        event = FeatureEvent(type="vmin", info={"value": value})
+        event = GraphicFeatureEvent(type="vmin", info={"value": value})
         self._call_event_handlers(event)
 
 
 class ImageVmax(GraphicFeature):
     """upper contrast limit"""
 
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float",
+            "description": "new vmax value",
+        },
+    ]
+
     def __init__(self, value: float):
         self._value = value
         super().__init__()
@@ -179,17 +210,26 @@ class ImageVmax(GraphicFeature):
     def value(self) -> float:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: float):
         vmin = graphic._material.clim[0]
         graphic._material.clim = (vmin, value)
         self._value = value
 
-        event = FeatureEvent(type="vmax", info={"value": value})
+        event = GraphicFeatureEvent(type="vmax", info={"value": value})
         self._call_event_handlers(event)
 
 
 class ImageCmap(GraphicFeature):
     """colormap for texture"""
+
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str",
+            "description": "new cmap name",
+        },
+    ]
 
     def __init__(self, value: str):
         self._value = value
@@ -200,18 +240,27 @@ class ImageCmap(GraphicFeature):
     def value(self) -> str:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str):
         new_colors = make_colors(256, value)
         graphic._material.map.texture.data[:] = new_colors
         graphic._material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
 
         self._value = value
-        event = FeatureEvent(type="cmap", info={"value": value})
+        event = GraphicFeatureEvent(type="cmap", info={"value": value})
         self._call_event_handlers(event)
 
 
 class ImageInterpolation(GraphicFeature):
     """Image interpolation method"""
+
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str",
+            "description": "new interpolation method, nearest | linear",
+        },
+    ]
 
     def __init__(self, value: str):
         self._validate(value)
@@ -226,18 +275,27 @@ class ImageInterpolation(GraphicFeature):
     def value(self) -> str:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str):
         self._validate(value)
 
         graphic._material.interpolation = value
 
         self._value = value
-        event = FeatureEvent(type="interpolation", info={"value": value})
+        event = GraphicFeatureEvent(type="interpolation", info={"value": value})
         self._call_event_handlers(event)
 
 
 class ImageCmapInterpolation(GraphicFeature):
     """Image cmap interpolation method"""
+
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str",
+            "description": "new cmap interpolatio method, nearest | linear",
+        },
+    ]
 
     def __init__(self, value: str):
         self._validate(value)
@@ -254,6 +312,7 @@ class ImageCmapInterpolation(GraphicFeature):
     def value(self) -> str:
         return self._value
 
+    @block_reentrance
     def set_value(self, graphic, value: str):
         self._validate(value)
 
@@ -262,5 +321,5 @@ class ImageCmapInterpolation(GraphicFeature):
         graphic._material.map.mag_filter = value
 
         self._value = value
-        event = FeatureEvent(type="cmap_interpolation", info={"value": value})
+        event = GraphicFeatureEvent(type="cmap_interpolation", info={"value": value})
         self._call_event_handlers(event)

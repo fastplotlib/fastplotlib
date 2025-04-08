@@ -59,12 +59,12 @@ jobs:
         python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
     - name: Test components
       env:
-        WGPU_FORCE_OFFSCREEN: 1
+        RENDERCANVAS_FORCE_OFFSCREEN: 1
       run: |
         pytest -v tests/
     - name: Test examples
       env:
-        WGPU_FORCE_OFFSCREEN: 1
+        RENDERCANVAS_FORCE_OFFSCREEN: 1
       run: |
         pytest -v examples/
     - name: Test examples notebooks, exclude ImageWidget notebook
@@ -82,7 +82,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: ${{ failure() }}
       with:
-        name: screenshot-diffs-${{ matrix.pyversion }}-${{ matrix.imgui_dep }}-${{ matrix.notebook_dep }}
+        name: screenshot-diffs-${{ matrix.os }}-${{ matrix.pyversion }}-${{ matrix.imgui_dep }}-${{ matrix.notebook_dep }}
         path: |
           examples/diffs
           examples/notebooks/diffs
