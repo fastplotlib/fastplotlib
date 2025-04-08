@@ -422,20 +422,20 @@ def subsample_array(arr: np.ndarray, max_size: int = 1e6):
 
         \\prod_{i=1}^{n} d_i
 
-    To find the factor ``f`` by which to divide the size of each dimension in order to 
+    To find the factor ``f`` by which to divide the size of each dimension in order to
     get max_size ``s`` we must solve for ``f`` in the following expression:
 
     .. math::
 
         \\prod_{i=1}^{n} \\frac{d_i}{\\mathbf{f}} = \\mathbf{s}
 
-    The solution for ``f`` is is simply the nth root of the product of the dims divided by the max_size 
+    The solution for ``f`` is is simply the nth root of the product of the dims divided by the max_size
     where n is the number of dimensions
 
     .. math::
 
         \\mathbf{f} = \\sqrt[n]{\\frac{\\prod_{i=1}^{n} d_i}{\\mathbf{s}}}
-        
+
     Parameters
     ----------
     arr: np.ndarray
@@ -459,5 +459,7 @@ def subsample_array(arr: np.ndarray, max_size: int = 1e6):
     ns = np.floor(np.array(arr.shape) / f).clip(min=1)
 
     # get the step size for the slices
-    slices = tuple(slice(None, None, int(s)) for s in np.floor(arr.shape / ns).astype(int))
+    slices = tuple(
+        slice(None, None, int(s)) for s in np.floor(arr.shape / ns).astype(int)
+    )
     return np.asarray(arr[slices])
