@@ -74,7 +74,7 @@ class PositionsGraphic(Graphic):
         colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
         uniform_color: bool = False,
         alpha: float = 1.0,
-        cmap: str | VertexCmap = None,
+        cmap: str | list[str] | tuple[str] | VertexCmap = None,
         cmap_transform: np.ndarray = None,
         isolated_buffer: bool = True,
         size_space: str = "screen",
@@ -94,7 +94,13 @@ class PositionsGraphic(Graphic):
             if uniform_color:
                 raise TypeError("Cannot use cmap if uniform_color=True")
 
-            if isinstance(cmap, str):
+            if isinstance(cmap, (str, list, tuple)):
+                if isinstance(cmap, (list, tuple)):
+                    if not all(isinstance(s, str) for s in cmap):
+                        raise TypeError(
+                            "`cmap` argument must be a <str> cmap name, a list/tuple of <str> "
+                            "defining a custom cmap, or an existing `VertexCmap` instance"
+                        )
                 # make colors from cmap
                 if isinstance(colors, VertexColors):
                     # share buffer with existing colors instance for the cmap
@@ -116,7 +122,8 @@ class PositionsGraphic(Graphic):
                 self._colors = cmap._vertex_colors
             else:
                 raise TypeError(
-                    "`cmap` argument must be a <str> cmap name or an existing `VertexCmap` instance"
+                    "`cmap` argument must be a <str> cmap name, a list/tuple of <str> "
+                    "defining a custom cmap, or an existing `VertexCmap` instance"
                 )
         else:
             # no cmap given
