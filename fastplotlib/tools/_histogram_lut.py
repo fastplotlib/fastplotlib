@@ -5,6 +5,7 @@ import numpy as np
 
 import pygfx
 
+from ..utils import subsample_array
 from ..graphics import LineGraphic, ImageGraphic, TextGraphic
 from ..graphics.utils import pause_events
 from ..graphics._base import Graphic
@@ -193,28 +194,10 @@ class HistogramLUTTool(Graphic):
         self._plot_area.controller.enabled = True
 
     def _calculate_histogram(self, data):
-        if data.ndim > 2:
-            # subsample to max of 500 x 100 x 100,
-            # np.histogram takes ~30ms with this size on a 8 core Ryzen laptop
-            # dim0 is usually time, allow max of 500 timepoints
-            ss0 = max(1, int(data.shape[0] / 500))  # max to prevent step = 0
-            # allow max of 100 for x and y if ndim > 2
-            ss1 = max(1, int(data.shape[1] / 100))
-            ss2 = max(1, int(data.shape[2] / 100))
 
-            data_ss = data[::ss0, ::ss1, ::ss2]
-
-            hist, edges = np.histogram(data_ss, bins=self._nbins)
-
-        else:
-            # allow max of 1000 x 1000
-            # this takes ~4ms on a 8 core Ryzen laptop
-            ss0 = max(1, int(data.shape[0] / 1_000))
-            ss1 = max(1, int(data.shape[1] / 1_000))
-
-            data_ss = data[::ss0, ::ss1]
-
-            hist, edges = np.histogram(data_ss, bins=self._nbins)
+        # get a subsampled view of this array
+        data_ss = subsample_array(data, max_size=int(1e6))  # 1e6 is default
+        hist, edges = np.histogram(data_ss, bins=self._nbins)
 
         # used if data ptp <= 10 because event things get weird
         # with tiny world objects due to floating point error

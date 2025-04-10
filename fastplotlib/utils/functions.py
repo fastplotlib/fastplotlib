@@ -267,7 +267,7 @@ def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
     return OrderedDict(zip(labels, colors))
 
 
-def quick_min_max(data: np.ndarray) -> tuple[float, float]:
+def quick_min_max(data: np.ndarray, max_size=1e6) -> tuple[float, float]:
     """
     Adapted from pyqtgraph.ImageView.
     Estimate the min/max values of *data* by subsampling.
@@ -275,6 +275,9 @@ def quick_min_max(data: np.ndarray) -> tuple[float, float]:
     Parameters
     ----------
     data: np.ndarray or array-like with `min` and `max` attributes
+
+    max_size : int, optional
+        largest array size allowed in the subsampled array. Default is 1e6.
 
     Returns
     -------
@@ -289,11 +292,7 @@ def quick_min_max(data: np.ndarray) -> tuple[float, float]:
         ):
             return data.min, data.max
 
-    while np.prod(data.shape) > 1e6:
-        ax = np.argmax(data.shape)
-        sl = [slice(None)] * data.ndim
-        sl[ax] = slice(None, None, 2)
-        data = data[tuple(sl)]
+    data = subsample_array(data, max_size=max_size)
 
     return float(np.nanmin(data)), float(np.nanmax(data))
 
@@ -405,3 +404,62 @@ def parse_cmap_values(
         colors = np.vstack([colormap[val] for val in norm_cmap_values])
 
         return colors
+
+
+def subsample_array(arr: np.ndarray, max_size: int = 1e6):
+    """
+    Subsamples an input array while preserving its relative dimensional proportions.
+
+    The dimensions (shape) of the array can be represented as:
+
+    .. math::
+
+        [d_1, d_2, \\dots d_n]
+
+    The product of the dimensions can be represented as:
+
+    .. math::
+
+        \\prod_{i=1}^{n} d_i
+
+    To find the factor ``f`` by which to divide the size of each dimension in order to
+    get max_size ``s`` we must solve for ``f`` in the following expression:
+
+    .. math::
+
+        \\prod_{i=1}^{n} \\frac{d_i}{\\mathbf{f}} = \\mathbf{s}
+
+    The solution for ``f`` is is simply the nth root of the product of the dims divided by the max_size
+    where n is the number of dimensions
+
+    .. math::
+
+        \\mathbf{f} = \\sqrt[n]{\\frac{\\prod_{i=1}^{n} d_i}{\\mathbf{s}}}
+
+    Parameters
+    ----------
+    arr: np.ndarray
+        input array of any dimensionality to be subsampled.
+
+    max_size: int, default 1e6
+        maximum number of elements in subsampled array
+
+    Returns
+    -------
+    np.ndarray
+        subsample of the input array
+    """
+    if np.prod(arr.shape) <= max_size:
+        return arr  # no need to subsample if already below the threshold
+
+    # get factor by which to divide all dims
+    f = np.power((np.prod(arr.shape) / max_size), 1.0 / arr.ndim)
+
+    # new shape for subsampled array
+    ns = np.floor(np.array(arr.shape) / f).clip(min=1)
+
+    # get the step size for the slices
+    slices = tuple(
+        slice(None, None, int(s)) for s in np.floor(arr.shape / ns).astype(int)
+    )
+    return np.asarray(arr[slices])
