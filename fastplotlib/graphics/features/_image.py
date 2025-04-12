@@ -13,8 +13,12 @@ from ...utils import (
 )
 
 
-# manages an array of 8192x8192 Textures representing chunks of an image
 class TextureArray(GraphicFeature):
+    """
+    Manages an array of Textures representing chunks of an image.
+
+    Creates multiple pygfx.Texture objects based on the GPU's max texture dimension limit.
+    """
     event_info_spec = [
         {
             "dict key": "key",
@@ -28,13 +32,30 @@ class TextureArray(GraphicFeature):
         },
     ]
 
-    def __init__(self, data, isolated_buffer: bool = True):
+    def __init__(self, data, dim: int, isolated_buffer: bool = True):
+        """
+
+        Parameters
+        ----------
+        dim: int, 2 | 3
+            whether the data array represents a 2D or 3D texture
+
+        """
+        if dim not in (2, 3):
+            raise ValueError("`dim` must be 2 | 3")
+
+        self._dim = dim
+
         super().__init__()
 
         data = self._fix_data(data)
 
         shared = pygfx.renderers.wgpu.get_shared()
-        self._texture_limit_2d = shared.device.limits["max-texture-dimension-2d"]
+
+        if self._dim == 2:
+            self._texture_size_limit = shared.device.limits["max-texture-dimension-2d"]
+        else:
+            self._texture_size_limit = shared.device.limits["max-texture-dimension-3d"]
 
         if isolated_buffer:
             # useful if data is read-only, example: memmaps
@@ -47,18 +68,30 @@ class TextureArray(GraphicFeature):
         # data start indices for each Texture
         self._row_indices = np.arange(
             0,
-            ceil(self.value.shape[0] / self._texture_limit_2d) * self._texture_limit_2d,
-            self._texture_limit_2d,
+            ceil(self.value.shape[0] / self._texture_size_limit) * self._texture_size_limit,
+            self._texture_size_limit,
         )
         self._col_indices = np.arange(
             0,
-            ceil(self.value.shape[1] / self._texture_limit_2d) * self._texture_limit_2d,
-            self._texture_limit_2d,
+            ceil(self.value.shape[1] / self._texture_size_limit) * self._texture_size_limit,
+            self._texture_size_limit,
         )
+
+        shape = [self.row_indices.size, self.col_indices.size]
+
+        if self._dim == 3:
+            self._zdim_indices = np.arange(
+                0,
+                ceil(self.value.shape[2] / self._texture_size_limit) * self._texture_size_limit,
+                self._texture_size_limit,
+            )
+            shape += [self.zdim_indices.size]
+        else:
+            self._zdim_indices = np.empty(0)
 
         # buffer will be an array of textures
         self._buffer: np.ndarray[pygfx.Texture] = np.empty(
-            shape=(self.row_indices.size, self.col_indices.size), dtype=object
+            shape=shape, dtype=object
         )
 
         self._iter = None
@@ -66,7 +99,7 @@ class TextureArray(GraphicFeature):
         # iterate through each chunk of passed `data`
         # create a pygfx.Texture from this chunk
         for _, buffer_index, data_slice in self:
-            texture = pygfx.Texture(self.value[data_slice], dim=2)
+            texture = pygfx.Texture(self.value[data_slice], dim=self._dim)
 
             self.buffer[buffer_index] = texture
 
@@ -100,6 +133,10 @@ class TextureArray(GraphicFeature):
         return self._col_indices
 
     @property
+    def zdim_indices(self) -> np.ndarray:
+        return self._zdim_indices
+
+    @property
     def shared(self) -> int:
         return self._shared
 
@@ -114,7 +151,11 @@ class TextureArray(GraphicFeature):
         return data.astype(np.float32)
 
     def __iter__(self):
-        self._iter = product(enumerate(self.row_indices), enumerate(self.col_indices))
+        if self._dim == 2:
+            self._iter = product(enumerate(self.row_indices), enumerate(self.col_indices))
+        elif self._dim == 3:
+            self._iter = product(enumerate(self.row_indices), enumerate(self.col_indices), enumerate(self.zdim_indices))
+
         return self
 
     def __next__(self) -> tuple[pygfx.Texture, tuple[int, int], tuple[slice, slice]]:
@@ -128,22 +169,32 @@ class TextureArray(GraphicFeature):
             | tuple[int, int]: chunk index, i.e corresponding index of ``self.buffer`` array
             | tuple[slice, slice]: data slice of big array in this chunk and Texture
         """
-        (chunk_row, data_row_start), (chunk_col, data_col_start) = next(self._iter)
+        if self._dim == 2:
+            (chunk_row, data_row_start), (chunk_col, data_col_start) = next(self._iter)
+        elif self._dim == 3:
+            (chunk_row, data_row_start), (chunk_col, data_col_start), (chunk_z, data_z_start) = next(self._iter)
 
         # indices for to self.buffer for this chunk
-        chunk_index = (chunk_row, chunk_col)
+        chunk_index = [chunk_row, chunk_col]
+
+        if self._dim == 3:
+            chunk_index += [chunk_z]
 
         # stop indices of big data array for this chunk
-        row_stop = min(self.value.shape[0], data_row_start + self._texture_limit_2d)
-        col_stop = min(self.value.shape[1], data_col_start + self._texture_limit_2d)
+        row_stop = min(self.value.shape[0], data_row_start + self._texture_size_limit)
+        col_stop = min(self.value.shape[1], data_col_start + self._texture_size_limit)
+        if self._dim == 3:
+            z_stop = min(self.value.shape[2], data_z_start + self._texture_size_limit)
 
         # row and column slices that slice the data for this chunk from the big data array
-        data_slice = (slice(data_row_start, row_stop), slice(data_col_start, col_stop))
+        data_slice = [slice(data_row_start, row_stop), slice(data_col_start, col_stop)]
+        if self._dim == 3:
+            data_slice += [slice(data_z_start, z_stop)]
 
         # texture for this chunk
-        texture = self.buffer[chunk_index]
+        texture = self.buffer[tuple(chunk_index)]
 
-        return texture, chunk_index, data_slice
+        return texture, chunk_index, tuple(data_slice)
 
     def __getitem__(self, item):
         return self.value[item]
