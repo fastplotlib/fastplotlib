@@ -19,6 +19,7 @@ class TextureArray(GraphicFeature):
 
     Creates multiple pygfx.Texture objects based on the GPU's max texture dimension limit.
     """
+
     event_info_spec = [
         {
             "dict key": "key",
@@ -68,12 +69,14 @@ class TextureArray(GraphicFeature):
         # data start indices for each Texture
         self._row_indices = np.arange(
             0,
-            ceil(self.value.shape[0] / self._texture_size_limit) * self._texture_size_limit,
+            ceil(self.value.shape[0] / self._texture_size_limit)
+            * self._texture_size_limit,
             self._texture_size_limit,
         )
         self._col_indices = np.arange(
             0,
-            ceil(self.value.shape[1] / self._texture_size_limit) * self._texture_size_limit,
+            ceil(self.value.shape[1] / self._texture_size_limit)
+            * self._texture_size_limit,
             self._texture_size_limit,
         )
 
@@ -82,7 +85,8 @@ class TextureArray(GraphicFeature):
         if self._dim == 3:
             self._zdim_indices = np.arange(
                 0,
-                ceil(self.value.shape[2] / self._texture_size_limit) * self._texture_size_limit,
+                ceil(self.value.shape[2] / self._texture_size_limit)
+                * self._texture_size_limit,
                 self._texture_size_limit,
             )
             shape += [self.zdim_indices.size]
@@ -90,9 +94,7 @@ class TextureArray(GraphicFeature):
             self._zdim_indices = np.empty(0)
 
         # buffer will be an array of textures
-        self._buffer: np.ndarray[pygfx.Texture] = np.empty(
-            shape=shape, dtype=object
-        )
+        self._buffer: np.ndarray[pygfx.Texture] = np.empty(shape=shape, dtype=object)
 
         self._iter = None
 
@@ -152,9 +154,15 @@ class TextureArray(GraphicFeature):
 
     def __iter__(self):
         if self._dim == 2:
-            self._iter = product(enumerate(self.row_indices), enumerate(self.col_indices))
+            self._iter = product(
+                enumerate(self.row_indices), enumerate(self.col_indices)
+            )
         elif self._dim == 3:
-            self._iter = product(enumerate(self.row_indices), enumerate(self.col_indices), enumerate(self.zdim_indices))
+            self._iter = product(
+                enumerate(self.row_indices),
+                enumerate(self.col_indices),
+                enumerate(self.zdim_indices),
+            )
 
         return self
 
@@ -172,7 +180,11 @@ class TextureArray(GraphicFeature):
         if self._dim == 2:
             (chunk_row, data_row_start), (chunk_col, data_col_start) = next(self._iter)
         elif self._dim == 3:
-            (chunk_row, data_row_start), (chunk_col, data_col_start), (chunk_z, data_z_start) = next(self._iter)
+            (
+                (chunk_row, data_row_start),
+                (chunk_col, data_col_start),
+                (chunk_z, data_z_start),
+            ) = next(self._iter)
 
         # indices for to self.buffer for this chunk
         chunk_index = [chunk_row, chunk_col]

@@ -82,20 +82,22 @@ class ImageVolumeGraphic(Graphic):
     }
 
     def __init__(
-            self,
-            data: Any,
-            mode: str = "ray",
-            vmin: int = None,
-            vmax: int = None,
-            cmap: str = "plasma",
-            interpolation: str = "nearest",
-            cmap_interpolation: str = "linear",
-            isolated_buffer: bool = True,
-            **kwargs,
+        self,
+        data: Any,
+        mode: str = "ray",
+        vmin: int = None,
+        vmax: int = None,
+        cmap: str = "plasma",
+        interpolation: str = "nearest",
+        cmap_interpolation: str = "linear",
+        isolated_buffer: bool = True,
+        **kwargs,
     ):
         valid_modes = ["basic", "ray", "slice", "iso", "mip", "minip"]
         if mode not in valid_modes:
-            raise ValueError(f"invalid mode specified: {mode}, valid modes are: {valid_modes}")
+            raise ValueError(
+                f"invalid mode specified: {mode}, valid modes are: {valid_modes}"
+            )
 
         super().__init__(**kwargs)
 
