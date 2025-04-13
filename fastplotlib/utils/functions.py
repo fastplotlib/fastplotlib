@@ -406,8 +406,9 @@ def parse_cmap_values(
         return colors
 
 
-def subsample_array(arr: np.ndarray, max_size: int = 1e6, ignore_dims: Sequence[int] | None = None
- ):
+def subsample_array(
+    arr: np.ndarray, max_size: int = 1e6, ignore_dims: Sequence[int] | None = None
+):
     """
     Subsamples an input array while preserving its relative dimensional proportions.
 
@@ -470,8 +471,8 @@ def subsample_array(arr: np.ndarray, max_size: int = 1e6, ignore_dims: Sequence[
 
     # ignore dims e.g. RGB, which we don't want to downsample
     if ignore_dims is not None:
-         for dim in ignore_dims:
-             slices[dim] = slice(None)
+        for dim in ignore_dims:
+            slices[dim] = slice(None)
 
     slices = tuple(slices)
 
