@@ -80,7 +80,9 @@ class StandardRightClickMenu(Popup):
                 imgui.text(f"subplot: {name}")
                 imgui.separator()
 
-            _, show_fps = imgui.menu_item("Show fps", "", self.get_subplot().get_figure().imgui_show_fps)
+            _, show_fps = imgui.menu_item(
+                "Show fps", "", self.get_subplot().get_figure().imgui_show_fps
+            )
             self.get_subplot().get_figure().imgui_show_fps = show_fps
 
             # autoscale, center, maintain aspect
@@ -179,11 +181,13 @@ class StandardRightClickMenu(Popup):
 
             # renderer blend modes
             if imgui.begin_menu("Blend mode"):
-                for blend_mode in sorted(self.get_subplot().renderer._blenders_available.keys()):
+                for blend_mode in sorted(
+                    self.get_subplot().renderer._blenders_available.keys()
+                ):
                     clicked, _ = imgui.menu_item(
                         label=blend_mode,
                         shortcut="",
-                        p_selected=self.get_subplot().renderer.blend_mode == blend_mode
+                        p_selected=self.get_subplot().renderer.blend_mode == blend_mode,
                     )
 
                     if clicked:
