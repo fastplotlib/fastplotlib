@@ -55,7 +55,7 @@ fig = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
 
 vmin, vmax = fpl.utils.quick_min_max(voldata)
 
-volume = fig[0, 0].add_image_volume(voldata[0], vmin=vmin, vmax=vmax, cmap="gnuplot2")
+volume = fig[0, 0].add_image_volume(voldata[0], vmin=vmin, vmax=vmax, interpolation="linear", cmap="gnuplot2")
 
 hlut = fpl.HistogramLUTTool(voldata, volume)
 
