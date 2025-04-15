@@ -263,7 +263,6 @@ class BaseSelector(Graphic):
 
         self._move_start(event_source, ev)
 
-
     def _move_start(self, event_source: WorldObject, ev):
         """
         Called on "pointer_down" events
