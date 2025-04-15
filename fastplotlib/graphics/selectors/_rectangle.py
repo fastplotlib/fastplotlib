@@ -479,14 +479,14 @@ class RectangleSelector(BaseSelector):
 
             return ixs
 
-    def _move_graphic(self,  move_info: MoveInfo):
+    def _move_graphic(self, move_info: MoveInfo):
 
         # If this the first move in this drag, store initial selection
         if move_info.start_selection is None:
             move_info.start_selection = self.selection
 
         # add delta to current min, max to get new positions
-        deltax, deltay = move_info.delta[0],  move_info.delta[1]
+        deltax, deltay = move_info.delta[0], move_info.delta[1]
 
         # Get original selection
         xmin, xmax, ymin, ymax = move_info.start_selection
@@ -501,7 +501,9 @@ class RectangleSelector(BaseSelector):
             deltax = np.clip(deltax, min_deltax, max_deltax)
             deltay = np.clip(deltay, min_deltay, max_deltay)
             # Update all bounds with equal amount
-            self._selection.set_value(self, (xmin + deltax, xmax+ deltax, ymin + deltay, ymax+deltay))
+            self._selection.set_value(
+                self, (xmin + deltax, xmax + deltax, ymin + deltay, ymax + deltay)
+            )
             return
 
         # if selector not resizable return

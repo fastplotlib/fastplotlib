@@ -63,7 +63,12 @@ class PolygonSelector(BaseSelector):
         self._current_mode = "add"
 
         position = self._plot_area.map_screen_to_world(ev)
-        self._move_info = MoveInfo(start_selection=None, start_position=position, delta=np.zeros_like(position), source=None)
+        self._move_info = MoveInfo(
+            start_selection=None,
+            start_position=position,
+            delta=np.zeros_like(position),
+            source=None,
+        )
 
         # line with same position for start and end until mouse moves
         data = np.array([position, position])

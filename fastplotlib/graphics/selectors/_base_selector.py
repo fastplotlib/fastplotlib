@@ -277,7 +277,12 @@ class BaseSelector(Graphic):
         """
         position = self._plot_area.map_screen_to_world(ev)
 
-        self._move_info = MoveInfo(start_selection=None, start_position=position, delta=np.zeros_like(position), source=event_source)
+        self._move_info = MoveInfo(
+            start_selection=None,
+            start_position=position,
+            delta=np.zeros_like(position),
+            source=event_source,
+        )
         self._moving = True
 
         self._initial_controller_state = self._plot_area.controller.enabled
@@ -361,12 +366,17 @@ class BaseSelector(Graphic):
         # use fill by default as the source, such as in region selectors
         if len(self._fill) > 0:
             move_info = MoveInfo(
-                start_selection=None, start_position=None, delta=delta, source=self._fill[0]
+                start_selection=None,
+                start_position=None,
+                delta=delta,
+                source=self._fill[0],
             )
         # else use an edge, such as for linear selector
         else:
             move_info = MoveInfo(
-                start_position=current_pos_world, last_position=current_pos_world, source=self._edges[0]
+                start_position=current_pos_world,
+                last_position=current_pos_world,
+                source=self._edges[0],
             )
 
         self._move_graphic(move_info)
@@ -405,10 +415,20 @@ class BaseSelector(Graphic):
             # set event source
             # use fill by default as the source
             if len(self._fill) > 0:
-                move_info = MoveInfo(start_selection=None, start_position=None, delta=delta, source=self._fill[0])
+                move_info = MoveInfo(
+                    start_selection=None,
+                    start_position=None,
+                    delta=delta,
+                    source=self._fill[0],
+                )
             # else use an edge
             else:
-                move_info = MoveInfo(start_selection=None, start_position=None, delta=delta, source=self._edges[0])
+                move_info = MoveInfo(
+                    start_selection=None,
+                    start_position=None,
+                    delta=delta,
+                    source=self._edges[0],
+                )
 
             # move the graphic
             self._move_graphic(move_info)
