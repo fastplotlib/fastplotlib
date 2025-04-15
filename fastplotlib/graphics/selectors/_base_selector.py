@@ -136,8 +136,13 @@ class BaseSelector(Graphic):
 
         self._hover_responsive: Tuple[WorldObject, ...] = hover_responsive
 
+        # Original color of object that we change the colors of
+        self._original_colors = {}
+
+        # Colors as they are changed by the hover events, so they can be restored after a move action
+        self._hover_colors = {}
+
         if hover_responsive is not None:
-            self._original_colors = dict()
             for wo in self._hover_responsive:
                 self._original_colors[wo] = wo.material.color
 
@@ -258,6 +263,7 @@ class BaseSelector(Graphic):
 
         self._move_start(event_source, ev)
 
+
     def _move_start(self, event_source: WorldObject, ev):
         """
         Called on "pointer_down" events
@@ -325,6 +331,11 @@ class BaseSelector(Graphic):
         self._move_info = None
         self._moving = False
 
+        # Reset hover state
+        for wo, color in self._hover_colors.items():
+            wo.material.color = color
+        self._hover_colors.clear()
+
         # restore the initial controller state
         # if it was disabled, keep it disabled
         if self._initial_controller_state is not None:
@@ -378,6 +389,7 @@ class BaseSelector(Graphic):
         self._move_info = None
 
     def _pointer_enter(self, ev):
+
         if self._hover_responsive is None:
             return
 
@@ -388,17 +400,23 @@ class BaseSelector(Graphic):
         if wo in self._edges:
             self._edge_hovered = True
 
-        wo.material.color = "magenta"
+        if self._moving:
+            self._hover_colors[wo] = "magenta"
+        else:
+            wo.material.color = "magenta"
 
     def _pointer_leave(self, ev):
         if self._hover_responsive is None:
             return
 
+        self._edge_hovered = False
+
         # reset colors
         for wo in self._hover_responsive:
-            wo.material.color = self._original_colors[wo]
-
-        self._edge_hovered = False
+            if self._moving:
+                self._hover_colors[wo] = self._original_colors[wo]
+            else:
+                wo.material.color = self._original_colors[wo]
 
     def _toggle_arrow_key_moveable(self, ev):
         self.arrow_key_events_enabled = not self.arrow_key_events_enabled
