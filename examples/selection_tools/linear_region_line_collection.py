@@ -59,8 +59,11 @@ def update_zoomed_subplots(ev):
 
     for i in range(len(zoomed_data)):
         # interpolate y-vals
-        data = interpolate(zoomed_data[i], axis=1)
-        figure[i + 1, 0]["zoomed"].data[:, 1] = data
+        if zoomed_data[i].size == 0:
+            figure[i + 1, 0]["zoomed"].data[:, 1] = 0
+        else:
+            data = interpolate(zoomed_data[i], axis=1)
+            figure[i + 1, 0]["zoomed"].data[:, 1] = data
         figure[i + 1, 0].auto_scale()
 
 

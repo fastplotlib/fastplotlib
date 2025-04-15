@@ -8,7 +8,7 @@ import pygfx
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import LinearSelectionFeature
-from ._base_selector import BaseSelector
+from ._base_selector import BaseSelector, MoveInfo
 
 
 class LinearSelector(BaseSelector):
@@ -177,8 +177,6 @@ class LinearSelector(BaseSelector):
         world_object.add(self.line_outer)
         world_object.add(line_inner)
 
-        self._move_info: dict = None
-
         if axis == "x":
             offset = (parent.offset[0], center + parent.offset[1], 0)
         elif axis == "y":
@@ -276,7 +274,7 @@ class LinearSelector(BaseSelector):
 
             return min(round(index), upper_bound)
 
-    def _move_graphic(self, delta: np.ndarray):
+    def _move_graphic(self, move_info: MoveInfo):
         """
         Moves the graphic
 
@@ -287,7 +285,9 @@ class LinearSelector(BaseSelector):
 
         """
 
-        if self.axis == "x":
-            self.selection = self.selection + delta[0]
-        else:
-            self.selection = self.selection + delta[1]
+        # If this the first move in this drag, store initial selection
+        if move_info.start_selection is None:
+            move_info.start_selection = self.selection
+
+        delta = move_info.delta[0] if self.axis == "x" else move_info.delta[1]
+        self.selection = move_info.start_selection + delta
