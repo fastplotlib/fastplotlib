@@ -38,7 +38,7 @@ def _is_arraylike(obj) -> bool:
     Checks if the object is array-like.
     For now just checks if obj has `__getitem__()`
     """
-    for attr in ["__getitem__", "shape", "ndim"]:
+    for attr in ["__getitem__", "shape"]:
         if not hasattr(obj, attr):
             return False
 
