@@ -20,13 +20,13 @@ class MoveInfo:
     start_selection: Any
 
     # The initial world position of the cursor
-    start_position: Union[np.ndarray, None]
+    start_position: np.ndarray | None
 
     # Delta position in world coordinates
     delta: np.ndarray
 
     # WorldObject or "key" event
-    source: Union[WorldObject, str]
+    source: WorldObject | str
 
 
 # key bindings used to move the selector
