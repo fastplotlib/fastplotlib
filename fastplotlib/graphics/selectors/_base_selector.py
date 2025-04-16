@@ -16,12 +16,17 @@ class MoveInfo:
     stores move info for a WorldObject
     """
 
-    # last position for an edge, fill, or vertex in world coordinates
-    # can be None, such as key events
-    last_position: Union[np.ndarray, None]
+    # The initial selection. Differs per type of selector
+    start_selection: Any
+
+    # The initial world position of the cursor
+    start_position: np.ndarray | None
+
+    # Delta position in world coordinates
+    delta: np.ndarray
 
     # WorldObject or "key" event
-    source: Union[WorldObject, str]
+    source: WorldObject | str
 
 
 # key bindings used to move the selector
@@ -147,9 +152,6 @@ class BaseSelector(Graphic):
                 self._original_colors[wo] = wo.material.color
 
         self._axis = axis
-
-        # current delta in world coordinates
-        self.delta: np.ndarray = None
 
         self.arrow_keys_modifier = arrow_keys_modifier
         # if not False, moves the slider on every render cycle
@@ -278,9 +280,14 @@ class BaseSelector(Graphic):
             pygfx ``Event``
 
         """
-        last_position = self._plot_area.map_screen_to_world(ev)
+        position = self._plot_area.map_screen_to_world(ev)
 
-        self._move_info = MoveInfo(last_position=last_position, source=event_source)
+        self._move_info = MoveInfo(
+            start_selection=None,
+            start_position=position,
+            delta=np.zeros_like(position),
+            source=event_source,
+        )
         self._moving = True
 
         self._initial_controller_state = self._plot_area.controller.enabled
@@ -303,21 +310,14 @@ class BaseSelector(Graphic):
         # disable controller during moves
         self._plot_area.controller.enabled = False
 
-        # get pointer current world position
-        world_pos = self._plot_area.map_screen_to_world(ev)
+        # get pointer current world position, in 'mouse capute mode'
+        world_pos = self._plot_area.map_screen_to_world(ev, allow_outside=True)
 
-        # outside this viewport
-        if world_pos is None:
-            return
-
-        # compute the delta
-        self.delta = world_pos - self._move_info.last_position
+        # update the delta
+        self._move_info.delta = world_pos - self._move_info.start_position
         self._pygfx_event = ev
 
-        self._move_graphic(self.delta)
-
-        # update last position
-        self._move_info.last_position = world_pos
+        self._move_graphic(self._move_info)
 
         # restore the initial controller state
         # if it was disabled, keep it disabled
@@ -370,22 +370,26 @@ class BaseSelector(Graphic):
         if world_pos is None:
             return
 
-        self.delta = world_pos - current_pos_world
+        delta = world_pos - current_pos_world
         self._pygfx_event = ev
 
         # use fill by default as the source, such as in region selectors
         if len(self._fill) > 0:
-            self._move_info = MoveInfo(
-                last_position=current_pos_world, source=self._fill[0]
+            move_info = MoveInfo(
+                start_selection=None,
+                start_position=None,
+                delta=delta,
+                source=self._fill[0],
             )
         # else use an edge, such as for linear selector
         else:
-            self._move_info = MoveInfo(
-                last_position=current_pos_world, source=self._edges[0]
+            move_info = MoveInfo(
+                start_position=current_pos_world,
+                last_position=current_pos_world,
+                source=self._edges[0],
             )
 
-        self._move_graphic(self.delta)
-        self._move_info = None
+        self._move_graphic(move_info)
 
     def _pointer_enter(self, ev):
 
@@ -428,15 +432,23 @@ class BaseSelector(Graphic):
             # set event source
             # use fill by default as the source
             if len(self._fill) > 0:
-                self._move_info = MoveInfo(last_position=None, source=self._fill[0])
+                move_info = MoveInfo(
+                    start_selection=None,
+                    start_position=None,
+                    delta=delta,
+                    source=self._fill[0],
+                )
             # else use an edge
             else:
-                self._move_info = MoveInfo(last_position=None, source=self._edges[0])
+                move_info = MoveInfo(
+                    start_selection=None,
+                    start_position=None,
+                    delta=delta,
+                    source=self._edges[0],
+                )
 
             # move the graphic
-            self._move_graphic(delta=delta)
-
-            self._move_info = None
+            self._move_graphic(move_info)
 
     def _key_down(self, ev):
         # key bind modifier must be set and must be used for the event
@@ -457,8 +469,6 @@ class BaseSelector(Graphic):
         # if arrow key is released, stop moving
         if ev.key in key_bind_direction.keys():
             self._key_move_value = False
-
-        self._move_info = None
 
     def _fpl_prepare_del(self):
         if hasattr(self, "_pfunc_fill"):

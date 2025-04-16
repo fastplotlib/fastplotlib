@@ -7,7 +7,7 @@ import pygfx
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import LinearRegionSelectionFeature
-from ._base_selector import BaseSelector
+from ._base_selector import BaseSelector, MoveInfo
 
 
 class LinearRegionSelector(BaseSelector):
@@ -288,7 +288,7 @@ class LinearRegionSelector(BaseSelector):
                         # slices n_datapoints dim
                         data_selections.append(g.data[s])
 
-                return source.data[s]
+                return data_selections
             else:
                 if ixs.size == 0:
                     # empty selection
@@ -368,31 +368,29 @@ class LinearRegionSelector(BaseSelector):
             # indices map directly to grid geometry for image data buffer
             return np.arange(*bounds, dtype=int)
 
-    def _move_graphic(self, delta: np.ndarray):
-        # add delta to current min, max to get new positions
-        if self.axis == "x":
-            # add x value
-            new_min, new_max = self.selection + delta[0]
+    def _move_graphic(self, move_info: MoveInfo):
 
-        elif self.axis == "y":
-            # add y value
-            new_min, new_max = self.selection + delta[1]
+        # If this the first move in this drag, store initial selection
+        if move_info.start_selection is None:
+            move_info.start_selection = self.selection
+
+        # add delta to current min, max to get new positions
+        delta = move_info.delta[0] if self.axis == "x" else move_info.delta[1]
+
+        # Get original selection
+        cur_min, cur_max = move_info.start_selection
 
         # move entire selector if event source was fill
         if self._move_info.source == self.fill:
-            # prevent weird shrinkage of selector if one edge is already at the limit
-            if self.selection[0] == self.limits[0] and new_min < self.limits[0]:
-                # self._move_end(None)  # TODO: cancel further movement to prevent weird asynchronization with pointer
-                return
-            if self.selection[1] == self.limits[1] and new_max > self.limits[1]:
-                # self._move_end(None)
-                return
-
-            # move entire selector
-            self._selection.set_value(self, (new_min, new_max))
+            # Limit the delta to avoid weird resizine behavior
+            min_delta = self.limits[0] - cur_min
+            max_delta = self.limits[1] - cur_max
+            delta = np.clip(delta, min_delta, max_delta)
+            # Update both bounds with equal amount
+            self._selection.set_value(self, (cur_min + delta, cur_max + delta))
             return
 
-        # if selector is not resizable return
+        # if selector not resizable return
         if not self._resizable:
             return
 
@@ -400,8 +398,10 @@ class LinearRegionSelector(BaseSelector):
         # move the edge that caused the event
         if self._move_info.source == self.edges[0]:
             # change only left or bottom bound
-            self._selection.set_value(self, (new_min, self._selection.value[1]))
+            new_min = min(cur_min + delta, cur_max)
+            self._selection.set_value(self, (new_min, cur_max))
 
         elif self._move_info.source == self.edges[1]:
             # change only right or top bound
-            self._selection.set_value(self, (self.selection[0], new_max))
+            new_max = max(cur_max + delta, cur_min)
+            self._selection.set_value(self, (cur_min, new_max))

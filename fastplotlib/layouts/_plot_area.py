@@ -273,7 +273,7 @@ class PlotArea(GraphicMethodsMixin):
         self._background_material.set_colors(*colors)
 
     def map_screen_to_world(
-        self, pos: tuple[float, float] | pygfx.PointerEvent
+        self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
         """
         Map screen position to world position
@@ -287,7 +287,7 @@ class PlotArea(GraphicMethodsMixin):
         if isinstance(pos, pygfx.PointerEvent):
             pos = pos.x, pos.y
 
-        if not self.viewport.is_inside(*pos):
+        if not allow_outside and not self.viewport.is_inside(*pos):
             return None
 
         vs = self.viewport.logical_size

@@ -8,7 +8,7 @@ from .._collection_base import GraphicCollection
 
 from .._base import Graphic
 from ..features import RectangleSelectionFeature
-from ._base_selector import BaseSelector
+from ._base_selector import BaseSelector, MoveInfo
 
 
 class RectangleSelector(BaseSelector):
@@ -24,7 +24,7 @@ class RectangleSelector(BaseSelector):
         """
         (xmin, xmax, ymin, ymax) of the rectangle selection
         """
-        return self._selection.value
+        return self._selection.value.copy()
 
     @selection.setter
     def selection(self, selection: Sequence[float]):
@@ -479,33 +479,41 @@ class RectangleSelector(BaseSelector):
 
             return ixs
 
-    def _move_graphic(self, delta: np.ndarray):
+    def _move_graphic(self, move_info: MoveInfo):
 
-        # new selection positions
-        xmin_new = self.selection[0] + delta[0]
-        xmax_new = self.selection[1] + delta[0]
-        ymin_new = self.selection[2] + delta[1]
-        ymax_new = self.selection[3] + delta[1]
+        # If this the first move in this drag, store initial selection
+        if move_info.start_selection is None:
+            move_info.start_selection = self.selection
+
+        # add delta to current min, max to get new positions
+        deltax, deltay = move_info.delta[0], move_info.delta[1]
+
+        # Get original selection
+        xmin, xmax, ymin, ymax = move_info.start_selection
 
         # move entire selector if source is fill
         if self._move_info.source == self.fill:
-            if self.selection[0] == self.limits[0] and xmin_new < self.limits[0]:
-                return
-            if self.selection[1] == self.limits[1] and xmax_new > self.limits[1]:
-                return
-            if self.selection[2] == self.limits[2] and ymin_new < self.limits[2]:
-                return
-            if self.selection[3] == self.limits[3] and ymax_new > self.limits[3]:
-                return
-            # set thew new bounds
-            self._selection.set_value(self, (xmin_new, xmax_new, ymin_new, ymax_new))
+            # Limit the delta to avoid weird resizine behavior
+            min_deltax = self.limits[0] - xmin
+            max_deltax = self.limits[1] - xmax
+            min_deltay = self.limits[2] - ymin
+            max_deltay = self.limits[3] - ymax
+            deltax = np.clip(deltax, min_deltax, max_deltax)
+            deltay = np.clip(deltay, min_deltay, max_deltay)
+            # Update all bounds with equal amount
+            self._selection.set_value(
+                self, (xmin + deltax, xmax + deltax, ymin + deltay, ymax + deltay)
+            )
             return
 
         # if selector not resizable return
         if not self._resizable:
             return
 
-        xmin, xmax, ymin, ymax = self.selection
+        xmin_new = min(xmin + deltax, xmax)
+        xmax_new = max(xmax + deltax, xmin)
+        ymin_new = min(ymin + deltay, ymax)
+        ymax_new = max(ymax + deltay, ymin)
 
         if self._move_info.source == self.vertices[0]:  # bottom left
             self._selection.set_value(self, (xmin_new, xmax, ymin_new, ymax))
