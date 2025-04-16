@@ -895,6 +895,11 @@ class ImageWidget:
             )
         # check all arrays
         for i, (new_array, current_array) in enumerate(zip(new_data, self._data)):
+
+            # if we don't know the ndim, we can get it from the shape
+            if not hasattr(new_array, "ndim"):
+                new_array.ndim = len(new_array.shape)
+
             if new_array.ndim != current_array.ndim:
                 raise ValueError(
                     f"new data ndim {new_array.ndim} at index {i} "
