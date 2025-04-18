@@ -456,7 +456,7 @@ def subsample_array(
         subsample of the input array
     """
     if np.prod(arr.shape) <= max_size:
-        return arr  # no need to subsample if already below the threshold
+        return arr[:]  # no need to subsample if already below the threshold
 
     # get factor by which to divide all dims
     f = np.power((np.prod(arr.shape) / max_size), 1.0 / arr.ndim)
