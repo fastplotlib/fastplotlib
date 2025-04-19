@@ -101,10 +101,10 @@ class ImageGraphic(Graphic):
             | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
         vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
+            minimum value for color scaling, estimated from data if not provided
 
         vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
+            maximum value for color scaling, estimated from data if not provided
 
         cmap: str, optional, default "plasma"
             colormap to use to display the data
@@ -129,8 +129,8 @@ class ImageGraphic(Graphic):
 
         world_object = pygfx.Group()
 
-        # texture array that manages the textures on the GPU for displaying this image
-        self._data = TextureArray(data, isolated_buffer=isolated_buffer)
+        # texture array that manages the multiple textures on the GPU that represent this image
+        self._data = TextureArray(data, dim=2, isolated_buffer=isolated_buffer)
 
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(data)
@@ -165,7 +165,7 @@ class ImageGraphic(Graphic):
         )
 
         # iterate through each texture chunk and create
-        # an _ImageTIle, offset the tile using the data indices
+        # an _ImageTile, offset the tile using the data indices
         for texture, chunk_index, data_slice in self._data:
 
             # create an ImageTile using the texture for this chunk
