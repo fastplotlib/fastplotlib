@@ -465,7 +465,7 @@ def subsample_array(
     ns = np.floor(np.array(arr.shape) / f).clip(min=1)
 
     # get the step size for the slices
-    slices = tuple(
+    slices = list(
         slice(None, None, int(s)) for s in np.floor(arr.shape / ns).astype(int)
     )
 
