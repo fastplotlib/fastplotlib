@@ -19,6 +19,9 @@ modules = list()
 
 for name, obj in inspect.getmembers(graphics):
     if inspect.isclass(obj):
+        if obj.__name__ == "Graphic":
+            # skip base class
+            continue
         modules.append(obj)
 
 
@@ -42,10 +45,16 @@ def generate_add_graphics_methods():
     f.write("            center = kwargs.pop('center')\n")
     f.write("        else:\n")
     f.write("            center = False\n\n")
+
+    f.write("        if 'reference_space' in kwargs.keys():\n")
+    f.write("            reference_space = kwargs.pop('reference_space')\n")
+    f.write("        else:\n")
+    f.write("            reference_space = 0\n\n")
+
     f.write("        if 'name' in kwargs.keys():\n")
     f.write("            self._check_graphic_name_exists(kwargs['name'])\n\n")
     f.write("        graphic = graphic_class(*args, **kwargs)\n")
-    f.write("        self.add_graphic(graphic, center=center)\n\n")
+    f.write("        self.add_graphic(graphic, center=center, reference_space=reference_space)\n\n")
     f.write("        return graphic\n\n")
 
     for m in modules:

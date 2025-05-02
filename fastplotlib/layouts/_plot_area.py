@@ -8,8 +8,9 @@ import pygfx
 from pylinalg import vec_transform, vec_unproject
 from rendercanvas import BaseRenderCanvas
 
+from ._reference_space import ReferenceSpace
 from ._utils import create_controller
-from ..graphics._base import Graphic
+from ..graphics import Graphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
@@ -114,6 +115,8 @@ class PlotArea(GraphicMethodsMixin):
         )
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
+
+        self._reference_spaces: list[ReferenceSpace] = list()
 
     def get_figure(self, obj=None):
         """Get Figure instance that contains this plot area"""
@@ -272,6 +275,35 @@ class PlotArea(GraphicMethodsMixin):
         """1, 2, or 4 colors, each color must be acceptable by pygfx.Color"""
         self._background_material.set_colors(*colors)
 
+    @property
+    def reference_spaces(self) -> tuple[ReferenceSpace, ...]:
+        return tuple(self._reference_spaces)
+
+    def add_reference_space(
+            self,
+            position: tuple[float, float, float] = (0., 0., 0.),
+            scale: tuple[float, float, float] = (1., 1., 1.),
+            name: str | None = None
+    ) -> ReferenceSpace:
+        camera = pygfx.PerspectiveCamera()
+
+        state = self.camera.get_state()
+        camera.set_state(state)
+
+        # camera.world.position = position
+        camera.world.scale = scale
+        camera.maintain_aspect = False
+
+        scene = pygfx.Scene()
+
+        controller = pygfx.PanZoomController(camera)
+        controller.register_events(self.viewport)
+
+        reference_space = ReferenceSpace(scene, camera, controller, self.viewport, name)
+        self._reference_spaces.append(reference_space)
+
+        return reference_space
+
     def map_screen_to_world(
         self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
@@ -313,6 +345,9 @@ class PlotArea(GraphicMethodsMixin):
 
         # does not flush, flush must be implemented in user-facing Plot objects
         self.viewport.render(self.scene, self.camera)
+
+        for reference_space in self.reference_spaces:
+            self.viewport.render(reference_space.scene, reference_space.camera)
 
         for child in self.children:
             child._render()
@@ -393,7 +428,7 @@ class PlotArea(GraphicMethodsMixin):
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
-    def add_graphic(self, graphic: Graphic, center: bool = True):
+    def add_graphic(self, graphic: Graphic, center: bool = True, reference_space: ReferenceSpace | int | str = 0):
         """
         Add a Graphic to the scene
 
@@ -413,7 +448,7 @@ class PlotArea(GraphicMethodsMixin):
             self._fpl_graphics_scene.add(graphic.world_object)
             return
 
-        self._add_or_insert_graphic(graphic=graphic, center=center, action="add")
+        self._add_or_insert_graphic(graphic=graphic, center=center, action="add", reference_space=reference_space)
 
         if self.camera.fov == 0:
             # for orthographic positions stack objects along the z-axis
@@ -469,6 +504,7 @@ class PlotArea(GraphicMethodsMixin):
         center: bool = True,
         action: str = Literal["insert", "add"],
         index: int = 0,
+        reference_space: ReferenceSpace | str | int = 0,
     ):
         """Private method to handle inserting or adding a graphic to a PlotArea."""
         if not isinstance(graphic, Graphic):
@@ -489,7 +525,10 @@ class PlotArea(GraphicMethodsMixin):
 
         elif isinstance(graphic, Graphic):
             obj_list = self._graphics
-            self._fpl_graphics_scene.add(graphic.world_object)
+            if isinstance(reference_space, ReferenceSpace):
+                reference_space.scene.add(graphic.world_object)
+            else:
+                self._fpl_graphics_scene.add(graphic.world_object)
 
         else:
             raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
