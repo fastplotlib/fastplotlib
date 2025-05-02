@@ -35,11 +35,9 @@ class ReferenceSpace:
     def camera(self) -> pygfx.Camera:
         return self._camera
 
-    # @property
-    # def controller(self):
-        # same controller for all reference spaces in one PlotArea I think?
-        # Use key events to add or remove a camera from the PlotArea dynamically?
-        # pass
+    @property
+    def controller(self) -> pygfx.Controller:
+        return self._controller
 
     def auto_scale(self):
         pass
