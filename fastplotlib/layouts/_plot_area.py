@@ -597,9 +597,9 @@ class PlotArea(GraphicMethodsMixin):
             width, height, depth = (1, 1, 1)
 
         # make sure width and height are non-zero
-        if width < 0.01:
+        if width <= np.finfo(np.float32).smallest_normal:
             width = 1
-        if height < 0.01:
+        if height <= np.finfo(np.float32).smallest_normal:
             height = 1
 
         # scale all cameras associated with this controller else it looks wonky
