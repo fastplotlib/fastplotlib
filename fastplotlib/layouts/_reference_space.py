@@ -6,7 +6,7 @@ from pylinalg import vec_transform, vec_unproject
 from ..graphics import Graphic
 
 
-class ReferenceSpace:
+class ReferenceFrame:
     def __init__(
             self,
             scene: pygfx.Scene,
