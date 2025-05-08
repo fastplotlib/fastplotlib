@@ -136,7 +136,7 @@ class LinearSelector(BaseSelector):
         else:
             raise ValueError("`axis` must be one of 'x' | 'y'")
 
-        line_data = np.column_stack([xs, ys, zs])#.astype(np.float32)
+        line_data = np.column_stack([xs, ys, zs])
 
         material = pygfx.LineInfiniteSegmentMaterial
 
