@@ -455,17 +455,17 @@ def subsample_array(
     np.ndarray
         subsample of the input array
     """
-    if np.prod(arr.shape) <= max_size:
+    if np.prod(arr.shape, dtype=np.int64) <= max_size:
         return arr[:]  # no need to subsample if already below the threshold
 
     # get factor by which to divide all dims
-    f = np.power((np.prod(arr.shape) / max_size), 1.0 / arr.ndim)
+    f = np.power((np.prod(arr.shape, dtype=np.int64) / max_size), 1.0 / arr.ndim)
 
     # new shape for subsampled array
     ns = np.floor(np.array(arr.shape) / f).clip(min=1)
 
     # get the step size for the slices
-    slices = tuple(
+    slices = list(
         slice(None, None, int(s)) for s in np.floor(arr.shape / ns).astype(int)
     )
 
