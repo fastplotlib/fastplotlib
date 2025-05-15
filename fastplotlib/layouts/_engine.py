@@ -31,7 +31,8 @@ class BaseLayout:
         self,
         renderer: pygfx.WgpuRenderer,
         subplots: np.ndarray[Subplot],
-        canvas_rect: tuple[float, float],
+        canvas_rect: tuple[float, float, float, float],
+        render_rect: tuple[float, float, float, float],
         moveable: bool,
         resizeable: bool,
     ):
@@ -41,6 +42,7 @@ class BaseLayout:
         self._renderer = renderer
         self._subplots: np.ndarray[Subplot] = subplots.ravel()
         self._canvas_rect = canvas_rect
+        self._render_rect = render_rect
 
         self._last_pointer_pos: np.ndarray[np.float64, np.float64] = np.array(
             [np.nan, np.nan]
@@ -82,7 +84,7 @@ class BaseLayout:
 
         return False
 
-    def canvas_resized(self, canvas_rect: tuple):
+    def canvas_resized(self, canvas_rect: tuple, render_rect: tuple):
         """
         called by figure when canvas is resized
 
@@ -94,8 +96,10 @@ class BaseLayout:
         """
 
         self._canvas_rect = canvas_rect
+        self._render_rect = render_rect
+
         for subplot in self._subplots:
-            subplot.frame.canvas_resized(canvas_rect)
+            subplot.frame.canvas_resized(canvas_rect, render_rect)
 
     def _highlight_resize_handler(self, subplot: Subplot, ev):
         if self._active_action == "resize":
@@ -132,6 +136,7 @@ class WindowLayout(BaseLayout):
         renderer,
         subplots: np.ndarray[Subplot],
         canvas_rect: tuple,
+        render_rect: tuple,
         moveable=True,
         resizeable=True,
     ):
@@ -144,7 +149,7 @@ class WindowLayout(BaseLayout):
 
         """
 
-        super().__init__(renderer, subplots, canvas_rect, moveable, resizeable)
+        super().__init__(renderer, subplots, canvas_rect, render_rect, moveable, resizeable)
 
         self._last_pointer_pos: np.ndarray[np.float64, np.float64] = np.array(
             [np.nan, np.nan]
@@ -291,7 +296,7 @@ class WindowLayout(BaseLayout):
 
         """
 
-        new_rect = RectManager(*rect, self._canvas_rect)
+        new_rect = RectManager(*rect, self._canvas_rect, self.render_rect)
         extent = new_rect.extent
         # check for overlaps
         for s in self._subplots:
@@ -318,7 +323,7 @@ class WindowLayout(BaseLayout):
 
         """
 
-        new_rect = RectManager.from_extent(extent, self._canvas_rect)
+        new_rect = RectManager.from_extent(extent, self._canvas_rect, self.render_rect)
         extent = new_rect.extent
         # check for overlaps
         for s in self._subplots:
@@ -337,6 +342,7 @@ class GridLayout(WindowLayout):
         renderer,
         subplots: np.ndarray[Subplot],
         canvas_rect: tuple[float, float, float, float],
+        render_rect: tuple[float, float, float, float],
         shape: tuple[int, int],
     ):
         """
@@ -346,7 +352,7 @@ class GridLayout(WindowLayout):
         """
 
         super().__init__(
-            renderer, subplots, canvas_rect, moveable=False, resizeable=False
+            renderer, subplots, canvas_rect, render_rect, moveable=False, resizeable=False
         )
 
         # {Subplot: (row_ix, col_ix)}, dict mapping subplots to their row and col index in the grid layout

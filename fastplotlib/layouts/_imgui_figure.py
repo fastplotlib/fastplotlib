@@ -177,6 +177,12 @@ class ImguiFigure(Figure):
 
         self._fpl_reset_layout()
 
+        # reset the rects for all guis to account for any existing guis on the edges to ensure no overlapping windows
+        for gui in self.guis.values():
+            if gui is None:
+                continue
+            gui._set_rect()
+
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
         Get rect for the portion of the canvas that the pygfx renderer draws to,

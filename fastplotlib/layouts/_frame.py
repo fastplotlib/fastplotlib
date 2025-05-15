@@ -116,6 +116,7 @@ class Frame:
         docks,
         toolbar_visible,
         canvas_rect,
+        render_rect,
     ):
         """
         Manages the plane mesh, resize handle point, and subplot title.
@@ -147,7 +148,10 @@ class Frame:
             toolbar visibility
 
         canvas_rect: tuple
-            figure canvas rect, the render area excluding any areas taken by imgui edge windows
+            figure canvas rec
+
+        render_rect: tuple
+            the render area rect excluding any areas taken by imgui edge windows or other things
 
         """
 
@@ -157,9 +161,9 @@ class Frame:
 
         # create rect manager to handle all the backend rect calculations
         if rect is not None:
-            self._rect_manager = RectManager(*rect, canvas_rect)
+            self._rect_manager = RectManager(*rect, canvas_rect, render_rect)
         elif extent is not None:
-            self._rect_manager = RectManager.from_extent(extent, canvas_rect)
+            self._rect_manager = RectManager.from_extent(extent, canvas_rect, render_rect)
         else:
             raise ValueError("Must provide `rect` or `extent`")
 
@@ -364,8 +368,8 @@ class Frame:
         """resize handler point"""
         return self._resize_handle
 
-    def canvas_resized(self, canvas_rect):
+    def canvas_resized(self, canvas_rect, render_rect):
         """called by layout is resized"""
-        self._rect_manager.canvas_resized(canvas_rect)
+        self._rect_manager.canvas_resized(canvas_rect, render_rect)
         self._reset()
         self.reset_viewport()

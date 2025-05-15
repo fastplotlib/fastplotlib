@@ -94,7 +94,8 @@ class Subplot(PlotArea):
             title=name,
             docks=self.docks,
             toolbar_visible=toolbar_visible,
-            canvas_rect=parent.get_pygfx_render_area(),
+            canvas_rect=(0, 0, *canvas.get_logical_size()),
+            render_rect=parent.get_pygfx_render_area(),
         )
 
     @property
