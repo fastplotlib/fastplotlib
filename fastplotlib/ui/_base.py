@@ -6,7 +6,7 @@ from imgui_bundle import imgui
 from ..layouts._figure import Figure
 
 
-GUI_EDGES = ["top", "right", "bottom", "left"]
+GUI_EDGES = ["right", "bottom"]
 
 
 class BaseGUI:
@@ -40,7 +40,7 @@ class EdgeWindow(Window):
         self,
         figure: Figure,
         size: int,
-        location: Literal["top", "bottom", "left", "right"],
+        location: Literal["bottom", "right"],
         title: str,
         window_flags: int = imgui.WindowFlags_.no_collapse
         | imgui.WindowFlags_.no_resize,
@@ -48,7 +48,7 @@ class EdgeWindow(Window):
         **kwargs,
     ):
         """
-        A base class for imgui windows displayed at one of the four edges of a Figure
+        A base class for imgui windows displayed at the bottom or top edge of a Figure
 
         Parameters
         ----------
@@ -58,7 +58,7 @@ class EdgeWindow(Window):
         size: int
             width or height of the window, depending on its location
 
-        location: str, "top" | "bottom" | "left" | "right"
+        location: str, "bottom" | "right"
             location of the window
 
         title: str
@@ -168,10 +168,6 @@ class EdgeWindow(Window):
         width_canvas, height_canvas = self._figure.canvas.get_logical_size()
 
         match self._location:
-            case "top":
-                x_pos, y_pos = (0, 0)
-                width, height = (width_canvas, self.size)
-
             case "bottom":
                 x_pos = 0
                 y_pos = height_canvas - self.size
@@ -179,22 +175,8 @@ class EdgeWindow(Window):
 
             case "right":
                 x_pos, y_pos = (width_canvas - self.size, 0)
-
-                if self._figure.guis["top"]:
-                    # if there is a GUI in the top edge, make this one below
-                    y_pos += self._figure.guis["top"].size
-
                 width, height = (self.size, height_canvas)
-                if self._figure.guis["bottom"] is not None:
-                    height -= self._figure.guis["bottom"].size
 
-            case "left":
-                x_pos, y_pos = (0, 0)
-                if self._figure.guis["top"]:
-                    # if there is a GUI in the top edge, make this one below
-                    y_pos += self._figure.guis["top"].size
-
-                width, height = (self.size, height_canvas)
                 if self._figure.guis["bottom"] is not None:
                     height -= self._figure.guis["bottom"].size
 
@@ -203,8 +185,11 @@ class EdgeWindow(Window):
     def draw_window(self):
         """helps simplify using imgui by managing window creation & position, and pushing/popping the ID"""
         # window position & size
+        x, y, w, h = self.get_rect()
         imgui.set_next_window_size((self.width, self.height))
         imgui.set_next_window_pos((self.x, self.y))
+        # imgui.set_next_window_pos((x, y))
+        # imgui.set_next_window_size((w, h))
         flags = self._window_flags
 
         # begin window
