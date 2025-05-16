@@ -549,10 +549,15 @@ between imgui and ipywidgets, Qt, and wx is the imgui UI can be rendered directl
 i.e. it will work in jupyter, Qt, glfw and wx windows! The programming model is different from Qt and ipywidgets, there
 are no callbacks, but it is easy to learn if you see a few examples.
 
+.. image:: ../_static/guide_imgui.png
+
 We specifically use `imgui-bundle <https://github.com/pthom/imgui_bundle>`_ for the python bindings in fastplotlib.
 There is large community and many resources out there on building UIs using imgui.
 
-For examples on integrating imgui with a fastplotlib Figure please see the examples gallery.
+To install ``fastplotlib`` with ``imgui`` use the ``imgui`` extras option, i.e. ``pip install fastplotlib[imgui]``, or ``pip install imgui_bundle`` if you've already installed fastplotlib.
+
+Fastplotlib comes built-in with imgui UIs for subplot toolbars and a standard right-click menu with a number of options.
+You can also make custom GUIs and embed them within the canvas, see the examples gallery for detailed examples.
 
 **Some tips:**
 
@@ -661,21 +666,6 @@ There are several spaces to consider when using ``fastplotlib``:
     space.
 
 For more information on the various spaces used by rendering engines please see this `article <https://learnopengl.com/Getting-started/Coordinate-Systems>`_
-
-Imgui
------
-
-Fastplotlib uses `imgui_bundle <https://github.com/pthom/imgui_bundle>`_ to provide within-canvas UI elemenents if you
-installed ``fastplotlib`` using the ``imgui`` toggle, i.e. ``fastplotlib[imgui]``, or installed ``imgui_bundle`` afterwards.
-
-Fastplotlib comes built-in with imgui UIs for subplot toolbars and a standard right-click menu with a number of options.
-You can also make custom GUIs and embed them within the canvas, see the examples gallery for detailed examples.
-
-.. note::
-    Imgui is optional, you can use other GUI frameworks such at Qt or ipywidgets with fastplotlib. You can also of course
-    use imgui and Qt or ipywidgets.
-
-.. image:: ../_static/guide_imgui.png
 
 Using ``fastplotlib`` in an interactive shell
 ---------------------------------------------
