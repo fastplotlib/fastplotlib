@@ -168,10 +168,6 @@ class EdgeWindow(Window):
         width_canvas, height_canvas = self._figure.canvas.get_logical_size()
 
         match self._location:
-            case "top":
-                x_pos, y_pos = (0, 0)
-                width, height = (width_canvas, self.size)
-
             case "bottom":
                 x_pos = 0
                 y_pos = height_canvas - self.size
@@ -180,25 +176,6 @@ class EdgeWindow(Window):
             case "right":
                 x_pos, y_pos = (width_canvas - self.size, 0)
                 width, height = (self.size, height_canvas)
-
-                if self._figure.guis["top"]:
-                    # if there is a GUI in the top edge, make this one below
-                    y_pos += self._figure.guis["top"].size
-                    # reduce height
-                    height -= self._figure.guis["top"].size
-
-                if self._figure.guis["bottom"] is not None:
-                    height -= self._figure.guis["bottom"].size
-
-            case "left":
-                x_pos, y_pos = (0, 0)
-                width, height = (self.size, height_canvas)
-
-                if self._figure.guis["top"]:
-                    # if there is a GUI in the top edge, make this one below
-                    y_pos += self._figure.guis["top"].size
-                    # reduce height
-                    height -= self._figure.guis["top"].size
 
                 if self._figure.guis["bottom"] is not None:
                     height -= self._figure.guis["bottom"].size
