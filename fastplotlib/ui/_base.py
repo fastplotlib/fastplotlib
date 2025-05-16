@@ -6,7 +6,7 @@ from imgui_bundle import imgui
 from ..layouts._figure import Figure
 
 
-GUI_EDGES = ["top", "right", "bottom", "left"]
+GUI_EDGES = ["right", "bottom"]
 
 
 class BaseGUI:
@@ -40,7 +40,7 @@ class EdgeWindow(Window):
         self,
         figure: Figure,
         size: int,
-        location: Literal["top", "bottom", "left", "right"],
+        location: Literal["bottom", "right"],
         title: str,
         window_flags: int = imgui.WindowFlags_.no_collapse
         | imgui.WindowFlags_.no_resize,
@@ -48,7 +48,7 @@ class EdgeWindow(Window):
         **kwargs,
     ):
         """
-        A base class for imgui windows displayed at one of the four edges of a Figure
+        A base class for imgui windows displayed at the bottom or top edge of a Figure
 
         Parameters
         ----------
@@ -58,7 +58,7 @@ class EdgeWindow(Window):
         size: int
             width or height of the window, depending on its location
 
-        location: str, "top" | "bottom" | "left" | "right"
+        location: str, "bottom" | "right"
             location of the window
 
         title: str

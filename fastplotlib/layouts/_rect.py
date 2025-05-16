@@ -6,15 +6,13 @@ class RectManager:
     Backend management of a rect. Allows converting between rects and extents, also works with fractional inputs.
     """
 
-    def __init__(self, x: float, y: float, w: float, h: float, canvas_rect: tuple, render_rect: tuple):
+    def __init__(self, x: float, y: float, w: float, h: float, canvas_rect: tuple):
         # initialize rect state arrays
         # used to store internal state of the rect in both fractional screen space and absolute screen space
         # the purpose of storing the fractional rect is that it remains constant when the canvas resizes
-        self._rect_frac_canvas_area = np.zeros(4, dtype=np.float64)
-        self._rect_frac_render_area = np.zeros(4, dtype=np.float64)
+        self._rect_frac = np.zeros(4, dtype=np.float64)
         self._rect_screen_space = np.zeros(4, dtype=np.float64)
         self._canvas_rect = np.asarray(canvas_rect)
-        self._render_rect = np.asarray(render_rect)
 
         self._set((x, y, w, h))
 
@@ -38,10 +36,13 @@ class RectManager:
 
         else:
             raise ValueError(f"Invalid rect: {rect}")
-    def _set_from_fract(self, rect):
-        """set rect from fractional rect representation"""
 
-        # check that widths, heights are valid
+    def _set_from_fract(self, rect):
+        """set rect from fractional representation"""
+        _, _, cw, ch = self._canvas_rect
+        mult = np.array([cw, ch, cw, ch])
+
+        # check that widths, heights are valid:
         if rect[0] + rect[2] > 1:
             raise ValueError(
                 f"invalid fractional rect: {rect}\n x + width > 1: {rect[0]} + {rect[2]} > 1"
@@ -51,53 +52,26 @@ class RectManager:
                 f"invalid fractional rect: {rect}\n y + height > 1: {rect[1]} + {rect[3]} > 1"
             )
 
-        cx, cy, cw, ch = self._canvas_rect
-        rx, ry, rw, rh = self._render_rect
-
-        mult = np.array([cw, ch, cw, ch])
-
-        # frac rect w.r.t. the render area only
-        rect_render_area = rect.copy()
-
-        # frac rect w.r.t. the entire canvas
-        rect_canvas_area = rect.copy()
-
-        render_rect_scaler = np.array([rw, rh, rw, rh]) / mult
-
-        # scale by render rect
-        rect_canvas_area *= np.concatenate([render_rect_scaler[2:], render_rect_scaler[2:]])
-        # add (x0, y0) offsets
-        rect_canvas_area[:-2] += np.array([rx, ry]) / mult[:-2]
-
         # assign values to the arrays, don't just change the reference
-        self._rect_frac_render_area[:] = rect_render_area
-        self._rect_frac_canvas_area[:] = rect_canvas_area
+        self._rect_frac[:] = rect
+        self._rect_screen_space[:] = self._rect_frac * mult
 
-        self._rect_screen_space[:] = self._rect_frac_canvas_area * mult
     def _set_from_screen_space(self, rect):
-        """set rect from screen space rect representation"""
-        cx, cy, cw, ch = self._canvas_rect
-        rx, ry, rw, rh = self._render_rect
-
-        # multiplier
-        mult = np.array([rw, rh, rw, rh])
-
-        # add (x0, y0) offset from render rect
-        rect[0] += rx
-        rect[1] += ry
-
+        """set rect from screen space representation"""
+        _, _, cw, ch = self._canvas_rect
+        mult = np.array([cw, ch, cw, ch])
         # for screen coords allow (x, y) = 1 or 0, but w, h must be > 1
         # check that widths, heights are valid
-        if rect[0] + rect[2] > rw:
+        if rect[0] + rect[2] > cw:
             raise ValueError(
-                f"invalid rect: {rect}\n x + width > canvas render area width: {rect[0]} + {rect[2]} > {rw}"
+                f"invalid rect: {rect}\n x + width > canvas width: {rect[0]} + {rect[2]} > {cw}"
             )
-        if rect[1] + rect[3] > rh:
+        if rect[1] + rect[3] > ch:
             raise ValueError(
-                f"invalid rect: {rect}\n y + height > canvas render area height: {rect[1]} + {rect[3]} >{rh}"
+                f"invalid rect: {rect}\n y + height > canvas height: {rect[1]} + {rect[3]} >{ch}"
             )
 
-        self._rect_frac_canvas_area[:] = rect / mult
+        self._rect_frac[:] = rect / mult
         self._rect_screen_space[:] = rect
 
     @property
@@ -129,12 +103,11 @@ class RectManager:
     def rect(self, rect: np.ndarray | tuple):
         self._set(rect)
 
-    def canvas_resized(self, canvas_rect: tuple, render_rect: tuple):
+    def canvas_resized(self, canvas_rect: tuple):
         # called by Frame when canvas is resized
         self._canvas_rect[:] = canvas_rect
-        self._render_rect[:] = render_rect
         # set new rect using existing rect_frac since this remains constant regardless of resize
-        self._set(self._rect_frac_render_area)
+        self._set(self._rect_frac)
 
     @property
     def x0(self) -> np.float64:
@@ -157,10 +130,10 @@ class RectManager:
         return self.y + self.h
 
     @classmethod
-    def from_extent(cls, extent, canvas_rect, render_rect):
+    def from_extent(cls, extent, canvas_rect):
         """create a RectManager from an extent"""
-        rect = cls.extent_to_rect(extent, render_rect)
-        return cls(*rect, canvas_rect, render_rect)
+        rect = cls.extent_to_rect(extent, canvas_rect)
+        return cls(*rect, canvas_rect)
 
     @property
     def extent(self) -> np.ndarray:
@@ -170,14 +143,14 @@ class RectManager:
 
     @extent.setter
     def extent(self, extent):
-        rect = RectManager.extent_to_rect(extent, self._canvas_rect)
+        rect = RectManager.extent_to_rect(extent, canvas_rect=self._canvas_rect)
 
         self._set(rect)
 
     @staticmethod
-    def extent_to_rect(extent, render_rect):
+    def extent_to_rect(extent, canvas_rect):
         """convert an extent to a rect"""
-        RectManager.validate_extent(extent, render_rect)
+        RectManager.validate_extent(extent, canvas_rect)
         x0, x1, y0, y1 = extent
 
         # width and height
@@ -187,9 +160,9 @@ class RectManager:
         return x0, y0, w, h
 
     @staticmethod
-    def validate_extent(extent: np.ndarray | tuple, render_rect: tuple):
+    def validate_extent(extent: np.ndarray | tuple, canvas_rect: tuple):
         extent = np.asarray(extent)
-        rx0, ry0, rw, rh = render_rect
+        cx0, cy0, cw, ch = canvas_rect
 
         # make sure extent is valid
         if (extent < 0).any():
@@ -201,7 +174,7 @@ class RectManager:
                 raise ValueError(
                     f"if passing a fractional extent, all values must be fractional, you have passed: {extent}"
                 )
-            extent *= np.asarray([rw, rw, rh, rh])
+            extent *= np.asarray([cw, cw, ch, ch])
 
         x0, x1, y0, y1 = extent
 
@@ -218,15 +191,15 @@ class RectManager:
             raise ValueError(f"extent y-range must be non-negative: {extent}")
 
         # calc canvas extent
-        cx1 = rx0 + rw
-        cy1 = ry0 + rh
-        canvas_extent = np.asarray([rx0, cx1, ry0, cy1])
+        cx1 = cx0 + cw
+        cy1 = cy0 + ch
+        canvas_extent = np.asarray([cx0, cx1, cy0, cy1])
 
-        if x0 < rx0 or x1 < rx0 or x0 > cx1 or x1 > cx1:
+        if x0 < cx0 or x1 < cx0 or x0 > cx1 or x1 > cx1:
             raise ValueError(
                 f"extent: {extent} x-range is beyond the bounds of the canvas: {canvas_extent}"
             )
-        if y0 < ry0 or y1 < ry0 or y0 > cy1 or y1 > cy1:
+        if y0 < cy0 or y1 < cy0 or y0 > cy1 or y1 > cy1:
             raise ValueError(
                 f"extent: {extent} y-range is beyond the bounds of the canvas: {canvas_extent}"
             )
@@ -261,6 +234,6 @@ class RectManager:
         )
 
     def __repr__(self):
-        s = f"{self._rect_frac_canvas_area}\n{self.rect}"
+        s = f"{self._rect_frac}\n{self.rect}"
 
         return s

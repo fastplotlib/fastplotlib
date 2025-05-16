@@ -398,8 +398,7 @@ class Figure:
             self._layout = GridLayout(
                 self.renderer,
                 subplots=self._subplots,
-                canvas_rect=(0, 0, *canvas.get_logical_size()),
-                render_rect=self.get_pygfx_render_area(),
+                canvas_rect=self.get_pygfx_render_area(),
                 shape=shape,
             )
 
@@ -407,8 +406,7 @@ class Figure:
             self._layout = WindowLayout(
                 self.renderer,
                 subplots=self._subplots,
-                canvas_rect=(0, 0, *canvas.get_logical_size()),
-                render_rect=self.get_pygfx_render_area()
+                canvas_rect=self.get_pygfx_render_area(),
             )
 
         self._underlay_camera = UnderlayCamera()
@@ -756,10 +754,7 @@ class Figure:
 
     def _fpl_reset_layout(self, *ev):
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
-        self.layout.canvas_resized(
-            canvas_rect=(0, 0, *self.canvas.get_logical_size()),
-            render_rect=self.get_pygfx_render_area()
-        )
+        self.layout.canvas_resized(self.get_pygfx_render_area())
 
     def get_pygfx_render_area(self, *args) -> tuple[float, float, float, float]:
         """
