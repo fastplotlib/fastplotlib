@@ -45,7 +45,11 @@ class PositionsGraphic(Graphic):
 
     @property
     def cmap(self) -> VertexCmap:
-        """Control the cmap, cmap transform, or cmap alpha"""
+        """
+        Control the cmap, cmap transform, or cmap alpha
+
+        For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+        """
         return self._cmap
 
     @cmap.setter
