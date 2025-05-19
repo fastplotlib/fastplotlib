@@ -286,21 +286,11 @@ class ImageGraphic(Graphic):
         """
 
         if axis == "x":
-            size = self._data.value.shape[0]
-            center = size / 2
             limits = (0, self._data.value.shape[1])
         elif axis == "y":
-            size = self._data.value.shape[1]
-            center = size / 2
             limits = (0, self._data.value.shape[0])
         else:
             raise ValueError("`axis` must be one of 'x' | 'y'")
-
-        # default padding is 25% the height or width of the image
-        if padding is None:
-            size *= 1.25
-        else:
-            size += padding
 
         if selection is None:
             selection = limits[0]

@@ -160,7 +160,7 @@ class LineGraphic(PositionsGraphic):
         """
 
         bounds_init, limits, size, center = self._get_linear_selector_init_args(
-            axis, padding
+            axis, padding=0
         )
 
         if selection is None:
