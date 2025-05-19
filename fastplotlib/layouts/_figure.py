@@ -155,14 +155,30 @@ class Figure:
             rects = [None] * n_subplots
 
         if names is not None:
+            # user has specified subplot names, check that there are enough subplots given the number of names
             subplot_names = np.asarray(names).flatten()
-            if subplot_names.size != n_subplots:
+            # make an array without nones for sanity checks
+            subplot_names_without_nones = subplot_names[subplot_names != np.array(None)]
+
+            # make sure all names are unique
+            if subplot_names_without_nones.size != np.unique(subplot_names_without_nones).size:
                 raise ValueError(
-                    f"must provide same number of subplot `names` as specified by shape, extents, or rects."
-                    f"You have specified {n_subplots} subplots, but {subplot_names.size} subplot names."
+                    f"subplot `names` must be unique, you have provided: {names}"
                 )
+
+            if subplot_names.size != n_subplots:
+                if subplot_names.size > n_subplots:
+                    # pad the subplot names with nones
+                    subplot_names = np.concatenate([subplot_names, np.asarray([None] * (n_subplots - subplot_names.size))])
+                else:
+                    raise ValueError(
+                        f"must provide same number of subplot `names` as specified by shape, extents, or rects."
+                        f"You have specified {n_subplots} subplots, but {subplot_names.size} subplot names."
+                    )
         else:
+            # no user specified subplot names
             if layout_mode == "grid":
+                # make names that show the [row index, col index]
                 subplot_names = np.asarray(
                     list(map(str, product(range(shape[0]), range(shape[1]))))
                 )
