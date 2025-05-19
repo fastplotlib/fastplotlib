@@ -1,8 +1,8 @@
 """
-GridPlot Non-Square Example
-===========================
+Grid Layout 2
+=============
 
-Example showing simple 2x2 GridPlot with Standard images from imageio.
+Simple 2x2 grid layout Figure with standard images from imageio, one subplot is left empty
 """
 
 # test_example = true

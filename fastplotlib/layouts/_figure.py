@@ -102,9 +102,10 @@ class Figure:
             | this syncs subplot_a, subplot_b and subplot_e together; syncs subplot_c and subplot_d together
 
         controllers: pygfx.Controller | list[pygfx.Controller] | np.ndarray[pygfx.Controller], optional
-            directly provide pygfx.Controller instances(s). Useful if you want to use a controller from an existing
-            plot/subplot. Other controller kwargs, i.e. ``controller_types`` and ``controller_ids`` are ignored if
-            ``controllers`` are provided.
+            Directly provide pygfx.Controller instances(s). Useful if you want to use a ``Controller`` from an existing
+            subplot or a ``Controller`` you have already instantiated. Also useful if you want to provide a custom
+            ``Controller`` subclass. Other controller kwargs, i.e. ``controller_types`` and ``controller_ids``
+            are ignored if `controllers` are provided.
 
         canvas: str, BaseRenderCanvas, pygfx.Texture
             Canvas to draw the figure onto, usually auto-selected based on running environment.
@@ -144,7 +145,7 @@ class Figure:
 
         else:
             if not all(isinstance(v, (int, np.integer)) for v in shape):
-                raise TypeError("shape argument must be a tuple[n_rows, n_cols]")
+                raise TypeError(f"shape argument must be a tuple[n_rows, n_cols], you have passed: {shape}")
             n_subplots = shape[0] * shape[1]
             layout_mode = "grid"
 
@@ -157,7 +158,8 @@ class Figure:
             subplot_names = np.asarray(names).flatten()
             if subplot_names.size != n_subplots:
                 raise ValueError(
-                    f"must provide same number of subplot `names` as specified by shape, extents, or rects: {n_subplots}"
+                    f"must provide same number of subplot `names` as specified by shape, extents, or rects."
+                    f"You have specified {n_subplots} subplots, but {subplot_names.size} subplot names."
                 )
         else:
             if layout_mode == "grid":
@@ -188,7 +190,7 @@ class Figure:
 
         if cameras.size != n_subplots:
             raise ValueError(
-                f"Number of cameras: {cameras.size} does not match the number of subplots: {n_subplots}"
+                f"Number of cameras: {cameras.size} does not match the number of specified subplots: {n_subplots}"
             )
 
         # create the cameras
@@ -213,8 +215,8 @@ class Figure:
                         pass
                     else:
                         raise TypeError(
-                            "controllers argument must be a single pygfx.Controller instance, or a Iterable of "
-                            "pygfx.Controller instances"
+                            f"controllers argument must be a single pygfx.Controller instance, or a Iterable of "
+                            f"pygfx.Controller instances. You have passed: {controllers}"
                         )
 
             subplot_controllers: np.ndarray[pygfx.Controller] = np.asarray(
@@ -242,7 +244,8 @@ class Figure:
                 else:
                     raise ValueError(
                         f"`controller_ids` must be one of 'sync', an array/list of subplot names, or an array/list of "
-                        f"integer ids. See the docstring for more details."
+                        f"integer ids. You have passed: {controller_ids}.\n"
+                        f"See the docstring for more details."
                     )
 
             # list controller_ids
@@ -259,12 +262,14 @@ class Figure:
                     # make sure each controller_id str is a subplot name
                     if not all([n in subplot_names for n in ids_flat]):
                         raise KeyError(
-                            f"all `controller_ids` strings must be one of the subplot names"
+                            f"all `controller_ids` strings must be one of the subplot names. You have passed "
+                            f"the following `controller_ids`:\n{controller_ids}\n\n"
+                            f"and the following subplot names:\n{subplot_names}"
                         )
 
                     if len(ids_flat) > len(set(ids_flat)):
                         raise ValueError(
-                            "id strings must not appear twice in `controller_ids`"
+                            f"id strings must not appear twice in `controller_ids`: \n{controller_ids}"
                         )
 
                     # initialize controller_ids array
@@ -284,7 +289,8 @@ class Figure:
                     controller_ids = np.asarray(controller_ids).flatten()
                     if controller_ids.max() < 0:
                         raise ValueError(
-                            "if passing an integer array of `controller_ids`, all the integers must be positive."
+                            f"if passing an integer array of `controller_ids`, "
+                            f"all the integers must be positive:{controller_ids}"
                         )
 
                 else:
@@ -295,7 +301,8 @@ class Figure:
 
             if controller_ids.size != n_subplots:
                 raise ValueError(
-                    f"Number of controller_ids does not match the number of subplots: {n_subplots}"
+                    f"Number of controller_ids: {controller_ids.size} "
+                    f"does not match the number of subplots: {n_subplots}"
                 )
 
             if controller_types is None:
@@ -429,7 +436,7 @@ class Figure:
 
     @property
     def shape(self) -> list[tuple[int, int, int, int]] | tuple[int, int]:
-        """[n_rows, n_cols]"""
+        """Only for grid layouts of subplots: [n_rows, n_cols] """
         if isinstance(self.layout, GridLayout):
             return self.layout.shape
 
@@ -711,7 +718,7 @@ class Figure:
 
     def export(self, uri: str | Path | bytes, **kwargs):
         """
-        Use ``imageio`` for writing the current Figure to a file, or return a byte string.
+        Use ``imageio`` to export the current Figure to a file, or return a byte string.
         Must have ``imageio`` installed.
 
         Parameters

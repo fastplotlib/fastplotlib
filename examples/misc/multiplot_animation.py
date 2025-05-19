@@ -2,7 +2,7 @@
 Multi-Subplot Image Update
 ==========================
 
-Example showing updating a multiple subplots with new random 512x512 data.
+Multiple subplots with an image that updates with new data on every render.
 """
 
 # test_example = false
@@ -27,7 +27,7 @@ figure[0,2]["rand-img"].cmap = "gray"
 figure[1,1]["rand-img"].cmap = "spring"
 
 # Define a function to update the image graphics with new data
-# add_animations will pass the gridplot to the animation function
+# add_animations will pass the figure to the animation function
 def update_data(f):
     for subplot in f:
         new_data = np.random.rand(512, 512)
@@ -37,7 +37,7 @@ def update_data(f):
 # add the animation function
 figure.add_animations(update_data)
 
-# show the gridplot
+# show the figure
 figure.show()
 
 
