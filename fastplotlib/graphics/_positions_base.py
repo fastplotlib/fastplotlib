@@ -19,7 +19,7 @@ class PositionsGraphic(Graphic):
 
     @property
     def data(self) -> VertexPositions:
-        """Get or set the vertex positions data"""
+        """Get or set the graphic's data"""
         return self._data
 
     @data.setter
@@ -28,7 +28,7 @@ class PositionsGraphic(Graphic):
 
     @property
     def colors(self) -> VertexColors | pygfx.Color:
-        """Get or set the colors data"""
+        """Get or set the colors"""
         if isinstance(self._colors, VertexColors):
             return self._colors
 
