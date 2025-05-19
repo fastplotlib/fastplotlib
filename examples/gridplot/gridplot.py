@@ -1,8 +1,8 @@
 """
-GridPlot Simple
-===============
+Grid layout Simple
+==================
 
-Example showing simple 2x2 GridPlot with Standard images from imageio.
+Example showing simple 2x2 grid layout with standard images from imageio.
 """
 
 # test_example = true
