@@ -145,7 +145,9 @@ class Figure:
 
         else:
             if not all(isinstance(v, (int, np.integer)) for v in shape):
-                raise TypeError(f"shape argument must be a tuple[n_rows, n_cols], you have passed: {shape}")
+                raise TypeError(
+                    f"shape argument must be a tuple[n_rows, n_cols], you have passed: {shape}"
+                )
             n_subplots = shape[0] * shape[1]
             layout_mode = "grid"
 
@@ -161,7 +163,10 @@ class Figure:
             subplot_names_without_nones = subplot_names[subplot_names != np.array(None)]
 
             # make sure all names are unique
-            if subplot_names_without_nones.size != np.unique(subplot_names_without_nones).size:
+            if (
+                subplot_names_without_nones.size
+                != np.unique(subplot_names_without_nones).size
+            ):
                 raise ValueError(
                     f"subplot `names` must be unique, you have provided: {names}"
                 )
@@ -169,7 +174,12 @@ class Figure:
             if subplot_names.size != n_subplots:
                 if subplot_names.size > n_subplots:
                     # pad the subplot names with nones
-                    subplot_names = np.concatenate([subplot_names, np.asarray([None] * (n_subplots - subplot_names.size))])
+                    subplot_names = np.concatenate(
+                        [
+                            subplot_names,
+                            np.asarray([None] * (n_subplots - subplot_names.size)),
+                        ]
+                    )
                 else:
                     raise ValueError(
                         f"must provide same number of subplot `names` as specified by shape, extents, or rects."
@@ -452,7 +462,7 @@ class Figure:
 
     @property
     def shape(self) -> list[tuple[int, int, int, int]] | tuple[int, int]:
-        """Only for grid layouts of subplots: [n_rows, n_cols] """
+        """Only for grid layouts of subplots: [n_rows, n_cols]"""
         if isinstance(self.layout, GridLayout):
             return self.layout.shape
 
