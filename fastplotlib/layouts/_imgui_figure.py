@@ -150,7 +150,7 @@ class ImguiFigure(Figure):
 
     def add_gui(self, gui: EdgeWindow):
         """
-        Add a GUI to the Figure. GUIs can be added to the top, bottom, left or right edge.
+        Add a GUI to the Figure. GUIs can be added to the left or bottom edge.
 
         Parameters
         ----------
@@ -191,25 +191,15 @@ class ImguiFigure(Figure):
 
         width, height = self.canvas.get_logical_size()
 
-        for edge in ["left", "right"]:
+        for edge in ["right"]:
             if self.guis[edge]:
                 width -= self._guis[edge].size
 
-        for edge in ["top", "bottom"]:
+        for edge in ["bottom"]:
             if self.guis[edge]:
                 height -= self._guis[edge].size
 
-        if self.guis["left"]:
-            xpos = self.guis["left"].size
-        else:
-            xpos = 0
-
-        if self.guis["top"]:
-            ypos = self.guis["top"].size
-        else:
-            ypos = 0
-
-        return xpos, ypos, max(1, width), max(1, height)
+        return 0, 0, max(1, width), max(1, height)
 
     def register_popup(self, popup: Popup.__class__):
         """
