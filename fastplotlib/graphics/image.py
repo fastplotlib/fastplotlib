@@ -203,7 +203,7 @@ class ImageGraphic(Graphic):
     @property
     def cmap(self) -> str:
         """
-        get or set the colormap
+        Get or set the colormap
 
         For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
         """
