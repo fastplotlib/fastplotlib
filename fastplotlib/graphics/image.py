@@ -237,7 +237,7 @@ class ImageGraphic(Graphic):
 
     @property
     def interpolation(self) -> str:
-        """data interpolation method"""
+        """Data interpolation method"""
         return self._interpolation.value
 
     @interpolation.setter
