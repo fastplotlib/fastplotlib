@@ -329,7 +329,7 @@ class ImageWidget:
             manually provide the shape for the Figure, otherwise the number of rows and columns is estimated
 
         figure_kwargs: dict, optional
-            passed to `GridPlot`
+            passed to ``Figure``
 
         names: Optional[str]
             gives names to the subplots
