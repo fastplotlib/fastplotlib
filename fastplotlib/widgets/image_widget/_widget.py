@@ -199,7 +199,7 @@ class ImageWidget:
             return
 
         try:
-            self._reentrant_block = True # block re-execution until current_index has *fully* completed execution
+            self._reentrant_block = True  # block re-execution until current_index has *fully* completed execution
             if not set(index.keys()).issubset(set(self._current_index.keys())):
                 raise KeyError(
                     f"All dimension keys for setting `current_index` must be present in the widget sliders. "
@@ -210,7 +210,9 @@ class ImageWidget:
                 if not isinstance(val, int):
                     raise TypeError("Indices for all dimensions must be int")
                 if val < 0:
-                    raise IndexError("negative indexing is not supported for ImageWidget")
+                    raise IndexError(
+                        "negative indexing is not supported for ImageWidget"
+                    )
                 if val > self._dims_max_bounds[k]:
                     raise IndexError(
                         f"index {val} is out of bounds for dimension '{k}' "
