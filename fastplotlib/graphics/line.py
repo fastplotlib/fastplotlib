@@ -46,7 +46,6 @@ class LineGraphic(PositionsGraphic):
         ----------
         data: array-like
             Line data to plot. Can provide 1D, 2D, or a 3D data.
-
             | If passing a 1D array, it is used to set the y-values and the x-values are generated as an integer range
             from [0, data.size]
             | 2D data must be of shape [n_points, 2]. 3D data must be of shape [n_points, 3]
