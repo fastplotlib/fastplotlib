@@ -126,7 +126,7 @@ class LineGraphic(PositionsGraphic):
 
     @property
     def thickness(self) -> float:
-        """get or set the line thickness"""
+        """Get or set the line thickness"""
         return self._thickness.value
 
     @thickness.setter
