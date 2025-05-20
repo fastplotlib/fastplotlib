@@ -369,6 +369,10 @@ class ImageWidget:
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
             if all([_is_arraylike(d) for d in data]):
+
+                if not hasattr(data, "ndim"):
+                    data.ndim = len(data.shape)
+
                 # Grid computations
                 if figure_shape is None:
                     if "shape" in figure_kwargs:
