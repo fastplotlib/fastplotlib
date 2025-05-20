@@ -232,7 +232,7 @@ class Tooltip:
         graphic,
         appear_event: str = "pointer_move",
         disappear_event: str = "pointer_leave",
-        custom_tooltip: callable = None,
+        custom_info: callable = None,
     ):
         """
         Register a Graphic to display tooltips
@@ -248,13 +248,13 @@ class Tooltip:
         disappear_event: str, default "pointer_leave"
             the event that triggers the tooltip to disappear, does not have to be a pointer event.
 
-        custom_tooltip: callable, default None
+        custom_info: callable, default None
             a custom function that takes the pointer event defined as the `appear_event` and returns the text
             to display in the tooltip
 
         """
 
-        pfunc = partial(self._event_handler, custom_tooltip)
+        pfunc = partial(self._event_handler, custom_info)
         graphic.add_event_handler(pfunc, appear_event)
         graphic.add_event_handler(self._clear, disappear_event)
 
