@@ -233,9 +233,7 @@ class RectangleSelector(BaseSelector):
         )
 
         bottom_left_vertex = pygfx.Points(
-            pygfx.Geometry(
-                positions=[bottom_left_vertex_data], sizes=[vertex_size]
-            ),
+            pygfx.Geometry(positions=[bottom_left_vertex_data], sizes=[vertex_size]),
             pygfx.PointsMarkerMaterial(
                 marker="square",
                 size=vertex_size,
@@ -246,9 +244,7 @@ class RectangleSelector(BaseSelector):
         )
 
         bottom_right_vertex = pygfx.Points(
-            pygfx.Geometry(
-                positions=[bottom_right_vertex_data], sizes=[vertex_size]
-            ),
+            pygfx.Geometry(positions=[bottom_right_vertex_data], sizes=[vertex_size]),
             pygfx.PointsMarkerMaterial(
                 marker="square",
                 size=vertex_size,
