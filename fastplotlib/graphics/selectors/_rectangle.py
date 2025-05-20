@@ -60,7 +60,7 @@ class RectangleSelector(BaseSelector):
         edge_color=(0.8, 0.6, 0),
         edge_thickness: float = 8,
         vertex_color=(0.7, 0.4, 0),
-        vertex_thickness: float = 8,
+        vertex_size: float = 8,
         arrow_keys_modifier: str = "Shift",
         name: str = None,
     ):
@@ -211,10 +211,10 @@ class RectangleSelector(BaseSelector):
         bottom_right_vertex_data = (xmax, ymin, 1)
 
         top_left_vertex = pygfx.Points(
-            pygfx.Geometry(positions=[top_left_vertex_data], sizes=[vertex_thickness]),
+            pygfx.Geometry(positions=[top_left_vertex_data], sizes=[vertex_size]),
             pygfx.PointsMarkerMaterial(
                 marker="square",
-                size=vertex_thickness,
+                size=vertex_size,
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
@@ -222,10 +222,10 @@ class RectangleSelector(BaseSelector):
         )
 
         top_right_vertex = pygfx.Points(
-            pygfx.Geometry(positions=[top_right_vertex_data], sizes=[vertex_thickness]),
+            pygfx.Geometry(positions=[top_right_vertex_data], sizes=[vertex_size]),
             pygfx.PointsMarkerMaterial(
                 marker="square",
-                size=vertex_thickness,
+                size=vertex_size,
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
@@ -233,12 +233,10 @@ class RectangleSelector(BaseSelector):
         )
 
         bottom_left_vertex = pygfx.Points(
-            pygfx.Geometry(
-                positions=[bottom_left_vertex_data], sizes=[vertex_thickness]
-            ),
+            pygfx.Geometry(positions=[bottom_left_vertex_data], sizes=[vertex_size]),
             pygfx.PointsMarkerMaterial(
                 marker="square",
-                size=vertex_thickness,
+                size=vertex_size,
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
@@ -246,12 +244,10 @@ class RectangleSelector(BaseSelector):
         )
 
         bottom_right_vertex = pygfx.Points(
-            pygfx.Geometry(
-                positions=[bottom_right_vertex_data], sizes=[vertex_thickness]
-            ),
+            pygfx.Geometry(positions=[bottom_right_vertex_data], sizes=[vertex_size]),
             pygfx.PointsMarkerMaterial(
                 marker="square",
-                size=vertex_thickness,
+                size=vertex_size,
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
