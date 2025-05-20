@@ -1,6 +1,6 @@
 """
-GridPlot test viewport rects
-============================
+Grid layout test viewport rects
+===============================
 
 Test figure to test that viewport rects are positioned correctly
 """

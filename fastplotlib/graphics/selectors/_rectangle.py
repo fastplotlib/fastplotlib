@@ -8,7 +8,7 @@ from .._collection_base import GraphicCollection
 
 from .._base import Graphic
 from ..features import RectangleSelectionFeature
-from ._base_selector import BaseSelector
+from ._base_selector import BaseSelector, MoveInfo
 
 
 class RectangleSelector(BaseSelector):
@@ -24,7 +24,7 @@ class RectangleSelector(BaseSelector):
         """
         (xmin, xmax, ymin, ymax) of the rectangle selection
         """
-        return self._selection.value
+        return self._selection.value.copy()
 
     @selection.setter
     def selection(self, selection: Sequence[float]):
@@ -60,7 +60,7 @@ class RectangleSelector(BaseSelector):
         edge_color=(0.8, 0.6, 0),
         edge_thickness: float = 8,
         vertex_color=(0.7, 0.4, 0),
-        vertex_thickness: float = 8,
+        vertex_size: float = 8,
         arrow_keys_modifier: str = "Shift",
         name: str = None,
     ):
@@ -83,13 +83,16 @@ class RectangleSelector(BaseSelector):
             if ``True``, the edges can be dragged to resize the selection
 
         fill_color: str, array, or tuple
-            fill color for the selector, passed to pygfx.Color
+            fill color for the selector as a str or RGBA array
 
         edge_color: str, array, or tuple
-            edge color for the selector, passed to pygfx.Color
+            edge color for the selector as a str or RGBA array
 
         edge_thickness: float, default 8
             edge thickness
+
+        vertex_color: str, array, or tuple
+            vertex color for the selector as a str or RGBA array
 
         arrow_keys_modifier: str
             modifier key that must be pressed to initiate movement using arrow keys, must be one of:
@@ -211,10 +214,10 @@ class RectangleSelector(BaseSelector):
         bottom_right_vertex_data = (xmax, ymin, 1)
 
         top_left_vertex = pygfx.Points(
-            pygfx.Geometry(positions=[top_left_vertex_data], sizes=[vertex_thickness]),
+            pygfx.Geometry(positions=[top_left_vertex_data], sizes=[vertex_size]),
             pygfx.PointsMarkerMaterial(
                 marker="square",
-                size=vertex_thickness,
+                size=vertex_size,
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
@@ -222,10 +225,10 @@ class RectangleSelector(BaseSelector):
         )
 
         top_right_vertex = pygfx.Points(
-            pygfx.Geometry(positions=[top_right_vertex_data], sizes=[vertex_thickness]),
+            pygfx.Geometry(positions=[top_right_vertex_data], sizes=[vertex_size]),
             pygfx.PointsMarkerMaterial(
                 marker="square",
-                size=vertex_thickness,
+                size=vertex_size,
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
@@ -233,12 +236,10 @@ class RectangleSelector(BaseSelector):
         )
 
         bottom_left_vertex = pygfx.Points(
-            pygfx.Geometry(
-                positions=[bottom_left_vertex_data], sizes=[vertex_thickness]
-            ),
+            pygfx.Geometry(positions=[bottom_left_vertex_data], sizes=[vertex_size]),
             pygfx.PointsMarkerMaterial(
                 marker="square",
-                size=vertex_thickness,
+                size=vertex_size,
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
@@ -246,12 +247,10 @@ class RectangleSelector(BaseSelector):
         )
 
         bottom_right_vertex = pygfx.Points(
-            pygfx.Geometry(
-                positions=[bottom_right_vertex_data], sizes=[vertex_thickness]
-            ),
+            pygfx.Geometry(positions=[bottom_right_vertex_data], sizes=[vertex_size]),
             pygfx.PointsMarkerMaterial(
                 marker="square",
-                size=vertex_thickness,
+                size=vertex_size,
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
@@ -479,33 +478,41 @@ class RectangleSelector(BaseSelector):
 
             return ixs
 
-    def _move_graphic(self, delta: np.ndarray):
+    def _move_graphic(self, move_info: MoveInfo):
 
-        # new selection positions
-        xmin_new = self.selection[0] + delta[0]
-        xmax_new = self.selection[1] + delta[0]
-        ymin_new = self.selection[2] + delta[1]
-        ymax_new = self.selection[3] + delta[1]
+        # If this the first move in this drag, store initial selection
+        if move_info.start_selection is None:
+            move_info.start_selection = self.selection
+
+        # add delta to current min, max to get new positions
+        deltax, deltay = move_info.delta[0], move_info.delta[1]
+
+        # Get original selection
+        xmin, xmax, ymin, ymax = move_info.start_selection
 
         # move entire selector if source is fill
         if self._move_info.source == self.fill:
-            if self.selection[0] == self.limits[0] and xmin_new < self.limits[0]:
-                return
-            if self.selection[1] == self.limits[1] and xmax_new > self.limits[1]:
-                return
-            if self.selection[2] == self.limits[2] and ymin_new < self.limits[2]:
-                return
-            if self.selection[3] == self.limits[3] and ymax_new > self.limits[3]:
-                return
-            # set thew new bounds
-            self._selection.set_value(self, (xmin_new, xmax_new, ymin_new, ymax_new))
+            # Limit the delta to avoid weird resizine behavior
+            min_deltax = self.limits[0] - xmin
+            max_deltax = self.limits[1] - xmax
+            min_deltay = self.limits[2] - ymin
+            max_deltay = self.limits[3] - ymax
+            deltax = np.clip(deltax, min_deltax, max_deltax)
+            deltay = np.clip(deltay, min_deltay, max_deltay)
+            # Update all bounds with equal amount
+            self._selection.set_value(
+                self, (xmin + deltax, xmax + deltax, ymin + deltay, ymax + deltay)
+            )
             return
 
         # if selector not resizable return
         if not self._resizable:
             return
 
-        xmin, xmax, ymin, ymax = self.selection
+        xmin_new = min(xmin + deltax, xmax)
+        xmax_new = max(xmax + deltax, xmin)
+        ymin_new = min(ymin + deltay, ymax)
+        ymax_new = max(ymax + deltay, ymin)
 
         if self._move_info.source == self.vertices[0]:  # bottom left
             self._selection.set_value(self, (xmin_new, xmax, ymin_new, ymax))

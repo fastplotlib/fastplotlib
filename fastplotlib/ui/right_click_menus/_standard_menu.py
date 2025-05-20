@@ -31,7 +31,7 @@ class StandardRightClickMenu(Popup):
         # whether the right click menu is currently open or not
         self.is_open: bool = False
 
-    def get_subplot(self) -> PlotArea | bool:
+    def get_subplot(self) -> PlotArea | bool | None:
         """get the subplot that a click occurred in"""
         if self._last_right_click_pos is None:
             return False
@@ -39,6 +39,9 @@ class StandardRightClickMenu(Popup):
         for subplot in self._figure:
             if subplot.viewport.is_inside(*self._last_right_click_pos):
                 return subplot
+
+        # not inside a subplot
+        return False
 
     def cleanup(self):
         """called when the popup disappears"""

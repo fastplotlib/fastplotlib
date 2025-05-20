@@ -49,23 +49,26 @@ def generate_add_graphics_methods():
     f.write("        return graphic\n\n")
 
     for m in modules:
-        class_name = m
-        method_name = class_name.type
+        cls = m
+        if cls.__name__ == "Graphic":
+            # skip base class
+            continue
+        method_name = cls.type
 
-        class_args = inspect.getfullargspec(class_name)[0][1:]
+        class_args = inspect.getfullargspec(cls)[0][1:]
         class_args = [arg + ", " for arg in class_args]
         s = ""
         for a in class_args:
             s += a
 
         f.write(
-            f"    def add_{method_name}{inspect.signature(class_name.__init__)} -> {class_name.__name__}:\n"
+            f"    def add_{method_name}{inspect.signature(cls.__init__)} -> {cls.__name__}:\n"
         )
         f.write('        """\n')
-        f.write(f"        {class_name.__init__.__doc__}\n")
+        f.write(f"        {cls.__init__.__doc__}\n")
         f.write('        """\n')
         f.write(
-            f"        return self._create_graphic({class_name.__name__}, {s} **kwargs)\n\n"
+            f"        return self._create_graphic({cls.__name__}, {s} **kwargs)\n\n"
         )
 
     f.close()

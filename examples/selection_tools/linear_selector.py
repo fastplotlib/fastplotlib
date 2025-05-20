@@ -5,7 +5,7 @@ Linear Selectors
 Example showing how to use a `LinearSelector` with lines and line collections.
 """
 
-# test_example = false
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
