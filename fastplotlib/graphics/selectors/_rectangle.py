@@ -83,13 +83,16 @@ class RectangleSelector(BaseSelector):
             if ``True``, the edges can be dragged to resize the selection
 
         fill_color: str, array, or tuple
-            fill color for the selector, passed to pygfx.Color
+            fill color for the selector as a str or RGBA array
 
         edge_color: str, array, or tuple
-            edge color for the selector, passed to pygfx.Color
+            edge color for the selector as a str or RGBA array
 
         edge_thickness: float, default 8
             edge thickness
+
+        vertex_color: str, array, or tuple
+            vertex color for the selector as a str or RGBA array
 
         arrow_keys_modifier: str
             modifier key that must be pressed to initiate movement using arrow keys, must be one of:

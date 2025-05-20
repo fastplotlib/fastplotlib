@@ -30,11 +30,11 @@ class LineGraphic(PositionsGraphic):
         self,
         data: Any,
         thickness: float = 2.0,
-        colors: str | np.ndarray | Iterable = "w",
+        colors: str | np.ndarray | Sequence = "w",
         uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_transform: np.ndarray | Iterable = None,
+        cmap_transform: np.ndarray | Sequence = None,
         isolated_buffer: bool = True,
         size_space: str = "screen",
         **kwargs,
@@ -45,14 +45,17 @@ class LineGraphic(PositionsGraphic):
         Parameters
         ----------
         data: array-like
-            Line data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
+            Line data to plot. Can provide 1D, 2D, or a 3D data.
+            | If passing a 1D array, it is used to set the y-values and the x-values are generated as an integer range
+            from [0, data.size]
+            | 2D data must be of shape [n_points, 2]. 3D data must be of shape [n_points, 3]
 
         thickness: float, optional, default 2.0
             thickness of the line
 
         colors: str, array, or iterable, default "w"
             specify colors as a single human-readable string, a single RGBA array,
-            or an iterable of strings or RGBA arrays
+            or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
         uniform_color: bool, default ``False``
             if True, uses a uniform buffer for the line color,
@@ -62,14 +65,15 @@ class LineGraphic(PositionsGraphic):
             alpha value for the colors
 
         cmap: str, optional
-            apply a colormap to the line instead of assigning colors manually, this
-            overrides any argument passed to "colors"
+            Apply a colormap to the line instead of assigning colors manually, this
+            overrides any argument passed to "colors". For supported colormaps see the
+            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         size_space: str, default "screen"
-            coordinate space in which the size is expressed ("screen", "world", "model")
+            coordinate space in which the thickness is expressed ("screen", "world", "model")
 
         **kwargs
             passed to Graphic
@@ -121,7 +125,7 @@ class LineGraphic(PositionsGraphic):
 
     @property
     def thickness(self) -> float:
-        """line thickness"""
+        """Get or set the line thickness"""
         return self._thickness.value
 
     @thickness.setter
@@ -129,23 +133,21 @@ class LineGraphic(PositionsGraphic):
         self._thickness.set_value(self, value)
 
     def add_linear_selector(
-        self, selection: float = None, padding: float = 0.0, axis: str = "x", **kwargs
+        self, selection: float = None, axis: str = "x", **kwargs
     ) -> LinearSelector:
         """
-        Adds a linear selector.
+        Adds a :class:`.LinearSelector`.
 
-        Parameters
-        ----------
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a
+        plot area just like any other ``Graphic``.
+
         Parameters
         ----------
         selection: float, optional
-            selected point on the linear selector, computed from data if not provided
+            selected point on the linear selector, by default the first datapoint on the line.
 
         axis: str, default "x"
             axis that the selector resides on
-
-        padding: float, default 0.0
-            Extra padding to extend the linear selector along the orthogonal axis to make it easier to interact with.
 
         kwargs
             passed to :class:`.LinearSelector`
@@ -157,7 +159,7 @@ class LineGraphic(PositionsGraphic):
         """
 
         bounds_init, limits, size, center = self._get_linear_selector_init_args(
-            axis, padding
+            axis, padding=0
         )
 
         if selection is None:
@@ -186,8 +188,10 @@ class LineGraphic(PositionsGraphic):
         **kwargs,
     ) -> LinearRegionSelector:
         """
-        Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
-        remove, or delete them from a plot area just like any other ``Graphic``.
+        Add a :class:`.LinearRegionSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a
+        plot area just like any other ``Graphic``.
 
         Parameters
         ----------
@@ -243,8 +247,10 @@ class LineGraphic(PositionsGraphic):
         **kwargs,
     ) -> RectangleSelector:
         """
-        Add a :class:`.RectangleSelector`. Selectors are just ``Graphic`` objects, so you can manage,
-        remove, or delete them from a plot area just like any other ``Graphic``.
+        Add a :class:`.RectangleSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a
+        plot area just like any other ``Graphic``.
 
         Parameters
         ----------

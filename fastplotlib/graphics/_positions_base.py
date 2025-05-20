@@ -19,7 +19,7 @@ class PositionsGraphic(Graphic):
 
     @property
     def data(self) -> VertexPositions:
-        """Get or set the vertex positions data"""
+        """Get or set the graphic's data"""
         return self._data
 
     @data.setter
@@ -28,7 +28,7 @@ class PositionsGraphic(Graphic):
 
     @property
     def colors(self) -> VertexColors | pygfx.Color:
-        """Get or set the colors data"""
+        """Get or set the colors"""
         if isinstance(self._colors, VertexColors):
             return self._colors
 
@@ -45,7 +45,11 @@ class PositionsGraphic(Graphic):
 
     @property
     def cmap(self) -> VertexCmap:
-        """Control the cmap, cmap transform, or cmap alpha"""
+        """
+        Control the cmap, cmap transform, or cmap alpha
+
+        For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+        """
         return self._cmap
 
     @cmap.setter
