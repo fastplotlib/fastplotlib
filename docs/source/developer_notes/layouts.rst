@@ -4,8 +4,8 @@ Layouts
 PlotArea
 --------
 
-This is the main base class within layouts. A ``Figure`` and ``Dock`` are areas within a ``Subplot`` that
-inherit from ``PlotArea``.
+This is the main base class within layouts. A ``Subplot`` and ``Dock`` are areas within a ``Figure``.
+``Subplot`` and ``Dock`` inherit from ``PlotArea``.
 
 ``PlotArea`` has the following key properties that allow it to be a "plot area" that can be used to view graphical objects:
 

@@ -312,8 +312,6 @@ class ImageGraphic(Graphic):
         selector = LinearSelector(
             selection=selection,
             limits=limits,
-            size=size,
-            center=center,
             axis=axis,
             parent=self,
             **kwargs,
