@@ -21,6 +21,7 @@ from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
 from .. import ImageGraphic
+from ..tools import Tooltip
 
 
 class Figure:
@@ -413,12 +414,16 @@ class Figure:
         self._underlay_camera = ScreenSpaceCamera()
         self._underlay_scene = pygfx.Scene()
 
+        for subplot in self._subplots.ravel():
+            self._underlay_scene.add(subplot.frame._world_object)
+
         # overlay render pass
         self._overlay_camera = ScreenSpaceCamera()
         self._overlay_scene = pygfx.Scene()
 
-        for subplot in self._subplots.ravel():
-            self._underlay_scene.add(subplot.frame._world_object)
+        # tooltip in overlay render pass
+        self._tooltip = Tooltip()
+        self._overlay_scene.add(self._tooltip.world_object)
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
@@ -486,6 +491,11 @@ class Figure:
 
         names.flags.writeable = False
         return names
+
+    @property
+    def tooltip(self) -> Tooltip:
+        """manage tooltips"""
+        return self._tooltip
 
     def _render(self, draw=True):
         # draw the underlay planes
