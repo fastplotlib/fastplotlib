@@ -45,10 +45,10 @@ class GraphicMethodsMixin:
             | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
         vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
+            minimum value for color scaling, estimated from data if not provided
 
         vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
+            maximum value for color scaling, estimated from data if not provided
 
         cmap: str, optional, default "plasma"
             colormap to use to display the data
@@ -72,6 +72,34 @@ class GraphicMethodsMixin:
         return self._create_graphic(
             ImageGraphic,
             data,
+            vmin,
+            vmax,
+            cmap,
+            interpolation,
+            cmap_interpolation,
+            isolated_buffer,
+            **kwargs,
+        )
+
+    def add_image_volume(
+        self,
+        data: Any,
+        mode: str = "ray",
+        vmin: int = None,
+        vmax: int = None,
+        cmap: str = "plasma",
+        interpolation: str = "nearest",
+        cmap_interpolation: str = "linear",
+        isolated_buffer: bool = True,
+        **kwargs,
+    ) -> ImageVolumeGraphic:
+        """
+        None
+        """
+        return self._create_graphic(
+            ImageVolumeGraphic,
+            data,
+            mode,
             vmin,
             vmax,
             cmap,
