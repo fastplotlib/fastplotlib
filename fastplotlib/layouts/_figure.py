@@ -19,7 +19,7 @@ from ._utils import (
 )
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
-from ._engine import GridLayout, WindowLayout, UnderlayCamera
+from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
 from .. import ImageGraphic
 
 
@@ -409,9 +409,13 @@ class Figure:
                 canvas_rect=self.get_pygfx_render_area(),
             )
 
-        self._underlay_camera = UnderlayCamera()
-
+        # underlay render pass
+        self._underlay_camera = ScreenSpaceCamera()
         self._underlay_scene = pygfx.Scene()
+
+        # overlay render pass
+        self._overlay_camera = ScreenSpaceCamera()
+        self._overlay_scene = pygfx.Scene()
 
         for subplot in self._subplots.ravel():
             self._underlay_scene.add(subplot.frame._world_object)
@@ -491,6 +495,9 @@ class Figure:
         self._call_animate_functions(self._animate_funcs_pre)
         for subplot in self:
             subplot._render()
+
+        # overlay render pass
+        self.renderer.render(self._overlay_scene, self._overlay_camera, flush=False)
 
         self.renderer.flush()
 
