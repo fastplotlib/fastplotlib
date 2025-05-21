@@ -441,6 +441,7 @@ def main():
             "    graphics/index\n"
             "    graphic_features/index\n"
             "    selectors/index\n"
+            "    tools/index\n"
             "    ui/index\n"
             "    widgets/index\n"
             "    fastplotlib\n"
