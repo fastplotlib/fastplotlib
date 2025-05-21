@@ -231,7 +231,10 @@ class Tooltip:
         custom_info: callable = None,
     ):
         """
-        Register a Graphic to display tooltips
+        Register a Graphic to display tooltips.
+
+        **Note:** if the passed graphic is already registered then it first unregistered
+        and then re-registered using the given arguments.
 
         Parameters
         ----------
@@ -266,6 +269,8 @@ class Tooltip:
         """
         Unregister a Graphic to no longer display tooltips for this graphic.
 
+        **Note:** if the passed graphic is not registered then it is just ignored without raising any exception.
+
         Parameters
         ----------
         graphic: Graphic
@@ -278,7 +283,7 @@ class Tooltip:
             graphic = graphic.graphic
 
         if graphic not in self._registered_graphics:
-            raise KeyError(f"Given graphic: {graphic} is not registered")
+            return
 
         # get pfunc and event names
         pfunc, appear_event, disappear_event = self._registered_graphics.pop(graphic)
