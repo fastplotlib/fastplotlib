@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 import pygfx
 
-from ..graphics import LineGraphic, ImageGraphic, ScatterGraphic
+from ..graphics import LineGraphic, ImageGraphic, ScatterGraphic, Graphic
 from ..graphics.features import GraphicFeatureEvent
 
 
@@ -225,7 +225,7 @@ class Tooltip:
 
     def register(
         self,
-        graphic,
+        graphic: Graphic,
         appear_event: str = "pointer_move",
         disappear_event: str = "pointer_leave",
         custom_info: callable = None,
@@ -262,7 +262,7 @@ class Tooltip:
         # automatically unregister when graphic is deleted
         graphic.add_event_handler(self.unregister, "deleted")
 
-    def unregister(self, graphic):
+    def unregister(self, graphic: Graphic):
         """
         Unregister a Graphic to no longer display tooltips for this graphic.
 
