@@ -1,0 +1,466 @@
+{
+ "__doc__": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "__name__": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "angles": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "data": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "figure": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts._imgui_figure",
+   "module_short": "fastplotlib.layouts",
+   "name": "ImguiFigure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts",
+   "module_short": "fastplotlib.layouts",
+   "name": "ImguiFigure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "ImguiFigure"
+  }
+ ],
+ "figure.show": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts._imgui_figure",
+   "module_short": "fastplotlib.layouts",
+   "name": "ImguiFigure.show"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts",
+   "module_short": "fastplotlib.layouts",
+   "name": "ImguiFigure.show"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "ImguiFigure.show"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts._figure",
+   "module_short": "fastplotlib.layouts",
+   "name": "Figure.show"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts",
+   "module_short": "fastplotlib.layouts",
+   "name": "Figure.show"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "Figure.show"
+  }
+ ],
+ "fpl.Figure": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts._imgui_figure",
+   "module_short": "fastplotlib.layouts",
+   "name": "ImguiFigure"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts",
+   "module_short": "fastplotlib.layouts",
+   "name": "ImguiFigure"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "ImguiFigure"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts._figure",
+   "module_short": "fastplotlib.layouts",
+   "name": "Figure"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts",
+   "module_short": "fastplotlib.layouts",
+   "name": "Figure"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "Figure"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "Figure"
+  }
+ ],
+ "fpl.loop.run": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "rendercanvas.offscreen",
+   "module_short": "rendercanvas.offscreen",
+   "name": "StubLoop.run"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "rendercanvas",
+   "module_short": "rendercanvas",
+   "name": "StubLoop.run"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "rendercanvas._loop",
+   "module_short": "rendercanvas",
+   "name": "BaseLoop.run"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "rendercanvas",
+   "module_short": "rendercanvas",
+   "name": "BaseLoop.run"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.loop",
+   "module_short": "fastplotlib.loop",
+   "name": "run"
+  }
+ ],
+ "graph": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts._subplot",
+   "module_short": "fastplotlib.layouts",
+   "name": "Subplot"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts",
+   "module_short": "fastplotlib.layouts",
+   "name": "Subplot"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "Subplot"
+  }
+ ],
+ "graph.auto_scale": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts._subplot",
+   "module_short": "fastplotlib.layouts",
+   "name": "Subplot.auto_scale"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts",
+   "module_short": "fastplotlib.layouts",
+   "name": "Subplot.auto_scale"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "Subplot.auto_scale"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts._plot_area",
+   "module_short": "fastplotlib.layouts._plot_area",
+   "name": "PlotArea.auto_scale"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts",
+   "module_short": "fastplotlib.layouts",
+   "name": "PlotArea.auto_scale"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "PlotArea.auto_scale"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts._graphic_methods_mixin",
+   "module_short": "fastplotlib.layouts._graphic_methods_mixin",
+   "name": "GraphicMethodsMixin.auto_scale"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.layouts",
+   "module_short": "fastplotlib.layouts",
+   "name": "GraphicMethodsMixin.auto_scale"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "GraphicMethodsMixin.auto_scale"
+  }
+ ],
+ "names": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "list"
+  }
+ ],
+ "non_scalar_sizes": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "np.abs": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ufunc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "abs"
+  }
+ ],
+ "np.arange": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "arange"
+  }
+ ],
+ "np.array": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "builtin_function_or_method"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "array"
+  }
+ ],
+ "np.column_stack": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "_ArrayFunctionDispatcher"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "column_stack"
+  }
+ ],
+ "np.float32": [
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "float32"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "floating"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "inexact"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "number"
+  },
+  {
+   "is_class": true,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "generic"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "float32"
+  }
+ ],
+ "np.pi": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "float"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "pi"
+  }
+ ],
+ "np.sin": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ufunc"
+  },
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "sin"
+  }
+ ],
+ "shape": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "tuple"
+  }
+ ],
+ "x_values": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ],
+ "y_values": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "ndarray"
+  }
+ ]
+}

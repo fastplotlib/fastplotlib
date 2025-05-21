@@ -1,0 +1,1022 @@
+
+
+Examples using ``fastplotlib.ImguiFigure.show``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing the simple plot creation with Standard imageio image.">
+
+.. only:: html
+
+  .. image:: /_gallery/image/images/thumb/sphx_glr_image_simple_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_image_simple.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Simple Image</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_image_simple.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing the simple plot creation with 512 x 512 2D RGB image.">
+
+.. only:: html
+
+  .. image:: /_gallery/image/images/thumb/sphx_glr_image_rgb_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_image_rgb.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">RGB Image</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_image_rgb.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing simple plot creation and subsequent cmap change with Standard image from imageio.">
+
+.. only:: html
+
+  .. image:: /_gallery/image/images/thumb/sphx_glr_image_cmap_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_image_cmap.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image Colormap</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_image_cmap.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing the simple plot followed by changing the vmin/vmax with 512 x 512 2D RGB image.">
+
+.. only:: html
+
+  .. image:: /_gallery/image/images/thumb/sphx_glr_image_rgbvminvmax_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_image_rgbvminvmax.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">RGB Image Vmin/Vmax</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_image_rgbvminvmax.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing the simple plot creation followed by changing the vmin/vmax with Standard imageio image.">
+
+.. only:: html
+
+  .. image:: /_gallery/image/images/thumb/sphx_glr_image_vminvmax_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_image_vminvmax.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image Vmin/Vmax</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_image_vminvmax.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Heatmap or large arrays">
+
+.. only:: html
+
+  .. image:: /_gallery/heatmap/images/thumb/sphx_glr_heatmap_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_heatmap_heatmap.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Heatmap or large arrays</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_heatmap_heatmap.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Simple 2x2 grid layout Figure with standard images from imageio, one subplot is left empty">
+
+.. only:: html
+
+  .. image:: /_gallery/gridplot/images/thumb/sphx_glr_gridplot_non_square_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_gridplot_gridplot_non_square.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Grid Layout 2</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_gridplot_gridplot_non_square.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing simple 2x2 grid layout with standard images from imageio.">
+
+.. only:: html
+
+  .. image:: /_gallery/gridplot/images/thumb/sphx_glr_gridplot_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_gridplot_gridplot.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Grid layout Simple</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_gridplot_gridplot.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A Figure with multiple subplots and multiple graphic types.">
+
+.. only:: html
+
+  .. image:: /_gallery/gridplot/images/thumb/sphx_glr_multigraphic_gridplot_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_gridplot_multigraphic_gridplot.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Multi-Graphic Grid layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_gridplot_multigraphic_gridplot.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using given rects in absolute pixels. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_rect_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_rect_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Rect Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_rect_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using rects given as fractions of the canvas. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_rect_frac_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_rect_frac_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Rect Fractional Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_rect_frac_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using extents given as fractions of the canvas. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_extent_frac_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_extent_frac_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Fractional Extent Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_extent_frac_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using given extents in absolute pixels. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_extent_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_extent_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Extent Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_extent_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Use one controller for all subplots.">
+
+.. only:: html
+
+  .. image:: /_gallery/controllers/images/thumb/sphx_glr_sync_all_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_controllers_sync_all.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Sync subplots</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_controllers_sync_all.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Provide a list of tuples where each tuple has subplot names. The same controller will be used for the subplots indicated by each of these tuples">
+
+.. only:: html
+
+  .. image:: /_gallery/controllers/images/thumb/sphx_glr_specify_names_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_controllers_specify_names.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Specify IDs with subplot names</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_controllers_specify_names.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Specify controllers to sync subplots using integer IDs">
+
+.. only:: html
+
+  .. image:: /_gallery/controllers/images/thumb/sphx_glr_specify_integers_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_controllers_specify_integers.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Specify IDs with integers</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_controllers_specify_integers.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing basic colormapping with lines">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_cmap_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line_cmap.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Plot Colormap</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line_cmap.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing cosine, sine, sinc lines.">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Simple Line Plot</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing data slicing with cosine, sine, sinc lines.">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_dataslice_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line_dataslice.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Plot Data Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line_dataslice.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing more on colormapping with lines">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_cmap_more_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line_cmap_more.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Lines more colormapping</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line_cmap_more.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing color slicing with cosine, sine, sinc lines.">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_colorslice_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line_colorslice.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Plot Color Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line_colorslice.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to plot a stack of lines">
+
+.. only:: html
+
+  .. image:: /_gallery/line_collection/images/thumb/sphx_glr_line_stack_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_collection_line_stack.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Stack</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_collection_line_stack.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to plot line collections">
+
+.. only:: html
+
+  .. image:: /_gallery/line_collection/images/thumb/sphx_glr_line_collection_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_collection_line_collection.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Collection Simple</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_collection_line_collection.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing one way ot setting colors for individual lines in a collection">
+
+.. only:: html
+
+  .. image:: /_gallery/line_collection/images/thumb/sphx_glr_line_collection_colors_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_collection_line_collection_colors.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Collection Colors</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_collection_line_collection_colors.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing a line collection with a quantitative cmap">
+
+.. only:: html
+
+  .. image:: /_gallery/line_collection/images/thumb/sphx_glr_line_collection_cmap_values_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_collection_line_collection_cmap_values.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line collections quantitative cmap</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_collection_line_collection_cmap_values.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing a line collection with a qualitative cmap">
+
+.. only:: html
+
+  .. image:: /_gallery/line_collection/images/thumb/sphx_glr_line_collection_cmap_values_qualitative_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_collection_line_collection_cmap_values_qualitative.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Collection Qualitative Colormap</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_collection_line_collection_cmap_values_qualitative.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to slice a line collection">
+
+.. only:: html
+
+  .. image:: /_gallery/line_collection/images/thumb/sphx_glr_line_collection_slicing_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_collection_line_collection_slicing.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line collection slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_collection_line_collection_slicing.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing a 3D stack of lines with animations">
+
+.. only:: html
+
+  .. image:: /_gallery/line_collection/images/thumb/sphx_glr_line_stack_3d_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_collection_line_stack_3d.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line stack 3D</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_collection_line_stack_3d.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing color slice for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_colorslice_iris_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_colorslice_iris.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Iris Scatter Plot Color Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_colorslice_iris.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing cmap change for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_cmap_iris_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_cmap_iris.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Iris Scatter Colormap</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_cmap_iris.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing data slice for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_dataslice_iris_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_dataslice_iris.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Iris Scatter Plot Data Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_dataslice_iris.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing data slice for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_dataslice_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_dataslice.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter Plot Data Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_dataslice.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter Plot</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing cmap change for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_cmap_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_cmap.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter Colormap</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_cmap.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing color slice for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_colorslice_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_colorslice.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter Plot Color Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_colorslice.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example that shows how to set scatter sizes in two different ways.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_size_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_size.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter Plot Size</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_size.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example of a spinning spiral scatter.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_spinning_spiral_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_spinning_spiral.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Spinning spiral scatter</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_spinning_spiral.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A TextGraphic that labels a point on a line and another TextGraphic that moves along the line on every draw.">
+
+.. only:: html
+
+  .. image:: /_gallery/text/images/thumb/sphx_glr_moving_label_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_text_moving_label.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Moving TextGraphic label</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_text_moving_label.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to use a click event on an image.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_image_click_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_image_click.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image click event</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_image_click.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to add an event handler to an ImageGraphic to capture when the data changes.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_image_data_event_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_image_data_event.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image data event</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_image_data_event.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Shows how to use the &quot;pointer_move&quot; event to get the nearest circle and highlight it.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_lines_mouse_nearest_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_lines_mouse_nearest.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Highlight nearest circle</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_lines_mouse_nearest.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Click and drag the mouse to paint in the image">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_paint_image_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_paint_image.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Paint an Image</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_paint_image.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Add a cmap event handler to multiple graphics. When any one graphic changes the cmap, the cmap of all other graphics is also changed.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_cmap_event_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_cmap_event.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">cmap event</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_cmap_event.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Add an event handler to click on scatter points and highlight them, i.e. change the color and size of the clicked point. Fly around the 3D scatter using WASD keys and click on points to highlight them">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_scatter_click_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_scatter_click.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter click</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_scatter_click.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Add an event handler to hover on scatter points and highlight them, i.e. change the color and size of the clicked point. Fly around the 3D scatter using WASD keys and click on points to highlight them.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_scatter_hover_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_scatter_hover.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter hover</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_scatter_hover.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example where you can drag scatter points on a line. This example also demonstrates how you can use a shared buffer between two graphics to represent the same data using different graphics. When you update the data of one graphic the data of the other graphic is also changed simultaneously since they use the same underlying buffer on the GPU.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_drag_points_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_drag_points.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Drag points</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_drag_points.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Simple example of adding event handlers for line data and thickness.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_line_data_thickness_event_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_line_data_thickness_event.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Events line data thickness</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_line_data_thickness_event.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Based on the sklearn preprocessing scalers example. Hover points to highlight the corresponding point of the dataset transformed by the various scalers.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_scatter_hover_transforms_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_scatter_hover_transforms.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter data explore scalers</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_scatter_hover_transforms.py`

@@ -1,0 +1,224 @@
+
+
+Examples using ``fastplotlib.ImageGraphic``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing the simple plot creation with Standard imageio image.">
+
+.. only:: html
+
+  .. image:: /_gallery/image/images/thumb/sphx_glr_image_simple_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_image_simple.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Simple Image</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_image_simple.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing the simple plot creation with 512 x 512 2D RGB image.">
+
+.. only:: html
+
+  .. image:: /_gallery/image/images/thumb/sphx_glr_image_rgb_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_image_rgb.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">RGB Image</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_image_rgb.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing simple plot creation and subsequent cmap change with Standard image from imageio.">
+
+.. only:: html
+
+  .. image:: /_gallery/image/images/thumb/sphx_glr_image_cmap_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_image_cmap.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image Colormap</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_image_cmap.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing the simple plot followed by changing the vmin/vmax with 512 x 512 2D RGB image.">
+
+.. only:: html
+
+  .. image:: /_gallery/image/images/thumb/sphx_glr_image_rgbvminvmax_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_image_rgbvminvmax.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">RGB Image Vmin/Vmax</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_image_rgbvminvmax.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing the simple plot creation followed by changing the vmin/vmax with Standard imageio image.">
+
+.. only:: html
+
+  .. image:: /_gallery/image/images/thumb/sphx_glr_image_vminvmax_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_image_vminvmax.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image Vmin/Vmax</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_image_vminvmax.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Heatmap or large arrays">
+
+.. only:: html
+
+  .. image:: /_gallery/heatmap/images/thumb/sphx_glr_heatmap_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_heatmap_heatmap.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Heatmap or large arrays</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_heatmap_heatmap.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to use a click event on an image.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_image_click_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_image_click.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image click event</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_image_click.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to add an event handler to an ImageGraphic to capture when the data changes.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_image_data_event_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_image_data_event.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image data event</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_image_data_event.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Move an image around using and change some of its properties using keyboard events.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_key_events_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_key_events.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Key Events</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_key_events.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Click and drag the mouse to paint in the image">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_paint_image_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_paint_image.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Paint an Image</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_paint_image.py`

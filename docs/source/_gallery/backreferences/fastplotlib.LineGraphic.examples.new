@@ -1,0 +1,203 @@
+
+
+Examples using ``fastplotlib.LineGraphic``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing basic colormapping with lines">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_cmap_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line_cmap.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Plot Colormap</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line_cmap.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing cosine, sine, sinc lines.">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Simple Line Plot</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing data slicing with cosine, sine, sinc lines.">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_dataslice_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line_dataslice.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Plot Data Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line_dataslice.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing more on colormapping with lines">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_cmap_more_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line_cmap_more.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Lines more colormapping</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line_cmap_more.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing color slicing with cosine, sine, sinc lines.">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_colorslice_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line_colorslice.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Plot Color Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line_colorslice.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to slice a line collection">
+
+.. only:: html
+
+  .. image:: /_gallery/line_collection/images/thumb/sphx_glr_line_collection_slicing_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_collection_line_collection_slicing.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line collection slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_collection_line_collection_slicing.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A TextGraphic that labels a point on a line and another TextGraphic that moves along the line on every draw.">
+
+.. only:: html
+
+  .. image:: /_gallery/text/images/thumb/sphx_glr_moving_label_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_text_moving_label.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Moving TextGraphic label</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_text_moving_label.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example where you can drag scatter points on a line. This example also demonstrates how you can use a shared buffer between two graphics to represent the same data using different graphics. When you update the data of one graphic the data of the other graphic is also changed simultaneously since they use the same underlying buffer on the GPU.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_drag_points_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_drag_points.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Drag points</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_drag_points.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Simple example of adding event handlers for line data and thickness.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_line_data_thickness_event_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_line_data_thickness_event.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Events line data thickness</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_line_data_thickness_event.py`

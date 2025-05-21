@@ -1,0 +1,56 @@
+
+
+Examples using ``fastplotlib.layouts._plot_area.PlotArea.add_line``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Use one controller for all subplots.">
+
+.. only:: html
+
+  .. image:: /_gallery/controllers/images/thumb/sphx_glr_sync_all_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_controllers_sync_all.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Sync subplots</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_controllers_sync_all.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Provide a list of tuples where each tuple has subplot names. The same controller will be used for the subplots indicated by each of these tuples">
+
+.. only:: html
+
+  .. image:: /_gallery/controllers/images/thumb/sphx_glr_specify_names_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_controllers_specify_names.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Specify IDs with subplot names</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_controllers_specify_names.py`

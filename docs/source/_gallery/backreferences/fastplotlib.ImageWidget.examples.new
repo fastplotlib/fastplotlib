@@ -1,0 +1,140 @@
+
+
+Examples using ``fastplotlib.ImageWidget``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Test Figure to test that viewport rects are positioned correctly in an image widget">
+
+.. only:: html
+
+  .. image:: /_gallery/image_widget/images/thumb/sphx_glr_image_widget_viewports_check_thumb.png
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_widget_image_widget_viewports_check.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">ImageWidget test viewport rects</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_widget_image_widget_viewports_check.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing the image widget in action.">
+
+.. only:: html
+
+  .. image:: /_gallery/image_widget/images/thumb/sphx_glr_image_widget_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_widget_image_widget.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image widget</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_widget_image_widget.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to scroll through one or more videos using the ImageWidget">
+
+.. only:: html
+
+  .. image:: /_gallery/image_widget/images/thumb/sphx_glr_image_widget_videos_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_widget_image_widget_videos.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image widget videos side by side</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_widget_image_widget_videos.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to view multiple images in an ImageWidget">
+
+.. only:: html
+
+  .. image:: /_gallery/image_widget/images/thumb/sphx_glr_image_widget_grid_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_widget_image_widget_grid.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image widget grid</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_widget_image_widget_grid.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to scroll through one or more videos using the ImageWidget">
+
+.. only:: html
+
+  .. image:: /_gallery/image_widget/images/thumb/sphx_glr_image_widget_single_video_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_widget_image_widget_single_video.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image widget Video</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_widget_image_widget_single_video.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Move an image around using and change some of its properties using keyboard events.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_key_events_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_key_events.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Key Events</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_key_events.py`

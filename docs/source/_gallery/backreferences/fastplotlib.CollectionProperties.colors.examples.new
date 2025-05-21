@@ -1,0 +1,35 @@
+
+
+Examples using ``fastplotlib.CollectionProperties.colors``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Shows how to use the &quot;pointer_move&quot; event to get the nearest circle and highlight it.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_lines_mouse_nearest_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_lines_mouse_nearest.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Highlight nearest circle</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_lines_mouse_nearest.py`

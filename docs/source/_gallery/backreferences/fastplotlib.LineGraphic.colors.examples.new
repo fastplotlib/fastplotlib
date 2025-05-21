@@ -1,0 +1,35 @@
+
+
+Examples using ``fastplotlib.LineGraphic.colors``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing color slicing with cosine, sine, sinc lines.">
+
+.. only:: html
+
+  .. image:: /_gallery/line/images/thumb/sphx_glr_line_colorslice_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_line_line_colorslice.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Line Plot Color Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_line_line_colorslice.py`

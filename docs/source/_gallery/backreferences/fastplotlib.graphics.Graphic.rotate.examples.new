@@ -1,0 +1,56 @@
+
+
+Examples using ``fastplotlib.graphics.Graphic.rotate``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example of a spinning spiral scatter.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_spinning_spiral_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_spinning_spiral.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Spinning spiral scatter</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_spinning_spiral.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Move an image around using and change some of its properties using keyboard events.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_key_events_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_key_events.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Key Events</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_key_events.py`
