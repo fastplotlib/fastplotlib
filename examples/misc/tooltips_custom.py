@@ -2,7 +2,8 @@
 Tooltips Customization
 ======================
 
-Customize the information displayed in a tooltip
+Customize the information displayed in a tooltip. This example uses the Iris dataset and sets the tooltip to display
+the species and cluster label of the point that is being hovered by the mouse pointer.
 """
 
 # test_example = false
@@ -36,7 +37,8 @@ def tooltip_info(ev) -> str:
 
     # get the species name
     target = dataset["target"][index]
-    info = dataset["target_names"][target]
+    cluster = agg.labels_[index]
+    info = f"species: {dataset['target_names'][target]}\ncluster: {cluster}"
 
     # return this string to display it in the tooltip
     return info
