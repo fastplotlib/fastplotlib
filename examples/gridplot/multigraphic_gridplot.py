@@ -1,8 +1,8 @@
 """
-Multi-Graphic GridPlot
-======================
+Multi-Graphic Grid layout
+=========================
 
-Example showing a Figure with multiple subplots and multiple graphic types.
+A Figure with multiple subplots and multiple graphic types.
 """
 
 # test_example = false

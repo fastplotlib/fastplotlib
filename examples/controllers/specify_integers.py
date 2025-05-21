@@ -24,14 +24,14 @@ ids = [
     [2, 0],
 ]
 
-names = [f"contr. id: {i}" for i in np.asarray(ids).ravel()]
-
 figure = fpl.Figure(
     shape=(2, 2),
     controller_ids=ids,
-    names=names,
     size=(700, 560),
 )
+
+for subplot, controller_id in zip(figure, np.asarray(ids).ravel()):
+    subplot.title = f"contr. id: {controller_id}"
 
 figure[0, 0].add_line(np.column_stack([xs, sine]))
 

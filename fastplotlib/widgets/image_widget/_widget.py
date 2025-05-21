@@ -195,33 +195,46 @@ class ImageWidget:
         if not self._initialized:
             return
 
-        if not set(index.keys()).issubset(set(self._current_index.keys())):
-            raise KeyError(
-                f"All dimension keys for setting `current_index` must be present in the widget sliders. "
-                f"The dimensions currently used for sliders are: {list(self.current_index.keys())}"
-            )
+        if self._reentrant_block:
+            return
 
-        for k, val in index.items():
-            if not isinstance(val, int):
-                raise TypeError("Indices for all dimensions must be int")
-            if val < 0:
-                raise IndexError("negative indexing is not supported for ImageWidget")
-            if val > self._dims_max_bounds[k]:
-                raise IndexError(
-                    f"index {val} is out of bounds for dimension '{k}' "
-                    f"which has a max bound of: {self._dims_max_bounds[k]}"
+        try:
+            self._reentrant_block = True  # block re-execution until current_index has *fully* completed execution
+            if not set(index.keys()).issubset(set(self._current_index.keys())):
+                raise KeyError(
+                    f"All dimension keys for setting `current_index` must be present in the widget sliders. "
+                    f"The dimensions currently used for sliders are: {list(self.current_index.keys())}"
                 )
 
-        self._current_index.update(index)
+            for k, val in index.items():
+                if not isinstance(val, int):
+                    raise TypeError("Indices for all dimensions must be int")
+                if val < 0:
+                    raise IndexError(
+                        "negative indexing is not supported for ImageWidget"
+                    )
+                if val > self._dims_max_bounds[k]:
+                    raise IndexError(
+                        f"index {val} is out of bounds for dimension '{k}' "
+                        f"which has a max bound of: {self._dims_max_bounds[k]}"
+                    )
 
-        for i, (ig, data) in enumerate(zip(self.managed_graphics, self.data)):
-            frame = self._process_indices(data, self._current_index)
-            frame = self._process_frame_apply(frame, i)
-            ig.data = frame
+            self._current_index.update(index)
 
-        # call any event handlers
-        for handler in self._current_index_changed_handlers:
-            handler(self.current_index)
+            for i, (ig, data) in enumerate(zip(self.managed_graphics, self.data)):
+                frame = self._process_indices(data, self._current_index)
+                frame = self._process_frame_apply(frame, i)
+                ig.data = frame
+
+            # call any event handlers
+            for handler in self._current_index_changed_handlers:
+                handler(self.current_index)
+        except Exception as exc:
+            # raise original exception
+            raise exc  # current_index setter has raised. The lines above below are probably more relevant!
+        finally:
+            # set_value has finished executing, now allow future executions
+            self._reentrant_block = False
 
     @property
     def n_img_dims(self) -> list[int]:
@@ -329,7 +342,7 @@ class ImageWidget:
             manually provide the shape for the Figure, otherwise the number of rows and columns is estimated
 
         figure_kwargs: dict, optional
-            passed to `GridPlot`
+            passed to ``Figure``
 
         names: Optional[str]
             gives names to the subplots
@@ -574,9 +587,11 @@ class ImageWidget:
 
         self.figure.add_gui(self._image_widget_sliders)
 
-        self._initialized = True
-
         self._current_index_changed_handlers = set()
+
+        self._reentrant_block = False
+
+        self._initialized = True
 
     @property
     def frame_apply(self) -> dict | None:

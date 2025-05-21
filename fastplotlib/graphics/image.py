@@ -107,7 +107,8 @@ class ImageGraphic(Graphic):
             maximum value for color scaling, calculated from data if not provided
 
         cmap: str, optional, default "plasma"
-            colormap to use to display the data
+            colormap to use to display the data. For supported colormaps see the
+            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
         interpolation: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
@@ -118,7 +119,8 @@ class ImageGraphic(Graphic):
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
             set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer.
+            If False, the input array is itself used as the buffer - useful if the
+            array is large.
 
         kwargs:
             additional keyword arguments passed to Graphic
@@ -200,7 +202,11 @@ class ImageGraphic(Graphic):
 
     @property
     def cmap(self) -> str:
-        """colormap name"""
+        """
+        Get or set the colormap
+
+        For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+        """
         if self.data.value.ndim > 2:
             raise AttributeError("RGB(A) images do not have a colormap property")
         return self._cmap.value
@@ -231,7 +237,7 @@ class ImageGraphic(Graphic):
 
     @property
     def interpolation(self) -> str:
-        """image data interpolation method"""
+        """Data interpolation method"""
         return self._interpolation.value
 
     @interpolation.setter
@@ -249,12 +255,7 @@ class ImageGraphic(Graphic):
 
     def reset_vmin_vmax(self):
         """
-        Reset the vmin, vmax by estimating it from the data
-
-        Returns
-        -------
-        None
-
+        Reset the vmin, vmax by estimating it from the data by subsampling.
         """
 
         vmin, vmax = quick_min_max(self._data.value)
@@ -262,18 +263,18 @@ class ImageGraphic(Graphic):
         self.vmax = vmax
 
     def add_linear_selector(
-        self, selection: int = None, axis: str = "x", padding: float = None, **kwargs
+        self, selection: int = None, axis: str = "x", **kwargs
     ) -> LinearSelector:
         """
         Adds a :class:`.LinearSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
 
         Parameters
         ----------
         selection: int, optional
             initial position of the selector
-
-        padding: float, optional
-            pad the length of the selector
 
         kwargs:
             passed to :class:`.LinearSelector`
@@ -285,21 +286,11 @@ class ImageGraphic(Graphic):
         """
 
         if axis == "x":
-            size = self._data.value.shape[0]
-            center = size / 2
             limits = (0, self._data.value.shape[1])
         elif axis == "y":
-            size = self._data.value.shape[1]
-            center = size / 2
             limits = (0, self._data.value.shape[0])
         else:
             raise ValueError("`axis` must be one of 'x' | 'y'")
-
-        # default padding is 25% the height or width of the image
-        if padding is None:
-            size *= 1.25
-        else:
-            size += padding
 
         if selection is None:
             selection = limits[0]
@@ -333,8 +324,10 @@ class ImageGraphic(Graphic):
         **kwargs,
     ) -> LinearRegionSelector:
         """
-        Add a :class:`.LinearRegionSelector`. Selectors are just ``Graphic`` objects, so you can manage,
-        remove, or delete them from a plot area just like any other ``Graphic``.
+        Add a :class:`.LinearRegionSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
 
         Parameters
         ----------
@@ -353,7 +346,6 @@ class ImageGraphic(Graphic):
         Returns
         -------
         LinearRegionSelector
-            linear selection graphic
 
         """
 
@@ -408,13 +400,16 @@ class ImageGraphic(Graphic):
         **kwargs,
     ) -> RectangleSelector:
         """
-        Add a :class:`.RectangleSelector`. Selectors are just ``Graphic`` objects, so you can manage,
-        remove, or delete them from a plot area just like any other ``Graphic``.
+        Add a :class:`.RectangleSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
 
         Parameters
         ----------
         selection: (float, float, float, float), optional
             initial (xmin, xmax, ymin, ymax) of the selection
+
         """
         # default selection is 25% of the diagonal
         if selection is None:

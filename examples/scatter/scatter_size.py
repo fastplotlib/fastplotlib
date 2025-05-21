@@ -2,7 +2,10 @@
 Scatter Plot Size
 =================
 
-Example showing point size change for scatter plot.
+Example that shows how to set scatter sizes in two different ways.
+
+One subplot uses a single scaler value for every point, and another subplot uses an array that defines the size for
+each individual scatter point.
 """
 
 # test_example = true
@@ -14,10 +17,10 @@ import fastplotlib as fpl
 # figure with 2 rows and 3 columns
 shape = (2, 1)
 
-# you can give string names for each subplot within the gridplot
+# you can give string names for each subplot within the figure
 names = [["scalar_size"], ["array_size"]]
 
-# Create the grid plot
+# Create the figure
 figure = fpl.Figure(shape=shape, names=names, size=(700, 560))
 
 # get y_values using sin function

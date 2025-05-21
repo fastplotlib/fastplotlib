@@ -269,8 +269,7 @@ def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
 
 def quick_min_max(data: np.ndarray, max_size=1e6) -> tuple[float, float]:
     """
-    Adapted from pyqtgraph.ImageView.
-    Estimate the min/max values of *data* by subsampling.
+    Estimate the min/max values of *data* by subsampling relative to the size of each dimension in the array.
 
     Parameters
     ----------
@@ -455,18 +454,19 @@ def subsample_array(
     np.ndarray
         subsample of the input array
     """
-    if np.prod(arr.shape) <= max_size:
+    full_shape = np.array(arr.shape, dtype=np.uint64)
+    if np.prod(full_shape) <= max_size:
         return arr[:]  # no need to subsample if already below the threshold
 
     # get factor by which to divide all dims
-    f = np.power((np.prod(arr.shape) / max_size), 1.0 / arr.ndim)
+    f = np.power((np.prod(full_shape) / max_size), 1.0 / arr.ndim)
 
     # new shape for subsampled array
-    ns = np.floor(np.array(arr.shape) / f).clip(min=1)
+    ns = np.floor(np.array(full_shape) / f).clip(min=1)
 
     # get the step size for the slices
-    slices = tuple(
-        slice(None, None, int(s)) for s in np.floor(arr.shape / ns).astype(int)
+    slices = list(
+        slice(None, None, int(s)) for s in np.floor(full_shape / ns).astype(int)
     )
 
     # ignore dims e.g. RGB, which we don't want to downsample
