@@ -98,8 +98,8 @@ class LineLegendItem(LegendItem):
             anchor="middle-left",
         )
         mat = self._label_world_object.material
-        mat.color             = color
-        mat.outline_color     = (0,0,0,1)  # or whatever you like
+        mat.color = color
+        mat.outline_color = (0, 0, 0, 1)  # or whatever you like
         mat.outline_thickness = 0
 
         self.world_object = pygfx.Group()
@@ -198,8 +198,7 @@ class Legend(Graphic):
         self._mesh = pygfx.Mesh(
             pygfx.box_geometry(w, h, 1),
             pygfx.MeshBasicMaterial(
-                color=pygfx.Color(background_color), 
-                wireframe_thickness=10
+                color=pygfx.Color(background_color), wireframe_thickness=10
             ),
         )
 
@@ -258,7 +257,7 @@ class Legend(Graphic):
             col_idx += 1
 
             # Get last column's items
-            prev_items = list(self._items.values())[-self._max_rows:]
+            prev_items = list(self._items.values())[-self._max_rows :]
             # Compute maximum width of that column
             max_width = 0
             for item in prev_items:
@@ -272,15 +271,11 @@ class Legend(Graphic):
         else:
             # Same column: flush to left
             x_pos = 0
-            y_pos = -row_idx * 10   # each row is 10px down
+            y_pos = -row_idx * 10  # each row is 10px down
             row_idx += 1
 
         if isinstance(graphic, LineGraphic):
-            legend_item = LineLegendItem(self, 
-                graphic, 
-                label, 
-                position=(x_pos, y_pos)
-            )
+            legend_item = LineLegendItem(self, graphic, label, position=(x_pos, y_pos))
         else:
             raise ValueError("Legend only supported for LineGraphic for now.")
 
@@ -303,10 +298,10 @@ class Legend(Graphic):
         # width, height, _ = np.ptp(bbox, axis=0)
 
         pos = self._mesh.geometry.positions.data
-        pos[mesh_masks.x_left]   = left   - self._padding
-        pos[mesh_masks.x_right]  = right  + self._padding
+        pos[mesh_masks.x_left] = left - self._padding
+        pos[mesh_masks.x_right] = right + self._padding
         pos[mesh_masks.y_bottom] = bottom - self._padding
-        pos[mesh_masks.y_top]    = top    + self._padding
+        pos[mesh_masks.y_top] = top + self._padding
         self._mesh.geometry.positions.update_range()
 
     def update_using_camera(self):
@@ -324,11 +319,12 @@ class Legend(Graphic):
         # legend_h = legend_top   - legend_bottom
 
         # Panel bounding box
-        (panel_left, panel_bottom, _), (panel_right, panel_top, _) = \
+        (panel_left, panel_bottom, _), (panel_right, panel_top, _) = (
             self.world_object.get_world_bounding_box()
+        )
 
         panel_w = panel_right - panel_left
-        panel_h = panel_top   - panel_bottom
+        panel_h = panel_top - panel_bottom
 
         # Camera bounding box
         dock = self._plot_area
@@ -337,10 +333,10 @@ class Legend(Graphic):
         cam_x, cam_y = state["position"][:2]
 
         # Scale the legend to fit the camera
-        # Panel dimensions work better 
+        # Panel dimensions work better
         scale_x = cam_w / panel_w
         scale_y = cam_h / panel_h
-        scale   = min(scale_x, scale_y)
+        scale = min(scale_x, scale_y)
         tf = self.world_object.local
         tf.scale_x *= scale
         tf.scale_y *= scale
@@ -357,8 +353,8 @@ class Legend(Graphic):
         #   This was hand tuned as the mix of dock size/borders, mesh padding, and legend size
         #   did not yield a simple formula
         wobj = self.world_object.world
-        wobj.x = cam_x + panel_left + 6*scale # hand tuned
-        wobj.y = cam_y + panel_top  
+        wobj.x = cam_x + panel_left + 6 * scale  # hand tuned
+        wobj.y = cam_y + panel_top
 
     def remove_graphic(self, graphic: Graphic):
         self._graphics.remove(graphic)
