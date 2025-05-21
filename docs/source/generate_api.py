@@ -469,6 +469,9 @@ def main():
         f.write("============\n\n")
 
         for graphic_cls in [*graphic_classes, *selector_classes]:
+            if graphic_cls is graphics.Graphic:
+                # skip Graphic base class
+                continue
             f.write(f"{graphic_cls.__name__}\n")
             f.write("-" * len(graphic_cls.__name__) + "\n\n")
             for name, type_ in graphic_cls._features.items():
