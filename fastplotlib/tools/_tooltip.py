@@ -76,17 +76,18 @@ class Tooltip:
         # line to outline the plane mesh
         self._line = pygfx.Line(
             geometry=pygfx.Geometry(
-                    positions=np.array([
+                positions=np.array(
+                    [
                         [0, 0, 0],
                         [0, 0, 0],
                         [0, 0, 0],
                         [0, 0, 0],
                         [0, 0, 0],
-                    ], dtype=np.float32)
+                    ],
+                    dtype=np.float32,
+                )
             ),
-            material=pygfx.LineThinMaterial(
-                thickness=1.0, color=(0.8, 0.8, 1.0, 1.0)
-            )
+            material=pygfx.LineThinMaterial(thickness=1.0, color=(0.8, 0.8, 1.0, 1.0)),
         )
 
         self._world_object = pygfx.Group()
@@ -94,11 +95,7 @@ class Tooltip:
 
         # padded to bbox so the background box behind the text extends a bit further
         # making the text easier to read
-        self._padding = np.array(
-            [[5, 5, 0],
-             [-5, -5, 0]],
-            dtype=np.float32
-        )
+        self._padding = np.array([[5, 5, 0], [-5, -5, 0]], dtype=np.float32)
 
         self._registered_graphics = dict()
 
@@ -187,13 +184,7 @@ class Tooltip:
         self._plane.geometry.positions.update_range()
 
         # line points
-        pts = [
-            [x0, y0],
-            [x0, y1],
-            [x1, y1],
-            [x1, y0],
-            [x0, y0]
-        ]
+        pts = [[x0, y0], [x0, y1], [x1, y1], [x1, y0], [x0, y0]]
 
         self._line.geometry.positions.data[:, :2] = pts
         self._line.geometry.positions.update_range()
@@ -208,11 +199,16 @@ class Tooltip:
             if ev.graphic.data.value.ndim == 2:
                 info = str(ev.graphic.data[row, col])
             else:
-                info = "\n".join(f"{channel}: {val}" for channel, val in zip("rgba", ev.graphic.data[row, col]))
+                info = "\n".join(
+                    f"{channel}: {val}"
+                    for channel, val in zip("rgba", ev.graphic.data[row, col])
+                )
 
         elif isinstance(ev.graphic, (LineGraphic, ScatterGraphic)):
             index = ev.pick_info["vertex_index"]
-            info = "\n".join(f"{dim}: {val}" for dim, val in zip("xyz", ev.graphic.data[index]))
+            info = "\n".join(
+                f"{dim}: {val}" for dim, val in zip("xyz", ev.graphic.data[index])
+            )
         else:
             raise TypeError("Unsupported graphic")
 
