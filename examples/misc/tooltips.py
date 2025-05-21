@@ -28,7 +28,7 @@ figure = fpl.Figure(
     controller_types=["orbit", "panzoom", "panzoom", "panzoom"],
     size=(700, 560),
     shape=(2, 2),
-    show_tooltips=True,
+    show_tooltips=True,  # tooltip will display data value info for all graphics
 )
 
 # create graphics
@@ -39,6 +39,12 @@ image_rgb = figure[1, 1].add_image(rgb)
 
 
 figure.show()
+
+# to hide tooltips for all graphics in an existing Figure
+# figure.show_tooltips = False
+
+# to show tooltips for all graphics in an existing Figure
+# figure.show_tooltips = True
 
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
