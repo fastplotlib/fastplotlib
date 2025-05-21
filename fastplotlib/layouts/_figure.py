@@ -52,6 +52,7 @@ class Figure:
         canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
+        show_tooltips: bool = False,
     ):
         """
         Create a Figure containing Subplots.
@@ -121,6 +122,9 @@ class Figure:
 
         names: list or array of str, optional
             subplot names
+
+        show_tooltips: bool, default False
+            show tooltips on graphics
 
         """
 
@@ -422,8 +426,10 @@ class Figure:
         self._overlay_scene = pygfx.Scene()
 
         # tooltip in overlay render pass
-        self._tooltip = Tooltip()
-        self._overlay_scene.add(self._tooltip.world_object)
+        self._tooltip_manager = Tooltip()
+        self._overlay_scene.add(self._tooltip_manager.world_object)
+
+        self._show_tooltips = show_tooltips
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
@@ -493,9 +499,27 @@ class Figure:
         return names
 
     @property
-    def tooltip(self) -> Tooltip:
+    def tooltip_manager(self) -> Tooltip:
         """manage tooltips"""
-        return self._tooltip
+        return self._tooltip_manager
+
+    @property
+    def show_tooltips(self) -> bool:
+        """show/hide tooltips for all graphics"""
+        return self._show_tooltips
+
+    @show_tooltips.setter
+    def show_tooltips(self, val: bool):
+        self._show_tooltips = val
+
+        if val:
+            # register all graphics
+            for subplot in self:
+                for graphic in subplot.graphics:
+                    self._tooltip_manager.register(graphic)
+
+        elif not val:
+            self._tooltip_manager.unregister_all()
 
     def _render(self, draw=True):
         # draw the underlay planes

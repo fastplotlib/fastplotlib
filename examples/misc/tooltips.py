@@ -2,7 +2,7 @@
 Tooltips
 ========
 
-Register graphics to the Figure's tooltip manager
+Show tooltips on all graphics
 """
 
 # test_example = false
@@ -27,7 +27,8 @@ figure = fpl.Figure(
     cameras=["3d", "2d", "2d", "2d"],
     controller_types=["orbit", "panzoom", "panzoom", "panzoom"],
     size=(700, 560),
-    shape=(2, 2)
+    shape=(2, 2),
+    show_tooltips=True,
 )
 
 # create graphics
@@ -36,9 +37,6 @@ line = figure[0, 1].add_line(np.column_stack([xs, ys]))
 image = figure[1, 0].add_image(gray)
 image_rgb = figure[1, 1].add_image(rgb)
 
-# register graphics to the tooltip
-for g in [scatter, line, image, image_rgb]:
-    figure.tooltip.register(g)
 
 figure.show()
 

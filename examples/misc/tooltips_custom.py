@@ -42,7 +42,7 @@ def tooltip_info(ev) -> str:
     return info
 
 
-figure.tooltip.register(scatter_graphic, custom_info=tooltip_info)
+figure.tooltip_manager.register(scatter_graphic, custom_info=tooltip_info)
 
 figure.show()
 

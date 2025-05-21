@@ -68,7 +68,7 @@ class Tooltip:
 
         # plane for the background of the text object
         geometry = pygfx.plane_geometry(1, 1)
-        material = pygfx.MeshBasicMaterial(color=(0.1, 0.1, 0.3, 0.9))
+        material = pygfx.MeshBasicMaterial(color=(0.1, 0.1, 0.3, 0.95))
         self._plane = pygfx.Mesh(geometry, material)
         # else text not visible
         self._plane.world.z = 0.5
@@ -253,6 +253,9 @@ class Tooltip:
             to display in the tooltip
 
         """
+        if graphic in list(self._registered_graphics.keys()):
+            # unregister first and then re-register
+            self.unregister(graphic)
 
         pfunc = partial(self._event_handler, custom_info)
         graphic.add_event_handler(pfunc, appear_event)
@@ -287,3 +290,8 @@ class Tooltip:
         # remove handlers from graphic
         graphic.remove_event_handler(pfunc, appear_event)
         graphic.remove_event_handler(self._clear, disappear_event)
+
+    def unregister_all(self):
+        """unregister all graphics"""
+        for graphic in self._registered_graphics.keys():
+            self.unregister(graphic)
