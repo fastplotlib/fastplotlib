@@ -1,0 +1,224 @@
+
+
+Examples using ``fastplotlib.layouts.Subplot``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing how to view multiple images in an ImageWidget">
+
+.. only:: html
+
+  .. image:: /_gallery/image_widget/images/thumb/sphx_glr_image_widget_grid_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_image_widget_image_widget_grid.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Image widget grid</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_image_widget_image_widget_grid.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using given rects in absolute pixels. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_rect_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_rect_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Rect Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_rect_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using rects given as fractions of the canvas. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_rect_frac_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_rect_frac_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Rect Fractional Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_rect_frac_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using extents given as fractions of the canvas. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_extent_frac_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_extent_frac_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Fractional Extent Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_extent_frac_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using given extents in absolute pixels. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_extent_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_extent_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Extent Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_extent_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Use one controller for all subplots.">
+
+.. only:: html
+
+  .. image:: /_gallery/controllers/images/thumb/sphx_glr_sync_all_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_controllers_sync_all.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Sync subplots</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_controllers_sync_all.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Provide a list of tuples where each tuple has subplot names. The same controller will be used for the subplots indicated by each of these tuples">
+
+.. only:: html
+
+  .. image:: /_gallery/controllers/images/thumb/sphx_glr_specify_names_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_controllers_specify_names.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Specify IDs with subplot names</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_controllers_specify_names.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Specify controllers to sync subplots using integer IDs">
+
+.. only:: html
+
+  .. image:: /_gallery/controllers/images/thumb/sphx_glr_specify_integers_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_controllers_specify_integers.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Specify IDs with integers</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_controllers_specify_integers.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example that shows how to set scatter sizes in two different ways.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_size_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_size.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter Plot Size</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_size.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Add a cmap event handler to multiple graphics. When any one graphic changes the cmap, the cmap of all other graphics is also changed.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_cmap_event_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_cmap_event.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">cmap event</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_cmap_event.py`

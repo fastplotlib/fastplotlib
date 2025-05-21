@@ -1,0 +1,65 @@
+{
+ "Path": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "pathlib",
+   "module_short": "pathlib",
+   "name": "Path"
+  }
+ ],
+ "__doc__": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "__name__": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "builtins",
+   "module_short": "builtins",
+   "name": "str"
+  }
+ ],
+ "fpl.Figure": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib",
+   "module_short": "fastplotlib",
+   "name": "Figure"
+  }
+ ],
+ "fpl.loop.run": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "fastplotlib.loop",
+   "module_short": "fastplotlib.loop",
+   "name": "run"
+  }
+ ],
+ "np.load": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "numpy",
+   "module_short": "numpy",
+   "name": "load"
+  }
+ ],
+ "sys.argv": [
+  {
+   "is_class": false,
+   "is_explicit": false,
+   "module": "sys",
+   "module_short": "sys",
+   "name": "argv"
+  }
+ ]
+}

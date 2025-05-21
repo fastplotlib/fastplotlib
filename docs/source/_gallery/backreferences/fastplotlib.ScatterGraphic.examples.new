@@ -1,0 +1,245 @@
+
+
+Examples using ``fastplotlib.ScatterGraphic``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing color slice for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_colorslice_iris_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_colorslice_iris.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Iris Scatter Plot Color Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_colorslice_iris.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing cmap change for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_cmap_iris_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_cmap_iris.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Iris Scatter Colormap</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_cmap_iris.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing data slice for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_dataslice_iris_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_dataslice_iris.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Iris Scatter Plot Data Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_dataslice_iris.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing data slice for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_dataslice_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_dataslice.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter Plot Data Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_dataslice.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example showing color slice for scatter plot.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_scatter_colorslice_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_scatter_colorslice.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter Plot Color Slicing</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_scatter_colorslice.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example of a spinning spiral scatter.">
+
+.. only:: html
+
+  .. image:: /_gallery/scatter/images/thumb/sphx_glr_spinning_spiral_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_scatter_spinning_spiral.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Spinning spiral scatter</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_scatter_spinning_spiral.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="A TextGraphic that labels a point on a line and another TextGraphic that moves along the line on every draw.">
+
+.. only:: html
+
+  .. image:: /_gallery/text/images/thumb/sphx_glr_moving_label_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_text_moving_label.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Moving TextGraphic label</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_text_moving_label.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Add an event handler to click on scatter points and highlight them, i.e. change the color and size of the clicked point. Fly around the 3D scatter using WASD keys and click on points to highlight them">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_scatter_click_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_scatter_click.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter click</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_scatter_click.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Add an event handler to hover on scatter points and highlight them, i.e. change the color and size of the clicked point. Fly around the 3D scatter using WASD keys and click on points to highlight them.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_scatter_hover_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_scatter_hover.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter hover</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_scatter_hover.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Example where you can drag scatter points on a line. This example also demonstrates how you can use a shared buffer between two graphics to represent the same data using different graphics. When you update the data of one graphic the data of the other graphic is also changed simultaneously since they use the same underlying buffer on the GPU.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_drag_points_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_drag_points.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Drag points</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_drag_points.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Based on the sklearn preprocessing scalers example. Hover points to highlight the corresponding point of the dataset transformed by the various scalers.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_scatter_hover_transforms_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_scatter_hover_transforms.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Scatter data explore scalers</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_scatter_hover_transforms.py`

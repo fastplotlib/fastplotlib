@@ -1,0 +1,35 @@
+
+
+Examples using ``fastplotlib.graphics.PositionsGraphic.thickness``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Simple example of adding event handlers for line data and thickness.">
+
+.. only:: html
+
+  .. image:: /_gallery/events/images/thumb/sphx_glr_line_data_thickness_event_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_events_line_data_thickness_event.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Events line data thickness</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_events_line_data_thickness_event.py`

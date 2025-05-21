@@ -1,0 +1,98 @@
+
+
+Examples using ``fastplotlib.layouts.Subplot.camera``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+.. start-sphx-glr-thumbnails
+
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbnails">
+
+.. thumbnail-parent-div-open
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using given rects in absolute pixels. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_rect_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_rect_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Rect Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_rect_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using rects given as fractions of the canvas. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_rect_frac_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_rect_frac_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Rect Fractional Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_rect_frac_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using extents given as fractions of the canvas. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_extent_frac_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_extent_frac_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Fractional Extent Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_extent_frac_layout.py`
+
+.. raw:: html
+
+    <div class="sphx-glr-thumbcontainer" tooltip="Create subplots using given extents in absolute pixels. This example plots two images and their histograms in separate subplots">
+
+.. only:: html
+
+  .. image:: /_gallery/window_layouts/images/thumb/sphx_glr_extent_layout_thumb.webp
+    :alt:
+
+  :ref:`sphx_glr__gallery_window_layouts_extent_layout.py`
+
+.. raw:: html
+
+      <div class="sphx-glr-thumbnail-title">Extent Layout</div>
+    </div>
+
+
+.. only:: not html
+
+ * :ref:`sphx_glr__gallery_window_layouts_extent_layout.py`
