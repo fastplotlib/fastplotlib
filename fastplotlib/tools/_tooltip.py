@@ -137,7 +137,6 @@ class Tooltip:
 
     @outline_color.setter
     def outline_color(self, color: str | tuple | list | np.ndarray):
-        """Get or set outline color using a str or RGB(A) array"""
         self._line.material.color = color
 
     @property
@@ -190,7 +189,7 @@ class Tooltip:
         self._line.geometry.positions.update_range()
 
     def _event_handler(self, custom_tooltip: callable, ev: pygfx.PointerEvent):
-        """handles the tooltip appear event, determines the text to be set in the tooltip"""
+        """Handles the tooltip appear event, determines the text to be set in the tooltip"""
         if custom_tooltip is not None:
             info = custom_tooltip(ev)
 

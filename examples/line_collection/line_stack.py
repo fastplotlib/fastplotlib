@@ -33,7 +33,7 @@ line_stack = figure[0, 0].add_line_stack(
 
 
 def tooltip_info(ev):
-    """a custom function to display the index of the graphic within the collection"""
+    """A custom function to display the index of the graphic within the collection."""
     index = ev.pick_info["vertex_index"]  # index of the line datapoint being hovered
 
     # get index of the hovered line within the line stack
