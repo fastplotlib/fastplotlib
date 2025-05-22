@@ -19,8 +19,9 @@ from ._utils import (
 )
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
-from ._engine import GridLayout, WindowLayout, UnderlayCamera
+from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
 from .. import ImageGraphic
+from ..tools import Tooltip
 
 
 class Figure:
@@ -51,6 +52,7 @@ class Figure:
         canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
+        show_tooltips: bool = False,
     ):
         """
         Create a Figure containing Subplots.
@@ -121,6 +123,9 @@ class Figure:
 
         names: list or array of str, optional
             subplot names
+
+        show_tooltips: bool, default False
+            show tooltips on graphics
 
         """
 
@@ -444,12 +449,22 @@ class Figure:
                 canvas_rect=self.get_pygfx_render_area(),
             )
 
-        self._underlay_camera = UnderlayCamera()
-
+        # underlay render pass
+        self._underlay_camera = ScreenSpaceCamera()
         self._underlay_scene = pygfx.Scene()
 
         for subplot in self._subplots.ravel():
             self._underlay_scene.add(subplot.frame._world_object)
+
+        # overlay render pass
+        self._overlay_camera = ScreenSpaceCamera()
+        self._overlay_scene = pygfx.Scene()
+
+        # tooltip in overlay render pass
+        self._tooltip_manager = Tooltip()
+        self._overlay_scene.add(self._tooltip_manager.world_object)
+
+        self._show_tooltips = show_tooltips
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
@@ -518,6 +533,29 @@ class Figure:
         names.flags.writeable = False
         return names
 
+    @property
+    def tooltip_manager(self) -> Tooltip:
+        """manage tooltips"""
+        return self._tooltip_manager
+
+    @property
+    def show_tooltips(self) -> bool:
+        """show/hide tooltips for all graphics"""
+        return self._show_tooltips
+
+    @show_tooltips.setter
+    def show_tooltips(self, val: bool):
+        self._show_tooltips = val
+
+        if val:
+            # register all graphics
+            for subplot in self:
+                for graphic in subplot.graphics:
+                    self._tooltip_manager.register(graphic)
+
+        elif not val:
+            self._tooltip_manager.unregister_all()
+
     def _render(self, draw=True):
         # draw the underlay planes
         self.renderer.render(self._underlay_scene, self._underlay_camera, flush=False)
@@ -526,6 +564,9 @@ class Figure:
         self._call_animate_functions(self._animate_funcs_pre)
         for subplot in self:
             subplot._render()
+
+        # overlay render pass
+        self.renderer.render(self._overlay_scene, self._overlay_camera, flush=False)
 
         self.renderer.flush()
 

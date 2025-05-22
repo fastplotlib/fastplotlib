@@ -27,6 +27,8 @@ Properties
     Figure.names
     Figure.renderer
     Figure.shape
+    Figure.show_tooltips
+    Figure.tooltip_manager
 
 Methods
 ~~~~~~~
