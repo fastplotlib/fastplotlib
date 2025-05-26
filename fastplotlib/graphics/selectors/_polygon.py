@@ -63,16 +63,25 @@ class PolygonSelector(BaseSelector):
 
         BaseSelector.__init__(self, name=name, parent=parent)
 
-        self.edge = pygfx.Line(
-            pygfx.Geometry(positions=np.zeros((4, 3), np.float32)),
+        self.geometry = pygfx.Geometry(
+            positions=np.zeros((8, 3), np.float32),
+            indices=np.zeros((8, 3), np.int32),
+        )
+        self.geometry.positions.draw_range = 0, 0
+        self.geometry.indices.draw_range = 0, 0
+
+        edge = pygfx.Line(
+            self.geometry,
             pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
         )
-        self.edge.geometry.positions.draw_range = 0, 0
         points = pygfx.Points(
-            self.edge.geometry,
+            self.geometry,
             pygfx.PointsMaterial(size=edge_thickness * 2, color=edge_color),
         )
-        group = pygfx.Group().add(self.edge, points)
+        mesh = pygfx.Mesh(
+            self.geometry, pygfx.MeshBasicMaterial(color=edge_color, opacity=0.2)
+        )
+        group = pygfx.Group().add(edge, points, mesh)
         self._set_world_object(group)
 
         self._selection = PolygonSelectionFeature([], [0, 0, 0, 0])
@@ -144,8 +153,8 @@ class PolygonSelector(BaseSelector):
         if world_pos is None:
             return
 
-        # TODO: add point to close loop, or
-        # self.world_object.children[0].material.loop = True
+        # close the loop
+        self.world_object.children[0].material.loop = True
 
         self._plot_area.controller.enabled = True
 

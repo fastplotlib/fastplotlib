@@ -5,6 +5,7 @@ import pygfx as gfx
 
 from ...utils import mesh_masks
 from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
+from ...utils.triangulation import triangulate
 
 
 class LinearSelectionFeature(GraphicFeature):
@@ -409,19 +410,31 @@ class PolygonSelectionFeature(GraphicFeature):
 
         self._value = value
 
+        if len(value) >= 3:
+            indices = triangulate(value)
+        else:
+            indices = np.zeros((0, 3), np.int32)
+
         # TODO: Update the fill mesh
         # selector.fill.geometry.positions = ...
 
-        edge_geometry = selector.edge.geometry
+        geometry = selector.geometry
 
         # Need larger buffer?
-        if len(value) > edge_geometry.positions.nitems:
-            arr = np.zeros((edge_geometry.positions.nitems * 2, 3), np.float32)
-            edge_geometry.positions = gfx.Buffer(arr)
+        if len(value) > geometry.positions.nitems:
+            arr = np.zeros((geometry.positions.nitems * 2, 3), np.float32)
+            geometry.positions = gfx.Buffer(arr)
+        if len(indices) > geometry.indices.nitems:
+            arr = np.zeros((geometry.indices.nitems * 2, 3), np.int32)
+            geometry.indices = gfx.Buffer(arr)
 
-        edge_geometry.positions.data[: len(value)] = value
-        edge_geometry.positions.draw_range = 0, len(value)
-        edge_geometry.positions.update_full()
+        geometry.positions.data[: len(value)] = value
+        geometry.positions.draw_range = 0, len(value)
+        geometry.positions.update_full()
+
+        geometry.indices.data[: len(indices)] = indices
+        geometry.indices.draw_range = 0, len(indices)
+        geometry.indices.update_full()
 
         # send event
         if len(self._event_handlers) < 1:
