@@ -7,7 +7,7 @@ import pygfx
 from ..utils import parse_cmap_values
 from ._collection_base import CollectionIndexer, GraphicCollection, CollectionFeature
 from .line import LineGraphic
-from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
+from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector, PolygonSelector
 
 
 class _LineCollectionProperties:
@@ -478,6 +478,36 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         selector = RectangleSelector(
             selection=selection,
             limits=limits,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        return selector
+
+    def add_polygon_selector(
+        self,
+        selection: List[tuple[float, float]] = None,
+        **kwargs,
+    ) -> PolygonSelector:
+        """
+        Add a :class:`.PolygonSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: List of positions, optional
+            initial points for the polygon
+        """
+        bbox = self.world_object.get_world_bounding_box()
+
+
+        if selection is not None:
+            selection = []  # TODO: fill selection
+
+
+        selector = PolygonSelector(
             parent=self,
             **kwargs,
         )

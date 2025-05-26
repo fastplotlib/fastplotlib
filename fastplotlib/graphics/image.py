@@ -5,7 +5,7 @@ import pygfx
 
 from ..utils import quick_min_max
 from ._base import Graphic
-from .selectors import LinearSelector, LinearRegionSelector, RectangleSelector
+from .selectors import LinearSelector, LinearRegionSelector, RectangleSelector, PolygonSelector
 from .features import (
     TextureArray,
     ImageCmap,
@@ -426,6 +426,49 @@ class ImageGraphic(Graphic):
         selector = RectangleSelector(
             selection=selection,
             limits=limits,
+            fill_color=fill_color,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        # place above this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
+
+        return selector
+
+    def add_polygon_selector(
+        self,
+        selection: List[tuple[float, float]] = None,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
+    ) -> PolygonSelector:
+        """
+        Add a :class:`.PolygonSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: List of positions, optional
+            initial points for the polygon
+
+        """
+        # default selection is 25% of the diagonal
+        if selection is None:
+            diagonal = math.sqrt(
+                self._data.value.shape[0] ** 2 + self._data.value.shape[1] ** 2
+            )
+
+            selection = (0, int(diagonal / 4), 0, int(diagonal / 4))
+
+        # min/max limits are image shape
+        # rows are ys, columns are xs
+        limits = (0, self._data.value.shape[1], 0, self._data.value.shape[0])
+
+        selector = PolygonSelector(
             fill_color=fill_color,
             parent=self,
             **kwargs,
