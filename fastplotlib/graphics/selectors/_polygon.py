@@ -1,65 +1,111 @@
 from typing import *
 
-import numpy as np
+from numbers import Real
 
+import numpy as np
 import pygfx
 
-from ._base_selector import BaseSelector, MoveInfo
 from .._base import Graphic
+from .._collection_base import GraphicCollection
+from ..features._selection_features import PolygonSelectionFeature
+from ._base_selector import BaseSelector, MoveInfo
 
 
 class PolygonSelector(BaseSelector):
+    _features = {"selection": PolygonSelectionFeature}
+
+    @property
+    def parent(self) -> Graphic | None:
+        """Graphic that selector is associated with."""
+        return self._parent
+
+    @property
+    def selection(self) -> np.ndarray[float]:
+        """
+        The polygon as an array of 3D points.
+        """
+        return self._selection.value.copy()
+
+    @selection.setter
+    def selection(self, selection: np.ndarray[float]):
+        # set (xmin, xmax, ymin, ymax) of the selector in data space
+        graphic = self._parent
+
+        if isinstance(graphic, GraphicCollection):
+            pass
+
+        self._selection.set_value(self, selection)
+
+    @property
+    def limits(self) -> Tuple[float, float, float, float]:
+        """Return the limits of the selector."""
+        return self._limits
+
+    @limits.setter
+    def limits(self, values: Tuple[float, float, float, float]):
+        if len(values) != 4 or not all(map(lambda v: isinstance(v, Real), values)):
+            raise TypeError("limits must be an iterable of two numeric values")
+        self._limits = tuple(
+            map(round, values)
+        )  # if values are close to zero things get weird so round them
+        self._selection._limits = self._limits
+
     def __init__(
         self,
         edge_color="magenta",
-        edge_width: float = 3,
+        edge_thickness: float = 4,
         parent: Graphic = None,
         name: str = None,
     ):
-        self.parent = parent
-
-        group = pygfx.Group()
-
-        self._set_world_object(group)
-
-        self.edge_color = edge_color
-        self.edge_width = edge_width
-
+        self._parent = parent
         self._move_info: MoveInfo = None
-
         self._current_mode = None
 
-        BaseSelector.__init__(self, name=name)
+        BaseSelector.__init__(self, name=name, parent=parent)
 
-    def get_vertices(self) -> np.ndarray:
-        """Get the vertices for the polygon"""
-        vertices = list()
-        for child in self.world_object.children:
-            vertices.append(child.geometry.positions.data[:, :2])
+        self.edge = pygfx.Line(
+            pygfx.Geometry(positions=np.zeros((4, 3), np.float32)),
+            pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
+        )
+        self.edge.geometry.positions.draw_range = 0, 0
+        points = pygfx.Points(
+            self.edge.geometry,
+            pygfx.PointsMaterial(size=edge_thickness * 2, color=edge_color),
+        )
+        group = pygfx.Group().add(self.edge, points)
+        self._set_world_object(group)
 
-        return np.vstack(vertices)
+        self._selection = PolygonSelectionFeature([], [0, 0, 0, 0])
+
+        self.edge_color = edge_color
+        self.edge_width = edge_thickness
+
+    def get_selected_indices(self):
+        return []
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
+        self._plot_area.controller.enabled = False
+
         # click to add new segment
-        self._plot_area.renderer.add_event_handler(self._add_segment, "click")
+        self._plot_area.renderer.add_event_handler(self._finish_segment, "click")
 
         # pointer move to change endpoint of segment
         self._plot_area.renderer.add_event_handler(
             self._move_segment_endpoint, "pointer_move"
         )
-
-        # click to finish existing segment
-        self._plot_area.renderer.add_event_handler(self._finish_segment, "click")
-
         # double click to finish polygon
         self._plot_area.renderer.add_event_handler(self._finish_polygon, "double_click")
 
         self.position_z = len(self._plot_area) + 10
 
-    def _add_segment(self, ev):
+    def _finish_segment(self, ev):
         """After click event, adds a new line segment"""
+
+        # Don't add two points at the same spot
+        if self._current_mode == "add":
+            return
         self._current_mode = "add"
 
         position = self._plot_area.map_screen_to_world(ev)
@@ -71,18 +117,9 @@ class PolygonSelector(BaseSelector):
         )
 
         # line with same position for start and end until mouse moves
-        data = np.array([position, position])
+        data = np.vstack([self.selection, position])
 
-        new_line = pygfx.Line(
-            geometry=pygfx.Geometry(positions=data.astype(np.float32)),
-            material=pygfx.LineMaterial(
-                thickness=self.edge_width,
-                color=pygfx.Color(self.edge_color),
-                pick_write=True,
-            ),
-        )
-
-        self.world_object.add(new_line)
+        self._selection.set_value(self, data)
 
     def _move_segment_endpoint(self, ev):
         """After mouse pointer move event, moves endpoint of current line segment"""
@@ -96,27 +133,9 @@ class PolygonSelector(BaseSelector):
             return
 
         # change endpoint
-        self.world_object.children[-1].geometry.positions.data[1] = np.array(
-            [world_pos]
-        ).astype(np.float32)
-        self.world_object.children[-1].geometry.positions.update_range()
-
-    def _finish_segment(self, ev):
-        """After click event, ends a line segment"""
-        # should start a new segment
-        if self._move_info is None:
-            return
-
-        # since both _add_segment and _finish_segment use the "click" callback
-        # this is to block _finish_segment right after a _add_segment call
-        if self._current_mode == "add":
-            return
-
-        # just make move info None so that _move_segment_endpoint is not called
-        # and _add_segment gets triggered for "click"
-        self._move_info = None
-
-        self._current_mode = "finish-segment"
+        data = self.selection
+        data[-1] = world_pos
+        self._selection.set_value(self, data)
 
     def _finish_polygon(self, ev):
         """finishes the polygon, disconnects events"""
@@ -125,26 +144,14 @@ class PolygonSelector(BaseSelector):
         if world_pos is None:
             return
 
-        # make new line to connect first and last vertices
-        data = np.vstack(
-            [world_pos, self.world_object.children[0].geometry.positions.data[0]]
-        )
+        # TODO: add point to close loop, or
+        # self.world_object.children[0].material.loop = True
 
-        new_line = pygfx.Line(
-            geometry=pygfx.Geometry(positions=data.astype(np.float32)),
-            material=pygfx.LineMaterial(
-                thickness=self.edge_width,
-                color=pygfx.Color(self.edge_color),
-                pick_write=True,
-            ),
-        )
-
-        self.world_object.add(new_line)
+        self._plot_area.controller.enabled = True
 
         handlers = {
-            self._add_segment: "click",
-            self._move_segment_endpoint: "pointer_move",
             self._finish_segment: "click",
+            self._move_segment_endpoint: "pointer_move",
             self._finish_polygon: "double_click",
         }
 

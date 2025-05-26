@@ -53,6 +53,7 @@ Methods
     LineStack.add_linear_region_selector
     LineStack.add_linear_selector
     LineStack.add_rectangle_selector
+    LineStack.add_polygon_selector
     LineStack.clear_event_handlers
     LineStack.remove_event_handler
     LineStack.remove_graphic

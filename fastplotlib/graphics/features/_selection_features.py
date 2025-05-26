@@ -1,6 +1,7 @@
 from typing import Sequence
 
 import numpy as np
+import pygfx as gfx
 
 from ...utils import mesh_masks
 from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
@@ -328,6 +329,99 @@ class RectangleSelectionFeature(GraphicFeature):
 
         for vertex in selector.vertices:
             vertex.geometry.positions.update_range()
+
+        # send event
+        if len(self._event_handlers) < 1:
+            return
+
+        event = GraphicFeatureEvent("selection", {"value": self.value})
+
+        event.get_selected_indices = selector.get_selected_indices
+        event.get_selected_data = selector.get_selected_data
+
+        # calls any events
+        self._call_event_handlers(event)
+
+
+class PolygonSelectionFeature(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "np.ndarray",
+            "description": "new array of points that represents the polygon selection",
+        },
+    ]
+
+    event_extra_attrs = [
+        {
+            "attribute": "get_selected_indices",
+            "type": "callable",
+            "description": "returns indices under the selector",
+        },
+        {
+            "attribute": "get_selected_data",
+            "type": "callable",
+            "description": "returns data under the selector",
+        },
+    ]
+
+    def __init__(
+        self,
+        value: Sequence[tuple[float]],
+        limits: tuple[float, float, float, float],
+    ):
+        super().__init__()
+
+        self._limits = limits
+        self._value = np.asarray(value).reshape(-1, 3).astype(float)
+
+    @property
+    def value(self) -> np.ndarray[float]:
+        """
+        The array of the polygon, in data space
+        """
+        return self._value
+
+    @block_reentrance
+    def set_value(self, selector, value: Sequence[tuple[float]]):
+        """
+        Set the selection of the rectangle selector.
+
+        Parameters
+        ----------
+        selector: PolygonSelector
+
+        value: array
+            new values (3D points) of the selection
+        """
+
+        value = np.asarray(value, dtype=np.float32)
+
+        if not value.shape[1] == 3:
+            raise TypeError(
+                "Selection must be an array, tuple, list, or sequence of the shape Nx3."
+            )
+
+        # # clip values if they are beyond the limits
+        # value[:, 0] = value[:2].clip(self._limits[0], self._limits[1])
+        # # clip y
+        # value[:, 1] = value[2:].clip(self._limits[2], self._limits[3])
+
+        self._value = value
+
+        # TODO: Update the fill mesh
+        # selector.fill.geometry.positions = ...
+
+        edge_geometry = selector.edge.geometry
+
+        # Need larger buffer?
+        if len(value) > edge_geometry.positions.nitems:
+            arr = np.zeros((edge_geometry.positions.nitems * 2, 3), np.float32)
+            edge_geometry.positions = gfx.Buffer(arr)
+
+        edge_geometry.positions.data[: len(value)] = value
+        edge_geometry.positions.draw_range = 0, len(value)
+        edge_geometry.positions.update_full()
 
         # send event
         if len(self._event_handlers) < 1:

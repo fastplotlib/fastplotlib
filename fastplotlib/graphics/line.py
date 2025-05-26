@@ -5,7 +5,7 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
+from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector, PolygonSelector
 from .features import (
     Thickness,
     VertexPositions,
@@ -245,7 +245,7 @@ class LineGraphic(PositionsGraphic):
         self,
         selection: tuple[float, float, float, float] = None,
         **kwargs,
-    ) -> RectangleSelector:
+    ) ->  RectangleSelector:
         """
         Add a :class:`.RectangleSelector`.
 
@@ -280,6 +280,31 @@ class LineGraphic(PositionsGraphic):
         selector = RectangleSelector(
             selection=selection,
             limits=limits,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        return selector
+
+    def add_polygon_selector(
+        self,
+        selection: List[tuple[float, float]] = None,
+        **kwargs,
+    ) -> PolygonSelector:
+        """
+        Add a :class:`.PolygonSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a
+        plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: (float, float, float, float), optional
+            initial (xmin, xmax, ymin, ymax) of the selection
+        """
+        selector = PolygonSelector(
             parent=self,
             **kwargs,
         )
