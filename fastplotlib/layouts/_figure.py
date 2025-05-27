@@ -560,6 +560,11 @@ class Figure:
         # draw the underlay planes
         self.renderer.render(self._underlay_scene, self._underlay_camera, flush=False)
 
+        # With new pygfx' blending, the depth buffer is only cleared after each flush, we need a manual depth
+        # clear to erase the depth values set by the underlay.
+        if hasattr(self.renderer, "clear"):
+            self.renderer.clear(depth=True)
+
         # call the animation functions before render
         self._call_animate_functions(self._animate_funcs_pre)
         for subplot in self:
