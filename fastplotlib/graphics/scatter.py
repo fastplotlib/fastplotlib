@@ -81,7 +81,7 @@ class ScatterGraphic(PositionsGraphic):
             coordinate space in which the size is expressed ("screen", "world", "model")
 
         kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
         """
 
