@@ -716,7 +716,7 @@ that are too large to share over the internet, and creating fast interactive app
 large datasets.
 
 Qt windows in jupyter and IPython
-^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Qt windows can also be used for displaying fastplotlib figures in an interactive jupyterlab or IPython. You must run
 ``%gui qt`` **before** importing ``fastplotlib`` (or ``wgpu``). This would typically be done at the very top of your
