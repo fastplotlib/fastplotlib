@@ -105,7 +105,14 @@ html_theme_options = {
     "switcher": {
         "json_url": "http://www.fastplotlib.org/_static/switcher.json",
         "version_match": release
-    }
+    },
+    "icon_links": [
+        {
+            "name": "Github",
+            "url": "https://github.com/fastplotlib/fastplotlib",
+            "icon": "fa-brands fa-github",
+        }
+    ]
 }
 
 html_static_path = ["_static"]
