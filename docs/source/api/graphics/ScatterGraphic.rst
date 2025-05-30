@@ -47,6 +47,4 @@ Methods
     ScatterGraphic.clear_event_handlers
     ScatterGraphic.remove_event_handler
     ScatterGraphic.rotate
-    ScatterGraphic.share_property
-    ScatterGraphic.unshare_property
 

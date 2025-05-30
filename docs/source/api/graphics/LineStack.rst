@@ -57,6 +57,4 @@ Methods
     LineStack.remove_event_handler
     LineStack.remove_graphic
     LineStack.rotate
-    LineStack.share_property
-    LineStack.unshare_property
 

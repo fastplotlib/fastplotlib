@@ -48,6 +48,4 @@ Methods
     HistogramLUTTool.remove_event_handler
     HistogramLUTTool.rotate
     HistogramLUTTool.set_data
-    HistogramLUTTool.share_property
-    HistogramLUTTool.unshare_property
 
