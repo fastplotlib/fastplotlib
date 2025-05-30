@@ -17,13 +17,20 @@ cosine function output values on the unit circle.
 
 import numpy as np
 import fastplotlib as fpl
+from fastplotlib.ui import EdgeWindow
+from imgui_bundle import imgui
 
 
-# helper function to make a cirlce
-def make_circle(center, radius: float, n_points: int) -> np.ndarray:
+# initial frequency coefficients for sine and cosine functions
+P = 1
+Q = 1
+
+
+# helper function to make a circle
+def make_circle(center, radius: float, p, q, n_points: int) -> np.ndarray:
     theta = np.linspace(0, 2 * np.pi, n_points)
-    xs = radius * np.cos(theta)
-    ys = radius * np.sin(theta)
+    xs = radius * np.cos(theta * p)
+    ys = radius * np.sin(theta * q)
 
     return np.column_stack([xs, ys]) + center
 
@@ -53,46 +60,51 @@ extents = [
 # create a figure with 3 subplots
 figure = fpl.Figure(
     extents=extents,
-    names=["unit circle", "sin(x)", "cos(x)"],
+    names=["circle", "sin", "cos"],
     size=(700, 560)
 )
+
+# set more descriptive figure titles
+figure["circle"].title = "sin(x*p) over cos(x*q)"
+figure["sin"].title = "sin(x * p)"
+figure["cos"].title = "cos(x * q)"
 
 # set the axes to intersect at (0, 0, 0) to better illustrate the unit circle
 for subplot in figure:
     subplot.axes.intersection = (0, 0, 0)
     subplot.toolbar = False  # reduce clutter
 
-figure["sin(x)"].camera.maintain_aspect = False
-figure["cos(x)"].camera.maintain_aspect = False
+figure["sin"].camera.maintain_aspect = False
+figure["cos"].camera.maintain_aspect = False
 
 # create sine and cosine data
 xs = np.linspace(0, 2 * np.pi, 360)
-sine = np.sin(xs)
-cosine = np.cos(xs)
+sine = np.sin(xs * P)
+cosine = np.cos(xs * Q)
 
 # circle data
-circle_data = make_circle(center=(0, 0), radius=1, n_points=360)
+circle_data = make_circle(center=(0, 0), p=P, q=Q, radius=1, n_points=360)
 
 # make the circle line graphic, set the cmap transform using the sine function
-circle_graphic = figure["unit circle"].add_line(
+circle_graphic = figure["circle"].add_line(
     circle_data, thickness=4, cmap="bwr", cmap_transform=sine
 )
 
 # line to show the circle radius
 # use it to indicate the current position of the sine and cosine selctors (below)
 radius_data = np.array([[0, 0, 0], [*circle_data[0], 0]])
-circle_radius = figure["unit circle"].add_line(
+circle_radius_graphic = figure["circle"].add_line(
     radius_data, thickness=6, colors="magenta"
 )
 
 # sine line graphic, cmap transform set from the sine function
-sine_graphic = figure["sin(x)"].add_line(
+sine_graphic = figure["sin"].add_line(
     sine, thickness=10, cmap="bwr", cmap_transform=sine
 )
 
 # cosine line graphic, cmap transform set from the sine function
 # illustrates the sine function values on the cosine graphic
-cosine_graphic = figure["cos(x)"].add_line(
+cosine_graphic = figure["cos"].add_line(
     cosine, thickness=10, cmap="bwr", cmap_transform=sine
 )
 
@@ -126,17 +138,67 @@ def set_x_val(ev):
     sine_selector.selection = value
     cosine_selector.selection = value
 
-    circle_radius.data[1, :-1] = circle_data[index]
+    circle_radius_graphic.data[1, :-1] = circle_data[index]
 
 # add same event handler to both graphics
 sine_selector.add_event_handler(set_x_val, "selection")
 cosine_selector.add_event_handler(set_x_val, "selection")
 
+# initial selection value
+sine_selector.selection = 50
+
+
+class GUIWindow(EdgeWindow):
+    def __init__(self, figure, size, location, title):
+        super().__init__(figure=figure, size=size, location=location, title=title)
+
+        self._p = 1
+        self._q = 1
+
+    def _set_data(self):
+        global sine_graphic, cosine_graphic, circle_graphic, circle_radius_graphic, circle_data
+
+        # make new data
+        sine = np.sin(xs * self._p)
+        cosine = np.cos(xs * self._q)
+        circle_data = make_circle(center=(0, 0), p=self._p, q=self._q, radius=1, n_points=360)
+
+
+        # set the graphics
+        sine_graphic.data[:, 1] = sine
+        cosine_graphic.data[:, 1] = cosine
+        circle_graphic.data[:, :2] = circle_data
+        circle_radius_graphic.data[1, :-1] = circle_data[sine_selector.get_selected_index()]
+
+    def update(self):
+        flag_set_data = False
+
+        changed, self._p = imgui.input_int("P", v=self._p, step_fast=2)
+        if changed:
+            flag_set_data = True
+
+        changed, self._q = imgui.input_int("Q", v=self._q, step_fast=2)
+        if changed:
+            flag_set_data = True
+
+        if flag_set_data:
+            self._set_data()
+
+
+gui = GUIWindow(
+    figure=figure,
+    size=80,
+    location="top",
+    title="Freq. coeffs"
+)
+
+figure.add_gui(gui)
+
 figure.show()
 
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()

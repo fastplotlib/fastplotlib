@@ -29,7 +29,7 @@ for center in product(range(0, spatial_dims[0], 15), range(0, spatial_dims[1], 1
 
 pos_xy = np.vstack(circles)
 
-figure = fpl.Figure(size=(700, 560))
+figure = fpl.Figure(size=(700, 560), show_tooltips=True)
 
 figure[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
 
@@ -40,7 +40,7 @@ figure.show()
 
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()
