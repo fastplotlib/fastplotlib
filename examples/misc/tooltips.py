@@ -47,7 +47,7 @@ figure.show()
 # figure.show_tooltips = True
 
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)

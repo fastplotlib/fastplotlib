@@ -46,7 +46,7 @@ scatter_graphic.colors[0:75] = "red"
 scatter_graphic.colors[75:150] = "white"
 scatter_graphic.colors[::2] = "blue"
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)

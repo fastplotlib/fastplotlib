@@ -72,7 +72,7 @@ sine_graphic.data[30:70, 1] = np.ones(40)
 # that causes the sine graphic's thickness to also be set from this value
 cosine_graphic.thickness = 10
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)

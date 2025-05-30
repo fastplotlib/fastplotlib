@@ -23,7 +23,7 @@ figure.show()
 image_graphic.vmin = 0.5
 image_graphic.vmax = 0.75
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)

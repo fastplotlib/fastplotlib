@@ -68,7 +68,7 @@ for subplot in figure:
 # change the cmap of graphic image, triggers all other graphics to set the cmap
 figure["camera"].graphics[0].cmap = "jet"
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)

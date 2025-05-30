@@ -83,7 +83,7 @@ zeros_graphic.cmap[50:75] = "jet"
 zeros_graphic.cmap[75:] = "viridis"
 
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
+# NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
