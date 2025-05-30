@@ -101,8 +101,8 @@ figure.show(maintain_aspect=False)
 figure[0, 0].camera.set_state(camera_state)
 
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()
