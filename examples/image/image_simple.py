@@ -17,10 +17,8 @@ data = iio.imread("imageio:camera.png")
 
 # plot the image data
 image_graphic = figure[0, 0].add_image(data=data, name="iio camera")
-image_graphic.add_data_annotation()
 
 figure.show()
-
 
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # See the "JupyterLab and IPython" section in the user guide

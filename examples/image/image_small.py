@@ -22,9 +22,6 @@ image_graphic = figure[0, 0].add_image(data)
 
 figure.show()
 
-image_graphic.add_data_annotation()
-
-
 # NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
