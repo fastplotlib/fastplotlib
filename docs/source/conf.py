@@ -49,6 +49,7 @@ extensions = [
 
 sphinx_gallery_conf = {
     "gallery_dirs": "_gallery",
+    "notebook_extensions": {},
     "backreferences_dir": "_gallery/backreferences",
     "doc_module": ("fastplotlib",),
     "image_scrapers": ("pygfx",),
