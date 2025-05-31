@@ -175,8 +175,7 @@ class HistogramLUTTool(Graphic):
     def _get_vmin_vmax_str(self) -> tuple[str, str]:
 
         # https://docs.dask.org/en/latest/generated/dask.array.Array.compute.html
-        # https://docs.pytorch.org/docs/stable/generated/torch.Tensor.item.html
-        lazy_callbacks = ("compute", "item")
+        lazy_callbacks = ("compute")
 
         def as_float(x) -> float:
             for name in lazy_callbacks:
