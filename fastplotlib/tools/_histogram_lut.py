@@ -175,7 +175,7 @@ class HistogramLUTTool(Graphic):
     def _get_vmin_vmax_str(self) -> tuple[str, str]:
 
         # https://docs.dask.org/en/latest/generated/dask.array.Array.compute.html
-        lazy_callbacks = ("compute")
+        lazy_callbacks = ["compute"]
 
         def as_float(x) -> float:
             for name in lazy_callbacks:
@@ -192,8 +192,6 @@ class HistogramLUTTool(Graphic):
         vmax_str = f"{vmax:.2e}" if vmax < 1e-3 or vmax > 9.9999e4 else f"{vmax:.2f}"
 
         return vmin_str, vmax_str
-
-
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
