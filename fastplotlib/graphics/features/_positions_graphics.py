@@ -417,7 +417,7 @@ class VertexCmap(BufferManager):
         },
         {
             "dict key": "value",
-            "type": "str",
+            "type": "str | list[str] | tuple[str]",
             "description": "new cmap to set at given slice",
         },
     ]
@@ -425,7 +425,7 @@ class VertexCmap(BufferManager):
     def __init__(
         self,
         vertex_colors: VertexColors,
-        cmap_name: str | None,
+        cmap_name: str | list[str] | tuple[str] | None,
         transform: np.ndarray | None,
         alpha: float = 1.0,
     ):
@@ -442,10 +442,17 @@ class VertexCmap(BufferManager):
         self._alpha = alpha
 
         if self._cmap_name is not None:
-            if not isinstance(self._cmap_name, str):
+            if not isinstance(self._cmap_name, (str, list, tuple)):
                 raise TypeError(
-                    f"cmap name must be of type <str>, you have passed: {self._cmap_name} of type: {type(self._cmap_name)}"
+                    f"cmap name must be of type <str>, or list/tuple of str to define a custom cmap. "
+                    f"You have passed: {self._cmap_name} of type: {type(self._cmap_name)}"
                 )
+            if isinstance(cmap_name, (list, tuple)):
+                if not all(isinstance(s, str) for s in cmap_name):
+                    raise TypeError(
+                        f"cmap name must be of type <str>, or list/tuple of str to define a custom cmap. "
+                        f"You have passed: {self._cmap_name} of type: {type(self._cmap_name)}"
+                    )
 
             if self._transform is not None:
                 self._transform = np.asarray(self._transform)

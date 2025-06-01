@@ -339,7 +339,7 @@ def normalize_min_max(a):
 
 def parse_cmap_values(
     n_colors: int,
-    cmap_name: str,
+    cmap_name: str | list[str] | tuple[str],
     transform: np.ndarray | list[int | float] = None,
 ) -> np.ndarray:
     """
