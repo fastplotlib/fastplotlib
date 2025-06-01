@@ -161,24 +161,30 @@ class ImguiFigure(Figure):
         """
         Add a GUI to the Figure. GUIs can be added to the left or bottom edge.
 
-        Can also be used as a decorator.
+        Can also be used as a decorator, see examples docstring and examples gallery.
+
+        For a list of imgui elements see: https://pyimgui.readthedocs.io/en/latest/reference/imgui.core.html#imgui.core.begin_combo
+
+        Note that the API docs for ``pyimgui`` do not match up exactly with ``imgui-bundle`` which we use in
+        fastplotlib. Unfortunately the API docs for imgui-bundle are nonexistent (as far as we know). See the
+        "imgui" section in the docs User Guide which includes tips on how to develop imgui UIs.
 
         Parameters
         ----------
         gui: EdgeWindow
-            A GUI EdgeWindow instance
+            A GUI EdgeWindow instance, if not decorating
 
         location: str, "right" | "bottom"
-            window location
+            window location, ignored if not decorating
 
         title: str
-            window title
+            window title, ignored if not decorating
 
         size: int
-            width or height of the window depending on location
+            width or height of the window depending on location, ignored if not decorating
 
         window_flags: imgui.WindowFlags_, default imgui.WindowFlags_.no_collapse | imgui.WindowFlags_.no_resize,
-            imgui.WindowFlags_ enum
+            imgui.WindowFlags_ enum, ignored if not decorating
 
         Examples
         --------
@@ -200,6 +206,33 @@ class ImguiFigure(Figure):
 
             figure.show(maintain_aspect=False)
 
+        Subclass EdgeWindow::
+
+            import numpy as np
+            import fastplotlib as fpl
+            from fastplotlib.ui import EdgeWindow
+
+            figure = fpl.Figure()
+            figure[0, 0].add_line(np.sin(np.linspace(0, np.pi * 4, 0.1)), name="sine")
+
+            class GUI(EdgeWindow):
+                def __init__(self, figure, location="right", size=200, title="My GUI", amplitude=1.0)
+                    self._figure = figure
+
+                    self._amplitude = 1
+
+                def compute_data(self):
+                    ampl = self._amplitude
+                    new_data = ampl * np.sin(np.linspace(0, np.pi * 4, 0.1))
+                    self._figure[0, 0]["sine"].data[:, 1] = new_data
+
+                def update(self):
+                    # gui update function
+                    changed, amplitude = imgui.slider_float("amplitude", v=self._amplitude, v_max=10, v_min=0.1)
+                    if changed:
+                        self._amplitude = amplitude
+                        self.compute_data()
+
         """
 
         def decorator(_gui_func):
@@ -212,7 +245,8 @@ class ImguiFigure(Figure):
                 raise ValueError(f"GUI already exists in the desired location: {location}")
 
             if not isinstance(gui, EdgeWindow):
-                ew = EdgeWindow(
+                # being used as a decorator, create an EdgeWindow
+                edge_window = EdgeWindow(
                     figure=self,
                     size=size,
                     location=location,
@@ -220,20 +254,25 @@ class ImguiFigure(Figure):
                     update_call=_gui_func,
                     window_flags=window_flags
                 )
-                window_location = location
+                window_location = location  # creating this reference is required
             else:
-                ew = _gui_func
-                window_location = location
+                edge_window = _gui_func  # creating this reference is required
+                window_location = location  # creating this reference is required
 
-            self.guis[window_location] = ew
+            # store the gui
+            self.guis[window_location] = edge_window
 
+            # redo the layout
             self._fpl_reset_layout()
 
+            # return function being decorated
             return _gui_func
 
         if not isinstance(gui, EdgeWindow):
+            # if decorating
             return decorator
 
+        # if not decorating
         decorator(gui)
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
