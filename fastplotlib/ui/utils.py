@@ -36,8 +36,7 @@ class ChangeFlag:
         return self.value
 
     def __or__(self, other):
-        if other:
-            self._value = True
+        return self._value | other
 
     def __eq__(self, other):
         return self.value == other
