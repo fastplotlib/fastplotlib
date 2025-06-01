@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from typing import Literal
-import numpy as np
 
 from imgui_bundle import imgui
 
@@ -31,7 +31,6 @@ class BaseGUI:
 
 class Window(BaseGUI):
     """Base class for imgui windows drawn within Figures"""
-
     pass
 
 
@@ -42,8 +41,9 @@ class EdgeWindow(Window):
         size: int,
         location: Literal["bottom", "right"],
         title: str,
-        window_flags: int = imgui.WindowFlags_.no_collapse
+        window_flags: imgui.WindowFlags_ = imgui.WindowFlags_.no_collapse
         | imgui.WindowFlags_.no_resize,
+        update_call: Callable = None,
         *args,
         **kwargs,
     ):
@@ -64,7 +64,7 @@ class EdgeWindow(Window):
         title: str
             window title
 
-        window_flags: int
+        window_flags: imgui.WindowFlags_
             window flag enum, valid flags are:
 
             .. code-block:: py
@@ -94,10 +94,10 @@ class EdgeWindow(Window):
                 imgui.WindowFlags_.no_inputs
 
         *args
-            additional args for the GUI
+            additional args
 
         **kwargs
-            additional kwargs for teh GUI
+            additional kwargs
         """
         super().__init__()
 
@@ -114,6 +114,11 @@ class EdgeWindow(Window):
         self._x, self._y, self._width, self._height = self.get_rect()
 
         self._figure.canvas.add_event_handler(self._set_rect, "resize")
+
+        if update_call is None:
+            self._update_call = self.update
+        else:
+            self._update_call = update_call
 
     @property
     def size(self) -> int | None:
@@ -185,11 +190,8 @@ class EdgeWindow(Window):
     def draw_window(self):
         """helps simplify using imgui by managing window creation & position, and pushing/popping the ID"""
         # window position & size
-        x, y, w, h = self.get_rect()
         imgui.set_next_window_size((self.width, self.height))
         imgui.set_next_window_pos((self.x, self.y))
-        # imgui.set_next_window_pos((x, y))
-        # imgui.set_next_window_size((w, h))
         flags = self._window_flags
 
         # begin window
@@ -198,8 +200,8 @@ class EdgeWindow(Window):
         # push ID to prevent conflict between multiple figs with same UI
         imgui.push_id(self._id_counter)
 
-        # draw stuff from subclass into window
-        self.update()
+        # draw imgui UI elements into window
+        self._update_call()
 
         # pop ID
         imgui.pop_id()

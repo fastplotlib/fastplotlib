@@ -150,34 +150,91 @@ class ImguiFigure(Figure):
 
         return imgui.get_draw_data()
 
-    def add_gui(self, gui: EdgeWindow):
+    def add_gui(
+            self,
+            gui: EdgeWindow = None,
+            location: Literal["right", "bottom"] = "right",
+            title="GUI Window",
+            size: int = 200,
+            window_flags: imgui.WindowFlags_ = imgui.WindowFlags_.no_collapse | imgui.WindowFlags_.no_resize,
+    ):
         """
         Add a GUI to the Figure. GUIs can be added to the left or bottom edge.
+
+        Can also be used as a decorator.
 
         Parameters
         ----------
         gui: EdgeWindow
             A GUI EdgeWindow instance
 
+        location: str, "right" | "bottom"
+            window location
+
+        title: str
+            window title
+
+        size: int
+            width or height of the window depending on location
+
+        window_flags: imgui.WindowFlags_, default imgui.WindowFlags_.no_collapse | imgui.WindowFlags_.no_resize,
+            imgui.WindowFlags_ enum
+
+        Examples
+        --------
+
+        As a decorator::
+
+            import numpy as np
+            import fastplotlib as fpl
+            from imgui_bundle import imgui
+
+            figure = fpl.Figure()
+            figure[0, 0].add_line(np.random.rand(100))
+
+
+            @figure.add_gui(location="right", title="yay", size=100)
+            def gui():
+                if imgui.button("reset data"):
+                    figure[0, 0].graphics[0].data[:, 1] = np.random.rand(100)
+
+            figure.show(maintain_aspect=False)
+
         """
+
+        def decorator(_gui_func):
+            if location not in GUI_EDGES:
+                raise ValueError(
+                    f"GUI does not have a valid location, valid locations are: {GUI_EDGES}, you have passed: {location}"
+                )
+
+            if self.guis[location] is not None:
+                raise ValueError(f"GUI already exists in the desired location: {location}")
+
+            if not isinstance(gui, EdgeWindow):
+                ew = EdgeWindow(
+                    figure=self,
+                    size=size,
+                    location=location,
+                    title=title,
+                    update_call=_gui_func,
+                    window_flags=window_flags
+                )
+                window_location = location
+            else:
+                ew = _gui_func
+                window_location = location
+
+            self.guis[window_location] = ew
+
+            self._fpl_reset_layout()
+
+            return _gui_func
+
         if not isinstance(gui, EdgeWindow):
-            raise TypeError(
-                f"GUI must be of type: {EdgeWindow} you have passed a {type(gui)}"
-            )
+            return decorator
 
-        location = gui.location
-
-        if location not in GUI_EDGES:
-            raise ValueError(
-                f"GUI does not have a valid location, valid locations are: {GUI_EDGES}, you have passed: {location}"
-            )
-
-        if self.guis[location] is not None:
-            raise ValueError(f"GUI already exists in the desired location: {location}")
-
-        self.guis[location] = gui
-
-        self._fpl_reset_layout()
+        decorator(gui)
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
