@@ -244,6 +244,11 @@ class ImguiFigure(Figure):
         """
 
         def decorator(_gui: EdgeWindow | Callable):
+            if not callable(_gui) and not isinstance(_gui, EdgeWindow):
+                raise TypeError(
+                    "figure.add_gui() must be used as a decorator, or `gui` must be an `EdgeWindow` instance"
+                )
+
             if location not in GUI_EDGES:
                 raise ValueError(
                     f"GUI does not have a valid location, valid locations are: {GUI_EDGES}, you have passed: {location}"
@@ -280,12 +285,41 @@ class ImguiFigure(Figure):
             # return function being decorated
             return _gui
 
-        if not isinstance(gui, EdgeWindow):
-            # if decorating
+        if gui is None:
+            # assume decorating
             return decorator
 
-        # if not decorating
+        # EdgeWindow instance passed
         decorator(gui)
+
+    def remove_gui(self, location: str) -> EdgeWindow:
+        """
+        Remove an imgui UI
+
+        Parameters
+        ----------
+        location: str
+            "right" | "bottom"
+
+        Returns
+        -------
+        EdgeWindow | Callable
+            The removed EdgeWindow instance
+
+        """
+
+        if location not in GUI_EDGES:
+            raise ValueError(
+                f"location not valid, valid locations are: {GUI_EDGES}, you have passed: {location}"
+            )
+
+        gui = self.guis.pop(location)
+
+        # reset to None for this location
+        self.guis[location] = None
+
+        # return EdgeWindow instance, it can be added again later
+        return gui
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
