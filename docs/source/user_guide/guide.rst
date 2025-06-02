@@ -667,28 +667,61 @@ There are several spaces to consider when using ``fastplotlib``:
 
 For more information on the various spaces used by rendering engines please see this `article <https://learnopengl.com/Getting-started/Coordinate-Systems>`_
 
-Using ``fastplotlib`` in an interactive shell
----------------------------------------------
+JupyterLab and IPython
+----------------------
 
-There are multiple ways to use ``fastplotlib`` in interactive shells, such as ipython.
+In ``jupyter lab`` you have the option to embed ``Figures`` in regular output cells, on the side with ``sidecar``,
+or show figures in separate Qt windows. Note: Once you have selected a display mode, we do not recommend switching to
+a different display mode. Restart the kernel to reliably choose a different display mode. By default, fastplotlib
+figures will be embedded in the notebook cell's output.
 
-1) Jupyter
+The `quickstart example notebook <https://github.com/fastplotlib/fastplotlib/blob/main/examples/notebooks/quickstart.ipynb>`_
+is also a great place to start.
 
-On ``jupyter lab`` the jupyter backend (i.e. ``jupyter_rfb``) is normally selected. This works via
-client-server rendering. Images generated on the server are streamed to the client (Jupyter) via a jpeg byte stream.
-Events (such as mouse or keyboard events) are then streamed in the opposite direction prompting new images to be generated
-by the server if necessary. This remote-frame-buffer approach makes the rendering process very fast. ``fastplotlib`` viusalizations
-can be displayed in cell output or on the side using ``sidecar``.
+Notebooks and remote rendering
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-A Qt backend can also optionally be used as well. If ``%gui qt`` is selected before importing ``fastplotlib`` then this backend
-will be used instead.
+To display the ``Figure`` in the notebook output,  the ``fig.show()`` call must be the last line in the code cell.  Or
+you can use ipython's display call: ``display(fig.show())``.
 
-Lastly, users can also force using ``glfw`` by specifying this as an argument when instantiating a ``Figure`` (i.e. ``Figure(canvas="gflw"``).
+To display the figure on the side: ``fig.show(sidecar=True)``
 
-.. note::
-    Do not mix between gui backends. For example, if you start the notebook using Qt, do not attempt to force using another backend such
-    as ``jupyter_rfb`` later.
+You can make use of all `ipywidget layout <https://ipywidgets.readthedocs.io/en/latest/examples/Widget%20Layout.html>`_
+options to display multiple figures::
 
-2) IPython
+    from ipywidgets import VBox, HBox
 
-Users can select between using a Qt backend or gflw using the same methods as above.
+    # stack figures vertically or horizontally
+    VBox([fig1.show(), fig2.show()])
+
+Again the ``VBox([...])`` call must be the last line in the code cell, or you can use ``display(VBox([...]))``
+
+You can combine ipywidget layouting just like any other ipywidget::
+
+    # display a figure on top of two figures laid out horizontally
+
+    VBox([
+        fig1.show(),
+        HBox([fig2.show(), fig3.show()])
+    ])
+
+Embedded figures will also render if you're using the notebook from a remote computer since rendering is done on the
+server side and the client only receives a jpeg stream of rendered frames. This allows you to visualize very large
+datasets on remote servers since the rendering is done remotely and you do not transfer any of the raw data to the
+client.
+
+You can create dashboards or webapps with ``fastplotlib`` by running the notebook with
+`voila <https://github.com/voila-dashboards/voila>`_. This is great for sharing visualizations of very large datasets
+that are too large to share over the internet, and creating fast interactive applications for the analysis of very
+large datasets.
+
+Qt windows in jupyter and IPython
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Qt windows can also be used for displaying fastplotlib figures in an interactive jupyterlab or IPython. You must run
+``%gui qt`` **before** importing ``fastplotlib`` (or ``wgpu``). This would typically be done at the very top of your
+notebook.
+
+Note that this only works if you are using jupyterlab or ipython locally, this cannot be used for remote rendering.
+You can forward windows (ex: X11 forwarding) but this is much slower than the remote rendering described in the
+previous section.
