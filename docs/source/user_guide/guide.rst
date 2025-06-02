@@ -671,8 +671,8 @@ JupyterLab and IPython
 ----------------------
 
 In ``jupyter lab`` you have the option to embed ``Figures`` in regular output cells, on the side with ``sidecar``,
-or show figures in separate Qt windows. Note that once you have selected a display mode we do not recommend switching to
-a different display mode, restart the kernel to reliably choose a different display mode. By default fastplotlib
+or show figures in separate Qt windows. Note: Once you have selected a display mode, we do not recommend switching to
+a different display mode. Restart the kernel to reliably choose a different display mode. By default, fastplotlib
 figures will be embedded in the notebook cell's output.
 
 The `quickstart example notebook <https://github.com/fastplotlib/fastplotlib/blob/main/examples/notebooks/quickstart.ipynb>`_
