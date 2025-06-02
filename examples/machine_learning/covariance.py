@@ -14,7 +14,7 @@ from sklearn import datasets
 from sklearn.preprocessing import StandardScaler
 
 # load faces dataset
-faces = datasets.fetch_olivetti_faces()
+faces = datasets.fetch_olivetti_faces(n_retries=5, delay=20)
 data = faces["data"]
 
 # sort the data so it's easier to understand the covariance matrix
