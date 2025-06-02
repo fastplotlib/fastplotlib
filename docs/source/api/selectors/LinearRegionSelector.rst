@@ -52,6 +52,4 @@ Methods
     LinearRegionSelector.get_selected_indices
     LinearRegionSelector.remove_event_handler
     LinearRegionSelector.rotate
-    LinearRegionSelector.share_property
-    LinearRegionSelector.unshare_property
 
