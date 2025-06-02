@@ -1,3 +1,6 @@
+from __future__ import annotations
+from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 from typing import Literal, Iterable
 
@@ -151,12 +154,13 @@ class ImguiFigure(Figure):
         return imgui.get_draw_data()
 
     def add_gui(
-            self,
-            gui: EdgeWindow = None,
-            location: Literal["right", "bottom"] = "right",
-            title="GUI Window",
-            size: int = 200,
-            window_flags: imgui.WindowFlags_ = imgui.WindowFlags_.no_collapse | imgui.WindowFlags_.no_resize,
+        self,
+        gui: EdgeWindow = None,
+        location: Literal["right", "bottom"] = "right",
+        title="GUI Window",
+        size: int = 200,
+        window_flags: imgui.WindowFlags_ = imgui.WindowFlags_.no_collapse
+        | imgui.WindowFlags_.no_resize,
     ):
         """
         Add a GUI to the Figure. GUIs can be added to the left or bottom edge.
@@ -175,16 +179,16 @@ class ImguiFigure(Figure):
             A GUI EdgeWindow instance, if not decorating
 
         location: str, "right" | "bottom"
-            window location, ignored if not decorating
+            window location, used if decorating
 
         title: str
-            window title, ignored if not decorating
+            window title, used if decorating
 
         size: int
-            width or height of the window depending on location, ignored if not decorating
+            width or height of the window depending on location, used if decorating
 
         window_flags: imgui.WindowFlags_, default imgui.WindowFlags_.no_collapse | imgui.WindowFlags_.no_resize,
-            imgui.WindowFlags_ enum, ignored if not decorating
+            imgui.WindowFlags_ enum, used if decorating
 
         Examples
         --------
@@ -200,9 +204,9 @@ class ImguiFigure(Figure):
 
 
             @figure.add_gui(location="right", title="yay", size=100)
-            def gui():
+            def gui(fig): # figure is the only argument, so you can use it within the local scope of the GUI function
                 if imgui.button("reset data"):
-                    figure[0, 0].graphics[0].data[:, 1] = np.random.rand(100)
+                    fig[0, 0].graphics[0].data[:, 1] = np.random.rand(100)
 
             figure.show(maintain_aspect=False)
 
@@ -233,16 +237,22 @@ class ImguiFigure(Figure):
                         self._amplitude = amplitude
                         self.compute_data()
 
+            # create GUI instance and add to the figure
+            gui = GUI(figure)
+            figure.add_gui(gui)
+
         """
 
-        def decorator(_gui_func):
+        def decorator(_gui: EdgeWindow | Callable):
             if location not in GUI_EDGES:
                 raise ValueError(
                     f"GUI does not have a valid location, valid locations are: {GUI_EDGES}, you have passed: {location}"
                 )
 
             if self.guis[location] is not None:
-                raise ValueError(f"GUI already exists in the desired location: {location}")
+                raise ValueError(
+                    f"GUI already exists in the desired location: {location}"
+                )
 
             if not isinstance(gui, EdgeWindow):
                 # being used as a decorator, create an EdgeWindow
@@ -251,12 +261,14 @@ class ImguiFigure(Figure):
                     size=size,
                     location=location,
                     title=title,
-                    update_call=_gui_func,
-                    window_flags=window_flags
+                    update_call=partial(
+                        _gui, self
+                    ),  # provide figure instance in scope of the gui function
+                    window_flags=window_flags,
                 )
                 window_location = location  # creating this reference is required
             else:
-                edge_window = _gui_func  # creating this reference is required
+                edge_window = _gui  # creating this reference is required
                 window_location = location  # creating this reference is required
 
             # store the gui
@@ -266,14 +278,14 @@ class ImguiFigure(Figure):
             self._fpl_reset_layout()
 
             # return function being decorated
-            return _gui_func
+            return _gui
 
         if not isinstance(gui, EdgeWindow):
             # if decorating
             return decorator
 
         # if not decorating
-        decorator(gui)
+        decorator(gui, self)
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """

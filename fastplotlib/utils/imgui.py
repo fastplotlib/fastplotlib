@@ -20,6 +20,7 @@ class ChangeFlag:
         print(changed.value)
 
     """
+
     def __init__(self, value: bool):
         self._value = bool(value)
 

@@ -31,6 +31,7 @@ class BaseGUI:
 
 class Window(BaseGUI):
     """Base class for imgui windows drawn within Figures"""
+
     pass
 
 
