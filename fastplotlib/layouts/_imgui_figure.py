@@ -285,7 +285,7 @@ class ImguiFigure(Figure):
             return decorator
 
         # if not decorating
-        decorator(gui, self)
+        decorator(gui)
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
