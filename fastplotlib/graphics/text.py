@@ -66,7 +66,7 @@ class TextGraphic(Graphic):
             * Horizontal values: "left", "center", "right"
 
         **kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
         """
 
