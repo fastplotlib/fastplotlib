@@ -274,7 +274,7 @@ class ImguiFigure(Figure):
                 window_location = location  # creating this reference is required
             else:
                 edge_window = _gui  # creating this reference is required
-                window_location = location  # creating this reference is required
+                window_location = _gui.location  # creating this reference is required
 
             # store the gui
             self.guis[window_location] = edge_window
