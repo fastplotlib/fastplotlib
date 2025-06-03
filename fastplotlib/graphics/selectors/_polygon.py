@@ -98,7 +98,7 @@ class PolygonSelector(BaseSelector):
         self._plot_area.controller.enabled = False
 
         # click to add new segment
-        self._plot_area.renderer.add_event_handler(self._finish_segment, "click")
+        self._plot_area.renderer.add_event_handler(self._start_finish_segment, "click")
 
         # pointer move to change endpoint of segment
         self._plot_area.renderer.add_event_handler(
@@ -109,7 +109,7 @@ class PolygonSelector(BaseSelector):
 
         self.position_z = len(self._plot_area) + 10
 
-    def _finish_segment(self, ev):
+    def _start_finish_segment(self, ev):
         """After click event, adds a new line segment"""
 
         # Don't add two points at the same spot
@@ -126,7 +126,10 @@ class PolygonSelector(BaseSelector):
         )
 
         # line with same position for start and end until mouse moves
-        data = np.vstack([self.selection, position])
+        if len(self.selection) == 0:
+            data = np.vstack([self.selection, position, position])
+        else:
+            data = np.vstack([self.selection, position])
 
         self._selection.set_value(self, data)
 
@@ -159,7 +162,7 @@ class PolygonSelector(BaseSelector):
         self._plot_area.controller.enabled = True
 
         handlers = {
-            self._finish_segment: "click",
+            self._start_finish_segment: "click",
             self._move_segment_endpoint: "pointer_move",
             self._finish_polygon: "double_click",
         }
