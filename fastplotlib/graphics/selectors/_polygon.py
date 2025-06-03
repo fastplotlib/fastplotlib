@@ -1,3 +1,4 @@
+import warnings
 from typing import *
 
 from numbers import Real
@@ -92,6 +93,129 @@ class PolygonSelector(BaseSelector):
         self.edge_width = edge_thickness
         self.limits = limits
 
+    def get_selected_data(
+        self, graphic: Graphic = None, mode: str = "full"
+    ) -> Union[np.ndarray, List[np.ndarray]]:
+        """
+        Get the ``Graphic`` data bounded by the current selection.
+        Returns a view of the data array.
+
+        If the ``Graphic`` is a collection, such as a ``LineStack``, it returns a list of views of the full array.
+        Can be performed on the ``parent`` Graphic or on another graphic by passing to the ``graphic`` arg.
+
+        Parameters
+        ----------
+        graphic: Graphic, optional, default ``None``
+            if provided, returns the data selection from this graphic instead of the graphic set as ``parent``
+        mode: str, default 'full'
+            One of 'full', 'partial', or 'ignore'. Indicates how selected data should be returned based on the
+            selectors position over the graphic. Only used for ``LineGraphic``, ``LineCollection``, and ``LineStack``
+            | If 'full', will return all data bounded by the x and y limits of the selector even if partial indices
+            along one axis are not fully covered by the selector.
+            | If 'partial' will return only the data that is bounded by the selector, missing indices not bounded by the
+            selector will be set to NaNs
+            | If 'ignore', will only return data for graphics that have indices completely bounded by the selector
+
+        Returns
+        -------
+        np.ndarray or List[np.ndarray]
+            view or list of views of the full array, returns empty array if selection is empty
+        """
+        source = self._get_source(graphic)
+        ixs = self.get_selected_indices(source)
+
+        # do not need to check for mode for images, because the selector is bounded by the image shape
+        # will always be `full`
+        if "Image" in source.__class__.__name__:
+            return source.data[ixs[:, 1], ixs[:, 0]]
+
+        if mode not in ["full", "partial", "ignore"]:
+            raise ValueError(
+                f"`mode` must be one of 'full', 'partial', or 'ignore', you have passed {mode}"
+            )
+        if "Line" in source.__class__.__name__:
+            if isinstance(source, GraphicCollection):
+                data_selections: List[np.ndarray] = list()
+
+                for i, g in enumerate(source.graphics):
+                    # want to keep same length as the original line collection
+                    if ixs[i].size == 0:
+                        data_selections.append(
+                            np.array([], dtype=np.float32).reshape(0, 3)
+                        )
+                    else:
+                        # s gives entire slice of data along the x
+                        s = slice(
+                            ixs[i][0], ixs[i][-1] + 1
+                        )  # add 1 because these are direct indices
+                        # slices n_datapoints dim
+
+                        # calculate missing ixs using set difference
+                        # then calculate shift
+                        missing_ixs = (
+                            np.setdiff1d(np.arange(ixs[i][0], ixs[i][-1] + 1), ixs[i])
+                            - ixs[i][0]
+                        )
+
+                        match mode:
+                            # take all ixs, ignore missing
+                            case "full":
+                                data_selections.append(g.data[s])
+                            # set missing ixs data to NaNs
+                            case "partial":
+                                if len(missing_ixs) > 0:
+                                    data = g.data[s].copy()
+                                    data[missing_ixs] = np.nan
+                                    data_selections.append(data)
+                                else:
+                                    data_selections.append(g.data[s])
+                            # ignore lines that do not have full ixs to start
+                            case "ignore":
+                                if len(missing_ixs) > 0:
+                                    data_selections.append(
+                                        np.array([], dtype=np.float32).reshape(0, 3)
+                                    )
+                                else:
+                                    data_selections.append(g.data[s])
+                return data_selections
+            else:  # for lines
+                if ixs.size == 0:
+                    # empty selection
+                    return np.array([], dtype=np.float32).reshape(0, 3)
+
+                s = slice(
+                    ixs[0], ixs[-1] + 1
+                )  # add 1 to end because these are direct indices
+                # slices n_datapoints dim
+                # slice with min, max is faster than using all the indices
+
+                # get missing ixs
+                missing_ixs = np.setdiff1d(np.arange(ixs[0], ixs[-1] + 1), ixs) - ixs[0]
+
+                match mode:
+                    # return all, do not care about missing
+                    case "full":
+                        return source.data[s]
+                    # set missing to NaNs
+                    case "partial":
+                        if len(missing_ixs) > 0:
+                            data = source.data[s].copy()
+                            data[missing_ixs] = np.nan
+                            return data
+                        else:
+                            return source.data[s]
+                    # missing means nothing will be returned even if selector is partially over data
+                    # warn the user and return empty
+                    case "ignore":
+                        if len(missing_ixs) > 0:
+                            warnings.warn(
+                                "You have selected 'ignore' mode. Selected graphic has incomplete indices. "
+                                "Move the selector or change the mode to one of `partial` or `full`."
+                            )
+                            return np.array([], dtype=np.float32)
+                        else:
+                            return source.data[s]
+
     def get_selected_indices(
         self, graphic: Graphic = None
     ) -> np.ndarray | tuple[np.ndarray]:
@@ -181,6 +305,8 @@ class PolygonSelector(BaseSelector):
         self._plot_area.renderer.add_event_handler(
             self._move_segment_endpoint, "pointer_move"
         )
+
+        self.__.add_event_handler(pfunc_down, "pointer_down")
 
         self.position_z = len(self._plot_area) + 10
 
