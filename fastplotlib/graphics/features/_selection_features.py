@@ -428,10 +428,12 @@ class PolygonSelectionFeature(GraphicFeature):
             geometry.indices = gfx.Buffer(arr)
 
         geometry.positions.data[: len(value)] = value
+        geometry.positions.data[len(value)] = value[-1] if len(value) else (0, 0, 0)
         geometry.positions.draw_range = 0, len(value)
         geometry.positions.update_full()
 
         geometry.indices.data[: len(indices)] = indices
+        geometry.indices.data[len(indices)] = 0
         geometry.indices.draw_range = 0, len(indices)
         geometry.indices.update_full()
 
