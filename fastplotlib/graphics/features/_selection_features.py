@@ -403,10 +403,9 @@ class PolygonSelectionFeature(GraphicFeature):
                 "Selection must be an array, tuple, list, or sequence of the shape Nx3."
             )
 
-        # # clip values if they are beyond the limits
-        # value[:, 0] = value[:2].clip(self._limits[0], self._limits[1])
-        # # clip y
-        # value[:, 1] = value[2:].clip(self._limits[2], self._limits[3])
+        # clip values if they are beyond the limits
+        value[:, 0] = value[:, 0].clip(self._limits[0], self._limits[1])
+        value[:, 1] = value[:, 1].clip(self._limits[2], self._limits[3])
 
         self._value = value
 

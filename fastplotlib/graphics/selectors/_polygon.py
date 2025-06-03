@@ -90,6 +90,7 @@ class PolygonSelector(BaseSelector):
 
         self.edge_color = edge_color
         self.edge_width = edge_thickness
+        self.limits = limits
 
     def get_selected_indices(
         self, graphic: Graphic = None
