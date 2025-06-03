@@ -7,7 +7,12 @@ import pygfx
 from ..utils import parse_cmap_values
 from ._collection_base import CollectionIndexer, GraphicCollection, CollectionFeature
 from .line import LineGraphic
-from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector, PolygonSelector
+from .selectors import (
+    LinearRegionSelector,
+    LinearSelector,
+    RectangleSelector,
+    PolygonSelector,
+)
 
 
 class _LineCollectionProperties:
@@ -198,19 +203,19 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
                 raise ValueError(
-                    f"len(thickness) != len(data)\n" f"{len(thickness)} != {len(data)}"
+                    f"len(thickness) != len(data)\n{len(thickness)} != {len(data)}"
                 )
 
         if names is not None:
             if len(names) != len(data):
                 raise ValueError(
-                    f"len(names) != len(data)\n" f"{len(names)} != {len(data)}"
+                    f"len(names) != len(data)\n{len(names)} != {len(data)}"
                 )
 
         if metadatas is not None:
             if len(metadatas) != len(data):
                 raise ValueError(
-                    f"len(metadata) != len(data)\n" f"{len(metadatas)} != {len(data)}"
+                    f"len(metadata) != len(data)\n{len(metadatas)} != {len(data)}"
                 )
 
         if kwargs_lines is not None:
@@ -502,12 +507,24 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         """
         bbox = self.world_object.get_world_bounding_box()
 
+        xdata = np.array(self.data[:, 0])
+        xmin, xmax = (np.nanmin(xdata), np.nanmax(xdata))
+
+        ydata = np.array(self.data[:, 1])
+        ymin = np.floor(ydata.min()).astype(int)
+
+        ymax = np.ptp(bbox[:, 1])
+
+        if selection is None:
+            selection = []
+
+        limits = (xmin, xmax, ymin - (ymax * 1.5 - ymax), ymax * 1.5)
 
         if selection is not None:
             selection = []  # TODO: fill selection
 
-
         selector = PolygonSelector(
+            limits,
             parent=self,
             **kwargs,
         )

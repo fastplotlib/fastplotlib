@@ -5,7 +5,12 @@ import pygfx
 
 from ..utils import quick_min_max
 from ._base import Graphic
-from .selectors import LinearSelector, LinearRegionSelector, RectangleSelector, PolygonSelector
+from .selectors import (
+    LinearSelector,
+    LinearRegionSelector,
+    RectangleSelector,
+    PolygonSelector,
+)
 from .features import (
     TextureArray,
     ImageCmap,
@@ -169,7 +174,6 @@ class ImageGraphic(Graphic):
         # iterate through each texture chunk and create
         # an _ImageTIle, offset the tile using the data indices
         for texture, chunk_index, data_slice in self._data:
-
             # create an ImageTile using the texture for this chunk
             img = _ImageTile(
                 geometry=pygfx.Geometry(grid=texture),
@@ -469,6 +473,7 @@ class ImageGraphic(Graphic):
         limits = (0, self._data.value.shape[1], 0, self._data.value.shape[0])
 
         selector = PolygonSelector(
+            limits,
             fill_color=fill_color,
             parent=self,
             **kwargs,

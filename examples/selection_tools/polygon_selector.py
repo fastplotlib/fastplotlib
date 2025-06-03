@@ -1,8 +1,8 @@
 """
-Lasso Selectors
-===============
+Polygon Selectors
+=================
 
-Example showing how to use a `PolygonSelector` with line collections
+Example showing how to use a `PolygonSelector` (a.k.a. lasso selector) with line collections
 """
 
 # test_example = false
@@ -39,7 +39,7 @@ pos_xy = np.vstack(circles)
 line_collection = figure[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
 
 # add polygon selector to image graphic
-polygon_selector = line_collection.add_polygon_selector()
+polygon_selector = line_collection.add_polygon_selector(fill_color="#ff00ff22", edge_color="#FFF", vertex_color="#FFF")
 
 
 # add event handler to highlight selected indices

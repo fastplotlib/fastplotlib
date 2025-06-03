@@ -5,7 +5,12 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector, PolygonSelector
+from .selectors import (
+    LinearRegionSelector,
+    LinearSelector,
+    RectangleSelector,
+    PolygonSelector,
+)
 from .features import (
     Thickness,
     VertexPositions,
@@ -245,7 +250,7 @@ class LineGraphic(PositionsGraphic):
         self,
         selection: tuple[float, float, float, float] = None,
         **kwargs,
-    ) ->  RectangleSelector:
+    ) -> RectangleSelector:
         """
         Add a :class:`.RectangleSelector`.
 
@@ -304,7 +309,25 @@ class LineGraphic(PositionsGraphic):
         selection: (float, float, float, float), optional
             initial (xmin, xmax, ymin, ymax) of the selection
         """
+
+        # remove any nans
+        data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
+
+        x_axis_vals = data[:, 0]
+        y_axis_vals = data[:, 1]
+
+        ymin = np.floor(y_axis_vals.min()).astype(int)
+        ymax = np.ceil(y_axis_vals.max()).astype(int)
+
+        # default selection is 25% of the image
+        if selection is None:
+            selection = []
+
+        # min/max limits
+        limits = (x_axis_vals[0], x_axis_vals[-1], ymin * 1.5, ymax * 1.5)
+
         selector = PolygonSelector(
+            limits,
             parent=self,
             **kwargs,
         )
