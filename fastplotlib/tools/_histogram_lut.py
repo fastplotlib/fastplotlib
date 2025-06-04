@@ -6,7 +6,7 @@ import numpy as np
 import pygfx
 
 from ..utils import subsample_array
-from ..graphics import LineGraphic, ImageGraphic, TextGraphic
+from ..graphics import LineGraphic, ImageGraphic, ImageVolumeGraphic, TextGraphic
 from ..graphics.utils import pause_events
 from ..graphics._base import Graphic
 from ..graphics.selectors import LinearRegionSelector
@@ -135,7 +135,7 @@ class HistogramLUTTool(Graphic):
         self.image_graphic.add_event_handler(self._image_cmap_handler, *ig_events)
 
         # colorbar for grayscale images
-        if self.image_graphic.data.value.ndim != 3:
+        if self.image_graphic.cmap is not None:
             self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
             self._colorbar.add_event_handler(self._open_cmap_picker, "click")
 

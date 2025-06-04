@@ -201,14 +201,15 @@ class ImageGraphic(Graphic):
         self._data[:] = data
 
     @property
-    def cmap(self) -> str:
+    def cmap(self) -> str | None:
         """
-        Get or set the colormap
+        Get or set the colormap for grayscale images. Returns ``None`` if image is RGB(A).
 
         For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
         """
         if self.data.value.ndim > 2:
-            raise AttributeError("RGB(A) images do not have a colormap property")
+            return None
+
         return self._cmap.value
 
     @cmap.setter
