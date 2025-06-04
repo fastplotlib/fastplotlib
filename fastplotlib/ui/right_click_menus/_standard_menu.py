@@ -31,7 +31,7 @@ class StandardRightClickMenu(Popup):
         # whether the right click menu is currently open or not
         self.is_open: bool = False
 
-    def get_subplot(self) -> PlotArea | bool:
+    def get_subplot(self) -> PlotArea | bool | None:
         """get the subplot that a click occurred in"""
         if self._last_right_click_pos is None:
             return False
@@ -39,6 +39,9 @@ class StandardRightClickMenu(Popup):
         for subplot in self._figure:
             if subplot.viewport.is_inside(*self._last_right_click_pos):
                 return subplot
+
+        # not inside a subplot
+        return False
 
     def cleanup(self):
         """called when the popup disappears"""
@@ -79,6 +82,11 @@ class StandardRightClickMenu(Popup):
                 # text label at the top of the menu
                 imgui.text(f"subplot: {name}")
                 imgui.separator()
+
+            _, show_fps = imgui.menu_item(
+                "Show fps", "", self.get_subplot().get_figure().imgui_show_fps
+            )
+            self.get_subplot().get_figure().imgui_show_fps = show_fps
 
             # autoscale, center, maintain aspect
             if imgui.menu_item(f"Autoscale", "", False)[0]:
@@ -172,6 +180,21 @@ class StandardRightClickMenu(Popup):
                         # menu item was clicked and the desired controller isn't the current one
                         self.get_subplot().controller = name
 
+                imgui.end_menu()
+
+            # renderer blend modes
+            if imgui.begin_menu("Blend mode"):
+                for blend_mode in sorted(
+                    self.get_subplot().renderer._blenders_available.keys()
+                ):
+                    clicked, _ = imgui.menu_item(
+                        label=blend_mode,
+                        shortcut="",
+                        p_selected=self.get_subplot().renderer.blend_mode == blend_mode,
+                    )
+
+                    if clicked:
+                        self.get_subplot().renderer.blend_mode = blend_mode
                 imgui.end_menu()
 
             imgui.end_popup()

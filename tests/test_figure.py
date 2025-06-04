@@ -170,3 +170,93 @@ def test_set_controllers_from_existing_controllers():
     assert fig[0, 0].camera is cameras[0][0]
 
     assert fig[0, 1].camera.fov == 50
+
+
+def test_subplot_names():
+    # names must be unique
+    with pytest.raises(ValueError):
+        fpl.Figure(
+            shape=(2, 3),
+            names=["1", "2", "3", "4", "4", "5"]
+        )
+
+    with pytest.raises(ValueError):
+        fpl.Figure(
+            shape=(2, 3),
+            names=["1", "2", None, "4", "4", "5"]
+        )
+
+    with pytest.raises(ValueError):
+        fpl.Figure(
+            shape=(2, 3),
+            names=[None, "2", None, "4", "4", "5"]
+        )
+
+    # len(names) <= n_subplots
+    fig = fpl.Figure(
+        shape=(2, 3),
+        names=["1", "2", "3", "4", "5", "6"]
+    )
+
+    assert fig[0, 0].name == "1"
+    assert fig[0, 1].name == "2"
+    assert fig[0, 2].name == "3"
+    assert fig[1, 0].name == "4"
+    assert fig[1, 1].name == "5"
+    assert fig[1, 2].name == "6"
+
+    fig = fpl.Figure(
+        shape=(2, 3),
+        names=["1", "2", "3", None, "5", "6"]
+    )
+
+    assert fig[0, 0].name == "1"
+    assert fig[0, 1].name == "2"
+    assert fig[0, 2].name == "3"
+    assert fig[1, 0].name is None
+    assert fig[1, 1].name == "5"
+    assert fig[1, 2].name == "6"
+
+    fig = fpl.Figure(
+        shape=(2, 3),
+        names=["1", "2", "3", None, "5", None]
+    )
+
+    assert fig[0, 0].name == "1"
+    assert fig[0, 1].name == "2"
+    assert fig[0, 2].name == "3"
+    assert fig[1, 0].name is None
+    assert fig[1, 1].name == "5"
+    assert fig[1, 2].name is None
+
+    # if fewer subplot names are given than n_sublots, pad with Nones
+    fig = fpl.Figure(
+        shape=(2, 3),
+        names=["1", "2", "3", "4"]
+    )
+
+    assert fig[0, 0].name == "1"
+    assert fig[0, 1].name == "2"
+    assert fig[0, 2].name == "3"
+    assert fig[1, 0].name == "4"
+    assert fig[1, 1].name is None
+    assert fig[1, 2].name is None
+
+    # raise if len(names) > n_subplots
+    with pytest.raises(ValueError):
+        fpl.Figure(
+            shape=(2, 3),
+            names=["1", "2", "3", "4", "5", "6", "7"]
+        )
+
+    with pytest.raises(ValueError):
+        fpl.Figure(
+            shape=(2, 3),
+            names=["1", "2", "3", "4", None, "6", "7"]
+        )
+
+    with pytest.raises(ValueError):
+        fpl.Figure(
+            shape=(2, 3),
+            names=["1", None, "3", "4", None, "6", "7"]
+        )

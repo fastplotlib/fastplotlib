@@ -33,7 +33,7 @@ class ScatterGraphic(PositionsGraphic):
         cmap: str = None,
         cmap_transform: np.ndarray = None,
         isolated_buffer: bool = True,
-        sizes: float | np.ndarray | Iterable[float] = 1,
+        sizes: float | np.ndarray | Sequence[float] = 1,
         uniform_size: bool = False,
         size_space: str = "screen",
         **kwargs,
@@ -44,42 +44,44 @@ class ScatterGraphic(PositionsGraphic):
         Parameters
         ----------
         data: array-like
-            Scatter data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
+            Scatter data to plot, Can provide 2D, or a 3D data. 2D data must be of shape [n_points, 2].
+            3D data must be of shape [n_points, 3]
 
-        colors: str, array, or iterable, default "w"
-            specify colors as a single human readable string, a single RGBA array,
-            or an iterable of strings or RGBA arrays
+        colors: str, array, tuple, list, Sequence, default "w"
+            specify colors as a single human-readable string, a single RGBA array,
+            or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
         uniform_color: bool, default False
-            if True, uses a uniform buffer for the scatter point colors,
-            basically saves GPU VRAM when the entire line has a single color
+            if True, uses a uniform buffer for the scatter point colors. Useful if you need to
+            save GPU VRAM when all points have the same color.
 
         alpha: float, optional, default 1.0
             alpha value for the colors
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
-            overrides any argument passed to "colors"
+            overrides any argument passed to "colors".  For supported colormaps see the
+            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
         cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         isolated_buffer: bool, default True
             whether the buffers should be isolated from the user input array.
-            Generally always ``True``, ``False`` is for rare advanced use.
+            Generally always ``True``, ``False`` is for rare advanced use if you have large arrays.
 
         sizes: float or iterable of float, optional, default 1.0
-            size of the scatter points
+            sizes of the scatter points
 
         uniform_size: bool, default False
-            if True, uses a uniform buffer for the scatter point sizes,
-            basically saves GPU VRAM when all scatter points are the same size
+            if True, uses a uniform buffer for the scatter point sizes. Useful if you need to
+            save GPU VRAM when all points have the same size.
 
         size_space: str, default "screen"
             coordinate space in which the size is expressed ("screen", "world", "model")
 
         kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
         """
 

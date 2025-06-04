@@ -19,7 +19,7 @@ class PositionsGraphic(Graphic):
 
     @property
     def data(self) -> VertexPositions:
-        """Get or set the vertex positions data"""
+        """Get or set the graphic's data"""
         return self._data
 
     @data.setter
@@ -28,7 +28,7 @@ class PositionsGraphic(Graphic):
 
     @property
     def colors(self) -> VertexColors | pygfx.Color:
-        """Get or set the colors data"""
+        """Get or set the colors"""
         if isinstance(self._colors, VertexColors):
             return self._colors
 
@@ -45,7 +45,11 @@ class PositionsGraphic(Graphic):
 
     @property
     def cmap(self) -> VertexCmap:
-        """Control the cmap, cmap transform, or cmap alpha"""
+        """
+        Control the cmap, cmap transform, or cmap alpha
+
+        For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+        """
         return self._cmap
 
     @cmap.setter
@@ -149,53 +153,3 @@ class PositionsGraphic(Graphic):
 
         self._size_space = SizeSpace(size_space)
         super().__init__(*args, **kwargs)
-
-    def unshare_property(self, property: str):
-        """unshare a shared property. Experimental and untested!"""
-        if not isinstance(property, str):
-            raise TypeError
-
-        f = getattr(self, property)
-        if f.shared == 0:
-            raise BufferError("Cannot detach an independent buffer")
-
-        if property == "colors" and isinstance(property, VertexColors):
-            self._colors._buffer = pygfx.Buffer(self._colors.value.copy())
-            self.world_object.geometry.colors = self._colors.buffer
-            self._colors._shared -= 1
-
-        elif property == "data":
-            self._data._buffer = pygfx.Buffer(self._data.value.copy())
-            self.world_object.geometry.positions = self._data.buffer
-            self._data._shared -= 1
-
-        elif property == "sizes":
-            self._sizes._buffer = pygfx.Buffer(self._sizes.value.copy())
-            self.world_object.geometry.positions = self._sizes.buffer
-            self._sizes._shared -= 1
-
-    def share_property(
-        self, property: VertexPositions | VertexColors | PointsSizesFeature
-    ):
-        """share a property from another graphic. Experimental and untested!"""
-        if isinstance(property, VertexPositions):
-            # TODO: check if this causes a memory leak
-            self._data._shared -= 1
-
-            self._data = property
-            self._data._shared += 1
-            self.world_object.geometry.positions = self._data.buffer
-
-        elif isinstance(property, VertexColors):
-            self._colors._shared -= 1
-
-            self._colors = property
-            self._colors._shared += 1
-            self.world_object.geometry.colors = self._colors.buffer
-
-        elif isinstance(property, PointsSizesFeature):
-            self._sizes._shared -= 1
-
-            self._sizes = property
-            self._sizes._shared += 1
-            self.world_object.geometry.sizes = self._sizes.buffer

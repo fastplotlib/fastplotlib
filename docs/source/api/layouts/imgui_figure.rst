@@ -29,6 +29,8 @@ Properties
     ImguiFigure.names
     ImguiFigure.renderer
     ImguiFigure.shape
+    ImguiFigure.show_tooltips
+    ImguiFigure.tooltip_manager
 
 Methods
 ~~~~~~~

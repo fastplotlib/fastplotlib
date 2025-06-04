@@ -79,9 +79,9 @@ def set_zoom_x(ev):
     if selected_data.size == 0:
         # no data selected
         zoomed_x.data[:, 1] = 0
-
-    # interpolate the y-values since y = f(x)
-    zoomed_x.data[:, 1] = interpolate(selected_data, axis=1)
+    else:
+        # interpolate the y-values since y = f(x)
+        zoomed_x.data[:, 1] = interpolate(selected_data, axis=1)
     figure[1, 0].auto_scale()
 
 
@@ -92,9 +92,9 @@ def set_zoom_y(ev):
     if selected_data.size == 0:
         # no data selected
         zoomed_y.data[:, 1] = 0
-
-    # interpolate the x values since this x = f(y)
-    zoomed_y.data[:, 1] = -interpolate(selected_data, axis=0)
+    else:
+        # interpolate the x values since this x = f(y)
+        zoomed_y.data[:, 1] = -interpolate(selected_data, axis=0)
     figure[1, 1].auto_scale()
 
 
@@ -107,8 +107,8 @@ selector_y.selection = (0, 150)
 
 figure.show(maintain_aspect=False)
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()

@@ -51,7 +51,8 @@ class GraphicMethodsMixin:
             maximum value for color scaling, estimated from data if not provided
 
         cmap: str, optional, default "plasma"
-            colormap to use to display the data
+            colormap to use to display the data. For supported colormaps see the
+            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
         interpolation: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
@@ -62,10 +63,11 @@ class GraphicMethodsMixin:
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then
             set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer.
+            If False, the input array is itself used as the buffer - useful if the
+            array is large.
 
         kwargs:
-            additional keyword arguments passed to Graphic
+            additional keyword arguments passed to :class:`.Graphic`
 
 
         """
@@ -204,11 +206,11 @@ class GraphicMethodsMixin:
         self,
         data: Any,
         thickness: float = 2.0,
-        colors: Union[str, numpy.ndarray, Iterable] = "w",
+        colors: Union[str, numpy.ndarray, Sequence] = "w",
         uniform_color: bool = False,
         alpha: float = 1.0,
         cmap: str = None,
-        cmap_transform: Union[numpy.ndarray, Iterable] = None,
+        cmap_transform: Union[numpy.ndarray, Sequence] = None,
         isolated_buffer: bool = True,
         size_space: str = "screen",
         **kwargs,
@@ -220,14 +222,17 @@ class GraphicMethodsMixin:
         Parameters
         ----------
         data: array-like
-            Line data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
+            Line data to plot. Can provide 1D, 2D, or a 3D data.
+            | If passing a 1D array, it is used to set the y-values and the x-values are generated as an integer range
+            from [0, data.size]
+            | 2D data must be of shape [n_points, 2]. 3D data must be of shape [n_points, 3]
 
         thickness: float, optional, default 2.0
             thickness of the line
 
         colors: str, array, or iterable, default "w"
             specify colors as a single human-readable string, a single RGBA array,
-            or an iterable of strings or RGBA arrays
+            or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
         uniform_color: bool, default ``False``
             if True, uses a uniform buffer for the line color,
@@ -237,17 +242,18 @@ class GraphicMethodsMixin:
             alpha value for the colors
 
         cmap: str, optional
-            apply a colormap to the line instead of assigning colors manually, this
-            overrides any argument passed to "colors"
+            Apply a colormap to the line instead of assigning colors manually, this
+            overrides any argument passed to "colors". For supported colormaps see the
+            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         size_space: str, default "screen"
-            coordinate space in which the size is expressed ("screen", "world", "model")
+            coordinate space in which the thickness is expressed ("screen", "world", "model")
 
         **kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
 
         """
@@ -374,7 +380,7 @@ class GraphicMethodsMixin:
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
         isolated_buffer: bool = True,
-        sizes: Union[float, numpy.ndarray, Iterable[float]] = 1,
+        sizes: Union[float, numpy.ndarray, Sequence[float]] = 1,
         uniform_size: bool = False,
         size_space: str = "screen",
         **kwargs,
@@ -386,42 +392,44 @@ class GraphicMethodsMixin:
         Parameters
         ----------
         data: array-like
-            Scatter data to plot, 2D must be of shape [n_points, 2], 3D must be of shape [n_points, 3]
+            Scatter data to plot, Can provide 2D, or a 3D data. 2D data must be of shape [n_points, 2].
+            3D data must be of shape [n_points, 3]
 
-        colors: str, array, or iterable, default "w"
-            specify colors as a single human readable string, a single RGBA array,
-            or an iterable of strings or RGBA arrays
+        colors: str, array, tuple, list, Sequence, default "w"
+            specify colors as a single human-readable string, a single RGBA array,
+            or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
         uniform_color: bool, default False
-            if True, uses a uniform buffer for the scatter point colors,
-            basically saves GPU VRAM when the entire line has a single color
+            if True, uses a uniform buffer for the scatter point colors. Useful if you need to
+            save GPU VRAM when all points have the same color.
 
         alpha: float, optional, default 1.0
             alpha value for the colors
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
-            overrides any argument passed to "colors"
+            overrides any argument passed to "colors".  For supported colormaps see the
+            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
         cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         isolated_buffer: bool, default True
             whether the buffers should be isolated from the user input array.
-            Generally always ``True``, ``False`` is for rare advanced use.
+            Generally always ``True``, ``False`` is for rare advanced use if you have large arrays.
 
         sizes: float or iterable of float, optional, default 1.0
-            size of the scatter points
+            sizes of the scatter points
 
         uniform_size: bool, default False
-            if True, uses a uniform buffer for the scatter point sizes,
-            basically saves GPU VRAM when all scatter points are the same size
+            if True, uses a uniform buffer for the scatter point sizes. Useful if you need to
+            save GPU VRAM when all points have the same size.
 
         size_space: str, default "screen"
             coordinate space in which the size is expressed ("screen", "world", "model")
 
         kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
 
         """
@@ -464,10 +472,10 @@ class GraphicMethodsMixin:
         font_size: float | int, default 10
             font size
 
-        face_color: str or array, default "w"
+        face_color: str, array, list, tuple, default "w"
             str or RGBA array to set the color of the text
 
-        outline_color: str or array, default "w"
+        outline_color: str, array, list, tuple, default "w"
             str or RGBA array to set the outline color of the text
 
         outline_thickness: float, default 0
@@ -487,7 +495,7 @@ class GraphicMethodsMixin:
             * Horizontal values: "left", "center", "right"
 
         **kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
 
         """

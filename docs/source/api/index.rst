@@ -9,6 +9,7 @@ API Reference
     graphics/index
     graphic_features/index
     selectors/index
+    tools/index
     ui/index
     widgets/index
     fastplotlib

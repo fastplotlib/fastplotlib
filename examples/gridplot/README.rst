@@ -1,2 +1,2 @@
-GridPlot Examples
-=================
+Grid layout Examples
+====================

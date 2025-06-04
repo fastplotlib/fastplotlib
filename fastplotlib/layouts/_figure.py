@@ -19,8 +19,9 @@ from ._utils import (
 )
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
-from ._engine import GridLayout, WindowLayout, UnderlayCamera
+from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
 from .. import ImageGraphic
+from ..tools import Tooltip
 
 
 class Figure:
@@ -51,6 +52,7 @@ class Figure:
         canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
+        show_tooltips: bool = False,
     ):
         """
         Create a Figure containing Subplots.
@@ -102,9 +104,10 @@ class Figure:
             | this syncs subplot_a, subplot_b and subplot_e together; syncs subplot_c and subplot_d together
 
         controllers: pygfx.Controller | list[pygfx.Controller] | np.ndarray[pygfx.Controller], optional
-            directly provide pygfx.Controller instances(s). Useful if you want to use a controller from an existing
-            plot/subplot. Other controller kwargs, i.e. ``controller_types`` and ``controller_ids`` are ignored if
-            ``controllers`` are provided.
+            Directly provide pygfx.Controller instances(s). Useful if you want to use a ``Controller`` from an existing
+            subplot or a ``Controller`` you have already instantiated. Also useful if you want to provide a custom
+            ``Controller`` subclass. Other controller kwargs, i.e. ``controller_types`` and ``controller_ids``
+            are ignored if `controllers` are provided.
 
         canvas: str, BaseRenderCanvas, pygfx.Texture
             Canvas to draw the figure onto, usually auto-selected based on running environment.
@@ -120,6 +123,9 @@ class Figure:
 
         names: list or array of str, optional
             subplot names
+
+        show_tooltips: bool, default False
+            show tooltips on graphics
 
         """
 
@@ -144,7 +150,9 @@ class Figure:
 
         else:
             if not all(isinstance(v, (int, np.integer)) for v in shape):
-                raise TypeError("shape argument must be a tuple[n_rows, n_cols]")
+                raise TypeError(
+                    f"shape argument must be a tuple[n_rows, n_cols], you have passed: {shape}"
+                )
             n_subplots = shape[0] * shape[1]
             layout_mode = "grid"
 
@@ -154,13 +162,40 @@ class Figure:
             rects = [None] * n_subplots
 
         if names is not None:
+            # user has specified subplot names
             subplot_names = np.asarray(names).flatten()
-            if subplot_names.size != n_subplots:
+            # make an array without nones for sanity checks
+            subplot_names_without_nones = subplot_names[subplot_names != np.array(None)]
+
+            # make sure all names are unique
+            if (
+                subplot_names_without_nones.size
+                != np.unique(subplot_names_without_nones).size
+            ):
                 raise ValueError(
-                    f"must provide same number of subplot `names` as specified by shape, extents, or rects: {n_subplots}"
+                    f"subplot `names` must be unique, you have provided: {names}"
+                )
+
+            # check that there are enough subplots given the number of names
+            if subplot_names.size > n_subplots:
+                raise ValueError(
+                    f"must provide same number or fewer subplot `names` than number of supblots specified by shape, "
+                    f"extents, or rects."
+                    f"You have specified {n_subplots} subplots, but {subplot_names.size} subplot names."
+                )
+
+            if subplot_names.size < n_subplots:
+                # pad the subplot names with nones
+                subplot_names = np.concatenate(
+                    [
+                        subplot_names,
+                        np.asarray([None] * (n_subplots - subplot_names.size)),
+                    ]
                 )
         else:
+            # no user specified subplot names
             if layout_mode == "grid":
+                # make names that show the [row index, col index]
                 subplot_names = np.asarray(
                     list(map(str, product(range(shape[0]), range(shape[1]))))
                 )
@@ -188,7 +223,7 @@ class Figure:
 
         if cameras.size != n_subplots:
             raise ValueError(
-                f"Number of cameras: {cameras.size} does not match the number of subplots: {n_subplots}"
+                f"Number of cameras: {cameras.size} does not match the number of specified subplots: {n_subplots}"
             )
 
         # create the cameras
@@ -213,8 +248,8 @@ class Figure:
                         pass
                     else:
                         raise TypeError(
-                            "controllers argument must be a single pygfx.Controller instance, or a Iterable of "
-                            "pygfx.Controller instances"
+                            f"controllers argument must be a single pygfx.Controller instance, or a Iterable of "
+                            f"pygfx.Controller instances. You have passed: {controllers}"
                         )
 
             subplot_controllers: np.ndarray[pygfx.Controller] = np.asarray(
@@ -242,7 +277,8 @@ class Figure:
                 else:
                     raise ValueError(
                         f"`controller_ids` must be one of 'sync', an array/list of subplot names, or an array/list of "
-                        f"integer ids. See the docstring for more details."
+                        f"integer ids. You have passed: {controller_ids}.\n"
+                        f"See the docstring for more details."
                     )
 
             # list controller_ids
@@ -259,12 +295,14 @@ class Figure:
                     # make sure each controller_id str is a subplot name
                     if not all([n in subplot_names for n in ids_flat]):
                         raise KeyError(
-                            f"all `controller_ids` strings must be one of the subplot names"
+                            f"all `controller_ids` strings must be one of the subplot names. You have passed "
+                            f"the following `controller_ids`:\n{controller_ids}\n\n"
+                            f"and the following subplot names:\n{subplot_names}"
                         )
 
                     if len(ids_flat) > len(set(ids_flat)):
                         raise ValueError(
-                            "id strings must not appear twice in `controller_ids`"
+                            f"id strings must not appear twice in `controller_ids`: \n{controller_ids}"
                         )
 
                     # initialize controller_ids array
@@ -284,7 +322,8 @@ class Figure:
                     controller_ids = np.asarray(controller_ids).flatten()
                     if controller_ids.max() < 0:
                         raise ValueError(
-                            "if passing an integer array of `controller_ids`, all the integers must be positive."
+                            f"if passing an integer array of `controller_ids`, "
+                            f"all the integers must be positive:{controller_ids}"
                         )
 
                 else:
@@ -295,7 +334,8 @@ class Figure:
 
             if controller_ids.size != n_subplots:
                 raise ValueError(
-                    f"Number of controller_ids does not match the number of subplots: {n_subplots}"
+                    f"Number of controller_ids: {controller_ids.size} "
+                    f"does not match the number of subplots: {n_subplots}"
                 )
 
             if controller_types is None:
@@ -409,12 +449,22 @@ class Figure:
                 canvas_rect=self.get_pygfx_render_area(),
             )
 
-        self._underlay_camera = UnderlayCamera()
-
+        # underlay render pass
+        self._underlay_camera = ScreenSpaceCamera()
         self._underlay_scene = pygfx.Scene()
 
         for subplot in self._subplots.ravel():
             self._underlay_scene.add(subplot.frame._world_object)
+
+        # overlay render pass
+        self._overlay_camera = ScreenSpaceCamera()
+        self._overlay_scene = pygfx.Scene()
+
+        # tooltip in overlay render pass
+        self._tooltip_manager = Tooltip()
+        self._overlay_scene.add(self._tooltip_manager.world_object)
+
+        self._show_tooltips = show_tooltips
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
@@ -429,7 +479,7 @@ class Figure:
 
     @property
     def shape(self) -> list[tuple[int, int, int, int]] | tuple[int, int]:
-        """[n_rows, n_cols]"""
+        """Only for grid layouts of subplots: [n_rows, n_cols]"""
         if isinstance(self.layout, GridLayout):
             return self.layout.shape
 
@@ -483,6 +533,29 @@ class Figure:
         names.flags.writeable = False
         return names
 
+    @property
+    def tooltip_manager(self) -> Tooltip:
+        """manage tooltips"""
+        return self._tooltip_manager
+
+    @property
+    def show_tooltips(self) -> bool:
+        """show/hide tooltips for all graphics"""
+        return self._show_tooltips
+
+    @show_tooltips.setter
+    def show_tooltips(self, val: bool):
+        self._show_tooltips = val
+
+        if val:
+            # register all graphics
+            for subplot in self:
+                for graphic in subplot.graphics:
+                    self._tooltip_manager.register(graphic)
+
+        elif not val:
+            self._tooltip_manager.unregister_all()
+
     def _render(self, draw=True):
         # draw the underlay planes
         self.renderer.render(self._underlay_scene, self._underlay_camera, flush=False)
@@ -491,6 +564,9 @@ class Figure:
         self._call_animate_functions(self._animate_funcs_pre)
         for subplot in self:
             subplot._render()
+
+        # overlay render pass
+        self.renderer.render(self._overlay_scene, self._overlay_camera, flush=False)
 
         self.renderer.flush()
 
@@ -711,7 +787,7 @@ class Figure:
 
     def export(self, uri: str | Path | bytes, **kwargs):
         """
-        Use ``imageio`` for writing the current Figure to a file, or return a byte string.
+        Use ``imageio`` to export the current Figure to a file, or return a byte string.
         Must have ``imageio`` installed.
 
         Parameters

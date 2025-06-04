@@ -52,6 +52,4 @@ Methods
     RectangleSelector.get_selected_indices
     RectangleSelector.remove_event_handler
     RectangleSelector.rotate
-    RectangleSelector.share_property
-    RectangleSelector.unshare_property
 

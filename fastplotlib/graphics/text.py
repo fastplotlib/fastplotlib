@@ -43,10 +43,10 @@ class TextGraphic(Graphic):
         font_size: float | int, default 10
             font size
 
-        face_color: str or array, default "w"
+        face_color: str, array, list, tuple, default "w"
             str or RGBA array to set the color of the text
 
-        outline_color: str or array, default "w"
+        outline_color: str, array, list, tuple, default "w"
             str or RGBA array to set the outline color of the text
 
         outline_thickness: float, default 0
@@ -66,7 +66,7 @@ class TextGraphic(Graphic):
             * Horizontal values: "left", "center", "right"
 
         **kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
         """
 
@@ -102,7 +102,7 @@ class TextGraphic(Graphic):
 
     @property
     def text(self) -> str:
-        """the text displayed"""
+        """Get or set the text"""
         return self._text.value
 
     @text.setter
@@ -111,7 +111,7 @@ class TextGraphic(Graphic):
 
     @property
     def font_size(self) -> float | int:
-        """ "text font size"""
+        """Get or set the font size"""
         return self._font_size.value
 
     @font_size.setter
@@ -120,7 +120,7 @@ class TextGraphic(Graphic):
 
     @property
     def face_color(self) -> pygfx.Color:
-        """text face color"""
+        """Get or set the face color"""
         return self._face_color.value
 
     @face_color.setter
@@ -129,7 +129,7 @@ class TextGraphic(Graphic):
 
     @property
     def outline_thickness(self) -> float:
-        """text outline thickness"""
+        """Get or set the outline thickness"""
         return self._outline_thickness.value
 
     @outline_thickness.setter
@@ -138,7 +138,7 @@ class TextGraphic(Graphic):
 
     @property
     def outline_color(self) -> pygfx.Color:
-        """text outline color"""
+        """Get or set the outline color"""
         return self._outline_color.value
 
     @outline_color.setter

@@ -269,9 +269,7 @@ def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
 
 def quick_min_max(data: np.ndarray, max_size=1e6) -> tuple[float, float]:
     """
-    Estimate the (min, max) values of data array by subsampling.
-
-    Also supports array-like data types may have a `min` and `max` property that provides a pre-calculated (min, max).
+    Estimate the min/max values of *data* by subsampling relative to the size of each dimension in the array.
 
     Parameters
     ----------
@@ -407,7 +405,9 @@ def parse_cmap_values(
         return colors
 
 
-def subsample_array(arr: np.ndarray, max_size: int = 1e6):
+def subsample_array(
+    arr: np.ndarray, max_size: int = 1e6, ignore_dims: Sequence[int] | None = None
+):
     """
     Subsamples an input array while preserving its relative dimensional proportions.
 
@@ -445,22 +445,35 @@ def subsample_array(arr: np.ndarray, max_size: int = 1e6):
     max_size: int, default 1e6
         maximum number of elements in subsampled array
 
+    ignore_dims: Sequence[int], optional
+        List of dimension indices to exclude from subsampling (i.e. retain full resolution).
+        For example, `ignore_dims=[0]` will avoid subsampling along the first axis.
+
     Returns
     -------
     np.ndarray
         subsample of the input array
     """
-    if np.prod(arr.shape) <= max_size:
-        return arr  # no need to subsample if already below the threshold
+    full_shape = np.array(arr.shape, dtype=np.uint64)
+    if np.prod(full_shape) <= max_size:
+        return arr[:]  # no need to subsample if already below the threshold
 
     # get factor by which to divide all dims
-    f = np.power((np.prod(arr.shape) / max_size), 1.0 / arr.ndim)
+    f = np.power((np.prod(full_shape) / max_size), 1.0 / arr.ndim)
 
     # new shape for subsampled array
-    ns = np.floor(np.array(arr.shape) / f).clip(min=1)
+    ns = np.floor(np.array(full_shape) / f).clip(min=1)
 
     # get the step size for the slices
-    slices = tuple(
-        slice(None, None, int(s)) for s in np.floor(arr.shape / ns).astype(int)
+    slices = list(
+        slice(None, None, int(s)) for s in np.floor(full_shape / ns).astype(int)
     )
+
+    # ignore dims e.g. RGB, which we don't want to downsample
+    if ignore_dims is not None:
+        for dim in ignore_dims:
+            slices[dim] = slice(None)
+
+    slices = tuple(slices)
+
     return np.asarray(arr[slices])

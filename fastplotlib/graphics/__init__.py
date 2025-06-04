@@ -8,6 +8,7 @@ from .line_collection import LineCollection, LineStack
 
 
 __all__ = [
+    "Graphic",
     "LineGraphic",
     "ScatterGraphic",
     "ImageGraphic",

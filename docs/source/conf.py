@@ -49,6 +49,7 @@ extensions = [
 
 sphinx_gallery_conf = {
     "gallery_dirs": "_gallery",
+    "notebook_extensions": {},  # remove the download notebook button
     "backreferences_dir": "_gallery/backreferences",
     "doc_module": ("fastplotlib",),
     "image_scrapers": ("pygfx",),
@@ -106,7 +107,14 @@ html_theme_options = {
     "switcher": {
         "json_url": "http://www.fastplotlib.org/_static/switcher.json",
         "version_match": release
-    }
+    },
+    "icon_links": [
+        {
+            "name": "Github",
+            "url": "https://github.com/fastplotlib/fastplotlib",
+            "icon": "fa-brands fa-github",
+        }
+    ]
 }
 
 html_static_path = ["_static"]

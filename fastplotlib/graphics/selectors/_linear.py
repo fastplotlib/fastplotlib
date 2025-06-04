@@ -8,7 +8,7 @@ import pygfx
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import LinearSelectionFeature
-from ._base_selector import BaseSelector
+from ._base_selector import BaseSelector, MoveInfo
 
 
 class LinearSelector(BaseSelector):
@@ -75,8 +75,6 @@ class LinearSelector(BaseSelector):
         self,
         selection: float,
         limits: Sequence[float],
-        size: float,
-        center: float,
         axis: str = "x",
         parent: Graphic = None,
         edge_color: str | Sequence[float] | np.ndarray = "w",
@@ -94,12 +92,6 @@ class LinearSelector(BaseSelector):
 
         limits: (int, int)
             (min, max) limits along the x or y-axis for the selector, in data space
-
-        size: float
-            size of the selector, usually the range of the data
-
-        center: float
-            center offset of the selector on the orthogonal axis, usually the data mean
 
         axis: str, default "x"
             "x" | "y", the axis along which the selector can move
@@ -131,29 +123,22 @@ class LinearSelector(BaseSelector):
 
         self._limits = np.asarray(limits)
 
-        end_points = [-size / 2, size / 2]
-
         if axis == "x":
-            xs = np.array([selection, selection])
-            ys = np.array(end_points)
-            zs = np.zeros(2)
+            xs = np.array([selection, selection], dtype=np.float32)
+            ys = np.array([0, 1], dtype=np.float32)
+            zs = np.zeros(2, dtype=np.float32)
 
-            line_data = np.column_stack([xs, ys, zs])
         elif axis == "y":
-            xs = np.array(end_points)
-            ys = np.array([selection, selection])
-            zs = np.zeros(2)
+            xs = np.array([0, 1], dtype=np.float32)
+            ys = np.array([selection, selection], dtype=np.float32)
+            zs = np.zeros(2, dtype=np.float32)
 
-            line_data = np.column_stack([xs, ys, zs])
         else:
-            raise ValueError("`axis` must be one of 'x' or 'y'")
+            raise ValueError("`axis` must be one of 'x' | 'y'")
 
-        line_data = line_data.astype(np.float32)
+        line_data = np.column_stack([xs, ys, zs])
 
-        if thickness < 1.1:
-            material = pygfx.LineThinMaterial
-        else:
-            material = pygfx.LineMaterial
+        material = pygfx.LineInfiniteSegmentMaterial
 
         self.colors_outer = pygfx.Color([0.3, 0.3, 0.3, 1.0])
 
@@ -177,12 +162,10 @@ class LinearSelector(BaseSelector):
         world_object.add(self.line_outer)
         world_object.add(line_inner)
 
-        self._move_info: dict = None
-
         if axis == "x":
-            offset = (parent.offset[0], center + parent.offset[1], 0)
+            offset = (parent.offset[0], 0, 0)
         elif axis == "y":
-            offset = (center + parent.offset[0], parent.offset[1], 0)
+            offset = (0, parent.offset[1], 0)
 
         # init base selector
         BaseSelector.__init__(
@@ -276,7 +259,7 @@ class LinearSelector(BaseSelector):
 
             return min(round(index), upper_bound)
 
-    def _move_graphic(self, delta: np.ndarray):
+    def _move_graphic(self, move_info: MoveInfo):
         """
         Moves the graphic
 
@@ -287,7 +270,9 @@ class LinearSelector(BaseSelector):
 
         """
 
-        if self.axis == "x":
-            self.selection = self.selection + delta[0]
-        else:
-            self.selection = self.selection + delta[1]
+        # If this the first move in this drag, store initial selection
+        if move_info.start_selection is None:
+            move_info.start_selection = self.selection
+
+        delta = move_info.delta[0] if self.axis == "x" else move_info.delta[1]
+        self.selection = move_info.start_selection + delta

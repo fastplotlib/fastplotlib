@@ -273,7 +273,7 @@ class PlotArea(GraphicMethodsMixin):
         self._background_material.set_colors(*colors)
 
     def map_screen_to_world(
-        self, pos: tuple[float, float] | pygfx.PointerEvent
+        self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
         """
         Map screen position to world position
@@ -287,7 +287,7 @@ class PlotArea(GraphicMethodsMixin):
         if isinstance(pos, pygfx.PointerEvent):
             pos = pos.x, pos.y
 
-        if not self.viewport.is_inside(*pos):
+        if not allow_outside and not self.viewport.is_inside(*pos):
             return None
 
         vs = self.viewport.logical_size
@@ -491,6 +491,10 @@ class PlotArea(GraphicMethodsMixin):
             obj_list = self._graphics
             self._fpl_graphics_scene.add(graphic.world_object)
 
+            # add to tooltip registry
+            if self.get_figure().show_tooltips:
+                self.get_figure().tooltip_manager.register(graphic)
+
         else:
             raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
 
@@ -504,7 +508,6 @@ class PlotArea(GraphicMethodsMixin):
         if center:
             self.center_graphic(graphic)
 
-        # if we don't use the weakref above, then the object lingers if a plot hook is used!
         graphic._fpl_add_plot_area_hook(self)
 
     def _check_graphic_name_exists(self, name):

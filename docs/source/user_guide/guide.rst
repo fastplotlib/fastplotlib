@@ -549,10 +549,15 @@ between imgui and ipywidgets, Qt, and wx is the imgui UI can be rendered directl
 i.e. it will work in jupyter, Qt, glfw and wx windows! The programming model is different from Qt and ipywidgets, there
 are no callbacks, but it is easy to learn if you see a few examples.
 
+.. image:: ../_static/guide_imgui.png
+
 We specifically use `imgui-bundle <https://github.com/pthom/imgui_bundle>`_ for the python bindings in fastplotlib.
 There is large community and many resources out there on building UIs using imgui.
 
-For examples on integrating imgui with a fastplotlib Figure please see the examples gallery.
+To install ``fastplotlib`` with ``imgui`` use the ``imgui`` extras option, i.e. ``pip install fastplotlib[imgui]``, or ``pip install imgui_bundle`` if you've already installed fastplotlib.
+
+Fastplotlib comes built-in with imgui UIs for subplot toolbars and a standard right-click menu with a number of options.
+You can also make custom GUIs and embed them within the canvas, see the examples gallery for detailed examples.
 
 **Some tips:**
 
@@ -662,43 +667,61 @@ There are several spaces to consider when using ``fastplotlib``:
 
 For more information on the various spaces used by rendering engines please see this `article <https://learnopengl.com/Getting-started/Coordinate-Systems>`_
 
-Imgui
------
+JupyterLab and IPython
+----------------------
 
-Fastplotlib uses `imgui_bundle <https://github.com/pthom/imgui_bundle>`_ to provide within-canvas UI elemenents if you
-installed ``fastplotlib`` using the ``imgui`` toggle, i.e. ``fastplotlib[imgui]``, or installed ``imgui_bundle`` afterwards.
+In ``jupyter lab`` you have the option to embed ``Figures`` in regular output cells, on the side with ``sidecar``,
+or show figures in separate Qt windows. Note: Once you have selected a display mode, we do not recommend switching to
+a different display mode. Restart the kernel to reliably choose a different display mode. By default, fastplotlib
+figures will be embedded in the notebook cell's output.
 
-Fastplotlib comes built-in with imgui UIs for subplot toolbars and a standard right-click menu with a number of options.
-You can also make custom GUIs and embed them within the canvas, see the examples gallery for detailed examples.
+The `quickstart example notebook <https://github.com/fastplotlib/fastplotlib/blob/main/examples/notebooks/quickstart.ipynb>`_
+is also a great place to start.
 
-.. note::
-    Imgui is optional, you can use other GUI frameworks such at Qt or ipywidgets with fastplotlib. You can also of course
-    use imgui and Qt or ipywidgets.
+Notebooks and remote rendering
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. image:: ../_static/guide_imgui.png
+To display the ``Figure`` in the notebook output,  the ``fig.show()`` call must be the last line in the code cell.  Or
+you can use ipython's display call: ``display(fig.show())``.
 
-Using ``fastplotlib`` in an interactive shell
----------------------------------------------
+To display the figure on the side: ``fig.show(sidecar=True)``
 
-There are multiple ways to use ``fastplotlib`` in interactive shells, such as ipython.
+You can make use of all `ipywidget layout <https://ipywidgets.readthedocs.io/en/latest/examples/Widget%20Layout.html>`_
+options to display multiple figures::
 
-1) Jupyter
+    from ipywidgets import VBox, HBox
 
-On ``jupyter lab`` the jupyter backend (i.e. ``jupyter_rfb``) is normally selected. This works via
-client-server rendering. Images generated on the server are streamed to the client (Jupyter) via a jpeg byte stream.
-Events (such as mouse or keyboard events) are then streamed in the opposite direction prompting new images to be generated
-by the server if necessary. This remote-frame-buffer approach makes the rendering process very fast. ``fastplotlib`` viusalizations
-can be displayed in cell output or on the side using ``sidecar``.
+    # stack figures vertically or horizontally
+    VBox([fig1.show(), fig2.show()])
 
-A Qt backend can also optionally be used as well. If ``%gui qt`` is selected before importing ``fastplotlib`` then this backend
-will be used instead.
+Again the ``VBox([...])`` call must be the last line in the code cell, or you can use ``display(VBox([...]))``
 
-Lastly, users can also force using ``glfw`` by specifying this as an argument when instantiating a ``Figure`` (i.e. ``Figure(canvas="gflw"``).
+You can combine ipywidget layouting just like any other ipywidget::
 
-.. note::
-    Do not mix between gui backends. For example, if you start the notebook using Qt, do not attempt to force using another backend such
-    as ``jupyter_rfb`` later.
+    # display a figure on top of two figures laid out horizontally
 
-2) IPython
+    VBox([
+        fig1.show(),
+        HBox([fig2.show(), fig3.show()])
+    ])
 
-Users can select between using a Qt backend or gflw using the same methods as above.
+Embedded figures will also render if you're using the notebook from a remote computer since rendering is done on the
+server side and the client only receives a jpeg stream of rendered frames. This allows you to visualize very large
+datasets on remote servers since the rendering is done remotely and you do not transfer any of the raw data to the
+client.
+
+You can create dashboards or webapps with ``fastplotlib`` by running the notebook with
+`voila <https://github.com/voila-dashboards/voila>`_. This is great for sharing visualizations of very large datasets
+that are too large to share over the internet, and creating fast interactive applications for the analysis of very
+large datasets.
+
+Qt windows in jupyter and IPython
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Qt windows can also be used for displaying fastplotlib figures in an interactive jupyterlab or IPython. You must run
+``%gui qt`` **before** importing ``fastplotlib`` (or ``wgpu``). This would typically be done at the very top of your
+notebook.
+
+Note that this only works if you are using jupyterlab or ipython locally, this cannot be used for remote rendering.
+You can forward windows (ex: X11 forwarding) but this is much slower than the remote rendering described in the
+previous section.
