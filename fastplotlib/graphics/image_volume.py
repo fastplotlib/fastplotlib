@@ -1,5 +1,6 @@
 from typing import *
 
+import numpy as np
 import pygfx
 
 from ..utils import quick_min_max
@@ -11,6 +12,15 @@ from .features import (
     ImageVmax,
     ImageInterpolation,
     ImageCmapInterpolation,
+    VolumeRenderMode,
+    VolumeIsoThreshold,
+    VolumeIsoStepSize,
+    VolumeIsoSubStepSize,
+    VolumeIsoEmissive,
+    VolumeIsoShininess,
+    VolumeSlicePlane,
+    VOLUME_RENDER_MODES,
+    create_volume_material_kwargs,
 )
 
 
@@ -85,15 +95,84 @@ class ImageVolumeGraphic(Graphic):
         self,
         data: Any,
         mode: str = "ray",
-        vmin: int = None,
-        vmax: int = None,
+        vmin: float = None,
+        vmax: float = None,
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
+        plane: tuple[int, int, int, int] = (0, 0, 1, 0),
+        threshold: float = 0.5,
+        step_size: float = 1.0,
+        substep_size: float = 0.1,
+        emissive: pygfx.Color = "#000",
+        shininess: int = 30,
         isolated_buffer: bool = True,
         **kwargs,
     ):
-        valid_modes = ["basic", "ray", "slice", "iso", "mip", "minip"]
+        """
+
+        Parameters
+        ----------
+        data: array-like
+            array-like, usually numpy.ndarray, must support ``memoryview()``.
+            Shape must be [n_planes, n_rows, n_cols] for grayscale, or [n_planes, n_rows, n_cols, 3 | 4] for RGB(A)
+
+        mode: str, default "ray"
+            render mode, one of ["basic", "ray", "slice", "iso", "mip", "minip"]
+
+        vmin: float
+            lower contrast limit
+
+        vmax: float
+            upper contrast limit
+        cmap: str, default "plasma"
+            colormap for grayscale volumes
+
+        interpolation: str, default "nearest"
+            interpolation method for sampling pixels
+
+        cmap_interpolation: str, default "linear"
+            interpolation method for sampling from colormap
+
+        plane: (int, int, int, int), default (0, 0, 1, 0)
+            Volume slice to display, used only if `mode` = "slice"
+
+        threshold : float, default 0.5
+            The threshold texture value at which the surface is rendered.
+            Used only if `mode` = "iso"
+
+        step_size : float, default 1.0
+            The size of the initial ray marching step for the initial surface finding.
+            Smaller values will result in more accurate surfaces but slower rendering.
+            Used only if `mode` = "iso"
+
+        substep_size : float, default 0.1
+            The size of the raymarching step for the refined surface finding.
+            Smaller values will result in more accurate surfaces but slower rendering.
+            Used only if `mode` = "iso"
+
+        emissive : Color, default (0, 0, 0, 1)
+            The emissive color of the surface. I.e. the color that the object emits
+            even when not lit by a light source. This color is added to the final
+            color and unaffected by lighting. The alpha channel is ignored.
+            Used only if `mode` = "iso"
+
+        shininess : int, default 30
+            How shiny the specular highlight is; a higher value gives a sharper highlight.
+            Used only if `mode` = "iso"
+
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then
+            set the data, useful if the data arrays are ready-only such as memmaps.
+            If False, the input array is itself used as the buffer - useful if the
+            array is large.
+
+        kwargs
+            additional keyword arguments passed to :class:`.Graphic`
+
+        """
+
+        valid_modes = VOLUME_RENDER_MODES.keys()
         if mode not in valid_modes:
             raise ValueError(
                 f"invalid mode specified: {mode}, valid modes are: {valid_modes}"
@@ -120,21 +199,26 @@ class ImageVolumeGraphic(Graphic):
         self._cmap = ImageCmap(cmap)
         self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
-        _map = pygfx.TextureMap(
+        self._texture_map = pygfx.TextureMap(
             self._cmap.texture,
             filter=self._cmap_interpolation.value,
             wrap="clamp-to-edge",
         )
 
-        material_cls = getattr(pygfx, f"Volume{mode.capitalize()}Material")
+        self._plane = VolumeSlicePlane(plane)
+        self._threshold = VolumeIsoThreshold(threshold)
+        self._step_size = VolumeIsoStepSize(step_size)
+        self._substep_size = VolumeIsoSubStepSize(substep_size)
+        self._emissive = VolumeIsoEmissive(emissive)
+        self._shininess = VolumeIsoShininess(shininess)
 
-        # TODO: graphic features for the various material properties
-        self._material = material_cls(
-            clim=(self._vmin.value, self._vmax.value),
-            map=_map,
-            interpolation=self._interpolation.value,
-            pick_write=True,
-        )
+        material_kwargs = create_volume_material_kwargs(graphic=self, mode=mode)
+
+        VolumeMaterialCls = VOLUME_RENDER_MODES[mode]
+
+        self._material = VolumeMaterialCls(**material_kwargs)
+
+        self._mode = VolumeRenderMode(mode)
 
         # iterate through each texture chunk and create
         # a _VolumeTile, offset the tile using the data indices
@@ -172,8 +256,17 @@ class ImageVolumeGraphic(Graphic):
         self._data[:] = data
 
     @property
+    def mode(self) -> str:
+        """Get or set the volume rendering mode"""
+        return self._mode.value
+
+    @mode.setter
+    def mode(self, mode: str):
+        self._mode.set_value(self, mode)
+
+    @property
     def cmap(self) -> str:
-        """colormap name"""
+        """Get or set colormap name"""
         return self._cmap.value
 
     @cmap.setter
@@ -182,7 +275,7 @@ class ImageVolumeGraphic(Graphic):
 
     @property
     def vmin(self) -> float:
-        """lower contrast limit"""
+        """Get or set the lower contrast limit"""
         return self._vmin.value
 
     @vmin.setter
@@ -191,7 +284,7 @@ class ImageVolumeGraphic(Graphic):
 
     @property
     def vmax(self) -> float:
-        """upper contrast limit"""
+        """Get or set the upper contrast limit"""
         return self._vmax.value
 
     @vmax.setter
@@ -200,7 +293,7 @@ class ImageVolumeGraphic(Graphic):
 
     @property
     def interpolation(self) -> str:
-        """image data interpolation method"""
+        """Get or set  the image data interpolation method"""
         return self._interpolation.value
 
     @interpolation.setter
@@ -209,16 +302,97 @@ class ImageVolumeGraphic(Graphic):
 
     @property
     def cmap_interpolation(self) -> str:
-        """cmap interpolation method"""
+        """Get or set the cmap interpolation method"""
         return self._cmap_interpolation.value
 
     @cmap_interpolation.setter
     def cmap_interpolation(self, value: str):
         self._cmap_interpolation.set_value(self, value)
 
-    def reset_vmin_vmax(self):
+    @property
+    def plane(self) -> tuple[int, int, int, int]:
+        """Get or set displayed plane in the volume. Valid only for `slice` render mode."""
+        return self._plane.value
+
+    @plane.setter
+    def plane(self, value: tuple[int, int, int, int]):
+        if self.mode != "slice":
+            raise TypeError("`plane` property is only valid for `slice` render mode.")
+
+        self._plane.set_value(self, value)
+
+    @property
+    def threshold(self) -> float:
+        """Get or set isosurface threshold, only for `iso` mode"""
+        return self._threshold.value
+
+    @threshold.setter
+    def threshold(self, value: float):
+        if self.mode != "iso":
+            raise TypeError("`threshold` property is only used for `iso` rendering mode")
+
+        self._threshold.set_value(self, value)
+
+    @property
+    def step_size(self) -> float:
+        """Get or set isosurface step_size, only for `iso` mode"""
+        return self._step_size.value
+
+    @step_size.setter
+    def step_size(self, value: float):
+        if self.mode != "iso":
+            raise TypeError(
+                "`step_size` property is only used for `iso` rendering mode"
+            )
+
+        self._step_size.set_value(self, value)
+
+    @property
+    def substep_size(self) -> float:
+        """Get or set isosurface substep_size, only for `iso` mode"""
+        return self._substep_size.value
+
+    @substep_size.setter
+    def substep_size(self, value: float):
+        if self.mode != "iso":
+            raise TypeError(
+                "`substep_size` property is only used for `iso` rendering mode"
+            )
+
+        self._substep_size.set_value(self, value)
+
+    @property
+    def emissive(self) -> pygfx.Color:
+        """Get or set isosurface emissive color, only for `iso` mode. Pass a <str> color, RGBA array or pygfx.Color"""
+        return self._emissive.value
+
+    @emissive.setter
+    def emissive(self, value: pygfx.Color | str | tuple | np.ndarray):
+        if self.mode != "iso":
+            raise TypeError(
+                "`emissive` property is only used for `iso` rendering mode"
+            )
+
+        self._emissive.set_value(self, value)
+
+    @property
+    def shininess(self) -> int:
+        """Get or set isosurface shininess"""
+        return self._shininess.value
+
+    @shininess.setter
+    def shininess(self, value: int):
+        if self.mode != "iso":
+            raise TypeError(
+                "`shininess` property is only used for `iso` rendering mode"
+            )
+
+        self._shininess.set_value(self, value)
+
+
+def reset_vmin_vmax(self):
         """
-        Reset the vmin, vmax by estimating it from the data
+        Reset the vmin, vmax by *estimating* it from the data
 
         Returns
         -------

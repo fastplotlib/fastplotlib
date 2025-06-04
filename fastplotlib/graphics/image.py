@@ -83,8 +83,8 @@ class ImageGraphic(Graphic):
     def __init__(
         self,
         data: Any,
-        vmin: int = None,
-        vmax: int = None,
+        vmin: float = None,
+        vmax: float = None,
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
@@ -100,10 +100,10 @@ class ImageGraphic(Graphic):
             array-like, usually numpy.ndarray, must support ``memoryview()``
             | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
-        vmin: int, optional
+        vmin: float, optional
             minimum value for color scaling, estimated from data if not provided
 
-        vmax: int, optional
+        vmax: float, optional
             maximum value for color scaling, estimated from data if not provided
 
         cmap: str, optional, default "plasma"
