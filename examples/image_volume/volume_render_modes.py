@@ -13,7 +13,7 @@ import fastplotlib as fpl
 from fastplotlib.ui import EdgeWindow
 from fastplotlib.graphics.features import VOLUME_RENDER_MODES
 import imageio.v3 as iio
-from imgui_bundle import imgui
+from imgui_bundle import imgui, imgui_ctx
 
 voldata = iio.imread("imageio:stent.npz").astype(np.float32)
 
@@ -25,9 +25,17 @@ fig = fpl.Figure(
 
 fig[0, 0].add_image_volume(voldata, name="vol-img")
 
+# add an hlut tool
+hlut = fpl.HistogramLUTTool(voldata, fig[0, 0]["vol-img"])
+
+fig[0, 0].docks["right"].size = 80
+fig[0, 0].docks["right"].controller.enabled = False
+fig[0, 0].docks["right"].add_graphic(hlut)
+fig[0, 0].docks["right"].auto_scale(maintain_aspect=False)
+
 
 class GUI(EdgeWindow):
-    def __init__(self, figure, title="Render options", location="right", size=250):
+    def __init__(self, figure, title="Render options", location="right", size=300):
         super().__init__(figure, title=title, location=location, size=size)
 
         # reference to the graphic for convenience
