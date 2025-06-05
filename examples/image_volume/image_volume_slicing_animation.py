@@ -13,7 +13,6 @@ For an example with UI sliders see the "Volume modes" example.
 import numpy as np
 import fastplotlib as fpl
 import imageio.v3 as iio
-import pygfx
 
 
 voldata = iio.imread("imageio:stent.npz").astype(np.float32)
@@ -56,6 +55,7 @@ fig[0, 0].add_animations(update)
 fig.show()
 
 fig[0, 0].camera.set_state(state)
+
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide

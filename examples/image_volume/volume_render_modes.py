@@ -2,7 +2,7 @@
 Volume modes
 ============
 
-View a volume using different rendering modes
+View a volume using different rendering modes.
 """
 
 # test_example = false
@@ -77,6 +77,7 @@ gui = GUI(figure=fig)
 fig.add_gui(gui)
 
 fig.show()
+
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide

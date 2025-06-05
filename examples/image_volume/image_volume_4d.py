@@ -13,13 +13,8 @@ import fastplotlib as fpl
 from tqdm import tqdm
 
 
-def gen_data(p=1, noise=.5, T=256, framerate=30, firerate=2.,):
-    if p == 2:
-        gamma = np.array([1.5, -.55])
-    elif p == 1:
-        gamma = np.array([.9])
-    else:
-        raise
+def generate_data(p=1, noise=.5, T=256, framerate=30, firerate=2., ):
+    gamma = np.array([.9])
     dims = (128, 128, 30)  # size of image
     sig = (4, 4, 2)  # neurons size
     bkgrd = 10
@@ -49,7 +44,7 @@ def gen_data(p=1, noise=.5, T=256, framerate=30, firerate=2.,):
     return Y
 
 
-voldata = gen_data()
+voldata = generate_data()
 
 fig = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
 
@@ -80,4 +75,9 @@ def update():
 
 fig.add_animations(update)
 
-fpl.loop.run()
+
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
+if __name__ == "__main__":
+    print(__doc__)
+    fpl.loop.run()

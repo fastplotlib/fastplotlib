@@ -21,6 +21,7 @@ fig[0, 0].add_image_volume(voldata, mode="iso")
 
 fig.show()
 
+
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
