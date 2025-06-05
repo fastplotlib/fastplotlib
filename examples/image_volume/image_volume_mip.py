@@ -15,9 +15,9 @@ import imageio.v3 as iio
 
 voldata = iio.imread("imageio:stent.npz").astype(np.float32)
 
-fig = fpl.Figure(cameras="3d", size=(700, 560))
+fig = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
 
-fig[0, 0].add_image_volume(voldata)
+fig[0, 0].add_image_volume(voldata, mode="iso")
 
 fig.show()
 

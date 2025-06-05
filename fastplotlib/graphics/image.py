@@ -131,11 +131,16 @@ class ImageGraphic(Graphic):
 
         world_object = pygfx.Group()
 
-        # texture array that manages the multiple textures on the GPU that represent this image
-        self._data = TextureArray(data, dim=2, isolated_buffer=isolated_buffer)
+        if isinstance(data, TextureArray):
+            # share buffer
+            self._data = data
+        else:
+            # create new texture array to manage buffer
+            # texture array that manages the multiple textures on the GPU that represent this image
+            self._data = TextureArray(data, dim=2, isolated_buffer=isolated_buffer)
 
         if (vmin is None) or (vmax is None):
-            vmin, vmax = quick_min_max(data)
+            vmin, vmax = quick_min_max(self.data.value)
 
         # other graphic features
         self._vmin = ImageVmin(vmin)
