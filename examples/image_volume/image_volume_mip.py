@@ -1,5 +1,5 @@
 """
-Volume Ray mode
+Volume Mip mode
 ===============
 
 View a volume, uses the fly controller by default so you can fly around the scene using WASD keys and the mouse:
@@ -21,4 +21,8 @@ fig[0, 0].add_image_volume(voldata, mode="iso")
 
 fig.show()
 
-fpl.loop.run()
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
+if __name__ == "__main__":
+    print(__doc__)
+    fpl.loop.run()

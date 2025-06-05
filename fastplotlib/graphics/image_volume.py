@@ -94,17 +94,17 @@ class ImageVolumeGraphic(Graphic):
     def __init__(
         self,
         data: Any,
-        mode: str = "ray",
+        mode: str = "mip",
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
-        plane: tuple[int, int, int, int] = (0, 0, 1, 0),
+        plane: tuple[float, float, float, float] = (0, 0, -1, 0),
         threshold: float = 0.5,
         step_size: float = 1.0,
         substep_size: float = 0.1,
-        emissive: pygfx.Color = "#000",
+        emissive: str | tuple | np.ndarray = (0, 0, 0),
         shininess: int = 30,
         isolated_buffer: bool = True,
         **kwargs,
@@ -118,13 +118,14 @@ class ImageVolumeGraphic(Graphic):
             Shape must be [n_planes, n_rows, n_cols] for grayscale, or [n_planes, n_rows, n_cols, 3 | 4] for RGB(A)
 
         mode: str, default "ray"
-            render mode, one of ["basic", "ray", "slice", "iso", "mip", "minip"]
+            render mode, one of "mip", "minip", "iso" or "slice"
 
         vmin: float
             lower contrast limit
 
         vmax: float
             upper contrast limit
+
         cmap: str, default "plasma"
             colormap for grayscale volumes
 
@@ -134,27 +135,27 @@ class ImageVolumeGraphic(Graphic):
         cmap_interpolation: str, default "linear"
             interpolation method for sampling from colormap
 
-        plane: (int, int, int, int), default (0, 0, 1, 0)
-            Volume slice to display, used only if `mode` = "slice"
+        plane: (float, float, float, float), default (0, 0, -1, 0)
+            Slice volume at this plane. Sets (a, b, c, d) in the equation the defines a plane: ax + by + cz + d = 0.
+            Used only if `mode` = "slice"
 
         threshold : float, default 0.5
             The threshold texture value at which the surface is rendered.
             Used only if `mode` = "iso"
 
         step_size : float, default 1.0
-            The size of the initial ray marching step for the initial surface finding.
-            Smaller values will result in more accurate surfaces but slower rendering.
+            The size of the initial ray marching step for the initial surface finding. Smaller values will result in
+            more accurate surfaces but slower rendering.
             Used only if `mode` = "iso"
 
         substep_size : float, default 0.1
-            The size of the raymarching step for the refined surface finding.
-            Smaller values will result in more accurate surfaces but slower rendering.
+            The size of the raymarching step for the refined surface finding. Smaller values will result in more
+            accurate surfaces but slower rendering.
             Used only if `mode` = "iso"
 
         emissive : Color, default (0, 0, 0, 1)
-            The emissive color of the surface. I.e. the color that the object emits
-            even when not lit by a light source. This color is added to the final
-            color and unaffected by lighting. The alpha channel is ignored.
+            The emissive color of the surface. I.e. the color that the object emits even when not lit by a light
+            source. This color is added to the final color and unaffected by lighting. The alpha channel is ignored.
             Used only if `mode` = "iso"
 
         shininess : int, default 30
@@ -162,10 +163,9 @@ class ImageVolumeGraphic(Graphic):
             Used only if `mode` = "iso"
 
         isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer - useful if the
-            array is large.
+            If True, initialize a buffer with the same shape as the input data and then set the data, useful if the
+            data arrays are ready-only such as memmaps. If False, the input array is itself used as the
+            buffer - useful if thearray is large.
 
         kwargs
             additional keyword arguments passed to :class:`.Graphic`
@@ -182,11 +182,16 @@ class ImageVolumeGraphic(Graphic):
 
         world_object = pygfx.Group()
 
-        # texture array that manages the textures on the GPU that represent this image volume
-        self._data = TextureArray(data, dim=3, isolated_buffer=isolated_buffer)
+        if isinstance(data, TextureArray):
+            # share existing buffer
+            self._data = data
+        else:
+            # create new texture array to manage buffer
+            # texture array that manages the textures on the GPU that represent this image volume
+            self._data = TextureArray(data, dim=3, isolated_buffer=isolated_buffer)
 
         if (vmin is None) or (vmax is None):
-            vmin, vmax = quick_min_max(data)
+            vmin, vmax = quick_min_max(self.data.value)
 
         # other graphic features
         self._vmin = ImageVmin(vmin)
@@ -204,6 +209,9 @@ class ImageVolumeGraphic(Graphic):
             filter=self._cmap_interpolation.value,
             wrap="clamp-to-edge",
         )
+
+        print(plane)
+
 
         self._plane = VolumeSlicePlane(plane)
         self._threshold = VolumeIsoThreshold(threshold)
@@ -310,12 +318,12 @@ class ImageVolumeGraphic(Graphic):
         self._cmap_interpolation.set_value(self, value)
 
     @property
-    def plane(self) -> tuple[int, int, int, int]:
+    def plane(self) -> tuple[float, float, float, float]:
         """Get or set displayed plane in the volume. Valid only for `slice` render mode."""
         return self._plane.value
 
     @plane.setter
-    def plane(self, value: tuple[int, int, int, int]):
+    def plane(self, value: tuple[float, float, float, float]):
         if self.mode != "slice":
             raise TypeError("`plane` property is only valid for `slice` render mode.")
 
@@ -390,7 +398,7 @@ class ImageVolumeGraphic(Graphic):
         self._shininess.set_value(self, value)
 
 
-def reset_vmin_vmax(self):
+    def reset_vmin_vmax(self):
         """
         Reset the vmin, vmax by *estimating* it from the data
 
@@ -400,6 +408,6 @@ def reset_vmin_vmax(self):
 
         """
 
-        vmin, vmax = quick_min_max(self._data.value)
+        vmin, vmax = quick_min_max(self.data.value)
         self.vmin = vmin
         self.vmax = vmax

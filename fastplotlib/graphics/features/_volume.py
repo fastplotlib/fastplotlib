@@ -1,24 +1,14 @@
-import inspect
-import re
-
 import numpy as np
 import pygfx
 
 from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
-VOLUME_RENDER_MODES: dict[str, pygfx.Material] = {}
-
-for name, obj in inspect.getmembers(pygfx):
-    if name == "VolumeBasicMaterial":
-        # TODO: AFAIK this isn't a real material that can be used??
-        continue
-    if name.startswith("Volume") and name.endswith("Material"):
-        # name without Volume prefix and Material suffix, and the actual material name in lowercase
-        # ex: VolumeMipMaterial -> mip; VolumeSomethingElseMaterial -> something_else
-        short_name = re.sub(
-            r"(?<!^)(?=[A-Z])", "_", name.lstrip("Volume").rstrip("Material")
-        ).lower()
-        VOLUME_RENDER_MODES[short_name] = obj
+VOLUME_RENDER_MODES = {
+    "mip": pygfx.VolumeMipMaterial,
+    "minip": pygfx.VolumeMinipMaterial,
+    "iso": pygfx.VolumeIsoMaterial,
+    "slice": pygfx.VolumeSliceMaterial,
+}
 
 
 def create_volume_material_kwargs(graphic, mode: str):
@@ -41,7 +31,8 @@ def create_volume_material_kwargs(graphic, mode: str):
         }
 
     elif mode == "slice":
-        more_kwargs = {"plane", graphic.plane}
+        more_kwargs = {"plane": graphic.plane}
+        print(more_kwargs)
     else:
         more_kwargs = {}
 
@@ -242,21 +233,21 @@ class VolumeSlicePlane(GraphicFeature):
     event_info_spec = [
         {
             "dict key": "value",
-            "type": "tuple[int, int, int, int]",
+            "type": "tuple[float, float, float, float]",
             "description": "new plane slice",
         },
     ]
 
-    def __init__(self, value: tuple[int, int, int, int]):
+    def __init__(self, value: tuple[float, float, float, float]):
         self._value = value
         super().__init__()
 
     @property
-    def value(self) -> tuple[int, int, int, int]:
+    def value(self) -> tuple[float, float, float, float]:
         return self._value
 
     @block_reentrance
-    def set_value(self, graphic, value: tuple[int, int, int, int]):
+    def set_value(self, graphic, value: tuple[float, float, float, float]):
         graphic._material.plane = value
         self._value = graphic._material.plane
 
