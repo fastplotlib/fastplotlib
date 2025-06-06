@@ -381,7 +381,7 @@ class LinearRegionSelector(BaseSelector):
         cur_min, cur_max = move_info.start_selection
 
         # move entire selector if event source was fill
-        if self._move_info.source == self.fill:
+        if move_info.source == self.fill:
             # Limit the delta to avoid weird resizine behavior
             min_delta = self.limits[0] - cur_min
             max_delta = self.limits[1] - cur_max
@@ -396,12 +396,12 @@ class LinearRegionSelector(BaseSelector):
 
         # if event source was an edge and selector is resizable,
         # move the edge that caused the event
-        if self._move_info.source == self.edges[0]:
+        if move_info.source == self.edges[0]:
             # change only left or bottom bound
             new_min = min(cur_min + delta, cur_max)
             self._selection.set_value(self, (new_min, cur_max))
 
-        elif self._move_info.source == self.edges[1]:
+        elif move_info.source == self.edges[1]:
             # change only right or top bound
             new_max = max(cur_max + delta, cur_min)
             self._selection.set_value(self, (cur_min, new_max))
