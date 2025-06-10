@@ -9,6 +9,7 @@ import fastplotlib
 from fastplotlib.layouts import Subplot
 from fastplotlib import graphics
 from fastplotlib.graphics import features, selectors
+from fastplotlib import tools
 from fastplotlib import widgets
 from fastplotlib import utils
 from fastplotlib import ui
@@ -21,6 +22,7 @@ LAYOUTS_DIR = API_DIR.joinpath("layouts")
 GRAPHICS_DIR = API_DIR.joinpath("graphics")
 GRAPHIC_FEATURES_DIR = API_DIR.joinpath("graphic_features")
 SELECTORS_DIR = API_DIR.joinpath("selectors")
+TOOLS_DIR = API_DIR.joinpath("tools")
 WIDGETS_DIR = API_DIR.joinpath("widgets")
 UI_DIR = API_DIR.joinpath("ui")
 GUIDE_DIR = current_dir.joinpath("user_guide")
@@ -31,6 +33,7 @@ doc_sources = [
     GRAPHICS_DIR,
     GRAPHIC_FEATURES_DIR,
     SELECTORS_DIR,
+    TOOLS_DIR,
     WIDGETS_DIR,
     UI_DIR,
 ]
@@ -264,7 +267,8 @@ def main():
         )
 
     # the rest of this is a mess and can be refactored later
-
+    ##############################################################################
+    # ** Graphic classes ** #
     graphic_classes = [getattr(graphics, g) for g in graphics.__all__]
 
     graphic_class_names = [g.__name__ for g in graphic_classes]
@@ -290,7 +294,7 @@ def main():
             source_path=GRAPHICS_DIR.joinpath(f"{graphic_cls.__name__}.rst"),
         )
     ##############################################################################
-
+    # ** GraphicFeature classes ** #
     feature_classes = [getattr(features, f) for f in features.__all__]
 
     feature_class_names = [f.__name__ for f in feature_classes]
@@ -315,7 +319,7 @@ def main():
             source_path=GRAPHIC_FEATURES_DIR.joinpath(f"{feature_cls.__name__}.rst"),
         )
     ##############################################################################
-
+    # ** Selector classes ** #
     selector_classes = [getattr(selectors, s) for s in selectors.__all__]
 
     selector_class_names = [s.__name__ for s in selector_classes]
@@ -339,8 +343,35 @@ def main():
             modules=["fastplotlib"],
             source_path=SELECTORS_DIR.joinpath(f"{selector_cls.__name__}.rst"),
         )
-    ##############################################################################
 
+    ##############################################################################
+    # ** Tools classes ** #
+    tools_classes = [getattr(tools, t) for t in tools.__all__]
+
+    tools_class_names = [t.__name__ for t in tools_classes]
+
+    tools_class_names_str = "\n    ".join([""] + tools_class_names)
+
+    with open(TOOLS_DIR.joinpath("index.rst"), "w") as f:
+        f.write(
+            f"Tools\n"
+            f"*****\n"
+            f"\n"
+            f".. toctree::\n"
+            f"    :maxdepth: 1\n"
+            f"{tools_class_names_str}\n"
+        )
+
+    for tool_cls in tools_classes:
+        generate_page(
+            page_name=tool_cls.__name__,
+            classes=[tool_cls],
+            modules=["fastplotlib"],
+            source_path=TOOLS_DIR.joinpath(f"{tool_cls.__name__}.rst"),
+        )
+
+    ##############################################################################
+    # ** Widget classes ** #
     widget_classes = [getattr(widgets, w) for w in widgets.__all__]
 
     widget_class_names = [w.__name__ for w in widget_classes]
@@ -365,7 +396,7 @@ def main():
             source_path=WIDGETS_DIR.joinpath(f"{widget_cls.__name__}.rst"),
         )
     ##############################################################################
-
+    # ** UI classes ** #
     ui_classes = [ui.BaseGUI, ui.Window, ui.EdgeWindow, ui.Popup]
 
     ui_class_names = [cls.__name__ for cls in ui_classes]
@@ -410,6 +441,7 @@ def main():
             "    graphics/index\n"
             "    graphic_features/index\n"
             "    selectors/index\n"
+            "    tools/index\n"
             "    ui/index\n"
             "    widgets/index\n"
             "    fastplotlib\n"
@@ -438,6 +470,9 @@ def main():
         f.write("============\n\n")
 
         for graphic_cls in [*graphic_classes, *selector_classes]:
+            if graphic_cls is graphics.Graphic:
+                # skip Graphic base class
+                continue
             f.write(f"{graphic_cls.__name__}\n")
             f.write("-" * len(graphic_cls.__name__) + "\n\n")
             for name, type_ in graphic_cls._features.items():

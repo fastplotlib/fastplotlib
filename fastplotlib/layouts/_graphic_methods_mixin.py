@@ -67,7 +67,7 @@ class GraphicMethodsMixin:
             array is large.
 
         kwargs:
-            additional keyword arguments passed to Graphic
+            additional keyword arguments passed to :class:`.Graphic`
 
 
         """
@@ -225,7 +225,7 @@ class GraphicMethodsMixin:
             coordinate space in which the thickness is expressed ("screen", "world", "model")
 
         **kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
 
         """
@@ -401,7 +401,7 @@ class GraphicMethodsMixin:
             coordinate space in which the size is expressed ("screen", "world", "model")
 
         kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
 
         """
@@ -467,7 +467,7 @@ class GraphicMethodsMixin:
             * Horizontal values: "left", "center", "right"
 
         **kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
 
         """

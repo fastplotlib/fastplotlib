@@ -7,7 +7,7 @@ from ._subplot import Subplot
 from ._rect import RectManager
 
 
-class UnderlayCamera(pygfx.Camera):
+class ScreenSpaceCamera(pygfx.Camera):
     """
     Same as pygfx.ScreenCoordsCamera but y-axis is inverted.
 

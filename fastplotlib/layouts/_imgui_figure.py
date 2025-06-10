@@ -44,6 +44,7 @@ class ImguiFigure(Figure):
         canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
+        show_tooltips: bool = False,
     ):
         self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
 
@@ -60,6 +61,7 @@ class ImguiFigure(Figure):
             canvas_kwargs=canvas_kwargs,
             size=size,
             names=names,
+            show_tooltips=show_tooltips,
         )
 
         self._imgui_renderer = ImguiRenderer(self.renderer.device, self.canvas)
