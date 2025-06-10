@@ -11,7 +11,6 @@ import numpy as np
 import time
 from math import pi, cos, sin, ceil, log10
 
-import fastplotlib as fpl
 
 try:
     from PyQt6.QtWidgets import QApplication, QWidget, QVBoxLayout, QMainWindow
@@ -20,6 +19,9 @@ try:
 except ImportError:
     from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QMainWindow
     from PyQt5.QtCore import QTimer, Qt
+
+
+import fastplotlib as fpl
 
 def rotate(angle, axis_x, axis_y, axis_z):
     """
@@ -34,7 +36,7 @@ class FastPlotMain(QMainWindow):
 
     MAJOR_TICKS = 5
     MINOR_TICKS = 4
-    DATAPOINTS  = 5000                   # number of data points per line
+    DATAPOINTS  = 50000                   # number of data points per line
     INTERVAL    = 16                     # display refresh in milliseconds
     WHITE       = (1.0, 1.0, 1.0, 1.0)
     BLACK       = (0.0, 0.0, 0.0, 1.0)
@@ -286,7 +288,7 @@ class FastPlotMain(QMainWindow):
         self.line3.data = self.buf3
 
         # Update the axes
-        self.updateAxesTicks(self.ax, self.MAJOR_TICKS, self.MINOR_TICKS)
+        #self.updateAxesTicks(self.ax, self.MAJOR_TICKS, self.MINOR_TICKS)
         
         # Redraw the figure
         self.fig.canvas.request_draw()
