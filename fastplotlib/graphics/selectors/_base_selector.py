@@ -381,7 +381,6 @@ class BaseSelector(Graphic):
                 delta=delta,
                 source=self._fill[0],
             )
-            print(move_info)
         # else use an edge, such as for linear selector
         else:
             move_info = MoveInfo(
