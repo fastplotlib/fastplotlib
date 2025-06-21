@@ -71,7 +71,8 @@ This is just a simple example of how the ``fastplotlib`` API works to create a p
 However, we are just scratching the surface of what is possible with ``fastplotlib``.
 Next, let's take a look at the building blocks of ``fastplotlib`` and how they can be used to create more complex visualizations.
 
-Aside from this user guide, the Examples Gallery is the best place to learn specific things in fastplotlib.
+Aside from this user guide, the Examples Gallery is the best place to learn how to do specific things in fastplotlib. The `quickstart notebook <https://github.com/fastplotlib/fastplotlib/blob/main/examples/notebooks/quickstart.ipynb>`_ is also an excellent introduction to the API, even if you do not plan to use ``fastplotlib`` in notebooks. Remember ``fastplotlib`` code is pretty much identical whether it's used in jupyterlab, Qt, or glfw!
+
 If you still need help don't hesitate to post an issue or discussion post!
 
 Figure
