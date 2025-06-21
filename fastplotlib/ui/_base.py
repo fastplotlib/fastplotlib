@@ -31,8 +31,13 @@ class BaseGUI:
 
 class Window(BaseGUI):
     """Base class for imgui windows drawn within Figures"""
+    def draw_window(self):
+        """
+        Must be implemented in subclass
 
-    pass
+        This must include the imgui.begin() and imgui.end() calls that define an imgui window.
+        """
+        raise NotImplementedError
 
 
 class EdgeWindow(Window):
