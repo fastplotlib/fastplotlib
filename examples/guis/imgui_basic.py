@@ -14,8 +14,7 @@ import numpy as np
 import fastplotlib as fpl
 
 # subclass from EdgeWindow to make a custom ImGUI Window to place inside the figure!
-from fastplotlib.ui import EdgeWindow
-from fastplotlib.utils.imgui import ChangeFlag
+from fastplotlib.ui import EdgeWindow, ChangeFlag
 from imgui_bundle import imgui
 
 # make some initial data

@@ -202,7 +202,11 @@ class EdgeWindow(Window):
         imgui.push_id(self._id_counter)
 
         # draw imgui UI elements into window
-        self._update_call()
+        if isinstance(self._update_call, list):
+            for update_call in self._update_call:
+                update_call()
+        else:
+            self._update_call()
 
         # pop ID
         imgui.pop_id()

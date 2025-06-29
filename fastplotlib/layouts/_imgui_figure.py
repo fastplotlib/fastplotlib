@@ -292,6 +292,35 @@ class ImguiFigure(Figure):
         # EdgeWindow instance passed
         decorator(gui)
 
+    def append_gui(self, gui: Callable = None, location: str = None):
+        if location is None:
+            raise ValueError("Must provide GUI location to append to.")
+
+        if location not in GUI_EDGES:
+            raise ValueError(
+                f"GUI does not have a valid location, valid locations are: {GUI_EDGES}, you have passed: {location}"
+            )
+
+        if self.guis[location] is None:
+            raise ValueError(
+                f"No GUI at given location to append to: {location}"
+            )
+
+        def decorator(_gui: Callable):
+            gui = self.guis[location]
+            if isinstance(gui._update_call, list):
+                gui._update_call.append(_gui)
+            else:
+                gui._update_call = [gui._update_call]
+                gui._update_call.append(partial(_gui, self))
+
+            return _gui
+
+        if gui is None:
+            return decorator
+
+        decorator(gui)
+
     def remove_gui(self, location: str) -> EdgeWindow:
         """
         Remove an imgui UI
