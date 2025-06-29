@@ -37,7 +37,6 @@ def gui(fig_local):  # figure is the only argument, so you can use it within the
 
     global noise_sigma
 
-
     clicked, img_index = imgui.combo("image", img_index, img_options)
     if clicked:
         fig_local[0, 0].delete_graphic(fig_local[0, 0]["image"])

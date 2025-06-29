@@ -293,6 +293,19 @@ class ImguiFigure(Figure):
         decorator(gui)
 
     def append_gui(self, gui: Callable = None, location: str = None):
+        """
+        Append to an existing GUI. Can also be used as a decorator.
+
+        Parameters
+        ----------
+        gui: Callable
+            function that creates imgui elements
+
+        location: str, "right" or "bottom"
+            the existing GUI window to append more UI elements to
+
+        """
+
         if location is None:
             raise ValueError("Must provide GUI location to append to.")
 
