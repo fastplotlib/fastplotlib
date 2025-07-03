@@ -571,6 +571,8 @@ class Figure:
             subplot._render()
 
         # overlay render pass
+        if hasattr(self.renderer, "clear"):
+            self.renderer.clear(depth=True)
         self.renderer.render(self._overlay_scene, self._overlay_camera, flush=False)
 
         self.renderer.flush()
