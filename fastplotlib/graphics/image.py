@@ -460,19 +460,13 @@ class ImageGraphic(Graphic):
             initial points for the polygon
 
         """
-        # default selection is 25% of the diagonal
-        if selection is None:
-            diagonal = math.sqrt(
-                self._data.value.shape[0] ** 2 + self._data.value.shape[1] ** 2
-            )
-
-            selection = (0, int(diagonal / 4), 0, int(diagonal / 4))
 
         # min/max limits are image shape
         # rows are ys, columns are xs
         limits = (0, self._data.value.shape[1], 0, self._data.value.shape[0])
 
         selector = PolygonSelector(
+            selection,
             limits,
             fill_color=fill_color,
             parent=self,

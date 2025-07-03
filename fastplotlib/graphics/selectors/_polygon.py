@@ -15,6 +15,7 @@ from ._base_selector import BaseSelector, MoveInfo
 class PolygonSelector(BaseSelector):
     _features = {"selection": PolygonSelectionFeature}
     _last_click = (-10, -10, 0)
+    _move_mode = None
 
     @property
     def parent(self) -> Graphic | None:
@@ -54,17 +55,20 @@ class PolygonSelector(BaseSelector):
 
     def __init__(
         self,
+        selection: Optional[Sequence[Tuple[float]]],
         limits: Sequence[float],
         parent: Graphic = None,
+        resizable: bool = True,
         fill_color=(0, 0, 0.35, 0.2),
         edge_color=(0.8, 0.6, 0),
-        edge_thickness: float = 8,
+        edge_thickness: float = 4,
         vertex_color=(0.7, 0.4, 0),
         vertex_size: float = 8,
         name: str = None,
     ):
         self._parent = parent
         self._move_info: MoveInfo = None
+        self._resizable = bool(resizable)
 
         BaseSelector.__init__(self, name=name, parent=parent)
 
@@ -75,19 +79,30 @@ class PolygonSelector(BaseSelector):
         self.geometry.positions.draw_range = 0, 0
         self.geometry.indices.draw_range = 0, 0
 
-        edge = pygfx.Line(
+        self._edge = pygfx.Line(
             self.geometry,
-            pygfx.LineMaterial(thickness=edge_thickness, color=edge_color),
+            pygfx.LineMaterial(
+                thickness=edge_thickness, color=edge_color, pick_write=False
+            ),
         )
-        points = pygfx.Points(
+        self._points = pygfx.Points(
             self.geometry,
-            pygfx.PointsMaterial(size=vertex_size, color=vertex_color),
+            pygfx.PointsMaterial(
+                size=vertex_size, color=vertex_color, pick_write=False
+            ),
         )
-        mesh = pygfx.Mesh(self.geometry, pygfx.MeshBasicMaterial(color=fill_color))
-        group = pygfx.Group().add(edge, points, mesh)
+        self._mesh = pygfx.Mesh(
+            self.geometry, pygfx.MeshBasicMaterial(color=fill_color, pick_write=False)
+        )
+        group = pygfx.Group().add(self._edge, self._points, self._mesh)
         self._set_world_object(group)
 
-        self._selection = PolygonSelectionFeature([], [0, 0, 0, 0])
+        # if selection is None:
+        if selection is None:
+            self._move_mode = "create"  # picked up by _fpl_add_plot_area_hook in a sec
+            selection = [(0, 0, 0)]
+            self.geometry.positions.draw_range = 0, 1
+        self._selection = PolygonSelectionFeature(selection, (0, 0, 0, 0))
 
         self.edge_color = edge_color
         self.edge_width = edge_thickness
@@ -233,7 +248,7 @@ class PolygonSelector(BaseSelector):
         -------
         Union[np.ndarray, List[np.ndarray]]
             data indicies of the selection
-            | tuple of [row_indices, col_indices] if the graphic is an image
+            | array of (x, y) indices if the graphic is an image
             | list of indices along the x-dimension for each line if graphic is a line collection
             | array of indices along the x-dimension if graphic is a line
         """
@@ -296,46 +311,83 @@ class PolygonSelector(BaseSelector):
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
-        self._plot_area.controller.enabled = False
-
-        # click to add new segment
-        self._plot_area.renderer.add_event_handler(self._on_click, "click")
-
         # pointer move to change endpoint of segment
         self._plot_area.renderer.add_event_handler(
-            self._move_segment_endpoint, "pointer_move"
+            self._on_pointer_down, "pointer_down"
         )
-
-        self.__.add_event_handler(pfunc_down, "pointer_down")
+        self._plot_area.renderer.add_event_handler(
+            self._on_pointer_move, "pointer_move"
+        )
+        self._plot_area.renderer.add_event_handler(self._on_pointer_up, "pointer_up")
 
         self.position_z = len(self._plot_area) + 10
 
-    def _on_click(self, ev):
-        last_click = self._last_click
-        self._last_click = ev.x, ev.y, ev.time_stamp
+        if self._move_mode == "create":
+            self._start_move_mode_create()
 
+    def _start_move_mode_create(self):
+        self._plot_area.controller.enabled = False
+        self._move_mode = "create"
+
+    def _on_pointer_down(self, ev):
         world_pos = self._plot_area.map_screen_to_world(ev)
         if world_pos is None:
             return
 
-        if np.linalg.norm([last_click[0] - ev.x, last_click[1] - ev.y]) > 5:
-            self._start_finish_segment(world_pos)
-        elif (ev.time_stamp - last_click[2]) < 2:
-            self._last_click = (-10, -10, 0)
-            self._finish_polygon(world_pos)
-        else:
-            pass  # a too slow double click
+        if self._move_mode == "create":
+            last_click = self._last_click
+            self._last_click = ev.x, ev.y, ev.time_stamp
+            if np.linalg.norm([last_click[0] - ev.x, last_click[1] - ev.y]) > 5:
+                self._add_polygon_vertex(world_pos)
+            elif (ev.time_stamp - last_click[2]) < 2:
+                self._last_click = (-10, -10, 0)
+                self._finish_polygon(world_pos)
+            else:
+                pass  # a too slow double click
 
-    def _start_finish_segment(self, world_pos):
+        elif self._move_mode is None:
+            # No move mode, so we can initiate a drag if we clicked on a vertex
+
+            self._move_mode = "drag"
+            self._move_info = MoveInfo(
+                start_selection=self.selection,
+                start_position=world_pos,
+                delta=np.zeros_like(world_pos),
+                source=None,
+            )
+            # TODO: initite drag, eirher on an existing vertex, or a new one
+            # TODO: also delete vertices by double clicking them?
+            breakpoint()
+
+    def _on_pointer_move(self, ev):
+        """After mouse pointer move event, moves endpoint of current line segment"""
+        if self._move_mode is None:
+            return
+        world_pos = self._plot_area.map_screen_to_world(ev)
+        if world_pos is None:
+            return
+
+        if self._move_mode == "create":
+            # change endpoint
+            data = self.selection
+            data[-1] = world_pos
+            self._selection.set_value(self, data)
+
+    def _on_pointer_up(self, ev):
+        if self._move_mode == "drag":
+            self._move_mode = None
+            self._move_info = None
+
+    def _add_polygon_vertex(self, world_pos):
         """After click event, adds a new line segment"""
 
-        self._move_info = MoveInfo(
-            start_selection=None,
-            start_position=world_pos,
-            delta=np.zeros_like(world_pos),
-            source=None,
-        )
-
+        # self._move_info = MoveInfo(
+        #     start_selection=None,
+        #     start_position=world_pos,
+        #     delta=np.zeros_like(world_pos),
+        #     source=None,
+        # )
+        print(world_pos)
         # line with same position for start and end until mouse moves
         if len(self.selection) == 0:
             data = np.vstack([self.selection, world_pos, world_pos])
@@ -344,34 +396,11 @@ class PolygonSelector(BaseSelector):
 
         self._selection.set_value(self, data)
 
-    def _move_segment_endpoint(self, ev):
-        """After mouse pointer move event, moves endpoint of current line segment"""
-        if self._move_info is None:
-            return
-
-        world_pos = self._plot_area.map_screen_to_world(ev)
-        if world_pos is None:
-            return
-
-        # change endpoint
-        data = self.selection
-        data[-1] = world_pos
-        self._selection.set_value(self, data)
-
     def _finish_polygon(self, world_pos):
         """finishes the polygon, disconnects events"""
-
         self.world_object.children[0].material.loop = True
-
         self._plot_area.controller.enabled = True
-
-        handlers = {
-            self._on_click: "click",
-            self._move_segment_endpoint: "pointer_move",
-        }
-
-        for handler, event in handlers.items():
-            self._plot_area.renderer.remove_event_handler(handler, event)
+        self._move_mode = None
 
 
 def is_left(p0, p1, p2):

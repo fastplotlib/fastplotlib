@@ -319,14 +319,11 @@ class LineGraphic(PositionsGraphic):
         ymin = np.floor(y_axis_vals.min()).astype(int)
         ymax = np.ceil(y_axis_vals.max()).astype(int)
 
-        # default selection is 25% of the image
-        if selection is None:
-            selection = []
-
         # min/max limits
         limits = (x_axis_vals[0], x_axis_vals[-1], ymin * 1.5, ymax * 1.5)
 
         selector = PolygonSelector(
+            selection,
             limits,
             parent=self,
             **kwargs,

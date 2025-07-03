@@ -452,7 +452,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
     def add_rectangle_selector(
         self,
-        selection: tuple[float, float, float, float] = None,
+        selection: tuple[float, float, float] = None,
         **kwargs,
     ) -> RectangleSelector:
         """
@@ -515,15 +515,10 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         ymax = np.ptp(bbox[:, 1])
 
-        if selection is None:
-            selection = []
-
         limits = (xmin, xmax, ymin - (ymax * 1.5 - ymax), ymax * 1.5)
 
-        if selection is not None:
-            selection = []  # TODO: fill selection
-
         selector = PolygonSelector(
+            selection,
             limits,
             parent=self,
             **kwargs,
