@@ -107,16 +107,14 @@ class PolygonSelector(BaseSelector):
         group = pygfx.Group().add(self._line, self._points, self._mesh, self._indicator)
         self._set_world_object(group)
 
-        # if selection is None:
         if selection is None:
-            self._move_info.mode = "create"
             selection = []
-            self.geometry.positions.draw_range = 0, 1
         self._selection = PolygonSelectionFeature(selection, (0, 0, 0, 0))
 
         self.edge_color = edge_color
         self.edge_width = edge_thickness
         self.limits = limits
+        self.selection = self.selection  # trigger positions to be created
 
     def get_selected_data(
         self, graphic: Graphic = None, mode: str = "full"
@@ -268,8 +266,15 @@ class PolygonSelector(BaseSelector):
         # selector (xmin, xmax, ymin, ymax) values
         polygon = self.selection[:, :2]
 
+        # Empty ...
         if len(polygon) == 0:
-            return None
+            if "Image" in source.__class__.__name__:
+                return np.zeros((0, 2), np.int32)
+            if "Line" in source.__class__.__name__:
+                if isinstance(source, GraphicCollection):
+                    return [np.zeros((0, 1), np.int32) for _ in source.graphics]
+                else:
+                    return np.zeros((0, 1), np.int32)
 
         # Get bounding box to be able to do first selection
         xmin, xmax = polygon[:, 0].min(), polygon[:, 0].max()
@@ -335,14 +340,20 @@ class PolygonSelector(BaseSelector):
 
         self.position_z = len(self._plot_area) + 10
 
-        if self._move_info.mode == "create":
+        if len(self.selection) == 0:
             self._start_move_mode("create", -1)
+
+    def start_new_polygon(self):
+        """Remove the current polygon and start drawing a new one."""
+        self.selection = np.zeros((0, 3), np.float32)
+        self._start_move_mode("create", -1)
 
     def _start_move_mode(self, what, index):
         self._plot_area.controller.enabled = False
         self._move_info.mode = what
         self._move_info.index = index
         self._move_info.snap_index = None
+        self._indicator.material.size = 15
         self._indicator.visible = True
 
     def _end_move_mode(self):
