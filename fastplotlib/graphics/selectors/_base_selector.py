@@ -28,8 +28,6 @@ class MoveInfo:
     # WorldObject or "key" event
     source: WorldObject | str
 
-    ref: Any = None
-
 
 # key bindings used to move the selector
 key_bind_direction = {
