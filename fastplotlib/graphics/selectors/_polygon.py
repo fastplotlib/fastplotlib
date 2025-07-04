@@ -1,6 +1,7 @@
 import warnings
 from typing import *
 
+from dataclasses import dataclass
 from numbers import Real
 
 import numpy as np
@@ -9,13 +10,18 @@ import pygfx
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import PolygonSelectionFeature
-from ._base_selector import BaseSelector, MoveInfo
+from ._base_selector import BaseSelector
+
+
+@dataclass
+class MoveInfo:
+    mode: str
+    index: int
+    snap_index: int
 
 
 class PolygonSelector(BaseSelector):
     _features = {"selection": PolygonSelectionFeature}
-    _last_click = (-10, -10, 0)
-    _move_mode = None
 
     @property
     def parent(self) -> Graphic | None:
@@ -63,14 +69,14 @@ class PolygonSelector(BaseSelector):
         edge_color=(0.8, 0.6, 0),
         edge_thickness: float = 4,
         vertex_color=(0.7, 0.4, 0),
-        vertex_size: float = 8,
+        vertex_size: float = 12,
         name: str = None,
     ):
         self._parent = parent
-        self._move_info: MoveInfo = None
         self._resizable = bool(resizable)
 
         BaseSelector.__init__(self, name=name, parent=parent)
+        self._move_info = MoveInfo("none", -1, -1)
 
         self.geometry = pygfx.Geometry(
             positions=np.zeros((8, 3), np.float32),
@@ -79,28 +85,32 @@ class PolygonSelector(BaseSelector):
         self.geometry.positions.draw_range = 0, 0
         self.geometry.indices.draw_range = 0, 0
 
-        self._edge = pygfx.Line(
+        self._line = pygfx.Line(
             self.geometry,
             pygfx.LineMaterial(
-                thickness=edge_thickness, color=edge_color, pick_write=False
+                thickness=edge_thickness, color=edge_color, pick_write=True
             ),
         )
         self._points = pygfx.Points(
             self.geometry,
-            pygfx.PointsMaterial(
-                size=vertex_size, color=vertex_color, pick_write=False
-            ),
+            pygfx.PointsMaterial(size=vertex_size, color=vertex_color, pick_write=True),
         )
+        self._indicator = pygfx.Points(
+            pygfx.Geometry(positions=[[0, 0, 0]]),
+            pygfx.PointsMaterial(size=15, color=vertex_color, opacity=0.3),
+        )
+        self._indicator.visible = False
+        self._points.local.z = 0.01  # move it slightly towards the camera
         self._mesh = pygfx.Mesh(
             self.geometry, pygfx.MeshBasicMaterial(color=fill_color, pick_write=False)
         )
-        group = pygfx.Group().add(self._edge, self._points, self._mesh)
+        group = pygfx.Group().add(self._line, self._points, self._mesh, self._indicator)
         self._set_world_object(group)
 
         # if selection is None:
         if selection is None:
-            self._move_mode = "create"  # picked up by _fpl_add_plot_area_hook in a sec
-            selection = [(0, 0, 0)]
+            self._move_info.mode = "create"
+            selection = []
             self.geometry.positions.draw_range = 0, 1
         self._selection = PolygonSelectionFeature(selection, (0, 0, 0, 0))
 
@@ -258,6 +268,9 @@ class PolygonSelector(BaseSelector):
         # selector (xmin, xmax, ymin, ymax) values
         polygon = self.selection[:, :2]
 
+        if len(polygon) == 0:
+            return None
+
         # Get bounding box to be able to do first selection
         xmin, xmax = polygon[:, 0].min(), polygon[:, 0].max()
         ymin, ymax = polygon[:, 1].min(), polygon[:, 1].max()
@@ -322,85 +335,121 @@ class PolygonSelector(BaseSelector):
 
         self.position_z = len(self._plot_area) + 10
 
-        if self._move_mode == "create":
-            self._start_move_mode_create()
+        if self._move_info.mode == "create":
+            self._start_move_mode("create", -1)
 
-    def _start_move_mode_create(self):
+    def _start_move_mode(self, what, index):
         self._plot_area.controller.enabled = False
-        self._move_mode = "create"
+        self._move_info.mode = what
+        self._move_info.index = index
+        self._move_info.snap_index = None
+        self._indicator.visible = True
+
+    def _end_move_mode(self):
+        if self._move_info.mode == "create":
+            self.world_object.children[0].material.loop = True
+        self._plot_area.controller.enabled = True
+        self._move_info.mode = None
+        self._indicator.visible = False
 
     def _on_pointer_down(self, ev):
         world_pos = self._plot_area.map_screen_to_world(ev)
         if world_pos is None:
             return
 
-        if self._move_mode == "create":
-            last_click = self._last_click
-            self._last_click = ev.x, ev.y, ev.time_stamp
-            if np.linalg.norm([last_click[0] - ev.x, last_click[1] - ev.y]) > 5:
-                self._add_polygon_vertex(world_pos)
-            elif (ev.time_stamp - last_click[2]) < 2:
-                self._last_click = (-10, -10, 0)
-                self._finish_polygon(world_pos)
+        if self._move_info.mode == "create":
+            # Add a polygon or finish it
+            if self._move_info.snap_index is not None:
+                pass  # on release we finish the polygon
             else:
-                pass  # a too slow double click
+                self._insert_polygon_vertex(999999, world_pos)
 
-        elif self._move_mode is None:
-            # No move mode, so we can initiate a drag if we clicked on a vertex
-
-            self._move_mode = "drag"
-            self._move_info = MoveInfo(
-                start_selection=self.selection,
-                start_position=world_pos,
-                delta=np.zeros_like(world_pos),
-                source=None,
-            )
-            # TODO: initite drag, eirher on an existing vertex, or a new one
-            # TODO: also delete vertices by double clicking them?
-            breakpoint()
+        elif self._move_info.mode is None:
+            # Maybe initiate a drag
+            if ev.target is self._points:
+                index = ev.pick_info["vertex_index"]
+                self._start_move_mode("drag", index)
+            elif ev.target is self._line:
+                index = ev.pick_info["vertex_index"]
+                if ev.pick_info["segment_coord"] > 0:
+                    index += 1
+                self._insert_polygon_vertex(index, world_pos)
+                self._start_move_mode("drag", index)
 
     def _on_pointer_move(self, ev):
         """After mouse pointer move event, moves endpoint of current line segment"""
-        if self._move_mode is None:
+        if self._move_info.mode is None:
             return
         world_pos = self._plot_area.map_screen_to_world(ev)
         if world_pos is None:
             return
 
-        if self._move_mode == "create":
-            # change endpoint
+        # Are we close to a point that we can snap to?
+        index = self._move_info.index
+        snap_index = None
+        if ev.target is self._points:
+            snap_index = ev.pick_info["vertex_index"]
+        if snap_index == index:  # dont snap to moving point
+            snap_index = None
+        if len(self.selection) < 4:
+            snap_index = None
+        if self._move_info.mode == "create" and snap_index != 0:
+            snap_index = None
+        if self._move_info.mode == "drag" and snap_index not in (index - 1, index + 1):
+            snap_index = None
+        self._move_info.snap_index = snap_index
+
+        # Show state of snap index to user
+        if snap_index is not None:
+            world_pos = self.geometry.positions.data[snap_index]
+            self._indicator.material.size = 30
+        else:
+            self._indicator.material.size = 15
+
+        # Move the positions being moved a bit down z, so its not preferred in picking
+        world_pos = (world_pos[0], world_pos[1], -0.01)
+
+        self._indicator.local.position = world_pos
+
+        # Update data
+        if self._move_info.mode in ("create", "drag"):
             data = self.selection
-            data[-1] = world_pos
-            self._selection.set_value(self, data)
+            if len(data) > 0:
+                data[self._move_info.index] = world_pos
+                self._selection.set_value(self, data)
 
     def _on_pointer_up(self, ev):
-        if self._move_mode == "drag":
-            self._move_mode = None
-            self._move_info = None
+        if self._move_info.mode in ("create", "drag"):
+            # Update data to set z to zero again
+            data = self.selection
+            data[self._move_info.index][2] = 0
+            self._selection.set_value(self, data)
+            # If we snapped, we dissolve (i.e. delete the vertex being moved)
+            if self._move_info.snap_index is not None:
+                self._delete_polygon_vertex(self._move_info.index)
 
-    def _add_polygon_vertex(self, world_pos):
-        """After click event, adds a new line segment"""
+        # Moving the mouse up may end the move action
+        if self._move_info.mode == "create":
+            if self._move_info.snap_index is not None:
+                self._end_move_mode()
+        elif self._move_info.mode == "drag":
+            self._end_move_mode()
 
-        # self._move_info = MoveInfo(
-        #     start_selection=None,
-        #     start_position=world_pos,
-        #     delta=np.zeros_like(world_pos),
-        #     source=None,
-        # )
-        print(world_pos)
-        # line with same position for start and end until mouse moves
-        if len(self.selection) == 0:
-            data = np.vstack([self.selection, world_pos, world_pos])
+    def _insert_polygon_vertex(self, i, world_pos):
+        selection = self.selection
+        if len(selection) == 0:
+            data = np.vstack([selection, world_pos, world_pos])
         else:
-            data = np.vstack([self.selection, world_pos])
-
+            data = np.vstack([selection[:i], world_pos, selection[i:]])
         self._selection.set_value(self, data)
 
-    def _finish_polygon(self, world_pos):
-        """finishes the polygon, disconnects events"""
-        self.world_object.children[0].material.loop = True
-        self._plot_area.controller.enabled = True
-        self._move_mode = None
+    def _delete_polygon_vertex(self, i):
+        selection = self.selection
+        if i < 0:
+            data = selection[:i]
+        else:
+            data = np.vstack([selection[:i], selection[i + 1 :]])
+        self._selection.set_value(self, data)
 
 
 def is_left(p0, p1, p2):
