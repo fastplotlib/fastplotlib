@@ -15,6 +15,8 @@ from ._base_selector import BaseSelector
 
 @dataclass
 class MoveInfo:
+    """Movement info specific to the polygon selector."""
+
     mode: str
     index: int
     snap_index: int
@@ -95,12 +97,12 @@ class PolygonSelector(BaseSelector):
             self.geometry,
             pygfx.PointsMaterial(size=vertex_size, color=vertex_color, pick_write=True),
         )
+        self._points.local.z = 0.01  # move it slightly towards the camera
         self._indicator = pygfx.Points(
             pygfx.Geometry(positions=[[0, 0, 0]]),
             pygfx.PointsMaterial(size=15, color=vertex_color, opacity=0.3),
         )
         self._indicator.visible = False
-        self._points.local.z = 0.01  # move it slightly towards the camera
         self._mesh = pygfx.Mesh(
             self.geometry, pygfx.MeshBasicMaterial(color=fill_color, pick_write=False)
         )
