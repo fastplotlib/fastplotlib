@@ -55,7 +55,7 @@ tests = [
     "scikit-learn",
     "tqdm",
 ]
-imgui = ["imgui-bundle"]
+imgui = ["imgui-bundle<1.92"]
 dev = ["fastplotlib[docs,notebook,tests,imgui]"]
 
 [project.urls]
