@@ -67,7 +67,7 @@ class _LineCollectionProperties:
         """
         Get or set a cmap along the line collection.
 
-        Optionally set using a tuple ("cmap", <transform>, <alpha>) to set the transform and/or alpha.
+        Optionally set using a tuple ("cmap", <transform>) to set the transform..
         Example:
 
         line_collection.cmap = ("jet", sine_transform_vals, 0.7)
@@ -79,23 +79,20 @@ class _LineCollectionProperties:
     def cmap(self, args):
         if isinstance(args, str):
             name = args
-            transform, alpha = None, 1.0
+            transform = None
         elif len(args) == 1:
             name = args[0]
-            transform, alpha = None, None
-
+            transform = None
         elif len(args) == 2:
             name, transform = args
-            alpha = None
+        else:
+            raise ValueError(
+                "Too many values for cmap (note that alpha is deprecated, set alpha on the graphic instead)"
+            )
 
-        elif len(args) == 3:
-            name, transform, alpha = args
-
-        colors = parse_cmap_values(
+        self.colors = parse_cmap_values(
             n_colors=len(self), cmap_name=name, transform=transform
         )
-        colors[:, -1] = alpha
-        self.colors = colors
 
     @property
     def thickness(self) -> np.ndarray:
@@ -160,7 +157,8 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
         alpha: float, optional
-            alpha value for colors, if colors is a ``str``
+            The uniform opacity of the object. If a list of colors is given, these can be RGBA, and their alpha
+            component is multiplied with the uniform opacity.
 
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
@@ -248,7 +246,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         else:
             if isinstance(colors, np.ndarray):
                 # single color for all lines in the collection as RGBA
-                if colors.shape == (4,):
+                if colors.shape in [(3,), (4,)]:
                     single_color = True
 
                 # colors specified for each line as array of shape [n_lines, RGBA]
@@ -263,8 +261,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
             elif isinstance(colors, str):
                 if colors == "random":
-                    colors = np.random.rand(len(data), 4)
-                    colors[:, -1] = alpha
+                    colors = np.random.rand(len(data), 3)
                     single_color = False
                 else:
                     # parse string color
@@ -325,6 +322,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                 colors=_c,
                 uniform_color=uniform_colors,
                 cmap=_cmap,
+                alpha=alpha,
                 name=_name,
                 metadata=_m,
                 isolated_buffer=isolated_buffer,

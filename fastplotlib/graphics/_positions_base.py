@@ -46,7 +46,7 @@ class PositionsGraphic(Graphic):
     @property
     def cmap(self) -> VertexCmap:
         """
-        Control the cmap, cmap transform, or cmap alpha
+        Control the cmap or cmap transform
 
         For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
         """
@@ -112,7 +112,6 @@ class PositionsGraphic(Graphic):
                         self._colors,
                         cmap_name=cmap,
                         transform=cmap_transform,
-                        alpha=alpha,
                     )
             elif isinstance(cmap, VertexCmap):
                 # use existing cmap instance
@@ -129,9 +128,7 @@ class PositionsGraphic(Graphic):
                 self._colors = colors
                 self._colors._shared += 1
                 # blank colormap instance
-                self._cmap = VertexCmap(
-                    self._colors, cmap_name=None, transform=None, alpha=alpha
-                )
+                self._cmap = VertexCmap(self._colors, cmap_name=None, transform=None)
             else:
                 if uniform_color:
                     if not isinstance(colors, str):  # not a single color
@@ -139,20 +136,23 @@ class PositionsGraphic(Graphic):
                             raise TypeError(
                                 "must pass a single color if using `uniform_colors=True`"
                             )
-                    self._colors = UniformColor(colors, alpha=alpha)
+                    self._colors = UniformColor(colors)
                     self._cmap = None
                 else:
                     self._colors = VertexColors(
-                        colors,
-                        n_colors=self._data.value.shape[0],
-                        alpha=alpha,
+                        colors, n_colors=self._data.value.shape[0]
                     )
                     self._cmap = VertexCmap(
-                        self._colors, cmap_name=None, transform=None, alpha=alpha
+                        self._colors, cmap_name=None, transform=None
                     )
 
         self._size_space = SizeSpace(size_space)
         super().__init__(*args, **kwargs)
+
+        # Set the object's opacity. Note that setting this to < 1 will turn the object from opaque to transparent
+        self.world_object.material.opacity = alpha
+        # self.world_object.material.alpha_mode = "blend" if alpha < 1 else "opaque"  # automatic
+        # TODO: should we add an alpha property on the graphic?
 
     def unshare_property(self, property: str):
         """unshare a shared property. Experimental and untested!"""
