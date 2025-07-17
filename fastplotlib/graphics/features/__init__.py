@@ -16,6 +16,17 @@ from ._image import (
     ImageInterpolation,
     ImageCmapInterpolation,
 )
+from ._volume import (
+    VolumeRenderMode,
+    VolumeIsoThreshold,
+    VolumeIsoStepSize,
+    VolumeIsoSubStepSize,
+    VolumeIsoEmissive,
+    VolumeIsoShininess,
+    VolumeSlicePlane,
+    VOLUME_RENDER_MODES,
+    create_volume_material_kwargs
+)
 from ._base import (
     GraphicFeature,
     BufferManager,
@@ -54,6 +65,13 @@ __all__ = [
     "ImageVmax",
     "ImageInterpolation",
     "ImageCmapInterpolation",
+    "VolumeRenderMode",
+    "VolumeIsoThreshold",
+    "VolumeIsoStepSize",
+    "VolumeIsoSubStepSize",
+    "VolumeIsoEmissive",
+    "VolumeIsoShininess",
+    "VolumeSlicePlane",
     "TextData",
     "FontSize",
     "TextFaceColor",
