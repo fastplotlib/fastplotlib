@@ -113,7 +113,8 @@ Caitlin Lewis:
 
 If your report involves any members of the fastplotlib core team, or if they feel they have
 a conflict of interest in handling it, then they will recuse themselves from
-considering your report.
+considering your report. You may also contact the neutral moderator as stated in our 
+[Governance document](https://github.com/fastplotlib/fastplotlib/blob/main/GOVERNANCE.md#neutral-moderator).
 
 # Incident reporting resolution & Code of Conduct enforcement
 
