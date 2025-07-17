@@ -942,8 +942,10 @@ class ImageWidget:
                 # make new graphic first
                 new_graphic = ImageGraphic(data=frame, name="image_widget_managed")
 
-                # set hlut tool to use new graphic
-                subplot.docks["right"]["histogram_lut"].image_graphic = new_graphic
+                if self._histogram_widget:
+                    # set hlut tool to use new graphic
+                    subplot.docks["right"]["histogram_lut"].image_graphic = new_graphic
+
                 # delete old graphic after setting hlut tool to new graphic
                 # this ensures gc
                 subplot.delete_graphic(graphic=subplot["image_widget_managed"])

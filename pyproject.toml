@@ -20,7 +20,7 @@ keywords = [
 requires-python = ">= 3.10"
 dependencies = [
     "numpy>=1.23.0",
-    "pygfx==0.10.0",
+    "pygfx==0.12.0",
     "wgpu>=0.20.0",
     "cmap>=0.1.3",
     # (this comment keeps this list multiline in VSCode)
@@ -55,7 +55,7 @@ tests = [
     "scikit-learn",
     "tqdm",
 ]
-imgui = ["imgui-bundle<1.92"]
+imgui = ["imgui-bundle>=1.6.0,<1.92.0"]
 dev = ["fastplotlib[docs,notebook,tests,imgui]"]
 
 [project.urls]

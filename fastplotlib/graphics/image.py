@@ -123,7 +123,7 @@ class ImageGraphic(Graphic):
             array is large.
 
         kwargs:
-            additional keyword arguments passed to Graphic
+            additional keyword arguments passed to :class:`.Graphic`
 
         """
 

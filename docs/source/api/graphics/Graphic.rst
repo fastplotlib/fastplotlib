@@ -42,6 +42,4 @@ Methods
     Graphic.clear_event_handlers
     Graphic.remove_event_handler
     Graphic.rotate
-    Graphic.share_property
-    Graphic.unshare_property
 

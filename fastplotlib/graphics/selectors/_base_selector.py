@@ -323,7 +323,7 @@ class BaseSelector(Graphic):
         # if it was disabled, keep it disabled
         self._plot_area.controller.enabled = self._initial_controller_state
 
-    def _move_graphic(self, delta: np.ndarray):
+    def _move_graphic(self, move_info: MoveInfo):
         raise NotImplementedError("Must be implemented in subclass")
 
     def _move_end(self, ev):
@@ -384,8 +384,9 @@ class BaseSelector(Graphic):
         # else use an edge, such as for linear selector
         else:
             move_info = MoveInfo(
-                start_position=current_pos_world,
-                last_position=current_pos_world,
+                start_position=None,
+                start_selection=None,
+                delta=delta,
                 source=self._edges[0],
             )
 

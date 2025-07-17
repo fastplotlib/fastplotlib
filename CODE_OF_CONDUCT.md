@@ -105,8 +105,11 @@ advice, in confidence.
 
 You can report issues to the fastplotlib core team: 
 
-[Kushal Kolar](https://github.com/kushalkolar)
-[Caitlin Lewis](https://github.com/clewis7)
+Kushal Kolar:
+- kushal {at} fastplotlib.org
+
+Caitlin Lewis:
+- caitlin {at} fastplotlib.org
 
 If your report involves any members of the fastplotlib core team, or if they feel they have
 a conflict of interest in handling it, then they will recuse themselves from
