@@ -53,6 +53,7 @@ Methods
     LineCollection.add_linear_region_selector
     LineCollection.add_linear_selector
     LineCollection.add_rectangle_selector
+    LineCollection.add_polygon_selector
     LineCollection.clear_event_handlers
     LineCollection.remove_event_handler
     LineCollection.remove_graphic
