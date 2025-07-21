@@ -19,7 +19,7 @@ data = datasets.load_iris()["data"]
 n_points = 50
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
-scatter_graphic = figure[0, 0].add_scatter(
+scatter = figure[0, 0].add_scatter(
     data=data[:, :-1],
     sizes=6,
     alpha=0.7,
@@ -28,9 +28,9 @@ scatter_graphic = figure[0, 0].add_scatter(
 
 figure.show()
 
-scatter_graphic.colors[0:75] = "red"
-scatter_graphic.colors[75:150] = "white"
-scatter_graphic.colors[::2] = "blue"
+scatter.colors[0:75] = "red"
+scatter.colors[75:150] = "white"
+scatter.colors[::2] = "blue"
 
 
 if __name__ == "__main__":

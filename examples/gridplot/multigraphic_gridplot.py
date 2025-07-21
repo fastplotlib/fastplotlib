@@ -84,7 +84,7 @@ figure["circles"]["circles-graphic"].offset = np.array([7, 7, 2])
 xs = np.linspace(-10, 10, 100)
 # sine wave
 ys = np.sin(xs)
-sine = np.dstack([xs, ys])[0]
+sine = np.column_stack([xs, ys])
 
 # make 10 identical waves
 sine_waves = 10 * [sine]
