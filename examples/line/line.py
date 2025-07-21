@@ -16,16 +16,16 @@ figure = fpl.Figure(size=(700, 560))
 xs = np.linspace(-10, 10, 100)
 # sine wave
 ys = np.sin(xs)
-sine_data = np.dstack([xs, ys])[0]
+sine_data = np.column_stack([xs, ys])
 
 # cosine wave
 ys = np.cos(xs) + 5
-cosine_data = np.dstack([xs, ys])[0]
+cosine_data = np.column_stack([xs, ys])
 
 # sinc function
 a = 0.5
 ys = np.sinc(xs) * 3 + 8
-sinc_data = np.dstack([xs, ys])[0]
+sinc_data = np.column_stack([xs, ys])
 
 sine = figure[0, 0].add_line(data=sine_data, thickness=5, colors="magenta")
 

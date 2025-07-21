@@ -19,7 +19,7 @@ ys = phi * np.sin(phi)
 zs = phi
 
 # make data 3d, with shape [<n_vertices>, 3]
-spiral = np.dstack([xs, ys, zs])[0]
+spiral = np.column_stack([xs, ys, zs])
 
 figure = fpl.Figure(cameras="3d", size=(700, 560))
 

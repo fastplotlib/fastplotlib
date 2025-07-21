@@ -16,15 +16,15 @@ figure = fpl.Figure(size=(700, 560))
 xs = np.linspace(0, 4 * np.pi, 100)
 # sine wave
 ys = np.sin(xs)
-sine = np.column_stack([xs, ys])
+sine_data = np.column_stack([xs, ys])
 
 # cosine wave
 ys = np.cos(xs)
-cosine = np.column_stack([xs, ys])
+cosine_data = np.column_stack([xs, ys])
 
 # create line graphics
-sine = figure[0, 0].add_line(data=sine)
-cosine = figure[0, 0].add_line(data=cosine, offset=(0, 4, 0))
+sine = figure[0, 0].add_line(data=sine_data)
+cosine = figure[0, 0].add_line(data=cosine_data, offset=(0, 4, 0))
 
 # make a list of the line graphics for convenience
 lines = [sine, cosine]

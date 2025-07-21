@@ -16,11 +16,11 @@ figure = fpl.Figure(size=(700, 560))
 xs = np.linspace(-10, 10, 100)
 # sine wave
 ys = np.sin(xs)
-sine_data = np.dstack([xs, ys])[0]
+sine_data = np.column_stack([xs, ys])
 
 # cosine wave
 ys = np.cos(xs) - 5
-cosine_data = np.dstack([xs, ys])[0]
+cosine_data = np.column_stack([xs, ys])
 
 # cmap_transform from an array, so the colors on the sine line will be based on the sine y-values
 sine = figure[0, 0].add_line(
