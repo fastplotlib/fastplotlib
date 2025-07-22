@@ -283,7 +283,6 @@ class PositionsGraphic(Graphic):
         """
         # computes args to create selectors
         n_datapoints = self.data.value.shape[0]
-        value_25p = int(n_datapoints / 4)
 
         # remove any nans
         data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
@@ -293,13 +292,15 @@ class PositionsGraphic(Graphic):
 
         ymin = np.floor(y_axis_vals.min()).astype(int)
         ymax = np.ceil(y_axis_vals.max()).astype(int)
+        xmin = np.floor(x_axis_vals.min()).astype(int)
+        xmax = np.ceil(x_axis_vals.max()).astype(int)
 
         # default selection is 25% of the image
         if selection is None:
-            selection = (x_axis_vals[0], x_axis_vals[value_25p], ymin, ymax)
+            selection = (xmin, xmin + 0.25 * (xmax - xmin), ymin, ymax)
 
         # min/max limits
-        limits = (x_axis_vals[0], x_axis_vals[-1], ymin * 1.5, ymax * 1.5)
+        limits = (xmin, xmax, ymin, ymax)
 
         selector = RectangleSelector(
             selection=selection,
@@ -318,7 +319,6 @@ class PositionsGraphic(Graphic):
     ) -> tuple[tuple[float, float], tuple[float, float], float, float]:
         # computes args to create selectors
         n_datapoints = self.data.value.shape[0]
-        value_25p = int(n_datapoints / 4)
 
         # remove any nans
         data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
@@ -333,8 +333,13 @@ class PositionsGraphic(Graphic):
             axis_vals = data[:, 1]
             magn_vals = data[:, 0]
 
-        bounds_init = axis_vals[0], axis_vals[value_25p]
-        limits = axis_vals[0], axis_vals[-1]
+        axis_vals_min = np.floor(axis_vals.min()).astype(int)
+        axis_vals_max = np.floor(axis_vals.max()).astype(int)
+
+        bounds_init = axis_vals_min, axis_vals_min + 0.25 * (
+            axis_vals_max - axis_vals_min
+        )
+        limits = axis_vals_min, axis_vals_max
 
         # width or height of selector
         size = int(np.ptp(magn_vals) * 1.5 + padding)
