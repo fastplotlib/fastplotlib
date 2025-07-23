@@ -291,15 +291,17 @@ class PositionsGraphic(Graphic):
 
         ymin = np.floor(y_axis_vals.min()).astype(int)
         ymax = np.ceil(y_axis_vals.max()).astype(int)
+        y25p = 0.25 * (ymax - ymin)
         xmin = np.floor(x_axis_vals.min()).astype(int)
         xmax = np.ceil(x_axis_vals.max()).astype(int)
+        x25p = 0.25 * (xmax - xmin)
 
         # default selection is 25% of the image
         if selection is None:
-            selection = (xmin, xmin + 0.25 * (xmax - xmin), ymin, ymax)
+            selection = (xmin, xmin + x25p, ymin, ymax)
 
-        # min/max limits
-        limits = (xmin, xmax, ymin, ymax)
+        # min/max limits include the data + 25% padding in the y-direction
+        limits = (xmin, xmax, ymin - y25p, ymax + y25p)
 
         selector = RectangleSelector(
             selection=selection,
@@ -332,7 +334,7 @@ class PositionsGraphic(Graphic):
             magn_vals = data[:, 0]
 
         axis_vals_min = np.floor(axis_vals.min()).astype(int)
-        axis_vals_max = np.floor(axis_vals.max()).astype(int)
+        axis_vals_max = np.ceil(axis_vals.max()).astype(int)
         axis_vals_25p = axis_vals_min + 0.25 * (axis_vals_max - axis_vals_min)
 
         # default selection is 25% of the image
