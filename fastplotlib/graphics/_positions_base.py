@@ -282,7 +282,6 @@ class PositionsGraphic(Graphic):
             initial (xmin, xmax, ymin, ymax) of the selection
         """
         # computes args to create selectors
-        n_datapoints = self.data.value.shape[0]
 
         # remove any nans
         data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
@@ -318,7 +317,6 @@ class PositionsGraphic(Graphic):
         self, axis: str, padding
     ) -> tuple[tuple[float, float], tuple[float, float], float, float]:
         # computes args to create selectors
-        n_datapoints = self.data.value.shape[0]
 
         # remove any nans
         data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
@@ -335,10 +333,10 @@ class PositionsGraphic(Graphic):
 
         axis_vals_min = np.floor(axis_vals.min()).astype(int)
         axis_vals_max = np.floor(axis_vals.max()).astype(int)
+        axis_vals_25p = axis_vals_min + 0.25 * (axis_vals_max - axis_vals_min)
 
-        bounds_init = axis_vals_min, axis_vals_min + 0.25 * (
-            axis_vals_max - axis_vals_min
-        )
+        # default selection is 25% of the image
+        bounds_init = axis_vals_min, axis_vals_25p
         limits = axis_vals_min, axis_vals_max
 
         # width or height of selector
