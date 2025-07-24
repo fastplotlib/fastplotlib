@@ -14,7 +14,7 @@ import numpy as np
 import fastplotlib as fpl
 
 # subclass from EdgeWindow to make a custom ImGUI Window to place inside the figure!
-from fastplotlib.ui import EdgeWindow
+from fastplotlib.ui import EdgeWindow, ChangeFlag
 from imgui_bundle import imgui
 
 # make some initial data
@@ -48,41 +48,44 @@ class ImguiExample(EdgeWindow):
         # sigma for gaussian noise
         self._sigma = 0.0
 
+        # a flag that once True, always remains True
+        self._color_changed = ChangeFlag(False)
+        self._data_changed = ChangeFlag(False)
+
+
     def update(self):
-        # the UI will be used to modify the line
-        self._line = figure[0, 0]["sine-wave"]
+        # force flag values to reset
+        self._color_changed.force_value(False)
+        self._data_changed.force_value(False)
 
         # get the current line RGB values
         rgb_color = self._line.colors[:-1]
         # make color picker
-        changed_color, rgb = imgui.color_picker3("color", col=rgb_color)
+        self._color_changed.value, rgb = imgui.color_picker3("color", col=rgb_color)
 
         # get current line color alpha value
         alpha = self._line.colors[-1]
         # make float slider
-        changed_alpha, new_alpha = imgui.slider_float("alpha", v=alpha, v_min=0.0, v_max=1.0)
+        self._color_changed.value, new_alpha = imgui.slider_float("alpha", v=alpha, v_min=0.0, v_max=1.0)
 
-        # if RGB or alpha changed
-        if changed_color | changed_alpha:
+        # if RGB or alpha flag indicates a change
+        if self._color_changed:
             # set new color along with alpha
             self._line.colors = [*rgb, new_alpha]
-
-        # example of a slider, you can also use input_float
-        changed, amplitude = imgui.slider_float("amplitude", v=self._amplitude, v_max=10, v_min=0.1)
-        if changed:
-            # set y values
-            self._amplitude = amplitude
-            self._set_data()
 
         # slider for thickness
         changed, thickness = imgui.slider_float("thickness", v=self._line.thickness, v_max=50.0, v_min=2.0)
         if changed:
             self._line.thickness = thickness
 
+        # example of a slider, you can also use input_float
+        self._data_changed.value, self._amplitude = imgui.slider_float("amplitude", v=self._amplitude, v_max=10, v_min=0.1)
+
         # slider for gaussian noise
-        changed, sigma = imgui.slider_float("noise-sigma", v=self._sigma, v_max=1.0, v_min=0.0)
-        if changed:
-            self._sigma = sigma
+        self._data_changed.value, self._sigma = imgui.slider_float("noise-sigma", v=self._sigma, v_max=1.0, v_min=0.0)
+
+        # data flag indicates change
+        if self._data_changed:
             self._set_data()
 
         # reset button
