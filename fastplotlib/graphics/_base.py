@@ -441,15 +441,15 @@ class Graphic:
     def axes(self) -> Axes:
         return self._axes
 
-    def add_axes(self):
+    def add_axes(self, reference_frame):
         """Add axes onto this Graphic"""
         if self._axes is not None:
             raise AttributeError("Axes already added onto this graphic")
 
-        self._axes = Axes(self._plot_area, offset=self.offset, grids=False)
+        self._axes = Axes(reference_frame, offset=self.offset, grids=False)
         self._axes.world_object.local.rotation = self.world_object.local.rotation
 
-        self._plot_area.scene.add(self.axes.world_object)
+        reference_frame.scene.add(self.axes.world_object)
         self._axes.update_using_bbox(self.world_object.get_world_bounding_box())
 
     @property
