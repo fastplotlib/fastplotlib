@@ -53,13 +53,6 @@ class Graphic:
     _features: dict[str, type] = dict()
 
     def __init_subclass__(cls, **kwargs):
-        # set the type of the graphic in lower case like "image", "line_collection", etc.
-        cls.type = (
-            cls.__name__.lower()
-            .replace("graphic", "")
-            .replace("collection", "_collection")
-            .replace("stack", "_stack")
-        )
 
         # set of all features
         cls._features = {
