@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Callable
 from warnings import warn
 
@@ -11,6 +10,7 @@ from ...graphics import ImageGraphic
 from ...utils import calculate_figure_shape, quick_min_max
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
+from ._array import ImageWidgetArray
 
 
 # Number of dimensions that represent one image/one frame
@@ -289,6 +289,7 @@ class ImageWidget:
     def __init__(
         self,
         data: np.ndarray | list[np.ndarray],
+        array_types: ImageWidgetArray | list[ImageWidgetArray] = ImageWidgetArray,
         window_funcs: dict[str, tuple[Callable, int]] = None,
         frame_apply: Callable | dict[int, Callable] = None,
         figure_shape: tuple[int, int] = None,
