@@ -62,7 +62,7 @@ Before giving a detailed overview of the library, here is a minimal example::
     fig.show()
 
     if __name__ == "__main__":
-        fpl.run()
+        fpl.loop.run()
 
 .. image:: ../_static/guide_hello_world.png
 
