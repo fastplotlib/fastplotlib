@@ -337,7 +337,6 @@ class RectangleSelector(BaseSelector):
                 f"`mode` must be one of 'full', 'partial', or 'ignore', you have passed {mode}"
             )
         if "Line" in source.__class__.__name__:
-
             if isinstance(source, GraphicCollection):
                 data_selections: List[np.ndarray] = list()
 
@@ -431,7 +430,7 @@ class RectangleSelector(BaseSelector):
         Parameters
         ----------
         graphic: Graphic, default ``None``
-            If provided, returns the selection indices from this graphic instrad of the graphic set as ``parent``
+            If provided, returns the selection indices from this graphic instead of the graphic set as ``parent``
 
         Returns
         -------
@@ -479,7 +478,6 @@ class RectangleSelector(BaseSelector):
             return ixs
 
     def _move_graphic(self, move_info: MoveInfo):
-
         # If this the first move in this drag, store initial selection
         if move_info.start_selection is None:
             move_info.start_selection = self.selection
