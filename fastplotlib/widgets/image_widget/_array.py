@@ -152,6 +152,8 @@ class ImageWidgetArray:
             return self.data
 
         if self.window_size is None:
+            # for simplicity, so we can use the same for loop below to slice the array
+            # regardless of whether window_functions are specified or not
             window_size = dict()
         else:
             window_size = self.window_size
@@ -167,7 +169,7 @@ class ImageWidgetArray:
             # don't go beyond max bound
             max_bound = self.data.shape[dim_number]
 
-            # check if a window is specific for this dim
+            # check if a window is specified for this dim
             if dim_name in window_size.keys():
                 size = window_size[dim_name]
                 half_size = int((size - 1) / 2)
@@ -175,7 +177,7 @@ class ImageWidgetArray:
                 # create slice obj for this dim using this window
                 start = max(0, index[dim_name] - half_size)  # start index, min allowed value is 0
                 stop = min(max_bound, index[dim_name] + half_size)
-                
+
                 s = slice(start, stop)
                 multi_slice.append(s)
 
