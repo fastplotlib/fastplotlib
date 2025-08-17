@@ -98,7 +98,7 @@ class ImageVolumeGraphic(Graphic):
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
-        interpolation: str = "nearest",
+        interpolation: str = "linear",
         cmap_interpolation: str = "linear",
         plane: tuple[float, float, float, float] = (0, 0, -1, 0),
         threshold: float = 0.5,
@@ -129,7 +129,7 @@ class ImageVolumeGraphic(Graphic):
         cmap: str, default "plasma"
             colormap for grayscale volumes
 
-        interpolation: str, default "nearest"
+        interpolation: str, default "linear"
             interpolation method for sampling pixels
 
         cmap_interpolation: str, default "linear"
