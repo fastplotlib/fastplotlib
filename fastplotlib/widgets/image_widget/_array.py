@@ -9,9 +9,8 @@ class ImageWidgetArray:
             self,
             data: NDArray,
             rgb: bool = False,
-            window_function: Callable = None,
+            process_function: Callable = None,
             window_size: dict[str, int] = None,
-            frame_function: Callable = None,
             n_display_dims: Literal[2, 3] = 2,
             dim_names: tuple[str] = None,
     ):
@@ -22,7 +21,7 @@ class ImageWidgetArray:
         data: NDArray
             array-like data, must have 2 or more dimensions
 
-        window_function: Callable, optional
+        process_function: Callable, optional
             function to apply to a window of data around the current index.
             The callable must take an `axis` kwarg.
 
@@ -32,16 +31,16 @@ class ImageWidgetArray:
 
             If a dim is not provided the window size is 0 for that dim, i.e. no window is taken along that dimension
 
-        frame_function
-        n_display_dims
-        dim_names
+        n_display_dims: int, 2 or 3, default 2
+            number of display dimensions
+
+        dim_names: tuple[str], optional
+            dimension names as a tuple of strings, ex: ("t", "z", "x", "y")
         """
         self._data = data
 
-        self._window_size = window_function
+        self._window_size = process_function
         self._window_size = window_size
-
-        self._frame_function = frame_function
 
         self._rgb = rgb
 
@@ -136,14 +135,6 @@ class ImageWidgetArray:
 
         self._window_size = size
 
-    @property
-    def frame_function(self) -> Callable | None:
-        return self._frame_function
-
-    @frame_function.setter
-    def frame_function(self, fa: Callable | None):
-        self._frame_function = fa
-
     def _apply_window_function(self, index: dict[str, int]):
         if self.n_scrollable_dims == 0:
             # 2D image, return full data
@@ -220,12 +211,11 @@ class ImageWidgetArray:
 
         window_output = self._apply_window_function(index)
 
-        if self.frame_function is not None:
-            frame_output = self.frame_function(window_output)
-        else:
-            frame_output = window_output
+        if window_output.ndim != self.n_display_dims:
+            raise ValueError(
+                f"Output of the `process_function` must match the number of display dims."
+                f"`process_function` returned an array with {window_output.ndim} dims, "
+                f"expected {self.n_display_dims} dims"
+            )
 
-        if frame_output.ndim != self.n_display_dims:
-            raise ValueError
-
-        return frame_output
+        return window_output
