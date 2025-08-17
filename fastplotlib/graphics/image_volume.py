@@ -210,9 +210,6 @@ class ImageVolumeGraphic(Graphic):
             wrap="clamp-to-edge",
         )
 
-        print(plane)
-
-
         self._plane = VolumeSlicePlane(plane)
         self._threshold = VolumeIsoThreshold(threshold)
         self._step_size = VolumeIsoStepSize(step_size)
