@@ -137,7 +137,7 @@ class ImageGraphic(Graphic):
         else:
             # create new texture array to manage buffer
             # texture array that manages the multiple textures on the GPU that represent this image
-            self._data = TextureArray(data, dim=2, isolated_buffer=isolated_buffer)
+            self._data = TextureArray(data, isolated_buffer=isolated_buffer)
 
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(self.data.value)
