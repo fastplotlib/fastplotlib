@@ -17,6 +17,7 @@ from ._image import (
     ImageCmapInterpolation,
 )
 from ._volume import (
+    TextureArrayVolume,
     VolumeRenderMode,
     VolumeIsoThreshold,
     VolumeIsoStepSize,
@@ -65,6 +66,7 @@ __all__ = [
     "ImageVmax",
     "ImageInterpolation",
     "ImageCmapInterpolation",
+    "TextureArrayVolume",
     "VolumeRenderMode",
     "VolumeIsoThreshold",
     "VolumeIsoStepSize",

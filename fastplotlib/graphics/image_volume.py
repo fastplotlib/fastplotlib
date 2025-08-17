@@ -6,7 +6,7 @@ import pygfx
 from ..utils import quick_min_max
 from ._base import Graphic
 from .features import (
-    TextureArray,
+    TextureArrayVolume,
     ImageCmap,
     ImageVmin,
     ImageVmax,
@@ -46,7 +46,7 @@ class _VolumeTile(pygfx.Volume):
     def _wgpu_get_pick_info(self, pick_value):
         pick_info = super()._wgpu_get_pick_info(pick_value)
 
-        data_row_start, data_col_start, data_z_start = (
+        data_z_start, data_row_start, data_col_start = (
             self.data_slice[0].start,
             self.data_slice[1].start,
             self.data_slice[2].start,
@@ -83,7 +83,7 @@ class _VolumeTile(pygfx.Volume):
 
 class ImageVolumeGraphic(Graphic):
     _features = {
-        "data": TextureArray,
+        "data": TextureArrayVolume,
         "cmap": ImageCmap,
         "vmin": ImageVmin,
         "vmax": ImageVmax,
@@ -182,13 +182,13 @@ class ImageVolumeGraphic(Graphic):
 
         world_object = pygfx.Group()
 
-        if isinstance(data, TextureArray):
+        if isinstance(data, TextureArrayVolume):
             # share existing buffer
             self._data = data
         else:
             # create new texture array to manage buffer
             # texture array that manages the textures on the GPU that represent this image volume
-            self._data = TextureArray(data, dim=3, isolated_buffer=isolated_buffer)
+            self._data = TextureArrayVolume(data, isolated_buffer=isolated_buffer)
 
         if (vmin is None) or (vmax is None):
             vmin, vmax = quick_min_max(self.data.value)
@@ -240,22 +240,22 @@ class ImageVolumeGraphic(Graphic):
             )
 
             # row and column start index for this chunk
-            data_row_start = data_slice[0].start
-            data_col_start = data_slice[1].start
-            data_z_start = data_slice[2].start
+            data_z_start = data_slice[0].start
+            data_row_start = data_slice[1].start
+            data_col_start = data_slice[2].start
 
             # offset tile position using the indices from the big data array
             # that correspond to this chunk
+            vol.world.z = data_z_start
             vol.world.x = data_col_start
             vol.world.y = data_row_start
-            vol.world.z = data_z_start
 
             world_object.add(vol)
 
         self._set_world_object(world_object)
 
     @property
-    def data(self) -> TextureArray:
+    def data(self) -> TextureArrayVolume:
         """Get or set the image data"""
         return self._data
 
