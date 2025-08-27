@@ -39,7 +39,6 @@ class PolygonSelector(BaseSelector):
 
     @selection.setter
     def selection(self, selection: np.ndarray[float]):
-        # set (xmin, xmax, ymin, ymax) of the selector in data space
         graphic = self._parent
 
         if isinstance(graphic, GraphicCollection):
