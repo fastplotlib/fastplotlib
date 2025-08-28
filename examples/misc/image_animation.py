@@ -16,10 +16,10 @@ data = np.random.rand(512, 512)
 figure = fpl.Figure(size=(700, 560))
 
 # plot the image data
-image_graphic = figure[0, 0].add_image(data=data, name="random-image")
+image = figure[0, 0].add_image(data=data, name="random-image")
 
 
-# a function to update the image_graphic
+# a function to update the image
 # a figure-level animation function will optionally take the figure as an argument
 def update_data(figure_instance):
     new_data = np.random.rand(512, 512)

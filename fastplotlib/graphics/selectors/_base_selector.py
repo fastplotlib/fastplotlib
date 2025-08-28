@@ -215,7 +215,7 @@ class BaseSelector(Graphic):
             wo.add_event_handler(self._toggle_arrow_key_moveable, "double_click")
 
         for fill in self._fill:
-            if fill.material.color_is_transparent:
+            if fill.material.color.a < 1 or fill.material.opacity < 1:
                 self._pfunc_fill = partial(self._check_fill_pointer_event, fill)
                 self._plot_area.renderer.add_event_handler(
                     self._pfunc_fill, "pointer_down"
@@ -393,7 +393,6 @@ class BaseSelector(Graphic):
         self._move_graphic(move_info)
 
     def _pointer_enter(self, ev):
-
         if self._hover_responsive is None:
             return
 

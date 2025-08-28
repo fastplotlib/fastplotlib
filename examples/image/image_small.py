@@ -18,7 +18,7 @@ data = np.array(
     [[0, 1, 2],
      [3, 4, 5]]
 )
-image_graphic = figure[0, 0].add_image(data)
+image = figure[0, 0].add_image(data)
 
 figure.show()
 
