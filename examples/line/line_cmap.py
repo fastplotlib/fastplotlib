@@ -16,24 +16,24 @@ figure = fpl.Figure(size=(700, 560))
 xs = np.linspace(-10, 10, 100)
 # sine wave
 ys = np.sin(xs)
-sine = np.dstack([xs, ys])[0]
+sine_data = np.column_stack([xs, ys])
 
 # cosine wave
 ys = np.cos(xs) - 5
-cosine = np.dstack([xs, ys])[0]
+cosine_data = np.column_stack([xs, ys])
 
 # cmap_transform from an array, so the colors on the sine line will be based on the sine y-values
-sine_graphic = figure[0, 0].add_line(
-    data=sine,
+sine = figure[0, 0].add_line(
+    data=sine_data,
     thickness=10,
     cmap="plasma",
-    cmap_transform=sine[:, 1]
+    cmap_transform=sine_data[:, 1]
 )
 
 # qualitative colormaps, useful for cluster labels or other types of categorical labels
 labels = [0] * 25 + [5] * 10 + [1] * 35 + [2] * 30
-cosine_graphic = figure[0, 0].add_line(
-    data=cosine,
+cosine = figure[0, 0].add_line(
+    data=cosine_data,
     thickness=10,
     cmap="tab10",
     cmap_transform=labels
@@ -42,8 +42,8 @@ cosine_graphic = figure[0, 0].add_line(
 figure.show()
 
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()

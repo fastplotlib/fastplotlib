@@ -58,6 +58,4 @@ Methods
     LineCollection.remove_event_handler
     LineCollection.remove_graphic
     LineCollection.rotate
-    LineCollection.share_property
-    LineCollection.unshare_property
 

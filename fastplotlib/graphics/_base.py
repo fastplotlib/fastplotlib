@@ -204,12 +204,6 @@ class Graphic:
         if not all(self.world_object.world.rotation == self.rotation):
             self.rotation = self.rotation
 
-    def unshare_property(self, feature: str):
-        raise NotImplementedError
-
-    def share_property(self, feature: BufferManager):
-        raise NotImplementedError
-
     @property
     def event_handlers(self) -> list[tuple[str, callable, ...]]:
         """

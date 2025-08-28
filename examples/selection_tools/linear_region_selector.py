@@ -37,22 +37,22 @@ xs = np.linspace(0, 200 * np.pi, 10_000)
 ys = np.sin(xs) + np.random.normal(scale=0.2, size=10000)
 
 # make sine along x axis
-sine_graphic_x = figure[0, 0].add_line(np.column_stack([xs, ys]), thickness=1)
+sine_x = figure[0, 0].add_line(np.column_stack([xs, ys]), thickness=1)
 
 # x = sine(y), sine(y) > 0 = 0
-sine_y = ys
-sine_y[sine_y > 0] = 0
+sine_y_data = ys
+sine_y_data[sine_y_data > 0] = 0
 
 # sine along y axis
-sine_graphic_y = figure[0, 1].add_line(np.column_stack([ys, xs]))
+sine_y = figure[0, 1].add_line(np.column_stack([ys, xs]))
 
 # offset the position of the graphic to demonstrate `get_selected_data()` later
-sine_graphic_y.position_x = 50
-sine_graphic_y.position_y = 50
+sine_y.position_x = 50
+sine_y.position_y = 50
 
 # add linear selectors
-selector_x = sine_graphic_x.add_linear_region_selector((0, 100))  # default axis is "x"
-selector_y = sine_graphic_y.add_linear_region_selector(axis="y")
+selector_x = sine_x.add_linear_region_selector((0, 100))  # default axis is "x"
+selector_y = sine_y.add_linear_region_selector(axis="y")
 
 # preallocate array for storing zoomed in data
 zoomed_init = np.column_stack([np.arange(zoomed_prealloc), np.zeros(zoomed_prealloc)])
@@ -107,8 +107,8 @@ selector_y.selection = (0, 150)
 
 figure.show(maintain_aspect=False)
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()

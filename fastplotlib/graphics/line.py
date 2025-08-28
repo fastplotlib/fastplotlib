@@ -81,7 +81,7 @@ class LineGraphic(PositionsGraphic):
             coordinate space in which the thickness is expressed ("screen", "world", "model")
 
         **kwargs
-            passed to Graphic
+            passed to :class:`.Graphic`
 
         """
 

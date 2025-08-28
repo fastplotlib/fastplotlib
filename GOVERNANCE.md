@@ -25,8 +25,8 @@ The maintainers are the core developers of fastplotlib and together have a compl
 
 The current maintainers are:
 
-1. [Kushal Kolar](https://github.com/kushalkolar)
-1. [Caitlin Lewis](https://github.com/clewis7)
+1. [Kushal Kolar](https://github.com/kushalkolar) - kushal {at} fastplotlib.org
+1. [Caitlin Lewis](https://github.com/clewis7) - caitlin {at} fastplotlib.org
 
 Responsibilities:
 
@@ -58,7 +58,7 @@ Responsibilities:
 
 No voting power, has no stake in the fastplotlib project.
 
-* Reagan Bullins
+* Reagan Bullins - reagan {at} fastplotlib.org
 
 Responsibilities:
 

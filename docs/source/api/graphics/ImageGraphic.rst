@@ -53,6 +53,4 @@ Methods
     ImageGraphic.remove_event_handler
     ImageGraphic.reset_vmin_vmax
     ImageGraphic.rotate
-    ImageGraphic.share_property
-    ImageGraphic.unshare_property
 

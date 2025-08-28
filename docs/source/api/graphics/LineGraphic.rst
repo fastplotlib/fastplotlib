@@ -51,6 +51,4 @@ Methods
     LineGraphic.clear_event_handlers
     LineGraphic.remove_event_handler
     LineGraphic.rotate
-    LineGraphic.share_property
-    LineGraphic.unshare_property
 

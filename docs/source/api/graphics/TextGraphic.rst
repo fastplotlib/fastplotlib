@@ -47,6 +47,4 @@ Methods
     TextGraphic.clear_event_handlers
     TextGraphic.remove_event_handler
     TextGraphic.rotate
-    TextGraphic.share_property
-    TextGraphic.unshare_property
 

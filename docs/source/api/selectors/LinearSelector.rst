@@ -52,6 +52,4 @@ Methods
     LinearSelector.get_selected_indices
     LinearSelector.remove_event_handler
     LinearSelector.rotate
-    LinearSelector.share_property
-    LinearSelector.unshare_property
 

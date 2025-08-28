@@ -23,7 +23,7 @@ data = dataset["data"]
 agg = AgglomerativeClustering(n_clusters=3)
 agg.fit_predict(data)
 
-scatter_graphic = figure[0, 0].add_scatter(
+scatter = figure[0, 0].add_scatter(
     data=data[:, :-1],  # use only xy data
     sizes=15,
     cmap="Set1",
@@ -44,7 +44,7 @@ def tooltip_info(ev) -> str:
     return info
 
 
-figure.tooltip_manager.register(scatter_graphic, custom_info=tooltip_info)
+figure.tooltip_manager.register(scatter, custom_info=tooltip_info)
 
 figure.show()
 

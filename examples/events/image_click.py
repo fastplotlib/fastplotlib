@@ -18,14 +18,14 @@ data = iio.imread("imageio:camera.png")
 figure = fpl.Figure(size=(700, 560))
 
 # create image graphic
-image_graphic = figure[0, 0].add_image(data=data)
+image = figure[0, 0].add_image(data=data)
 
 # show the plot
 figure.show()
 
 
 # adding a click event, we can also use decorators to add event handlers
-@image_graphic.add_event_handler("click")
+@image.add_event_handler("click")
 def click_event(ev: pygfx.PointerEvent):
     # get the click location in screen coordinates
     xy = (ev.x, ev.y)
@@ -37,8 +37,8 @@ def click_event(ev: pygfx.PointerEvent):
     print(xy)
 
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()
