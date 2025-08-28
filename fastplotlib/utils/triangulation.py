@@ -7,6 +7,10 @@ from .mapbox_earcut import earcut as mapbox_earcut
 logger = logging.getLogger("fastplotlib")
 
 
+# Note: the current triangulation is in pure Python. If the results or performance of the current implementation
+# proves inadequate, we can have a look at Bermuda: https://github.com/napari/bermuda
+
+
 def triangulate(positions, method="earcut"):
     """Triangulate the given vertex positions.
 
