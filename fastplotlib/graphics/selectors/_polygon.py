@@ -438,12 +438,14 @@ class PolygonSelector(BaseSelector):
             snap_index = None
         if self._move_info.mode == "create" and snap_index != 0:
             snap_index = None
-        if (
-            self._move_info.mode == "drag"
-            and index is not None
-            and snap_index not in (index - 1, index + 1)
-        ):
-            snap_index = None
+        if self._move_info.mode == "drag" and index is not None:
+            last_index = len(self.selection) - 1
+            if not (
+                (index == 0 and snap_index == last_index)
+                or (index == last_index and snap_index == 0)
+                or (snap_index in (index - 1, index + 1))
+            ):
+                snap_index = None
         self._move_info.snap_index = snap_index
 
         # Show state of snap index to user
@@ -453,8 +455,8 @@ class PolygonSelector(BaseSelector):
         else:
             self._indicator.material.size = 15
 
-        # Move the positions being moved a bit down z, so its not preferred in picking
-        world_pos = (world_pos[0], world_pos[1], -0.01)
+        # Move the positions being moved a bit down in depth, so its de-preferred in picking
+        world_pos = (world_pos[0], world_pos[1], -0.05)
 
         self._indicator.local.position = world_pos
 
@@ -471,11 +473,10 @@ class PolygonSelector(BaseSelector):
 
     def _on_pointer_up(self, ev):
         if self._move_info.mode in ("create", "drag"):
-            # Update data to set z to zero again
-            if self._move_info.index is not None:
-                data = self.selection
-                data[self._move_info.index][2] = 0
-                self._selection.set_value(self, data)
+            # Update data to set depth (z) to zero again
+            data = self.selection
+            data[:, 2] = 0
+            self._selection.set_value(self, data)
             # If we snapped, we dissolve (i.e. delete the vertex being moved)
             if self._move_info.snap_index is not None:
                 assert self._move_info.index is not None
