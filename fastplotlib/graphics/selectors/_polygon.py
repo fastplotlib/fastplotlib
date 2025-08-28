@@ -23,8 +23,14 @@ class MoveInfo:
     # The index of the point in the polygon that is currently being manipulated
     index: int
 
-    # The index of the point in the polygon to snap to. This is used to merge (i.e. delete) points, and to close the polygon.
+    # The index of the point in the polygon to snap to. This is used to merge (i.e. delete) points, and to finish se the polygon.
     snap_index: int
+
+    # The position of the cursor at the start of a drag
+    start_pos: np.ndarray | None
+
+    # The position of the vertices at the start of a drag
+    start_positions: np.ndarray | None
 
 
 class PolygonSelector(BaseSelector):
@@ -82,7 +88,7 @@ class PolygonSelector(BaseSelector):
         self._resizable = bool(resizable)
 
         BaseSelector.__init__(self, name=name, parent=parent)
-        self._move_info = MoveInfo("none", -1, -1)
+        self._move_info = MoveInfo("none", -1, -1, None, None)
 
         # Initialize geometry with space for 8 points. The buffers are oversized, so we only need to create new buffers when the allocated space is full.
         # The points are 3D, even though the z-component is always 0. Indices represent the faces (i.e. the triangles).
@@ -105,17 +111,20 @@ class PolygonSelector(BaseSelector):
             self.geometry,
             pygfx.PointsMaterial(size=vertex_size, color=vertex_color, pick_write=True),
         )
-        self._points.local.z = 0.1  # move it slightly towards the camera
         self._indicator = pygfx.Points(
             pygfx.Geometry(positions=[[0, 0, 0]]),
             pygfx.PointsMaterial(size=15, color=vertex_color, opacity=0.3),
         )
         self._indicator.visible = False
         self._mesh = pygfx.Mesh(
-            self.geometry, pygfx.MeshBasicMaterial(color=fill_color, pick_write=False)
+            self.geometry, pygfx.MeshBasicMaterial(color=fill_color, pick_write=True)
         )
         group = pygfx.Group().add(self._line, self._points, self._mesh, self._indicator)
         self._set_world_object(group)
+
+        # Order in z, so stuff stays pickable
+        self._line.local.z = 0.1
+        self._points.local.z = 0.2
 
         if selection is None:
             selection = []
@@ -358,19 +367,25 @@ class PolygonSelector(BaseSelector):
         self.selection = np.zeros((0, 3), np.float32)
         self._start_move_mode("create", -1)
 
-    def _start_move_mode(self, what, index):
+    def _start_move_mode(self, what, index, start_pos=None):
         self._plot_area.controller.enabled = False
         self._move_info.mode = what
         self._move_info.index = index
         self._move_info.snap_index = None
         self._indicator.material.size = 15
         self._indicator.visible = True
+        if start_pos is not None:
+            self._move_info.start_pos = start_pos
+            self._move_info.start_positions = self.selection.copy()
+            self._indicator.visible = False
 
     def _end_move_mode(self):
         if self._move_info.mode == "create":
             self.world_object.children[0].material.loop = True
         self._plot_area.controller.enabled = True
         self._move_info.mode = None
+        self._move_info.start_pos = None
+        self._move_info.start_positions = None
         self._indicator.visible = False
 
     def _on_pointer_down(self, ev):
@@ -396,6 +411,9 @@ class PolygonSelector(BaseSelector):
                     index += 1
                 self._insert_polygon_vertex(index, world_pos)
                 self._start_move_mode("drag", index)
+            elif ev.target is self._mesh:
+                index = None  # move whole polygon
+                self._start_move_mode("drag", index, world_pos)
 
     def _on_pointer_move(self, ev):
         """After mouse pointer move event, moves endpoint of current line segment"""
@@ -406,9 +424,10 @@ class PolygonSelector(BaseSelector):
             return
 
         # Are we close to a point that we can snap to?
-        # The concept of snapping is to prevent the user from creating points that are very close to each-other,
-        # allowing the user to merge points by dragging one onto its neighbour, and allowing the user to close the polygon
-        # by clicking on the first point when in 'create' mode.
+        # The concept of snapping does multiple things:
+        # - preventing the user from creating points that are very close to each-other,
+        # - allowing the user to finish the polygon by connecting to the start-point when in 'create' mode.
+        # - allowing the user to merge points by dragging one onto its neighbour.
         index = self._move_info.index
         snap_index = None
         if ev.target is self._points:
@@ -419,7 +438,11 @@ class PolygonSelector(BaseSelector):
             snap_index = None
         if self._move_info.mode == "create" and snap_index != 0:
             snap_index = None
-        if self._move_info.mode == "drag" and snap_index not in (index - 1, index + 1):
+        if (
+            self._move_info.mode == "drag"
+            and index is not None
+            and snap_index not in (index - 1, index + 1)
+        ):
             snap_index = None
         self._move_info.snap_index = snap_index
 
@@ -439,17 +462,23 @@ class PolygonSelector(BaseSelector):
         if self._move_info.mode in ("create", "drag"):
             data = self.selection
             if len(data) > 0:
-                data[self._move_info.index] = world_pos
+                if self._move_info.index is None:
+                    delta = world_pos - self._move_info.start_pos
+                    data[:] = self._move_info.start_positions + delta
+                else:
+                    data[self._move_info.index] = world_pos
                 self._selection.set_value(self, data)
 
     def _on_pointer_up(self, ev):
         if self._move_info.mode in ("create", "drag"):
             # Update data to set z to zero again
-            data = self.selection
-            data[self._move_info.index][2] = 0
-            self._selection.set_value(self, data)
+            if self._move_info.index is not None:
+                data = self.selection
+                data[self._move_info.index][2] = 0
+                self._selection.set_value(self, data)
             # If we snapped, we dissolve (i.e. delete the vertex being moved)
             if self._move_info.snap_index is not None:
+                assert self._move_info.index is not None
                 self._delete_polygon_vertex(self._move_info.index)
 
         # Moving the mouse up may end the move action
