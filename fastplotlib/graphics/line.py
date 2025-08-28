@@ -306,8 +306,8 @@ class LineGraphic(PositionsGraphic):
 
         Parameters
         ----------
-        selection: (float, float, float, float), optional
-            initial (xmin, xmax, ymin, ymax) of the selection
+        selection: List of positions, optional
+            Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
         """
 
         # remove any nans

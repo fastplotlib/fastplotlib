@@ -457,7 +457,7 @@ class ImageGraphic(Graphic):
         Parameters
         ----------
         selection: List of positions, optional
-            initial points for the polygon
+            Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
 
         """
 

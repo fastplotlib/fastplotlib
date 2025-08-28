@@ -414,9 +414,6 @@ class PolygonSelectionFeature(GraphicFeature):
         else:
             indices = np.zeros((0, 3), np.int32)
 
-        # TODO: Update the fill mesh
-        # selector.fill.geometry.positions = ...
-
         geometry = selector.geometry
 
         # Need larger buffer?

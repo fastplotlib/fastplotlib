@@ -503,7 +503,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         Parameters
         ----------
         selection: List of positions, optional
-            initial points for the polygon
+            Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
         """
         bbox = self.world_object.get_world_bounding_box()
 

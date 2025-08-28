@@ -17,8 +17,13 @@ from ._base_selector import BaseSelector
 class MoveInfo:
     """Movement info specific to the polygon selector."""
 
+    # The interaction mode: None, 'create', or 'drag'
     mode: str
+
+    # The index of the point in the polygon that is currently being manipulated
     index: int
+
+    # The index of the point in the polygon to snap to. This is used to merge (i.e. delete) points, and to close the polygon.
     snap_index: int
 
 
@@ -33,7 +38,7 @@ class PolygonSelector(BaseSelector):
     @property
     def selection(self) -> np.ndarray[float]:
         """
-        The polygon as an array of 3D points.
+        The polygon as an array of 3D points. The shape is [n_points, 3].
         """
         return self._selection.value.copy()
 
@@ -79,10 +84,14 @@ class PolygonSelector(BaseSelector):
         BaseSelector.__init__(self, name=name, parent=parent)
         self._move_info = MoveInfo("none", -1, -1)
 
+        # Initialize geometry with space for 8 points. The buffers are oversized, so we only need to create new buffers when the allocated space is full.
+        # The points are 3D, even though the z-component is always 0. Indices represent the faces (i.e. the triangles).
         self.geometry = pygfx.Geometry(
             positions=np.zeros((8, 3), np.float32),
             indices=np.zeros((8, 3), np.int32),
         )
+
+        # The draw range allows us to draw only part of the buffer, i.e. it allows us to oversize our buffers to avoid creating a new one for every added point.
         self.geometry.positions.draw_range = 0, 0
         self.geometry.indices.draw_range = 0, 0
 
@@ -96,7 +105,7 @@ class PolygonSelector(BaseSelector):
             self.geometry,
             pygfx.PointsMaterial(size=vertex_size, color=vertex_color, pick_write=True),
         )
-        self._points.local.z = 0.01  # move it slightly towards the camera
+        self._points.local.z = 0.1  # move it slightly towards the camera
         self._indicator = pygfx.Points(
             pygfx.Geometry(positions=[[0, 0, 0]]),
             pygfx.PointsMaterial(size=15, color=vertex_color, opacity=0.3),
@@ -397,6 +406,9 @@ class PolygonSelector(BaseSelector):
             return
 
         # Are we close to a point that we can snap to?
+        # The concept of snapping is to prevent the user from creating points that are very close to each-other,
+        # allowing the user to merge points by dragging one onto its neighbour, and allowing the user to close the polygon
+        # by clicking on the first point when in 'create' mode.
         index = self._move_info.index
         snap_index = None
         if ev.target is self._points:
