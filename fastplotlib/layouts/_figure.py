@@ -592,6 +592,7 @@ class Figure:
         self,
         autoscale: bool = True,
         maintain_aspect: bool = None,
+        axes_visible: bool = True,
         sidecar: bool = False,
         sidecar_kwargs: dict = None,
     ):
@@ -605,6 +606,9 @@ class Figure:
 
         maintain_aspect: bool, default ``True``
             maintain aspect ratio
+
+        axes_visible: bool, default ``True``
+            show axes
 
         sidecar: bool, default ``True``
             display plot in a ``jupyterlab-sidecar``, only in jupyter
@@ -643,6 +647,11 @@ class Figure:
                 else:
                     _maintain_aspect = maintain_aspect
                 subplot.auto_scale(maintain_aspect=maintain_aspect)
+
+        # set axes visibility if False
+        if not axes_visible:
+            for subplot in self:
+                subplot.axes.visible = False
 
         # parse based on canvas type
         if self.canvas.__class__.__name__ == "JupyterRenderCanvas":
