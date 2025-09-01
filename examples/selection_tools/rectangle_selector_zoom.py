@@ -18,10 +18,10 @@ figure = fpl.Figure(
 )
 
 # add image
-image_graphic = figure[0, 0].add_image(data=iio.imread("imageio:camera.png"))
+image = figure[0, 0].add_image(data=iio.imread("imageio:camera.png"))
 
 # add rectangle selector to image graphic
-rectangle_selector = image_graphic.add_rectangle_selector()
+rectangle_selector = image.add_rectangle_selector()
 
 # add a zoomed plot of the selected data
 zoom_ig = figure[1, 0].add_image(rectangle_selector.get_selected_data())
@@ -46,8 +46,8 @@ def update_data(ev):
 
 figure.show()
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()

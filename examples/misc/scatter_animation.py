@@ -37,13 +37,13 @@ colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 figure = fpl.Figure(size=(700, 560))
 subplot_scatter = figure[0, 0]
 # use an alpha value since this will be a lot of points
-scatter_graphic = subplot_scatter.add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
+scatter = subplot_scatter.add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
 
 
 def update_points(subplot):
     # move every point by a small amount
-    deltas = np.random.normal(size=scatter_graphic.data.value.shape, loc=0, scale=0.15)
-    scatter_graphic.data = scatter_graphic.data.value + deltas
+    deltas = np.random.normal(size=scatter.data.value.shape, loc=0, scale=0.15)
+    scatter.data = scatter.data.value + deltas
 
 
 subplot_scatter.add_animations(update_points)
@@ -51,8 +51,8 @@ subplot_scatter.add_animations(update_points)
 figure.show()
 
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()

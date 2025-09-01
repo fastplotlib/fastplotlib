@@ -80,7 +80,7 @@ figure["circles"]["circles-graphic"].offset = np.array([7, 7, 2])
 xs = np.linspace(-10, 10, 100)
 # sine wave
 ys = np.sin(xs)
-sine = np.dstack([xs, ys])[0]
+sine = np.column_stack([xs, ys])
 
 # make 10 identical waves
 sine_waves = 10 * [sine]
@@ -106,8 +106,8 @@ figure["scatter"].add_scatter(data=gaussian_cloud2, colors="r", sizes=2)
 
 figure.show()
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()

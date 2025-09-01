@@ -21,13 +21,13 @@ sine = np.sin(np.sqrt(xs))
 data = np.vstack([sine * i for i in range(2_300)])
 
 # plot the image data
-img = figure[0, 0].add_image(data=data, name="heatmap")
+image = figure[0, 0].add_image(data=data, name="heatmap")
 del data
 
 figure.show()
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()

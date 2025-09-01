@@ -19,11 +19,11 @@ ys = phi * np.sin(phi)
 zs = phi
 
 # make data 3d, with shape [<n_vertices>, 3]
-spiral = np.dstack([xs, ys, zs])[0]
+spiral = np.column_stack([xs, ys, zs])
 
 figure = fpl.Figure(cameras="3d", size=(700, 560))
 
-line_graphic = figure[0,0].add_line(data=spiral, thickness=3, cmap='jet')
+line = figure[0,0].add_line(data=spiral, thickness=3, cmap='jet')
 
 marker = figure[0,0].add_scatter(data=spiral[0], sizes=10, name="marker")
 
@@ -54,8 +54,8 @@ figure[0, 0].axes.grids.xz.visible = True
 figure.show()
 
 
-# NOTE: `if __name__ == "__main__"` is NOT how to use fastplotlib interactively
-# please see our docs for using fastplotlib interactively in ipython and jupyter
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()
