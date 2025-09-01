@@ -515,19 +515,6 @@ class VertexCmap(BufferManager):
 
         self._emit_event("cmap.transform", indices, values)
 
-    # TODO: is this property used a lot? Can we afford to remove it? Maybe raise a helpful exception?
-    # @property
-    # def alpha(self) -> float:
-    #     """Get or set the alpha level"""
-    #     return self._alpha
-
-    # @alpha.setter
-    # def alpha(self, value: float, indices: slice | list | np.ndarray = None):
-    #     self._vertex_colors[indices, -1] = value
-    #     self._alpha = value
-
-    #     self._emit_event("cmap.alpha", indices, value)
-
     def __len__(self):
         raise NotImplementedError(
             "len not implemented for `cmap`, use len(colors) instead"
