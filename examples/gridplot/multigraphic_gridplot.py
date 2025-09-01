@@ -55,7 +55,12 @@ for center in product(range(0, spatial_dims[0], 15), range(0, spatial_dims[1], 1
     circles.append(make_circle(center, 5, n_points=75))
 
 # things like class labels, cluster labels, etc.
-cmap_transform = [0, 1, 1, 2, 0, 0, 1, 1, 2, 2, 8, 3, 1, 9, 1, 5]
+cmap_transform = [
+    [0, 1, 1, 2],
+    [0, 0, 1, 1],
+    [2, 2, 8, 3],
+    [1, 9, 1, 5],
+]
 
 # add an image to overlay the circles on
 img2 = iio.imread("imageio:coins.png")[10::5, 5::5]
@@ -66,7 +71,7 @@ figure["circles"].add_image(data=img2, cmap="gray")
 figure["circles"].add_line_collection(
     circles,
     cmap="tab10",
-    cmap_transform=cmap_transform,
+    cmap_transform=sum(cmap_transform, []),
     thickness=3,
     alpha=0.5,
     name="circles-graphic",
