@@ -181,9 +181,9 @@ class Axes:
         }
 
         # create ruler for each dim
-        self._x = pygfx.Ruler(**x_kwargs)
-        self._y = pygfx.Ruler(**y_kwargs)
-        self._z = pygfx.Ruler(**z_kwargs)
+        self._x = pygfx.Ruler(alpha_mode="blend", render_queue=3000, **x_kwargs)
+        self._y = pygfx.Ruler(alpha_mode="blend", render_queue=3000, **y_kwargs)
+        self._z = pygfx.Ruler(alpha_mode="blend", render_queue=3000, **z_kwargs)
 
         self._offset = offset
 
