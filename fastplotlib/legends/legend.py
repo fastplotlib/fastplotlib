@@ -80,16 +80,15 @@ class LineLegendItem(LegendItem):
         # self._line_world_object.world.x = position[0]
 
         self._label_world_object = pygfx.Text(
-            geometry=pygfx.TextGeometry(
-                text=str(label),
-                font_size=6,
-                screen_space=False,
-                anchor="middle-left",
-            ),
+            text=str(label),
+            font_size=6,
+            screen_space=False,
+            anchor="middle-left",
             material=pygfx.TextMaterial(
                 color="w",
                 outline_color="w",
                 outline_thickness=0,
+                aa=True,
             ),
         )
 

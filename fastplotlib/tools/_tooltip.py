@@ -63,6 +63,7 @@ class Tooltip:
                 outline_color="w",
                 outline_thickness=0.0,
                 pick_write=False,
+                aa=True,
             ),
         )
 

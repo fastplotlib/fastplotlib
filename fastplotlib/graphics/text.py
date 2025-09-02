@@ -88,6 +88,7 @@ class TextGraphic(Graphic):
                 outline_color=self.outline_color,
                 outline_thickness=self.outline_thickness,
                 pick_write=True,
+                aa=True,
             ),
         )
 
