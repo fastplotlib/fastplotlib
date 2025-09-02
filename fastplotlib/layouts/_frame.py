@@ -37,7 +37,7 @@ Illustration:
 
 # wgsl shader snippet for SDF function that defines the resize handler, a lower right triangle.
 sdf_wgsl_resize_handle = """
-// hardcode square root of 2 
+// hardcode square root of 2
 let m_sqrt_2 = 1.4142135;
 
 // given a distance from an origin point, this defines the hypotenuse of a lower right triangle
@@ -175,7 +175,12 @@ class Frame:
 
         # init mesh of size 1 to graphically represent rect
         geometry = pygfx.plane_geometry(1, 1)
-        material = pygfx.MeshBasicMaterial(color=self.plane_color.idle, pick_write=True)
+        material = pygfx.MeshBasicMaterial(
+            alpha_mode="blend",
+            render_queue=1000,
+            color=self.plane_color.idle,
+            pick_write=True,
+        )
         self._plane = pygfx.Mesh(geometry, material)
         wobjects.append(self._plane)
 
@@ -189,6 +194,7 @@ class Frame:
             # subtract 7 so that the bottom right corner of the triangle is at the center
             pygfx.Geometry(positions=[[x1 - 7, -y1 + 7, 0]]),
             pygfx.PointsMarkerMaterial(
+                alpha_mode="blend",
                 color=self.resize_handle_color.idle,
                 marker="custom",
                 custom_sdf=sdf_wgsl_resize_handle,

@@ -244,6 +244,7 @@ class Axes:
                     material=pygfx.GridMaterial(**grid_kwargs),
                     orientation=plane,
                     visible=False,
+                    alpha_mode="blend",
                 )
 
                 _grids[plane] = grid

@@ -74,7 +74,11 @@ class LineLegendItem(LegendItem):
 
         self._line_world_object = pygfx.Line(
             geometry=pygfx.Geometry(positions=data),
-            material=material(thickness=8, color=self._color),
+            material=material(
+                alpha_mode="blend",
+                thickness=8,
+                color=self._color,
+            ),
         )
 
         # self._line_world_object.world.x = position[0]
@@ -85,6 +89,7 @@ class LineLegendItem(LegendItem):
             screen_space=False,
             anchor="middle-left",
             material=pygfx.TextMaterial(
+                alpha_mode="blend",
                 color="w",
                 outline_color="w",
                 outline_thickness=0,
@@ -174,7 +179,9 @@ class Legend(Graphic):
         self._mesh = pygfx.Mesh(
             pygfx.box_geometry(50, 10, 1),
             pygfx.MeshBasicMaterial(
-                color=pygfx.Color([0.1, 0.1, 0.1, 1]), wireframe_thickness=10
+                alpha_mode="blend",
+                color=pygfx.Color([0.1, 0.1, 0.1, 1]),
+                wireframe_thickness=10,
             ),
         )
 

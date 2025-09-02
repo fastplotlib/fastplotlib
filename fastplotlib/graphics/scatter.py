@@ -105,12 +105,12 @@ class ScatterGraphic(PositionsGraphic):
         n_datapoints = self.data.value.shape[0]
 
         geo_kwargs = {"positions": self._data.buffer}
-        material_kwargs = {
-            "pick_write": True,
-            "alpha_mode": alpha_mode,
-            "opacity": alpha,
-            "aa": True,
-        }
+        material_kwargs = dict(
+            alpha_mode=alpha_mode,
+            pick_write=True,
+            opacity=alpha,
+            aa=True,
+        )
         self._size_space = SizeSpace(size_space)
 
         if uniform_color:
