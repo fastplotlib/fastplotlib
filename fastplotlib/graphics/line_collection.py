@@ -125,6 +125,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
         uniform_colors: bool = False,
         alpha: float = 1.0,
+        alpha_mode: str = "blend",
         cmap: Sequence[str] | str = None,
         cmap_transform: np.ndarray | List = None,
         name: str = None,
@@ -159,6 +160,10 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         alpha: float, optional
             The uniform opacity of the object. If a list of colors is given, these can be RGBA, and their alpha
             component is multiplied with the uniform opacity.
+
+        alpha_mode: str, optional, default "blend",
+            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+            For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
@@ -196,19 +201,19 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
                 raise ValueError(
-                    f"len(thickness) != len(data)\n" f"{len(thickness)} != {len(data)}"
+                    f"len(thickness) != len(data)\n{len(thickness)} != {len(data)}"
                 )
 
         if names is not None:
             if len(names) != len(data):
                 raise ValueError(
-                    f"len(names) != len(data)\n" f"{len(names)} != {len(data)}"
+                    f"len(names) != len(data)\n{len(names)} != {len(data)}"
                 )
 
         if metadatas is not None:
             if len(metadatas) != len(data):
                 raise ValueError(
-                    f"len(metadata) != len(data)\n" f"{len(metadatas)} != {len(data)}"
+                    f"len(metadata) != len(data)\n{len(metadatas)} != {len(data)}"
                 )
 
         if kwargs_lines is not None:
@@ -323,6 +328,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                 uniform_color=uniform_colors,
                 cmap=_cmap,
                 alpha=alpha,
+                alpha_mode=alpha_mode,
                 name=_name,
                 metadata=_m,
                 isolated_buffer=isolated_buffer,
@@ -525,6 +531,7 @@ class LineStack(LineCollection):
         thickness: float | Iterable[float] = 2.0,
         colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
         alpha: float = 1.0,
+        alpha_mode: str = "blend",
         cmap: Iterable[str] | str = None,
         cmap_transform: np.ndarray | List = None,
         name: str = None,
@@ -560,6 +567,10 @@ class LineStack(LineCollection):
 
         alpha: float, optional
             alpha value for colors, if colors is a ``str``
+
+        alpha_mode: str, optional, default "blend",
+            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+            For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
@@ -603,6 +614,7 @@ class LineStack(LineCollection):
             thickness=thickness,
             colors=colors,
             alpha=alpha,
+            alpha_mode=alpha_mode,
             cmap=cmap,
             cmap_transform=cmap_transform,
             name=name,

@@ -30,6 +30,7 @@ class ScatterGraphic(PositionsGraphic):
         colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
         uniform_color: bool = False,
         alpha: float = 1.0,
+        alpha_mode: str = "blend",
         cmap: str = None,
         cmap_transform: np.ndarray = None,
         isolated_buffer: bool = True,
@@ -57,6 +58,10 @@ class ScatterGraphic(PositionsGraphic):
 
         alpha: float, optional, default 1.0
             alpha value for the colors
+
+        alpha_mode: str, optional, default "blend",
+            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+            For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
@@ -100,7 +105,12 @@ class ScatterGraphic(PositionsGraphic):
         n_datapoints = self.data.value.shape[0]
 
         geo_kwargs = {"positions": self._data.buffer}
-        material_kwargs = {"pick_write": True}
+        material_kwargs = {
+            "pick_write": True,
+            "alpha_mode": alpha_mode,
+            "opacity": alpha,
+            "aa": True,
+        }
         self._size_space = SizeSpace(size_space)
 
         if uniform_color:

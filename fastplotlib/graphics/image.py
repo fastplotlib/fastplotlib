@@ -85,6 +85,8 @@ class ImageGraphic(Graphic):
         data: Any,
         vmin: int = None,
         vmax: int = None,
+        alpha: float = 1.0,
+        alpha_mode: str = "blend",
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
@@ -105,6 +107,13 @@ class ImageGraphic(Graphic):
 
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
+
+        alpha: float, optional, default 1.0
+            alpha value for the colors
+
+        alpha_mode: str, optional, default "blend",
+            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+            For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: str, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
@@ -160,6 +169,8 @@ class ImageGraphic(Graphic):
 
         # one common material is used for every Texture chunk
         self._material = pygfx.ImageBasicMaterial(
+            alpha_mode=alpha_mode,
+            opacity=alpha,
             clim=(vmin, vmax),
             map=_map,
             interpolation=self._interpolation.value,
@@ -169,7 +180,6 @@ class ImageGraphic(Graphic):
         # iterate through each texture chunk and create
         # an _ImageTIle, offset the tile using the data indices
         for texture, chunk_index, data_slice in self._data:
-
             # create an ImageTile using the texture for this chunk
             img = _ImageTile(
                 geometry=pygfx.Geometry(grid=texture),

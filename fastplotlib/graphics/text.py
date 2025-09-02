@@ -84,11 +84,12 @@ class TextGraphic(Graphic):
             screen_space=screen_space,
             anchor=anchor,
             material=pygfx.TextMaterial(
+                alpha_mode="auto",
+                aa=True,
                 color=self.face_color,
                 outline_color=self.outline_color,
                 outline_thickness=self.outline_thickness,
                 pick_write=True,
-                aa=True,
             ),
         )
 

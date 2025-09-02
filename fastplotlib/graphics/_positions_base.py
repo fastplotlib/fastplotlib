@@ -148,16 +148,3 @@ class PositionsGraphic(Graphic):
 
         self._size_space = SizeSpace(size_space)
         super().__init__(*args, **kwargs)
-
-        # Set the object's opacity. Note that with alpha_mode='auto', setting
-        # this to < 1 will make Pygfx consider the object transparent: i.e. turn
-        # off ``depth_write``, and set ``render_queue`` to 3000.
-        self.world_object.material.opacity = alpha
-
-        # This would be similar:
-        # self.world_object.material.alpha_mode = 'blend' if alpha < 1 else 'solid'
-        # Except that with alpha_mode 'auto', the alpha-method is always 'blended';
-        # i.e. semi-transparent fragments (for aa or otherwise) blend also if alpha == 1.
-
-        # We could also provide API for users to set the alpha_mode, but I'm not sure how many
-        # users would want to use it, and they can always access the world object.

@@ -33,6 +33,7 @@ class LineGraphic(PositionsGraphic):
         colors: str | np.ndarray | Sequence = "w",
         uniform_color: bool = False,
         alpha: float = 1.0,
+        alpha_mode: str = "blend",
         cmap: str = None,
         cmap_transform: np.ndarray | Sequence = None,
         isolated_buffer: bool = True,
@@ -64,6 +65,10 @@ class LineGraphic(PositionsGraphic):
         alpha: float, optional, default 1.0
             alpha value for the colors
 
+        alpha_mode: str, optional, default "blend",
+            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+            For details see https://docs.pygfx.org/stable/transparency.html
+
         cmap: str, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
@@ -84,7 +89,6 @@ class LineGraphic(PositionsGraphic):
             data=data,
             colors=colors,
             uniform_color=uniform_color,
-            alpha=alpha,
             cmap=cmap,
             cmap_transform=cmap_transform,
             isolated_buffer=isolated_buffer,
@@ -102,6 +106,9 @@ class LineGraphic(PositionsGraphic):
         if uniform_color:
             geometry = pygfx.Geometry(positions=self._data.buffer)
             material = MaterialCls(
+                alpha_mode=alpha_mode,
+                opacity=alpha,
+                aa=True,
                 thickness=self.thickness,
                 color_mode="uniform",
                 color=self.colors,
@@ -110,6 +117,9 @@ class LineGraphic(PositionsGraphic):
             )
         else:
             material = MaterialCls(
+                alpha_mode=alpha_mode,
+                opacity=alpha,
+                aa=True,
                 thickness=self.thickness,
                 color_mode="vertex",
                 pick_write=True,
