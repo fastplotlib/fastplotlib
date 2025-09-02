@@ -226,15 +226,16 @@ class Axes:
         if grid_kwargs is None:
             grid_kwargs = dict()
 
-        grid_kwargs = {
-            "major_step": 10,
-            "minor_step": 1,
-            "thickness_space": "screen",
-            "major_thickness": 2,
-            "minor_thickness": 0.5,
-            "infinite": True,
+        grid_kwargs = dict(
+            alpha_mode="blend",
+            major_step=10,
+            minor_step=1,
+            thickness_space="screen",
+            major_thickness=2,
+            minor_thickness=0.5,
+            infinite=True,
             **grid_kwargs,
-        }
+        )
 
         if grids:
             _grids = dict()
@@ -244,7 +245,6 @@ class Axes:
                     material=pygfx.GridMaterial(**grid_kwargs),
                     orientation=plane,
                     visible=False,
-                    alpha_mode="blend",
                 )
 
                 _grids[plane] = grid
