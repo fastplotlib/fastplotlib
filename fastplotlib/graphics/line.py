@@ -5,7 +5,12 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
-from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
+from .selectors import (
+    LinearRegionSelector,
+    LinearSelector,
+    RectangleSelector,
+    PolygonSelector,
+)
 from .features import (
     Thickness,
     VertexPositions,
@@ -290,6 +295,46 @@ class LineGraphic(PositionsGraphic):
         selector = RectangleSelector(
             selection=selection,
             limits=limits,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        return selector
+
+    def add_polygon_selector(
+        self,
+        selection: List[tuple[float, float]] = None,
+        **kwargs,
+    ) -> PolygonSelector:
+        """
+        Add a :class:`.PolygonSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a
+        plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: List of positions, optional
+            Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
+        """
+
+        # remove any nans
+        data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
+
+        x_axis_vals = data[:, 0]
+        y_axis_vals = data[:, 1]
+
+        ymin = np.floor(y_axis_vals.min()).astype(int)
+        ymax = np.ceil(y_axis_vals.max()).astype(int)
+
+        # min/max limits
+        limits = (x_axis_vals[0], x_axis_vals[-1], ymin * 1.5, ymax * 1.5)
+
+        selector = PolygonSelector(
+            selection,
+            limits,
             parent=self,
             **kwargs,
         )
