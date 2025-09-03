@@ -145,13 +145,21 @@ class LinearSelector(BaseSelector):
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=line_data),
-            material=material(thickness=thickness, color=edge_color, pick_write=True),
+            material=material(
+                thickness=thickness,
+                color=edge_color,
+                alpha_mode="blend",
+                pick_write=True,
+            ),
         )
 
         self.line_outer = pygfx.Line(
             geometry=pygfx.Geometry(positions=line_data),
             material=material(
-                thickness=thickness + 6, color=self.colors_outer, pick_write=True
+                thickness=thickness + 6,
+                color=self.colors_outer,
+                alpha_mode="blend",
+                pick_write=True,
             ),
         )
 

@@ -140,7 +140,9 @@ class LinearRegionSelector(BaseSelector):
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(1, size, 1),
                 pygfx.MeshBasicMaterial(
-                    color=pygfx.Color(self.fill_color), pick_write=True
+                    color=pygfx.Color(self.fill_color),
+                    alpha_mode="blend",
+                    pick_write=True,
                 ),
             )
 
@@ -148,7 +150,9 @@ class LinearRegionSelector(BaseSelector):
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(size, 1, 1),
                 pygfx.MeshBasicMaterial(
-                    color=pygfx.Color(self.fill_color), pick_write=True
+                    color=pygfx.Color(self.fill_color),
+                    alpha_mode="blend",
+                    pick_write=True,
                 ),
             )
         else:
@@ -188,7 +192,10 @@ class LinearRegionSelector(BaseSelector):
                 positions=init_line_data.copy()
             ),  # copy so the line buffer is isolated
             pygfx.LineMaterial(
-                thickness=edge_thickness, color=self.edge_color, pick_write=True
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+                pick_write=True,
             ),
         )
         line1 = pygfx.Line(
@@ -196,7 +203,10 @@ class LinearRegionSelector(BaseSelector):
                 positions=init_line_data.copy()
             ),  # copy so the line buffer is isolated
             pygfx.LineMaterial(
-                thickness=edge_thickness, color=self.edge_color, pick_write=True
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+                pick_write=True,
             ),
         )
 
@@ -369,7 +379,6 @@ class LinearRegionSelector(BaseSelector):
             return np.arange(*bounds, dtype=int)
 
     def _move_graphic(self, move_info: MoveInfo):
-
         # If this the first move in this drag, store initial selection
         if move_info.start_selection is None:
             move_info.start_selection = self.selection

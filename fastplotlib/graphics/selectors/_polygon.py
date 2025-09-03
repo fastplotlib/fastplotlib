@@ -104,20 +104,38 @@ class PolygonSelector(BaseSelector):
         self._line = pygfx.Line(
             self.geometry,
             pygfx.LineMaterial(
-                thickness=edge_thickness, color=edge_color, pick_write=True
+                thickness=edge_thickness,
+                color=edge_color,
+                alpha_mode="blend",
+                pick_write=True,
             ),
         )
         self._points = pygfx.Points(
             self.geometry,
-            pygfx.PointsMaterial(size=vertex_size, color=vertex_color, pick_write=True),
+            pygfx.PointsMaterial(
+                size=vertex_size,
+                color=vertex_color,
+                alpha_mode="blend",
+                pick_write=True,
+            ),
         )
         self._indicator = pygfx.Points(
             pygfx.Geometry(positions=[[0, 0, 0]]),
-            pygfx.PointsMaterial(size=15, color=vertex_color, opacity=0.3),
+            pygfx.PointsMaterial(
+                size=15,
+                color=vertex_color,
+                alpha_mode="blend",
+                opacity=0.3,
+            ),
         )
         self._indicator.visible = False
         self._mesh = pygfx.Mesh(
-            self.geometry, pygfx.MeshBasicMaterial(color=fill_color, pick_write=True)
+            self.geometry,
+            pygfx.MeshBasicMaterial(
+                color=fill_color,
+                alpha_mode="blend",
+                pick_write=True,
+            ),
         )
         group = pygfx.Group().add(self._line, self._points, self._mesh, self._indicator)
         self._set_world_object(group)

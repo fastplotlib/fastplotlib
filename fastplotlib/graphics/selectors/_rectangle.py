@@ -135,7 +135,9 @@ class RectangleSelector(BaseSelector):
         self.fill = pygfx.Mesh(
             pygfx.box_geometry(width, height, 1),
             pygfx.MeshBasicMaterial(
-                color=pygfx.Color(self.fill_color), pick_write=True
+                color=pygfx.Color(self.fill_color),
+                alpha_mode="blend",
+                pick_write=True,
             ),
         )
 
@@ -153,7 +155,11 @@ class RectangleSelector(BaseSelector):
 
         left_line = pygfx.Line(
             pygfx.Geometry(positions=left_line_data.copy()),
-            pygfx.LineMaterial(thickness=edge_thickness, color=self.edge_color),
+            pygfx.LineMaterial(
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+            ),
         )
 
         # position data for the right edge line
@@ -166,7 +172,11 @@ class RectangleSelector(BaseSelector):
 
         right_line = pygfx.Line(
             pygfx.Geometry(positions=right_line_data.copy()),
-            pygfx.LineMaterial(thickness=edge_thickness, color=self.edge_color),
+            pygfx.LineMaterial(
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+            ),
         )
 
         # position data for the left edge line
@@ -179,7 +189,11 @@ class RectangleSelector(BaseSelector):
 
         bottom_line = pygfx.Line(
             pygfx.Geometry(positions=bottom_line_data.copy()),
-            pygfx.LineMaterial(thickness=edge_thickness, color=self.edge_color),
+            pygfx.LineMaterial(
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+            ),
         )
 
         # position data for the right edge line
@@ -192,7 +206,11 @@ class RectangleSelector(BaseSelector):
 
         top_line = pygfx.Line(
             pygfx.Geometry(positions=top_line_data.copy()),
-            pygfx.LineMaterial(thickness=edge_thickness, color=self.edge_color),
+            pygfx.LineMaterial(
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+            ),
         )
 
         self.edges: Tuple[pygfx.Line, pygfx.Line, pygfx.Line, pygfx.Line] = (
@@ -221,6 +239,7 @@ class RectangleSelector(BaseSelector):
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
+                alpha_mode="blend",
             ),
         )
 
@@ -232,6 +251,7 @@ class RectangleSelector(BaseSelector):
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
+                alpha_mode="blend",
             ),
         )
 
@@ -243,6 +263,7 @@ class RectangleSelector(BaseSelector):
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
+                alpha_mode="blend",
             ),
         )
 
@@ -254,6 +275,7 @@ class RectangleSelector(BaseSelector):
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
+                alpha_mode="blend",
             ),
         )
 
