@@ -7,7 +7,12 @@ import pygfx
 from ..utils import parse_cmap_values
 from ._collection_base import CollectionIndexer, GraphicCollection, CollectionFeature
 from .line import LineGraphic
-from .selectors import LinearRegionSelector, LinearSelector, RectangleSelector
+from .selectors import (
+    LinearRegionSelector,
+    LinearSelector,
+    RectangleSelector,
+    PolygonSelector,
+)
 
 
 class _LineCollectionProperties:
@@ -198,19 +203,19 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         if not isinstance(thickness, (float, int)):
             if len(thickness) != len(data):
                 raise ValueError(
-                    f"len(thickness) != len(data)\n" f"{len(thickness)} != {len(data)}"
+                    f"len(thickness) != len(data)\n{len(thickness)} != {len(data)}"
                 )
 
         if names is not None:
             if len(names) != len(data):
                 raise ValueError(
-                    f"len(names) != len(data)\n" f"{len(names)} != {len(data)}"
+                    f"len(names) != len(data)\n{len(names)} != {len(data)}"
                 )
 
         if metadatas is not None:
             if len(metadatas) != len(data):
                 raise ValueError(
-                    f"len(metadata) != len(data)\n" f"{len(metadatas)} != {len(data)}"
+                    f"len(metadata) != len(data)\n{len(metadatas)} != {len(data)}"
                 )
 
         if kwargs_lines is not None:
@@ -447,7 +452,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
     def add_rectangle_selector(
         self,
-        selection: tuple[float, float, float, float] = None,
+        selection: tuple[float, float, float] = None,
         **kwargs,
     ) -> RectangleSelector:
         """
@@ -478,6 +483,43 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         selector = RectangleSelector(
             selection=selection,
             limits=limits,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        return selector
+
+    def add_polygon_selector(
+        self,
+        selection: List[tuple[float, float]] = None,
+        **kwargs,
+    ) -> PolygonSelector:
+        """
+        Add a :class:`.PolygonSelector`. Selectors are just ``Graphic`` objects, so you can manage,
+        remove, or delete them from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: List of positions, optional
+            Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
+        """
+        bbox = self.world_object.get_world_bounding_box()
+
+        xdata = np.array(self.data[:, 0])
+        xmin, xmax = (np.nanmin(xdata), np.nanmax(xdata))
+
+        ydata = np.array(self.data[:, 1])
+        ymin = np.floor(ydata.min()).astype(int)
+
+        ymax = np.ptp(bbox[:, 1])
+
+        limits = (xmin, xmax, ymin - (ymax * 1.5 - ymax), ymax * 1.5)
+
+        selector = PolygonSelector(
+            selection,
+            limits,
             parent=self,
             **kwargs,
         )
