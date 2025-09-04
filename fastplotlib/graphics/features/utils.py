@@ -6,9 +6,7 @@ from ...utils import make_pygfx_colors
 
 
 def parse_colors(
-    colors: str | np.ndarray | list[str] | tuple[str],
-    n_colors: int | None,
-    alpha: float | None = None,
+    colors: str | np.ndarray | list[str] | tuple[str], n_colors: int | None
 ):
     """
 
@@ -16,8 +14,6 @@ def parse_colors(
     ----------
     colors
     n_colors
-    alpha
-    key
 
     Returns
     -------
@@ -30,20 +26,22 @@ def parse_colors(
             colors = colors.tolist()
     # if the color is provided as a numpy array
     if isinstance(colors, np.ndarray):
-        if colors.shape == (4,):  # single RGBA array
+        if colors.shape == (3,):  # single RGB array
+            data = np.repeat(np.array([colors]), n_colors, axis=0)
+        elif colors.shape == (4,):  # single RGBA array
             data = np.repeat(np.array([colors]), n_colors, axis=0)
         # else assume it's already a stack of RGBA arrays, keep this directly as the data
         elif colors.ndim == 2:
-            if colors.shape[1] != 4 and colors.shape[0] != n_colors:
+            if not (colors.shape[1] in (3, 4) and colors.shape[0] == n_colors):
                 raise ValueError(
                     "Valid array color arguments must be a single RGBA array or a stack of "
-                    "RGBA arrays for each datapoint in the shape [n_datapoints, 4]"
+                    "RGB or RGBA arrays for each datapoint in the shape [n_datapoints, 3] or [n_datapoints, 4]"
                 )
             data = colors
         else:
             raise ValueError(
-                "Valid array color arguments must be a single RGBA array or a stack of "
-                "RGBA arrays for each datapoint in the shape [n_datapoints, 4]"
+                "Valid array color arguments must be a single RGB(A) array or a stack of "
+                "RGB(A) arrays for each datapoint in the shape [n_datapoints, 3] or [n_datapoints, 4]"
             )
 
     # if the color is provided as list or tuple
@@ -58,8 +56,8 @@ def parse_colors(
 
             data = np.vstack([np.array(pygfx.Color(c)) for c in colors])
 
-        # if it's a single RGBA array as a tuple/list
-        elif len(colors) == 4:
+        # if it's a single RGB/RGBA array as a tuple/list
+        elif len(colors) in (3, 4):
             c = pygfx.Color(colors)
             data = np.repeat(np.array([c]), n_colors, axis=0)
 
@@ -70,18 +68,11 @@ def parse_colors(
             )
     elif isinstance(colors, str):
         if colors == "random":
-            data = np.random.rand(n_colors, 4)
-            data[:, -1] = alpha
+            data = np.random.rand(n_colors, 3)
         else:
             data = make_pygfx_colors(colors, n_colors)
     else:
         # assume it's a single color, use pygfx.Color to parse it
         data = make_pygfx_colors(colors, n_colors)
-
-    if alpha is not None:
-        if isinstance(alpha, float):
-            data[:, -1] = alpha
-        else:
-            raise TypeError("if alpha is provided it must be of type `float`")
 
     return to_gpu_supported_dtype(data)

@@ -8,7 +8,7 @@ import pygfx
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import LinearSelectionFeature
-from ._base_selector import BaseSelector, MoveInfo
+from ._base_selector import BaseSelector, MoveInfo, render_queue
 
 
 class LinearSelector(BaseSelector):
@@ -145,17 +145,34 @@ class LinearSelector(BaseSelector):
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=line_data),
-            material=material(thickness=thickness, color=edge_color, pick_write=True),
+            material=material(
+                thickness=thickness,
+                color=edge_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=render_queue,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
+            ),
         )
 
         self.line_outer = pygfx.Line(
             geometry=pygfx.Geometry(positions=line_data),
             material=material(
-                thickness=thickness + 6, color=self.colors_outer, pick_write=True
+                thickness=thickness + 6,
+                color=self.colors_outer,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=render_queue,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
             ),
         )
 
-        line_inner.world.z = self.line_outer.world.z + 1
+        # Inner line goes on top of the outer line
+        line_inner.render_order = 1
 
         world_object = pygfx.Group()
 

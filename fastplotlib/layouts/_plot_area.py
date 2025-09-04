@@ -111,6 +111,7 @@ class PlotArea(GraphicMethodsMixin):
             (0.0, 0.0, 0.0, 1.0),
             (0.0, 0.0, 0.0, 1.0),
             (0.0, 0.0, 0.0, 1.0),
+            alpha_mode="blend",
         )
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
