@@ -38,7 +38,7 @@ def _is_arraylike(obj) -> bool:
     Checks if the object is array-like.
     For now just checks if obj has `__getitem__()`
     """
-    for attr in ["__getitem__", "shape", "ndim"]:
+    for attr in ["__getitem__", "shape"]:
         if not hasattr(obj, attr):
             return False
 
@@ -369,6 +369,11 @@ class ImageWidget:
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
             if all([_is_arraylike(d) for d in data]):
+
+                for i, d in enumerate(data):
+                    if not hasattr(d, "ndim"):
+                        data[i] = np.asarray(d)
+
                 # Grid computations
                 if figure_shape is None:
                     if "shape" in figure_kwargs:
@@ -910,6 +915,11 @@ class ImageWidget:
             )
         # check all arrays
         for i, (new_array, current_array) in enumerate(zip(new_data, self._data)):
+
+            # if we don't know the ndim, we can get it from the shape
+            if not hasattr(new_array, "ndim"):
+                new_array.ndim = len(new_array.shape)
+
             if new_array.ndim != current_array.ndim:
                 raise ValueError(
                     f"new data ndim {new_array.ndim} at index {i} "
