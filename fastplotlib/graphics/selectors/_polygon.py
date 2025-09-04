@@ -156,9 +156,10 @@ class PolygonSelector(BaseSelector):
         group = pygfx.Group().add(self._line, self._points, self._mesh, self._indicator)
         self._set_world_object(group)
 
-        # Order in z, so stuff stays pickable
-        self._line.local.z = 0.1
-        self._points.local.z = 0.2
+        # Points go on top of lines, which go on top of the mesh. And indicator in between.
+        self._line.render_order = 1
+        self._indicator.render_order = 2
+        self._points.render_order = 3
 
         if selection is None:
             selection = []
@@ -259,9 +260,8 @@ class PolygonSelector(BaseSelector):
                     # empty selection
                     return np.array([], dtype=np.float32).reshape(0, 3)
 
-                s = slice(
-                    ixs[0], ixs[-1] + 1
-                )  # add 1 to end because these are direct indices
+                # add 1 to end because these are direct indices
+                s = slice(ixs[0], ixs[-1] + 1)
                 # slices n_datapoints dim
                 # slice with min, max is faster than using all the indices
 
@@ -504,9 +504,6 @@ class PolygonSelector(BaseSelector):
         else:
             self._indicator.material.size = 15
 
-        # Move the positions being moved a bit down in depth, so its de-preferred in picking
-        world_pos = (world_pos[0], world_pos[1], -0.05)
-
         self._indicator.local.position = world_pos
 
         # Update data
@@ -522,10 +519,6 @@ class PolygonSelector(BaseSelector):
 
     def _on_pointer_up(self, ev):
         if self._move_info.mode in ("create", "drag"):
-            # Update data to set depth (z) to zero again
-            data = self.selection
-            data[:, 2] = 0
-            self._selection.set_value(self, data)
             # If we snapped, we dissolve (i.e. delete the vertex being moved)
             if self._move_info.snap_index is not None:
                 assert self._move_info.index is not None

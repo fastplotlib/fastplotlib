@@ -171,7 +171,8 @@ class LinearSelector(BaseSelector):
             ),
         )
 
-        line_inner.world.z = self.line_outer.world.z + 1
+        # Inner line goes on top of the outer line
+        line_inner.render_order = 1
 
         world_object = pygfx.Group()
 

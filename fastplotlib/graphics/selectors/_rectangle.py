@@ -241,9 +241,10 @@ class RectangleSelector(BaseSelector):
         )  # left line, right line, bottom line, top line
 
         # add the edge lines
+
         for edge in self.edges:
-            edge.world.z = -0.5
-            group.add(edge)
+            edge.render_order = 1
+            group.add(*self.edges)
 
         # vertices
         top_left_vertex_data = (xmin, ymax, 1)
@@ -323,7 +324,7 @@ class RectangleSelector(BaseSelector):
         )
 
         for vertex in self.vertices:
-            vertex.world.z = -0.25
+            vertex.render_order = 2
             group.add(vertex)
 
         self._selection = RectangleSelectionFeature(selection, limits=self._limits)

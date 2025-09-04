@@ -166,6 +166,9 @@ class LinearRegionSelector(BaseSelector):
         else:
             raise ValueError("`axis` must be one of 'x' or 'y'")
 
+        # Render the mesh before the lines
+        mesh.render_order = -1
+
         # the fill of the selection
         self.fill = mesh
         # no x, y offsets for linear region selector
@@ -229,11 +232,7 @@ class LinearRegionSelector(BaseSelector):
         )
 
         self.edges: tuple[pygfx.Line, pygfx.Line] = (line0, line1)
-
-        # add the edge lines
-        for edge in self.edges:
-            edge.world.z = -0.5
-            group.add(edge)
+        group.add(*self.edges)
 
         # TODO: if parent offset changes, we should set the selector offset too, use offset evented property
         # TODO: add check if parent is `None`, will throw error otherwise
