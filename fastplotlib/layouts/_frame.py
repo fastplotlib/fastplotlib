@@ -175,6 +175,7 @@ class Frame:
         m.alpha_mode = "blend"
         m.render_queue = 1002
         m.depth_write = False
+        m.depth_test = False
         wobjects.append(self._title_graphic.world_object)
 
         # init mesh of size 1 to graphically represent rect
@@ -184,6 +185,7 @@ class Frame:
             render_queue=1000,
             color=self.plane_color.idle,
             depth_write=False,
+            depth_test=False,
             pick_write=True,
         )
         self._plane = pygfx.Mesh(geometry, material)
@@ -207,6 +209,7 @@ class Frame:
                 size=12,
                 size_space="screen",
                 depth_write=False,
+                depth_test=False,
                 pick_write=True,
             ),
         )

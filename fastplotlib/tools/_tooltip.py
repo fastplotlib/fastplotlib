@@ -65,6 +65,8 @@ class Tooltip:
                 color="w",
                 outline_color="w",
                 outline_thickness=0.0,
+                depth_write=False,
+                depth_test=False,
                 pick_write=False,
             ),
         )
@@ -75,6 +77,8 @@ class Tooltip:
             alpha_mode="blend",
             render_queue=4000,  # overlay
             color=(0.1, 0.1, 0.3, 0.95),
+            depth_write=False,
+            depth_test=False,
         )
         self._plane = pygfx.Mesh(geometry, material)
         # else text not visible
@@ -99,6 +103,8 @@ class Tooltip:
                 render_queue=4000,  # overlay
                 thickness=1.0,
                 color=(0.8, 0.8, 1.0, 1.0),
+                depth_write=False,
+                depth_test=False,
             ),
         )
 

@@ -79,6 +79,8 @@ class LineLegendItem(LegendItem):
                 render_queue=4000,  # overlay
                 thickness=8,
                 color=self._color,
+                depth_write=False,
+                depth_test=False,
             ),
         )
 
@@ -96,6 +98,8 @@ class LineLegendItem(LegendItem):
                 color="w",
                 outline_color="w",
                 outline_thickness=0,
+                depth_write=False,
+                depth_test=False,
             ),
         )
 
@@ -185,6 +189,8 @@ class Legend(Graphic):
                 render_queue=4000,  # overlay
                 color=pygfx.Color([0.1, 0.1, 0.1, 1]),
                 wireframe_thickness=10,
+                depth_write=False,
+                depth_test=False,
             ),
         )
 
