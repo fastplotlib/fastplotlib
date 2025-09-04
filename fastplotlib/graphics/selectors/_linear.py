@@ -8,7 +8,7 @@ import pygfx
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import LinearSelectionFeature
-from ._base_selector import BaseSelector, MoveInfo
+from ._base_selector import BaseSelector, MoveInfo, render_queue
 
 
 class LinearSelector(BaseSelector):
@@ -142,7 +142,6 @@ class LinearSelector(BaseSelector):
 
         self.colors_outer = pygfx.Color([0.3, 0.3, 0.3, 1.0])
 
-        # Use render_queue=3500 to render it later than the normal scene (2000 - 3000), but before overlays like legends and tooltips.
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=line_data),
@@ -151,7 +150,7 @@ class LinearSelector(BaseSelector):
                 color=edge_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=3500,
+                render_queue=render_queue,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,
@@ -165,7 +164,7 @@ class LinearSelector(BaseSelector):
                 color=self.colors_outer,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=3500,
+                render_queue=render_queue,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,

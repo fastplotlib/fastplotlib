@@ -173,7 +173,7 @@ class Frame:
         self._title_graphic = TextGraphic(title_text, font_size=16, face_color="white")
         m = self._title_graphic.world_object.material
         m.alpha_mode = "blend"
-        m.render_queue = 1002
+        m.render_queue = 1000  # background
         m.depth_write = False
         m.depth_test = False
         wobjects.append(self._title_graphic.world_object)
@@ -182,7 +182,7 @@ class Frame:
         geometry = pygfx.plane_geometry(1, 1)
         material = pygfx.MeshBasicMaterial(
             alpha_mode="blend",
-            render_queue=1000,
+            render_queue=1000,  # background
             color=self.plane_color.idle,
             depth_write=False,
             depth_test=False,
@@ -191,8 +191,8 @@ class Frame:
         self._plane = pygfx.Mesh(geometry, material)
         wobjects.append(self._plane)
 
-        # otherwise text isn't visible
-        self._plane.world.z = 0.5
+        # Plane gets rendered before text and point
+        self._plane.render_order = -1
 
         # create resize handler at point (x1, y1)
         x1, y1 = self.extent[[1, 3]]
@@ -202,7 +202,7 @@ class Frame:
             pygfx.Geometry(positions=[[x1 - 7, -y1 + 7, 0]]),
             pygfx.PointsMarkerMaterial(
                 alpha_mode="blend",
-                render_queue=1001,
+                render_queue=1000,  # background
                 color=self.resize_handle_color.idle,
                 marker="custom",
                 custom_sdf=sdf_wgsl_resize_handle,

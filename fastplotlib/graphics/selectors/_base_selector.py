@@ -10,6 +10,11 @@ from pygfx import WorldObject, Line, Mesh, Points
 from .._base import Graphic
 
 
+# For selectors we use a render_queue of 3500, which is at the end of what is considered the group of transparent objects.
+# So it's rendered later than the normal scene (2000 - 3000), but before overlays like legends and tooltips.
+render_queue = 3500
+
+
 @dataclass
 class MoveInfo:
     """

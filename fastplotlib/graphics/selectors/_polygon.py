@@ -10,7 +10,7 @@ import pygfx
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import PolygonSelectionFeature
-from ._base_selector import BaseSelector
+from ._base_selector import BaseSelector, render_queue
 
 
 @dataclass
@@ -108,7 +108,7 @@ class PolygonSelector(BaseSelector):
                 color=edge_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=3500,
+                render_queue=render_queue,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,
@@ -121,7 +121,7 @@ class PolygonSelector(BaseSelector):
                 color=vertex_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=3500,
+                render_queue=render_queue,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,
@@ -135,7 +135,7 @@ class PolygonSelector(BaseSelector):
                 alpha_mode="blend",
                 opacity=0.3,
                 aa=True,
-                render_queue=3500,
+                render_queue=render_queue,
                 depth_test=False,
                 depth_write=False,
             ),
@@ -147,7 +147,7 @@ class PolygonSelector(BaseSelector):
                 color=fill_color,
                 alpha_mode="blend",
                 opacity=0.4,
-                render_queue=3500,
+                render_queue=render_queue,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,
@@ -478,7 +478,6 @@ class PolygonSelector(BaseSelector):
             distances /= world_pos_scale
             distances[index] = np.inf
             snap_index = int(np.argmin(distances))
-            print(snap_index, distances[snap_index])
             if distances[snap_index] > snap_radius:
                 snap_index = None
 

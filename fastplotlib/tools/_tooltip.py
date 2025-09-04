@@ -61,7 +61,7 @@ class Tooltip:
             material=pygfx.TextMaterial(
                 alpha_mode="blend",
                 aa=True,
-                render_queue=4001,  # overlay
+                render_queue=4000,  # overlay
                 color="w",
                 outline_color="w",
                 outline_thickness=0.0,
@@ -81,8 +81,6 @@ class Tooltip:
             depth_test=False,
         )
         self._plane = pygfx.Mesh(geometry, material)
-        # else text not visible
-        self._plane.world.z = 0.5
 
         # line to outline the plane mesh
         self._line = pygfx.Line(
@@ -107,6 +105,8 @@ class Tooltip:
                 depth_test=False,
             ),
         )
+        # Plane gets rendered before text and line
+        self._plane.render_order = -1
 
         self._world_object = pygfx.Group()
         self._world_object.add(self._plane, self._text, self._line)

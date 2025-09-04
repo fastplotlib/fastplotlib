@@ -7,7 +7,7 @@ import pygfx
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import LinearRegionSelectionFeature
-from ._base_selector import BaseSelector, MoveInfo
+from ._base_selector import BaseSelector, MoveInfo, render_queue
 
 
 class LinearRegionSelector(BaseSelector):
@@ -143,7 +143,7 @@ class LinearRegionSelector(BaseSelector):
                     color=pygfx.Color(self.fill_color),
                     alpha_mode="blend",
                     opacity=0.4,
-                    render_queue=3500,
+                    render_queue=render_queue,
                     depth_test=False,
                     depth_write=False,
                     pick_write=True,
@@ -157,7 +157,7 @@ class LinearRegionSelector(BaseSelector):
                     color=pygfx.Color(self.fill_color),
                     alpha_mode="blend",
                     opacity=0.4,
-                    render_queue=3500,
+                    render_queue=render_queue,
                     depth_test=False,
                     depth_write=False,
                     pick_write=True,
@@ -205,7 +205,7 @@ class LinearRegionSelector(BaseSelector):
                 alpha_mode="blend",
                 opacity=1,
                 aa=True,
-                render_queue=3500,
+                render_queue=render_queue,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,
@@ -221,7 +221,7 @@ class LinearRegionSelector(BaseSelector):
                 alpha_mode="blend",
                 opacity=1,
                 aa=True,
-                render_queue=3500,
+                render_queue=render_queue,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,

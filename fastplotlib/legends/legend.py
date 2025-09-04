@@ -194,6 +194,9 @@ class Legend(Graphic):
             ),
         )
 
+        # Plane gets rendered before text and line
+        self._mesh.render_order = -1
+
         self.world_object.add(self._mesh)
         self.world_object.add(self._legend_items_group)
 
