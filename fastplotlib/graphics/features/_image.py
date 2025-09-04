@@ -13,8 +13,13 @@ from ...utils import (
 )
 
 
-# manages an array of 8192x8192 Textures representing chunks of an image
 class TextureArray(GraphicFeature):
+    """
+    Manages an array of Textures representing chunks of an image.
+
+    Creates multiple pygfx.Texture objects based on the GPU's max texture dimension limit.
+    """
+
     event_info_spec = [
         {
             "dict key": "key",
