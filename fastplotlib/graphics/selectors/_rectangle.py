@@ -137,7 +137,10 @@ class RectangleSelector(BaseSelector):
             pygfx.MeshBasicMaterial(
                 color=pygfx.Color(self.fill_color),
                 alpha_mode="blend",
+                opacity=0.4,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
                 pick_write=True,
             ),
         )
@@ -162,6 +165,8 @@ class RectangleSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -181,6 +186,8 @@ class RectangleSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -200,6 +207,8 @@ class RectangleSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -219,6 +228,8 @@ class RectangleSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -251,6 +262,8 @@ class RectangleSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -265,6 +278,8 @@ class RectangleSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -279,6 +294,8 @@ class RectangleSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -293,6 +310,8 @@ class RectangleSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 

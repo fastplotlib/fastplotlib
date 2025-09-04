@@ -152,6 +152,8 @@ class LinearSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
                 pick_write=True,
             ),
         )
@@ -164,6 +166,8 @@ class LinearSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
                 pick_write=True,
             ),
         )

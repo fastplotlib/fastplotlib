@@ -77,7 +77,7 @@ class PolygonSelector(BaseSelector):
         limits: Sequence[float],
         parent: Graphic = None,
         resizable: bool = True,
-        fill_color=(0, 0, 0.35, 0.2),
+        fill_color=(0, 0, 0.35),
         edge_color=(0.8, 0.6, 0),
         edge_thickness: float = 4,
         vertex_color=(0.7, 0.4, 0),
@@ -109,6 +109,8 @@ class PolygonSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
                 pick_write=True,
             ),
         )
@@ -120,6 +122,8 @@ class PolygonSelector(BaseSelector):
                 alpha_mode="blend",
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
                 pick_write=True,
             ),
         )
@@ -129,9 +133,11 @@ class PolygonSelector(BaseSelector):
                 size=15,
                 color=vertex_color,
                 alpha_mode="blend",
+                opacity=0.3,
                 aa=True,
                 render_queue=3500,
-                opacity=0.3,
+                depth_test=False,
+                depth_write=False,
             ),
         )
         self._indicator.visible = False
@@ -140,7 +146,10 @@ class PolygonSelector(BaseSelector):
             pygfx.MeshBasicMaterial(
                 color=fill_color,
                 alpha_mode="blend",
+                opacity=0.4,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
                 pick_write=True,
             ),
         )
@@ -444,7 +453,7 @@ class PolygonSelector(BaseSelector):
         """After mouse pointer move event, moves endpoint of current line segment"""
         if self._move_info.mode is None:
             return
-        world_pos = self._plot_area.map_screen_to_world(ev)
+        world_pos = self._plot_area.map_screen_to_world((ev.x, ev.y))
         if world_pos is None:
             return
 
@@ -455,9 +464,25 @@ class PolygonSelector(BaseSelector):
         # - allowing the user to merge points by dragging one onto its neighbour.
         index = self._move_info.index
         snap_index = None
-        if ev.target is self._points:
-            snap_index = ev.pick_info["vertex_index"]
-        if snap_index == index:  # dont snap to moving point
+
+        # Use numpy to select the nearest point.
+        # This is because we cannot use picking on the actual points because
+        # then we'd always pick the point being moved. We don't use a depth buffer
+        # so we cannot move the point backwards to avoid it being picked.
+        # An advantage is that we can make the snap-radius larger than the size of the points.
+        world_pos2 = self._plot_area.map_screen_to_world((ev.x + 1, ev.y))
+        world_pos_scale = float(np.linalg.norm(world_pos - world_pos2))
+        snap_radius = 20  # logical screen pixels
+        if len(self.selection) > 0:
+            distances = np.linalg.norm(self.selection[:, :2] - world_pos[:2], axis=1)
+            distances /= world_pos_scale
+            distances[index] = np.inf
+            snap_index = int(np.argmin(distances))
+            print(snap_index, distances[snap_index])
+            if distances[snap_index] > snap_radius:
+                snap_index = None
+
+        if snap_index == index:  # just in case, dont snap to moving point
             snap_index = None
         if len(self.selection) < 4:
             snap_index = None

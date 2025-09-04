@@ -142,7 +142,10 @@ class LinearRegionSelector(BaseSelector):
                 pygfx.MeshBasicMaterial(
                     color=pygfx.Color(self.fill_color),
                     alpha_mode="blend",
+                    opacity=0.4,
                     render_queue=3500,
+                    depth_test=False,
+                    depth_write=False,
                     pick_write=True,
                 ),
             )
@@ -153,7 +156,10 @@ class LinearRegionSelector(BaseSelector):
                 pygfx.MeshBasicMaterial(
                     color=pygfx.Color(self.fill_color),
                     alpha_mode="blend",
+                    opacity=0.4,
                     render_queue=3500,
+                    depth_test=False,
+                    depth_write=False,
                     pick_write=True,
                 ),
             )
@@ -197,8 +203,11 @@ class LinearRegionSelector(BaseSelector):
                 thickness=edge_thickness,
                 color=self.edge_color,
                 alpha_mode="blend",
+                opacity=1,
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
                 pick_write=True,
             ),
         )
@@ -210,8 +219,11 @@ class LinearRegionSelector(BaseSelector):
                 thickness=edge_thickness,
                 color=self.edge_color,
                 alpha_mode="blend",
+                opacity=1,
                 aa=True,
                 render_queue=3500,
+                depth_test=False,
+                depth_write=False,
                 pick_write=True,
             ),
         )
