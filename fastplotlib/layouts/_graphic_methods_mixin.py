@@ -422,8 +422,8 @@ class GraphicMethodsMixin:
               The points are blended in the order they are drawn.
             * 'weighted_blend': like 'blend', but the result does not depend on the order in which points are rendered,
               nor is their distance to the camera.
-            * 'dither': although the result is a bit noisy, the points distance to the camera is properly taken into account.
-              Writes to the depth buffer.
+            * 'dither': use stochastic transparency. Although the result is a bit noisy, the points distance to the camera
+              is properly taken into account, which may be better for 3D point clouds. Writes to the depth buffer.
 
             For details see https://docs.pygfx.org/stable/transparency.html
 
