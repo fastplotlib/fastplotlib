@@ -29,7 +29,7 @@ class GraphicMethodsMixin:
         vmin: int = None,
         vmax: int = None,
         alpha: float = 1.0,
-        alpha_mode: str = "blend",
+        alpha_mode: str = "auto",
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
@@ -53,10 +53,11 @@ class GraphicMethodsMixin:
             maximum value for color scaling, calculated from data if not provided
 
         alpha: float, optional, default 1.0
-            alpha value for the colors
+            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
 
-        alpha_mode: str, optional, default "blend",
-            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+        alpha_mode: str, optional, default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
             For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: str, optional, default "plasma"
@@ -101,7 +102,7 @@ class GraphicMethodsMixin:
         colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
         uniform_colors: bool = False,
         alpha: float = 1.0,
-        alpha_mode: str = "blend",
+        alpha_mode: str = "auto",
         cmap: Union[Sequence[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
@@ -135,10 +136,11 @@ class GraphicMethodsMixin:
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
         alpha: float, optional
-            alpha value for colors, if colors is a ``str``
+            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
 
-        alpha_mode: str, optional, default "blend",
-            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+        alpha_mode: str, optional, default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
             For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: Iterable of str or str, optional
@@ -198,7 +200,7 @@ class GraphicMethodsMixin:
         colors: Union[str, numpy.ndarray, Sequence] = "w",
         uniform_color: bool = False,
         alpha: float = 1.0,
-        alpha_mode: str = "blend",
+        alpha_mode: str = "auto",
         cmap: str = None,
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
         isolated_buffer: bool = True,
@@ -229,10 +231,11 @@ class GraphicMethodsMixin:
             basically saves GPU VRAM when the entire line has a single color
 
         alpha: float, optional, default 1.0
-            alpha value for the colors
+            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
 
-        alpha_mode: str, optional, default "blend",
-            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+        alpha_mode: str, optional, default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
             For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: str, optional
@@ -272,7 +275,7 @@ class GraphicMethodsMixin:
         thickness: Union[float, Iterable[float]] = 2.0,
         colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
         alpha: float = 1.0,
-        alpha_mode: str = "blend",
+        alpha_mode: str = "auto",
         cmap: Union[Iterable[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
@@ -308,10 +311,11 @@ class GraphicMethodsMixin:
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
         alpha: float, optional
-            alpha value for colors, if colors is a ``str``
+            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
 
-        alpha_mode: str, optional, default "blend",
-            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+        alpha_mode: str, optional, default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
             For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: Iterable of str or str, optional
@@ -378,7 +382,7 @@ class GraphicMethodsMixin:
         colors: str | numpy.ndarray | tuple[float] | list[float] | list[str] = "w",
         uniform_color: bool = False,
         alpha: float = 1.0,
-        alpha_mode: str = "blend",
+        alpha_mode: str = "auto",
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
         isolated_buffer: bool = True,
@@ -406,10 +410,21 @@ class GraphicMethodsMixin:
             save GPU VRAM when all points have the same color.
 
         alpha: float, optional, default 1.0
-            alpha value for the colors
+            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
 
-        alpha_mode: str, optional, default "blend",
-            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+        alpha_mode: str, optional, default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
+
+            * 'solid': the points do not have semi-transparent fragments. Writes to the depth buffer.
+            * 'auto': like 'solid', but allows semi-transparent fragments.
+            * 'blend': the points are considered transparent, and don't write to the depth buffer.
+              The points are blended in the order they are drawn.
+            * 'weighted_blend': like 'blend', but the result does not depend on the order in which points are rendered,
+              nor is their distance to the camera.
+            * 'dither': although the result is a bit noisy, the points distance to the camera is properly taken into account.
+              Writes to the depth buffer.
+
             For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: str, optional

@@ -130,7 +130,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
         uniform_colors: bool = False,
         alpha: float = 1.0,
-        alpha_mode: str = "blend",
+        alpha_mode: str = "auto",
         cmap: Sequence[str] | str = None,
         cmap_transform: np.ndarray | List = None,
         name: str = None,
@@ -165,9 +165,11 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         alpha: float, optional
             The uniform opacity of the object. If a list of colors is given, these can be RGBA, and their alpha
             component is multiplied with the uniform opacity.
+            If you make your a graphic transparent, consider setting alpha_mode
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
 
-        alpha_mode: str, optional, default "blend",
-            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+        alpha_mode: str, optional, default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
             For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: Iterable of str or str, optional
@@ -573,7 +575,7 @@ class LineStack(LineCollection):
         thickness: float | Iterable[float] = 2.0,
         colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
         alpha: float = 1.0,
-        alpha_mode: str = "blend",
+        alpha_mode: str = "auto",
         cmap: Iterable[str] | str = None,
         cmap_transform: np.ndarray | List = None,
         name: str = None,
@@ -608,10 +610,11 @@ class LineStack(LineCollection):
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
 
         alpha: float, optional
-            alpha value for colors, if colors is a ``str``
+            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
 
-        alpha_mode: str, optional, default "blend",
-            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+        alpha_mode: str, optional, default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighte_blend', 'solid', or 'dither'.
             For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: Iterable of str or str, optional

@@ -181,9 +181,15 @@ class Axes:
         }
 
         # create ruler for each dim
-        self._x = pygfx.Ruler(alpha_mode="blend", render_queue=3000, **x_kwargs)
-        self._y = pygfx.Ruler(alpha_mode="blend", render_queue=3000, **y_kwargs)
-        self._z = pygfx.Ruler(alpha_mode="blend", render_queue=3000, **z_kwargs)
+        self._x = pygfx.Ruler(alpha_mode="solid", **x_kwargs)
+        self._y = pygfx.Ruler(alpha_mode="solid", **y_kwargs)
+        self._z = pygfx.Ruler(alpha_mode="solid", **z_kwargs)
+
+        # We render the lines and ticks as solid, but enable aa for text for prettier glyphs
+        for ruler in self._x, self._y, self._z:
+            ruler.text.material.alpha_mode = "auto"
+            ruler.text.material.render_queue = 2650  # bitlater than 2600 'auto'
+            ruler.text.material.aa = True
 
         self._offset = offset
 
@@ -226,8 +232,15 @@ class Axes:
         if grid_kwargs is None:
             grid_kwargs = dict()
 
+        # The grid is a bit weird, because it makes use of transparency to fade off in the distance.
+        # But w want it to write depth, so that objects that are drawn behind it are partually hidden.
+        # So we set alha_mode to 'auto'. We make it draw earlier than other 'auto' objects, under the
+        # assumption that most interesting stuff is in front of the grid, and artifacts behind the grid are less
+        # bad than those in front. Note that fully opaque objects blend perfectly fine with the grid. Artifacts
+        # should only emerge for objects that have semi-transparent fragments.
         grid_kwargs = dict(
-            alpha_mode="blend",
+            alpha_mode="auto",
+            render_queue=2550,  # later than 1500-2500 'opaque', but earlier than 2600 'auto'
             major_step=10,
             minor_step=1,
             thickness_space="screen",

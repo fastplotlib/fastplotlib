@@ -38,7 +38,7 @@ class LineGraphic(PositionsGraphic):
         colors: str | np.ndarray | Sequence = "w",
         uniform_color: bool = False,
         alpha: float = 1.0,
-        alpha_mode: str = "blend",
+        alpha_mode: str = "auto",
         cmap: str = None,
         cmap_transform: np.ndarray | Sequence = None,
         isolated_buffer: bool = True,
@@ -68,10 +68,11 @@ class LineGraphic(PositionsGraphic):
             basically saves GPU VRAM when the entire line has a single color
 
         alpha: float, optional, default 1.0
-            alpha value for the colors
+            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
 
-        alpha_mode: str, optional, default "blend",
-            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+        alpha_mode: str, optional, default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
             For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: str, optional
@@ -108,12 +109,17 @@ class LineGraphic(PositionsGraphic):
         else:
             MaterialCls = pygfx.LineMaterial
 
+        # Turn aa on if blending. For the default alpha_mode 'auto' we turn aa off
+        # to avoid artifacts. Since PyGfx uses SSAA and PPAA the aa does not help a lot,
+        # but it does help with lines thinner than 1 px.
+        aa = alpha_mode in ("blend", "weighted_blend")
+
         if uniform_color:
             geometry = pygfx.Geometry(positions=self._data.buffer)
             material = MaterialCls(
-                alpha_mode=alpha_mode,
                 opacity=alpha,
-                aa=True,
+                alpha_mode=alpha_mode,
+                aa=aa,
                 thickness=self.thickness,
                 color_mode="uniform",
                 color=self.colors,
@@ -122,9 +128,9 @@ class LineGraphic(PositionsGraphic):
             )
         else:
             material = MaterialCls(
-                alpha_mode=alpha_mode,
                 opacity=alpha,
-                aa=True,
+                alpha_mode=alpha_mode,
+                aa=aa,
                 thickness=self.thickness,
                 color_mode="vertex",
                 pick_write=True,

@@ -76,6 +76,7 @@ class LineLegendItem(LegendItem):
             geometry=pygfx.Geometry(positions=data),
             material=material(
                 alpha_mode="blend",
+                render_queue=4000,  # overlay
                 thickness=8,
                 color=self._color,
             ),
@@ -90,10 +91,11 @@ class LineLegendItem(LegendItem):
             anchor="middle-left",
             material=pygfx.TextMaterial(
                 alpha_mode="blend",
+                aa=True,
+                render_queue=4000,  # overlay
                 color="w",
                 outline_color="w",
                 outline_thickness=0,
-                aa=True,
             ),
         )
 
@@ -180,6 +182,7 @@ class Legend(Graphic):
             pygfx.box_geometry(50, 10, 1),
             pygfx.MeshBasicMaterial(
                 alpha_mode="blend",
+                render_queue=4000,  # overlay
                 color=pygfx.Color([0.1, 0.1, 0.1, 1]),
                 wireframe_thickness=10,
             ),

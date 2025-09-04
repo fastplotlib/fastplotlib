@@ -60,11 +60,12 @@ class Tooltip:
             anchor="bottom-left",
             material=pygfx.TextMaterial(
                 alpha_mode="blend",
+                aa=True,
+                render_queue=4001,  # overlay
                 color="w",
                 outline_color="w",
                 outline_thickness=0.0,
                 pick_write=False,
-                aa=True,
             ),
         )
 
@@ -72,6 +73,7 @@ class Tooltip:
         geometry = pygfx.plane_geometry(1, 1)
         material = pygfx.MeshBasicMaterial(
             alpha_mode="blend",
+            render_queue=4000,  # overlay
             color=(0.1, 0.1, 0.3, 0.95),
         )
         self._plane = pygfx.Mesh(geometry, material)
@@ -94,6 +96,7 @@ class Tooltip:
             ),
             material=pygfx.LineThinMaterial(
                 alpha_mode="blend",
+                render_queue=4000,  # overlay
                 thickness=1.0,
                 color=(0.8, 0.8, 1.0, 1.0),
             ),

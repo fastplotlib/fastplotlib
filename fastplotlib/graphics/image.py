@@ -91,7 +91,7 @@ class ImageGraphic(Graphic):
         vmin: int = None,
         vmax: int = None,
         alpha: float = 1.0,
-        alpha_mode: str = "blend",
+        alpha_mode: str = "auto",
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
@@ -114,10 +114,11 @@ class ImageGraphic(Graphic):
             maximum value for color scaling, calculated from data if not provided
 
         alpha: float, optional, default 1.0
-            alpha value for the colors
+            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
 
-        alpha_mode: str, optional, default "blend",
-            The alpha-mode, e.g. 'auto', 'blend', or 'solid'.
+        alpha_mode: str, optional, default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
             For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: str, optional, default "plasma"

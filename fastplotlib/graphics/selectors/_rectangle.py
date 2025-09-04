@@ -137,6 +137,7 @@ class RectangleSelector(BaseSelector):
             pygfx.MeshBasicMaterial(
                 color=pygfx.Color(self.fill_color),
                 alpha_mode="blend",
+                render_queue=3500,
                 pick_write=True,
             ),
         )
@@ -159,6 +160,8 @@ class RectangleSelector(BaseSelector):
                 thickness=edge_thickness,
                 color=self.edge_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
             ),
         )
 
@@ -176,6 +179,8 @@ class RectangleSelector(BaseSelector):
                 thickness=edge_thickness,
                 color=self.edge_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
             ),
         )
 
@@ -193,6 +198,8 @@ class RectangleSelector(BaseSelector):
                 thickness=edge_thickness,
                 color=self.edge_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
             ),
         )
 
@@ -210,6 +217,8 @@ class RectangleSelector(BaseSelector):
                 thickness=edge_thickness,
                 color=self.edge_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
             ),
         )
 
@@ -240,6 +249,8 @@ class RectangleSelector(BaseSelector):
                 size_mode="vertex",
                 edge_color=self.vertex_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
             ),
         )
 
@@ -252,6 +263,8 @@ class RectangleSelector(BaseSelector):
                 size_mode="vertex",
                 edge_color=self.vertex_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
             ),
         )
 
@@ -264,6 +277,8 @@ class RectangleSelector(BaseSelector):
                 size_mode="vertex",
                 edge_color=self.vertex_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
             ),
         )
 
@@ -276,6 +291,8 @@ class RectangleSelector(BaseSelector):
                 size_mode="vertex",
                 edge_color=self.vertex_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
             ),
         )
 

@@ -107,6 +107,8 @@ class PolygonSelector(BaseSelector):
                 thickness=edge_thickness,
                 color=edge_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
                 pick_write=True,
             ),
         )
@@ -116,6 +118,8 @@ class PolygonSelector(BaseSelector):
                 size=vertex_size,
                 color=vertex_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
                 pick_write=True,
             ),
         )
@@ -125,6 +129,8 @@ class PolygonSelector(BaseSelector):
                 size=15,
                 color=vertex_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
                 opacity=0.3,
             ),
         )
@@ -134,6 +140,7 @@ class PolygonSelector(BaseSelector):
             pygfx.MeshBasicMaterial(
                 color=fill_color,
                 alpha_mode="blend",
+                render_queue=3500,
                 pick_write=True,
             ),
         )

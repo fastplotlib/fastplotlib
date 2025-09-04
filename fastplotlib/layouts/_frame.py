@@ -171,6 +171,10 @@ class Frame:
         else:
             title_text = title
         self._title_graphic = TextGraphic(title_text, font_size=16, face_color="white")
+        m = self._title_graphic.world_object.material
+        m.alpha_mode = "blend"
+        m.render_queue = 1002
+        m.depth_write = False
         wobjects.append(self._title_graphic.world_object)
 
         # init mesh of size 1 to graphically represent rect
@@ -179,6 +183,7 @@ class Frame:
             alpha_mode="blend",
             render_queue=1000,
             color=self.plane_color.idle,
+            depth_write=False,
             pick_write=True,
         )
         self._plane = pygfx.Mesh(geometry, material)
@@ -195,11 +200,13 @@ class Frame:
             pygfx.Geometry(positions=[[x1 - 7, -y1 + 7, 0]]),
             pygfx.PointsMarkerMaterial(
                 alpha_mode="blend",
+                render_queue=1001,
                 color=self.resize_handle_color.idle,
                 marker="custom",
                 custom_sdf=sdf_wgsl_resize_handle,
                 size=12,
                 size_space="screen",
+                depth_write=False,
                 pick_write=True,
             ),
         )

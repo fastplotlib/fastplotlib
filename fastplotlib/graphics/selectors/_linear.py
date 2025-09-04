@@ -142,6 +142,7 @@ class LinearSelector(BaseSelector):
 
         self.colors_outer = pygfx.Color([0.3, 0.3, 0.3, 1.0])
 
+        # Use render_queue=3500 to render it later than the normal scene (2000 - 3000), but before overlays like legends and tooltips.
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=line_data),
@@ -149,6 +150,8 @@ class LinearSelector(BaseSelector):
                 thickness=thickness,
                 color=edge_color,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
                 pick_write=True,
             ),
         )
@@ -159,6 +162,8 @@ class LinearSelector(BaseSelector):
                 thickness=thickness + 6,
                 color=self.colors_outer,
                 alpha_mode="blend",
+                aa=True,
+                render_queue=3500,
                 pick_write=True,
             ),
         )
