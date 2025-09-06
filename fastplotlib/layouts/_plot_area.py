@@ -272,6 +272,10 @@ class PlotArea(GraphicMethodsMixin):
         """1, 2, or 4 colors, each color must be acceptable by pygfx.Color"""
         self._background_material.set_colors(*colors)
 
+    @property
+    def animation_funcs(self) -> list[callable]:
+        return self._animate_funcs_pre + self._animate_funcs_post
+
     def map_screen_to_world(
         self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
@@ -391,6 +395,14 @@ class PlotArea(GraphicMethodsMixin):
             self._animate_funcs_pre.remove(func)
 
         if func in self._animate_funcs_post:
+            self._animate_funcs_post.remove(func)
+
+    def clear_animations(self):
+        """Removes all animation functions from both pre and post render."""
+        for func in self._animate_funcs_pre:
+            self._animate_funcs_pre.remove(func)
+
+        for func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
     def add_graphic(self, graphic: Graphic, center: bool = True):

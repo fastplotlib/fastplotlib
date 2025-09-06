@@ -543,6 +543,10 @@ class Figure:
         """show/hide tooltips for all graphics"""
         return self._show_tooltips
 
+    @property
+    def animation_funcs(self) -> list[callable]:
+        return self._animate_funcs_pre + self._animate_funcs_post
+
     @show_tooltips.setter
     def show_tooltips(self, val: bool):
         self._show_tooltips = val
@@ -763,6 +767,14 @@ class Figure:
             self._animate_funcs_pre.remove(func)
 
         if func in self._animate_funcs_post:
+            self._animate_funcs_post.remove(func)
+
+    def clear_animations(self):
+        """Removes all animation functions from both pre and post render."""
+        for func in self._animate_funcs_pre:
+            self._animate_funcs_pre.remove(func)
+
+        for func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
     def clear(self):
