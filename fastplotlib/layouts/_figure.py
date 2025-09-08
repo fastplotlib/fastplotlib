@@ -544,8 +544,9 @@ class Figure:
         return self._show_tooltips
 
     @property
-    def animation_funcs(self) -> list[callable]:
-        return self._animate_funcs_pre + self._animate_funcs_post
+    def animation_funcs(self) -> dict[str, list[callable]]:
+        """Returns a dictionary of 'pre' and 'post' animation functions."""
+        return {"pre": self._animate_funcs_pre, "post": self._animate_funcs_post}
 
     @show_tooltips.setter
     def show_tooltips(self, val: bool):
@@ -769,13 +770,36 @@ class Figure:
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
-    def clear_animations(self):
-        """Removes all animation functions from both pre and post render."""
-        for func in self._animate_funcs_pre:
-            self._animate_funcs_pre.remove(func)
+    def clear_animations(self, type: str = None):
+        """
+        Remove animation functions.
 
-        for func in self._animate_funcs_post:
-            self._animate_funcs_post.remove(func)
+        Parameters
+        ----------
+        type: str, default ``None``
+            The type of animation functions to clear. One of 'pre' or 'post'. If `None`, removes all animation
+            functions.
+        """
+        if type is None:
+            # remove all
+            for func in self._animate_funcs_pre:
+                self._animate_funcs_pre.remove(func)
+
+            for func in self._animate_funcs_post:
+                self._animate_funcs_post.remove(func)
+        elif type == "pre":
+            # only pre
+            for func in self._animate_funcs_pre:
+                self._animate_funcs_pre.remove(func)
+        elif type == "post":
+            # only post
+            for func in self._animate_funcs_post:
+                self._animate_funcs_post.remove(func)
+        else:
+            raise ValueError(
+                f"Animation type: {type} must be one of 'pre' or 'post'. To remove all animation "
+                f"functions, pass `type=None`"
+            )
 
     def clear(self):
         """Clear all Subplots"""
