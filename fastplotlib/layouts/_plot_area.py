@@ -398,34 +398,34 @@ class PlotArea(GraphicMethodsMixin):
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
-    def clear_animations(self, type: str = None):
+    def clear_animations(self, removal: str = None):
         """
         Remove animation functions.
 
         Parameters
         ----------
-        type: str, default ``None``
+        removal: str, default ``None``
             The type of animation functions to clear. One of 'pre' or 'post'. If `None`, removes all animation
             functions.
         """
-        if type is None:
+        if removal is None:
             # remove all
             for func in self._animate_funcs_pre:
                 self._animate_funcs_pre.remove(func)
 
             for func in self._animate_funcs_post:
                 self._animate_funcs_post.remove(func)
-        elif type == "pre":
+        elif removal == "pre":
             # only pre
             for func in self._animate_funcs_pre:
                 self._animate_funcs_pre.remove(func)
-        elif type == "post":
+        elif removal == "post":
             # only post
             for func in self._animate_funcs_post:
                 self._animate_funcs_post.remove(func)
         else:
             raise ValueError(
-                f"Animation type: {type} must be one of 'pre' or 'post'. To remove all animation "
+                f"Animation type: {removal} must be one of 'pre' or 'post'. To remove all animation "
                 f"functions, pass `type=None`"
             )
 
