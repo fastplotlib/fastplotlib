@@ -6,10 +6,12 @@ import pygfx
 
 from ._positions_base import PositionsGraphic
 from .selectors import (
+    BallSelector,
     LinearRegionSelector,
     LinearSelector,
     RectangleSelector,
     PolygonSelector,
+    __all__,
 )
 from .features import (
     Thickness,
@@ -136,6 +138,34 @@ class LineGraphic(PositionsGraphic):
     @thickness.setter
     def thickness(self, value: float):
         self._thickness.set_value(self, value)
+
+    def add_ball_selector(self, selection: float = None, **kwargs) -> BallSelector:
+        """
+        Adds a :class: `.BallSelector`.
+
+        Parameters
+        ----------
+        selection: float, optional
+            selected point on the linear selector, by default the first datapoint on the line.
+
+        kwargs
+            passed to :class:`.BallSelector`
+
+        Returns
+        -------
+        BallSelector
+        """
+        if selection is None:
+            selection = self.data.value[0].reshape(1, 3)
+
+        selector = BallSelector(selection=selection, parent=self, **kwargs)
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        # place selector above this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
+
+        return selector
 
     def add_linear_selector(
         self, selection: float = None, axis: str = "x", **kwargs

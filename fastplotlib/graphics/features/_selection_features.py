@@ -8,6 +8,58 @@ from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 from ...utils.triangulation import triangulate
 
 
+class PointSelectionFeature(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "np.ndarray",
+            "description": "new (x, y, z) value of selection",
+        },
+    ]
+
+    event_extra_attrs = [
+        {
+            "attribute": "get_selected_index",
+            "type": "callable",
+            "description": "returns index under the selector",
+        }
+    ]
+
+    def __init__(self, value: np.ndarray):
+        """
+        Parameters
+        ----------
+        value : np.ndarray
+            position of the selector in world space, NOT data space
+        """
+
+        super().__init__()
+
+        self._value = value
+
+    @property
+    def value(self) -> np.ndarray:
+        """
+        selection, data (x, y, z)
+        """
+        return self._value
+
+    @block_reentrance
+    def set_value(self, selector, value: np.ndarray):
+        if value.shape != (1, 3):
+            raise ValueError("Shape of new value must be of a single point: (1, 3)")
+        for vertex in selector._vertices:
+            vertex.geometry.positions.data[:] = value
+            vertex.geometry.positions.update_range()
+
+        self._value = value
+
+        event = GraphicFeatureEvent("selection", {"value": value})
+        event.get_selected_index = selector.get_selected_index
+
+        self._call_event_handlers(event)
+
+
 class LinearSelectionFeature(GraphicFeature):
     event_info_spec = [
         {
