@@ -1,10 +1,10 @@
 from typing import Sequence
+import math
 
 import numpy as np
 import pygfx
 
 from .._base import Graphic
-from .._collection_base import GraphicCollection
 from ..features._selection_features import PointSelectionFeature
 from ._base_selector import BaseSelector, MoveInfo
 from ..features import UniformSize
@@ -24,6 +24,21 @@ class BallSelector(BaseSelector):
 
     @selection.setter
     def selection(self, value: np.ndarray):
+        """
+        Set the (x, y, z) position of the selector. If bound to a parent graphic, will set
+        selection to the nearest point of the parent.
+
+        Parameters
+        ----------
+        value : np.ndarray
+            New (x, y, z) position of the selector
+        """
+        if value.shape != (1, 3):
+            raise ValueError("Selection must be a single (x, y, z) point")
+        # if selector is bound to a parent graphic, find the nearest data point
+        if self.parent is not None:
+            closest_ix = self._get_nearest_index(self.parent, value)
+            value = self.parent.data[closest_ix].reshape(1, 3)
         self._selection.set_value(self, value)
 
     @property
@@ -79,7 +94,21 @@ class BallSelector(BaseSelector):
 
         Parameters
         ----------
-        selection : np.ndarray
+        selection: np.ndarray
+            (x, y, z) position of the selector, in data space
+        parent: Graphic
+            parent graphic for the BallSelector
+        color: str | tuple | np.ndarray, default "w"
+            color of the selector
+        size: float
+            size of the selector
+        arrow_keys_modifier: str
+            modifier key that must be pressed to initiate movement using arrow keys, must be one of:
+            "Control", "Shift", "Alt" or ``None``. Double-click the selector first to enable the
+            arrow key movements, or set the attribute ``arrow_key_events_enabled = True``
+        name: str, optional
+            name of linear selector
+
         """
         self._color = pygfx.Color(color)
 
@@ -117,8 +146,16 @@ class BallSelector(BaseSelector):
         else:
             self._selection.set_value(self, selection)
 
-    def get_selected_index(self, graphic: Graphic = None) -> int | list[int]:
-        return 0
+    def _get_nearest_index(self, graphic, find_value):
+        data = graphic.data.value[:]
+
+        # get closest data index to the world space position of the selector
+        distances = np.sum((data - find_value) ** 2, axis=1)
+
+        # Index of closest point
+        idx = np.argmin(distances)
+
+        return idx
 
     def _move_graphic(self, move_info: MoveInfo):
         """
@@ -135,4 +172,5 @@ class BallSelector(BaseSelector):
             move_info.start_selection = self.selection
 
         delta = move_info.delta
+
         self.selection = move_info.start_selection + delta

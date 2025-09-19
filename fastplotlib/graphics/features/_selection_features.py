@@ -17,14 +17,6 @@ class PointSelectionFeature(GraphicFeature):
         },
     ]
 
-    event_extra_attrs = [
-        {
-            "attribute": "get_selected_index",
-            "type": "callable",
-            "description": "returns index under the selector",
-        }
-    ]
-
     def __init__(self, value: np.ndarray):
         """
         Parameters
@@ -48,6 +40,7 @@ class PointSelectionFeature(GraphicFeature):
     def set_value(self, selector, value: np.ndarray):
         if value.shape != (1, 3):
             raise ValueError("Shape of new value must be of a single point: (1, 3)")
+
         for vertex in selector._vertices:
             vertex.geometry.positions.data[:] = value
             vertex.geometry.positions.update_range()
