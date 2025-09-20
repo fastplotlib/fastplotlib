@@ -144,7 +144,7 @@ class Grids(pygfx.Group):
 class Axes:
     def __init__(
         self,
-        plot_area,
+        reference_space,
         intersection: tuple[int, int, int] | None = None,
         x_kwargs: dict = None,
         y_kwargs: dict = None,
@@ -157,7 +157,7 @@ class Axes:
             [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
         ),
     ):
-        self._plot_area = plot_area
+        self._reference_space = reference_space
 
         if x_kwargs is None:
             x_kwargs = dict()
@@ -193,20 +193,20 @@ class Axes:
         self.x.end_pos = 100, 0, 0
         self.x.start_value = self.x.start_pos[0] - offset[0]
         statsx = self.x.update(
-            self._plot_area.camera, self._plot_area.viewport.logical_size
+            self._reference_space.camera, self._reference_space.viewport.logical_size
         )
 
         self.y.start_pos = 0, 0, 0
         self.y.end_pos = 0, 100, 0
         self.y.start_value = self.y.start_pos[1] - offset[1]
         statsy = self.y.update(
-            self._plot_area.camera, self._plot_area.viewport.logical_size
+            self._reference_space.camera, self._reference_space.viewport.logical_size
         )
 
         self.z.start_pos = 0, 0, 0
         self.z.end_pos = 0, 0, 100
         self.z.start_value = self.z.start_pos[1] - offset[2]
-        self.z.update(self._plot_area.camera, self._plot_area.viewport.logical_size)
+        self.z.update(self._reference_space.camera, self._reference_space.viewport.logical_size)
 
         # world object for the rulers + grids
         self._world_object = pygfx.Group()
@@ -219,7 +219,7 @@ class Axes:
         )
 
         # set z ruler invisible for orthographic projections for now
-        if self._plot_area.camera.fov == 0:
+        if self._reference_space.camera.fov == 0:
             # TODO: allow any orientation in the future even for orthographic projections
             self.z.visible = False
 
@@ -251,7 +251,7 @@ class Axes:
             self._grids = Grids(**_grids)
             self.world_object.add(self._grids)
 
-            if self._plot_area.camera.fov == 0:
+            if self._reference_space.camera.fov == 0:
                 # orthographic projection, place grids far away
                 self._grids.local.z = -1000
 
@@ -382,13 +382,13 @@ class Axes:
         """
 
         # flip axes if camera scale is flipped
-        if self._plot_area.camera.local.scale_x < 0:
+        if self._reference_space.camera.local.scale_x < 0:
             bbox[0, 0], bbox[1, 0] = bbox[1, 0], bbox[0, 0]
 
-        if self._plot_area.camera.local.scale_y < 0:
+        if self._reference_space.camera.local.scale_y < 0:
             bbox[0, 1], bbox[1, 1] = bbox[1, 1], bbox[0, 1]
 
-        if self._plot_area.camera.local.scale_z < 0:
+        if self._reference_space.camera.local.scale_z < 0:
             bbox[0, 2], bbox[1, 2] = bbox[1, 2], bbox[0, 2]
 
         if self.intersection is None:
@@ -413,8 +413,8 @@ class Axes:
         if not self.visible:
             return
 
-        if self._plot_area.camera.fov == 0:
-            xpos, ypos, width, height = self._plot_area.viewport.rect
+        if self._reference_space.camera.fov == 0:
+            xpos, ypos, width, height = self._reference_space.viewport.rect
             # orthographic projection, get ranges using inverse
 
             # get range of screen space by getting the corners
@@ -442,8 +442,8 @@ class Axes:
             #     self.y.local.rotation
             # )
 
-            min_vals = self._plot_area.map_screen_to_world((xmin, ymin))
-            max_vals = self._plot_area.map_screen_to_world((xmax, ymax))
+            min_vals = self._reference_space.map_screen_to_world((xmin, ymin))
+            max_vals = self._reference_space.map_screen_to_world((xmax, ymax))
 
             if min_vals is None or max_vals is None:
                 return
@@ -462,14 +462,14 @@ class Axes:
 
         else:
             # set ruler start and end positions based on scene bbox
-            bbox = self._plot_area._fpl_graphics_scene.get_world_bounding_box()
+            bbox = self._reference_space._fpl_graphics_scene.get_world_bounding_box()
 
         if self.intersection is None:
-            if self._plot_area.camera.fov == 0:
+            if self._reference_space.camera.fov == 0:
                 # place the ruler close to the left and bottom edges of the viewport
                 # TODO: determine this for perspective projections
                 xscreen_10, yscreen_10 = xpos + (width * 0.1), ypos + (height * 0.9)
-                intersection = self._plot_area.map_screen_to_world(
+                intersection = self._reference_space.map_screen_to_world(
                     (xscreen_10, yscreen_10)
                 )
             else:
@@ -502,7 +502,7 @@ class Axes:
         world_x_10, world_y_10, world_z_10 = intersection
 
         # swap min and max for each dimension if necessary
-        if self._plot_area.camera.local.scale_y < 0:
+        if self._reference_space.camera.local.scale_y < 0:
             world_ymin, world_ymax = world_ymax, world_ymin
             self.y.tick_side = "right"  # swap tick side
             self.x.tick_side = "right"
@@ -510,7 +510,7 @@ class Axes:
             self.y.tick_side = "left"
             self.x.tick_side = "right"
 
-        if self._plot_area.camera.local.scale_x < 0:
+        if self._reference_space.camera.local.scale_x < 0:
             world_xmin, world_xmax = world_xmax, world_xmin
             self.x.tick_side = "left"
 
@@ -519,7 +519,7 @@ class Axes:
 
         self.x.start_value = self.x.start_pos[0] - self.offset[0]
         statsx = self.x.update(
-            self._plot_area.camera, self._plot_area.viewport.logical_size
+            self._reference_space.camera, self._reference_space.viewport.logical_size
         )
 
         self.y.start_pos = world_x_10, world_ymin, world_z_10
@@ -527,16 +527,16 @@ class Axes:
 
         self.y.start_value = self.y.start_pos[1] - self.offset[1]
         statsy = self.y.update(
-            self._plot_area.camera, self._plot_area.viewport.logical_size
+            self._reference_space.camera, self._reference_space.viewport.logical_size
         )
 
-        if self._plot_area.camera.fov != 0:
+        if self._reference_space.camera.fov != 0:
             self.z.start_pos = world_x_10, world_y_10, world_zmin
             self.z.end_pos = world_x_10, world_y_10, world_zmax
 
             self.z.start_value = self.z.start_pos[2] - self.offset[2]
             statsz = self.z.update(
-                self._plot_area.camera, self._plot_area.viewport.logical_size
+                self._reference_space.camera, self._reference_space.viewport.logical_size
             )
             major_step_z = statsz["tick_step"]
 
@@ -546,7 +546,7 @@ class Axes:
                 self.grids.xy.major_step = major_step_x, major_step_y
                 self.grids.xy.minor_step = 0.2 * major_step_x, 0.2 * major_step_y
 
-                if self._plot_area.camera.fov != 0:
+                if self._reference_space.camera.fov != 0:
                     self.grids.xz.major_step = major_step_x, major_step_z
                     self.grids.xz.minor_step = 0.2 * major_step_x, 0.2 * major_step_z
 

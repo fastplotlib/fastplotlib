@@ -8,8 +8,9 @@ import pygfx
 from pylinalg import vec_transform, vec_unproject
 from rendercanvas import BaseRenderCanvas
 
+from ._reference_space import ReferenceFrame
 from ._utils import create_controller
-from ..graphics._base import Graphic
+from ..graphics import Graphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
@@ -114,6 +115,8 @@ class PlotArea(GraphicMethodsMixin):
         )
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
+
+        self._reference_frames: list[ReferenceFrame] = list()
 
     def get_figure(self, obj=None):
         """Get Figure instance that contains this plot area"""
@@ -272,6 +275,42 @@ class PlotArea(GraphicMethodsMixin):
         """1, 2, or 4 colors, each color must be acceptable by pygfx.Color"""
         self._background_material.set_colors(*colors)
 
+    @property
+    def reference_frames(self) -> tuple[ReferenceFrame, ...]:
+        return tuple(self._reference_frames)
+
+    def add_reference_frame(
+            self,
+            position: tuple[float, float, float] | None = None,
+            scale: tuple[float, float, float] | None = None,
+            controller_type: str = None,
+            controller_include_state=None,
+            controller_exclude_state=None,
+            name: str | None = None
+    ) -> ReferenceFrame:
+        camera = pygfx.PerspectiveCamera()
+
+        state = self.camera.get_state()
+        camera.set_state(state)
+
+        if position is not None:
+            camera.world.position = position
+        if scale is not None:
+            camera.world.scale = scale
+
+        camera.maintain_aspect = self.camera.maintain_aspect
+
+        scene = pygfx.Scene()
+
+        controller = pygfx.PanZoomController()
+        controller.add_camera(camera, include_state=controller_include_state, exclude_state=controller_exclude_state)
+        controller.register_events(self.viewport)
+
+        ref_frame = ReferenceFrame(scene, camera, controller, self.viewport, name)
+        self._reference_frames.append(ref_frame)
+
+        return ref_frame
+
     def map_screen_to_world(
         self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
@@ -313,6 +352,9 @@ class PlotArea(GraphicMethodsMixin):
 
         # does not flush, flush must be implemented in user-facing Plot objects
         self.viewport.render(self.scene, self.camera)
+
+        for reference_space in self.reference_frames:
+            self.viewport.render(reference_space.scene, reference_space.camera)
 
         for child in self.children:
             child._render()
@@ -393,7 +435,7 @@ class PlotArea(GraphicMethodsMixin):
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
-    def add_graphic(self, graphic: Graphic, center: bool = True):
+    def add_graphic(self, graphic: Graphic, center: bool = True, reference_frame: ReferenceFrame | int | str = 0):
         """
         Add a Graphic to the scene
 
@@ -413,7 +455,7 @@ class PlotArea(GraphicMethodsMixin):
             self._fpl_graphics_scene.add(graphic.world_object)
             return
 
-        self._add_or_insert_graphic(graphic=graphic, center=center, action="add")
+        self._add_or_insert_graphic(graphic=graphic, center=center, action="add", reference_frame=reference_frame)
 
         if self.camera.fov == 0:
             # for orthographic positions stack objects along the z-axis
@@ -469,6 +511,7 @@ class PlotArea(GraphicMethodsMixin):
         center: bool = True,
         action: str = Literal["insert", "add"],
         index: int = 0,
+        reference_frame: ReferenceFrame | str | int = 0,
     ):
         """Private method to handle inserting or adding a graphic to a PlotArea."""
         if not isinstance(graphic, Graphic):
@@ -489,7 +532,10 @@ class PlotArea(GraphicMethodsMixin):
 
         elif isinstance(graphic, Graphic):
             obj_list = self._graphics
-            self._fpl_graphics_scene.add(graphic.world_object)
+            if isinstance(reference_frame, ReferenceFrame):
+                reference_frame.scene.add(graphic.world_object)
+            else:
+                self._fpl_graphics_scene.add(graphic.world_object)
 
             # add to tooltip registry
             if self.get_figure().show_tooltips:
