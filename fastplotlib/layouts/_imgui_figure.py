@@ -12,7 +12,7 @@ from rendercanvas import BaseRenderCanvas
 import pygfx
 
 from ._figure import Figure
-from ..ui import EdgeWindow, SubplotToolbar, StandardRightClickMenu, Popup, GUI_EDGES
+from ..ui import Window, EdgeWindow, SubplotToolbar, StandardRightClickMenu, Popup, GUI_EDGES
 from ..ui import ColormapPicker
 
 
@@ -46,7 +46,7 @@ class ImguiFigure(Figure):
         names: list | np.ndarray = None,
         show_tooltips: bool = False,
     ):
-        self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
+        self._guis: dict[str, Window] = {k: None for k in GUI_EDGES}
 
         super().__init__(
             shape=shape,
@@ -103,7 +103,7 @@ class ImguiFigure(Figure):
         self.register_popup(ColormapPicker)
 
     @property
-    def guis(self) -> dict[str, EdgeWindow]:
+    def guis(self) -> dict[str, Window]:
         """GUI windows added to the Figure"""
         return self._guis
 
@@ -150,30 +150,34 @@ class ImguiFigure(Figure):
 
         return imgui.get_draw_data()
 
-    def add_gui(self, gui: EdgeWindow):
+    def add_gui(self, gui: Window):
         """
         Add a GUI to the Figure. GUIs can be added to the left or bottom edge.
 
         Parameters
         ----------
-        gui: EdgeWindow
-            A GUI EdgeWindow instance
+        gui: Window
+            A GUI Window instance
 
         """
-        if not isinstance(gui, EdgeWindow):
+        if not isinstance(gui, Window):
             raise TypeError(
-                f"GUI must be of type: {EdgeWindow} you have passed a {type(gui)}"
+                f"GUI must be of type: {Window} you have passed a {type(gui)}"
             )
 
-        location = gui.location
+        if isinstance(gui, EdgeWindow):
+            location = gui.location
 
-        if location not in GUI_EDGES:
-            raise ValueError(
-                f"GUI does not have a valid location, valid locations are: {GUI_EDGES}, you have passed: {location}"
-            )
+            if location not in GUI_EDGES:
+                raise ValueError(
+                    f"GUI does not have a valid location, valid locations are: {GUI_EDGES}, you have passed: {location}"
+                )
 
-        if self.guis[location] is not None:
-            raise ValueError(f"GUI already exists in the desired location: {location}")
+            if self.guis[location] is not None:
+                raise ValueError(f"GUI already exists in the desired location: {location}")
+        else:
+            # just use mem address for a location key
+            location = hex(id(gui))
 
         self.guis[location] = gui
 
