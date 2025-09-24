@@ -16,7 +16,7 @@ figure = fpl.Figure(size=(700, 560))
 data = iio.imread("imageio:camera.png")
 
 # plot the image data
-image_graphic = figure[0, 0].add_image(data=data, name="iio camera")
+image = figure[0, 0].add_image(data=data, name="iio camera")
 
 figure.show()
 

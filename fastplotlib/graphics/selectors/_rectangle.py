@@ -337,7 +337,6 @@ class RectangleSelector(BaseSelector):
                 f"`mode` must be one of 'full', 'partial', or 'ignore', you have passed {mode}"
             )
         if "Line" in source.__class__.__name__:
-
             if isinstance(source, GraphicCollection):
                 data_selections: List[np.ndarray] = list()
 
@@ -431,7 +430,7 @@ class RectangleSelector(BaseSelector):
         Parameters
         ----------
         graphic: Graphic, default ``None``
-            If provided, returns the selection indices from this graphic instrad of the graphic set as ``parent``
+            If provided, returns the selection indices from this graphic instead of the graphic set as ``parent``
 
         Returns
         -------
@@ -479,7 +478,6 @@ class RectangleSelector(BaseSelector):
             return ixs
 
     def _move_graphic(self, move_info: MoveInfo):
-
         # If this the first move in this drag, store initial selection
         if move_info.start_selection is None:
             move_info.start_selection = self.selection
@@ -491,7 +489,7 @@ class RectangleSelector(BaseSelector):
         xmin, xmax, ymin, ymax = move_info.start_selection
 
         # move entire selector if source is fill
-        if self._move_info.source == self.fill:
+        if move_info.source == self.fill:
             # Limit the delta to avoid weird resizine behavior
             min_deltax = self.limits[0] - xmin
             max_deltax = self.limits[1] - xmax
@@ -514,22 +512,22 @@ class RectangleSelector(BaseSelector):
         ymin_new = min(ymin + deltay, ymax)
         ymax_new = max(ymax + deltay, ymin)
 
-        if self._move_info.source == self.vertices[0]:  # bottom left
+        if move_info.source == self.vertices[0]:  # bottom left
             self._selection.set_value(self, (xmin_new, xmax, ymin_new, ymax))
-        if self._move_info.source == self.vertices[1]:  # bottom right
+        if move_info.source == self.vertices[1]:  # bottom right
             self._selection.set_value(self, (xmin, xmax_new, ymin_new, ymax))
-        if self._move_info.source == self.vertices[2]:  # top left
+        if move_info.source == self.vertices[2]:  # top left
             self._selection.set_value(self, (xmin_new, xmax, ymin, ymax_new))
-        if self._move_info.source == self.vertices[3]:  # top right
+        if move_info.source == self.vertices[3]:  # top right
             self._selection.set_value(self, (xmin, xmax_new, ymin, ymax_new))
         # if event source was an edge and selector is resizable, move the edge that caused the event
-        if self._move_info.source == self.edges[0]:
+        if move_info.source == self.edges[0]:
             self._selection.set_value(self, (xmin_new, xmax, ymin, ymax))
-        if self._move_info.source == self.edges[1]:
+        if move_info.source == self.edges[1]:
             self._selection.set_value(self, (xmin, xmax_new, ymin, ymax))
-        if self._move_info.source == self.edges[2]:
+        if move_info.source == self.edges[2]:
             self._selection.set_value(self, (xmin, xmax, ymin_new, ymax))
-        if self._move_info.source == self.edges[3]:
+        if move_info.source == self.edges[3]:
             self._selection.set_value(self, (xmin, xmax, ymin, ymax_new))
 
     def _move_to_pointer(self, ev):

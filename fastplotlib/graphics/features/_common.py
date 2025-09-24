@@ -130,7 +130,7 @@ class Rotation(GraphicFeature):
 class Visible(GraphicFeature):
     """Access or change the visibility."""
 
-    property_name = "offset"
+    property_name = "visible"
     event_info_spec = [
         {"dict key": "value", "type": "bool", "description": "new visibility bool"},
     ]

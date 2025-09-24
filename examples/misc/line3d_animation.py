@@ -19,11 +19,11 @@ ys = phi * np.sin(phi)
 zs = phi
 
 # make data 3d, with shape [<n_vertices>, 3]
-spiral = np.dstack([xs, ys, zs])[0]
+spiral = np.column_stack([xs, ys, zs])
 
 figure = fpl.Figure(cameras="3d", size=(700, 560))
 
-line_graphic = figure[0,0].add_line(data=spiral, thickness=3, cmap='jet')
+line = figure[0,0].add_line(data=spiral, thickness=3, cmap='jet')
 
 marker = figure[0,0].add_scatter(data=spiral[0], sizes=10, name="marker")
 
