@@ -243,14 +243,16 @@ class Graphic:
     def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
 
-        self.world_object.visible = self.visible
+        wo.visible = self.visible
+        wo.material.opacity = self.alpha
+        wo.material.alpha_mode = self.alpha_mode
 
         # set offset if it's not (0., 0., 0.)
-        if not all(self.world_object.world.position == self.offset):
+        if not all(wo.world.position == self.offset):
             self.offset = self.offset
 
         # set rotation if it's not (0., 0., 0., 1.)
-        if not all(self.world_object.world.rotation == self.rotation):
+        if not all(wo.world.rotation == self.rotation):
             self.rotation = self.rotation
 
     @property

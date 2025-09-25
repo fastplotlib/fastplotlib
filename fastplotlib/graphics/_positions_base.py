@@ -77,7 +77,6 @@ class PositionsGraphic(Graphic):
         data: Any,
         colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
         uniform_color: bool = False,
-        alpha: float = 1.0,
         cmap: str | VertexCmap = None,
         cmap_transform: np.ndarray = None,
         isolated_buffer: bool = True,
