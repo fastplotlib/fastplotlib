@@ -71,7 +71,7 @@ figure["circles"].add_image(data=img2, cmap="gray")
 figure["circles"].add_line_collection(
     circles,
     cmap="tab10",
-    cmap_transform=np.asarray(cmap_transform).ravel()
+    cmap_transform=np.asarray(cmap_transform).ravel(),
     thickness=3,
     alpha=0.5,
     name="circles-graphic",
