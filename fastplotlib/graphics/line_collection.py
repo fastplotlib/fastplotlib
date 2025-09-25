@@ -129,8 +129,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         thickness: float | Sequence[float] = 2.0,
         colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
         uniform_colors: bool = False,
-        alpha: float = 1.0,
-        alpha_mode: str = "auto",
         cmap: Sequence[str] | str = None,
         cmap_transform: np.ndarray | List = None,
         name: str = None,
@@ -161,16 +159,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
-
-        alpha: float, optional
-            The uniform opacity of the object. If a list of colors is given, these can be RGBA, and their alpha
-            component is multiplied with the uniform opacity.
-            If you make your a graphic transparent, consider setting alpha_mode
-            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
-
-        alpha_mode: str, optional, default "auto",
-            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
-            For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
@@ -334,8 +322,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                 colors=_c,
                 uniform_color=uniform_colors,
                 cmap=_cmap,
-                alpha=alpha,
-                alpha_mode=alpha_mode,
                 name=_name,
                 metadata=_m,
                 isolated_buffer=isolated_buffer,
@@ -574,8 +560,6 @@ class LineStack(LineCollection):
         data: List[np.ndarray],
         thickness: float | Iterable[float] = 2.0,
         colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
-        alpha: float = 1.0,
-        alpha_mode: str = "auto",
         cmap: Iterable[str] | str = None,
         cmap_transform: np.ndarray | List = None,
         name: str = None,
@@ -608,14 +592,6 @@ class LineStack(LineCollection):
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
-
-        alpha: float, optional
-            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
-            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
-
-        alpha_mode: str, optional, default "auto",
-            The alpha-mode, e.g. 'auto', 'blend', 'weighte_blend', 'solid', or 'dither'.
-            For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
@@ -658,8 +634,6 @@ class LineStack(LineCollection):
             data=data,
             thickness=thickness,
             colors=colors,
-            alpha=alpha,
-            alpha_mode=alpha_mode,
             cmap=cmap,
             cmap_transform=cmap_transform,
             name=name,

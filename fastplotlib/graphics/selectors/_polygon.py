@@ -11,6 +11,7 @@ from ...utils.enums import RenderQueue
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import PolygonSelectionFeature
+from ._base_selector import BaseSelector
 
 
 @dataclass

@@ -29,8 +29,6 @@ class ScatterGraphic(PositionsGraphic):
         data: Any,
         colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
         uniform_color: bool = False,
-        alpha: float = 1.0,
-        alpha_mode: str = "auto",
         cmap: str = None,
         cmap_transform: np.ndarray = None,
         isolated_buffer: bool = True,
@@ -55,24 +53,6 @@ class ScatterGraphic(PositionsGraphic):
         uniform_color: bool, default False
             if True, uses a uniform buffer for the scatter point colors. Useful if you need to
             save GPU VRAM when all points have the same color.
-
-        alpha: float, optional, default 1.0
-            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
-            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
-
-        alpha_mode: str, optional, default "auto",
-            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
-
-            * 'solid': the points do not have semi-transparent fragments. Writes to the depth buffer.
-            * 'auto': like 'solid', but allows semi-transparent fragments.
-            * 'blend': the points are considered transparent, and don't write to the depth buffer.
-              The points are blended in the order they are drawn.
-            * 'weighted_blend': like 'blend', but the result does not depend on the order in which points are rendered,
-              nor is their distance to the camera.
-            * 'dither': use stochastic transparency. Although the result is a bit noisy, the points distance to the camera
-              is properly taken into account, which may be better for 3D point clouds. Writes to the depth buffer.
-
-            For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
@@ -105,7 +85,6 @@ class ScatterGraphic(PositionsGraphic):
             data=data,
             colors=colors,
             uniform_color=uniform_color,
-            alpha=alpha,
             cmap=cmap,
             cmap_transform=cmap_transform,
             isolated_buffer=isolated_buffer,
@@ -115,13 +94,11 @@ class ScatterGraphic(PositionsGraphic):
 
         n_datapoints = self.data.value.shape[0]
 
-        aa = alpha_mode in ("blend", "weighted_blend")
+        aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
 
         geo_kwargs = {"positions": self._data.buffer}
         material_kwargs = dict(
-            alpha_mode=alpha_mode,
             pick_write=True,
-            opacity=alpha,
             aa=aa,
         )
         self._size_space = SizeSpace(size_space)

@@ -4,7 +4,7 @@ from typing import Literal
 import numpy as np
 from numpy.typing import NDArray
 
-from wgpu.gui.base import log_exception
+from rendercanvas.base import log_exception
 
 import pygfx
 
@@ -318,7 +318,7 @@ class BufferManager(GraphicFeature):
         raise NotImplementedError
 
     def __repr__(self):
-        return f"{self.__class__.__name__} buffer data:\n" f"{self.value.__repr__()}"
+        return f"{self.__class__.__name__} buffer data:\n{self.value.__repr__()}"
 
 
 def block_reentrance(set_value):

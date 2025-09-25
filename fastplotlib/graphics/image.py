@@ -90,8 +90,6 @@ class ImageGraphic(Graphic):
         data: Any,
         vmin: int = None,
         vmax: int = None,
-        alpha: float = 1.0,
-        alpha_mode: str = "auto",
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
@@ -112,14 +110,6 @@ class ImageGraphic(Graphic):
 
         vmax: int, optional
             maximum value for color scaling, calculated from data if not provided
-
-        alpha: float, optional, default 1.0
-            The alpha value for the colors. If you make your a graphic transparent, consider setting alpha_mode
-            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
-
-        alpha_mode: str, optional, default "auto",
-            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
-            For details see https://docs.pygfx.org/stable/transparency.html
 
         cmap: str, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
@@ -175,8 +165,6 @@ class ImageGraphic(Graphic):
 
         # one common material is used for every Texture chunk
         self._material = pygfx.ImageBasicMaterial(
-            alpha_mode=alpha_mode,
-            opacity=alpha,
             clim=(vmin, vmax),
             map=_map,
             interpolation=self._interpolation.value,

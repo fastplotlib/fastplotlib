@@ -29,6 +29,8 @@ Graphic Features
     Name
     Offset
     Rotation
+    Alpha,
+    AlphaMode,
     Visible
     Deleted
     GraphicFeatureEvent

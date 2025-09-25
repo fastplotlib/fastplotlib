@@ -9,6 +9,7 @@ from .._collection_base import GraphicCollection
 from ...utils.enums import RenderQueue
 from .._base import Graphic
 from ..features import RectangleSelectionFeature
+from ._base_selector import BaseSelector, MoveInfo
 
 
 class RectangleSelector(BaseSelector):
