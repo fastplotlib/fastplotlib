@@ -145,7 +145,9 @@ class Alpha(GraphicFeature):
 
     @block_reentrance
     def set_value(self, graphic, value: float):
-        graphic.world_object.material.opacity = value
+        wo = graphic.world_object
+        if wo.material is not None:
+            wo.material.opacity = value
         self._value = value
 
         event = GraphicFeatureEvent(type="alpha", info={"value": value})
@@ -170,7 +172,9 @@ class AlphaMode(GraphicFeature):
 
     @block_reentrance
     def set_value(self, graphic, value: str):
-        graphic.world_object.material.alpha_mode = value
+        wo = graphic.world_object
+        if wo.material is not None:
+            wo.alpha_mode = value
         self._value = value
 
         event = GraphicFeatureEvent(type="alpha_mode", info={"value": value})

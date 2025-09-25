@@ -244,8 +244,9 @@ class Graphic:
         WORLD_OBJECTS[self._fpl_address] = wo
 
         wo.visible = self.visible
-        wo.material.opacity = self.alpha
-        wo.material.alpha_mode = self.alpha_mode
+        if wo.material is not None:
+            wo.material.opacity = self.alpha
+            wo.material.alpha_mode = self.alpha_mode
 
         # set offset if it's not (0., 0., 0.)
         if not all(wo.world.position == self.offset):
