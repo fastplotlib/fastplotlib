@@ -3,6 +3,8 @@ import numpy as np
 import pygfx
 from pylinalg import quat_from_vecs, vec_transform_quat
 
+from ..utils.enums import RenderQueue
+
 
 GRID_PLANES = ["xy", "xz", "yz"]
 
@@ -188,7 +190,7 @@ class Axes:
         # We render the lines and ticks as solid, but enable aa for text for prettier glyphs
         for ruler in self._x, self._y, self._z:
             ruler.text.material.alpha_mode = "auto"
-            ruler.text.material.render_queue = 2650  # bitlater than 2600 'auto'
+            ruler.text.material.render_queue = RenderQueue.auto + 50
             ruler.text.material.aa = True
 
         self._offset = offset
@@ -240,7 +242,7 @@ class Axes:
         # should only emerge for objects that have semi-transparent fragments.
         grid_kwargs = dict(
             alpha_mode="auto",
-            render_queue=2550,  # later than 1500-2500 'opaque', but earlier than 2600 'auto'
+            render_queue=RenderQueue.auto + 50,
             major_step=10,
             minor_step=1,
             thickness_space="screen",

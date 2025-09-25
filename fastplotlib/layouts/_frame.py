@@ -1,6 +1,7 @@
 import numpy as np
 import pygfx
 
+from ..utils.enums import RenderQueue
 from ._rect import RectManager
 from ._utils import IMGUI_TOOLBAR_HEIGHT
 from ..utils.types import SelectorColorStates
@@ -173,7 +174,7 @@ class Frame:
         self._title_graphic = TextGraphic(title_text, font_size=16, face_color="white")
         m = self._title_graphic.world_object.material
         m.alpha_mode = "blend"
-        m.render_queue = 1000  # background
+        m.render_queue = RenderQueue.background
         m.depth_write = False
         m.depth_test = False
         wobjects.append(self._title_graphic.world_object)
@@ -182,7 +183,7 @@ class Frame:
         geometry = pygfx.plane_geometry(1, 1)
         material = pygfx.MeshBasicMaterial(
             alpha_mode="blend",
-            render_queue=1000,  # background
+            render_queue=RenderQueue.background,
             color=self.plane_color.idle,
             depth_write=False,
             depth_test=False,
@@ -202,7 +203,7 @@ class Frame:
             pygfx.Geometry(positions=[[x1 - 7, -y1 + 7, 0]]),
             pygfx.PointsMarkerMaterial(
                 alpha_mode="blend",
-                render_queue=1000,  # background
+                render_queue=RenderQueue.background,
                 color=self.resize_handle_color.idle,
                 marker="custom",
                 custom_sdf=sdf_wgsl_resize_handle,

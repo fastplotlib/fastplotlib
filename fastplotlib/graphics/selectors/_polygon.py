@@ -7,10 +7,10 @@ from numbers import Real
 import numpy as np
 import pygfx
 
+from ...utils.enums import RenderQueue
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import PolygonSelectionFeature
-from ._base_selector import BaseSelector, render_queue
 
 
 @dataclass
@@ -108,7 +108,7 @@ class PolygonSelector(BaseSelector):
                 color=edge_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,
@@ -121,7 +121,7 @@ class PolygonSelector(BaseSelector):
                 color=vertex_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,
@@ -135,7 +135,7 @@ class PolygonSelector(BaseSelector):
                 alpha_mode="blend",
                 opacity=0.3,
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
             ),
@@ -147,7 +147,7 @@ class PolygonSelector(BaseSelector):
                 color=fill_color,
                 alpha_mode="blend",
                 opacity=0.4,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,

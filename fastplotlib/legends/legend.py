@@ -5,6 +5,7 @@ from typing import Iterable
 import numpy as np
 import pygfx
 
+from ..utils.enums import RenderQueue
 from ..graphics import Graphic
 from ..graphics.features import GraphicFeatureEvent
 from ..graphics import LineGraphic, ScatterGraphic, ImageGraphic
@@ -76,7 +77,7 @@ class LineLegendItem(LegendItem):
             geometry=pygfx.Geometry(positions=data),
             material=material(
                 alpha_mode="blend",
-                render_queue=4000,  # overlay
+                render_queue=RenderQueue.overlay,
                 thickness=8,
                 color=self._color,
                 depth_write=False,
@@ -94,7 +95,7 @@ class LineLegendItem(LegendItem):
             material=pygfx.TextMaterial(
                 alpha_mode="blend",
                 aa=True,
-                render_queue=4000,  # overlay
+                render_queue=RenderQueue.overlay,
                 color="w",
                 outline_color="w",
                 outline_thickness=0,
@@ -186,7 +187,7 @@ class Legend(Graphic):
             pygfx.box_geometry(50, 10, 1),
             pygfx.MeshBasicMaterial(
                 alpha_mode="blend",
-                render_queue=4000,  # overlay
+                render_queue=RenderQueue.overlay,
                 color=pygfx.Color([0.1, 0.1, 0.1, 1]),
                 wireframe_thickness=10,
                 depth_write=False,

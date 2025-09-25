@@ -3,6 +3,7 @@ from functools import partial
 import numpy as np
 import pygfx
 
+from ..utils.enums import RenderQueue
 from ..graphics import LineGraphic, ImageGraphic, ScatterGraphic, Graphic
 from ..graphics.features import GraphicFeatureEvent
 
@@ -61,7 +62,7 @@ class Tooltip:
             material=pygfx.TextMaterial(
                 alpha_mode="blend",
                 aa=True,
-                render_queue=4000,  # overlay
+                render_queue=RenderQueue.overlay,
                 color="w",
                 outline_color="w",
                 outline_thickness=0.0,
@@ -75,7 +76,7 @@ class Tooltip:
         geometry = pygfx.plane_geometry(1, 1)
         material = pygfx.MeshBasicMaterial(
             alpha_mode="blend",
-            render_queue=4000,  # overlay
+            render_queue=RenderQueue.overlay,
             color=(0.1, 0.1, 0.3, 0.95),
             depth_write=False,
             depth_test=False,
@@ -98,7 +99,7 @@ class Tooltip:
             ),
             material=pygfx.LineThinMaterial(
                 alpha_mode="blend",
-                render_queue=4000,  # overlay
+                render_queue=RenderQueue.overlay,
                 thickness=1.0,
                 color=(0.8, 0.8, 1.0, 1.0),
                 depth_write=False,

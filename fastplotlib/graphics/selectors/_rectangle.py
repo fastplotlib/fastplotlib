@@ -6,9 +6,9 @@ import numpy as np
 import pygfx
 from .._collection_base import GraphicCollection
 
+from ...utils.enums import RenderQueue
 from .._base import Graphic
 from ..features import RectangleSelectionFeature
-from ._base_selector import BaseSelector, MoveInfo, render_queue
 
 
 class RectangleSelector(BaseSelector):
@@ -138,7 +138,7 @@ class RectangleSelector(BaseSelector):
                 color=pygfx.Color(self.fill_color),
                 alpha_mode="blend",
                 opacity=0.4,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,
@@ -164,7 +164,7 @@ class RectangleSelector(BaseSelector):
                 color=self.edge_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
             ),
@@ -185,7 +185,7 @@ class RectangleSelector(BaseSelector):
                 color=self.edge_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
             ),
@@ -206,7 +206,7 @@ class RectangleSelector(BaseSelector):
                 color=self.edge_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
             ),
@@ -227,7 +227,7 @@ class RectangleSelector(BaseSelector):
                 color=self.edge_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
             ),
@@ -262,7 +262,7 @@ class RectangleSelector(BaseSelector):
                 edge_color=self.vertex_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
             ),
@@ -278,7 +278,7 @@ class RectangleSelector(BaseSelector):
                 edge_color=self.vertex_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
             ),
@@ -294,7 +294,7 @@ class RectangleSelector(BaseSelector):
                 edge_color=self.vertex_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
             ),
@@ -310,7 +310,7 @@ class RectangleSelector(BaseSelector):
                 edge_color=self.vertex_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
             ),

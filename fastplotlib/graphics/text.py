@@ -1,6 +1,7 @@
 import pygfx
 import numpy as np
 
+from ..utils.enums import RenderQueue
 from ._base import Graphic
 from .features import (
     TextData,
@@ -91,7 +92,7 @@ class TextGraphic(Graphic):
             anchor=anchor,
             material=pygfx.TextMaterial(
                 alpha_mode="auto",
-                render_queue=2650,  # later than 2600 'auto', earlier than 3000 'transparent'
+                render_queue=RenderQueue.auto + 50,
                 aa=True,
                 color=self.face_color,
                 outline_color=self.outline_color,

@@ -5,10 +5,11 @@ from typing import Sequence
 import numpy as np
 import pygfx
 
+from ...utils.enums import RenderQueue
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import LinearSelectionFeature
-from ._base_selector import BaseSelector, MoveInfo, render_queue
+from ._base_selector import BaseSelector, MoveInfo
 
 
 class LinearSelector(BaseSelector):
@@ -150,7 +151,7 @@ class LinearSelector(BaseSelector):
                 color=edge_color,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,
@@ -164,7 +165,7 @@ class LinearSelector(BaseSelector):
                 color=self.colors_outer,
                 alpha_mode="blend",
                 aa=True,
-                render_queue=render_queue,
+                render_queue=RenderQueue.selector,
                 depth_test=False,
                 depth_write=False,
                 pick_write=True,
