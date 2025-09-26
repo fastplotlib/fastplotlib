@@ -216,11 +216,7 @@ class Frame:
         )
 
         if not resizeable:
-            # set all color states to transparent if Frame isn't resizeable
-            c = (0, 0, 0, 0)
-            self._resize_handle.material.color = c
-            self._resize_handle.material.edge_width = 0
-            self.resize_handle_color = SelectorColorStates(c, c, c)
+            self._resize_handle.visible = False
 
         wobjects.append(self._resize_handle)
 
