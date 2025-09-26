@@ -26,14 +26,13 @@ class ColormapPicker(Popup):
     name = "colormap-picker"
 
     def __init__(self, figure):
-        super().__init__(figure=figure, fa_icons=None)
+        super().__init__(figure=figure)
 
         self.renderer = self._figure.renderer
         self.imgui_renderer = self._figure.imgui_renderer
 
         # maps str cmap names -> int texture IDs
-        self._texture_ids: dict[str, int] = {}
-        self._textures = list()
+        self._cmap_texture_refs: dict[str, imgui.ImTextureRef] = dict()
 
         # make all colormaps and upload representative texture for each cmap to the GPU
         for name in all_cmaps:
@@ -45,8 +44,7 @@ class ColormapPicker(Popup):
             data = np.vstack([[data]] * 2).astype(np.uint8)
 
             # upload the texture to the GPU, get the texture ID and texture
-            self._texture_ids[name], texture = self._create_texture_and_upload(data)
-            self._textures.append(texture)
+            self._cmap_texture_refs[name] = self._create_texture_and_upload(data)
 
         # used to set the states of the UI
         self._lut_tool = None
@@ -83,12 +81,8 @@ class ColormapPicker(Popup):
         # get a view
         texture_view = texture.create_view()
 
-        # get the id so that imgui can display it
-        id_texture = ctypes.c_int32(id(texture_view)).value
-        # add texture view to the backend so that it can be retrieved for rendering
-        self.imgui_renderer.backend._texture_views[id_texture] = texture_view
-
-        return id_texture, texture
+        # return texture ref
+        return self.imgui_renderer.backend.register_texture(texture_view)
 
     def open(self, pos: tuple[int, int], lut_tool):
         """
@@ -121,10 +115,18 @@ class ColormapPicker(Popup):
         self.is_open = False
 
     def _add_cmap_menu_item(self, cmap_name: str):
-        texture_id = self._texture_ids[cmap_name]
+        # white border around cmap image
+        imgui.push_style_color(imgui.Col_.border, (1.0, 1.0, 1.0, 1.0))
+        imgui.push_style_var(imgui.StyleVar_.image_border_size, 1.0)
+
+        # cmap image
+        texture_ref = self._cmap_texture_refs[cmap_name]
         imgui.image(
-            texture_id, image_size=(50, self._texture_height), border_col=(1, 1, 1, 1)
+            texture_ref, image_size=(50, self._texture_height),
         )
+        # pop white border
+        imgui.pop_style_var()
+        imgui.pop_style_color()
 
         imgui.same_line()
 
@@ -148,10 +150,7 @@ class ColormapPicker(Popup):
             self.is_open = True
 
             # make the cmap image height the same as the text height
-            self._texture_height = (
-                self.imgui_renderer.backend.io.font_global_scale
-                * imgui.get_font().font_size
-            ) - 2
+            self._texture_height = (imgui.get_font_size()) - 2
 
             if imgui.menu_item("Reset vmin-vmax", "", False)[0]:
                 self._lut_tool.image_graphic.reset_vmin_vmax()

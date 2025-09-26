@@ -109,7 +109,6 @@ class EdgeWindow(Window):
         self._location = location
         self._title = title
         self._window_flags = window_flags
-        self._fa_icons = self._figure._fa_icons
 
         self._x, self._y, self._width, self._height = self.get_rect()
 
@@ -231,7 +230,6 @@ class Popup(BaseGUI):
         super().__init__()
 
         self._figure = figure
-        self._fa_icons = self._figure._fa_icons
 
         self.is_open = False
 

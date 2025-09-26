@@ -66,7 +66,15 @@ class ImguiFigure(Figure):
 
         self._imgui_renderer = ImguiRenderer(self.renderer.device, self.canvas)
 
-        fronts_path = str(
+        # This loads both the Roboto Font and FontAwesome 6 icons and creates and merged font
+        # allowing us to use both without pushing and popping to display icons or regular text
+        sans_serif_font = str(
+            Path(imgui_bundle.__file__).parent.joinpath(
+                "assets", "fonts", "Roboto", "Roboto-Regular.ttf"
+            )
+        )
+
+        fa_6_fonts_path = str(
             Path(imgui_bundle.__file__).parent.joinpath(
                 "assets", "fonts", "Font_Awesome_6_Free-Solid-900.otf"
             )
@@ -74,12 +82,18 @@ class ImguiFigure(Figure):
 
         io = imgui.get_io()
 
-        self._fa_icons = io.fonts.add_font_from_file_ttf(
-            fronts_path, 16, glyph_ranges_as_int_list=[fa.ICON_MIN_FA, fa.ICON_MAX_FA]
+        self._default_imgui_font = io.fonts.add_font_from_file_ttf(
+            sans_serif_font, 14, imgui.ImFontConfig()
         )
 
-        io.fonts.build()
-        self.imgui_renderer.backend.create_fonts_texture()
+        font_config = imgui.ImFontConfig()
+        font_config.merge_mode = True
+
+        self._default_imgui_font = io.fonts.add_font_from_file_ttf(
+            fa_6_fonts_path, 14, font_config,
+        )
+
+        imgui.push_font(self._default_imgui_font, self._default_imgui_font.legacy_size)
 
         self.imgui_renderer.set_gui(self._draw_imgui)
 
@@ -88,12 +102,10 @@ class ImguiFigure(Figure):
         )
 
         for i, subplot in enumerate(self._subplots.ravel()):
-            toolbar = SubplotToolbar(subplot=subplot, fa_icons=self._fa_icons)
+            toolbar = SubplotToolbar(subplot=subplot)
             self._subplot_toolbars[i] = toolbar
 
-        self._right_click_menu = StandardRightClickMenu(
-            figure=self, fa_icons=self._fa_icons
-        )
+        self._right_click_menu = StandardRightClickMenu(figure=self)
 
         self._popups: dict[str, Popup] = {}
 
@@ -101,6 +113,10 @@ class ImguiFigure(Figure):
         self._stats = Stats(self.renderer.device, self.canvas)
 
         self.register_popup(ColormapPicker)
+
+    @property
+    def default_imgui_font(self) -> imgui.ImFont:
+        return self._default_imgui_font
 
     @property
     def guis(self) -> dict[str, EdgeWindow]:
@@ -125,7 +141,7 @@ class ImguiFigure(Figure):
         self.canvas.request_draw()
 
     def _draw_imgui(self) -> imgui.ImDrawData:
-        imgui.new_frame()
+        # imgui.new_frame()
 
         for subplot, toolbar in zip(
             self._subplots.ravel(), self._subplot_toolbars.ravel()
@@ -144,11 +160,11 @@ class ImguiFigure(Figure):
 
         self._right_click_menu.update()
 
-        imgui.end_frame()
+        # imgui.end_frame()
 
-        imgui.render()
+        # imgui.render()
 
-        return imgui.get_draw_data()
+        # return imgui.get_draw_data()
 
     def add_gui(self, gui: EdgeWindow):
         """
