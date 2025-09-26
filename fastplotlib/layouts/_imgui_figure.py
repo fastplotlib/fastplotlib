@@ -90,7 +90,9 @@ class ImguiFigure(Figure):
         font_config.merge_mode = True
 
         self._default_imgui_font = io.fonts.add_font_from_file_ttf(
-            fa_6_fonts_path, 14, font_config,
+            fa_6_fonts_path,
+            14,
+            font_config,
         )
 
         imgui.push_font(self._default_imgui_font, self._default_imgui_font.legacy_size)

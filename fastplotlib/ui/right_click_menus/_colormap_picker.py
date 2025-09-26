@@ -122,7 +122,8 @@ class ColormapPicker(Popup):
         # cmap image
         texture_ref = self._cmap_texture_refs[cmap_name]
         imgui.image(
-            texture_ref, image_size=(50, self._texture_height),
+            texture_ref,
+            image_size=(50, self._texture_height),
         )
         # pop white border
         imgui.pop_style_var()
