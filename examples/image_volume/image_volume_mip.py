@@ -6,7 +6,7 @@ View a volume, uses the fly controller by default so you can fly around the scen
 https://docs.pygfx.org/stable/_autosummary/controllers/pygfx.controllers.FlyController.html#pygfx.controllers.FlyController
 """
 
-# test_example = false
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np
