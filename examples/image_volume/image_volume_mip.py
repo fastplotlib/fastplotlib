@@ -2,8 +2,7 @@
 Volume Mip mode
 ===============
 
-View a volume, uses the fly controller by default so you can fly around the scene using WASD keys and the mouse:
-https://docs.pygfx.org/stable/_autosummary/controllers/pygfx.controllers.FlyController.html#pygfx.controllers.FlyController
+View a volume using MIP rendering.
 """
 
 # test_example = true
