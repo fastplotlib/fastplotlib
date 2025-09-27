@@ -20,6 +20,8 @@ Properties
 .. autosummary::
     :toctree: HistogramLUTTool_api
 
+    HistogramLUTTool.alpha
+    HistogramLUTTool.alpha_mode
     HistogramLUTTool.axes
     HistogramLUTTool.block_events
     HistogramLUTTool.cmap

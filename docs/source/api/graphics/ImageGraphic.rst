@@ -20,6 +20,8 @@ Properties
 .. autosummary::
     :toctree: ImageGraphic_api
 
+    ImageGraphic.alpha
+    ImageGraphic.alpha_mode
     ImageGraphic.axes
     ImageGraphic.block_events
     ImageGraphic.cmap
@@ -47,8 +49,8 @@ Methods
     ImageGraphic.add_event_handler
     ImageGraphic.add_linear_region_selector
     ImageGraphic.add_linear_selector
-    ImageGraphic.add_rectangle_selector
     ImageGraphic.add_polygon_selector
+    ImageGraphic.add_rectangle_selector
     ImageGraphic.clear_event_handlers
     ImageGraphic.remove_event_handler
     ImageGraphic.reset_vmin_vmax

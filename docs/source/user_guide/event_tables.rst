@@ -113,6 +113,28 @@ rotation
 | value    | np.ndarray[float, float, float, float] | new rotation quaternion |
 +----------+----------------------------------------+-------------------------+
 
+alpha
+^^^^^
+
+**event info dict**
+
++----------+-------+-----------------+
+| dict key | type  | description     |
++==========+=======+=================+
+| value    | float | new alpha value |
++----------+-------+-----------------+
+
+alpha_mode
+^^^^^^^^^^
+
+**event info dict**
+
++----------+------+----------------+
+| dict key | type | description    |
++==========+======+================+
+| value    | str  | new alpha mode |
++----------+------+----------------+
+
 visible
 ^^^^^^^
 
@@ -258,6 +280,28 @@ rotation
 | value    | np.ndarray[float, float, float, float] | new rotation quaternion |
 +----------+----------------------------------------+-------------------------+
 
+alpha
+^^^^^
+
+**event info dict**
+
++----------+-------+-----------------+
+| dict key | type  | description     |
++==========+=======+=================+
+| value    | float | new alpha value |
++----------+-------+-----------------+
+
+alpha_mode
+^^^^^^^^^^
+
+**event info dict**
+
++----------+------+----------------+
+| dict key | type | description    |
++==========+======+================+
+| value    | str  | new alpha mode |
++----------+------+----------------+
+
 visible
 ^^^^^^^
 
@@ -384,6 +428,28 @@ rotation
 | value    | np.ndarray[float, float, float, float] | new rotation quaternion |
 +----------+----------------------------------------+-------------------------+
 
+alpha
+^^^^^
+
+**event info dict**
+
++----------+-------+-----------------+
+| dict key | type  | description     |
++==========+=======+=================+
+| value    | float | new alpha value |
++----------+-------+-----------------+
+
+alpha_mode
+^^^^^^^^^^
+
+**event info dict**
+
++----------+------+----------------+
+| dict key | type | description    |
++==========+======+================+
+| value    | str  | new alpha mode |
++----------+------+----------------+
+
 visible
 ^^^^^^^
 
@@ -496,6 +562,28 @@ rotation
 +==========+========================================+=========================+
 | value    | np.ndarray[float, float, float, float] | new rotation quaternion |
 +----------+----------------------------------------+-------------------------+
+
+alpha
+^^^^^
+
+**event info dict**
+
++----------+-------+-----------------+
+| dict key | type  | description     |
++==========+=======+=================+
+| value    | float | new alpha value |
++----------+-------+-----------------+
+
+alpha_mode
+^^^^^^^^^^
+
+**event info dict**
+
++----------+------+----------------+
+| dict key | type | description    |
++==========+======+================+
+| value    | str  | new alpha mode |
++----------+------+----------------+
 
 visible
 ^^^^^^^
@@ -629,6 +717,28 @@ rotation
 | value    | np.ndarray[float, float, float, float] | new rotation quaternion |
 +----------+----------------------------------------+-------------------------+
 
+alpha
+^^^^^
+
+**event info dict**
+
++----------+-------+-----------------+
+| dict key | type  | description     |
++==========+=======+=================+
+| value    | float | new alpha value |
++----------+-------+-----------------+
+
+alpha_mode
+^^^^^^^^^^
+
+**event info dict**
+
++----------+------+----------------+
+| dict key | type | description    |
++==========+======+================+
+| value    | str  | new alpha mode |
++----------+------+----------------+
+
 visible
 ^^^^^^^
 
@@ -761,6 +871,28 @@ rotation
 | value    | np.ndarray[float, float, float, float] | new rotation quaternion |
 +----------+----------------------------------------+-------------------------+
 
+alpha
+^^^^^
+
+**event info dict**
+
++----------+-------+-----------------+
+| dict key | type  | description     |
++==========+=======+=================+
+| value    | float | new alpha value |
++----------+-------+-----------------+
+
+alpha_mode
+^^^^^^^^^^
+
+**event info dict**
+
++----------+------+----------------+
+| dict key | type | description    |
++==========+======+================+
+| value    | str  | new alpha mode |
++----------+------+----------------+
+
 visible
 ^^^^^^^
 
@@ -837,6 +969,28 @@ rotation
 +==========+========================================+=========================+
 | value    | np.ndarray[float, float, float, float] | new rotation quaternion |
 +----------+----------------------------------------+-------------------------+
+
+alpha
+^^^^^
+
+**event info dict**
+
++----------+-------+-----------------+
+| dict key | type  | description     |
++==========+=======+=================+
+| value    | float | new alpha value |
++----------+-------+-----------------+
+
+alpha_mode
+^^^^^^^^^^
+
+**event info dict**
+
++----------+------+----------------+
+| dict key | type | description    |
++==========+======+================+
+| value    | str  | new alpha mode |
++----------+------+----------------+
 
 visible
 ^^^^^^^
@@ -917,6 +1071,28 @@ rotation
 | value    | np.ndarray[float, float, float, float] | new rotation quaternion |
 +----------+----------------------------------------+-------------------------+
 
+alpha
+^^^^^
+
+**event info dict**
+
++----------+-------+-----------------+
+| dict key | type  | description     |
++==========+=======+=================+
+| value    | float | new alpha value |
++----------+-------+-----------------+
+
+alpha_mode
+^^^^^^^^^^
+
+**event info dict**
+
++----------+------+----------------+
+| dict key | type | description    |
++==========+======+================+
+| value    | str  | new alpha mode |
++----------+------+----------------+
+
 visible
 ^^^^^^^
 
@@ -995,6 +1171,28 @@ rotation
 +==========+========================================+=========================+
 | value    | np.ndarray[float, float, float, float] | new rotation quaternion |
 +----------+----------------------------------------+-------------------------+
+
+alpha
+^^^^^
+
+**event info dict**
+
++----------+-------+-----------------+
+| dict key | type  | description     |
++==========+=======+=================+
+| value    | float | new alpha value |
++----------+-------+-----------------+
+
+alpha_mode
+^^^^^^^^^^
+
+**event info dict**
+
++----------+------+----------------+
+| dict key | type | description    |
++==========+======+================+
+| value    | str  | new alpha mode |
++----------+------+----------------+
 
 visible
 ^^^^^^^
