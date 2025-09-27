@@ -20,6 +20,8 @@ Properties
 .. autosummary::
     :toctree: LineCollection_api
 
+    LineCollection.alpha
+    LineCollection.alpha_mode
     LineCollection.axes
     LineCollection.block_events
     LineCollection.cmap
@@ -52,6 +54,7 @@ Methods
     LineCollection.add_graphic
     LineCollection.add_linear_region_selector
     LineCollection.add_linear_selector
+    LineCollection.add_polygon_selector
     LineCollection.add_rectangle_selector
     LineCollection.clear_event_handlers
     LineCollection.remove_event_handler

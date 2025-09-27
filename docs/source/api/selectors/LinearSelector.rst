@@ -20,6 +20,8 @@ Properties
 .. autosummary::
     :toctree: LinearSelector_api
 
+    LinearSelector.alpha
+    LinearSelector.alpha_mode
     LinearSelector.axes
     LinearSelector.axis
     LinearSelector.block_events

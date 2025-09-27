@@ -32,22 +32,22 @@ xs = np.linspace(0, 10 * np.pi, 1_000)
 ys = np.sin(xs)  # y = sine(x)
 
 # make sine along x axis
-sine_graphic_x = figure[0, 0].add_line(np.column_stack([xs, ys]), offset=(10, 10, 0))
+sine_x = figure[0, 0].add_line(np.column_stack([xs, ys]), offset=(10, 10, 0))
 
 # x = sine(y), sine(y) > 0 = 0
-sine_y = ys
-sine_y[sine_y > 0] = 0
+sine_y_data = ys
+sine_y_data[sine_y_data > 0] = 0
 
 # sine along y axis
-sine_graphic_y = figure[0, 1].add_line(np.column_stack([ys, xs]), offset=(10, 10, 0))
+sine_y = figure[0, 1].add_line(np.column_stack([ys, xs]), offset=(10, 10, 0))
 
 # offset the position of the graphic to demonstrate `get_selected_data()` later
-sine_graphic_y.position_x = 50
-sine_graphic_y.position_y = 50
+sine_y.position_x = 50
+sine_y.position_y = 50
 
 # add linear selectors
-selector_x = sine_graphic_x.add_linear_region_selector()  # default axis is "x"
-selector_y = sine_graphic_y.add_linear_region_selector(axis="y")
+selector_x = sine_x.add_linear_region_selector()  # default axis is "x"
+selector_y = sine_y.add_linear_region_selector(axis="y")
 
 # preallocate array for storing zoomed in data
 zoomed_init = np.column_stack([np.arange(zoomed_prealloc), np.zeros(zoomed_prealloc)])

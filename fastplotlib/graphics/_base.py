@@ -5,7 +5,7 @@ import weakref
 
 import numpy as np
 import pylinalg as la
-from wgpu.gui.base import log_exception
+from rendercanvas.base import log_exception
 
 try:
     from imgui_bundle import imgui
@@ -22,6 +22,8 @@ from .features import (
     Name,
     Offset,
     Rotation,
+    Alpha,
+    AlphaMode,
     Visible,
 )
 from ._axes import Axes
@@ -60,6 +62,8 @@ class Graphic:
             "name": Name,
             "offset": Offset,
             "rotation": Rotation,
+            "alpha": Alpha,
+            "alpha_mode": AlphaMode,
             "visible": Visible,
             "deleted": Deleted,
         }
@@ -70,6 +74,8 @@ class Graphic:
         name: str = None,
         offset: np.ndarray | list | tuple = (0.0, 0.0, 0.0),
         rotation: np.ndarray | list | tuple = (0.0, 0.0, 0.0, 1.0),
+        alpha: float = 1.0,
+        alpha_mode: str = "auto",
         visible: bool = True,
         metadata: Any = None,
     ):
@@ -85,6 +91,29 @@ class Graphic:
 
         rotation: (float, float, float, float), default (0, 0, 0, 1)
             rotation quaternion
+
+        alpha: (float), default 1.0
+            The global alpha value, i.e. opacity, of the graphic.
+
+        The alpha value for the colors. If you make your a graphic transparent, consider setting ``alpha_mode``
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
+
+        alpha_mode: (str), default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
+
+            * 'solid': the points do not have semi-transparent fragments. Writes to the depth buffer.
+            * 'auto': like 'solid', but allows semi-transparent fragments.
+            * 'blend': the points are considered transparent, and don't write to the depth buffer.
+              The points are blended in the order they are drawn.
+            * 'weighted_blend': like 'blend', but the result does not depend on the order in which points are rendered,
+              nor is their distance to the camera.
+            * 'dither': use stochastic transparency. Although the result is a bit noisy, the points distance to the camera
+              is properly taken into account, which may be better for 3D point clouds. Writes to the depth buffer.
+
+            For details see https://docs.pygfx.org/stable/transparency.html
+
+        visible: (bool), default True
+            Whether the graphic is visible.
 
         metadata: Any, optional
             metadata attached to this Graphic, this is for the user to manage
@@ -112,6 +141,8 @@ class Graphic:
         self._deleted = Deleted(False)
         self._rotation = Rotation(rotation)
         self._offset = Offset(offset)
+        self._alpha = Alpha(alpha)
+        self._alpha_mode = AlphaMode(alpha_mode)
         self._visible = Visible(visible)
         self._block_events = False
 
@@ -152,6 +183,24 @@ class Graphic:
         self._rotation.set_value(self, value)
 
     @property
+    def alpha(self) -> float:
+        """The opacity of the graphic"""
+        return self._alpha.value
+
+    @alpha.setter
+    def alpha(self, value: float):
+        self._alpha.set_value(self, value)
+
+    @property
+    def alpha_mode(self) -> str:
+        """How the alpha is handled by the renderer"""
+        return self._alpha_mode.value
+
+    @alpha_mode.setter
+    def alpha_mode(self, value: str):
+        self._alpha_mode.set_value(self, value)
+
+    @property
     def visible(self) -> bool:
         """Whether the graphic is visible"""
         return self._visible.value
@@ -187,14 +236,17 @@ class Graphic:
     def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
 
-        self.world_object.visible = self.visible
+        wo.visible = self.visible
+        if wo.material is not None:
+            wo.material.opacity = self.alpha
+            wo.material.alpha_mode = self.alpha_mode
 
         # set offset if it's not (0., 0., 0.)
-        if not all(self.world_object.world.position == self.offset):
+        if not all(wo.world.position == self.offset):
             self.offset = self.offset
 
         # set rotation if it's not (0., 0., 0., 1.)
-        if not all(self.world_object.world.rotation == self.rotation):
+        if not all(wo.world.rotation == self.rotation):
             self.rotation = self.rotation
 
     @property
@@ -453,8 +505,7 @@ class Graphic:
     def right_click_menu(self, menu):
         if not IMGUI:
             raise ImportError(
-                "imgui is required to set right-click menus:\n"
-                "pip install imgui_bundle"
+                "imgui is required to set right-click menus:\npip install imgui_bundle"
             )
 
         self._right_click_menu = menu

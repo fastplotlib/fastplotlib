@@ -8,6 +8,7 @@ from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import LinearRegionSelectionFeature
 from ._base_selector import BaseSelector, MoveInfo
+from ...utils.enums import RenderQueue
 
 
 class LinearRegionSelector(BaseSelector):
@@ -140,7 +141,13 @@ class LinearRegionSelector(BaseSelector):
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(1, size, 1),
                 pygfx.MeshBasicMaterial(
-                    color=pygfx.Color(self.fill_color), pick_write=True
+                    color=pygfx.Color(self.fill_color),
+                    alpha_mode="blend",
+                    opacity=0.4,
+                    render_queue=RenderQueue.selector,
+                    depth_test=False,
+                    depth_write=False,
+                    pick_write=True,
                 ),
             )
 
@@ -148,11 +155,20 @@ class LinearRegionSelector(BaseSelector):
             mesh = pygfx.Mesh(
                 pygfx.box_geometry(size, 1, 1),
                 pygfx.MeshBasicMaterial(
-                    color=pygfx.Color(self.fill_color), pick_write=True
+                    color=pygfx.Color(self.fill_color),
+                    alpha_mode="blend",
+                    opacity=0.4,
+                    render_queue=RenderQueue.selector,
+                    depth_test=False,
+                    depth_write=False,
+                    pick_write=True,
                 ),
             )
         else:
             raise ValueError("`axis` must be one of 'x' or 'y'")
+
+        # Render the mesh before the lines
+        mesh.render_order = -1
 
         # the fill of the selection
         self.fill = mesh
@@ -188,7 +204,15 @@ class LinearRegionSelector(BaseSelector):
                 positions=init_line_data.copy()
             ),  # copy so the line buffer is isolated
             pygfx.LineMaterial(
-                thickness=edge_thickness, color=self.edge_color, pick_write=True
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+                opacity=1,
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
             ),
         )
         line1 = pygfx.Line(
@@ -196,16 +220,20 @@ class LinearRegionSelector(BaseSelector):
                 positions=init_line_data.copy()
             ),  # copy so the line buffer is isolated
             pygfx.LineMaterial(
-                thickness=edge_thickness, color=self.edge_color, pick_write=True
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+                opacity=1,
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
             ),
         )
 
         self.edges: tuple[pygfx.Line, pygfx.Line] = (line0, line1)
-
-        # add the edge lines
-        for edge in self.edges:
-            edge.world.z = -0.5
-            group.add(edge)
+        group.add(*self.edges)
 
         # TODO: if parent offset changes, we should set the selector offset too, use offset evented property
         # TODO: add check if parent is `None`, will throw error otherwise
@@ -369,7 +397,6 @@ class LinearRegionSelector(BaseSelector):
             return np.arange(*bounds, dtype=int)
 
     def _move_graphic(self, move_info: MoveInfo):
-
         # If this the first move in this drag, store initial selection
         if move_info.start_selection is None:
             move_info.start_selection = self.selection
@@ -381,7 +408,7 @@ class LinearRegionSelector(BaseSelector):
         cur_min, cur_max = move_info.start_selection
 
         # move entire selector if event source was fill
-        if self._move_info.source == self.fill:
+        if move_info.source == self.fill:
             # Limit the delta to avoid weird resizine behavior
             min_delta = self.limits[0] - cur_min
             max_delta = self.limits[1] - cur_max
@@ -396,12 +423,12 @@ class LinearRegionSelector(BaseSelector):
 
         # if event source was an edge and selector is resizable,
         # move the edge that caused the event
-        if self._move_info.source == self.edges[0]:
+        if move_info.source == self.edges[0]:
             # change only left or bottom bound
             new_min = min(cur_min + delta, cur_max)
             self._selection.set_value(self, (new_min, cur_max))
 
-        elif self._move_info.source == self.edges[1]:
+        elif move_info.source == self.edges[1]:
             # change only right or top bound
             new_max = max(cur_max + delta, cur_min)
             self._selection.set_value(self, (cur_min, new_max))

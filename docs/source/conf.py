@@ -127,6 +127,7 @@ add_module_names = False
 
 autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented_params"
+autodoc_preserve_defaults = True
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),

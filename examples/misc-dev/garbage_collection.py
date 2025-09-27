@@ -1,9 +1,9 @@
 import numpy as np
-from wgpu.gui.auto import WgpuCanvas, run
+from rendercanvas.auto import RenderCanvas, loop
 import pygfx as gfx
 import subprocess
 
-canvas = WgpuCanvas()
+canvas = RenderCanvas()
 renderer = gfx.WgpuRenderer(canvas)
 scene = gfx.Scene()
 camera = gfx.OrthographicCamera(5000, 5000)
@@ -28,7 +28,11 @@ def draw():
 def print_nvidia(msg=""):
     print(msg)
     print(
-        subprocess.check_output(["nvidia-smi", "--format=csv", "--query-gpu=memory.used"]).decode().split("\n")[1]
+        subprocess.check_output(
+            ["nvidia-smi", "--format=csv", "--query-gpu=memory.used"]
+        )
+        .decode()
+        .split("\n")[1]
     )
     print()
 
@@ -57,4 +61,4 @@ def remove_img(*args):
 renderer.add_event_handler(add_img, "double_click")
 
 draw()
-run()
+loop.run()

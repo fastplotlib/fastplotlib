@@ -5,7 +5,12 @@ import pygfx
 
 from ..utils import quick_min_max
 from ._base import Graphic
-from .selectors import LinearSelector, LinearRegionSelector, RectangleSelector
+from .selectors import (
+    LinearSelector,
+    LinearRegionSelector,
+    RectangleSelector,
+    PolygonSelector,
+)
 from .features import (
     TextureArray,
     ImageCmap,
@@ -174,7 +179,6 @@ class ImageGraphic(Graphic):
         # iterate through each texture chunk and create
         # an _ImageTile, offset the tile using the data indices
         for texture, chunk_index, data_slice in self._data:
-
             # create an ImageTile using the texture for this chunk
             img = _ImageTile(
                 geometry=pygfx.Geometry(grid=texture),
@@ -432,6 +436,44 @@ class ImageGraphic(Graphic):
         selector = RectangleSelector(
             selection=selection,
             limits=limits,
+            fill_color=fill_color,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        # place above this graphic
+        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
+
+        return selector
+
+    def add_polygon_selector(
+        self,
+        selection: List[tuple[float, float]] = None,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
+    ) -> PolygonSelector:
+        """
+        Add a :class:`.PolygonSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: List of positions, optional
+            Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
+
+        """
+
+        # min/max limits are image shape
+        # rows are ys, columns are xs
+        limits = (0, self._data.value.shape[1], 0, self._data.value.shape[0])
+
+        selector = PolygonSelector(
+            selection,
+            limits,
             fill_color=fill_color,
             parent=self,
             **kwargs,

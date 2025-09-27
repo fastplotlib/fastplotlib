@@ -560,12 +560,19 @@ class Figure:
         # draw the underlay planes
         self.renderer.render(self._underlay_scene, self._underlay_camera, flush=False)
 
+        # With new pygfx' blending, the depth buffer is only cleared after each flush, we need a manual depth
+        # clear to erase the depth values set by the underlay.
+        if hasattr(self.renderer, "clear"):
+            self.renderer.clear(depth=True)
+
         # call the animation functions before render
         self._call_animate_functions(self._animate_funcs_pre)
         for subplot in self:
             subplot._render()
 
         # overlay render pass
+        if hasattr(self.renderer, "clear"):
+            self.renderer.clear(depth=True)
         self.renderer.render(self._overlay_scene, self._overlay_camera, flush=False)
 
         self.renderer.flush()
@@ -585,6 +592,7 @@ class Figure:
         self,
         autoscale: bool = True,
         maintain_aspect: bool = None,
+        axes_visible: bool = True,
         sidecar: bool = False,
         sidecar_kwargs: dict = None,
     ):
@@ -598,6 +606,9 @@ class Figure:
 
         maintain_aspect: bool, default ``True``
             maintain aspect ratio
+
+        axes_visible: bool, default ``True``
+            show axes
 
         sidecar: bool, default ``True``
             display plot in a ``jupyterlab-sidecar``, only in jupyter
@@ -636,6 +647,11 @@ class Figure:
                 else:
                     _maintain_aspect = maintain_aspect
                 subplot.auto_scale(maintain_aspect=maintain_aspect)
+
+        # set axes visibility if False
+        if not axes_visible:
+            for subplot in self:
+                subplot.axes.visible = False
 
         # parse based on canvas type
         if self.canvas.__class__.__name__ == "JupyterRenderCanvas":

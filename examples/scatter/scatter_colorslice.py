@@ -36,15 +36,17 @@ cloud = np.vstack(
 colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 
 # use an alpha value since this will be a lot of points
-figure[0, 0].add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
+figure[0, 0].add_scatter(
+    data=cloud, sizes=3, colors=colors, alpha_mode="weighted_blend", alpha=0.6
+)
 
 figure.show()
 
-scatter_graphic = figure[0, 0].graphics[0]
+scatter = figure[0, 0].graphics[0]
 
-scatter_graphic.colors[0:75] = "red"
-scatter_graphic.colors[75:150] = "white"
-scatter_graphic.colors[::2] = "blue"
+scatter.colors[0:75] = "red"
+scatter.colors[75:150] = "white"
+scatter.colors[::2] = "blue"
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide

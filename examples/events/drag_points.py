@@ -23,16 +23,16 @@ data = np.column_stack([xs, ys])
 figure = fpl.Figure(size=(700, 560))
 
 # add a line
-line_graphic = figure[0, 0].add_line(data)
+line = figure[0, 0].add_line(data)
 
 # add a scatter, share the line graphic buffer!
-scatter_graphic = figure[0, 0].add_scatter(data=line_graphic.data, sizes=25, colors="r")
+scatter = figure[0, 0].add_scatter(data=line.data, sizes=25, colors="r")
 
 is_moving = False
 vertex_index = None
 
 
-@scatter_graphic.add_event_handler("pointer_down")
+@scatter.add_event_handler("pointer_down")
 def start_drag(ev: pygfx.PointerEvent):
     global is_moving
     global vertex_index
@@ -42,7 +42,7 @@ def start_drag(ev: pygfx.PointerEvent):
 
     is_moving = True
     vertex_index = ev.pick_info["vertex_index"]
-    scatter_graphic.colors[vertex_index] = "cyan"
+    scatter.colors[vertex_index] = "cyan"
 
 
 @figure.renderer.add_event_handler("pointer_move")
@@ -63,13 +63,13 @@ def move_point(ev):
     if pos is None:
         # end movement
         is_moving = False
-        scatter_graphic.colors[vertex_index] = "r"  # reset color
+        scatter.colors[vertex_index] = "r"  # reset color
         vertex_index = None
         return
 
     # change scatter data
     # since we are sharing the buffer, the line data will also change
-    scatter_graphic.data[vertex_index, :-1] = pos[:-1]
+    scatter.data[vertex_index, :-1] = pos[:-1]
 
     # re-enable controller
     figure[0, 0].controller.enabled = True
@@ -83,7 +83,7 @@ def end_drag(ev: pygfx.PointerEvent):
     # end movement
     if is_moving:
         # reset color
-        scatter_graphic.colors[vertex_index] = "r"
+        scatter.colors[vertex_index] = "r"
 
     is_moving = False
     vertex_index = None

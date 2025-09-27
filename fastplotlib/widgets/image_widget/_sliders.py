@@ -56,19 +56,15 @@ class ImageWidgetSliders(EdgeWindow):
         flag_index_changed = False
 
         # reset vmin-vmax using full orig data
-        imgui.push_font(self._fa_icons)
         if imgui.button(label=fa.ICON_FA_CIRCLE_HALF_STROKE + fa.ICON_FA_FILM):
             self._image_widget.reset_vmin_vmax()
-        imgui.pop_font()
         if imgui.is_item_hovered(0):
             imgui.set_tooltip("reset contrast limits using full movie/stack")
 
         # reset vmin-vmax using currently displayed ImageGraphic data
-        imgui.push_font(self._fa_icons)
         imgui.same_line()
         if imgui.button(label=fa.ICON_FA_CIRCLE_HALF_STROKE):
             self._image_widget.reset_vmin_vmax_frame()
-        imgui.pop_font()
         if imgui.is_item_hovered(0):
             imgui.set_tooltip("reset contrast limits using current frame")
 
@@ -78,7 +74,6 @@ class ImageWidgetSliders(EdgeWindow):
         # buttons and slider UI elements for each dim
         for dim in self._image_widget.slider_dims:
             imgui.push_id(f"{self._id_counter}_{dim}")
-            imgui.push_font(self._fa_icons)
 
             if self._playing[dim]:
                 # show pause button if playing
@@ -119,7 +114,6 @@ class ImageWidgetSliders(EdgeWindow):
             imgui.same_line()
             # loop checkbox
             _, self._loop = imgui.checkbox(label=fa.ICON_FA_ROTATE, v=self._loop)
-            imgui.pop_font()
             if imgui.is_item_hovered(0):
                 imgui.set_tooltip("loop playback")
 
