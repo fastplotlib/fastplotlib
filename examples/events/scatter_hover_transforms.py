@@ -24,7 +24,7 @@ import fastplotlib as fpl
 import pygfx
 
 # get the dataset
-dataset = fetch_california_housing(n_retries=5, delay=20)
+dataset = fetch_california_housing(n_retries=8, delay=30)
 X_full, y = dataset.data, dataset.target
 feature_names = dataset.feature_names
 
