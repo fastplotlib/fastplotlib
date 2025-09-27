@@ -219,7 +219,6 @@ def create_volume_material_kwargs(graphic, mode: str):
 
     elif mode == "slice":
         more_kwargs = {"plane": graphic.plane}
-        print(more_kwargs)
     else:
         more_kwargs = {}
 
