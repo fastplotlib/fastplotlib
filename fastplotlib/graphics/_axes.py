@@ -3,6 +3,8 @@ import numpy as np
 import pygfx
 from pylinalg import quat_from_vecs, vec_transform_quat
 
+from ..utils.enums import RenderQueue
+
 
 GRID_PLANES = ["xy", "xz", "yz"]
 
@@ -181,9 +183,15 @@ class Axes:
         }
 
         # create ruler for each dim
-        self._x = pygfx.Ruler(**x_kwargs)
-        self._y = pygfx.Ruler(**y_kwargs)
-        self._z = pygfx.Ruler(**z_kwargs)
+        self._x = pygfx.Ruler(alpha_mode="solid", **x_kwargs)
+        self._y = pygfx.Ruler(alpha_mode="solid", **y_kwargs)
+        self._z = pygfx.Ruler(alpha_mode="solid", **z_kwargs)
+
+        # We render the lines and ticks as solid, but enable aa for text for prettier glyphs
+        for ruler in self._x, self._y, self._z:
+            ruler.text.material.alpha_mode = "auto"
+            ruler.text.material.render_queue = RenderQueue.auto + 50
+            ruler.text.material.aa = True
 
         self._offset = offset
 
@@ -226,15 +234,23 @@ class Axes:
         if grid_kwargs is None:
             grid_kwargs = dict()
 
-        grid_kwargs = {
-            "major_step": 10,
-            "minor_step": 1,
-            "thickness_space": "screen",
-            "major_thickness": 2,
-            "minor_thickness": 0.5,
-            "infinite": True,
+        # The grid is a bit weird, because it makes use of transparency to fade off in the distance.
+        # But w want it to write depth, so that objects that are drawn behind it are partually hidden.
+        # So we set alha_mode to 'auto'. We make it draw earlier than other 'auto' objects, under the
+        # assumption that most interesting stuff is in front of the grid, and artifacts behind the grid are less
+        # bad than those in front. Note that fully opaque objects blend perfectly fine with the grid. Artifacts
+        # should only emerge for objects that have semi-transparent fragments.
+        grid_kwargs = dict(
+            alpha_mode="auto",
+            render_queue=RenderQueue.auto + 50,
+            major_step=10,
+            minor_step=1,
+            thickness_space="screen",
+            major_thickness=2,
+            minor_thickness=0.5,
+            infinite=True,
             **grid_kwargs,
-        }
+        )
 
         if grids:
             _grids = dict()

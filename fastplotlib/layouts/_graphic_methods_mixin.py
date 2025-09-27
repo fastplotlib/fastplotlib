@@ -89,7 +89,6 @@ class GraphicMethodsMixin:
         thickness: Union[float, Sequence[float]] = 2.0,
         colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
         uniform_colors: bool = False,
-        alpha: float = 1.0,
         cmap: Union[Sequence[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
@@ -121,9 +120,6 @@ class GraphicMethodsMixin:
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
-
-        alpha: float, optional
-            alpha value for colors, if colors is a ``str``
 
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
@@ -162,7 +158,6 @@ class GraphicMethodsMixin:
             thickness,
             colors,
             uniform_colors,
-            alpha,
             cmap,
             cmap_transform,
             name,
@@ -180,7 +175,6 @@ class GraphicMethodsMixin:
         thickness: float = 2.0,
         colors: Union[str, numpy.ndarray, Sequence] = "w",
         uniform_color: bool = False,
-        alpha: float = 1.0,
         cmap: str = None,
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
         isolated_buffer: bool = True,
@@ -210,9 +204,6 @@ class GraphicMethodsMixin:
             if True, uses a uniform buffer for the line color,
             basically saves GPU VRAM when the entire line has a single color
 
-        alpha: float, optional, default 1.0
-            alpha value for the colors
-
         cmap: str, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
@@ -235,7 +226,6 @@ class GraphicMethodsMixin:
             thickness,
             colors,
             uniform_color,
-            alpha,
             cmap,
             cmap_transform,
             isolated_buffer,
@@ -248,7 +238,6 @@ class GraphicMethodsMixin:
         data: List[numpy.ndarray],
         thickness: Union[float, Iterable[float]] = 2.0,
         colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
-        alpha: float = 1.0,
         cmap: Union[Iterable[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
@@ -282,9 +271,6 @@ class GraphicMethodsMixin:
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
-
-        alpha: float, optional
-            alpha value for colors, if colors is a ``str``
 
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
@@ -329,7 +315,6 @@ class GraphicMethodsMixin:
             data,
             thickness,
             colors,
-            alpha,
             cmap,
             cmap_transform,
             name,
@@ -348,7 +333,6 @@ class GraphicMethodsMixin:
         data: Any,
         colors: str | numpy.ndarray | tuple[float] | list[float] | list[str] = "w",
         uniform_color: bool = False,
-        alpha: float = 1.0,
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
         isolated_buffer: bool = True,
@@ -374,9 +358,6 @@ class GraphicMethodsMixin:
         uniform_color: bool, default False
             if True, uses a uniform buffer for the scatter point colors. Useful if you need to
             save GPU VRAM when all points have the same color.
-
-        alpha: float, optional, default 1.0
-            alpha value for the colors
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
@@ -410,7 +391,6 @@ class GraphicMethodsMixin:
             data,
             colors,
             uniform_color,
-            alpha,
             cmap,
             cmap_transform,
             isolated_buffer,

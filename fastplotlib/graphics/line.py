@@ -37,7 +37,6 @@ class LineGraphic(PositionsGraphic):
         thickness: float = 2.0,
         colors: str | np.ndarray | Sequence = "w",
         uniform_color: bool = False,
-        alpha: float = 1.0,
         cmap: str = None,
         cmap_transform: np.ndarray | Sequence = None,
         isolated_buffer: bool = True,
@@ -66,9 +65,6 @@ class LineGraphic(PositionsGraphic):
             if True, uses a uniform buffer for the line color,
             basically saves GPU VRAM when the entire line has a single color
 
-        alpha: float, optional, default 1.0
-            alpha value for the colors
-
         cmap: str, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
@@ -89,7 +85,6 @@ class LineGraphic(PositionsGraphic):
             data=data,
             colors=colors,
             uniform_color=uniform_color,
-            alpha=alpha,
             cmap=cmap,
             cmap_transform=cmap_transform,
             isolated_buffer=isolated_buffer,
@@ -104,9 +99,12 @@ class LineGraphic(PositionsGraphic):
         else:
             MaterialCls = pygfx.LineMaterial
 
+        aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
+
         if uniform_color:
             geometry = pygfx.Geometry(positions=self._data.buffer)
             material = MaterialCls(
+                aa=aa,
                 thickness=self.thickness,
                 color_mode="uniform",
                 color=self.colors,
@@ -115,6 +113,7 @@ class LineGraphic(PositionsGraphic):
             )
         else:
             material = MaterialCls(
+                aa=aa,
                 thickness=self.thickness,
                 color_mode="vertex",
                 pick_write=True,

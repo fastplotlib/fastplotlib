@@ -127,6 +127,60 @@ class Rotation(GraphicFeature):
         self._call_event_handlers(event)
 
 
+class Alpha(GraphicFeature):
+    """The alpha value (i.e. opacity) of a graphic."""
+
+    property_name = "alpha"
+    event_info_spec = [
+        {"dict key": "value", "type": "float", "description": "new alpha value"},
+    ]
+
+    def __init__(self, value: float):
+        self._value = value
+        super().__init__()
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: float):
+        wo = graphic.world_object
+        if wo.material is not None:
+            wo.material.opacity = value
+        self._value = value
+
+        event = GraphicFeatureEvent(type="alpha", info={"value": value})
+        self._call_event_handlers(event)
+
+
+class AlphaMode(GraphicFeature):
+    """The alpha-mode value of a graphic (i.e. how alpha is handled by the renderer)."""
+
+    property_name = "alpha_mode"
+    event_info_spec = [
+        {"dict key": "value", "type": "str", "description": "new alpha mode"},
+    ]
+
+    def __init__(self, value: str):
+        self._value = value
+        super().__init__()
+
+    @property
+    def value(self) -> str:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: str):
+        wo = graphic.world_object
+        if wo.material is not None:
+            wo.alpha_mode = value
+        self._value = value
+
+        event = GraphicFeatureEvent(type="alpha_mode", info={"value": value})
+        self._call_event_handlers(event)
+
+
 class Visible(GraphicFeature):
     """Access or change the visibility."""
 

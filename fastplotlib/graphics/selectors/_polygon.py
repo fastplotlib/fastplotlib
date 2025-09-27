@@ -7,6 +7,7 @@ from numbers import Real
 import numpy as np
 import pygfx
 
+from ...utils.enums import RenderQueue
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import PolygonSelectionFeature
@@ -77,7 +78,7 @@ class PolygonSelector(BaseSelector):
         limits: Sequence[float],
         parent: Graphic = None,
         resizable: bool = True,
-        fill_color=(0, 0, 0.35, 0.2),
+        fill_color=(0, 0, 0.35),
         edge_color=(0.8, 0.6, 0),
         edge_thickness: float = 4,
         vertex_color=(0.7, 0.4, 0),
@@ -104,27 +105,62 @@ class PolygonSelector(BaseSelector):
         self._line = pygfx.Line(
             self.geometry,
             pygfx.LineMaterial(
-                thickness=edge_thickness, color=edge_color, pick_write=True
+                thickness=edge_thickness,
+                color=edge_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
             ),
         )
         self._points = pygfx.Points(
             self.geometry,
-            pygfx.PointsMaterial(size=vertex_size, color=vertex_color, pick_write=True),
+            pygfx.PointsMaterial(
+                size=vertex_size,
+                color=vertex_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
+            ),
         )
         self._indicator = pygfx.Points(
             pygfx.Geometry(positions=[[0, 0, 0]]),
-            pygfx.PointsMaterial(size=15, color=vertex_color, opacity=0.3),
+            pygfx.PointsMaterial(
+                size=15,
+                color=vertex_color,
+                alpha_mode="blend",
+                opacity=0.3,
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+            ),
         )
         self._indicator.visible = False
         self._mesh = pygfx.Mesh(
-            self.geometry, pygfx.MeshBasicMaterial(color=fill_color, pick_write=True)
+            self.geometry,
+            pygfx.MeshBasicMaterial(
+                color=fill_color,
+                alpha_mode="blend",
+                opacity=0.4,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
+            ),
         )
         group = pygfx.Group().add(self._line, self._points, self._mesh, self._indicator)
         self._set_world_object(group)
 
-        # Order in z, so stuff stays pickable
-        self._line.local.z = 0.1
-        self._points.local.z = 0.2
+        # Points go on top of lines, which go on top of the mesh. And indicator in between.
+        self._line.render_order = 1
+        self._indicator.render_order = 2
+        self._points.render_order = 3
 
         if selection is None:
             selection = []
@@ -225,9 +261,8 @@ class PolygonSelector(BaseSelector):
                     # empty selection
                     return np.array([], dtype=np.float32).reshape(0, 3)
 
-                s = slice(
-                    ixs[0], ixs[-1] + 1
-                )  # add 1 to end because these are direct indices
+                # add 1 to end because these are direct indices
+                s = slice(ixs[0], ixs[-1] + 1)
                 # slices n_datapoints dim
                 # slice with min, max is faster than using all the indices
 
@@ -419,7 +454,7 @@ class PolygonSelector(BaseSelector):
         """After mouse pointer move event, moves endpoint of current line segment"""
         if self._move_info.mode is None:
             return
-        world_pos = self._plot_area.map_screen_to_world(ev)
+        world_pos = self._plot_area.map_screen_to_world((ev.x, ev.y))
         if world_pos is None:
             return
 
@@ -430,9 +465,24 @@ class PolygonSelector(BaseSelector):
         # - allowing the user to merge points by dragging one onto its neighbour.
         index = self._move_info.index
         snap_index = None
-        if ev.target is self._points:
-            snap_index = ev.pick_info["vertex_index"]
-        if snap_index == index:  # dont snap to moving point
+
+        # Use numpy to select the nearest point.
+        # This is because we cannot use picking on the actual points because
+        # then we'd always pick the point being moved. We don't use a depth buffer
+        # so we cannot move the point backwards to avoid it being picked.
+        # An advantage is that we can make the snap-radius larger than the size of the points.
+        world_pos2 = self._plot_area.map_screen_to_world((ev.x + 1, ev.y))
+        world_pos_scale = float(np.linalg.norm(world_pos - world_pos2))
+        snap_radius = 20  # logical screen pixels
+        if len(self.selection) > 0:
+            distances = np.linalg.norm(self.selection[:, :2] - world_pos[:2], axis=1)
+            distances /= world_pos_scale
+            distances[index] = np.inf
+            snap_index = int(np.argmin(distances))
+            if distances[snap_index] > snap_radius:
+                snap_index = None
+
+        if snap_index == index:  # just in case, dont snap to moving point
             snap_index = None
         if len(self.selection) < 4:
             snap_index = None
@@ -455,9 +505,6 @@ class PolygonSelector(BaseSelector):
         else:
             self._indicator.material.size = 15
 
-        # Move the positions being moved a bit down in depth, so its de-preferred in picking
-        world_pos = (world_pos[0], world_pos[1], -0.05)
-
         self._indicator.local.position = world_pos
 
         # Update data
@@ -473,10 +520,6 @@ class PolygonSelector(BaseSelector):
 
     def _on_pointer_up(self, ev):
         if self._move_info.mode in ("create", "drag"):
-            # Update data to set depth (z) to zero again
-            data = self.selection
-            data[:, 2] = 0
-            self._selection.set_value(self, data)
             # If we snapped, we dissolve (i.e. delete the vertex being moved)
             if self._move_info.snap_index is not None:
                 assert self._move_info.index is not None

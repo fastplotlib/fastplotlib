@@ -23,6 +23,7 @@ Properties
     ImguiFigure.cameras
     ImguiFigure.canvas
     ImguiFigure.controllers
+    ImguiFigure.default_imgui_font
     ImguiFigure.guis
     ImguiFigure.imgui_renderer
     ImguiFigure.layout
