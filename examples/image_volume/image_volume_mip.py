@@ -14,11 +14,11 @@ import imageio.v3 as iio
 
 voldata = iio.imread("imageio:stent.npz").astype(np.float32)
 
-fig = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
+figure = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
 
-fig[0, 0].add_image_volume(voldata, mode="mip", alpha_mode="add")
+figure[0, 0].add_image_volume(voldata, mode="mip", alpha_mode="add")
 
-fig.show()
+figure.show()
 
 
 # load a pre-saved camera state
@@ -37,7 +37,7 @@ state = {
 }
 
 
-fig[0, 0].camera.set_state(state)
+figure[0, 0].camera.set_state(state)
 
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions

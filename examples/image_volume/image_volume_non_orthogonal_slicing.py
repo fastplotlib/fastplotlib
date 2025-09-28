@@ -17,13 +17,13 @@ import imageio.v3 as iio
 
 voldata = iio.imread("imageio:stent.npz").astype(np.float32)
 
-fig = fpl.Figure(
+figure = fpl.Figure(
     cameras="3d",
     controller_types="orbit",
     size=(700, 560)
 )
 
-vol = fig[0, 0].add_image_volume(voldata, mode="slice")
+vol = figure[0, 0].add_image_volume(voldata, mode="slice")
 
 # a plane is defined by ax + by + cz + d = 0
 # the plane property sets (a, b, c, d)
@@ -44,9 +44,9 @@ state = {
     "depth_range": None
 }
 
-fig.show()
+figure.show()
 
-fig[0, 0].camera.set_state(state)
+figure[0, 0].camera.set_state(state)
 
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions

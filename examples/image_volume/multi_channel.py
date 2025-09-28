@@ -28,18 +28,18 @@ dask_data = image_node.data
 # use the highest resolution image in the pyramid zarr
 voldata = dask_data[0]
 
-fig = fpl.Figure(
+figure = fpl.Figure(
     cameras="3d",
     controller_types="orbit",
     size=(700, 700)
 )
 
 # add first channel, use cyan colormap
-vol_ch0 = fig[0, 0].add_image_volume(voldata[0], cmap="cyan", alpha_mode="add")
+vol_ch0 = figure[0, 0].add_image_volume(voldata[0], cmap="cyan", alpha_mode="add")
 # add another channel, use magenta cmap
-vol_ch1 = fig[0, 0].add_image_volume(voldata[1], cmap="magenta", alpha_mode="add")
+vol_ch1 = figure[0, 0].add_image_volume(voldata[1], cmap="magenta", alpha_mode="add")
 
-fig.show()
+figure.show()
 
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions

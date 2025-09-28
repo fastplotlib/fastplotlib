@@ -57,9 +57,9 @@ def generate_data(
 
 voldata = generate_data()
 
-fig = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
+figure = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
 
-volume = fig[0, 0].add_image_volume(
+volume = figure[0, 0].add_image_volume(
     voldata[0],
     vmin=10,
     vmax=15,
@@ -69,12 +69,12 @@ volume = fig[0, 0].add_image_volume(
 
 hlut = fpl.HistogramLUTTool(voldata, volume)
 
-fig[0, 0].docks["right"].size = 100
-fig[0, 0].docks["right"].controller.enabled = False
-fig[0, 0].docks["right"].add_graphic(hlut)
-fig[0, 0].docks["right"].auto_scale(maintain_aspect=False)
+figure[0, 0].docks["right"].size = 100
+figure[0, 0].docks["right"].controller.enabled = False
+figure[0, 0].docks["right"].add_graphic(hlut)
+figure[0, 0].docks["right"].auto_scale(maintain_aspect=False)
 
-fig.show()
+figure.show()
 
 # load a pre-saved camera state
 state = {
@@ -91,7 +91,7 @@ state = {
     "depth_range": None,
 }
 
-fig[0, 0].camera.set_state(state)
+figure[0, 0].camera.set_state(state)
 
 
 i = 0
@@ -105,7 +105,7 @@ def update():
         i = 0
 
 
-fig.add_animations(update)
+figure.add_animations(update)
 
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions

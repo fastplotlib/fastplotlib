@@ -17,21 +17,21 @@ from imgui_bundle import imgui
 
 voldata = iio.imread("imageio:stent.npz").astype(np.float32)
 
-fig = fpl.Figure(
+figure = fpl.Figure(
     cameras="3d",
     controller_types="orbit",
     size=(700, 560)
 )
 
-fig[0, 0].add_image_volume(voldata, name="vol-img")
+figure[0, 0].add_image_volume(voldata, name="vol-img")
 
 # add an hlut tool
-hlut = fpl.HistogramLUTTool(voldata, fig[0, 0]["vol-img"])
+hlut = fpl.HistogramLUTTool(voldata, figure[0, 0]["vol-img"])
 
-fig[0, 0].docks["right"].size = 80
-fig[0, 0].docks["right"].controller.enabled = False
-fig[0, 0].docks["right"].add_graphic(hlut)
-fig[0, 0].docks["right"].auto_scale(maintain_aspect=False)
+figure[0, 0].docks["right"].size = 80
+figure[0, 0].docks["right"].controller.enabled = False
+figure[0, 0].docks["right"].add_graphic(hlut)
+figure[0, 0].docks["right"].auto_scale(maintain_aspect=False)
 
 
 class GUI(EdgeWindow):
@@ -73,10 +73,10 @@ class GUI(EdgeWindow):
 
             self.graphic.plane = (a, b, c, d)
 
-gui = GUI(figure=fig)
-fig.add_gui(gui)
+gui = GUI(figure=figure)
+figure.add_gui(gui)
 
-fig.show()
+figure.show()
 
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
