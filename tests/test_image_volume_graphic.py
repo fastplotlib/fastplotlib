@@ -82,7 +82,7 @@ def test_gray():
 
     # since this entire image is under the wgpu max texture limit,
     # the entire image should be in the single Texture buffer
-    npt.assert_almost_equal(ig.data.buffer[0, 0].data, SIMPLE_IMAGE)
+    npt.assert_almost_equal(ig.data.buffer[0, 0, 0].data, SIMPLE_IMAGE)
 
     assert isinstance(ig._material, pygfx.ImageBasicMaterial)
     assert isinstance(ig._material.map, pygfx.TextureMap)
