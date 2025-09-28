@@ -14,7 +14,7 @@ jobs:
   screenshots:
     name: Regenerate
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
