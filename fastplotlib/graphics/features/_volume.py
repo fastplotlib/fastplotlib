@@ -20,6 +20,7 @@ class TextureArrayVolume(GraphicFeature):
 
     Creates and manages multiple pygfx.Texture objects.
     """
+
     event_info_spec = [
         {
             "dict key": "key",
@@ -147,7 +148,9 @@ class TextureArrayVolume(GraphicFeature):
 
         return self
 
-    def __next__(self) -> tuple[pygfx.Texture, tuple[int, int, int], tuple[slice, slice, slice]]:
+    def __next__(
+        self,
+    ) -> tuple[pygfx.Texture, tuple[int, int, int], tuple[slice, slice, slice]]:
         """
         Iterate through each Texture within the texture array
 
@@ -174,7 +177,11 @@ class TextureArrayVolume(GraphicFeature):
         col_stop = min(self.value.shape[2], data_col_start + self._texture_size_limit)
 
         # zdim, row and column slices that slice the data for this chunk from the big data array
-        data_slice = (slice(data_z_start, z_stop), slice(data_row_start, row_stop), slice(data_col_start, col_stop))
+        data_slice = (
+            slice(data_z_start, z_stop),
+            slice(data_row_start, row_stop),
+            slice(data_col_start, col_stop),
+        )
 
         # texture for this chunk
         texture = self.buffer[chunk_index]
@@ -207,7 +214,8 @@ def create_volume_material_kwargs(graphic, mode: str):
     }
 
     if mode == "iso":
-        more_kwargs = {attr: getattr(graphic, attr)
+        more_kwargs = {
+            attr: getattr(graphic, attr)
             for attr in [
                 "threshold",
                 "step_size",

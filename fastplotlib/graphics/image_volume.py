@@ -345,7 +345,9 @@ class ImageVolumeGraphic(Graphic):
     @threshold.setter
     def threshold(self, value: float):
         if self.mode != "iso":
-            raise TypeError("`threshold` property is only used for `iso` rendering mode")
+            raise TypeError(
+                "`threshold` property is only used for `iso` rendering mode"
+            )
 
         self._threshold.set_value(self, value)
 
@@ -385,9 +387,7 @@ class ImageVolumeGraphic(Graphic):
     @emissive.setter
     def emissive(self, value: pygfx.Color | str | tuple | np.ndarray):
         if self.mode != "iso":
-            raise TypeError(
-                "`emissive` property is only used for `iso` rendering mode"
-            )
+            raise TypeError("`emissive` property is only used for `iso` rendering mode")
 
         self._emissive.set_value(self, value)
 
@@ -404,7 +404,6 @@ class ImageVolumeGraphic(Graphic):
             )
 
         self._shininess.set_value(self, value)
-
 
     def reset_vmin_vmax(self):
         """

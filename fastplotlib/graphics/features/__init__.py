@@ -26,7 +26,7 @@ from ._volume import (
     VolumeIsoShininess,
     VolumeSlicePlane,
     VOLUME_RENDER_MODES,
-    create_volume_material_kwargs
+    create_volume_material_kwargs,
 )
 from ._base import (
     GraphicFeature,
