@@ -150,9 +150,9 @@ class Alpha(GraphicFeature):
         if wo.material is not None:
             wo.material.opacity = value
 
-        if "Image" in self.__class__.__name__:
+        if "Image" in graphic.__class__.__name__:
             # Image and ImageVolume use tiling and share one material
-            wo.children[0].material.alpha = value
+            graphic._material.alpha = value
 
         self._value = value
 
@@ -182,9 +182,9 @@ class AlphaMode(GraphicFeature):
         if wo.material is not None:
             wo.alpha_mode = value
 
-        if "Image" in self.__class__.__name__:
+        if "Image" in graphic.__class__.__name__:
             # Image and ImageVolume use tiling and share one material
-            wo.children[0].material.alpha_mode = value
+            graphic._material.alpha_mode = value
 
         self._value = value
 
