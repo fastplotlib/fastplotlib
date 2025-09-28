@@ -145,7 +145,11 @@ class ImageGraphic(Graphic):
             self._data = TextureArray(data, isolated_buffer=isolated_buffer)
 
         if (vmin is None) or (vmax is None):
-            vmin, vmax = quick_min_max(self.data.value)
+            _vmin, _vmax = quick_min_max(self.data.value)
+            if vmin is None:
+                vmin = _vmin
+            if vmax is None:
+                vmax = _vmax
 
         # other graphic features
         self._vmin = ImageVmin(vmin)
