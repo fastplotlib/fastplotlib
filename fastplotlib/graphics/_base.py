@@ -254,8 +254,8 @@ class Graphic:
         wo.visible = self.visible
         if "Image" in self.__class__.__name__:
             # Image and ImageVolume use tiling and share one material
-            wo.children[0].material.opacity = self.alpha
-            wo.children[0].material.alpha_mode = self.alpha_mode
+            self._material.opacity = self.alpha
+            self._material.alpha_mode = self.alpha_mode
 
         if wo.material is not None:
             wo.material.opacity = self.alpha
