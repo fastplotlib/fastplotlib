@@ -9,7 +9,8 @@ from fastplotlib.graphics.features import GraphicFeatureEvent
 from fastplotlib.utils import make_colors
 
 
-SIMPLE_IMAGE = iio.imread("imageio:stent.npz")
+# load only first 128 planes because we set a limit for the tests
+SIMPLE_IMAGE = iio.imread("imageio:stent.npz")[:128]
 
 EVENT_RETURN_VALUE: GraphicFeatureEvent = None
 
@@ -84,7 +85,7 @@ def test_gray():
     # the entire image should be in the single Texture buffer
     npt.assert_almost_equal(ig.data.buffer[0, 0, 0].data, SIMPLE_IMAGE)
 
-    assert isinstance(ig._material, pygfx.ImageBasicMaterial)
+    assert isinstance(ig._material, pygfx.VolumeMipMaterial)
     assert isinstance(ig._material.map, pygfx.TextureMap)
     assert isinstance(ig._material.map.texture, pygfx.Texture)
 
@@ -103,15 +104,15 @@ def test_gray():
     for child in ig.world_object.children:
         npt.assert_almost_equal(child.material.map.texture.data, new_colors)
 
-    assert ig.interpolation == "nearest"
-    for child in ig.world_object.children:
-        assert child.material.interpolation == "nearest"
-
-    ig.interpolation = "linear"
     assert ig.interpolation == "linear"
     for child in ig.world_object.children:
         assert child.material.interpolation == "linear"
-    check_event(graphic=ig, feature="interpolation", value="linear")
+
+    ig.interpolation = "nearest"
+    assert ig.interpolation == "nearest"
+    for child in ig.world_object.children:
+        assert child.material.interpolation == "nearest"
+    check_event(graphic=ig, feature="interpolation", value="nearest")
 
     assert ig.cmap_interpolation == "linear"
     for child in ig.world_object.children:
@@ -178,7 +179,7 @@ def test_gray():
     npt.assert_almost_equal(ig.vmin, SIMPLE_IMAGE.min())
     npt.assert_almost_equal(ig.vmax, SIMPLE_IMAGE.max())
 
-    check_set_slice(SIMPLE_IMAGE, ig, slice(100, 200), slice(200, 300))
+    check_set_slice(SIMPLE_IMAGE, ig, slice(50, 60), slice(20, 30), slice(80, 100))
 
     # test setting all values
     ig.data = 1
