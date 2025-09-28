@@ -89,6 +89,13 @@ class ImageVolumeGraphic(Graphic):
         "vmax": ImageVmax,
         "interpolation": ImageInterpolation,
         "cmap_interpolation": ImageCmapInterpolation,
+        "mode": VolumeRenderMode,
+        "threshold": VolumeIsoThreshold,
+        "step_size": VolumeIsoStepSize,
+        "substep_size": VolumeIsoSubStepSize,
+        "emissive": VolumeIsoEmissive,
+        "shininess": VolumeIsoShininess,
+        "plane": VolumeSlicePlane,
     }
 
     def __init__(
@@ -165,7 +172,7 @@ class ImageVolumeGraphic(Graphic):
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then set the data, useful if the
             data arrays are ready-only such as memmaps. If False, the input array is itself used as the
-            buffer - useful if thearray is large.
+            buffer - useful if the array is large.
 
         kwargs
             additional keyword arguments passed to :class:`.Graphic`
