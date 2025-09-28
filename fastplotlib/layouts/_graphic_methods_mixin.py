@@ -158,7 +158,7 @@ class GraphicMethodsMixin:
         isolated_buffer: bool, default True
             If True, initialize a buffer with the same shape as the input data and then set the data, useful if the
             data arrays are ready-only such as memmaps. If False, the input array is itself used as the
-            buffer - useful if thearray is large.
+            buffer - useful if the array is large.
 
         kwargs
             additional keyword arguments passed to :class:`.Graphic`
