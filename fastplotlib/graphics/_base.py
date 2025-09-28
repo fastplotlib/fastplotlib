@@ -252,7 +252,7 @@ class Graphic:
         WORLD_OBJECTS[self._fpl_address] = wo
 
         wo.visible = self.visible
-        if isinstance(wo, pygfx.Group):
+        if "Image" in self.__class__.__name__:
             # Image and ImageVolume use tiling and share one material
             wo.children[0].material.opacity = self.alpha
             wo.children[0].material.alpha_mode = self.alpha_mode

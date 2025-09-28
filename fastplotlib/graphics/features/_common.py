@@ -150,7 +150,7 @@ class Alpha(GraphicFeature):
         if wo.material is not None:
             wo.material.opacity = value
 
-        if isinstance(wo, pygfx.Group):
+        if "Image" in self.__class__.__name__:
             # Image and ImageVolume use tiling and share one material
             wo.children[0].material.alpha = value
 
@@ -182,7 +182,7 @@ class AlphaMode(GraphicFeature):
         if wo.material is not None:
             wo.alpha_mode = value
 
-        if isinstance(wo, pygfx.Group):
+        if "Image" in self.__class__.__name__:
             # Image and ImageVolume use tiling and share one material
             wo.children[0].material.alpha_mode = value
 
