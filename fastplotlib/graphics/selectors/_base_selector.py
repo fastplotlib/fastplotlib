@@ -287,7 +287,6 @@ class BaseSelector(Graphic):
         # if the event source was an outer transparent line, get the
         # corresponding inner line since it's just a proxy
         if event_source in self._outer_edges:
-            print("outer edge pointer down")
             index = self._outer_edges.index(event_source)
             event_source = self._edges[index]
 
