@@ -20,6 +20,8 @@ Properties
 .. autosummary::
     :toctree: ScatterGraphic_api
 
+    ScatterGraphic.alpha
+    ScatterGraphic.alpha_mode
     ScatterGraphic.axes
     ScatterGraphic.block_events
     ScatterGraphic.cmap

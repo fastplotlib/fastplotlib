@@ -29,7 +29,6 @@ class ScatterGraphic(PositionsGraphic):
         data: Any,
         colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
         uniform_color: bool = False,
-        alpha: float = 1.0,
         cmap: str = None,
         cmap_transform: np.ndarray = None,
         isolated_buffer: bool = True,
@@ -54,9 +53,6 @@ class ScatterGraphic(PositionsGraphic):
         uniform_color: bool, default False
             if True, uses a uniform buffer for the scatter point colors. Useful if you need to
             save GPU VRAM when all points have the same color.
-
-        alpha: float, optional, default 1.0
-            alpha value for the colors
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
@@ -89,7 +85,6 @@ class ScatterGraphic(PositionsGraphic):
             data=data,
             colors=colors,
             uniform_color=uniform_color,
-            alpha=alpha,
             cmap=cmap,
             cmap_transform=cmap_transform,
             isolated_buffer=isolated_buffer,
@@ -99,8 +94,13 @@ class ScatterGraphic(PositionsGraphic):
 
         n_datapoints = self.data.value.shape[0]
 
+        aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
+
         geo_kwargs = {"positions": self._data.buffer}
-        material_kwargs = {"pick_write": True}
+        material_kwargs = dict(
+            pick_write=True,
+            aa=aa,
+        )
         self._size_space = SizeSpace(size_space)
 
         if uniform_color:

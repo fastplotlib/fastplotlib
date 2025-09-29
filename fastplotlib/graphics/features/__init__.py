@@ -36,7 +36,7 @@ from ._selection_features import (
     LinearRegionSelectionFeature,
     RectangleSelectionFeature,
 )
-from ._common import Name, Offset, Rotation, Visible, Deleted
+from ._common import Name, Offset, Rotation, Alpha, AlphaMode, Visible, Deleted
 
 
 __all__ = [
@@ -65,6 +65,8 @@ __all__ = [
     "Name",
     "Offset",
     "Rotation",
+    "Alpha",
+    "AlphaMode",
     "Visible",
     "Deleted",
     "GraphicFeatureEvent",

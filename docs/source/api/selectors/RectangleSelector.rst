@@ -20,6 +20,8 @@ Properties
 .. autosummary::
     :toctree: RectangleSelector_api
 
+    RectangleSelector.alpha
+    RectangleSelector.alpha_mode
     RectangleSelector.axes
     RectangleSelector.axis
     RectangleSelector.block_events

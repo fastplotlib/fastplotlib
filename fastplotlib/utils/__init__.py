@@ -5,6 +5,7 @@ from .gui import loop
 from .functions import *
 from .gpu import enumerate_adapters, select_adapter, print_wgpu_report
 from ._plot_helpers import *
+from .enums import *
 
 
 @dataclass

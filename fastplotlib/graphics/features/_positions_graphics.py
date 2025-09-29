@@ -40,7 +40,6 @@ class VertexColors(BufferManager):
         self,
         colors: str | np.ndarray | tuple[float] | list[float] | list[str],
         n_colors: int,
-        alpha: float = None,
         isolated_buffer: bool = True,
     ):
         """
@@ -55,11 +54,8 @@ class VertexColors(BufferManager):
         n_colors: int
             number of colors, if passing in a single str or single RGBA array
 
-        alpha: float, optional
-            alpha value for the colors
-
         """
-        data = parse_colors(colors, n_colors, alpha)
+        data = parse_colors(colors, n_colors)
 
         super().__init__(data=data, isolated_buffer=isolated_buffer)
 
@@ -158,13 +154,10 @@ class UniformColor(GraphicFeature):
         },
     ]
 
-    def __init__(
-        self, value: str | np.ndarray | tuple | list | pygfx.Color, alpha: float = 1.0
-    ):
+    def __init__(self, value: str | np.ndarray | tuple | list | pygfx.Color):
         """Manages uniform color for line or scatter material"""
 
-        v = (*tuple(pygfx.Color(value))[:-1], alpha)  # apply alpha
-        self._value = pygfx.Color(v)
+        self._value = pygfx.Color(value)
         super().__init__()
 
     @property
@@ -427,7 +420,6 @@ class VertexCmap(BufferManager):
         vertex_colors: VertexColors,
         cmap_name: str | None,
         transform: np.ndarray | None,
-        alpha: float = 1.0,
     ):
         """
         Sliceable colormap feature, manages a VertexColors instance and
@@ -439,7 +431,6 @@ class VertexCmap(BufferManager):
         self._vertex_colors = vertex_colors
         self._cmap_name = cmap_name
         self._transform = transform
-        self._alpha = alpha
 
         if self._cmap_name is not None:
             if not isinstance(self._cmap_name, str):
@@ -457,7 +448,6 @@ class VertexCmap(BufferManager):
                 cmap_name=self._cmap_name,
                 transform=self._transform,
             )
-            colors[:, -1] = alpha
             # set vertex colors from cmap
             self._vertex_colors[:] = colors
 
@@ -481,7 +471,6 @@ class VertexCmap(BufferManager):
         colors = parse_cmap_values(
             n_colors=n_elements, cmap_name=cmap_name, transform=self._transform
         )
-        colors[:, -1] = self.alpha
 
         self._cmap_name = cmap_name
         self._vertex_colors[key] = colors
@@ -517,8 +506,6 @@ class VertexCmap(BufferManager):
             n_colors=self.value.shape[0], cmap_name=self._cmap_name, transform=values
         )
 
-        colors[:, -1] = self.alpha
-
         self._transform = values
 
         if indices is None:
@@ -527,18 +514,6 @@ class VertexCmap(BufferManager):
         self._vertex_colors[indices] = colors
 
         self._emit_event("cmap.transform", indices, values)
-
-    @property
-    def alpha(self) -> float:
-        """Get or set the alpha level"""
-        return self._alpha
-
-    @alpha.setter
-    def alpha(self, value: float, indices: slice | list | np.ndarray = None):
-        self._vertex_colors[indices, -1] = value
-        self._alpha = value
-
-        self._emit_event("cmap.alpha", indices, value)
 
     def __len__(self):
         raise NotImplementedError(

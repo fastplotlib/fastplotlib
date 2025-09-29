@@ -16,7 +16,7 @@ im = iio.imread("imageio:astronaut.png")
 figure = fpl.Figure(size=(700, 560))
 
 # plot the image data
-image_graphic = figure[0, 0].add_image(data=im, name="iio astronaut")
+image = figure[0, 0].add_image(data=im, name="iio astronaut")
 
 figure.show()
 

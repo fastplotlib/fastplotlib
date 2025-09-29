@@ -13,9 +13,9 @@ This is another example that uses bi-directional events.
 # test_example = false
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
-from sklearn.datasets import fetch_california_housing
+from sklearn.datasets import load_diabetes
 from sklearn.preprocessing import (
-    Normalizer,
+    StandardScaler,
     QuantileTransformer,
     PowerTransformer,
 )
@@ -24,30 +24,16 @@ import fastplotlib as fpl
 import pygfx
 
 # get the dataset
-dataset = fetch_california_housing(n_retries=5, delay=20)
-X_full, y = dataset.data, dataset.target
-feature_names = dataset.feature_names
+dataset = load_diabetes(scaled=False)
 
-feature_mapping = {
-    "MedInc": "Median income in block",
-    "HouseAge": "Median house age in block",
-    "AveRooms": "Average number of rooms",
-    "AveBedrms": "Average number of bedrooms",
-    "Population": "Block population",
-    "AveOccup": "Average house occupancy",
-    "Latitude": "House block latitude",
-    "Longitude": "House block longitude",
-}
 
 # Take only 2 features to make visualization easier
-# Feature MedInc has a long tail distribution.
-# Feature AveOccup has a few but very large outliers.
-features = ["MedInc", "AveOccup"]
-features_idx = [feature_names.index(feature) for feature in features]
-X = X_full[:, features_idx]
+X = dataset["data"][:, (2, 6)]
+# target
+y = dataset["target"]
 
 # list of our scalers and their names as strings
-scalers = [PowerTransformer, QuantileTransformer, Normalizer]
+scalers = [PowerTransformer, QuantileTransformer, StandardScaler]
 names = ["Original Data", *[s.__name__ for s in scalers]]
 
 # fastplotlib code starts here, make a figure

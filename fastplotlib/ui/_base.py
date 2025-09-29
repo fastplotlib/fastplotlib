@@ -1,3 +1,4 @@
+import enum
 from typing import Literal
 import numpy as np
 
@@ -42,7 +43,7 @@ class EdgeWindow(Window):
         size: int,
         location: Literal["bottom", "right"],
         title: str,
-        window_flags: int = imgui.WindowFlags_.no_collapse
+        window_flags: enum.IntFlag = imgui.WindowFlags_.no_collapse
         | imgui.WindowFlags_.no_resize,
         *args,
         **kwargs,
@@ -64,8 +65,8 @@ class EdgeWindow(Window):
         title: str
             window title
 
-        window_flags: int
-            window flag enum, valid flags are:
+        window_flags: enum.IntFlag
+            Window flag enum, can be compared with ``|`` operator. Valid flags are:
 
             .. code-block:: py
 
@@ -109,7 +110,6 @@ class EdgeWindow(Window):
         self._location = location
         self._title = title
         self._window_flags = window_flags
-        self._fa_icons = self._figure._fa_icons
 
         self._x, self._y, self._width, self._height = self.get_rect()
 
@@ -231,7 +231,6 @@ class Popup(BaseGUI):
         super().__init__()
 
         self._figure = figure
-        self._fa_icons = self._figure._fa_icons
 
         self.is_open = False
 
