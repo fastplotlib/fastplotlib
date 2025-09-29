@@ -111,6 +111,7 @@ class BaseSelector(Graphic):
     def __init__(
         self,
         edges: Tuple[Line, ...] = None,
+        outer_edges: Tuple[Line, ...] = None,
         fill: Tuple[Mesh, ...] = None,
         vertices: Tuple[Points, ...] = None,
         hover_responsive: Tuple[WorldObject, ...] = None,
@@ -129,11 +130,12 @@ class BaseSelector(Graphic):
             vertices = tuple()
 
         self._edges: Tuple[Line, ...] = edges
+        self._outer_edges: Tuple[Line, ...] = outer_edges
         self._fill: Tuple[Mesh, ...] = fill
         self._vertices: Tuple[Points, ...] = vertices
 
         self._world_objects: Tuple[WorldObject, ...] = (
-            self._edges + self._fill + self._vertices
+            *self._edges, *self._outer_edges, *self._fill, *self._vertices
         )
 
         for wo in self._world_objects:
@@ -148,7 +150,7 @@ class BaseSelector(Graphic):
         self._hover_colors = {}
 
         if hover_responsive is not None:
-            for wo in self._hover_responsive:
+            for wo in [*self._hover_responsive, *self._outer_edges]:
                 self._original_colors[wo] = wo.material.color
 
         self._axis = axis
@@ -231,7 +233,7 @@ class BaseSelector(Graphic):
         self._plot_area.renderer.add_event_handler(self._move_to_pointer, "click")
 
         # mouse hover color events
-        for wo in self._hover_responsive:
+        for wo in [*self._hover_responsive, *self._outer_edges]:
             wo.add_event_handler(self._pointer_enter, "pointer_enter")
             wo.add_event_handler(self._pointer_leave, "pointer_leave")
 
@@ -281,6 +283,13 @@ class BaseSelector(Graphic):
 
         """
         position = self._plot_area.map_screen_to_world(ev)
+
+        # if the event source was an outer transparent line, get the
+        # corresponding inner line since it's just a proxy
+        if event_source in self._outer_edges:
+            print("outer edge pointer down")
+            index = self._outer_edges.index(event_source)
+            event_source = self._edges[index]
 
         self._move_info = MoveInfo(
             start_selection=None,
@@ -397,8 +406,15 @@ class BaseSelector(Graphic):
             return
 
         wo = ev.pick_info["world_object"]
-        if wo not in self._hover_responsive:
+        if wo not in [*self._hover_responsive, *self._outer_edges]:
             return
+
+        # if it's an outer edge, highlight the corresponding inner edge instead
+        if wo in self._outer_edges:
+            # get index
+            index = self._outer_edges.index(wo)
+            # now use inner edge
+            wo = self._edges[index]
 
         if wo in self._edges:
             self._edge_hovered = True
@@ -415,7 +431,7 @@ class BaseSelector(Graphic):
         self._edge_hovered = False
 
         # reset colors
-        for wo in self._hover_responsive:
+        for wo in [*self._hover_responsive, *self._outer_edges]:
             if self._moving:
                 self._hover_colors[wo] = self._original_colors[wo]
             else:
