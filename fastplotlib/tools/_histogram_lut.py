@@ -30,7 +30,11 @@ class HistogramLUTTool(Graphic):
     def __init__(
         self,
         data: np.ndarray,
-        images: ImageGraphic | ImageVolumeGraphic | Sequence[ImageGraphic | ImageVolumeGraphic],
+        images: (
+            ImageGraphic
+            | ImageVolumeGraphic
+            | Sequence[ImageGraphic | ImageVolumeGraphic]
+        ),
         nbins: int = 100,
         flank_divisor: float = 5.0,
         **kwargs,
@@ -64,12 +68,18 @@ class HistogramLUTTool(Graphic):
         if isinstance(images, (ImageGraphic, ImageVolumeGraphic)):
             images = (images,)
         elif isinstance(images, Sequence):
-            if not all([isinstance(ig, (ImageGraphic, ImageVolumeGraphic)) for ig in images]):
-                raise TypeError(f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
-                                f"tuple or list or ImageGraphic | ImageVolumeGraphic")
+            if not all(
+                [isinstance(ig, (ImageGraphic, ImageVolumeGraphic)) for ig in images]
+            ):
+                raise TypeError(
+                    f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
+                    f"tuple or list or ImageGraphic | ImageVolumeGraphic"
+                )
         else:
-            raise TypeError(f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
-                            f"tuple or list or ImageGraphic | ImageVolumeGraphic")
+            raise TypeError(
+                f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
+                f"tuple or list or ImageGraphic | ImageVolumeGraphic"
+            )
 
         self._images = images
 
@@ -81,7 +91,9 @@ class HistogramLUTTool(Graphic):
 
         line_data = np.column_stack([hist_scaled, edges_flanked])
 
-        self._histogram_line = LineGraphic(line_data, colors=(0.8, 0.8, 0.8), alpha_mode="solid", offset=(0, 0, -1))
+        self._histogram_line = LineGraphic(
+            line_data, colors=(0.8, 0.8, 0.8), alpha_mode="solid", offset=(0, 0, -1)
+        )
 
         bounds = (edges[0] * self._scale_factor, edges[-1] * self._scale_factor)
         limits = (edges_flanked[0], edges_flanked[-1])
@@ -384,20 +396,24 @@ class HistogramLUTTool(Graphic):
         if isinstance(images, (ImageGraphic, ImageVolumeGraphic)):
             images = (images,)
         elif isinstance(images, Sequence):
-            if not all([isinstance(ig, (ImageGraphic, ImageVolumeGraphic)) for ig in images]):
-                raise TypeError(f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
-                                f"tuple or list or ImageGraphic | ImageVolumeGraphic")
+            if not all(
+                [isinstance(ig, (ImageGraphic, ImageVolumeGraphic)) for ig in images]
+            ):
+                raise TypeError(
+                    f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
+                    f"tuple or list or ImageGraphic | ImageVolumeGraphic"
+                )
         else:
-            raise TypeError(f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
-                            f"tuple or list or ImageGraphic | ImageVolumeGraphic")
+            raise TypeError(
+                f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
+                f"tuple or list or ImageGraphic | ImageVolumeGraphic"
+            )
 
         if self._images is not None:
             for ig in self._images:
                 # cleanup events from current image graphics
                 ig_events = _get_image_graphic_events(ig)
-                ig.remove_event_handler(
-                    self._image_cmap_handler, *ig_events
-                )
+                ig.remove_event_handler(self._image_cmap_handler, *ig_events)
 
         self._images = images
 
