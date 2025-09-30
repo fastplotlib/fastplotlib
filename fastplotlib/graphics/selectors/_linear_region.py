@@ -67,7 +67,7 @@ class LinearRegionSelector(BaseSelector):
         edge_color: str | Sequence[float] = "yellow",
         edge_thickness: float = 1.0,
         arrow_keys_modifier: str = "Shift",
-        hitbox_width: float = 14.0,
+        extra_width: float = 14.0,
         name: str = None,
     ):
         """
@@ -114,8 +114,8 @@ class LinearRegionSelector(BaseSelector):
             modifier key that must be pressed to initiate movement using arrow keys, must be one of:
             "Control", "Shift", "Alt" or ``None``
 
-        hitbox_width: float, default 14.0
-            the width around the selector lines which is responsive to mouse events
+        extra_width: float, default 14.0
+            the width around the selector lines which is responsive to mouse events, in logical pixels
 
         name: str, optional
             name of this selector graphic
@@ -226,7 +226,7 @@ class LinearRegionSelector(BaseSelector):
                 positions=line0.geometry.positions
             ),
             pygfx.LineMaterial(
-                thickness=edge_thickness + hitbox_width,
+                thickness=edge_thickness + extra_width,
                 color=pygfx.Color([0, 0, 0]),
                 alpha_mode="blend",
                 opacity=0,
@@ -261,7 +261,7 @@ class LinearRegionSelector(BaseSelector):
                 positions=line1.geometry.positions
             ),
             pygfx.LineMaterial(
-                thickness=edge_thickness + hitbox_width,
+                thickness=edge_thickness + extra_width,
                 color=pygfx.Color([0, 0, 0]),
                 alpha_mode="blend",
                 opacity=0,

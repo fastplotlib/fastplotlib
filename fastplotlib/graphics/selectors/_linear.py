@@ -81,7 +81,7 @@ class LinearSelector(BaseSelector):
         edge_color: str | Sequence[float] | np.ndarray = "yellow",
         thickness: float = 1.0,
         arrow_keys_modifier: str = "Shift",
-        hitbox_width: float = 14.0,
+        extra_width: float = 14.0,
         name: str = None,
     ):
         """
@@ -112,8 +112,8 @@ class LinearSelector(BaseSelector):
         edge_color: str | tuple | np.ndarray, default "w"
             color of the selector
 
-        hitbox_width: float, default 14.0
-            the width around the selector which is responsive to mouse events
+        extra_width: float, default 14.0
+            the width around the selector which is responsive to mouse events, in logical pixels
 
         name: str, optional
             name of linear selector
@@ -161,9 +161,9 @@ class LinearSelector(BaseSelector):
         )
 
         line_outer = pygfx.Line(
-            geometry=pygfx.Geometry(positions=line_data),
+            geometry=line_inner.geometry,
             material=material(
-                thickness=thickness + hitbox_width,
+                thickness=thickness + extra_width,
                 color=pygfx.Color([0, 0, 0]),
                 opacity=0,
                 alpha_mode="blend",
@@ -191,7 +191,7 @@ class LinearSelector(BaseSelector):
         # init base selector
         BaseSelector.__init__(
             self,
-            edges=(line_inner, line_outer),
+            edges=(line_inner,),
             outer_edges=(line_outer,),
             hover_responsive=(line_inner,),
             arrow_keys_modifier=arrow_keys_modifier,

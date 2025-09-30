@@ -64,9 +64,9 @@ class LinearSelectionFeature(GraphicFeature):
         elif self._axis == "y":
             dim = 1
 
-        for edge in selector._edges:
-            edge.geometry.positions.data[:, dim] = value
-            edge.geometry.positions.update_range()
+        edge = selector._edges[0]
+        edge.geometry.positions.data[:, dim] = value
+        edge.geometry.positions.update_range()
 
         self._value = value
 
