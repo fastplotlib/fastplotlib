@@ -19,7 +19,7 @@ class MoveInfo:
     """Movement info specific to the polygon selector."""
 
     # The interaction mode: None, 'create', or 'drag'
-    mode: str
+    mode: str | None
 
     # The index of the point in the polygon that is currently being manipulated
     index: int
@@ -89,7 +89,7 @@ class PolygonSelector(BaseSelector):
         self._resizable = bool(resizable)
 
         BaseSelector.__init__(self, name=name, parent=parent)
-        self._move_info = MoveInfo("none", -1, -1, None, None)
+        self._move_info = MoveInfo(None, -1, -1, None, None)
 
         # Initialize geometry with space for 8 points. The buffers are oversized, so we only need to create new buffers when the allocated space is full.
         # The points are 3D, even though the z-component is always 0. Indices represent the faces (i.e. the triangles).
@@ -207,6 +207,9 @@ class PolygonSelector(BaseSelector):
         if "Image" in source.__class__.__name__:
             return source.data[ixs[:, 1], ixs[:, 0]]
 
+        if "Scatter" in source.__class__.__name__:
+            return source.data[ixs]
+
         if mode not in ["full", "partial", "ignore"]:
             raise ValueError(
                 f"`mode` must be one of 'full', 'partial', or 'ignore', you have passed {mode}"
@@ -309,10 +312,11 @@ class PolygonSelector(BaseSelector):
         Returns
         -------
         Union[np.ndarray, List[np.ndarray]]
-            data indicies of the selection
+            data indices of the selection
             | array of (x, y) indices if the graphic is an image
             | list of indices along the x-dimension for each line if graphic is a line collection
             | array of indices along the x-dimension if graphic is a line
+            | array of indices if graphic is a scatter
         """
         # get indices from source
         source = self._get_source(graphic)
@@ -324,7 +328,10 @@ class PolygonSelector(BaseSelector):
         if len(polygon) == 0:
             if "Image" in source.__class__.__name__:
                 return np.zeros((0, 2), np.int32)
-            if "Line" in source.__class__.__name__:
+            if (
+                "Line" in source.__class__.__name__
+                or "Scatter" in graphic.__class__.__name__
+            ):
                 if isinstance(source, GraphicCollection):
                     return [np.zeros((0, 1), np.int32) for _ in source.graphics]
                 else:
@@ -348,7 +355,10 @@ class PolygonSelector(BaseSelector):
                         indices.append(p)
             return np.array(indices, np.int32).reshape(-1, 2)
 
-        if "Line" in source.__class__.__name__:
+        if (
+            "Line" in source.__class__.__name__
+            or "Scatter" in source.__class__.__name__
+        ):
             if isinstance(source, GraphicCollection):
                 ixs = list()
                 for g in source.graphics:
@@ -366,7 +376,10 @@ class PolygonSelector(BaseSelector):
                     ixs.append(g_ixs)
             else:
                 # map only this graphic
-                points = source.data.value[:2]
+                if "Scatter" in source.__class__.__name__:
+                    points = source.data.value[:, :]
+                else:
+                    points = source.data.value[:2]
                 ixs = np.where(
                     (points[:, 0] >= xmin)
                     & (points[:, 0] <= xmax)
