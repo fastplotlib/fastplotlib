@@ -125,7 +125,7 @@ class ImageVolumeGraphic(Graphic):
             array-like, usually numpy.ndarray, must support ``memoryview()``.
             Shape must be [n_planes, n_rows, n_cols] for grayscale, or [n_planes, n_rows, n_cols, 3 | 4] for RGB(A)
 
-        mode: str, default "ray"
+        mode: str, default "mip"
             render mode, one of "mip", "minip", "iso" or "slice"
 
         vmin: float
