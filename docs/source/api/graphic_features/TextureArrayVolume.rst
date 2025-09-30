@@ -23,7 +23,6 @@ Properties
     TextureArrayVolume.buffer
     TextureArrayVolume.col_indices
     TextureArrayVolume.row_indices
-    TextureArrayVolume.shared
     TextureArrayVolume.value
     TextureArrayVolume.zdim_indices
 
