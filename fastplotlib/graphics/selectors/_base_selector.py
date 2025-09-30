@@ -135,7 +135,10 @@ class BaseSelector(Graphic):
         self._vertices: Tuple[Points, ...] = vertices
 
         self._world_objects: Tuple[WorldObject, ...] = (
-            *self._edges, *self._outer_edges, *self._fill, *self._vertices
+            *self._edges,
+            *self._outer_edges,
+            *self._fill,
+            *self._vertices,
         )
 
         for wo in self._world_objects:
