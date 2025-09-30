@@ -117,6 +117,7 @@ class ImageVolumeGraphic(Graphic):
         **kwargs,
     ):
         """
+        Create an ImageVolumeGraphic.
 
         Parameters
         ----------

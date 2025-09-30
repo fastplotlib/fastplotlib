@@ -220,10 +220,10 @@ class ImageGraphic(Graphic):
 
         For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
         """
-        if self.data.value.ndim > 2:
-            return None
+        if self._cmap is not None:
+            return self._cmap.value
 
-        return self._cmap.value
+        return None
 
     @cmap.setter
     def cmap(self, name: str):
