@@ -86,8 +86,6 @@ class TextureArrayVolume(GraphicFeature):
 
             self.buffer[buffer_index] = texture
 
-        self._shared: int = 0
-
     @property
     def value(self) -> np.ndarray:
         """The full array that represents all the data within this TextureArray"""
@@ -124,10 +122,6 @@ class TextureArrayVolume(GraphicFeature):
         into individual Textures on the GPU
         """
         return self._zdim_indices
-
-    @property
-    def shared(self) -> int:
-        return self._shared
 
     def _fix_data(self, data):
         if data.ndim not in (3, 4):
