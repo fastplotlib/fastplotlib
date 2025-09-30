@@ -81,7 +81,7 @@ class HistogramLUTTool(Graphic):
 
         line_data = np.column_stack([hist_scaled, edges_flanked])
 
-        self._histogram_line = LineGraphic(line_data)
+        self._histogram_line = LineGraphic(line_data, colors=(0.8, 0.8, 0.8), alpha_mode="solid", offset=(0, 0, -1))
 
         bounds = (edges[0] * self._scale_factor, edges[-1] * self._scale_factor)
         limits = (edges_flanked[0], edges_flanked[-1])
@@ -115,11 +115,11 @@ class HistogramLUTTool(Graphic):
             offset=(0, 0, 0),
             anchor="top-left",
             outline_color="black",
-            outline_thickness=1.5,
+            outline_thickness=0.5,
+            alpha_mode="solid",
         )
 
         self._text_vmin.world_object.material.pick_write = False
-        self._text_vmin.world_object.render_order = 1
 
         self._text_vmax = TextGraphic(
             text=vmax_str,
@@ -127,11 +127,11 @@ class HistogramLUTTool(Graphic):
             offset=(0, 0, 0),
             anchor="bottom-left",
             outline_color="black",
-            outline_thickness=1.5,
+            outline_thickness=0.5,
+            alpha_mode="solid",
         )
 
         self._text_vmax.world_object.material.pick_write = False
-        self._text_vmin.world_object.render_order = 1
 
         widget_wo = pygfx.Group()
         widget_wo.add(
