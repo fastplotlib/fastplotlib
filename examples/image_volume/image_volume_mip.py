@@ -2,7 +2,7 @@
 Volume Mip mode
 ===============
 
-View a volume using MIP rendering.
+View a volume using MIP (Maximum Intensity Projection) rendering.
 """
 
 # test_example = true
