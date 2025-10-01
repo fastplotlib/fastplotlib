@@ -5,7 +5,7 @@ Polygon Selectors with ScatterGraphic
 Example showing how to use a `PolygonSelector` with a scatter plot.
 """
 
-# test_example = false
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np

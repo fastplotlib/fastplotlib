@@ -6,7 +6,7 @@ Example showing how to use a `LinearRegionSelector` with a scatter plot. We demo
 LinearRegionSelector which selects along the x-axis and a vertical selector which moves along the y-axis.
 """
 
-# test_example = false
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
