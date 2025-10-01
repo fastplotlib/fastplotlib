@@ -57,6 +57,7 @@ class PolygonSelector(BaseSelector):
             pass
 
         self._selection.set_value(self, selection)
+        self._move_info = MoveInfo(None, -1, -1, None, None)
 
     @property
     def limits(self) -> Tuple[float, float, float, float]:

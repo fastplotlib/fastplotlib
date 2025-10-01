@@ -40,6 +40,9 @@ def color_indices(ev):
     figure[0, 1].add_scatter(ev.get_selected_data(), sizes=16)
     figure[0, 1].auto_scale()
 
+# set initial selection
+polygon_selector.selection = [(50.0, 20.0,0.0), (80.0,80.0,0.0), (20.0, 50.0,0.0), (50.0, 50.0, 0.0), (50.0, 20.0,0.0)]
+
 figure.show()
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
