@@ -47,6 +47,7 @@ Methods
     Subplot.add_animations
     Subplot.add_graphic
     Subplot.add_image
+    Subplot.add_image_volume
     Subplot.add_line
     Subplot.add_line_collection
     Subplot.add_line_stack

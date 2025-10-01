@@ -55,13 +55,6 @@ class Graphic:
     _features: dict[str, type] = dict()
 
     def __init_subclass__(cls, **kwargs):
-        # set the type of the graphic in lower case like "image", "line_collection", etc.
-        cls.type = (
-            cls.__name__.lower()
-            .replace("graphic", "")
-            .replace("collection", "_collection")
-            .replace("stack", "_stack")
-        )
 
         # set of all features
         cls._features = {
@@ -108,14 +101,29 @@ class Graphic:
         alpha_mode: (str), default "auto",
             The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
 
-            * 'solid': the points do not have semi-transparent fragments. Writes to the depth buffer.
-            * 'auto': like 'solid', but allows semi-transparent fragments.
-            * 'blend': the points are considered transparent, and don't write to the depth buffer.
-              The points are blended in the order they are drawn.
-            * 'weighted_blend': like 'blend', but the result does not depend on the order in which points are rendered,
-              nor is their distance to the camera.
-            * 'dither': use stochastic transparency. Although the result is a bit noisy, the points distance to the camera
-              is properly taken into account, which may be better for 3D point clouds. Writes to the depth buffer.
+            Modes for method “opaque” (overwrites the value in the output texture):
+
+                * “solid”: alpha is ignored.
+                * “solid_premul”: the alpha is multipled with the color (making it darker).
+
+            Modes for method “blended” (per-fragment blending, a.k.a. compositing):
+
+                * “auto”: classic alpha blending, with depth_write defaulting to True. See note below.
+                * “blend”: classic alpha blending using the over-operator. depth_write defaults to False.
+                * “add”: additive blending that adds the fragment color, multiplied by alpha.
+                * “subtract”: subtractuve blending that removes the fragment color.
+                * “multiply”: multiplicative blending that multiplies the fragment color.
+
+            Modes for method “weighted” (order independent blending):
+
+                * “weighted_blend”: weighted blended order independent transparency.
+                * “weighted_solid”: fragments are combined based on alpha, but the final alpha is always 1. Great for e.g. image stitching.
+
+            Modes for method “stochastic” (alpha represents the chance of a fragment being visible):
+
+                * “dither”: stochastic transparency with blue noise. This mode handles order-independent transparency exceptionally well, but it produces results that can look somewhat noisy.
+                * “bayer”: stochastic transparency with an 8x8 Bayer pattern.
+
 
             For details see https://docs.pygfx.org/stable/transparency.html
 
@@ -244,6 +252,11 @@ class Graphic:
         WORLD_OBJECTS[self._fpl_address] = wo
 
         wo.visible = self.visible
+        if "Image" in self.__class__.__name__:
+            # Image and ImageVolume use tiling and share one material
+            self._material.opacity = self.alpha
+            self._material.alpha_mode = self.alpha_mode
+
         if wo.material is not None:
             wo.material.opacity = self.alpha
             wo.material.alpha_mode = self.alpha_mode

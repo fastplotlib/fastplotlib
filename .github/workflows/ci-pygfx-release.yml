@@ -16,7 +16,7 @@ on:
 jobs:
   test-build-full:
     name: Tests - pygfx release
-    timeout-minutes: 25
+    timeout-minutes: 20
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false

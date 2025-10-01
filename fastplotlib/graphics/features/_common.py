@@ -1,4 +1,5 @@
 import numpy as np
+import pygfx
 
 from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
@@ -148,6 +149,11 @@ class Alpha(GraphicFeature):
         wo = graphic.world_object
         if wo.material is not None:
             wo.material.opacity = value
+
+        if "Image" in graphic.__class__.__name__:
+            # Image and ImageVolume use tiling and share one material
+            graphic._material.alpha = value
+
         self._value = value
 
         event = GraphicFeatureEvent(type="alpha", info={"value": value})
@@ -175,6 +181,11 @@ class AlphaMode(GraphicFeature):
         wo = graphic.world_object
         if wo.material is not None:
             wo.alpha_mode = value
+
+        if "Image" in graphic.__class__.__name__:
+            # Image and ImageVolume use tiling and share one material
+            graphic._material.alpha_mode = value
+
         self._value = value
 
         event = GraphicFeatureEvent(type="alpha_mode", info={"value": value})
