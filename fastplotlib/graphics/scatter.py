@@ -173,9 +173,10 @@ class ScatterGraphic(PositionsGraphic):
         y25p = 0.25 * (ymax - ymin)
         xmin = np.floor(x_axis_vals.min()).astype(int)
         xmax = np.ceil(x_axis_vals.max()).astype(int)
+        x25p = 0.25 * (xmax - xmin)
 
-        # min/max limits include the data + 25% padding in the y-direction
-        limits = (xmin, xmax, ymin - y25p, ymax + y25p)
+        # min/max limits include the data + 25% padding in both directions
+        limits = (xmin - x25p, xmax + x25p, ymin - y25p, ymax + y25p)
 
         selector = PolygonSelector(
             selection,
