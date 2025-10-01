@@ -16,7 +16,7 @@ on:
 jobs:
   test-build-full:
     name: Tests
-    timeout-minutes: 15
+    timeout-minutes: 20
     if: ${{ !github.event.pull_request.draft }}
     strategy:
       fail-fast: false
