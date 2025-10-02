@@ -95,13 +95,16 @@ class LineGraphic(PositionsGraphic):
         self._thickness = Thickness(thickness)
 
         if thickness < 1.1:
+            MaterialCls = pygfx.LineThinMaterial
             aa = True
         else:
-            aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
+            MaterialCls = pygfx.LineMaterial
+
+        aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
 
         if uniform_color:
             geometry = pygfx.Geometry(positions=self._data.buffer)
-            material = pygfx.LineMaterial(
+            material = MaterialCls(
                 aa=aa,
                 thickness=self.thickness,
                 color_mode="uniform",
@@ -111,7 +114,7 @@ class LineGraphic(PositionsGraphic):
                 depth_compare="<=",
             )
         else:
-            material = pygfx.LineMaterial(
+            material = MaterialCls(
                 aa=aa,
                 thickness=self.thickness,
                 color_mode="vertex",

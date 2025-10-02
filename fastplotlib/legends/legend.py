@@ -71,11 +71,9 @@ class LineLegendItem(LegendItem):
         # construct Line WorldObject
         data = np.array([[0, 0, 0], [3, 0, 0]], dtype=np.float32)
 
-        material = pygfx.LineMaterial
-
         self._line_world_object = pygfx.Line(
             geometry=pygfx.Geometry(positions=data),
-            material=material(
+            material=pygfx.LineMaterial(
                 alpha_mode="blend",
                 render_queue=RenderQueue.overlay,
                 thickness=8,
