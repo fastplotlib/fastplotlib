@@ -9,6 +9,7 @@ class RenderQueue(IntEnum):
     auto = 2600
     transparent = 3000
     overlay = 4000
-    # For selectors we use a render_queue of 3500, which is at the end of what is considered the group of transparent objects.
-    # So it's rendered later than the normal scene (2000 - 3000), but before overlays like legends and tooltips.
-    selector = 3500
+    # For axes and selectors we use a higher render_queue, so they get rendered later than
+    # the graphics. Axes (rulers) have depth_compare '<=' and selectors don't compare depth.
+    axes = 3400  # still in 'object' group
+    selector = 3600  # considered in 'overlay' group

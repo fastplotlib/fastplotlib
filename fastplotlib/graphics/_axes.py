@@ -183,14 +183,22 @@ class Axes:
         }
 
         # create ruler for each dim
-        self._x = pygfx.Ruler(alpha_mode="solid", **x_kwargs)
-        self._y = pygfx.Ruler(alpha_mode="solid", **y_kwargs)
-        self._z = pygfx.Ruler(alpha_mode="solid", **z_kwargs)
+        self._x = pygfx.Ruler(
+            alpha_mode="solid", render_queue=RenderQueue.axes, **x_kwargs
+        )
+        self._y = pygfx.Ruler(
+            alpha_mode="solid", render_queue=RenderQueue.axes, **y_kwargs
+        )
+        self._z = pygfx.Ruler(
+            alpha_mode="solid", render_queue=RenderQueue.axes, **z_kwargs
+        )
 
         # We render the lines and ticks as solid, but enable aa for text for prettier glyphs
         for ruler in self._x, self._y, self._z:
+            ruler.line.material.depth_compare = "<="
+            ruler.points.material.depth_compare = "<="
+            ruler.text.material.depth_compare = "<="
             ruler.text.material.alpha_mode = "auto"
-            ruler.text.material.render_queue = RenderQueue.auto + 50
             ruler.text.material.aa = True
 
         self._offset = offset
