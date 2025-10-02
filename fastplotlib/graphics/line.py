@@ -179,9 +179,6 @@ class LineGraphic(PositionsGraphic):
 
         self._plot_area.add_graphic(selector, center=False)
 
-        # place selector above this graphic
-        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
-
         return selector
 
     def add_linear_region_selector(
@@ -237,9 +234,6 @@ class LineGraphic(PositionsGraphic):
         )
 
         self._plot_area.add_graphic(selector, center=False)
-
-        # place selector below this graphic
-        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] - 1)
 
         # PlotArea manages this for garbage collection etc. just like all other Graphics
         # so we should only work with a proxy on the user-end

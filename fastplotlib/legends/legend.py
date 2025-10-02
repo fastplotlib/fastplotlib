@@ -112,7 +112,6 @@ class LineLegendItem(LegendItem):
         self._label_world_object.world.x = position[0] + 10
 
         self.world_object.world.y = position[1]
-        self.world_object.world.z = 2
 
         self.world_object.add_event_handler(
             partial(self._highlight_graphic, graphic), "click"
