@@ -562,7 +562,7 @@ class ImageWidget:
             subplot.add_graphic(ig)
 
             if self._histogram_widget:
-                hlut = HistogramLUTTool(data=d, image_graphic=ig, name="histogram_lut")
+                hlut = HistogramLUTTool(data=d, images=ig, name="histogram_lut")
 
                 subplot.docks["right"].add_graphic(hlut)
                 subplot.docks["right"].size = 80
@@ -944,7 +944,7 @@ class ImageWidget:
 
                 if self._histogram_widget:
                     # set hlut tool to use new graphic
-                    subplot.docks["right"]["histogram_lut"].image_graphic = new_graphic
+                    subplot.docks["right"]["histogram_lut"].images = new_graphic
 
                 # delete old graphic after setting hlut tool to new graphic
                 # this ensures gc

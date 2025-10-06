@@ -26,8 +26,8 @@ class GraphicMethodsMixin:
     def add_image(
         self,
         data: Any,
-        vmin: int = None,
-        vmax: int = None,
+        vmin: float = None,
+        vmax: float = None,
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
@@ -44,11 +44,11 @@ class GraphicMethodsMixin:
             array-like, usually numpy.ndarray, must support ``memoryview()``
             | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
+        vmin: float, optional
+            minimum value for color scaling, estimated from data if not provided
 
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
+        vmax: float, optional
+            maximum value for color scaling, estimated from data if not provided
 
         cmap: str, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
@@ -79,6 +79,107 @@ class GraphicMethodsMixin:
             cmap,
             interpolation,
             cmap_interpolation,
+            isolated_buffer,
+            **kwargs,
+        )
+
+    def add_image_volume(
+        self,
+        data: Any,
+        mode: str = "mip",
+        vmin: float = None,
+        vmax: float = None,
+        cmap: str = "plasma",
+        interpolation: str = "linear",
+        cmap_interpolation: str = "linear",
+        plane: tuple[float, float, float, float] = (0, 0, -1, 0),
+        threshold: float = 0.5,
+        step_size: float = 1.0,
+        substep_size: float = 0.1,
+        emissive: str | tuple | numpy.ndarray = (0, 0, 0),
+        shininess: int = 30,
+        isolated_buffer: bool = True,
+        **kwargs,
+    ) -> ImageVolumeGraphic:
+        """
+
+
+        Parameters
+        ----------
+        data: array-like
+            array-like, usually numpy.ndarray, must support ``memoryview()``.
+            Shape must be [n_planes, n_rows, n_cols] for grayscale, or [n_planes, n_rows, n_cols, 3 | 4] for RGB(A)
+
+        mode: str, default "ray"
+            render mode, one of "mip", "minip", "iso" or "slice"
+
+        vmin: float
+            lower contrast limit
+
+        vmax: float
+            upper contrast limit
+
+        cmap: str, default "plasma"
+            colormap for grayscale volumes
+
+        interpolation: str, default "linear"
+            interpolation method for sampling pixels
+
+        cmap_interpolation: str, default "linear"
+            interpolation method for sampling from colormap
+
+        plane: (float, float, float, float), default (0, 0, -1, 0)
+            Slice volume at this plane. Sets (a, b, c, d) in the equation the defines a plane: ax + by + cz + d = 0.
+            Used only if `mode` = "slice"
+
+        threshold : float, default 0.5
+            The threshold texture value at which the surface is rendered.
+            Used only if `mode` = "iso"
+
+        step_size : float, default 1.0
+            The size of the initial ray marching step for the initial surface finding. Smaller values will result in
+            more accurate surfaces but slower rendering.
+            Used only if `mode` = "iso"
+
+        substep_size : float, default 0.1
+            The size of the raymarching step for the refined surface finding. Smaller values will result in more
+            accurate surfaces but slower rendering.
+            Used only if `mode` = "iso"
+
+        emissive : Color, default (0, 0, 0, 1)
+            The emissive color of the surface. I.e. the color that the object emits even when not lit by a light
+            source. This color is added to the final color and unaffected by lighting. The alpha channel is ignored.
+            Used only if `mode` = "iso"
+
+        shininess : int, default 30
+            How shiny the specular highlight is; a higher value gives a sharper highlight.
+            Used only if `mode` = "iso"
+
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then set the data, useful if the
+            data arrays are ready-only such as memmaps. If False, the input array is itself used as the
+            buffer - useful if the array is large.
+
+        kwargs
+            additional keyword arguments passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            ImageVolumeGraphic,
+            data,
+            mode,
+            vmin,
+            vmax,
+            cmap,
+            interpolation,
+            cmap_interpolation,
+            plane,
+            threshold,
+            step_size,
+            substep_size,
+            emissive,
+            shininess,
             isolated_buffer,
             **kwargs,
         )

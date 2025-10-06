@@ -39,6 +39,7 @@ docs = [
     "imageio[ffmpeg]",
     "matplotlib",
     "scikit-learn",
+    "ome-zarr",
 ]
 notebook = [
     "jupyterlab",
@@ -54,6 +55,7 @@ tests = [
     "imageio[ffmpeg]",
     "scikit-learn",
     "tqdm",
+    "ome-zarr",
 ]
 imgui = ["wgpu[imgui]"]
 dev = ["fastplotlib[docs,notebook,tests,imgui]"]
