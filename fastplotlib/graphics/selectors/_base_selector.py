@@ -123,6 +123,9 @@ class BaseSelector(Graphic):
         if edges is None:
             edges = tuple()
 
+        if outer_edges is None:
+            outer_edges = tuple()
+
         if fill is None:
             fill = tuple()
 
