@@ -139,7 +139,6 @@ class BufferManager(GraphicFeature):
         data: NDArray | pygfx.Buffer,
         buffer_type: Literal["buffer", "texture", "texture-array"] = "buffer",
         isolated_buffer: bool = True,
-        texture_dim: int = 2,
         **kwargs,
     ):
         super().__init__()
@@ -157,17 +156,12 @@ class BufferManager(GraphicFeature):
             self._buffer = data
         elif buffer_type == "buffer":
             self._buffer = pygfx.Buffer(bdata)
-        elif buffer_type == "texture":
-            # TODO: placeholder, not currently used since TextureArray is used specifically for Image graphics
-            self._buffer = pygfx.Texture(bdata, dim=texture_dim)
         else:
             raise ValueError(
                 "`data` must be a pygfx.Buffer instance or `buffer_type` must be one of: 'buffer' or 'texture'"
             )
 
         self._event_handlers: list[callable] = list()
-
-        self._shared: int = 0
 
     @property
     def value(self) -> np.ndarray:
@@ -182,11 +176,6 @@ class BufferManager(GraphicFeature):
     def buffer(self) -> pygfx.Buffer | pygfx.Texture:
         """managed buffer"""
         return self._buffer
-
-    @property
-    def shared(self) -> int:
-        """Number of graphics that share this buffer"""
-        return self._shared
 
     @property
     def __array_interface__(self):
