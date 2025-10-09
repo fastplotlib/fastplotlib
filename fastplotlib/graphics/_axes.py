@@ -168,26 +168,24 @@ class Axes:
         generic_kwargs = dict(
             tick_size=8.0,
             line_width=2.0,
+            tick_marker="tick",  # 'tick' for both-sides, 'tick_left' or 'tick_right' for one-sided
             color="#fff",
         )
 
         x_kwargs = dict(
             tick_side="right",
-            tick_marker="tick",  # 'tick' or 'tick_left' make sense
             **generic_kwargs,
             **x_kwargs,
         )
 
         y_kwargs = dict(
             tick_side="left",
-            tick_marker="tick",  # 'tick' or 'tick_right' make sense
             **generic_kwargs,
             **y_kwargs,
         )
 
         z_kwargs = dict(
             tick_side="left",
-            tick_marker="tick",  # 'tick' or 'tick_right' make sense
             **generic_kwargs,
             **z_kwargs,
         )
