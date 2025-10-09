@@ -48,15 +48,25 @@ marker_names = {
 }
 
 
-def check_marker(name):
+def user_input_to_marker(name):
     resolved_name = marker_names.get(name, name).lower()
     if resolved_name not in pygfx.MarkerShape:
         raise ValueError(
-            f"markers must be a string in: {list(pygfx.MarkerShape)}, not {name!r}"
+            f"markers must be a string in: {list(pygfx.MarkerShape) + list(marker_names.keys())}, not {name!r}"
         )
 
     return resolved_name
 
+def validate_user_markers(markers):
+    # make sure all markers are valid
+    # need to validate before converting to ints because
+    # we can't use control flow in the vectorized function
+    unique_values = np.unique(markers)
+    for m in unique_values:
+        user_input_to_marker(m)
+
+# fast vectorized function to convert array of user markers to the standardized strings
+vectorized_user_markers_to_std_markers = np.vectorize(marker_names.get, otypes="<U14")
 
 # maps the human-readable marker name to the integers stored in the buffer
 marker_int_mapping = dict.fromkeys(list(pygfx.MarkerShape))
@@ -71,7 +81,8 @@ marker_int_mapping = dict.fromkeys(list(pygfx.MarkerShape))
 for k in marker_int_mapping.keys():
     marker_int_mapping[k] = pygfx.MarkerInt[k]
 
-vectorized_markers_to_int = np.vectorize(marker_int_mapping.get)
+# fast vectorized function to convert array of string markers to int
+vectorized_markers_to_int = np.vectorize(marker_int_mapping.get, otypes=np.int32)
 
 
 class VertexMarkers(BufferManager):
@@ -89,18 +100,23 @@ class VertexMarkers(BufferManager):
         },
     ]
 
-    def __init__(self, markers: Sequence[str] | np.ndarray):
+    def __init__(self, markers: str | Sequence[str] | np.ndarray):
         """
         Manages the markers buffer for the scatter points. Supports fancy indexing.
         """
         n_datapoints = len(markers)
-        markers_int_array = np.zeros(n_datapoints, dtype=np.int32)
 
+        markers_int_array = np.zeros(n_datapoints, dtype=np.int32)
         marker_str_length = max(map(len, list(pygfx.MarkerShape)))
+
         self._markers_readable_array = np.empty(n_datapoints, dtype=f"<U{marker_str_length}")
 
+        if not isinstance(markers, str):
+            unique_markers = validate_user_markers(markers)
+            # TODO: need to finish this
+
         for i, m in enumerate(markers):
-            m = check_marker(m)
+            m = user_input_to_marker(m)
             self._markers_readable_array[i] = m
             markers_int_array[i] = marker_int_mapping[m]
 
@@ -133,7 +149,7 @@ class VertexMarkers(BufferManager):
                     f"you have passed index: {key} and value: {value}"
                 )
 
-            m = check_marker(value)
+            m = user_input_to_marker(value)
             self._markers_readable_array[key] = m
             self.value_int[key] = marker_int_mapping[m]
 
@@ -145,7 +161,7 @@ class VertexMarkers(BufferManager):
 
             if isinstance(value, str):
                 # set markers at these indices to this value
-                m = check_marker(value)
+                m = user_input_to_marker(value)
                 self._markers_readable_array[key] = m
                 self.value_int[key] = marker_int_mapping[m]
 
@@ -157,9 +173,18 @@ class VertexMarkers(BufferManager):
                         f"provided {len(value)} new marker values. You must provide 1 or {n_markers} values."
                     )
 
-                m = check_marker(value)
-                self._markers_readable_array[key] = m
-                self.value_int[key] = marker_int_mapping[m]
+                # make sure all markers are valid
+                # need to validate before converting to ints because
+                # we can't use control flow in the vectorized function
+                unique_values = np.unique(value)
+                for m in unique_values:
+                    user_input_to_marker(m)
+
+                new_markers_human_readable = vectorized_user_markers_to_std_markers(value)
+                new_markers_int = vectorized_markers_to_int(new_markers_human_readable)
+
+                self._markers_readable_array[key] = new_markers_human_readable
+                self.value_int[key] = new_markers_int
 
         elif isinstance(key, np.ndarray):
             pass
