@@ -1,6 +1,7 @@
 from typing import *
 
 import numpy as np
+from numpy.typing import ArrayLike
 import pygfx
 
 from ._positions_base import PositionsGraphic
@@ -15,6 +16,9 @@ from .features import (
 )
 
 
+
+
+
 class ScatterGraphic(PositionsGraphic):
     _features = {
         "data": VertexPositions,
@@ -27,14 +31,23 @@ class ScatterGraphic(PositionsGraphic):
     def __init__(
         self,
         data: Any,
-        colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
+        colors: str | np.ndarray | Sequence[float] | Sequence[str] = "w",
         uniform_color: bool = False,
         cmap: str = None,
         cmap_transform: np.ndarray = None,
-        isolated_buffer: bool = True,
+        markers: None | str | np.ndarray | Sequence[str] = None,
+        uniform_marker: bool = False,
+        custom_sdf: str = None,
+        image: ArrayLike = None,
+        edge_colors = "black",
+        uniform_edge_color: bool = True,
+        edge_width: float = 1.0,
+        rotations: ArrayLike = None,
+        uniform_rotation: bool = False,
         sizes: float | np.ndarray | Sequence[float] = 1,
         uniform_size: bool = False,
         size_space: str = "screen",
+        isolated_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -94,13 +107,55 @@ class ScatterGraphic(PositionsGraphic):
 
         n_datapoints = self.data.value.shape[0]
 
+        geo_kwargs = {"positions": self._data.buffer}
+
         aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
 
-        geo_kwargs = {"positions": self._data.buffer}
         material_kwargs = dict(
             pick_write=True,
             aa=aa,
         )
+
+        if not uniform_marker:
+            material_kwargs["marker_mode"] = "vertex"
+
+
+        if markers is None:
+            # simple PointsMaterial
+            material = pygfx.PointsMaterial
+
+        if isinstance(markers, str):
+            if markers == "custom":
+                if custom_sdf is None:
+                    raise ValueError("Must provide `custom_sdf` if `marker = 'custom'")
+                material = pygfx.PointsMarkerMaterial
+                material_kwargs["marker"] = markers
+                material_kwargs["custom_sdf"] = custom_sdf
+
+            elif markers == "gaussian":
+                material = pygfx.PointsGaussianBlobMaterial
+
+            elif markers == "image":
+                if image is None:
+                    raise ValueError("Must provide `image` if `marker = 'image'")
+                material = pygfx.PointsSpriteMaterial
+                material_kwargs["sprite"] = image
+            else:
+                # one of the defined marker shapes
+                markers = check_marker(markers)
+
+        elif isinstance(markers, (Sequence, np.ndarray)):
+            if len(markers) != n_datapoints:
+                raise ValueError(f"number of markers != n_datapoints: {len(markers)} != {n_datapoints}")
+
+            markers_array = np.zeros(n_datapoints, dtype=np.int32)
+            for i, m in enumerate(markers):
+                m = check_marker(m)
+                markers_array[i] = pygfx.MarkerInt[m]
+
+            material_kwargs["marker_mode"] = "vertex"
+            geo_kwargs["markers"] = markers_array
+
         self._size_space = SizeSpace(size_space)
 
         if uniform_color:
