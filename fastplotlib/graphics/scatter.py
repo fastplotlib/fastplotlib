@@ -35,6 +35,7 @@ class ScatterGraphic(PositionsGraphic):
         uniform_color: bool = False,
         cmap: str = None,
         cmap_transform: np.ndarray = None,
+        symbols: Literal["markers", "points", "gaussian", "image"] = "markers",
         markers: None | str | np.ndarray | Sequence[str] = None,
         uniform_marker: bool = False,
         custom_sdf: str = None,
@@ -123,6 +124,24 @@ class ScatterGraphic(PositionsGraphic):
         if markers is None:
             # simple PointsMaterial
             material = pygfx.PointsMaterial
+
+        # TODO: In a future iteration we could think of
+        #  allowing the marker material to be changed.
+        #  So for now, if marker = None or "gaussian",
+        #  we don't allow setting a different marker.
+        #  Similarly if a particular marker shape is
+        #  chosen, don't allow switching to gaussian or None
+        match symbols:
+            case "markers":
+                # default
+                material = pygfx.PointsMarkerMaterial
+            case "points":
+                # basic points material
+                material = pygfx.PointsMaterial
+            case "gaussian":
+                material = pygfx.PointsGaussianBlobMaterial
+            case "image":
+                material = pygfx.PointsSpriteMaterial
 
         if isinstance(markers, str):
             if markers == "custom":

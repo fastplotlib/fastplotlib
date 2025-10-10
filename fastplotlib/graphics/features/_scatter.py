@@ -125,17 +125,49 @@ class VertexMarkers(BufferManager):
     @property
     def value(self) -> np.ndarray[str]:
         """numpy array of per-vertex marker shapes in human-readable form"""
-        self._markers_readable_array
+        return self._markers_readable_array
 
     @property
     def value_int(self) -> np.ndarray[np.int32]:
         """numpy array of the actual int32 buffer that represents per-vertex marker shapes on the GPU"""
         return self.buffer.data
 
+    def _set_markers_arrays(self, key, value, n_markers):
+        if isinstance(value, str):
+            # set markers at these indices to this value
+            m = user_input_to_marker(value)
+            self._markers_readable_array[key] = m
+            self.value_int[key] = marker_int_mapping[m]
+
+        elif isinstance(value, (np.ndarray, Sequence)):
+            if n_markers != len(value):
+                raise IndexError(
+                    f"Must provide one marker value, or an array/list/tuple of marker values with the same length "
+                    f"as the slice. You have provided the slice: {key}, which refers to {n_markers} markers, but "
+                    f"provided {len(value)} new marker values. You must provide 1 or {n_markers} values."
+                )
+
+            # make sure all markers are valid
+            # need to validate before converting to ints because
+            # we can't use control flow in the vectorized function
+            unique_values = np.unique(value)
+            for m in unique_values:
+                user_input_to_marker(m)
+
+            new_markers_human_readable = vectorized_user_markers_to_std_markers(value)
+            new_markers_int = vectorized_markers_to_int(new_markers_human_readable)
+
+            self._markers_readable_array[key] = new_markers_human_readable
+            self.value_int[key] = new_markers_int
+        else:
+            raise TypeError(
+                "new markers value must be a str, Sequence or np.ndarray of new marker values"
+            )
+
     @block_reentrance
     def __setitem__(
         self,
-        key: int | slice | np.ndarray[int | bool],
+        key: int | slice | list[int | bool] | np.ndarray[int | bool],
         value: str | Sequence[str] | np.ndarray[str],
     ):
         if isinstance(key, int):
@@ -158,39 +190,46 @@ class VertexMarkers(BufferManager):
             start, stop, step = key.indices(self.value.size)
 
             n_markers = len(range(start, stop, step))
+            self._set_markers_arrays(key, value, n_markers)
 
-            if isinstance(value, str):
-                # set markers at these indices to this value
-                m = user_input_to_marker(value)
-                self._markers_readable_array[key] = m
-                self.value_int[key] = marker_int_mapping[m]
+        elif isinstance(key, (list, np.ndarray)):
+            key = np.asarray(key)  # convert to array if list
 
-            elif isinstance(value, (np.ndarray, Sequence)):
-                if n_markers != len(value):
+            if key.dtype == bool:
+                # make sure len is same
+                if not key.size == self.buffer.data.shape[0]:
                     raise IndexError(
-                        f"Must provide one marker value, or an array/list/tuple of marker values with the same length "
-                        f"as the slice. You have provided the slice: {key}, which refers to {n_markers} markers, but "
-                        f"provided {len(value)} new marker values. You must provide 1 or {n_markers} values."
+                        f"Length of array for fancy indexing must match number of datapoints.\n"
+                        f"There are {len(self.buffer.data.shape[0])} datapoints and you have passed "
+                        f"a bool array of size: {key.size}"
                     )
 
-                # make sure all markers are valid
-                # need to validate before converting to ints because
-                # we can't use control flow in the vectorized function
-                unique_values = np.unique(value)
-                for m in unique_values:
-                    user_input_to_marker(m)
+                n_markers = np.count_nonzero(key)
+                self._set_markers_arrays(key, value, n_markers)
 
-                new_markers_human_readable = vectorized_user_markers_to_std_markers(value)
-                new_markers_int = vectorized_markers_to_int(new_markers_human_readable)
+            # if it's an array of int
+            elif np.issubdtype(key.dtype, np.integer):
+                if key.size > self.buffer.data.shape[0]:
+                    raise IndexError(
+                        f"Length of array for fancy indexing must be <= n_datapoints. "
+                        f"There are: {self.buffer.data.shape[0]} datapoints, you have passed an "
+                        f"integer array for fancy indexing of size: {key.size}"
+                    )
+                n_markers = key.size
+                self._set_markers_arrays(key, value, n_markers)
 
-                self._markers_readable_array[key] = new_markers_human_readable
-                self.value_int[key] = new_markers_int
-
-        elif isinstance(key, np.ndarray):
-            pass
+            else:
+                # fancy indexing doesn't make sense with non-integer types
+                raise TypeError(
+                    f"can only using integer or booleans arrays for fancy indexing, your array is of type: {key.dtype}"
+                )
 
         else:
-            raise TypeError
+            raise TypeError(
+                f"Can only set markers by slicing/indexing using the one of the following types: "
+                f"int | slice | list[int | bool] | np.ndarray[int | bool], you have passed"
+                f"sliced using the following type: {type(key)}"
+            )
 
         # _update_range handles parsing the key to
         # determine offset and size for GPU upload
@@ -212,10 +251,10 @@ class UniformMarker(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: str | np.ndarray | tuple | list | pygfx.Color):
-        """Manages uniform marker for scatter material"""
+    def __init__(self, marker: str):
+        """Manages evented uniform buffer for scatter marker"""
 
-        self._value = pygfx.Color(value)
+        self._value = user_input_to_marker(marker)
         super().__init__()
 
     @property
@@ -223,10 +262,10 @@ class UniformMarker(GraphicFeature):
         return self._value
 
     @block_reentrance
-    def set_value(self, graphic, value: str | np.ndarray | tuple | list | pygfx.Color):
-        value = pygfx.Color(value)
-        graphic.world_object.material.color = value
+    def set_value(self, graphic, value: str):
+        value = user_input_to_marker(value)
+        graphic.world_object.material.marker = value
         self._value = value
 
-        event = GraphicFeatureEvent(type="colors", info={"value": value})
+        event = GraphicFeatureEvent(type="markers", info={"value": value})
         self._call_event_handlers(event)
