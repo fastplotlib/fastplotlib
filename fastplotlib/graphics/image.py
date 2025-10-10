@@ -324,9 +324,6 @@ class ImageGraphic(Graphic):
 
         self._plot_area.add_graphic(selector, center=False)
 
-        # place selector above this graphic
-        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
-
         return selector
 
     def add_linear_region_selector(
@@ -402,9 +399,6 @@ class ImageGraphic(Graphic):
 
         self._plot_area.add_graphic(selector, center=False)
 
-        # place above this graphic
-        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
-
         return selector
 
     def add_rectangle_selector(
@@ -447,9 +441,6 @@ class ImageGraphic(Graphic):
 
         self._plot_area.add_graphic(selector, center=False)
 
-        # place above this graphic
-        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
-
         return selector
 
     def add_polygon_selector(
@@ -484,8 +475,5 @@ class ImageGraphic(Graphic):
         )
 
         self._plot_area.add_graphic(selector, center=False)
-
-        # place above this graphic
-        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
 
         return selector

@@ -97,10 +97,7 @@ class ScatterGraphic(PositionsGraphic):
         aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
 
         geo_kwargs = {"positions": self._data.buffer}
-        material_kwargs = dict(
-            pick_write=True,
-            aa=aa,
-        )
+        material_kwargs = dict(pick_write=True, aa=aa, depth_compare="<=")
         self._size_space = SizeSpace(size_space)
 
         if uniform_color:
