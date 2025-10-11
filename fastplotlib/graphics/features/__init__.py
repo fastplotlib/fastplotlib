@@ -8,6 +8,10 @@ from ._positions_graphics import (
     PointsSizesFeature,
     VertexCmap,
 )
+from ._scatter import (
+    VertexMarkers,
+    UniformMarker
+)
 from ._image import (
     TextureArray,
     ImageCmap,
@@ -60,6 +64,8 @@ __all__ = [
     "VertexPositions",
     "PointsSizesFeature",
     "VertexCmap",
+    "VertexMarkers",
+    "UniformMarker",
     "TextureArray",
     "ImageCmap",
     "ImageVmin",

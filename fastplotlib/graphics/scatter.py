@@ -13,10 +13,10 @@ from .features import (
     VertexColors,
     UniformColor,
     VertexCmap,
+    VertexMarkers,
+    UniformMarker,
+    TextureArray,
 )
-
-
-
 
 
 class ScatterGraphic(PositionsGraphic):
@@ -35,8 +35,8 @@ class ScatterGraphic(PositionsGraphic):
         uniform_color: bool = False,
         cmap: str = None,
         cmap_transform: np.ndarray = None,
-        symbols: Literal["markers", "points", "gaussian", "image"] = "markers",
-        markers: None | str | np.ndarray | Sequence[str] = None,
+        mode: Literal["markers", "points", "gaussian", "image"] = "markers",
+        markers: None | str | np.ndarray | Sequence[str] = "o",
         uniform_marker: bool = False,
         custom_sdf: str = None,
         image: ArrayLike = None,
@@ -117,63 +117,57 @@ class ScatterGraphic(PositionsGraphic):
             aa=aa,
         )
 
-        if not uniform_marker:
-            material_kwargs["marker_mode"] = "vertex"
+        self._sprite_texture_array: TextureArray | None = None
 
-
-        if markers is None:
-            # simple PointsMaterial
-            material = pygfx.PointsMaterial
-
-        # TODO: In a future iteration we could think of
-        #  allowing the marker material to be changed.
-        #  So for now, if marker = None or "gaussian",
-        #  we don't allow setting a different marker.
-        #  Similarly if a particular marker shape is
-        #  chosen, don't allow switching to gaussian or None
-        match symbols:
+        # material cannot be changed after the ScatterGraphic is created
+        self._mode = mode
+        match self.mode:
             case "markers":
                 # default
                 material = pygfx.PointsMarkerMaterial
+
+                if uniform_marker:
+                    if not isinstance(markers, str):
+                        raise TypeError("must pass a single <str> marker if uniform_marker is True")
+
+                    self._markers = UniformMarker(markers)
+
+                    material_kwargs["marker_mode"] = pygfx.MarkerMode.uniform
+                    material_kwargs["marker"] = self._markers.value
+                else:
+                    material_kwargs["marker_mode"] = pygfx.MarkerMode.vertex
+
+                    self._markers = VertexMarkers(markers)
+
+                    geo_kwargs["markers"] = self._markers.value_int
+
+                material_kwargs["custom_sdf"] = custom_sdf
+
             case "points":
                 # basic points material
                 material = pygfx.PointsMaterial
+
             case "gaussian":
                 material = pygfx.PointsGaussianBlobMaterial
+
             case "image":
                 material = pygfx.PointsSpriteMaterial
+                # sprites should actually only be one texture, but we don't
+                # want to create a new buffer manager just for sprites
+                # if someone is creating scatter plots with images of size
+                # larger than the typical limit of 16384, I'm very curious
+                # to know what they're trying to visualize
+                shared = pygfx.renderers.wgpu.get_shared()
+                limit = shared.device.limits["max-texture-dimension-2d"]
+                if any([dim > limit for dim in image.shape]):
+                    raise BufferError(
+                        f"Scatter point image dimension is greater than the device texture limit."
+                        f"Your device limit is: {limit} but your image shape is: {image.shape}"
+                    )
 
-        if isinstance(markers, str):
-            if markers == "custom":
-                if custom_sdf is None:
-                    raise ValueError("Must provide `custom_sdf` if `marker = 'custom'")
-                material = pygfx.PointsMarkerMaterial
-                material_kwargs["marker"] = markers
-                material_kwargs["custom_sdf"] = custom_sdf
+                self._sprite_texture_array = TextureArray(image)
 
-            elif markers == "gaussian":
-                material = pygfx.PointsGaussianBlobMaterial
-
-            elif markers == "image":
-                if image is None:
-                    raise ValueError("Must provide `image` if `marker = 'image'")
-                material = pygfx.PointsSpriteMaterial
-                material_kwargs["sprite"] = image
-            else:
-                # one of the defined marker shapes
-                markers = check_marker(markers)
-
-        elif isinstance(markers, (Sequence, np.ndarray)):
-            if len(markers) != n_datapoints:
-                raise ValueError(f"number of markers != n_datapoints: {len(markers)} != {n_datapoints}")
-
-            markers_array = np.zeros(n_datapoints, dtype=np.int32)
-            for i, m in enumerate(markers):
-                m = check_marker(m)
-                markers_array[i] = pygfx.MarkerInt[m]
-
-            material_kwargs["marker_mode"] = "vertex"
-            geo_kwargs["markers"] = markers_array
+                material_kwargs["sprite"] = self._sprite_texture_array.buffer[0, 0]
 
         self._size_space = SizeSpace(size_space)
 
@@ -200,6 +194,23 @@ class ScatterGraphic(PositionsGraphic):
         )
 
         self._set_world_object(world_object)
+
+    @property
+    def mode(self) -> str:
+        """scatter plot mode"""
+        return self._mode
+
+    @property
+    def image(self) -> TextureArray | None:
+        """Get or set the image data, returns None if scatter plot mode is not 'image'"""
+        return self._sprite_texture_array
+
+    @image.setter
+    def image(self, data):
+        if self.mode != "image":
+            raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'image' to set the image")
+
+        self._sprite_texture_array[:] = data
 
     @property
     def sizes(self) -> PointsSizesFeature | float:

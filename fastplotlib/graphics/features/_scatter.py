@@ -57,7 +57,7 @@ def user_input_to_marker(name):
 
     return resolved_name
 
-def validate_user_markers(markers):
+def validate_user_markers_array(markers):
     # make sure all markers are valid
     # need to validate before converting to ints because
     # we can't use control flow in the vectorized function
@@ -66,7 +66,7 @@ def validate_user_markers(markers):
         user_input_to_marker(m)
 
 # fast vectorized function to convert array of user markers to the standardized strings
-vectorized_user_markers_to_std_markers = np.vectorize(marker_names.get, otypes="<U14")
+vectorized_user_markers_to_std_markers = np.vectorize(marker_names.get, otypes=["<U14"])
 
 # maps the human-readable marker name to the integers stored in the buffer
 marker_int_mapping = dict.fromkeys(list(pygfx.MarkerShape))
@@ -82,7 +82,7 @@ for k in marker_int_mapping.keys():
     marker_int_mapping[k] = pygfx.MarkerInt[k]
 
 # fast vectorized function to convert array of string markers to int
-vectorized_markers_to_int = np.vectorize(marker_int_mapping.get, otypes=np.int32)
+vectorized_markers_to_int = np.vectorize(marker_int_mapping.get, otypes=[np.int32])
 
 
 class VertexMarkers(BufferManager):
@@ -106,19 +106,32 @@ class VertexMarkers(BufferManager):
         """
         n_datapoints = len(markers)
 
+        # first validate then allocate buffers
+
+        if isinstance(markers, str):
+            user_input_to_marker(markers)
+
+        elif isinstance(markers, (Sequence, np.ndarray)):
+            validate_user_markers_array(markers)
+
+        # allocate buffers
         markers_int_array = np.zeros(n_datapoints, dtype=np.int32)
+
         marker_str_length = max(map(len, list(pygfx.MarkerShape)))
 
         self._markers_readable_array = np.empty(n_datapoints, dtype=f"<U{marker_str_length}")
 
-        if not isinstance(markers, str):
-            unique_markers = validate_user_markers(markers)
-            # TODO: need to finish this
+        if isinstance(markers, str):
+            # all markers in the array are identical, so set the entire array
+            self._markers_readable_array[:] = markers
+            markers_int_array[:] = marker_int_mapping[markers]
 
-        for i, m in enumerate(markers):
-            m = user_input_to_marker(m)
-            self._markers_readable_array[i] = m
-            markers_int_array[i] = marker_int_mapping[m]
+        if isinstance(markers, (np.ndarray, Sequence)):
+            # distinct marker for each point
+            # first vectorized map from user marker strings to "standard" marker strings
+            self._markers_readable_array = vectorized_user_markers_to_std_markers(markers)
+            # map standard marker strings to integer array
+            markers_int_array[:] = vectorized_markers_to_int(self._markers_readable_array)
 
         super().__init__(markers_int_array, isolated_buffer=False)
 
@@ -147,12 +160,7 @@ class VertexMarkers(BufferManager):
                     f"provided {len(value)} new marker values. You must provide 1 or {n_markers} values."
                 )
 
-            # make sure all markers are valid
-            # need to validate before converting to ints because
-            # we can't use control flow in the vectorized function
-            unique_values = np.unique(value)
-            for m in unique_values:
-                user_input_to_marker(m)
+            validate_user_markers_array(value)
 
             new_markers_human_readable = vectorized_user_markers_to_std_markers(value)
             new_markers_int = vectorized_markers_to_int(new_markers_human_readable)
