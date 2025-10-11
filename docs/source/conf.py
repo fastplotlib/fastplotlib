@@ -129,6 +129,8 @@ autodoc_typehints = "description"
 autodoc_typehints_description_target = "documented_params"
 autodoc_preserve_defaults = True
 
+viewcode_follow_imported_members = True
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable", None),
