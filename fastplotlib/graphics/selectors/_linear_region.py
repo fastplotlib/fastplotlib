@@ -64,9 +64,10 @@ class LinearRegionSelector(BaseSelector):
         parent: Graphic = None,
         resizable: bool = True,
         fill_color: str | Sequence[float] = (0, 0, 0.35),
-        edge_color: str | Sequence[float] = (0.8, 0.6, 0),
-        edge_thickness: float = 8,
+        edge_color: str | Sequence[float] = "yellow",
+        edge_thickness: float = 1.0,
         arrow_keys_modifier: str = "Shift",
+        extra_width: float = 14.0,
         name: str = None,
     ):
         """
@@ -112,6 +113,9 @@ class LinearRegionSelector(BaseSelector):
         arrow_keys_modifier: str
             modifier key that must be pressed to initiate movement using arrow keys, must be one of:
             "Control", "Shift", "Alt" or ``None``
+
+        extra_width: float, default 14.0
+            the width around the selector lines which is responsive to mouse events, in logical pixels
 
         name: str, optional
             name of this selector graphic
@@ -215,6 +219,25 @@ class LinearRegionSelector(BaseSelector):
                 pick_write=True,
             ),
         )
+
+        line0_outer = pygfx.Line(
+            pygfx.Geometry(
+                # share buffer with inner line so they can both be managed together
+                positions=line0.geometry.positions
+            ),
+            pygfx.LineMaterial(
+                thickness=edge_thickness + extra_width,
+                color=pygfx.Color([0, 0, 0]),
+                alpha_mode="blend",
+                opacity=0,
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
+            ),
+        )
+
         line1 = pygfx.Line(
             pygfx.Geometry(
                 positions=init_line_data.copy()
@@ -232,8 +255,27 @@ class LinearRegionSelector(BaseSelector):
             ),
         )
 
-        self.edges: tuple[pygfx.Line, pygfx.Line] = (line0, line1)
-        group.add(*self.edges)
+        line1_outer = pygfx.Line(
+            pygfx.Geometry(
+                # share buffer with inner line so they can both be managed together
+                positions=line1.geometry.positions
+            ),
+            pygfx.LineMaterial(
+                thickness=edge_thickness + extra_width,
+                color=pygfx.Color([0, 0, 0]),
+                alpha_mode="blend",
+                opacity=0,
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
+            ),
+        )
+
+        edges: tuple[pygfx.Line, pygfx.Line] = (line0, line1)
+        outer_edges = (line0_outer, line1_outer)
+        group.add(*edges, *outer_edges)
 
         # TODO: if parent offset changes, we should set the selector offset too, use offset evented property
         # TODO: add check if parent is `None`, will throw error otherwise
@@ -253,9 +295,10 @@ class LinearRegionSelector(BaseSelector):
 
         BaseSelector.__init__(
             self,
-            edges=self.edges,
+            edges=edges,
+            outer_edges=outer_edges,
             fill=(self.fill,),
-            hover_responsive=self.edges,
+            hover_responsive=edges,
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
             parent=parent,
@@ -423,12 +466,12 @@ class LinearRegionSelector(BaseSelector):
 
         # if event source was an edge and selector is resizable,
         # move the edge that caused the event
-        if move_info.source == self.edges[0]:
+        if move_info.source == self._edges[0]:
             # change only left or bottom bound
             new_min = min(cur_min + delta, cur_max)
             self._selection.set_value(self, (new_min, cur_max))
 
-        elif move_info.source == self.edges[1]:
+        elif move_info.source == self._edges[1]:
             # change only right or top bound
             new_max = max(cur_max + delta, cur_min)
             self._selection.set_value(self, (cur_min, new_max))

@@ -132,6 +132,9 @@ def set_x_val(ev):
 sine_selector.add_event_handler(set_x_val, "selection")
 cosine_selector.add_event_handler(set_x_val, "selection")
 
+# set initial position of the selector so it's not just overlapping the y-axis
+sine_selector.selection = 100
+
 figure.show()
 
 
