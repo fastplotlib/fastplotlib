@@ -1,7 +1,6 @@
 from typing import *
 
 import numpy as np
-from numpy.typing import ArrayLike
 import pygfx
 
 from ._positions_base import PositionsGraphic
@@ -43,15 +42,15 @@ class ScatterGraphic(PositionsGraphic):
         cmap: str = None,
         cmap_transform: np.ndarray = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
-        markers: None | str | np.ndarray | Sequence[str] = "o",
+        markers: str | np.ndarray | Sequence[str] = "o",
         uniform_marker: bool = False,
         custom_sdf: str = None,
         edge_colors: str | np.ndarray | pygfx.Color | Sequence[float] = "black",
         uniform_edge_color: bool = True,
         edge_width: float = 1.0,
-        image: ArrayLike = None,
-        point_rotations: float | ArrayLike = 0,
-        point_rotation_mode: pygfx.enums.RotationMode = "uniform",
+        image: np.ndarray = None,
+        point_rotations: float | np.ndarray = 0,
+        point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
         sizes: float | np.ndarray | Sequence[float] = 1,
         uniform_size: bool = False,
         size_space: str = "screen",
@@ -185,7 +184,7 @@ class ScatterGraphic(PositionsGraphic):
             aa=aa,
         )
 
-        self._markers: VertexMarkers | None = None
+        self._markers: VertexMarkers | UniformMarker | None = None
         self._edge_colors: UniformEdgeColor | VertexColors | None = None
         self._edge_width: EdgeWidth | None = None
         self._point_rotations: VertexRotations | UniformRotations | None = None
@@ -209,7 +208,7 @@ class ScatterGraphic(PositionsGraphic):
                 else:
                     material_kwargs["marker_mode"] = pygfx.MarkerMode.vertex
 
-                    self._markers = VertexMarkers(markers)
+                    self._markers = VertexMarkers(markers, n_datapoints)
 
                     geo_kwargs["markers"] = self._markers.buffer
 
@@ -272,6 +271,7 @@ class ScatterGraphic(PositionsGraphic):
         match point_rotation_mode:
             case pygfx.enums.RotationMode.vertex:
                 self._point_rotations = VertexRotations(point_rotations, n_datapoints=n_datapoints)
+                geo_kwargs["rotations"] = self._point_rotations.buffer
 
             case pygfx.enums.RotationMode.uniform:
                 self._point_rotations = UniformRotations(point_rotations)
@@ -290,7 +290,7 @@ class ScatterGraphic(PositionsGraphic):
 
         world_object = pygfx.Points(
             pygfx.Geometry(**geo_kwargs),
-            material=pygfx.PointsMaterial(**material_kwargs),
+            material=material(**material_kwargs),
         )
 
         self._set_world_object(world_object)
@@ -350,7 +350,7 @@ class ScatterGraphic(PositionsGraphic):
     @property
     def point_rotation_mode(self) -> str:
         """point rotation mode, read-only, one of 'uniform', 'vertex', or 'curve'"""
-        return self.world_object.rotation_mode
+        return self.world_object.material.rotation_mode
 
     @property
     def point_rotations(self) -> VertexRotations | float | None:

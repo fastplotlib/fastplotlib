@@ -1,7 +1,6 @@
 from typing import Sequence
 
 import numpy as np
-import pygfx
 
 from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 

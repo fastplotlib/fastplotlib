@@ -4,6 +4,8 @@ from typing import *
 
 import numpy
 
+import pygfx
+
 from ..graphics import *
 from ..graphics._base import Graphic
 
@@ -438,7 +440,7 @@ class GraphicMethodsMixin:
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
-        markers: Union[NoneType, str, numpy.ndarray, Sequence[str]] = "o",
+        markers: Union[str, numpy.ndarray, Sequence[str]] = "o",
         uniform_marker: bool = False,
         custom_sdf: str = None,
         edge_colors: Union[
@@ -446,37 +448,9 @@ class GraphicMethodsMixin:
         ] = "black",
         uniform_edge_color: bool = True,
         edge_width: float = 1.0,
-        image: Union[
-            numpy._typing._array_like._SupportsArray[numpy.dtype[Any]],
-            numpy._typing._nested_sequence._NestedSequence[
-                numpy._typing._array_like._SupportsArray[numpy.dtype[Any]]
-            ],
-            bool,
-            int,
-            float,
-            complex,
-            str,
-            bytes,
-            numpy._typing._nested_sequence._NestedSequence[
-                bool | int | float | complex | str | bytes
-            ],
-        ] = None,
-        point_rotations: Union[
-            float,
-            numpy._typing._array_like._SupportsArray[numpy.dtype[Any]],
-            numpy._typing._nested_sequence._NestedSequence[
-                numpy._typing._array_like._SupportsArray[numpy.dtype[Any]]
-            ],
-            bool,
-            int,
-            complex,
-            str,
-            bytes,
-            numpy._typing._nested_sequence._NestedSequence[
-                bool | int | float | complex | str | bytes
-            ],
-        ] = 0,
-        point_rotation_mode: pygfx.utils.enums.RotationMode = "uniform",
+        image: numpy.ndarray = None,
+        point_rotations: float | numpy.ndarray = 0,
+        point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
         sizes: Union[float, numpy.ndarray, Sequence[float]] = 1,
         uniform_size: bool = False,
         size_space: str = "screen",

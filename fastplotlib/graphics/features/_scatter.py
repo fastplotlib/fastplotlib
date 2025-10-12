@@ -107,18 +107,17 @@ class VertexMarkers(BufferManager):
         },
     ]
 
-    def __init__(self, markers: str | Sequence[str] | np.ndarray, property_name: str = "markers"):
+    def __init__(self, markers: str | Sequence[str] | np.ndarray, n_datapoints: int, property_name: str = "markers"):
         """
         Manages the markers buffer for the scatter points. Supports fancy indexing.
         """
-        n_datapoints = len(markers)
 
         # first validate then allocate buffers
 
         if isinstance(markers, str):
-            user_input_to_marker(markers)
+            markers = user_input_to_marker(markers)
 
-        elif isinstance(markers, (Sequence, np.ndarray)):
+        elif isinstance(markers, (tuple, list, np.ndarray)):
             validate_user_markers_array(markers)
 
         # allocate buffers
@@ -133,14 +132,14 @@ class VertexMarkers(BufferManager):
             self._markers_readable_array[:] = markers
             markers_int_array[:] = marker_int_mapping[markers]
 
-        if isinstance(markers, (np.ndarray, Sequence)):
+        elif isinstance(markers, (np.ndarray, tuple, list)):
             # distinct marker for each point
             # first vectorized map from user marker strings to "standard" marker strings
             self._markers_readable_array = vectorized_user_markers_to_std_markers(markers)
             # map standard marker strings to integer array
             markers_int_array[:] = searchsorted_markers_to_int_array(self._markers_readable_array)
 
-        super().__init__(markers_int_array, isolated_buffer=False)
+        super().__init__(markers_int_array, isolated_buffer=False, property_name=property_name)
 
     @property
     def value(self) -> np.ndarray[str]:
@@ -159,7 +158,7 @@ class VertexMarkers(BufferManager):
             self._markers_readable_array[key] = m
             self.value_int[key] = marker_int_mapping[m]
 
-        elif isinstance(value, (np.ndarray, Sequence)):
+        elif isinstance(value, (np.ndarray, list, tuple)):
             if n_markers != len(value):
                 raise IndexError(
                     f"Must provide one marker value, or an array/list/tuple of marker values with the same length "
