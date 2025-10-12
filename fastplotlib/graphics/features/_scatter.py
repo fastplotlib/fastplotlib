@@ -95,7 +95,6 @@ def searchsorted_markers_to_int_array(markers_str_array: np.ndarray[str]):
 
 
 class VertexMarkers(BufferManager):
-    property_name = "markers"
     event_info_spec = [
         {
             "dict key": "key",
@@ -109,7 +108,7 @@ class VertexMarkers(BufferManager):
         },
     ]
 
-    def __init__(self, markers: str | Sequence[str] | np.ndarray):
+    def __init__(self, markers: str | Sequence[str] | np.ndarray, property_name: str = "markers"):
         """
         Manages the markers buffer for the scatter points. Supports fancy indexing.
         """
@@ -252,14 +251,13 @@ class VertexMarkers(BufferManager):
         # determine offset and size for GPU upload
         self._update_range(key)
 
-        self._emit_event("markers", key, value)
+        self._emit_event(self._property_name, key, value)
 
     def __len__(self):
         return len(self.buffer.data)
 
 
 class UniformMarker(GraphicFeature):
-    property_name = "markers"
     event_info_spec = [
         {
             "dict key": "value",
@@ -268,11 +266,11 @@ class UniformMarker(GraphicFeature):
         },
     ]
 
-    def __init__(self, marker: str):
+    def __init__(self, marker: str, property_name: str = "colors"):
         """Manages evented uniform buffer for scatter marker"""
 
         self._value = user_input_to_marker(marker)
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> str:
@@ -284,12 +282,11 @@ class UniformMarker(GraphicFeature):
         graphic.world_object.material.marker = value
         self._value = value
 
-        event = GraphicFeatureEvent(type="markers", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
 class UniformEdgeColor(GraphicFeature):
-    property_name = "edge_color"
     event_info_spec = [
         {
             "dict key": "value",
@@ -298,11 +295,11 @@ class UniformEdgeColor(GraphicFeature):
         },
     ]
 
-    def __init__(self, edge_color: str | np.ndarray | pygfx.Color | Sequence[float]):
+    def __init__(self, edge_color: str | np.ndarray | pygfx.Color | Sequence[float], property_name: str = "colors"):
         """Manages evented uniform buffer for scatter marker edge_color"""
 
         self._value = pygfx.Color(edge_color)
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> pygfx.Color:
@@ -313,5 +310,5 @@ class UniformEdgeColor(GraphicFeature):
         graphic.world_object.material.edge_color = pygfx.Color(value)
         self._value = value
 
-        event = GraphicFeatureEvent(type="edge_color", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)

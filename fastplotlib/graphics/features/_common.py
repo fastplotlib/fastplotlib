@@ -1,3 +1,5 @@
+from typing import Sequence
+
 import numpy as np
 import pygfx
 
@@ -5,16 +7,15 @@ from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
 
 class Name(GraphicFeature):
-    property_name = "name"
     event_info_spec = [
         {"dict key": "value", "type": "str", "description": "user provided name"},
     ]
 
-    def __init__(self, value: str):
+    def __init__(self, value: str, property_name: str = "name"):
         """Graphic name"""
 
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> str:
@@ -30,12 +31,11 @@ class Name(GraphicFeature):
 
         self._value = value
 
-        event = GraphicFeatureEvent(type="name", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
 class Offset(GraphicFeature):
-    property_name = "offset"
     event_info_spec = [
         {
             "dict key": "value",
@@ -44,7 +44,7 @@ class Offset(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: np.ndarray | list | tuple):
+    def __init__(self, value: np.ndarray | Sequence[float], property_name: str = "offset"):
         """Offset position of the graphic, [x, y, z]"""
 
         self._validate(value)
@@ -53,7 +53,7 @@ class Offset(GraphicFeature):
 
         # set values
         self._value[:] = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     def _validate(self, value):
         if not len(value) == 3:
@@ -64,7 +64,7 @@ class Offset(GraphicFeature):
         return self._value
 
     @block_reentrance
-    def set_value(self, graphic, value: np.ndarray | list | tuple):
+    def set_value(self, graphic, value: np.ndarray | Sequence[float]):
         self._validate(value)
         value = np.asarray(value)
 
@@ -76,12 +76,11 @@ class Offset(GraphicFeature):
         # set value of existing feature value array
         self._value[:] = value
 
-        event = GraphicFeatureEvent(type="offset", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
 class Rotation(GraphicFeature):
-    property_name = "offset"
     event_info_spec = [
         {
             "dict key": "value",
@@ -90,7 +89,7 @@ class Rotation(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: np.ndarray | list | tuple):
+    def __init__(self, value: np.ndarray | Sequence[float], property_name: str = "rotation"):
         """Graphic rotation quaternion"""
 
         self._validate(value)
@@ -98,7 +97,7 @@ class Rotation(GraphicFeature):
         self._value = np.zeros(4)
 
         self._value[:] = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     def _validate(self, value):
         if not len(value) == 4:
@@ -111,7 +110,7 @@ class Rotation(GraphicFeature):
         return self._value
 
     @block_reentrance
-    def set_value(self, graphic, value: np.ndarray | list | tuple):
+    def set_value(self, graphic, value: np.ndarray | Sequence[float]):
         self._validate(value)
         value = np.asarray(value)
 
@@ -124,21 +123,20 @@ class Rotation(GraphicFeature):
         # set value of existing feature value array
         self._value[:] = value
 
-        event = GraphicFeatureEvent(type="rotation", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
 class Alpha(GraphicFeature):
     """The alpha value (i.e. opacity) of a graphic."""
 
-    property_name = "alpha"
     event_info_spec = [
         {"dict key": "value", "type": "float", "description": "new alpha value"},
     ]
 
-    def __init__(self, value: float):
+    def __init__(self, value: float, property_name: str = "alpha"):
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> float:
@@ -156,21 +154,20 @@ class Alpha(GraphicFeature):
 
         self._value = value
 
-        event = GraphicFeatureEvent(type="alpha", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
 class AlphaMode(GraphicFeature):
     """The alpha-mode value of a graphic (i.e. how alpha is handled by the renderer)."""
 
-    property_name = "alpha_mode"
     event_info_spec = [
         {"dict key": "value", "type": "str", "description": "new alpha mode"},
     ]
 
-    def __init__(self, value: str):
+    def __init__(self, value: str, property_name: str = "alpha_mode"):
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> str:
@@ -188,21 +185,20 @@ class AlphaMode(GraphicFeature):
 
         self._value = value
 
-        event = GraphicFeatureEvent(type="alpha_mode", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
 class Visible(GraphicFeature):
     """Access or change the visibility."""
 
-    property_name = "visible"
     event_info_spec = [
         {"dict key": "value", "type": "bool", "description": "new visibility bool"},
     ]
 
-    def __init__(self, value: bool):
+    def __init__(self, value: bool, property_name: str = "visible"):
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> bool:
@@ -213,7 +209,7 @@ class Visible(GraphicFeature):
         graphic.world_object.visible = value
         self._value = value
 
-        event = GraphicFeatureEvent(type="visible", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -222,7 +218,6 @@ class Deleted(GraphicFeature):
     Used when a graphic is deleted, triggers events that can be useful to indicate this graphic has been deleted
     """
 
-    property_name = "deleted"
     event_info_spec = [
         {
             "dict key": "value",
@@ -231,9 +226,9 @@ class Deleted(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: bool):
+    def __init__(self, value: bool, property_name: str = "deleted"):
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> bool:
@@ -242,5 +237,5 @@ class Deleted(GraphicFeature):
     @block_reentrance
     def set_value(self, graphic, value: bool):
         self._value = value
-        event = GraphicFeatureEvent(type="deleted", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)

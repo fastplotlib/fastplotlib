@@ -49,7 +49,8 @@ class GraphicFeatureEvent(pygfx.Event):
 
 
 class GraphicFeature:
-    def __init__(self, **kwargs):
+    def __init__(self, property_name: str, **kwargs):
+        self._property_name = property_name
         self._event_handlers = list()
         self._block_events = False
 
@@ -141,7 +142,7 @@ class BufferManager(GraphicFeature):
         isolated_buffer: bool = True,
         **kwargs,
     ):
-        super().__init__()
+        super().__init__(**kwargs)
         if isolated_buffer and not isinstance(data, pygfx.Resource):
             # useful if data is read-only, example: memmaps
             bdata = np.zeros(data.shape, dtype=data.dtype)

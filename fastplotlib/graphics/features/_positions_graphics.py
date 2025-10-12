@@ -17,7 +17,6 @@ from .utils import parse_colors
 
 
 class VertexColors(BufferManager):
-    property_name = "colors"
     event_info_spec = [
         {
             "dict key": "key",
@@ -38,16 +37,17 @@ class VertexColors(BufferManager):
 
     def __init__(
         self,
-        colors: str | np.ndarray | tuple[float] | list[float] | list[str],
+        colors: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
         n_colors: int,
         isolated_buffer: bool = True,
+        property_name: str = "colors",
     ):
         """
         Manages the vertex color buffer for :class:`LineGraphic` or :class:`ScatterGraphic`
 
         Parameters
         ----------
-        colors: str | np.ndarray | tuple[float, float, float, float] | list[str] | list[float] | int | float
+        colors: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str]
             specify colors as a single human-readable string, RGBA array,
             or an iterable of strings or RGBA arrays
 
@@ -57,13 +57,13 @@ class VertexColors(BufferManager):
         """
         data = parse_colors(colors, n_colors)
 
-        super().__init__(data=data, isolated_buffer=isolated_buffer)
+        super().__init__(data=data, isolated_buffer=isolated_buffer, property_name=property_name)
 
     @block_reentrance
     def __setitem__(
         self,
         key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
-        user_value: str | np.ndarray | tuple[float] | list[float] | list[str],
+        user_value: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
     ):
         user_key = key
 
@@ -137,7 +137,7 @@ class VertexColors(BufferManager):
             "user_value": user_value,
         }
 
-        event = GraphicFeatureEvent("colors", info=event_info)
+        event = GraphicFeatureEvent(self._property_name, info=event_info)
         self._call_event_handlers(event)
 
     def __len__(self):
@@ -145,7 +145,6 @@ class VertexColors(BufferManager):
 
 
 class UniformColor(GraphicFeature):
-    property_name = "colors"
     event_info_spec = [
         {
             "dict key": "value",
@@ -154,11 +153,11 @@ class UniformColor(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: str | pygfx.Color | np.ndarray | Sequence[float]):
+    def __init__(self, value: str | pygfx.Color | np.ndarray | Sequence[float], property_name: str = "colors"):
         """Manages uniform color for line or scatter material"""
 
         self._value = pygfx.Color(value)
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> pygfx.Color:
@@ -170,21 +169,20 @@ class UniformColor(GraphicFeature):
         graphic.world_object.material.color = value
         self._value = value
 
-        event = GraphicFeatureEvent(type="colors", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
 class UniformSize(GraphicFeature):
-    property_name = "sizes"
     event_info_spec = [
         {"dict key": "value", "type": "float", "description": "new size value"},
     ]
 
-    def __init__(self, value: int | float):
+    def __init__(self, value: int | float, property_name: str = "sizes"):
         """Manages uniform size for scatter material"""
 
         self._value = float(value)
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> float:
@@ -196,12 +194,11 @@ class UniformSize(GraphicFeature):
         graphic.world_object.material.size = value
         self._value = value
 
-        event = GraphicFeatureEvent(type="sizes", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
 class SizeSpace(GraphicFeature):
-    property_name = "size_space"
     event_info_spec = [
         {
             "dict key": "value",
@@ -210,11 +207,11 @@ class SizeSpace(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: str):
+    def __init__(self, value: str, property_name: str = "size_space"):
         """Manages the coordinate space for scatter/line graphic"""
 
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> str:
@@ -233,12 +230,11 @@ class SizeSpace(GraphicFeature):
             graphic.world_object.material.size_space = value
         self._value = value
 
-        event = GraphicFeatureEvent(type="size_space", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
 class VertexPositions(BufferManager):
-    property_name = "data"
     event_info_spec = [
         {
             "dict key": "key",
@@ -252,14 +248,14 @@ class VertexPositions(BufferManager):
         },
     ]
 
-    def __init__(self, data: Any, isolated_buffer: bool = True):
+    def __init__(self, data: Any, isolated_buffer: bool = True, property_name: str = "data"):
         """
         Manages the vertex positions buffer shown in the graphic.
         Supports fancy indexing if the data array also supports it.
         """
 
         data = self._fix_data(data)
-        super().__init__(data, isolated_buffer=isolated_buffer)
+        super().__init__(data, isolated_buffer=isolated_buffer, property_name=property_name)
 
     def _fix_data(self, data):
         # data = to_gpu_supported_dtype(data)
@@ -293,14 +289,13 @@ class VertexPositions(BufferManager):
         # determine offset and size for GPU upload
         self._update_range(key)
 
-        self._emit_event("data", key, value)
+        self._emit_event(self._property_name, key, value)
 
     def __len__(self):
         return len(self.buffer.data)
 
 
 class PointsSizesFeature(BufferManager):
-    property_name = "sizes"
     event_info_spec = [
         {
             "dict key": "key",
@@ -316,9 +311,10 @@ class PointsSizesFeature(BufferManager):
 
     def __init__(
         self,
-        sizes: int | float | np.ndarray | list[int | float] | tuple[int | float],
+        sizes: int | float | np.ndarray | Sequence[int | float],
         n_datapoints: int,
         isolated_buffer: bool = True,
+        property_name: str = "sizes"
     ):
         """
         Manages sizes buffer of scatter points.
@@ -328,7 +324,7 @@ class PointsSizesFeature(BufferManager):
 
     def _fix_sizes(
         self,
-        sizes: int | float | np.ndarray | list[int | float] | tuple[int | float],
+        sizes: int | float | np.ndarray | Sequence[int | float],
         n_datapoints: int,
     ):
         if np.issubdtype(type(sizes), np.number):
@@ -364,27 +360,26 @@ class PointsSizesFeature(BufferManager):
     def __setitem__(
         self,
         key: int | slice | np.ndarray[int | bool] | list[int | bool],
-        value: int | float | np.ndarray | list[int | float] | tuple[int | float],
+        value: int | float | np.ndarray | Sequence[int | float],
     ):
         # this is a very simple 1D buffer, no parsing required, directly set buffer
         self.buffer.data[key] = value
         self._update_range(key)
 
-        self._emit_event("sizes", key, value)
+        self._emit_event(self._property_name, key, value)
 
     def __len__(self):
         return len(self.buffer.data)
 
 
 class Thickness(GraphicFeature):
-    property_name = "thickness"
     event_info_spec = [
         {"dict key": "value", "type": "float", "description": "new thickness value"},
     ]
 
-    def __init__(self, value: float):
+    def __init__(self, value: float, property_name: str = "thickness"):
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> float:
@@ -396,12 +391,11 @@ class Thickness(GraphicFeature):
         graphic.world_object.material.thickness = value
         self._value = value
 
-        event = GraphicFeatureEvent(type="thickness", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
 class VertexCmap(BufferManager):
-    property_name = "cmap"
     event_info_spec = [
         {
             "dict key": "key",
@@ -420,13 +414,14 @@ class VertexCmap(BufferManager):
         vertex_colors: VertexColors,
         cmap_name: str | None,
         transform: np.ndarray | None,
+        property_name: str = "colors"
     ):
         """
         Sliceable colormap feature, manages a VertexColors instance and
         provides a way to set colormaps with arbitrary transforms
         """
 
-        super().__init__(data=vertex_colors.buffer)
+        super().__init__(data=vertex_colors.buffer, property_name=property_name)
 
         self._vertex_colors = vertex_colors
         self._cmap_name = cmap_name
@@ -478,7 +473,7 @@ class VertexCmap(BufferManager):
         # TODO: should we block vertex_colors from emitting an event?
         #  Because currently this will result in 2 emitted events, one
         #  for cmap and another from the colors
-        self._emit_event("cmap", key, cmap_name)
+        self._emit_event(self._property_name, key, cmap_name)
 
     @property
     def name(self) -> str:
