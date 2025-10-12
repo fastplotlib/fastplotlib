@@ -363,7 +363,7 @@ class ScatterGraphic(PositionsGraphic):
             return self._point_rotations.value
 
     @point_rotations.setter
-    def point_rotations(self, value: float | ArrayLike[float]):
+    def point_rotations(self, value: float | np.ndarray[float]):
         if self.point_rotation_mode not in ["uniform", "vertex"]:
             raise AttributeError(
                 f"point_rotation_mode is: {self.point_rotation_mode}. "
