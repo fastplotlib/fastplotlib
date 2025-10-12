@@ -96,7 +96,7 @@ class ScatterGraphic(PositionsGraphic):
 
             Supported values:
 
-            * A string from :obj:`pygfx.utils.enums.MarkerShape`.
+            * A string from pygfx.MarkerShape enum
             * Matplotlib compatible characters: "osD+x^v<>".
             * Unicode symbols: "●○■♦♥♠♣✳▲▼◀▶".
             * Emojis: "❤️♠️♣️♦️💎💍✳️📍".
