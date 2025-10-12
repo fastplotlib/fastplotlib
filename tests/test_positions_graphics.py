@@ -11,7 +11,7 @@ from fastplotlib.graphics.features import (
     VertexCmap,
     UniformColor,
     UniformSize,
-    PointsSizesFeature,
+    VertexPointSizes,
     Thickness,
     GraphicFeatureEvent,
 )
@@ -359,8 +359,8 @@ def test_sizes(sizes, uniform_size):
 
     graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
-    assert isinstance(graphic.sizes, PointsSizesFeature)
-    assert isinstance(graphic._sizes, PointsSizesFeature)
+    assert isinstance(graphic.sizes, VertexPointSizes)
+    assert isinstance(graphic._sizes, VertexPointSizes)
     assert len(data) == len(graphic.sizes)
 
     if sizes is None:

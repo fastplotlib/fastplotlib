@@ -173,31 +173,6 @@ class UniformColor(GraphicFeature):
         self._call_event_handlers(event)
 
 
-class UniformSize(GraphicFeature):
-    event_info_spec = [
-        {"dict key": "value", "type": "float", "description": "new size value"},
-    ]
-
-    def __init__(self, value: int | float, property_name: str = "sizes"):
-        """Manages uniform size for scatter material"""
-
-        self._value = float(value)
-        super().__init__(property_name=property_name)
-
-    @property
-    def value(self) -> float:
-        return self._value
-
-    @block_reentrance
-    def set_value(self, graphic, value: float | int):
-        value = float(value)
-        graphic.world_object.material.size = value
-        self._value = value
-
-        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
-        self._call_event_handlers(event)
-
-
 class SizeSpace(GraphicFeature):
     event_info_spec = [
         {
@@ -293,106 +268,6 @@ class VertexPositions(BufferManager):
 
     def __len__(self):
         return len(self.buffer.data)
-
-
-class PointsSizesFeature(BufferManager):
-    event_info_spec = [
-        {
-            "dict key": "key",
-            "type": "slice, index (int) or numpy-like fancy index",
-            "description": "key at which point sizes were indexed/sliced",
-        },
-        {
-            "dict key": "value",
-            "type": "int | float | array-like",
-            "description": "new size values for points that were changed",
-        },
-    ]
-
-    def __init__(
-        self,
-        sizes: int | float | np.ndarray | Sequence[int | float],
-        n_datapoints: int,
-        isolated_buffer: bool = True,
-        property_name: str = "sizes"
-    ):
-        """
-        Manages sizes buffer of scatter points.
-        """
-        sizes = self._fix_sizes(sizes, n_datapoints)
-        super().__init__(data=sizes, isolated_buffer=isolated_buffer, property_name=property_name)
-
-    def _fix_sizes(
-        self,
-        sizes: int | float | np.ndarray | Sequence[int | float],
-        n_datapoints: int,
-    ):
-        if np.issubdtype(type(sizes), np.number):
-            # single value given
-            sizes = np.full(
-                n_datapoints, sizes, dtype=np.float32
-            )  # force it into a float to avoid weird gpu errors
-
-        elif isinstance(
-            sizes, (np.ndarray, tuple, list)
-        ):  # if it's not a ndarray already, make it one
-            sizes = np.asarray(sizes, dtype=np.float32)  # read it in as a numpy.float32
-            if (sizes.ndim != 1) or (sizes.size != n_datapoints):
-                raise ValueError(
-                    f"sequence of `sizes` must be 1 dimensional with "
-                    f"the same length as the number of datapoints"
-                )
-
-        else:
-            raise TypeError(
-                "sizes must be a single <int>, <float>, or a sequence (array, list, tuple) of int"
-                "or float with the length equal to the number of datapoints"
-            )
-
-        if np.count_nonzero(sizes < 0) > 1:
-            raise ValueError(
-                "All sizes must be positive numbers greater than or equal to 0.0."
-            )
-
-        return sizes
-
-    @block_reentrance
-    def __setitem__(
-        self,
-        key: int | slice | np.ndarray[int | bool] | list[int | bool],
-        value: int | float | np.ndarray | Sequence[int | float],
-    ):
-        # this is a very simple 1D buffer, no parsing required, directly set buffer
-        self.buffer.data[key] = value
-        self._update_range(key)
-
-        self._emit_event(self._property_name, key, value)
-
-    def __len__(self):
-        return len(self.buffer.data)
-
-
-class Thickness(GraphicFeature):
-    event_info_spec = [
-        {"dict key": "value", "type": "float", "description": "new thickness value"},
-    ]
-
-    def __init__(self, value: float, property_name: str = "thickness"):
-        self._value = value
-        super().__init__(property_name=property_name)
-
-    @property
-    def value(self) -> float:
-        return self._value
-
-    @block_reentrance
-    def set_value(self, graphic, value: float):
-        value = float(value)
-        graphic.world_object.material.thickness = value
-        self._value = value
-
-        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
-        self._call_event_handlers(event)
 
 
 class VertexCmap(BufferManager):

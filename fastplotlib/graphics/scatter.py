@@ -6,7 +6,7 @@ import pygfx
 
 from ._positions_base import PositionsGraphic
 from .features import (
-    PointsSizesFeature,
+    VertexPointSizes,
     UniformSize,
     SizeSpace,
     VertexPositions,
@@ -26,9 +26,12 @@ from .features import (
 class ScatterGraphic(PositionsGraphic):
     _features = {
         "data": VertexPositions,
-        "sizes": (PointsSizesFeature, UniformSize),
+        "sizes": (VertexPointSizes, UniformSize),
         "colors": (VertexColors, UniformColor),
         "cmap": (VertexCmap, None),
+        "markers": (VertexMarkers, UniformMarker, None),
+        "edge_colors": (UniformEdgeColor, VertexColors, None),
+        "image": (TextureArray, None),
         "size_space": SizeSpace,
     }
 
@@ -43,10 +46,10 @@ class ScatterGraphic(PositionsGraphic):
         markers: None | str | np.ndarray | Sequence[str] = "o",
         uniform_marker: bool = False,
         custom_sdf: str = None,
-        image: ArrayLike = None,
         edge_colors: str | np.ndarray | pygfx.Color | Sequence[float] = "black",
         uniform_edge_color: bool = True,
         edge_width: float = 1.0,
+        image: ArrayLike = None,
         point_rotations: float | ArrayLike = 0,
         point_rotation_mode: pygfx.enums.RotationMode = "uniform",
         sizes: float | np.ndarray | Sequence[float] = 1,
@@ -119,10 +122,6 @@ class ScatterGraphic(PositionsGraphic):
             with the `edge_color`. Other negative distances will be colored by
             `colors`.
 
-        image: ArrayLike, optional
-            renders an image at the scatter points, also known as sprites.
-            The image color is multiplied with the point's "normal" color.
-
         edge_colors: str | np.ndarray | pygfx.Color | Sequence[float], default "black"
             edge color of the markers, used when `mode` is "markers"
 
@@ -131,6 +130,10 @@ class ScatterGraphic(PositionsGraphic):
 
         edge_width: float = 1.0,
             Width of the marker edges. used when `mode` is "markers".
+
+        image: ArrayLike, optional
+            renders an image at the scatter points, also known as sprites.
+            The image color is multiplied with the point's "normal" color.
 
         point_rotations: float | ArrayLike = 0,
             The rotation of the scatter points in radians. Default 0. A single float rotation value can be set on all
@@ -263,7 +266,7 @@ class ScatterGraphic(PositionsGraphic):
             material_kwargs["size"] = self.sizes
         else:
             material_kwargs["size_mode"] = pygfx.SizeMode.vertex
-            self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
+            self._sizes = VertexPointSizes(sizes, n_datapoints=n_datapoints)
             geo_kwargs["sizes"] = self.sizes.buffer
 
         match point_rotation_mode:
@@ -386,9 +389,9 @@ class ScatterGraphic(PositionsGraphic):
         self._sprite_texture_array[:] = data
 
     @property
-    def sizes(self) -> PointsSizesFeature | float:
+    def sizes(self) -> VertexPointSizes | float:
         """Get or set the scatter point size(s)"""
-        if isinstance(self._sizes, PointsSizesFeature):
+        if isinstance(self._sizes, VertexPointSizes):
             return self._sizes
 
         elif isinstance(self._sizes, UniformSize):
@@ -396,7 +399,7 @@ class ScatterGraphic(PositionsGraphic):
 
     @sizes.setter
     def sizes(self, value):
-        if isinstance(self._sizes, PointsSizesFeature):
+        if isinstance(self._sizes, VertexPointSizes):
             self._sizes[:] = value
 
         elif isinstance(self._sizes, UniformSize):

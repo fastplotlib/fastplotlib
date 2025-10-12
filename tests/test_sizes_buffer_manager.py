@@ -2,7 +2,7 @@ import numpy as np
 from numpy import testing as npt
 import pytest
 
-from fastplotlib.graphics.features import PointsSizesFeature
+from fastplotlib.graphics.features import VertexPointSizes
 from .utils import generate_slice_indices
 
 
@@ -28,7 +28,7 @@ def generate_data(input_type: str) -> np.ndarray | float:
 
 @pytest.mark.parametrize("data", [generate_data(v) for v in ["float", "sine"]])
 def test_create_buffer(data):
-    sizes = PointsSizesFeature(data, n_datapoints=10)
+    sizes = VertexPointSizes(data, n_datapoints=10)
 
     if isinstance(data, float):
         npt.assert_almost_equal(sizes[:], generate_data("float"))
@@ -50,7 +50,7 @@ def test_slice(slice_method: dict, user_input: str):
     size = slice_method["size"]
     others = slice_method["others"]
 
-    sizes = PointsSizesFeature(data, n_datapoints=10)
+    sizes = VertexPointSizes(data, n_datapoints=10)
 
     match user_input:
         case "float":
