@@ -66,23 +66,32 @@ def validate_user_markers_array(markers):
         user_input_to_marker(m)
 
 # fast vectorized function to convert array of user markers to the standardized strings
+# TODO: can probably use search-sorted for this too
 vectorized_user_markers_to_std_markers = np.vectorize(marker_names.get, otypes=["<U14"])
 
 # maps the human-readable marker name to the integers stored in the buffer
-marker_int_mapping = dict.fromkeys(list(pygfx.MarkerShape))
+marker_int_mapping = dict(pygfx.MarkerInt.__members__)
 
-# numpy vectorize to map the marker strings to ints is much faster than a for loop or python's list(map(d.get, array))
-# to elaborate:
-# np.vectorize(marker_int_mapping.get)(markers_str_array)
-# is much faster than:
-# np.asarray(list(map(marker_int_mapping.get, markers_str_array)))
-# both of these are much faster than a for loop
+# search sorted is the fastest way to map an array of str -> array of int
+# see: https://github.com/pygfx/pygfx/issues/1215
+# Prepare for searchsorted
+def init_searchsorted(markers_mapping):
+    keys = np.array(list(markers_mapping.keys()))
+    vals = np.array(list(markers_mapping.values()))
 
-for k in marker_int_mapping.keys():
-    marker_int_mapping[k] = pygfx.MarkerInt[k]
+    order = np.argsort(keys)
+    keys = keys[order]
+    vals = vals[order]
 
-# fast vectorized function to convert array of string markers to int
-vectorized_markers_to_int = np.vectorize(marker_int_mapping.get, otypes=[np.int32])
+    return keys, vals
+
+marker_int_searchsorted_keys, marker_int_searchsorted_vals = init_searchsorted(marker_int_mapping)
+
+
+def searchsorted_markers_to_int_array(markers_str_array: np.ndarray[str]):
+    # Vectorized lookup
+    indices = np.searchsorted(marker_int_searchsorted_keys, markers_str_array)
+    return marker_int_searchsorted_vals[indices]
 
 
 class VertexMarkers(BufferManager):
@@ -131,7 +140,7 @@ class VertexMarkers(BufferManager):
             # first vectorized map from user marker strings to "standard" marker strings
             self._markers_readable_array = vectorized_user_markers_to_std_markers(markers)
             # map standard marker strings to integer array
-            markers_int_array[:] = vectorized_markers_to_int(self._markers_readable_array)
+            markers_int_array[:] = searchsorted_markers_to_int_array(self._markers_readable_array)
 
         super().__init__(markers_int_array, isolated_buffer=False)
 
@@ -163,7 +172,7 @@ class VertexMarkers(BufferManager):
             validate_user_markers_array(value)
 
             new_markers_human_readable = vectorized_user_markers_to_std_markers(value)
-            new_markers_int = vectorized_markers_to_int(new_markers_human_readable)
+            new_markers_int = searchsorted_markers_to_int_array(new_markers_human_readable)
 
             self._markers_readable_array[key] = new_markers_human_readable
             self.value_int[key] = new_markers_int
@@ -276,4 +285,33 @@ class UniformMarker(GraphicFeature):
         self._value = value
 
         event = GraphicFeatureEvent(type="markers", info={"value": value})
+        self._call_event_handlers(event)
+
+
+class UniformEdgeColor(GraphicFeature):
+    property_name = "edge_color"
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "str | np.ndarray | pygfx.Color | Sequence[float]",
+            "description": "new edge_color",
+        },
+    ]
+
+    def __init__(self, edge_color: str | np.ndarray | pygfx.Color | Sequence[float]):
+        """Manages evented uniform buffer for scatter marker edge_color"""
+
+        self._value = pygfx.Color(edge_color)
+        super().__init__()
+
+    @property
+    def value(self) -> pygfx.Color:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: str | np.ndarray | pygfx.Color | Sequence[float]):
+        graphic.world_object.material.edge_color = pygfx.Color(value)
+        self._value = value
+
+        event = GraphicFeatureEvent(type="edge_color", info={"value": value})
         self._call_event_handlers(event)

@@ -15,6 +15,7 @@ from .features import (
     VertexCmap,
     VertexMarkers,
     UniformMarker,
+    UniformEdgeColor,
     TextureArray,
 )
 
@@ -40,7 +41,7 @@ class ScatterGraphic(PositionsGraphic):
         uniform_marker: bool = False,
         custom_sdf: str = None,
         image: ArrayLike = None,
-        edge_colors = "black",
+        edge_colors: str | np.ndarray | pygfx.Color | Sequence[float] = "black",
         uniform_edge_color: bool = True,
         edge_width: float = 1.0,
         rotations: ArrayLike = None,
@@ -141,6 +142,8 @@ class ScatterGraphic(PositionsGraphic):
 
                     geo_kwargs["markers"] = self._markers.value_int
 
+                if uniform_edge_color:
+                    self._edge_color = UniformEdgeColor(edge_colors)
                 material_kwargs["custom_sdf"] = custom_sdf
 
             case "points":
@@ -153,8 +156,8 @@ class ScatterGraphic(PositionsGraphic):
             case "image":
                 material = pygfx.PointsSpriteMaterial
                 # sprites should actually only be one texture, but we don't
-                # want to create a new buffer manager just for sprites
-                # if someone is creating scatter plots with images of size
+                # want to create a new buffer manager just for sprites.
+                # If someone is creating scatter plots with images of size
                 # larger than the typical limit of 16384, I'm very curious
                 # to know what they're trying to visualize
                 shared = pygfx.renderers.wgpu.get_shared()

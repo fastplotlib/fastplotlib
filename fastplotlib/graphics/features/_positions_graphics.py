@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 import pygfx
@@ -149,12 +149,12 @@ class UniformColor(GraphicFeature):
     event_info_spec = [
         {
             "dict key": "value",
-            "type": "np.ndarray [RGBA]",
+            "type": "str | pygfx.Color | np.ndarray | Sequence[float]",
             "description": "new color value",
         },
     ]
 
-    def __init__(self, value: str | np.ndarray | tuple | list | pygfx.Color):
+    def __init__(self, value: str | pygfx.Color | np.ndarray | Sequence[float]):
         """Manages uniform color for line or scatter material"""
 
         self._value = pygfx.Color(value)
@@ -165,7 +165,7 @@ class UniformColor(GraphicFeature):
         return self._value
 
     @block_reentrance
-    def set_value(self, graphic, value: str | np.ndarray | tuple | list | pygfx.Color):
+    def set_value(self, graphic, value: str | pygfx.Color | np.ndarray | Sequence[float]):
         value = pygfx.Color(value)
         graphic.world_object.material.color = value
         self._value = value

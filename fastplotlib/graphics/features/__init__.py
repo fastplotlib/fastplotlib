@@ -10,7 +10,8 @@ from ._positions_graphics import (
 )
 from ._scatter import (
     VertexMarkers,
-    UniformMarker
+    UniformMarker,
+    UniformEdgeColor,
 )
 from ._image import (
     TextureArray,
@@ -66,6 +67,7 @@ __all__ = [
     "VertexCmap",
     "VertexMarkers",
     "UniformMarker",
+    "UniformEdgeColor",
     "TextureArray",
     "ImageCmap",
     "ImageVmin",
