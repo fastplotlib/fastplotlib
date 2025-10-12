@@ -7,7 +7,6 @@ from ._base import (
     GraphicFeature,
     BufferManager,
     GraphicFeatureEvent,
-    to_gpu_supported_dtype,
     block_reentrance,
 )
 
@@ -312,3 +311,131 @@ class UniformEdgeColor(GraphicFeature):
 
         event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
+
+
+class EdgeWidth(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float",
+            "description": "new edge_width",
+        },
+    ]
+
+    def __init__(self, edge_width: float, property_name: str = "edge_width"):
+        """Manages evented uniform buffer for scatter marker edge_width"""
+
+        self._value = edge_width
+        super().__init__(property_name=property_name)
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: float):
+        graphic.world_object.material.edge_width = value
+        self._value = value
+
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
+        self._call_event_handlers(event)
+
+
+class UniformRotations(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float",
+            "description": "new edge_width",
+        },
+    ]
+
+    def __init__(self, edge_width: float, property_name: str = "rotations"):
+        """Manages evented uniform buffer for scatter marker rotation"""
+
+        self._value = edge_width
+        super().__init__(property_name=property_name)
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: float):
+        graphic.world_object.material.rotations = value
+        self._value = value
+
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
+        self._call_event_handlers(event)
+
+
+class VertexRotations(BufferManager):
+    event_info_spec = [
+        {
+            "dict key": "key",
+            "type": "slice, index (int) or numpy-like fancy index",
+            "description": "key at which point rotations were indexed/sliced",
+        },
+        {
+            "dict key": "value",
+            "type": "int | float | array-like",
+            "description": "new rotation values for points that were changed",
+        },
+    ]
+
+    def __init__(
+        self,
+        rotations: int | float | np.ndarray | Sequence[int | float],
+        n_datapoints: int,
+        isolated_buffer: bool = True,
+        property_name: str = "rotations"
+    ):
+        """
+        Manages rotations buffer of scatter points.
+        """
+        sizes = self._fix_sizes(rotations, n_datapoints)
+        super().__init__(data=sizes, isolated_buffer=isolated_buffer, property_name=property_name)
+
+    def _fix_sizes(
+        self,
+        sizes: int | float | np.ndarray | Sequence[int | float],
+        n_datapoints: int,
+    ):
+        if np.issubdtype(type(sizes), np.number):
+            # single value given
+            sizes = np.full(
+                n_datapoints, sizes, dtype=np.float32
+            )  # force it into a float to avoid weird gpu errors
+
+        elif isinstance(
+            sizes, (np.ndarray, tuple, list)
+        ):  # if it's not a ndarray already, make it one
+            sizes = np.asarray(sizes, dtype=np.float32)  # read it in as a numpy.float32
+            if (sizes.ndim != 1) or (sizes.size != n_datapoints):
+                raise ValueError(
+                    f"sequence of `rotations` must be 1 dimensional with "
+                    f"the same length as the number of datapoints"
+                )
+
+        else:
+            raise TypeError(
+                "`rotations` must be a single <int>, <float>, or a sequence (array, list, tuple) of int"
+                "or float with the length equal to the number of datapoints"
+            )
+
+        return sizes
+
+    @block_reentrance
+    def __setitem__(
+        self,
+        key: int | slice | np.ndarray[int | bool] | list[int | bool],
+        value: int | float | np.ndarray | Sequence[int | float],
+    ):
+        # this is a very simple 1D buffer, no parsing required, directly set buffer
+        self.buffer.data[key] = value
+        self._update_range(key)
+
+        self._emit_event(self._property_name, key, value)
+
+    def __len__(self):
+        return len(self.buffer.data)

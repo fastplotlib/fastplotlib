@@ -16,6 +16,9 @@ from .features import (
     VertexMarkers,
     UniformMarker,
     UniformEdgeColor,
+    EdgeWidth,
+    UniformRotations,
+    VertexRotations,
     TextureArray,
 )
 
@@ -44,8 +47,8 @@ class ScatterGraphic(PositionsGraphic):
         edge_colors: str | np.ndarray | pygfx.Color | Sequence[float] = "black",
         uniform_edge_color: bool = True,
         edge_width: float = 1.0,
-        rotations: ArrayLike = None,
-        uniform_rotation: bool = False,
+        point_rotations: float | ArrayLike = 0,
+        point_rotation_mode: pygfx.enums.RotationMode = "uniform",
         sizes: float | np.ndarray | Sequence[float] = 1,
         uniform_size: bool = False,
         size_space: str = "screen",
@@ -118,6 +121,10 @@ class ScatterGraphic(PositionsGraphic):
             aa=aa,
         )
 
+        self._markers: VertexMarkers | None = None
+        self._edge_colors: UniformEdgeColor | VertexColors | None = None
+        self._edge_width: EdgeWidth | None = None
+        self._point_rotations: VertexRotations | UniformRotations | None = None
         self._sprite_texture_array: TextureArray | None = None
 
         # material cannot be changed after the ScatterGraphic is created
@@ -140,10 +147,18 @@ class ScatterGraphic(PositionsGraphic):
 
                     self._markers = VertexMarkers(markers)
 
-                    geo_kwargs["markers"] = self._markers.value_int
+                    geo_kwargs["markers"] = self._markers.buffer
 
                 if uniform_edge_color:
-                    self._edge_color = UniformEdgeColor(edge_colors)
+                    self._edge_colors = UniformEdgeColor(edge_colors)
+                    material_kwargs["edge_color_mode"] = pygfx.ColorMode.uniform
+                else:
+                    self._edge_colors = VertexColors(edge_colors, n_datapoints, property_name="edge_colors")
+                    material_kwargs["edge_color_mode"] = pygfx.ColorMode.vertex
+                    geo_kwargs["edge_colors"] = self._edge_colors.buffer
+
+                self._edge_width = EdgeWidth(edge_width)
+                material_kwargs["edge_width"] = self._edge_width.value
                 material_kwargs["custom_sdf"] = custom_sdf
 
             case "points":
@@ -168,29 +183,47 @@ class ScatterGraphic(PositionsGraphic):
                         f"Your device limit is: {limit} but your image shape is: {image.shape}"
                     )
 
-                self._sprite_texture_array = TextureArray(image)
+                self._sprite_texture_array = TextureArray(image, property_name="image")
 
                 material_kwargs["sprite"] = self._sprite_texture_array.buffer[0, 0]
 
         self._size_space = SizeSpace(size_space)
 
         if uniform_color:
-            material_kwargs["color_mode"] = "uniform"
+            material_kwargs["color_mode"] = pygfx.ColorMode.uniform
             material_kwargs["color"] = self.colors
         else:
-            material_kwargs["color_mode"] = "vertex"
+            material_kwargs["color_mode"] = pygfx.ColorMode.vertex
             geo_kwargs["colors"] = self.colors.buffer
 
         if uniform_size:
-            material_kwargs["size_mode"] = "uniform"
+            material_kwargs["size_mode"] = pygfx.SizeMode.uniform
             self._sizes = UniformSize(sizes)
             material_kwargs["size"] = self.sizes
         else:
-            material_kwargs["size_mode"] = "vertex"
+            material_kwargs["size_mode"] = pygfx.SizeMode.vertex
             self._sizes = PointsSizesFeature(sizes, n_datapoints=n_datapoints)
             geo_kwargs["sizes"] = self.sizes.buffer
 
+        match point_rotation_mode:
+            case pygfx.enums.RotationMode.vertex:
+                self._point_rotations = VertexRotations(point_rotations, n_datapoints=n_datapoints)
+
+            case pygfx.enums.RotationMode.uniform:
+                self._point_rotations = UniformRotations(point_rotations)
+
+            case pygfx.enums.RotationMode.curve:
+                pass # nothing special for curve rotation mode
+
+            case _:
+                raise ValueError(
+                    f"`point_rotation_mode` must be one of: {pygfx.enums.RotationMode}, "
+                    f"you have passed: {point_rotation_mode}"
+                )
+
+        material_kwargs["rotation_mode"] = point_rotation_mode
         material_kwargs["size_space"] = self.size_space
+
         world_object = pygfx.Points(
             pygfx.Geometry(**geo_kwargs),
             material=pygfx.PointsMaterial(**material_kwargs),
@@ -202,6 +235,82 @@ class ScatterGraphic(PositionsGraphic):
     def mode(self) -> str:
         """scatter plot mode"""
         return self._mode
+
+    @property
+    def markers(self) -> str | VertexMarkers | None:
+        """markers if mode is 'marker'"""
+        return self._markers
+
+    @markers.setter
+    def markers(self, value: str | np.ndarray[str] | Sequence[str]):
+        if self.mode != "markers":
+            raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'markers' to set the markers")
+        self._markers[:] = value
+
+    @property
+    def edge_colors(self) -> str | pygfx.Color | VertexColors | None:
+        """edge_colors if mode is 'marker'"""
+
+        if isinstance(self._edge_colors, VertexColors):
+            return self._edge_colors
+
+        elif isinstance(self._edge_colors, UniformEdgeColor):
+            return self._edge_colors.value
+
+    @edge_colors.setter
+    def edge_colors(self, value: str | np.ndarray | Sequence[str] | Sequence[float]):
+        if self.mode != "markers":
+            raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'markers' to set the edge_colors")
+
+        if isinstance(self._colors, VertexColors):
+            self._edge_colors[:] = value
+
+        elif isinstance(self._colors, UniformEdgeColor):
+            self._edge_colors.set_value(self, value)
+
+    @property
+    def edge_width(self) -> float | None:
+        """Get or set the edge_width if mode is 'markers'"""
+        if self._edge_width is None:
+            return None
+
+        return self._edge_width.value
+
+    @edge_width.setter
+    def edge_width(self, value: float):
+        if self.mode != "markers":
+            raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'markers' to set the edge_width")
+
+        self._edge_width.set_value(self, value)
+
+    @property
+    def point_rotation_mode(self) -> str:
+        """point rotation mode, read-only, one of 'uniform', 'vertex', or 'curve'"""
+        return self.world_object.rotation_mode
+
+    @property
+    def point_rotations(self) -> VertexRotations | float | None:
+        """rotation of each point, in radians, if `point_rotation_mode` is 'uniform' or 'vertex'"""
+
+        if isinstance(self._point_rotations, VertexRotations):
+            return self._point_rotations
+
+        elif isinstance(self._point_rotations, UniformRotations):
+            return self._point_rotations.value
+
+    @point_rotations.setter
+    def point_rotations(self, value: float | ArrayLike[float]):
+        if self.point_rotation_mode not in ["uniform", "vertex"]:
+            raise AttributeError(
+                f"point_rotation_mode is: {self.point_rotation_mode}. "
+                f"it be 'uniform' or 'vertex' to set the `point_rotations`"
+            )
+
+        if isinstance(self._point_rotations, VertexRotations):
+            self._point_rotations[:] = value
+
+        elif isinstance(self._point_rotations, UniformRotations):
+            self._point_rotations.set_value(self, value)
 
     @property
     def image(self) -> TextureArray | None:

@@ -320,7 +320,7 @@ class PointsSizesFeature(BufferManager):
         Manages sizes buffer of scatter points.
         """
         sizes = self._fix_sizes(sizes, n_datapoints)
-        super().__init__(data=sizes, isolated_buffer=isolated_buffer)
+        super().__init__(data=sizes, isolated_buffer=isolated_buffer, property_name=property_name)
 
     def _fix_sizes(
         self,

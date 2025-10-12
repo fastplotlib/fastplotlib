@@ -12,6 +12,9 @@ from ._scatter import (
     VertexMarkers,
     UniformMarker,
     UniformEdgeColor,
+    EdgeWidth,
+    UniformRotations,
+    VertexRotations,
 )
 from ._image import (
     TextureArray,
@@ -68,6 +71,9 @@ __all__ = [
     "VertexMarkers",
     "UniformMarker",
     "UniformEdgeColor",
+    "EdgeWidth",
+    "UniformRotations",
+    "VertexRotations",
     "TextureArray",
     "ImageCmap",
     "ImageVmin",
