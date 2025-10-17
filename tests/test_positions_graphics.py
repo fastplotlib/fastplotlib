@@ -73,12 +73,11 @@ def test_sizes_slice():
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("colors", [None, *generate_color_inputs("b")])
 @pytest.mark.parametrize("uniform_color", [True, False])
-@pytest.mark.parametrize("alpha", [1.0, 0.5, 0.0])
-def test_uniform_color(graphic_type, colors, uniform_color, alpha):
+def test_uniform_color(graphic_type, colors, uniform_color):
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["colors", "uniform_color", "alpha"]:
+    for kwarg in ["colors", "uniform_color"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -95,10 +94,10 @@ def test_uniform_color(graphic_type, colors, uniform_color, alpha):
         assert isinstance(graphic.colors, pygfx.Color)
         if colors is None:
             # default white
-            assert graphic.colors == pygfx.Color([1, 1, 1, alpha])
+            assert graphic.colors == pygfx.Color([1, 1, 1])
         else:
             # should be blue
-            assert graphic.colors == pygfx.Color([0, 0, 1, alpha])
+            assert graphic.colors == pygfx.Color([0, 0, 1])
 
         # check pygfx material
         npt.assert_almost_equal(
@@ -111,13 +110,13 @@ def test_uniform_color(graphic_type, colors, uniform_color, alpha):
             # default white
             npt.assert_almost_equal(
                 graphic.colors.value,
-                np.repeat([[1, 1, 1, alpha]], repeats=len(graphic.data), axis=0),
+                np.repeat([[1, 1, 1, 1.0]], repeats=len(graphic.data), axis=0),
             )
         else:
             # blue
             npt.assert_almost_equal(
                 graphic.colors.value,
-                np.repeat([[0, 0, 1, alpha]], repeats=len(graphic.data), axis=0),
+                np.repeat([[0, 0, 1, 1.0]], repeats=len(graphic.data), axis=0),
             )
 
         # check geometry
@@ -167,18 +166,16 @@ def test_positions_graphics_data(
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("colors", [None, *generate_color_inputs("r")])
 @pytest.mark.parametrize("uniform_color", [None, False])
-@pytest.mark.parametrize("alpha", [None, 0.5, 0.0])
 def test_positions_graphic_vertex_colors(
     graphic_type,
     colors,
     uniform_color,
-    alpha,
 ):
     # test different ways of passing vertex colors
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["colors", "uniform_color", "alpha"]:
+    for kwarg in ["colors", "uniform_color"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -190,9 +187,6 @@ def test_positions_graphic_vertex_colors(
     elif graphic_type == "scatter":
         graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
-    if alpha is None:  # default arg
-        alpha = 1
-
     # color per vertex
     # uniform colors is default False, or set to False
     assert isinstance(graphic._colors, VertexColors)
@@ -203,14 +197,14 @@ def test_positions_graphic_vertex_colors(
         # default
         npt.assert_almost_equal(
             graphic.colors.value,
-            np.repeat([[1, 1, 1, alpha]], repeats=len(graphic.data), axis=0),
+            np.repeat([[1, 1, 1, 1.0]], repeats=len(graphic.data), axis=0),
         )
     else:
         if len(colors) != len(graphic.data):
             # should be single red, regardless of input variant (i.e. str, array, RGBA tuple, etc.
             npt.assert_almost_equal(
                 graphic.colors.value,
-                np.repeat([[1, 0, 0, alpha]], repeats=len(graphic.data), axis=0),
+                np.repeat([[1, 0, 0, 1.0]], repeats=len(graphic.data), axis=0),
             )
         else:
             # multi colors
@@ -225,20 +219,18 @@ def test_positions_graphic_vertex_colors(
 @pytest.mark.parametrize(
     "cmap_transform", [None, [3, 5, 2, 1, 0, 6, 9, 7, 4, 8], np.arange(9, -1, -1)]
 )
-@pytest.mark.parametrize("alpha", [None, 0.5, 0.0])
 def test_cmap(
     graphic_type,
     colors,
     uniform_color,
     cmap,
     cmap_transform,
-    alpha,
 ):
     # test different ways of passing cmap args
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["cmap", "cmap_transform", "colors", "uniform_color", "alpha"]:
+    for kwarg in ["cmap", "cmap_transform", "colors", "uniform_color"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -250,11 +242,7 @@ def test_cmap(
     elif graphic_type == "scatter":
         graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
-    if alpha is None:
-        alpha = 1.0
-
     truth = TRUTH_CMAPS[cmap].copy()
-    truth[:, -1] = alpha
 
     # permute if transform is provided
     if cmap_transform is not None:
@@ -275,7 +263,6 @@ def test_cmap(
     # test changing cmap but not transform
     graphic.cmap = "viridis"
     truth = TRUTH_CMAPS["viridis"].copy()
-    truth[:, -1] = alpha
 
     if cmap_transform is not None:
         truth = truth[cmap_transform]
@@ -293,7 +280,7 @@ def test_cmap(
     cmap_transform_norm /= cmap_transform_norm.max()
     cmap_transform_norm *= 255
 
-    truth = fpl.utils.get_cmap("viridis", alpha=alpha)
+    truth = fpl.utils.get_cmap("viridis", alpha=1)
     truth = np.vstack([truth[val] for val in cmap_transform_norm.astype(int)])
 
     graphic.cmap.transform = cmap_transform
@@ -485,3 +472,7 @@ def test_size_space(graphic_type, size_space):
         graphic.size_space = "world"
         assert graphic.size_space == "world"
         assert graphic.world_object.material.size_space == "world"
+
+
+if __name__ == "__main__":
+    test_cmap("scatter", None, False, "jet", None)

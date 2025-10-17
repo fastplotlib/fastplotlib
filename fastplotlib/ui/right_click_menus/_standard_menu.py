@@ -22,8 +22,8 @@ def flip_axis(subplot: PlotArea, axis: str, flip: bool):
 class StandardRightClickMenu(Popup):
     """Right click menu that is shown on subplots"""
 
-    def __init__(self, figure, fa_icons):
-        super().__init__(figure=figure, fa_icons=fa_icons)
+    def __init__(self, figure):
+        super().__init__(figure=figure)
 
         self._last_right_click_pos = None
         self._mouse_down: bool = False
@@ -180,21 +180,6 @@ class StandardRightClickMenu(Popup):
                         # menu item was clicked and the desired controller isn't the current one
                         self.get_subplot().controller = name
 
-                imgui.end_menu()
-
-            # renderer blend modes
-            if imgui.begin_menu("Blend mode"):
-                for blend_mode in sorted(
-                    self.get_subplot().renderer._blenders_available.keys()
-                ):
-                    clicked, _ = imgui.menu_item(
-                        label=blend_mode,
-                        shortcut="",
-                        p_selected=self.get_subplot().renderer.blend_mode == blend_mode,
-                    )
-
-                    if clicked:
-                        self.get_subplot().renderer.blend_mode = blend_mode
                 imgui.end_menu()
 
             imgui.end_popup()

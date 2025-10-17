@@ -26,8 +26,8 @@ class GraphicMethodsMixin:
     def add_image(
         self,
         data: Any,
-        vmin: int = None,
-        vmax: int = None,
+        vmin: float = None,
+        vmax: float = None,
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
@@ -44,11 +44,11 @@ class GraphicMethodsMixin:
             array-like, usually numpy.ndarray, must support ``memoryview()``
             | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
+        vmin: float, optional
+            minimum value for color scaling, estimated from data if not provided
 
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
+        vmax: float, optional
+            maximum value for color scaling, estimated from data if not provided
 
         cmap: str, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
@@ -83,13 +83,113 @@ class GraphicMethodsMixin:
             **kwargs,
         )
 
+    def add_image_volume(
+        self,
+        data: Any,
+        mode: str = "mip",
+        vmin: float = None,
+        vmax: float = None,
+        cmap: str = "plasma",
+        interpolation: str = "linear",
+        cmap_interpolation: str = "linear",
+        plane: tuple[float, float, float, float] = (0, 0, -1, 0),
+        threshold: float = 0.5,
+        step_size: float = 1.0,
+        substep_size: float = 0.1,
+        emissive: str | tuple | numpy.ndarray = (0, 0, 0),
+        shininess: int = 30,
+        isolated_buffer: bool = True,
+        **kwargs,
+    ) -> ImageVolumeGraphic:
+        """
+
+
+        Parameters
+        ----------
+        data: array-like
+            array-like, usually numpy.ndarray, must support ``memoryview()``.
+            Shape must be [n_planes, n_rows, n_cols] for grayscale, or [n_planes, n_rows, n_cols, 3 | 4] for RGB(A)
+
+        mode: str, default "ray"
+            render mode, one of "mip", "minip", "iso" or "slice"
+
+        vmin: float
+            lower contrast limit
+
+        vmax: float
+            upper contrast limit
+
+        cmap: str, default "plasma"
+            colormap for grayscale volumes
+
+        interpolation: str, default "linear"
+            interpolation method for sampling pixels
+
+        cmap_interpolation: str, default "linear"
+            interpolation method for sampling from colormap
+
+        plane: (float, float, float, float), default (0, 0, -1, 0)
+            Slice volume at this plane. Sets (a, b, c, d) in the equation the defines a plane: ax + by + cz + d = 0.
+            Used only if `mode` = "slice"
+
+        threshold : float, default 0.5
+            The threshold texture value at which the surface is rendered.
+            Used only if `mode` = "iso"
+
+        step_size : float, default 1.0
+            The size of the initial ray marching step for the initial surface finding. Smaller values will result in
+            more accurate surfaces but slower rendering.
+            Used only if `mode` = "iso"
+
+        substep_size : float, default 0.1
+            The size of the raymarching step for the refined surface finding. Smaller values will result in more
+            accurate surfaces but slower rendering.
+            Used only if `mode` = "iso"
+
+        emissive : Color, default (0, 0, 0, 1)
+            The emissive color of the surface. I.e. the color that the object emits even when not lit by a light
+            source. This color is added to the final color and unaffected by lighting. The alpha channel is ignored.
+            Used only if `mode` = "iso"
+
+        shininess : int, default 30
+            How shiny the specular highlight is; a higher value gives a sharper highlight.
+            Used only if `mode` = "iso"
+
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then set the data, useful if the
+            data arrays are ready-only such as memmaps. If False, the input array is itself used as the
+            buffer - useful if the array is large.
+
+        kwargs
+            additional keyword arguments passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            ImageVolumeGraphic,
+            data,
+            mode,
+            vmin,
+            vmax,
+            cmap,
+            interpolation,
+            cmap_interpolation,
+            plane,
+            threshold,
+            step_size,
+            substep_size,
+            emissive,
+            shininess,
+            isolated_buffer,
+            **kwargs,
+        )
+
     def add_line_collection(
         self,
         data: Union[numpy.ndarray, List[numpy.ndarray]],
         thickness: Union[float, Sequence[float]] = 2.0,
         colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
         uniform_colors: bool = False,
-        alpha: float = 1.0,
         cmap: Union[Sequence[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
@@ -121,9 +221,6 @@ class GraphicMethodsMixin:
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
-
-        alpha: float, optional
-            alpha value for colors, if colors is a ``str``
 
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
@@ -162,7 +259,6 @@ class GraphicMethodsMixin:
             thickness,
             colors,
             uniform_colors,
-            alpha,
             cmap,
             cmap_transform,
             name,
@@ -180,7 +276,6 @@ class GraphicMethodsMixin:
         thickness: float = 2.0,
         colors: Union[str, numpy.ndarray, Sequence] = "w",
         uniform_color: bool = False,
-        alpha: float = 1.0,
         cmap: str = None,
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
         isolated_buffer: bool = True,
@@ -210,9 +305,6 @@ class GraphicMethodsMixin:
             if True, uses a uniform buffer for the line color,
             basically saves GPU VRAM when the entire line has a single color
 
-        alpha: float, optional, default 1.0
-            alpha value for the colors
-
         cmap: str, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
@@ -235,7 +327,6 @@ class GraphicMethodsMixin:
             thickness,
             colors,
             uniform_color,
-            alpha,
             cmap,
             cmap_transform,
             isolated_buffer,
@@ -248,7 +339,6 @@ class GraphicMethodsMixin:
         data: List[numpy.ndarray],
         thickness: Union[float, Iterable[float]] = 2.0,
         colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
-        alpha: float = 1.0,
         cmap: Union[Iterable[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
@@ -282,9 +372,6 @@ class GraphicMethodsMixin:
             | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
             | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
             | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
-
-        alpha: float, optional
-            alpha value for colors, if colors is a ``str``
 
         cmap: Iterable of str or str, optional
             | if ``str``, single cmap will be used for all lines
@@ -329,7 +416,6 @@ class GraphicMethodsMixin:
             data,
             thickness,
             colors,
-            alpha,
             cmap,
             cmap_transform,
             name,
@@ -348,7 +434,6 @@ class GraphicMethodsMixin:
         data: Any,
         colors: str | numpy.ndarray | tuple[float] | list[float] | list[str] = "w",
         uniform_color: bool = False,
-        alpha: float = 1.0,
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
         isolated_buffer: bool = True,
@@ -374,9 +459,6 @@ class GraphicMethodsMixin:
         uniform_color: bool, default False
             if True, uses a uniform buffer for the scatter point colors. Useful if you need to
             save GPU VRAM when all points have the same color.
-
-        alpha: float, optional, default 1.0
-            alpha value for the colors
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
@@ -410,7 +492,6 @@ class GraphicMethodsMixin:
             data,
             colors,
             uniform_color,
-            alpha,
             cmap,
             cmap_transform,
             isolated_buffer,

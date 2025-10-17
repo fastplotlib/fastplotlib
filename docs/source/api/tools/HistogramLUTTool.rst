@@ -20,12 +20,14 @@ Properties
 .. autosummary::
     :toctree: HistogramLUTTool_api
 
+    HistogramLUTTool.alpha
+    HistogramLUTTool.alpha_mode
     HistogramLUTTool.axes
     HistogramLUTTool.block_events
     HistogramLUTTool.cmap
     HistogramLUTTool.deleted
     HistogramLUTTool.event_handlers
-    HistogramLUTTool.image_graphic
+    HistogramLUTTool.images
     HistogramLUTTool.name
     HistogramLUTTool.offset
     HistogramLUTTool.right_click_menu
@@ -44,7 +46,6 @@ Methods
     HistogramLUTTool.add_axes
     HistogramLUTTool.add_event_handler
     HistogramLUTTool.clear_event_handlers
-    HistogramLUTTool.disconnect_image_graphic
     HistogramLUTTool.remove_event_handler
     HistogramLUTTool.rotate
     HistogramLUTTool.set_data

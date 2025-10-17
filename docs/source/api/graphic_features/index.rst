@@ -18,6 +18,14 @@ Graphic Features
     ImageVmax
     ImageInterpolation
     ImageCmapInterpolation
+    TextureArrayVolume
+    VolumeRenderMode
+    VolumeIsoThreshold
+    VolumeIsoStepSize
+    VolumeIsoSubStepSize
+    VolumeIsoEmissive
+    VolumeIsoShininess
+    VolumeSlicePlane
     TextData
     FontSize
     TextFaceColor
@@ -29,6 +37,8 @@ Graphic Features
     Name
     Offset
     Rotation
+    Alpha
+    AlphaMode
     Visible
     Deleted
     GraphicFeatureEvent

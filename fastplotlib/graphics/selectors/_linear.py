@@ -5,6 +5,7 @@ from typing import Sequence
 import numpy as np
 import pygfx
 
+from ...utils.enums import RenderQueue
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import LinearSelectionFeature
@@ -145,17 +146,34 @@ class LinearSelector(BaseSelector):
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=line_data),
-            material=material(thickness=thickness, color=edge_color, pick_write=True),
+            material=material(
+                thickness=thickness,
+                color=edge_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
+            ),
         )
 
         self.line_outer = pygfx.Line(
             geometry=pygfx.Geometry(positions=line_data),
             material=material(
-                thickness=thickness + 6, color=self.colors_outer, pick_write=True
+                thickness=thickness + 6,
+                color=self.colors_outer,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
             ),
         )
 
-        line_inner.world.z = self.line_outer.world.z + 1
+        # Inner line goes on top of the outer line
+        line_inner.render_order = 1
 
         world_object = pygfx.Group()
 

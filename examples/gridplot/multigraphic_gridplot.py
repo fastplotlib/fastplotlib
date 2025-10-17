@@ -17,7 +17,7 @@ from itertools import product
 figure = fpl.Figure(
     shape=(2, 2),
     names=[["image-overlay", "circles"], ["line-stack", "scatter"]],
-    size=(700, 560)
+    size=(700, 560),
 )
 
 img = iio.imread("imageio:coffee.png")
@@ -35,6 +35,7 @@ overlay[img[:, :, -1] > 200] = np.array([0.0, 0.0, 1.0, 0.6]).astype(np.float32)
 
 # add overlay to image
 figure["image-overlay"].add_image(data=overlay)
+
 
 # generate some circles
 def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
@@ -55,10 +56,10 @@ for center in product(range(0, spatial_dims[0], 15), range(0, spatial_dims[1], 1
 
 # things like class labels, cluster labels, etc.
 cmap_transform = [
-    0, 1, 1, 2,
-    0, 0, 1, 1,
-    2, 2, 8, 3,
-    1, 9, 1, 5
+    [0, 1, 1, 2],
+    [0, 0, 1, 1],
+    [2, 2, 8, 3],
+    [1, 9, 1, 5],
 ]
 
 # add an image to overlay the circles on
@@ -70,10 +71,10 @@ figure["circles"].add_image(data=img2, cmap="gray")
 figure["circles"].add_line_collection(
     circles,
     cmap="tab10",
-    cmap_transform=cmap_transform,
+    cmap_transform=np.asarray(cmap_transform).ravel(),
     thickness=3,
     alpha=0.5,
-    name="circles-graphic"
+    name="circles-graphic",
 )
 
 # move the circles graphic so that it is centered over the image
@@ -115,4 +116,3 @@ figure.show()
 if __name__ == "__main__":
     print(__doc__)
     fpl.loop.run()
-

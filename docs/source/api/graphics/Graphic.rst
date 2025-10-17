@@ -20,6 +20,8 @@ Properties
 .. autosummary::
     :toctree: Graphic_api
 
+    Graphic.alpha
+    Graphic.alpha_mode
     Graphic.axes
     Graphic.block_events
     Graphic.deleted

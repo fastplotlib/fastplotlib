@@ -1,4 +1,5 @@
 from math import ceil
+from typing import Sequence
 import weakref
 
 import numpy as np
@@ -6,7 +7,7 @@ import numpy as np
 import pygfx
 
 from ..utils import subsample_array
-from ..graphics import LineGraphic, ImageGraphic, TextGraphic
+from ..graphics import LineGraphic, ImageGraphic, ImageVolumeGraphic, TextGraphic
 from ..graphics.utils import pause_events
 from ..graphics._base import Graphic
 from ..graphics.selectors import LinearRegionSelector
@@ -29,28 +30,58 @@ class HistogramLUTTool(Graphic):
     def __init__(
         self,
         data: np.ndarray,
-        image_graphic: ImageGraphic,
+        images: (
+            ImageGraphic
+            | ImageVolumeGraphic
+            | Sequence[ImageGraphic | ImageVolumeGraphic]
+        ),
         nbins: int = 100,
         flank_divisor: float = 5.0,
         **kwargs,
     ):
         """
+        HistogramLUT tool that can be used to control the vmin, vmax of ImageGraphics or ImageVolumeGraphics.
+        If used to control multiple images or image volumes it is assumed that they share a representation of
+        the same data, and that their histogram, vmin, and vmax are identical. For example, displaying a
+        ImageVolumeGraphic and several images that represent slices of the same volume data.
 
         Parameters
         ----------
-        data
-        image_graphic
+        data: np.ndarray
+
+        images: ImageGraphic | ImageVolumeGraphic | tuple[ImageGraphic | ImageVolumeGraphic]
+
         nbins: int, defaut 100.
             Total number of bins used in the histogram
+
         flank_divisor: float, default 5.0.
             Fraction of empty histogram bins on the tails of the distribution set `np.inf` for no flanks
-        kwargs
+
+        kwargs: passed to ``Graphic``
+
         """
         super().__init__(**kwargs)
 
         self._nbins = nbins
         self._flank_divisor = flank_divisor
-        self._image_graphic = image_graphic
+
+        if isinstance(images, (ImageGraphic, ImageVolumeGraphic)):
+            images = (images,)
+        elif isinstance(images, Sequence):
+            if not all(
+                [isinstance(ig, (ImageGraphic, ImageVolumeGraphic)) for ig in images]
+            ):
+                raise TypeError(
+                    f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
+                    f"tuple or list or ImageGraphic | ImageVolumeGraphic"
+                )
+        else:
+            raise TypeError(
+                f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
+                f"tuple or list or ImageGraphic | ImageVolumeGraphic"
+            )
+
+        self._images = images
 
         self._data = weakref.proxy(data)
 
@@ -60,7 +91,9 @@ class HistogramLUTTool(Graphic):
 
         line_data = np.column_stack([hist_scaled, edges_flanked])
 
-        self._histogram_line = LineGraphic(line_data)
+        self._histogram_line = LineGraphic(
+            line_data, colors=(0.8, 0.8, 0.8), alpha_mode="solid", offset=(0, 0, -1)
+        )
 
         bounds = (edges[0] * self._scale_factor, edges[-1] * self._scale_factor)
         limits = (edges_flanked[0], edges_flanked[-1])
@@ -77,14 +110,14 @@ class HistogramLUTTool(Graphic):
             parent=self._histogram_line,
         )
 
+        self._vmin = self.images[0].vmin
+        self._vmax = self.images[0].vmax
+
         # there will be a small difference with the histogram edges so this makes them both line up exactly
         self._linear_region_selector.selection = (
-            self._image_graphic.vmin * self._scale_factor,
-            self._image_graphic.vmax * self._scale_factor,
+            self._vmin * self._scale_factor,
+            self._vmax * self._scale_factor,
         )
-
-        self._vmin = self.image_graphic.vmin
-        self._vmax = self.image_graphic.vmax
 
         vmin_str, vmax_str = self._get_vmin_vmax_str()
 
@@ -94,7 +127,8 @@ class HistogramLUTTool(Graphic):
             offset=(0, 0, 0),
             anchor="top-left",
             outline_color="black",
-            outline_thickness=1,
+            outline_thickness=0.5,
+            alpha_mode="solid",
         )
 
         self._text_vmin.world_object.material.pick_write = False
@@ -105,7 +139,8 @@ class HistogramLUTTool(Graphic):
             offset=(0, 0, 0),
             anchor="bottom-left",
             outline_color="black",
-            outline_thickness=1,
+            outline_thickness=0.5,
+            alpha_mode="solid",
         )
 
         self._text_vmax.world_object.material.pick_write = False
@@ -130,12 +165,13 @@ class HistogramLUTTool(Graphic):
             self._linear_region_handler, "selection"
         )
 
-        ig_events = _get_image_graphic_events(self.image_graphic)
+        ig_events = _get_image_graphic_events(self.images[0])
 
-        self.image_graphic.add_event_handler(self._image_cmap_handler, *ig_events)
+        for ig in self.images:
+            ig.add_event_handler(self._image_cmap_handler, *ig_events)
 
         # colorbar for grayscale images
-        if self.image_graphic.data.value.ndim != 3:
+        if self.images[0].cmap is not None:
             self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
             self._colorbar.add_event_handler(self._open_cmap_picker, "click")
 
@@ -162,13 +198,13 @@ class HistogramLUTTool(Graphic):
             data=colorbar_data,
             vmin=self.vmin,
             vmax=self.vmax,
-            cmap=self.image_graphic.cmap,
+            cmap=self.images[0].cmap,
             interpolation="linear",
             offset=(-55, edges_flanked[0], -1),
         )
 
         cbar.world_object.world.scale_x = 20
-        self._cmap = self.image_graphic.cmap
+        self._cmap = self.images[0].cmap
 
         return cbar
 
@@ -256,8 +292,9 @@ class HistogramLUTTool(Graphic):
         if self._colorbar is None:
             return
 
-        with pause_events(self.image_graphic):
-            self.image_graphic.cmap = name
+        with pause_events(*self.images):
+            for ig in self.images:
+                ig.cmap = name
 
             self._cmap = name
             self._colorbar.cmap = name
@@ -268,14 +305,15 @@ class HistogramLUTTool(Graphic):
 
     @vmin.setter
     def vmin(self, value: float):
-        with pause_events(self.image_graphic, self._linear_region_selector):
+        with pause_events(self._linear_region_selector, *self.images):
             # must use world coordinate values directly from selection()
             # otherwise the linear region bounds jump to the closest bin edges
             self._linear_region_selector.selection = (
                 value * self._scale_factor,
                 self._linear_region_selector.selection[1],
             )
-            self.image_graphic.vmin = value
+            for ig in self.images:
+                ig.vmin = value
 
         self._vmin = value
         if self._colorbar is not None:
@@ -291,7 +329,7 @@ class HistogramLUTTool(Graphic):
 
     @vmax.setter
     def vmax(self, value: float):
-        with pause_events(self.image_graphic, self._linear_region_selector):
+        with pause_events(self._linear_region_selector, *self.images):
             # must use world coordinate values directly from selection()
             # otherwise the linear region bounds jump to the closest bin edges
             self._linear_region_selector.selection = (
@@ -299,7 +337,8 @@ class HistogramLUTTool(Graphic):
                 value * self._scale_factor,
             )
 
-            self.image_graphic.vmax = value
+            for ig in self.images:
+                ig.vmax = value
 
         self._vmax = value
         if self._colorbar is not None:
@@ -326,7 +365,7 @@ class HistogramLUTTool(Graphic):
             self._linear_region_selector.limits = limits
             self._linear_region_selector.selection = bounds
         else:
-            with pause_events(self.image_graphic, self._linear_region_selector):
+            with pause_events(self._linear_region_selector, *self.images):
                 # don't change the current selection
                 self._linear_region_selector.limits = limits
 
@@ -336,7 +375,7 @@ class HistogramLUTTool(Graphic):
             self._colorbar.clear_event_handlers()
             self.world_object.remove(self._colorbar.world_object)
 
-        if self.image_graphic.data.value.ndim != 3:
+        if self.images[0].cmap is not None:
             self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
             self._colorbar.add_event_handler(self._open_cmap_picker, "click")
 
@@ -349,34 +388,39 @@ class HistogramLUTTool(Graphic):
         self._plot_area.auto_scale()
 
     @property
-    def image_graphic(self) -> ImageGraphic:
-        return self._image_graphic
+    def images(self) -> tuple[ImageGraphic | ImageVolumeGraphic]:
+        return self._images
 
-    @image_graphic.setter
-    def image_graphic(self, graphic):
-        if not isinstance(graphic, ImageGraphic):
+    @images.setter
+    def images(self, images):
+        if isinstance(images, (ImageGraphic, ImageVolumeGraphic)):
+            images = (images,)
+        elif isinstance(images, Sequence):
+            if not all(
+                [isinstance(ig, (ImageGraphic, ImageVolumeGraphic)) for ig in images]
+            ):
+                raise TypeError(
+                    f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
+                    f"tuple or list or ImageGraphic | ImageVolumeGraphic"
+                )
+        else:
             raise TypeError(
-                f"HistogramLUTTool can only use ImageGraphic types, you have passed: {type(graphic)}"
+                f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
+                f"tuple or list or ImageGraphic | ImageVolumeGraphic"
             )
 
-        if self._image_graphic is not None:
-            # cleanup events from current image graphic
-            ig_events = _get_image_graphic_events(self._image_graphic)
-            self._image_graphic.remove_event_handler(
-                self._image_cmap_handler, *ig_events
-            )
+        if self._images is not None:
+            for ig in self._images:
+                # cleanup events from current image graphics
+                ig_events = _get_image_graphic_events(ig)
+                ig.remove_event_handler(self._image_cmap_handler, *ig_events)
 
-        self._image_graphic = graphic
+        self._images = images
 
-        ig_events = _get_image_graphic_events(self._image_graphic)
+        ig_events = _get_image_graphic_events(self._images[0])
 
-        self.image_graphic.add_event_handler(self._image_cmap_handler, *ig_events)
-
-    def disconnect_image_graphic(self):
-        ig_events = _get_image_graphic_events(self._image_graphic)
-        self._image_graphic.remove_event_handler(self._image_cmap_handler, *ig_events)
-        del self._image_graphic
-        # self._image_graphic = None
+        for ig in self.images:
+            ig.add_event_handler(self._image_cmap_handler, *ig_events)
 
     def _open_cmap_picker(self, ev):
         # check if right click

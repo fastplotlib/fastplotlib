@@ -20,8 +20,8 @@ keywords = [
 requires-python = ">= 3.10"
 dependencies = [
     "numpy>=1.23.0",
-    "pygfx==0.12.0",
-    "wgpu>=0.20.0",
+    "pygfx==0.14",
+    "wgpu",          # Let pygfx constrain the wgpu version
     "cmap>=0.1.3",
     # (this comment keeps this list multiline in VSCode)
 ]
@@ -39,6 +39,7 @@ docs = [
     "imageio[ffmpeg]",
     "matplotlib",
     "scikit-learn",
+    "ome-zarr",
 ]
 notebook = [
     "jupyterlab",
@@ -54,8 +55,9 @@ tests = [
     "imageio[ffmpeg]",
     "scikit-learn",
     "tqdm",
+    "ome-zarr",
 ]
-imgui = ["imgui-bundle>=1.6.0,<1.92.0"]
+imgui = ["wgpu[imgui]"]
 dev = ["fastplotlib[docs,notebook,tests,imgui]"]
 
 [project.urls]

@@ -5,6 +5,7 @@ from typing import Iterable
 import numpy as np
 import pygfx
 
+from ..utils.enums import RenderQueue
 from ..graphics import Graphic
 from ..graphics.features import GraphicFeatureEvent
 from ..graphics import LineGraphic, ScatterGraphic, ImageGraphic
@@ -70,26 +71,34 @@ class LineLegendItem(LegendItem):
         # construct Line WorldObject
         data = np.array([[0, 0, 0], [3, 0, 0]], dtype=np.float32)
 
-        material = pygfx.LineMaterial
-
         self._line_world_object = pygfx.Line(
             geometry=pygfx.Geometry(positions=data),
-            material=material(thickness=8, color=self._color),
+            material=pygfx.LineMaterial(
+                alpha_mode="blend",
+                render_queue=RenderQueue.overlay,
+                thickness=8,
+                color=self._color,
+                depth_write=False,
+                depth_test=False,
+            ),
         )
 
         # self._line_world_object.world.x = position[0]
 
         self._label_world_object = pygfx.Text(
-            geometry=pygfx.TextGeometry(
-                text=str(label),
-                font_size=6,
-                screen_space=False,
-                anchor="middle-left",
-            ),
+            text=str(label),
+            font_size=6,
+            screen_space=False,
+            anchor="middle-left",
             material=pygfx.TextMaterial(
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.overlay,
                 color="w",
                 outline_color="w",
                 outline_thickness=0,
+                depth_write=False,
+                depth_test=False,
             ),
         )
 
@@ -101,7 +110,6 @@ class LineLegendItem(LegendItem):
         self._label_world_object.world.x = position[0] + 10
 
         self.world_object.world.y = position[1]
-        self.world_object.world.z = 2
 
         self.world_object.add_event_handler(
             partial(self._highlight_graphic, graphic), "click"
@@ -175,9 +183,17 @@ class Legend(Graphic):
         self._mesh = pygfx.Mesh(
             pygfx.box_geometry(50, 10, 1),
             pygfx.MeshBasicMaterial(
-                color=pygfx.Color([0.1, 0.1, 0.1, 1]), wireframe_thickness=10
+                alpha_mode="blend",
+                render_queue=RenderQueue.overlay,
+                color=pygfx.Color([0.1, 0.1, 0.1, 1]),
+                wireframe_thickness=10,
+                depth_write=False,
+                depth_test=False,
             ),
         )
+
+        # Plane gets rendered before text and line
+        self._mesh.render_order = -1
 
         self.world_object.add(self._mesh)
         self.world_object.add(self._legend_items_group)

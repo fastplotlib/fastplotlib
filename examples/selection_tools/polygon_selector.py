@@ -13,9 +13,7 @@ import fastplotlib as fpl
 from itertools import product
 
 # create a figure
-figure = fpl.Figure(
-    size=(700, 560)
-)
+figure = fpl.Figure(size=(700, 560))
 
 
 # generate some data
@@ -39,7 +37,9 @@ pos_xy = np.vstack(circles)
 line_collection = figure[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
 
 # add polygon selector to image graphic
-polygon_selector = line_collection.add_polygon_selector(fill_color="#ff00ff22", edge_color="#FFF", vertex_color="#FFF")
+polygon_selector = line_collection.add_polygon_selector(
+    fill_color="#ff00ff", edge_color="#FFF", vertex_color="#FFF"
+)
 
 
 # add event handler to highlight selected indices

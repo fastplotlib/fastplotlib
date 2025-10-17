@@ -61,12 +61,12 @@ def prep_environment():
     # Make that examples using rendercanvas.auto, will use the offscreen backend
     os.environ["RENDERCANVAS_FORCE_OFFSCREEN"] = "true"
     # Disable ppaa on the renderer by default. Otherwise all screenshots change when the ppaa shaders are updated.
-    os.environ["PYGFX_PPAA"] = "none"
+    os.environ["PYGFX_DEFAULT_PPAA"] = "none"
     try:
         yield
     finally:
         del os.environ["RENDERCANVAS_FORCE_OFFSCREEN"]
-        del os.environ["PYGFX_PPAA"]
+        del os.environ["PYGFX_DEFAULT_PPAA"]
 
 
 def test_that_we_are_on_lavapipe():
@@ -207,6 +207,6 @@ def update_diffs(module, is_similar, img, stored_img):
 
 if __name__ == "__main__":
     os.environ["RENDERCANVAS_FORCE_OFFSCREEN"] = "true"
-    os.environ["PYGFX_PPAA"] = "none"
+    os.environ["PYGFX_DEFAULT_PPAA"] = "none"
     test_examples_run("simple")
     test_example_screenshots("simple")

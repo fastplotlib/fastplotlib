@@ -1,6 +1,7 @@
 import numpy as np
 import pygfx
 
+from ..utils.enums import RenderQueue
 from ._rect import RectManager
 from ._utils import IMGUI_TOOLBAR_HEIGHT
 from ..utils.types import SelectorColorStates
@@ -37,7 +38,7 @@ Illustration:
 
 # wgsl shader snippet for SDF function that defines the resize handler, a lower right triangle.
 sdf_wgsl_resize_handle = """
-// hardcode square root of 2 
+// hardcode square root of 2
 let m_sqrt_2 = 1.4142135;
 
 // given a distance from an origin point, this defines the hypotenuse of a lower right triangle
@@ -171,16 +172,28 @@ class Frame:
         else:
             title_text = title
         self._title_graphic = TextGraphic(title_text, font_size=16, face_color="white")
+        m = self._title_graphic.world_object.material
+        m.alpha_mode = "blend"
+        m.render_queue = RenderQueue.background
+        m.depth_write = False
+        m.depth_test = False
         wobjects.append(self._title_graphic.world_object)
 
         # init mesh of size 1 to graphically represent rect
         geometry = pygfx.plane_geometry(1, 1)
-        material = pygfx.MeshBasicMaterial(color=self.plane_color.idle, pick_write=True)
+        material = pygfx.MeshBasicMaterial(
+            alpha_mode="blend",
+            render_queue=RenderQueue.background,
+            color=self.plane_color.idle,
+            depth_write=False,
+            depth_test=False,
+            pick_write=True,
+        )
         self._plane = pygfx.Mesh(geometry, material)
         wobjects.append(self._plane)
 
-        # otherwise text isn't visible
-        self._plane.world.z = 0.5
+        # Plane gets rendered before text and point
+        self._plane.render_order = -1
 
         # create resize handler at point (x1, y1)
         x1, y1 = self.extent[[1, 3]]
@@ -189,21 +202,21 @@ class Frame:
             # subtract 7 so that the bottom right corner of the triangle is at the center
             pygfx.Geometry(positions=[[x1 - 7, -y1 + 7, 0]]),
             pygfx.PointsMarkerMaterial(
+                alpha_mode="blend",
+                render_queue=RenderQueue.background,
                 color=self.resize_handle_color.idle,
                 marker="custom",
                 custom_sdf=sdf_wgsl_resize_handle,
                 size=12,
                 size_space="screen",
+                depth_write=False,
+                depth_test=False,
                 pick_write=True,
             ),
         )
 
         if not resizeable:
-            # set all color states to transparent if Frame isn't resizeable
-            c = (0, 0, 0, 0)
-            self._resize_handle.material.color = c
-            self._resize_handle.material.edge_width = 0
-            self.resize_handle_color = SelectorColorStates(c, c, c)
+            self._resize_handle.visible = False
 
         wobjects.append(self._resize_handle)
 

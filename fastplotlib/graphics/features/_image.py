@@ -13,8 +13,13 @@ from ...utils import (
 )
 
 
-# manages an array of 8192x8192 Textures representing chunks of an image
 class TextureArray(GraphicFeature):
+    """
+    Manages an array of Textures representing chunks of an image.
+
+    Creates multiple pygfx.Texture objects based on the GPU's max texture dimension limit.
+    """
+
     event_info_spec = [
         {
             "dict key": "key",
@@ -70,8 +75,6 @@ class TextureArray(GraphicFeature):
 
             self.buffer[buffer_index] = texture
 
-        self._shared: int = 0
-
     @property
     def value(self) -> np.ndarray:
         return self._value
@@ -98,10 +101,6 @@ class TextureArray(GraphicFeature):
         into individual Textures on the GPU
         """
         return self._col_indices
-
-    @property
-    def shared(self) -> int:
-        return self._shared
 
     def _fix_data(self, data):
         if data.ndim not in (2, 3):

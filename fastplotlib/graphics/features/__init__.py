@@ -16,6 +16,18 @@ from ._image import (
     ImageInterpolation,
     ImageCmapInterpolation,
 )
+from ._volume import (
+    TextureArrayVolume,
+    VolumeRenderMode,
+    VolumeIsoThreshold,
+    VolumeIsoStepSize,
+    VolumeIsoSubStepSize,
+    VolumeIsoEmissive,
+    VolumeIsoShininess,
+    VolumeSlicePlane,
+    VOLUME_RENDER_MODES,
+    create_volume_material_kwargs,
+)
 from ._base import (
     GraphicFeature,
     BufferManager,
@@ -36,7 +48,7 @@ from ._selection_features import (
     LinearRegionSelectionFeature,
     RectangleSelectionFeature,
 )
-from ._common import Name, Offset, Rotation, Visible, Deleted
+from ._common import Name, Offset, Rotation, Alpha, AlphaMode, Visible, Deleted
 
 
 __all__ = [
@@ -54,6 +66,14 @@ __all__ = [
     "ImageVmax",
     "ImageInterpolation",
     "ImageCmapInterpolation",
+    "TextureArrayVolume",
+    "VolumeRenderMode",
+    "VolumeIsoThreshold",
+    "VolumeIsoStepSize",
+    "VolumeIsoSubStepSize",
+    "VolumeIsoEmissive",
+    "VolumeIsoShininess",
+    "VolumeSlicePlane",
     "TextData",
     "FontSize",
     "TextFaceColor",
@@ -65,6 +85,8 @@ __all__ = [
     "Name",
     "Offset",
     "Rotation",
+    "Alpha",
+    "AlphaMode",
     "Visible",
     "Deleted",
     "GraphicFeatureEvent",
