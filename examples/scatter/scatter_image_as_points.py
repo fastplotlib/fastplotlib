@@ -2,7 +2,7 @@
 Scatter image as points
 =======================
 
-Display a scatter using an image as the points
+Display a scatter using an image as the points. These are also called sprites.
 """
 
 # test_example = true
