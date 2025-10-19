@@ -31,6 +31,7 @@ def make_data(z: int, n_rows: int, n_cols: int) -> np.ndarray:
 
     return data.T
 
+
 def check_texture_array(
     data: np.ndarray,
     ta: TextureArrayVolume,
@@ -68,9 +69,7 @@ def check_texture_array(
         data_row_start_index = chunk_row * MAX_TEXTURE_SIZE_3D
         data_col_start_index = chunk_col * MAX_TEXTURE_SIZE_3D
 
-        data_z_stop_index = min(
-            data.shape[0], data_z_start_index + MAX_TEXTURE_SIZE_3D
-        )
+        data_z_stop_index = min(data.shape[0], data_z_start_index + MAX_TEXTURE_SIZE_3D)
 
         data_row_stop_index = min(
             data.shape[1], data_row_start_index + MAX_TEXTURE_SIZE_3D
@@ -91,14 +90,14 @@ def check_set_slice(data, ta, zdim_slice, row_slice, col_slice):
     npt.assert_almost_equal(ta[zdim_slice, row_slice, col_slice], 1)
 
     # make sure other vals unchanged
-    npt.assert_almost_equal(ta[:zdim_slice.start], data[:zdim_slice.start])
-    npt.assert_almost_equal(ta[zdim_slice.stop:], data[zdim_slice.stop:])
+    npt.assert_almost_equal(ta[: zdim_slice.start], data[: zdim_slice.start])
+    npt.assert_almost_equal(ta[zdim_slice.stop :], data[zdim_slice.stop :])
 
-    npt.assert_almost_equal(ta[:, :row_slice.start], data[:, :row_slice.start])
-    npt.assert_almost_equal(ta[:, row_slice.stop:], data[:, row_slice.stop:])
+    npt.assert_almost_equal(ta[:, : row_slice.start], data[:, : row_slice.start])
+    npt.assert_almost_equal(ta[:, row_slice.stop :], data[:, row_slice.stop :])
 
-    npt.assert_almost_equal(ta[:, :, :col_slice.start], data[:, :, :col_slice.start])
-    npt.assert_almost_equal(ta[:, :, col_slice.stop:], data[:, :, col_slice.stop:])
+    npt.assert_almost_equal(ta[:, :, : col_slice.start], data[:, :, : col_slice.start])
+    npt.assert_almost_equal(ta[:, :, col_slice.stop :], data[:, :, col_slice.stop :])
 
 
 def make_image_volume_graphic(data) -> fpl.ImageVolumeGraphic:

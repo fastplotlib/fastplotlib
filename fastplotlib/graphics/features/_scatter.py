@@ -22,6 +22,7 @@ marker_names = {
     "<": "triangle_left",
     ">": "triangle_right",
     "v": "triangle_down",
+    "*": "asterisk6",
     # Unicode
     "●": "circle",
     "○": "ring",
@@ -30,7 +31,7 @@ marker_names = {
     "♥": "heart",
     "♠": "spade",
     "♣": "club",
-    "✳": "asterix",
+    "✳": "asterisk6",
     "▲": "triangle_up",
     "▼": "triangle_down",
     "◀": "triangle_left",
@@ -42,7 +43,7 @@ marker_names = {
     "♦️": "diamond",
     "💎": "diamond",
     "💍": "ring",
-    "✳️": "asterix",
+    "✳️": "asterisk6",
     "📍": "pin",
 }
 

@@ -212,8 +212,21 @@ class ScatterGraphic(PositionsGraphic):
 
                     geo_kwargs["markers"] = self._markers.buffer
 
+                if edge_colors is None:
+                    # interpret as no edge color
+                    edge_colors = (0, 0, 0, 0)
+
                 if uniform_edge_color:
+                    if not isinstance(edge_colors, (str, pygfx.Color)):
+                        if len(edge_colors) not in [3, 4]:
+                            raise TypeError(
+                                f"if `uniform_edge_color` is True, then `edge_color` must be a str, pygfx.Color, "
+                                f"or an RGB(A) tuple, list, array representation of a single color. You have passed: "
+                                f"{edge_colors}"
+                            )
+
                     self._edge_colors = UniformEdgeColor(edge_colors)
+                    material_kwargs["edge_color"] = self._edge_colors.value
                     material_kwargs["edge_color_mode"] = pygfx.ColorMode.uniform
                 else:
                     self._edge_colors = VertexColors(edge_colors, n_datapoints, property_name="edge_colors")
@@ -246,7 +259,8 @@ class ScatterGraphic(PositionsGraphic):
                         f"Your device limit is: {limit} but your image shape is: {image.shape}"
                     )
 
-                self._sprite_texture_array = TextureArray(image, property_name="image")
+                # create texture array with normalized image
+                self._sprite_texture_array = TextureArray(image / np.nanmax(image), property_name="image")
 
                 material_kwargs["sprite"] = self._sprite_texture_array.buffer[0, 0]
 
@@ -303,7 +317,10 @@ class ScatterGraphic(PositionsGraphic):
     @property
     def markers(self) -> str | VertexMarkers | None:
         """markers if mode is 'marker'"""
-        return self._markers
+        if isinstance(self._markers, VertexMarkers):
+            return self._markers
+        elif isinstance(self._markers, UniformMarker):
+            return self._markers.value
 
     @markers.setter
     def markers(self, value: str | np.ndarray[str] | Sequence[str]):
