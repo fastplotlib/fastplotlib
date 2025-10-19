@@ -22,7 +22,7 @@ from .utils import (
 )
 
 
-@pytest.mark.parametrize("marker", list("osD+x^v<>"))
+@pytest.mark.parametrize("marker", list("osD+x^v<>*"))
 def test_uniform_markers(marker):
     fig = fpl.Figure()
 
