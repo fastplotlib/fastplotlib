@@ -2,7 +2,8 @@
 Linear Selectors
 ================
 
-Example showing how to use a `LinearSelector` with lines and line collections.
+Example showing how to use a `LinearSelector` with lines and line collections. The linear selector is the yellow
+vertical line.
 """
 
 # test_example = true

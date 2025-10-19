@@ -64,9 +64,9 @@ class LinearSelectionFeature(GraphicFeature):
         elif self._axis == "y":
             dim = 1
 
-        for edge in selector._edges:
-            edge.geometry.positions.data[:, dim] = value
-            edge.geometry.positions.update_range()
+        edge = selector._edges[0]
+        edge.geometry.positions.data[:, dim] = value
+        edge.geometry.positions.update_range()
 
         self._value = value
 
@@ -152,10 +152,10 @@ class LinearRegionSelectionFeature(GraphicFeature):
             selector.fill.geometry.positions.data[mesh_masks.x_right] = value[1]
 
             # change x position of the left edge line
-            selector.edges[0].geometry.positions.data[:, 0] = value[0]
+            selector._edges[0].geometry.positions.data[:, 0] = value[0]
 
             # change x position of the right edge line
-            selector.edges[1].geometry.positions.data[:, 0] = value[1]
+            selector._edges[1].geometry.positions.data[:, 0] = value[1]
 
         elif self.axis == "y":
             # change bottom y position of the fill mesh
@@ -165,18 +165,18 @@ class LinearRegionSelectionFeature(GraphicFeature):
             selector.fill.geometry.positions.data[mesh_masks.y_top] = value[1]
 
             # change y position of the bottom edge line
-            selector.edges[0].geometry.positions.data[:, 1] = value[0]
+            selector._edges[0].geometry.positions.data[:, 1] = value[0]
 
             # change y position of the top edge line
-            selector.edges[1].geometry.positions.data[:, 1] = value[1]
+            selector._edges[1].geometry.positions.data[:, 1] = value[1]
 
         self._value = value
 
         # send changes to GPU
         selector.fill.geometry.positions.update_range()
 
-        selector.edges[0].geometry.positions.update_range()
-        selector.edges[1].geometry.positions.update_range()
+        selector._edges[0].geometry.positions.update_range()
+        selector._edges[1].geometry.positions.update_range()
 
         # send event
         if len(self._event_handlers) < 1:

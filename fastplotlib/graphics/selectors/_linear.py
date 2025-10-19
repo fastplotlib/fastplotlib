@@ -78,9 +78,10 @@ class LinearSelector(BaseSelector):
         limits: Sequence[float],
         axis: str = "x",
         parent: Graphic = None,
-        edge_color: str | Sequence[float] | np.ndarray = "w",
-        thickness: float = 2.5,
+        edge_color: str | Sequence[float] | np.ndarray = "yellow",
+        thickness: float = 1.0,
         arrow_keys_modifier: str = "Shift",
+        extra_width: float = 14.0,
         name: str = None,
     ):
         """
@@ -110,6 +111,9 @@ class LinearSelector(BaseSelector):
 
         edge_color: str | tuple | np.ndarray, default "w"
             color of the selector
+
+        extra_width: float, default 14.0
+            the width around the selector which is responsive to mouse events, in logical pixels
 
         name: str, optional
             name of linear selector
@@ -141,8 +145,6 @@ class LinearSelector(BaseSelector):
 
         material = pygfx.LineInfiniteSegmentMaterial
 
-        self.colors_outer = pygfx.Color([0.3, 0.3, 0.3, 1.0])
-
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=line_data),
@@ -158,11 +160,12 @@ class LinearSelector(BaseSelector):
             ),
         )
 
-        self.line_outer = pygfx.Line(
-            geometry=pygfx.Geometry(positions=line_data),
+        line_outer = pygfx.Line(
+            geometry=line_inner.geometry,
             material=material(
-                thickness=thickness + 6,
-                color=self.colors_outer,
+                thickness=thickness + extra_width,
+                color=pygfx.Color([0, 0, 0]),
+                opacity=0,
                 alpha_mode="blend",
                 aa=True,
                 render_queue=RenderQueue.selector,
@@ -177,7 +180,7 @@ class LinearSelector(BaseSelector):
 
         world_object = pygfx.Group()
 
-        world_object.add(self.line_outer)
+        world_object.add(line_outer)
         world_object.add(line_inner)
 
         if axis == "x":
@@ -188,8 +191,9 @@ class LinearSelector(BaseSelector):
         # init base selector
         BaseSelector.__init__(
             self,
-            edges=(line_inner, self.line_outer),
-            hover_responsive=(line_inner, self.line_outer),
+            edges=(line_inner,),
+            outer_edges=(line_outer,),
+            hover_responsive=(line_inner,),
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
             parent=parent,
