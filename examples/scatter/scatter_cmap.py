@@ -3,6 +3,7 @@ Scatter Colormap
 ================
 
 Example showing cmap change for scatter plot.
+
 """
 
 # test_example = false
