@@ -33,7 +33,7 @@ class ScatterGraphic(PositionsGraphic):
         "edge_width": (EdgeWidth, None),
         "image": (TextureArray, None),
         "size_space": SizeSpace,
-        "point_rotations": (UniformRotations, VertexRotations, None)
+        "point_rotations": (UniformRotations, VertexRotations, None),
     }
 
     def __init__(
@@ -202,7 +202,9 @@ class ScatterGraphic(PositionsGraphic):
 
                 if uniform_marker:
                     if not isinstance(markers, str):
-                        raise TypeError("must pass a single <str> marker if uniform_marker is True")
+                        raise TypeError(
+                            "must pass a single <str> marker if uniform_marker is True"
+                        )
 
                     self._markers = UniformMarker(markers)
 
@@ -232,7 +234,9 @@ class ScatterGraphic(PositionsGraphic):
                     material_kwargs["edge_color"] = self._edge_colors.value
                     material_kwargs["edge_color_mode"] = pygfx.ColorMode.uniform
                 else:
-                    self._edge_colors = VertexColors(edge_colors, n_datapoints, property_name="edge_colors")
+                    self._edge_colors = VertexColors(
+                        edge_colors, n_datapoints, property_name="edge_colors"
+                    )
                     material_kwargs["edge_color_mode"] = pygfx.ColorMode.vertex
                     geo_kwargs["edge_colors"] = self._edge_colors.buffer
 
@@ -263,7 +267,9 @@ class ScatterGraphic(PositionsGraphic):
                     )
 
                 # create texture array with normalized image
-                self._image = TextureArray(image / np.nanmax(image), property_name="image")
+                self._image = TextureArray(
+                    image / np.nanmax(image), property_name="image"
+                )
 
                 material_kwargs["sprite"] = self._image.buffer[0, 0]
 
@@ -287,14 +293,16 @@ class ScatterGraphic(PositionsGraphic):
 
         match point_rotation_mode:
             case pygfx.enums.RotationMode.vertex:
-                self._point_rotations = VertexRotations(point_rotations, n_datapoints=n_datapoints)
+                self._point_rotations = VertexRotations(
+                    point_rotations, n_datapoints=n_datapoints
+                )
                 geo_kwargs["rotations"] = self._point_rotations.buffer
 
             case pygfx.enums.RotationMode.uniform:
                 self._point_rotations = UniformRotations(point_rotations)
 
             case pygfx.enums.RotationMode.curve:
-                pass # nothing special for curve rotation mode
+                pass  # nothing special for curve rotation mode
 
             case _:
                 raise ValueError(
@@ -328,7 +336,9 @@ class ScatterGraphic(PositionsGraphic):
     @markers.setter
     def markers(self, value: str | np.ndarray[str] | Sequence[str]):
         if self.mode != "markers":
-            raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'markers' to set the markers")
+            raise AttributeError(
+                f"scatter plot is: {self.mode}. The mode must be 'markers' to set the markers"
+            )
         if isinstance(self._markers, VertexMarkers):
             self._markers[:] = value
         elif isinstance(self._markers, UniformMarker):
@@ -347,7 +357,9 @@ class ScatterGraphic(PositionsGraphic):
     @edge_colors.setter
     def edge_colors(self, value: str | np.ndarray | Sequence[str] | Sequence[float]):
         if self.mode != "markers":
-            raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'markers' to set the edge_colors")
+            raise AttributeError(
+                f"scatter plot is: {self.mode}. The mode must be 'markers' to set the edge_colors"
+            )
 
         if isinstance(self._edge_colors, VertexColors):
             self._edge_colors[:] = value
@@ -366,7 +378,9 @@ class ScatterGraphic(PositionsGraphic):
     @edge_width.setter
     def edge_width(self, value: float):
         if self.mode != "markers":
-            raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'markers' to set the edge_width")
+            raise AttributeError(
+                f"scatter plot is: {self.mode}. The mode must be 'markers' to set the edge_width"
+            )
 
         self._edge_width.set_value(self, value)
 
@@ -407,7 +421,9 @@ class ScatterGraphic(PositionsGraphic):
     @image.setter
     def image(self, data):
         if self.mode != "image":
-            raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'image' to set the image")
+            raise AttributeError(
+                f"scatter plot is: {self.mode}. The mode must be 'image' to set the image"
+            )
 
         self._image[:] = data
 

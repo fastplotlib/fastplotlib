@@ -43,7 +43,9 @@ class Offset(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: np.ndarray | Sequence[float], property_name: str = "offset"):
+    def __init__(
+        self, value: np.ndarray | Sequence[float], property_name: str = "offset"
+    ):
         """Offset position of the graphic, [x, y, z]"""
 
         self._validate(value)
@@ -88,7 +90,9 @@ class Rotation(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: np.ndarray | Sequence[float], property_name: str = "rotation"):
+    def __init__(
+        self, value: np.ndarray | Sequence[float], property_name: str = "rotation"
+    ):
         """Graphic rotation quaternion"""
 
         self._validate(value)

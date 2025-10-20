@@ -57,6 +57,7 @@ def user_input_to_marker(name):
 
     return resolved_name
 
+
 def validate_user_markers_array(markers):
     # make sure all markers are valid
     # need to validate before converting to ints because
@@ -65,12 +66,14 @@ def validate_user_markers_array(markers):
     for m in unique_values:
         user_input_to_marker(m)
 
+
 # fast vectorized function to convert array of user markers to the standardized strings
 # TODO: can probably use search-sorted for this too
 vectorized_user_markers_to_std_markers = np.vectorize(marker_names.get, otypes=["<U14"])
 
 # maps the human-readable marker name to the integers stored in the buffer
 marker_int_mapping = dict(pygfx.MarkerInt.__members__)
+
 
 # search sorted is the fastest way to map an array of str -> array of int
 # see: https://github.com/pygfx/pygfx/issues/1215
@@ -85,7 +88,10 @@ def init_searchsorted(markers_mapping):
 
     return keys, vals
 
-marker_int_searchsorted_keys, marker_int_searchsorted_vals = init_searchsorted(marker_int_mapping)
+
+marker_int_searchsorted_keys, marker_int_searchsorted_vals = init_searchsorted(
+    marker_int_mapping
+)
 
 
 def searchsorted_markers_to_int_array(markers_str_array: np.ndarray[str]):
@@ -108,7 +114,12 @@ class VertexMarkers(BufferManager):
         },
     ]
 
-    def __init__(self, markers: str | Sequence[str] | np.ndarray, n_datapoints: int, property_name: str = "markers"):
+    def __init__(
+        self,
+        markers: str | Sequence[str] | np.ndarray,
+        n_datapoints: int,
+        property_name: str = "markers",
+    ):
         """
         Manages the markers buffer for the scatter points. Supports fancy indexing.
         """
@@ -126,7 +137,9 @@ class VertexMarkers(BufferManager):
 
         marker_str_length = max(map(len, list(pygfx.MarkerShape)))
 
-        self._markers_readable_array = np.empty(n_datapoints, dtype=f"<U{marker_str_length}")
+        self._markers_readable_array = np.empty(
+            n_datapoints, dtype=f"<U{marker_str_length}"
+        )
 
         if isinstance(markers, str):
             # all markers in the array are identical, so set the entire array
@@ -136,11 +149,17 @@ class VertexMarkers(BufferManager):
         elif isinstance(markers, (np.ndarray, tuple, list)):
             # distinct marker for each point
             # first vectorized map from user marker strings to "standard" marker strings
-            self._markers_readable_array = vectorized_user_markers_to_std_markers(markers)
+            self._markers_readable_array = vectorized_user_markers_to_std_markers(
+                markers
+            )
             # map standard marker strings to integer array
-            markers_int_array[:] = searchsorted_markers_to_int_array(self._markers_readable_array)
+            markers_int_array[:] = searchsorted_markers_to_int_array(
+                self._markers_readable_array
+            )
 
-        super().__init__(markers_int_array, isolated_buffer=False, property_name=property_name)
+        super().__init__(
+            markers_int_array, isolated_buffer=False, property_name=property_name
+        )
 
     @property
     def value(self) -> np.ndarray[str]:
@@ -170,7 +189,9 @@ class VertexMarkers(BufferManager):
             validate_user_markers_array(value)
 
             new_markers_human_readable = vectorized_user_markers_to_std_markers(value)
-            new_markers_int = searchsorted_markers_to_int_array(new_markers_human_readable)
+            new_markers_int = searchsorted_markers_to_int_array(
+                new_markers_human_readable
+            )
 
             self._markers_readable_array[key] = new_markers_human_readable
             self.value_int[key] = new_markers_int
@@ -294,7 +315,11 @@ class UniformEdgeColor(GraphicFeature):
         },
     ]
 
-    def __init__(self, edge_color: str | np.ndarray | pygfx.Color | Sequence[float], property_name: str = "edge_colors"):
+    def __init__(
+        self,
+        edge_color: str | np.ndarray | pygfx.Color | Sequence[float],
+        property_name: str = "edge_colors",
+    ):
         """Manages evented uniform buffer for scatter marker edge_color"""
 
         self._value = pygfx.Color(edge_color)
@@ -305,7 +330,9 @@ class UniformEdgeColor(GraphicFeature):
         return self._value
 
     @block_reentrance
-    def set_value(self, graphic, value: str | np.ndarray | pygfx.Color | Sequence[float]):
+    def set_value(
+        self, graphic, value: str | np.ndarray | pygfx.Color | Sequence[float]
+    ):
         graphic.world_object.material.edge_color = pygfx.Color(value)
         self._value = value
 
@@ -388,13 +415,15 @@ class VertexRotations(BufferManager):
         rotations: int | float | np.ndarray | Sequence[int | float],
         n_datapoints: int,
         isolated_buffer: bool = True,
-        property_name: str = "point_rotations"
+        property_name: str = "point_rotations",
     ):
         """
         Manages rotations buffer of scatter points.
         """
         sizes = self._fix_sizes(rotations, n_datapoints)
-        super().__init__(data=sizes, isolated_buffer=isolated_buffer, property_name=property_name)
+        super().__init__(
+            data=sizes, isolated_buffer=isolated_buffer, property_name=property_name
+        )
 
     def _fix_sizes(
         self,
@@ -460,13 +489,15 @@ class VertexPointSizes(BufferManager):
         sizes: int | float | np.ndarray | Sequence[int | float],
         n_datapoints: int,
         isolated_buffer: bool = True,
-        property_name: str = "sizes"
+        property_name: str = "sizes",
     ):
         """
         Manages sizes buffer of scatter points.
         """
         sizes = self._fix_sizes(sizes, n_datapoints)
-        super().__init__(data=sizes, isolated_buffer=isolated_buffer, property_name=property_name)
+        super().__init__(
+            data=sizes, isolated_buffer=isolated_buffer, property_name=property_name
+        )
 
     def _fix_sizes(
         self,

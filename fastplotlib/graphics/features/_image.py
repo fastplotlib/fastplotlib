@@ -154,7 +154,9 @@ class TextureArray(GraphicFeature):
         for texture in self.buffer.ravel():
             texture.update_range((0, 0, 0), texture.size)
 
-        event = GraphicFeatureEvent(self._property_name, info={"key": key, "value": value})
+        event = GraphicFeatureEvent(
+            self._property_name, info={"key": key, "value": value}
+        )
         self._call_event_handlers(event)
 
     def __len__(self):

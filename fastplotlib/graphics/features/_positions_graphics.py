@@ -57,7 +57,9 @@ class VertexColors(BufferManager):
         """
         data = parse_colors(colors, n_colors)
 
-        super().__init__(data=data, isolated_buffer=isolated_buffer, property_name=property_name)
+        super().__init__(
+            data=data, isolated_buffer=isolated_buffer, property_name=property_name
+        )
 
     @block_reentrance
     def __setitem__(
@@ -153,7 +155,11 @@ class UniformColor(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: str | pygfx.Color | np.ndarray | Sequence[float], property_name: str = "colors"):
+    def __init__(
+        self,
+        value: str | pygfx.Color | np.ndarray | Sequence[float],
+        property_name: str = "colors",
+    ):
         """Manages uniform color for line or scatter material"""
 
         self._value = pygfx.Color(value)
@@ -164,7 +170,9 @@ class UniformColor(GraphicFeature):
         return self._value
 
     @block_reentrance
-    def set_value(self, graphic, value: str | pygfx.Color | np.ndarray | Sequence[float]):
+    def set_value(
+        self, graphic, value: str | pygfx.Color | np.ndarray | Sequence[float]
+    ):
         value = pygfx.Color(value)
         graphic.world_object.material.color = value
         self._value = value
@@ -223,14 +231,18 @@ class VertexPositions(BufferManager):
         },
     ]
 
-    def __init__(self, data: Any, isolated_buffer: bool = True, property_name: str = "data"):
+    def __init__(
+        self, data: Any, isolated_buffer: bool = True, property_name: str = "data"
+    ):
         """
         Manages the vertex positions buffer shown in the graphic.
         Supports fancy indexing if the data array also supports it.
         """
 
         data = self._fix_data(data)
-        super().__init__(data, isolated_buffer=isolated_buffer, property_name=property_name)
+        super().__init__(
+            data, isolated_buffer=isolated_buffer, property_name=property_name
+        )
 
     def _fix_data(self, data):
         # data = to_gpu_supported_dtype(data)
@@ -289,7 +301,7 @@ class VertexCmap(BufferManager):
         vertex_colors: VertexColors,
         cmap_name: str | None,
         transform: np.ndarray | None,
-        property_name: str = "colors"
+        property_name: str = "colors",
     ):
         """
         Sliceable colormap feature, manages a VertexColors instance and
