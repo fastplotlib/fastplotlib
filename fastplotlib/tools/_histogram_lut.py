@@ -106,7 +106,6 @@ class HistogramLUTTool(Graphic):
             size=size,
             center=origin[0],
             axis="y",
-            edge_thickness=8,
             parent=self._histogram_line,
         )
 

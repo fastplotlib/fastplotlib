@@ -184,6 +184,7 @@ class ScatterGraphic(PositionsGraphic):
         material_kwargs = dict(
             pick_write=True,
             aa=aa,
+            depth_compare="<=",
         )
 
         self._markers: VertexMarkers | UniformMarker | None = None
