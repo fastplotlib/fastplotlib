@@ -15,11 +15,33 @@ from fastplotlib.graphics.features import (
 )
 
 from fastplotlib.graphics.features._scatter import marker_names
+from fastplotlib.graphics.features import GraphicFeatureEvent
 from .utils import (
     generate_positions_spiral_data,
     generate_color_inputs,
     MULTI_COLORS_TRUTH,
 )
+
+
+EVENT_RETURN_VALUE: GraphicFeatureEvent = None
+
+
+def event_handler(ev):
+    global EVENT_RETURN_VALUE
+    EVENT_RETURN_VALUE = ev
+
+
+def check_event(graphic, feature, value):
+    global EVENT_RETURN_VALUE
+    assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)
+    assert EVENT_RETURN_VALUE.type == feature
+    assert EVENT_RETURN_VALUE.graphic == graphic
+    assert EVENT_RETURN_VALUE.target == graphic.world_object
+    if isinstance(EVENT_RETURN_VALUE.info["value"], float):
+        # floating point error
+        npt.assert_almost_equal(EVENT_RETURN_VALUE.info["value"], value)
+    else:
+        assert EVENT_RETURN_VALUE.info["value"] == value
 
 
 @pytest.mark.parametrize("marker", list("osD+x^v<>*"))
@@ -38,6 +60,14 @@ def test_uniform_markers(marker):
 
     assert scatter.markers == marker_full_name
     assert scatter.world_object.material.marker == marker_full_name
+
+    # test changes and event
+    scatter.add_event_handler(event_handler, "markers")
+    scatter.markers = "o"
+    assert scatter.markers == pygfx.MarkerShape.circle
+    assert scatter.world_object.material.marker == pygfx.MarkerShape.circle
+
+    check_event(scatter, "markers", pygfx.MarkerShape.circle)
 
 
 @pytest.mark.parametrize("to_type", [list, tuple, np.array])
@@ -181,3 +211,23 @@ def test_sprite():
 
     npt.assert_almost_equal(scatter.image.value, image)
     npt.assert_almost_equal(scatter.image.buffer[0, 0].data, image)
+
+    # test changes and event
+
+    image2 = np.array(
+        [
+            [0, 1, 0],
+            [1, 0, 1],
+            [0, 1, 0]
+        ]
+    )
+
+    scatter.add_event_handler(event_handler, "image")
+
+    scatter.image = image2
+    npt.assert_almost_equal(scatter.image.buffer[0, 0].data, image2)
+
+    assert EVENT_RETURN_VALUE.graphic is scatter
+    assert EVENT_RETURN_VALUE.target is scatter.world_object
+    assert EVENT_RETURN_VALUE.type == "image"
+    npt.assert_almost_equal(EVENT_RETURN_VALUE.info["value"], image2)
