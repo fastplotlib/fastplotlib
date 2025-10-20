@@ -148,6 +148,23 @@ def generate_color_inputs(
         array = np.vstack([pygfx.Color(c) for c in s])
         return [s, array]
 
+    if name == "multi2":
+        # a second multi option
+        s = [
+            "g",
+            "r",
+            "cyan",
+            "magenta",
+            "b",
+            "black",
+            "white",
+            "purple",
+            "yellow",
+            "pink",
+        ]
+        array = np.vstack([pygfx.Color(c) for c in s])
+        return [s, array]
+
     color = pygfx.Color(name)
 
     s = name

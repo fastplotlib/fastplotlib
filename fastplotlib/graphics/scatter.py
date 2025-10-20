@@ -30,6 +30,7 @@ class ScatterGraphic(PositionsGraphic):
         "cmap": (VertexCmap, None),
         "markers": (VertexMarkers, UniformMarker, None),
         "edge_colors": (UniformEdgeColor, VertexColors, None),
+        "edge_width": (EdgeWidth, None),
         "image": (TextureArray, None),
         "size_space": SizeSpace,
     }
@@ -346,10 +347,10 @@ class ScatterGraphic(PositionsGraphic):
         if self.mode != "markers":
             raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'markers' to set the edge_colors")
 
-        if isinstance(self._colors, VertexColors):
+        if isinstance(self._edge_colors, VertexColors):
             self._edge_colors[:] = value
 
-        elif isinstance(self._colors, UniformEdgeColor):
+        elif isinstance(self._edge_colors, UniformEdgeColor):
             self._edge_colors.set_value(self, value)
 
     @property

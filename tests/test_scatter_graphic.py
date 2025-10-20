@@ -136,6 +136,11 @@ def test_edge_colors(edge_colors):
         scatter.edge_colors.buffer is scatter.world_object.geometry.edge_colors
     )
 
+    # test changes, don't need to test extensively here since it's tested in the main VertexColors test
+    new_colors, array = generate_color_inputs("multi2")
+    scatter.edge_colors = new_colors
+    npt.assert_almost_equal(scatter.edge_colors.value, array)
+
 
 @pytest.mark.parametrize("edge_color", ["r", (1, 0, 0), [1, 0, 0], np.array([1, 0, 0])])
 def test_uniform_edge_colors(edge_color):
@@ -150,6 +155,15 @@ def test_uniform_edge_colors(edge_color):
     assert isinstance(scatter._edge_colors, UniformEdgeColor)
     assert scatter.edge_colors == pygfx.Color(edge_color)
     assert scatter.world_object.material.edge_color == pygfx.Color(edge_color)
+
+    # test changes and event
+    scatter.add_event_handler(event_handler, "edge_colors")
+    scatter.edge_colors = "g"
+
+    assert scatter.edge_colors == pygfx.Color("g")
+    assert scatter.world_object.material.edge_color == pygfx.Color("g")
+
+    check_event(scatter, "edge_colors", pygfx.Color("g"))
 
 
 @pytest.mark.parametrize("edge_colors", [generate_color_inputs("multi")[0],generate_color_inputs("multi")[1]])
@@ -182,6 +196,15 @@ def test_edge_width(edge_width):
     assert isinstance(scatter._edge_width, EdgeWidth)
     assert scatter.world_object.material.edge_width == edge_width
     assert scatter.edge_width == edge_width
+
+    # test changes and events
+    scatter.add_event_handler(event_handler, "edge_width")
+    scatter.edge_width = 2.0
+
+    npt.assert_almost_equal(scatter.edge_width, 2.0)
+    npt.assert_almost_equal(scatter.world_object.material.edge_width, 2.0)
+
+    check_event(scatter, "edge_width", 2.0)
 
 
 def test_sprite():
