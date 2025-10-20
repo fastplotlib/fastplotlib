@@ -326,7 +326,10 @@ class ScatterGraphic(PositionsGraphic):
     def markers(self, value: str | np.ndarray[str] | Sequence[str]):
         if self.mode != "markers":
             raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'markers' to set the markers")
-        self._markers[:] = value
+        if isinstance(self._markers, VertexMarkers):
+            self._markers[:] = value
+        elif isinstance(self._markers, UniformMarker):
+            self._markers.set_value(self, value)
 
     @property
     def edge_colors(self) -> str | pygfx.Color | VertexColors | None:

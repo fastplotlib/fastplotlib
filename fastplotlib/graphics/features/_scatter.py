@@ -265,7 +265,7 @@ class UniformMarker(GraphicFeature):
         },
     ]
 
-    def __init__(self, marker: str, property_name: str = "colors"):
+    def __init__(self, marker: str, property_name: str = "markers"):
         """Manages evented uniform buffer for scatter marker"""
 
         self._value = user_input_to_marker(marker)
@@ -294,7 +294,7 @@ class UniformEdgeColor(GraphicFeature):
         },
     ]
 
-    def __init__(self, edge_color: str | np.ndarray | pygfx.Color | Sequence[float], property_name: str = "colors"):
+    def __init__(self, edge_color: str | np.ndarray | pygfx.Color | Sequence[float], property_name: str = "edge_colors"):
         """Manages evented uniform buffer for scatter marker edge_color"""
 
         self._value = pygfx.Color(edge_color)
