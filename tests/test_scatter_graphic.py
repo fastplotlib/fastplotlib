@@ -207,6 +207,28 @@ def test_edge_width(edge_width):
     check_event(scatter, "edge_width", 2.0)
 
 
+def test_uniform_rotation():
+    fig = fpl.Figure()
+
+    data = generate_positions_spiral_data("xyz")
+
+    scatter = fig[0, 0].add_scatter(
+        data=data,
+        point_rotations=np.pi / 2,
+    )
+
+    assert scatter.point_rotation_mode == "uniform"
+    npt.assert_almost_equal(scatter.point_rotations, np.pi / 2)
+
+    # test changes and events
+    scatter.add_event_handler(event_handler, "point_rotations")
+    scatter.point_rotations = np.pi / 3
+
+    npt.assert_almost_equal(scatter.point_rotations, np.pi / 3)
+
+    check_event(scatter, "point_rotations", np.pi / 3)
+
+
 def test_sprite():
     image = np.array(
         [

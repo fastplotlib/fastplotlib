@@ -33,6 +33,7 @@ class ScatterGraphic(PositionsGraphic):
         "edge_width": (EdgeWidth, None),
         "image": (TextureArray, None),
         "size_space": SizeSpace,
+        "point_rotations": (UniformRotations, VertexRotations, None)
     }
 
     def __init__(

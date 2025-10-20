@@ -350,7 +350,7 @@ class UniformRotations(GraphicFeature):
         },
     ]
 
-    def __init__(self, edge_width: float, property_name: str = "rotations"):
+    def __init__(self, edge_width: float, property_name: str = "point_rotations"):
         """Manages evented uniform buffer for scatter marker rotation"""
 
         self._value = edge_width
@@ -388,7 +388,7 @@ class VertexRotations(BufferManager):
         rotations: int | float | np.ndarray | Sequence[int | float],
         n_datapoints: int,
         isolated_buffer: bool = True,
-        property_name: str = "rotations"
+        property_name: str = "point_rotations"
     ):
         """
         Manages rotations buffer of scatter points.
