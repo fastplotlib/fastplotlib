@@ -188,7 +188,7 @@ class ScatterGraphic(PositionsGraphic):
         self._edge_colors: UniformEdgeColor | VertexColors | None = None
         self._edge_width: EdgeWidth | None = None
         self._point_rotations: VertexRotations | UniformRotations | None = None
-        self._sprite_texture_array: TextureArray | None = None
+        self._image: TextureArray | None = None
 
         # material cannot be changed after the ScatterGraphic is created
         self._mode = mode
@@ -260,9 +260,9 @@ class ScatterGraphic(PositionsGraphic):
                     )
 
                 # create texture array with normalized image
-                self._sprite_texture_array = TextureArray(image / np.nanmax(image), property_name="image")
+                self._image = TextureArray(image / np.nanmax(image), property_name="image")
 
-                material_kwargs["sprite"] = self._sprite_texture_array.buffer[0, 0]
+                material_kwargs["sprite"] = self._image.buffer[0, 0]
 
         self._size_space = SizeSpace(size_space)
 
@@ -399,14 +399,14 @@ class ScatterGraphic(PositionsGraphic):
     @property
     def image(self) -> TextureArray | None:
         """Get or set the image data, returns None if scatter plot mode is not 'image'"""
-        return self._sprite_texture_array
+        return self._image
 
     @image.setter
     def image(self, data):
         if self.mode != "image":
             raise AttributeError(f"scatter plot is: {self.mode}. The mode must be 'image' to set the image")
 
-        self._sprite_texture_array[:] = data
+        self._image[:] = data
 
     @property
     def sizes(self) -> VertexPointSizes | float:
