@@ -21,8 +21,8 @@ def event_handler(ev):
 
 
 # some rotation angles
-ROTATIONS1 = np.linspace(0, 2 * np.pi, 10)
-ROTATIONS2 = np.linspace(np.pi / 2, (np.pi / 2) + (np.pi * 2), 10)
+ROTATIONS1 = np.linspace(0, 2 * np.pi, 10, dtype=np.float32)
+ROTATIONS2 = np.linspace(np.pi / 2, (np.pi / 2) + (np.pi * 2), 10, dtype=np.float32)
 
 
 @pytest.mark.parametrize("test_graphic", [True, False])
