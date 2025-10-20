@@ -97,7 +97,7 @@ class ScatterGraphic(PositionsGraphic):
             Supported values:
 
             * A string from pygfx.MarkerShape enum
-            * Matplotlib compatible characters: "osD+x^v<>".
+            * Matplotlib compatible characters: "osD+x^v<>*".
             * Unicode symbols: "●○■♦♥♠♣✳▲▼◀▶".
             * Emojis: "❤️♠️♣️♦️💎💍✳️📍".
             * A string containing the value "custom". In this case, the WGSL
