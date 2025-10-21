@@ -335,6 +335,13 @@ class Graphic:
                 if t in self._features.keys():
                     # fpl feature event
                     feature = getattr(self, f"_{t}")
+
+                    if feature is None:
+                        # feature is None in the graphic's current mode, probably is a scatter graphic
+                        raise AttributeError(
+                            f"{self} does not have the passed feature: '{t}' in its current mode."
+                        )
+
                     feature.add_event_handler(_callback_wrapper)
                 else:
                     # wrap pygfx event
