@@ -22,7 +22,6 @@ Properties
 
     VertexCmap.buffer
     VertexCmap.name
-    VertexCmap.shared
     VertexCmap.transform
     VertexCmap.value
 

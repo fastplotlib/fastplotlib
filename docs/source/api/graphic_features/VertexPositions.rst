@@ -21,7 +21,6 @@ Properties
     :toctree: VertexPositions_api
 
     VertexPositions.buffer
-    VertexPositions.shared
     VertexPositions.value
 
 Methods
