@@ -544,7 +544,7 @@ class Figure:
         return self._show_tooltips
 
     @property
-    def animation_funcs(self) -> dict[str, list[callable]]:
+    def animations(self) -> dict[str, list[callable]]:
         """Returns a dictionary of 'pre' and 'post' animation functions."""
         return {"pre": self._animate_funcs_pre, "post": self._animate_funcs_post}
 
