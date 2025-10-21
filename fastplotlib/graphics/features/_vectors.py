@@ -13,7 +13,9 @@ from ._base import (
 # it doesn't make sense to modify just a portion of a vector field, I can't think of a use case.
 # so we only allow setting the entire buffer, but allow getting portions of it
 class VectorPositions(GraphicFeature):
-    """Manages vector field positions by managing the mesh instance buffer"""
+    event_info_spec = [
+        {"dict key": "value", "type": "np.ndarray", "description": "new vector positions"},
+    ]
 
     def __init__(
         self,
@@ -21,6 +23,8 @@ class VectorPositions(GraphicFeature):
         isolated_buffer: bool = True,
         property_name: str = "positions",
     ):
+        """Manages vector field positions by managing the mesh instance buffer"""
+
         positions = np.asarray(positions, dtype=np.float32)
         if positions.ndim != 2:
             raise ValueError(
@@ -88,7 +92,9 @@ class VectorPositions(GraphicFeature):
 
 
 class VectorDirections(GraphicFeature):
-    """Manager vector field directions by interfacing with VectorBuffer manager"""
+    event_info_spec = [
+        {"dict key": "value", "type": "np.ndarray", "description": "new vector directions"},
+    ]
 
     def __init__(
         self,
@@ -96,6 +102,7 @@ class VectorDirections(GraphicFeature):
         isolated_buffer: bool = True,
         property_name: str = "directions",
     ):
+        """Manages vector field directions by interfacing with VectorBuffer manager"""
         directions = np.asarray(directions, dtype=np.float32)
         if directions.ndim != 2:
             raise ValueError(

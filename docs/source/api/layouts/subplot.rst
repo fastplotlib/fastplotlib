@@ -53,6 +53,7 @@ Methods
     Subplot.add_line_stack
     Subplot.add_scatter
     Subplot.add_text
+    Subplot.add_vector_field
     Subplot.auto_scale
     Subplot.center_graphic
     Subplot.center_scene
