@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: ImguiFigure_api
 
+    ImguiFigure.animations
     ImguiFigure.cameras
     ImguiFigure.canvas
     ImguiFigure.controllers
@@ -42,6 +43,7 @@ Methods
     ImguiFigure.add_gui
     ImguiFigure.add_subplot
     ImguiFigure.clear
+    ImguiFigure.clear_animations
     ImguiFigure.close
     ImguiFigure.export
     ImguiFigure.export_numpy
