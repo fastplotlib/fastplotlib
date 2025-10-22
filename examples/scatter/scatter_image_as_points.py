@@ -33,7 +33,7 @@ figure = fpl.Figure(size=(700, 350))
 
 scatter = figure[0, 0].add_scatter(
     data=sine,
-    mode="image",  # mode must be "image", otherwise
+    mode="image",  # mode must be "image", otherwise the `image` arg is ignored and markers are used
     image=array,
     cmap="jet",  # the image is multiplied by the scatter point colors if provided
     sizes=25,
