@@ -101,8 +101,7 @@ class ScatterGraphic(PositionsGraphic):
             * Matplotlib compatible characters: "osD+x^v<>*".
             * Unicode symbols: "●○■♦♥♠♣✳▲▼◀▶".
             * Emojis: "❤️♠️♣️♦️💎💍✳️📍".
-            * A string containing the value "custom". In this case, the WGSL
-            code defined by ``custom_sdf`` will be used.
+            * A string containing the value "custom". In this case, WGSL code defined by ``custom_sdf`` will be used.
 
         uniform_marker: bool, default False
             Use the same marker for all points. Only valid when `mode` is "markers". Useful if you need to use
