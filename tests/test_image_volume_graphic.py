@@ -51,8 +51,12 @@ def check_set_slice(
         data_values[:, : col_slice.start], data[:, : col_slice.start]
     )
     npt.assert_almost_equal(data_values[:, col_slice.stop :], data[:, col_slice.stop :])
-    npt.assert_almost_equal(data_values[:, :, : zpl_slice.start], data[:, :, : zpl_slice.start])
-    npt.assert_almost_equal(data_values[:, :, zpl_slice.stop :], data[:, :, zpl_slice.stop :])
+    npt.assert_almost_equal(
+        data_values[:, :, : zpl_slice.start], data[:, :, : zpl_slice.start]
+    )
+    npt.assert_almost_equal(
+        data_values[:, :, zpl_slice.stop :], data[:, :, zpl_slice.stop :]
+    )
 
     global EVENT_RETURN_VALUE
     assert isinstance(EVENT_RETURN_VALUE, GraphicFeatureEvent)

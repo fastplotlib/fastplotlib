@@ -16,7 +16,7 @@ class TextData(GraphicFeature):
 
     def __init__(self, value: str):
         self._value = value
-        super().__init__()
+        super().__init__(property_name="text")
 
     @property
     def value(self) -> str:
@@ -27,7 +27,7 @@ class TextData(GraphicFeature):
         graphic.world_object.set_text(value)
         self._value = value
 
-        event = GraphicFeatureEvent(type="text", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -42,7 +42,7 @@ class FontSize(GraphicFeature):
 
     def __init__(self, value: float | int):
         self._value = value
-        super().__init__()
+        super().__init__(property_name="font_size")
 
     @property
     def value(self) -> float | int:
@@ -53,7 +53,7 @@ class FontSize(GraphicFeature):
         graphic.world_object.font_size = value
         self._value = graphic.world_object.font_size
 
-        event = GraphicFeatureEvent(type="font_size", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -68,7 +68,7 @@ class TextFaceColor(GraphicFeature):
 
     def __init__(self, value: str | np.ndarray | list[float] | tuple[float]):
         self._value = pygfx.Color(value)
-        super().__init__()
+        super().__init__(property_name="face_color")
 
     @property
     def value(self) -> pygfx.Color:
@@ -80,7 +80,7 @@ class TextFaceColor(GraphicFeature):
         graphic.world_object.material.color = value
         self._value = graphic.world_object.material.color
 
-        event = GraphicFeatureEvent(type="face_color", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -95,7 +95,7 @@ class TextOutlineColor(GraphicFeature):
 
     def __init__(self, value: str | np.ndarray | list[float] | tuple[float]):
         self._value = pygfx.Color(value)
-        super().__init__()
+        super().__init__(property_name="outline_color")
 
     @property
     def value(self) -> pygfx.Color:
@@ -107,7 +107,7 @@ class TextOutlineColor(GraphicFeature):
         graphic.world_object.material.outline_color = value
         self._value = graphic.world_object.material.outline_color
 
-        event = GraphicFeatureEvent(type="outline_color", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -122,7 +122,7 @@ class TextOutlineThickness(GraphicFeature):
 
     def __init__(self, value: float):
         self._value = value
-        super().__init__()
+        super().__init__(property_name="outline_thickness")
 
     @property
     def value(self) -> float:
@@ -133,5 +133,5 @@ class TextOutlineThickness(GraphicFeature):
         graphic.world_object.material.outline_thickness = value
         self._value = graphic.world_object.material.outline_thickness
 
-        event = GraphicFeatureEvent(type="outline_thickness", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
