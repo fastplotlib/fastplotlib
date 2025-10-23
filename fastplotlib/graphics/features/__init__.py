@@ -36,6 +36,12 @@ from ._volume import (
     VOLUME_RENDER_MODES,
     create_volume_material_kwargs,
 )
+
+from ._vectors import (
+    VectorPositions,
+    VectorDirections,
+)
+
 from ._base import (
     GraphicFeature,
     BufferManager,
@@ -88,6 +94,8 @@ __all__ = [
     "VolumeIsoEmissive",
     "VolumeIsoShininess",
     "VolumeSlicePlane",
+    "VectorPositions",
+    "VectorDirections",
     "TextData",
     "FontSize",
     "TextFaceColor",

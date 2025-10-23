@@ -649,3 +649,59 @@ class GraphicMethodsMixin:
             anchor,
             **kwargs,
         )
+
+    def add_vector_field(
+        self,
+        positions: Union[numpy.ndarray, Sequence[float]],
+        directions: Union[numpy.ndarray, Sequence[float]],
+        spacing: float,
+        color: Union[str, Sequence[float], numpy.ndarray] = "w",
+        vector_shape_options: dict = None,
+        size_scaling_factor: float = 1.0,
+        **kwargs,
+    ) -> VectorField:
+        """
+
+        Create a Vector Field. Similar to matplotlib quiver.
+
+        Parameters
+        ----------
+        positions: np.ndarray | Sequence[float]
+            positions of the vectors, array-like, shape must be [n, 2] or [n, 3] where n is the number of vectors.
+
+        directions: np.ndarray | Sequence[float]
+            directions of the vectors, array-like, shape must be [n, 2] or [n, 3] where n is the number of vectors.
+
+        spacing: float
+            average distance between pairs of nearest-neighbor vectors, used for scaling
+
+        color: str | pygfx.Color | Sequence[float] | np.ndarray, default "w"
+            color of the vectors
+
+        vector_shape_options: dict
+            dict with the following fields that describe the shape of the vector arrows.
+            Larger values decrease the size of each component.
+
+                * cone_radius_divisor, default 10.0
+                * cone_height_divisor, default 4.0
+                * stalk_radius_divisor, default 30.0
+                * stalk_height_divisor, default 4.0
+
+        scaling_factor: float, default 1.0
+            larger values will create larger vector arrows
+
+        **kwargs
+            passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            VectorField,
+            positions,
+            directions,
+            spacing,
+            color,
+            vector_shape_options,
+            size_scaling_factor,
+            **kwargs,
+        )

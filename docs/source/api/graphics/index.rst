@@ -9,6 +9,7 @@ Graphics
     ScatterGraphic
     ImageGraphic
     ImageVolumeGraphic
+    VectorField
     TextGraphic
     LineCollection
     LineStack
