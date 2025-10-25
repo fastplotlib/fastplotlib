@@ -51,6 +51,12 @@ PYGFX_EVENTS = [
 ]
 
 
+def _update_text_offset(parent, tg, ev):
+    # helper function
+    new_offset = parent._fpl_get_corner(*tg._location)
+    tg.offset = new_offset
+
+
 class Graphic:
     _features: dict[str, type] = dict()
 
@@ -426,6 +432,94 @@ class Graphic:
             else:
                 feature = getattr(self, f"_{t}")
                 feature.remove_event_handler(wrapper)
+
+    def _fpl_get_corner(self, location: str, location_z) -> tuple[float, float, float]:
+        """Get the (x, y, z) corner of a graphic relative to the rendered view"""
+        valid = ["center", "top-left", "top-right", "bottom-right", "bottom-left"]
+        if not isinstance(location, str):
+            raise TypeError("`location` must be of type <str>")
+        if location not in valid:
+            raise ValueError(
+                f"`location` must be one of : {valid}, you have passed: {location}"
+            )
+
+        if location == "center":
+            x, y, z, r = self.world_object.get_world_bounding_sphere()
+
+            return (x, y, z)
+
+        else:
+            bbox = self.world_object.get_world_bounding_box()
+
+            for i, axis in enumerate(["x", "y", "z"]):
+                if getattr(self._plot_area.camera.local, f"scale_{axis}") < 0:
+                    # swap boundary values for this axis
+                    bbox[0, i], bbox[1, i] = bbox[1, i], bbox[0, i]
+
+            [[x1, y1, z1], [x2, y2, z2]] = bbox
+
+            # set (x, y, z) location of text based on user str
+            if "top" in location:
+                y = y2
+            elif "bottom" in location:
+                y = y1
+            if "left" in location:
+                x = x1
+            elif "right" in location:
+                x = x2
+            if location_z == "front":
+                z = z1
+            elif location_z == "back":
+                z = z2
+
+            return (x, y, z)
+
+    def add_text(
+        self, text: str, location: str = "center", location_z: str = "front", **kwargs
+    ):
+        """
+        Add a TextGraphic at one of the corners or center of this graphic.
+
+        Note 1: If an axis is flipped, location is relative to the rendered view not the location in world space
+        Note 2: Uses axis aligned bounding box to get corners, does not account for any rotation set on the graphic.
+
+        Parameters
+        ----------
+        text: str
+            text to display in the ``TextGraphic``
+
+        location: str, default "center"
+            one of "center", "top-left", "top-right", "bottom-right", or "bottom-left"
+
+        location_z: str, default "front"
+            one of "front" or "back"
+
+        spacing: float, default 2.0
+            number of pixels from the corner of the graphic to the TextGraphic position, ignored if location = "center"
+
+        kwargs
+            passed to ``TextGraphic``
+
+        Returns
+        -------
+            TextGraphic
+
+        """
+        offset = self._fpl_get_corner(location, location_z)
+
+        text_graphic = self._plot_area.add_text(text, offset=offset, metadata=(location, location_z), **kwargs)
+        text_graphic._location = (location, location_z)
+
+        events = ["offset"]
+
+        class_name = self.__class__.__name__
+
+        if "Line" in class_name or "Scatter" in class_name:
+            events.append("data")
+
+        self.add_event_handler(partial(_update_text_offset, self, text_graphic), *events)
+
+        return text_graphic
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
