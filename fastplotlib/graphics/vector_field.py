@@ -22,10 +22,9 @@ class VectorField(Graphic):
         self,
         positions: np.ndarray | Sequence[float],
         directions: np.ndarray | Sequence[float],
-        spacing: float,
         color: str | Sequence[float] | np.ndarray = "w",
+        size: float = None,
         vector_shape_options: dict = None,
-        size_scaling_factor: float = 1.0,
         **kwargs,
     ):
         """
@@ -45,17 +44,19 @@ class VectorField(Graphic):
         color: str | pygfx.Color | Sequence[float] | np.ndarray, default "w"
             color of the vectors
 
+        size: float or None
+            Size of a vector of magnitude 1 in world space for display purpose.
+            Estimated from field density if not provided.
+
         vector_shape_options: dict
-            dict with the following fields that describe the shape of the vector arrows.
-            Larger values decrease the size of each component.
+            dict with the following fields that directly describes the shape of the vector arrows.
+            Overrides ``size`` argument.
 
-                * cone_radius_divisor, default 10.0
-                * cone_height_divisor, default 4.0
-                * stalk_radius_divisor, default 30.0
-                * stalk_height_divisor, default 4.0
 
-        scaling_factor: float, default 1.0
-            larger values will create larger vector arrows
+                * cone_radius
+                * cone_height
+                * stalk_radius
+                * stalk_height
 
         **kwargs
             passed to :class:`.Graphic`
@@ -67,35 +68,53 @@ class VectorField(Graphic):
         self._positions = VectorPositions(positions)
         self._directions = VectorDirections(directions)
 
-        shape_options = dict(
-            cone_radius_divisor=10.0,
-            cone_height_divisor=4.0,
-            stalk_radius_divisor=30.0,
-            stalk_height_divisor=4.0,
-        )
+        if size is None and vector_shape_options is None:
+            # guess from field density
 
-        if vector_shape_options is None:
-            vector_shape_options = {}
+            # sort xs and then take unique to get the density along x, same for y and z
+            x_density = np.diff(np.unique(np.sort(positions[:, 0]))).mean()
+            y_density = np.diff(np.unique(np.sort(positions[:, 1]))).mean()
+            densities = [x_density, y_density]
 
-        for k in vector_shape_options:
-            if k not in shape_options:
-                raise KeyError(
-                    f"valid dict fields for `vector_shape_options` are: {list(shape_options.keys())}. "
-                    f"You passed the following dict: {vector_shape_options}"
-                )
+            if positions.shape[1] == 3:
+                z_density = np.diff(np.unique(np.sort(positions[:, 2]))).mean()
+                densities.append(z_density)
+            print(densities)
+            mean_density = np.mean(densities)
 
-        shape_options = {**shape_options, **vector_shape_options}
+            size = mean_density
 
-        geometry = create_vector_geometry(spacing=spacing, color=color, **shape_options)
+            cone_height = size / 2
+            stalk_height = size / 2
+
+            cone_radius = size / 10
+            stalk_radius = cone_radius / 8
+
+            shape_options = {
+                "cone_radius": cone_radius,
+                "cone_height": cone_height,
+                "stalk_radius": stalk_radius,
+                "stalk_height": stalk_height,
+            }
+
+        # if vector_shape_options is None:
+        #     vector_shape_options = {}
+        #
+        # for k in vector_shape_options:
+        #     if k not in shape_options:
+        #         raise KeyError(
+        #             f"valid dict fields for `vector_shape_options` are: {list(shape_options.keys())}. "
+        #             f"You passed the following dict: {vector_shape_options}"
+        #         )
+
+        geometry = create_vector_geometry(color=color, **shape_options)
         material = pygfx.MeshBasicMaterial()
+
         n_vectors = self._positions.value.shape[0]
 
         world_object = pygfx.InstancedMesh(geometry, material, n_vectors)
 
-        range_3d = np.mean(np.ptp(self._positions[:], axis=0))
-        magnitudes = (
-            np.linalg.norm(self.directions[:], axis=1, ord=2) / range_3d
-        ) * size_scaling_factor
+        magnitudes = np.linalg.norm(self.directions[:], axis=1, ord=2)
 
         start_rot = np.array([0, 0, 1])
 
@@ -264,21 +283,16 @@ def generate_cap(radius, height, radial_segments, theta_start, theta_length, up=
 
 
 def create_vector_geometry(
-    spacing: float,
     color: str | pygfx.Color | Sequence[float] | np.ndarray = "w",
     cone_cap_color: str | pygfx.Color | Sequence[float] | np.ndarray | None = None,
-    cone_radius_divisor: float = 10.0,
-    cone_height_divisor: float = 4.0,
-    stalk_radius_divisor: float = 30.0,
-    stalk_height_divisor: float = 4.0,
+    cone_radius: float = 10.0,
+    cone_height: float = 4.0,
+    stalk_radius: float = 30.0,
+    stalk_height: float = 4.0,
     segments: int = 24,
 ):
-    cone_radius = spacing / cone_radius_divisor
-    stalk_radius = spacing / stalk_radius_divisor
     radius_top = 0
 
-    cone_height = spacing / cone_height_divisor
-    stalk_height = spacing / stalk_height_divisor
     radial_segments = segments
 
     height_segments = 1

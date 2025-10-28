@@ -150,8 +150,6 @@ class VectorDirections(GraphicFeature):
                 f"{value.shape[0]} != {self._directions.shape[0]}"
             )
 
-        old_directions = self._directions.copy()
-
         if value.shape[1] == 2:
             # assume 2d
             self._directions[:, :-1] = value
@@ -159,16 +157,15 @@ class VectorDirections(GraphicFeature):
         else:
             self._directions[:] = value
 
-        # use the range of the 3D space to help set a scaling factor
-        range_3d = np.mean(np.ptp(graphic.positions[:], axis=0))
         # vector determines the size of the vector
-        magnitudes = np.linalg.norm(self._directions, axis=1, ord=2) / range_3d
+        magnitudes = np.linalg.norm(self._directions, axis=1, ord=2)
 
         for i in range(self._directions.shape[0]):
             # get quaternion to rotate existing vector direction to new direction
-            rotation = la.quat_from_vecs(old_directions[i], self._directions[i])
+            rotation = la.quat_from_vecs(np.array([0, 0, 1]), self._directions[i])
             # get the new transform
             transform = la.mat_compose(graphic.positions[i], rotation, magnitudes[i])
+
             # set the buffer
             graphic.world_object.instance_buffer.data["matrix"][i] = transform.T
 
