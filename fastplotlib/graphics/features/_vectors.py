@@ -27,7 +27,9 @@ class VectorPositions(GraphicFeature):
         isolated_buffer: bool = True,
         property_name: str = "positions",
     ):
-        """Manages vector field positions by managing the mesh instance buffer"""
+        """
+        Manages vector field positions by managing the translation elements of the mesh instance transform matrix buffer
+        """
 
         positions = np.asarray(positions, dtype=np.float32)
         if positions.ndim != 2:
@@ -114,7 +116,8 @@ class VectorDirections(GraphicFeature):
         isolated_buffer: bool = True,
         property_name: str = "directions",
     ):
-        """Manages vector field directions by interfacing with VectorBuffer manager"""
+        """Manages vector field positions by managing the mesh instance buffer's full transform matrix"""
+
         directions = np.asarray(directions, dtype=np.float32)
         if directions.ndim != 2:
             raise ValueError(
