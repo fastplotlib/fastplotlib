@@ -52,7 +52,6 @@ class VectorField(Graphic):
             dict with the following fields that directly describes the shape of the vector arrows.
             Overrides ``size`` argument.
 
-
                 * cone_radius
                 * cone_height
                 * stalk_radius
@@ -68,21 +67,29 @@ class VectorField(Graphic):
         self._positions = VectorPositions(positions)
         self._directions = VectorDirections(directions)
 
-        if size is None and vector_shape_options is None:
-            # guess from field density
+        if vector_shape_options is not None:
+            required = {"cone_radius", "cone_height", "stalk_radius", "stalk_height"}
+            if set(vector_shape_options.keys()) != required:
+                raise KeyError(
+                    f"`vector_shape_options` must be a dict with the following keys: {required}.\n"
+                    f"You have passed: {vector_shape_options}"
+                )
+            shape_options = vector_shape_options
+        else:
+            if size is None:
+                # guess from field density
+                # sort xs and then take unique to get the density along x, same for y and z
+                x_density = np.diff(np.unique(np.sort(positions[:, 0]))).mean()
+                y_density = np.diff(np.unique(np.sort(positions[:, 1]))).mean()
+                densities = [x_density, y_density]
 
-            # sort xs and then take unique to get the density along x, same for y and z
-            x_density = np.diff(np.unique(np.sort(positions[:, 0]))).mean()
-            y_density = np.diff(np.unique(np.sort(positions[:, 1]))).mean()
-            densities = [x_density, y_density]
+                if positions.shape[1] == 3:
+                    z_density = np.diff(np.unique(np.sort(positions[:, 2]))).mean()
+                    densities.append(z_density)
 
-            if positions.shape[1] == 3:
-                z_density = np.diff(np.unique(np.sort(positions[:, 2]))).mean()
-                densities.append(z_density)
-            print(densities)
-            mean_density = np.mean(densities)
+                mean_density = np.mean(densities)
 
-            size = mean_density
+                size = mean_density
 
             cone_height = size / 2
             stalk_height = size / 2
@@ -97,16 +104,6 @@ class VectorField(Graphic):
                 "stalk_height": stalk_height,
             }
 
-        # if vector_shape_options is None:
-        #     vector_shape_options = {}
-        #
-        # for k in vector_shape_options:
-        #     if k not in shape_options:
-        #         raise KeyError(
-        #             f"valid dict fields for `vector_shape_options` are: {list(shape_options.keys())}. "
-        #             f"You passed the following dict: {vector_shape_options}"
-        #         )
-
         geometry = create_vector_geometry(color=color, **shape_options)
         material = pygfx.MeshBasicMaterial()
 
@@ -116,11 +113,9 @@ class VectorField(Graphic):
 
         magnitudes = np.linalg.norm(self.directions[:], axis=1, ord=2)
 
-        start_rot = np.array([0, 0, 1])
-
         for i in range(n_vectors):
             # get quaternion to rotate existing vector direction to new direction
-            rotation = la.quat_from_vecs(start_rot, self._directions[i])
+            rotation = la.quat_from_vecs(np.array([0, 0, 1]), self._directions[i])
             # get the new transform
             transform = la.mat_compose(
                 self._positions.value[i], rotation, magnitudes[i]
@@ -285,11 +280,11 @@ def generate_cap(radius, height, radial_segments, theta_start, theta_length, up=
 def create_vector_geometry(
     color: str | pygfx.Color | Sequence[float] | np.ndarray = "w",
     cone_cap_color: str | pygfx.Color | Sequence[float] | np.ndarray | None = None,
-    cone_radius: float = 10.0,
-    cone_height: float = 4.0,
-    stalk_radius: float = 30.0,
-    stalk_height: float = 4.0,
-    segments: int = 24,
+    cone_radius: float = 1.0,
+    cone_height: float = 0.5,
+    stalk_radius: float = 0.3,
+    stalk_height: float = 0.5,
+    segments: int = 12,
 ):
     radius_top = 0
 

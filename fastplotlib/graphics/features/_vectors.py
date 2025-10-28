@@ -14,7 +14,11 @@ from ._base import (
 # so we only allow setting the entire buffer, but allow getting portions of it
 class VectorPositions(GraphicFeature):
     event_info_spec = [
-        {"dict key": "value", "type": "np.ndarray", "description": "new vector positions"},
+        {
+            "dict key": "value",
+            "type": "np.ndarray",
+            "description": "new vector positions",
+        },
     ]
 
     def __init__(
@@ -93,7 +97,11 @@ class VectorPositions(GraphicFeature):
 
 class VectorDirections(GraphicFeature):
     event_info_spec = [
-        {"dict key": "value", "type": "np.ndarray", "description": "new vector directions"},
+        {
+            "dict key": "value",
+            "type": "np.ndarray",
+            "description": "new vector directions",
+        },
     ]
 
     def __init__(
