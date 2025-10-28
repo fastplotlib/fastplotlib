@@ -114,8 +114,8 @@ class VectorField(Graphic):
         magnitudes = np.linalg.norm(self.directions[:], axis=1, ord=2)
 
         for i in range(n_vectors):
-            # get quaternion to rotate existing vector direction to new direction
-            rotation = la.quat_from_vecs(np.array([0, 0, 1]), self._directions[i])
+            # get quaternion to rotate vector to new direction
+            rotation = la.quat_from_vecs(self._directions.init_direction, self._directions[i])
             # get the new transform
             transform = la.mat_compose(
                 self._positions.value[i], rotation, magnitudes[i]

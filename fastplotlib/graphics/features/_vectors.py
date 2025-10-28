@@ -104,6 +104,10 @@ class VectorDirections(GraphicFeature):
         },
     ]
 
+    # vector is always pointing in [0, 0, 1] when mesh is initialized
+    init_direction = np.array([0, 0, 1])
+    init_direction.flags.writeable = False
+
     def __init__(
         self,
         directions: np.ndarray | Sequence[float],
@@ -169,11 +173,10 @@ class VectorDirections(GraphicFeature):
         magnitudes = np.linalg.norm(self._directions, axis=1, ord=2)
 
         for i in range(self._directions.shape[0]):
-            # get quaternion to rotate existing vector direction to new direction
-            rotation = la.quat_from_vecs(np.array([0, 0, 1]), self._directions[i])
+            # get quaternion to rotate vector to new direction
+            rotation = la.quat_from_vecs(self.init_direction, self._directions[i])
             # get the new transform
             transform = la.mat_compose(graphic.positions[i], rotation, magnitudes[i])
-
             # set the buffer
             graphic.world_object.instance_buffer.data["matrix"][i] = transform.T
 
