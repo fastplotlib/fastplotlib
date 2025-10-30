@@ -6,7 +6,7 @@ Example showing a swirling vector field. Similar to matplotlib quiver.
 
 """
 
-# test_example = false
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np
