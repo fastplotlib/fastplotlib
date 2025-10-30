@@ -18,10 +18,8 @@ url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zar
 
 # read the image data
 reader = Reader(parse_url(url))
-# nodes may include images, labels etc
-nodes = list(reader())
-# first node will be the image pixel data
-image_node = nodes[0]
+# first node is image data
+image_node = next(reader())
 
 dask_data = image_node.data
 
