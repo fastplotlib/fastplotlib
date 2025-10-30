@@ -64,7 +64,6 @@ class VectorField(Graphic):
 
         super().__init__(**kwargs)
 
-
         # TODO: once it's possible to constructor instanced objects with a shared buffer I can do this
         # if isinstance(positions, VectorPositions):
         #     self._positions = positions
@@ -96,7 +95,9 @@ class VectorField(Graphic):
                 densities = [x_density, y_density]
 
                 # if z is not basically zero
-                if not np.allclose(np.diff(np.unique(np.sort(self._positions[:, 2]))), 0.0):
+                if not np.allclose(
+                    np.diff(np.unique(np.sort(self._positions[:, 2]))), 0.0
+                ):
                     z_density = np.diff(np.unique(np.sort(positions[:, 2]))).mean()
                     densities.append(z_density)
 
@@ -128,7 +129,9 @@ class VectorField(Graphic):
 
         for i in range(n_vectors):
             # get quaternion to rotate vector to new direction
-            rotation = la.quat_from_vecs(self._directions.init_direction, self._directions[i])
+            rotation = la.quat_from_vecs(
+                self._directions.init_direction, self._directions[i]
+            )
             # get the new transform
             transform = la.mat_compose(
                 self._positions.value[i], rotation, magnitudes[i]
