@@ -56,7 +56,7 @@ def generate_add_graphics_methods():
         cls = m
         cls_name = cls.__name__.replace("Graphic", "")
         # from https://stackoverflow.com/a/1176023
-        method_name = re.sub(r'(?<!^)(?=[A-Z])', '_', cls_name).lower()
+        method_name = re.sub(r"(?<!^)(?=[A-Z])", "_", cls_name).lower()
 
         class_args = inspect.getfullargspec(cls)[0][1:]
         class_args = [arg + ", " for arg in class_args]
