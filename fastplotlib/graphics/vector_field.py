@@ -64,6 +64,18 @@ class VectorField(Graphic):
 
         super().__init__(**kwargs)
 
+
+        # TODO: once it's possible to constructor instanced objects with a shared buffer I can do this
+        # if isinstance(positions, VectorPositions):
+        #     self._positions = positions
+        # else:
+        #     self._positions = VectorPositions(positions)
+        #
+        # if isinstance(directions, VectorDirections):
+        #     self._directions = directions
+        # else:
+        #     self._directions = VectorDirections(directions)
+
         self._positions = VectorPositions(positions)
         self._directions = VectorDirections(directions)
 
@@ -79,11 +91,12 @@ class VectorField(Graphic):
             if size is None:
                 # guess from field density
                 # sort xs and then take unique to get the density along x, same for y and z
-                x_density = np.diff(np.unique(np.sort(positions[:, 0]))).mean()
-                y_density = np.diff(np.unique(np.sort(positions[:, 1]))).mean()
+                x_density = np.diff(np.unique(np.sort(self._positions[:, 0]))).mean()
+                y_density = np.diff(np.unique(np.sort(self._positions[:, 1]))).mean()
                 densities = [x_density, y_density]
 
-                if positions.shape[1] == 3:
+                # if z is not basically zero
+                if not np.allclose(np.diff(np.unique(np.sort(self._positions[:, 2]))), 0.0):
                     z_density = np.diff(np.unique(np.sort(positions[:, 2]))).mean()
                     densities.append(z_density)
 

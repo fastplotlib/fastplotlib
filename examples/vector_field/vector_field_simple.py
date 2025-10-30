@@ -32,8 +32,6 @@ directions = np.column_stack([u.ravel(), v.ravel()])
 vector_field = figure[0, 0].add_vector_field(
     positions=positions,
     directions=directions,
-    spacing=step,
-    size_scaling_factor=5.0,
 )
 
 figure.show()
