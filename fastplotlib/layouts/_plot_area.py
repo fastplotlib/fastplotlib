@@ -274,6 +274,11 @@ class PlotArea(GraphicMethodsMixin):
         """1, 2, or 4 colors, each color must be acceptable by pygfx.Color"""
         self._background_material.set_colors(*colors)
 
+    @property
+    def animations(self) -> dict[str, list[callable]]:
+        """Returns a dictionary of 'pre' and 'post' animation functions."""
+        return {"pre": self._animate_funcs_pre, "post": self._animate_funcs_post}
+
     def map_screen_to_world(
         self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
@@ -394,6 +399,37 @@ class PlotArea(GraphicMethodsMixin):
 
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
+
+    def clear_animations(self, removal: str = None):
+        """
+        Remove animation functions.
+
+        Parameters
+        ----------
+        removal: str, default ``None``
+            The type of animation functions to clear. One of 'pre' or 'post'. If `None`, removes all animation
+            functions.
+        """
+        if removal is None:
+            # remove all
+            for func in self._animate_funcs_pre:
+                self._animate_funcs_pre.remove(func)
+
+            for func in self._animate_funcs_post:
+                self._animate_funcs_post.remove(func)
+        elif removal == "pre":
+            # only pre
+            for func in self._animate_funcs_pre:
+                self._animate_funcs_pre.remove(func)
+        elif removal == "post":
+            # only post
+            for func in self._animate_funcs_post:
+                self._animate_funcs_post.remove(func)
+        else:
+            raise ValueError(
+                f"Animation type: {removal} must be one of 'pre' or 'post'. To remove all animation "
+                f"functions, pass `type=None`"
+            )
 
     def _sort_images_by_depth(self):
         """

@@ -6,12 +6,18 @@ Graphic Features
 
     VertexColors
     UniformColor
-    UniformSize
     SizeSpace
-    Thickness
     VertexPositions
-    PointsSizesFeature
     VertexCmap
+    Thickness
+    VertexMarkers
+    UniformMarker
+    UniformEdgeColor
+    EdgeWidth
+    UniformRotations
+    VertexRotations
+    VertexPointSizes
+    UniformSize
     TextureArray
     ImageCmap
     ImageVmin

@@ -21,7 +21,6 @@ Properties
     :toctree: VertexColors_api
 
     VertexColors.buffer
-    VertexColors.shared
     VertexColors.value
 
 Methods

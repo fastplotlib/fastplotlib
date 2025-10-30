@@ -57,6 +57,7 @@ def test_int(test_graphic):
             graphic = fig[0, 0].add_scatter(data=data)
 
         points = graphic.data
+        assert graphic.data.buffer is graphic.world_object.geometry.positions
         global EVENT_RETURN_VALUE
         graphic.add_event_handler(event_handler, "data")
     else:

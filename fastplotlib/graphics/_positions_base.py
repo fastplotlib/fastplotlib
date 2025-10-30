@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -9,7 +9,6 @@ from .features import (
     VertexColors,
     UniformColor,
     VertexCmap,
-    PointsSizesFeature,
     SizeSpace,
 )
 
@@ -36,7 +35,7 @@ class PositionsGraphic(Graphic):
             return self._colors.value
 
     @colors.setter
-    def colors(self, value: str | np.ndarray | tuple[float] | list[float] | list[str]):
+    def colors(self, value: str | np.ndarray | Sequence[float] | Sequence[str]):
         if isinstance(self._colors, VertexColors):
             self._colors[:] = value
 

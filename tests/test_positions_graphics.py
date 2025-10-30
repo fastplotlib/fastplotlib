@@ -11,52 +11,17 @@ from fastplotlib.graphics.features import (
     VertexCmap,
     UniformColor,
     UniformSize,
-    PointsSizesFeature,
+    VertexPointSizes,
     Thickness,
     GraphicFeatureEvent,
 )
+from tests.utils import TRUTH_CMAPS
 
 from .utils import (
     generate_positions_spiral_data,
     generate_color_inputs,
     MULTI_COLORS_TRUTH,
-    generate_slice_indices,
 )
-
-
-TRUTH_CMAPS = {
-    "jet": np.array(
-        [
-            [0.0, 0.0, 0.5, 1.0],
-            [0.0, 0.0, 0.99910873, 1.0],
-            [0.0, 0.37843138, 1.0, 1.0],
-            [0.0, 0.8333333, 1.0, 1.0],
-            [0.30044276, 1.0, 0.66729915, 1.0],
-            [0.65464896, 1.0, 0.31309298, 1.0],
-            [1.0, 0.90123457, 0.0, 1.0],
-            [1.0, 0.4945534, 0.0, 1.0],
-            [1.0, 0.08787218, 0.0, 1.0],
-            [0.5, 0.0, 0.0, 1.0],
-        ],
-        dtype=np.float32,
-    ),
-    "viridis": np.array(
-        [
-            [0.267004, 0.004874, 0.329415, 1.0],
-            [0.281412, 0.155834, 0.469201, 1.0],
-            [0.244972, 0.287675, 0.53726, 1.0],
-            [0.190631, 0.407061, 0.556089, 1.0],
-            [0.147607, 0.511733, 0.557049, 1.0],
-            [0.119483, 0.614817, 0.537692, 1.0],
-            [0.20803, 0.718701, 0.472873, 1.0],
-            [0.421908, 0.805774, 0.35191, 1.0],
-            [0.699415, 0.867117, 0.175971, 1.0],
-            [0.993248, 0.906157, 0.143936, 1.0],
-        ],
-        dtype=np.float32,
-    ),
-}
-
 
 EVENT_RETURN_VALUE: GraphicFeatureEvent = None
 
@@ -359,8 +324,8 @@ def test_sizes(sizes, uniform_size):
 
     graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
-    assert isinstance(graphic.sizes, PointsSizesFeature)
-    assert isinstance(graphic._sizes, PointsSizesFeature)
+    assert isinstance(graphic.sizes, VertexPointSizes)
+    assert isinstance(graphic._sizes, VertexPointSizes)
     assert len(data) == len(graphic.sizes)
 
     if sizes is None:

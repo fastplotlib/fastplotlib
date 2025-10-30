@@ -929,6 +929,11 @@ class ImageWidget:
         for i, (new_array, current_array, subplot) in enumerate(
             zip(new_data, self._data, self.figure)
         ):
+            # if the new array is the same as the existing array, skip
+            # this allows setting just a subset of the arrays in the ImageWidget
+            if new_data is self._data[i]:
+                continue
+
             # check last two dims (x and y) to see if data shape is changing
             old_data_shape = self._data[i].shape[-self.n_img_dims[i] :]
             self._data[i] = new_array

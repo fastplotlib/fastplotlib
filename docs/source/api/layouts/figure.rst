@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: Figure_api
 
+    Figure.animations
     Figure.cameras
     Figure.canvas
     Figure.controllers
@@ -38,6 +39,7 @@ Methods
     Figure.add_animations
     Figure.add_subplot
     Figure.clear
+    Figure.clear_animations
     Figure.close
     Figure.export
     Figure.export_numpy

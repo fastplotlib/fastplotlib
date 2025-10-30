@@ -35,7 +35,7 @@ class TextureArrayVolume(GraphicFeature):
     ]
 
     def __init__(self, data, isolated_buffer: bool = True):
-        super().__init__()
+        super().__init__(property_name="data")
 
         data = self._fix_data(data)
 
@@ -192,7 +192,9 @@ class TextureArrayVolume(GraphicFeature):
         for texture in self.buffer.ravel():
             texture.update_range((0, 0, 0), texture.size)
 
-        event = GraphicFeatureEvent("data", info={"key": key, "value": value})
+        event = GraphicFeatureEvent(
+            self._property_name, info={"key": key, "value": value}
+        )
         self._call_event_handlers(event)
 
     def __len__(self):
@@ -242,7 +244,7 @@ class VolumeRenderMode(GraphicFeature):
     def __init__(self, value: str):
         self._validate(value)
         self._value = value
-        super().__init__()
+        super().__init__(property_name="mode")
 
     @property
     def value(self) -> str:
@@ -271,7 +273,7 @@ class VolumeRenderMode(GraphicFeature):
         graphic._material = new_material
         self._value = value
 
-        event = GraphicFeatureEvent(type="mode", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -288,7 +290,7 @@ class VolumeIsoThreshold(GraphicFeature):
 
     def __init__(self, value: float):
         self._value = value
-        super().__init__()
+        super().__init__(property_name="threshold")
 
     @property
     def value(self) -> float:
@@ -299,7 +301,7 @@ class VolumeIsoThreshold(GraphicFeature):
         graphic._material.threshold = value
         self._value = graphic._material.threshold
 
-        event = GraphicFeatureEvent(type="threshold", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -316,7 +318,7 @@ class VolumeIsoStepSize(GraphicFeature):
 
     def __init__(self, value: float):
         self._value = value
-        super().__init__()
+        super().__init__(property_name="step_size")
 
     @property
     def value(self) -> float:
@@ -327,7 +329,7 @@ class VolumeIsoStepSize(GraphicFeature):
         graphic._material.step_size = value
         self._value = graphic._material.step_size
 
-        event = GraphicFeatureEvent(type="step_size", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -344,7 +346,7 @@ class VolumeIsoSubStepSize(GraphicFeature):
 
     def __init__(self, value: float):
         self._value = value
-        super().__init__()
+        super().__init__(property_name="substep_size")
 
     @property
     def value(self) -> float:
@@ -355,7 +357,7 @@ class VolumeIsoSubStepSize(GraphicFeature):
         graphic._material.substep_size = value
         self._value = graphic._material.substep_size
 
-        event = GraphicFeatureEvent(type="step_size", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -372,7 +374,7 @@ class VolumeIsoEmissive(GraphicFeature):
 
     def __init__(self, value: pygfx.Color | str | tuple | np.ndarray):
         self._value = pygfx.Color(value)
-        super().__init__()
+        super().__init__(property_name="emissive")
 
     @property
     def value(self) -> pygfx.Color:
@@ -383,7 +385,7 @@ class VolumeIsoEmissive(GraphicFeature):
         graphic._material.emissive = value
         self._value = graphic._material.emissive
 
-        event = GraphicFeatureEvent(type="emissive", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -400,7 +402,7 @@ class VolumeIsoShininess(GraphicFeature):
 
     def __init__(self, value: int):
         self._value = value
-        super().__init__()
+        super().__init__(property_name="shininess")
 
     @property
     def value(self) -> int:
@@ -411,7 +413,7 @@ class VolumeIsoShininess(GraphicFeature):
         graphic._material.shininess = value
         self._value = graphic._material.shininess
 
-        event = GraphicFeatureEvent(type="shininess", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -428,7 +430,7 @@ class VolumeSlicePlane(GraphicFeature):
 
     def __init__(self, value: tuple[float, float, float, float]):
         self._value = value
-        super().__init__()
+        super().__init__(property_name="plane")
 
     @property
     def value(self) -> tuple[float, float, float, float]:
@@ -439,5 +441,5 @@ class VolumeSlicePlane(GraphicFeature):
         graphic._material.plane = value
         self._value = graphic._material.plane
 
-        event = GraphicFeatureEvent(type="plane", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)

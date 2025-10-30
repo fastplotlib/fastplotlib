@@ -1,4 +1,4 @@
-name: CI
+name: CI-pygfx-release
 
 on:
   push:
@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python: ["3.11", "3.12", "3.13"]
+        python: ["3.11", "3.13"]
         imgui_dep: ["imgui", ""]
         notebook_dep: ["notebook", ""]
         os: ["ubuntu-latest", "macos-latest"]
@@ -63,19 +63,20 @@ jobs:
       run: |
         pytest -v tests/
     - name: Test examples
+      if: ${{ matrix.python == '3.13' }}
       env:
         RENDERCANVAS_FORCE_OFFSCREEN: 1
       run: |
         pytest -v examples/
     - name: Test examples notebooks, exclude ImageWidget notebook
-      if: ${{ matrix.notebook_dep == 'notebook' }}
+      if: ${{ matrix.notebook_dep == 'notebook' && matrix.python == '3.13' }}
       env:
         FASTPLOTLIB_NB_TESTS: 1
       # test notebooks, exclude ImageWidget notebooks
       run: pytest --nbmake $(find ./examples/notebooks/ -maxdepth 1 -type f -name "*.ipynb" ! -name "image_widget*.ipynb" -print | xargs)
-    - name: Test ImageWidget notebooks
+    - name: Test ImageWidget notebook
       # test image widget notebooks only if imgui is installed
-      if: ${{ matrix.notebook_dep == 'notebook' && matrix.imgui_dep == 'imgui' }}
+      if: ${{ matrix.notebook_dep == 'notebook' && matrix.imgui_dep == 'imgui' && matrix.python == '3.13' }}
       env:
         FASTPLOTLIB_NB_TESTS: 1
       run: pytest --nbmake $(find ./examples/notebooks/ -maxdepth 1 -type f -name "image_widget*.ipynb" -print | xargs)

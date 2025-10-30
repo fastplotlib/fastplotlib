@@ -33,6 +33,7 @@ def generate_add_graphics_methods():
 
     f.write("from typing import *\n\n")
     f.write("import numpy\n\n")
+    f.write("import pygfx\n\n")
     f.write("from ..graphics import *\n")
     f.write("from ..graphics._base import Graphic\n\n")
 

@@ -40,7 +40,7 @@ class LinearSelectionFeature(GraphicFeature):
 
         """
 
-        super().__init__()
+        super().__init__(property_name="selection")
 
         self._axis = axis
         self._limits = limits
@@ -70,7 +70,7 @@ class LinearSelectionFeature(GraphicFeature):
 
         self._value = value
 
-        event = GraphicFeatureEvent("selection", {"value": value})
+        event = GraphicFeatureEvent(self._property_name, {"value": value})
         event.get_selected_index = selector.get_selected_index
 
         self._call_event_handlers(event)
@@ -99,7 +99,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
     ]
 
     def __init__(self, value: tuple[int, int], axis: str, limits: tuple[float, float]):
-        super().__init__()
+        super().__init__(property_name="selection")
 
         self._axis = axis
         self._limits = limits
@@ -182,7 +182,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
         if len(self._event_handlers) < 1:
             return
 
-        event = GraphicFeatureEvent("selection", {"value": self.value})
+        event = GraphicFeatureEvent(self._property_name, {"value": self.value})
 
         event.get_selected_indices = selector.get_selected_indices
         event.get_selected_data = selector.get_selected_data
@@ -220,7 +220,7 @@ class RectangleSelectionFeature(GraphicFeature):
         value: tuple[float, float, float, float],
         limits: tuple[float, float, float, float],
     ):
-        super().__init__()
+        super().__init__(property_name="selection")
 
         self._limits = limits
         self._value = tuple(int(v) for v in value)
@@ -335,7 +335,7 @@ class RectangleSelectionFeature(GraphicFeature):
         if len(self._event_handlers) < 1:
             return
 
-        event = GraphicFeatureEvent("selection", {"value": self.value})
+        event = GraphicFeatureEvent(self._property_name, {"value": self.value})
 
         event.get_selected_indices = selector.get_selected_indices
         event.get_selected_data = selector.get_selected_data
@@ -371,7 +371,7 @@ class PolygonSelectionFeature(GraphicFeature):
         value: Sequence[tuple[float]],
         limits: tuple[float, float, float, float],
     ):
-        super().__init__()
+        super().__init__(property_name="selection")
 
         self._limits = limits
         self._value = np.asarray(value).reshape(-1, 3).astype(float)
@@ -438,7 +438,7 @@ class PolygonSelectionFeature(GraphicFeature):
         if len(self._event_handlers) < 1:
             return
 
-        event = GraphicFeatureEvent("selection", {"value": self.value})
+        event = GraphicFeatureEvent(self._property_name, {"value": self.value})
 
         event.get_selected_indices = selector.get_selected_indices
         event.get_selected_data = selector.get_selected_data

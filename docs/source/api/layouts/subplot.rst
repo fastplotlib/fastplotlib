@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: Subplot_api
 
+    Subplot.animations
     Subplot.axes
     Subplot.background_color
     Subplot.camera
@@ -58,6 +59,7 @@ Methods
     Subplot.center_graphic
     Subplot.center_scene
     Subplot.clear
+    Subplot.clear_animations
     Subplot.delete_graphic
     Subplot.get_figure
     Subplot.insert_graphic
