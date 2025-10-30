@@ -56,7 +56,7 @@ class VectorPositions(GraphicFeature):
 
         self._positions = positions
 
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> np.ndarray:
@@ -143,7 +143,7 @@ class VectorDirections(GraphicFeature):
 
         self._directions = directions
 
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> np.ndarray:
