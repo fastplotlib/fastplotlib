@@ -137,4 +137,3 @@ dmypy.json
 
 # diffs from visual regression tests
 examples/desktop/diffs/*.png
-
