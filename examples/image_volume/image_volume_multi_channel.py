@@ -6,6 +6,7 @@ Example with multi-channel volume images. Use alpha_mode "add" for additive blen
 """
 
 # test_example = false
+# run_example = false
 # sphinx_gallery_pygfx_docs = 'code'
 
 import fastplotlib as fpl
