@@ -5,8 +5,8 @@ Multi channel volumes
 Example with multi-channel volume images. Use alpha_mode "add" for additive blending.
 """
 
-# test_example = true
-# sphinx_gallery_pygfx_docs = 'screenshot'
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'code'
 
 import fastplotlib as fpl
 from ome_zarr.io import parse_url
