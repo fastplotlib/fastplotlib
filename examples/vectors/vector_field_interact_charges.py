@@ -40,7 +40,7 @@ figure = fpl.Figure(size=(700, 750))
 # positions of 3 particles, ignore z
 positions = np.array([
     [3, 3, 0],
-    [7, 7, 0],
+    [8, 5, 0],
     [4, 8, 0],
 ])
 
@@ -96,7 +96,7 @@ def update_field():
     for i in range(particles.data.value.shape[0]):
         force_vectors = coulombs_law(
             q=particles.metadata["charges"][i],  # force due to one of the charges
-            r=particles.data[:, :-1][i] - field_positions
+            r=field_positions - particles.data[:, :-1][i]
         )
 
         force_vectors_total = force_vectors_total + force_vectors
