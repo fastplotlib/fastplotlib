@@ -795,8 +795,8 @@ deleted
 | value    | bool | True when graphic was deleted |
 +----------+------+-------------------------------+
 
-VectorField
------------
+VectorsGraphic
+--------------
 
 positions
 ^^^^^^^^^
