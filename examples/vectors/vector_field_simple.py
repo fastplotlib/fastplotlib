@@ -1,8 +1,8 @@
 """
-Simple Vector Field
-===================
+Simple Vectors
+==============
 
-Simple vector field example. Similar to matplotlib quiver.
+Simple example with vectors. Similar to matplotlib quiver.
 
 """
 
@@ -29,7 +29,7 @@ positions = np.column_stack([x.ravel(), y.ravel()])
 directions = np.column_stack([u.ravel(), v.ravel()])
 
 
-vector_field = figure[0, 0].add_vector_field(
+vectors = figure[0, 0].add_vectors(
     positions=positions,
     directions=directions,
 )

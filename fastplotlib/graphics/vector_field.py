@@ -12,7 +12,7 @@ from .features import (
 )
 
 
-class VectorField(Graphic):
+class VectorsGraphic(Graphic):
     _features = {
         "positions": VectorPositions,
         "directions": VectorDirections,
@@ -28,7 +28,7 @@ class VectorField(Graphic):
         **kwargs,
     ):
         """
-        Create a Vector Field. Similar to matplotlib quiver.
+        Create graphic that draw vectors. Similar to matplotlib quiver.
 
         Parameters
         ----------
@@ -46,7 +46,7 @@ class VectorField(Graphic):
 
         size: float or None
             Size of a vector of magnitude 1 in world space for display purpose.
-            Estimated from field density if not provided.
+            Estimated from density if not provided.
 
         vector_shape_options: dict
             dict with the following fields that directly describes the shape of the vector arrows.
@@ -88,7 +88,7 @@ class VectorField(Graphic):
             shape_options = vector_shape_options
         else:
             if size is None:
-                # guess from field density
+                # guess from density
                 # sort xs and then take unique to get the density along x, same for y and z
                 x_density = np.diff(np.unique(np.sort(self._positions[:, 0]))).mean()
                 y_density = np.diff(np.unique(np.sort(self._positions[:, 1]))).mean()

@@ -1,8 +1,8 @@
 """
-Swirling vector field
-=====================
+Swirling vectors
+================
 
-Example showing a swirling vector field. Similar to matplotlib quiver.
+Example showing swirling vectors. Similar to matplotlib quiver.
 
 """
 
@@ -32,7 +32,7 @@ positions = np.column_stack([x.ravel(), y.ravel(), z.ravel()])
 directions = np.column_stack([u.ravel(), v.ravel(), w.ravel()])
 
 
-vector_field = figure[0, 0].add_vector_field(
+vectors = figure[0, 0].add_vectors(
     positions=positions,
     directions=directions,
 )
