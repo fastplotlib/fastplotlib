@@ -173,6 +173,7 @@ def generate_torso(
     theta_length,
     z_offset=0.0,
 ):
+    """copied from pygfx, generates the mesh for a cylinder with the given parameters"""
     # compute POSITIONS assuming x-y horizontal plane and z up axis
 
     # radius for each vertex ring from bottom to top
@@ -244,6 +245,7 @@ def generate_torso(
 
 
 def generate_cap(radius, height, radial_segments, theta_start, theta_length, up=True):
+    """copied from pygfx, generates the mesh for a circular cap with the given parameters"""
     # compute POSITIONS assuming x-y horizontal plane and z up axis
 
     # to enable texture mapping to fully wrap around the cylinder,
@@ -302,7 +304,35 @@ def create_vector_geometry(
     stalk_height: float = 0.5,
     segments: int = 12,
 ):
-    radius_top = 0
+    """
+    Generate the mesh for a vector pointing in the direction [0, 0, 1], a unit vector in the +z direction.
+
+    Parameters
+    ----------
+    color:
+        color of the vector
+
+    cone_cap_color:
+        color of the cone cap, by default it will use a darker version of the provided vector color from above.
+
+    cone_radius:
+        radius of the bottom of the cone segment of the vector
+
+    cone_height:
+        height of the cone segment of the vector
+
+    stalk_radius:
+        radius of the vector's stalk
+
+    stalk_height:
+        height of the vector's stalk
+
+    segments:
+        number of mesh segments, more looks nicers but is also more expennsive to render, 12 looks good enough.
+
+    """
+
+    radius_top = 0  # radius top = 0 means the cylinder becomes a cone
 
     radial_segments = segments
 
