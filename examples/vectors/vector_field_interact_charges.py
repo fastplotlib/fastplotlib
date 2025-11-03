@@ -5,6 +5,7 @@ View Electric Field
 Interactively move the charges around by clicking and dragging the mouse to see
 the static field with the charges at their new positions. This is just computing
 static fields, no electrodynamics or magnetic field effects are taken into account.
+
 """
 
 # test_example = false
@@ -59,15 +60,13 @@ particles = figure[0, 0].add_scatter(
     data=positions,
     colors=colors,
     sizes=1,
-    edge_width=0.1,
+    edge_width=0.05,
     uniform_edge_color=False,
     alpha=0.7,
     size_space="model",
     metadata={"charges": charges},  # you can store anything as arbitrary metadata
     alpha_mode="blend",
 )
-particles.world_object.render_order
-
 
 xs = np.linspace(0, 10, num=20)
 ys = np.linspace(0, 10, num=20)
@@ -84,6 +83,8 @@ field_directions = np.ones(field_positions.shape, dtype=np.float32)
 vectors = figure[0, 0].add_vectors(
     positions=field_positions,
     directions=field_directions,
+    alpha=0.7,
+    alpha_mode="blend",
 )
 
 
@@ -112,7 +113,7 @@ def update_field():
 update_field()
 
 # render particles on top of field
-particles.world_object.material.render_queue = fpl.utils.RenderQueue.selector
+particles.world_object.material.render_queue = vectors.world_object.material.render_queue + 1
 
 # interactivity code, very similar to the "Drag points" example
 is_moving = False
@@ -123,7 +124,7 @@ def start_drag(ev: pygfx.PointerEvent):
     global is_moving
     global particle_index
 
-    if ev.button != 1:
+    if ev.button != 1:  # check for left mouse button
         return
 
     is_moving = True
