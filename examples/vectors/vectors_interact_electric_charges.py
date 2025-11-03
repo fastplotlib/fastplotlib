@@ -38,11 +38,11 @@ def coulombs_law(q: float, r: np.ndarray) -> np.ndarray[float, float]:
 
 figure = fpl.Figure(size=(700, 750))
 
-# positions of 3 particles, ignore z
+# positions of 3 particles in a 2d plane
 positions = np.array([
-    [3, 3, 0],
-    [8, 5, 0],
-    [4, 8, 0],
+    [3, 3],
+    [8, 5],
+    [4, 8],
 ])
 
 # charges of the 3 particles
@@ -76,9 +76,9 @@ x, y = np.meshgrid(xs, ys)
 # display vectors at these positions in the field
 field_positions = np.column_stack([x.ravel(), y.ravel()])
 
-# direction of the field at every position due to the particle's charge
+# allocate array to store direction of the field at every position due to the charge of the 3 particles
 # i.e., the force felt by a unit charge at a given position in the field
-field_directions = np.ones(field_positions.shape, dtype=np.float32)
+field_directions = np.zeros(field_positions.shape, dtype=np.float32)
 
 vectors = figure[0, 0].add_vectors(
     positions=field_positions,
