@@ -19,7 +19,7 @@ start, stop, step = 0, 2 * np.pi, 0.2
 # get uniform x, y positions
 x, y = np.meshgrid(np.arange(start, stop, step), np.arange(start, stop, step))
 
-# vectors, u and v are x and y components indication directions
+# vectors, u and v are x and y components indicating directions
 u = np.cos(x)
 v = np.sin(y)
 

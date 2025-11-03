@@ -1,6 +1,6 @@
 """
-View Electric Field
-===================
+Static Electric Field
+=====================
 
 Interactively move the charges around by clicking and dragging the mouse to see
 the static field with the charges at their new positions. This is just computing
