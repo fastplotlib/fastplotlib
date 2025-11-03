@@ -75,6 +75,15 @@ class VectorsGraphic(Graphic):
         # else:
         #     self._directions = VectorDirections(directions)
 
+        positions = np.asarray(positions)
+        directions = np.asarray(directions)
+
+        if positions.shape != directions.shape:
+            raise ValueError(
+                f"positions.shape != directions.shape: {positions.shape} != {directions.shape}\n"
+                f"They must be of the same shape"
+            )
+
         self._positions = VectorPositions(positions)
         self._directions = VectorDirections(directions)
 

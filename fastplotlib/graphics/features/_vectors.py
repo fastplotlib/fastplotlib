@@ -23,7 +23,7 @@ class VectorPositions(GraphicFeature):
 
     def __init__(
         self,
-        positions: np.ndarray | Sequence[float],
+        positions: np.ndarray,
         isolated_buffer: bool = True,
         property_name: str = "positions",
     ):
@@ -112,7 +112,7 @@ class VectorDirections(GraphicFeature):
 
     def __init__(
         self,
-        directions: np.ndarray | Sequence[float],
+        directions: np.ndarray,
         isolated_buffer: bool = True,
         property_name: str = "directions",
     ):
