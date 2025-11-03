@@ -4,7 +4,7 @@ View Electric Field
 
 Interactively move the charges around by clicking and dragging the mouse to see
 the static field with the charges at their new positions. This is just computing
-static fields, not electrodynamics or magnetic field effects are taken into account.
+static fields, no electrodynamics or magnetic field effects are taken into account.
 """
 
 # test_example = false
