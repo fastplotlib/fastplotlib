@@ -66,6 +66,7 @@ sphinx_gallery_conf = {
             "../../examples/line",
             "../../examples/line_collection",
             "../../examples/scatter",
+            "../../examples/vectors",
             "../../examples/text",
             "../../examples/events",
             "../../examples/selection_tools",

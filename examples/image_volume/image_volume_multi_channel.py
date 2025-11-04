@@ -5,8 +5,9 @@ Multi channel volumes
 Example with multi-channel volume images. Use alpha_mode "add" for additive blending.
 """
 
-# test_example = true
-# sphinx_gallery_pygfx_docs = 'screenshot'
+# test_example = false
+# run_example = false
+# sphinx_gallery_pygfx_docs = 'code'
 
 import fastplotlib as fpl
 from ome_zarr.io import parse_url
@@ -18,10 +19,8 @@ url = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.5/idr0062A/6001240_labels.zar
 
 # read the image data
 reader = Reader(parse_url(url))
-# nodes may include images, labels etc
-nodes = list(reader())
-# first node will be the image pixel data
-image_node = nodes[0]
+# first node is image data
+image_node = next(reader())
 
 dask_data = image_node.data
 

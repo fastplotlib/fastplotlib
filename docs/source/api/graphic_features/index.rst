@@ -32,6 +32,8 @@ Graphic Features
     VolumeIsoEmissive
     VolumeIsoShininess
     VolumeSlicePlane
+    VectorPositions
+    VectorDirections
     TextData
     FontSize
     TextFaceColor
