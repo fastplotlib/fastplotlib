@@ -6,6 +6,7 @@ import numpy as np
 import pygfx
 from .._collection_base import GraphicCollection
 
+from ...utils.enums import RenderQueue
 from .._base import Graphic
 from ..features import RectangleSelectionFeature
 from ._base_selector import BaseSelector, MoveInfo
@@ -135,7 +136,13 @@ class RectangleSelector(BaseSelector):
         self.fill = pygfx.Mesh(
             pygfx.box_geometry(width, height, 1),
             pygfx.MeshBasicMaterial(
-                color=pygfx.Color(self.fill_color), pick_write=True
+                color=pygfx.Color(self.fill_color),
+                alpha_mode="blend",
+                opacity=0.4,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
             ),
         )
 
@@ -153,7 +160,15 @@ class RectangleSelector(BaseSelector):
 
         left_line = pygfx.Line(
             pygfx.Geometry(positions=left_line_data.copy()),
-            pygfx.LineMaterial(thickness=edge_thickness, color=self.edge_color),
+            pygfx.LineMaterial(
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+            ),
         )
 
         # position data for the right edge line
@@ -166,7 +181,15 @@ class RectangleSelector(BaseSelector):
 
         right_line = pygfx.Line(
             pygfx.Geometry(positions=right_line_data.copy()),
-            pygfx.LineMaterial(thickness=edge_thickness, color=self.edge_color),
+            pygfx.LineMaterial(
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+            ),
         )
 
         # position data for the left edge line
@@ -179,7 +202,15 @@ class RectangleSelector(BaseSelector):
 
         bottom_line = pygfx.Line(
             pygfx.Geometry(positions=bottom_line_data.copy()),
-            pygfx.LineMaterial(thickness=edge_thickness, color=self.edge_color),
+            pygfx.LineMaterial(
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+            ),
         )
 
         # position data for the right edge line
@@ -192,7 +223,15 @@ class RectangleSelector(BaseSelector):
 
         top_line = pygfx.Line(
             pygfx.Geometry(positions=top_line_data.copy()),
-            pygfx.LineMaterial(thickness=edge_thickness, color=self.edge_color),
+            pygfx.LineMaterial(
+                thickness=edge_thickness,
+                color=self.edge_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+            ),
         )
 
         self.edges: Tuple[pygfx.Line, pygfx.Line, pygfx.Line, pygfx.Line] = (
@@ -203,9 +242,10 @@ class RectangleSelector(BaseSelector):
         )  # left line, right line, bottom line, top line
 
         # add the edge lines
+
         for edge in self.edges:
-            edge.world.z = -0.5
-            group.add(edge)
+            edge.render_order = 1
+            group.add(*self.edges)
 
         # vertices
         top_left_vertex_data = (xmin, ymax, 1)
@@ -221,6 +261,11 @@ class RectangleSelector(BaseSelector):
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -232,6 +277,11 @@ class RectangleSelector(BaseSelector):
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -243,6 +293,11 @@ class RectangleSelector(BaseSelector):
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -254,6 +309,11 @@ class RectangleSelector(BaseSelector):
                 color=self.vertex_color,
                 size_mode="vertex",
                 edge_color=self.vertex_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
             ),
         )
 
@@ -265,7 +325,7 @@ class RectangleSelector(BaseSelector):
         )
 
         for vertex in self.vertices:
-            vertex.world.z = -0.25
+            vertex.render_order = 2
             group.add(vertex)
 
         self._selection = RectangleSelectionFeature(selection, limits=self._limits)
@@ -337,7 +397,6 @@ class RectangleSelector(BaseSelector):
                 f"`mode` must be one of 'full', 'partial', or 'ignore', you have passed {mode}"
             )
         if "Line" in source.__class__.__name__:
-
             if isinstance(source, GraphicCollection):
                 data_selections: List[np.ndarray] = list()
 
@@ -431,7 +490,7 @@ class RectangleSelector(BaseSelector):
         Parameters
         ----------
         graphic: Graphic, default ``None``
-            If provided, returns the selection indices from this graphic instrad of the graphic set as ``parent``
+            If provided, returns the selection indices from this graphic instead of the graphic set as ``parent``
 
         Returns
         -------
@@ -479,7 +538,6 @@ class RectangleSelector(BaseSelector):
             return ixs
 
     def _move_graphic(self, move_info: MoveInfo):
-
         # If this the first move in this drag, store initial selection
         if move_info.start_selection is None:
             move_info.start_selection = self.selection

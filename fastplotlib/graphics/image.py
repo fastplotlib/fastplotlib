@@ -5,7 +5,12 @@ import pygfx
 
 from ..utils import quick_min_max
 from ._base import Graphic
-from .selectors import LinearSelector, LinearRegionSelector, RectangleSelector
+from .selectors import (
+    LinearSelector,
+    LinearRegionSelector,
+    RectangleSelector,
+    PolygonSelector,
+)
 from .features import (
     TextureArray,
     ImageCmap,
@@ -83,8 +88,8 @@ class ImageGraphic(Graphic):
     def __init__(
         self,
         data: Any,
-        vmin: int = None,
-        vmax: int = None,
+        vmin: float = None,
+        vmax: float = None,
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
@@ -100,11 +105,11 @@ class ImageGraphic(Graphic):
             array-like, usually numpy.ndarray, must support ``memoryview()``
             | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
+        vmin: float, optional
+            minimum value for color scaling, estimated from data if not provided
 
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
+        vmax: float, optional
+            maximum value for color scaling, estimated from data if not provided
 
         cmap: str, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
@@ -131,11 +136,20 @@ class ImageGraphic(Graphic):
 
         world_object = pygfx.Group()
 
-        # texture array that manages the textures on the GPU for displaying this image
-        self._data = TextureArray(data, isolated_buffer=isolated_buffer)
+        if isinstance(data, TextureArray):
+            # share buffer
+            self._data = data
+        else:
+            # create new texture array to manage buffer
+            # texture array that manages the multiple textures on the GPU that represent this image
+            self._data = TextureArray(data, isolated_buffer=isolated_buffer)
 
         if (vmin is None) or (vmax is None):
-            vmin, vmax = quick_min_max(data)
+            _vmin, _vmax = quick_min_max(self.data.value)
+            if vmin is None:
+                vmin = _vmin
+            if vmax is None:
+                vmax = _vmax
 
         # other graphic features
         self._vmin = ImageVmin(vmin)
@@ -167,9 +181,8 @@ class ImageGraphic(Graphic):
         )
 
         # iterate through each texture chunk and create
-        # an _ImageTIle, offset the tile using the data indices
+        # an _ImageTile, offset the tile using the data indices
         for texture, chunk_index, data_slice in self._data:
-
             # create an ImageTile using the texture for this chunk
             img = _ImageTile(
                 geometry=pygfx.Geometry(grid=texture),
@@ -201,15 +214,16 @@ class ImageGraphic(Graphic):
         self._data[:] = data
 
     @property
-    def cmap(self) -> str:
+    def cmap(self) -> str | None:
         """
-        Get or set the colormap
+        Get or set the colormap for grayscale images. Returns ``None`` if image is RGB(A).
 
         For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
         """
-        if self.data.value.ndim > 2:
-            raise AttributeError("RGB(A) images do not have a colormap property")
-        return self._cmap.value
+        if self._cmap is not None:
+            return self._cmap.value
+
+        return None
 
     @cmap.setter
     def cmap(self, name: str):
@@ -310,9 +324,6 @@ class ImageGraphic(Graphic):
 
         self._plot_area.add_graphic(selector, center=False)
 
-        # place selector above this graphic
-        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
-
         return selector
 
     def add_linear_region_selector(
@@ -388,9 +399,6 @@ class ImageGraphic(Graphic):
 
         self._plot_area.add_graphic(selector, center=False)
 
-        # place above this graphic
-        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
-
         return selector
 
     def add_rectangle_selector(
@@ -433,7 +441,39 @@ class ImageGraphic(Graphic):
 
         self._plot_area.add_graphic(selector, center=False)
 
-        # place above this graphic
-        selector.offset = selector.offset + (0.0, 0.0, self.offset[-1] + 1)
+        return selector
+
+    def add_polygon_selector(
+        self,
+        selection: List[tuple[float, float]] = None,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
+    ) -> PolygonSelector:
+        """
+        Add a :class:`.PolygonSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: List of positions, optional
+            Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
+
+        """
+
+        # min/max limits are image shape
+        # rows are ys, columns are xs
+        limits = (0, self._data.value.shape[1], 0, self._data.value.shape[0])
+
+        selector = PolygonSelector(
+            selection,
+            limits,
+            fill_color=fill_color,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
 
         return selector

@@ -13,8 +13,13 @@ from ...utils import (
 )
 
 
-# manages an array of 8192x8192 Textures representing chunks of an image
 class TextureArray(GraphicFeature):
+    """
+    Manages an array of Textures representing chunks of an image.
+
+    Creates multiple pygfx.Texture objects based on the GPU's max texture dimension limit.
+    """
+
     event_info_spec = [
         {
             "dict key": "key",
@@ -28,8 +33,8 @@ class TextureArray(GraphicFeature):
         },
     ]
 
-    def __init__(self, data, isolated_buffer: bool = True):
-        super().__init__()
+    def __init__(self, data, isolated_buffer: bool = True, property_name: str = "data"):
+        super().__init__(property_name=property_name)
 
         data = self._fix_data(data)
 
@@ -70,8 +75,6 @@ class TextureArray(GraphicFeature):
 
             self.buffer[buffer_index] = texture
 
-        self._shared: int = 0
-
     @property
     def value(self) -> np.ndarray:
         return self._value
@@ -98,10 +101,6 @@ class TextureArray(GraphicFeature):
         into individual Textures on the GPU
         """
         return self._col_indices
-
-    @property
-    def shared(self) -> int:
-        return self._shared
 
     def _fix_data(self, data):
         if data.ndim not in (2, 3):
@@ -155,7 +154,9 @@ class TextureArray(GraphicFeature):
         for texture in self.buffer.ravel():
             texture.update_range((0, 0, 0), texture.size)
 
-        event = GraphicFeatureEvent("data", info={"key": key, "value": value})
+        event = GraphicFeatureEvent(
+            self._property_name, info={"key": key, "value": value}
+        )
         self._call_event_handlers(event)
 
     def __len__(self):
@@ -173,9 +174,9 @@ class ImageVmin(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: float):
+    def __init__(self, value: float, property_name: str = "vmin"):
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> float:
@@ -187,7 +188,7 @@ class ImageVmin(GraphicFeature):
         graphic._material.clim = (value, vmax)
         self._value = value
 
-        event = GraphicFeatureEvent(type="vmin", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -202,9 +203,9 @@ class ImageVmax(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: float):
+    def __init__(self, value: float, property_name: str = "vmax"):
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> float:
@@ -216,7 +217,7 @@ class ImageVmax(GraphicFeature):
         graphic._material.clim = (vmin, value)
         self._value = value
 
-        event = GraphicFeatureEvent(type="vmax", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -231,10 +232,10 @@ class ImageCmap(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: str):
+    def __init__(self, value: str, property_name: str = "cmap"):
         self._value = value
         self.texture = get_cmap_texture(value)
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> str:
@@ -247,7 +248,7 @@ class ImageCmap(GraphicFeature):
         graphic._material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
 
         self._value = value
-        event = GraphicFeatureEvent(type="cmap", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 
 
@@ -262,10 +263,10 @@ class ImageInterpolation(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: str):
+    def __init__(self, value: str, property_name: str = "interpolation"):
         self._validate(value)
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     def _validate(self, value):
         if value not in ["nearest", "linear"]:
@@ -297,10 +298,10 @@ class ImageCmapInterpolation(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: str):
+    def __init__(self, value: str, property_name: str = "cmap_interpolation"):
         self._validate(value)
         self._value = value
-        super().__init__()
+        super().__init__(property_name=property_name)
 
     def _validate(self, value):
         if value not in ["nearest", "linear"]:
@@ -321,5 +322,5 @@ class ImageCmapInterpolation(GraphicFeature):
         graphic._material.map.mag_filter = value
 
         self._value = value
-        event = GraphicFeatureEvent(type="cmap_interpolation", info={"value": value})
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)

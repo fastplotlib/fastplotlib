@@ -18,10 +18,10 @@ figure = fpl.Figure(
 )
 
 # add image
-image_graphic = figure[0, 0].add_image(data=iio.imread("imageio:camera.png"))
+image = figure[0, 0].add_image(data=iio.imread("imageio:camera.png"))
 
 # add rectangle selector to image graphic
-rectangle_selector = image_graphic.add_rectangle_selector()
+rectangle_selector = image.add_rectangle_selector()
 
 # add a zoomed plot of the selected data
 zoom_ig = figure[1, 0].add_image(rectangle_selector.get_selected_data())

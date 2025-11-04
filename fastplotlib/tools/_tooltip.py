@@ -3,6 +3,7 @@ from functools import partial
 import numpy as np
 import pygfx
 
+from ..utils.enums import RenderQueue
 from ..graphics import LineGraphic, ImageGraphic, ScatterGraphic, Graphic
 from ..graphics.features import GraphicFeatureEvent
 
@@ -59,19 +60,28 @@ class Tooltip:
             screen_space=False,
             anchor="bottom-left",
             material=pygfx.TextMaterial(
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.overlay,
                 color="w",
                 outline_color="w",
                 outline_thickness=0.0,
+                depth_write=False,
+                depth_test=False,
                 pick_write=False,
             ),
         )
 
         # plane for the background of the text object
         geometry = pygfx.plane_geometry(1, 1)
-        material = pygfx.MeshBasicMaterial(color=(0.1, 0.1, 0.3, 0.95))
+        material = pygfx.MeshBasicMaterial(
+            alpha_mode="blend",
+            render_queue=RenderQueue.overlay,
+            color=(0.1, 0.1, 0.3, 0.95),
+            depth_write=False,
+            depth_test=False,
+        )
         self._plane = pygfx.Mesh(geometry, material)
-        # else text not visible
-        self._plane.world.z = 0.5
 
         # line to outline the plane mesh
         self._line = pygfx.Line(
@@ -87,8 +97,17 @@ class Tooltip:
                     dtype=np.float32,
                 )
             ),
-            material=pygfx.LineThinMaterial(thickness=1.0, color=(0.8, 0.8, 1.0, 1.0)),
+            material=pygfx.LineThinMaterial(
+                alpha_mode="blend",
+                render_queue=RenderQueue.overlay,
+                thickness=1.0,
+                color=(0.8, 0.8, 1.0, 1.0),
+                depth_write=False,
+                depth_test=False,
+            ),
         )
+        # Plane gets rendered before text and line
+        self._plane.render_order = -1
 
         self._world_object = pygfx.Group()
         self._world_object.add(self._plane, self._text, self._line)

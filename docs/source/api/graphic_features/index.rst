@@ -6,18 +6,34 @@ Graphic Features
 
     VertexColors
     UniformColor
-    UniformSize
     SizeSpace
-    Thickness
     VertexPositions
-    PointsSizesFeature
     VertexCmap
+    Thickness
+    VertexMarkers
+    UniformMarker
+    UniformEdgeColor
+    EdgeWidth
+    UniformRotations
+    VertexRotations
+    VertexPointSizes
+    UniformSize
     TextureArray
     ImageCmap
     ImageVmin
     ImageVmax
     ImageInterpolation
     ImageCmapInterpolation
+    TextureArrayVolume
+    VolumeRenderMode
+    VolumeIsoThreshold
+    VolumeIsoStepSize
+    VolumeIsoSubStepSize
+    VolumeIsoEmissive
+    VolumeIsoShininess
+    VolumeSlicePlane
+    VectorPositions
+    VectorDirections
     TextData
     FontSize
     TextFaceColor
@@ -29,6 +45,8 @@ Graphic Features
     Name
     Offset
     Rotation
+    Alpha
+    AlphaMode
     Visible
     Deleted
     GraphicFeatureEvent

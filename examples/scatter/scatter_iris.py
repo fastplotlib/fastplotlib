@@ -6,24 +6,36 @@ Example showing scatter plot using sklearn iris dataset.
 """
 
 # test_example = true
-# sphinx_gallery_pygfx_docs = 'hidden'
+# sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
 import numpy as np
-from pathlib import Path
-import sys
+from sklearn.cluster import AgglomerativeClustering
+from sklearn import datasets
+
 
 figure = fpl.Figure(size=(700, 560))
 
-current_file = Path(sys.argv[0]).resolve()
+data, target = datasets.load_iris(return_X_y=True)
+data = data[:, :2]  # use only first 2 features
 
-data_path = Path(__file__).parent.parent.joinpath("data", "iris.npy")
-data = np.load(data_path)
+# map target class to scatter point marker
+markers_map = {0: "o", 1: "s", 2: "+"}
+markers = list(map(markers_map.get, target))
 
-n_points = 50
-colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
+agg = AgglomerativeClustering(n_clusters=3)
+agg.fit_predict(data)
 
-scatter_graphic = figure[0, 0].add_scatter(data=data[:, :-1], sizes=6, alpha=0.7, colors=colors)
+clusters_labels = agg.labels_
+
+scatter = figure[0, 0].add_scatter(
+    data=data,
+    sizes=10,
+    alpha=0.7,
+    cmap="tab10",
+    cmap_transform=clusters_labels,
+    markers=markers,
+)
 
 figure.show()
 

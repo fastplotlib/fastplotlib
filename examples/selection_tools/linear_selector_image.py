@@ -2,8 +2,9 @@
 Linear Selectors Image
 ======================
 
-Example showing how to use a `LinearSelector` to selector rows or columns of an image. The subplot on the right
-displays the data for the selector row and column.
+Example showing how to use a `LinearSelector` to select rows or columns of an image. The subplot on the right
+displays the data for the selector row and column. Move the selectors independently or click the middle mouse
+button to move both selectors to the clicked location.
 """
 
 # test_example = false
@@ -24,10 +25,10 @@ figure = fpl.Figure(
 image = figure[0, 0].add_image(image_data)
 
 # add a row selector
-image_row_selector = image.add_linear_selector(axis="y")
+image_row_selector = image.add_linear_selector(axis="y", edge_color="cyan")
 
 # add column selector
-image_col_selector = image.add_linear_selector()
+image_col_selector = image.add_linear_selector(edge_color="cyan")
 
 # make a line to indicate row data
 line_image_row = figure[0, 1].add_line(image.data[0])

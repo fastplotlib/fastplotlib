@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -9,7 +9,6 @@ from .features import (
     VertexColors,
     UniformColor,
     VertexCmap,
-    PointsSizesFeature,
     SizeSpace,
 )
 
@@ -36,7 +35,7 @@ class PositionsGraphic(Graphic):
             return self._colors.value
 
     @colors.setter
-    def colors(self, value: str | np.ndarray | tuple[float] | list[float] | list[str]):
+    def colors(self, value: str | np.ndarray | Sequence[float] | Sequence[str]):
         if isinstance(self._colors, VertexColors):
             self._colors[:] = value
 
@@ -46,7 +45,7 @@ class PositionsGraphic(Graphic):
     @property
     def cmap(self) -> VertexCmap:
         """
-        Control the cmap, cmap transform, or cmap alpha
+        Control the cmap or cmap transform
 
         For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
         """
@@ -77,7 +76,6 @@ class PositionsGraphic(Graphic):
         data: Any,
         colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
         uniform_color: bool = False,
-        alpha: float = 1.0,
         cmap: str | VertexCmap = None,
         cmap_transform: np.ndarray = None,
         isolated_buffer: bool = True,
@@ -112,7 +110,6 @@ class PositionsGraphic(Graphic):
                         self._colors,
                         cmap_name=cmap,
                         transform=cmap_transform,
-                        alpha=alpha,
                     )
             elif isinstance(cmap, VertexCmap):
                 # use existing cmap instance
@@ -129,9 +126,7 @@ class PositionsGraphic(Graphic):
                 self._colors = colors
                 self._colors._shared += 1
                 # blank colormap instance
-                self._cmap = VertexCmap(
-                    self._colors, cmap_name=None, transform=None, alpha=alpha
-                )
+                self._cmap = VertexCmap(self._colors, cmap_name=None, transform=None)
             else:
                 if uniform_color:
                     if not isinstance(colors, str):  # not a single color
@@ -139,16 +134,14 @@ class PositionsGraphic(Graphic):
                             raise TypeError(
                                 "must pass a single color if using `uniform_colors=True`"
                             )
-                    self._colors = UniformColor(colors, alpha=alpha)
+                    self._colors = UniformColor(colors)
                     self._cmap = None
                 else:
                     self._colors = VertexColors(
-                        colors,
-                        n_colors=self._data.value.shape[0],
-                        alpha=alpha,
+                        colors, n_colors=self._data.value.shape[0]
                     )
                     self._cmap = VertexCmap(
-                        self._colors, cmap_name=None, transform=None, alpha=alpha
+                        self._colors, cmap_name=None, transform=None
                     )
 
         self._size_space = SizeSpace(size_space)

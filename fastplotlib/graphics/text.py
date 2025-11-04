@@ -1,6 +1,7 @@
 import pygfx
 import numpy as np
 
+from ..utils.enums import RenderQueue
 from ._base import Graphic
 from .features import (
     TextData,
@@ -78,12 +79,21 @@ class TextGraphic(Graphic):
         self._outline_color = TextOutlineColor(outline_color)
         self._outline_thickness = TextOutlineThickness(outline_thickness)
 
+        # Text is usually used for annotations and the like. But we still want it to write depth.
+        # We make it render later than other 'auto' objects, assuming that most of these don't have transparent fragments.
+
+        # The aa is on because it makes the glyphs prettier. It can result in artifacts, but these often express a different color outline
+        # which is actually not so bad; it would look weird on a line, but for text it helps the contrast of the glyph!
+
         world_object = pygfx.Text(
             text=self.text,
             font_size=self.font_size,
             screen_space=screen_space,
             anchor=anchor,
             material=pygfx.TextMaterial(
+                alpha_mode="auto",
+                render_queue=RenderQueue.auto + 50,
+                aa=True,
                 color=self.face_color,
                 outline_color=self.outline_color,
                 outline_thickness=self.outline_thickness,

@@ -20,7 +20,7 @@ data = datasets.load_iris()["data"]
 agg = AgglomerativeClustering(n_clusters=3)
 agg.fit_predict(data)
 
-scatter_graphic = figure[0, 0].add_scatter(
+scatter = figure[0, 0].add_scatter(
     data=data[:, :-1],  # use only xy data
     sizes=15,
     alpha=0.7,
@@ -30,7 +30,7 @@ scatter_graphic = figure[0, 0].add_scatter(
 
 figure.show()
 
-scatter_graphic.cmap = "tab10"
+scatter.cmap = "tab10"
 
 
 if __name__ == "__main__":

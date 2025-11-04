@@ -5,7 +5,7 @@ import weakref
 
 import numpy as np
 import pylinalg as la
-from wgpu.gui.base import log_exception
+from rendercanvas.base import log_exception
 
 try:
     from imgui_bundle import imgui
@@ -22,6 +22,8 @@ from .features import (
     Name,
     Offset,
     Rotation,
+    Alpha,
+    AlphaMode,
     Visible,
 )
 from ._axes import Axes
@@ -53,13 +55,6 @@ class Graphic:
     _features: dict[str, type] = dict()
 
     def __init_subclass__(cls, **kwargs):
-        # set the type of the graphic in lower case like "image", "line_collection", etc.
-        cls.type = (
-            cls.__name__.lower()
-            .replace("graphic", "")
-            .replace("collection", "_collection")
-            .replace("stack", "_stack")
-        )
 
         # set of all features
         cls._features = {
@@ -67,6 +62,8 @@ class Graphic:
             "name": Name,
             "offset": Offset,
             "rotation": Rotation,
+            "alpha": Alpha,
+            "alpha_mode": AlphaMode,
             "visible": Visible,
             "deleted": Deleted,
         }
@@ -77,6 +74,8 @@ class Graphic:
         name: str = None,
         offset: np.ndarray | list | tuple = (0.0, 0.0, 0.0),
         rotation: np.ndarray | list | tuple = (0.0, 0.0, 0.0, 1.0),
+        alpha: float = 1.0,
+        alpha_mode: str = "auto",
         visible: bool = True,
         metadata: Any = None,
     ):
@@ -92,6 +91,44 @@ class Graphic:
 
         rotation: (float, float, float, float), default (0, 0, 0, 1)
             rotation quaternion
+
+        alpha: (float), default 1.0
+            The global alpha value, i.e. opacity, of the graphic.
+
+        The alpha value for the colors. If you make your a graphic transparent, consider setting ``alpha_mode``
+            to 'blend' or 'weighted_blend' so it won't write to the depth buffer.
+
+        alpha_mode: (str), default "auto",
+            The alpha-mode, e.g. 'auto', 'blend', 'weighted_blend', 'solid', or 'dither'.
+
+            Modes for method “opaque” (overwrites the value in the output texture):
+
+                * “solid”: alpha is ignored.
+                * “solid_premul”: the alpha is multipled with the color (making it darker).
+
+            Modes for method “blended” (per-fragment blending, a.k.a. compositing):
+
+                * “auto”: classic alpha blending, with depth_write defaulting to True. See note below.
+                * “blend”: classic alpha blending using the over-operator. depth_write defaults to False.
+                * “add”: additive blending that adds the fragment color, multiplied by alpha.
+                * “subtract”: subtractuve blending that removes the fragment color.
+                * “multiply”: multiplicative blending that multiplies the fragment color.
+
+            Modes for method “weighted” (order independent blending):
+
+                * “weighted_blend”: weighted blended order independent transparency.
+                * “weighted_solid”: fragments are combined based on alpha, but the final alpha is always 1. Great for e.g. image stitching.
+
+            Modes for method “stochastic” (alpha represents the chance of a fragment being visible):
+
+                * “dither”: stochastic transparency with blue noise. This mode handles order-independent transparency exceptionally well, but it produces results that can look somewhat noisy.
+                * “bayer”: stochastic transparency with an 8x8 Bayer pattern.
+
+
+            For details see https://docs.pygfx.org/stable/transparency.html
+
+        visible: (bool), default True
+            Whether the graphic is visible.
 
         metadata: Any, optional
             metadata attached to this Graphic, this is for the user to manage
@@ -119,6 +156,8 @@ class Graphic:
         self._deleted = Deleted(False)
         self._rotation = Rotation(rotation)
         self._offset = Offset(offset)
+        self._alpha = Alpha(alpha)
+        self._alpha_mode = AlphaMode(alpha_mode)
         self._visible = Visible(visible)
         self._block_events = False
 
@@ -159,6 +198,24 @@ class Graphic:
         self._rotation.set_value(self, value)
 
     @property
+    def alpha(self) -> float:
+        """The opacity of the graphic"""
+        return self._alpha.value
+
+    @alpha.setter
+    def alpha(self, value: float):
+        self._alpha.set_value(self, value)
+
+    @property
+    def alpha_mode(self) -> str:
+        """How the alpha is handled by the renderer"""
+        return self._alpha_mode.value
+
+    @alpha_mode.setter
+    def alpha_mode(self, value: str):
+        self._alpha_mode.set_value(self, value)
+
+    @property
     def visible(self) -> bool:
         """Whether the graphic is visible"""
         return self._visible.value
@@ -194,14 +251,22 @@ class Graphic:
     def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
 
-        self.world_object.visible = self.visible
+        wo.visible = self.visible
+        if "Image" in self.__class__.__name__:
+            # Image and ImageVolume use tiling and share one material
+            self._material.opacity = self.alpha
+            self._material.alpha_mode = self.alpha_mode
+
+        if wo.material is not None:
+            wo.material.opacity = self.alpha
+            wo.material.alpha_mode = self.alpha_mode
 
         # set offset if it's not (0., 0., 0.)
-        if not all(self.world_object.world.position == self.offset):
+        if not all(wo.world.position == self.offset):
             self.offset = self.offset
 
         # set rotation if it's not (0., 0., 0., 1.)
-        if not all(self.world_object.world.rotation == self.rotation):
+        if not all(wo.world.rotation == self.rotation):
             self.rotation = self.rotation
 
     @property
@@ -270,6 +335,13 @@ class Graphic:
                 if t in self._features.keys():
                     # fpl feature event
                     feature = getattr(self, f"_{t}")
+
+                    if feature is None:
+                        # feature is None in the graphic's current mode, probably is a scatter graphic
+                        raise AttributeError(
+                            f"{self} does not have the passed feature: '{t}' in its current mode."
+                        )
+
                     feature.add_event_handler(_callback_wrapper)
                 else:
                     # wrap pygfx event
@@ -460,8 +532,7 @@ class Graphic:
     def right_click_menu(self, menu):
         if not IMGUI:
             raise ImportError(
-                "imgui is required to set right-click menus:\n"
-                "pip install imgui_bundle"
+                "imgui is required to set right-click menus:\npip install imgui_bundle"
             )
 
         self._right_click_menu = menu

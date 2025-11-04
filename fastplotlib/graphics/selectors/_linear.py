@@ -5,6 +5,7 @@ from typing import Sequence
 import numpy as np
 import pygfx
 
+from ...utils.enums import RenderQueue
 from .._base import Graphic
 from .._collection_base import GraphicCollection
 from ..features._selection_features import LinearSelectionFeature
@@ -77,9 +78,10 @@ class LinearSelector(BaseSelector):
         limits: Sequence[float],
         axis: str = "x",
         parent: Graphic = None,
-        edge_color: str | Sequence[float] | np.ndarray = "w",
-        thickness: float = 2.5,
+        edge_color: str | Sequence[float] | np.ndarray = "yellow",
+        thickness: float = 1.0,
         arrow_keys_modifier: str = "Shift",
+        extra_width: float = 14.0,
         name: str = None,
     ):
         """
@@ -109,6 +111,9 @@ class LinearSelector(BaseSelector):
 
         edge_color: str | tuple | np.ndarray, default "w"
             color of the selector
+
+        extra_width: float, default 14.0
+            the width around the selector which is responsive to mouse events, in logical pixels
 
         name: str, optional
             name of linear selector
@@ -140,26 +145,42 @@ class LinearSelector(BaseSelector):
 
         material = pygfx.LineInfiniteSegmentMaterial
 
-        self.colors_outer = pygfx.Color([0.3, 0.3, 0.3, 1.0])
-
         line_inner = pygfx.Line(
             # self.data.feature_data because data is a Buffer
             geometry=pygfx.Geometry(positions=line_data),
-            material=material(thickness=thickness, color=edge_color, pick_write=True),
-        )
-
-        self.line_outer = pygfx.Line(
-            geometry=pygfx.Geometry(positions=line_data),
             material=material(
-                thickness=thickness + 6, color=self.colors_outer, pick_write=True
+                thickness=thickness,
+                color=edge_color,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
             ),
         )
 
-        line_inner.world.z = self.line_outer.world.z + 1
+        line_outer = pygfx.Line(
+            geometry=line_inner.geometry,
+            material=material(
+                thickness=thickness + extra_width,
+                color=pygfx.Color([0, 0, 0]),
+                opacity=0,
+                alpha_mode="blend",
+                aa=True,
+                render_queue=RenderQueue.selector,
+                depth_test=False,
+                depth_write=False,
+                pick_write=True,
+            ),
+        )
+
+        # Inner line goes on top of the outer line
+        line_inner.render_order = 1
 
         world_object = pygfx.Group()
 
-        world_object.add(self.line_outer)
+        world_object.add(line_outer)
         world_object.add(line_inner)
 
         if axis == "x":
@@ -170,8 +191,9 @@ class LinearSelector(BaseSelector):
         # init base selector
         BaseSelector.__init__(
             self,
-            edges=(line_inner, self.line_outer),
-            hover_responsive=(line_inner, self.line_outer),
+            edges=(line_inner,),
+            outer_edges=(line_outer,),
+            hover_responsive=(line_inner,),
             arrow_keys_modifier=arrow_keys_modifier,
             axis=axis,
             parent=parent,

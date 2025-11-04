@@ -1,12 +1,20 @@
 from ._positions_graphics import (
     VertexColors,
     UniformColor,
-    UniformSize,
     SizeSpace,
-    Thickness,
     VertexPositions,
-    PointsSizesFeature,
     VertexCmap,
+)
+from ._line import Thickness
+from ._scatter import (
+    VertexMarkers,
+    UniformMarker,
+    UniformEdgeColor,
+    EdgeWidth,
+    UniformRotations,
+    VertexRotations,
+    VertexPointSizes,
+    UniformSize,
 )
 from ._image import (
     TextureArray,
@@ -16,6 +24,24 @@ from ._image import (
     ImageInterpolation,
     ImageCmapInterpolation,
 )
+from ._volume import (
+    TextureArrayVolume,
+    VolumeRenderMode,
+    VolumeIsoThreshold,
+    VolumeIsoStepSize,
+    VolumeIsoSubStepSize,
+    VolumeIsoEmissive,
+    VolumeIsoShininess,
+    VolumeSlicePlane,
+    VOLUME_RENDER_MODES,
+    create_volume_material_kwargs,
+)
+
+from ._vectors import (
+    VectorPositions,
+    VectorDirections,
+)
+
 from ._base import (
     GraphicFeature,
     BufferManager,
@@ -36,24 +62,40 @@ from ._selection_features import (
     LinearRegionSelectionFeature,
     RectangleSelectionFeature,
 )
-from ._common import Name, Offset, Rotation, Visible, Deleted
+from ._common import Name, Offset, Rotation, Alpha, AlphaMode, Visible, Deleted
 
 
 __all__ = [
     "VertexColors",
     "UniformColor",
-    "UniformSize",
     "SizeSpace",
-    "Thickness",
     "VertexPositions",
-    "PointsSizesFeature",
     "VertexCmap",
+    "Thickness",
+    "VertexMarkers",
+    "UniformMarker",
+    "UniformEdgeColor",
+    "EdgeWidth",
+    "UniformRotations",
+    "VertexRotations",
+    "VertexPointSizes",
+    "UniformSize",
     "TextureArray",
     "ImageCmap",
     "ImageVmin",
     "ImageVmax",
     "ImageInterpolation",
     "ImageCmapInterpolation",
+    "TextureArrayVolume",
+    "VolumeRenderMode",
+    "VolumeIsoThreshold",
+    "VolumeIsoStepSize",
+    "VolumeIsoSubStepSize",
+    "VolumeIsoEmissive",
+    "VolumeIsoShininess",
+    "VolumeSlicePlane",
+    "VectorPositions",
+    "VectorDirections",
     "TextData",
     "FontSize",
     "TextFaceColor",
@@ -65,6 +107,8 @@ __all__ = [
     "Name",
     "Offset",
     "Rotation",
+    "Alpha",
+    "AlphaMode",
     "Visible",
     "Deleted",
     "GraphicFeatureEvent",

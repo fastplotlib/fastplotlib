@@ -17,7 +17,7 @@ else:
 
 
 # number of pixels taken by the imgui toolbar when present
-IMGUI_TOOLBAR_HEIGHT = 39
+IMGUI_TOOLBAR_HEIGHT = 36
 
 
 def make_canvas_and_renderer(

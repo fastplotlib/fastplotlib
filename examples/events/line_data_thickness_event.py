@@ -16,18 +16,18 @@ figure = fpl.Figure(size=(700, 560))
 xs = np.linspace(0, 4 * np.pi, 100)
 # sine wave
 ys = np.sin(xs)
-sine = np.column_stack([xs, ys])
+sine_data = np.column_stack([xs, ys])
 
 # cosine wave
 ys = np.cos(xs)
-cosine = np.column_stack([xs, ys])
+cosine_data = np.column_stack([xs, ys])
 
 # create line graphics
-sine_graphic = figure[0, 0].add_line(data=sine)
-cosine_graphic = figure[0, 0].add_line(data=cosine, offset=(0, 4, 0))
+sine = figure[0, 0].add_line(data=sine_data)
+cosine = figure[0, 0].add_line(data=cosine_data, offset=(0, 4, 0))
 
 # make a list of the line graphics for convenience
-lines = [sine_graphic, cosine_graphic]
+lines = [sine, cosine]
 
 
 def change_thickness(ev: fpl.GraphicFeatureEvent):
@@ -66,11 +66,11 @@ figure[0, 0].axes.intersection = (0, 0, 0)
 # set the y-value of the middle 40 points of the sine graphic to 1
 # after the sine_graphic sets its data, the event handlers will be called
 # and therefore the cosine graphic will also set its data using the event data
-sine_graphic.data[30:70, 1] = np.ones(40)
+sine.data[30:70, 1] = np.ones(40)
 
 # set the thickness of the cosine graphic, this will trigger an event
 # that causes the sine graphic's thickness to also be set from this value
-cosine_graphic.thickness = 10
+cosine.thickness = 10
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide

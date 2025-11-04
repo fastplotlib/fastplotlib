@@ -47,7 +47,7 @@ def check_skip_imgui(module):
 
 
 @pytest.mark.parametrize("module", examples_to_run, ids=lambda x: x.stem)
-def test_examples_run(module, force_offscreen):
+def test_examples_run(module, prep_environment):
     """Run every example marked to see if they run without error."""
     if not fpl.IMGUI:
         check_skip_imgui(module)
@@ -56,13 +56,17 @@ def test_examples_run(module, force_offscreen):
 
 
 @pytest.fixture
-def force_offscreen():
+def prep_environment():
     """Force the offscreen canvas to be selected by the auto gui module."""
+    # Make that examples using rendercanvas.auto, will use the offscreen backend
     os.environ["RENDERCANVAS_FORCE_OFFSCREEN"] = "true"
+    # Disable ppaa on the renderer by default. Otherwise all screenshots change when the ppaa shaders are updated.
+    os.environ["PYGFX_DEFAULT_PPAA"] = "none"
     try:
         yield
     finally:
         del os.environ["RENDERCANVAS_FORCE_OFFSCREEN"]
+        del os.environ["PYGFX_DEFAULT_PPAA"]
 
 
 def test_that_we_are_on_lavapipe():
@@ -86,7 +90,7 @@ def import_from_path(module_name, filename):
 
 
 @pytest.mark.parametrize("module", examples_to_test, ids=lambda x: x.stem)
-def test_example_screenshots(module, force_offscreen):
+def test_example_screenshots(module, prep_environment):
     """Make sure that every example marked outputs the expected."""
 
     if not fpl.IMGUI:
@@ -98,7 +102,9 @@ def test_example_screenshots(module, force_offscreen):
 
     if fpl.IMGUI:
         # there doesn't seem to be a resize event for the manual offscreen canvas
-        example.figure.imgui_renderer._backend.io.display_size = example.figure.canvas.get_logical_size()
+        example.figure.imgui_renderer._backend.io.display_size = (
+            example.figure.canvas.get_logical_size()
+        )
         # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
         # hacky but it works for now
         example.figure.imgui_renderer.render()
@@ -148,16 +154,16 @@ def test_example_screenshots(module, force_offscreen):
         if os.environ["REGENERATE_SCREENSHOTS"] == "1":
             iio.imwrite(screenshot_path, rgb)
 
-    assert (
-        screenshot_path.exists()
-    ), "found # test_example = true but no reference screenshot available"
+    assert screenshot_path.exists(), (
+        "found # test_example = true but no reference screenshot available"
+    )
 
     ref_img = iio.imread(screenshot_path)
 
     rgb = normalize_image(rgb)
     ref_img = normalize_image(ref_img)
 
-    similar, rmse = image_similarity(rgb, ref_img, threshold=0.05)
+    similar, rmse = image_similarity(rgb, ref_img)
 
     update_diffs(module.stem, similar, rgb, ref_img)
     assert similar, (
@@ -200,5 +206,7 @@ def update_diffs(module, is_similar, img, stored_img):
 
 
 if __name__ == "__main__":
+    os.environ["RENDERCANVAS_FORCE_OFFSCREEN"] = "true"
+    os.environ["PYGFX_DEFAULT_PPAA"] = "none"
     test_examples_run("simple")
     test_example_screenshots("simple")
