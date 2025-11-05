@@ -1,221 +1,331 @@
 import numpy as np
-from numpy.typing import NDArray
+from numpy.typing import ArrayLike
 from typing import Literal, Callable
 from warnings import warn
 
+from ...utils import subsample_array
 
-class ImageWidgetArray:
+
+WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
+
+
+class NDImageView:
     def __init__(
             self,
-            data: NDArray,
-            rgb: bool = False,
-            process_function: Callable = None,
-            window_size: dict[str, int] = None,
+            data: ArrayLike,
             n_display_dims: Literal[2, 3] = 2,
-            dim_names: tuple[str] = None,
+            rgb: bool = False,
+            window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
+            window_sizes: tuple[int | None, ...] = None,
+            window_order: tuple[int, ...] = None,
+            finalizer_func: Callable[[ArrayLike], ArrayLike] = None,
     ):
         """
+        A dynamic view of an ND image that supports computing window functions, and functions over spatial dimensions.
 
         Parameters
         ----------
-        data: NDArray
+        data: ArrayLike
             array-like data, must have 2 or more dimensions
-
-        process_function: Callable, optional
-            function to apply to a window of data around the current index.
-            The callable must take an `axis` kwarg.
-
-        window_size: dict[str, int]
-            dict of window sizes for each dim, maps dim names -> window size.
-            Example: {"t": 5, "z": 3}.
-
-            If a dim is not provided the window size is 0 for that dim, i.e. no window is taken along that dimension
 
         n_display_dims: int, 2 or 3, default 2
             number of display dimensions
 
-        dim_names: tuple[str], optional
-            dimension names as a tuple of strings, ex: ("t", "z", "x", "y")
+        rgb: bool, default False
+            whether the image data is RGB(A) or not
+
+        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable, optional
+            A function or a ``tuple`` of functions that are applied to a rolling window of the data.
+
+            You can provide unique window functions for each dimension. If you want to apply a window function
+            only to a subset of the dimensions, put ``None`` to indicate no window function for a given dimension.
+
+            A "window function" must take ``axis`` argument, which is an ``int`` that specifies the axis along which
+            the window function is applied. It must also take a ``keepdims`` argument which is a ``bool``. The window
+            function **must** return an array that has the same number of dimensions as the original ``data`` array,
+            therefore the size of the dimension along which the window was applied will reduce to ``1``.
+
+            The output array-like type from a window function **must** support a ``.squeeze()`` method, but the
+            function itself should NOT squeeze the output array.
+
+        window_sizes: tuple[int | None, ...], optional
+            ``tuple`` of ``int`` that specifies the window size for each dimension.
+
+        window_order: tuple[int, ...] | None, optional
+            order in which to apply the window functions, by default just applies it from the left-most dim to the
+            right-most slider dim.
+
+        finalizer_func: Callable[[ArrayLike], ArrayLike] | None, optional
+            A function that the data is put through after the window functions (if present) before being displayed.
+
         """
+
         self._data = data
-
-        self._window_size = process_function
-        self._window_size = window_size
-
+        self._n_display_dims = n_display_dims
         self._rgb = rgb
 
-        # default dim names for mn, tmn, and tzmn, ignore rgb dim if present
-        if dim_names is None:
-            if data.ndim == (2 + int(self.rgb)):
-                dim_names = ("m", "n")
+        self._window_funcs = window_funcs
+        self._window_sizes = window_sizes
+        self._window_order = window_order
 
-            elif data.ndim == (3 + int(self.rgb)):
-                dim_names = ("t", "m", "n")
-
-            elif data.ndim == (4 + int(self.rgb)):
-                dim_names = ("t", "z", "m", "n")
-
-            else:
-                # create a tuple of str numbers for each time, ex: ("0", "1", "2", "3", "4", "5", "6")
-                dim_names = tuple(map(str, range(data.ndim)))
-
-        self._dim_names = dim_names
-
-        for k in self._window_size:
-            if k not in dim_names:
-                raise KeyError
-
-        if n_display_dims not in (2, 3):
-            raise ValueError("`n_display_dims` must be an <int> with a value of 2 or 3")
-
-        self._n_display_dims = n_display_dims
+        self._finalizer_func = finalizer_func
 
     @property
-    def data(self) -> NDArray:
+    def data(self) -> ArrayLike:
+        """get or set the data array"""
         return self._data
 
     @data.setter
-    def data(self, data: NDArray):
+    def data(self, data: ArrayLike):
+        # check that all array-like attributes are present
+        required_attrs = ["shape", "ndim", "__getitem__"]
+        for attr in required_attrs:
+            if not hasattr(data, attr):
+                raise TypeError(
+                    f"`data` arrays must have all of the following attributes to be sufficiently array-like:\n"
+                    f"{required_attrs}"
+                )
         self._data = data
 
     @property
     def rgb(self) -> bool:
+        """whether or not the data is rgb(a)"""
         return self._rgb
 
     @property
-    def ndim(self) -> int:
-        return self.data.ndim
+    def n_slider_dims(self) -> int:
+        """number of slider dimensions"""
+        return self.data.ndim - self.n_display_dims - int(self.rgb)
 
     @property
-    def n_scrollable_dims(self) -> int:
-        return self.ndim - 2 - int(self.rgb)
+    def slider_dims(self) -> tuple[int, ...] | None:
+        """tuple indicating the slider dimension indices"""
+        if self.n_slider_dims == 0:
+            return None
+
+        return tuple(range(self.n_slider_dims))
 
     @property
-    def n_display_dims(self) -> int:
+    def n_display_dims(self) -> Literal[2 , 3]:
+        """get or set the number of display dimensions, `2` for 2D image and `3` for volume images"""
         return self._n_display_dims
 
-    @property
-    def dim_names(self) -> tuple[str]:
-        return self._dim_names
+    @n_display_dims.setter
+    def n_display_dims(self, n: Literal[2, 3]):
+        if n not in (2, 3):
+            raise ValueError("`n_display_dims` must be an <int> with a value of 2 or 3")
+        self._n_display_dims = n
 
     @property
-    def window_function(self) -> Callable | None:
-        return self._window_size
-
-    @window_function.setter
-    def window_function(self, func: Callable | None):
-        self._window_size = func
+    def display_dims(self) -> tuple[int, int] | tuple[int, int, int]:
+        """tuple indicating the diplay dimension indices"""
+        return tuple(range(self.data.ndim))[self.n_slider_dims:]
 
     @property
-    def window_size(self) -> dict | None:
-        """dict of window sizes for each dim"""
-        return self._window_size
+    def window_funcs(self) -> tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None:
+        """get or set window functions, see docstring for details"""
+        return self._window_funcs
 
-    @window_size.setter
-    def window_size(self, size: dict):
-        for k in list(size.keys()):
-            if k not in self.dim_names:
-                raise ValueError(f"specified window key: `k` not present in array with dim names: {self.dim_names}")
+    @window_funcs.setter
+    def window_funcs(self, window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None):
+        if window_funcs is None:
+            self._window_funcs = None
+            return
 
-            if not isinstance(size[k], int):
-                raise TypeError("window size values must be integers")
+        # if all are None
+        if all([f is None for f in window_funcs]):
+            self._window_funcs = None
+            return
 
-            if size[k] < 0:
-                raise ValueError(f"window size values must be greater than 2 and odd numbers")
+        if not all([callable(f) or f is None for f in funcs]):
+            raise TypeError(
+                f"`window_funcs` must be of type: tuple[Callable | None, ...], you have passed: {window_funcs}"
+            )
 
-            if size[k] == 0:
-                # remove key
-                warn(f"specified window size of 0 for dim: {k}, removing dim from windows")
-                size.pop(k)
+        if not len(window_funcs) == self.n_slider_dims:
+            raise IndexError(
+                f"number of `window_funcs` must be the same as the number of slider dims, "
+                f"i.e. `data.ndim` - n_display_dims, your data array has {data.ndim} dimensions "
+                f"and you passed {len(window_funcs)} `window_funcs`: {window_funcs}"
+            )
 
-            elif size[k] % 2 != 0:
-                # odd number, add 1
-                warn(f"specified even number for window size of dim: {k}, adding one to make it even")
-                size[k] += 1
+        self._window_funcs = window_funcs
 
-        self._window_size = size
+    @property
+    def window_sizes(self) -> tuple[int | None, ...] | None:
+        """get or set window sizes used for the corresponding window functions, see docstring for details"""
+        return self._window_sizes
 
-    def _apply_window_function(self, index: dict[str, int]):
-        if self.n_scrollable_dims == 0:
-            # 2D image, return full data
-            # TODO: would be smart to handle this in ImageWidget so
-            #  that Texture buffer is not updated when it doesn't change!!
-            return self.data
+    @window_sizes.setter
+    def window_sizes(self, window_sizes: tuple[int | None, ...] | int | None):
+        if window_sizes is None:
+            self._window_sizes = None
+            return
 
-        if self.window_size is None:
-            # for simplicity, so we can use the same for loop below to slice the array
-            # regardless of whether window_functions are specified or not
-            window_size = dict()
+        # if all are None
+        if all([w is None for w in window_sizes]):
+            self._window_sizes = None
+            return
+
+        if not all([isinstance(w, (int)) or w is None for w in window_sizes]):
+            raise TypeError(
+                f"`window_sizes` must be of type: tuple[int | None, ...] | int | None, you have passed: {window_sizes}"
+            )
+
+        if not len(window_sizes) == self.n_slider_dims:
+            raise window_sizes(
+                f"number of `window_sizes` must be the same as the number of slider dims, "
+                f"i.e. `data.ndim` - n_display_dims, your data array has {data.ndim} dimensions "
+                f"and you passed {len(window_sizes)} `window_sizes`: {window_sizes}"
+            )
+
+            # make all window sizes are valid numbers
+            _window_sizes = list()
+            for i, w in enumerate(window_sizes):
+                if w is None:
+                    _window_sizes.append(None)
+                    continue
+
+                if w < 0:
+                    raise ValueError(f"negative window size passed, all `window_sizes` must be positive "
+                                     f"integers or `None`, you passed: {_window_sizes}")
+
+                if w in (0, 1):
+                    # this is not a real window, set as None
+                    w = None
+
+                if w % 2 == 0:
+                    # odd window sizes makes most sense
+                    warn(f"provided even window size: {w} in dim: {i}, adding `1` to make it odd")
+                    w += 1
+
+                _window_sizes.append(w)
+
+        self._window_sizes = tuple(window_sizes)
+
+    @property
+    def window_order(self) -> tuple[int, ...] | None:
+        """get or set dimension order in which window functions are applied"""
+        return self._window_order
+
+    @window_order.setter
+    def window_order(self, order: tuple[int] | None):
+        if order is not None:
+            if not all([d <= self.n_slider_dims for d in order]):
+                raise IndexError(
+                    f"all `window_order` entries must be <= n_slider_dims\n"
+                    f"`n_slider_dims` is: {self.n_slider_dims}, you have passed `window_order`: {order}"
+                )
+
+            if not all([d >= 0 for d in order]):
+                raise IndexError(f"all `window_order` entires must be >= 0, you have passed: {order}")
+
+        self._window_order = order
+
+    @property
+    def finalizer_func(self) -> Callable[[ArrayLike], ArrayLike] | None:
+        """get or set a finalizer function, see docstring for details"""
+        return self._finalizer_func
+
+    @finalizer_func.setter
+    def finalizer_func(self, func: Callable[[ArrayLike], ArrayLike] | None):
+        self._finalizer_func = func
+
+    def _apply_window_function(self, index: tuple[int, ...]) -> ArrayLike:
+        """applies the window functions for each dimension specified"""
+        # window size for each dim
+        winds = self._window_sizes
+        # window function for each dim
+        funcs = self._window_funcs
+
+        if winds is None or funcs is None:
+            # no window funcs or window sizes, just slice data and return
+            return self.data[index]
+
+        # order in which window funcs are applied
+        order = self._window_order
+
+        if order is not None:
+            # remove any entries in `window_order` where the specified dim
+            # has a window function or window size specified as `None`
+            # example:
+            # window_sizes = (3, 2)
+            # window_funcs = (np.mean, None)
+            # order = (0, 1)
+            # `1` is removed from the order since that window_func is `None`
+            order = tuple(d for d in order if windows[d] is not None and funcs[d] is not None)
         else:
-            window_size = self.window_size
+            # sequential order
+            order = tuple(range(self.n_slider_dims))
 
-        # create a slice object for every dim except the last 2, or 3 (if rgb)
-        multi_slice = list()
-        axes = list()
+        # the final indexer which will be used on the data array
+        indexer = list()
 
-        for dim_number in range(self.n_scrollable_dims):
-            # get str name
-            dim_name = self.dim_names[dim_number]
-
-            # don't go beyond max bound
-            max_bound = self.data.shape[dim_number]
-
-            # check if a window is specified for this dim
-            if dim_name in window_size.keys():
-                size = window_size[dim_name]
-                half_size = int((size - 1) / 2)
-
-                # create slice obj for this dim using this window
-                start = max(0, index[dim_name] - half_size)  # start index, min allowed value is 0
-                stop = min(max_bound, index[dim_name] + half_size)
-
-                s = slice(start, stop)
-                multi_slice.append(s)
-
-                # add to axes list for window function
-                axes.append(dim_number)
+        for i, w, f in zip(index, winds, funcs):
+            if (w is not None) and (f is not None):
+                # specify slice window if both window size and function for this dim are not None
+                hw = int((w - 1) / 2)  # half window
+                # start, stop, step
+                s = slice(i - hw, i + hw, 1)
             else:
-                # no window size is specified for this scrollable dim, directly use integer index
-                multi_slice.append(index[dim_name])
+                s = slice(i, i + 1, 1)
+            indexer.append(s)
 
-            # get sliced array
-            array_sliced = self.data[tuple(multi_slice)]
+        # apply indexer to slice data with the specified windows
+        data_sliced = self.data[tuple(indexer)]
 
-        if self.window_function is not None:
-            # apply window function
-            return self.window_function(array_sliced, axis=axes)
+        # finally apply the window functions in the specified order
+        for dim in order:
+            f = funcs[dim]
 
-        # not window function, return sliced array
-        return array_sliced
+            data_sliced = f(data_sliced, axis=dim, keepdims=True)
 
-    def get(self, index: dict[str, int]):
+        return data_sliced
+
+    def get(self, index: tuple[int, ...]):
         """
-        Get the data at the given index, process data through the window function and frame function.
+        Get the data at the given index, process data through the window functions.
 
-        Note that we do not use __getitem__ here since the index is a dict specifying a single integer
+        Note that we do not use __getitem__ here since the index is a tuple specifying a single integer
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
 
         Parameters
         ----------
-        index: dict[str, int]
+        index: tuple[int, ...]
             Get the processed data at this index.
-            Example: get({"t": 1000, "z" 3})
+            Example: get((100, 5))
 
         """
+        if self.n_slider_dims != 0:
+            if len(index) != len(self.n_slider_dims):
+                raise IndexError(
+                    f"Must specify index for every slider dim, you have specified an index: {index}\n"
+                    f"But there are: {self.n_slider_dims} slider dims."
+                )
+            # get output after processing through all window funcs
+            # squeeze to remove all dims of size 1
+            window_output = self._apply_window_function(index).squeeze()
 
-        if set(index.keys()) != set(self.dim_names):
-            raise ValueError(
-                f"Must specify index for every dim, you have specified an index: {index}\n"
-                f"All dim names are: {self.dim_names}"
-            )
+        # apply finalizer func
+        if self.finalizer_func is not None:
+            final_output = self.finalizer_func(window_output)
+            if final_output.ndim != self.n_display_dims:
+                raise IndexError(
+                    f"Final output after of the `finalizer_func` must match the number of display dims."
+                    f"Output after `finalizer_func` returned an array with {final_output.ndim} dims and "
+                    f"of shape: {final_output.shape}, expected {self.n_display_dims} dims"
+                )
+        else:
+            # check that output ndim after window functions matches display dims
+            final_output = window_output
+            if final_output.ndim != self.n_display_dims:
+                raise IndexError(
+                    f"Final output after of the `window_funcs` must match the number of display dims."
+                    f"Output after `window_funcs` returned an array with {window_output.ndim} dims and "
+                    f"of shape: {window_output.shape}, expected {self.n_display_dims} dims"
+                )
 
-        window_output = self._apply_window_function(index)
+        return final_output
 
-        if window_output.ndim != self.n_display_dims:
-            raise ValueError(
-                f"Output of the `process_function` must match the number of display dims."
-                f"`process_function` returned an array with {window_output.ndim} dims, "
-                f"expected {self.n_display_dims} dims"
-            )
-
-        return window_output
+    def compute_histogram(self) -> tuple[np.ndarray, np.ndarray]:
+        pass
