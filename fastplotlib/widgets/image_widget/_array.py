@@ -19,6 +19,7 @@ class NDImageView:
             window_sizes: tuple[int | None, ...] = None,
             window_order: tuple[int, ...] = None,
             finalizer_func: Callable[[ArrayLike], ArrayLike] = None,
+            compute_histogram: bool = True,
     ):
         """
         A dynamic view of an ND image that supports computing window functions, and functions over spatial dimensions.
@@ -57,6 +58,10 @@ class NDImageView:
 
         finalizer_func: Callable[[ArrayLike], ArrayLike] | None, optional
             A function that the data is put through after the window functions (if present) before being displayed.
+            
+        compute_histogram: bool, default True
+            Compute a histogram of the data, auto re-computes if window function propties or finalizer_func changes.
+            Disable if slow.
 
         """
 
@@ -69,6 +74,9 @@ class NDImageView:
         self._window_order = window_order
 
         self._finalizer_func = finalizer_func
+
+        self._compute_histogram = compute_histogram
+        self._histogram = self._compute_histogram()
 
     @property
     def data(self) -> ArrayLike:
@@ -86,6 +94,7 @@ class NDImageView:
                     f"{required_attrs}"
                 )
         self._data = data
+        self._recompute_histogram()
 
     @property
     def rgb(self) -> bool:
@@ -115,6 +124,7 @@ class NDImageView:
         if n not in (2, 3):
             raise ValueError("`n_display_dims` must be an <int> with a value of 2 or 3")
         self._n_display_dims = n
+        self._recompute_histogram()
 
     @property
     def display_dims(self) -> tuple[int, int] | tuple[int, int, int]:
@@ -150,6 +160,7 @@ class NDImageView:
             )
 
         self._window_funcs = window_funcs
+        self._recompute_histogram()
 
     @property
     def window_sizes(self) -> tuple[int | None, ...] | None:
@@ -202,6 +213,7 @@ class NDImageView:
                 _window_sizes.append(w)
 
         self._window_sizes = tuple(window_sizes)
+        self._recompute_histogram()
 
     @property
     def window_order(self) -> tuple[int, ...] | None:
@@ -221,6 +233,7 @@ class NDImageView:
                 raise IndexError(f"all `window_order` entires must be >= 0, you have passed: {order}")
 
         self._window_order = order
+        self._recompute_histogram()
 
     @property
     def finalizer_func(self) -> Callable[[ArrayLike], ArrayLike] | None:
@@ -230,6 +243,31 @@ class NDImageView:
     @finalizer_func.setter
     def finalizer_func(self, func: Callable[[ArrayLike], ArrayLike] | None):
         self._finalizer_func = func
+        self._recompute_histogram()
+
+    @property
+    def compute_histogram(self) -> bool:
+        return self._compute_histogram
+
+    @compute_histogram.setter
+    def compute_histogram(self, compute: bool):
+        if compute:
+            if self._compute_histogram is False:
+                # compute a histogram
+                self._recompute_histogram()
+                self._compute_histogram = True
+        else:
+            self._compute_histogram = False
+            self._histogram = None
+
+    @property
+    def histogram(self) -> tuple[np.ndarray, np.ndarray] | None:
+        """
+        an estimate of the histogram of the data, (histogram_values, bin_edges).
+
+        returns `None` if `compute_histogram` is `False`
+        """
+        return self._histogram
 
     def _apply_window_function(self, index: tuple[int, ...]) -> ArrayLike:
         """applies the window functions for each dimension specified"""
@@ -327,5 +365,15 @@ class NDImageView:
 
         return final_output
 
-    def compute_histogram(self) -> tuple[np.ndarray, np.ndarray]:
-        pass
+    def _recompute_histogram(self):
+        """
+
+        Returns
+        -------
+        (histogram_values, bin_edges)
+
+        """
+        if not self._compute_histogram:
+            return
+
+        self._histogram = None
