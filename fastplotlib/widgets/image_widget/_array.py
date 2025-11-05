@@ -6,20 +6,21 @@ from warnings import warn
 from ...utils import subsample_array
 
 
+# must take arguments: array-like, `axis`: int, `keepdims`: bool
 WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
 
 
 class NDImageView:
     def __init__(
-            self,
-            data: ArrayLike,
-            n_display_dims: Literal[2, 3] = 2,
-            rgb: bool = False,
-            window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
-            window_sizes: tuple[int | None, ...] = None,
-            window_order: tuple[int, ...] = None,
-            finalizer_func: Callable[[ArrayLike], ArrayLike] = None,
-            compute_histogram: bool = True,
+        self,
+        data: ArrayLike,
+        n_display_dims: Literal[2, 3] = 2,
+        rgb: bool = False,
+        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
+        window_sizes: tuple[int | None, ...] = None,
+        window_order: tuple[int, ...] = None,
+        finalizer_func: Callable[[ArrayLike], ArrayLike] = None,
+        compute_histogram: bool = True,
     ):
         """
         A dynamic view of an ND image that supports computing window functions, and functions over spatial dimensions.
@@ -58,7 +59,7 @@ class NDImageView:
 
         finalizer_func: Callable[[ArrayLike], ArrayLike] | None, optional
             A function that the data is put through after the window functions (if present) before being displayed.
-            
+
         compute_histogram: bool, default True
             Compute a histogram of the data, auto re-computes if window function propties or finalizer_func changes.
             Disable if slow.
@@ -115,7 +116,7 @@ class NDImageView:
         return tuple(range(self.n_slider_dims))
 
     @property
-    def n_display_dims(self) -> Literal[2 , 3]:
+    def n_display_dims(self) -> Literal[2, 3]:
         """get or set the number of display dimensions, `2` for 2D image and `3` for volume images"""
         return self._n_display_dims
 
@@ -128,16 +129,21 @@ class NDImageView:
 
     @property
     def display_dims(self) -> tuple[int, int] | tuple[int, int, int]:
-        """tuple indicating the diplay dimension indices"""
-        return tuple(range(self.data.ndim))[self.n_slider_dims:]
+        """tuple indicating the display dimension indices"""
+        return tuple(range(self.data.ndim))[self.n_slider_dims :]
 
     @property
-    def window_funcs(self) -> tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None:
+    def window_funcs(
+        self,
+    ) -> tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None:
         """get or set window functions, see docstring for details"""
         return self._window_funcs
 
     @window_funcs.setter
-    def window_funcs(self, window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None):
+    def window_funcs(
+        self,
+        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None,
+    ):
         if window_funcs is None:
             self._window_funcs = None
             return
@@ -198,8 +204,10 @@ class NDImageView:
                     continue
 
                 if w < 0:
-                    raise ValueError(f"negative window size passed, all `window_sizes` must be positive "
-                                     f"integers or `None`, you passed: {_window_sizes}")
+                    raise ValueError(
+                        f"negative window size passed, all `window_sizes` must be positive "
+                        f"integers or `None`, you passed: {_window_sizes}"
+                    )
 
                 if w in (0, 1):
                     # this is not a real window, set as None
@@ -207,7 +215,9 @@ class NDImageView:
 
                 if w % 2 == 0:
                     # odd window sizes makes most sense
-                    warn(f"provided even window size: {w} in dim: {i}, adding `1` to make it odd")
+                    warn(
+                        f"provided even window size: {w} in dim: {i}, adding `1` to make it odd"
+                    )
                     w += 1
 
                 _window_sizes.append(w)
@@ -230,7 +240,9 @@ class NDImageView:
                 )
 
             if not all([d >= 0 for d in order]):
-                raise IndexError(f"all `window_order` entires must be >= 0, you have passed: {order}")
+                raise IndexError(
+                    f"all `window_order` entires must be >= 0, you have passed: {order}"
+                )
 
         self._window_order = order
         self._recompute_histogram()
@@ -291,7 +303,9 @@ class NDImageView:
             # window_funcs = (np.mean, None)
             # order = (0, 1)
             # `1` is removed from the order since that window_func is `None`
-            order = tuple(d for d in order if windows[d] is not None and funcs[d] is not None)
+            order = tuple(
+                d for d in order if windows[d] is not None and funcs[d] is not None
+            )
         else:
             # sequential order
             order = tuple(range(self.n_slider_dims))
