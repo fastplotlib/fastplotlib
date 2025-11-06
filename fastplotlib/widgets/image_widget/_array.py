@@ -12,6 +12,17 @@ from ...utils import subsample_array
 WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
 
 
+ARRAY_LIKE_ATTRS = ["shape", "ndim", "__getitem__"]
+
+def is_arraylike(obj) -> bool:
+    """checks if the array is sufficiently array-like for ImageWidget"""
+    for attr in ARRAY_LIKE_ATTRS:
+        if not hasattr(obj, attr):
+            return False
+
+    return True
+
+
 class NDImageArray:
     def __init__(
         self,
@@ -19,7 +30,7 @@ class NDImageArray:
         n_display_dims: Literal[2, 3] = 2,
         rgb: bool = False,
         window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
-        window_sizes: tuple[int | None, ...] = None,
+        window_sizes: tuple[int | None, ...] | int = None,
         window_order: tuple[int, ...] = None,
         finalizer_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
@@ -75,14 +86,14 @@ class NDImageArray:
         # set as False until window funcs stuff and finalizer func is all set
         self._compute_histogram = False
 
-        self._window_funcs = window_funcs
-        self._window_sizes = window_sizes
-        self._window_order = window_order
+        self.window_funcs = window_funcs
+        self.window_sizes = window_sizes
+        self.window_order = window_order
 
         self._finalizer_func = finalizer_func
 
         self._compute_histogram = compute_histogram
-        self._compute_histogram()
+        self._recompute_histogram()
 
     @property
     def data(self) -> ArrayLike:
@@ -92,13 +103,12 @@ class NDImageArray:
     @data.setter
     def data(self, data: ArrayLike):
         # check that all array-like attributes are present
-        required_attrs = ["shape", "ndim", "__getitem__"]
-        for attr in required_attrs:
-            if not hasattr(data, attr):
-                raise TypeError(
-                    f"`data` arrays must have all of the following attributes to be sufficiently array-like:\n"
-                    f"{required_attrs}"
-                )
+        if not is_arraylike(data):
+            raise TypeError(
+                f"`data` arrays must have all of the following attributes to be sufficiently array-like:\n"
+                f"{ARRAY_LIKE_ATTRS}"
+            )
+
         self._data = data
         self._recompute_histogram()
 
@@ -148,7 +158,7 @@ class NDImageArray:
     @property
     def window_funcs(
         self,
-    ) -> tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None:
+    ) -> tuple[WindowFuncCallable | None, ...] | None:
         """get or set window functions, see docstring for details"""
         return self._window_funcs
 
@@ -160,6 +170,9 @@ class NDImageArray:
         if window_funcs is None:
             self._window_funcs = None
             return
+
+        if callable(window_funcs):
+            window_funcs = (window_funcs,)
 
         # if all are None
         if all([f is None for f in window_funcs]):
@@ -187,11 +200,11 @@ class NDImageArray:
                         f"following function signature: {sig}"
                     )
 
-        if not len(window_funcs) == self.n_slider_dims:
+        if not len(funcs) == self.n_slider_dims:
             raise IndexError(
                 f"number of `window_funcs` must be the same as the number of slider dims, "
                 f"i.e. `data.ndim` - n_display_dims, your data array has {data.ndim} dimensions "
-                f"and you passed {len(window_funcs)} `window_funcs`: {window_funcs}"
+                f"and you passed {len(funcs)} `window_funcs`: {funcs}"
             )
 
     @property
@@ -204,6 +217,9 @@ class NDImageArray:
         if window_sizes is None:
             self._window_sizes = None
             return
+
+        if isinstance(window_sizes, int):
+            window_sizes = (window_sizes,)
 
         # if all are None
         if all([w is None for w in window_sizes]):
@@ -307,7 +323,7 @@ class NDImageArray:
         """
         return self._histogram
 
-    def _apply_window_function(self, index: tuple[int, ...]) -> ArrayLike:
+    def _apply_window_function(self, indices: tuple[int, ...]) -> ArrayLike:
         """applies the window functions for each dimension specified"""
         # window size for each dim
         winds = self._window_sizes
@@ -316,7 +332,13 @@ class NDImageArray:
 
         if winds is None or funcs is None:
             # no window funcs or window sizes, just slice data and return
-            return self.data[index]
+            # clamp to max bounds
+            indexer = list()
+            for dim, i in enumerate(indices):
+                i = min(self.shape[dim] - 1, i)
+                indexer.append(i)
+
+            return self.data[tuple(indexer)]
 
         # order in which window funcs are applied
         order = self._window_order
@@ -339,14 +361,24 @@ class NDImageArray:
         # the final indexer which will be used on the data array
         indexer = list()
 
-        for i, w, f in zip(index, winds, funcs):
+        for dim_index, (i, w, f) in enumerate(zip(indices, winds, funcs)):
+            # clamp i within the max bounds
+            i = min(self.shape[dim_index] - 1, i)
+
             if (w is not None) and (f is not None):
                 # specify slice window if both window size and function for this dim are not None
                 hw = int((w - 1) / 2)  # half window
-                # start, stop, step
-                s = slice(i - hw, i + hw, 1)
+
+                # start index cannot be less than 0
+                start = max(0, i - hw)
+
+                # stop index cannot exceed the bounds of this dimension
+                stop = min(self.shape[dim_index] - 1, i + hw)
+
+                s = slice(start, stop, 1)
             else:
                 s = slice(i, i + 1, 1)
+
             indexer.append(s)
 
         # apply indexer to slice data with the specified windows
@@ -360,7 +392,7 @@ class NDImageArray:
 
         return data_sliced
 
-    def get(self, index: tuple[int, ...]):
+    def get(self, indices: tuple[int, ...]):
         """
         Get the data at the given index, process data through the window functions.
 
@@ -369,25 +401,28 @@ class NDImageArray:
 
         Parameters
         ----------
-        index: tuple[int, ...]
-            Get the processed data at this index.
+        indices: tuple[int, ...]
+            Get the processed data at this index. Must provide a value for each dimension.
             Example: get((100, 5))
 
         """
         if self.n_slider_dims != 0:
-            if len(index) != len(self.n_slider_dims):
+            if len(indices) != self.n_slider_dims:
                 raise IndexError(
-                    f"Must specify index for every slider dim, you have specified an index: {index}\n"
+                    f"Must specify index for every slider dim, you have specified an index: {indices}\n"
                     f"But there are: {self.n_slider_dims} slider dims."
                 )
             # get output after processing through all window funcs
             # squeeze to remove all dims of size 1
-            window_output = self._apply_window_function(index).squeeze()
+            window_output = self._apply_window_function(indices).squeeze()
+        else:
+            # data is a static image or volume
+            window_output = self.data
 
         # apply finalizer func
         if self.finalizer_func is not None:
             final_output = self.finalizer_func(window_output)
-            if final_output.ndim != self.n_display_dims:
+            if final_output.ndim != (self.n_display_dims + int(self.rgb)):
                 raise IndexError(
                     f"Final output after of the `finalizer_func` must match the number of display dims."
                     f"Output after `finalizer_func` returned an array with {final_output.ndim} dims and "
@@ -396,11 +431,12 @@ class NDImageArray:
         else:
             # check that output ndim after window functions matches display dims
             final_output = window_output
-            if final_output.ndim != self.n_display_dims:
+            if final_output.ndim != (self.n_display_dims + int(self.rgb)):
                 raise IndexError(
                     f"Final output after of the `window_funcs` must match the number of display dims."
                     f"Output after `window_funcs` returned an array with {window_output.ndim} dims and "
-                    f"of shape: {window_output.shape}, expected {self.n_display_dims} dims"
+                    f"of shape: {window_output.shape}{' with rgb(a) channels' if self.rgb else ''}, "
+                    f"expected {self.n_display_dims} dims"
                 )
 
         return final_output

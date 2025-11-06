@@ -49,15 +49,15 @@ class ImageWidgetSliders(EdgeWindow):
                 return
 
         # set current_index
-        index = list(self._image_widget.index)
+        index = list(self._image_widget.indices)
         index[dim] = new_index
-        self._image_widget.index = index
+        self._image_widget.indices = index
 
     def update(self):
         """called on every render cycle to update the GUI elements"""
 
         # store the new index of the image widget ("t" and "z")
-        new_index = dict()
+        new_index = list()
 
         # flag if the index changed
         flag_index_changed = False
@@ -79,7 +79,7 @@ class ImageWidgetSliders(EdgeWindow):
         now = perf_counter()
 
         # buttons and slider UI elements for each dim
-        for dim in self._image_widget.slider_dims:
+        for dim in range(self._image_widget.n_sliders):
             imgui.push_id(f"{self._id_counter}_{dim}")
 
             if self._playing[dim]:
@@ -90,7 +90,7 @@ class ImageWidgetSliders(EdgeWindow):
 
                 # if in play mode and enough time has elapsed w.r.t. the desired framerate, increment the index
                 if now - self._last_frame_time[dim] >= self._frame_time[dim]:
-                    self.set_index(dim, self._image_widget.index[dim] + 1)
+                    self.set_index(dim, self._image_widget.indices[dim] + 1)
                     self._last_frame_time[dim] = now
 
             else:
@@ -104,12 +104,12 @@ class ImageWidgetSliders(EdgeWindow):
             imgui.same_line()
             # step back one frame button
             if imgui.button(label=fa.ICON_FA_BACKWARD_STEP) and not self._playing[dim]:
-                self.set_index(dim, self._image_widget.index[dim] - 1)
+                self.set_index(dim, self._image_widget.indices[dim] - 1)
 
             imgui.same_line()
             # step forward one frame button
             if imgui.button(label=fa.ICON_FA_FORWARD_STEP) and not self._playing[dim]:
-                self.set_index(dim, self._image_widget.index[dim] + 1)
+                self.set_index(dim, self._image_widget.indices[dim] + 1)
 
             imgui.same_line()
             # stop button
@@ -144,10 +144,10 @@ class ImageWidgetSliders(EdgeWindow):
                 self._fps[dim] = value
                 self._frame_time[dim] = 1 / value
 
-            val = self._image_widget.index[dim]
-            vmax = self._image_widget._dims_max_bounds[dim] - 1
+            val = self._image_widget.indices[dim]
+            vmax = self._image_widget.bounds[dim] - 1
 
-            imgui.text(f"{dim}: ")
+            imgui.text(f"dim {dim}: ")
             imgui.same_line()
             # so that slider occupies full width
             imgui.set_next_item_width(self.width * 0.85)
@@ -160,11 +160,11 @@ class ImageWidgetSliders(EdgeWindow):
                 flags = imgui.SliderFlags_.always_clamp
 
             # slider for this dimension
-            changed, index = imgui.slider_int(
+            changed, dim_index = imgui.slider_int(
                 f"{dim}", v=val, v_min=0, v_max=vmax, flags=flags
             )
 
-            new_index[dim] = index
+            new_index.append(dim_index)
 
             # if the slider value changed for this dimension
             flag_index_changed |= changed
@@ -173,6 +173,6 @@ class ImageWidgetSliders(EdgeWindow):
 
         if flag_index_changed:
             # if any slider dim changed set the new index of the image widget
-            self._image_widget.index = new_index
+            self._image_widget.indices = new_index
 
         self.size = int(imgui.get_window_height())

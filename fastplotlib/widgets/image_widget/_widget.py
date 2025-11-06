@@ -10,7 +10,7 @@ from ...graphics import ImageGraphic, ImageVolumeGraphic
 from ...utils import calculate_figure_shape, quick_min_max
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
-from ._array import NDImageArray
+from ._array import NDImageArray, WindowFuncCallable, ArrayLike, is_arraylike
 
 
 class ImageWidget:
@@ -88,12 +88,12 @@ class ImageWidget:
         if figure_kwargs is None:
             figure_kwargs = dict()
 
-        if _is_arraylike(data):
+        if is_arraylike(data):
             data = [data]
 
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
-            if not all([_is_arraylike(d) for d in data]):
+            if not all([is_arraylike(d) for d in data]):
                 raise TypeError(
                     f"`data` must be an array-like type or a list of array-like."
                     f"You have passed the following type {type(data)}"
@@ -144,14 +144,6 @@ class ImageWidget:
                     "number of `names` for subplots must be same as the number of data arrays"
                 )
 
-            else:
-                raise TypeError(
-                    f"If passing a list to `data` all elements must be an "
-                    f"array-like type representing an n-dimensional image. "
-                    f"You have passed the following types:\n"
-                    f"{[type(a) for a in data]}"
-                )
-
         # verify window funcs
         if window_funcs is None:
             win_funcs = [None] * len(data)
@@ -167,6 +159,9 @@ class ImageWidget:
 
         # verify window sizes
         if window_sizes is None:
+            win_sizes = [window_sizes] * len(data)
+
+        elif isinstance(window_sizes, int):
             win_sizes = [window_sizes] * len(data)
 
         elif all([isinstance(size, int) or size is None for size in window_sizes]):
@@ -194,7 +189,7 @@ class ImageWidget:
 
         elif callable(finalizer_funcs):
             # same finalizer func for all data arrays
-            finalizer_funcs = [finalizer_funcs] * len(data)
+            final_funcs = [finalizer_funcs] * len(data)
 
         elif len(finalizer_funcs) != len(data):
             raise IndexError
@@ -229,7 +224,7 @@ class ImageWidget:
                 window_funcs=win_funcs[i],
                 window_sizes=win_sizes[i],
                 window_order=win_order[i],
-                finalizer_func=finalizer_funcs[i],
+                finalizer_func=final_funcs[i],
                 compute_histogram=histogram_widget,
             )
 
@@ -255,11 +250,12 @@ class ImageWidget:
 
         self._histogram_widget = histogram_widget
 
-        self._index = tuple(0 for i in range(self.n_sliders))
+        self._indices = tuple(0 for i in range(self.n_sliders))
 
-        for i, subplot in zip(range(len(self._image_arrays)), figure):
-            image_data = self._get_image(self._index, self._image_arrays[i])
+        for i, subplot in zip(range(len(self._image_arrays)), self.figure):
+            image_data = self._get_image(self._indices, self._image_arrays[i])
 
+            # next 20 lines are just vmin, vmax parsing
             vmin_specified, vmax_specified = None, None
             if "vmin" in graphic_kwargs[i].keys():
                 vmin_specified = graphic_kwargs[i].pop("vmin")
@@ -268,7 +264,7 @@ class ImageWidget:
 
             if (vmin_specified is None) or (vmax_specified is None):
                 # if either vmin or vmax are not specified, calculate an estimate by subsampling
-                vmin_estimate, vmax_estimate = quick_min_max(self._image_arrays[i])
+                vmin_estimate, vmax_estimate = quick_min_max(self._image_arrays[i].data)
 
                 # decide vmin, vmax passed to ImageGraphic constructor based on whether it's user specified or now
                 if vmin_specified is None:
@@ -287,6 +283,7 @@ class ImageWidget:
                 vmin, vmax = vmin_specified, vmax_specified
 
             if self._n_display_dims[i] == 2:
+                # create an Image
                 graphic = ImageGraphic(
                     data=image_data,
                     name="image_widget_managed",
@@ -295,6 +292,7 @@ class ImageWidget:
                     **graphic_kwargs[i]
                 )
             elif self._n_display_dims[i] == 3:
+                # create an ImageVolume
                 graphic = ImageVolumeGraphic(
                     data=image_data,
                     name="image_widget_managed",
@@ -307,7 +305,10 @@ class ImageWidget:
 
             if self._histogram_widget:
                 hlut = HistogramLUTTool(
-                    data=d, images=ig, name="histogram_lut", histogram=self._image_arrays[i].histogram
+                    data=self._image_arrays[i].data,
+                    images=graphic,
+                    name="histogram_lut",
+                    histogram=self._image_arrays[i].histogram
                 )
 
                 subplot.docks["right"].add_graphic(hlut)
@@ -328,7 +329,7 @@ class ImageWidget:
 
         self.figure.add_gui(self._image_widget_sliders)
 
-        self._current_index_changed_handlers = set()
+        self._indices_changed_handlers = set()
 
         self._reentrant_block = False
 
@@ -387,20 +388,20 @@ class ImageWidget:
         return self._data
 
     @property
-    def index(self) -> tuple[int, ...]:
+    def indices(self) -> tuple[int, ...]:
         """
-        Get or set the current index
+        Get or set the current indices
 
         Returns
         -------
-        index: tuple[int, ...]
+        indices: tuple[int, ...]
             integer index for each slider dimension
 
         """
-        return self._current_index
+        return self._indices
 
-    @index.setter
-    def index(self, new_index: Sequence[int, ...]):
+    @indices.setter
+    def indices(self, new_indices: Sequence[int]):
         if not self._initialized:
             return
 
@@ -408,38 +409,42 @@ class ImageWidget:
             return
 
         try:
-            self._reentrant_block = True  # block re-execution until current_index has *fully* completed execution
+            self._reentrant_block = True  # block re-execution until new_indices has *fully* completed execution
 
-            if len(new_index) != self.n_sliders:
+            if len(new_indices) != self.n_sliders:
                 raise IndexError(
-                    f"len(index) != ImageWidget.n_sliders, {len(new_index)} != {self.n_sliders}. "
-                    f"The length of the index must be the same as the number of sliders"
+                    f"len(new_indices) != ImageWidget.n_sliders, {len(new_indices)} != {self.n_sliders}. "
+                    f"The length of the new_indices must be the same as the number of sliders"
                 )
 
+            if any([i < 0 for i in new_indices]):
+                raise IndexError(f"only positive index values are supported, you have passed: {new_indices}")
+
             for image_array, graphic in zip(self._image_arrays, self.graphics):
-                new_data = self._get_image(new_index, image_array)
+                new_data = self._get_image(new_indices, image_array)
                 graphic.data = new_data
 
-            self._index = new_index
+            self._indices = new_indices
 
             # call any event handlers
-            for handler in self._current_index_changed_handlers:
-                handler(self.index)
+            for handler in self._indices_changed_handlers:
+                handler(self.indices)
+
         except Exception as exc:
             # raise original exception
-            raise exc  # current_index setter has raised. The lines above below are probably more relevant!
+            raise exc  # indices setter has raised. The lines above below are probably more relevant!
         finally:
             # set_value has finished executing, now allow future executions
             self._reentrant_block = False
 
-    def _get_image(self, slider_indices: tuple[int, ...], array_index: int):
-        a = self._image_arrays[array_index]
-        n = a.n_slider_dims
+    def _get_image(self, slider_indices: tuple[int, ...], image_array: NDImageArray):
+        n = image_array.n_slider_dims
 
         if self._sliders_dim_order == "right":
-            return a.get(self.index[-n:])
+            return image_array.get(self.indices[-n:])
+
         elif self._sliders_dim_order == "left":
-            return a.get(self.index[:n])
+            return image_array.get(self.indices[:n])
 
     @property
     def n_sliders(self) -> int:
@@ -449,7 +454,7 @@ class ImageWidget:
     def bounds(self) -> tuple[int, ...]:
         """The max bound across all dimensions across all data arrays"""
         # initialize with 0
-        bounds = [0] * len(self.n_sliders)
+        bounds = [0] * self.n_sliders
 
         for dim in range(self.n_sliders):
             # across each dim
@@ -459,30 +464,29 @@ class ImageWidget:
 
         return bounds
 
-    def add_event_handler(self, handler: callable, event: str = "current_index"):
+    def add_event_handler(self, handler: callable, event: str = "indices"):
         """
         Register an event handler.
 
-        Currently the only event that ImageWidget supports is "current_index". This event is
-        emitted whenever the index of the ImageWidget changes.
+        Currently the only event that ImageWidget supports is "indices". This event is
+        emitted whenever the indices of the ImageWidget changes.
 
         Parameters
         ----------
         handler: callable
-            callback function, must take a dict as the only argument. This dict will be the `current_index`
+            callback function, must take a tuple of int as the only argument. This tuple will be the `indices`
 
-        event: str, "current_index"
-            the only supported event is "current_index"
+        event: str, "indices"
+            the only supported event is "indices"
 
         Example
         -------
 
         .. code-block:: py
 
-            def my_handler(index):
-                print(index)
-                # example prints: {"t": 100} if data has only time dimension
-                # "z" index will be another key if present in the data, ex: {"t": 100, "z": 5}
+            def my_handler(indices):
+                print(indices)
+                # example prints: (100, 15) if the data has 2 slider dimensions with sliders at positions 100, 15
 
             # create an image widget
             iw = ImageWidget(...)
@@ -491,20 +495,20 @@ class ImageWidget:
             iw.add_event_handler(my_handler)
 
         """
-        if event != "current_index":
+        if event != "indices":
             raise ValueError(
-                "`current_index` is the only event supported by `ImageWidget`"
+                "`indices` is the only event supported by `ImageWidget`"
             )
 
-        self._current_index_changed_handlers.add(handler)
+        self._indices_changed_handlers.add(handler)
 
     def remove_event_handler(self, handler: callable):
         """Remove a registered event handler"""
-        self._current_index_changed_handlers.remove(handler)
+        self._indices_changed_handlers.remove(handler)
 
     def clear_event_handlers(self):
         """Clear all registered event handlers"""
-        self._current_index_changed_handlers.clear()
+        self._indices_changed_handlers.clear()
 
     def reset_vmin_vmax(self):
         """
@@ -561,8 +565,8 @@ class ImageWidget:
         """
 
         if reset_indices:
-            for key in self.index:
-                self.index[key] = 0
+            for key in self.indices:
+                self.indices[key] = 0
 
         # set slider max according to new data
         max_lengths = dict()
@@ -649,7 +653,7 @@ class ImageWidget:
                 )
 
         # force graphics to update
-        self.index = self.index
+        self.indices = self.indices
 
     def show(self, **kwargs):
         """
