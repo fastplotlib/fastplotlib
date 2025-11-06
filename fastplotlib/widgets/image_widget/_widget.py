@@ -20,7 +20,7 @@ class ImageWidget:
         array_types: NDImageArray | list[NDImageArray] = NDImageArray,
         n_display_dims: Literal[2, 3] | Sequence[Literal[2, 3]] = 2,
         rgb: bool | Sequence[bool] = None,
-        cmap: str = "plasma",
+        cmap: str | Sequence[str]= "plasma",
         window_funcs: (
             tuple[WindowFuncCallable | None, ...]
             | WindowFuncCallable
@@ -259,6 +259,15 @@ class ImageWidget:
         elif len(graphic_kwargs) != len(data):
             raise IndexError
 
+        if cmap is None:
+            cmap = [None] * len(data)
+
+        elif isinstance(cmap, str):
+            cmap = [cmap] * len(data)
+
+        elif not all([isinstance(c, str) for c in cmap]):
+            raise TypeError(f"`cmap` must be a <str> or a list/tuple of <str>")
+
         self._figure: Figure = Figure(**figure_kwargs_default)
 
         self._histogram_widget = histogram_widget
@@ -295,6 +304,8 @@ class ImageWidget:
                 # both vmin and vmax are specified
                 vmin, vmax = vmin_specified, vmax_specified
 
+            graphic_kwargs[i]["cmap"] = cmap[i]
+
             if self._n_display_dims[i] == 2:
                 # create an Image
                 graphic = ImageGraphic(
@@ -330,7 +341,7 @@ class ImageWidget:
                 subplot.docks["right"].controller.enabled = False
 
         # hard code the expected height so that the first render looks right in tests, docs etc.
-        ui_size = 57 + (self.n_sliders * 55)
+        ui_size = 57 + (self.n_sliders * 50)
 
         self._image_widget_sliders = ImageWidgetSliders(
             figure=self.figure,

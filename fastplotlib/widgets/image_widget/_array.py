@@ -188,23 +188,24 @@ class NDImageArray:
     def _validate_window_func(self, funcs):
         if isinstance(funcs, (tuple, list)):
             for f in funcs:
-                if not callable(f):
-                    raise TypeError(
-                        f"`window_funcs` must be of type: tuple[Callable | None, ...], you have passed: {window_funcs}"
-                    )
+                if f is None:
+                    pass
+                elif callable(f):
+                    sig = inspect.signature(f)
 
-                sig = inspect.signature(f)
-
-                if "axis" not in sig.parameters or "keepdims" not in sig.parameters:
+                    if "axis" not in sig.parameters or "keepdims" not in sig.parameters:
+                        raise TypeError(
+                            f"Each window function must take an `axis` and `keepdims` argument, you passed: {f} with the "
+                            f"following function signature: {sig}"
+                        )
+                else:
                     raise TypeError(
-                        f"Each window function must take an `axis` and `keepdims` argument, you passed: {f} with the "
-                        f"following function signature: {sig}"
+                        f"`window_funcs` must be of type: tuple[Callable | None, ...], you have passed: {funcs}"
                     )
 
         if not len(funcs) == self.n_slider_dims:
             raise IndexError(
                 f"number of `window_funcs` must be the same as the number of slider dims, "
-                f"i.e. `data.ndim` - n_display_dims, your data array has {data.ndim} dimensions "
                 f"and you passed {len(funcs)} `window_funcs`: {funcs}"
             )
 
@@ -353,11 +354,14 @@ class NDImageArray:
             # order = (0, 1)
             # `1` is removed from the order since that window_func is `None`
             order = tuple(
-                d for d in order if windows[d] is not None and funcs[d] is not None
+                d for d in order if winds[d] is not None and funcs[d] is not None
             )
         else:
             # sequential order
-            order = tuple(range(self.n_slider_dims))
+            order = list()
+            for d in range(self.n_slider_dims):
+                if winds[d] is not None and funcs[d] is not None:
+                    order.append(d)
 
         # the final indexer which will be used on the data array
         indexer = list()
