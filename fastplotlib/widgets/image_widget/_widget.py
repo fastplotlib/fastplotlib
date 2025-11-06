@@ -169,6 +169,8 @@ class ImageWidget:
         # if the above two clauses didn't trigger, then window_funcs defined per-dim, per data array
         elif len(window_funcs) != len(data):
             raise IndexError
+        else:
+            win_funcs = window_funcs
 
         # verify window sizes
         if window_sizes is None:
@@ -184,6 +186,8 @@ class ImageWidget:
         elif len(window_sizes) != len(data):
             # window sizes defined per-dim, per data array
             raise IndexError
+        else:
+            win_sizes = window_sizes
 
         # verify window orders
         if window_order is None:
@@ -196,6 +200,9 @@ class ImageWidget:
         elif len(window_order) != len(data):
             raise IndexError
 
+        else:
+            win_order = window_order
+
         # verify finalizer function
         if finalizer_funcs is None:
             final_funcs = [None] * len(data)
@@ -206,6 +213,9 @@ class ImageWidget:
 
         elif len(finalizer_funcs) != len(data):
             raise IndexError
+
+        else:
+            final_funcs = finalizer_funcs
 
         # verify number of display dims
         if isinstance(n_display_dims, int):
@@ -485,6 +495,8 @@ class ImageWidget:
         for dim in range(self.n_sliders):
             # across each dim
             for array in self._image_arrays:
+                if dim > array.n_slider_dims - 1:
+                    continue
                 # across each data array
                 bounds[dim] = max(array.shape[dim], bounds[dim])
 
