@@ -88,7 +88,9 @@ class HistogramLUTTool(Graphic):
 
         self._scale_factor: float = 1.0
 
-        hist, edges, hist_scaled, edges_flanked = self._calculate_histogram(data, histogram)
+        hist, edges, hist_scaled, edges_flanked = self._calculate_histogram(
+            data, histogram
+        )
 
         line_data = np.column_stack([hist_scaled, edges_flanked])
 
@@ -229,7 +231,7 @@ class HistogramLUTTool(Graphic):
         self._plot_area.auto_scale()
         self._plot_area.controller.enabled = True
 
-    def _calculate_histogram(self, data, histogram = None):
+    def _calculate_histogram(self, data, histogram=None):
         if histogram is None:
             # get a subsampled view of this array
             data_ss = subsample_array(data, max_size=int(1e6))  # 1e6 is default

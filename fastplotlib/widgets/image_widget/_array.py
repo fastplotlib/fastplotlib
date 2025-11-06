@@ -14,6 +14,7 @@ WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
 
 ARRAY_LIKE_ATTRS = ["shape", "ndim", "__getitem__"]
 
+
 def is_arraylike(obj) -> bool:
     """checks if the array is sufficiently array-like for ImageWidget"""
     for attr in ARRAY_LIKE_ATTRS:

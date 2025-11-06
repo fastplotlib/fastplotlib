@@ -21,10 +21,23 @@ class ImageWidget:
         n_display_dims: Literal[2, 3] | Sequence[Literal[2, 3]] = 2,
         rgb: bool | Sequence[bool] = None,
         cmap: str = "plasma",
-        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None | Sequence[tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None ]= None,
-        window_sizes: tuple[int | None, ...] | Sequence[tuple[int | None, ...] | None] = None,
+        window_funcs: (
+            tuple[WindowFuncCallable | None, ...]
+            | WindowFuncCallable
+            | None
+            | Sequence[
+                tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None
+            ]
+        ) = None,
+        window_sizes: (
+            tuple[int | None, ...] | Sequence[tuple[int | None, ...] | None]
+        ) = None,
         window_order: tuple[int, ...] | Sequence[tuple[int, ...] | None] = None,
-        finalizer_funcs: Callable[[ArrayLike], ArrayLike] | Sequence[Callable[[ArrayLike], ArrayLike]] | None = None,
+        finalizer_funcs: (
+            Callable[[ArrayLike], ArrayLike]
+            | Sequence[Callable[[ArrayLike], ArrayLike]]
+            | None
+        ) = None,
         sliders_dim_order: Literal["right", "left"] = "right",
         figure_shape: tuple[int, int] = None,
         names: Sequence[str] = None,
@@ -135,9 +148,7 @@ class ImageWidget:
 
         if names is not None:
             if not all([isinstance(n, str) for n in names]):
-                raise TypeError(
-                    "optional argument `names` must be a Sequence of str"
-                )
+                raise TypeError("optional argument `names` must be a Sequence of str")
 
             if len(names) != len(data):
                 raise ValueError(
@@ -148,7 +159,9 @@ class ImageWidget:
         if window_funcs is None:
             win_funcs = [None] * len(data)
 
-        elif callable(window_funcs) or all([callable(f) or f is None for f in window_funcs]):
+        elif callable(window_funcs) or all(
+            [callable(f) or f is None for f in window_funcs]
+        ):
             # across all data arrays
             # one window function defined for all dims, or window functions defined per-dim
             win_funcs = [window_funcs] * len(data)
@@ -289,7 +302,7 @@ class ImageWidget:
                     name="image_widget_managed",
                     vmin=vmin,
                     vmax=vmax,
-                    **graphic_kwargs[i]
+                    **graphic_kwargs[i],
                 )
             elif self._n_display_dims[i] == 3:
                 # create an ImageVolume
@@ -298,7 +311,7 @@ class ImageWidget:
                     name="image_widget_managed",
                     vmin=vmin,
                     vmax=vmax,
-                    **graphic_kwargs[i]
+                    **graphic_kwargs[i],
                 )
 
             subplot.add_graphic(graphic)
@@ -308,7 +321,7 @@ class ImageWidget:
                     data=self._image_arrays[i].data,
                     images=graphic,
                     name="histogram_lut",
-                    histogram=self._image_arrays[i].histogram
+                    histogram=self._image_arrays[i].histogram,
                 )
 
                 subplot.docks["right"].add_graphic(hlut)
@@ -418,7 +431,9 @@ class ImageWidget:
                 )
 
             if any([i < 0 for i in new_indices]):
-                raise IndexError(f"only positive index values are supported, you have passed: {new_indices}")
+                raise IndexError(
+                    f"only positive index values are supported, you have passed: {new_indices}"
+                )
 
             for image_array, graphic in zip(self._image_arrays, self.graphics):
                 new_data = self._get_image(new_indices, image_array)
@@ -496,9 +511,7 @@ class ImageWidget:
 
         """
         if event != "indices":
-            raise ValueError(
-                "`indices` is the only event supported by `ImageWidget`"
-            )
+            raise ValueError("`indices` is the only event supported by `ImageWidget`")
 
         self._indices_changed_handlers.add(handler)
 
