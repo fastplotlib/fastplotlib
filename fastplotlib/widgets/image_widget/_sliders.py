@@ -11,40 +11,47 @@ class ImageWidgetSliders(EdgeWindow):
         super().__init__(figure=figure, size=size, location=location, title=title)
         self._image_widget = image_widget
 
+        n_sliders = self._image_widget.n_sliders
+
         # whether or not a dimension is in play mode
-        self._playing: dict[str, bool] = {"t": False, "z": False}
+        self._playing: tuple[int, ...] = [False] * n_sliders
 
         # approximate framerate for playing
-        self._fps: dict[str, int] = {"t": 20, "z": 20}
+        self._fps: tuple[int, ...] = [20] * n_sliders
+
         # framerate converted to frame time
-        self._frame_time: dict[str, float] = {"t": 1 / 20, "z": 1 / 20}
+        self._frame_time: tuple[int, ...] = [1 / 20] * n_sliders
 
         # last timepoint that a frame was displayed from a given dimension
-        self._last_frame_time: dict[str, float] = {"t": 0, "z": 0}
+        self._last_frame_time: tuple[int, ...] = [20] * n_sliders
 
+        # loop playback
         self._loop = False
 
-        if "RTD_BUILD" in os.environ.keys():
-            if os.environ["RTD_BUILD"] == "1":
-                self._playing["t"] = True
+        # auto-plays the ImageWidget's left-most dimension in docs galleries
+        if "DOCS_BUILD" in os.environ.keys():
+            if os.environ["DOCS_BUILD"] == "1":
+                self._playing[0] = True
                 self._loop = True
 
-    def set_index(self, dim: str, index: int):
-        """set the current_index of the ImageWidget"""
+    def set_index(self, dim: int, new_index: int):
+        """set the index of the ImageWidget"""
 
         # make sure the max index for this dim is not exceeded
-        max_index = self._image_widget._dims_max_bounds[dim] - 1
-        if index > max_index:
+        max_index = self._image_widget.bounds[dim] - 1
+        if new_index > max_index:
             if self._loop:
                 # loop back to index zero if looping is enabled
-                index = 0
+                new_index = 0
             else:
                 # if looping not enabled, stop playing this dimension
                 self._playing[dim] = False
                 return
 
         # set current_index
-        self._image_widget.current_index = {dim: min(index, max_index)}
+        index = list(self._image_widget.index)
+        index[dim] = new_index
+        self._image_widget.index = index
 
     def update(self):
         """called on every render cycle to update the GUI elements"""
@@ -83,7 +90,7 @@ class ImageWidgetSliders(EdgeWindow):
 
                 # if in play mode and enough time has elapsed w.r.t. the desired framerate, increment the index
                 if now - self._last_frame_time[dim] >= self._frame_time[dim]:
-                    self.set_index(dim, self._image_widget.current_index[dim] + 1)
+                    self.set_index(dim, self._image_widget.index[dim] + 1)
                     self._last_frame_time[dim] = now
 
             else:
@@ -97,12 +104,12 @@ class ImageWidgetSliders(EdgeWindow):
             imgui.same_line()
             # step back one frame button
             if imgui.button(label=fa.ICON_FA_BACKWARD_STEP) and not self._playing[dim]:
-                self.set_index(dim, self._image_widget.current_index[dim] - 1)
+                self.set_index(dim, self._image_widget.index[dim] - 1)
 
             imgui.same_line()
             # step forward one frame button
             if imgui.button(label=fa.ICON_FA_FORWARD_STEP) and not self._playing[dim]:
-                self.set_index(dim, self._image_widget.current_index[dim] + 1)
+                self.set_index(dim, self._image_widget.index[dim] + 1)
 
             imgui.same_line()
             # stop button
@@ -137,7 +144,7 @@ class ImageWidgetSliders(EdgeWindow):
                 self._fps[dim] = value
                 self._frame_time[dim] = 1 / value
 
-            val = self._image_widget.current_index[dim]
+            val = self._image_widget.index[dim]
             vmax = self._image_widget._dims_max_bounds[dim] - 1
 
             imgui.text(f"{dim}: ")
@@ -166,6 +173,6 @@ class ImageWidgetSliders(EdgeWindow):
 
         if flag_index_changed:
             # if any slider dim changed set the new index of the image widget
-            self._image_widget.current_index = new_index
+            self._image_widget.index = new_index
 
         self.size = int(imgui.get_window_height())

@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Sequence, Literal
 from warnings import warn
 
 import numpy as np
@@ -6,142 +6,31 @@ import numpy as np
 from rendercanvas import BaseRenderCanvas
 
 from ...layouts import ImguiFigure as Figure
-from ...graphics import ImageGraphic
+from ...graphics import ImageGraphic, ImageVolumeGraphic
 from ...utils import calculate_figure_shape, quick_min_max
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
-from ._array import NDImageView
+from ._array import NDImageArray
 
 
 class ImageWidget:
-    @property
-    def figure(self) -> Figure:
-        """
-        ``Figure`` used by `ImageWidget`.
-        """
-        return self._figure
-
-    @property
-    def managed_graphics(self) -> list[ImageGraphic]:
-        """List of ``ImageWidget`` managed graphics."""
-        iw_managed = list()
-        for subplot in self.figure:
-            # empty subplots will not have any image widget data
-            if len(subplot.graphics) > 0:
-                iw_managed.append(subplot["image_widget_managed"])
-        return iw_managed
-
-    @property
-    def cmap(self) -> list[str]:
-        cmaps = list()
-        for g in self.managed_graphics:
-            cmaps.append(g.cmap)
-
-        return cmaps
-
-    @cmap.setter
-    def cmap(self, names: str | list[str]):
-        if isinstance(names, list):
-            if not all([isinstance(n, str) for n in names]):
-                raise TypeError(
-                    f"Must pass cmap name as a `str` of list of `str`, you have passed:\n{names}"
-                )
-
-            if not len(names) == len(self.managed_graphics):
-                raise IndexError(
-                    f"If passing a list of cmap names, the length of the list must be the same as the number of "
-                    f"image widget subplots. You have passed: {len(names)} cmap names and have "
-                    f"{len(self.managed_graphics)} image widget subplots"
-                )
-
-            for name, g in zip(names, self.managed_graphics):
-                g.cmap = name
-
-        elif isinstance(names, str):
-            for g in self.managed_graphics:
-                g.cmap = names
-
-    @property
-    def data(self) -> list[np.ndarray]:
-        """data currently displayed in the widget"""
-        return self._data
-
-    @property
-    def current_index(self) -> dict[str, int]:
-        """
-        Get or set the current index
-
-        Returns
-        -------
-        index: Dict[str, int]
-            | ``dict`` for indexing each dimension, provide a ``dict`` with indices for all dimensions used by sliders
-            or only a subset of dimensions used by the sliders.
-            | example: if you have sliders for dims "t" and "z", you can pass either ``{"t": 10}`` to index to position
-            10 on dimension "t" or ``{"t": 5, "z": 20}`` to index to position 5 on dimension "t" and position 20 on
-            dimension "z" simultaneously.
-
-        """
-        return self._current_index
-
-    @current_index.setter
-    def current_index(self, index: dict[str, int]):
-        if not self._initialized:
-            return
-
-        if self._reentrant_block:
-            return
-
-        try:
-            self._reentrant_block = True  # block re-execution until current_index has *fully* completed execution
-            if not set(index.keys()).issubset(set(self._current_index.keys())):
-                raise KeyError(
-                    f"All dimension keys for setting `current_index` must be present in the widget sliders. "
-                    f"The dimensions currently used for sliders are: {list(self.current_index.keys())}"
-                )
-
-            for k, val in index.items():
-                if not isinstance(val, int):
-                    raise TypeError("Indices for all dimensions must be int")
-                if val < 0:
-                    raise IndexError(
-                        "negative indexing is not supported for ImageWidget"
-                    )
-                if val > self._dims_max_bounds[k]:
-                    raise IndexError(
-                        f"index {val} is out of bounds for dimension '{k}' "
-                        f"which has a max bound of: {self._dims_max_bounds[k]}"
-                    )
-
-            self._current_index.update(index)
-
-            for i, (ig, data) in enumerate(zip(self.managed_graphics, self.data)):
-                frame = self._process_indices(data, self._current_index)
-                frame = self._process_frame_apply(frame, i)
-                ig.data = frame
-
-            # call any event handlers
-            for handler in self._current_index_changed_handlers:
-                handler(self.current_index)
-        except Exception as exc:
-            # raise original exception
-            raise exc  # current_index setter has raised. The lines above below are probably more relevant!
-        finally:
-            # set_value has finished executing, now allow future executions
-            self._reentrant_block = False
-
     def __init__(
         self,
         data: np.ndarray | list[np.ndarray],
-        array_types: ImageWidgetArray | list[ImageWidgetArray] = ImageWidgetArray,
-        window_funcs: dict[str, tuple[Callable, int]] = None,
-        frame_apply: Callable | dict[int, Callable] = None,
+        array_types: NDImageArray | list[NDImageArray] = NDImageArray,
+        n_display_dims: Literal[2, 3] | Sequence[Literal[2, 3]] = 2,
+        rgb: bool | Sequence[bool] = None,
+        cmap: str = "plasma",
+        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None | Sequence[tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None ]= None,
+        window_sizes: tuple[int | None, ...] | Sequence[tuple[int | None, ...] | None] = None,
+        window_order: tuple[int, ...] | Sequence[tuple[int, ...] | None] = None,
+        finalizer_funcs: Callable[[ArrayLike], ArrayLike] | Sequence[Callable[[ArrayLike], ArrayLike]] | None = None,
+        sliders_dim_order: Literal["right", "left"] = "right",
         figure_shape: tuple[int, int] = None,
-        names: list[str] = None,
+        names: Sequence[str] = None,
         figure_kwargs: dict = None,
         histogram_widget: bool = True,
-        rgb: bool | list[bool] = None,
-        cmap: str = "plasma",
-        graphic_kwargs: dict = None,
+        graphic_kwargs: dict | Sequence[dict] = None,
     ):
         """
         This widget facilitates high-level navigation through image stacks, which are arrays containing one or more
@@ -153,7 +42,7 @@ class ImageWidget:
 
         Parameters
         ----------
-        data: Union[np.ndarray, List[np.ndarray]
+        data: np.ndarray | List[np.ndarray]
             array-like or a list of array-like
 
         window_funcs: dict[str, tuple[Callable, int]], i.e. {"t" or "z": (callable, int)}
@@ -204,51 +93,56 @@ class ImageWidget:
 
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
-            if all([_is_arraylike(d) for d in data]):
-                # Grid computations
-                if figure_shape is None:
-                    if "shape" in figure_kwargs:
-                        figure_shape = figure_kwargs["shape"]
-                    else:
-                        figure_shape = calculate_figure_shape(len(data))
+            if not all([_is_arraylike(d) for d in data]):
+                raise TypeError(
+                    f"`data` must be an array-like type or a list of array-like."
+                    f"You have passed the following type {type(data)}"
+                )
 
-                # Regardless of how figure_shape is computed, below code
-                # verifies that figure shape is large enough for the number of image arrays passed
-                if figure_shape[0] * figure_shape[1] < len(data):
-                    original_shape = (figure_shape[0], figure_shape[1])
-                    figure_shape = calculate_figure_shape(len(data))
-                    warn(
-                        f"Original `figure_shape` was: {original_shape} "
-                        f" but data length is {len(data)}"
-                        f" Resetting figure shape to: {figure_shape}"
-                    )
+        # subplot layout
+        if figure_shape is None:
+            if "shape" in figure_kwargs:
+                figure_shape = figure_kwargs["shape"]
+            else:
+                figure_shape = calculate_figure_shape(len(data))
 
-                self._data: list[np.ndarray] = data
+        # Regardless of how figure_shape is computed, below code
+        # verifies that figure shape is large enough for the number of image arrays passed
+        if figure_shape[0] * figure_shape[1] < len(data):
+            original_shape = (figure_shape[0], figure_shape[1])
+            figure_shape = calculate_figure_shape(len(data))
+            warn(
+                f"Original `figure_shape` was: {original_shape} "
+                f" but data length is {len(data)}"
+                f" Resetting figure shape to: {figure_shape}"
+            )
 
-                # Establish number of image dimensions and number of scrollable dimensions for each array
-                if rgb is None:
-                    rgb = [False] * len(self.data)
-                if isinstance(rgb, bool):
-                    rgb = [rgb] * len(self.data)
-                if not isinstance(rgb, list):
-                    raise TypeError(
-                        f"`rgb` parameter must be a bool or list of bool, a <{type(rgb)}> was provided"
-                    )
-                if not len(rgb) == len(self.data):
-                    raise ValueError(
-                        f"len(rgb) != len(data), {len(rgb)} != {len(self.data)}. These must be equal"
-                    )
+        if rgb is None:
+            rgb = [False] * len(data)
 
-                if names is not None:
-                    if not all([isinstance(n, str) for n in names]):
-                        raise TypeError(
-                            "optional argument `names` must be a list of str"
-                        )
+        elif isinstance(rgb, bool):
+            rgb = [rgb] * len(data)
 
-                    if len(names) != len(self.data):
-                        raise ValueError(
-                            "number of `names` for subplots must be same as the number of data arrays"
-                        )
+        if not all([isinstance(v, bool) for v in rgb]):
+            raise TypeError(
+                f"`rgb` parameter must be a bool or a Sequence of bool, <{rgb}> was provided"
+            )
+
+        if not len(rgb) == len(data):
+            raise ValueError(
+                f"len(rgb) != len(data), {len(rgb)} != {len(self.data)}. These must be equal"
+            )
+
+        if names is not None:
+            if not all([isinstance(n, str) for n in names]):
+                raise TypeError(
+                    "optional argument `names` must be a Sequence of str"
+                )
+
+            if len(names) != len(data):
+                raise ValueError(
+                    "number of `names` for subplots must be same as the number of data arrays"
+                )
 
             else:
                 raise TypeError(
@@ -257,14 +151,89 @@ class ImageWidget:
                     f"You have passed the following types:\n"
                     f"{[type(a) for a in data]}"
                 )
+
+        # verify window funcs
+        if window_funcs is None:
+            win_funcs = [None] * len(data)
+
+        elif callable(window_funcs) or all([callable(f) or f is None for f in window_funcs]):
+            # across all data arrays
+            # one window function defined for all dims, or window functions defined per-dim
+            win_funcs = [window_funcs] * len(data)
+
+        # if the above two clauses didn't trigger, then window_funcs defined per-dim, per data array
+        elif len(window_funcs) != len(data):
+            raise IndexError
+
+        # verify window sizes
+        if window_sizes is None:
+            win_sizes = [window_sizes] * len(data)
+
+        elif all([isinstance(size, int) or size is None for size in window_sizes]):
+            # window sizes defined per-dim across all data arrays
+            win_sizes = [window_sizes] * len(data)
+
+        elif len(window_sizes) != len(data):
+            # window sizes defined per-dim, per data array
+            raise IndexError
+
+        # verify window orders
+        if window_order is None:
+            win_order = [None] * len(data)
+
+        elif all([isinstance(o, int) for o in order]):
+            # window order defined per-dim across all data arrays
+            win_order = [window_order] * len(data)
+
+        elif len(window_order) != len(data):
+            raise IndexError
+
+        # verify finalizer function
+        if finalizer_funcs is None:
+            final_funcs = [None] * len(data)
+
+        elif callable(finalizer_funcs):
+            # same finalizer func for all data arrays
+            finalizer_funcs = [finalizer_funcs] * len(data)
+
+        elif len(finalizer_funcs) != len(data):
+            raise IndexError
+
+        # verify number of display dims
+        if isinstance(n_display_dims, int):
+            if n_display_dims not in (2, 3):
+                raise ValueError
+            n_display_dims = [n_display_dims] * len(data)
+
+        elif isinstance(n_display_dims, (tuple, list)):
+            if not all([n in (2, 3) for n in n_display_dims]):
+                raise ValueError
+            if len(n_display_dims) != len(data):
+                raise IndexError
         else:
-            raise TypeError(
-                f"`data` must be an array-like type or a list of array-like."
-                f"You have passed the following type {type(data)}"
+            raise TypeError
+
+        self._n_display_dims = n_display_dims
+
+        if sliders_dim_order not in ("left", "right"):
+            raise ValueError
+        self._sliders_dim_order = sliders_dim_order
+
+        # make NDImageArrays
+        self._image_arrays: list[NDImageArray] = list()
+        for i in range(len(data)):
+            image_array = NDImageArray(
+                data=data[i],
+                rgb=rgb[i],
+                n_display_dims=n_display_dims[i],
+                window_funcs=win_funcs[i],
+                window_sizes=win_sizes[i],
+                window_order=win_order[i],
+                finalizer_func=finalizer_funcs[i],
+                compute_histogram=histogram_widget,
             )
 
-        # current_index stores {dimension_index: slice_index} for every dimension
-        self._current_index: dict[str, int] = {sax: 0 for sax in self.slider_dims}
+            self._image_arrays.append(image_array)
 
         figure_kwargs_default = {"controller_ids": "sync", "names": names}
 
@@ -274,27 +243,32 @@ class ImageWidget:
         figure_kwargs_default["shape"] = figure_shape
 
         if graphic_kwargs is None:
-            graphic_kwargs = dict()
+            graphic_kwargs = [dict()] * len(data)
 
-        graphic_kwargs.update({"cmap": cmap})
+        elif isinstance(graphic_kwargs, dict):
+            graphic_kwargs = [graphic_kwargs] * len(data)
 
-        vmin_specified, vmax_specified = None, None
-        if "vmin" in graphic_kwargs.keys():
-            vmin_specified = graphic_kwargs.pop("vmin")
-        if "vmax" in graphic_kwargs.keys():
-            vmax_specified = graphic_kwargs.pop("vmax")
+        elif len(graphic_kwargs) != len(data):
+            raise IndexError
 
         self._figure: Figure = Figure(**figure_kwargs_default)
 
         self._histogram_widget = histogram_widget
-        for data_ix, (d, subplot) in enumerate(zip(self.data, self.figure)):
 
-            frame = self._process_indices(d, slice_indices=self._current_index)
-            frame = self._process_frame_apply(frame, data_ix)
+        self._index = tuple(0 for i in range(self.n_sliders))
+
+        for i, subplot in zip(range(len(self._image_arrays)), figure):
+            image_data = self._get_image(self._index, self._image_arrays[i])
+
+            vmin_specified, vmax_specified = None, None
+            if "vmin" in graphic_kwargs[i].keys():
+                vmin_specified = graphic_kwargs[i].pop("vmin")
+            if "vmax" in graphic_kwargs[i].keys():
+                vmax_specified = graphic_kwargs[i].pop("vmax")
 
             if (vmin_specified is None) or (vmax_specified is None):
                 # if either vmin or vmax are not specified, calculate an estimate by subsampling
-                vmin_estimate, vmax_estimate = quick_min_max(d)
+                vmin_estimate, vmax_estimate = quick_min_max(self._image_arrays[i])
 
                 # decide vmin, vmax passed to ImageGraphic constructor based on whether it's user specified or now
                 if vmin_specified is None:
@@ -312,17 +286,29 @@ class ImageWidget:
                 # both vmin and vmax are specified
                 vmin, vmax = vmin_specified, vmax_specified
 
-            ig = ImageGraphic(
-                frame,
-                name="image_widget_managed",
-                vmin=vmin,
-                vmax=vmax,
-                **graphic_kwargs,
-            )
-            subplot.add_graphic(ig)
+            if self._n_display_dims[i] == 2:
+                graphic = ImageGraphic(
+                    data=image_data,
+                    name="image_widget_managed",
+                    vmin=vmin,
+                    vmax=vmax,
+                    **graphic_kwargs[i]
+                )
+            elif self._n_display_dims[i] == 3:
+                graphic = ImageVolumeGraphic(
+                    data=image_data,
+                    name="image_widget_managed",
+                    vmin=vmin,
+                    vmax=vmax,
+                    **graphic_kwargs[i]
+                )
+
+            subplot.add_graphic(graphic)
 
             if self._histogram_widget:
-                hlut = HistogramLUTTool(data=d, images=ig, name="histogram_lut")
+                hlut = HistogramLUTTool(
+                    data=d, images=ig, name="histogram_lut", histogram=self._image_arrays[i].histogram
+                )
 
                 subplot.docks["right"].add_graphic(hlut)
                 subplot.docks["right"].size = 80
@@ -330,12 +316,7 @@ class ImageWidget:
                 subplot.docks["right"].controller.enabled = False
 
         # hard code the expected height so that the first render looks right in tests, docs etc.
-        if len(self.slider_dims) == 0:
-            ui_size = 57
-        if len(self.slider_dims) == 1:
-            ui_size = 106
-        elif len(self.slider_dims) == 2:
-            ui_size = 155
+        ui_size = 57 + (self.n_sliders * 55)
 
         self._image_widget_sliders = ImageWidgetSliders(
             figure=self.figure,
@@ -352,6 +333,131 @@ class ImageWidget:
         self._reentrant_block = False
 
         self._initialized = True
+
+    @property
+    def figure(self) -> Figure:
+        """
+        ``Figure`` used by `ImageWidget`.
+        """
+        return self._figure
+
+    @property
+    def graphics(self) -> list[ImageGraphic]:
+        """List of ``ImageWidget`` managed graphics."""
+        iw_managed = list()
+        for subplot in self.figure:
+            # empty subplots will not have any image widget data
+            if len(subplot.graphics) > 0:
+                iw_managed.append(subplot["image_widget_managed"])
+        return iw_managed
+
+    @property
+    def cmap(self) -> list[str]:
+        cmaps = list()
+        for g in self.graphics:
+            cmaps.append(g.cmap)
+
+        return cmaps
+
+    @cmap.setter
+    def cmap(self, names: str | list[str]):
+        if isinstance(names, list):
+            if not all([isinstance(n, str) for n in names]):
+                raise TypeError(
+                    f"Must pass cmap name as a `str` of list of `str`, you have passed:\n{names}"
+                )
+
+            if not len(names) == len(self.graphics):
+                raise IndexError(
+                    f"If passing a list of cmap names, the length of the list must be the same as the number of "
+                    f"image widget subplots. You have passed: {len(names)} cmap names and have "
+                    f"{len(self.graphics)} image widget subplots"
+                )
+
+            for name, g in zip(names, self.graphics):
+                g.cmap = name
+
+        elif isinstance(names, str):
+            for g in self.graphics:
+                g.cmap = names
+
+    @property
+    def data(self) -> list[np.ndarray]:
+        """data currently displayed in the widget"""
+        return self._data
+
+    @property
+    def index(self) -> tuple[int, ...]:
+        """
+        Get or set the current index
+
+        Returns
+        -------
+        index: tuple[int, ...]
+            integer index for each slider dimension
+
+        """
+        return self._current_index
+
+    @index.setter
+    def index(self, new_index: Sequence[int, ...]):
+        if not self._initialized:
+            return
+
+        if self._reentrant_block:
+            return
+
+        try:
+            self._reentrant_block = True  # block re-execution until current_index has *fully* completed execution
+
+            if len(new_index) != self.n_sliders:
+                raise IndexError(
+                    f"len(index) != ImageWidget.n_sliders, {len(new_index)} != {self.n_sliders}. "
+                    f"The length of the index must be the same as the number of sliders"
+                )
+
+            for image_array, graphic in zip(self._image_arrays, self.graphics):
+                new_data = self._get_image(new_index, image_array)
+                graphic.data = new_data
+
+            self._index = new_index
+
+            # call any event handlers
+            for handler in self._current_index_changed_handlers:
+                handler(self.index)
+        except Exception as exc:
+            # raise original exception
+            raise exc  # current_index setter has raised. The lines above below are probably more relevant!
+        finally:
+            # set_value has finished executing, now allow future executions
+            self._reentrant_block = False
+
+    def _get_image(self, slider_indices: tuple[int, ...], array_index: int):
+        a = self._image_arrays[array_index]
+        n = a.n_slider_dims
+
+        if self._sliders_dim_order == "right":
+            return a.get(self.index[-n:])
+        elif self._sliders_dim_order == "left":
+            return a.get(self.index[:n])
+
+    @property
+    def n_sliders(self) -> int:
+        return max([a.n_slider_dims for a in self._image_arrays])
+
+    @property
+    def bounds(self) -> tuple[int, ...]:
+        """The max bound across all dimensions across all data arrays"""
+        # initialize with 0
+        bounds = [0] * len(self.n_sliders)
+
+        for dim in range(self.n_sliders):
+            # across each dim
+            for array in self._image_arrays:
+                # across each data array
+                bounds[dim] = max(array.shape[dim], bounds[dim])
+
+        return bounds
 
     def add_event_handler(self, handler: callable, event: str = "current_index"):
         """
@@ -428,6 +534,10 @@ class ImageWidget:
             # set the data using the current image graphic data
             hlut.set_data(subplot["image_widget_managed"].data.value)
 
+    @property
+    def data(self) -> tuple[np.ndarray, ...]:
+        return tuple(array.data for array in self._image_arrays)
+
     def set_data(
         self,
         new_data: np.ndarray | list[np.ndarray],
@@ -451,8 +561,8 @@ class ImageWidget:
         """
 
         if reset_indices:
-            for key in self.current_index:
-                self.current_index[key] = 0
+            for key in self.index:
+                self.index[key] = 0
 
         # set slider max according to new data
         max_lengths = dict()
@@ -539,7 +649,7 @@ class ImageWidget:
                 )
 
         # force graphics to update
-        self.current_index = self.current_index
+        self.index = self.index
 
     def show(self, **kwargs):
         """

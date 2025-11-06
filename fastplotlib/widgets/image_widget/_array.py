@@ -1,7 +1,9 @@
-import numpy as np
-from numpy.typing import ArrayLike
+import inspect
 from typing import Literal, Callable
 from warnings import warn
+
+import numpy as np
+from numpy.typing import ArrayLike
 
 from ...utils import subsample_array
 
@@ -10,7 +12,7 @@ from ...utils import subsample_array
 WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
 
 
-class NDImageView:
+class NDImageArray:
     def __init__(
         self,
         data: ArrayLike,
@@ -23,7 +25,7 @@ class NDImageView:
         compute_histogram: bool = True,
     ):
         """
-        A dynamic view of an ND image that supports computing window functions, and functions over spatial dimensions.
+        An ND image that supports computing window functions, and functions over spatial dimensions.
 
         Parameters
         ----------
@@ -70,6 +72,9 @@ class NDImageView:
         self._n_display_dims = n_display_dims
         self._rgb = rgb
 
+        # set as False until window funcs stuff and finalizer func is all set
+        self._compute_histogram = False
+
         self._window_funcs = window_funcs
         self._window_sizes = window_sizes
         self._window_order = window_order
@@ -77,7 +82,7 @@ class NDImageView:
         self._finalizer_func = finalizer_func
 
         self._compute_histogram = compute_histogram
-        self._histogram = self._compute_histogram()
+        self._compute_histogram()
 
     @property
     def data(self) -> ArrayLike:
@@ -96,6 +101,14 @@ class NDImageView:
                 )
         self._data = data
         self._recompute_histogram()
+
+    @property
+    def ndim(self) -> int:
+        return self.data.ndim
+
+    @property
+    def shape(self) -> tuple[int, ...]:
+        return self.data.shape
 
     @property
     def rgb(self) -> bool:
@@ -153,10 +166,26 @@ class NDImageView:
             self._window_funcs = None
             return
 
-        if not all([callable(f) or f is None for f in funcs]):
-            raise TypeError(
-                f"`window_funcs` must be of type: tuple[Callable | None, ...], you have passed: {window_funcs}"
-            )
+        self._validate_window_func(window_funcs)
+
+        self._window_funcs = window_funcs
+        self._recompute_histogram()
+
+    def _validate_window_func(self, funcs):
+        if isinstance(funcs, (tuple, list)):
+            for f in funcs:
+                if not callable(f):
+                    raise TypeError(
+                        f"`window_funcs` must be of type: tuple[Callable | None, ...], you have passed: {window_funcs}"
+                    )
+
+                sig = inspect.signature(f)
+
+                if "axis" not in sig.parameters or "keepdims" not in sig.parameters:
+                    raise TypeError(
+                        f"Each window function must take an `axis` and `keepdims` argument, you passed: {f} with the "
+                        f"following function signature: {sig}"
+                    )
 
         if not len(window_funcs) == self.n_slider_dims:
             raise IndexError(
@@ -164,9 +193,6 @@ class NDImageView:
                 f"i.e. `data.ndim` - n_display_dims, your data array has {data.ndim} dimensions "
                 f"and you passed {len(window_funcs)} `window_funcs`: {window_funcs}"
             )
-
-        self._window_funcs = window_funcs
-        self._recompute_histogram()
 
     @property
     def window_sizes(self) -> tuple[int | None, ...] | None:
@@ -388,6 +414,14 @@ class NDImageView:
 
         """
         if not self._compute_histogram:
+            self._histogram = None
             return
 
-        self._histogram = None
+        if self.finalizer_func is not None:
+            ignore_dims = self.display_dims
+        else:
+            ignore_dims = None
+
+        sub = subsample_array(self.data, ignore_dims=ignore_dims)
+
+        self._histogram = np.histogram(sub, bins=100)
