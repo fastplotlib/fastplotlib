@@ -49,7 +49,9 @@ class ImageWidgetSliders(EdgeWindow):
                 return
 
         # set new index
-        self._image_widget.indices[dim] = new_index
+        new_indices = list(self._image_widget.indices)
+        new_indices[dim] = new_index
+        self._image_widget.indices = new_indices
 
     def update(self):
         """called on every render cycle to update the GUI elements"""
@@ -157,7 +159,9 @@ class ImageWidgetSliders(EdgeWindow):
             )
 
             if changed:
-                self._image_widget.indices[dim] = index
+                new_indices = list(self._image_widget.indices)
+                new_indices[dim] = index
+                self._image_widget.indices = new_indices
 
             imgui.pop_id()
 

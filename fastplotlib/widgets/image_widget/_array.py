@@ -145,17 +145,17 @@ class NDImageArray:
         return self._n_display_dims
 
     # TODO: make n_display_dims settable, requires thinking about inserting and poping indices in ImageWidget
-    # @n_display_dims.setter
-    # def n_display_dims(self, n: Literal[2, 3]):
-    #     if n not in (2, 3):
-    #         raise ValueError("`n_display_dims` must be an <int> with a value of 2 or 3")
-    #     self._n_display_dims = n
-    #     self._recompute_histogram()
-    #
-    # @property
-    # def max_n_display_dims(self) -> int:
-    #     """maximum number of possible display dims"""
-    #     return min(3, self.ndim - int(self.rgb))
+    @n_display_dims.setter
+    def n_display_dims(self, n: Literal[2, 3]):
+        if n not in (2, 3):
+            raise ValueError("`n_display_dims` must be an <int> with a value of 2 or 3")
+        self._n_display_dims = n
+        self._recompute_histogram()
+
+    @property
+    def max_n_display_dims(self) -> int:
+        """maximum number of possible display dims"""
+        return min(3, self.ndim - int(self.rgb))
 
     @property
     def display_dims(self) -> tuple[int, int] | tuple[int, int, int]:
