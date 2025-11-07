@@ -350,12 +350,9 @@ class ImageWidget:
                 subplot.docks["right"].auto_scale(maintain_aspect=False)
                 subplot.docks["right"].controller.enabled = False
 
-        # hard code the expected height so that the first render looks right in tests, docs etc.
-        ui_size = 57 + (self.n_sliders * 50)
-
         self._image_widget_sliders = ImageWidgetSliders(
             figure=self.figure,
-            size=ui_size,
+            size=180,
             location="bottom",
             title="ImageWidget Controls",
             image_widget=self,
@@ -497,11 +494,13 @@ class ImageWidget:
         while len(self._indices) > self.n_sliders:
             # pop from: left <- right
             self._indices.pop(len(self._indices) - 1)
+            self._image_widget_sliders.pop_dim()
 
         # add any new dimensions that aren't present
         while len(self.indices) < self.n_sliders:
             # insert from: left <- right
             self._indices.append(0)
+            self._image_widget_sliders.push_dim()
 
         # update graphics where display dims have changed accordings to indices
 

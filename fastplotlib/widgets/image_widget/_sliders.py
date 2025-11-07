@@ -34,6 +34,19 @@ class ImageWidgetSliders(EdgeWindow):
                 self._playing[0] = True
                 self._loop = True
 
+        self.pause = False
+
+    def push_dim(self):
+        self._playing.append(False)
+        self._fps.append(20)
+        self._frame_time.append(1 / 20)
+        self._last_frame_time.append(perf_counter())
+
+    def pop_dim(self):
+        i = len(self._image_widget.indices) - 1
+        for l in [self._playing, self._fps, self._frame_time, self._last_frame_time]:
+            l.pop(i)
+
     def set_index(self, dim: int, new_index: int):
         """set the index of the ImageWidget"""
 
@@ -72,8 +85,13 @@ class ImageWidgetSliders(EdgeWindow):
         # time now
         now = perf_counter()
 
+        # self._size = 300#57 + (self._image_widget.n_sliders * 50)
+
         # buttons and slider UI elements for each dim
         for dim in range(self._image_widget.n_sliders):
+            if self.pause:
+                continue
+
             imgui.push_id(f"{self._id_counter}_{dim}")
 
             if self._playing[dim]:
