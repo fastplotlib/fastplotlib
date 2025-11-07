@@ -129,7 +129,7 @@ class NDImageArray:
     @property
     def n_slider_dims(self) -> int:
         """number of slider dimensions"""
-        return self.data.ndim - self.n_display_dims - int(self.rgb)
+        return self.ndim - self.n_display_dims - int(self.rgb)
 
     @property
     def slider_dims(self) -> tuple[int, ...] | None:
@@ -144,12 +144,18 @@ class NDImageArray:
         """get or set the number of display dimensions, `2` for 2D image and `3` for volume images"""
         return self._n_display_dims
 
-    @n_display_dims.setter
-    def n_display_dims(self, n: Literal[2, 3]):
-        if n not in (2, 3):
-            raise ValueError("`n_display_dims` must be an <int> with a value of 2 or 3")
-        self._n_display_dims = n
-        self._recompute_histogram()
+    # TODO: make n_display_dims settable, requires thinking about inserting and poping indices in ImageWidget
+    # @n_display_dims.setter
+    # def n_display_dims(self, n: Literal[2, 3]):
+    #     if n not in (2, 3):
+    #         raise ValueError("`n_display_dims` must be an <int> with a value of 2 or 3")
+    #     self._n_display_dims = n
+    #     self._recompute_histogram()
+    #
+    # @property
+    # def max_n_display_dims(self) -> int:
+    #     """maximum number of possible display dims"""
+    #     return min(3, self.ndim - int(self.rgb))
 
     @property
     def display_dims(self) -> tuple[int, int] | tuple[int, int, int]:
@@ -195,8 +201,8 @@ class NDImageArray:
 
                     if "axis" not in sig.parameters or "keepdims" not in sig.parameters:
                         raise TypeError(
-                            f"Each window function must take an `axis` and `keepdims` argument, you passed: {f} with the "
-                            f"following function signature: {sig}"
+                            f"Each window function must take an `axis` and `keepdims` argument, "
+                            f"you passed: {f} with the following function signature: {sig}"
                         )
                 else:
                     raise TypeError(
@@ -234,37 +240,37 @@ class NDImageArray:
             )
 
         if not len(window_sizes) == self.n_slider_dims:
-            raise window_sizes(
+            raise IndexError(
                 f"number of `window_sizes` must be the same as the number of slider dims, "
-                f"i.e. `data.ndim` - n_display_dims, your data array has {data.ndim} dimensions "
+                f"i.e. `data.ndim` - n_display_dims, your data array has {self.ndim} dimensions "
                 f"and you passed {len(window_sizes)} `window_sizes`: {window_sizes}"
             )
 
-            # make all window sizes are valid numbers
-            _window_sizes = list()
-            for i, w in enumerate(window_sizes):
-                if w is None:
-                    _window_sizes.append(None)
-                    continue
+        # make all window sizes are valid numbers
+        _window_sizes = list()
+        for i, w in enumerate(window_sizes):
+            if w is None:
+                _window_sizes.append(None)
+                continue
 
-                if w < 0:
-                    raise ValueError(
-                        f"negative window size passed, all `window_sizes` must be positive "
-                        f"integers or `None`, you passed: {_window_sizes}"
-                    )
+            if w < 0:
+                raise ValueError(
+                    f"negative window size passed, all `window_sizes` must be positive "
+                    f"integers or `None`, you passed: {_window_sizes}"
+                )
 
-                if w in (0, 1):
-                    # this is not a real window, set as None
-                    w = None
+            if w in (0, 1):
+                # this is not a real window, set as None
+                w = None
 
-                if w % 2 == 0:
-                    # odd window sizes makes most sense
-                    warn(
-                        f"provided even window size: {w} in dim: {i}, adding `1` to make it odd"
-                    )
-                    w += 1
+            if w % 2 == 0:
+                # odd window sizes makes most sense
+                warn(
+                    f"provided even window size: {w} in dim: {i}, adding `1` to make it odd"
+                )
+                w += 1
 
-                _window_sizes.append(w)
+            _window_sizes.append(w)
 
         self._window_sizes = tuple(window_sizes)
         self._recompute_histogram()

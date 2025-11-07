@@ -11,6 +11,7 @@ from ...utils import calculate_figure_shape, quick_min_max
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
 from ._array import NDImageArray, WindowFuncCallable, ArrayLike, is_arraylike
+from ._properties import Indices
 
 
 class ImageWidget:
@@ -231,7 +232,7 @@ class ImageWidget:
         else:
             raise TypeError
 
-        self._n_display_dims = n_display_dims
+        self._n_display_dims = tuple(n_display_dims)
 
         if sliders_dim_order not in ("left", "right"):
             raise ValueError
@@ -243,7 +244,7 @@ class ImageWidget:
             image_array = NDImageArray(
                 data=data[i],
                 rgb=rgb[i],
-                n_display_dims=n_display_dims[i],
+                n_display_dims=self._n_display_dims[i],
                 window_funcs=win_funcs[i],
                 window_sizes=win_sizes[i],
                 window_order=win_order[i],
@@ -282,10 +283,13 @@ class ImageWidget:
 
         self._histogram_widget = histogram_widget
 
-        self._indices = tuple(0 for i in range(self.n_sliders))
+        self._indices = Indices(
+            data=[0 for i in range(self.n_sliders)],
+            image_widget=self,
+        )
 
         for i, subplot in zip(range(len(self._image_arrays)), self.figure):
-            image_data = self._get_image(self._indices, self._image_arrays[i])
+            image_data = self._get_image(self._image_arrays[i])
 
             # next 20 lines are just vmin, vmax parsing
             vmin_specified, vmax_specified = None, None
@@ -387,34 +391,14 @@ class ImageWidget:
         return iw_managed
 
     @property
-    def cmap(self) -> list[str]:
-        cmaps = list()
-        for g in self.graphics:
-            cmaps.append(g.cmap)
-
-        return cmaps
+    def cmap(self) -> tuple[str, ...]:
+        """get the cmaps, or set the cmap across all images"""
+        return tuple(g.cmap for g in self.graphics)
 
     @cmap.setter
-    def cmap(self, names: str | list[str]):
-        if isinstance(names, list):
-            if not all([isinstance(n, str) for n in names]):
-                raise TypeError(
-                    f"Must pass cmap name as a `str` of list of `str`, you have passed:\n{names}"
-                )
-
-            if not len(names) == len(self.graphics):
-                raise IndexError(
-                    f"If passing a list of cmap names, the length of the list must be the same as the number of "
-                    f"image widget subplots. You have passed: {len(names)} cmap names and have "
-                    f"{len(self.graphics)} image widget subplots"
-                )
-
-            for name, g in zip(names, self.graphics):
-                g.cmap = name
-
-        elif isinstance(names, str):
-            for g in self.graphics:
-                g.cmap = names
+    def cmap(self, name: str):
+        for g in self.graphics:
+            g.cmap = name
 
     @property
     def data(self) -> list[np.ndarray]:
@@ -422,13 +406,13 @@ class ImageWidget:
         return self._data
 
     @property
-    def indices(self) -> tuple[int, ...]:
+    def indices(self) -> Indices:
         """
-        Get or set the current indices
+        Get or set the current indices.
 
         Returns
         -------
-        indices: tuple[int, ...]
+        indices: Indices
             integer index for each slider dimension
 
         """
@@ -457,10 +441,10 @@ class ImageWidget:
                 )
 
             for image_array, graphic in zip(self._image_arrays, self.graphics):
-                new_data = self._get_image(new_indices, image_array)
+                new_data = self._get_image(image_array)
                 graphic.data = new_data
 
-            self._indices = new_indices
+            self._indices.data = new_indices
 
             # call any event handlers
             for handler in self._indices_changed_handlers:
@@ -473,7 +457,7 @@ class ImageWidget:
             # set_value has finished executing, now allow future executions
             self._reentrant_block = False
 
-    def _get_image(self, slider_indices: tuple[int, ...], image_array: NDImageArray):
+    def _get_image(self, image_array: NDImageArray):
         n = image_array.n_slider_dims
 
         if self._sliders_dim_order == "right":
@@ -481,6 +465,58 @@ class ImageWidget:
 
         elif self._sliders_dim_order == "left":
             return image_array.get(self.indices[:n])
+
+    @property
+    def n_display_dims(self) -> tuple[int]:
+        return self._n_display_dims
+
+    # TODO: make n_display_dims settable, requires thinking about how to pop or insert dims into indices
+    # @n_display_dims.setter
+    # def n_display_dims(self, new_n_display_dims: Sequence[int]):
+    #     if len(new_n_display_dims) != len(self.data):
+    #         raise IndexError
+    #
+    #     if not all([n in (2, 3) for n in new_n_display_dims]):
+    #         raise ValueError
+    #
+    #     for i, (new, old, subplot) in enumerate(zip(new_n_display_dims, self.n_display_dims, self.figure)):
+    #         if new == old:
+    #             continue
+    #
+    #         image_array = self._image_arrays[i]
+    #
+    #         if new > image_array.max_n_display_dims:
+    #             raise IndexError(
+    #                 f"number of display dims exceeds maximum number of possible "
+    #                 f"display dimensions: {image_array.max_n_display_dims}, for array at index: "
+    #                 f"{i} with shape: {image_array.shape}, and rgb set to: {image_array.rgb}"
+    #             )
+    #
+    #         image_array.n_display_dims = new
+    #
+    #         image_data = self._get_image(image_array)
+    #         cmap = self.cmap[i]
+    #
+    #         subplot.delete_graphic(subplot["image_widget_managed"])
+    #
+    #         if new == 2:
+    #             g = subplot.add_image(
+    #                 data=image_data,
+    #                 cmap=cmap,
+    #                 name="image_widget_managed"
+    #             )
+    #             subplot.camera.fov = 50
+    #             subplot.camera.show_object(g)
+    #             subplot.controller = "panzoom"
+    #
+    #         elif new == 3:
+    #             subplot.add_image_volume(
+    #                 data=image_data,
+    #                 cmap=cmap,
+    #                 name="image_widget_managed"
+    #             )
+    #             subplot.camera.fov = 50
+    #             subplot.controller = "orbit"
 
     @property
     def n_sliders(self) -> int:
@@ -562,8 +598,6 @@ class ImageWidget:
         ImageGraphic instead of the data in the full data array. For example, if a post-processing
         function is used, the range of values in the ImageGraphic can be very different from the
         range of values in the full data array.
-
-        TODO: We could think of applying the frame_apply funcs to a subsample of the entire array to get a better estimate of vmin vmax?
         """
 
         for subplot in self.figure:

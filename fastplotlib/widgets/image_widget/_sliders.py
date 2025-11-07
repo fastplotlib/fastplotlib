@@ -14,16 +14,16 @@ class ImageWidgetSliders(EdgeWindow):
         n_sliders = self._image_widget.n_sliders
 
         # whether or not a dimension is in play mode
-        self._playing: tuple[int, ...] = [False] * n_sliders
+        self._playing: list[bool] = [False] * n_sliders
 
         # approximate framerate for playing
-        self._fps: tuple[int, ...] = [20] * n_sliders
+        self._fps: list[int] = [20] * n_sliders
 
         # framerate converted to frame time
-        self._frame_time: tuple[int, ...] = [1 / 20] * n_sliders
+        self._frame_time: list[float] = [1 / 20] * n_sliders
 
         # last timepoint that a frame was displayed from a given dimension
-        self._last_frame_time: tuple[int, ...] = [20] * n_sliders
+        self._last_frame_time: list[float] = [perf_counter()] * n_sliders
 
         # loop playback
         self._loop = False
@@ -48,19 +48,11 @@ class ImageWidgetSliders(EdgeWindow):
                 self._playing[dim] = False
                 return
 
-        # set current_index
-        index = list(self._image_widget.indices)
-        index[dim] = new_index
-        self._image_widget.indices = index
+        # set new index
+        self._image_widget.indices[dim] = new_index
 
     def update(self):
         """called on every render cycle to update the GUI elements"""
-
-        # store the new index of the image widget ("t" and "z")
-        new_index = list()
-
-        # flag if the index changed
-        flag_index_changed = False
 
         # reset vmin-vmax using full orig data
         if imgui.button(label=fa.ICON_FA_CIRCLE_HALF_STROKE + fa.ICON_FA_FILM):
@@ -160,19 +152,13 @@ class ImageWidgetSliders(EdgeWindow):
                 flags = imgui.SliderFlags_.always_clamp
 
             # slider for this dimension
-            changed, dim_index = imgui.slider_int(
+            changed, index = imgui.slider_int(
                 f"{dim}", v=val, v_min=0, v_max=vmax, flags=flags
             )
 
-            new_index.append(dim_index)
-
-            # if the slider value changed for this dimension
-            flag_index_changed |= changed
+            if changed:
+                self._image_widget.indices[dim] = index
 
             imgui.pop_id()
-
-        if flag_index_changed:
-            # if any slider dim changed set the new index of the image widget
-            self._image_widget.indices = new_index
 
         self.size = int(imgui.get_window_height())
