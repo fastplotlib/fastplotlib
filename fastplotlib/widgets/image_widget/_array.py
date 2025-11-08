@@ -5,29 +5,17 @@ from warnings import warn
 import numpy as np
 from numpy.typing import ArrayLike
 
-from ...utils import subsample_array
+from ...utils import subsample_array, ArrayProtocol, ARRAY_LIKE_ATTRS
 
 
 # must take arguments: array-like, `axis`: int, `keepdims`: bool
 WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
 
 
-ARRAY_LIKE_ATTRS = ["shape", "ndim", "__getitem__"]
-
-
-def is_arraylike(obj) -> bool:
-    """checks if the array is sufficiently array-like for ImageWidget"""
-    for attr in ARRAY_LIKE_ATTRS:
-        if not hasattr(obj, attr):
-            return False
-
-    return True
-
-
 class NDImageProcessor:
     def __init__(
         self,
-        data: ArrayLike,
+        data: ArrayLike | None,
         n_display_dims: Literal[2, 3] = 2,
         rgb: bool = False,
         window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
@@ -79,13 +67,12 @@ class NDImageProcessor:
             Disable if slow.
 
         """
+        # set as False until data, window funcs stuff and finalizer func is all set
+        self._compute_histogram = False
 
-        self._data = data
+        self.data = data
         self._n_display_dims = n_display_dims
         self._rgb = rgb
-
-        # set as False until window funcs stuff and finalizer func is all set
-        self._compute_histogram = False
 
         self.window_funcs = window_funcs
         self.window_sizes = window_sizes
@@ -97,17 +84,26 @@ class NDImageProcessor:
         self._recompute_histogram()
 
     @property
-    def data(self) -> ArrayLike:
+    def data(self) -> ArrayLike | None:
         """get or set the data array"""
         return self._data
 
     @data.setter
     def data(self, data: ArrayLike):
         # check that all array-like attributes are present
-        if not is_arraylike(data):
+        if data is None:
+            self._data = None
+            return
+
+        if not isinstance(data, ArrayProtocol):
             raise TypeError(
                 f"`data` arrays must have all of the following attributes to be sufficiently array-like:\n"
-                f"{ARRAY_LIKE_ATTRS}"
+                f"{ARRAY_LIKE_ATTRS}, or they must be `None`"
+            )
+
+        if data.ndim < 2:
+            raise IndexError(
+                f"Image data must have a minimum of 2 dimensions, you have passed an array of shape: {data.shape}"
             )
 
         self._data = data
@@ -115,10 +111,16 @@ class NDImageProcessor:
 
     @property
     def ndim(self) -> int:
+        if self.data is None:
+            return 0
+
         return self.data.ndim
 
     @property
     def shape(self) -> tuple[int, ...]:
+        if self._data is None:
+            return tuple()
+
         return self.data.shape
 
     @property
@@ -129,6 +131,9 @@ class NDImageProcessor:
     @property
     def n_slider_dims(self) -> int:
         """number of slider dimensions"""
+        if self._data is None:
+            return 0
+
         return self.ndim - self.n_display_dims - int(self.rgb)
 
     @property
@@ -138,6 +143,13 @@ class NDImageProcessor:
             return None
 
         return tuple(range(self.n_slider_dims))
+
+    @property
+    def slider_dims_shape(self) -> tuple[int, ...] | None:
+        if self.n_slider_dims == 0:
+            return None
+
+        return tuple(self.shape[i] for i in self.slider_dims)
 
     @property
     def n_display_dims(self) -> Literal[2, 3]:
@@ -155,7 +167,8 @@ class NDImageProcessor:
     @property
     def max_n_display_dims(self) -> int:
         """maximum number of possible display dims"""
-        return min(3, self.ndim - int(self.rgb))
+        # min 2, max 3, accounts for if data is None and ndim is 0
+        return max(2, min(3, self.ndim - int(self.rgb)))
 
     @property
     def display_dims(self) -> tuple[int, int] | tuple[int, int, int]:
@@ -403,7 +416,7 @@ class NDImageProcessor:
 
         return data_sliced
 
-    def get(self, indices: tuple[int, ...]):
+    def get(self, indices: tuple[int, ...]) -> ArrayLike | None:
         """
         Get the data at the given index, process data through the window functions.
 
@@ -417,6 +430,9 @@ class NDImageProcessor:
             Example: get((100, 5))
 
         """
+        if self.data is None:
+            return None
+
         if self.n_slider_dims != 0:
             if len(indices) != self.n_slider_dims:
                 raise IndexError(
@@ -460,7 +476,7 @@ class NDImageProcessor:
         (histogram_values, bin_edges)
 
         """
-        if not self._compute_histogram:
+        if not self._compute_histogram or self.data is None:
             self._histogram = None
             return
 

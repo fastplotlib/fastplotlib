@@ -7,16 +7,16 @@ from rendercanvas import BaseRenderCanvas
 
 from ...layouts import ImguiFigure as Figure
 from ...graphics import ImageGraphic, ImageVolumeGraphic
-from ...utils import calculate_figure_shape, quick_min_max
+from ...utils import calculate_figure_shape, quick_min_max, ArrayProtocol, ARRAY_LIKE_ATTRS
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
-from ._array import NDImageProcessor, WindowFuncCallable, ArrayLike, is_arraylike
+from ._array import NDImageProcessor, WindowFuncCallable
 
 
 class ImageWidget:
     def __init__(
         self,
-        data: np.ndarray | list[np.ndarray],
+        data: ArrayProtocol | list[ArrayProtocol] | None | list[None],
         array_types: NDImageProcessor | list[NDImageProcessor] = NDImageProcessor,
         n_display_dims: Literal[2, 3] | Sequence[Literal[2, 3]] = 2,
         rgb: bool | Sequence[bool] = None,
@@ -34,8 +34,8 @@ class ImageWidget:
         ) = None,
         window_order: tuple[int, ...] | Sequence[tuple[int, ...] | None] = None,
         finalizer_funcs: (
-            Callable[[ArrayLike], ArrayLike]
-            | Sequence[Callable[[ArrayLike], ArrayLike]]
+            Callable[[ArrayProtocol], ArrayProtocol]
+            | Sequence[Callable[[ArrayProtocol], ArrayProtocol]]
             | None
         ) = None,
         sliders_dim_order: Literal["right", "left"] = "right",
@@ -101,14 +101,14 @@ class ImageWidget:
         if figure_kwargs is None:
             figure_kwargs = dict()
 
-        if is_arraylike(data):
+        if isinstance(data, ArrayProtocol) or (data is None):
             data = [data]
 
         if isinstance(data, list):
             # verify that it's a list of np.ndarray
-            if not all([is_arraylike(d) for d in data]):
+            if not all([isinstance(d, ArrayProtocol) or d is None for d in data]):
                 raise TypeError(
-                    f"`data` must be an array-like type or a list of array-like."
+                    f"`data` must be an array-like type or a list of array-like or None."
                     f"You have passed the following type {type(data)}"
                 )
 
@@ -285,7 +285,11 @@ class ImageWidget:
         self._indices = [0 for i in range(self.n_sliders)]
 
         for i, subplot in zip(range(len(self._image_arrays)), self.figure):
-            image_data = self._get_image(self._image_arrays[i])
+            image_data = self._get_image(self._image_arrays[i], self._indices)
+
+            if image_data is None:
+                # this subplot/data array is blank, skip
+                continue
 
             # next 20 lines are just vmin, vmax parsing
             vmin_specified, vmax_specified = None, None
@@ -434,8 +438,13 @@ class ImageWidget:
                 )
 
             for image_array, graphic in zip(self._image_arrays, self.graphics):
-                new_data = self._get_image(image_array)
-                graphic.data = new_data
+                new_data = self._get_image(image_array, indices=new_indices)
+                if new_data is None:
+                    continue
+
+                graphic.data.buffer[0, 0].data[:] = new_data
+                graphic.data.buffer[0, 0].update_full()
+                # print("set data", new_indices)
 
             self._indices[:] = new_indices
 
@@ -450,14 +459,14 @@ class ImageWidget:
             # set_value has finished executing, now allow future executions
             self._reentrant_block = False
 
-    def _get_image(self, image_array: NDImageProcessor):
+    def _get_image(self, image_array: NDImageProcessor, indices: Sequence[int]) -> ArrayProtocol:
         n = image_array.n_slider_dims
 
         if self._sliders_dim_order == "right":
-            return image_array.get(self.indices[-n:])
+            return image_array.get(indices[-n:])
 
         elif self._sliders_dim_order == "left":
-            return image_array.get(self.indices[:n])
+            return image_array.get(indices[:n])
 
     @property
     def n_display_dims(self) -> tuple[int]:
@@ -472,23 +481,20 @@ class ImageWidget:
         if not all([n in (2, 3) for n in new_ndd]):
             raise ValueError
 
-        # old n_display_dims
-        old_ndd = tuple(self.n_display_dims)
-
         # first update image arrays
-        for image_array, new, old in zip(self._image_arrays, new_ndd, old_ndd):
-            if new == old:
-                continue
-
+        for i, (image_array, new) in enumerate(zip(self._image_arrays, new_ndd)):
             if new > image_array.max_n_display_dims:
                 raise IndexError(
                     f"number of display dims exceeds maximum number of possible "
-                    f"display dmight beimensions: {image_array.max_n_display_dims}, for array at index: "
+                    f"display dimensions: {image_array.max_n_display_dims}, for array at index: "
                     f"{i} with shape: {image_array.shape}, and rgb set to: {image_array.rgb}"
                 )
 
             image_array.n_display_dims = new
 
+        self._reset_config()
+
+    def _reset_sliders(self):
         # add or remove dims from indices
         # trim any excess dimensions
         while len(self._indices) > self.n_sliders:
@@ -502,27 +508,33 @@ class ImageWidget:
             self._indices.append(0)
             self._image_widget_sliders.push_dim()
 
-        # update graphics where display dims have changed accordings to indices
+    def _reset_graphic(self):
+        for subplot, image_array in zip(self.figure, self._image_arrays):
+            image_data = self._get_image(image_array, indices=self.indices)
+            # check if a graphic exists
+            if "image_widget_managed" in subplot:
+                # create a new graphic only if the buffer shape doesn't match
+                if subplot["image_widget_managed"].data.value.shape == image_data.shape:
+                    continue
 
-        for image_array, subplot, new, old in zip(self._image_arrays, self.figure, new_ndd, old_ndd):
-            if new == old:
-                continue
+                # keep cmap
+                cmap = subplot["image_widget_managed"].cmap
+                # delete graphic since it will be replaced
+                subplot.delete_graphic(subplot["image_widget_managed"])
+            else:
+                # default cmap
+                cmap = "plasma"
 
-            image_data = self._get_image(image_array)
-            cmap = subplot["image_widget_managed"].cmap
-
-            subplot.delete_graphic(subplot["image_widget_managed"])
-
-            if new == 2:
+            if image_array.n_display_dims == 2:
                 g = subplot.add_image(
                     data=image_data,
                     cmap=cmap,
                     name="image_widget_managed"
                 )
-                subplot.camera.fov = 50
+                subplot.camera.fov = 0
                 subplot.controller = "panzoom"
 
-            elif new == 3:
+            elif image_array.n_display_dims == 3:
                 g = subplot.add_image_volume(
                     data=image_data,
                     cmap=cmap,
@@ -531,13 +543,19 @@ class ImageWidget:
                 subplot.camera.fov = 50
                 subplot.controller = "orbit"
 
-                # make sure all 3D dimension scales are positive
+                # make sure all 3D dimension camera scales are positive
+                # MIP rendering doesn't work with negative camera scales
                 for dim in ["x", "y", "z"]:
-                    if getattr(subplot.camera.world, f"scale_{dim}") < 0:
-                        setattr(subplot.camera.world, f"scale_{dim}", 1)
+                    if getattr(subplot.camera.local, f"scale_{dim}") < 0:
+                        setattr(subplot.camera.local, f"scale_{dim}", 1)
 
             subplot.camera.show_object(g.world_object)
 
+    def _reset_config(self):
+        # reset the slider indices according to the new collection of dimensions
+        self._reset_sliders()
+        # update graphics where display dims have changed accordings to indices
+        self._reset_graphic()
         # force an update
         self.indices = self.indices
 
@@ -551,13 +569,15 @@ class ImageWidget:
         # initialize with 0
         bounds = [0] * self.n_sliders
 
-        for dim in range(self.n_sliders):
+        # in reverse because dims go left <- right
+        for i, dim in enumerate(range(-1, -self.n_sliders - 1, -1)):
             # across each dim
             for array in self._image_arrays:
-                if dim > array.n_slider_dims - 1:
+                if i > array.n_slider_dims - 1:
                     continue
                 # across each data array
-                bounds[dim] = max(array.shape[dim], bounds[dim])
+                # dims go left <- right
+                bounds[dim] = max(array.slider_dims_shape[dim], bounds[dim])
 
         return bounds
 
@@ -632,8 +652,23 @@ class ImageWidget:
             hlut.set_data(subplot["image_widget_managed"].data.value)
 
     @property
-    def data(self) -> tuple[np.ndarray, ...]:
+    def data(self) -> tuple[ArrayProtocol, ...]:
         return tuple(array.data for array in self._image_arrays)
+
+    @data.setter
+    def data(self, new_data: Sequence[ArrayProtocol]):
+        if len(new_data) != len(self.data):
+            raise IndexError
+
+        old_ndd = tuple(self.n_display_dims)
+
+        for new_data, image_array in zip(new_data, self._image_arrays):
+            if new_data is image_array.data:
+                continue
+
+            image_array.data = new_data
+
+        self._reset_config()
 
     def set_data(
         self,
