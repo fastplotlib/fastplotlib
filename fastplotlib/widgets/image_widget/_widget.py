@@ -442,9 +442,7 @@ class ImageWidget:
                 if new_data is None:
                     continue
 
-                graphic.data.buffer[0, 0].data[:] = new_data
-                graphic.data.buffer[0, 0].update_full()
-                # print("set data", new_indices)
+                graphic.data = new_data
 
             self._indices[:] = new_indices
 
@@ -508,9 +506,15 @@ class ImageWidget:
             self._indices.append(0)
             self._image_widget_sliders.push_dim()
 
-    def _reset_graphic(self):
+    def _reset_graphics(self):
         for subplot, image_array in zip(self.figure, self._image_arrays):
             image_data = self._get_image(image_array, indices=self.indices)
+            if image_data is None:
+                # just delete graphic from this subplot
+                if "image_widget_managed" in subplot:
+                    subplot.delete_graphic(subplot["image_widget_managed"])
+                    continue
+
             # check if a graphic exists
             if "image_widget_managed" in subplot:
                 # create a new graphic only if the buffer shape doesn't match
@@ -555,7 +559,7 @@ class ImageWidget:
         # reset the slider indices according to the new collection of dimensions
         self._reset_sliders()
         # update graphics where display dims have changed accordings to indices
-        self._reset_graphic()
+        self._reset_graphics()
         # force an update
         self.indices = self.indices
 
