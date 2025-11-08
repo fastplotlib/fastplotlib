@@ -218,6 +218,9 @@ class PlotArea(GraphicMethodsMixin):
         #  pygfx plans on refactoring viewports anyways
         if self.parent is not None:
             if self.parent.__class__.__name__.endswith("Figure"):
+                # always use figure._subplots.ravel() in internal fastplotlib code
+                # otherwise if we use `for subplot in figure`, this could conflict
+                # with a user's iterator where they are doing `for subplot in figure` !!!
                 for subplot in self.parent._subplots.ravel():
                     if subplot.camera in cameras_list:
                         new_controller.register_events(subplot.viewport)
