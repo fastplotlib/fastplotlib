@@ -12,8 +12,10 @@ from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
 from ._array import NDImageProcessor, WindowFuncCallable
 
-import pygfx
-pygfx.Camera
+
+IMGUI_SLIDER_HEIGHT = 49
+
+
 class ImageWidget:
     def __init__(
         self,
@@ -278,7 +280,31 @@ class ImageWidget:
 
             self._image_processors.append(image_array)
 
-        figure_kwargs_default = {"controller_ids": "sync", "names": names}
+        if len(set(n_display_dims)) > 1:
+            # assume user wants one controller for 2D images and another for 3D image volumes
+            n_subplots = np.prod(figure_shape)
+            controller_ids = [0] * n_subplots
+            controller_types = ["panzoom"] * n_subplots
+
+            for i in range(len(data)):
+                if n_display_dims[i] == 2:
+                    controller_ids[i] = 1
+                else:
+                    controller_ids[i] = 2
+                    controller_types[i] = "orbit"
+
+            # needs to be a list of list
+            controller_ids = [controller_ids]
+
+        else:
+            controller_ids = "sync"
+            controller_types = None
+
+        figure_kwargs_default = {
+            "controller_ids": controller_ids,
+            "controller_types": controller_types ,
+            "names": names
+        }
 
         # update the default kwargs with any user-specified kwargs
         # user specified kwargs will overwrite the defaults
@@ -363,6 +389,7 @@ class ImageWidget:
                     vmax=vmax,
                     **graphic_kwargs[i],
                 )
+                subplot.fov = 50
 
             subplot.add_graphic(graphic)
 
@@ -381,7 +408,7 @@ class ImageWidget:
 
         self._sliders_ui = ImageWidgetSliders(
             figure=self.figure,
-            size=180,
+            size=57 + (IMGUI_SLIDER_HEIGHT * self.n_sliders),
             location="bottom",
             title="ImageWidget Controls",
             image_widget=self,
@@ -546,6 +573,8 @@ class ImageWidget:
             # insert right -> left
             self._indices.insert(0, 0)
             self._sliders_ui.push_dim()
+
+        self._sliders_ui.size = 55 + (IMGUI_SLIDER_HEIGHT * self.n_sliders)
 
     def _reset_graphics(self):
         """delete and create new graphics if necessary"""

@@ -186,5 +186,3 @@ class ImageWidgetSliders(EdgeWindow):
                 self._image_widget.indices = new_indices
 
             imgui.pop_id()
-
-        self.size = int(imgui.get_window_height())
