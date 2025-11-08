@@ -10,14 +10,14 @@ from ...graphics import ImageGraphic, ImageVolumeGraphic
 from ...utils import calculate_figure_shape, quick_min_max
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
-from ._array import NDImageArray, WindowFuncCallable, ArrayLike, is_arraylike
+from ._array import NDImageProcessor, WindowFuncCallable, ArrayLike, is_arraylike
 
 
 class ImageWidget:
     def __init__(
         self,
         data: np.ndarray | list[np.ndarray],
-        array_types: NDImageArray | list[NDImageArray] = NDImageArray,
+        array_types: NDImageProcessor | list[NDImageProcessor] = NDImageProcessor,
         n_display_dims: Literal[2, 3] | Sequence[Literal[2, 3]] = 2,
         rgb: bool | Sequence[bool] = None,
         cmap: str | Sequence[str]= "plasma",
@@ -238,9 +238,9 @@ class ImageWidget:
         self._sliders_dim_order = sliders_dim_order
 
         # make NDImageArrays
-        self._image_arrays: list[NDImageArray] = list()
+        self._image_arrays: list[NDImageProcessor] = list()
         for i in range(len(data)):
-            image_array = NDImageArray(
+            image_array = NDImageProcessor(
                 data=data[i],
                 rgb=rgb[i],
                 n_display_dims=n_display_dims[i],
@@ -450,7 +450,7 @@ class ImageWidget:
             # set_value has finished executing, now allow future executions
             self._reentrant_block = False
 
-    def _get_image(self, image_array: NDImageArray):
+    def _get_image(self, image_array: NDImageProcessor):
         n = image_array.n_slider_dims
 
         if self._sliders_dim_order == "right":
@@ -520,7 +520,6 @@ class ImageWidget:
                     name="image_widget_managed"
                 )
                 subplot.camera.fov = 50
-                subplot.camera.show_object(g.world_object)
                 subplot.controller = "panzoom"
 
             elif new == 3:
@@ -531,10 +530,16 @@ class ImageWidget:
                 )
                 subplot.camera.fov = 50
                 subplot.controller = "orbit"
-                subplot.camera.show_object(g.world_object)
+
+                # make sure all 3D dimension scales are positive
+                for dim in ["x", "y", "z"]:
+                    if getattr(subplot.camera.world, f"scale_{dim}") < 0:
+                        setattr(subplot.camera.world, f"scale_{dim}", 1)
+
+            subplot.camera.show_object(g.world_object)
 
         # force an update
-        # self.indices = self.indices
+        self.indices = self.indices
 
     @property
     def n_sliders(self) -> int:

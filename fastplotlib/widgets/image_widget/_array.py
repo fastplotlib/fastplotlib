@@ -24,7 +24,7 @@ def is_arraylike(obj) -> bool:
     return True
 
 
-class NDImageArray:
+class NDImageProcessor:
     def __init__(
         self,
         data: ArrayLike,
