@@ -218,7 +218,7 @@ class PlotArea(GraphicMethodsMixin):
         #  pygfx plans on refactoring viewports anyways
         if self.parent is not None:
             if self.parent.__class__.__name__.endswith("Figure"):
-                for subplot in self.parent:
+                for subplot in self.parent._subplots.ravel():
                     if subplot.camera in cameras_list:
                         new_controller.register_events(subplot.viewport)
                         subplot._controller = new_controller
