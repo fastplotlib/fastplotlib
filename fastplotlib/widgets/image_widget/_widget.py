@@ -12,12 +12,13 @@ from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
 from ._array import NDImageProcessor, WindowFuncCallable
 
-
+import pygfx
+pygfx.Camera
 class ImageWidget:
     def __init__(
         self,
-        data: ArrayProtocol | list[ArrayProtocol] | None | list[None],
-        array_types: NDImageProcessor | list[NDImageProcessor] = NDImageProcessor,
+        data: ArrayProtocol | Sequence[ArrayProtocol] | None | list[None],
+        array_types: NDImageProcessor | Sequence[NDImageProcessor] = NDImageProcessor,
         n_display_dims: Literal[2, 3] | Sequence[Literal[2, 3]] = 2,
         rgb: bool | Sequence[bool] = None,
         cmap: str | Sequence[str]= "plasma",
@@ -238,7 +239,7 @@ class ImageWidget:
         self._sliders_dim_order = sliders_dim_order
 
         # make NDImageArrays
-        self._image_arrays: list[NDImageProcessor] = list()
+        self._image_processor: list[NDImageProcessor] = list()
         for i in range(len(data)):
             image_array = NDImageProcessor(
                 data=data[i],
@@ -251,7 +252,7 @@ class ImageWidget:
                 compute_histogram=histogram_widget,
             )
 
-            self._image_arrays.append(image_array)
+            self._image_processor.append(image_array)
 
         figure_kwargs_default = {"controller_ids": "sync", "names": names}
 
@@ -284,8 +285,8 @@ class ImageWidget:
 
         self._indices = [0 for i in range(self.n_sliders)]
 
-        for i, subplot in zip(range(len(self._image_arrays)), self.figure):
-            image_data = self._get_image(self._image_arrays[i], self._indices)
+        for i, subplot in zip(range(len(self._image_processor)), self.figure):
+            image_data = self._get_image(self._image_processor[i], self._indices)
 
             if image_data is None:
                 # this subplot/data array is blank, skip
@@ -300,7 +301,7 @@ class ImageWidget:
 
             if (vmin_specified is None) or (vmax_specified is None):
                 # if either vmin or vmax are not specified, calculate an estimate by subsampling
-                vmin_estimate, vmax_estimate = quick_min_max(self._image_arrays[i].data)
+                vmin_estimate, vmax_estimate = quick_min_max(self._image_processor[i].data)
 
                 # decide vmin, vmax passed to ImageGraphic constructor based on whether it's user specified or now
                 if vmin_specified is None:
@@ -320,7 +321,7 @@ class ImageWidget:
 
             graphic_kwargs[i]["cmap"] = cmap[i]
 
-            if self._image_arrays[i].n_display_dims == 2:
+            if self._image_processor[i].n_display_dims == 2:
                 # create an Image
                 graphic = ImageGraphic(
                     data=image_data,
@@ -329,7 +330,7 @@ class ImageWidget:
                     vmax=vmax,
                     **graphic_kwargs[i],
                 )
-            elif self._image_arrays[i].n_display_dims == 3:
+            elif self._image_processor[i].n_display_dims == 3:
                 # create an ImageVolume
                 graphic = ImageVolumeGraphic(
                     data=image_data,
@@ -343,10 +344,10 @@ class ImageWidget:
 
             if self._histogram_widget:
                 hlut = HistogramLUTTool(
-                    data=self._image_arrays[i].data,
+                    data=self._image_processor[i].data,
                     images=graphic,
                     name="histogram_lut",
-                    histogram=self._image_arrays[i].histogram,
+                    histogram=self._image_processor[i].histogram,
                 )
 
                 subplot.docks["right"].add_graphic(hlut)
@@ -437,7 +438,7 @@ class ImageWidget:
                     f"only positive index values are supported, you have passed: {new_indices}"
                 )
 
-            for image_array, graphic in zip(self._image_arrays, self.graphics):
+            for image_array, graphic in zip(self._image_processor, self.graphics):
                 new_data = self._get_image(image_array, indices=new_indices)
                 if new_data is None:
                     continue
@@ -457,22 +458,23 @@ class ImageWidget:
             # set_value has finished executing, now allow future executions
             self._reentrant_block = False
 
-    def _get_image(self, image_array: NDImageProcessor, indices: Sequence[int]) -> ArrayProtocol:
-        n = image_array.n_slider_dims
+    def _get_image(self, image_processor: NDImageProcessor, indices: Sequence[int]) -> ArrayProtocol:
+        """Get a processed 2d or 3d image from the NDImage at the given indices"""
+        n = image_processor.n_slider_dims
 
         if self._sliders_dim_order == "right":
-            return image_array.get(indices[-n:])
+            return image_processor.get(indices[-n:])
 
         elif self._sliders_dim_order == "left":
-            return image_array.get(indices[:n])
+            return image_processor.get(indices[:n])
 
     @property
-    def n_display_dims(self) -> tuple[int]:
-        return tuple(img.n_display_dims for img in self._image_arrays)
+    def n_display_dims(self) -> tuple[Literal[2, 3]]:
+        """Get or set the number of display dimensions for each data array, 2 is a 2D image, 3 is a 3D volume image"""
+        return tuple(img.n_display_dims for img in self._image_processor)
 
-    # TODO: make n_display_dims settable, requires thinking about how to pop or insert dims into indices
     @n_display_dims.setter
-    def n_display_dims(self, new_ndd: Sequence[int]):
+    def n_display_dims(self, new_ndd: Sequence[Literal[2, 3]]):
         if len(new_ndd) != len(self.data):
             raise IndexError
 
@@ -480,7 +482,7 @@ class ImageWidget:
             raise ValueError
 
         # first update image arrays
-        for i, (image_array, new) in enumerate(zip(self._image_arrays, new_ndd)):
+        for i, (image_array, new) in enumerate(zip(self._image_processor, new_ndd)):
             if new > image_array.max_n_display_dims:
                 raise IndexError(
                     f"number of display dims exceeds maximum number of possible "
@@ -493,6 +495,7 @@ class ImageWidget:
         self._reset_config()
 
     def _reset_sliders(self):
+        """reset the """
         # add or remove dims from indices
         # trim any excess dimensions
         while len(self._indices) > self.n_sliders:
@@ -507,7 +510,7 @@ class ImageWidget:
             self._image_widget_sliders.push_dim()
 
     def _reset_graphics(self):
-        for subplot, image_array in zip(self.figure, self._image_arrays):
+        for subplot, image_array in zip(self.figure, self._image_processor):
             image_data = self._get_image(image_array, indices=self.indices)
             if image_data is None:
                 # just delete graphic from this subplot
@@ -535,8 +538,21 @@ class ImageWidget:
                     cmap=cmap,
                     name="image_widget_managed"
                 )
-                subplot.camera.fov = 0
+
+                # set camera orthogonal to the xy plane, flip y axis
+                subplot.camera.set_state(
+                    {
+                        "position": [0, 0, -1],
+                        "rotation": [0, 0, 0, 1],
+                        "scale": [1, -1, 1],
+                        "reference_up": [0, 1, 0],
+                        "fov": 0,
+                        "depth_range": None
+                    }
+                )
+
                 subplot.controller = "panzoom"
+                subplot.axes.intersection = None
 
             elif image_array.n_display_dims == 3:
                 g = subplot.add_image_volume(
@@ -565,7 +581,7 @@ class ImageWidget:
 
     @property
     def n_sliders(self) -> int:
-        return max([a.n_slider_dims for a in self._image_arrays])
+        return max([a.n_slider_dims for a in self._image_processor])
 
     @property
     def bounds(self) -> tuple[int, ...]:
@@ -576,7 +592,7 @@ class ImageWidget:
         # in reverse because dims go left <- right
         for i, dim in enumerate(range(-1, -self.n_sliders - 1, -1)):
             # across each dim
-            for array in self._image_arrays:
+            for array in self._image_processor:
                 if i > array.n_slider_dims - 1:
                     continue
                 # across each data array
@@ -657,7 +673,7 @@ class ImageWidget:
 
     @property
     def data(self) -> tuple[ArrayProtocol, ...]:
-        return tuple(array.data for array in self._image_arrays)
+        return tuple(array.data for array in self._image_processor)
 
     @data.setter
     def data(self, new_data: Sequence[ArrayProtocol]):
@@ -666,7 +682,7 @@ class ImageWidget:
 
         old_ndd = tuple(self.n_display_dims)
 
-        for new_data, image_array in zip(new_data, self._image_arrays):
+        for new_data, image_array in zip(new_data, self._image_processor):
             if new_data is image_array.data:
                 continue
 
