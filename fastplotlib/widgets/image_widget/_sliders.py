@@ -36,16 +36,18 @@ class ImageWidgetSliders(EdgeWindow):
 
         self.pause = False
 
-    def push_dim(self):
-        self._playing.append(False)
-        self._fps.append(20)
-        self._frame_time.append(1 / 20)
-        self._last_frame_time.append(perf_counter())
-
     def pop_dim(self):
-        i = len(self._image_widget.indices) - 1
+        """pop right most dim"""
+        i = 0 # len(self._image_widget.indices) - 1
         for l in [self._playing, self._fps, self._frame_time, self._last_frame_time]:
             l.pop(i)
+
+    def push_dim(self):
+        """push a new dim"""
+        self._playing.insert(0, False)
+        self._fps.insert(0, 20)
+        self._frame_time.insert(0, 1 / 20)
+        self._last_frame_time.insert(0, perf_counter())
 
     def set_index(self, dim: int, new_index: int):
         """set the index of the ImageWidget"""
@@ -89,9 +91,6 @@ class ImageWidgetSliders(EdgeWindow):
 
         # buttons and slider UI elements for each dim
         for dim in range(self._image_widget.n_sliders):
-            if self.pause:
-                continue
-
             imgui.push_id(f"{self._id_counter}_{dim}")
 
             if self._playing[dim]:
@@ -159,7 +158,12 @@ class ImageWidgetSliders(EdgeWindow):
             val = self._image_widget.indices[dim]
             vmax = self._image_widget.bounds[dim] - 1
 
-            imgui.text(f"dim {dim}: ")
+            dim_name = dim
+            if self._image_widget._slider_dim_names is not None:
+                if dim < len(self._image_widget._slider_dim_names):
+                    dim_name = self._image_widget._slider_dim_names[dim]
+
+            imgui.text(f"dim {dim_name}: ")
             imgui.same_line()
             # so that slider occupies full width
             imgui.set_next_item_width(self.width * 0.85)

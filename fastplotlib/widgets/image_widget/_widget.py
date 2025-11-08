@@ -20,6 +20,7 @@ class ImageWidget:
         data: ArrayProtocol | list[ArrayProtocol | None] | None,
         processor: NDImageProcessor | Sequence[NDImageProcessor] = NDImageProcessor,
         n_display_dims: Literal[2, 3] | Sequence[Literal[2, 3]] = 2,
+        slider_dim_names: Sequence[str] | None = None,  # dim names left -> right
         rgb: bool | Sequence[bool] = None,
         cmap: str | Sequence[str]= "plasma",
         window_funcs: (
@@ -256,8 +257,8 @@ class ImageWidget:
 
         n_display_dims = tuple(n_display_dims)
 
-        if sliders_dim_order not in ("left", "right"):
-            raise ValueError
+        if sliders_dim_order not in ("right",):
+            raise ValueError(f"Only 'right' slider dims order is currently supported, you passed: {sliders_dim_order}")
         self._sliders_dim_order = sliders_dim_order
 
         # make NDImageArrays
@@ -390,41 +391,32 @@ class ImageWidget:
 
         self._indices_changed_handlers = set()
 
+        if slider_dim_names is not None:
+            self._slider_dim_names = tuple(slider_dim_names)
+        else:
+            self._slider_dim_names = None
+
         self._reentrant_block = False
 
-        self._initialized = True
-
     @property
-    def figure(self) -> Figure:
-        """
-        ``Figure`` used by `ImageWidget`.
-        """
-        return self._figure
+    def data(self) -> tuple[ArrayProtocol | None]:
+        """get or set the nd-image data arrays"""
+        return tuple(array.data for array in self._image_processors)
 
-    @property
-    def graphics(self) -> list[ImageGraphic]:
-        """List of ``ImageWidget`` managed graphics."""
-        iw_managed = list()
-        for subplot in self.figure:
-            # empty subplots will not have any image widget data
-            if len(subplot.graphics) > 0:
-                iw_managed.append(subplot["image_widget_managed"])
-        return iw_managed
+    @data.setter
+    def data(self, new_data: Sequence[ArrayProtocol | None]):
+        if len(new_data) != len(self.data):
+            raise IndexError
 
-    @property
-    def cmap(self) -> tuple[str, ...]:
-        """get the cmaps, or set the cmap across all images"""
-        return tuple(g.cmap for g in self.graphics)
+        old_ndd = tuple(self.n_display_dims)
 
-    @cmap.setter
-    def cmap(self, name: str):
-        for g in self.graphics:
-            g.cmap = name
+        for new_data, image_array in zip(new_data, self._image_processors):
+            if new_data is image_array.data:
+                continue
 
-    @property
-    def data(self) -> list[np.ndarray]:
-        """data currently displayed in the widget"""
-        return self._data
+            image_array.data = new_data
+
+        self._reset()
 
     @property
     def indices(self) -> tuple[int, ...]:
@@ -441,9 +433,6 @@ class ImageWidget:
 
     @indices.setter
     def indices(self, new_indices: Sequence[int]):
-        if not self._initialized:
-            return
-
         if self._reentrant_block:
             return
 
@@ -481,16 +470,6 @@ class ImageWidget:
             # set_value has finished executing, now allow future executions
             self._reentrant_block = False
 
-    def _get_image(self, image_processor: NDImageProcessor, indices: Sequence[int]) -> ArrayProtocol:
-        """Get a processed 2d or 3d image from the NDImage at the given indices"""
-        n = image_processor.n_slider_dims
-
-        if self._sliders_dim_order == "right":
-            return image_processor.get(indices[-n:])
-
-        elif self._sliders_dim_order == "left":
-            return image_processor.get(indices[:n])
-
     @property
     def n_display_dims(self) -> tuple[Literal[2, 3]]:
         """Get or set the number of display dimensions for each data array, 2 is a 2D image, 3 is a 3D volume image"""
@@ -515,31 +494,69 @@ class ImageWidget:
 
             image_array.n_display_dims = new
 
-        self._reset_config()
+        self._reset()
 
-    def _reset_sliders(self):
-        """reset the """
+    @property
+    def n_sliders(self) -> int:
+        """number of sliders"""
+        return max([a.n_slider_dims for a in self._image_processors])
+
+    @property
+    def bounds(self) -> tuple[int, ...]:
+        """The max bound across all dimensions across all data arrays"""
+        # initialize with 0
+        bounds = [0] * self.n_sliders
+
+        # TODO: implement left -> right slider dims ordering, right now it's only right -> left
+        # in reverse because dims go left <- right
+        for i, dim in enumerate(range(-1, -self.n_sliders - 1, -1)):
+            # across each dim
+            for array in self._image_processors:
+                if i > array.n_slider_dims - 1:
+                    continue
+                # across each data array
+                # dims go left <- right
+                bounds[dim] = max(array.slider_dims_shape[dim], bounds[dim])
+
+        return bounds
+
+    def _get_image(self, image_processor: NDImageProcessor, indices: Sequence[int]) -> ArrayProtocol:
+        """Get a processed 2d or 3d image from the NDImage at the given indices"""
+        n = image_processor.n_slider_dims
+
+        if self._sliders_dim_order == "right":
+            return image_processor.get(indices[-n:])
+
+        elif self._sliders_dim_order == "left":
+            # TODO: left -> right is not fully implemented yet in ImageWidget
+            return image_processor.get(indices[:n])
+
+    def _reset_dimensions(self):
+        """reset the dimensions w.r.t. current collection of NDImageProcessors"""
+        # TODO: implement left -> right slider dims ordering, right now it's only right -> left
         # add or remove dims from indices
         # trim any excess dimensions
         while len(self._indices) > self.n_sliders:
-            # pop from: left <- right
-            self._indices.pop(len(self._indices) - 1)
+            # pop from right -> left
+            self._indices.pop(0)
             self._sliders_ui.pop_dim()
 
         # add any new dimensions that aren't present
         while len(self.indices) < self.n_sliders:
-            # insert from: left <- right
-            self._indices.append(0)
+            # insert right -> left
+            self._indices.insert(0, 0)
             self._sliders_ui.push_dim()
 
     def _reset_graphics(self):
+        """delete and create new graphics if necessary"""
         for subplot, image_array in zip(self.figure, self._image_processors):
             image_data = self._get_image(image_array, indices=self.indices)
             if image_data is None:
-                # just delete graphic from this subplot
                 if "image_widget_managed" in subplot:
+                    # delete graphic from this subplot if present
                     subplot.delete_graphic(subplot["image_widget_managed"])
-                    continue
+                # skip this subplot
+                continue
 
             # check if a graphic exists
             if "image_widget_managed" in subplot:
@@ -594,35 +611,41 @@ class ImageWidget:
 
             subplot.camera.show_object(g.world_object)
 
-    def _reset_config(self):
+    def _reset(self):
         # reset the slider indices according to the new collection of dimensions
-        self._reset_sliders()
+        self._reset_dimensions()
         # update graphics where display dims have changed accordings to indices
         self._reset_graphics()
         # force an update
         self.indices = self.indices
 
     @property
-    def n_sliders(self) -> int:
-        return max([a.n_slider_dims for a in self._image_processors])
+    def figure(self) -> Figure:
+        """
+        ``Figure`` used by `ImageWidget`.
+        """
+        return self._figure
 
     @property
-    def bounds(self) -> tuple[int, ...]:
-        """The max bound across all dimensions across all data arrays"""
-        # initialize with 0
-        bounds = [0] * self.n_sliders
+    def graphics(self) -> list[ImageGraphic]:
+        """List of ``ImageWidget`` managed graphics."""
+        iw_managed = list()
+        for subplot in self.figure:
+            if "image_widget_managed" in subplot:
+                iw_managed.append(subplot["image_widget_managed"])
+            else:
+                iw_managed.append(None)
+        return tuple(iw_managed)
 
-        # in reverse because dims go left <- right
-        for i, dim in enumerate(range(-1, -self.n_sliders - 1, -1)):
-            # across each dim
-            for array in self._image_processors:
-                if i > array.n_slider_dims - 1:
-                    continue
-                # across each data array
-                # dims go left <- right
-                bounds[dim] = max(array.slider_dims_shape[dim], bounds[dim])
+    @property
+    def cmap(self) -> tuple[str, ...]:
+        """get the cmaps, or set the cmap across all images"""
+        return tuple(g.cmap for g in self.graphics)
 
-        return bounds
+    @cmap.setter
+    def cmap(self, name: str):
+        for g in self.graphics:
+            g.cmap = name
 
     def add_event_handler(self, handler: callable, event: str = "indices"):
         """
@@ -693,26 +716,6 @@ class ImageWidget:
             hlut = subplot.docks["right"]["histogram_lut"]
             # set the data using the current image graphic data
             hlut.set_data(subplot["image_widget_managed"].data.value)
-
-    @property
-    def data(self) -> tuple[ArrayProtocol | None]:
-        """get or set the data arrays"""
-        return tuple(array.data for array in self._image_processors)
-
-    @data.setter
-    def data(self, new_data: Sequence[ArrayProtocol | None]):
-        if len(new_data) != len(self.data):
-            raise IndexError
-
-        old_ndd = tuple(self.n_display_dims)
-
-        for new_data, image_array in zip(new_data, self._image_processors):
-            if new_data is image_array.data:
-                continue
-
-            image_array.data = new_data
-
-        self._reset_config()
 
     def set_data(
         self,
