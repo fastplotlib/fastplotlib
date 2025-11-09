@@ -59,21 +59,6 @@ class HistogramLUTTool(Graphic):
 
         self._selector.add_event_handler(self._selector_event_handler, "selection")
 
-        colorbar_visible = False
-        if images is not None:
-            if isinstance(images, (ImageGraphic, ImageVolumeGraphic)):
-                images = [images]
-
-            for image in images:
-                if image.cmap is not None:
-                    colorbar_visible = True
-
-                if not isinstance(image, (ImageGraphic, ImageVolumeGraphic)):
-                    raise TypeError(
-                        f"`images` must be a tuple/list of ImageGraphic or ImageVolumeGraphic. "
-                        f"You have passed: {images}"
-                    )
-
         self._colorbar = ImageGraphic(
             data=np.zeros([120, 2]),
             interpolation="linear",
@@ -81,9 +66,6 @@ class HistogramLUTTool(Graphic):
         )
 
         self._colorbar.world_object.local.scale_x = 0.15
-
-        if not colorbar_visible:
-            self._colorbar.visible = False
 
         self._ruler = pygfx.Ruler(
             end_pos=(0, 119, 0),
@@ -138,7 +120,6 @@ class HistogramLUTTool(Graphic):
 
         # set the images
         self.images = images
-
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
@@ -197,6 +178,9 @@ class HistogramLUTTool(Graphic):
         if new_images is None:
             return
 
+        if isinstance(new_images, (ImageGraphic, ImageVolumeGraphic)):
+            new_images = [new_images]
+
         if not all([isinstance(image, (ImageGraphic, ImageVolumeGraphic)) for image in new_images]):
             raise TypeError
 
@@ -219,10 +203,13 @@ class HistogramLUTTool(Graphic):
         # connect event handlers
         for image in self._images:
             image.add_event_handler(self._image_event_handler, "vmin", "vmax", "cmap")
+            image.add_event_handler(self._disconnect_images, "deleted")
 
-    def _disconnect_images(self):
+    def _disconnect_images(self, *args):
         for image in self._images:
-            image.remove_event_handler(self._image_event_handler, "vmin", "vmax", "cmap")
+            for ev, handlers in image.event_handlers:
+                if self._image_event_handler in handlers:
+                    image.remove_event_handler(self._image_event_handler, ev)
 
     def _image_event_handler(self, ev):
         new_value = ev.info["value"]

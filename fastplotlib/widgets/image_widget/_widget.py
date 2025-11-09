@@ -10,7 +10,7 @@ from ...graphics import ImageGraphic, ImageVolumeGraphic
 from ...utils import calculate_figure_shape, quick_min_max, ArrayProtocol, ARRAY_LIKE_ATTRS
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
-from ._array import NDImageProcessor, WindowFuncCallable
+from ._processor import NDImageProcessor, WindowFuncCallable
 
 
 IMGUI_SLIDER_HEIGHT = 49
@@ -100,7 +100,6 @@ class ImageWidget:
             passed to each ImageGraphic in the ImageWidget figure subplots
 
         """
-        self._initialized = False
 
         if figure_kwargs is None:
             figure_kwargs = dict()
@@ -263,6 +262,8 @@ class ImageWidget:
             raise ValueError(f"Only 'right' slider dims order is currently supported, you passed: {sliders_dim_order}")
         self._sliders_dim_order = sliders_dim_order
 
+        self._histogram_widget = histogram_widget
+
         # make NDImageArrays
         self._image_processors: list[NDImageProcessor] = list()
         for i in range(len(data)):
@@ -275,7 +276,7 @@ class ImageWidget:
                 window_sizes=win_sizes[i],
                 window_order=win_order[i],
                 finalizer_func=final_funcs[i],
-                compute_histogram=histogram_widget,
+                compute_histogram=self._histogram_widget,
             )
 
             self._image_processors.append(image_array)
@@ -330,8 +331,6 @@ class ImageWidget:
             raise TypeError(f"`cmap` must be a <str> or a list/tuple of <str>")
 
         self._figure: Figure = Figure(**figure_kwargs_default)
-
-        self._histogram_widget = histogram_widget
 
         self._indices = [0 for i in range(self.n_sliders)]
 
@@ -393,18 +392,7 @@ class ImageWidget:
 
             subplot.add_graphic(graphic)
 
-            if self._histogram_widget:
-                hlut = HistogramLUTTool(
-                    data=self._image_processors[i].data,
-                    images=graphic,
-                    name="histogram_lut",
-                    histogram=self._image_processors[i].histogram,
-                )
-
-                subplot.docks["right"].add_graphic(hlut)
-                subplot.docks["right"].size = 80
-                subplot.docks["right"].auto_scale(maintain_aspect=False)
-                subplot.docks["right"].controller.enabled = False
+            self._reset_histograms(subplot, self._image_processors[i])
 
         self._sliders_ui = ImageWidgetSliders(
             figure=self.figure,
@@ -435,15 +423,18 @@ class ImageWidget:
         if len(new_data) != len(self.data):
             raise IndexError
 
-        old_ndd = tuple(self.n_display_dims)
+        # if the data array hasn't been changed
+        # graphics will not be reset for this data index
+        skip_indices = list()
 
-        for new_data, image_array in zip(new_data, self._image_processors):
-            if new_data is image_array.data:
+        for i, (new_data, image_processor) in enumerate(zip(new_data, self._image_processors)):
+            if new_data is image_processor.data:
+                skip_indices.append(i)
                 continue
 
-            image_array.data = new_data
+            image_processor.data = new_data
 
-        self._reset()
+        self._reset(skip_indices)
 
     @property
     def indices(self) -> tuple[int, ...]:
@@ -510,18 +501,25 @@ class ImageWidget:
         if not all([n in (2, 3) for n in new_ndd]):
             raise ValueError
 
+        # if the n_display_dims hasn't been changed for this data array
+        # graphics will not be reset for this data array index
+        skip_indices = list()
+
         # first update image arrays
-        for i, (image_array, new) in enumerate(zip(self._image_processors, new_ndd)):
-            if new > image_array.max_n_display_dims:
+        for i, (image_processor, new) in enumerate(zip(self._image_processors, new_ndd)):
+            if new > image_processor.max_n_display_dims:
                 raise IndexError(
                     f"number of display dims exceeds maximum number of possible "
-                    f"display dimensions: {image_array.max_n_display_dims}, for array at index: "
-                    f"{i} with shape: {image_array.shape}, and rgb set to: {image_array.rgb}"
+                    f"display dimensions: {image_processor.max_n_display_dims}, for array at index: "
+                    f"{i} with shape: {image_processor.shape}, and rgb set to: {image_processor.rgb}"
                 )
 
-            image_array.n_display_dims = new
+            if image_processor.n_display_dims == new:
+                skip_indices.append(i)
+            else:
+                image_processor.n_display_dims = new
 
-        self._reset()
+        self._reset(skip_indices)
 
     @property
     def n_sliders(self) -> int:
@@ -576,75 +574,114 @@ class ImageWidget:
 
         self._sliders_ui.size = 55 + (IMGUI_SLIDER_HEIGHT * self.n_sliders)
 
-    def _reset_graphics(self):
+    def _reset_graphics(self, subplot, image_processor):
         """delete and create new graphics if necessary"""
-        for subplot, image_array in zip(self.figure, self._image_processors):
-            image_data = self._get_image(image_array, indices=self.indices)
-            if image_data is None:
-                if "image_widget_managed" in subplot:
-                    # delete graphic from this subplot if present
-                    subplot.delete_graphic(subplot["image_widget_managed"])
-                # skip this subplot
-                continue
-
-            # check if a graphic exists
+        new_image = self._get_image(image_processor, indices=self.indices)
+        if new_image is None:
             if "image_widget_managed" in subplot:
-                # create a new graphic only if the buffer shape doesn't match
-                if subplot["image_widget_managed"].data.value.shape == image_data.shape:
-                    continue
-
-                # keep cmap
-                cmap = subplot["image_widget_managed"].cmap
-                # delete graphic since it will be replaced
+                # delete graphic from this subplot if present
                 subplot.delete_graphic(subplot["image_widget_managed"])
-            else:
-                # default cmap
-                cmap = "plasma"
+            # skip this subplot
+            return
 
-            if image_array.n_display_dims == 2:
-                g = subplot.add_image(
-                    data=image_data,
-                    cmap=cmap,
-                    name="image_widget_managed"
-                )
+        # check if a graphic exists
+        if "image_widget_managed" in subplot:
+            # create a new graphic only if the Texture buffer shape doesn't match
+            if subplot["image_widget_managed"].data.value.shape == new_image.shape:
+                return
 
-                # set camera orthogonal to the xy plane, flip y axis
-                subplot.camera.set_state(
-                    {
-                        "position": [0, 0, -1],
-                        "rotation": [0, 0, 0, 1],
-                        "scale": [1, -1, 1],
-                        "reference_up": [0, 1, 0],
-                        "fov": 0,
-                        "depth_range": None
-                    }
-                )
+            # keep cmap
+            cmap = subplot["image_widget_managed"].cmap
+            # delete graphic since it will be replaced
+            subplot.delete_graphic(subplot["image_widget_managed"])
+        else:
+            # default cmap
+            cmap = "plasma"
 
-                subplot.controller = "panzoom"
-                subplot.axes.intersection = None
+        if image_processor.n_display_dims == 2:
+            g = subplot.add_image(
+                data=new_image,
+                cmap=cmap,
+                name="image_widget_managed"
+            )
 
-            elif image_array.n_display_dims == 3:
-                g = subplot.add_image_volume(
-                    data=image_data,
-                    cmap=cmap,
-                    name="image_widget_managed"
-                )
-                subplot.camera.fov = 50
-                subplot.controller = "orbit"
+            # set camera orthogonal to the xy plane, flip y axis
+            subplot.camera.set_state(
+                {
+                    "position": [0, 0, -1],
+                    "rotation": [0, 0, 0, 1],
+                    "scale": [1, -1, 1],
+                    "reference_up": [0, 1, 0],
+                    "fov": 0,
+                    "depth_range": None
+                }
+            )
 
-                # make sure all 3D dimension camera scales are positive
-                # MIP rendering doesn't work with negative camera scales
-                for dim in ["x", "y", "z"]:
-                    if getattr(subplot.camera.local, f"scale_{dim}") < 0:
-                        setattr(subplot.camera.local, f"scale_{dim}", 1)
+            subplot.controller = "panzoom"
+            subplot.axes.intersection = None
 
-            subplot.camera.show_object(g.world_object)
+        elif image_processor.n_display_dims == 3:
+            g = subplot.add_image_volume(
+                data=new_image,
+                cmap=cmap,
+                name="image_widget_managed"
+            )
+            subplot.camera.fov = 50
+            subplot.controller = "orbit"
 
-    def _reset(self):
+            # make sure all 3D dimension camera scales are positive
+            # MIP rendering doesn't work with negative camera scales
+            for dim in ["x", "y", "z"]:
+                if getattr(subplot.camera.local, f"scale_{dim}") < 0:
+                    setattr(subplot.camera.local, f"scale_{dim}", 1)
+
+        subplot.camera.show_object(g.world_object)
+
+    def _reset_histograms(self, subplot, image_processor):
+        """reset the histograms"""
+        if not self._histogram_widget:
+            subplot.docks["right"].size = 0
+            return
+
+        if image_processor.histogram is None:
+            # no histogram available for this processor
+            # either there is no data array in this subplot,
+            # or a histogram routine does not exist for this processor
+            subplot.docks["right"].size = 0
+            return
+
+        image = subplot["image_widget_managed"]
+
+        if "histogram_lut" in subplot.docks["right"]:
+            hlut: HistogramLUTTool = subplot.docks["right"]["histogram_lut"]
+            hlut.histogram = image_processor.histogram
+            hlut.images = image
+
+        else:
+            # need to make one
+            hlut = HistogramLUTTool(
+                histogram=image_processor.histogram,
+                images=image,
+                name="histogram_lut",
+            )
+
+            subplot.docks["right"].add_graphic(hlut)
+            subplot.docks["right"].size = 80
+
+    def _reset(self, skip_data_indices: tuple[int, ...] = None):
+        if skip_data_indices is None:
+            skip_data_indices = tuple()
+
         # reset the slider indices according to the new collection of dimensions
         self._reset_dimensions()
         # update graphics where display dims have changed accordings to indices
-        self._reset_graphics()
+        for i, (subplot, image_processor) in enumerate(zip(self.figure, self._image_processors)):
+            if i in skip_data_indices:
+                continue
+
+            self._reset_graphics(subplot, image_processor)
+            self._reset_histograms(subplot, image_processor)
+
         # force an update
         self.indices = self.indices
 

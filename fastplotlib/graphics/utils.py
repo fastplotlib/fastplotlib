@@ -1,12 +1,15 @@
 from contextlib import contextmanager
+from typing import Callable, Iterable
 
 from ._base import Graphic
 
 
 @contextmanager
-def pause_events(*graphics: Graphic):
+def pause_events(*graphics: Graphic, event_handlers: Iterable[Callable] = None):
     """
     Context manager for pausing Graphic events.
+
+    Optionally pass in only specific event handlers which are blocked. Other events for the graphic will not be blocked.
 
     Examples
     --------
@@ -30,8 +33,14 @@ def pause_events(*graphics: Graphic):
     original_vals = [g.block_events for g in graphics]
 
     for g in graphics:
-        g.block_events = True
+        if event_handlers is not None:
+            g.block_handlers.extend([e for e in event_handlers])
+        else:
+            g.block_events = True
     yield
 
     for g, value in zip(graphics, original_vals):
-        g.block_events = value
+        if event_handlers is not None:
+            g.block_handlers.clear()
+        else:
+            g.block_events = value

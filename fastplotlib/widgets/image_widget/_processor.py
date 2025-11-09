@@ -481,6 +481,10 @@ class NDImageProcessor:
             return
 
         if self.finalizer_func is not None:
+            # don't subsample spatial dims if a finalizer function is used
+            # finalizer functions often operate on the spatial dims, ex: a gaussian kernel
+            # so their results require the full spatial resolution, the histogram of a
+            # spatially subsampled image will be very different
             ignore_dims = self.display_dims
         else:
             ignore_dims = None
