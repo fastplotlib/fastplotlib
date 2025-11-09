@@ -437,6 +437,29 @@ class ImageWidget:
         self._reset(skip_indices)
 
     @property
+    def rgb(self):
+        """get or set the rgb toggle for each data array"""
+        return tuple(p.rgb for p in self._image_processors)
+
+    @rgb.setter
+    def rgb(self, rgb: Sequence[bool]):
+        if len(rgb) != len(self.data):
+            raise IndexError
+
+        # if the rgb option hasn't been changed
+        # graphics will not be reset for this data index
+        skip_indices = list()
+
+        for i, (new, image_processor) in enumerate(zip(rgb, self._image_processors)):
+            if image_processor.rgb == new:
+                skip_indices.append(i)
+                continue
+
+            image_processor.rgb = new
+
+        self._reset(skip_indices)
+
+    @property
     def indices(self) -> tuple[int, ...]:
         """
         Get or set the current indices.
@@ -592,6 +615,9 @@ class ImageWidget:
 
             # keep cmap
             cmap = subplot["image_widget_managed"].cmap
+            if cmap is None:
+                # ex: going from rgb -> grayscale
+                cmap = "plasma"
             # delete graphic since it will be replaced
             subplot.delete_graphic(subplot["image_widget_managed"])
         else:

@@ -72,7 +72,7 @@ class NDImageProcessor:
 
         self.data = data
         self._n_display_dims = n_display_dims
-        self._rgb = rgb
+        self.rgb = rgb
 
         self.window_funcs = window_funcs
         self.window_sizes = window_sizes
@@ -127,6 +127,16 @@ class NDImageProcessor:
     def rgb(self) -> bool:
         """whether or not the data is rgb(a)"""
         return self._rgb
+
+    @rgb.setter
+    def rgb(self, rgb: bool):
+        if not isinstance(rgb, bool):
+            raise TypeError
+
+        if rgb and self.ndim < 3:
+            raise IndexError(f"require 3 or more dims for RGB, you have: {self.ndim} dims")
+
+        self._rgb = rgb
 
     @property
     def n_slider_dims(self) -> int:

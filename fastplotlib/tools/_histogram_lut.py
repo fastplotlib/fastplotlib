@@ -66,6 +66,7 @@ class HistogramLUTTool(Graphic):
         )
 
         self._colorbar.world_object.local.scale_x = 0.15
+        self._colorbar.add_event_handler(self._open_cmap_picker, "click")
 
         self._ruler = pygfx.Ruler(
             end_pos=(0, 119, 0),
@@ -202,8 +203,10 @@ class HistogramLUTTool(Graphic):
 
         # connect event handlers
         for image in self._images:
-            image.add_event_handler(self._image_event_handler, "vmin", "vmax", "cmap")
+            image.add_event_handler(self._image_event_handler, "vmin", "vmax")
             image.add_event_handler(self._disconnect_images, "deleted")
+            if image.cmap is not None:
+                image.add_event_handler(self._image_event_handler, "vmin", "vmax", "cmap")
 
     def _disconnect_images(self, *args):
         for image in self._images:
@@ -216,7 +219,7 @@ class HistogramLUTTool(Graphic):
         setattr(self, ev.type, new_value)
 
     @property
-    def cmap(self) -> str | None:
+    def cmap(self) -> str:
         return self._colorbar.cmap
 
     @cmap.setter
