@@ -7,7 +7,7 @@ from rendercanvas import BaseRenderCanvas
 
 from ...layouts import ImguiFigure as Figure
 from ...graphics import ImageGraphic, ImageVolumeGraphic
-from ...utils import calculate_figure_shape, quick_min_max, ArrayProtocol, ARRAY_LIKE_ATTRS
+from ...utils import calculate_figure_shape, quick_min_max, ArrayProtocol
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
 from ._processor import NDImageProcessor, WindowFuncCallable
@@ -168,7 +168,7 @@ class ImageWidget:
 
         if not len(rgb) == len(data):
             raise ValueError(
-                f"len(rgb) != len(data), {len(rgb)} != {len(self.data)}. These must be equal"
+                f"len(rgb) != len(data), {len(rgb)} != {len(data)}. These must be equal"
             )
 
         if names is not None:
@@ -420,7 +420,10 @@ class ImageWidget:
 
     @data.setter
     def data(self, new_data: Sequence[ArrayProtocol | None]):
-        if len(new_data) != len(self.data):
+        if isinstance(new_data, ArrayProtocol) or new_data is None:
+            new_data = [new_data] * len(self._image_processors)
+
+        if len(new_data) != len(self._image_processors):
             raise IndexError
 
         # if the data array hasn't been changed
@@ -443,7 +446,10 @@ class ImageWidget:
 
     @rgb.setter
     def rgb(self, rgb: Sequence[bool]):
-        if len(rgb) != len(self.data):
+        if isinstance(rgb, bool):
+            rgb = [rgb] * len(self._image_processors)
+
+        if len(rgb) != len(self._image_processors):
             raise IndexError
 
         # if the rgb option hasn't been changed
@@ -458,6 +464,122 @@ class ImageWidget:
             image_processor.rgb = new
 
         self._reset(skip_indices)
+
+    @property
+    def n_display_dims(self) -> tuple[Literal[2, 3]]:
+        """Get or set the number of display dimensions for each data array, 2 is a 2D image, 3 is a 3D volume image"""
+        return tuple(img.n_display_dims for img in self._image_processors)
+
+    @n_display_dims.setter
+    def n_display_dims(self, new_ndd: Sequence[Literal[2, 3]] | Literal[[2, 3]]):
+        if isinstance(new_ndd, (int, np.integer)):
+            if new_ndd == 2 or new_ndd == 3:
+                new_ndd = [new_ndd] * len(self._image_processors)
+            else:
+                raise ValueError
+
+        if len(new_ndd) != len(self._image_processors):
+            raise IndexError
+
+        if not all([(n == 2) or (n == 3) for n in new_ndd]):
+            raise ValueError
+
+        # if the n_display_dims hasn't been changed for this data array
+        # graphics will not be reset for this data array index
+        skip_indices = list()
+
+        # first update image arrays
+        for i, (image_processor, new) in enumerate(zip(self._image_processors, new_ndd)):
+            if new > image_processor.max_n_display_dims:
+                raise IndexError(
+                    f"number of display dims exceeds maximum number of possible "
+                    f"display dimensions: {image_processor.max_n_display_dims}, for array at index: "
+                    f"{i} with shape: {image_processor.shape}, and rgb set to: {image_processor.rgb}"
+                )
+
+            if image_processor.n_display_dims == new:
+                skip_indices.append(i)
+            else:
+                image_processor.n_display_dims = new
+
+        self._reset(skip_indices)
+
+    @property
+    def window_funcs(self) -> tuple[tuple[WindowFuncCallable | None, ...] | None]:
+        """get or set the window functions"""
+        return tuple(p.window_funcs for p in self._image_processors)
+
+    @window_funcs.setter
+    def window_funcs(self, new_funcs: Sequence[WindowFuncCallable | None, ...] | None):
+        if callable(new_funcs) or new_funcs is None:
+            new_funcs = [new_funcs] * len(self._image_processors)
+
+        if len(new_funcs) != len(self._image_processors):
+            raise IndexError
+
+        self._set_image_processor_funcs("window_funcs", new_funcs)
+
+    @property
+    def window_sizes(self) -> tuple[tuple[int | None, ...] | None]:
+        """get or set the window sizes"""
+        return tuple(p.window_sizes for p in self._image_processors)
+
+    @window_sizes.setter
+    def window_sizes(self, new_sizes: Sequence[tuple[int | None, ...] | int | None] | int | None):
+        if isinstance(new_sizes, int) or new_sizes is None:
+            # same window for all data arrays
+            new_sizes = [new_sizes] * len(self._image_processors)
+
+        if len(new_sizes) != len(self._image_processors):
+            raise IndexError
+
+        self._set_image_processor_funcs("window_sizes", new_sizes)
+
+    @property
+    def window_order(self) -> tuple[tuple[int, ...] | None]:
+        """get or set order in which window functions are applied over dimensions"""
+        return tuple(p.window_order for p in self._image_processors)
+
+    @window_order.setter
+    def window_order(self, new_order: Sequence[tuple[int, ...]]):
+        if new_order is None:
+            new_order = [new_order] * len(self._image_processors)
+
+        if all([isinstance(order, (int, np.integer))] for order in new_order):
+            # same order specified across all data arrays
+            new_order = [new_order] * len(self._image_processors)
+
+        if len(new_order) != len(self._image_processors):
+            raise IndexError
+
+        self._set_image_processor_funcs("window_order", new_order)
+
+    @property
+    def finalizer_funcs(self) -> tuple[Callable | None]:
+        """Get or set a finalizer function that operates on the spatial dimensions of the 2D or 3D image"""
+        return tuple(p.finalizer_func for p in self._image_processors)
+
+    @finalizer_funcs.setter
+    def finalizer_funcs(self, funcs: Callable | Sequence[Callable] | None):
+        if callable(funcs) or funcs is None:
+            funcs = [funcs] * len(self._image_processors)
+
+        if len(funcs) != len(self._image_processors):
+            raise IndexError
+
+        self._set_image_processor_funcs("finalizer_func", funcs)
+
+    def _set_image_processor_funcs(self, attr, new_values):
+        """sets window_funcs, window_sizes, window_order, or finalizer_func and updates displayed data and histograms"""
+        for new, image_processor, subplot in zip(new_values, self._image_processors, self.figure):
+            if getattr(image_processor, attr) == new:
+                continue
+
+            setattr(image_processor, attr, new)
+
+            self._reset_histograms(subplot, image_processor)
+
+        self.indices = self.indices
 
     @property
     def indices(self) -> tuple[int, ...]:
@@ -491,8 +613,8 @@ class ImageWidget:
                     f"only positive index values are supported, you have passed: {new_indices}"
                 )
 
-            for image_array, graphic in zip(self._image_processors, self.graphics):
-                new_data = self._get_image(image_array, indices=new_indices)
+            for image_processor, graphic in zip(self._image_processors, self.graphics):
+                new_data = self._get_image(image_processor, indices=new_indices)
                 if new_data is None:
                     continue
 
@@ -510,39 +632,6 @@ class ImageWidget:
         finally:
             # set_value has finished executing, now allow future executions
             self._reentrant_block = False
-
-    @property
-    def n_display_dims(self) -> tuple[Literal[2, 3]]:
-        """Get or set the number of display dimensions for each data array, 2 is a 2D image, 3 is a 3D volume image"""
-        return tuple(img.n_display_dims for img in self._image_processors)
-
-    @n_display_dims.setter
-    def n_display_dims(self, new_ndd: Sequence[Literal[2, 3]]):
-        if len(new_ndd) != len(self.data):
-            raise IndexError
-
-        if not all([n in (2, 3) for n in new_ndd]):
-            raise ValueError
-
-        # if the n_display_dims hasn't been changed for this data array
-        # graphics will not be reset for this data array index
-        skip_indices = list()
-
-        # first update image arrays
-        for i, (image_processor, new) in enumerate(zip(self._image_processors, new_ndd)):
-            if new > image_processor.max_n_display_dims:
-                raise IndexError(
-                    f"number of display dims exceeds maximum number of possible "
-                    f"display dimensions: {image_processor.max_n_display_dims}, for array at index: "
-                    f"{i} with shape: {image_processor.shape}, and rgb set to: {image_processor.rgb}"
-                )
-
-            if image_processor.n_display_dims == new:
-                skip_indices.append(i)
-            else:
-                image_processor.n_display_dims = new
-
-        self._reset(skip_indices)
 
     @property
     def n_sliders(self) -> int:
@@ -585,7 +674,7 @@ class ImageWidget:
         # add or remove dims from indices
         # trim any excess dimensions
         while len(self._indices) > self.n_sliders:
-            # pop from right -> left
+            # remove outer most dims first
             self._indices.pop(0)
             self._sliders_ui.pop_dim()
 
@@ -674,6 +763,10 @@ class ImageWidget:
             # either there is no data array in this subplot,
             # or a histogram routine does not exist for this processor
             subplot.docks["right"].size = 0
+            return
+
+        if "image_widget_managed" not in subplot:
+            # no image in this subplot
             return
 
         image = subplot["image_widget_managed"]
@@ -808,119 +901,6 @@ class ImageWidget:
             hlut = subplot.docks["right"]["histogram_lut"]
             # set the data using the current image graphic data
             hlut.set_data(subplot["image_widget_managed"].data.value)
-
-    def set_data(
-        self,
-        new_data: np.ndarray | list[np.ndarray],
-        reset_vmin_vmax: bool = True,
-        reset_indices: bool = True,
-    ):
-        """
-        Change data of widget. Note: sliders max currently update only for ``txy`` and ``tzxy`` data.
-
-        Parameters
-        ----------
-        new_data: array-like or list of array-like
-            The new data to display in the widget
-
-        reset_vmin_vmax: bool, default ``True``
-            reset the vmin vmax levels based on the new data
-
-        reset_indices: bool, default ``True``
-            reset the current index for all dimensions to 0
-
-        """
-
-        if reset_indices:
-            for key in self.indices:
-                self.indices[key] = 0
-
-        # set slider max according to new data
-        max_lengths = dict()
-        for scroll_dim in self.slider_dims:
-            max_lengths[scroll_dim] = np.inf
-
-        if _is_arraylike(new_data):
-            new_data = [new_data]
-
-        if len(self._data) != len(new_data):
-            raise ValueError(
-                f"number of new data arrays {len(new_data)} must match"
-                f" current number of data arrays {len(self._data)}"
-            )
-        # check all arrays
-        for i, (new_array, current_array) in enumerate(zip(new_data, self._data)):
-            if new_array.ndim != current_array.ndim:
-                raise ValueError(
-                    f"new data ndim {new_array.ndim} at index {i} "
-                    f"does not equal current data ndim {current_array.ndim}"
-                )
-
-            # Computes the number of scrollable dims and also validates new_array
-            new_scrollable_dims = self._get_n_scrollable_dims(new_array, self._rgb[i])
-
-            if self.n_scrollable_dims[i] != new_scrollable_dims:
-                raise ValueError(
-                    f"number of dimensions of data arrays must match number of dimensions of "
-                    f"existing data arrays"
-                )
-
-        # if checks pass, update with new data
-        for i, (new_array, current_array, subplot) in enumerate(
-            zip(new_data, self._data, self.figure)
-        ):
-            # if the new array is the same as the existing array, skip
-            # this allows setting just a subset of the arrays in the ImageWidget
-            if new_data is self._data[i]:
-                continue
-
-            # check last two dims (x and y) to see if data shape is changing
-            old_data_shape = self._data[i].shape[-self.n_img_dims[i] :]
-            self._data[i] = new_array
-
-            if old_data_shape != new_array.shape[-self.n_img_dims[i] :]:
-                frame = self._process_indices(
-                    new_array, slice_indices=self._current_index
-                )
-                frame = self._process_frame_apply(frame, i)
-
-                # make new graphic first
-                new_graphic = ImageGraphic(data=frame, name="image_widget_managed")
-
-                if self._histogram_widget:
-                    # set hlut tool to use new graphic
-                    subplot.docks["right"]["histogram_lut"].images = new_graphic
-
-                # delete old graphic after setting hlut tool to new graphic
-                # this ensures gc
-                subplot.delete_graphic(graphic=subplot["image_widget_managed"])
-                subplot.insert_graphic(graphic=new_graphic)
-
-            # Returns "", "t", or "tz"
-            curr_scrollable_format = SCROLLABLE_DIMS_ORDER[self.n_scrollable_dims[i]]
-
-            for scroll_dim in self.slider_dims:
-                if scroll_dim in curr_scrollable_format:
-                    new_length = new_array.shape[
-                        curr_scrollable_format.index(scroll_dim)
-                    ]
-                    if max_lengths[scroll_dim] == np.inf:
-                        max_lengths[scroll_dim] = new_length
-                    elif max_lengths[scroll_dim] != new_length:
-                        raise ValueError(
-                            f"New arrays have differing values along dim {scroll_dim}"
-                        )
-
-                    self._dims_max_bounds[scroll_dim] = max_lengths[scroll_dim]
-
-            # set histogram widget
-            if self._histogram_widget:
-                subplot.docks["right"]["histogram_lut"].set_data(
-                    new_array, reset_vmin_vmax=reset_vmin_vmax
-                )
-
-        # force graphics to update
-        self.indices = self.indices
 
     def show(self, **kwargs):
         """

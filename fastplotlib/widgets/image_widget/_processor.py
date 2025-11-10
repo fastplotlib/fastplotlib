@@ -71,7 +71,7 @@ class NDImageProcessor:
         self._compute_histogram = False
 
         self.data = data
-        self._n_display_dims = n_display_dims
+        self.n_display_dims = n_display_dims
         self.rgb = rgb
 
         self.window_funcs = window_funcs
@@ -169,7 +169,7 @@ class NDImageProcessor:
     # TODO: make n_display_dims settable, requires thinking about inserting and poping indices in ImageWidget
     @n_display_dims.setter
     def n_display_dims(self, n: Literal[2, 3]):
-        if n not in (2, 3):
+        if n != 2 or n != 3:
             raise ValueError("`n_display_dims` must be an <int> with a value of 2 or 3")
         self._n_display_dims = n
         self._recompute_histogram()
@@ -211,7 +211,7 @@ class NDImageProcessor:
 
         self._validate_window_func(window_funcs)
 
-        self._window_funcs = window_funcs
+        self._window_funcs = tuple(window_funcs)
         self._recompute_histogram()
 
     def _validate_window_func(self, funcs):
@@ -305,6 +305,10 @@ class NDImageProcessor:
 
     @window_order.setter
     def window_order(self, order: tuple[int] | None):
+        if order is None:
+            self._window_order = None
+            return
+
         if order is not None:
             if not all([d <= self.n_slider_dims for d in order]):
                 raise IndexError(
@@ -317,7 +321,7 @@ class NDImageProcessor:
                     f"all `window_order` entires must be >= 0, you have passed: {order}"
                 )
 
-        self._window_order = order
+        self._window_order = tuple(order)
         self._recompute_histogram()
 
     @property
@@ -327,6 +331,11 @@ class NDImageProcessor:
 
     @finalizer_func.setter
     def finalizer_func(self, func: Callable[[ArrayLike], ArrayLike] | None):
+        if not callable(func) or func is not None:
+            raise TypeError(
+                f"`finalizer_func` must be a callable or `None`, you have passed: {func}"
+            )
+
         self._finalizer_func = func
         self._recompute_histogram()
 

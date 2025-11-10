@@ -87,8 +87,6 @@ class ImageWidgetSliders(EdgeWindow):
         # time now
         now = perf_counter()
 
-        # self._size = 300#57 + (self._image_widget.n_sliders * 50)
-
         # buttons and slider UI elements for each dim
         for dim in range(self._image_widget.n_sliders):
             imgui.push_id(f"{self._id_counter}_{dim}")
