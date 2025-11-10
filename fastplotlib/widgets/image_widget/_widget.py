@@ -1,4 +1,4 @@
-from typing import Callable, Sequence, Literal
+from typing import Callable, Sequence, Literal, Iterable
 from warnings import warn
 
 import numpy as np
@@ -272,6 +272,14 @@ class ImageWidget:
 
             self._image_processors.append(image_processor)
 
+        self._data = ImageProcessorProperty(self, "data")
+        self._rgb = ImageProcessorProperty(self, "rgb")
+        self._n_display_dims = ImageProcessorProperty(self, "n_display_dims")
+        self._window_funcs = ImageProcessorProperty(self, "window_funcs")
+        self._window_sizes = ImageProcessorProperty(self, "window_sizes")
+        self._window_order = ImageProcessorProperty(self, "window_order")
+        self._finalizer_func = ImageProcessorProperty(self, "finalizer_func")
+
         if len(set(n_display_dims)) > 1:
             # assume user wants one controller for 2D images and another for 3D image volumes
             n_subplots = np.prod(figure_shape)
@@ -323,10 +331,10 @@ class ImageWidget:
 
         self._figure: Figure = Figure(**figure_kwargs_default)
 
-        self._indices = [0 for i in range(self.n_sliders)]
+        self._indices = Indices(list(0 for i in range(self.n_sliders)), self)
 
         for i, subplot in zip(range(len(self._image_processors)), self.figure):
-            image_data = self._get_image(self._image_processors[i], self._indices)
+            image_data = self._get_image(self._image_processors[i], tuple(self._indices))
 
             if image_data is None:
                 # this subplot/data array is blank, skip
@@ -405,9 +413,9 @@ class ImageWidget:
         self._reentrant_block = False
 
     @property
-    def data(self) -> tuple[ArrayProtocol | None]:
+    def data(self) -> Iterable[ArrayProtocol | None]:
         """get or set the nd-image data arrays"""
-        return tuple(array.data for array in self._image_processors)
+        return self._data
 
     @data.setter
     def data(self, new_data: Sequence[ArrayProtocol | None]):
@@ -431,9 +439,9 @@ class ImageWidget:
         self._reset(skip_indices)
 
     @property
-    def rgb(self):
+    def rgb(self) -> Iterable[bool]:
         """get or set the rgb toggle for each data array"""
-        return tuple(p.rgb for p in self._image_processors)
+        return self._rgb
 
     @rgb.setter
     def rgb(self, rgb: Sequence[bool]):
@@ -457,9 +465,9 @@ class ImageWidget:
         self._reset(skip_indices)
 
     @property
-    def n_display_dims(self) -> tuple[Literal[2, 3]]:
+    def n_display_dims(self) -> Iterable[Literal[2, 3]]:
         """Get or set the number of display dimensions for each data array, 2 is a 2D image, 3 is a 3D volume image"""
-        return tuple(img.n_display_dims for img in self._image_processors)
+        return self._n_display_dims
 
     @n_display_dims.setter
     def n_display_dims(self, new_ndd: Sequence[Literal[2, 3]] | Literal[2, 3]):
@@ -496,9 +504,9 @@ class ImageWidget:
         self._reset(skip_indices)
 
     @property
-    def window_funcs(self) -> tuple[tuple[WindowFuncCallable | None] | None]:
+    def window_funcs(self) -> Iterable[tuple[WindowFuncCallable | None] | None]:
         """get or set the window functions"""
-        return tuple(p.window_funcs for p in self._image_processors)
+        return self._window_funcs
 
     @window_funcs.setter
     def window_funcs(self, new_funcs: Sequence[WindowFuncCallable | None] | None):
@@ -511,9 +519,9 @@ class ImageWidget:
         self._set_image_processor_funcs("window_funcs", new_funcs)
 
     @property
-    def window_sizes(self) -> tuple[tuple[int | None, ...] | None]:
+    def window_sizes(self) -> Iterable[tuple[int | None, ...] | None]:
         """get or set the window sizes"""
-        return tuple(p.window_sizes for p in self._image_processors)
+        return self._window_sizes
 
     @window_sizes.setter
     def window_sizes(self, new_sizes: Sequence[tuple[int | None, ...] | int | None] | int | None):
@@ -527,9 +535,9 @@ class ImageWidget:
         self._set_image_processor_funcs("window_sizes", new_sizes)
 
     @property
-    def window_order(self) -> tuple[tuple[int, ...] | None]:
+    def window_order(self) -> Iterable[tuple[int, ...] | None]:
         """get or set order in which window functions are applied over dimensions"""
-        return tuple(p.window_order for p in self._image_processors)
+        return self._window_order
 
     @window_order.setter
     def window_order(self, new_order: Sequence[tuple[int, ...]]):
@@ -546,9 +554,9 @@ class ImageWidget:
         self._set_image_processor_funcs("window_order", new_order)
 
     @property
-    def finalizer_func(self) -> tuple[Callable | None]:
+    def finalizer_func(self) -> Iterable[Callable | None]:
         """Get or set a finalizer function that operates on the spatial dimensions of the 2D or 3D image"""
-        return tuple(p.finalizer_func for p in self._image_processors)
+        return self._finalizer_func
 
     @finalizer_func.setter
     def finalizer_func(self, funcs: Callable | Sequence[Callable] | None):
@@ -577,17 +585,17 @@ class ImageWidget:
         self.indices = self.indices
 
     @property
-    def indices(self) -> tuple[int, ...]:
+    def indices(self) -> Iterable[int]:
         """
         Get or set the current indices.
 
         Returns
         -------
-        indices: tuple[int, ...]
+        indices: Iterable[int]
             integer index for each slider dimension
 
         """
-        return tuple(self._indices)
+        return self._indices
 
     @indices.setter
     def indices(self, new_indices: Sequence[int]):
@@ -615,7 +623,7 @@ class ImageWidget:
 
                 graphic.data = new_data
 
-            self._indices[:] = new_indices
+            self._indices._fpl_set(new_indices)
 
             # call any event handlers
             for handler in self._indices_changed_handlers:
@@ -684,20 +692,20 @@ class ImageWidget:
         # trim any excess dimensions
         while len(self._indices) > self.n_sliders:
             # remove outer most dims first
-            self._indices.pop(0)
+            self._indices.pop_dim()
             self._sliders_ui.pop_dim()
 
         # add any new dimensions that aren't present
         while len(self.indices) < self.n_sliders:
             # insert right -> left
-            self._indices.insert(0, 0)
+            self._indices.push_dim()
             self._sliders_ui.push_dim()
 
         self._sliders_ui.size = 55 + (IMGUI_SLIDER_HEIGHT * self.n_sliders)
 
     def _reset_image_graphics(self, subplot, image_processor):
         """delete and create a new image graphic if necessary"""
-        new_image = self._get_image(image_processor, indices=self.indices)
+        new_image = self._get_image(image_processor, indices=tuple(self.indices))
         if new_image is None:
             if "image_widget_managed" in subplot:
                 # delete graphic from this subplot if present
@@ -776,6 +784,7 @@ class ImageWidget:
 
         if "image_widget_managed" not in subplot:
             # no image in this subplot
+            subplot.docks["right"].size = 0
             return
 
         image = subplot["image_widget_managed"]
@@ -784,6 +793,8 @@ class ImageWidget:
             hlut: HistogramLUTTool = subplot.docks["right"]["histogram_lut"]
             hlut.histogram = image_processor.histogram
             hlut.images = image
+            if subplot.docks["right"].size < 1:
+                subplot.docks["right"].size = 80
 
         else:
             # need to make one
