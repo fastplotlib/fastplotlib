@@ -215,6 +215,7 @@ class ImageVolumeGraphic(Graphic):
             # set map to None for RGB image volumes
             self._cmap = None
             self._texture_map = None
+            self._cmap_interpolation = None
 
         elif self._data.value.ndim == 3:
             # use TextureMap for grayscale images
@@ -293,9 +294,10 @@ class ImageVolumeGraphic(Graphic):
         self._mode.set_value(self, mode)
 
     @property
-    def cmap(self) -> str:
+    def cmap(self) -> str | None:
         """Get or set colormap name"""
-        return self._cmap.value
+        if self._cmap is not None:
+            return self._cmap.value
 
     @cmap.setter
     def cmap(self, name: str):
@@ -329,9 +331,10 @@ class ImageVolumeGraphic(Graphic):
         self._interpolation.set_value(self, value)
 
     @property
-    def cmap_interpolation(self) -> str:
+    def cmap_interpolation(self) -> str | None:
         """Get or set the cmap interpolation method"""
-        return self._cmap_interpolation.value
+        if self._cmap_interpolation is not None:
+            return self._cmap_interpolation.value
 
     @cmap_interpolation.setter
     def cmap_interpolation(self, value: str):
