@@ -974,12 +974,8 @@ class Figure:
         )
 
     def __iter__(self):
-        self._current_iter = iter(range(len(self)))
-        return self
-
-    def __next__(self) -> Subplot:
-        pos = self._current_iter.__next__()
-        return self._subplots.ravel()[pos]
+        for subplot in self._subplots.ravel():
+            yield subplot
 
     def __len__(self):
         """number of subplots"""

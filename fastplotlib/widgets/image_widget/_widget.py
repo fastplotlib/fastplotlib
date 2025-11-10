@@ -840,6 +840,8 @@ class ImageWidget:
             subplot.docks["right"].add_graphic(hlut)
             subplot.docks["right"].size = 80
 
+        self.reset_vmin_vmax()
+
     def _reset(self, skip_data_indices: tuple[int, ...] = None):
         if skip_data_indices is None:
             skip_data_indices = tuple()
@@ -935,11 +937,15 @@ class ImageWidget:
         """
         Reset the vmin and vmax w.r.t. the full data
         """
-        for data, subplot in zip(self.data, self.figure):
+        for image_processor, subplot in zip(self._image_processors, self.figure):
             if "histogram_lut" not in subplot.docks["right"]:
                 continue
+
             hlut = subplot.docks["right"]["histogram_lut"]
-            hlut.set_data(data, reset_vmin_vmax=True)
+            hlut.histogram = image_processor.histogram
+
+            edges = image_processor.histogram[1]
+            hlut.vmin, hlut.vmax = edges[0], edges[-1]
 
     def reset_vmin_vmax_frame(self):
         """
@@ -955,7 +961,10 @@ class ImageWidget:
 
             hlut = subplot.docks["right"]["histogram_lut"]
             # set the data using the current image graphic data
-            hlut.set_data(subplot["image_widget_managed"].data.value)
+            image = subplot["image_widget_managed"]
+            freqs, edges = np.histogram(image.data.value, bins=100)
+            hlut.histogram = (freqs, edges)
+            hlut.vmin, hlut.vmax = edges[0], edges[-1]
 
     def show(self, **kwargs):
         """
