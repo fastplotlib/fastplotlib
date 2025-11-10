@@ -19,11 +19,11 @@ IMGUI_SLIDER_HEIGHT = 49
 class ImageWidget:
     def __init__(
         self,
-        data: ArrayProtocol | list[ArrayProtocol | None] | None,
-        processor: NDImageProcessor | Sequence[NDImageProcessor] = NDImageProcessor,
+        data: ArrayProtocol | Sequence[ArrayProtocol | None] | None,
+        processors: NDImageProcessor | Sequence[NDImageProcessor] = NDImageProcessor,
         n_display_dims: Literal[2, 3] | Sequence[Literal[2, 3]] = 2,
         slider_dim_names: Sequence[str] | None = None,  # dim names left -> right
-        rgb: bool | Sequence[bool] = None,
+        rgb: bool | Sequence[bool] = False,
         cmap: str | Sequence[str]= "plasma",
         window_funcs: (
             tuple[WindowFuncCallable | None, ...]
@@ -59,26 +59,20 @@ class ImageWidget:
 
         Parameters
         ----------
-        data: np.ndarray | List[np.ndarray]
-            array-like or a list of array-like
+        data: ArrayProtocol | Sequence[ArrayProtocol | None] | None
+            array-like or a list of array-like, each array must have a minimum of 2 dimensions
 
-        window_funcs: dict[str, tuple[Callable, int]], i.e. {"t" or "z": (callable, int)}
-            | Apply function(s) with rolling windows along "t" and/or "z" dimensions of the `data` arrays.
-            | Pass a dict in the form: {dimension: (func, window_size)}, `func` must take a slice of the data array as
-            | the first argument and must take `axis` as a kwarg.
-            | Ex: mean along "t" dimension: {"t": (np.mean, 11)}, if `current_index` of "t" is 50, it will pass frames
-            | 45 to 55 to `np.mean` with `axis=0`.
-            | Ex: max along z dim: {"z": (np.max, 3)}, passes current, previous & next frame to `np.max` with `axis=1`
+        processors: NDImageProcessor | Sequence[NDImageProcessor], default NDImageProcessor
+            The image processors used for each n-dimensional data array
 
-        frame_apply: Union[callable, Dict[int, callable]]
-            | Apply function(s) to `data` arrays before to generate final 2D image that is displayed.
-            | Ex: apply a spatial gaussian filter
-            | Pass a single function or a dict of functions to apply to each array individually
-            | examples: ``{array_index: to_grayscale}``, ``{0: to_grayscale, 2: threshold_img}``
-            | "array_index" is the position of the corresponding array in the data list.
-            | if `window_funcs` is used, then this function is applied after `window_funcs`
-            | this function must be a callable that returns a 2D array
-            | example use case: converting an RGB frame from video to a 2D grayscale frame
+        n_display_dims: Literal[2, 3] | Sequence[Literal[2, 3]], default 2
+            number of display dimensions
+
+        slider_dim_names: Sequence[str], optional
+            optional list/tuple of names for each slider dim
+
+        rgb: bool | Sequence[bool], default
+            whether or not each data array represents RGB(A) images
 
         figure_shape: Optional[Tuple[int, int]]
             manually provide the shape for the Figure, otherwise the number of rows and columns is estimated
@@ -121,20 +115,20 @@ class ImageWidget:
                 f"You have passed the following type {type(data)}"
             )
 
-        if issubclass(processor, NDImageProcessor):
-            processor = [processor] * len(data)
+        if issubclass(processors, NDImageProcessor):
+            processors = [processors] * len(data)
 
-        elif isinstance(processor, (tuple, list)):
-            if not all([issubclass(p, NDImageProcessor) for p in processor]):
+        elif isinstance(processors, (tuple, list)):
+            if not all([issubclass(p, NDImageProcessor) for p in processors]):
                 raise TypeError(
-                    f"`processor` must be a `NDImageProcess` class, a subclass of `NDImageProcessor`, or a "
-                    f"list/tuple of `NDImageProcess` subclasses. You have passed: {processor}"
+                    f"`processors` must be a `NDImageProcess` class, a subclass of `NDImageProcessor`, or a "
+                    f"list/tuple of `NDImageProcess` subclasses. You have passed: {processors}"
                 )
 
         else:
             raise TypeError(
-                f"`processor` must be a `NDImageProcess` class, a subclass of `NDImageProcessor`, or a "
-                f"list/tuple of `NDImageProcess` subclasses. You have passed: {processor}"
+                f"`processors` must be a `NDImageProcess` class, a subclass of `NDImageProcessor`, or a "
+                f"list/tuple of `NDImageProcess` subclasses. You have passed: {processors}"
             )
 
         # subplot layout
@@ -155,15 +149,12 @@ class ImageWidget:
                 f" Resetting figure shape to: {figure_shape}"
             )
 
-        if rgb is None:
-            rgb = [False] * len(data)
-
         elif isinstance(rgb, bool):
             rgb = [rgb] * len(data)
 
         if not all([isinstance(v, bool) for v in rgb]):
             raise TypeError(
-                f"`rgb` parameter must be a bool or a Sequence of bool, <{rgb}> was provided"
+                f"`rgb` parameter must be a bool or a Sequence of bool, you have passed: {rgb}"
             )
 
         if not len(rgb) == len(data):
@@ -267,8 +258,8 @@ class ImageWidget:
         # make NDImageArrays
         self._image_processors: list[NDImageProcessor] = list()
         for i in range(len(data)):
-            cls = processor[i]
-            image_array = cls(
+            cls = processors[i]
+            image_processor = cls(
                 data=data[i],
                 rgb=rgb[i],
                 n_display_dims=n_display_dims[i],
@@ -279,7 +270,7 @@ class ImageWidget:
                 compute_histogram=self._histogram_widget,
             )
 
-            self._image_processors.append(image_array)
+            self._image_processors.append(image_processor)
 
         if len(set(n_display_dims)) > 1:
             # assume user wants one controller for 2D images and another for 3D image volumes
@@ -392,7 +383,7 @@ class ImageWidget:
 
             subplot.add_graphic(graphic)
 
-            self._reset_histograms(subplot, self._image_processors[i])
+            self._reset_histogram(subplot, self._image_processors[i])
 
         self._sliders_ui = ImageWidgetSliders(
             figure=self.figure,
@@ -471,7 +462,7 @@ class ImageWidget:
         return tuple(img.n_display_dims for img in self._image_processors)
 
     @n_display_dims.setter
-    def n_display_dims(self, new_ndd: Sequence[Literal[2, 3]] | Literal[[2, 3]]):
+    def n_display_dims(self, new_ndd: Sequence[Literal[2, 3]] | Literal[2, 3]):
         if isinstance(new_ndd, (int, np.integer)):
             if new_ndd == 2 or new_ndd == 3:
                 new_ndd = [new_ndd] * len(self._image_processors)
@@ -505,12 +496,12 @@ class ImageWidget:
         self._reset(skip_indices)
 
     @property
-    def window_funcs(self) -> tuple[tuple[WindowFuncCallable | None, ...] | None]:
+    def window_funcs(self) -> tuple[tuple[WindowFuncCallable | None] | None]:
         """get or set the window functions"""
         return tuple(p.window_funcs for p in self._image_processors)
 
     @window_funcs.setter
-    def window_funcs(self, new_funcs: Sequence[WindowFuncCallable | None, ...] | None):
+    def window_funcs(self, new_funcs: Sequence[WindowFuncCallable | None] | None):
         if callable(new_funcs) or new_funcs is None:
             new_funcs = [new_funcs] * len(self._image_processors)
 
@@ -577,8 +568,12 @@ class ImageWidget:
 
             setattr(image_processor, attr, new)
 
-            self._reset_histograms(subplot, image_processor)
+            # window functions and finalizer functions will only change the histogram
+            # they do not change the collections of dimensions, so we don't need to call _reset_dimensions
+            # they also do not change the image graphic, so we do not need to call _reset_image_graphics
+            self._reset_histogram(subplot, image_processor)
 
+        # update the displayed image data in the graphics
         self.indices = self.indices
 
     @property
@@ -634,6 +629,20 @@ class ImageWidget:
             self._reentrant_block = False
 
     @property
+    def histogram_widget(self) -> bool:
+        """show or hide the histograms"""
+        return self._histogram_widget
+
+    @histogram_widget.setter
+    def histogram_widget(self, show_histogram: bool):
+        if not isinstance(show_histogram, bool):
+            raise TypeError(f"`histogram_widget` can be set with a bool, you have passed: {show_histogram}")
+
+        for subplot, image_processor in zip(self.figure, self._image_processors):
+            image_processor.compute_histogram = show_histogram
+            self._reset_histogram(subplot, image_processor)
+
+    @property
     def n_sliders(self) -> int:
         """number of sliders"""
         return max([a.n_slider_dims for a in self._image_processors])
@@ -686,8 +695,8 @@ class ImageWidget:
 
         self._sliders_ui.size = 55 + (IMGUI_SLIDER_HEIGHT * self.n_sliders)
 
-    def _reset_graphics(self, subplot, image_processor):
-        """delete and create new graphics if necessary"""
+    def _reset_image_graphics(self, subplot, image_processor):
+        """delete and create a new image graphic if necessary"""
         new_image = self._get_image(image_processor, indices=self.indices)
         if new_image is None:
             if "image_widget_managed" in subplot:
@@ -752,8 +761,8 @@ class ImageWidget:
 
         subplot.camera.show_object(g.world_object)
 
-    def _reset_histograms(self, subplot, image_processor):
-        """reset the histograms"""
+    def _reset_histogram(self, subplot, image_processor):
+        """reset the histogram"""
         if not self._histogram_widget:
             subplot.docks["right"].size = 0
             return
@@ -798,8 +807,8 @@ class ImageWidget:
             if i in skip_data_indices:
                 continue
 
-            self._reset_graphics(subplot, image_processor)
-            self._reset_histograms(subplot, image_processor)
+            self._reset_image_graphics(subplot, image_processor)
+            self._reset_histogram(subplot, image_processor)
 
         # force an update
         self.indices = self.indices
