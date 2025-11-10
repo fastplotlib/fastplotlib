@@ -80,14 +80,32 @@ class Indices:
         for i in self._data:
             yield i
 
-    def __getitem__(self, item) -> int | tuple[int]:
-        return self._data[item]
+    def _parse_key(self, key: int | np.integer | str) -> int:
+        if not isinstance(key, (int, np.integer, str)):
+            raise TypeError(
+                f"indices can only be indexed with <int> or <str> types, you have used: {key}"
+            )
+
+        if isinstance(key, str):
+            # get integer index from user's names
+            names = self._image_widget._slider_dim_names
+            if key not in names:
+                raise KeyError(
+                    f"dim with name: {key} not found in slider_dim_names, current names are: {names}"
+                )
+
+            key = names.index(key)
+
+        return key
+
+    def __getitem__(self, key: int | np.integer | str) -> int | tuple[int]:
+        if isinstance(key, str):
+            key = self._parse_key(key)
+
+        return self._data[key]
 
     def __setitem__(self, key, value):
-        if not isinstance(key, (int, np.integer, slice)):
-            raise TypeError(
-                f"indices can only be indexed with <int> types, you have used: {key}"
-            )
+        key = self._parse_key(key)
 
         if not isinstance(value, (int, np.integer)):
             raise TypeError(

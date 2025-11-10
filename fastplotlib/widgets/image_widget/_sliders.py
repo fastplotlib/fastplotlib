@@ -161,7 +161,7 @@ class ImageWidgetSliders(EdgeWindow):
                 if dim < len(self._image_widget._slider_dim_names):
                     dim_name = self._image_widget._slider_dim_names[dim]
 
-            imgui.text(f"dim {dim_name}: ")
+            imgui.text(f"dim '{dim_name}:' ")
             imgui.same_line()
             # so that slider occupies full width
             imgui.set_next_item_width(self.width * 0.85)
@@ -175,7 +175,7 @@ class ImageWidgetSliders(EdgeWindow):
 
             # slider for this dimension
             changed, index = imgui.slider_int(
-                f"{dim}", v=val, v_min=0, v_max=vmax, flags=flags
+                f"d: {dim}", v=val, v_min=0, v_max=vmax, flags=flags
             )
 
             if changed:

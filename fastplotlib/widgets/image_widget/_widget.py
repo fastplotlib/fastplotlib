@@ -255,6 +255,9 @@ class ImageWidget:
             )
         self._sliders_dim_order = sliders_dim_order
 
+        self._slider_dim_names = None
+        self.slider_dim_names = slider_dim_names
+
         self._histogram_widget = histogram_widget
 
         # make NDImageArrays
@@ -410,11 +413,6 @@ class ImageWidget:
         self.figure.add_gui(self._sliders_ui)
 
         self._indices_changed_handlers = set()
-
-        if slider_dim_names is not None:
-            self._slider_dim_names = tuple(slider_dim_names)
-        else:
-            self._slider_dim_names = None
 
         self._reentrant_block = False
 
@@ -689,6 +687,26 @@ class ImageWidget:
                 bounds[dim] = max(array.slider_dims_shape[dim], bounds[dim])
 
         return bounds
+
+    @property
+    def slider_dim_names(self) -> tuple[str, ...]:
+        return self._slider_dim_names
+
+    @slider_dim_names.setter
+    def slider_dim_names(self, names: Sequence[str]):
+        if names is None:
+            self._slider_dim_names = None
+            return
+
+        if not all([isinstance(n, str) for n in names]):
+            raise TypeError(f"`slider_dim_names` must be set with a list/tuple of <str>, you passed: {names}")
+
+        if len(set(names)) != len(names):
+            raise ValueError(
+                f"`slider_dim_names` must be unique, you passed: {names}"
+            )
+
+        self._slider_dim_names = tuple(names)
 
     def _get_image(
         self, image_processor: NDImageProcessor, indices: Sequence[int]

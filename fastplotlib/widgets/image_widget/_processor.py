@@ -286,11 +286,11 @@ class NDImageProcessor:
                     f"integers or `None`, you passed: {_window_sizes}"
                 )
 
-            if w in (0, 1):
+            if w == 0 or w == 1:
                 # this is not a real window, set as None
                 w = None
 
-            if w % 2 == 0:
+            elif w % 2 == 0:
                 # odd window sizes makes most sense
                 warn(
                     f"provided even window size: {w} in dim: {i}, adding `1` to make it odd"
@@ -299,7 +299,7 @@ class NDImageProcessor:
 
             _window_sizes.append(w)
 
-        self._window_sizes = tuple(window_sizes)
+        self._window_sizes = tuple(_window_sizes)
         self._recompute_histogram()
 
     @property
