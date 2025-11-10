@@ -211,7 +211,7 @@ class ImageVolumeGraphic(Graphic):
 
         self._interpolation = ImageInterpolation(interpolation)
 
-        if self._data.value.ndim  == 4:
+        if self._data.value.ndim == 4:
             # set map to None for RGB image volumes
             self._cmap = None
             self._texture_map = None

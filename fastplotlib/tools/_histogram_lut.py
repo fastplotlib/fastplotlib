@@ -24,10 +24,10 @@ def _format_value(value: float):
 
 class HistogramLUTTool(Graphic):
     def __init__(
-            self,
-            histogram: tuple[np.ndarray, np.ndarray],
-            images: Sequence[ImageGraphic | ImageVolumeGraphic] | None = None,
-            **kwargs,
+        self,
+        histogram: tuple[np.ndarray, np.ndarray],
+        images: Sequence[ImageGraphic | ImageVolumeGraphic] | None = None,
+        **kwargs,
     ):
         super().__init__(**kwargs)
 
@@ -45,7 +45,9 @@ class HistogramLUTTool(Graphic):
             [np.zeros(120, dtype=np.float32), np.arange(0, 120)]
         )
 
-        self._line = LineGraphic(line_data, colors=(0.8, 0.8, 0.8), alpha_mode="solid", offset=(1, 0, 0))
+        self._line = LineGraphic(
+            line_data, colors=(0.8, 0.8, 0.8), alpha_mode="solid", offset=(1, 0, 0)
+        )
         self._line.world_object.local.scale_x = -1
 
         self._selector = LinearRegionSelector(
@@ -60,9 +62,7 @@ class HistogramLUTTool(Graphic):
         self._selector.add_event_handler(self._selector_event_handler, "selection")
 
         self._colorbar = ImageGraphic(
-            data=np.zeros([120, 2]),
-            interpolation="linear",
-            offset=(1.5, 0, 0)
+            data=np.zeros([120, 2]), interpolation="linear", offset=(1.5, 0, 0)
         )
 
         self._colorbar.world_object.local.scale_x = 0.15
@@ -110,11 +110,17 @@ class HistogramLUTTool(Graphic):
             self._colorbar.world_object,
             self._ruler,
             self._text_vmin.world_object,
-            self._text_vmax.world_object
+            self._text_vmax.world_object,
         )
         self._set_world_object(wo)
 
-        self._children = [self._line, self._selector, self._colorbar, self._text_vmin, self._text_vmax]
+        self._children = [
+            self._line,
+            self._selector,
+            self._colorbar,
+            self._text_vmin,
+            self._text_vmax,
+        ]
 
         # set histogram
         self.histogram = histogram
@@ -144,28 +150,38 @@ class HistogramLUTTool(Graphic):
         return self._freq_flanked, self._bin_centers_flanked
 
     @histogram.setter
-    def histogram(self, histogram: tuple[np.ndarray, np.ndarray], limits: tuple[int, int] = None):
+    def histogram(
+        self, histogram: tuple[np.ndarray, np.ndarray], limits: tuple[int, int] = None
+    ):
         freq, edges = histogram
 
-        freq = (freq / freq.max())
+        freq = freq / freq.max()
 
         bin_centers = 0.5 * (edges[1:] + edges[:-1])
 
         step = bin_centers[1] - bin_centers[0]
 
         under_flank = np.linspace(bin_centers[0] - step * 10, bin_centers[0] - step, 10)
-        over_flank = np.linspace(bin_centers[-1] + step, bin_centers[-1] + step * 10, 10)
-        self._bin_centers_flanked[:] = np.concatenate([under_flank, bin_centers, over_flank])
+        over_flank = np.linspace(
+            bin_centers[-1] + step, bin_centers[-1] + step * 10, 10
+        )
+        self._bin_centers_flanked[:] = np.concatenate(
+            [under_flank, bin_centers, over_flank]
+        )
 
         self._freq_flanked[10:110] = freq
 
         self._line.data[:, 0] = self._freq_flanked
-        self._colorbar.data = np.column_stack([self._bin_centers_flanked, self._bin_centers_flanked])
+        self._colorbar.data = np.column_stack(
+            [self._bin_centers_flanked, self._bin_centers_flanked]
+        )
 
         # self.vmin, self.vmax = bin_centers[0], bin_centers[-1]
 
         if hasattr(self, "plot_area"):
-            self._ruler.update(self._plot_area.camera, self._plot_area.canvas.get_logical_size())
+            self._ruler.update(
+                self._plot_area.camera, self._plot_area.canvas.get_logical_size()
+            )
 
     @property
     def images(self) -> tuple[ImageGraphic | ImageVolumeGraphic, ...] | None:
@@ -182,7 +198,12 @@ class HistogramLUTTool(Graphic):
         if isinstance(new_images, (ImageGraphic, ImageVolumeGraphic)):
             new_images = [new_images]
 
-        if not all([isinstance(image, (ImageGraphic, ImageVolumeGraphic)) for image in new_images]):
+        if not all(
+            [
+                isinstance(image, (ImageGraphic, ImageVolumeGraphic))
+                for image in new_images
+            ]
+        ):
             raise TypeError
 
         for image in new_images:
@@ -206,7 +227,9 @@ class HistogramLUTTool(Graphic):
             image.add_event_handler(self._image_event_handler, "vmin", "vmax")
             image.add_event_handler(self._disconnect_images, "deleted")
             if image.cmap is not None:
-                image.add_event_handler(self._image_event_handler, "vmin", "vmax", "cmap")
+                image.add_event_handler(
+                    self._image_event_handler, "vmin", "vmax", "cmap"
+                )
 
     def _disconnect_images(self, *args):
         for image in self._images:
@@ -234,7 +257,9 @@ class HistogramLUTTool(Graphic):
         try:
             self._colorbar.cmap = name
 
-            with pause_events(*self._images, event_handlers=[self._image_event_handler]):
+            with pause_events(
+                *self._images, event_handlers=[self._image_event_handler]
+            ):
                 for image in self._images:
                     image.cmap = name
         except Exception as exc:
@@ -257,7 +282,14 @@ class HistogramLUTTool(Graphic):
         self._block_reentrance = True
         try:
             index_min = np.searchsorted(self._bin_centers_flanked, value)
-            with pause_events(self._selector, *self._images, event_handlers=[self._selector_event_handler, self._image_event_handler]):
+            with pause_events(
+                self._selector,
+                *self._images,
+                event_handlers=[
+                    self._selector_event_handler,
+                    self._image_event_handler,
+                ],
+            ):
                 self._selector.selection = (index_min, self._selector.selection[1])
 
                 self._colorbar.vmin = value
@@ -289,7 +321,14 @@ class HistogramLUTTool(Graphic):
         self._block_reentrance = True
         try:
             index_max = np.searchsorted(self._bin_centers_flanked, value)
-            with pause_events(self._selector, *self._images, event_handlers=[self._selector_event_handler, self._image_event_handler]):
+            with pause_events(
+                self._selector,
+                *self._images,
+                event_handlers=[
+                    self._selector_event_handler,
+                    self._image_event_handler,
+                ],
+            ):
                 self._selector.selection = (self._selector.selection[0], index_max)
 
                 self._colorbar.vmax = value

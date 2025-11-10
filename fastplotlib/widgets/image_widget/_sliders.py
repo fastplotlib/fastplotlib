@@ -38,7 +38,7 @@ class ImageWidgetSliders(EdgeWindow):
 
     def pop_dim(self):
         """pop right most dim"""
-        i = 0 # len(self._image_widget.indices) - 1
+        i = 0  # len(self._image_widget.indices) - 1
         for l in [self._playing, self._fps, self._frame_time, self._last_frame_time]:
             l.pop(i)
 

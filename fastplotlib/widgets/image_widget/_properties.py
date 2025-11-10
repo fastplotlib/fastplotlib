@@ -1,5 +1,4 @@
 from pprint import pformat
-from typing import Iterable
 
 import numpy as np
 
@@ -8,9 +7,9 @@ from ._processor import NDImageProcessor
 
 class ImageProcessorProperty:
     def __init__(
-            self,
-            image_widget,
-            attribute: str,
+        self,
+        image_widget,
+        attribute: str,
     ):
         self._image_widget = image_widget
         self._image_processors: list[NDImageProcessor] = image_widget._image_processors
@@ -42,9 +41,7 @@ class ImageProcessorProperty:
         # if it's a slice
         processors = self._image_processors[key]
 
-        return tuple(
-            getattr(p, self._attribute) for p in processors
-        )
+        return tuple(getattr(p, self._attribute) for p in processors)
 
     def __setitem__(self, key, value):
         key = self._get_key(key)
@@ -88,10 +85,14 @@ class Indices:
 
     def __setitem__(self, key, value):
         if not isinstance(key, (int, np.integer, slice)):
-            raise TypeError(f"indices can only be indexed with <int> types, you have used: {key}")
+            raise TypeError(
+                f"indices can only be indexed with <int> types, you have used: {key}"
+            )
 
         if not isinstance(value, (int, np.integer)):
-            raise TypeError(f"indices values can only be set with integers, you have tried to set the value: {value}")
+            raise TypeError(
+                f"indices values can only be set with integers, you have tried to set the value: {value}"
+            )
 
         new_indices = list(self._data)
         new_indices[key] = value

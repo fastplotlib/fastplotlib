@@ -182,7 +182,9 @@ class LinearRegionSelectionFeature(GraphicFeature):
         if len(self._event_handlers) < 1:
             return
 
-        event = GraphicFeatureEvent(self._property_name, {"value": self.value, "change": change})
+        event = GraphicFeatureEvent(
+            self._property_name, {"value": self.value, "change": change}
+        )
 
         event.get_selected_indices = selector.get_selected_indices
         event.get_selected_data = selector.get_selected_data

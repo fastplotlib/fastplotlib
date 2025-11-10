@@ -25,7 +25,7 @@ class ImageWidget:
         n_display_dims: Literal[2, 3] | Sequence[Literal[2, 3]] = 2,
         slider_dim_names: Sequence[str] | None = None,  # dim names left -> right
         rgb: bool | Sequence[bool] = False,
-        cmap: str | Sequence[str]= "plasma",
+        cmap: str | Sequence[str] = "plasma",
         window_funcs: (
             tuple[WindowFuncCallable | None, ...]
             | WindowFuncCallable
@@ -250,7 +250,9 @@ class ImageWidget:
         n_display_dims = tuple(n_display_dims)
 
         if sliders_dim_order not in ("right",):
-            raise ValueError(f"Only 'right' slider dims order is currently supported, you passed: {sliders_dim_order}")
+            raise ValueError(
+                f"Only 'right' slider dims order is currently supported, you passed: {sliders_dim_order}"
+            )
         self._sliders_dim_order = sliders_dim_order
 
         self._histogram_widget = histogram_widget
@@ -302,8 +304,8 @@ class ImageWidget:
 
         figure_kwargs_default = {
             "controller_ids": controller_ids,
-            "controller_types": controller_types ,
-            "names": names
+            "controller_types": controller_types,
+            "names": names,
         }
 
         # update the default kwargs with any user-specified kwargs
@@ -334,7 +336,9 @@ class ImageWidget:
         self._indices = Indices(list(0 for i in range(self.n_sliders)), self)
 
         for i, subplot in zip(range(len(self._image_processors)), self.figure):
-            image_data = self._get_image(self._image_processors[i], tuple(self._indices))
+            image_data = self._get_image(
+                self._image_processors[i], tuple(self._indices)
+            )
 
             if image_data is None:
                 # this subplot/data array is blank, skip
@@ -349,7 +353,9 @@ class ImageWidget:
 
             if (vmin_specified is None) or (vmax_specified is None):
                 # if either vmin or vmax are not specified, calculate an estimate by subsampling
-                vmin_estimate, vmax_estimate = quick_min_max(self._image_processors[i].data)
+                vmin_estimate, vmax_estimate = quick_min_max(
+                    self._image_processors[i].data
+                )
 
                 # decide vmin, vmax passed to ImageGraphic constructor based on whether it's user specified or now
                 if vmin_specified is None:
@@ -429,7 +435,9 @@ class ImageWidget:
         # graphics will not be reset for this data index
         skip_indices = list()
 
-        for i, (new_data, image_processor) in enumerate(zip(new_data, self._image_processors)):
+        for i, (new_data, image_processor) in enumerate(
+            zip(new_data, self._image_processors)
+        ):
             if new_data is image_processor.data:
                 skip_indices.append(i)
                 continue
@@ -488,7 +496,9 @@ class ImageWidget:
         skip_indices = list()
 
         # first update image arrays
-        for i, (image_processor, new) in enumerate(zip(self._image_processors, new_ndd)):
+        for i, (image_processor, new) in enumerate(
+            zip(self._image_processors, new_ndd)
+        ):
             if new > image_processor.max_n_display_dims:
                 raise IndexError(
                     f"number of display dims exceeds maximum number of possible "
@@ -524,7 +534,9 @@ class ImageWidget:
         return self._window_sizes
 
     @window_sizes.setter
-    def window_sizes(self, new_sizes: Sequence[tuple[int | None, ...] | int | None] | int | None):
+    def window_sizes(
+        self, new_sizes: Sequence[tuple[int | None, ...] | int | None] | int | None
+    ):
         if isinstance(new_sizes, int) or new_sizes is None:
             # same window for all data arrays
             new_sizes = [new_sizes] * len(self._image_processors)
@@ -570,7 +582,9 @@ class ImageWidget:
 
     def _set_image_processor_funcs(self, attr, new_values):
         """sets window_funcs, window_sizes, window_order, or finalizer_func and updates displayed data and histograms"""
-        for new, image_processor, subplot in zip(new_values, self._image_processors, self.figure):
+        for new, image_processor, subplot in zip(
+            new_values, self._image_processors, self.figure
+        ):
             if getattr(image_processor, attr) == new:
                 continue
 
@@ -644,7 +658,9 @@ class ImageWidget:
     @histogram_widget.setter
     def histogram_widget(self, show_histogram: bool):
         if not isinstance(show_histogram, bool):
-            raise TypeError(f"`histogram_widget` can be set with a bool, you have passed: {show_histogram}")
+            raise TypeError(
+                f"`histogram_widget` can be set with a bool, you have passed: {show_histogram}"
+            )
 
         for subplot, image_processor in zip(self.figure, self._image_processors):
             image_processor.compute_histogram = show_histogram
@@ -674,7 +690,9 @@ class ImageWidget:
 
         return bounds
 
-    def _get_image(self, image_processor: NDImageProcessor, indices: Sequence[int]) -> ArrayProtocol:
+    def _get_image(
+        self, image_processor: NDImageProcessor, indices: Sequence[int]
+    ) -> ArrayProtocol:
         """Get a processed 2d or 3d image from the NDImage at the given indices"""
         n = image_processor.n_slider_dims
 
@@ -732,9 +750,7 @@ class ImageWidget:
 
         if image_processor.n_display_dims == 2:
             g = subplot.add_image(
-                data=new_image,
-                cmap=cmap,
-                name="image_widget_managed"
+                data=new_image, cmap=cmap, name="image_widget_managed"
             )
 
             # set camera orthogonal to the xy plane, flip y axis
@@ -745,7 +761,7 @@ class ImageWidget:
                     "scale": [1, -1, 1],
                     "reference_up": [0, 1, 0],
                     "fov": 0,
-                    "depth_range": None
+                    "depth_range": None,
                 }
             )
 
@@ -754,9 +770,7 @@ class ImageWidget:
 
         elif image_processor.n_display_dims == 3:
             g = subplot.add_image_volume(
-                data=new_image,
-                cmap=cmap,
-                name="image_widget_managed"
+                data=new_image, cmap=cmap, name="image_widget_managed"
             )
             subplot.camera.fov = 50
             subplot.controller = "orbit"
@@ -814,7 +828,9 @@ class ImageWidget:
         # reset the slider indices according to the new collection of dimensions
         self._reset_dimensions()
         # update graphics where display dims have changed accordings to indices
-        for i, (subplot, image_processor) in enumerate(zip(self.figure, self._image_processors)):
+        for i, (subplot, image_processor) in enumerate(
+            zip(self.figure, self._image_processors)
+        ):
             if i in skip_data_indices:
                 continue
 
