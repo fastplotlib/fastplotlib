@@ -1,4 +1,4 @@
-from typing import Callable, Sequence, Literal, Iterable
+from typing import Callable, Sequence, Literal
 from warnings import warn
 
 import numpy as np
@@ -11,7 +11,7 @@ from ...utils import calculate_figure_shape, quick_min_max, ArrayProtocol
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
 from ._processor import NDImageProcessor, WindowFuncCallable
-from ._properties import ImageProcessorProperty, Indices
+from ._properties import ImageWidgetProperty, Indices
 
 
 IMGUI_SLIDER_HEIGHT = 49
@@ -277,13 +277,13 @@ class ImageWidget:
 
             self._image_processors.append(image_processor)
 
-        self._data = ImageProcessorProperty(self, "data")
-        self._rgb = ImageProcessorProperty(self, "rgb")
-        self._n_display_dims = ImageProcessorProperty(self, "n_display_dims")
-        self._window_funcs = ImageProcessorProperty(self, "window_funcs")
-        self._window_sizes = ImageProcessorProperty(self, "window_sizes")
-        self._window_order = ImageProcessorProperty(self, "window_order")
-        self._finalizer_func = ImageProcessorProperty(self, "finalizer_func")
+        self._data = ImageWidgetProperty(self, "data")
+        self._rgb = ImageWidgetProperty(self, "rgb")
+        self._n_display_dims = ImageWidgetProperty(self, "n_display_dims")
+        self._window_funcs = ImageWidgetProperty(self, "window_funcs")
+        self._window_sizes = ImageWidgetProperty(self, "window_sizes")
+        self._window_order = ImageWidgetProperty(self, "window_order")
+        self._finalizer_func = ImageWidgetProperty(self, "finalizer_func")
 
         if len(set(n_display_dims)) > 1:
             # assume user wants one controller for 2D images and another for 3D image volumes
@@ -417,7 +417,7 @@ class ImageWidget:
         self._reentrant_block = False
 
     @property
-    def data(self) -> Iterable[ArrayProtocol | None]:
+    def data(self) -> ImageWidgetProperty[ArrayProtocol | None]:
         """get or set the nd-image data arrays"""
         return self._data
 
@@ -445,7 +445,7 @@ class ImageWidget:
         self._reset(skip_indices)
 
     @property
-    def rgb(self) -> Iterable[bool]:
+    def rgb(self) -> ImageWidgetProperty[bool]:
         """get or set the rgb toggle for each data array"""
         return self._rgb
 
@@ -471,7 +471,7 @@ class ImageWidget:
         self._reset(skip_indices)
 
     @property
-    def n_display_dims(self) -> Iterable[Literal[2, 3]]:
+    def n_display_dims(self) -> ImageWidgetProperty[Literal[2, 3]]:
         """Get or set the number of display dimensions for each data array, 2 is a 2D image, 3 is a 3D volume image"""
         return self._n_display_dims
 
@@ -512,7 +512,7 @@ class ImageWidget:
         self._reset(skip_indices)
 
     @property
-    def window_funcs(self) -> Iterable[tuple[WindowFuncCallable | None] | None]:
+    def window_funcs(self) -> ImageWidgetProperty[tuple[WindowFuncCallable | None] | None]:
         """get or set the window functions"""
         return self._window_funcs
 
@@ -527,7 +527,7 @@ class ImageWidget:
         self._set_image_processor_funcs("window_funcs", new_funcs)
 
     @property
-    def window_sizes(self) -> Iterable[tuple[int | None, ...] | None]:
+    def window_sizes(self) -> ImageWidgetProperty[tuple[int | None, ...] | None]:
         """get or set the window sizes"""
         return self._window_sizes
 
@@ -545,7 +545,7 @@ class ImageWidget:
         self._set_image_processor_funcs("window_sizes", new_sizes)
 
     @property
-    def window_order(self) -> Iterable[tuple[int, ...] | None]:
+    def window_order(self) -> ImageWidgetProperty[tuple[int, ...] | None]:
         """get or set order in which window functions are applied over dimensions"""
         return self._window_order
 
@@ -564,7 +564,7 @@ class ImageWidget:
         self._set_image_processor_funcs("window_order", new_order)
 
     @property
-    def finalizer_func(self) -> Iterable[Callable | None]:
+    def finalizer_func(self) -> ImageWidgetProperty[Callable | None]:
         """Get or set a finalizer function that operates on the spatial dimensions of the 2D or 3D image"""
         return self._finalizer_func
 
@@ -597,13 +597,13 @@ class ImageWidget:
         self.indices = self.indices
 
     @property
-    def indices(self) -> Iterable[int]:
+    def indices(self) -> ImageWidgetProperty[int]:
         """
         Get or set the current indices.
 
         Returns
         -------
-        indices: Iterable[int]
+        indices: ImageWidgetProperty[int]
             integer index for each slider dimension
 
         """
@@ -785,6 +785,7 @@ class ImageWidget:
 
             subplot.controller = "panzoom"
             subplot.axes.intersection = None
+            subplot.auto_scale()
 
         elif image_processor.n_display_dims == 3:
             g = subplot.add_image_volume(
@@ -799,7 +800,7 @@ class ImageWidget:
                 if getattr(subplot.camera.local, f"scale_{dim}") < 0:
                     setattr(subplot.camera.local, f"scale_{dim}", 1)
 
-        subplot.camera.show_object(g.world_object)
+            subplot.auto_scale()
 
     def _reset_histogram(self, subplot, image_processor):
         """reset the histogram"""

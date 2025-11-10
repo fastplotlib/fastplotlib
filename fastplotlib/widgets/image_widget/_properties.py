@@ -1,11 +1,14 @@
 from pprint import pformat
+from typing import Iterable
 
 import numpy as np
 
 from ._processor import NDImageProcessor
 
 
-class ImageProcessorProperty:
+class ImageWidgetProperty:
+    __class_getitem__ = classmethod(type(list[int]))
+
     def __init__(
         self,
         image_widget,
