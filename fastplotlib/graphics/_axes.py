@@ -161,36 +161,52 @@ class Axes:
     ):
         self._plot_area = plot_area
 
-        if x_kwargs is None:
-            x_kwargs = dict()
+        x_kwargs = x_kwargs or {}
+        y_kwargs = y_kwargs or {}
+        z_kwargs = z_kwargs or {}
 
-        if y_kwargs is None:
-            y_kwargs = dict()
+        generic_kwargs = dict(
+            tick_size=8.0,
+            line_width=2.0,
+            tick_marker="tick",  # 'tick' for both-sides, 'tick_left' or 'tick_right' for one-sided
+            color="#fff",
+        )
 
-        if z_kwargs is None:
-            z_kwargs = dict()
-
-        x_kwargs = {
-            "tick_side": "right",
+        x_kwargs = dict(
+            tick_side="right",
+            **generic_kwargs,
             **x_kwargs,
-        }
+        )
 
-        y_kwargs = {"tick_side": "left", **y_kwargs}
+        y_kwargs = dict(
+            tick_side="left",
+            **generic_kwargs,
+            **y_kwargs,
+        )
 
-        z_kwargs = {
-            "tick_side": "left",
+        z_kwargs = dict(
+            tick_side="left",
+            **generic_kwargs,
             **z_kwargs,
-        }
+        )
 
         # create ruler for each dim
-        self._x = pygfx.Ruler(alpha_mode="solid", **x_kwargs)
-        self._y = pygfx.Ruler(alpha_mode="solid", **y_kwargs)
-        self._z = pygfx.Ruler(alpha_mode="solid", **z_kwargs)
+        self._x = pygfx.Ruler(
+            alpha_mode="solid", render_queue=RenderQueue.axes, **x_kwargs
+        )
+        self._y = pygfx.Ruler(
+            alpha_mode="solid", render_queue=RenderQueue.axes, **y_kwargs
+        )
+        self._z = pygfx.Ruler(
+            alpha_mode="solid", render_queue=RenderQueue.axes, **z_kwargs
+        )
 
         # We render the lines and ticks as solid, but enable aa for text for prettier glyphs
         for ruler in self._x, self._y, self._z:
+            ruler.line.material.depth_compare = "<="
+            ruler.points.material.depth_compare = "<="
+            ruler.text.material.depth_compare = "<="
             ruler.text.material.alpha_mode = "auto"
-            ruler.text.material.render_queue = RenderQueue.auto + 50
             ruler.text.material.aa = True
 
         self._offset = offset

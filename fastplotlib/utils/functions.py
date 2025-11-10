@@ -273,15 +273,15 @@ def quick_min_max(data: np.ndarray, max_size=1e6) -> tuple[float, float]:
 
     Parameters
     ----------
-    data: np.ndarray or array-like with `min` and `max` attributes
+    data: np.ndarray or array-like
 
     max_size : int, optional
-        largest array size allowed in the subsampled array. Default is 1e6.
+        subsamples data array to this max size
 
     Returns
     -------
     (float, float)
-        (min, max)
+        (min, max) estimate
     """
 
     if hasattr(data, "min") and hasattr(data, "max"):

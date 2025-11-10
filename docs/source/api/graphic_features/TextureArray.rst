@@ -23,7 +23,6 @@ Properties
     TextureArray.buffer
     TextureArray.col_indices
     TextureArray.row_indices
-    TextureArray.shared
     TextureArray.value
 
 Methods

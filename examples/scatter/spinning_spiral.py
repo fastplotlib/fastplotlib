@@ -34,7 +34,7 @@ figure = fpl.Figure(
     canvas_kwargs={"max_fps": 500, "vsync": False}
 )
 
-spiral = figure[0, 0].add_scatter(data, cmap="viridis_r", alpha=0.5, sizes=sizes)
+spiral = figure[0, 0].add_scatter(data, cmap="viridis_r", edge_colors=None, alpha=0.5, sizes=sizes)
 
 # pre-generate normally distributed data to jitter the points before each render
 jitter = np.random.normal(scale=0.001, size=n * 3).reshape((n, 3))

@@ -28,9 +28,16 @@ Properties
     ScatterGraphic.colors
     ScatterGraphic.data
     ScatterGraphic.deleted
+    ScatterGraphic.edge_colors
+    ScatterGraphic.edge_width
     ScatterGraphic.event_handlers
+    ScatterGraphic.image
+    ScatterGraphic.markers
+    ScatterGraphic.mode
     ScatterGraphic.name
     ScatterGraphic.offset
+    ScatterGraphic.point_rotation_mode
+    ScatterGraphic.point_rotations
     ScatterGraphic.right_click_menu
     ScatterGraphic.rotation
     ScatterGraphic.size_space

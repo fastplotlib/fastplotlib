@@ -90,6 +90,7 @@ class LineGraphic(PositionsGraphic):
 
         if thickness < 1.1:
             MaterialCls = pygfx.LineThinMaterial
+            aa = True
         else:
             MaterialCls = pygfx.LineMaterial
 
@@ -104,6 +105,7 @@ class LineGraphic(PositionsGraphic):
                 color=self.colors,
                 pick_write=True,
                 thickness_space=self.size_space,
+                depth_compare="<=",
             )
         else:
             material = MaterialCls(
@@ -112,6 +114,7 @@ class LineGraphic(PositionsGraphic):
                 color_mode="vertex",
                 pick_write=True,
                 thickness_space=self.size_space,
+                depth_compare="<=",
             )
             geometry = pygfx.Geometry(
                 positions=self._data.buffer, colors=self._colors.buffer

@@ -4,6 +4,8 @@ from typing import *
 
 import numpy
 
+import pygfx
+
 from ..graphics import *
 from ..graphics._base import Graphic
 
@@ -26,8 +28,8 @@ class GraphicMethodsMixin:
     def add_image(
         self,
         data: Any,
-        vmin: int = None,
-        vmax: int = None,
+        vmin: float = None,
+        vmax: float = None,
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
@@ -44,11 +46,11 @@ class GraphicMethodsMixin:
             array-like, usually numpy.ndarray, must support ``memoryview()``
             | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
-        vmin: int, optional
-            minimum value for color scaling, calculated from data if not provided
+        vmin: float, optional
+            minimum value for color scaling, estimated from data if not provided
 
-        vmax: int, optional
-            maximum value for color scaling, calculated from data if not provided
+        vmax: float, optional
+            maximum value for color scaling, estimated from data if not provided
 
         cmap: str, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
@@ -79,6 +81,108 @@ class GraphicMethodsMixin:
             cmap,
             interpolation,
             cmap_interpolation,
+            isolated_buffer,
+            **kwargs,
+        )
+
+    def add_image_volume(
+        self,
+        data: Any,
+        mode: str = "mip",
+        vmin: float = None,
+        vmax: float = None,
+        cmap: str = "plasma",
+        interpolation: str = "linear",
+        cmap_interpolation: str = "linear",
+        plane: tuple[float, float, float, float] = (0, 0, -1, 0),
+        threshold: float = 0.5,
+        step_size: float = 1.0,
+        substep_size: float = 0.1,
+        emissive: str | tuple | numpy.ndarray = (0, 0, 0),
+        shininess: int = 30,
+        isolated_buffer: bool = True,
+        **kwargs,
+    ) -> ImageVolumeGraphic:
+        """
+
+        Create an ImageVolumeGraphic.
+
+        Parameters
+        ----------
+        data: array-like
+            array-like, usually numpy.ndarray, must support ``memoryview()``.
+            Shape must be [n_planes, n_rows, n_cols] for grayscale, or [n_planes, n_rows, n_cols, 3 | 4] for RGB(A)
+
+        mode: str, default "mip"
+            render mode, one of "mip", "minip", "iso" or "slice"
+
+        vmin: float
+            lower contrast limit
+
+        vmax: float
+            upper contrast limit
+
+        cmap: str, default "plasma"
+            colormap for grayscale volumes
+
+        interpolation: str, default "linear"
+            interpolation method for sampling pixels
+
+        cmap_interpolation: str, default "linear"
+            interpolation method for sampling from colormap
+
+        plane: (float, float, float, float), default (0, 0, -1, 0)
+            Slice volume at this plane. Sets (a, b, c, d) in the equation the defines a plane: ax + by + cz + d = 0.
+            Used only if `mode` = "slice"
+
+        threshold : float, default 0.5
+            The threshold texture value at which the surface is rendered.
+            Used only if `mode` = "iso"
+
+        step_size : float, default 1.0
+            The size of the initial ray marching step for the initial surface finding. Smaller values will result in
+            more accurate surfaces but slower rendering.
+            Used only if `mode` = "iso"
+
+        substep_size : float, default 0.1
+            The size of the raymarching step for the refined surface finding. Smaller values will result in more
+            accurate surfaces but slower rendering.
+            Used only if `mode` = "iso"
+
+        emissive : Color, default (0, 0, 0, 1)
+            The emissive color of the surface. I.e. the color that the object emits even when not lit by a light
+            source. This color is added to the final color and unaffected by lighting. The alpha channel is ignored.
+            Used only if `mode` = "iso"
+
+        shininess : int, default 30
+            How shiny the specular highlight is; a higher value gives a sharper highlight.
+            Used only if `mode` = "iso"
+
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then set the data, useful if the
+            data arrays are ready-only such as memmaps. If False, the input array is itself used as the
+            buffer - useful if the array is large.
+
+        kwargs
+            additional keyword arguments passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            ImageVolumeGraphic,
+            data,
+            mode,
+            vmin,
+            vmax,
+            cmap,
+            interpolation,
+            cmap_interpolation,
+            plane,
+            threshold,
+            step_size,
+            substep_size,
+            emissive,
+            shininess,
             isolated_buffer,
             **kwargs,
         )
@@ -331,14 +435,26 @@ class GraphicMethodsMixin:
     def add_scatter(
         self,
         data: Any,
-        colors: str | numpy.ndarray | tuple[float] | list[float] | list[str] = "w",
+        colors: Union[str, numpy.ndarray, Sequence[float], Sequence[str]] = "w",
         uniform_color: bool = False,
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
-        isolated_buffer: bool = True,
+        mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
+        markers: Union[str, numpy.ndarray, Sequence[str]] = "o",
+        uniform_marker: bool = False,
+        custom_sdf: str = None,
+        edge_colors: Union[
+            str, pygfx.utils.color.Color, numpy.ndarray, Sequence[float]
+        ] = "black",
+        uniform_edge_color: bool = True,
+        edge_width: float = 1.0,
+        image: numpy.ndarray = None,
+        point_rotations: float | numpy.ndarray = 0,
+        point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
         sizes: Union[float, numpy.ndarray, Sequence[float]] = 1,
         uniform_size: bool = False,
         size_space: str = "screen",
+        isolated_buffer: bool = True,
         **kwargs,
     ) -> ScatterGraphic:
         """
@@ -367,9 +483,65 @@ class GraphicMethodsMixin:
         cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
-        isolated_buffer: bool, default True
-            whether the buffers should be isolated from the user input array.
-            Generally always ``True``, ``False`` is for rare advanced use if you have large arrays.
+        mode: one of: "markers", "simple", "gaussian", "image", default "markers"
+            The scatter points mode, cannot be changed after the graphic has been created.
+
+            * markers: represent points with various or custom markers, default
+            * simple: all scatters points are simple circles
+            * gaussian: each point is a gaussian blob
+            * image: use an image for each point, pass an array to the `image` kwarg, these are also called sprites
+
+        markers: None | str | np.ndarray | Sequence[str], default "o"
+            The shape of the markers when `mode` is "markers"
+
+            Supported values:
+
+            * A string from pygfx.MarkerShape enum
+            * Matplotlib compatible characters: "osD+x^v<>*".
+            * Unicode symbols: "●○■♦♥♠♣✳▲▼◀▶".
+            * Emojis: "❤️♠️♣️♦️💎💍✳️📍".
+            * A string containing the value "custom". In this case, WGSL code defined by ``custom_sdf`` will be used.
+
+        uniform_marker: bool, default False
+            Use the same marker for all points. Only valid when `mode` is "markers". Useful if you need to use
+            the same marker for all points and want to save GPU RAM.
+
+        custom_sdf: str = None,
+            The SDF code for the marker shape when the marker is set to custom.
+            Can be used when `mode` is "markers".
+
+            Negative values are inside the shape, positive values are outside the
+            shape.
+
+            The SDF's takes in two parameters `coords: vec2<f32>` and `size: f32`.
+            The first is a WGSL coordinate and `size` is the overall size of
+            the texture. The returned value should be the signed distance from
+            any edge of the shape. Distances (positive and negative) that are
+            less than half the `edge_width` in absolute terms will be colored
+            with the `edge_color`. Other negative distances will be colored by
+            `colors`.
+
+        edge_colors: str | np.ndarray | pygfx.Color | Sequence[float], default "black"
+            edge color of the markers, used when `mode` is "markers"
+
+        uniform_edge_color: bool, default True
+            Set the same edge color for all markers. Useful for saving GPU RAM.
+
+        edge_width: float = 1.0,
+            Width of the marker edges. used when `mode` is "markers".
+
+        image: ArrayLike, optional
+            renders an image at the scatter points, also known as sprites.
+            The image color is multiplied with the point's "normal" color.
+
+        point_rotations: float | ArrayLike = 0,
+            The rotation of the scatter points in radians. Default 0. A single float rotation value can be set on all
+            points, or an array of rotation values can be used to set per-point rotations
+
+        point_rotation_mode: one of: "uniform" | "vertex" | "curve", default "uniform"
+            * uniform: set the same rotation for every point, useful to save GPU RAM
+            * vertex: set per-vertex rotations
+            * curve: The rotation follows the curve of the line defined by the points (in screen space)
 
         sizes: float or iterable of float, optional, default 1.0
             sizes of the scatter points
@@ -379,7 +551,11 @@ class GraphicMethodsMixin:
             save GPU VRAM when all points have the same size.
 
         size_space: str, default "screen"
-            coordinate space in which the size is expressed ("screen", "world", "model")
+            coordinate space in which the size is expressed, one of ("screen", "world", "model")
+
+        isolated_buffer: bool, default True
+            whether the buffers should be isolated from the user input array.
+            Generally always ``True``, ``False`` is for rare advanced use if you have large arrays.
 
         kwargs
             passed to :class:`.Graphic`
@@ -393,10 +569,20 @@ class GraphicMethodsMixin:
             uniform_color,
             cmap,
             cmap_transform,
-            isolated_buffer,
+            mode,
+            markers,
+            uniform_marker,
+            custom_sdf,
+            edge_colors,
+            uniform_edge_color,
+            edge_width,
+            image,
+            point_rotations,
+            point_rotation_mode,
             sizes,
             uniform_size,
             size_space,
+            isolated_buffer,
             **kwargs,
         )
 
@@ -461,5 +647,60 @@ class GraphicMethodsMixin:
             screen_space,
             offset,
             anchor,
+            **kwargs,
+        )
+
+    def add_vectors(
+        self,
+        positions: Union[numpy.ndarray, Sequence[float]],
+        directions: Union[numpy.ndarray, Sequence[float]],
+        color: Union[str, Sequence[float], numpy.ndarray] = "w",
+        size: float = None,
+        vector_shape_options: dict = None,
+        **kwargs,
+    ) -> VectorsGraphic:
+        """
+
+        Create graphic that draw vectors. Similar to matplotlib quiver.
+
+        Parameters
+        ----------
+        positions: np.ndarray | Sequence[float]
+            positions of the vectors, array-like, shape must be [n, 2] or [n, 3] where n is the number of vectors.
+
+        directions: np.ndarray | Sequence[float]
+            directions of the vectors, array-like, shape must be [n, 2] or [n, 3] where n is the number of vectors.
+
+        spacing: float
+            average distance between pairs of nearest-neighbor vectors, used for scaling
+
+        color: str | pygfx.Color | Sequence[float] | np.ndarray, default "w"
+            color of the vectors
+
+        size: float or None
+            Size of a vector of magnitude 1 in world space for display purpose.
+            Estimated from density if not provided.
+
+        vector_shape_options: dict
+            dict with the following fields that directly describes the shape of the vector arrows.
+            Overrides ``size`` argument.
+
+                * cone_radius
+                * cone_height
+                * stalk_radius
+                * stalk_height
+
+        **kwargs
+            passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            VectorsGraphic,
+            positions,
+            directions,
+            color,
+            size,
+            vector_shape_options,
             **kwargs,
         )

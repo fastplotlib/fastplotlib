@@ -1,5 +1,6 @@
 import inspect
 import pathlib
+import re
 
 import black
 
@@ -19,6 +20,8 @@ modules = list()
 
 for name, obj in inspect.getmembers(graphics):
     if inspect.isclass(obj):
+        if obj.__name__ == "Graphic":
+            continue  # skip the base class
         modules.append(obj)
 
 
@@ -30,6 +33,7 @@ def generate_add_graphics_methods():
 
     f.write("from typing import *\n\n")
     f.write("import numpy\n\n")
+    f.write("import pygfx\n\n")
     f.write("from ..graphics import *\n")
     f.write("from ..graphics._base import Graphic\n\n")
 
@@ -50,10 +54,9 @@ def generate_add_graphics_methods():
 
     for m in modules:
         cls = m
-        if cls.__name__ == "Graphic":
-            # skip base class
-            continue
-        method_name = cls.type
+        cls_name = cls.__name__.replace("Graphic", "")
+        # from https://stackoverflow.com/a/1176023
+        method_name = re.sub(r"(?<!^)(?=[A-Z])", "_", cls_name).lower()
 
         class_args = inspect.getfullargspec(cls)[0][1:]
         class_args = [arg + ", " for arg in class_args]

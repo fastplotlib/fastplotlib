@@ -8,6 +8,8 @@ Graphics
     LineGraphic
     ScatterGraphic
     ImageGraphic
+    ImageVolumeGraphic
+    VectorsGraphic
     TextGraphic
     LineCollection
     LineStack

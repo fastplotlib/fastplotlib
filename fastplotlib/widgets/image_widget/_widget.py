@@ -562,7 +562,7 @@ class ImageWidget:
             subplot.add_graphic(ig)
 
             if self._histogram_widget:
-                hlut = HistogramLUTTool(data=d, image_graphic=ig, name="histogram_lut")
+                hlut = HistogramLUTTool(data=d, images=ig, name="histogram_lut")
 
                 subplot.docks["right"].add_graphic(hlut)
                 subplot.docks["right"].size = 80
@@ -929,6 +929,11 @@ class ImageWidget:
         for i, (new_array, current_array, subplot) in enumerate(
             zip(new_data, self._data, self.figure)
         ):
+            # if the new array is the same as the existing array, skip
+            # this allows setting just a subset of the arrays in the ImageWidget
+            if new_data is self._data[i]:
+                continue
+
             # check last two dims (x and y) to see if data shape is changing
             old_data_shape = self._data[i].shape[-self.n_img_dims[i] :]
             self._data[i] = new_array
@@ -944,7 +949,7 @@ class ImageWidget:
 
                 if self._histogram_widget:
                     # set hlut tool to use new graphic
-                    subplot.docks["right"]["histogram_lut"].image_graphic = new_graphic
+                    subplot.docks["right"]["histogram_lut"].images = new_graphic
 
                 # delete old graphic after setting hlut tool to new graphic
                 # this ensures gc

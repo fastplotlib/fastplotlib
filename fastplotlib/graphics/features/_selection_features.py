@@ -40,7 +40,7 @@ class LinearSelectionFeature(GraphicFeature):
 
         """
 
-        super().__init__()
+        super().__init__(property_name="selection")
 
         self._axis = axis
         self._limits = limits
@@ -64,13 +64,13 @@ class LinearSelectionFeature(GraphicFeature):
         elif self._axis == "y":
             dim = 1
 
-        for edge in selector._edges:
-            edge.geometry.positions.data[:, dim] = value
-            edge.geometry.positions.update_range()
+        edge = selector._edges[0]
+        edge.geometry.positions.data[:, dim] = value
+        edge.geometry.positions.update_range()
 
         self._value = value
 
-        event = GraphicFeatureEvent("selection", {"value": value})
+        event = GraphicFeatureEvent(self._property_name, {"value": value})
         event.get_selected_index = selector.get_selected_index
 
         self._call_event_handlers(event)
@@ -99,7 +99,7 @@ class LinearRegionSelectionFeature(GraphicFeature):
     ]
 
     def __init__(self, value: tuple[int, int], axis: str, limits: tuple[float, float]):
-        super().__init__()
+        super().__init__(property_name="selection")
 
         self._axis = axis
         self._limits = limits
@@ -152,10 +152,10 @@ class LinearRegionSelectionFeature(GraphicFeature):
             selector.fill.geometry.positions.data[mesh_masks.x_right] = value[1]
 
             # change x position of the left edge line
-            selector.edges[0].geometry.positions.data[:, 0] = value[0]
+            selector._edges[0].geometry.positions.data[:, 0] = value[0]
 
             # change x position of the right edge line
-            selector.edges[1].geometry.positions.data[:, 0] = value[1]
+            selector._edges[1].geometry.positions.data[:, 0] = value[1]
 
         elif self.axis == "y":
             # change bottom y position of the fill mesh
@@ -165,24 +165,24 @@ class LinearRegionSelectionFeature(GraphicFeature):
             selector.fill.geometry.positions.data[mesh_masks.y_top] = value[1]
 
             # change y position of the bottom edge line
-            selector.edges[0].geometry.positions.data[:, 1] = value[0]
+            selector._edges[0].geometry.positions.data[:, 1] = value[0]
 
             # change y position of the top edge line
-            selector.edges[1].geometry.positions.data[:, 1] = value[1]
+            selector._edges[1].geometry.positions.data[:, 1] = value[1]
 
         self._value = value
 
         # send changes to GPU
         selector.fill.geometry.positions.update_range()
 
-        selector.edges[0].geometry.positions.update_range()
-        selector.edges[1].geometry.positions.update_range()
+        selector._edges[0].geometry.positions.update_range()
+        selector._edges[1].geometry.positions.update_range()
 
         # send event
         if len(self._event_handlers) < 1:
             return
 
-        event = GraphicFeatureEvent("selection", {"value": self.value})
+        event = GraphicFeatureEvent(self._property_name, {"value": self.value})
 
         event.get_selected_indices = selector.get_selected_indices
         event.get_selected_data = selector.get_selected_data
@@ -220,7 +220,7 @@ class RectangleSelectionFeature(GraphicFeature):
         value: tuple[float, float, float, float],
         limits: tuple[float, float, float, float],
     ):
-        super().__init__()
+        super().__init__(property_name="selection")
 
         self._limits = limits
         self._value = tuple(int(v) for v in value)
@@ -335,7 +335,7 @@ class RectangleSelectionFeature(GraphicFeature):
         if len(self._event_handlers) < 1:
             return
 
-        event = GraphicFeatureEvent("selection", {"value": self.value})
+        event = GraphicFeatureEvent(self._property_name, {"value": self.value})
 
         event.get_selected_indices = selector.get_selected_indices
         event.get_selected_data = selector.get_selected_data
@@ -371,7 +371,7 @@ class PolygonSelectionFeature(GraphicFeature):
         value: Sequence[tuple[float]],
         limits: tuple[float, float, float, float],
     ):
-        super().__init__()
+        super().__init__(property_name="selection")
 
         self._limits = limits
         self._value = np.asarray(value).reshape(-1, 3).astype(float)
@@ -438,7 +438,7 @@ class PolygonSelectionFeature(GraphicFeature):
         if len(self._event_handlers) < 1:
             return
 
-        event = GraphicFeatureEvent("selection", {"value": self.value})
+        event = GraphicFeatureEvent(self._property_name, {"value": self.value})
 
         event.get_selected_indices = selector.get_selected_indices
         event.get_selected_data = selector.get_selected_data

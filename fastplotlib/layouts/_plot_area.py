@@ -10,6 +10,7 @@ from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
 from ..graphics._base import Graphic
+from ..graphics import ImageGraphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
@@ -273,6 +274,11 @@ class PlotArea(GraphicMethodsMixin):
         """1, 2, or 4 colors, each color must be acceptable by pygfx.Color"""
         self._background_material.set_colors(*colors)
 
+    @property
+    def animations(self) -> dict[str, list[callable]]:
+        """Returns a dictionary of 'pre' and 'post' animation functions."""
+        return {"pre": self._animate_funcs_pre, "post": self._animate_funcs_post}
+
     def map_screen_to_world(
         self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
@@ -394,6 +400,60 @@ class PlotArea(GraphicMethodsMixin):
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
+    def clear_animations(self, removal: str = None):
+        """
+        Remove animation functions.
+
+        Parameters
+        ----------
+        removal: str, default ``None``
+            The type of animation functions to clear. One of 'pre' or 'post'. If `None`, removes all animation
+            functions.
+        """
+        if removal is None:
+            # remove all
+            for func in self._animate_funcs_pre:
+                self._animate_funcs_pre.remove(func)
+
+            for func in self._animate_funcs_post:
+                self._animate_funcs_post.remove(func)
+        elif removal == "pre":
+            # only pre
+            for func in self._animate_funcs_pre:
+                self._animate_funcs_pre.remove(func)
+        elif removal == "post":
+            # only post
+            for func in self._animate_funcs_post:
+                self._animate_funcs_post.remove(func)
+        else:
+            raise ValueError(
+                f"Animation type: {removal} must be one of 'pre' or 'post'. To remove all animation "
+                f"functions, pass `type=None`"
+            )
+
+    def _sort_images_by_depth(self):
+        """
+        In general, we want to avoid setting the offset of a graphic, because the
+        z-dimension may actually mean something; we cannot know whether the user is
+        building a 3D scene or not. We could check whether the 3d dimension of line/point data
+        is all zeros, but maybe this is intended, and *other* graphics in the same scene
+        may be actually 3D. We could check camera.fov being zero, but maybe the user
+        switches to a 3D camera later, or uses a 3D orthographic camera.
+
+        The one exception, kindof, is images, which are inherently 2D, and for which
+        layering helps a lot to get things rendered correctly. So we basically layer the
+        images, in the order that they were added, pushing older images backwards (away
+        from the camera).
+        """
+        count = 0
+        for graphic in self._graphics:
+            if isinstance(graphic, ImageGraphic):
+                count += 1
+                auto_depth = -count
+                user_changed_depth = graphic.offset[2] % 1 > 0.0  # i.e. is not integer
+                if not user_changed_depth:
+                    graphic.offset = (*graphic.offset[:-1], auto_depth)
+
     def add_graphic(self, graphic: Graphic, center: bool = True):
         """
         Add a Graphic to the scene
@@ -416,10 +476,8 @@ class PlotArea(GraphicMethodsMixin):
 
         self._add_or_insert_graphic(graphic=graphic, center=center, action="add")
 
-        if self.camera.fov == 0:
-            # for orthographic positions stack objects along the z-axis
-            # for perspective projections we assume the user wants full 3D control
-            graphic.offset = (*graphic.offset[:-1], len(self))
+        if isinstance(graphic, ImageGraphic):
+            self._sort_images_by_depth()
 
     def insert_graphic(
         self,
@@ -458,17 +516,14 @@ class PlotArea(GraphicMethodsMixin):
             graphic=graphic, center=center, action="insert", index=index
         )
 
-        if self.camera.fov == 0:
-            # for orthographic positions stack objects along the z-axis
-            # for perspective projections we assume the user wants full 3D control
-            if auto_offset:
-                graphic.offset = (*graphic.offset[:-1], index)
+        if isinstance(graphic, ImageGraphic):
+            self._sort_images_by_depth()
 
     def _add_or_insert_graphic(
         self,
         graphic: Graphic,
         center: bool = True,
-        action: str = Literal["insert", "add"],
+        action: Literal["insert", "add"] = "add",
         index: int = 0,
     ):
         """Private method to handle inserting or adding a graphic to a PlotArea."""
