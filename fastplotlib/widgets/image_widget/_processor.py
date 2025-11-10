@@ -236,9 +236,9 @@ class NDImageProcessor:
                         f"`window_funcs` must be of type: tuple[Callable | None, ...], you have passed: {funcs}"
                     )
 
-        if not len(funcs) == self.n_slider_dims:
+        if not (len(funcs) == self.n_slider_dims or self.n_slider_dims == 0):
             raise IndexError(
-                f"number of `window_funcs` must be the same as the number of slider dims, "
+                f"number of `window_funcs` must be the same as the number of slider dims: {self.n_slider_dims}, "
                 f"and you passed {len(funcs)} `window_funcs`: {funcs}"
             )
 
@@ -266,7 +266,7 @@ class NDImageProcessor:
                 f"`window_sizes` must be of type: tuple[int | None, ...] | int | None, you have passed: {window_sizes}"
             )
 
-        if not len(window_sizes) == self.n_slider_dims:
+        if not (len(window_sizes) == self.n_slider_dims or self.n_slider_dims == 0):
             raise IndexError(
                 f"number of `window_sizes` must be the same as the number of slider dims, "
                 f"i.e. `data.ndim` - n_display_dims, your data array has {self.ndim} dimensions "
