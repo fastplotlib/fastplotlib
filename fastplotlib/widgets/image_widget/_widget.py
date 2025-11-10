@@ -11,6 +11,7 @@ from ...utils import calculate_figure_shape, quick_min_max, ArrayProtocol
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
 from ._processor import NDImageProcessor, WindowFuncCallable
+from ._properties import ImageProcessorProperty, Indices
 
 
 IMGUI_SLIDER_HEIGHT = 49
@@ -37,7 +38,7 @@ class ImageWidget:
             tuple[int | None, ...] | Sequence[tuple[int | None, ...] | None]
         ) = None,
         window_order: tuple[int, ...] | Sequence[tuple[int, ...] | None] = None,
-        finalizer_funcs: (
+        finalizer_func: (
             Callable[[ArrayProtocol], ArrayProtocol]
             | Sequence[Callable[[ArrayProtocol], ArrayProtocol]]
             | None
@@ -220,28 +221,27 @@ class ImageWidget:
             win_order = window_order
 
         # verify finalizer function
-        if finalizer_funcs is None:
+        if finalizer_func is None:
             final_funcs = [None] * len(data)
 
-        elif callable(finalizer_funcs):
+        elif callable(finalizer_func):
             # same finalizer func for all data arrays
-            final_funcs = [finalizer_funcs] * len(data)
+            final_funcs = [finalizer_func] * len(data)
 
-        elif len(finalizer_funcs) != len(data):
+        elif len(finalizer_func) != len(data):
             raise IndexError
 
         else:
-            final_funcs = finalizer_funcs
+            final_funcs = finalizer_func
 
         # verify number of display dims
-        if isinstance(n_display_dims, int):
-            if n_display_dims not in (2, 3):
-                raise ValueError
+        if isinstance(n_display_dims, (int, np.integer)):
             n_display_dims = [n_display_dims] * len(data)
 
         elif isinstance(n_display_dims, (tuple, list)):
-            if not all([n in (2, 3) for n in n_display_dims]):
-                raise ValueError
+            if not all([isinstance(n, (int, np.integer)) for n in n_display_dims]):
+                raise TypeError
+
             if len(n_display_dims) != len(data):
                 raise IndexError
         else:
@@ -379,7 +379,7 @@ class ImageWidget:
                     vmax=vmax,
                     **graphic_kwargs[i],
                 )
-                subplot.fov = 50
+                subplot.camera.fov = 50
 
             subplot.add_graphic(graphic)
 
@@ -546,12 +546,12 @@ class ImageWidget:
         self._set_image_processor_funcs("window_order", new_order)
 
     @property
-    def finalizer_funcs(self) -> tuple[Callable | None]:
+    def finalizer_func(self) -> tuple[Callable | None]:
         """Get or set a finalizer function that operates on the spatial dimensions of the 2D or 3D image"""
         return tuple(p.finalizer_func for p in self._image_processors)
 
-    @finalizer_funcs.setter
-    def finalizer_funcs(self, funcs: Callable | Sequence[Callable] | None):
+    @finalizer_func.setter
+    def finalizer_func(self, funcs: Callable | Sequence[Callable] | None):
         if callable(funcs) or funcs is None:
             funcs = [funcs] * len(self._image_processors)
 

@@ -169,8 +169,8 @@ class NDImageProcessor:
     # TODO: make n_display_dims settable, requires thinking about inserting and poping indices in ImageWidget
     @n_display_dims.setter
     def n_display_dims(self, n: Literal[2, 3]):
-        if n != 2 or n != 3:
-            raise ValueError("`n_display_dims` must be an <int> with a value of 2 or 3")
+        if not (n == 2 or n == 3):
+            raise ValueError(f"`n_display_dims` must be an <int> with a value of 2 or 3, you have passed: {n}")
         self._n_display_dims = n
         self._recompute_histogram()
 
