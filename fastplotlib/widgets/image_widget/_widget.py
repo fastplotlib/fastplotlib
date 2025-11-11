@@ -737,7 +737,7 @@ class ImageWidget:
             self._indices.push_dim()
             self._sliders_ui.push_dim()
 
-        self._sliders_ui.size = 55 + (IMGUI_SLIDER_HEIGHT * self.n_sliders)
+        self._sliders_ui.size = 57 + (IMGUI_SLIDER_HEIGHT * self.n_sliders)
 
     def _reset_image_graphics(self, subplot, image_processor):
         """delete and create a new image graphic if necessary"""
