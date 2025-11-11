@@ -941,6 +941,9 @@ class ImageWidget:
             if "histogram_lut" not in subplot.docks["right"]:
                 continue
 
+            if image_processor.histogram is None:
+                continue
+
             hlut = subplot.docks["right"]["histogram_lut"]
             hlut.histogram = image_processor.histogram
 
@@ -955,8 +958,11 @@ class ImageWidget:
         range of values in the full data array.
         """
 
-        for subplot in self.figure:
+        for subplot, image_processor in zip(self.figure, self._image_processors):
             if "histogram_lut" not in subplot.docks["right"]:
+                continue
+
+            if image_processor.histogram is None:
                 continue
 
             hlut = subplot.docks["right"]["histogram_lut"]
