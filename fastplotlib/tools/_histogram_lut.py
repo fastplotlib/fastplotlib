@@ -62,11 +62,13 @@ class HistogramLUTTool(Graphic):
             [np.zeros(120, dtype=np.float32), np.arange(0, 120)]
         )
 
+        # line that displays the histogram
         self._line = LineGraphic(
             line_data, colors=(0.8, 0.8, 0.8), alpha_mode="solid", offset=(1, 0, 0)
         )
         self._line.world_object.local.scale_x = -1
 
+        # vmin, vmax selector
         self._selector = LinearRegionSelector(
             selection=(10, 110),
             limits=(0, 119),
@@ -82,9 +84,11 @@ class HistogramLUTTool(Graphic):
             data=np.zeros([120, 2]), interpolation="linear", offset=(1.5, 0, 0)
         )
 
+        # make the colorbar thin
         self._colorbar.world_object.local.scale_x = 0.15
         self._colorbar.add_event_handler(self._open_cmap_picker, "click")
 
+        # colorbar ruler
         self._ruler = pygfx.Ruler(
             end_pos=(0, 119, 0),
             alpha_mode="solid",
@@ -107,7 +111,8 @@ class HistogramLUTTool(Graphic):
             outline_thickness=0.5,
             alpha_mode="solid",
         )
-        # need to make sure text object doesn't conflict with selector tool
+        # this is to make sure clicking text doesn't conflict with the selector tool
+        # since the text appears near the selector tool
         self._text_vmin.world_object.material.pick_write = False
 
         self._text_vmax = TextGraphic(
@@ -120,6 +125,7 @@ class HistogramLUTTool(Graphic):
         )
         self._text_vmax.world_object.material.pick_write = False
 
+        # add all the world objects to a pygfx.Group
         wo = pygfx.Group()
         wo.add(
             self._line.world_object,
@@ -131,6 +137,7 @@ class HistogramLUTTool(Graphic):
         )
         self._set_world_object(wo)
 
+        # for convenience, a list that stores all the graphics managed by the histogram LUT tool
         self._children = [
             self._line,
             self._selector,
@@ -147,15 +154,21 @@ class HistogramLUTTool(Graphic):
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
+
         for child in self._children:
+            # need all of them to call the add_plot_area_hook so that events are connected correctly
+            # example, the linear region selector needs all the canvas events to be connected
             child._fpl_add_plot_area_hook(plot_area)
 
         if hasattr(self._plot_area, "size"):
             # if it's in a dock area
             self._plot_area.size = 80
 
+        # disable the controller in this plot area
         self._plot_area.controller.enabled = False
         self._plot_area.auto_scale(maintain_aspect=False)
+
+        # tick text for colorbar ruler doesn't show without this call
         self._ruler.update(plot_area.camera, plot_area.canvas.get_logical_size())
 
     def _ruler_tick_map(self, bin_index, *args):
@@ -207,6 +220,7 @@ class HistogramLUTTool(Graphic):
 
     @property
     def images(self) -> tuple[ImageGraphic | ImageVolumeGraphic, ...] | None:
+        """get or set the managed images"""
         return tuple(self._images)
 
     @images.setter
@@ -254,17 +268,20 @@ class HistogramLUTTool(Graphic):
                 )
 
     def _disconnect_images(self, *args):
+        """disconnect event handlers of the managed images"""
         for image in self._images:
             for ev, handlers in image.event_handlers:
                 if self._image_event_handler in handlers:
                     image.remove_event_handler(self._image_event_handler, ev)
 
     def _image_event_handler(self, ev):
+        """when the image vmin, vmax, or cmap changes it will update the HistogramLUTTool"""
         new_value = ev.info["value"]
         setattr(self, ev.type, new_value)
 
     @property
     def cmap(self) -> str:
+        """get or set the colormap, only for grayscale images"""
         return self._colorbar.cmap
 
     @cmap.setter
@@ -283,6 +300,10 @@ class HistogramLUTTool(Graphic):
                 *self._images, event_handlers=[self._image_event_handler]
             ):
                 for image in self._images:
+                    if image.cmap is None:
+                        # rgb(a) images have no cmap
+                        continue
+
                     image.cmap = name
         except Exception as exc:
             # raise original exception
@@ -293,6 +314,7 @@ class HistogramLUTTool(Graphic):
 
     @property
     def vmin(self) -> float:
+        """get or set the vmin, the lower contrast limit"""
         # no offset or rotation so we can directly use the world space selection value
         index = int(self._selector.selection[0])
         return self._bin_centers_flanked[index]
@@ -331,6 +353,7 @@ class HistogramLUTTool(Graphic):
 
     @property
     def vmax(self) -> float:
+        """get or set the vmax, the upper contrast limit"""
         # no offset or rotation so we can directly use the world space selection value
         index = int(self._selector.selection[1])
         return self._bin_centers_flanked[index]
@@ -369,6 +392,7 @@ class HistogramLUTTool(Graphic):
             self._block_reentrance = False
 
     def _selector_event_handler(self, ev: GraphicFeatureEvent):
+        """when the selector's selctor has changed, it will update the vmin, vmax, or both"""
         selection = ev.info["value"]
         index_min = int(selection[0])
         vmin = self._bin_centers_flanked[index_min]
@@ -385,6 +409,7 @@ class HistogramLUTTool(Graphic):
                 self.vmin, self.vmax = vmin, vmax
 
     def _open_cmap_picker(self, ev):
+        """open imgui cmap picker"""
         # check if right click
         if ev.button != 2:
             return
@@ -394,6 +419,7 @@ class HistogramLUTTool(Graphic):
         self._plot_area.get_figure().open_popup("colormap-picker", pos, lut_tool=self)
 
     def _fpl_prepare_del(self):
+        """cleanup, need to disconnect events and remove image references for proper garbage collection"""
         self._disconnect_images()
         self._images.clear()
 
