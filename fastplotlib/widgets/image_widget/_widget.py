@@ -639,7 +639,7 @@ class ImageWidget:
 
             # call any event handlers
             for handler in self._indices_changed_handlers:
-                handler(self.indices)
+                handler(tuple(self.indices))
 
         except Exception as exc:
             # raise original exception
