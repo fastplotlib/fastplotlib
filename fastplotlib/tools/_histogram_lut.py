@@ -26,9 +26,26 @@ class HistogramLUTTool(Graphic):
     def __init__(
         self,
         histogram: tuple[np.ndarray, np.ndarray],
-        images: Sequence[ImageGraphic | ImageVolumeGraphic] | None = None,
+        images: ImageGraphic | ImageVolumeGraphic | Sequence[ImageGraphic | ImageVolumeGraphic] | None = None,
         **kwargs,
     ):
+        """
+        A histogram tool that allows adjusting the vmin, vmax of images.
+        Also allows changing the cmap LUT for grayscale images and displays a colorbar.
+
+        Parameters
+        ----------
+        histogram: tuple[np.ndarray, np.ndarray]
+            [frequency, bin_edges], must be 100 bins
+
+        images: ImageGraphic | ImageVolumeGraphic | Sequence[ImageGraphic | ImageVolumeGraphic]
+            the images that are managed by the histogram tool
+
+        kwargs:
+            passed to ``Graphic``
+
+        """
+
         super().__init__(**kwargs)
 
         if len(histogram) != 2:
@@ -153,9 +170,14 @@ class HistogramLUTTool(Graphic):
     def histogram(
         self, histogram: tuple[np.ndarray, np.ndarray], limits: tuple[int, int] = None
     ):
+        """set histogram with pre-compuated [frequency, edges], must have exactly 100 bins"""
+
         freq, edges = histogram
 
-        freq = freq / freq.max()
+        if freq.max() > 0:
+            # if the histogram is made from an empty array, then the max freq will be 0
+            # we don't want to divide by 0 because then we just get nans
+            freq = freq / freq.max()
 
         bin_centers = 0.5 * (edges[1:] + edges[:-1])
 
@@ -188,7 +210,7 @@ class HistogramLUTTool(Graphic):
         return tuple(self._images)
 
     @images.setter
-    def images(self, new_images: tuple[ImageGraphic | ImageVolumeGraphic] | None):
+    def images(self, new_images: ImageGraphic | ImageVolumeGraphic | Sequence[ImageGraphic | ImageVolumeGraphic] | None):
         self._disconnect_images()
         self._images.clear()
 
@@ -213,7 +235,7 @@ class HistogramLUTTool(Graphic):
         else:
             self._colorbar.visible = False
 
-        self._images = new_images
+        self._images = list(new_images)
 
         # reset vmin, vmax using first image
         self.vmin = self._images[0].vmin
