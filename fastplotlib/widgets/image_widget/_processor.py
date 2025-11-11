@@ -513,5 +513,6 @@ class NDImageProcessor:
             ignore_dims = None
 
         sub = subsample_array(self.data, ignore_dims=ignore_dims)
+        sub_real = sub[~(np.isnan(sub) | np.isinf(sub))]
 
-        self._histogram = np.histogram(sub, bins=100)
+        self._histogram = np.histogram(sub_real, bins=100)
