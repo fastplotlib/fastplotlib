@@ -614,7 +614,11 @@ class PlotArea(GraphicMethodsMixin):
             for subplot in self.parent._subplots.ravel():
                 # scale all cameras associated with this controller
                 if subplot.camera in self.controller.cameras:
-                    # scale the cameras in other subplots w.r.t. the scene in those subplots
+                    # skip if the scene is empty
+                    if len(subplot._fpl_graphics_scene.children) < 1:
+                        continue
+
+                    # center the camera in the other subplot w.r.t. the scene in that other subplot!
                     self._auto_center_scene(
                         subplot.camera, subplot._fpl_graphics_scene, zoom
                     )
@@ -667,8 +671,11 @@ class PlotArea(GraphicMethodsMixin):
             # otherwise if we use `for subplot in figure`, this could conflict
             # with a user's iterator where they are doing `for subplot in figure` !!!
             for subplot in self.parent._subplots.ravel():
+                # skip if the scene is empty
+                if len(subplot._fpl_graphics_scene.children) < 1:
+                    continue
 
-                # scale all cameras associated with this controller
+                # scale the camera in the other subplot w.r.t. the scene in that other subplot!
                 if subplot.camera in self.controller.cameras:
                     camera = subplot.camera
                     self._auto_scale_scene(
