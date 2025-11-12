@@ -880,13 +880,21 @@ class ImageWidget:
         return tuple(iw_managed)
 
     @property
-    def cmap(self) -> tuple[str, ...]:
+    def cmap(self) -> tuple[str | None, ...]:
         """get the cmaps, or set the cmap across all images"""
         return tuple(g.cmap for g in self.graphics)
 
     @cmap.setter
     def cmap(self, name: str):
         for g in self.graphics:
+            if g is None:
+                # no data at this index
+                continue
+
+            if g.cmap is None:
+                # if rgb
+                continue
+
             g.cmap = name
 
     def add_event_handler(self, handler: callable, event: str = "indices"):
