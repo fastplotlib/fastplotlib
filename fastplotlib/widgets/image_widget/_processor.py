@@ -21,7 +21,7 @@ class NDImageProcessor:
         window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
         window_sizes: tuple[int | None, ...] | int = None,
         window_order: tuple[int, ...] = None,
-        finalizer_func: Callable[[ArrayLike], ArrayLike] = None,
+        spatial_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
     ):
         """
@@ -59,15 +59,16 @@ class NDImageProcessor:
             order in which to apply the window functions, by default just applies it from the left-most dim to the
             right-most slider dim.
 
-        finalizer_func: Callable[[ArrayLike], ArrayLike] | None, optional
-            A function that the data is put through after the window functions (if present) before being displayed.
+        spatial_func: Callable[[ArrayLike], ArrayLike] | None, optional
+            A function that is applied on the _spatial_ dimensions of the data array, i.e. the last 2 or 3 dimensions.
+            This function is applied after the window functions (if present).
 
         compute_histogram: bool, default True
-            Compute a histogram of the data, auto re-computes if window function propties or finalizer_func changes.
+            Compute a histogram of the data, auto re-computes if window function propties or spatial_func changes.
             Disable if slow.
 
         """
-        # set as False until data, window funcs stuff and finalizer func is all set
+        # set as False until data, window funcs stuff and spatial func is all set
         self._compute_histogram = False
 
         self.data = data
@@ -78,7 +79,7 @@ class NDImageProcessor:
         self.window_sizes = window_sizes
         self.window_order = window_order
 
-        self._finalizer_func = finalizer_func
+        self._spatial_func = spatial_func
 
         self._compute_histogram = compute_histogram
         self._recompute_histogram()
@@ -329,18 +330,18 @@ class NDImageProcessor:
         self._recompute_histogram()
 
     @property
-    def finalizer_func(self) -> Callable[[ArrayLike], ArrayLike] | None:
-        """get or set a finalizer function, see docstring for details"""
-        return self._finalizer_func
+    def spatial_func(self) -> Callable[[ArrayLike], ArrayLike] | None:
+        """get or set a spatial_func function, see docstring for details"""
+        return self._spatial_func
 
-    @finalizer_func.setter
-    def finalizer_func(self, func: Callable[[ArrayLike], ArrayLike] | None):
+    @spatial_func.setter
+    def spatial_func(self, func: Callable[[ArrayLike], ArrayLike] | None):
         if not callable(func) or func is not None:
             raise TypeError(
-                f"`finalizer_func` must be a callable or `None`, you have passed: {func}"
+                f"`spatial_func` must be a callable or `None`, you have passed: {func}"
             )
 
-        self._finalizer_func = func
+        self._spatial_func = func
         self._recompute_histogram()
 
     @property
@@ -469,13 +470,13 @@ class NDImageProcessor:
             # data is a static image or volume
             window_output = self.data
 
-        # apply finalizer func
-        if self.finalizer_func is not None:
-            final_output = self.finalizer_func(window_output)
+        # apply spatial_func
+        if self.spatial_func is not None:
+            final_output = self.spatial_func(window_output)
             if final_output.ndim != (self.n_display_dims + int(self.rgb)):
                 raise IndexError(
-                    f"Final output after of the `finalizer_func` must match the number of display dims."
-                    f"Output after `finalizer_func` returned an array with {final_output.ndim} dims and "
+                    f"Final output after of the `spatial_func` must match the number of display dims."
+                    f"Output after `spatial_func` returned an array with {final_output.ndim} dims and "
                     f"of shape: {final_output.shape}, expected {self.n_display_dims} dims"
                 )
         else:
@@ -503,9 +504,9 @@ class NDImageProcessor:
             self._histogram = None
             return
 
-        if self.finalizer_func is not None:
-            # don't subsample spatial dims if a finalizer function is used
-            # finalizer functions often operate on the spatial dims, ex: a gaussian kernel
+        if self.spatial_func is not None:
+            # don't subsample spatial dims if a spatial function is used
+            # spatial functions often operate on the spatial dims, ex: a gaussian kernel
             # so their results require the full spatial resolution, the histogram of a
             # spatially subsampled image will be very different
             ignore_dims = self.display_dims

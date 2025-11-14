@@ -38,7 +38,7 @@ class ImageWidget:
             tuple[int | None, ...] | Sequence[tuple[int | None, ...] | None]
         ) = None,
         window_order: tuple[int, ...] | Sequence[tuple[int, ...] | None] = None,
-        finalizer_func: (
+        spatial_func: (
             Callable[[ArrayProtocol], ArrayProtocol]
             | Sequence[Callable[[ArrayProtocol], ArrayProtocol]]
             | None
@@ -220,19 +220,19 @@ class ImageWidget:
         else:
             win_order = window_order
 
-        # verify finalizer function
-        if finalizer_func is None:
-            final_funcs = [None] * len(data)
+        # verify spatial_func
+        if spatial_func is None:
+            spatial_func = [None] * len(data)
 
-        elif callable(finalizer_func):
-            # same finalizer func for all data arrays
-            final_funcs = [finalizer_func] * len(data)
+        elif callable(spatial_func):
+            # same spatial_func for all data arrays
+            spatial_func = [spatial_func] * len(data)
 
-        elif len(finalizer_func) != len(data):
+        elif len(spatial_func) != len(data):
             raise IndexError
 
         else:
-            final_funcs = finalizer_func
+            spatial_func = spatial_func
 
         # verify number of display dims
         if isinstance(n_display_dims, (int, np.integer)):
@@ -271,7 +271,7 @@ class ImageWidget:
                 window_funcs=win_funcs[i],
                 window_sizes=win_sizes[i],
                 window_order=win_order[i],
-                finalizer_func=final_funcs[i],
+                spatial_func=spatial_func[i],
                 compute_histogram=self._histogram_widget,
             )
 
@@ -283,7 +283,7 @@ class ImageWidget:
         self._window_funcs = ImageWidgetProperty(self, "window_funcs")
         self._window_sizes = ImageWidgetProperty(self, "window_sizes")
         self._window_order = ImageWidgetProperty(self, "window_order")
-        self._finalizer_func = ImageWidgetProperty(self, "finalizer_func")
+        self._spatial_func = ImageWidgetProperty(self, "spatial_func")
 
         if len(set(n_display_dims)) > 1:
             # assume user wants one controller for 2D images and another for 3D image volumes
@@ -564,22 +564,22 @@ class ImageWidget:
         self._set_image_processor_funcs("window_order", new_order)
 
     @property
-    def finalizer_func(self) -> ImageWidgetProperty[Callable | None]:
-        """Get or set a finalizer function that operates on the spatial dimensions of the 2D or 3D image"""
-        return self._finalizer_func
+    def spatial_func(self) -> ImageWidgetProperty[Callable | None]:
+        """Get or set a spatial_func that operates on the spatial dimensions of the 2D or 3D image"""
+        return self._spatial_func
 
-    @finalizer_func.setter
-    def finalizer_func(self, funcs: Callable | Sequence[Callable] | None):
+    @spatial_func.setter
+    def spatial_func(self, funcs: Callable | Sequence[Callable] | None):
         if callable(funcs) or funcs is None:
             funcs = [funcs] * len(self._image_processors)
 
         if len(funcs) != len(self._image_processors):
             raise IndexError
 
-        self._set_image_processor_funcs("finalizer_func", funcs)
+        self._set_image_processor_funcs("spatial_func", funcs)
 
     def _set_image_processor_funcs(self, attr, new_values):
-        """sets window_funcs, window_sizes, window_order, or finalizer_func and updates displayed data and histograms"""
+        """sets window_funcs, window_sizes, window_order, or spatial_func and updates displayed data and histograms"""
         for new, image_processor, subplot in zip(
             new_values, self._image_processors, self.figure
         ):
@@ -588,7 +588,7 @@ class ImageWidget:
 
             setattr(image_processor, attr, new)
 
-            # window functions and finalizer functions will only change the histogram
+            # window functions and spatial functions will only change the histogram
             # they do not change the collections of dimensions, so we don't need to call _reset_dimensions
             # they also do not change the image graphic, so we do not need to call _reset_image_graphics
             self._reset_histogram(subplot, image_processor)
