@@ -208,15 +208,23 @@ class HistogramLUTTool(Graphic):
         return cbar
 
     def _get_vmin_vmax_str(self) -> tuple[str, str]:
-        if self.vmin < 0.001 or self.vmin > 99_999:
-            vmin_str = f"{self.vmin:.2e}"
-        else:
-            vmin_str = f"{self.vmin:.2f}"
 
-        if self.vmax < 0.001 or self.vmax > 99_999:
-            vmax_str = f"{self.vmax:.2e}"
-        else:
-            vmax_str = f"{self.vmax:.2f}"
+        # https://docs.dask.org/en/latest/generated/dask.array.Array.compute.html
+        lazy_callbacks = ["compute"]
+
+        def as_float(x) -> float:
+            for name in lazy_callbacks:
+                meth = getattr(x, name, None)
+                if callable(meth):
+                    x = meth()
+                    break
+            return float(x)
+
+        vmin = as_float(self.vmin)
+        vmax = as_float(self.vmax)
+
+        vmin_str = f"{vmin:.2e}" if vmin < 1e-3 or vmin > 9.9999e4 else f"{vmin:.2f}"
+        vmax_str = f"{vmax:.2e}" if vmax < 1e-3 or vmax > 9.9999e4 else f"{vmax:.2f}"
 
         return vmin_str, vmax_str
 
