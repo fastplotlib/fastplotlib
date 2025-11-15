@@ -469,9 +469,9 @@ class LinearRegionSelector(BaseSelector):
         if move_info.source == self._edges[0]:
             # change only left or bottom bound
             new_min = min(cur_min + delta, cur_max)
-            self._selection.set_value(self, (new_min, cur_max))
+            self._selection.set_value(self, (new_min, cur_max), change="min")
 
         elif move_info.source == self._edges[1]:
             # change only right or top bound
             new_max = max(cur_max + delta, cur_min)
-            self._selection.set_value(self, (cur_min, new_max))
+            self._selection.set_value(self, (cur_min, new_max), change="max")
