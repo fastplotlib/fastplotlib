@@ -277,12 +277,15 @@ class LinearRegionSelector(BaseSelector):
         outer_edges = (line0_outer, line1_outer)
         group.add(*edges, *outer_edges)
 
-        # TODO: if parent offset changes, we should set the selector offset too, use offset evented property
-        # TODO: add check if parent is `None`, will throw error otherwise
-        if axis == "x":
-            offset = (parent.offset[0], center + parent.offset[1], 0)
-        elif axis == "y":
-            offset = (center + parent.offset[1], parent.offset[1], 0)
+        if parent is None:
+            offset = (0, 0, 0)
+        else:
+            # TODO: if parent offset changes, we should set the selector offset too, use offset evented property
+            # TODO: add check if parent is `None`, will throw error otherwise
+            if axis == "x":
+                offset = (parent.offset[0], center + parent.offset[1], 0)
+            elif axis == "y":
+                offset = (center + parent.offset[1], parent.offset[1], 0)
 
         # set the initial bounds of the selector
         # compensate for any offset from the parent graphic
