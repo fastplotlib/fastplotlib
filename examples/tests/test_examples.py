@@ -100,29 +100,10 @@ def test_example_screenshots(module, prep_environment):
     # import the example module
     example = import_from_path(module.stem, module)
 
-    if fpl.IMGUI:
-        # there doesn't seem to be a resize event for the manual offscreen canvas
-        example.figure.imgui_renderer._backend.io.display_size = (
-            example.figure.canvas.get_logical_size()
-        )
-        # run this once so any edge widgets set their sizes and therefore the subplots get the correct rect
-        # hacky but it works for now
-        example.figure.imgui_renderer.render()
-
-    example.figure._fpl_reset_layout()
-    # render each subplot
-    for subplot in example.figure:
-        subplot.viewport.render(subplot.scene, subplot.camera)
-
-    # flush pygfx renderer
-    example.figure.renderer.flush()
-
-    if fpl.IMGUI:
-        # render imgui
-        example.figure.imgui_renderer.render()
-
-    # render a frame
-    img = np.asarray(example.figure.renderer.target.draw())
+    # Render a frame. Twice, because layouts don't settle in one go?
+    m1 = example.figure.renderer.target.draw()
+    m2 = example.figure.renderer.target.draw()
+    img = np.asarray(m2)
 
     # check if _something_ was rendered
     assert img is not None and img.size > 0
@@ -164,7 +145,6 @@ def test_example_screenshots(module, prep_environment):
     ref_img = normalize_image(ref_img)
 
     similar, rmse = image_similarity(rgb, ref_img)
-
     update_diffs(module.stem, similar, rgb, ref_img)
     assert similar, (
         f"diff {rmse} above threshold for {module.stem}, see "
@@ -206,7 +186,9 @@ def update_diffs(module, is_similar, img, stored_img):
 
 
 if __name__ == "__main__":
-    os.environ["RENDERCANVAS_FORCE_OFFSCREEN"] = "true"
-    os.environ["PYGFX_DEFAULT_PPAA"] = "none"
-    test_examples_run("simple")
-    test_example_screenshots("simple")
+    # Need to apply these env vars *before* running this script,
+    # since FPL selects its backend on import.
+    # os.environ["RENDERCANVAS_FORCE_OFFSCREEN"] = "true"
+    # os.environ["PYGFX_DEFAULT_PPAA"] = "none"
+
+    test_example_screenshots(examples_to_test[0], None)

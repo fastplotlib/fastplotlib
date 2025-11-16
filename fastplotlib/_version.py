@@ -10,7 +10,7 @@ from pathlib import Path
 
 # This is the reference version number, to be bumped before each release.
 # The build system detects this definition when building a distribution.
-__version__ = "0.6.0"
+__version__ = "0.6.1"
 
 # Allow using nearly the same code in different projects
 project_name = "fastplotlib"
