@@ -446,7 +446,7 @@ class PlotArea(GraphicMethodsMixin):
         from the camera).
         """
         count = 0
-        for graphic in self._graphics:
+        for graphic in reversed(self._graphics):
             if isinstance(graphic, ImageGraphic):
                 count += 1
                 auto_depth = -count
