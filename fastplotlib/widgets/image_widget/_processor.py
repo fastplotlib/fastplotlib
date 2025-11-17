@@ -336,7 +336,7 @@ class NDImageProcessor:
 
     @spatial_func.setter
     def spatial_func(self, func: Callable[[ArrayLike], ArrayLike] | None):
-        if not callable(func) or func is not None:
+        if not (callable(func) or func is not None):
             raise TypeError(
                 f"`spatial_func` must be a callable or `None`, you have passed: {func}"
             )
