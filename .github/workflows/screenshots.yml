@@ -38,6 +38,7 @@ jobs:
           # remove pygfx from install_requires, we install using pygfx@main
           sed -i "/pygfx/d" ./pyproject.toml
           pip install git+https://github.com/pygfx/pygfx.git@main
+          pip install git+https://github.com/pygfx/rendercanvas.git@lazy-logical-size
       - name: Install fastplotlib
         run: |
           # create string with one of: tests,imgui,notebook; test,imgui; test,notebook ; tests

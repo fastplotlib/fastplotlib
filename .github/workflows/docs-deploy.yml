@@ -42,6 +42,7 @@ jobs:
           # remove pygfx from install_requires, we install using pygfx@main
           sed -i "/pygfx/d" ./pyproject.toml
           pip install git+https://github.com/pygfx/pygfx.git@main
+          pip install git+https://github.com/pygfx/rendercanvas.git@lazy-logical-size
           pip install -e ".[docs,notebook,imgui]"
       - name: Show wgpu backend
         run:
