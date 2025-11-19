@@ -116,8 +116,6 @@ class Tooltip:
         # making the text easier to read
         self._padding = np.array([[5, 5, 0], [-5, -5, 0]], dtype=np.float32)
 
-        self._registered_graphics = dict()
-
     @property
     def world_object(self) -> pygfx.Group:
         return self._world_object
@@ -172,6 +170,23 @@ class Tooltip:
         self._padding[0, :2] = padding_xy
         self._padding[1, :2] = -np.asarray(padding_xy)
 
+    def display(self, position: tuple[float, float], info: str):
+        """
+        display tooltip at the given position in screen space
+
+        Parameters
+        ----------
+        position: (x, y)
+            position in screen space
+
+        info: str
+            tooltip text to display
+
+        """
+        # set the text and top left position of the tooltip
+        self._text.set_text(info)
+        self._set_position(position)
+
     def _set_position(self, pos: tuple[float, float]):
         """
         Set the position of the tooltip
@@ -207,6 +222,18 @@ class Tooltip:
         self._line.geometry.positions.data[:, :2] = pts
         self._line.geometry.positions.update_range()
 
+    def clear(self, *args):
+        self._text.set_text("")
+        self.world_object.visible = False
+
+
+class GraphicTooltip(Tooltip):
+    """A tooltip that auto displays info for registered graphics"""
+    def __init__(self):
+        super().__init__()
+
+        self._registered_graphics = dict()
+
     def _event_handler(self, custom_tooltip: callable, ev: pygfx.PointerEvent):
         """Handles the tooltip appear event, determines the text to be set in the tooltip"""
         if custom_tooltip is not None:
@@ -228,25 +255,19 @@ class Tooltip:
                 f"{dim}: {val}" for dim, val in zip("xyz", ev.graphic.data[index])
             )
         else:
-            raise TypeError("Unsupported graphic")
+            return
 
         # make the tooltip object visible
         self.world_object.visible = True
 
-        # set the text and top left position of the tooltip
-        self._text.set_text(info)
-        self._set_position((ev.x, ev.y))
-
-    def _clear(self, ev):
-        self._text.set_text("")
-        self.world_object.visible = False
+        self.display((ev.x, ev.y), info)
 
     def register(
-        self,
-        graphic: Graphic,
-        appear_event: str = "pointer_move",
-        disappear_event: str = "pointer_leave",
-        custom_info: callable = None,
+            self,
+            graphic: Graphic,
+            appear_event: str = "pointer_move",
+            disappear_event: str = "pointer_leave",
+            custom_info: callable = None,
     ):
         """
         Register a Graphic to display tooltips.
@@ -276,7 +297,7 @@ class Tooltip:
 
         pfunc = partial(self._event_handler, custom_info)
         graphic.add_event_handler(pfunc, appear_event)
-        graphic.add_event_handler(self._clear, disappear_event)
+        graphic.add_event_handler(self.clear, disappear_event)
 
         self._registered_graphics[graphic] = (pfunc, appear_event, disappear_event)
 
@@ -308,7 +329,7 @@ class Tooltip:
 
         # remove handlers from graphic
         graphic.remove_event_handler(pfunc, appear_event)
-        graphic.remove_event_handler(self._clear, disappear_event)
+        graphic.remove_event_handler(self.clear, disappear_event)
 
     def unregister_all(self):
         """unregister all graphics"""

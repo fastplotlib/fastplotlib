@@ -21,7 +21,7 @@ from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
 from .. import ImageGraphic
-from ..tools import Tooltip
+from ..tools import GraphicTooltip
 
 
 class Figure:
@@ -461,7 +461,7 @@ class Figure:
         self._overlay_scene = pygfx.Scene()
 
         # tooltip in overlay render pass
-        self._tooltip_manager = Tooltip()
+        self._tooltip_manager = GraphicTooltip()
         self._overlay_scene.add(self._tooltip_manager.world_object)
 
         self._show_tooltips = show_tooltips
@@ -534,7 +534,7 @@ class Figure:
         return names
 
     @property
-    def tooltip_manager(self) -> Tooltip:
+    def tooltip_manager(self) -> GraphicTooltip:
         """manage tooltips"""
         return self._tooltip_manager
 
