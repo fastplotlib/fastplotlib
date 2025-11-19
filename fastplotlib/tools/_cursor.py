@@ -10,15 +10,15 @@ from ..utils import RenderQueue
 
 class Cursor:
     def __init__(
-            self,
-            mode: Literal["crosshair", "marker"],
-            size: float = 1.0,  # in screen space
-            color: str | Sequence[float] | pygfx.Color | np.ndarray = "r",
-            marker: str = "+",
-            edge_color: str | Sequence[float] | pygfx.Color | np.ndarray = "k",
-            edge_width: float = 0.5,
-            alpha: float = 0.7,
-            size_space: Literal["screen", "world"] = "screen"
+        self,
+        mode: Literal["crosshair", "marker"],
+        size: float = 1.0,  # in screen space
+        color: str | Sequence[float] | pygfx.Color | np.ndarray = "r",
+        marker: str = "+",
+        edge_color: str | Sequence[float] | pygfx.Color | np.ndarray = "k",
+        edge_width: float = 0.5,
+        alpha: float = 0.7,
+        size_space: Literal["screen", "world"] = "screen",
     ):
         """
         A cursor that indicates the same position in world-space across subplots.
@@ -78,7 +78,9 @@ class Cursor:
     @mode.setter
     def mode(self, mode: Literal["crosshair", "marker"]):
         if not (mode == "crosshair" or mode == "marker"):
-            raise ValueError(f"mode must be one of: 'crosshair' | 'marker', you passed: {mode}")
+            raise ValueError(
+                f"mode must be one of: 'crosshair' | 'marker', you passed: {mode}"
+            )
 
         if mode == self.mode:
             return
@@ -249,7 +251,9 @@ class Cursor:
             cursor = self._create_crosshair()
 
         subplot.scene.add(cursor)
-        subplot.renderer.add_event_handler(partial(self._pointer_moved, subplot), "pointer_move")
+        subplot.renderer.add_event_handler(
+            partial(self._pointer_moved, subplot), "pointer_move"
+        )
 
         self._cursors[subplot] = cursor
 
@@ -281,7 +285,7 @@ class Cursor:
                 depth_test=False,
                 depth_write=False,
                 pick_write=False,
-            )
+            ),
         )
 
         return point
@@ -292,14 +296,16 @@ class Cursor:
             [
                 [x - 1, y, 0],
                 [x + 1, y, 0],
-            ], dtype=np.float32
+            ],
+            dtype=np.float32,
         )
 
         line_v_data = np.array(
             [
                 [x, y - 1, 0],
                 [x, y + 1, 0],
-            ], dtype=np.float32
+            ],
+            dtype=np.float32,
         )
 
         line_h = pygfx.Line(

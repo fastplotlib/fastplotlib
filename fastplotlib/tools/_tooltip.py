@@ -229,6 +229,7 @@ class Tooltip:
 
 class GraphicTooltip(Tooltip):
     """A tooltip that auto displays info for registered graphics"""
+
     def __init__(self):
         super().__init__()
 
@@ -263,11 +264,11 @@ class GraphicTooltip(Tooltip):
         self.display((ev.x, ev.y), info)
 
     def register(
-            self,
-            graphic: Graphic,
-            appear_event: str = "pointer_move",
-            disappear_event: str = "pointer_leave",
-            custom_info: callable = None,
+        self,
+        graphic: Graphic,
+        appear_event: str = "pointer_move",
+        disappear_event: str = "pointer_leave",
+        custom_info: callable = None,
     ):
         """
         Register a Graphic to display tooltips.

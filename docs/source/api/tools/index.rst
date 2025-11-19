@@ -6,3 +6,5 @@ Tools
 
     HistogramLUTTool
     Tooltip
+    GraphicTooltip
+    Cursor
