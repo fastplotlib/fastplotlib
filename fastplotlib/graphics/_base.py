@@ -265,7 +265,7 @@ class Graphic:
                     global_id = int(child.uniform_buffer.data["global_id"])
                     WORLD_OBJECT_TO_GRAPHIC[global_id] = self
         else:
-            global_id = wo.uniform_buffer.data["global_id"]
+            global_id = int(wo.uniform_buffer.data["global_id"])
             WORLD_OBJECT_TO_GRAPHIC[global_id] = self
 
         wo.visible = self.visible
