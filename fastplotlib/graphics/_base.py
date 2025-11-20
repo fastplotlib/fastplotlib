@@ -170,6 +170,8 @@ class Graphic:
 
         self._right_click_menu = None
 
+        self._world_object_ids = list()
+
     @property
     def supported_events(self) -> tuple[str]:
         """events supported by this graphic"""
@@ -264,9 +266,13 @@ class Graphic:
                     # and numpy arrays aren't hashable
                     global_id = int(child.uniform_buffer.data["global_id"])
                     WORLD_OBJECT_TO_GRAPHIC[global_id] = self
+                    # store id to pop from dict when graphic is deleted
+                    self._world_object_ids.append(global_id)
         else:
             global_id = int(wo.uniform_buffer.data["global_id"])
             WORLD_OBJECT_TO_GRAPHIC[global_id] = self
+            # store id to pop from dict when graphic is deleted
+            self._world_object_ids.append(global_id)
 
         wo.visible = self.visible
         if "Image" in self.__class__.__name__:
@@ -461,6 +467,9 @@ class Graphic:
 
         Optionally implemented in subclasses
         """
+        for global_id in self._world_object_ids:
+            WORLD_OBJECT_TO_GRAPHIC.pop(global_id)
+
         # remove axes if added to this graphic
         if self._axes is not None:
             self._plot_area.scene.remove(self._axes)

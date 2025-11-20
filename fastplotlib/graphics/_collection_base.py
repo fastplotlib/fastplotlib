@@ -308,6 +308,7 @@ class GraphicCollection(Graphic, CollectionProperties):
         """
         # clear any attached event handlers and animation functions
         self.world_object._event_handlers.clear()
+        self.world_object.clear()
 
         for g in self:
             g._fpl_prepare_del()
@@ -317,16 +318,6 @@ class GraphicCollection(Graphic, CollectionProperties):
             return self.graphics[key]
 
         return self._indexer(selection=self.graphics[key], features=self._features)
-
-    def __del__(self):
-        # detach children
-        self.world_object.clear()
-
-        for g in self.graphics:
-            g._fpl_prepare_del()
-            del g
-
-        super().__del__()
 
     def __len__(self):
         return len(self._graphics)
