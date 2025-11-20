@@ -29,10 +29,15 @@ from .features import (
 from ._axes import Axes
 
 HexStr: TypeAlias = str
+WorldObjectID: TypeAlias = int
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
 WORLD_OBJECTS: dict[HexStr, pygfx.WorldObject] = dict()  #: {hex id str: WorldObject}
+
+# maps world object to the graphic which owns it, useful when manually picking from the renderer and we
+# need to know the graphic associated with the target world object
+WORLD_OBJECT_TO_GRAPHIC: dict[WorldObjectID, "Graphic"] = dict()
 
 
 PYGFX_EVENTS = [
@@ -250,6 +255,18 @@ class Graphic:
 
     def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
+
+        # add to world object -> graphic mapping
+        if isinstance(wo, pygfx.Group):
+            for child in wo.children:
+                if isinstance(child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)):
+                    # need to call int() on it since it's a numpy array with 1 element
+                    # and numpy arrays aren't hashable
+                    global_id = int(child.uniform_buffer.data["global_id"])
+                    WORLD_OBJECT_TO_GRAPHIC[global_id] = self
+        else:
+            global_id = wo.uniform_buffer.data["global_id"]
+            WORLD_OBJECT_TO_GRAPHIC[global_id] = self
 
         wo.visible = self.visible
         if "Image" in self.__class__.__name__:

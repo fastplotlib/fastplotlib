@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Literal
 
 import numpy as np
 import pygfx
@@ -170,6 +171,14 @@ class Tooltip:
         self._padding[0, :2] = padding_xy
         self._padding[1, :2] = -np.asarray(padding_xy)
 
+    @property
+    def visible(self) -> bool:
+        return self._world_object.visible
+
+    @visible.setter
+    def visible(self, visible: bool):
+        self._world_object.visible = visible
+
     def display(self, position: tuple[float, float], info: str):
         """
         display tooltip at the given position in screen space
@@ -184,6 +193,7 @@ class Tooltip:
 
         """
         # set the text and top left position of the tooltip
+        self.visible = True
         self._text.set_text(info)
         self._set_position(position)
 
