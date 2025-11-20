@@ -9,7 +9,7 @@ from pylinalg import vec_transform, vec_unproject
 from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
-from ..graphics._base import Graphic
+from ..graphics._base import Graphic, WORLD_OBJECT_TO_GRAPHIC
 from ..graphics import ImageGraphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ._graphic_methods_mixin import GraphicMethodsMixin
@@ -283,12 +283,17 @@ class PlotArea(GraphicMethodsMixin):
         self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
         """
-        Map screen position to world position
+        Map screen (canvas) position to world position
 
         Parameters
         ----------
         pos: (float, float) | pygfx.PointerEvent
             ``(x, y)`` screen coordinates, or ``pygfx.PointerEvent``
+
+        Returns
+        -------
+        (float, float, float)
+            (x, y, z) position in world space, z is always 0
 
         """
         if isinstance(pos, pygfx.PointerEvent):
@@ -314,6 +319,64 @@ class PlotArea(GraphicMethodsMixin):
 
         # default z is zero for now
         return np.array([*pos_world[:2], 0])
+
+    def map_world_to_screen(self, pos: tuple[float, float, float]):
+        """
+        Map world position to screen (canvas) posiition
+
+        Parameters
+        ----------
+        pos: (x, y, z)
+            world space position
+
+        Returns
+        -------
+        (float, float)
+            (x, y) position in screen (canvas) space
+
+        """
+
+        if not len(pos) == 3:
+            raise ValueError(f"must pass 3d (x, y, z) position, you passed: {pos}")
+
+        # apply camera transform and get NDC position
+        ndc = vec_transform(np.asarray(pos), self.camera.camera_matrix)
+
+        # get viewport rect
+        x_offset, y_offset, w, h = self.viewport.rect
+
+        # ndc to screen position
+        x_screen = x_offset + (ndc[0] + 1) * 0.5 * w
+        y_screen = y_offset + (1 - ndc[1]) * 0.5 * h
+
+        return x_screen, y_screen
+
+    def get_pick_info(self, pos):
+        """
+        Get pick info at this screen position
+
+        Parameters
+        ----------
+        pos: (x, y)
+            screen space position
+
+        Returns
+        -------
+        dict | None
+            pick info if a graphic is at this position, else None
+
+        """
+
+        info = self.renderer.get_pick_info(pos)
+
+        if info["world_object"] is not None:
+            try:
+                graphic = WORLD_OBJECT_TO_GRAPHIC[info["world_object"]._global_id]
+                info["graphic"] = graphic
+                return info
+
+            except KeyError:
+                pass  # this world obj is not owned by a graphic
 
     def _render(self):
         self._call_animate_functions(self._animate_funcs_pre)
