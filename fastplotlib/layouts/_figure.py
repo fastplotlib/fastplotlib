@@ -21,7 +21,7 @@ from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
 from .. import ImageGraphic
-from ..tools import GraphicTooltip
+from ..tools import Tooltip, GraphicTooltip
 
 
 class Figure:
@@ -560,6 +560,15 @@ class Figure:
 
         elif not val:
             self._tooltip_manager.unregister_all()
+
+    def add_tooltip(self, tooltip: Tooltip):
+        if not isinstance(tooltip, Tooltip):
+            raise TypeError(f"tooltip must be a `Tooltip` instance, you passed: {tooltip}")
+
+        self._overlay_scene.add(tooltip.world_object)
+
+    def remove_tooltip(self, tooltip):
+        self._overlay_scene.remove(tooltip)
 
     def _render(self, draw=True):
         # draw the underlay planes
