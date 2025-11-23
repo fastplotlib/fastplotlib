@@ -116,7 +116,7 @@ class ImageWidget:
                 f"You have passed the following type {type(data)}"
             )
 
-        if issubclass(processors, NDImageProcessor):
+        if isinstance(processors, type) and issubclass(processors, NDImageProcessor):
             processors = [processors] * len(data)
 
         elif isinstance(processors, (tuple, list)):
