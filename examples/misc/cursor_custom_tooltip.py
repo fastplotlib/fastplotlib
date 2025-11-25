@@ -16,10 +16,10 @@ img2 = iio.imread("imageio:astronaut.png")
 scatter_data = np.random.normal(loc=256, scale=(50), size=(500)).reshape(250, 2)
 line_data = np.random.rand(100, 2) * 512
 
-figure = fpl.Figure(shape=(2, 2), size=(500, 500))
+figure = fpl.Figure(shape=(2, 2), size=(700, 800))
 
 img = figure[0, 0].add_image(img1, cmap="viridis")
-figure[0, 1].add_image(img2, metadata="image metadata")
+figure[0, 1].add_image(img2, metadata=np.arange(512))
 figure[1, 0].add_scatter(scatter_data, sizes=5, metadata="scatter metadata")
 figure[1, 1].add_line(line_data, metadata="line metadata")
 
@@ -46,8 +46,8 @@ def update(ev):
     if pick is None:
         tooltips2.visible = False
         return
-
-    info = pick["graphic"].metadata
+    print(pick)
+    info = pick["graphic"].metadata[pick["index"][1]]
     tooltips2.display((x, y), str(info))
 
 print((img.world_object.children[0].uniform_buffer.data["global_id"]).item())

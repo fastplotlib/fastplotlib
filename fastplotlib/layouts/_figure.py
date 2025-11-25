@@ -21,7 +21,6 @@ from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
 from .. import ImageGraphic
-from ..tools import Tooltip, GraphicTooltip
 
 
 class Figure:
@@ -52,7 +51,6 @@ class Figure:
         canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
-        show_tooltips: bool = False,
     ):
         """
         Create a Figure containing Subplots.
@@ -123,9 +121,6 @@ class Figure:
 
         names: list or array of str, optional
             subplot names
-
-        show_tooltips: bool, default False
-            show tooltips on graphics
 
         """
 
@@ -460,12 +455,6 @@ class Figure:
         self._overlay_camera = ScreenSpaceCamera()
         self._overlay_scene = pygfx.Scene()
 
-        # tooltip in overlay render pass
-        self._tooltip_manager = GraphicTooltip()
-        self._overlay_scene.add(self._tooltip_manager.world_object)
-
-        self._show_tooltips = show_tooltips
-
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
 
@@ -534,41 +523,9 @@ class Figure:
         return names
 
     @property
-    def tooltip_manager(self) -> GraphicTooltip:
-        """manage tooltips"""
-        return self._tooltip_manager
-
-    @property
-    def show_tooltips(self) -> bool:
-        """show/hide tooltips for all graphics"""
-        return self._show_tooltips
-
-    @property
     def animations(self) -> dict[str, list[callable]]:
         """Returns a dictionary of 'pre' and 'post' animation functions."""
         return {"pre": self._animate_funcs_pre, "post": self._animate_funcs_post}
-
-    @show_tooltips.setter
-    def show_tooltips(self, val: bool):
-        self._show_tooltips = val
-
-        if val:
-            # register all graphics
-            for subplot in self:
-                for graphic in subplot.graphics:
-                    self._tooltip_manager.register(graphic)
-
-        elif not val:
-            self._tooltip_manager.unregister_all()
-
-    def add_tooltip(self, tooltip: Tooltip):
-        if not isinstance(tooltip, Tooltip):
-            raise TypeError(f"tooltip must be a `Tooltip` instance, you passed: {tooltip}")
-
-        self._overlay_scene.add(tooltip.world_object)
-
-    def remove_tooltip(self, tooltip):
-        self._overlay_scene.remove(tooltip)
 
     def _render(self, draw=True):
         # draw the underlay planes
