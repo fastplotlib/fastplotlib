@@ -23,9 +23,11 @@ z = im.mean(axis=2)
 z = scipy.ndimage.gaussian_filter(z, 5)  # 2nd arg is sigma
 
 mesh = figure[0, 0].add_surface(z, colors="magenta", cmap=im)
+mesh.world_object.local.scale_y = -1
 
 
 figure[0, 0].axes.grids.xy.visible = True
+figure[0, 0].camera.show_object(mesh.world_object, (1, 2, -1), up=(0, 0, 1))
 figure.show()
 
 

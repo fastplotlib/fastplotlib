@@ -25,6 +25,8 @@ mesh = figure[0, 0].add_mesh(positions, indices, colors="magenta")
 
 
 figure[0, 0].axes.grids.xy.visible = True
+figure[0, 0].camera.show_object(mesh.world_object, (1, 1, -1), up=(0, 0, 1))
+
 figure.show()
 
 

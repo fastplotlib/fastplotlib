@@ -25,7 +25,8 @@ z = (x.reshape(1, -1) * x.reshape(-1, 1)) * 50  # 100x100
 mesh = figure[0, 0].add_surface(z, colors="magenta", cmap='jet')
 
 
-figure[0, 0].axes.grids.xy.visible = True
+# figure[0, 0].axes.grids.xy.visible = True
+figure[0, 0].camera.show_object(mesh.world_object, (-2, 2, -3), up=(0, 0, 1))
 figure.show()
 
 
