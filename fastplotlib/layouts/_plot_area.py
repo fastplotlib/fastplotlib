@@ -117,6 +117,9 @@ class PlotArea(GraphicMethodsMixin):
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
 
+        self.scene.add(pygfx.AmbientLight())
+        self.scene.add(self._camera.add(pygfx.DirectionalLight()))
+
     def get_figure(self, obj=None):
         """Get Figure instance that contains this plot area"""
         if obj is None:

@@ -432,6 +432,204 @@ class GraphicMethodsMixin:
             **kwargs,
         )
 
+    def add_mesh(
+        self,
+        positions: Any,
+        indices: Any,
+        mapcoords: Any = None,
+        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        cmap: str = None,
+        isolated_buffer: bool = True,
+        **kwargs,
+    ) -> MeshGraphic:
+        """
+
+        Create a mesh Graphic
+
+        Parameters
+        ----------
+
+        positions: array-like
+            The 3D positions of the vertices.
+
+        indices: array-like
+            The indices into the positions that make up the triangles. Each 3
+            subsequent indices form a triangle.
+
+        colors: str, array, or iterable, default "w"
+            A uniform color, or the per-position colors.
+
+        mapcoords: array-like
+            The per-position 1D coordinates to which to apply the colormap (a.k.a. texcoords).
+            These can e.g. be some domain-specific value, mapped to [0..1].
+            If ``mapcoords`` and ``cmap`` are given, they are used instead of ``colors``.
+
+        cmap: str, optional
+            Apply a colormap to the mesh, this overrides any argument passed to
+            "colors". For supported colormaps see the ``cmap`` library
+            catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+
+        **kwargs
+            passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            MeshGraphic,
+            positions,
+            indices,
+            colors,
+            mapcoords,
+            cmap,
+            isolated_buffer,
+            **kwargs,
+        )
+
+    def add_surface(
+        self,
+        data: Any,
+        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        mapcoords: Any = None,
+        cmap: str = None,
+        clim: tuple[float, float] | None = None,
+        isolated_buffer: bool = True,
+        **kwargs,
+    ) -> MeshGraphic:
+        """
+
+        Create a mesh Graphic
+
+        Parameters
+        ----------
+        data: array-like
+            A height-map (an image where the values indicate height, i.e. z values).
+            Can also be a 3-tuple to explicitly specify the x and y values in addition to the z values.
+
+        colors: str, array, or iterable, default "w"
+            A uniform color, or the per-position colors.
+
+        mapcoords: array-like
+            The per-position 1D coordinates to which to apply the colormap (a.k.a. texcoords).
+            These can e.g. be some domain-specific value (mapped to [0..1] using ``clim``).
+            If not given, they will be the depth (z-coordinate) of the surface.
+
+        cmap: str, optional
+            Apply a colormap to the mesh, this overrides any argument passed to
+            "colors". For supported colormaps see the ``cmap`` library
+            catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+
+        clim: tuple[float, float]
+            The colormap limits. If the mapcoords has values between e.g. 5 and 90, you want to set the clim
+            to e.g. (5, 90) or (0, 100) to determine how the values map onto the colormap.
+
+        **kwargs
+             passed to :class:`.Graphic`
+
+
+        """
+
+        def check_z(z):
+            if z.ndim != 2:
+                raise ValueError("Z must be a 2D array.")
+
+        # In VisVis (https://github.com/almarklein/visvis/blob/main/visvis/functions/surf.py)
+        # the tuple can be 2-element or 4-element, to pass a color per z-value.
+        # I disabled that by commenting related logic. Maybe it can be enabled someday.
+
+        if isinstance(data, (tuple, list)):
+            if len(data) == 1:
+                z = numpy.asanyarray(data[0])
+                check_z(z)
+                y = numpy.arange(z.shape[0])
+                x = numpy.arange(z.shape[1])
+                c = None
+            # elif len(data) == 2:
+            #     z = numpy.asanyarray(data[0])
+            #     c = numpy.asanyarray(data[1])
+            #     check_z(z)
+            #     y = numpy.arange(z.shape[0])
+            #     x = numpy.arange(z.shape[1])
+            elif len(args) == 3:
+                x = numpy.asanyarray(data[0])
+                y = numpy.asanyarray(data[1])
+                z = numpy.asanyarray(data[2])
+                check_z(z)
+                c = None
+            # elif len(args) == 4:
+            #     x = numpy.asanyarray(data[0])
+            #     y = numpy.asanyarray(data[1])
+            #     z = numpy.asanyarray(data[2])
+            #     c = numpy.asanyarray(data[3])
+            #     check_z(z)
+            else:
+                raise ValueError(
+                    "Surface tuple has invalid number of elements (need 1-4)."
+                )
+        else:
+            z = numpy.asanyarray(data)
+            check_z(z)
+            y = numpy.arange(z.shape[0])
+            x = numpy.arange(z.shape[1])
+            c = None
+
+        # Set y vertices
+        if y.shape == (z.shape[0],):
+            y = y.reshape(z.shape[0], 1).repeat(z.shape[1], axis=1)
+        elif y.shape != z.shape:
+            raise ValueError(
+                "Y must have same shape as Z, or be 1D with length of rows of Z."
+            )
+
+        # Set x vertices
+        if x.shape == (z.shape[1],):
+            x = x.reshape(1, z.shape[1]).repeat(z.shape[0], axis=0)
+        elif x.shape != z.shape:
+            raise ValueError(
+                "X must have same shape as Z, or be 1D with length of columns of Z."
+            )
+
+        # Set vertices
+        positions = numpy.column_stack((x.ravel(), y.ravel(), z.ravel()))
+
+        # Create texcoords
+        if mapcoords is None:
+            if True:  # 1d
+                mapcoords = z.ravel()
+            else:
+                # TODO: if cmap is 2D, create 2D texcoords
+                mapcoords = numpy.column_stack((Y.ravel(), Z.ravel()))
+            # Apply contrast limits. Would be nice if Pygfx mesh material had clim too! But
+            # for now we apply it as a pre-processing step.
+            if clim is None:
+                clim = mapcoords.min(), mapcoords.max()
+            mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
+        else:
+            raise ValueError("C must have same shape as Z, or be 3D array.")
+
+        # Create faces
+        w = z.shape[1]
+        i = numpy.arange(z.shape[0] - 1)
+        indices = numpy.row_stack(
+            [
+                numpy.column_stack(
+                    (j + w * i, j + 1 + w * i, j + 1 + w * (i + 1), j + w * (i + 1))
+                )
+                for j in range(w - 1)
+            ]
+        )
+        indices = indices.astype("i4")
+
+        return self._create_graphic(
+            MeshGraphic,
+            positions,
+            indices,
+            colors,
+            mapcoords,
+            cmap,
+            isolated_buffer,
+            **kwargs,
+        )
+
     def add_scatter(
         self,
         data: Any,

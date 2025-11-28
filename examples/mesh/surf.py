@@ -1,8 +1,8 @@
 """
-Simple Line Plot
-================
+Simple surface
+==============
 
-Example showing cosine, sine, sinc lines.
+Example showing a surface mesh
 """
 
 # test_example = true
@@ -16,12 +16,13 @@ import pygfx as gfx
 figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
 
 
+t = np.linspace(0, 6, 100).astype(np.float32)
+x = np.sin(t)
+y = np.cos(t*2)
+z = (x.reshape(1, -1) * x.reshape(-1, 1)) * 50  # 100x100
 
-geo = gfx.geometries.torus_knot_geometry()
-positions = geo.positions.data
-indices = geo.indices.data
 
-mesh = figure[0, 0].add_mesh(positions, indices, colors="magenta")
+mesh = figure[0, 0].add_surface(z, colors="magenta", cmap='jet')
 
 
 figure[0, 0].axes.grids.xy.visible = True
