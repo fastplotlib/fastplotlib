@@ -22,6 +22,27 @@ from ..utils.functions import get_cmap
 from ..utils import quick_min_max
 
 
+def resolve_cmap(cmap):
+    """Turn a user-provided in a pygfx.TextureMap, supporting 1D, 2D and 3D data."""
+    if cmap is None:
+        pygfx_cmap = None
+    elif isinstance(cmap, pygfx.TextureMap):
+        pygfx_cmap = cmap
+    elif isinstance(cmap, pygfx.Texture):
+        pygfx_cmap = pygfx.TextureMap(cmap)
+    elif isinstance(cmap, (str, dict)):
+        pygfx_cmap = pygfx.cm.create_colormap(get_cmap(cmap))
+    else:
+        map = np.asarray(cmap)
+        if map.ndim == 2:  # 1D plus color
+            pygfx_cmap = pygfx.cm.create_colormap(cmap)
+        else:
+            tex = pygfx.Texture(map, dim=map.ndim - 1)
+            pygfx_cmap = pygfx.TextureMap(tex)
+
+    return pygfx_cmap
+
+
 class MeshGraphic(Graphic):
     _features = {
         "positions": VertexPositions,
@@ -56,7 +77,7 @@ class MeshGraphic(Graphic):
             A uniform color, or the per-position colors.
 
         mapcoords: array-like
-            The per-position 1D coordinates to which to apply the colormap (a.k.a. texcoords).
+            The per-position coordinates to which to apply the colormap (a.k.a. texcoords).
             These can e.g. be some domain-specific value, mapped to [0..1].
             If ``mapcoords`` and ``cmap`` are given, they are used instead of ``colors``.
 
@@ -64,6 +85,7 @@ class MeshGraphic(Graphic):
             Apply a colormap to the mesh, this overrides any argument passed to
             "colors". For supported colormaps see the ``cmap`` library
             catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
 
         **kwargs
             passed to :class:`.Graphic`
@@ -95,17 +117,10 @@ class MeshGraphic(Graphic):
                 mapcoords, isolated_buffer=isolated_buffer, property_name="mapcoords"
             )
 
-        pygfx_cmap = None
         uniform_color = "w"
         per_vertex_colors = False
-        if cmap is not None:
-            # if a cmap is specified it overrides colors argument
-            if isinstance(cmap, str):
-                pygfx_cmap = pygfx.cm.create_colormap(get_cmap(cmap))
-            else:
-                pygfx_cmap = pygfx.cm.create_colormap(cmap)
-
-        else:
+        pygfx_cmap = resolve_cmap(cmap)
+        if cmap is None:
             if colors is None:
                 uniform_color = "w"
                 self._colors = UniformColor(uniform_color)

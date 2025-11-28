@@ -8,6 +8,7 @@ import pygfx
 
 from ..graphics import *
 from ..graphics._base import Graphic
+from ..graphics.mesh import resolve_cmap as resolve_mesh_cmap
 
 
 class GraphicMethodsMixin:
@@ -460,7 +461,7 @@ class GraphicMethodsMixin:
             A uniform color, or the per-position colors.
 
         mapcoords: array-like
-            The per-position 1D coordinates to which to apply the colormap (a.k.a. texcoords).
+            The per-position coordinates to which to apply the colormap (a.k.a. texcoords).
             These can e.g. be some domain-specific value, mapped to [0..1].
             If ``mapcoords`` and ``cmap`` are given, they are used instead of ``colors``.
 
@@ -468,6 +469,7 @@ class GraphicMethodsMixin:
             Apply a colormap to the mesh, this overrides any argument passed to
             "colors". For supported colormaps see the ``cmap`` library
             catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
 
         **kwargs
             passed to :class:`.Graphic`
@@ -509,7 +511,7 @@ class GraphicMethodsMixin:
             A uniform color, or the per-position colors.
 
         mapcoords: array-like
-            The per-position 1D coordinates to which to apply the colormap (a.k.a. texcoords).
+            The per-position coordinates to which to apply the colormap (a.k.a. texcoords).
             These can e.g. be some domain-specific value (mapped to [0..1] using ``clim``).
             If not given, they will be the depth (z-coordinate) of the surface.
 
@@ -517,6 +519,7 @@ class GraphicMethodsMixin:
             Apply a colormap to the mesh, this overrides any argument passed to
             "colors". For supported colormaps see the ``cmap`` library
             catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
 
         clim: tuple[float, float]
             The colormap limits. If the mapcoords has values between e.g. 5 and 90, you want to set the clim
@@ -592,15 +595,17 @@ class GraphicMethodsMixin:
         positions = numpy.column_stack((x.ravel(), y.ravel(), z.ravel()))
 
         # Create texcoords
+        cmap = resolve_mesh_cmap(cmap)
         if mapcoords is None:
-            if True:  # 1d
+            if cmap.texture.dim == 1:  # 1d
                 mapcoords = z.ravel()
-            else:
-                # TODO: if cmap is 2D, create 2D texcoords
-                mapcoords = numpy.column_stack((Y.ravel(), Z.ravel()))
+            elif cmap.texture.dim == 2:
+                mapcoords = numpy.column_stack((x.ravel(), y.ravel())).astype(
+                    numpy.float32
+                )
             # Apply contrast limits. Would be nice if Pygfx mesh material had clim too! But
             # for now we apply it as a pre-processing step.
-            if clim is None:
+            if clim is None and mapcoords is not None:
                 clim = mapcoords.min(), mapcoords.max()
             mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
         else:
