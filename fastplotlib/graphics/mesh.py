@@ -1,63 +1,38 @@
-from typing import Sequence, Any
+from typing import Sequence, Any, Literal
 
 import numpy as np
 
 import pygfx
 
 from ._positions_base import Graphic
-from .selectors import (
-    LinearRegionSelector,
-    LinearSelector,
-    RectangleSelector,
-    PolygonSelector,
-)
 from .features import (
-    BufferManager,
-    VertexPositions,
+    MeshVertexPositions,
+    MeshIndices,
+    MeshCmap,
     VertexColors,
     UniformColor,
-    VertexCmap,
+    resolve_cmap_mesh,
+    VolumeSlicePlane,
 )
-from ..utils.functions import get_cmap
-from ..utils import quick_min_max
-
-
-def resolve_cmap(cmap):
-    """Turn a user-provided in a pygfx.TextureMap, supporting 1D, 2D and 3D data."""
-    if cmap is None:
-        pygfx_cmap = None
-    elif isinstance(cmap, pygfx.TextureMap):
-        pygfx_cmap = cmap
-    elif isinstance(cmap, pygfx.Texture):
-        pygfx_cmap = pygfx.TextureMap(cmap)
-    elif isinstance(cmap, (str, dict)):
-        pygfx_cmap = pygfx.cm.create_colormap(get_cmap(cmap))
-    else:
-        map = np.asarray(cmap)
-        if map.ndim == 2:  # 1D plus color
-            pygfx_cmap = pygfx.cm.create_colormap(cmap)
-        else:
-            tex = pygfx.Texture(map, dim=map.ndim - 1)
-            pygfx_cmap = pygfx.TextureMap(tex)
-
-    return pygfx_cmap
 
 
 class MeshGraphic(Graphic):
     _features = {
-        "positions": VertexPositions,
-        "indices": BufferManager,
-        "mapcoords": (BufferManager, None),
+        "positions": MeshVertexPositions,
+        "indices": MeshIndices,
         "colors": (VertexColors, UniformColor),
+        "cmap": MeshCmap,
     }
 
     def __init__(
         self,
         positions: Any,
         indices: Any,
+        mode: Literal["basic", "phong", "slice"],
+        plane: tuple[float, float, float, float] = (0, 0, 1, 0),
         colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
-        cmap: str = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         isolated_buffer: bool = True,
         **kwargs,
     ):
@@ -86,6 +61,7 @@ class MeshGraphic(Graphic):
             "colors". For supported colormaps see the ``cmap`` library
             catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
             Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
+            An image can also be used, this is basically a 2D colormap.
 
         **kwargs
             passed to :class:`.Graphic`
@@ -94,32 +70,30 @@ class MeshGraphic(Graphic):
 
         super().__init__(**kwargs)
 
-        if isinstance(positions, VertexPositions):
+        if isinstance(positions, MeshVertexPositions):
             self._positions = positions
         else:
-            self._positions = VertexPositions(
+            self._positions = MeshVertexPositions(
                 positions, isolated_buffer=isolated_buffer, property_name="positions"
             )
 
-        if isinstance(positions, BufferManager):
+        if isinstance(positions, MeshIndices):
             self._indices = indices
         else:
-            self._indices = BufferManager(
+            self._indices = MeshIndices(
                 indices, isolated_buffer=isolated_buffer, property_name="indices"
             )
 
-        if mapcoords is None:
-            self._mapcoords = None
-        elif isinstance(mapcoords, BufferManager):
-            self._mapcoords = mapcoords
+        self._cmap = MeshCmap(cmap)
+
+        if mapcoords is not None:
+            self._mapcoords = pygfx.Buffer(np.asarray(mapcoords, dtype=np.float32))
         else:
-            self._mapcoords = mapcoords = BufferManager(
-                mapcoords, isolated_buffer=isolated_buffer, property_name="mapcoords"
-            )
+            self._mapcoords = None
 
         uniform_color = "w"
         per_vertex_colors = False
-        pygfx_cmap = resolve_cmap(cmap)
+
         if cmap is None:
             if colors is None:
                 uniform_color = "w"
@@ -130,7 +104,6 @@ class MeshGraphic(Graphic):
             elif isinstance(colors, VertexColors):
                 per_vertex_colors = True
                 self._colors = colors
-                self._colors._shared += 1
             else:
                 per_vertex_colors = True
                 self._colors = VertexColors(
@@ -140,19 +113,35 @@ class MeshGraphic(Graphic):
         geometry = pygfx.Geometry(
             positions=self._positions.buffer, indices=self._indices._buffer
         )
-        material = pygfx.MeshPhongMaterial(
+
+        valid_modes = ["basic", "phong", "slice"]
+        if mode not in valid_modes:
+            raise ValueError(f"mode must be one of: {valid_modes}\nYou passed: {mode}")
+        self._mode = mode
+
+        material_cls = getattr(pygfx, f"Mesh{mode.capitalize()}Material")
+
+        if mode == "slice":
+            self._plane = VolumeSlicePlane(plane)
+            add_kwargs = {"plane": self._plane.value}
+        else:
+            # for basic and phong, maybe later we can add more of the properties
+            add_kwargs = {}
+
+        material = material_cls(
             color_mode="uniform",
             color=uniform_color,
             pick_write=True,
+            **add_kwargs,
         )
 
         # Set all the data
         if per_vertex_colors:
             geometry.colors = self._colors.buffer
-        if mapcoords is not None:
-            geometry.texcoords = self._mapcoords.buffer
-        if pygfx_cmap is not None:
-            material.map = pygfx_cmap
+        if self._mapcoords is not None:
+            geometry.texcoords = self._mapcoords
+        elif self._cmap.value is not None:
+            material.map = resolve_cmap_mesh(self.cmap)
 
         # Decide on color mode
         # uniform = None  #: Use the uniform color (usually ``material.color``).
@@ -160,7 +149,7 @@ class MeshGraphic(Graphic):
         # face = None  #: Use the per-face color specified in the geometry  (usually  ``geometry.colors``).
         # vertex_map = None  #: Use per-vertex texture coords (``geometry.texcoords``), and sample these in ``material.map``.
         # face_map = None  #: Use per-face texture coords (``geometry.texcoords``), and sample these in ``material.map``.
-        if mapcoords is not None and pygfx_cmap is not None:
+        if mapcoords is not None and self._cmap.value is not None:
             material.color_mode = "vertex_map"
         elif per_vertex_colors:
             material.color_mode = "vertex"
@@ -170,3 +159,87 @@ class MeshGraphic(Graphic):
         world_object: pygfx.Mesh = pygfx.Mesh(geometry=geometry, material=material)
 
         self._set_world_object(world_object)
+
+    @property
+    def mode(self) -> Literal["basic", "phong", "slice"]:
+        return self._mode
+
+    @property
+    def positions(self) -> MeshVertexPositions:
+        """Get or set the vertex positions"""
+        return self._positions
+
+    @positions.setter
+    def positions(self, new_positions):
+        self._positions[:] = new_positions
+
+    @property
+    def indices(self) -> MeshIndices:
+        """Get or set the vertex indices"""
+        return self._indices
+
+    @indices.setter
+    def indices(self, mew_indices):
+        self._indices[:] = mew_indices
+
+    @property
+    def mapcoords(self) -> np.ndarray | None:
+        if self._mapcoords is not None:
+            return self._mapcoords.data
+
+    @mapcoords.setter
+    def mapcoords(self, new_mapcoords: np.ndarray | None):
+        if new_mapcoords is None:
+            self.world_object.geometry.texcoords = None
+            self._mapcoords = None
+            return
+
+        if new_mapcoords.shape == self._mapcoords.data.shape:
+            self._mapcoords.data[:] = new_mapcoords
+            self._mapcoords.update_full()
+        else:
+            # allocate new buffer
+            self._mapcoords = pygfx.Buffer(np.asarray(new_mapcoords, dtype=np.float32))
+            self.world_object.geometry.texcoords = self._mapcoords
+
+    @property
+    def colors(self) -> VertexColors | pygfx.Color:
+        """Get or set the colors"""
+        if isinstance(self._colors, VertexColors):
+            return self._colors
+
+        elif isinstance(self._colors, UniformColor):
+            return self._colors.value
+
+    @colors.setter
+    def colors(self, value: str | np.ndarray | Sequence[float] | Sequence[str]):
+        if isinstance(self._colors, VertexColors):
+            self._colors[:] = value
+
+        elif isinstance(self._colors, UniformColor):
+            self._colors.set_value(self, value)
+
+    @property
+    def cmap(self) -> str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray | None:
+        if self._cmap is not None:
+            return self._cmap.value
+
+    @cmap.setter
+    def cmap(self, new_cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray | None):
+        self._cmap.set_value(self, new_cmap)
+
+    @property
+    def plane(self) -> tuple[float, float, float, float] | None:
+        """Get or set displayed plane in the volume. Valid only for `slice` render mode."""
+        if self.mode != "slice":
+            return
+
+        return self._plane.value
+
+    @plane.setter
+    def plane(self, value: tuple[float, float, float, float]):
+        if self.mode != "slice":
+            raise TypeError("`plane` property is only valid for `slice` render mode.")
+
+        self._plane.set_value(self, value)
+
