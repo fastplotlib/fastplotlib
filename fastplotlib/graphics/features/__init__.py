@@ -5,7 +5,7 @@ from ._positions import (
     VertexPositions,
     VertexCmap,
 )
-from ._mesh import MeshVertexPositions, MeshIndices, MeshCmap, resolve_cmap_mesh
+from ._mesh import MeshVertexPositions, MeshIndices, MeshCmap, SurfaceData, resolve_cmap_mesh, surface_data_to_mesh
 from ._line import Thickness
 from ._scatter import (
     VertexMarkers,
@@ -75,6 +75,7 @@ __all__ = [
     "MeshVertexPositions",
     "MeshIndices",
     "MeshCmap",
+    "SurfaceData",
     "Thickness",
     "VertexMarkers",
     "UniformMarker",

@@ -10,7 +10,6 @@ Example showing an image as a surface.
 
 import imageio.v3 as iio
 import fastplotlib as fpl
-import numpy as np
 import scipy.ndimage
 
 im = iio.imread("imageio:astronaut.png")

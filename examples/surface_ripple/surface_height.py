@@ -1,8 +1,8 @@
 """
-Simple mesh
-===========
+Simple surface
+==============
 
-Example showing a simple mesh
+Example showing a surface mesh
 """
 
 # test_example = true
@@ -16,17 +16,15 @@ import pygfx as gfx
 figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
 
 
-# Load geometry using Pygfx's geometry util
-geo = gfx.geometries.torus_knot_geometry()
-positions = geo.positions.data
-indices = geo.indices.data
+t = np.linspace(0, 6, 100).astype(np.float32)
+x = np.sin(t)
+y = np.cos(t*2)
+z = (x.reshape(1, -1) * x.reshape(-1, 1)) * 50  # 100x100
 
-mesh = figure[0, 0].add_mesh(positions, indices, colors="magenta")
+surface = figure[0, 0].add_surface(z, cmap="bwr")
 
-
-figure[0, 0].axes.grids.xy.visible = True
-figure[0, 0].camera.show_object(mesh.world_object, (1, 1, -1), up=(0, 0, 1))
-
+# figure[0, 0].axes.grids.xy.visible = True
+figure[0, 0].camera.show_object(surface.world_object, (-2, 2, -3), up=(0, 0, 1))
 figure.show()
 
 

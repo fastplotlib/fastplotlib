@@ -1,32 +1,31 @@
 """
-Simple surface
-==============
+Simple mesh
+===========
 
-Example showing a surface mesh
+Example showing a simple mesh
 """
 
 # test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
-import numpy as np
 import pygfx as gfx
 
 
 figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
 
 
-t = np.linspace(0, 6, 100).astype(np.float32)
-x = np.sin(t)
-y = np.cos(t*2)
-z = (x.reshape(1, -1) * x.reshape(-1, 1)) * 50  # 100x100
+# Load geometry using Pygfx's geometry util
+geo = gfx.geometries.torus_knot_geometry()
+positions = geo.positions.data
+indices = geo.indices.data
 
+mesh = fpl.MeshGraphic(positions, indices, colors="magenta")
 
-mesh = figure[0, 0].add_surface(z, colors="magenta", cmap='jet')
+figure[0, 0].add_graphic(mesh)
+figure[0, 0].axes.grids.xy.visible = True
+figure[0, 0].camera.show_object(mesh.world_object, (1, 1, -1), up=(0, 0, 1))
 
-
-# figure[0, 0].axes.grids.xy.visible = True
-figure[0, 0].camera.show_object(mesh.world_object, (-2, 2, -3), up=(0, 0, 1))
 figure.show()
 
 

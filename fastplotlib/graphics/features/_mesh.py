@@ -116,3 +116,91 @@ class MeshCmap(GraphicFeature):
 
         event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
+
+
+def surface_data_to_mesh(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """
+    surface data to mesh positions and indices
+
+    expects data that is of shape: [m, n, 3] or [m, n]
+    """
+
+    data = np.asarray(data)
+
+    if data.ndim == 2:
+        # "image" of z values passed
+        # [m, n] -> [n_vertices, 3]
+        y = np.arange(data.shape[0]).reshape(data.shape[0], 1).repeat(data.shape[1], axis=1)
+        x = np.arange(data.shape[1]).reshape(1, data.shape[1]).repeat(data.shape[0], axis=0)
+        positions = np.column_stack((x.ravel(), y.ravel(), data.ravel()))
+    else:
+        if data.ndim != 3:
+            raise ValueError(
+                f"expect data that is of shape: [m, n, 3], [m, n]\n"
+                f"you passed: {data.shape}"
+            )
+        if data.shape[2] != 3:
+            raise ValueError(
+                f"expect data that is of shape: [m, n, 3], [m, n]\n"
+                f"you passed: {data.shape}"
+            )
+
+        # [m, n, 3] -> [n_vertices, 3]
+        positions = data.reshape(-1, 3)
+
+    # Create faces
+    w = data.shape[1]
+    i = np.arange(data.shape[0] - 1)
+    j = np.arange(w - 1)
+
+    j, i = np.meshgrid(j, i, indexing="ij")
+    start = j.ravel() + w * i.ravel()
+
+    indices = np.column_stack([start, start + 1, start + w + 1, start + w])
+
+    return positions, indices
+
+
+class SurfaceData(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "np.ndarray",
+            "description": "new data",
+        },
+    ]
+
+    def __init__(self, value: np.ndarray | Sequence, property_name: str = "data"):
+        self._value = np.asarray(value, dtype=np.float32)
+        super().__init__(property_name=property_name)
+
+    @property
+    def value(self) -> np.ndarray:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: np.ndarray):
+        positions, indices = surface_data_to_mesh(value)
+
+        graphic.world_object.geometry.positions.data[:] = positions
+        graphic.world_object.geometry.indices.data[:] = indices
+
+        graphic.world_object.geometry.positions.update_full()
+        graphic.world_object.geometry.indices.update_full()
+
+        # if cmap is a 1D texture we need to set the texcoords again using new z values
+        if graphic.world_object.material.map is not None:
+            if graphic.world_object.material.map.texture.dim == 1:
+                mapcoords = positions[:, 2]
+
+                if graphic.clim is None:
+                    clim = mapcoords.min(), mapcoords.max()
+                else:
+                    clim = graphic.clim
+                mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
+                graphic.mapcoords = mapcoords
+
+        self._value = value
+
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
+        self._call_event_handlers(event)

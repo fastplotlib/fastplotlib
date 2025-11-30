@@ -9,6 +9,8 @@ from .features import (
     MeshVertexPositions,
     MeshIndices,
     MeshCmap,
+    SurfaceData,
+    surface_data_to_mesh,
     VertexColors,
     UniformColor,
     resolve_cmap_mesh,
@@ -28,7 +30,7 @@ class MeshGraphic(Graphic):
         self,
         positions: Any,
         indices: Any,
-        mode: Literal["basic", "phong", "slice"],
+        mode: Literal["basic", "phong", "slice"] = "phong",
         plane: tuple[float, float, float, float] = (0, 0, 1, 0),
         colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
@@ -140,8 +142,8 @@ class MeshGraphic(Graphic):
             geometry.colors = self._colors.buffer
         if self._mapcoords is not None:
             geometry.texcoords = self._mapcoords
-        elif self._cmap.value is not None:
-            material.map = resolve_cmap_mesh(self.cmap)
+        if cmap is not None:
+            material.map = resolve_cmap_mesh(cmap)
 
         # Decide on color mode
         # uniform = None  #: Use the uniform color (usually ``material.color``).
@@ -149,7 +151,7 @@ class MeshGraphic(Graphic):
         # face = None  #: Use the per-face color specified in the geometry  (usually  ``geometry.colors``).
         # vertex_map = None  #: Use per-vertex texture coords (``geometry.texcoords``), and sample these in ``material.map``.
         # face_map = None  #: Use per-face texture coords (``geometry.texcoords``), and sample these in ``material.map``.
-        if mapcoords is not None and self._cmap.value is not None:
+        if mapcoords is not None and cmap is not None:
             material.color_mode = "vertex_map"
         elif per_vertex_colors:
             material.color_mode = "vertex"
@@ -243,3 +245,105 @@ class MeshGraphic(Graphic):
 
         self._plane.set_value(self, value)
 
+
+class SurfaceGraphic(MeshGraphic):
+    _features = {
+        "data": MeshVertexPositions,
+        "colors": (VertexColors, UniformColor),
+        "cmap": MeshCmap,
+    }
+
+    def __init__(
+        self,
+        data: np.ndarray,
+        mode: Literal["basic", "phong", "slice"] = "phong",
+        colors: str | np.ndarray | Sequence = "w",
+        mapcoords: Any = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
+        clim: tuple[float, float] | None = None,
+        **kwargs,
+    ):
+        """
+        Create a Surface mesh Graphic
+
+        Parameters
+        ----------
+        data: array-like
+            A height-map (an image where the values indicate height, i.e. z values).
+            Can also be a [m, n, 3] to explicitly specify the x and y values in addition to the z values.
+
+        colors: str, array, or iterable, default "w"
+            A uniform color, or the per-position colors.
+
+        mapcoords: array-like
+            The per-position coordinates to which to apply the colormap (a.k.a. texcoords).
+            These can e.g. be some domain-specific value (mapped to [0..1] using ``clim``).
+            If not given, they will be the depth (z-coordinate) of the surface.
+
+        cmap: str, optional
+            Apply a colormap to the mesh, this overrides any argument passed to
+            "colors". For supported colormaps see the ``cmap`` library
+            catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
+
+        clim: tuple[float, float]
+            The colormap limits. If the mapcoords has values between e.g. 5 and 90, you want to set the clim
+            to e.g. (5, 90) or (0, 100) to determine how the values map onto the colormap.
+
+        **kwargs
+             passed to :class:`.Graphic`
+
+        """
+
+        self._data = SurfaceData(data)
+
+        if clim is not None:
+            if len(clim) != 2:
+                raise ValueError("clim must be a: tuple[float, float]")
+
+            self._clim = tuple(clim)
+        else:
+            self._clim = None
+
+        positions, indices = surface_data_to_mesh(data)
+
+        cmap_tex_view = resolve_cmap_mesh(cmap)
+        if (cmap_tex_view is not None) and (mapcoords is None):
+                if cmap_tex_view.texture.dim == 1:  # 1d
+                    mapcoords = positions[:, 2]
+
+                elif cmap_tex_view.texture.dim == 2:
+                    mapcoords = np.column_stack((positions[:, 0], positions[:, 1])).astype(
+                        np.float32
+                    )
+                # Apply contrast limits. Would be nice if Pygfx mesh material had clim too! But
+                # for now we apply it as a pre-processing step.
+                if clim is None and mapcoords is not None:
+                    clim = mapcoords.min(), mapcoords.max()
+                mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
+
+        super().__init__(positions, indices, mode=mode, colors=colors, mapcoords=mapcoords, cmap=cmap, **kwargs)
+
+    @property
+    def data(self) -> np.ndarray:
+        return self._data.value
+
+    @data.setter
+    def data(self, new_data: np.ndarray):
+        self._data.set_value(self, new_data)
+
+    @property
+    def clim(self) -> tuple[float, float] | None:
+        return self._clim
+
+    @clim.setter
+    def clim(self, new_clim: tuple[float, float]):
+        if len(new_clim) != 2:
+            raise ValueError("clim must be a: tuple[float, float]")
+
+        self._clim = tuple(new_clim)
+
+        self.mapcoords = (self.mapcoords - self.clim[0]) / (self.clim[1] - self.clim[0])
+
+class Polygon(Graphic):
+    pass
