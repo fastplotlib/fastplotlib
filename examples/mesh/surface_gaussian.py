@@ -30,7 +30,7 @@ x, y = np.meshgrid(r, r)
 z = gaus2d(x, y, mx=5, my=5, sx=1, sy=1) * 50
 
 mesh = figure[0, 0].add_surface(
-    np.dstack([x, y, z]), mode="phong", colors="magenta", cmap="jet"
+    np.dstack([x, y, z]), mode="phong", cmap="jet"
 )
 
 # figure[0, 0].axes.grids.xy.visible = True

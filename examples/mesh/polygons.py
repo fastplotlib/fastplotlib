@@ -1,6 +1,6 @@
 """
 Polygons
-======================
+========
 
 An example with polygons.
 
@@ -24,28 +24,38 @@ def make_circle(center, radius: float, n_points: int = 75) -> np.ndarray:
     return np.column_stack([xs, ys]) + np.asarray(center)[None]
 
 
+# define vertices for some polygons
 circle_data = make_circle(center=(0, 0), radius=5)
 octogon_data = make_circle(center=(15, 0), radius=7, n_points=8)
-
-rectangle_data = np.array([[10, 10], [15, 10], [15, 15], [10, 15]])
-
+rectangle_data = np.array([[10, 10], [20, 10], [20, 15], [10, 15]])
 triangle_data = np.array(
     [
-        [0, 10],
-        [5, 10],
-        [2.5, 15],
-        [0, 10],
+        [-5, 8],
+        [5, 8],
+        [0, 15],
+        [-5, 8],
     ]
 )
 
-
+# add polygons
 figure[0, 0].add_polygon(circle_data, name="circle")
-figure[0, 0].add_polygon(octogon_data, colors=Colormap("jet").lut(8), name="octogon")
 figure[0, 0].add_polygon(
-    rectangle_data, colors=["r", "r", "cyan", "y"], name="rectangle"
+    octogon_data,
+    colors=Colormap("jet").lut(8), # set vertex colors from jet cmap
+    name="octogon"
+)
+figure[0, 0].add_polygon(
+    rectangle_data,
+    colors=["r", "r", "cyan", "y"], # manually specify vertex colors
+    name="rectangle"
 )
 figure[0, 0].add_polygon(triangle_data, colors="m")
 
 figure.show()
 
-fpl.loop.run()
+
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
+if __name__ == "__main__":
+    print(__doc__)
+    fpl.loop.run()
