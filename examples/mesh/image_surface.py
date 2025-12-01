@@ -21,7 +21,7 @@ figure = fpl.Figure(size=(700, 560), cameras="3d", controller_types="orbit")
 z = im.mean(axis=2)
 z = scipy.ndimage.gaussian_filter(z, 5)  # 2nd arg is sigma
 
-mesh = figure[0, 0].add_surface(z, colors="magenta", cmap=im)
+mesh = figure[0, 0].add_surface(z, cmap=im)
 mesh.world_object.local.scale_y = -1
 
 
