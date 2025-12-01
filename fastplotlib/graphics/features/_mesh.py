@@ -198,11 +198,8 @@ class SurfaceData(GraphicFeature):
     def set_value(self, graphic, value: np.ndarray):
         positions, indices = surface_data_to_mesh(value)
 
-        graphic.world_object.geometry.positions.data[:] = positions
-        graphic.world_object.geometry.indices.data[:] = indices
-
-        graphic.world_object.geometry.positions.update_full()
-        graphic.world_object.geometry.indices.update_full()
+        graphic.positions = positions
+        graphic.indices = indices
 
         # if cmap is a 1D texture we need to set the texcoords again using new z values
         if graphic.world_object.material.map is not None:
