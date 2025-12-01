@@ -463,6 +463,15 @@ class GraphicMethodsMixin:
             The indices into the positions that make up the triangles. Each 3
             subsequent indices form a triangle.
 
+        mode: one of "basic", "phong", "slice", default "phong"
+            * basic: illuminate mesh with only ambient lighting
+            * phong: phong lighting model, good for most use cases, see https://en.wikipedia.org/wiki/Phong_shading
+            * slice: display a slice of the mesh at the specified ``plane``
+
+        plane: (float, float, float, float), default (0, 0, -1, 0)
+            Slice mesh at this plane. Sets (a, b, c, d) in the equation the defines a plane: ax + by + cz + d = 0.
+            Used only if `mode` = "slice". The plane is defined in world space.
+
         colors: str, array, or iterable, default "w"
             A uniform color, or the per-position colors.
 
@@ -477,6 +486,12 @@ class GraphicMethodsMixin:
             catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
             Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
             An image can also be used, this is basically a 2D colormap.
+
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then
+            set the data, useful if the data arrays are ready-only such as memmaps.
+            If False, the input array is itself used as the buffer - useful if the
+            array is large. In almost all cases this should be ``True``.
 
         **kwargs
             passed to :class:`.Graphic`
@@ -514,17 +529,39 @@ class GraphicMethodsMixin:
     ) -> PolygonGraphic:
         """
 
-        Create a polygon mesh graphic
+        Create a polygon mesh graphic.
+
+        The data are always in the 'xy' plane. Set a rotation to display the polygon in another plane or in 3D space.
 
         Parameters
         ----------
-        data
-        mode
-        colors
-        mapcoords
-        cmap
-        clim
-        kwargs
+        data: array-like
+            The polygon vertices, must be of shape: [n_vertices, 2]
+
+        mode: one of "basic", "phong", "slice", default "phong"
+            * basic: illuminate mesh with only ambient lighting
+            * phong: phong lighting model, good for most use cases, see https://en.wikipedia.org/wiki/Phong_shading
+
+        colors: str, array, or iterable, default "w"
+            A uniform color, or the per-position colors.
+
+        mapcoords: array-like
+            The per-position coordinates to which to apply the colormap (a.k.a. texcoords).
+            These can e.g. be some domain-specific value (mapped to [0..1] using ``clim``).
+            If not given, they will be the depth (z-coordinate) of the surface.
+
+        cmap: str, optional
+            Apply a colormap to the mesh, this overrides any argument passed to
+            "colors". For supported colormaps see the ``cmap`` library
+            catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
+
+        clim: tuple[float, float]
+            The colormap limits. If the mapcoords has values between e.g. 5 and 90, you want to set the clim
+            to e.g. (5, 90) or (0, 100) to determine how the values map onto the colormap.
+
+        **kwargs
+             passed to :class:`.Graphic`
 
         """
         return self._create_graphic(
@@ -710,6 +747,10 @@ class GraphicMethodsMixin:
         data: array-like
             A height-map (an image where the values indicate height, i.e. z values).
             Can also be a [m, n, 3] to explicitly specify the x and y values in addition to the z values.
+
+        mode: one of "basic", "phong", "slice", default "phong"
+            * basic: illuminate mesh with only ambient lighting
+            * phong: phong lighting model, good for most use cases, see https://en.wikipedia.org/wiki/Phong_shading
 
         colors: str, array, or iterable, default "w"
             A uniform color, or the per-position colors.
