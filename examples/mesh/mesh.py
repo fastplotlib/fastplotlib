@@ -12,7 +12,7 @@ import fastplotlib as fpl
 import pygfx as gfx
 
 
-figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
+figure = fpl.Figure(size=(700, 560), cameras="3d", controller_types="orbit")
 
 
 # Load geometry using Pygfx's geometry util

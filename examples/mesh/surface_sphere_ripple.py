@@ -12,7 +12,7 @@ Example of a sphere with a ripple effect by setting the data on every render.
 import fastplotlib as fpl
 import numpy as np
 
-figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
+figure = fpl.Figure(size=(700, 560), cameras="3d", controller_types="orbit")
 
 # create an ellipsoid from spherical coordinates
 # see this for reference: https://mathworld.wolfram.com/SphericalCoordinates.html
@@ -53,6 +53,8 @@ figure[0, 0].camera.zoom = 1.3
 
 
 start = 0
+
+
 def animate():
     global start
     theta = np.linspace(start, start + np.pi, num=ny, dtype=np.float32)

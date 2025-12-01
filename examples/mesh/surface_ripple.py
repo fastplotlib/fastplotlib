@@ -13,23 +13,26 @@ import fastplotlib as fpl
 import numpy as np
 
 
-figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
+figure = fpl.Figure(size=(700, 560), cameras="3d", controller_types="orbit")
 
 
 def create_ripple(shape=(100, 100), phase=0.0, freq=np.pi / 4, ampl=1.0):
     m, n = shape
-    y, x = np.ogrid[-m / 2:m / 2, -n / 2:n / 2]
-    r = np.sqrt(x ** 2 + y ** 2)
+    y, x = np.ogrid[-m / 2 : m / 2, -n / 2 : n / 2]
+    r = np.sqrt(x**2 + y**2)
     z = (ampl * np.sin(freq * r + phase)) / np.sqrt(r + 1)
 
-    return  z * 8
+    return z * 8
+
 
 z = create_ripple()
 
 # set the clim vmax
 max_z = create_ripple(phase=(np.pi / 4) - (np.pi / 2)).max()
 
-surface = figure[0, 0].add_surface(z, mode="basic", cmap="viridis", clim=(-max_z, max_z))
+surface = figure[0, 0].add_surface(
+    z, mode="basic", cmap="viridis", clim=(-max_z, max_z)
+)
 
 figure[0, 0].camera.show_object(surface.world_object, (-1, 3, -1), up=(0, 0, 1))
 figure.show()
@@ -37,6 +40,8 @@ figure.show()
 figure[0, 0].camera.zoom = 1.15
 
 phase = 0.0
+
+
 def animate():
     global phase
 
@@ -45,6 +50,7 @@ def animate():
     surface.data = z
 
     phase -= 0.1
+
 
 figure[0, 0].add_animations(animate)
 

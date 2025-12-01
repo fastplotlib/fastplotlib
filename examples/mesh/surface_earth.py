@@ -16,7 +16,7 @@ import imageio.v3 as iio
 import pylinalg as la
 
 
-figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
+figure = fpl.Figure(size=(700, 560), cameras="3d", controller_types="orbit")
 
 # create a sphere from spherical coordinates
 # see this for reference: https://mathworld.wolfram.com/SphericalCoordinates.html
@@ -41,12 +41,20 @@ v = 1 - (theta_grid / np.pi)
 texcoords = np.dstack([u, v]).reshape(-1, 2)
 
 # get an image of the earth from nasa
-image = iio.imread("https://svs.gsfc.nasa.gov/vis/a000000/a003600/a003615/flat_earth_Largest_still.0330.jpg")
+image = iio.imread(
+    "https://svs.gsfc.nasa.gov/vis/a000000/a003600/a003615/flat_earth_Largest_still.0330.jpg"
+)
 # images coordinate systems are typically inverted in y, so flip the image
 image = np.ascontiguousarray(np.flipud(image))
 
 # create a sphere
-sphere = figure[0, 0].add_surface(np.dstack([x, y, z]), mode="phong", colors="magenta", cmap=image, mapcoords=texcoords)
+sphere = figure[0, 0].add_surface(
+    np.dstack([x, y, z]),
+    mode="phong",
+    colors="magenta",
+    cmap=image,
+    mapcoords=texcoords,
+)
 
 # display xz plane as a grid
 figure[0, 0].axes.grids.xz.visible = True
@@ -60,9 +68,13 @@ figure[0, 0].camera.zoom = 1.25
 axial_tilt = la.quat_from_euler((np.radians(23.44), 0), order="XY")
 
 # a line to indicate the axial tilt
-figure[0, 0].add_line(np.array([[0, -20, 0], [0, 20, 0]]), rotation=axial_tilt, colors="magenta")
+figure[0, 0].add_line(
+    np.array([[0, -20, 0], [0, 20, 0]]), rotation=axial_tilt, colors="magenta"
+)
 
 rot = 1
+
+
 def rotate():
     # rotate by 1 degree
     global rot
@@ -71,6 +83,7 @@ def rotate():
 
     # apply rotation w.r.t. axial tilt
     sphere.rotation = la.quat_mul(axial_tilt, rot_quat)
+
 
 figure[0, 0].add_animations(rotate)
 

@@ -12,7 +12,7 @@ Simple example of a sphere surface mesh with a colormap indicating z values.
 import fastplotlib as fpl
 import numpy as np
 
-figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
+figure = fpl.Figure(size=(700, 560), cameras="3d", controller_types="orbit")
 
 # create an ellipsoid from spherical coordinates
 # see this for reference: https://mathworld.wolfram.com/SphericalCoordinates.html
@@ -37,7 +37,7 @@ z = radius * 2 * np.sin(phi_grid) * theta_grid_sin
 sphere = figure[0, 0].add_surface(
     np.dstack([x, y, z]),
     mode="phong",
-    cmap="bwr", # by default, providing a colormap name will map the colors to z values
+    cmap="bwr",  # by default, providing a colormap name will map the colors to z values
 )
 
 # display xz plane as a grid

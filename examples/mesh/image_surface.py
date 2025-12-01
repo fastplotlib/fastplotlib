@@ -14,7 +14,7 @@ import scipy.ndimage
 
 im = iio.imread("imageio:astronaut.png")
 
-figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
+figure = fpl.Figure(size=(700, 560), cameras="3d", controller_types="orbit")
 
 
 # Create the height map from the image
