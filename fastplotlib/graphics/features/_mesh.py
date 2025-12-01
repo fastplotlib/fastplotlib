@@ -276,7 +276,9 @@ class PolygonData(GraphicFeature):
             geometry.indices = pygfx.Buffer(arr)
 
         geometry.positions.data[: len(positions)] = positions
-        geometry.positions.data[len(positions) :] = positions[-1] if len(positions) else (0, 0, 0)
+        geometry.positions.data[len(positions) :] = (
+            positions[-1] if len(positions) else (0, 0, 0)
+        )
         geometry.positions.draw_range = 0, len(positions)
         geometry.positions.update_full()
 
