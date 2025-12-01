@@ -1,6 +1,6 @@
 """
 Ellipsoid surface
-======================
+=================
 
 Simple example of a sphere surface mesh with a colormap indicating z values.
 

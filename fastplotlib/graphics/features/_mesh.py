@@ -12,6 +12,7 @@ from ._base import (
 
 from ._positions import VertexPositions
 from ...utils.functions import get_cmap
+from ...utils.triangulation import triangulate
 
 
 def resolve_cmap_mesh(cmap) -> pygfx.TextureMap | None:
@@ -75,7 +76,9 @@ class MeshIndices(VertexPositions):
         )
 
     def _fix_data(self, data):
-        if data.ndim != 2 or data.shape[1] not in (3, 4):
+        if data.shape == (3,):
+            pass
+        elif data.ndim != 2 or data.shape[1] not in (3, 4):
             raise ValueError(
                 f"indices must be of shape: [n_vertices, 3] or [n_vertices, 4], "
                 f"you passed an array of shape: {data.shape}"
@@ -166,7 +169,7 @@ class SurfaceData(GraphicFeature):
         {
             "dict key": "value",
             "type": "np.ndarray",
-            "description": "new data",
+            "description": "new surface data",
         },
     ]
 
@@ -203,4 +206,79 @@ class SurfaceData(GraphicFeature):
         self._value = value
 
         event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
+        self._call_event_handlers(event)
+
+
+def triangulate_polygon(data: np.ndarray | Sequence):
+    """vertices of shape [n_vertices , 2] -> positions, indices"""
+    data = np.asarray(data, dtype=np.float32)
+
+    err_msg = f"polygon vertex data must be of shape [n_vertices, 2], you passed: {data}"
+
+    if data.ndim != 2:
+        raise ValueError(err_msg)
+    if data.shape[1] != 2:
+        raise ValueError(err_msg)
+
+    if len(data) >= 3:
+        indices = triangulate(data)
+    else:
+        indices = np.arange((0, 3), np.int32)
+
+    data = np.column_stack([data, np.zeros(data.shape[0], dtype=np.float32)])
+
+    return data, indices
+
+
+
+class PolygonData(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "np.ndarray",
+            "description": "new polygon vertex data",
+        },
+    ]
+
+    def __init__(self, value: np.ndarray, property_name: str = "data"):
+        self._value = np.asarray(value, dtype=np.float32)
+        super().__init__(property_name=property_name)
+
+    @property
+    def value(self) -> np.ndarray:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: np.ndarray | Sequence):
+        value = np.asarray(value, dtype=np.float32)
+
+        positions, indices = triangulate_polygon(value)
+
+        geometry = graphic.geometry
+
+        # Need larger buffer?
+        if len(value) > geometry.positions.nitems:
+            arr = np.zeros((geometry.positions.nitems * 2, 3), np.float32)
+            geometry.positions = pygfx.Buffer(arr)
+        if len(indices) > geometry.indices.nitems:
+            arr = np.zeros((geometry.indices.nitems * 2, 3), np.int32)
+            geometry.indices = pygfx.Buffer(arr)
+
+        geometry.positions.data[: len(value)] = value
+        geometry.positions.data[len(value):] = value[-1] if len(value) else (0, 0, 0)
+        geometry.positions.draw_range = 0, len(value)
+        geometry.positions.update_full()
+
+        geometry.indices.data[: len(indices)] = indices
+        geometry.indices.data[len(indices):] = 0
+        geometry.indices.draw_range = 0, len(indices)
+        geometry.indices.update_full()
+
+        # send event
+        if len(self._event_handlers) < 1:
+            return
+
+        event = GraphicFeatureEvent(self._property_name, {"value": self.value})
+
+        # calls any events
         self._call_event_handlers(event)

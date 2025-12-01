@@ -15,6 +15,8 @@ from .features import (
     UniformColor,
     resolve_cmap_mesh,
     VolumeSlicePlane,
+    PolygonData,
+    triangulate_polygon,
 )
 
 
@@ -248,7 +250,7 @@ class MeshGraphic(Graphic):
 
 class SurfaceGraphic(MeshGraphic):
     _features = {
-        "data": MeshVertexPositions,
+        "data": SurfaceData,
         "colors": (VertexColors, UniformColor),
         "cmap": MeshCmap,
     }
@@ -309,18 +311,18 @@ class SurfaceGraphic(MeshGraphic):
 
         cmap_tex_view = resolve_cmap_mesh(cmap)
         if (cmap_tex_view is not None) and (mapcoords is None):
-                if cmap_tex_view.texture.dim == 1:  # 1d
-                    mapcoords = positions[:, 2]
+            if cmap_tex_view.texture.dim == 1:  # 1d
+                mapcoords = positions[:, 2]
 
-                elif cmap_tex_view.texture.dim == 2:
-                    mapcoords = np.column_stack((positions[:, 0], positions[:, 1])).astype(
-                        np.float32
-                    )
-                # Apply contrast limits. Would be nice if Pygfx mesh material had clim too! But
-                # for now we apply it as a pre-processing step.
-                if clim is None and mapcoords is not None:
-                    clim = mapcoords.min(), mapcoords.max()
-                mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
+            elif cmap_tex_view.texture.dim == 2:
+                mapcoords = np.column_stack((positions[:, 0], positions[:, 1])).astype(
+                    np.float32
+                )
+            # Apply contrast limits. Would be nice if Pygfx mesh material had clim too! But
+            # for now we apply it as a pre-processing step.
+            if clim is None and mapcoords is not None:
+                clim = mapcoords.min(), mapcoords.max()
+            mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
 
         super().__init__(positions, indices, mode=mode, colors=colors, mapcoords=mapcoords, cmap=cmap, **kwargs)
 
@@ -345,5 +347,70 @@ class SurfaceGraphic(MeshGraphic):
 
         self.mapcoords = (self.mapcoords - self.clim[0]) / (self.clim[1] - self.clim[0])
 
-class Polygon(Graphic):
-    pass
+
+class PolygonGraphic(MeshGraphic):
+    _features = {
+        "data": SurfaceData,
+        "colors": (VertexColors, UniformColor),
+        "cmap": MeshCmap,
+    }
+
+    def __init__(
+        self,
+        data: np.ndarray,
+        mode: Literal["basic", "phong"] = "basic",
+        colors: str | np.ndarray | Sequence = "w",
+        mapcoords: Any = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
+        clim: tuple[float, float] | None = None,
+        **kwargs,
+    ):
+        """
+        Create a polygon mesh graphic
+
+        Parameters
+        ----------
+        data
+        mode
+        colors
+        mapcoords
+        cmap
+        clim
+        kwargs
+        """
+        pass
+
+        positions, indices = triangulate_polygon(data)
+
+        self._data = PolygonData(positions)
+
+        if clim is not None:
+            if len(clim) != 2:
+                raise ValueError("clim must be a: tuple[float, float]")
+
+            self._clim = tuple(clim)
+        else:
+            self._clim = None
+
+        super().__init__(positions, indices, mode=mode, colors=colors, mapcoords=mapcoords, cmap=cmap, **kwargs)
+
+    @property
+    def data(self) -> np.ndarray:
+        return self._data.value
+
+    @data.setter
+    def data(self, new_data: np.ndarray | Sequence):
+        self._data.set_value(self, new_data)
+
+    @property
+    def clim(self) -> tuple[float, float] | None:
+        return self._clim
+
+    @clim.setter
+    def clim(self, new_clim: tuple[float, float]):
+        if len(new_clim) != 2:
+            raise ValueError("clim must be a: tuple[float, float]")
+
+        self._clim = tuple(new_clim)
+
+        self.mapcoords = (self.mapcoords - self.clim[0]) / (self.clim[1] - self.clim[0])

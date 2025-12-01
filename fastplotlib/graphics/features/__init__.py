@@ -5,7 +5,7 @@ from ._positions import (
     VertexPositions,
     VertexCmap,
 )
-from ._mesh import MeshVertexPositions, MeshIndices, MeshCmap, SurfaceData, resolve_cmap_mesh, surface_data_to_mesh
+from ._mesh import MeshVertexPositions, MeshIndices, MeshCmap, SurfaceData, PolygonData, resolve_cmap_mesh, surface_data_to_mesh, triangulate_polygon
 from ._line import Thickness
 from ._scatter import (
     VertexMarkers,

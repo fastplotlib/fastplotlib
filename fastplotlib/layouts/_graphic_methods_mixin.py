@@ -496,6 +496,41 @@ class GraphicMethodsMixin:
             **kwargs
         )
 
+    def add_polygon(
+        self,
+        data: numpy.ndarray,
+        mode: Literal["basic", "phong"] = "basic",
+        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        mapcoords: Any = None,
+        cmap: (
+            str
+            | dict
+            | pygfx.resources._texture.Texture
+            | pygfx.resources._texturemap.TextureMap
+            | numpy.ndarray
+        ) = None,
+        clim: tuple[float, float] | None = None,
+        **kwargs
+    ) -> PolygonGraphic:
+        """
+
+        Create a polygon mesh graphic
+
+        Parameters
+        ----------
+        data
+        mode
+        colors
+        mapcoords
+        cmap
+        clim
+        kwargs
+
+        """
+        return self._create_graphic(
+            PolygonGraphic, data, mode, colors, mapcoords, cmap, clim, **kwargs
+        )
+
     def add_scatter(
         self,
         data: Any,
