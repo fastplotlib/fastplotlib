@@ -229,7 +229,10 @@ class MeshGraphic(Graphic):
             return self._cmap.value
 
     @cmap.setter
-    def cmap(self, new_cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray | None):
+    def cmap(
+        self,
+        new_cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray | None,
+    ):
         self._cmap.set_value(self, new_cmap)
 
     @property
@@ -324,7 +327,15 @@ class SurfaceGraphic(MeshGraphic):
                 clim = mapcoords.min(), mapcoords.max()
             mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
 
-        super().__init__(positions, indices, mode=mode, colors=colors, mapcoords=mapcoords, cmap=cmap, **kwargs)
+        super().__init__(
+            positions,
+            indices,
+            mode=mode,
+            colors=colors,
+            mapcoords=mapcoords,
+            cmap=cmap,
+            **kwargs,
+        )
 
     @property
     def data(self) -> np.ndarray:
@@ -392,7 +403,15 @@ class PolygonGraphic(MeshGraphic):
         else:
             self._clim = None
 
-        super().__init__(positions, indices, mode=mode, colors=colors, mapcoords=mapcoords, cmap=cmap, **kwargs)
+        super().__init__(
+            positions,
+            indices,
+            mode=mode,
+            colors=colors,
+            mapcoords=mapcoords,
+            cmap=cmap,
+            **kwargs,
+        )
 
     @property
     def data(self) -> np.ndarray:

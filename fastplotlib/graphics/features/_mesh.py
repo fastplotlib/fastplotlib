@@ -39,8 +39,9 @@ def resolve_cmap_mesh(cmap) -> pygfx.TextureMap | None:
 
 class MeshVertexPositions(VertexPositions):
     """Manages mesh vertex positions, same as VertexPosition but data must be of shape [n, 3]"""
+
     def _fix_data(self, data):
-        if data.ndim != 2 or data.shape[1] !=3:
+        if data.ndim != 2 or data.shape[1] != 3:
             raise ValueError(
                 f"mesh vertex positions must be of shape: [n_vertices, 3], you passed an array of shape: {data.shape}"
             )
@@ -97,9 +98,9 @@ class MeshCmap(GraphicFeature):
     ]
 
     def __init__(
-            self,
-            value: str | dict | pygfx.TextureMap | pygfx.Texture | np.ndarray | None,
-            property_name: str = "cmap",
+        self,
+        value: str | dict | pygfx.TextureMap | pygfx.Texture | np.ndarray | None,
+        property_name: str = "cmap",
     ):
         """Manages a mesh colormap"""
 
@@ -107,12 +108,16 @@ class MeshCmap(GraphicFeature):
         super().__init__(property_name=property_name)
 
     @property
-    def value(self) -> str | dict | pygfx.TextureMap | pygfx.Texture | np.ndarray | None:
+    def value(
+        self,
+    ) -> str | dict | pygfx.TextureMap | pygfx.Texture | np.ndarray | None:
         return self._value
 
     @block_reentrance
     def set_value(
-        self, graphic, value: str | dict | pygfx.TextureMap | pygfx.Texture | np.ndarray | None
+        self,
+        graphic,
+        value: str | dict | pygfx.TextureMap | pygfx.Texture | np.ndarray | None,
     ):
         graphic.world_object.material.map = resolve_cmap_mesh(value)
         self._value = value
@@ -133,8 +138,16 @@ def surface_data_to_mesh(data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     if data.ndim == 2:
         # "image" of z values passed
         # [m, n] -> [n_vertices, 3]
-        y = np.arange(data.shape[0]).reshape(data.shape[0], 1).repeat(data.shape[1], axis=1)
-        x = np.arange(data.shape[1]).reshape(1, data.shape[1]).repeat(data.shape[0], axis=0)
+        y = (
+            np.arange(data.shape[0])
+            .reshape(data.shape[0], 1)
+            .repeat(data.shape[1], axis=1)
+        )
+        x = (
+            np.arange(data.shape[1])
+            .reshape(1, data.shape[1])
+            .repeat(data.shape[0], axis=0)
+        )
         positions = np.column_stack((x.ravel(), y.ravel(), data.ravel()))
     else:
         if data.ndim != 3:
@@ -213,7 +226,9 @@ def triangulate_polygon(data: np.ndarray | Sequence):
     """vertices of shape [n_vertices , 2] -> positions, indices"""
     data = np.asarray(data, dtype=np.float32)
 
-    err_msg = f"polygon vertex data must be of shape [n_vertices, 2], you passed: {data}"
+    err_msg = (
+        f"polygon vertex data must be of shape [n_vertices, 2], you passed: {data}"
+    )
 
     if data.ndim != 2:
         raise ValueError(err_msg)
@@ -228,7 +243,6 @@ def triangulate_polygon(data: np.ndarray | Sequence):
     data = np.column_stack([data, np.zeros(data.shape[0], dtype=np.float32)])
 
     return data, indices
-
 
 
 class PolygonData(GraphicFeature):
@@ -265,12 +279,12 @@ class PolygonData(GraphicFeature):
             geometry.indices = pygfx.Buffer(arr)
 
         geometry.positions.data[: len(value)] = value
-        geometry.positions.data[len(value):] = value[-1] if len(value) else (0, 0, 0)
+        geometry.positions.data[len(value) :] = value[-1] if len(value) else (0, 0, 0)
         geometry.positions.draw_range = 0, len(value)
         geometry.positions.update_full()
 
         geometry.indices.data[: len(indices)] = indices
-        geometry.indices.data[len(indices):] = 0
+        geometry.indices.data[len(indices) :] = 0
         geometry.indices.draw_range = 0, len(indices)
         geometry.indices.update_full()
 
