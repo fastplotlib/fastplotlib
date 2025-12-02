@@ -8,7 +8,6 @@ import pygfx
 
 from ..graphics import *
 from ..graphics._base import Graphic
-from ..graphics.mesh import resolve_cmap as resolve_mesh_cmap
 
 
 class GraphicMethodsMixin:
@@ -437,25 +436,41 @@ class GraphicMethodsMixin:
         self,
         positions: Any,
         indices: Any,
-        mapcoords: Any = None,
+        mode: Literal["basic", "phong", "slice"] = "phong",
+        plane: tuple[float, float, float, float] = (0, 0, 1, 0),
         colors: Union[str, numpy.ndarray, Sequence] = "w",
-        cmap: str = None,
+        mapcoords: Any = None,
+        cmap: (
+            str
+            | dict
+            | pygfx.resources._texture.Texture
+            | pygfx.resources._texturemap.TextureMap
+            | numpy.ndarray
+        ) = None,
         isolated_buffer: bool = True,
         **kwargs,
     ) -> MeshGraphic:
         """
 
-        Create a mesh Graphic
+        Create a mesh Graphic.
 
         Parameters
         ----------
-
         positions: array-like
             The 3D positions of the vertices.
 
         indices: array-like
             The indices into the positions that make up the triangles. Each 3
             subsequent indices form a triangle.
+
+        mode: one of "basic", "phong", "slice", default "phong"
+            * basic: illuminate mesh with only ambient lighting
+            * phong: phong lighting model, good for most use cases, see https://en.wikipedia.org/wiki/Phong_shading
+            * slice: display a slice of the mesh at the specified ``plane``
+
+        plane: (float, float, float, float), default (0, 0, -1, 0)
+            Slice mesh at this plane. Sets (a, b, c, d) in the equation the defines a plane: ax + by + cz + d = 0.
+            Used only if `mode` = "slice". The plane is defined in world space.
 
         colors: str, array, or iterable, default "w"
             A uniform color, or the per-position colors.
@@ -470,6 +485,13 @@ class GraphicMethodsMixin:
             "colors". For supported colormaps see the ``cmap`` library
             catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
             Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
+            An image can also be used, this is basically a 2D colormap.
+
+        isolated_buffer: bool, default True
+            If True, initialize a buffer with the same shape as the input data and then
+            set the data, useful if the data arrays are ready-only such as memmaps.
+            If False, the input array is itself used as the buffer - useful if the
+            array is large. In almost all cases this should be ``True``.
 
         **kwargs
             passed to :class:`.Graphic`
@@ -480,6 +502,8 @@ class GraphicMethodsMixin:
             MeshGraphic,
             positions,
             indices,
+            mode,
+            plane,
             colors,
             mapcoords,
             cmap,
@@ -487,25 +511,36 @@ class GraphicMethodsMixin:
             **kwargs,
         )
 
-    def add_surface(
+    def add_polygon(
         self,
-        data: Any,
+        data: numpy.ndarray,
+        mode: Literal["basic", "phong"] = "basic",
         colors: Union[str, numpy.ndarray, Sequence] = "w",
         mapcoords: Any = None,
-        cmap: str = None,
+        cmap: (
+            str
+            | dict
+            | pygfx.resources._texture.Texture
+            | pygfx.resources._texturemap.TextureMap
+            | numpy.ndarray
+        ) = None,
         clim: tuple[float, float] | None = None,
-        isolated_buffer: bool = True,
         **kwargs,
-    ) -> MeshGraphic:
+    ) -> PolygonGraphic:
         """
 
-        Create a mesh Graphic
+        Create a polygon mesh graphic.
+
+        The data are always in the 'xy' plane. Set a rotation to display the polygon in another plane or in 3D space.
 
         Parameters
         ----------
         data: array-like
-            A height-map (an image where the values indicate height, i.e. z values).
-            Can also be a 3-tuple to explicitly specify the x and y values in addition to the z values.
+            The polygon vertices, must be of shape: [n_vertices, 2]
+
+        mode: one of "basic", "phong", "slice", default "phong"
+            * basic: illuminate mesh with only ambient lighting
+            * phong: phong lighting model, good for most use cases, see https://en.wikipedia.org/wiki/Phong_shading
 
         colors: str, array, or iterable, default "w"
             A uniform color, or the per-position colors.
@@ -528,111 +563,9 @@ class GraphicMethodsMixin:
         **kwargs
              passed to :class:`.Graphic`
 
-
         """
-
-        def check_z(z):
-            if z.ndim != 2:
-                raise ValueError("Z must be a 2D array.")
-
-        # In VisVis (https://github.com/almarklein/visvis/blob/main/visvis/functions/surf.py)
-        # the tuple can be 2-element or 4-element, to pass a color per z-value.
-        # I disabled that by commenting related logic. Maybe it can be enabled someday.
-
-        if isinstance(data, (tuple, list)):
-            if len(data) == 1:
-                z = numpy.asanyarray(data[0])
-                check_z(z)
-                y = numpy.arange(z.shape[0])
-                x = numpy.arange(z.shape[1])
-                c = None
-            # elif len(data) == 2:
-            #     z = numpy.asanyarray(data[0])
-            #     c = numpy.asanyarray(data[1])
-            #     check_z(z)
-            #     y = numpy.arange(z.shape[0])
-            #     x = numpy.arange(z.shape[1])
-            elif len(args) == 3:
-                x = numpy.asanyarray(data[0])
-                y = numpy.asanyarray(data[1])
-                z = numpy.asanyarray(data[2])
-                check_z(z)
-                c = None
-            # elif len(args) == 4:
-            #     x = numpy.asanyarray(data[0])
-            #     y = numpy.asanyarray(data[1])
-            #     z = numpy.asanyarray(data[2])
-            #     c = numpy.asanyarray(data[3])
-            #     check_z(z)
-            else:
-                raise ValueError(
-                    "Surface tuple has invalid number of elements (need 1-4)."
-                )
-        else:
-            z = numpy.asanyarray(data)
-            check_z(z)
-            y = numpy.arange(z.shape[0])
-            x = numpy.arange(z.shape[1])
-            c = None
-
-        # Set y vertices
-        if y.shape == (z.shape[0],):
-            y = y.reshape(z.shape[0], 1).repeat(z.shape[1], axis=1)
-        elif y.shape != z.shape:
-            raise ValueError(
-                "Y must have same shape as Z, or be 1D with length of rows of Z."
-            )
-
-        # Set x vertices
-        if x.shape == (z.shape[1],):
-            x = x.reshape(1, z.shape[1]).repeat(z.shape[0], axis=0)
-        elif x.shape != z.shape:
-            raise ValueError(
-                "X must have same shape as Z, or be 1D with length of columns of Z."
-            )
-
-        # Set vertices
-        positions = numpy.column_stack((x.ravel(), y.ravel(), z.ravel()))
-
-        # Create texcoords
-        cmap = resolve_mesh_cmap(cmap)
-        if mapcoords is None:
-            if cmap.texture.dim == 1:  # 1d
-                mapcoords = z.ravel()
-            elif cmap.texture.dim == 2:
-                mapcoords = numpy.column_stack((x.ravel(), y.ravel())).astype(
-                    numpy.float32
-                )
-            # Apply contrast limits. Would be nice if Pygfx mesh material had clim too! But
-            # for now we apply it as a pre-processing step.
-            if clim is None and mapcoords is not None:
-                clim = mapcoords.min(), mapcoords.max()
-            mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
-        else:
-            raise ValueError("C must have same shape as Z, or be 3D array.")
-
-        # Create faces
-        w = z.shape[1]
-        i = numpy.arange(z.shape[0] - 1)
-        indices = numpy.row_stack(
-            [
-                numpy.column_stack(
-                    (j + w * i, j + 1 + w * i, j + 1 + w * (i + 1), j + w * (i + 1))
-                )
-                for j in range(w - 1)
-            ]
-        )
-        indices = indices.astype("i4")
-
         return self._create_graphic(
-            MeshGraphic,
-            positions,
-            indices,
-            colors,
-            mapcoords,
-            cmap,
-            isolated_buffer,
-            **kwargs,
+            PolygonGraphic, data, mode, colors, mapcoords, cmap, clim, **kwargs
         )
 
     def add_scatter(
@@ -787,6 +720,63 @@ class GraphicMethodsMixin:
             size_space,
             isolated_buffer,
             **kwargs,
+        )
+
+    def add_surface(
+        self,
+        data: numpy.ndarray,
+        mode: Literal["basic", "phong", "slice"] = "phong",
+        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        mapcoords: Any = None,
+        cmap: (
+            str
+            | dict
+            | pygfx.resources._texture.Texture
+            | pygfx.resources._texturemap.TextureMap
+            | numpy.ndarray
+        ) = None,
+        clim: tuple[float, float] | None = None,
+        **kwargs,
+    ) -> SurfaceGraphic:
+        """
+
+        Create a Surface mesh Graphic
+
+        Parameters
+        ----------
+        data: array-like
+            A height-map (an image where the values indicate height, i.e. z values).
+            Can also be a [m, n, 3] to explicitly specify the x and y values in addition to the z values.
+
+        mode: one of "basic", "phong", "slice", default "phong"
+            * basic: illuminate mesh with only ambient lighting
+            * phong: phong lighting model, good for most use cases, see https://en.wikipedia.org/wiki/Phong_shading
+
+        colors: str, array, or iterable, default "w"
+            A uniform color, or the per-position colors.
+
+        mapcoords: array-like
+            The per-position coordinates to which to apply the colormap (a.k.a. texcoords).
+            These can e.g. be some domain-specific value (mapped to [0..1] using ``clim``).
+            If not given, they will be the depth (z-coordinate) of the surface.
+
+        cmap: str, optional
+            Apply a colormap to the mesh, this overrides any argument passed to
+            "colors". For supported colormaps see the ``cmap`` library
+            catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
+
+        clim: tuple[float, float]
+            The colormap limits. If the mapcoords has values between e.g. 5 and 90, you want to set the clim
+            to e.g. (5, 90) or (0, 100) to determine how the values map onto the colormap.
+
+        **kwargs
+             passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            SurfaceGraphic, data, mode, colors, mapcoords, cmap, clim, **kwargs
         )
 
     def add_text(

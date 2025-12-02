@@ -1,9 +1,19 @@
-from ._positions_graphics import (
+from ._positions import (
     VertexColors,
     UniformColor,
     SizeSpace,
     VertexPositions,
     VertexCmap,
+)
+from ._mesh import (
+    MeshVertexPositions,
+    MeshIndices,
+    MeshCmap,
+    SurfaceData,
+    PolygonData,
+    resolve_cmap_mesh,
+    surface_data_to_mesh,
+    triangulate_polygon,
 )
 from ._line import Thickness
 from ._scatter import (
@@ -71,6 +81,10 @@ __all__ = [
     "SizeSpace",
     "VertexPositions",
     "VertexCmap",
+    "MeshVertexPositions",
+    "MeshIndices",
+    "MeshCmap",
+    "SurfaceData",
     "Thickness",
     "VertexMarkers",
     "UniformMarker",

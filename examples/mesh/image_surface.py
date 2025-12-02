@@ -10,19 +10,18 @@ Example showing an image as a surface.
 
 import imageio.v3 as iio
 import fastplotlib as fpl
-import numpy as np
 import scipy.ndimage
 
 im = iio.imread("imageio:astronaut.png")
 
-figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
+figure = fpl.Figure(size=(700, 560), cameras="3d", controller_types="orbit")
 
 
 # Create the height map from the image
 z = im.mean(axis=2)
 z = scipy.ndimage.gaussian_filter(z, 5)  # 2nd arg is sigma
 
-mesh = figure[0, 0].add_surface(z, colors="magenta", cmap=im)
+mesh = figure[0, 0].add_surface(z, cmap=im)
 mesh.world_object.local.scale_y = -1
 
 

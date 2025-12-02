@@ -9,11 +9,10 @@ Example showing a simple mesh
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
-import numpy as np
 import pygfx as gfx
 
 
-figure = fpl.Figure(size=(700, 560), cameras='3d', controller_types='orbit')
+figure = fpl.Figure(size=(700, 560), cameras="3d", controller_types="orbit")
 
 
 # Load geometry using Pygfx's geometry util
@@ -21,9 +20,9 @@ geo = gfx.geometries.torus_knot_geometry()
 positions = geo.positions.data
 indices = geo.indices.data
 
-mesh = figure[0, 0].add_mesh(positions, indices, colors="magenta")
+mesh = fpl.MeshGraphic(positions, indices, colors="magenta")
 
-
+figure[0, 0].add_graphic(mesh)
 figure[0, 0].axes.grids.xy.visible = True
 figure[0, 0].camera.show_object(mesh.world_object, (1, 1, -1), up=(0, 0, 1))
 
