@@ -33,7 +33,7 @@ class MeshGraphic(Graphic):
         positions: Any,
         indices: Any,
         mode: Literal["basic", "phong", "slice"] = "phong",
-        plane: tuple[float, float, float, float] = (0., 0., 1., 0.),
+        plane: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 0.0),
         colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
         cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
