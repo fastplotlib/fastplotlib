@@ -34,7 +34,7 @@ class GraphicMethodsMixin:
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
         isolated_buffer: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ImageGraphic:
         """
 
@@ -82,7 +82,7 @@ class GraphicMethodsMixin:
             interpolation,
             cmap_interpolation,
             isolated_buffer,
-            **kwargs,
+            **kwargs
         )
 
     def add_image_volume(
@@ -101,7 +101,7 @@ class GraphicMethodsMixin:
         emissive: str | tuple | numpy.ndarray = (0, 0, 0),
         shininess: int = 30,
         isolated_buffer: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ImageVolumeGraphic:
         """
 
@@ -184,7 +184,7 @@ class GraphicMethodsMixin:
             emissive,
             shininess,
             isolated_buffer,
-            **kwargs,
+            **kwargs
         )
 
     def add_line_collection(
@@ -201,7 +201,7 @@ class GraphicMethodsMixin:
         metadatas: Union[Sequence[Any], numpy.ndarray] = None,
         isolated_buffer: bool = True,
         kwargs_lines: list[dict] = None,
-        **kwargs,
+        **kwargs
     ) -> LineCollection:
         """
 
@@ -270,7 +270,7 @@ class GraphicMethodsMixin:
             metadatas,
             isolated_buffer,
             kwargs_lines,
-            **kwargs,
+            **kwargs
         )
 
     def add_line(
@@ -283,7 +283,7 @@ class GraphicMethodsMixin:
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
         isolated_buffer: bool = True,
         size_space: str = "screen",
-        **kwargs,
+        **kwargs
     ) -> LineGraphic:
         """
 
@@ -334,7 +334,7 @@ class GraphicMethodsMixin:
             cmap_transform,
             isolated_buffer,
             size_space,
-            **kwargs,
+            **kwargs
         )
 
     def add_line_stack(
@@ -352,7 +352,7 @@ class GraphicMethodsMixin:
         separation: float = 10.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
-        **kwargs,
+        **kwargs
     ) -> LineStack:
         """
 
@@ -429,7 +429,7 @@ class GraphicMethodsMixin:
             separation,
             separation_axis,
             kwargs_lines,
-            **kwargs,
+            **kwargs
         )
 
     def add_mesh(
@@ -437,7 +437,7 @@ class GraphicMethodsMixin:
         positions: Any,
         indices: Any,
         mode: Literal["basic", "phong", "slice"] = "phong",
-        plane: tuple[float, float, float, float] = (0, 0, 1, 0),
+        plane: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 0.0),
         colors: Union[str, numpy.ndarray, Sequence] = "w",
         mapcoords: Any = None,
         cmap: (
@@ -447,8 +447,9 @@ class GraphicMethodsMixin:
             | pygfx.resources._texturemap.TextureMap
             | numpy.ndarray
         ) = None,
+        clim: tuple[float, float] = None,
         isolated_buffer: bool = True,
-        **kwargs,
+        **kwargs
     ) -> MeshGraphic:
         """
 
@@ -468,7 +469,7 @@ class GraphicMethodsMixin:
             * phong: phong lighting model, good for most use cases, see https://en.wikipedia.org/wiki/Phong_shading
             * slice: display a slice of the mesh at the specified ``plane``
 
-        plane: (float, float, float, float), default (0, 0, -1, 0)
+        plane: (float, float, float, float), default (0., 0., 1., 0.)
             Slice mesh at this plane. Sets (a, b, c, d) in the equation the defines a plane: ax + by + cz + d = 0.
             Used only if `mode` = "slice". The plane is defined in world space.
 
@@ -507,8 +508,9 @@ class GraphicMethodsMixin:
             colors,
             mapcoords,
             cmap,
+            clim,
             isolated_buffer,
-            **kwargs,
+            **kwargs
         )
 
     def add_polygon(
@@ -525,7 +527,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] | None = None,
-        **kwargs,
+        **kwargs
     ) -> PolygonGraphic:
         """
 
@@ -591,7 +593,7 @@ class GraphicMethodsMixin:
         uniform_size: bool = False,
         size_space: str = "screen",
         isolated_buffer: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ScatterGraphic:
         """
 
@@ -719,7 +721,7 @@ class GraphicMethodsMixin:
             uniform_size,
             size_space,
             isolated_buffer,
-            **kwargs,
+            **kwargs
         )
 
     def add_surface(
@@ -736,7 +738,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] | None = None,
-        **kwargs,
+        **kwargs
     ) -> SurfaceGraphic:
         """
 
@@ -747,6 +749,7 @@ class GraphicMethodsMixin:
         data: array-like
             A height-map (an image where the values indicate height, i.e. z values).
             Can also be a [m, n, 3] to explicitly specify the x and y values in addition to the z values.
+            [m, n, 3] is a dstack of (x, y, z) values that form a grid on the xy plane.
 
         mode: one of "basic", "phong", "slice", default "phong"
             * basic: illuminate mesh with only ambient lighting
@@ -789,7 +792,7 @@ class GraphicMethodsMixin:
         screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
-        **kwargs,
+        **kwargs
     ) -> TextGraphic:
         """
 
@@ -840,7 +843,7 @@ class GraphicMethodsMixin:
             screen_space,
             offset,
             anchor,
-            **kwargs,
+            **kwargs
         )
 
     def add_vectors(
@@ -850,7 +853,7 @@ class GraphicMethodsMixin:
         color: Union[str, Sequence[float], numpy.ndarray] = "w",
         size: float = None,
         vector_shape_options: dict = None,
-        **kwargs,
+        **kwargs
     ) -> VectorsGraphic:
         """
 
@@ -895,5 +898,5 @@ class GraphicMethodsMixin:
             color,
             size,
             vector_shape_options,
-            **kwargs,
+            **kwargs
         )
