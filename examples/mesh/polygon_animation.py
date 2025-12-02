@@ -13,48 +13,58 @@ Polygon animation example that changes the polygon data. Random points are gener
 import numpy as np
 from scipy.spatial import ConvexHull
 import fastplotlib as fpl
-from time import perf_counter
 
 
 def points_to_hull(points) -> np.ndarray:
-    hull = ConvexHull(points, qhull_options='Qs')
+    hull = ConvexHull(points, qhull_options="Qs")
     return points[hull.vertices]
 
 
 figure = fpl.Figure(size=(700, 560))
 
-mu = (0, 0)
+
 cov = np.array([[1, 0], [0, 1]])
 
 # sample points from a 2d gaussian
-samples = np.random.multivariate_normal(mu, cov, size=20)
+samples1 = np.random.multivariate_normal((0, 0), cov, size=20)
+samples2 = np.random.multivariate_normal((5, 0), cov, size=50)
 
 # add the convex hull as a polygon
-polygon = figure[0, 0].add_polygon(points_to_hull(samples), colors="cyan")
+polygon1 = figure[0, 0].add_polygon(
+    points_to_hull(samples1), colors="cyan", alpha=0.7, alpha_mode="blend"
+)
 # add the sampled points
-scatter = figure[0, 0].add_scatter(samples, sizes=8, colors="magenta")
+scatter1 = figure[0, 0].add_scatter(
+    samples1, sizes=8, colors="blue", alpha=0.7, alpha_mode="blend"
+)
 
-t = perf_counter()
+# add the second gaussian and convex hull polygon
+polygon2 = figure[0, 0].add_polygon(
+    points_to_hull(samples2), colors="magenta", alpha=0.7, alpha_mode="blend"
+)
+scatter2 = figure[0, 0].add_scatter(
+    samples2, sizes=8, colors="r", alpha=0.7, alpha_mode="blend"
+)
+
+
 def animate():
-    global t
-    # generate new data every ~0.2 seconds
-    if perf_counter() - t < 0.2:
-        return
-
-    # generate new samples
-    samples = np.random.multivariate_normal(mu, cov, size=20)
-
     # set new scatter data
-    scatter.data[:, :-1] = samples
+    scatter1.data[:, :-1] += np.random.normal(0, 0.05, size=samples1.size).reshape(
+        samples1.shape
+    )
     # set convex hull with new polygon vertices
-    polygon.data = points_to_hull(samples)
+    polygon1.data = points_to_hull(scatter1.data[:, :-1])
 
-    t = perf_counter()
+    # set the other scatter and polygon
+    scatter2.data[:, :-1] += np.random.normal(0, 0.05, size=samples2.size).reshape(
+        samples2.shape
+    )
+    polygon2.data = points_to_hull(scatter2.data[:, :-1])
 
 
 figure.show()
-figure[0, 0].camera.width = 8
-figure[0, 0].camera.height = 8
+figure[0, 0].camera.width = 10
+figure[0, 0].camera.height = 10
 
 figure.add_animations(animate)
 
