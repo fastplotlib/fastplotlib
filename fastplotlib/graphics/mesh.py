@@ -33,7 +33,7 @@ class MeshGraphic(Graphic):
         positions: Any,
         indices: Any,
         mode: Literal["basic", "phong", "slice"] = "phong",
-        plane: tuple[float, float, float, float] = (0, 0, 1, 0),
+        plane: tuple[float, float, float, float] = (0., 0., 1., 0.),
         colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
         cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
@@ -58,7 +58,7 @@ class MeshGraphic(Graphic):
             * phong: phong lighting model, good for most use cases, see https://en.wikipedia.org/wiki/Phong_shading
             * slice: display a slice of the mesh at the specified ``plane``
 
-        plane: (float, float, float, float), default (0, 0, -1, 0)
+        plane: (float, float, float, float), default (0., 0., 1., 0.)
             Slice mesh at this plane. Sets (a, b, c, d) in the equation the defines a plane: ax + by + cz + d = 0.
             Used only if `mode` = "slice". The plane is defined in world space.
 
@@ -111,9 +111,8 @@ class MeshGraphic(Graphic):
         if clim is None and mapcoords is not None:
             clim = mapcoords.min(), mapcoords.max()
 
-        mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
-
         if mapcoords is not None:
+            mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
             self._mapcoords = pygfx.Buffer(np.asarray(mapcoords, dtype=np.float32))
         else:
             self._mapcoords = None
