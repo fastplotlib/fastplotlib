@@ -5,7 +5,7 @@ Elevation map of the earth
 Surface graphic showing elevation map of the earth
 """
 
-# test_example = false
+# run_example = false
 # sphinx_gallery_pygfx_docs = 'code'
 
 import imageio.v3 as iio
