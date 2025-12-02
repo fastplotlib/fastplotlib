@@ -37,6 +37,7 @@ class MeshGraphic(Graphic):
         colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
         cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
+        clim: tuple[float, float] = None,
         isolated_buffer: bool = True,
         **kwargs,
     ):
@@ -105,10 +106,19 @@ class MeshGraphic(Graphic):
 
         self._cmap = MeshCmap(cmap)
 
+        # Apply contrast limits. Would be nice if Pygfx mesh material had clim too! But
+        # for now we apply it as a pre-processing step.
+        if clim is None and mapcoords is not None:
+            clim = mapcoords.min(), mapcoords.max()
+
+        mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
+
         if mapcoords is not None:
             self._mapcoords = pygfx.Buffer(np.asarray(mapcoords, dtype=np.float32))
         else:
             self._mapcoords = None
+
+        self._clim = clim
 
         uniform_color = "w"
         per_vertex_colors = False
@@ -224,6 +234,20 @@ class MeshGraphic(Graphic):
             self.world_object.geometry.texcoords = self._mapcoords
 
     @property
+    def clim(self) -> tuple[float, float] | None:
+        """get or set the colormap limits"""
+        return self._clim
+
+    @clim.setter
+    def clim(self, new_clim: tuple[float, float]):
+        if len(new_clim) != 2:
+            raise ValueError("clim must be a: tuple[float, float]")
+
+        self._clim = tuple(new_clim)
+
+        self.mapcoords = (self.mapcoords - self.clim[0]) / (self.clim[1] - self.clim[0])
+
+    @property
     def colors(self) -> VertexColors | pygfx.Color:
         """Get or set the colors"""
         if isinstance(self._colors, VertexColors):
@@ -294,6 +318,7 @@ class SurfaceGraphic(MeshGraphic):
         data: array-like
             A height-map (an image where the values indicate height, i.e. z values).
             Can also be a [m, n, 3] to explicitly specify the x and y values in addition to the z values.
+            [m, n, 3] is a dstack of (x, y, z) values that form a grid on the xy plane.
 
         mode: one of "basic", "phong", "slice", default "phong"
             * basic: illuminate mesh with only ambient lighting
@@ -324,14 +349,6 @@ class SurfaceGraphic(MeshGraphic):
 
         self._data = SurfaceData(data)
 
-        if clim is not None:
-            if len(clim) != 2:
-                raise ValueError("clim must be a: tuple[float, float]")
-
-            self._clim = tuple(clim)
-        else:
-            self._clim = None
-
         positions, indices = surface_data_to_mesh(data)
 
         cmap_tex_view = resolve_cmap_mesh(cmap)
@@ -343,11 +360,6 @@ class SurfaceGraphic(MeshGraphic):
                 mapcoords = np.column_stack((positions[:, 0], positions[:, 1])).astype(
                     np.float32
                 )
-            # Apply contrast limits. Would be nice if Pygfx mesh material had clim too! But
-            # for now we apply it as a pre-processing step.
-            if clim is None and mapcoords is not None:
-                clim = mapcoords.min(), mapcoords.max()
-            mapcoords = (mapcoords - clim[0]) / (clim[1] - clim[0])
 
         super().__init__(
             positions,
@@ -356,6 +368,7 @@ class SurfaceGraphic(MeshGraphic):
             colors=colors,
             mapcoords=mapcoords,
             cmap=cmap,
+            clim=clim,
             **kwargs,
         )
 
@@ -367,20 +380,6 @@ class SurfaceGraphic(MeshGraphic):
     @data.setter
     def data(self, new_data: np.ndarray):
         self._data.set_value(self, new_data)
-
-    @property
-    def clim(self) -> tuple[float, float] | None:
-        """get or set the colormap limits"""
-        return self._clim
-
-    @clim.setter
-    def clim(self, new_clim: tuple[float, float]):
-        if len(new_clim) != 2:
-            raise ValueError("clim must be a: tuple[float, float]")
-
-        self._clim = tuple(new_clim)
-
-        self.mapcoords = (self.mapcoords - self.clim[0]) / (self.clim[1] - self.clim[0])
 
 
 class PolygonGraphic(MeshGraphic):
@@ -440,14 +439,6 @@ class PolygonGraphic(MeshGraphic):
 
         self._data = PolygonData(positions)
 
-        if clim is not None:
-            if len(clim) != 2:
-                raise ValueError("clim must be a: tuple[float, float]")
-
-            self._clim = tuple(clim)
-        else:
-            self._clim = None
-
         super().__init__(
             positions,
             indices,
@@ -455,6 +446,7 @@ class PolygonGraphic(MeshGraphic):
             colors=colors,
             mapcoords=mapcoords,
             cmap=cmap,
+            clim=clim,
             **kwargs,
         )
 
