@@ -24,7 +24,7 @@ example_globs = [
     "scatter/*.py",
     "line/*.py",
     "line_collection/*.py",
-    "vectors/*.py"
+    "vectors/*.py",
     "mesh/*.py",
     "gridplot/*.py",
     "window_layouts/*.py",
