@@ -77,14 +77,11 @@ class MeshIndices(VertexPositions):
         )
 
     def _fix_data(self, data):
-        if data.shape == (3,):
-            pass
-        elif data.ndim != 2 or data.shape[1] not in (3, 4):
+        if data.ndim != 2 or data.shape[1] not in (3, 4):
             raise ValueError(
                 f"indices must be of shape: [n_vertices, 3] or [n_vertices, 4], "
                 f"you passed an array of shape: {data.shape}"
             )
-
         return data.astype("i4")
 
 
