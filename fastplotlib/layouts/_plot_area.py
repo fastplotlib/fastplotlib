@@ -286,7 +286,7 @@ class PlotArea(GraphicMethodsMixin):
     def ambient_light(self) -> pygfx.AmbientLight:
         """the ambient lighting in the scene"""
         return self._ambient_light
-    
+
     @property
     def directional_light(self) -> pygfx.DirectionalLight:
         """the directional lighting on the camera in the scene"""
