@@ -117,8 +117,11 @@ class PlotArea(GraphicMethodsMixin):
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
 
-        self.scene.add(pygfx.AmbientLight())
-        self.scene.add(self._camera.add(pygfx.DirectionalLight()))
+        self._ambient_light = pygfx.AmbientLight()
+        self._directional_light = pygfx.DirectionalLight()
+
+        self.scene.add(self._ambient_light)
+        self.scene.add(self._camera.add(self._directional_light))
 
     def get_figure(self, obj=None):
         """Get Figure instance that contains this plot area"""
@@ -169,6 +172,8 @@ class PlotArea(GraphicMethodsMixin):
         # user wants to set completely new camera, remove current camera from controller
         if isinstance(new_camera, pygfx.PerspectiveCamera):
             self.controller.remove_camera(self._camera)
+            # add directional light to new camera
+            new_camera.add(self._directional_light)
             # add new camera to controller
             self.controller.add_camera(new_camera)
 
@@ -276,6 +281,16 @@ class PlotArea(GraphicMethodsMixin):
     def background_color(self, colors: str | tuple[float]):
         """1, 2, or 4 colors, each color must be acceptable by pygfx.Color"""
         self._background_material.set_colors(*colors)
+
+    @property
+    def ambient_light(self) -> pygfx.AmbientLight:
+        """the ambient lighting in the scene"""
+        return self._ambient_light
+    
+    @property
+    def directional_light(self) -> pygfx.DirectionalLight:
+        """the directional lighting on the camera in the scene"""
+        return self._directional_light
 
     @property
     def animations(self) -> dict[str, list[callable]]:
