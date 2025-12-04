@@ -34,8 +34,9 @@ def parse_colors(
         elif colors.ndim == 2:
             if not (colors.shape[1] in (3, 4) and colors.shape[0] == n_colors):
                 raise ValueError(
-                    "Valid array color arguments must be a single RGBA array or a stack of "
-                    "RGB or RGBA arrays for each datapoint in the shape [n_datapoints, 3] or [n_datapoints, 4]"
+                    f"Valid array color arguments must be a single RGBA array or a stack of "
+                    f"RGB or RGBA arrays for each datapoint in the shape [n_datapoints, 3] or [n_datapoints, 4].\n"
+                    f"n_datapoints is: {n_colors}, you passed a colors array of shape: {colors.shape}"
                 )
             data = colors
         else:
