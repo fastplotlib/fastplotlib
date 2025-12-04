@@ -252,18 +252,18 @@ class PolygonData(GraphicFeature):
 
         geometry = graphic.world_object.geometry
 
-        # Need larger buffer?
-        if len(positions) > geometry.positions.nitems:
-            arr = np.zeros((geometry.positions.nitems * 2, 3), np.float32)
+        # Need larger (or smaller) buffer? Scale up/down with factors of 2.
+        need_position_size = 2 ** int(np.ceil(np.log2(max(8, len(positions)))))
+        if need_position_size != geometry.positions.nitems:
+            arr = np.zeros((need_position_size, 3), np.float32)
             geometry.positions = pygfx.Buffer(arr)
-        if len(indices) > geometry.indices.nitems:
-            arr = np.zeros((geometry.indices.nitems * 2, 3), np.int32)
+        need_indices_size = 2 ** int(np.ceil(np.log2(max(8, len(indices)))))
+        if need_indices_size != geometry.indices.nitems:
+            arr = np.zeros((need_indices_size, 3), np.int32)
             geometry.indices = pygfx.Buffer(arr)
 
         geometry.positions.data[: len(positions)] = positions
-        geometry.positions.data[len(positions) :] = (
-            positions[-1] if len(positions) else (0, 0, 0)
-        )
+        geometry.positions.data[len(positions) :] = positions[-1] if len(positions) else (0, 0, 0)
         geometry.positions.draw_range = 0, len(positions)
         geometry.positions.update_full()
 
