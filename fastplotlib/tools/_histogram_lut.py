@@ -6,422 +6,410 @@ import numpy as np
 
 import pygfx
 
-from ..utils import subsample_array
+from ..utils import subsample_array, RenderQueue
 from ..graphics import LineGraphic, ImageGraphic, ImageVolumeGraphic, TextGraphic
 from ..graphics.utils import pause_events
 from ..graphics._base import Graphic
+from ..graphics.features import GraphicFeatureEvent
 from ..graphics.selectors import LinearRegionSelector
 
 
-def _get_image_graphic_events(image_graphic: ImageGraphic) -> list[str]:
-    """Small helper function to return the relevant events for an ImageGraphic"""
-    events = ["vmin", "vmax"]
-
-    if not image_graphic.data.value.ndim > 2:
-        events.append("cmap")
-
-    # if RGB(A), do not add cmap
-
-    return events
+def _format_value(value: float):
+    abs_val = abs(value)
+    if abs_val < 0.01 or abs_val > 9_999:
+        return f"{value:.2e}"
+    else:
+        return f"{value:.2f}"
 
 
-# TODO: This is a widget, we can think about a BaseWidget class later if necessary
 class HistogramLUTTool(Graphic):
     def __init__(
         self,
-        data: np.ndarray,
-        images: (
-            ImageGraphic
-            | ImageVolumeGraphic
-            | Sequence[ImageGraphic | ImageVolumeGraphic]
-        ),
-        nbins: int = 100,
-        flank_divisor: float = 5.0,
+        histogram: tuple[np.ndarray, np.ndarray],
+        images: ImageGraphic | ImageVolumeGraphic | Sequence[ImageGraphic | ImageVolumeGraphic] | None = None,
         **kwargs,
     ):
         """
-        HistogramLUT tool that can be used to control the vmin, vmax of ImageGraphics or ImageVolumeGraphics.
-        If used to control multiple images or image volumes it is assumed that they share a representation of
-        the same data, and that their histogram, vmin, and vmax are identical. For example, displaying a
-        ImageVolumeGraphic and several images that represent slices of the same volume data.
+        A histogram tool that allows adjusting the vmin, vmax of images.
+        Also allows changing the cmap LUT for grayscale images and displays a colorbar.
 
         Parameters
         ----------
-        data: np.ndarray
+        histogram: tuple[np.ndarray, np.ndarray]
+            [frequency, bin_edges], must be 100 bins
 
-        images: ImageGraphic | ImageVolumeGraphic | tuple[ImageGraphic | ImageVolumeGraphic]
+        images: ImageGraphic | ImageVolumeGraphic | Sequence[ImageGraphic | ImageVolumeGraphic]
+            the images that are managed by the histogram tool
 
-        nbins: int, defaut 100.
-            Total number of bins used in the histogram
-
-        flank_divisor: float, default 5.0.
-            Fraction of empty histogram bins on the tails of the distribution set `np.inf` for no flanks
-
-        kwargs: passed to ``Graphic``
+        kwargs:
+            passed to ``Graphic``
 
         """
+
         super().__init__(**kwargs)
 
-        self._nbins = nbins
-        self._flank_divisor = flank_divisor
+        if len(histogram) != 2:
+            raise TypeError
 
-        if isinstance(images, (ImageGraphic, ImageVolumeGraphic)):
-            images = (images,)
-        elif isinstance(images, Sequence):
-            if not all(
-                [isinstance(ig, (ImageGraphic, ImageVolumeGraphic)) for ig in images]
-            ):
-                raise TypeError(
-                    f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
-                    f"tuple or list or ImageGraphic | ImageVolumeGraphic"
-                )
-        else:
-            raise TypeError(
-                f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
-                f"tuple or list or ImageGraphic | ImageVolumeGraphic"
-            )
+        self._block_reentrance = False
+        self._images = list()
 
-        self._images = images
+        self._bin_centers_flanked = np.zeros(120, dtype=np.float64)
+        self._freq_flanked = np.zeros(120, dtype=np.float32)
 
-        self._data = weakref.proxy(data)
-
-        self._scale_factor: float = 1.0
-
-        hist, edges, hist_scaled, edges_flanked = self._calculate_histogram(data)
-
-        line_data = np.column_stack([hist_scaled, edges_flanked])
-
-        self._histogram_line = LineGraphic(
-            line_data, colors=(0.8, 0.8, 0.8), alpha_mode="solid", offset=(0, 0, -1)
+        # 100 points for the histogram, 10 points on each side for the flank
+        line_data = np.column_stack(
+            [np.zeros(120, dtype=np.float32), np.arange(0, 120)]
         )
 
-        bounds = (edges[0] * self._scale_factor, edges[-1] * self._scale_factor)
-        limits = (edges_flanked[0], edges_flanked[-1])
-        size = 120  # since it's scaled to 100
-        origin = (hist_scaled.max() / 2, 0)
+        # line that displays the histogram
+        self._line = LineGraphic(
+            line_data, colors=(0.8, 0.8, 0.8), alpha_mode="solid", offset=(1, 0, 0)
+        )
+        self._line.world_object.local.scale_x = -1
 
-        self._linear_region_selector = LinearRegionSelector(
-            selection=bounds,
-            limits=limits,
-            size=size,
-            center=origin[0],
+        # vmin, vmax selector
+        self._selector = LinearRegionSelector(
+            selection=(10, 110),
+            limits=(0, 119),
+            size=1.5,
+            center=0.5,  # frequency data are normalized between 0-1
             axis="y",
-            parent=self._histogram_line,
+            parent=self._line,
         )
 
-        self._vmin = self.images[0].vmin
-        self._vmax = self.images[0].vmax
+        self._selector.add_event_handler(self._selector_event_handler, "selection")
 
-        # there will be a small difference with the histogram edges so this makes them both line up exactly
-        self._linear_region_selector.selection = (
-            self._vmin * self._scale_factor,
-            self._vmax * self._scale_factor,
+        self._colorbar = ImageGraphic(
+            data=np.zeros([120, 2]), interpolation="linear", offset=(1.5, 0, 0)
         )
 
-        vmin_str, vmax_str = self._get_vmin_vmax_str()
+        # make the colorbar thin
+        self._colorbar.world_object.local.scale_x = 0.15
+        self._colorbar.add_event_handler(self._open_cmap_picker, "click")
+
+        # colorbar ruler
+        self._ruler = pygfx.Ruler(
+            end_pos=(0, 119, 0),
+            alpha_mode="solid",
+            render_queue=RenderQueue.axes,
+            tick_side="right",
+            tick_marker="tick_right",
+            tick_format=self._ruler_tick_map,
+            min_tick_distance=10,
+        )
+        self._ruler.local.x = 1.75
+
+        # TODO: need to auto-scale using the text so it appears nicely, will do later
+        self._ruler.visible = False
 
         self._text_vmin = TextGraphic(
-            text=vmin_str,
+            text="",
             font_size=16,
-            offset=(0, 0, 0),
             anchor="top-left",
             outline_color="black",
             outline_thickness=0.5,
             alpha_mode="solid",
         )
-
+        # this is to make sure clicking text doesn't conflict with the selector tool
+        # since the text appears near the selector tool
         self._text_vmin.world_object.material.pick_write = False
 
         self._text_vmax = TextGraphic(
-            text=vmax_str,
+            text="",
             font_size=16,
-            offset=(0, 0, 0),
             anchor="bottom-left",
             outline_color="black",
             outline_thickness=0.5,
             alpha_mode="solid",
         )
-
         self._text_vmax.world_object.material.pick_write = False
 
-        widget_wo = pygfx.Group()
-        widget_wo.add(
-            self._histogram_line.world_object,
-            self._linear_region_selector.world_object,
+        # add all the world objects to a pygfx.Group
+        wo = pygfx.Group()
+        wo.add(
+            self._line.world_object,
+            self._selector.world_object,
+            self._colorbar.world_object,
+            self._ruler,
             self._text_vmin.world_object,
             self._text_vmax.world_object,
         )
+        self._set_world_object(wo)
 
-        self._set_world_object(widget_wo)
+        # for convenience, a list that stores all the graphics managed by the histogram LUT tool
+        self._children = [
+            self._line,
+            self._selector,
+            self._colorbar,
+            self._text_vmin,
+            self._text_vmax,
+        ]
 
-        self.world_object.local.scale_x *= -1
+        # set histogram
+        self.histogram = histogram
 
-        self._text_vmin.offset = (-120, self._linear_region_selector.selection[0], 0)
-
-        self._text_vmax.offset = (-120, self._linear_region_selector.selection[1], 0)
-
-        self._linear_region_selector.add_event_handler(
-            self._linear_region_handler, "selection"
-        )
-
-        ig_events = _get_image_graphic_events(self.images[0])
-
-        for ig in self.images:
-            ig.add_event_handler(self._image_cmap_handler, *ig_events)
-
-        # colorbar for grayscale images
-        if self.images[0].cmap is not None:
-            self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
-            self._colorbar.add_event_handler(self._open_cmap_picker, "click")
-
-            self.world_object.add(self._colorbar.world_object)
-        else:
-            self._colorbar = None
-            self._cmap = None
-
-    def _make_colorbar(self, edges_flanked) -> ImageGraphic:
-        # use the histogram edge values as data for an
-        # image with 2 columns, this will be our colorbar!
-        colorbar_data = np.column_stack(
-            [
-                np.linspace(
-                    edges_flanked[0], edges_flanked[-1], ceil(np.ptp(edges_flanked))
-                )
-            ]
-            * 2
-        ).astype(np.float32)
-
-        colorbar_data /= self._scale_factor
-
-        cbar = ImageGraphic(
-            data=colorbar_data,
-            vmin=self.vmin,
-            vmax=self.vmax,
-            cmap=self.images[0].cmap,
-            interpolation="linear",
-            offset=(-55, edges_flanked[0], -1),
-        )
-
-        cbar.world_object.world.scale_x = 20
-        self._cmap = self.images[0].cmap
-
-        return cbar
-
-    def _get_vmin_vmax_str(self) -> tuple[str, str]:
-        if self.vmin < 0.001 or self.vmin > 99_999:
-            vmin_str = f"{self.vmin:.2e}"
-        else:
-            vmin_str = f"{self.vmin:.2f}"
-
-        if self.vmax < 0.001 or self.vmax > 99_999:
-            vmax_str = f"{self.vmax:.2e}"
-        else:
-            vmax_str = f"{self.vmax:.2f}"
-
-        return vmin_str, vmax_str
+        # set the images
+        self.images = images
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
-        self._linear_region_selector._fpl_add_plot_area_hook(plot_area)
-        self._histogram_line._fpl_add_plot_area_hook(plot_area)
 
-        self._plot_area.auto_scale()
-        self._plot_area.controller.enabled = True
+        for child in self._children:
+            # need all of them to call the add_plot_area_hook so that events are connected correctly
+            # example, the linear region selector needs all the canvas events to be connected
+            child._fpl_add_plot_area_hook(plot_area)
 
-    def _calculate_histogram(self, data):
+        if hasattr(self._plot_area, "size"):
+            # if it's in a dock area
+            self._plot_area.size = 80
 
-        # get a subsampled view of this array
-        data_ss = subsample_array(data, max_size=int(1e6))  # 1e6 is default
-        hist, edges = np.histogram(data_ss, bins=self._nbins)
+        # disable the controller in this plot area
+        self._plot_area.controller.enabled = False
+        self._plot_area.auto_scale(maintain_aspect=False)
 
-        # used if data ptp <= 10 because event things get weird
-        # with tiny world objects due to floating point error
-        # so if ptp <= 10, scale up by a factor
-        data_interval = edges[-1] - edges[0]
-        self._scale_factor: int = max(1, 100 * int(10 / data_interval))
+        # tick text for colorbar ruler doesn't show without this call
+        self._ruler.update(plot_area.camera, plot_area.canvas.get_logical_size())
 
-        edges = edges * self._scale_factor
+    def _ruler_tick_map(self, bin_index, *args):
+        return f"{self._bin_centers_flanked[int(bin_index)]:.2f}"
 
-        bin_width = edges[1] - edges[0]
+    @property
+    def histogram(self) -> tuple[np.ndarray, np.ndarray]:
+        """histogram [frequency, bin_centers]. Frequency is flanked by 10 zeros on both sides"""
+        return self._freq_flanked, self._bin_centers_flanked
 
-        flank_nbins = int(self._nbins / self._flank_divisor)
-        flank_size = flank_nbins * bin_width
+    @histogram.setter
+    def histogram(
+        self, histogram: tuple[np.ndarray, np.ndarray], limits: tuple[int, int] = None
+    ):
+        """set histogram with pre-compuated [frequency, edges], must have exactly 100 bins"""
 
-        flank_left = np.arange(edges[0] - flank_size, edges[0], bin_width)
-        flank_right = np.arange(
-            edges[-1] + bin_width, edges[-1] + flank_size, bin_width
+        freq, edges = histogram
+
+        if freq.max() > 0:
+            # if the histogram is made from an empty array, then the max freq will be 0
+            # we don't want to divide by 0 because then we just get nans
+            freq = freq / freq.max()
+
+        bin_centers = 0.5 * (edges[1:] + edges[:-1])
+
+        step = bin_centers[1] - bin_centers[0]
+
+        under_flank = np.linspace(bin_centers[0] - step * 10, bin_centers[0] - step, 10)
+        over_flank = np.linspace(
+            bin_centers[-1] + step, bin_centers[-1] + step * 10, 10
+        )
+        self._bin_centers_flanked[:] = np.concatenate(
+            [under_flank, bin_centers, over_flank]
         )
 
-        edges_flanked = np.concatenate((flank_left, edges, flank_right))
+        self._freq_flanked[10:110] = freq
 
-        hist_flanked = np.concatenate(
-            (np.zeros(flank_nbins), hist, np.zeros(flank_nbins))
+        self._line.data[:, 0] = self._freq_flanked
+        self._colorbar.data = np.column_stack(
+            [self._bin_centers_flanked, self._bin_centers_flanked]
         )
 
-        # scale 0-100 to make it easier to see
-        # float32 data can produce unnecessarily high values
-        hist_scale_value = hist_flanked.max()
-        if np.allclose(hist_scale_value, 0):
-            hist_scale_value = 1
-        hist_scaled = hist_flanked / (hist_scale_value / 100)
+        # self.vmin, self.vmax = bin_centers[0], bin_centers[-1]
 
-        if edges_flanked.size > hist_scaled.size:
-            # we don't care about accuracy here so if it's off by 1-2 bins that's fine
-            edges_flanked = edges_flanked[: hist_scaled.size]
+        if hasattr(self, "plot_area"):
+            self._ruler.update(
+                self._plot_area.camera, self._plot_area.canvas.get_logical_size()
+            )
 
-        return hist, edges, hist_scaled, edges_flanked
+    @property
+    def images(self) -> tuple[ImageGraphic | ImageVolumeGraphic, ...] | None:
+        """get or set the managed images"""
+        return tuple(self._images)
 
-    def _linear_region_handler(self, ev):
-        # must use world coordinate values directly from selection()
-        # otherwise the linear region bounds jump to the closest bin edges
-        selected_ixs = self._linear_region_selector.selection
-        vmin, vmax = selected_ixs[0], selected_ixs[1]
-        vmin, vmax = vmin / self._scale_factor, vmax / self._scale_factor
-        self.vmin, self.vmax = vmin, vmax
+    @images.setter
+    def images(self, new_images: ImageGraphic | ImageVolumeGraphic | Sequence[ImageGraphic | ImageVolumeGraphic] | None):
+        self._disconnect_images()
+        self._images.clear()
 
-    def _image_cmap_handler(self, ev):
-        setattr(self, ev.type, ev.info["value"])
+        if new_images is None:
+            return
+
+        if isinstance(new_images, (ImageGraphic, ImageVolumeGraphic)):
+            new_images = [new_images]
+
+        if not all(
+            [
+                isinstance(image, (ImageGraphic, ImageVolumeGraphic))
+                for image in new_images
+            ]
+        ):
+            raise TypeError
+
+        for image in new_images:
+            if image.cmap is not None:
+                self._colorbar.visible = True
+                break
+        else:
+            self._colorbar.visible = False
+
+        self._images = list(new_images)
+
+        # reset vmin, vmax using first image
+        self.vmin = self._images[0].vmin
+        self.vmax = self._images[0].vmax
+
+        if self._images[0].cmap is not None:
+            self._colorbar.cmap = self._images[0].cmap
+
+        # connect event handlers
+        for image in self._images:
+            image.add_event_handler(self._image_event_handler, "vmin", "vmax")
+            image.add_event_handler(self._disconnect_images, "deleted")
+            if image.cmap is not None:
+                image.add_event_handler(
+                    self._image_event_handler, "vmin", "vmax", "cmap"
+                )
+
+    def _disconnect_images(self, *args):
+        """disconnect event handlers of the managed images"""
+        for image in self._images:
+            for ev, handlers in image.event_handlers:
+                if self._image_event_handler in handlers:
+                    image.remove_event_handler(self._image_event_handler, ev)
+
+    def _image_event_handler(self, ev):
+        """when the image vmin, vmax, or cmap changes it will update the HistogramLUTTool"""
+        new_value = ev.info["value"]
+        setattr(self, ev.type, new_value)
 
     @property
     def cmap(self) -> str:
-        return self._cmap
+        """get or set the colormap, only for grayscale images"""
+        return self._colorbar.cmap
 
     @cmap.setter
     def cmap(self, name: str):
-        if self._colorbar is None:
+        if self._block_reentrance:
             return
 
-        with pause_events(*self.images):
-            for ig in self.images:
-                ig.cmap = name
+        if name is None:
+            return
 
-            self._cmap = name
+        self._block_reentrance = True
+        try:
             self._colorbar.cmap = name
+
+            with pause_events(
+                *self._images, event_handlers=[self._image_event_handler]
+            ):
+                for image in self._images:
+                    if image.cmap is None:
+                        # rgb(a) images have no cmap
+                        continue
+
+                    image.cmap = name
+        except Exception as exc:
+            # raise original exception
+            raise exc  # vmax setter has raised. The lines above below are probably more relevant!
+        finally:
+            # set_value has finished executing, now allow future executions
+            self._block_reentrance = False
 
     @property
     def vmin(self) -> float:
-        return self._vmin
+        """get or set the vmin, the lower contrast limit"""
+        # no offset or rotation so we can directly use the world space selection value
+        index = int(self._selector.selection[0])
+        return self._bin_centers_flanked[index]
 
     @vmin.setter
     def vmin(self, value: float):
-        with pause_events(self._linear_region_selector, *self.images):
-            # must use world coordinate values directly from selection()
-            # otherwise the linear region bounds jump to the closest bin edges
-            self._linear_region_selector.selection = (
-                value * self._scale_factor,
-                self._linear_region_selector.selection[1],
-            )
-            for ig in self.images:
-                ig.vmin = value
+        if self._block_reentrance:
+            return
+        self._block_reentrance = True
+        try:
+            index_min = np.searchsorted(self._bin_centers_flanked, value)
+            with pause_events(
+                self._selector,
+                *self._images,
+                event_handlers=[
+                    self._selector_event_handler,
+                    self._image_event_handler,
+                ],
+            ):
+                self._selector.selection = (index_min, self._selector.selection[1])
 
-        self._vmin = value
-        if self._colorbar is not None:
-            self._colorbar.vmin = value
+                self._colorbar.vmin = value
 
-        vmin_str, vmax_str = self._get_vmin_vmax_str()
-        self._text_vmin.offset = (-120, self._linear_region_selector.selection[0], 0)
-        self._text_vmin.text = vmin_str
+                self._text_vmin.text = _format_value(value)
+                self._text_vmin.offset = (-0.45, self._selector.selection[0], 0)
+
+                for image in self._images:
+                    image.vmin = value
+
+        except Exception as exc:
+            # raise original exception
+            raise exc  # vmax setter has raised. The lines above below are probably more relevant!
+        finally:
+            # set_value has finished executing, now allow future executions
+            self._block_reentrance = False
 
     @property
     def vmax(self) -> float:
-        return self._vmax
+        """get or set the vmax, the upper contrast limit"""
+        # no offset or rotation so we can directly use the world space selection value
+        index = int(self._selector.selection[1])
+        return self._bin_centers_flanked[index]
 
     @vmax.setter
     def vmax(self, value: float):
-        with pause_events(self._linear_region_selector, *self.images):
-            # must use world coordinate values directly from selection()
-            # otherwise the linear region bounds jump to the closest bin edges
-            self._linear_region_selector.selection = (
-                self._linear_region_selector.selection[0],
-                value * self._scale_factor,
-            )
+        if self._block_reentrance:
+            return
 
-            for ig in self.images:
-                ig.vmax = value
-
-        self._vmax = value
-        if self._colorbar is not None:
-            self._colorbar.vmax = value
-
-        vmin_str, vmax_str = self._get_vmin_vmax_str()
-        self._text_vmax.offset = (-120, self._linear_region_selector.selection[1], 0)
-        self._text_vmax.text = vmax_str
-
-    def set_data(self, data, reset_vmin_vmax: bool = True):
-        hist, edges, hist_scaled, edges_flanked = self._calculate_histogram(data)
-
-        line_data = np.column_stack([hist_scaled, edges_flanked])
-
-        # set x and y vals
-        self._histogram_line.data[:, :2] = line_data
-
-        bounds = (edges[0], edges[-1])
-        limits = (edges_flanked[0], edges_flanked[-11])
-        origin = (hist_scaled.max() / 2, 0)
-
-        if reset_vmin_vmax:
-            # reset according to the new data
-            self._linear_region_selector.limits = limits
-            self._linear_region_selector.selection = bounds
-        else:
-            with pause_events(self._linear_region_selector, *self.images):
-                # don't change the current selection
-                self._linear_region_selector.limits = limits
-
-        self._data = weakref.proxy(data)
-
-        if self._colorbar is not None:
-            self._colorbar.clear_event_handlers()
-            self.world_object.remove(self._colorbar.world_object)
-
-        if self.images[0].cmap is not None:
-            self._colorbar: ImageGraphic = self._make_colorbar(edges_flanked)
-            self._colorbar.add_event_handler(self._open_cmap_picker, "click")
-
-            self.world_object.add(self._colorbar.world_object)
-        else:
-            self._colorbar = None
-            self._cmap = None
-
-        # reset plotarea dims
-        self._plot_area.auto_scale()
-
-    @property
-    def images(self) -> tuple[ImageGraphic | ImageVolumeGraphic]:
-        return self._images
-
-    @images.setter
-    def images(self, images):
-        if isinstance(images, (ImageGraphic, ImageVolumeGraphic)):
-            images = (images,)
-        elif isinstance(images, Sequence):
-            if not all(
-                [isinstance(ig, (ImageGraphic, ImageVolumeGraphic)) for ig in images]
+        self._block_reentrance = True
+        try:
+            index_max = np.searchsorted(self._bin_centers_flanked, value)
+            with pause_events(
+                self._selector,
+                *self._images,
+                event_handlers=[
+                    self._selector_event_handler,
+                    self._image_event_handler,
+                ],
             ):
-                raise TypeError(
-                    f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
-                    f"tuple or list or ImageGraphic | ImageVolumeGraphic"
-                )
-        else:
-            raise TypeError(
-                f"`images` argument must be an ImageGraphic, ImageVolumeGraphic, or a "
-                f"tuple or list or ImageGraphic | ImageVolumeGraphic"
-            )
+                self._selector.selection = (self._selector.selection[0], index_max)
 
-        if self._images is not None:
-            for ig in self._images:
-                # cleanup events from current image graphics
-                ig_events = _get_image_graphic_events(ig)
-                ig.remove_event_handler(self._image_cmap_handler, *ig_events)
+                self._colorbar.vmax = value
 
-        self._images = images
+                self._text_vmax.text = _format_value(value)
+                self._text_vmax.offset = (-0.45, self._selector.selection[1], 0)
 
-        ig_events = _get_image_graphic_events(self._images[0])
+                for image in self._images:
+                    image.vmax = value
 
-        for ig in self.images:
-            ig.add_event_handler(self._image_cmap_handler, *ig_events)
+        except Exception as exc:
+            # raise original exception
+            raise exc  # vmax setter has raised. The lines above below are probably more relevant!
+        finally:
+            # set_value has finished executing, now allow future executions
+            self._block_reentrance = False
+
+    def _selector_event_handler(self, ev: GraphicFeatureEvent):
+        """when the selector's selctor has changed, it will update the vmin, vmax, or both"""
+        selection = ev.info["value"]
+        index_min = int(selection[0])
+        vmin = self._bin_centers_flanked[index_min]
+
+        index_max = int(selection[1])
+        vmax = self._bin_centers_flanked[index_max]
+
+        match ev.info["change"]:
+            case "min":
+                self.vmin = vmin
+            case "max":
+                self.vmax = vmax
+            case _:
+                self.vmin, self.vmax = vmin, vmax
 
     def _open_cmap_picker(self, ev):
+        """open imgui cmap picker"""
         # check if right click
         if ev.button != 2:
             return
@@ -431,7 +419,11 @@ class HistogramLUTTool(Graphic):
         self._plot_area.get_figure().open_popup("colormap-picker", pos, lut_tool=self)
 
     def _fpl_prepare_del(self):
-        self._linear_region_selector._fpl_prepare_del()
-        self._histogram_line._fpl_prepare_del()
-        del self._histogram_line
-        del self._linear_region_selector
+        """cleanup, need to disconnect events and remove image references for proper garbage collection"""
+        self._disconnect_images()
+        self._images.clear()
+
+        for i in range(len(self._children)):
+            g = self._children.pop(0)
+            g._fpl_prepare_del()
+            del g
