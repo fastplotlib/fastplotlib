@@ -9,7 +9,6 @@ Graphic Features
     SizeSpace
     VertexPositions
     VertexCmap
-    MeshVertexPositions
     MeshIndices
     MeshCmap
     SurfaceData
