@@ -6,7 +6,7 @@ import pygfx
 
 from ._positions_base import Graphic
 from .features import (
-    MeshVertexPositions,
+    VertexPositions,
     MeshIndices,
     MeshCmap,
     SurfaceData,
@@ -22,7 +22,7 @@ from .features import (
 
 class MeshGraphic(Graphic):
     _features = {
-        "positions": MeshVertexPositions,
+        "positions": VertexPositions,
         "indices": MeshIndices,
         "colors": (VertexColors, UniformColor),
         "cmap": MeshCmap,
@@ -90,10 +90,10 @@ class MeshGraphic(Graphic):
 
         super().__init__(**kwargs)
 
-        if isinstance(positions, MeshVertexPositions):
+        if isinstance(positions, VertexPositions):
             self._positions = positions
         else:
-            self._positions = MeshVertexPositions(
+            self._positions = VertexPositions(
                 positions, isolated_buffer=isolated_buffer, property_name="positions"
             )
 
@@ -194,7 +194,7 @@ class MeshGraphic(Graphic):
         return self._mode
 
     @property
-    def positions(self) -> MeshVertexPositions:
+    def positions(self) -> VertexPositions:
         """Get or set the vertex positions"""
         return self._positions
 

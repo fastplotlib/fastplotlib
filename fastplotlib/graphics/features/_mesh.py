@@ -37,18 +37,6 @@ def resolve_cmap_mesh(cmap) -> pygfx.TextureMap | None:
     return pygfx_cmap
 
 
-class MeshVertexPositions(VertexPositions):
-    """Manages mesh vertex positions, same as VertexPosition but data must be of shape [n, 3]"""
-
-    def _fix_data(self, data):
-        if data.ndim != 2 or data.shape[1] != 3:
-            raise ValueError(
-                f"mesh vertex positions must be of shape: [n_vertices, 3], you passed an array of shape: {data.shape}"
-            )
-
-        return to_gpu_supported_dtype(data)
-
-
 class MeshIndices(VertexPositions):
     event_info_spec = [
         {

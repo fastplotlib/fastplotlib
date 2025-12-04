@@ -6,7 +6,6 @@ from ._positions import (
     VertexCmap,
 )
 from ._mesh import (
-    MeshVertexPositions,
     MeshIndices,
     MeshCmap,
     SurfaceData,
@@ -81,7 +80,6 @@ __all__ = [
     "SizeSpace",
     "VertexPositions",
     "VertexCmap",
-    "MeshVertexPositions",
     "MeshIndices",
     "MeshCmap",
     "SurfaceData",
