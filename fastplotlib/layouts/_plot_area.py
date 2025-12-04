@@ -117,6 +117,12 @@ class PlotArea(GraphicMethodsMixin):
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
 
+        self._ambient_light = pygfx.AmbientLight()
+        self._directional_light = pygfx.DirectionalLight()
+
+        self.scene.add(self._ambient_light)
+        self.scene.add(self._camera.add(self._directional_light))
+
     def get_figure(self, obj=None):
         """Get Figure instance that contains this plot area"""
         if obj is None:
@@ -166,6 +172,8 @@ class PlotArea(GraphicMethodsMixin):
         # user wants to set completely new camera, remove current camera from controller
         if isinstance(new_camera, pygfx.PerspectiveCamera):
             self.controller.remove_camera(self._camera)
+            # add directional light to new camera
+            new_camera.add(self._directional_light)
             # add new camera to controller
             self.controller.add_camera(new_camera)
 
@@ -276,6 +284,16 @@ class PlotArea(GraphicMethodsMixin):
     def background_color(self, colors: str | tuple[float]):
         """1, 2, or 4 colors, each color must be acceptable by pygfx.Color"""
         self._background_material.set_colors(*colors)
+
+    @property
+    def ambient_light(self) -> pygfx.AmbientLight:
+        """the ambient lighting in the scene"""
+        return self._ambient_light
+
+    @property
+    def directional_light(self) -> pygfx.DirectionalLight:
+        """the directional lighting on the camera in the scene"""
+        return self._directional_light
 
     @property
     def animations(self) -> dict[str, list[callable]]:
@@ -449,7 +467,7 @@ class PlotArea(GraphicMethodsMixin):
         from the camera).
         """
         count = 0
-        for graphic in self._graphics:
+        for graphic in reversed(self._graphics):
             if isinstance(graphic, ImageGraphic):
                 count += 1
                 auto_depth = -count
@@ -610,14 +628,33 @@ class PlotArea(GraphicMethodsMixin):
         if not len(self._fpl_graphics_scene.children) > 0:
             return
 
-        # scale all cameras associated with this controller
-        # else it looks wonky
-        for camera in self.controller.cameras:
-            camera.show_object(self._fpl_graphics_scene)
+        if self.parent.__class__.__name__.endswith("Figure"):
+            # always use figure._subplots.ravel() in internal fastplotlib code
+            # otherwise if we use `for subplot in figure`, this could conflict
+            # with a user's iterator where they are doing `for subplot in figure` !!!
+            for subplot in self.parent._subplots.ravel():
+                # scale all cameras associated with this controller
+                if subplot.camera in self.controller.cameras:
+                    # skip if the scene is empty
+                    if len(subplot._fpl_graphics_scene.children) < 1:
+                        continue
 
-            # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
-            # probably because camera.show_object uses bounding sphere
-            camera.zoom = zoom
+                    # center the camera in the other subplot w.r.t. the scene in that other subplot!
+                    self._auto_center_scene(
+                        subplot.camera, subplot._fpl_graphics_scene, zoom
+                    )
+        else:
+            # just change for this plot area
+            # this is probably a dock area
+            self._auto_center_scene(self.camera, self._fpl_graphics_scene, zoom)
+
+    def _auto_center_scene(
+        self, camera: pygfx.PerspectiveCamera, scene: pygfx.Scene, zoom: float
+    ):
+        camera.show_object(scene)
+        # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
+        # probably because camera.show_object uses bounding sphere
+        camera.zoom = zoom
 
     def auto_scale(
         self,
@@ -645,16 +682,43 @@ class PlotArea(GraphicMethodsMixin):
         self.center_scene()
 
         if maintain_aspect is None:  # if not provided keep current setting
+            # use the same maintain apsect for all other cameras that this controller manages
+            # I think this make sense for most use cases, even when the other controllers are
+            # only managing one or 2 axes
             maintain_aspect = self.camera.maintain_aspect
 
-        # scale all cameras associated with this controller else it looks wonky
-        for camera in self.controller.cameras:
-            camera.maintain_aspect = maintain_aspect
+        if self.parent.__class__.__name__.endswith("Figure"):
+            # always use figure._subplots.ravel() in internal fastplotlib code
+            # otherwise if we use `for subplot in figure`, this could conflict
+            # with a user's iterator where they are doing `for subplot in figure` !!!
+            for subplot in self.parent._subplots.ravel():
+                # skip if the scene is empty
+                if len(subplot._fpl_graphics_scene.children) < 1:
+                    continue
 
-        if len(self._fpl_graphics_scene.children) > 0:
-            width, height, depth = np.ptp(
-                self._fpl_graphics_scene.get_world_bounding_box(), axis=0
+                # scale the camera in the other subplot w.r.t. the scene in that other subplot!
+                if subplot.camera in self.controller.cameras:
+                    camera = subplot.camera
+                    self._auto_scale_scene(
+                        camera, subplot._fpl_graphics_scene, zoom, maintain_aspect
+                    )
+        else:
+            # just change for this plot area, this is probably a dock area
+            self._auto_scale_scene(
+                self.camera, self._fpl_graphics_scene, zoom, maintain_aspect
             )
+
+    def _auto_scale_scene(
+        self,
+        camera: pygfx.PerspectiveCamera,
+        scene: pygfx.Scene,
+        zoom: float,
+        maintain_aspect: bool,
+    ):
+        camera.maintain_aspect = maintain_aspect
+
+        if len(scene.children) > 0:
+            width, height, depth = np.ptp(scene.get_world_bounding_box(), axis=0)
         else:
             width, height, depth = (1, 1, 1)
 
@@ -664,12 +728,10 @@ class PlotArea(GraphicMethodsMixin):
         if height < 0.01:
             height = 1
 
-        # scale all cameras associated with this controller else it looks wonky
-        for camera in self.controller.cameras:
-            camera.width = width
-            camera.height = height
+        camera.width = width
+        camera.height = height
 
-            camera.zoom = zoom
+        camera.zoom = zoom
 
     def remove_graphic(self, graphic: Graphic):
         """

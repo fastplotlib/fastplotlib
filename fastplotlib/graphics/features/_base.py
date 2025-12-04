@@ -289,6 +289,12 @@ class BufferManager(GraphicFeature):
             # the first dimension corresponding to n_datapoints
             key: int | np.ndarray[int | bool] | slice = key[0]
 
+        if isinstance(key, slice):
+            if key == slice(None):
+                # directly update full, don't need to figure out chunks
+                self.buffer.update_full()
+                return
+
         offset, size = self._parse_offset_size(key, upper_bound)
         self.buffer.update_range(offset=offset, size=size)
 

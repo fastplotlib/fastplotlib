@@ -183,10 +183,13 @@ class LinearSelector(BaseSelector):
         world_object.add(line_outer)
         world_object.add(line_inner)
 
-        if axis == "x":
-            offset = (parent.offset[0], 0, 0)
-        elif axis == "y":
-            offset = (0, parent.offset[1], 0)
+        if parent is None:
+            offset = (0, 0, 0)
+        else:
+            if axis == "x":
+                offset = (parent.offset[0], 0, 0)
+            elif axis == "y":
+                offset = (0, parent.offset[1], 0)
 
         # init base selector
         BaseSelector.__init__(

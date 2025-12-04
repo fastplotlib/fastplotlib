@@ -10,15 +10,12 @@ import os
 os.environ["WGPU_FORCE_OFFSCREEN"] = "1"
 
 import fastplotlib
-import pygfx
 from pygfx.utils.gallery_scraper import find_examples_for_gallery
 from pathlib import Path
 import sys
 from sphinx_gallery.sorting import ExplicitOrder
 import imageio.v3 as iio
 
-MAX_TEXTURE_SIZE = 2048
-pygfx.renderers.wgpu.set_wgpu_limits(**{"max-texture-dimension-2d": MAX_TEXTURE_SIZE})
 
 ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
 EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples")
@@ -44,7 +41,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "sphinx_design",
-    "sphinx_gallery.gen_gallery"
+    "sphinx_gallery.gen_gallery",
 ]
 
 sphinx_gallery_conf = {
@@ -65,6 +62,7 @@ sphinx_gallery_conf = {
             "../../examples/controllers",
             "../../examples/line",
             "../../examples/line_collection",
+            "../../examples/mesh",
             "../../examples/scatter",
             "../../examples/vectors",
             "../../examples/text",
@@ -77,9 +75,9 @@ sphinx_gallery_conf = {
             "../../examples/qt",
         ]
     ),
-    "ignore_pattern": r'__init__\.py',
+    "ignore_pattern": r"__init__\.py",
     "nested_sections": False,
-    "thumbnail_size": (250, 250)
+    "thumbnail_size": (250, 250),
 }
 
 extra_conf = find_examples_for_gallery(EXAMPLES_DIR)
@@ -107,7 +105,7 @@ html_theme_options = {
     "check_switcher": True,
     "switcher": {
         "json_url": "http://www.fastplotlib.org/_static/switcher.json",
-        "version_match": release
+        "version_match": release,
     },
     "icon_links": [
         {
@@ -115,7 +113,7 @@ html_theme_options = {
             "url": "https://github.com/fastplotlib/fastplotlib",
             "icon": "fa-brands fa-github",
         }
-    ]
+    ],
 }
 
 html_static_path = ["_static"]
