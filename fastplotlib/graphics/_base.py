@@ -27,6 +27,7 @@ from .features import (
     Visible,
 )
 from ._axes import Axes
+from ._tooltip import Tooltip
 
 HexStr: TypeAlias = str
 WorldObjectID: TypeAlias = int
@@ -171,6 +172,8 @@ class Graphic:
         self._right_click_menu = None
 
         self._world_object_ids = list()
+
+        self._tooltip = GraphicTooltip(self)
 
     @property
     def supported_events(self) -> tuple[str]:
@@ -452,6 +455,7 @@ class Graphic:
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
+        self._tooltip._fpl_add_plot_area_hook(plot_area)
 
     def __repr__(self):
         rval = f"{self.__class__.__name__}"
@@ -569,3 +573,24 @@ class Graphic:
 
     def _fpl_close_right_click_menu(self):
         pass
+
+
+class GraphicTooltip(Tooltip):
+    def __init__(self, graphic: Graphic):
+        pass
+
+    def _fpl_add_plot_area_hook(self, plot_area):
+        plot_area.get_figure()._overlay_scene.add(self._world_object)
+
+    def display(self, position: tuple[float, float], info: str = None):
+        """
+
+        Parameters
+        ----------
+        position
+        info
+
+        Returns
+        -------
+
+        """
