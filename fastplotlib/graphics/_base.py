@@ -1,6 +1,7 @@
+from __future__ import annotations
 from collections import defaultdict
 from functools import partial
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias, Callable
 import weakref
 
 import numpy as np
@@ -22,6 +23,7 @@ from .features import (
     Name,
     Offset,
     Rotation,
+    Scale,
     Alpha,
     AlphaMode,
     Visible,
@@ -38,7 +40,7 @@ WORLD_OBJECTS: dict[HexStr, pygfx.WorldObject] = dict()  #: {hex id str: WorldOb
 
 # maps world object to the graphic which owns it, useful when manually picking from the renderer and we
 # need to know the graphic associated with the target world object
-WORLD_OBJECT_TO_GRAPHIC: dict[WorldObjectID, "Graphic"] = dict()
+WORLD_OBJECT_TO_GRAPHIC: dict[WorldObjectID, Graphic] = dict()
 
 
 PYGFX_EVENTS = [
@@ -68,6 +70,7 @@ class Graphic:
             "name": Name,
             "offset": Offset,
             "rotation": Rotation,
+            "scale": Scale,
             "alpha": Alpha,
             "alpha_mode": AlphaMode,
             "visible": Visible,
@@ -78,12 +81,14 @@ class Graphic:
     def __init__(
         self,
         name: str = None,
-        offset: np.ndarray | list | tuple = (0.0, 0.0, 0.0),
-        rotation: np.ndarray | list | tuple = (0.0, 0.0, 0.0, 1.0),
+        offset: np.ndarray | tuple[float] = (0.0, 0.0, 0.0),
+        rotation: np.ndarray | tuple[float] = (0.0, 0.0, 0.0, 1.0),
+        scale: np.ndarray | tuple[float] = (1.0, 1.0, 1.0),
         alpha: float = 1.0,
         alpha_mode: str = "auto",
         visible: bool = True,
         metadata: Any = None,
+        create_tooltip: bool = True,
     ):
         """
 
@@ -97,6 +102,9 @@ class Graphic:
 
         rotation: (float, float, float, float), default (0, 0, 0, 1)
             rotation quaternion
+
+        scale: (float, float, float), default (1.0, 1.0, 1.0)
+            (x, y, z) scale factors
 
         alpha: (float), default 1.0
             The global alpha value, i.e. opacity, of the graphic.
@@ -161,6 +169,7 @@ class Graphic:
         self._name = Name(name)
         self._deleted = Deleted(False)
         self._rotation = Rotation(rotation)
+        self._scale = Scale(scale)
         self._offset = Offset(offset)
         self._alpha = Alpha(alpha)
         self._alpha_mode = AlphaMode(alpha_mode)
@@ -171,9 +180,19 @@ class Graphic:
 
         self._right_click_menu = None
 
+        # store ids of all the WorldObjects that this Graphic manages/uses
         self._world_object_ids = list()
 
-        self._tooltip = GraphicTooltip(self)
+        # TODO: this exists for LineCollections since we don't want to create
+        #  thousands or hundreds of tooltip objects and meshes etc. for each line,
+        #  the GraphicCollection handles one tooltip instance instead. Once we
+        #  refactor GraphicCollection we can make this nicer
+        # It also doesn't make sense to create tooltips for text, that would be very funny
+        # similarly they would probably not be useful for selector tools
+        if create_tooltip:
+            self._tooltip = GraphicTooltip(self)
+        else:
+            self._tooltip = None
 
     @property
     def supported_events(self) -> tuple[str]:
@@ -195,7 +214,7 @@ class Graphic:
         return self._offset.value
 
     @offset.setter
-    def offset(self, value: np.ndarray | list | tuple):
+    def offset(self, value: np.ndarray | tuple[float, float, float]):
         self._offset.set_value(self, value)
 
     @property
@@ -204,8 +223,17 @@ class Graphic:
         return self._rotation.value
 
     @rotation.setter
-    def rotation(self, value: np.ndarray | list | tuple):
+    def rotation(self, value: np.ndarray | tuple[float, float, float, float]):
         self._rotation.set_value(self, value)
+
+    @property
+    def scale(self) -> np.ndarray:
+        """(x, y, z) scaling factor"""
+        return self._scale.value
+
+    @scale.setter
+    def scale(self, value: np.ndarray | tuple[float, float, float]):
+        self._scale.set_value(self, value)
 
     @property
     def alpha(self) -> float:
@@ -267,12 +295,12 @@ class Graphic:
                 if isinstance(child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)):
                     # need to call int() on it since it's a numpy array with 1 element
                     # and numpy arrays aren't hashable
-                    global_id = int(child.uniform_buffer.data["global_id"])
+                    global_id = child.id
                     WORLD_OBJECT_TO_GRAPHIC[global_id] = self
                     # store id to pop from dict when graphic is deleted
                     self._world_object_ids.append(global_id)
         else:
-            global_id = int(wo.uniform_buffer.data["global_id"])
+            global_id = wo.id
             WORLD_OBJECT_TO_GRAPHIC[global_id] = self
             # store id to pop from dict when graphic is deleted
             self._world_object_ids.append(global_id)
@@ -294,6 +322,11 @@ class Graphic:
         # set rotation if it's not (0., 0., 0., 1.)
         if not all(wo.world.rotation == self.rotation):
             self.rotation = self.rotation
+
+    @property
+    def tooltip(self) -> GraphicTooltip:
+        """tooltip for this graphic"""
+        return self._tooltip
 
     @property
     def event_handlers(self) -> list[tuple[str, callable, ...]]:
@@ -453,9 +486,69 @@ class Graphic:
                 feature = getattr(self, f"_{t}")
                 feature.remove_event_handler(wrapper)
 
+    def map_model_to_world(self, position: tuple[float, float, float] | tuple[float, float]) -> np.ndarray:
+        """
+        map position from model (data) space to world space, basically applies the world affine transform
+
+        Parameters
+        ----------
+        position: (float, float, float) or (float, float)
+            (x, y, z) or (x, y) position. If z is not provided then the graphic's offset z is used.
+
+        Returns
+        -------
+        np.ndarray
+            (x, y, z) position in world space
+
+        """
+
+        if len(position) == 2:
+            # use z of the graphic
+            position = [*position, self.offset[-1]]
+
+        if len(position) != 3:
+            raise ValueError(f"position must be tuple indicating (x, y, z) position in *model space*")
+
+        # apply world transform to project from model space to world space
+        return la.vec_transform(position, self.world_object.world.matrix)
+
+    def map_world_to_model(self, position: tuple[float, float, float] | tuple[float, float]) -> np.ndarray:
+        """
+        map position from world space to model (data) space, basically applies the inverse world affine transform
+
+        Parameters
+        ----------
+        position: (float, float, float) or (float, float)
+            (x, y, z) or (x, y) position. If z is not provided then 0 is used.
+
+        Returns
+        -------
+        np.ndarray
+            (x, y, z) position in world space
+
+        """
+
+        if len(position) == 2:
+            # use z of the graphic
+            position = [*position, self.offset[-1]]
+
+        if len(position) != 3:
+            raise ValueError(f"position must be tuple indicating (x, y, z) position in *model space*")
+
+        return la.vec_transform(position, self.world_object.world.inverse_matrix)
+
+    def _fpl_tooltip_info_handler(self, ev: pygfx.PointerEvent) -> str:
+        """
+        Takes a pygfx.PointerEvent and returns formatted pick info.
+        """
+
+        raise NotImplementedError("must be implemented in subclass")
+
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
-        self._tooltip._fpl_add_plot_area_hook(plot_area)
+
+        if self._tooltip is not None:
+            self._tooltip._fpl_add_plot_area_hook(plot_area)
 
     def __repr__(self):
         rval = f"{self.__class__.__name__}"
@@ -471,8 +564,14 @@ class Graphic:
 
         Optionally implemented in subclasses
         """
+        # remove from world_obj -> graphic map
         for global_id in self._world_object_ids:
             WORLD_OBJECT_TO_GRAPHIC.pop(global_id)
+
+        # prepare del in tooltip remove tooltip
+        if self._tooltip is not None:
+            self._tooltip._fpl_prepare_del()
+            del self._tooltip
 
         # remove axes if added to this graphic
         if self._axes is not None:
@@ -577,20 +676,138 @@ class Graphic:
 
 class GraphicTooltip(Tooltip):
     def __init__(self, graphic: Graphic):
-        pass
+        self._graphic = graphic
+        self._plot_area = None
 
-    def _fpl_add_plot_area_hook(self, plot_area):
-        plot_area.get_figure()._overlay_scene.add(self._world_object)
+        self._info_handler: Callable = None
 
-    def display(self, position: tuple[float, float], info: str = None):
+        self._enabled = True
+        
+        super().__init__()
+
+    @property
+    def enabled(self) -> bool:
+        """enable or disable tooltips for this graphic"""
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, enable: bool):
+        self._enabled = bool(enable)
+
+        if not self._enabled:
+            self.visible = False
+
+    @property
+    def info_handler(self) -> None | Callable:
+        """get or set a custom handler for setting the tooltip info"""
+        return self._info_handler
+
+    @info_handler.setter
+    def info_handler(self, func: Callable | None):
+        if func is None:
+            self._info_handler = None
+            return
+
+        if not callable(func):
+            raise TypeError(
+                f"`info_handler` must be set with a callable that takes a pointer event, or it can be set as None"
+            )
+
+        self._info_handler = func
+
+    def display(self, position: tuple[float, float, float] | tuple[float, float], info: str = None, space: Literal["model", "world", "screen"] = "model"):
         """
+        display tooltip at the given position in the given space
 
         Parameters
         ----------
-        position
-        info
+        position: (float, float, float) or (float, float)
+            (x, y, z) or (x, y) position in **model space**
 
-        Returns
-        -------
+        info: str
+            text to display in the tooltip
+
+        space: Literal["model", "world", "screen"], default "model"
+            interpret the ``position`` as being in this space
 
         """
+        if not self.enabled:
+            return
+
+        if space == "model":
+            world_pos = self._graphic.map_model_to_world(position)
+            screen_pos = self._plot_area.map_world_to_screen(world_pos)
+
+        elif space == "world":
+            screen_pos = self._plot_area.map_world_to_screen(world_pos)
+
+        elif space == "screen":
+            screen_pos = position
+
+        else:
+            raise ValueError(f"`space` must be one of: 'model', 'world', or 'screen', you passed: {space}")
+
+        if info is None:
+            # auto fetch pick info
+            pick_info = self._plot_area.get_pick_info(screen_pos)
+
+            # if it is None return, the graphic is moved away from this position
+            if pick_info is None:
+                return
+
+            # simulate event at this screen position, pass through graphic's formatter
+            info = self.format_event(
+                pygfx.PointerEvent("tooltip-pick", x=screen_pos[0], y=screen_pos[1], pick_info=pick_info))
+
+        super().display(screen_pos, info)
+
+    def _fpl_auto_update_render(self):
+        # auto-updates the tooltip on every render so it is always accurate
+        # if the data under the graphic changes at this position, then it will update the text
+        if self.visible:
+            self.display(
+                position=self.position,
+                space="screen",
+            )
+
+    def _fpl_add_plot_area_hook(self, plot_area):
+        self._plot_area = plot_area
+
+        # add to overlay scene
+        self._plot_area.get_figure()._fpl_overlay_scene.add(self._fpl_world_object)
+
+        # this makes the tooltip info auto-update on every render
+        self._plot_area.add_animations(self._fpl_auto_update_render, post_render="True")
+
+        # connect events
+        self._graphic.add_event_handler(self._pointer_move_handler, "pointer_move")
+        self._graphic.add_event_handler(self._pointer_leave_handler, "pointer_leave")
+
+    def _fpl_prepare_del(self):
+        # remove from overlay scene
+        self._plot_area.get_figure()._fpl_overlay_scene.remove(self._fpl_world_object)
+
+        # remove animation func
+        self._plot_area.remove_animation(self._fpl_auto_update_render)
+
+    def format_event(self, ev):
+        # format pick info
+        info = self._graphic._fpl_tooltip_info_handler(ev)
+
+        if self.info_handler is not None:
+            info = self.info_handler(ev, info)
+
+        return info
+
+    def _pointer_move_handler(self, ev: pygfx.PointerEvent):
+        if not self.enabled:
+            return
+
+        info = self.format_event(ev)
+
+        # IMPORTANT: call display() of superclass class, NOT this class,
+        # since the pointer event already has the screen space (x, y)
+        super().display((ev.x, ev.y), info)
+
+    def _pointer_leave_handler(self, ev):
+        self.clear()

@@ -182,7 +182,7 @@ class BaseSelector(Graphic):
 
         self._parent = parent
 
-        Graphic.__init__(self, **kwargs)
+        Graphic.__init__(self, create_tooltip=False, **kwargs)
 
     def get_selected_index(self):
         """Not implemented for this selector"""

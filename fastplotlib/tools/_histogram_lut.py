@@ -60,7 +60,7 @@ class HistogramLUTTool(Graphic):
         kwargs: passed to ``Graphic``
 
         """
-        super().__init__(**kwargs)
+        super().__init__(create_tooltip, **kwargs)
 
         self._nbins = nbins
         self._flank_divisor = flank_divisor

@@ -6,6 +6,7 @@ import pygfx
 
 from ..layouts import Subplot
 from ..utils import RenderQueue
+from ..graphics import GraphicTooltip
 
 
 class Cursor:
@@ -56,6 +57,7 @@ class Cursor:
         """
 
         self._cursors: dict[Subplot, [pygfx.Points | pygfx.Group[pygfx.Line]]] = dict()
+        self._active_tooltips: dict[Subplot, GraphicTooltip] = dict()
 
         self._mode = None
         self.mode = mode
@@ -210,7 +212,7 @@ class Cursor:
 
     @position.setter
     def position(self, pos: tuple[float, float]):
-        for cursor in self._cursors.values():
+        for subplot, cursor in self._cursors.items():
 
             if self.mode == "marker":
                 cursor.geometry.positions.data[0, :-1] = pos
@@ -237,6 +239,20 @@ class Cursor:
 
                 line_v.geometry.positions.update_full()
 
+            # set tooltip using pick info if a graphic is at this position
+            # for now we just set z = 1
+            screen_pos = subplot.map_world_to_screen((*pos, 1))
+            pick_info = subplot.get_pick_info(screen_pos)
+            if pick_info is not None:
+                graphic = pick_info["graphic"]
+                if graphic.tooltip is not None:  # some graphics don't use tooltips, ex: Text
+                    info = graphic.tooltip.format_event(pygfx.PointerEvent("cursor-pick", x=screen_pos[0], y=screen_pos[1], target=pick_info["world_object"], pick_info=pick_info))
+                    graphic.tooltip.display(screen_pos, info, space="screen")
+                    self._active_tooltips[subplot] = graphic.tooltip
+            else:
+                if self._active_tooltips[subplot] is not None:
+                    self._active_tooltips[subplot].visible = False
+
         self._position[:] = pos
 
     def add_subplot(self, subplot: Subplot):
@@ -256,6 +272,7 @@ class Cursor:
         )
 
         self._cursors[subplot] = cursor
+        self._active_tooltips[subplot] = None
 
     def remove_subplot(self, subplot: Subplot):
         """remove cursor from subplot"""
@@ -263,6 +280,7 @@ class Cursor:
             raise KeyError("cursor not in given supblot")
 
         subplot.scene.remove(self._cursors.pop(subplot))
+        self._active_tooltips.pop(subplot)
 
     def clear(self):
         """remove from all subplots"""

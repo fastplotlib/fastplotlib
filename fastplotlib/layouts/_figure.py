@@ -453,7 +453,7 @@ class Figure:
 
         # overlay render pass
         self._overlay_camera = ScreenSpaceCamera()
-        self._overlay_scene = pygfx.Scene()
+        self._fpl_overlay_scene = pygfx.Scene()
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
@@ -544,7 +544,7 @@ class Figure:
         # overlay render pass
         if hasattr(self.renderer, "clear"):
             self.renderer.clear(depth=True)
-        self.renderer.render(self._overlay_scene, self._overlay_camera, flush=False)
+        self.renderer.render(self._fpl_overlay_scene, self._overlay_camera, flush=False)
 
         self.renderer.flush()
 
