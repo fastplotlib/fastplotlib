@@ -20,12 +20,14 @@ Properties
 .. autosummary::
     :toctree: Subplot_api
 
+    Subplot.ambient_light
     Subplot.animations
     Subplot.axes
     Subplot.background_color
     Subplot.camera
     Subplot.canvas
     Subplot.controller
+    Subplot.directional_light
     Subplot.docks
     Subplot.frame
     Subplot.graphics
@@ -52,7 +54,10 @@ Methods
     Subplot.add_line
     Subplot.add_line_collection
     Subplot.add_line_stack
+    Subplot.add_mesh
+    Subplot.add_polygon
     Subplot.add_scatter
+    Subplot.add_surface
     Subplot.add_text
     Subplot.add_vectors
     Subplot.auto_scale
