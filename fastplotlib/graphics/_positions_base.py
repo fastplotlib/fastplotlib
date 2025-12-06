@@ -146,3 +146,11 @@ class PositionsGraphic(Graphic):
 
         self._size_space = SizeSpace(size_space)
         super().__init__(*args, **kwargs)
+
+    def _fpl_tooltip_info_handler(self, ev: pygfx.PointerEvent) -> str:
+        index = ev.pick_info["vertex_index"]
+        info = "\n".join(
+            f"{dim}: {val:.4g}" for dim, val in zip("xyz", self.data[index])
+        )
+
+        return info

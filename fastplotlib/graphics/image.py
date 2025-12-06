@@ -21,6 +21,15 @@ from .features import (
 )
 
 
+def _format_value(value: float):
+    """float -> rounded str, or str with scientific notation"""
+    abs_val = abs(value)
+    if abs_val < 0.01 or abs_val > 9_999:
+        return f"{value:.2e}"
+    else:
+        return f"{value:.4f}"
+
+
 class _ImageTile(pygfx.Image):
     """
     Similar to pygfx.Image, only difference is that it modifies the pick_info
@@ -477,3 +486,16 @@ class ImageGraphic(Graphic):
         self._plot_area.add_graphic(selector, center=False)
 
         return selector
+
+    def _fpl_tooltip_info_handler(self, ev: pygfx.PointerEvent) -> str:
+        col, row = ev.pick_info["index"]
+        if self.data.value.ndim == 2:
+            val = self.data[row, col]
+            info = f"{val:.4g}"
+        else:
+            info = "\n".join(
+                f"{channel}: {val:.4g}"
+                for channel, val in zip("rgba", self.data[row, col])
+            )
+
+        return info

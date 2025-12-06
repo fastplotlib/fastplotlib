@@ -128,7 +128,7 @@ class VectorsGraphic(Graphic):
             }
 
         geometry = create_vector_geometry(color=color, **shape_options)
-        material = pygfx.MeshBasicMaterial()
+        material = pygfx.MeshBasicMaterial(pick_write=True)
 
         n_vectors = self._positions.value.shape[0]
 
@@ -169,6 +169,14 @@ class VectorsGraphic(Graphic):
     @directions.setter
     def directions(self, new_directions):
         self._directions.set_value(self, new_directions)
+
+    def _fpl_tooltip_info_handler(self, ev: pygfx.PointerEvent) -> str:
+        index = ev.pick_info["instance_index"]
+
+        info = (f"position: {self.positions[index]}\n"
+                f"direction: {self.directions[index]}")
+
+        return info
 
 
 # mesh code copied and adapted from pygfx

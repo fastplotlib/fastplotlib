@@ -32,7 +32,6 @@ Methods
 .. autosummary::
     :toctree: Tooltip_api
 
-    Tooltip.register
-    Tooltip.unregister
-    Tooltip.unregister_all
+    Tooltip.clear
+    Tooltip.display
 

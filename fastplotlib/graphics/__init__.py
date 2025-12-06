@@ -1,4 +1,5 @@
-from ._base import Graphic
+from ._tooltip import Tooltip
+from ._base import Graphic, GraphicTooltip
 from .line import LineGraphic
 from .scatter import ScatterGraphic
 from .image import ImageGraphic
@@ -10,6 +11,8 @@ from .line_collection import LineCollection, LineStack
 
 
 __all__ = [
+    "Tooltip",
+    "GraphicTooltip",
     "Graphic",
     "LineGraphic",
     "ScatterGraphic",

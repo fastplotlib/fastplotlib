@@ -71,7 +71,7 @@ class TextGraphic(Graphic):
 
         """
 
-        super().__init__(**kwargs)
+        super().__init__(create_tooltip=False, **kwargs)
 
         self._text = TextData(text)
         self._font_size = FontSize(font_size)

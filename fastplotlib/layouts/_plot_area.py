@@ -9,7 +9,7 @@ from pylinalg import vec_transform, vec_unproject
 from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
-from ..graphics._base import Graphic
+from ..graphics._base import Graphic, WORLD_OBJECT_TO_GRAPHIC
 from ..graphics import ImageGraphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ._graphic_methods_mixin import GraphicMethodsMixin
@@ -87,6 +87,8 @@ class PlotArea(GraphicMethodsMixin):
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
+
+        self._animate_funcs_persist: list[callable] = list()
 
         # list of all graphics managed by this PlotArea
         self._graphics: list[Graphic] = list()
@@ -301,12 +303,17 @@ class PlotArea(GraphicMethodsMixin):
         self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
         """
-        Map screen position to world position
+        Map screen (canvas) position to world position
 
         Parameters
         ----------
         pos: (float, float) | pygfx.PointerEvent
             ``(x, y)`` screen coordinates, or ``pygfx.PointerEvent``
+
+        Returns
+        -------
+        (float, float, float)
+            (x, y, z) position in world space, z is always 0
 
         """
         if isinstance(pos, pygfx.PointerEvent):
@@ -332,6 +339,61 @@ class PlotArea(GraphicMethodsMixin):
 
         # default z is zero for now
         return np.array([*pos_world[:2], 0])
+
+    def map_world_to_screen(self, pos: tuple[float, float, float]):
+        """
+        Map world position to screen (canvas) posiition
+
+        Parameters
+        ----------
+        pos: (x, y, z)
+            world space position
+
+        Returns
+        -------
+        (float, float)
+            (x, y) position in screen (canvas) space
+
+        """
+
+        if not len(pos) == 3:
+            raise ValueError(f"must pass 3d (x, y, z) position, you passed: {pos}")
+
+        # apply camera transform and get NDC position
+        ndc = vec_transform(np.asarray(pos), self.camera.camera_matrix)
+
+        # get viewport rect
+        x_offset, y_offset, w, h = self.viewport.rect
+
+        # ndc to screen position
+        x_screen = x_offset + (ndc[0] + 1) * 0.5 * w
+        y_screen = y_offset + (1 - ndc[1]) * 0.5 * h
+
+        return x_screen, y_screen
+
+    def get_pick_info(self, pos):
+        """
+        Get pick info at this screen position
+
+        Parameters
+        ----------
+        pos: (x, y)
+            screen space position
+
+        Returns
+        -------
+        dict | None
+            pick info if a graphic is at this position, else None
+
+        """
+
+        info = self.renderer.get_pick_info(pos)
+
+        if info["world_object"] is not None:
+            # if this world object is owned by a graphic
+            if info["world_object"].id in WORLD_OBJECT_TO_GRAPHIC.keys():
+                info["graphic"] = WORLD_OBJECT_TO_GRAPHIC[info["world_object"].id]
+                return info
 
     def _render(self):
         self._call_animate_functions(self._animate_funcs_pre)
@@ -368,6 +430,7 @@ class PlotArea(GraphicMethodsMixin):
         *funcs: callable,
         pre_render: bool = True,
         post_render: bool = False,
+        persist: bool = False,
     ):
         """
         Add function(s) that are called on every render cycle.
@@ -384,6 +447,10 @@ class PlotArea(GraphicMethodsMixin):
         post_render: bool, default ``False``, optional keyword-only argument
             if true, these function(s) are called after a render cycle
 
+        persist: bool, default False
+            if True, the animation function will persist even if ``clear_animations()`` is called.
+            Such functions must be removed explicitly using ``remove_animation()``
+
         """
         for f in funcs:
             if not callable(f):
@@ -394,6 +461,8 @@ class PlotArea(GraphicMethodsMixin):
                 self._animate_funcs_pre += funcs
             if post_render:
                 self._animate_funcs_post += funcs
+            if persist:
+                self._animate_funcs_persist += funcs
 
     def remove_animation(self, func):
         """
@@ -418,6 +487,9 @@ class PlotArea(GraphicMethodsMixin):
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
+        if func in self._animate_funcs_persist:
+            self._animate_funcs_persist.remove(func)
+
     def clear_animations(self, removal: str = None):
         """
         Remove animation functions.
@@ -428,26 +500,36 @@ class PlotArea(GraphicMethodsMixin):
             The type of animation functions to clear. One of 'pre' or 'post'. If `None`, removes all animation
             functions.
         """
+        to_remove = list()
+
         if removal is None:
             # remove all
             for func in self._animate_funcs_pre:
-                self._animate_funcs_pre.remove(func)
+                to_remove.append(func)
 
             for func in self._animate_funcs_post:
-                self._animate_funcs_post.remove(func)
+                to_remove.append(func)
+
         elif removal == "pre":
             # only pre
             for func in self._animate_funcs_pre:
-                self._animate_funcs_pre.remove(func)
+                to_remove.append(func)
+
         elif removal == "post":
             # only post
             for func in self._animate_funcs_post:
-                self._animate_funcs_post.remove(func)
+                to_remove.append(func)
         else:
             raise ValueError(
                 f"Animation type: {removal} must be one of 'pre' or 'post'. To remove all animation "
                 f"functions, pass `type=None`"
             )
+
+        for func in to_remove:
+            if func in self._animate_funcs_persist:
+                # skip
+                continue
+            self.remove_animation(func)
 
     def _sort_images_by_depth(self):
         """
@@ -564,10 +646,6 @@ class PlotArea(GraphicMethodsMixin):
         elif isinstance(graphic, Graphic):
             obj_list = self._graphics
             self._fpl_graphics_scene.add(graphic.world_object)
-
-            # add to tooltip registry
-            if self.get_figure().show_tooltips:
-                self.get_figure().tooltip_manager.register(graphic)
 
         else:
             raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
