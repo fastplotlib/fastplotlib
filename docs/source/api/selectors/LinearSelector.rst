@@ -35,8 +35,10 @@ Properties
     LinearSelector.parent
     LinearSelector.right_click_menu
     LinearSelector.rotation
+    LinearSelector.scale
     LinearSelector.selection
     LinearSelector.supported_events
+    LinearSelector.tooltip_format
     LinearSelector.vertex_color
     LinearSelector.visible
     LinearSelector.world_object
@@ -49,9 +51,12 @@ Methods
     LinearSelector.add_axes
     LinearSelector.add_event_handler
     LinearSelector.clear_event_handlers
+    LinearSelector.format_pick_info
     LinearSelector.get_selected_data
     LinearSelector.get_selected_index
     LinearSelector.get_selected_indices
+    LinearSelector.map_model_to_world
+    LinearSelector.map_world_to_model
     LinearSelector.remove_event_handler
     LinearSelector.rotate
 

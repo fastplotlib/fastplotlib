@@ -419,3 +419,16 @@ class ImageVolumeGraphic(Graphic):
         vmin, vmax = quick_min_max(self.data.value)
         self.vmin = vmin
         self.vmax = vmax
+
+    def format_pick_info(self, pick_info: dict) -> str:
+        col, row = pick_info["index"]
+        if ev.graphic.data.value.ndim == 2:
+            val = ev.graphic.data[row, col]
+            info = f"{val:.4g}"
+        else:
+            info = "\n".join(
+                f"{channel}: {val:.4g}"
+                for channel, val in zip("rgba", ev.graphic.data[row, col])
+            )
+
+        return info
