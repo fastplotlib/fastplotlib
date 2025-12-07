@@ -585,11 +585,6 @@ class Graphic:
         for global_id in self._world_object_ids:
             WORLD_OBJECT_TO_GRAPHIC.pop(global_id)
 
-        # prepare del in tooltip remove tooltip
-        if self._tooltip is not None:
-            self._tooltip._fpl_prepare_del()
-            del self._tooltip
-
         # remove axes if added to this graphic
         if self._axes is not None:
             self._plot_area.scene.remove(self._axes)
