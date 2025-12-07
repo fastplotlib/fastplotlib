@@ -20,7 +20,7 @@ img1 = iio.imread("imageio:camera.png")
 img2 = np.zeros(img1.shape)
 img2[50:, 20:] = img1[:-50, :-20]
 
-figure = fpl.Figure((1, 2), size=(700, 500))
+figure = fpl.Figure((1, 2), size=(700, 450))
 
 # add images
 figure[0, 0].add_image(img1)
