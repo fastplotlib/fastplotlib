@@ -11,9 +11,9 @@ from ..utils import RenderQueue
 class Cursor:
     def __init__(
         self,
-        mode: Literal["crosshair", "marker"],
+        mode: Literal["crosshair", "marker"] = "crosshair",
         size: float = 1.0,  # in screen space
-        color: str | Sequence[float] | pygfx.Color | np.ndarray = "r",
+        color: str | Sequence[float] | pygfx.Color | np.ndarray = "w",
         marker: str = "+",
         edge_color: str | Sequence[float] | pygfx.Color | np.ndarray = "k",
         edge_width: float = 0.5,
@@ -287,12 +287,18 @@ class Cursor:
         self._cursors[subplot] = cursor
         self._transforms[subplot] = transform
 
+        # let cursor manage tooltips
+        subplot.renderer.remove_event_handler(subplot._fpl_set_tooltip, "pointer_move")
+
     def remove_subplot(self, subplot: Subplot):
         """remove cursor from subplot"""
         if subplot not in self._cursors.keys():
             raise KeyError("cursor not in given supblot")
 
         subplot.scene.remove(self._cursors.pop(subplot))
+
+        # give back tooltip control to the subplot
+        subplot.renderer.add_event_handler(subplot._fpl_set_tooltip, "pointer_move")
 
     def clear(self):
         """remove from all subplots"""
