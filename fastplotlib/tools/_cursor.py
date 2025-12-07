@@ -41,10 +41,10 @@ class Cursor:
             marker shape, used if mode == 'marker'
 
         edge_color: str | Sequence[float] | pygfx.Color | np.ndarray, default "k"
-            marker edge color, used if mode == 'marker'
+            marker edge color, used if ``mode`` == 'marker'
 
         edge_width: float, default 0.5
-            marker edge widget, used if mode == 'marker'
+            marker edge widget, used if ``mode`` == 'marker'
 
         alpha: float, default 0.7
             alpha (transparency) of the cursor
@@ -74,6 +74,7 @@ class Cursor:
 
     @property
     def mode(self) -> Literal["crosshair", "marker"]:
+        """cursor mode, one of 'crosshair' or 'marker'"""
         return self._mode
 
     @mode.setter
@@ -98,6 +99,7 @@ class Cursor:
 
     @property
     def size(self) -> float:
+        """size of marker or crosshair line thickness"""
         return self._size
 
     @size.setter
@@ -114,6 +116,7 @@ class Cursor:
 
     @property
     def size_space(self) -> Literal["screen", "world"]:
+        """interpret cursor size in screen or world space"""
         return self._size_space
 
     @size_space.setter
@@ -136,6 +139,7 @@ class Cursor:
 
     @property
     def color(self) -> pygfx.Color:
+        """cursor color"""
         return self._color
 
     @color.setter
@@ -149,6 +153,7 @@ class Cursor:
 
     @property
     def marker(self) -> str:
+        """cursor marker shape, if `mode` is 'marker'"""
         return self._marker
 
     @marker.setter
@@ -161,6 +166,7 @@ class Cursor:
 
     @property
     def edge_color(self) -> pygfx.Color:
+        """cursor marker edge color, if `mode` is 'marker'"""
         return self._edge_color
 
     @edge_color.setter
@@ -175,6 +181,7 @@ class Cursor:
 
     @property
     def edge_width(self) -> float:
+        """cursor marker edge width, if `mode` is 'marker'"""
         return self._edge_width
 
     @edge_width.setter
@@ -187,6 +194,7 @@ class Cursor:
 
     @property
     def alpha(self) -> float:
+        """cursor alpha value"""
         return self._alpha
 
     @alpha.setter
@@ -198,6 +206,7 @@ class Cursor:
 
     @property
     def pause(self) -> bool:
+        """pause the cursor, if True the cursor will not respond to mouse pointer events"""
         return self._pause
 
     @pause.setter
@@ -206,7 +215,7 @@ class Cursor:
 
     @property
     def position(self) -> tuple[float, float]:
-        """x, y position in world space"""
+        """(x, y) position in world space"""
         return tuple(self._position)
 
     @position.setter
@@ -268,7 +277,19 @@ class Cursor:
             subplot.tooltip.clear()
 
     def add_subplot(self, subplot: Subplot, transform: Callable | None = None):
-        """add this cursor to a subplot, with an optional position transform function"""
+        """
+        Add add a subplot to this cursor, with an optional position transform function
+
+        Parameters
+        ----------
+        subplot: Subplot
+            subplot to add
+
+        transform: Callable[[tuple[float, float]], tuple[float, float]]
+            a transform function that takes the cursor's position and returns a transformed
+            position at which the cursor will visually appear.
+
+        """
         if subplot in self._cursors.keys():
             raise KeyError(f"The given subplot has already been added to this cursor")
 
@@ -295,7 +316,7 @@ class Cursor:
         subplot.renderer.remove_event_handler(subplot._fpl_set_tooltip, "pointer_move")
 
     def remove_subplot(self, subplot: Subplot):
-        """remove cursor from subplot"""
+        """remove a subplot"""
         if subplot not in self._cursors.keys():
             raise KeyError("cursor not in given supblot")
 
@@ -305,11 +326,12 @@ class Cursor:
         subplot.renderer.add_event_handler(subplot._fpl_set_tooltip, "pointer_move")
 
     def clear(self):
-        """remove from all subplots"""
+        """remove all subplots"""
         for subplot in self._cursors.keys():
             self.remove_subplot(subplot)
 
     def _create_marker(self) -> pygfx.Points:
+        # creates a Point object, used for "marker" mode
         point = pygfx.Points(
             pygfx.Geometry(positions=np.array([[*self.position, 0]], dtype=np.float32)),
             pygfx.PointsMarkerMaterial(
@@ -331,6 +353,7 @@ class Cursor:
         return point
 
     def _create_crosshair(self) -> pygfx.Group:
+        # Creates two infinite lines, used for "crosshair" mode
         x, y = self.position
         line_h_data = np.array(
             [
