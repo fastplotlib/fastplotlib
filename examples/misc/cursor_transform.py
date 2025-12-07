@@ -39,12 +39,12 @@ def transform_func(pos):
 # add second subplot with a transform
 cursor.add_subplot(figure[0, 1], transform=transform_func)
 
-# programmatically set cursor position
-cursor.position = (400, 120)
-
 figure.show()
 
-# you can hide the canvas cursor
+# you can programmatically set cursor position
+cursor.position = (400, 120)
+
+# you can hide the canvas cursor, this is different and has nothing to do with the fastplotlib Cursor!
 figure.canvas.set_cursor("none")
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
