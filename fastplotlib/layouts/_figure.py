@@ -123,6 +123,29 @@ class Figure:
             subplot names
 
         """
+        # create canvas and renderer
+        if canvas_kwargs is not None:
+            if size not in canvas_kwargs.keys():
+                canvas_kwargs["size"] = size
+        else:
+            canvas_kwargs = {"size": size, "max_fps": 60.0, "vsync": True}
+
+        canvas, renderer = make_canvas_and_renderer(
+            canvas, renderer, canvas_kwargs=canvas_kwargs
+        )
+
+        canvas.add_event_handler(self._fpl_reset_layout, "resize")
+
+        self._canvas = canvas
+        self._renderer = renderer
+
+        # underlay render pass
+        self._underlay_camera = ScreenSpaceCamera()
+        self._underlay_scene = pygfx.Scene()
+
+        # overlay render pass
+        self._overlay_camera = ScreenSpaceCamera()
+        self._fpl_overlay_scene = pygfx.Scene()
 
         if rects is not None:
             if not all(isinstance(v, (np.ndarray, tuple, list)) for v in rects):
@@ -196,18 +219,6 @@ class Figure:
                 )
             else:
                 subplot_names = None
-
-        if canvas_kwargs is not None:
-            if size not in canvas_kwargs.keys():
-                canvas_kwargs["size"] = size
-        else:
-            canvas_kwargs = {"size": size, "max_fps": 60.0, "vsync": True}
-
-        canvas, renderer = make_canvas_and_renderer(
-            canvas, renderer, canvas_kwargs=canvas_kwargs
-        )
-
-        canvas.add_event_handler(self._fpl_reset_layout, "resize")
 
         if isinstance(cameras, str):
             # create the array representing the views for each subplot in the grid
@@ -387,9 +398,6 @@ class Figure:
                     for cam in cams[1:]:
                         _controller.add_camera(cam)
 
-        self._canvas = canvas
-        self._renderer = renderer
-
         if layout_mode == "grid":
             n_rows, n_cols = shape
             grid_index_iterator = list(product(range(n_rows), range(n_cols)))
@@ -444,16 +452,9 @@ class Figure:
                 canvas_rect=self.get_pygfx_render_area(),
             )
 
-        # underlay render pass
-        self._underlay_camera = ScreenSpaceCamera()
-        self._underlay_scene = pygfx.Scene()
-
+        # add subplot frames to underlay
         for subplot in self._subplots.ravel():
             self._underlay_scene.add(subplot.frame._world_object)
-
-        # overlay render pass
-        self._overlay_camera = ScreenSpaceCamera()
-        self._fpl_overlay_scene = pygfx.Scene()
 
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()

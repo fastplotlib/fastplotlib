@@ -50,7 +50,7 @@ class MeshMasks:
 masks = MeshMasks
 
 
-class Tooltip:
+class TextBox:
     def __init__(self):
         # text object
         self._text = pygfx.Text(
@@ -210,6 +210,9 @@ class Tooltip:
             position in screen space
 
         """
+        if np.array_equal(self.position, pos):
+            return
+
         # need to flip due to inverted y
         x, y = pos[0], pos[1]
 
@@ -238,3 +241,31 @@ class Tooltip:
     def clear(self, *args):
         self._text.set_text("")
         self._fpl_world_object.visible = False
+
+
+class Tooltip(TextBox):
+    def __init__(self):
+        super().__init__()
+        self._enabled: bool = True
+        self._continuous_update = False
+        self.visible = False
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    @enabled.setter
+    def enabled(self, value: bool):
+        self._enabled = bool(value)
+
+        if not self.enabled:
+            self.visible = False
+
+    @property
+    def continuous_update(self) -> bool:
+        """update the tooltip on every render"""
+        return self._continuous_update
+
+    @continuous_update.setter
+    def continuous_update(self, value: bool):
+        self._continuous_update = bool(value)

@@ -325,7 +325,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                 name=_name,
                 metadata=_m,
                 isolated_buffer=isolated_buffer,
-                create_tooltip=False,
                 **kwargs_lines,
             )
 
@@ -544,17 +543,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             center = bbox[:, 0].mean()
 
         return bounds, limits, size, center
-
-    def _fpl_tooltip_info_handler(self, ev: pygfx.PointerEvent) -> str:
-        index = ev.pick_info["vertex_index"]
-
-        # get index of the hovered line within the line stack
-        line_index = np.where(self.graphics == ev.graphic)[0].item()
-        info = "\n".join(
-            f"{dim}: {val:.4g}" for dim, val in zip("xyz", ev.graphic.data[index])
-        )
-
-        return f"line index: {line_index}\n\n{info}"
 
 
 axes = {"x": 0, "y": 1, "z": 2}

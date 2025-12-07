@@ -1,12 +1,11 @@
 from functools import partial
-from typing import Literal, Sequence
+from typing import Literal, Sequence, Callable
 
 import numpy as np
 import pygfx
 
 from ..layouts import Subplot
 from ..utils import RenderQueue
-from ..graphics import GraphicTooltip
 
 
 class Cursor:
@@ -57,7 +56,7 @@ class Cursor:
         """
 
         self._cursors: dict[Subplot, [pygfx.Points | pygfx.Group[pygfx.Line]]] = dict()
-        self._active_tooltips: dict[Subplot, GraphicTooltip] = dict()
+        self._transforms: dict[Subplot, [Callable | None]] = dict()
 
         self._mode = None
         self.mode = mode
@@ -213,52 +212,66 @@ class Cursor:
     @position.setter
     def position(self, pos: tuple[float, float]):
         for subplot, cursor in self._cursors.items():
+            if self._transforms[subplot] is not None:
+                pos_transformed = self._transforms[subplot](pos)
+            else:
+                pos_transformed = pos
 
             if self.mode == "marker":
-                cursor.geometry.positions.data[0, :-1] = pos
+                cursor.geometry.positions.data[0, :-1] = pos_transformed
                 cursor.geometry.positions.update_full()
 
             elif self.mode == "crosshair":
                 line_h, line_v = cursor.children
 
                 # set x vals for horizontal line
-                line_h.geometry.positions.data[0, 0] = pos[0] - 1
+                line_h.geometry.positions.data[0, 0] = pos_transformed[0] - 1
                 line_h.geometry.positions.data[1, 0] = pos[0] + 1
 
                 # set y value
-                line_h.geometry.positions.data[:, 1] = pos[1]
+                line_h.geometry.positions.data[:, 1] = pos_transformed[1]
 
                 line_h.geometry.positions.update_full()
 
                 # set y vals for vertical line
-                line_v.geometry.positions.data[0, 1] = pos[1] - 1
-                line_v.geometry.positions.data[1, 1] = pos[1] + 1
+                line_v.geometry.positions.data[0, 1] = pos_transformed[1] - 1
+                line_v.geometry.positions.data[1, 1] = pos_transformed[1] + 1
 
                 # set x value
-                line_v.geometry.positions.data[:, 0] = pos[0]
+                line_v.geometry.positions.data[:, 0] = pos_transformed[0]
 
                 line_v.geometry.positions.update_full()
 
             # set tooltip using pick info if a graphic is at this position
             # for now we just set z = 1
-            screen_pos = subplot.map_world_to_screen((*pos, 1))
+            screen_pos = subplot.map_world_to_screen((*pos_transformed, 1))
             pick_info = subplot.get_pick_info(screen_pos)
+
+            self._position[:] = pos_transformed
+
             if pick_info is not None:
                 graphic = pick_info["graphic"]
-                if graphic.tooltip is not None:  # some graphics don't use tooltips, ex: Text
-                    info = graphic.tooltip.format_event(pygfx.PointerEvent("cursor-pick", x=screen_pos[0], y=screen_pos[1], target=pick_info["world_object"], pick_info=pick_info))
-                    graphic.tooltip.display(screen_pos, info, space="screen")
-                    self._active_tooltips[subplot] = graphic.tooltip
-            else:
-                if self._active_tooltips[subplot] is not None:
-                    self._active_tooltips[subplot].visible = False
+                if graphic._fpl_support_tooltip:  # some graphics don't support tooltips, ex: Text
+                    if graphic.tooltip_format is not None:
+                        # custom formatter
+                        info = graphic.tooltip_format
+                    else:
+                        # default formatter for this graphic
+                        info = graphic.format_pick_info(pick_info)
 
-        self._position[:] = pos
+                    subplot.tooltip.display(screen_pos, info)
+                    continue
 
-    def add_subplot(self, subplot: Subplot):
-        """add this cursor to a subplot"""
+            # tooltip cleared if none of the above condiitionals reached the tooltip display call
+            subplot.tooltip.clear()
+
+    def add_subplot(self, subplot: Subplot, transform: Callable | None = None):
+        """add this cursor to a subplot, with an optional position transform function"""
         if subplot in self._cursors.keys():
-            raise KeyError
+            raise KeyError(f"The given subplot has already been added to this cursor")
+
+        if (not callable(transform)) and (transform is not None):
+            raise TypeError(f"`transform` must be a callable or `None`, you passed: {transform}")
 
         if self.mode == "marker":
             cursor = self._create_marker()
@@ -272,7 +285,7 @@ class Cursor:
         )
 
         self._cursors[subplot] = cursor
-        self._active_tooltips[subplot] = None
+        self._transforms[subplot] = transform
 
     def remove_subplot(self, subplot: Subplot):
         """remove cursor from subplot"""
@@ -280,7 +293,6 @@ class Cursor:
             raise KeyError("cursor not in given supblot")
 
         subplot.scene.remove(self._cursors.pop(subplot))
-        self._active_tooltips.pop(subplot)
 
     def clear(self):
         """remove from all subplots"""

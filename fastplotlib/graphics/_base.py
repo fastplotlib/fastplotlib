@@ -29,7 +29,6 @@ from .features import (
     Visible,
 )
 from ._axes import Axes
-from ._tooltip import Tooltip
 
 HexStr: TypeAlias = str
 WorldObjectID: TypeAlias = int
@@ -62,6 +61,11 @@ PYGFX_EVENTS = [
 class Graphic:
     _features: dict[str, type] = dict()
 
+    # It also doesn't make sense to create tooltips for some graphics
+    # ex: text, that would be very funny.
+    # They would also get in the way of selector tools
+    _fpl_support_tooltip: bool = True
+
     def __init_subclass__(cls, **kwargs):
 
         # set of all features
@@ -88,7 +92,6 @@ class Graphic:
         alpha_mode: str = "auto",
         visible: bool = True,
         metadata: Any = None,
-        create_tooltip: bool = True,
     ):
         """
 
@@ -183,16 +186,7 @@ class Graphic:
         # store ids of all the WorldObjects that this Graphic manages/uses
         self._world_object_ids = list()
 
-        # TODO: this exists for LineCollections since we don't want to create
-        #  thousands or hundreds of tooltip objects and meshes etc. for each line,
-        #  the GraphicCollection handles one tooltip instance instead. Once we
-        #  refactor GraphicCollection we can make this nicer
-        # It also doesn't make sense to create tooltips for text, that would be very funny
-        # similarly they would probably not be useful for selector tools
-        if create_tooltip:
-            self._tooltip = GraphicTooltip(self)
-        else:
-            self._tooltip = None
+        self._tooltip_format: Callable = None
 
     @property
     def supported_events(self) -> tuple[str]:
@@ -324,9 +318,25 @@ class Graphic:
             self.rotation = self.rotation
 
     @property
-    def tooltip(self) -> GraphicTooltip:
-        """tooltip for this graphic"""
-        return self._tooltip
+    def tooltip_format(self) -> Callable[[dict], str] | None:
+        """
+        set a custom tooltip format function which takes a ``pick_info`` dict and
+        returns a str to be displayed in the tooltip
+        """
+        return self._tooltip_format
+
+    @tooltip_format.setter
+    def tooltip_format(self, func: Callable[[dict], str] | None):
+        if func is None:
+            self._tooltip_format = None
+            return
+
+        if not callable(func):
+            raise TypeError(
+                f"`tooltip_format` must be set with a callable that takes a pick_info dict, or it can be set as None"
+            )
+
+        self._tooltip_format = func
 
     @property
     def event_handlers(self) -> list[tuple[str, callable, ...]]:
@@ -537,7 +547,7 @@ class Graphic:
 
         return la.vec_transform(position, self.world_object.world.inverse_matrix)
 
-    def _fpl_tooltip_info_handler(self, ev: pygfx.PointerEvent) -> str:
+    def format_pick_info(self, ev: pygfx.PointerEvent) -> str:
         """
         Takes a pygfx.PointerEvent and returns formatted pick info.
         """
@@ -546,9 +556,6 @@ class Graphic:
 
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
-
-        if self._tooltip is not None:
-            self._tooltip._fpl_add_plot_area_hook(plot_area)
 
     def __repr__(self):
         rval = f"{self.__class__.__name__}"
@@ -672,142 +679,3 @@ class Graphic:
 
     def _fpl_close_right_click_menu(self):
         pass
-
-
-class GraphicTooltip(Tooltip):
-    def __init__(self, graphic: Graphic):
-        self._graphic = graphic
-        self._plot_area = None
-
-        self._info_handler: Callable = None
-
-        self._enabled = True
-        
-        super().__init__()
-
-    @property
-    def enabled(self) -> bool:
-        """enable or disable tooltips for this graphic"""
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, enable: bool):
-        self._enabled = bool(enable)
-
-        if not self._enabled:
-            self.visible = False
-
-    @property
-    def info_handler(self) -> None | Callable:
-        """get or set a custom handler for setting the tooltip info"""
-        return self._info_handler
-
-    @info_handler.setter
-    def info_handler(self, func: Callable | None):
-        if func is None:
-            self._info_handler = None
-            return
-
-        if not callable(func):
-            raise TypeError(
-                f"`info_handler` must be set with a callable that takes a pointer event, or it can be set as None"
-            )
-
-        self._info_handler = func
-
-    def display(self, position: tuple[float, float, float] | tuple[float, float], info: str = None, space: Literal["model", "world", "screen"] = "model"):
-        """
-        display tooltip at the given position in the given space
-
-        Parameters
-        ----------
-        position: (float, float, float) or (float, float)
-            (x, y, z) or (x, y) position in **model space**
-
-        info: str
-            text to display in the tooltip
-
-        space: Literal["model", "world", "screen"], default "model"
-            interpret the ``position`` as being in this space
-
-        """
-        if not self.enabled:
-            return
-
-        if space == "model":
-            world_pos = self._graphic.map_model_to_world(position)
-            screen_pos = self._plot_area.map_world_to_screen(world_pos)
-
-        elif space == "world":
-            screen_pos = self._plot_area.map_world_to_screen(world_pos)
-
-        elif space == "screen":
-            screen_pos = position
-
-        else:
-            raise ValueError(f"`space` must be one of: 'model', 'world', or 'screen', you passed: {space}")
-
-        if info is None:
-            # auto fetch pick info
-            pick_info = self._plot_area.get_pick_info(screen_pos)
-
-            # if it is None return, the graphic is moved away from this position
-            if pick_info is None:
-                return
-
-            # simulate event at this screen position, pass through graphic's formatter
-            info = self.format_event(
-                pygfx.PointerEvent("tooltip-pick", x=screen_pos[0], y=screen_pos[1], pick_info=pick_info))
-
-        super().display(screen_pos, info)
-
-    def _fpl_auto_update_render(self):
-        # auto-updates the tooltip on every render so it is always accurate
-        # if the data under the graphic changes at this position, then it will update the text
-        if self.visible:
-            self.display(
-                position=self.position,
-                space="screen",
-            )
-
-    def _fpl_add_plot_area_hook(self, plot_area):
-        self._plot_area = plot_area
-
-        # add to overlay scene
-        self._plot_area.get_figure()._fpl_overlay_scene.add(self._fpl_world_object)
-
-        # this makes the tooltip info auto-update on every render
-        self._plot_area.add_animations(self._fpl_auto_update_render, post_render="True")
-
-        # connect events
-        self._graphic.add_event_handler(self._pointer_move_handler, "pointer_move")
-        self._graphic.add_event_handler(self._pointer_leave_handler, "pointer_leave")
-
-    def _fpl_prepare_del(self):
-        # remove from overlay scene
-        self._plot_area.get_figure()._fpl_overlay_scene.remove(self._fpl_world_object)
-
-        # remove animation func
-        self._plot_area.remove_animation(self._fpl_auto_update_render)
-
-    def format_event(self, ev):
-        # format pick info
-        info = self._graphic._fpl_tooltip_info_handler(ev)
-
-        if self.info_handler is not None:
-            info = self.info_handler(ev, info)
-
-        return info
-
-    def _pointer_move_handler(self, ev: pygfx.PointerEvent):
-        if not self.enabled:
-            return
-
-        info = self.format_event(ev)
-
-        # IMPORTANT: call display() of superclass class, NOT this class,
-        # since the pointer event already has the screen space (x, y)
-        super().display((ev.x, ev.y), info)
-
-    def _pointer_leave_handler(self, ev):
-        self.clear()

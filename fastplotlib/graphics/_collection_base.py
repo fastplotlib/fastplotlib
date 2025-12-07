@@ -181,6 +181,8 @@ class GraphicCollection(Graphic, CollectionProperties):
 
     _child_type: type
     _indexer: type
+    # tooltips will come from the child graphics
+    _fpl_support_tooltip = False
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)

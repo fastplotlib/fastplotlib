@@ -10,7 +10,7 @@ from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
 from ..graphics._base import Graphic, WORLD_OBJECT_TO_GRAPHIC
-from ..graphics import ImageGraphic
+from ..graphics import ImageGraphic, Tooltip
 from ..graphics.selectors._base_selector import BaseSelector
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
@@ -124,6 +124,10 @@ class PlotArea(GraphicMethodsMixin):
 
         self.scene.add(self._ambient_light)
         self.scene.add(self._camera.add(self._directional_light))
+
+        self._tooltip = Tooltip()
+        self.get_figure()._fpl_overlay_scene.add(self._tooltip._fpl_world_object)
+        self.renderer.add_event_handler(self._fpl_set_tooltip, "pointer_move")
 
     def get_figure(self, obj=None):
         """Get Figure instance that contains this plot area"""
@@ -299,6 +303,11 @@ class PlotArea(GraphicMethodsMixin):
         """Returns a dictionary of 'pre' and 'post' animation functions."""
         return {"pre": self._animate_funcs_pre, "post": self._animate_funcs_post}
 
+    @property
+    def tooltip(self) -> Tooltip:
+        """The tooltip in this PlotArea"""
+        return self._tooltip
+
     def map_screen_to_world(
         self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
@@ -395,6 +404,63 @@ class PlotArea(GraphicMethodsMixin):
                 info["graphic"] = WORLD_OBJECT_TO_GRAPHIC[info["world_object"].id]
                 return info
 
+    def _fpl_set_tooltip(self, ev: pygfx.PointerEvent):
+        # set tooltip using pointer position
+        if not self._tooltip.enabled:
+            return
+
+        # is pointer in this plot area
+        if not self.viewport.is_inside(ev.x, ev.y):
+            return
+
+        # is there a world object under the pointer
+        if ev.target is not None:
+            # is it owned by a graphic
+            if ev.target.id in WORLD_OBJECT_TO_GRAPHIC.keys():
+                graphic = WORLD_OBJECT_TO_GRAPHIC[ev.target.id]
+                if not graphic._fpl_support_tooltip:
+                    return
+
+                pick_info = ev.pick_info
+                if graphic.tooltip_format is not None:
+                    # custom formatter
+                    info = graphic.tooltip_format(pick_info)
+                else:
+                    # default formatter for this graphic
+                    info = graphic.format_pick_info(pick_info)
+                self._tooltip.display((ev.x, ev.y), info)
+                return
+
+        # not over a graphic that supports tooltips
+        self._tooltip.clear()
+
+    def _fpl_update_tooltip_render(self):
+        # update tooltip on every render
+        # TODO: improve performance
+        if (not self._tooltip.visible) or (not self._tooltip.enabled):
+            return
+
+        pick_info = self.get_pick_info(self._tooltip.position)
+
+        # None if no graphic is at this position
+        if pick_info is not None:
+            graphic = pick_info["graphic"]
+            if graphic._fpl_support_tooltip:
+                if graphic.tooltip_format is not None:
+                    # custom formatter
+                    info = graphic.tooltip_format(pick_info)
+                else:
+                    # default formatter for this graphic
+                    info = graphic.format_pick_info(pick_info)
+                self._tooltip.display(
+                    self._tooltip.position,
+                    info
+                )
+                return
+
+        # tooltip cleared if none of the above condiitionals reached the tooltip display call
+        self._tooltip.clear()
+
     def _render(self):
         self._call_animate_functions(self._animate_funcs_pre)
 
@@ -405,6 +471,9 @@ class PlotArea(GraphicMethodsMixin):
             child._render()
 
         self._call_animate_functions(self._animate_funcs_post)
+
+        if self._tooltip.continuous_update:
+            self._fpl_update_tooltip_render()
 
     def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:

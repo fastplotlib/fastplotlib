@@ -291,9 +291,7 @@ class MeshGraphic(Graphic):
 
         self._plane.set_value(self, value)
 
-    def _fpl_tooltip_info_handler(self, ev: pygfx.PointerEvent) -> str:
-        pick_info = ev.pick_info
-
+    def format_pick_info(self, pick_info: dict) -> str:
         # Get what face was clicked
         face_index = pick_info["face_index"]
         coords = pick_info["face_coord"]
@@ -302,7 +300,11 @@ class MeshGraphic(Graphic):
         # or use the coords to select the closest edge.
         sub_index = np.argmax(coords)
         # Look up the vertex index
-        vertex_index = int(self.indices[face_index, sub_index])
+        try:
+            vertex_index = int(self.indices[face_index, sub_index])
+        except IndexError:
+            # if vertex buffer sizes change then the pointer event can have outdated pick info?
+            return "error, buffer size changed"
 
         info = "\n".join(f"{dim}: {val:.4g}" for dim, val in zip("xyz", self.positions[vertex_index]))
 

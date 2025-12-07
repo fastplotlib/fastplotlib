@@ -27,6 +27,8 @@ def _get_image_graphic_events(image_graphic: ImageGraphic) -> list[str]:
 
 # TODO: This is a widget, we can think about a BaseWidget class later if necessary
 class HistogramLUTTool(Graphic):
+    _fpl_support_tooltip = False
+
     def __init__(
         self,
         data: np.ndarray,
@@ -60,7 +62,7 @@ class HistogramLUTTool(Graphic):
         kwargs: passed to ``Graphic``
 
         """
-        super().__init__(create_tooltip, **kwargs)
+        super().__init__(**kwargs)
 
         self._nbins = nbins
         self._flank_divisor = flank_divisor

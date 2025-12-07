@@ -40,6 +40,8 @@ key_bind_direction = {
 
 # Selector base class
 class BaseSelector(Graphic):
+    _fpl_support_tooltip = False
+
     @property
     def axis(self) -> str:
         return self._axis
@@ -182,7 +184,7 @@ class BaseSelector(Graphic):
 
         self._parent = parent
 
-        Graphic.__init__(self, create_tooltip=False, **kwargs)
+        Graphic.__init__(self, **kwargs)
 
     def get_selected_index(self):
         """Not implemented for this selector"""

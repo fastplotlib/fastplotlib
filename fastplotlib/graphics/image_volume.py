@@ -420,8 +420,8 @@ class ImageVolumeGraphic(Graphic):
         self.vmin = vmin
         self.vmax = vmax
 
-    def _fpl_tooltip_info_handler(self, ev: pygfx.PointerEvent) -> str:
-        col, row = ev.pick_info["index"]
+    def format_pick_info(self, pick_info: dict) -> str:
+        col, row = pick_info["index"]
         if ev.graphic.data.value.ndim == 2:
             val = ev.graphic.data[row, col]
             info = f"{val:.4g}"

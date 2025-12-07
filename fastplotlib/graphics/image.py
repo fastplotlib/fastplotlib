@@ -487,8 +487,8 @@ class ImageGraphic(Graphic):
 
         return selector
 
-    def _fpl_tooltip_info_handler(self, ev: pygfx.PointerEvent) -> str:
-        col, row = ev.pick_info["index"]
+    def format_pick_info(self, pick_info: dict) -> str:
+        col, row = pick_info["index"]
         if self.data.value.ndim == 2:
             val = self.data[row, col]
             info = f"{val:.4g}"

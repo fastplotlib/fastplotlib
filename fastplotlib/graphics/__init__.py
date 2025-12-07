@@ -1,5 +1,4 @@
-from ._tooltip import Tooltip
-from ._base import Graphic, GraphicTooltip
+from ._base import Graphic
 from .line import LineGraphic
 from .scatter import ScatterGraphic
 from .image import ImageGraphic
@@ -8,11 +7,10 @@ from ._vectors import VectorsGraphic
 from .mesh import MeshGraphic, SurfaceGraphic, PolygonGraphic
 from .text import TextGraphic
 from .line_collection import LineCollection, LineStack
+from ._tooltip import TextBox, Tooltip
 
 
 __all__ = [
-    "Tooltip",
-    "GraphicTooltip",
     "Graphic",
     "LineGraphic",
     "ScatterGraphic",
@@ -25,4 +23,6 @@ __all__ = [
     "TextGraphic",
     "LineCollection",
     "LineStack",
+    "TextBox",
+    "Tooltip",
 ]
