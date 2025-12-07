@@ -2,7 +2,7 @@
 Cursor transform
 ================
 
-Create a cursor and add them to subplots with a transform function. An example usecase is image registration.
+Create a cursor and add them to subplots with a transform function. A common usecase is image registration.
 """
 
 # test_example = False
@@ -38,6 +38,9 @@ def transform_func(pos):
 
 # add second subplot with a transform
 cursor.add_subplot(figure[0, 1], transform=transform_func)
+
+# programmatically set cursor position
+cursor.position = (400, 120)
 
 figure.show()
 
