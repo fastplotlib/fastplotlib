@@ -306,7 +306,9 @@ class MeshGraphic(Graphic):
             # if vertex buffer sizes change then the pointer event can have outdated pick info?
             return "error, buffer size changed"
 
-        info = "\n".join(f"{dim}: {val:.4g}" for dim, val in zip("xyz", self.positions[vertex_index]))
+        info = "\n".join(
+            f"{dim}: {val:.4g}" for dim, val in zip("xyz", self.positions[vertex_index])
+        )
 
         return info
 

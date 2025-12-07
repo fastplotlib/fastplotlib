@@ -286,7 +286,9 @@ class Graphic:
         # add to world object -> graphic mapping
         if isinstance(wo, pygfx.Group):
             for child in wo.children:
-                if isinstance(child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)):
+                if isinstance(
+                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
+                ):
                     # need to call int() on it since it's a numpy array with 1 element
                     # and numpy arrays aren't hashable
                     global_id = child.id
@@ -496,7 +498,9 @@ class Graphic:
                 feature = getattr(self, f"_{t}")
                 feature.remove_event_handler(wrapper)
 
-    def map_model_to_world(self, position: tuple[float, float, float] | tuple[float, float]) -> np.ndarray:
+    def map_model_to_world(
+        self, position: tuple[float, float, float] | tuple[float, float]
+    ) -> np.ndarray:
         """
         map position from model (data) space to world space, basically applies the world affine transform
 
@@ -517,12 +521,16 @@ class Graphic:
             position = [*position, self.offset[-1]]
 
         if len(position) != 3:
-            raise ValueError(f"position must be tuple indicating (x, y, z) position in *model space*")
+            raise ValueError(
+                f"position must be tuple indicating (x, y, z) position in *model space*"
+            )
 
         # apply world transform to project from model space to world space
         return la.vec_transform(position, self.world_object.world.matrix)
 
-    def map_world_to_model(self, position: tuple[float, float, float] | tuple[float, float]) -> np.ndarray:
+    def map_world_to_model(
+        self, position: tuple[float, float, float] | tuple[float, float]
+    ) -> np.ndarray:
         """
         map position from world space to model (data) space, basically applies the inverse world affine transform
 
@@ -543,7 +551,9 @@ class Graphic:
             position = [*position, self.offset[-1]]
 
         if len(position) != 3:
-            raise ValueError(f"position must be tuple indicating (x, y, z) position in *model space*")
+            raise ValueError(
+                f"position must be tuple indicating (x, y, z) position in *model space*"
+            )
 
         return la.vec_transform(position, self.world_object.world.inverse_matrix)
 

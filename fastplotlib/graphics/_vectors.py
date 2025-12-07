@@ -173,8 +173,10 @@ class VectorsGraphic(Graphic):
     def format_pick_info(self, pick_info: dict) -> str:
         index = pick_info["instance_index"]
 
-        info = (f"position: {self.positions[index]}\n"
-                f"direction: {self.directions[index]}")
+        info = (
+            f"position: {self.positions[index]}\n"
+            f"direction: {self.directions[index]}"
+        )
 
         return info
 

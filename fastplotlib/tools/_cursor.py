@@ -251,7 +251,9 @@ class Cursor:
 
             if pick_info is not None:
                 graphic = pick_info["graphic"]
-                if graphic._fpl_support_tooltip:  # some graphics don't support tooltips, ex: Text
+                if (
+                    graphic._fpl_support_tooltip
+                ):  # some graphics don't support tooltips, ex: Text
                     if graphic.tooltip_format is not None:
                         # custom formatter
                         info = graphic.tooltip_format
@@ -271,7 +273,9 @@ class Cursor:
             raise KeyError(f"The given subplot has already been added to this cursor")
 
         if (not callable(transform)) and (transform is not None):
-            raise TypeError(f"`transform` must be a callable or `None`, you passed: {transform}")
+            raise TypeError(
+                f"`transform` must be a callable or `None`, you passed: {transform}"
+            )
 
         if self.mode == "marker":
             cursor = self._create_marker()

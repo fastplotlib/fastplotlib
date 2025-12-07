@@ -453,10 +453,7 @@ class PlotArea(GraphicMethodsMixin):
                 else:
                     # default formatter for this graphic
                     info = graphic.format_pick_info(pick_info)
-                self._tooltip.display(
-                    self._tooltip.position,
-                    info
-                )
+                self._tooltip.display(self._tooltip.position, info)
                 return
 
         # tooltip cleared if none of the above condiitionals reached the tooltip display call
