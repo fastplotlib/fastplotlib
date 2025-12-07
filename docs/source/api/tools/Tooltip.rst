@@ -21,11 +21,14 @@ Properties
     :toctree: Tooltip_api
 
     Tooltip.background_color
+    Tooltip.continuous_update
+    Tooltip.enabled
     Tooltip.font_size
     Tooltip.outline_color
     Tooltip.padding
+    Tooltip.position
     Tooltip.text_color
-    Tooltip.world_object
+    Tooltip.visible
 
 Methods
 ~~~~~~~

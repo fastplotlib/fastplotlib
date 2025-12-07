@@ -40,9 +40,11 @@ Properties
     ScatterGraphic.point_rotations
     ScatterGraphic.right_click_menu
     ScatterGraphic.rotation
+    ScatterGraphic.scale
     ScatterGraphic.size_space
     ScatterGraphic.sizes
     ScatterGraphic.supported_events
+    ScatterGraphic.tooltip_format
     ScatterGraphic.visible
     ScatterGraphic.world_object
 
@@ -54,6 +56,9 @@ Methods
     ScatterGraphic.add_axes
     ScatterGraphic.add_event_handler
     ScatterGraphic.clear_event_handlers
+    ScatterGraphic.format_pick_info
+    ScatterGraphic.map_model_to_world
+    ScatterGraphic.map_world_to_model
     ScatterGraphic.remove_event_handler
     ScatterGraphic.rotate
 

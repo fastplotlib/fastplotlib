@@ -7,7 +7,6 @@ from ._vectors import VectorsGraphic
 from .mesh import MeshGraphic, SurfaceGraphic, PolygonGraphic
 from .text import TextGraphic
 from .line_collection import LineCollection, LineStack
-from ._tooltip import TextBox, Tooltip
 
 
 __all__ = [
@@ -23,6 +22,4 @@ __all__ = [
     "TextGraphic",
     "LineCollection",
     "LineStack",
-    "TextBox",
-    "Tooltip",
 ]

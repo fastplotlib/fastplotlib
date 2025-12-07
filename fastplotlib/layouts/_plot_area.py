@@ -10,10 +10,11 @@ from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
 from ..graphics._base import Graphic, WORLD_OBJECT_TO_GRAPHIC
-from ..graphics import ImageGraphic, Tooltip
+from ..graphics import ImageGraphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
+from ..tools import Tooltip
 
 
 try:

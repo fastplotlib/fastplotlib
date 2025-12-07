@@ -34,8 +34,10 @@ Properties
     TextGraphic.outline_thickness
     TextGraphic.right_click_menu
     TextGraphic.rotation
+    TextGraphic.scale
     TextGraphic.supported_events
     TextGraphic.text
+    TextGraphic.tooltip_format
     TextGraphic.visible
     TextGraphic.world_object
 
@@ -47,6 +49,9 @@ Methods
     TextGraphic.add_axes
     TextGraphic.add_event_handler
     TextGraphic.clear_event_handlers
+    TextGraphic.format_pick_info
+    TextGraphic.map_model_to_world
+    TextGraphic.map_world_to_model
     TextGraphic.remove_event_handler
     TextGraphic.rotate
 

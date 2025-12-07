@@ -39,7 +39,9 @@ Properties
     SurfaceGraphic.positions
     SurfaceGraphic.right_click_menu
     SurfaceGraphic.rotation
+    SurfaceGraphic.scale
     SurfaceGraphic.supported_events
+    SurfaceGraphic.tooltip_format
     SurfaceGraphic.visible
     SurfaceGraphic.world_object
 
@@ -51,6 +53,9 @@ Methods
     SurfaceGraphic.add_axes
     SurfaceGraphic.add_event_handler
     SurfaceGraphic.clear_event_handlers
+    SurfaceGraphic.format_pick_info
+    SurfaceGraphic.map_model_to_world
+    SurfaceGraphic.map_world_to_model
     SurfaceGraphic.remove_event_handler
     SurfaceGraphic.rotate
 

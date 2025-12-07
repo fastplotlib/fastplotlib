@@ -33,9 +33,11 @@ Properties
     LineGraphic.offset
     LineGraphic.right_click_menu
     LineGraphic.rotation
+    LineGraphic.scale
     LineGraphic.size_space
     LineGraphic.supported_events
     LineGraphic.thickness
+    LineGraphic.tooltip_format
     LineGraphic.visible
     LineGraphic.world_object
 
@@ -51,6 +53,9 @@ Methods
     LineGraphic.add_polygon_selector
     LineGraphic.add_rectangle_selector
     LineGraphic.clear_event_handlers
+    LineGraphic.format_pick_info
+    LineGraphic.map_model_to_world
+    LineGraphic.map_world_to_model
     LineGraphic.remove_event_handler
     LineGraphic.rotate
 

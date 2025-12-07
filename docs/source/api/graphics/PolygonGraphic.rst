@@ -39,7 +39,9 @@ Properties
     PolygonGraphic.positions
     PolygonGraphic.right_click_menu
     PolygonGraphic.rotation
+    PolygonGraphic.scale
     PolygonGraphic.supported_events
+    PolygonGraphic.tooltip_format
     PolygonGraphic.visible
     PolygonGraphic.world_object
 
@@ -51,6 +53,9 @@ Methods
     PolygonGraphic.add_axes
     PolygonGraphic.add_event_handler
     PolygonGraphic.clear_event_handlers
+    PolygonGraphic.format_pick_info
+    PolygonGraphic.map_model_to_world
+    PolygonGraphic.map_world_to_model
     PolygonGraphic.remove_event_handler
     PolygonGraphic.rotate
 

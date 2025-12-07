@@ -40,6 +40,7 @@ Properties
     Subplot.selectors
     Subplot.title
     Subplot.toolbar
+    Subplot.tooltip
     Subplot.viewport
 
 Methods
@@ -67,8 +68,10 @@ Methods
     Subplot.clear_animations
     Subplot.delete_graphic
     Subplot.get_figure
+    Subplot.get_pick_info
     Subplot.insert_graphic
     Subplot.map_screen_to_world
+    Subplot.map_world_to_screen
     Subplot.remove_animation
     Subplot.remove_graphic
 
