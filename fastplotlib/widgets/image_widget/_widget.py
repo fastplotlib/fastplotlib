@@ -48,6 +48,7 @@ class ImageWidget:
         names: Sequence[str] = None,
         figure_kwargs: dict = None,
         histogram_widget: bool = True,
+        histogram_init_quantile: int = (0, 100),
         graphic_kwargs: dict | Sequence[dict] = None,
     ):
         """
@@ -956,6 +957,7 @@ class ImageWidget:
             hlut.histogram = image_processor.histogram
 
             edges = image_processor.histogram[1]
+
             hlut.vmin, hlut.vmax = edges[0], edges[-1]
 
     def reset_vmin_vmax_frame(self):
