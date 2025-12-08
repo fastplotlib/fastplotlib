@@ -2,6 +2,7 @@ from ...layouts import IMGUI
 
 if IMGUI:
     from ._widget import ImageWidget
+    from ._processor import NDImageProcessor
 
 else:
 

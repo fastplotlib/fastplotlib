@@ -554,7 +554,7 @@ class Figure:
 
         if val:
             # register all graphics
-            for subplot in self:
+            for subplot in self._subplots.ravel():
                 for graphic in subplot.graphics:
                     self._tooltip_manager.register(graphic)
 
@@ -572,7 +572,7 @@ class Figure:
 
         # call the animation functions before render
         self._call_animate_functions(self._animate_funcs_pre)
-        for subplot in self:
+        for subplot in self._subplots.ravel():
             subplot._render()
 
         # overlay render pass
@@ -639,14 +639,14 @@ class Figure:
             sidecar_kwargs = dict()
 
         # flip y-axis if ImageGraphics are present
-        for subplot in self:
+        for subplot in self._subplots.ravel():
             for g in subplot.graphics:
                 if isinstance(g, ImageGraphic):
                     subplot.camera.local.scale_y *= -1
                     break
 
         if autoscale:
-            for subplot in self:
+            for subplot in self._subplots.ravel():
                 if maintain_aspect is None:
                     _maintain_aspect = subplot.camera.maintain_aspect
                 else:
@@ -655,7 +655,7 @@ class Figure:
 
         # set axes visibility if False
         if not axes_visible:
-            for subplot in self:
+            for subplot in self._subplots.ravel():
                 subplot.axes.visible = False
 
         # parse based on canvas type
@@ -679,15 +679,15 @@ class Figure:
         elif self.canvas.__class__.__name__ == "OffscreenRenderCanvas":
             # for test and docs gallery screenshots
             self._fpl_reset_layout()
-            for subplot in self:
+            for subplot in self._subplots.ravel():
                 subplot.axes.update_using_camera()
 
                 # render call is blocking only on github actions for some reason,
                 # but not for rtd build, this is a workaround
                 # for CI tests, the render call works if it's in test_examples
                 # but it is necessary for the gallery images too so that's why this check is here
-                if "RTD_BUILD" in os.environ.keys():
-                    if os.environ["RTD_BUILD"] == "1":
+                if "DOCS_BUILD" in os.environ.keys():
+                    if os.environ["DOCS_BUILD"] == "1":
                         self._render()
 
         else:  # assume GLFW
@@ -803,7 +803,7 @@ class Figure:
 
     def clear(self):
         """Clear all Subplots"""
-        for subplot in self:
+        for subplot in self._subplots.ravel():
             subplot.clear()
 
     def export_numpy(self, rgb: bool = False) -> np.ndarray:
@@ -962,18 +962,20 @@ class Figure:
                     return subplot
             raise IndexError(f"no subplot with given name: {index}")
 
+        if isinstance(index, (int, np.integer)):
+            return self._subplots.ravel()[index]
+
         if isinstance(self.layout, GridLayout):
             return self._subplots[index[0], index[1]]
 
-        return self._subplots[index]
+        raise TypeError(
+            f"Can index figure using <str> subplot name, numerical <int> subplot index, or a "
+            f"tuple[int, int] if the layout is a grid"
+        )
 
     def __iter__(self):
-        self._current_iter = iter(range(len(self)))
-        return self
-
-    def __next__(self) -> Subplot:
-        pos = self._current_iter.__next__()
-        return self._subplots.ravel()[pos]
+        for subplot in self._subplots.ravel():
+            yield subplot
 
     def __len__(self):
         """number of subplots"""
@@ -988,6 +990,6 @@ class Figure:
         return (
             f"fastplotlib.{self.__class__.__name__}"
             f"  Subplots:\n"
-            f"\t{newline.join(subplot.__str__() for subplot in self)}"
+            f"\t{newline.join(subplot.__str__() for subplot in self._subplots.ravel())}"
             f"\n"
         )

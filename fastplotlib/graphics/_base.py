@@ -160,6 +160,7 @@ class Graphic:
         self._alpha_mode = AlphaMode(alpha_mode)
         self._visible = Visible(visible)
         self._block_events = False
+        self._block_handlers = list()
 
         self._axes: Axes = None
 
@@ -241,6 +242,11 @@ class Graphic:
     @block_events.setter
     def block_events(self, value: bool):
         self._block_events = value
+
+    @property
+    def block_handlers(self) -> list:
+        """Used to block event handlers for a graphic and prevent recursion."""
+        return self._block_handlers
 
     @property
     def world_object(self) -> pygfx.WorldObject:
@@ -368,6 +374,9 @@ class Graphic:
         event.graphic = self
 
         if self.block_events:
+            return
+
+        if callback in self._block_handlers:
             return
 
         if event.type in self._features:

@@ -123,8 +123,9 @@ class EdgeWindow(Window):
     @size.setter
     def size(self, value):
         if not isinstance(value, int):
-            raise TypeError
+            raise TypeError(f"{self.__class__.__name__}.size must be an <int>")
         self._size = value
+        self._set_rect()
 
     @property
     def location(self) -> str:
@@ -153,6 +154,7 @@ class EdgeWindow(Window):
 
     def _set_rect(self, *args):
         self._x, self._y, self._width, self._height = self.get_rect()
+        self._figure._fpl_reset_layout()
 
     def get_rect(self) -> tuple[int, int, int, int]:
         """
