@@ -10,6 +10,9 @@ Graphics
     ImageGraphic
     ImageVolumeGraphic
     VectorsGraphic
+    MeshGraphic
+    SurfaceGraphic
+    PolygonGraphic
     TextGraphic
     LineCollection
     LineStack

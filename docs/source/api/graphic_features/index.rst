@@ -9,6 +9,9 @@ Graphic Features
     SizeSpace
     VertexPositions
     VertexCmap
+    MeshIndices
+    MeshCmap
+    SurfaceData
     Thickness
     VertexMarkers
     UniformMarker

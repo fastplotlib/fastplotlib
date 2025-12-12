@@ -418,12 +418,14 @@ class PolygonSelectionFeature(GraphicFeature):
 
         geometry = selector.geometry
 
-        # Need larger buffer?
-        if len(value) > geometry.positions.nitems:
-            arr = np.zeros((geometry.positions.nitems * 2, 3), np.float32)
+        # Need larger (or smaller) buffer? Scale up/down with factors of 2.
+        need_position_size = 2 ** int(np.ceil(np.log2(max(8, len(value)))))
+        if need_position_size != geometry.positions.nitems:
+            arr = np.zeros((need_position_size, 3), np.float32)
             geometry.positions = gfx.Buffer(arr)
-        if len(indices) > geometry.indices.nitems:
-            arr = np.zeros((geometry.indices.nitems * 2, 3), np.int32)
+        need_indices_size = 2 ** int(np.ceil(np.log2(max(8, len(indices)))))
+        if need_indices_size != geometry.indices.nitems:
+            arr = np.zeros((need_indices_size, 3), np.int32)
             geometry.indices = gfx.Buffer(arr)
 
         geometry.positions.data[: len(value)] = value

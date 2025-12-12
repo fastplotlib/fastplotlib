@@ -245,8 +245,6 @@ class VertexPositions(BufferManager):
         )
 
     def _fix_data(self, data):
-        # data = to_gpu_supported_dtype(data)
-
         if data.ndim == 1:
             # if user provides a 1D array, assume these are y-values
             data = np.column_stack([np.arange(data.size, dtype=data.dtype), data])
