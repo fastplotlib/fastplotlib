@@ -14,7 +14,7 @@ import pygfx
 from ._figure import Figure
 from ..ui import EdgeWindow, SubplotToolbar, StandardRightClickMenu, Popup, GUI_EDGES
 from ..ui import ColormapPicker
-from ..ui._base import COLLAPSE_BUTTON_WIDTH, COLLAPSE_BUTTON_HEIGHT
+from ..ui._base import COLLAPSE_BUTTON_WIDTH
 
 
 class ImguiFigure(Figure):

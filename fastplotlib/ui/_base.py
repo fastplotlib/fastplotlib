@@ -9,7 +9,6 @@ from ..layouts._figure import Figure
 
 # width of the collapse/expand button
 COLLAPSE_BUTTON_WIDTH = 12
-COLLAPSE_BUTTON_HEIGHT = 24
 
 
 GUI_EDGES = ["right", "bottom"]
@@ -167,15 +166,11 @@ class EdgeWindow(Window):
 
     @collapsed.setter
     def collapsed(self, value: bool):
-        if not isinstance(value, bool):
-            raise TypeError(f"{self.__class__.__name__}.collapsed must be a <bool>")
-
-        # TODO: Do we want image sliders to be collapsable
-        #       Need to update this when other edges are supported.
+        # TODO: support other edges when needed
         if self._location != "right":
             return
 
-        self._collapsed = value
+        self._collapsed = bool(value)
         self._set_rect()
 
     def _set_rect(self, *args):
@@ -248,17 +243,14 @@ class EdgeWindow(Window):
         if self._figure.guis["bottom"] is not None:
             height_canvas -= self._figure.guis["bottom"].size
 
-        # exact position: right edge of plot area, vertically centered
-        # plot area ends at: width_canvas - gui_size - COLLAPSE_BUTTON_WIDTH
-        # button goes from there to: width_canvas - gui_size
         x_pos = width_canvas - self._size - COLLAPSE_BUTTON_WIDTH
-        y_pos = (height_canvas - COLLAPSE_BUTTON_HEIGHT) / 2
+        y_pos = 0
 
         # remove all window padding so position is exact
         imgui.push_style_var(imgui.StyleVar_.window_padding, (0, 0))
 
         imgui.set_next_window_pos((x_pos, y_pos))
-        imgui.set_next_window_size((COLLAPSE_BUTTON_WIDTH, COLLAPSE_BUTTON_HEIGHT))
+        imgui.set_next_window_size((COLLAPSE_BUTTON_WIDTH, height_canvas))
 
         flags = (
             imgui.WindowFlags_.no_title_bar
@@ -272,24 +264,17 @@ class EdgeWindow(Window):
         imgui.begin(f"collapse-{self._title}", p_open=None, flags=flags)
         imgui.push_id(self._id_counter + 1000)
 
-        # frame_padding: (horizontal, vertical) padding inside the button around text
-        # button size = text_size + frame_padding * 2
-        # we want button to fill window exactly: 12x24
-        # text is ~8x14, so frame_padding = (2, 5) gives 8+4=12 width, 14+10=24 height
-        imgui.push_style_var(imgui.StyleVar_.frame_padding, (2, 5))
-
         # transparent button, visible on hover
         imgui.push_style_color(imgui.Col_.button, (0, 0, 0, 0))
         imgui.push_style_color(imgui.Col_.button_hovered, (0.5, 0.5, 0.5, 0.5))
         imgui.push_style_color(imgui.Col_.button_active, (0.6, 0.6, 0.6, 0.6))
 
-        if imgui.button(fa.ICON_FA_CARET_RIGHT):
+        if imgui.button(fa.ICON_FA_CARET_RIGHT, (COLLAPSE_BUTTON_WIDTH, height_canvas)):
             self._collapsed = True
             self._set_rect()
             self._figure._fpl_reset_layout()
 
         imgui.pop_style_color(3)
-        imgui.pop_style_var(1)
 
         if imgui.is_item_hovered(0):
             imgui.set_tooltip("collapse")
@@ -306,15 +291,14 @@ class EdgeWindow(Window):
         if self._figure.guis["bottom"] is not None:
             height_canvas -= self._figure.guis["bottom"].size
 
-        # exact position: flush with right edge of canvas, vertically centered
         x_pos = width_canvas - COLLAPSE_BUTTON_WIDTH
-        y_pos = (height_canvas - COLLAPSE_BUTTON_HEIGHT) / 2
+        y_pos = 0
 
         # remove all window padding so position is exact
         imgui.push_style_var(imgui.StyleVar_.window_padding, (0, 0))
 
         imgui.set_next_window_pos((x_pos, y_pos))
-        imgui.set_next_window_size((COLLAPSE_BUTTON_WIDTH, COLLAPSE_BUTTON_HEIGHT))
+        imgui.set_next_window_size((COLLAPSE_BUTTON_WIDTH, height_canvas))
 
         flags = (
             imgui.WindowFlags_.no_title_bar
@@ -328,21 +312,17 @@ class EdgeWindow(Window):
         imgui.begin(f"expand-{self._title}", p_open=None, flags=flags)
         imgui.push_id(self._id_counter)
 
-        # same frame_padding as collapse button for exact same size
-        imgui.push_style_var(imgui.StyleVar_.frame_padding, (2, 5))
-
         # visible button - needs to stand out when panel is collapsed
         imgui.push_style_color(imgui.Col_.button, (0.4, 0.4, 0.4, 0.9))
         imgui.push_style_color(imgui.Col_.button_hovered, (0.5, 0.5, 0.5, 1.0))
         imgui.push_style_color(imgui.Col_.button_active, (0.6, 0.6, 0.6, 1.0))
 
-        if imgui.button(fa.ICON_FA_CARET_LEFT):
+        if imgui.button(fa.ICON_FA_CARET_LEFT, (COLLAPSE_BUTTON_WIDTH, height_canvas)):
             self._collapsed = False
             self._set_rect()
             self._figure._fpl_reset_layout()
 
         imgui.pop_style_color(3)
-        imgui.pop_style_var(1)
 
         if imgui.is_item_hovered(0):
             imgui.set_tooltip("expand")
