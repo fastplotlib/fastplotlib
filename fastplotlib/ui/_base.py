@@ -2,9 +2,13 @@ import enum
 from typing import Literal
 import numpy as np
 
-from imgui_bundle import imgui
+from imgui_bundle import imgui, icons_fontawesome_6 as fa
 
 from ..layouts._figure import Figure
+
+
+# width of the collapse button area on left edge of right-side GUI
+COLLAPSE_BUTTON_WIDTH = 14
 
 
 GUI_EDGES = ["right", "bottom"]
@@ -111,6 +115,10 @@ class EdgeWindow(Window):
         self._title = title
         self._window_flags = window_flags
 
+        # collapse state for right-side GUI panels
+        # TODO: other sides when they're supported
+        self._collapsed = False
+
         self._x, self._y, self._width, self._height = self.get_rect()
 
         self._figure.canvas.add_event_handler(self._set_rect, "resize")
@@ -152,6 +160,24 @@ class EdgeWindow(Window):
         """height of the window"""
         return self._height
 
+    @property
+    def collapsed(self) -> bool:
+        """whether the window is collapsed, only applicable to right-side GUI"""
+        return self._collapsed
+
+    @collapsed.setter
+    def collapsed(self, value: bool):
+        if not isinstance(value, bool):
+            raise TypeError(f"{self.__class__.__name__}.collapsed must be a <bool>")
+
+        # TODO: Do we want image sliders to be collapsable
+        #       Need to update this when other edges are supported.
+        if self._location != "right":
+            return
+
+        self._collapsed = value
+        self._set_rect()
+
     def _set_rect(self, *args):
         self._x, self._y, self._width, self._height = self.get_rect()
         self._figure._fpl_reset_layout()
@@ -186,12 +212,17 @@ class EdgeWindow(Window):
 
     def draw_window(self):
         """helps simplify using imgui by managing window creation & position, and pushing/popping the ID"""
+        if self._location == "right" and self._collapsed:
+            self._draw_expand_button()
+            return
+
+        if self._location == "right":
+            self._draw_collapse_button()
+
         # window position & size
         x, y, w, h = self.get_rect()
         imgui.set_next_window_size((self.width, self.height))
         imgui.set_next_window_pos((self.x, self.y))
-        # imgui.set_next_window_pos((x, y))
-        # imgui.set_next_window_size((w, h))
         flags = self._window_flags
 
         # begin window
@@ -207,6 +238,101 @@ class EdgeWindow(Window):
         imgui.pop_id()
 
         # end the window
+        imgui.end()
+
+    def _draw_collapse_button(self):
+        """draw narrow collapse button centered on left edge of right-side GUI panel"""
+        width_canvas, height_canvas = self._figure.canvas.get_logical_size()
+
+        # account for bottom GUI if present
+        if self._figure.guis["bottom"] is not None:
+            height_canvas -= self._figure.guis["bottom"].size
+
+        # position in the reserved collapse button area (to the left of GUI panel)
+        button_width = COLLAPSE_BUTTON_WIDTH
+        button_height = 30
+        # positioned in the collapse button reserved area, not overlapping GUI
+        x_pos = width_canvas - self._size - button_width
+        y_pos = (height_canvas - button_height) / 2
+
+        imgui.set_next_window_pos((x_pos, y_pos))
+        imgui.set_next_window_size((button_width, button_height))
+
+        # transparent background, no border
+        flags = (
+            imgui.WindowFlags_.no_title_bar
+            | imgui.WindowFlags_.no_resize
+            | imgui.WindowFlags_.no_move
+            | imgui.WindowFlags_.no_scrollbar
+            | imgui.WindowFlags_.no_collapse
+            | imgui.WindowFlags_.no_background
+        )
+
+        imgui.begin(f"collapse-{self._title}", p_open=None, flags=flags)
+        imgui.push_id(self._id_counter + 1000)
+
+        # invisible button background, subtle hover effect
+        imgui.push_style_color(imgui.Col_.button, (0, 0, 0, 0))
+        imgui.push_style_color(imgui.Col_.button_hovered, (0.5, 0.5, 0.5, 0.3))
+        imgui.push_style_color(imgui.Col_.button_active, (0.5, 0.5, 0.5, 0.5))
+
+        if imgui.button(fa.ICON_FA_CARET_RIGHT):
+            self._collapsed = True
+            self._set_rect()
+
+        imgui.pop_style_color(3)
+
+        if imgui.is_item_hovered(0):
+            imgui.set_tooltip("collapse")
+
+        imgui.pop_id()
+        imgui.end()
+
+    def _draw_expand_button(self):
+        """draw expand button at same position as collapse button (right edge, centered)"""
+        width_canvas, height_canvas = self._figure.canvas.get_logical_size()
+
+        # account for bottom GUI if present
+        if self._figure.guis["bottom"] is not None:
+            height_canvas -= self._figure.guis["bottom"].size
+
+        # same position as collapse button would be, but at the right edge
+        button_width = COLLAPSE_BUTTON_WIDTH
+        button_height = 30
+        x_pos = width_canvas - button_width
+        y_pos = (height_canvas - button_height) / 2
+
+        imgui.set_next_window_pos((x_pos, y_pos))
+        imgui.set_next_window_size((button_width, button_height))
+
+        # transparent background
+        flags = (
+            imgui.WindowFlags_.no_title_bar
+            | imgui.WindowFlags_.no_resize
+            | imgui.WindowFlags_.no_move
+            | imgui.WindowFlags_.no_scrollbar
+            | imgui.WindowFlags_.no_collapse
+            | imgui.WindowFlags_.no_background
+        )
+
+        imgui.begin(f"expand-{self._title}", p_open=None, flags=flags)
+        imgui.push_id(self._id_counter)
+
+        # invisible button background, subtle hover effect
+        imgui.push_style_color(imgui.Col_.button, (0, 0, 0, 0))
+        imgui.push_style_color(imgui.Col_.button_hovered, (0.5, 0.5, 0.5, 0.3))
+        imgui.push_style_color(imgui.Col_.button_active, (0.5, 0.5, 0.5, 0.5))
+
+        if imgui.button(fa.ICON_FA_CARET_LEFT):
+            self._collapsed = False
+            self._set_rect()
+
+        imgui.pop_style_color(3)
+
+        if imgui.is_item_hovered(0):
+            imgui.set_tooltip("expand")
+
+        imgui.pop_id()
         imgui.end()
 
     def update(self):
