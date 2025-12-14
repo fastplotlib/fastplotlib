@@ -2,13 +2,12 @@ import enum
 from typing import Literal
 import numpy as np
 
-from imgui_bundle import imgui
+from imgui_bundle import imgui, icons_fontawesome_6 as fa
 
 from ..layouts._figure import Figure
 
 
-# width of the collapse/expand button (calculated to fit unicode arrow + minimal padding)
-# unicode triangle char is ~8px wide, plus 2px padding each side = 12px
+# width of the collapse/expand button
 COLLAPSE_BUTTON_WIDTH = 12
 COLLAPSE_BUTTON_HEIGHT = 24
 
@@ -284,9 +283,10 @@ class EdgeWindow(Window):
         imgui.push_style_color(imgui.Col_.button_hovered, (0.5, 0.5, 0.5, 0.5))
         imgui.push_style_color(imgui.Col_.button_active, (0.6, 0.6, 0.6, 0.6))
 
-        if imgui.button("▶"):
+        if imgui.button(fa.ICON_FA_CARET_RIGHT):
             self._collapsed = True
             self._set_rect()
+            self._figure._fpl_reset_layout()
 
         imgui.pop_style_color(3)
         imgui.pop_style_var(1)
@@ -336,9 +336,10 @@ class EdgeWindow(Window):
         imgui.push_style_color(imgui.Col_.button_hovered, (0.5, 0.5, 0.5, 1.0))
         imgui.push_style_color(imgui.Col_.button_active, (0.6, 0.6, 0.6, 1.0))
 
-        if imgui.button("◀"):
+        if imgui.button(fa.ICON_FA_CARET_LEFT):
             self._collapsed = False
             self._set_rect()
+            self._figure._fpl_reset_layout()
 
         imgui.pop_style_color(3)
         imgui.pop_style_var(1)
