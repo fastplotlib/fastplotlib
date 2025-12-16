@@ -11,7 +11,7 @@ from ...graphics import ImageGraphic
 from ...utils import calculate_figure_shape, quick_min_max
 from ...tools import HistogramLUTTool
 from ._sliders import ImageWidgetSliders
- 
+
 
 # Number of dimensions that represent one image/one frame
 # For grayscale shape will be [n_rows, n_cols], i.e. 2 dims
