@@ -49,12 +49,12 @@ masks = MeshMasks
 
 class TextBox:
     def __init__(
-            self,
-            font_size: int = 12,
-            text_color: str | pygfx.Color | tuple = "w",
-            background_color: str | pygfx.Color | tuple = (0.1, 0.1, 0.3, 0.95),
-            outline_color: str | pygfx.Color | tuple = (0.8, 0.8, 1.0, 1.0),
-            padding: tuple[float, float] = (5, 5),
+        self,
+        font_size: int = 12,
+        text_color: str | pygfx.Color | tuple = "w",
+        background_color: str | pygfx.Color | tuple = (0.1, 0.1, 0.3, 0.95),
+        outline_color: str | pygfx.Color | tuple = (0.8, 0.8, 1.0, 1.0),
+        padding: tuple[float, float] = (5, 5),
     ):
         """
         Create a Textbox
