@@ -499,7 +499,6 @@ class PlotArea(GraphicMethodsMixin):
         *funcs: callable,
         pre_render: bool = True,
         post_render: bool = False,
-        persist: bool = False,
     ):
         """
         Add function(s) that are called on every render cycle.
@@ -516,10 +515,6 @@ class PlotArea(GraphicMethodsMixin):
         post_render: bool, default ``False``, optional keyword-only argument
             if true, these function(s) are called after a render cycle
 
-        persist: bool, default False
-            if True, the animation function will persist even if ``clear_animations()`` is called.
-            Such functions must be removed explicitly using ``remove_animation()``
-
         """
         for f in funcs:
             if not callable(f):
@@ -530,8 +525,6 @@ class PlotArea(GraphicMethodsMixin):
                 self._animate_funcs_pre += funcs
             if post_render:
                 self._animate_funcs_post += funcs
-            if persist:
-                self._animate_funcs_persist += funcs
 
     def remove_animation(self, func):
         """
@@ -556,9 +549,6 @@ class PlotArea(GraphicMethodsMixin):
         if func in self._animate_funcs_post:
             self._animate_funcs_post.remove(func)
 
-        if func in self._animate_funcs_persist:
-            self._animate_funcs_persist.remove(func)
-
     def clear_animations(self, removal: str = None):
         """
         Remove animation functions.
@@ -569,36 +559,26 @@ class PlotArea(GraphicMethodsMixin):
             The type of animation functions to clear. One of 'pre' or 'post'. If `None`, removes all animation
             functions.
         """
-        to_remove = list()
-
         if removal is None:
             # remove all
             for func in self._animate_funcs_pre:
-                to_remove.append(func)
+                self._animate_funcs_pre.remove(func)
 
             for func in self._animate_funcs_post:
-                to_remove.append(func)
-
+                self._animate_funcs_post.remove(func)
         elif removal == "pre":
             # only pre
             for func in self._animate_funcs_pre:
-                to_remove.append(func)
-
+                self._animate_funcs_pre.remove(func)
         elif removal == "post":
             # only post
             for func in self._animate_funcs_post:
-                to_remove.append(func)
+                self._animate_funcs_post.remove(func)
         else:
             raise ValueError(
                 f"Animation type: {removal} must be one of 'pre' or 'post'. To remove all animation "
                 f"functions, pass `type=None`"
             )
-
-        for func in to_remove:
-            if func in self._animate_funcs_persist:
-                # skip
-                continue
-            self.remove_animation(func)
 
     def _sort_images_by_depth(self):
         """
