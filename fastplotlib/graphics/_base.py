@@ -499,7 +499,7 @@ class Graphic:
                 feature.remove_event_handler(wrapper)
 
     def map_model_to_world(
-        self, position: tuple[float, float, float] | tuple[float, float]
+        self, position: tuple[float, float, float] | tuple[float, float] | np.ndarray
     ) -> np.ndarray:
         """
         map position from model (data) space to world space, basically applies the world affine transform
@@ -522,14 +522,14 @@ class Graphic:
 
         if len(position) != 3:
             raise ValueError(
-                f"position must be tuple indicating (x, y, z) position in *model space*"
+                f"position must be tuple or array indicating (x, y, z) position in *model space*"
             )
 
         # apply world transform to project from model space to world space
         return la.vec_transform(position, self.world_object.world.matrix)
 
     def map_world_to_model(
-        self, position: tuple[float, float, float] | tuple[float, float]
+        self, position: tuple[float, float, float] | tuple[float, float] | np.ndarray
     ) -> np.ndarray:
         """
         map position from world space to model (data) space, basically applies the inverse world affine transform
@@ -552,7 +552,7 @@ class Graphic:
 
         if len(position) != 3:
             raise ValueError(
-                f"position must be tuple indicating (x, y, z) position in *model space*"
+                f"position must be tuple or array indicating (x, y, z) position in *model space*"
             )
 
         return la.vec_transform(position, self.world_object.world.inverse_matrix)

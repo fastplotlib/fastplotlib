@@ -350,9 +350,9 @@ class PlotArea(GraphicMethodsMixin):
         # default z is zero for now
         return np.array([*pos_world[:2], 0])
 
-    def map_world_to_screen(self, pos: tuple[float, float, float]):
+    def map_world_to_screen(self, pos: tuple[float, float, float] | np.ndarray) -> tuple[float, float]:
         """
-        Map world position to screen (canvas) posiition
+        Map world position to screen (canvas) position
 
         Parameters
         ----------

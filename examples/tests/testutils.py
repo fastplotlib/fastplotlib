@@ -30,6 +30,7 @@ example_globs = [
     "window_layouts/*.py",
     "events/*.py",
     "selection_tools/*.py",
+    "spaces_transforms/*.py",
     "misc/*.py",
     "guis/*.py",
 ]
