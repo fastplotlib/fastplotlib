@@ -71,14 +71,14 @@ def update_text():
 
     # set text to display model, world and screen space position of the 2 points
     text_0.text = (
-        f"model pos: {scatter.data[0]}\n"
-        f"world pos: {point_0_world}\n"
+        f"model pos: [{', '.join(str(round(p, 2)) for p in scatter.data[0])}]\n"
+        f"world pos: [{', '.join(str(round(p, 2)) for p in point_0_world)}]\n"
         f"screen pos: [{', '.join(str(round(p)) for p in point_0_screen)}]"
     )
 
     text_1.text = (
-        f"model pos: {scatter.data[1]}\n"
-        f"world pos: {point_1_world}\n"
+        f"model pos: [{', '.join(str(round(p, 2)) for p in scatter.data[1])}]\n"
+        f"world pos: [{', '.join(str(round(p, 2)) for p in point_1_world)}]\n"
         f"screen pos: [{', '.join(str(round(p)) for p in point_1_screen)}]"
     )
 
