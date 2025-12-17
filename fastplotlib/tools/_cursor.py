@@ -55,8 +55,8 @@ class Cursor:
 
         """
 
-        self._cursors: dict[Subplot, [pygfx.Points | pygfx.Group[pygfx.Line]]] = dict()
-        self._transforms: dict[Subplot, [Callable | None]] = dict()
+        self._cursors: dict[Subplot, pygfx.Points | pygfx.Group[pygfx.Line]] = dict()
+        self._transforms: dict[Subplot, Callable | None] = dict()
 
         self._mode = None
         self.mode = mode
@@ -278,14 +278,14 @@ class Cursor:
 
     def add_subplot(self, subplot: Subplot, transform: Callable | None = None):
         """
-        Add add a subplot to this cursor, with an optional position transform function
+        Add a subplot to this cursor, with an optional position transform function
 
         Parameters
         ----------
         subplot: Subplot
             subplot to add
 
-        transform: Callable[[tuple[float, float]], tuple[float, float]]
+        transform: Callable[[tuple[float, float]], tuple[float, float]] | None
             a transform function that takes the cursor's position and returns a transformed
             position at which the cursor will visually appear.
 
