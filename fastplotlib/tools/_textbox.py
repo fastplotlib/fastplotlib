@@ -1,6 +1,3 @@
-from functools import partial
-from typing import Literal
-
 import numpy as np
 import pygfx
 
@@ -175,6 +172,7 @@ class TextBox:
 
     @property
     def visible(self) -> bool:
+        """get or set the visibility"""
         return self._fpl_world_object.visible
 
     @visible.setter
@@ -183,7 +181,7 @@ class TextBox:
 
     def display(self, position: tuple[float, float], info: str):
         """
-        display tooltip at the given position in screen space
+        display at the given position in screen space
 
         Parameters
         ----------
@@ -202,7 +200,7 @@ class TextBox:
 
     def _draw_tooltip(self, pos: tuple[float, float]):
         """
-        Set the position of the tooltip
+        Sets the positions of the world objects so it's draw at the given position
 
         Parameters
         ----------
@@ -239,6 +237,7 @@ class TextBox:
         self._line.geometry.positions.update_range()
 
     def clear(self, *args):
+        """clear the text box and make it invisible"""
         self._text.set_text("")
         self._fpl_world_object.visible = False
 
@@ -252,6 +251,7 @@ class Tooltip(TextBox):
 
     @property
     def enabled(self) -> bool:
+        """enable or disable the tooltip"""
         return self._enabled
 
     @enabled.setter
