@@ -6,7 +6,7 @@ This examples illustrates the various spaces that you may need to map between,
 plots a line to show these mappings.
 """
 
-# test_example = True
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np
