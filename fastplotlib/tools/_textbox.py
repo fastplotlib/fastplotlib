@@ -48,20 +48,47 @@ masks = MeshMasks
 
 
 class TextBox:
-    def __init__(self):
+    def __init__(
+            self,
+            font_size: int = 12,
+            text_color: str | pygfx.Color | tuple = "w",
+            background_color: str | pygfx.Color | tuple = (0.1, 0.1, 0.3, 0.95),
+            outline_color: str | pygfx.Color | tuple = (0.8, 0.8, 1.0, 1.0),
+            padding: tuple[float, float] = (5, 5),
+    ):
+        """
+        Create a Textbox
+
+        Parameters
+        ----------
+        font_size: int, default 12
+            text font size
+
+        text_color: str | pygfx.Color | tuple, default "w"
+            text color, interpretable by pygfx.Color
+
+        background_color:  str | pygfx.Color | tuple, default (0.1, 0.1, 0.3, 0.95),
+            background color, interpretable by pygfx.Color
+
+        outline_color: str | pygfx.Color | tuple, default (0.8, 0.8, 1.0, 1.0)
+            outline color, interpretable by pygfx.Color
+
+        padding: (float, float), default (5, 5)
+            the amount of pixels in (x, y) by which to extend the rectangle behind the text
+
+        """
+
         # text object
         self._text = pygfx.Text(
             text="",
-            font_size=12,
-            screen_space=False,
+            font_size=font_size,
+            screen_space=False,  # these are added to the overlay render pass so it will actually be in screen space!
             anchor="bottom-left",
             material=pygfx.TextMaterial(
                 alpha_mode="blend",
                 aa=True,
                 render_queue=RenderQueue.overlay,
-                color="w",
-                outline_color="w",
-                outline_thickness=0.0,
+                color=text_color,
                 depth_write=False,
                 depth_test=False,
                 pick_write=False,
@@ -73,7 +100,7 @@ class TextBox:
         material = pygfx.MeshBasicMaterial(
             alpha_mode="blend",
             render_queue=RenderQueue.overlay,
-            color=(0.1, 0.1, 0.3, 0.95),
+            color=background_color,
             depth_write=False,
             depth_test=False,
         )
@@ -97,7 +124,7 @@ class TextBox:
                 alpha_mode="blend",
                 render_queue=RenderQueue.overlay,
                 thickness=1.0,
-                color=(0.8, 0.8, 1.0, 1.0),
+                color=outline_color,
                 depth_write=False,
                 depth_test=False,
             ),
@@ -110,7 +137,8 @@ class TextBox:
 
         # padded to bbox so the background box behind the text extends a bit further
         # making the text easier to read
-        self._padding = np.array([[5, 5, 0], [-5, -5, 0]], dtype=np.float32)
+        self._padding = np.zeros(shape=(2, 3), dtype=np.float32)
+        self.padding = padding
 
         # position of the tooltip in screen space
         self._position = np.array([0.0, 0.0])
