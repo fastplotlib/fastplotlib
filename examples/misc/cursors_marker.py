@@ -1,9 +1,8 @@
 """
-Cursor tool
-===========
+Cursor tool, marker mode
+========================
 
-Example with multiple subplots and an interactive cursor that marks the same position in each subplot.
-Default crosshair mode.
+Example with multiple subplots and an interactive cursor that marks the same position in each subplot. Marker mode.
 """
 
 # test_example = False
@@ -30,7 +29,7 @@ figure[1, 0].add_scatter(scatter_data, sizes=5, colors="r")
 figure[1, 1].add_line(line_data, colors="r")
 
 # creator a cursor in crosshair mode
-cursor = fpl.Cursor(color="w")
+cursor = fpl.Cursor(mode="marker", color="w", size=15)
 
 # add all subplots to the cursor
 for subplot in figure:
