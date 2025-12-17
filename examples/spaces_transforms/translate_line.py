@@ -1,9 +1,9 @@
 """
-Translate and scale image
-=========================
+Translate line
+==============
 
 This examples illustrates the various spaces that you may need to map between,
-plots an image to show these mappings.
+plots a line to show these mappings.
 """
 
 # test_example = True
@@ -14,21 +14,16 @@ import fastplotlib as fpl
 
 figure = fpl.Figure(size=(700, 560))
 
-# an image to demonstrate some data in model/data space
-image_data = np.array(
-    [
-        [0, 1, 2],
-        [3, 4, 5],
-        [5, 6, 7],
-        [8, 9, 10],
-    ]
-)
-image = figure[0, 0].add_image(image_data, cmap="turbo")
+xs = np.linspace(0, 2 * np.pi, 100)
+ys = np.sin(xs)
 
+# a line to demonstrate some data in model/data space
+line_data = np.column_stack([xs, ys])
+line = figure[0, 0].add_line(line_data, cmap="jet", thickness=10)
 
-# a scatter that will be in the same space as the image
-# used to indicates a few points on the image
-scatter_data = np.array([[0, 1], [2, 3]])
+# a scatter that will be in the same space as the line
+# used to indicates a few points on the line
+scatter_data = np.array([[np.pi / 4, np.sin(np.pi / 4)], [3 * np.pi / 2 , -1]])
 scatter = figure[0, 0].add_scatter(
     scatter_data,
     sizes=15,
@@ -54,14 +49,10 @@ text_1 = figure[0, 0].add_text(
 )
 
 
-# translation and scaling
+# translation
 translation = (2, 3, 0)  # x, y, z translation
-image.offset = translation
+line.offset = translation
 scatter.offset = translation
-
-scaling = (2, 0.5, 1.0)  # scale (x, y, z)
-image.scale = scaling
-scatter.scale = scaling
 
 
 def update_text():
@@ -80,14 +71,14 @@ def update_text():
 
     # set text to display model, world and screen space position of the 2 points
     text_0.text = (
-        f"model pos: [{', '.join(str(round(p, 2)) for p in scatter.data[0])}]\n"
-        f"world pos: [{', '.join(str(round(p, 2)) for p in point_0_world)}]\n"
+        f"model pos: {scatter.data[0]}\n"
+        f"world pos: {point_0_world}\n"
         f"screen pos: [{', '.join(str(round(p)) for p in point_0_screen)}]"
     )
 
     text_1.text = (
-        f"model pos: [{', '.join(str(round(p, 2)) for p in scatter.data[1])}]\n"
-        f"world pos: [{', '.join(str(round(p, 2)) for p in point_1_world)}]\n"
+        f"model pos: {scatter.data[1]}\n"
+        f"world pos: {point_1_world}\n"
         f"screen pos: [{', '.join(str(round(p)) for p in point_1_screen)}]"
     )
 

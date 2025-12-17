@@ -28,11 +28,13 @@ image = figure[0, 0].add_image(image_data, cmap="turbo")
 
 # a scatter that will be in the same space as the image
 # used to indicates a few points on the image
-scatter_data = np.array([[2, 3], [0, 1]])
+scatter_data = np.array([[0, 1], [2, 3]])
 scatter = figure[0, 0].add_scatter(
     scatter_data,
     sizes=15,
     colors=["blue", "red"],
+    edge_colors="w",
+    edge_width=2.0,
 )
 
 # text to indicate the scatter point positions in all spaces
