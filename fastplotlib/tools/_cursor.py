@@ -68,9 +68,9 @@ class Cursor:
         self.alpha = alpha
         self.size_space = size_space
 
-        self._pause = False
+        self._enabled = True
 
-        self._position = [0, 0]
+        self._position: list[float, float] = [0.0, 0.0]
 
     @property
     def mode(self) -> Literal["crosshair", "marker"]:
@@ -205,13 +205,13 @@ class Cursor:
         self._alpha = value
 
     @property
-    def pause(self) -> bool:
-        """pause the cursor, if True the cursor will not respond to mouse pointer events"""
-        return self._pause
+    def enabled(self) -> bool:
+        """enable/disable the cursor, if False the cursor will not respond to mouse pointer events"""
+        return self._enabled
 
-    @pause.setter
-    def pause(self, pause: bool):
-        self._pause = bool(pause)
+    @enabled.setter
+    def enabled(self, pause: bool):
+        self._enabled = bool(pause)
 
     @property
     def position(self) -> tuple[float, float]:
@@ -409,7 +409,7 @@ class Cursor:
         return lines
 
     def _pointer_moved(self, subplot, ev: pygfx.PointerEvent):
-        if self.pause:
+        if not self.enabled:
             return
 
         pos = subplot.map_screen_to_world(ev)
