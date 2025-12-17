@@ -24,9 +24,9 @@ Properties
     Cursor.color
     Cursor.edge_color
     Cursor.edge_width
+    Cursor.enabled
     Cursor.marker
     Cursor.mode
-    Cursor.pause
     Cursor.position
     Cursor.size
     Cursor.size_space
