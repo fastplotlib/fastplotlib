@@ -74,7 +74,25 @@ class FileDialogWidget(EdgeWindow):
         """Load an image file and update the graphic."""
         try:
             img_data = iio.imread(filepath)
-            self._image_graphic.data = img_data
+
+            # validate image format: must be 2D (grayscale) or 3D with 1-4 channels
+            if not (img_data.ndim == 2 or (img_data.ndim == 3 and img_data.shape[2] <= 4)):
+                self._status_msg = (
+                    f"Unsupported format: {img_data.shape}. "
+                    f"Expected (H, W) or (H, W, C) with C <= 4"
+                )
+                return
+
+            # check if the new image shape matches the current buffer
+            if img_data.shape == self._image_graphic.data.value.shape:
+                self._image_graphic.data = img_data
+            else:
+                # shape mismatch: remove old graphic and create a new one
+                subplot = self._image_graphic._plot_area
+                subplot.remove_graphic(self._image_graphic)
+                self._image_graphic = subplot.add_image(img_data)
+                subplot.auto_scale()
+
             self._status_msg = f"Loaded: {filepath}"
         except Exception as e:
             self._status_msg = f"Error: {e}"
