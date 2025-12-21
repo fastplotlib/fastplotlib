@@ -4,16 +4,20 @@
 
 ---
 
-[![CI](https://github.com/fastplotlib/fastplotlib/actions/workflows/ci.yml/badge.svg)](https://github.com/fastplotlib/fastplotlib/actions/workflows/ci.yml)
-[![PyPI version](https://badge.fury.io/py/fastplotlib.svg)](https://badge.fury.io/py/fastplotlib)
-[![Deploy docs](https://github.com/fastplotlib/fastplotlib/actions/workflows/docs-deploy.yml/badge.svg)](https://fastplotlib.org/ver/dev/)
-[![DOI](https://zenodo.org/badge/485481453.svg)](https://zenodo.org/doi/10.5281/zenodo.13365890)
+<p align="center">
+  <a href="https://github.com/fastplotlib/fastplotlib/actions/workflows/ci.yml"><img src="https://github.com/fastplotlib/fastplotlib/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://badge.fury.io/py/fastplotlib"><img src="https://badge.fury.io/py/fastplotlib.svg" alt="PyPI version"></a>
+  <a href="https://fastplotlib.org/ver/dev/"><img src="https://github.com/fastplotlib/fastplotlib/actions/workflows/docs-deploy.yml/badge.svg" alt="Deploy docs"></a>
+  <a href="https://zenodo.org/doi/10.5281/zenodo.13365890"><img src="https://zenodo.org/badge/485481453.svg" alt="DOI"></a>
+</p>
 
-[**Installation**](https://github.com/fastplotlib/fastplotlib#installation) | 
-[**GPU Drivers**](https://github.com/kushalkolar/fastplotlib#graphics-drivers) | 
-[**Documentation**](https://github.com/fastplotlib/fastplotlib#documentation) | 
-[**Examples**](https://github.com/kushalkolar/fastplotlib#examples) | 
-[**Contributing**](https://github.com/kushalkolar/fastplotlib#heart-contributing)
+<p align="center">
+  <a href="https://github.com/fastplotlib/fastplotlib#installation"><b>Installation</b></a> |
+  <a href="https://github.com/kushalkolar/fastplotlib#graphics-drivers"><b>GPU Drivers</b></a> |
+  <a href="https://github.com/fastplotlib/fastplotlib#documentation"><b>Documentation</b></a> |
+  <a href="https://github.com/kushalkolar/fastplotlib#examples"><b>Examples</b></a> |
+  <a href="https://github.com/kushalkolar/fastplotlib#heart-contributing"><b>Contributing</b></a>
+</p>
 
 Next-gen plotting library built using the [`pygfx`](https://github.com/pygfx/pygfx) rendering engine that utilizes [Vulkan](https://en.wikipedia.org/wiki/Vulkan), [DX12](https://en.wikipedia.org/wiki/DirectX#DirectX_12), or [Metal](https://developer.apple.com/metal/) via WGPU, so it is very fast! `fastplotlib` is an expressive plotting library that enables rapid prototyping for large scale exploratory scientific visualization.
 
