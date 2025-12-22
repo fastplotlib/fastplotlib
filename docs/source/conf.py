@@ -118,6 +118,7 @@ html_theme_options = {
 
 html_static_path = ["_static"]
 html_logo = "_static/logo.png"
+html_favicon = "_static/favicon.ico"
 html_title = f"v{release}"
 
 autodoc_member_order = "groupwise"
