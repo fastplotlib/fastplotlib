@@ -421,6 +421,8 @@ class ImageVolumeGraphic(Graphic):
         self.vmax = vmax
 
     def format_pick_info(self, pick_info: dict) -> str:
+        return "image volume tooltips supported in next version"
+
         col, row, z = pick_info["index"]
         if self.data.value.ndim == 3:
             val = self.data[z, row, col]
