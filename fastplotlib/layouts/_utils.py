@@ -1,5 +1,6 @@
 import importlib
 from itertools import product
+from pathlib import Path
 
 import numpy as np
 
@@ -7,6 +8,8 @@ import pygfx
 from pygfx import WgpuRenderer, Texture, Renderer
 
 from ..utils.gui import BaseRenderCanvas, RenderCanvas
+
+ICON_PATH = Path(__file__).parent.parent / "assets" / "icon.png"
 
 try:
     import imgui_bundle
@@ -49,6 +52,8 @@ def make_canvas_and_renderer(
         raise TypeError(
             f"renderer option must be a pygfx.Renderer instance such as pygfx.WgpuRenderer"
         )
+
+    _set_window_icon(canvas)
 
     return canvas, renderer
 
@@ -123,3 +128,51 @@ def get_extents_from_grid(
         extents.append(extent)
 
     return extents
+
+
+def _set_window_icon(canvas) -> None:
+    """Set the window icon based on canvas type."""
+    if not ICON_PATH.exists():
+        return
+
+    canvas_name = canvas.__class__.__name__
+
+    if canvas_name == "QRenderCanvas":
+        _set_icon_qt(canvas)
+    elif canvas_name == "GlfwRenderCanvas":
+        _set_icon_glfw(canvas)
+
+
+def _set_icon_glfw(canvas) -> None:
+    """Set window icon for GLFW backend."""
+    try:
+        import glfw
+        from PIL import Image
+    except ImportError:
+        return
+
+    if not hasattr(canvas, "_window"):
+        return
+
+    img = Image.open(ICON_PATH).convert("RGBA")
+    pixels = np.array(img)
+    glfw.set_window_icon(canvas._window, 1, [(img.width, img.height, pixels)])
+
+
+def _set_icon_qt(canvas) -> None:
+    """Set window icon for Qt backend."""
+    try:
+        from qtpy.QtGui import QIcon
+        from qtpy.QtWidgets import QApplication
+    except ImportError:
+        return
+
+    icon = QIcon(str(ICON_PATH))
+
+    app = QApplication.instance()
+    if app is not None:
+        app.setWindowIcon(icon)
+
+    window = canvas.window()
+    if window is not None:
+        window.setWindowIcon(icon)
