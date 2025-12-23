@@ -674,7 +674,6 @@ class Figure:
         elif self.canvas.__class__.__name__ == "QRenderCanvas":
             self._output = self.canvas
             self._output.show()
-            self._set_window_icon()  # set after show for Qt
             return self.canvas
 
         elif self.canvas.__class__.__name__ == "OffscreenRenderCanvas":
@@ -693,7 +692,6 @@ class Figure:
 
         else:  # assume GLFW
             self._output = self.canvas
-            self._set_window_icon()
 
         # return the canvas
         return self._output
@@ -702,53 +700,6 @@ class Figure:
         self._output.close()
         if self._sidecar:
             self._sidecar.close()
-
-    def _set_window_icon(self):
-        """Set the window icon based on canvas type."""
-        icon_path = Path(__file__).parent.parent / "assets" / "icon.png"
-        if not icon_path.exists():
-            return
-
-        canvas_name = self.canvas.__class__.__name__
-
-        if canvas_name == "QRenderCanvas":
-            self._set_icon_qt(icon_path)
-        elif canvas_name == "GlfwRenderCanvas":
-            self._set_icon_glfw(icon_path)
-        # jupyter, offscreen, etc. don't have window icons
-
-    def _set_icon_glfw(self, icon_path: Path):
-        """Set window icon for GLFW backend."""
-        try:
-            import glfw
-            from PIL import Image
-        except ImportError:
-            return
-
-        if not hasattr(self.canvas, "_window"):
-            return
-
-        img = Image.open(icon_path).convert("RGBA")
-        pixels = np.array(img)
-        glfw.set_window_icon(self.canvas._window, 1, [(img.width, img.height, pixels)])
-
-    def _set_icon_qt(self, icon_path: Path):
-        """Set window icon for Qt backend."""
-        try:
-            from qtpy.QtGui import QIcon
-            from qtpy.QtWidgets import QApplication
-        except ImportError:
-            return
-
-        icon = QIcon(str(icon_path))
-
-        app = QApplication.instance()
-        if app is not None:
-            app.setWindowIcon(icon)
-
-        window = self.canvas.window()
-        if window is not None:
-            window.setWindowIcon(icon)
 
     def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:
