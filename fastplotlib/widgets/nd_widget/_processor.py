@@ -5,6 +5,7 @@ from warnings import warn
 import numpy as np
 from numpy.typing import ArrayLike
 
+from ...graphics import ImageGraphic, LineStack, LineCollection, ScatterGraphic
 from ...utils import subsample_array, ArrayProtocol
 
 
@@ -14,13 +15,13 @@ WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
 
 class NDProcessor:
     def __init__(
-            self,
-            data: ArrayProtocol,
-            n_display_dims: Literal[2, 3] = 2,
-            slider_index_maps: tuple[Callable[[Any], int] | None, ...] | None = None,
-            window_funcs: tuple[WindowFuncCallable | None] | None = None,
-            window_sizes: tuple[int | None] | None = None,
-            spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
+        self,
+        data,
+        n_display_dims: Literal[2, 3] = 2,
+        slider_index_maps: tuple[Callable[[Any], int] | None, ...] | None = None,
+        window_funcs: tuple[WindowFuncCallable | None] | None = None,
+        window_sizes: tuple[int | None] | None = None,
+        spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
     ):
         self._data = self._validate_data(data)
         self._slider_index_maps = self._validate_slider_index_maps(slider_index_maps)
@@ -84,17 +85,30 @@ class NDImageProcessor(NDProcessor):
             raise ValueError("`n_display_dims` must be")
 
 
+VALID_TIMESERIES_Y_DATA_SHAPES = (
+    "[n_datapoints] for 1D array of y-values, [n_datapoints, 2] "
+    "for a 1D array of y and z-values, [n_lines, n_datapoints] for a 2D stack of lines with y-values, "
+    "or [n_lines, n_datapoints, 2] for a stack of lines with y and z-values."
+)
+
+
+# Limitation, no heatmap if z-values present, I don't think you can visualize that
 class NDTimeSeriesProcessor(NDProcessor):
     def __init__(
-            self,
-            data: ArrayProtocol,
-            graphic: Literal["line", "heatmap"] = "line",
-            n_display_dims: Literal[2, 3] = 2,
-            slider_index_maps: tuple[Callable[[Any], int] | None, ...] | None = None,
-            display_window: int | float | None = None,
-            window_funcs: tuple[WindowFuncCallable | None] | None = None,
-            window_sizes: tuple[int | None] | None = None,
-            spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
+        self,
+        data: list[
+            ArrayProtocol, ArrayProtocol
+        ],  # list: [x_vals_array, y_vals_and_z_vals_array]
+        x_values: ArrayProtocol = None,
+        cmap: str = None,
+        cmap_transform: ArrayProtocol = None,
+        display_graphic: Literal["line", "heatmap"] = "line",
+        n_display_dims: Literal[2, 3] = 2,
+        slider_index_maps: tuple[Callable[[Any], int] | None, ...] | None = None,
+        display_window: int | float | None = 100,
+        window_funcs: tuple[WindowFuncCallable | None] | None = None,
+        window_sizes: tuple[int | None] | None = None,
+        spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
     ):
         super().__init__(
             data=data,
@@ -104,22 +118,72 @@ class NDTimeSeriesProcessor(NDProcessor):
 
         self._display_window = display_window
 
-    def _validate_data(self, data: ArrayProtocol):
-        data = super()._validate_data(data)
+        self._display_graphic = None
+        self.display_graphic = display_graphic
 
-        # need to make shape be [n_lines, n_datapoints, 2]
-        # this will work for displaying a linestack and heatmap
-        # for heatmap just slice: [..., 1]
-        # TODO: Think about how to allow n-dimensional lines,
-        #  maybe [d1, d2, ..., d(n - 1), n_lines, n_datapoint, 2]
-        #  and dn is the x-axis values??
-        if data.ndim == 1:
-            pass
+        self._uniform_x_values: ArrayProtocol | None = None
+        self._interp_yz: ArrayProtocol | None = None
+
+    @property
+    def data(self) -> list[ArrayProtocol, ArrayProtocol]:
+        return self._data
+
+    @data.setter
+    def data(self, data: list[ArrayProtocol, ArrayProtocol]):
+        self._data = self._validate_data(data)
+
+    def _validate_data(self, data: list[ArrayProtocol, ArrayProtocol]):
+        x_vals, yz_vals = data
+
+        if x_vals.ndim != 1:
+            raise ("data x values must be 1D")
+
+        if data[1].ndim > 3:
+            raise ValueError(
+                f"data yz values must be of shape: {VALID_TIMESERIES_Y_DATA_SHAPES}. You passed data of shape: {yz_vals.shape}"
+            )
+
+        return data
+
+    @property
+    def display_graphic(self) -> Literal["line", "heatmap"]:
+        return self._display_graphic
+
+    @display_graphic.setter
+    def display_graphic(self, dg: Literal["line", "heatmap"]):
+        dg = self._validate_display_graphic(dg)
+
+        if dg == "heatmap":
+            # check if x-vals uniformly spaced
+            norm = np.linalg.norm(np.diff(np.diff(self.x_values))) / len(self.x_values)
+            if norm > 10 ** -12:
+                # need to create evenly spaced x-values
+                x0 = self.data[0][0]
+                xn = self.data[0][-1]
+                self._uniform_x_values = np.linspace(x0, xn, num=len(self.data[0]))
+
+                # TODO: interpolate yz values on the fly only when within the display window
+
+    def _validate_display_graphic(self, dg):
+        if dg not in ("line", "heatmap"):
+            raise ValueError
+
+        return dg
 
     @property
     def display_window(self) -> int | float | None:
         """display window in the reference units along the x-axis"""
         return self._display_window
+
+    @display_window.setter
+    def display_window(self, dw: int | float | None):
+        if dw is None:
+            self._display_window = None
+
+        elif not isinstance(dw, (int, float)):
+            raise TypeError
+
+        self._display_window = dw
 
     def __getitem__(self, indices: tuple[Any, ...]) -> ArrayProtocol:
         if self.display_window is not None:
@@ -134,8 +198,75 @@ class NDTimeSeriesProcessor(NDProcessor):
 
             # for now assume just a single index provided that indicates x axis value
             start = max(indices - hw, 0)
-            stop = indices + hw
+            stop = start + indices_window
 
             # slice dim would be ndim - 1
+            return self.data[0][start:stop], self.data[1][:, start:stop]
 
-            return self.data[start:stop]
+
+class NDTimeSeries:
+    def __init__(self, processor: NDTimeSeriesProcessor, display_graphic):
+        self._processor = processor
+
+        self._indices = 0
+
+        if display_graphic == "line":
+            self._create_line_stack()
+
+    @property
+    def processor(self) -> NDTimeSeriesProcessor:
+        return self._processor
+
+    @property
+    def graphic(self) -> LineStack | ImageGraphic:
+        """LineStack or ImageGraphic for heatmaps"""
+        return self._graphic
+
+    @property
+    def display_window(self) ->  int | float | None:
+        return self.processor.display_window
+
+    @display_window.setter
+    def display_window(self, dw:  int | float | None):
+        # create new graphic if it changed
+        if dw != self.display_window:
+            create_new_graphic = True
+        else:
+            create_new_graphic = False
+
+        self.processor.display_window = dw
+
+        if create_new_graphic:
+            if isinstance(self.graphic, LineStack):
+                self.set_index(self._indices)
+
+    def set_index(self, indices: tuple[Any, ...]):
+        # set the graphic at the given data indices
+        data_slice = self.processor[indices]
+
+        if isinstance(self.graphic, LineStack):
+            line_stack_data = self._create_line_stack_data(data_slice)
+
+            for g, line_data in zip(self.graphic.graphics, line_stack_data):
+                if line_data.shape[1] == 2:
+                    # only x and y values
+                    g.data[:, :-1] = line_data
+                else:
+                    # has z values too
+                    g.data[:] = line_data
+
+        self._indices = indices
+
+    def _create_line_stack_data(self, data_slice):
+        xs = data_slice[0]  # 1D
+        yz = data_slice[1]  # [n_lines, n_datapoints] for y-vals or [n_lines, n_datapoints, 2] for yz-vals
+
+        # need to go from x_vals and yz_vals arrays to an array of shape: [n_lines, n_datapoints, 2 | 3]
+        return np.dstack([np.repeat(xs[None], repeats=yz.shape[0], axis=0), yz])
+
+    def _create_line_stack(self):
+        data_slice = self.processor[self._indices]
+
+        ls_data = self._create_line_stack_data(data_slice)
+
+        self._graphic = LineStack(ls_data)
