@@ -155,6 +155,7 @@ class NDTimeSeriesProcessor(NDProcessor):
 
         if dg == "heatmap":
             # check if x-vals uniformly spaced
+            # this is very fast to do on the fly, especially for typical small display windows
             norm = np.linalg.norm(np.diff(np.diff(self.x_values))) / len(self.x_values)
             if norm > 10 ** -12:
                 # need to create evenly spaced x-values
@@ -205,13 +206,17 @@ class NDTimeSeriesProcessor(NDProcessor):
 
 
 class NDTimeSeries:
-    def __init__(self, processor: NDTimeSeriesProcessor, display_graphic):
+    def __init__(self, processor: NDTimeSeriesProcessor, graphic):
         self._processor = processor
 
         self._indices = 0
 
-        if display_graphic == "line":
+        if graphic == "line":
             self._create_line_stack()
+        elif graphic == "heatmap":
+            self._create_heatmap()
+        else:
+            raise ValueError
 
     @property
     def processor(self) -> NDTimeSeriesProcessor:
@@ -221,6 +226,19 @@ class NDTimeSeries:
     def graphic(self) -> LineStack | ImageGraphic:
         """LineStack or ImageGraphic for heatmaps"""
         return self._graphic
+
+    @graphic.setter
+    def graphic(self, g: Literal["line", "heatmap"]):
+        if g == "line":
+            # TODO: remove existing graphic
+            self._create_line_stack()
+
+        elif g == "heatmap":
+            # make sure "yz" data is only ys and no z values
+            # can't represent y and z vals in a heatmap
+            if self.processor.data[1].ndim > 2:
+                raise ValueError("Only y-values are supported for heatmaps, not yz-values")
+            self._create_heatmap()
 
     @property
     def display_window(self) ->  int | float | None:
@@ -255,6 +273,10 @@ class NDTimeSeries:
                     # has z values too
                     g.data[:] = line_data
 
+        elif isinstance(self.graphic, ImageGraphic):
+            hm_data, scale = self._create_heatmap_data(data_slice)
+            self.graphic.data = hm_data
+
         self._indices = indices
 
     def _create_line_stack_data(self, data_slice):
@@ -270,3 +292,32 @@ class NDTimeSeries:
         ls_data = self._create_line_stack_data(data_slice)
 
         self._graphic = LineStack(ls_data)
+
+    def _create_heatmap_data(self, data_slice) -> tuple[ArrayProtocol, float]:
+        """Returns [n_lines, y_values] array and scale factor for x dimension"""
+        # check if x-vals uniformly spaced
+        # this is very fast to do on the fly, especially for typical small display windows
+        x, y = data_slice
+        norm = np.linalg.norm(np.diff(np.diff(x))) / x.size
+        if norm > 10 ** -12:
+            # need to create evenly spaced x-values
+            x_uniform = np.linspace(x[0], x[-1], num=x.size)
+            # yz is [n_lines, n_datapoints]
+            y_interp = np.zeros(shape=y.shape, dtype=np.float32)
+            for i in range(y.shape[0]):
+                y_interp[i] = np.interp(x_uniform, x, y[i])
+
+        else:
+            y_interp = y
+
+        x_scale = x[-1] / x.size
+
+        return y_interp, x_scale
+
+    def _create_heatmap(self):
+        data_slice = self.processor[self._indices]
+
+        hm_data, x_scale = self._create_heatmap_data(data_slice)
+
+        self._graphic = ImageGraphic(hm_data)
+        self._graphic.world_object.world.scale_x = x_scale
