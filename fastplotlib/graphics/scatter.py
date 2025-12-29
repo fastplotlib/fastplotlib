@@ -53,7 +53,7 @@ class ScatterGraphic(PositionsGraphic):
         image: np.ndarray = None,
         point_rotations: float | np.ndarray = 0,
         point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
-        sizes: float | np.ndarray | Sequence[float] = 1,
+        sizes: float | np.ndarray | Sequence[float] = 5,
         uniform_size: bool = False,
         size_space: str = "screen",
         isolated_buffer: bool = True,
