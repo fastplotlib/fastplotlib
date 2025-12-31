@@ -173,6 +173,5 @@ def _set_icon_qt(canvas) -> None:
     if app is not None:
         app.setWindowIcon(icon)
 
-    window = canvas.window()
-    if window is not None:
-        window.setWindowIcon(icon)
+        for window in app.topLevelWidgets():
+            window.setWindowIcon(icon)
