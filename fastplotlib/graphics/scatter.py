@@ -4,6 +4,7 @@ import numpy as np
 import pygfx
 
 from ._positions_base import PositionsGraphic
+from .selectors import PolygonSelector
 from .features import (
     VertexPointSizes,
     UniformSize,
@@ -442,3 +443,47 @@ class ScatterGraphic(PositionsGraphic):
 
         elif isinstance(self._sizes, UniformSize):
             self._sizes.set_value(self, value)
+
+    def add_polygon_selector(
+        self,
+        selection: List[tuple[float, float]] = None,
+        **kwargs,
+    ) -> PolygonSelector:
+        """
+        Add a :class:`.PolygonSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them from a
+        plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: List of positions, optional
+            Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
+        """
+
+        # remove any nans
+        data = self.data.value[~np.any(np.isnan(self.data.value), axis=1)]
+
+        x_axis_vals = data[:, 0]
+        y_axis_vals = data[:, 1]
+
+        ymin = np.floor(y_axis_vals.min()).astype(int)
+        ymax = np.ceil(y_axis_vals.max()).astype(int)
+        y25p = 0.25 * (ymax - ymin)
+        xmin = np.floor(x_axis_vals.min()).astype(int)
+        xmax = np.ceil(x_axis_vals.max()).astype(int)
+        x25p = 0.25 * (xmax - xmin)
+
+        # min/max limits include the data + 25% padding in both directions
+        limits = (xmin - x25p, xmax + x25p, ymin - y25p, ymax + y25p)
+
+        selector = PolygonSelector(
+            selection,
+            limits,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        return selector
