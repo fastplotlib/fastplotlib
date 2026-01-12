@@ -39,6 +39,11 @@ class ImguiFigure(Figure):
             | Iterable[Iterable[str]]
         ) = None,
         controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
+        scene_ids: (
+            Iterable[int]
+            | Iterable[Iterable[int]]
+            | Iterable[Iterable[str]]
+        ) = None,
         canvas: str | BaseRenderCanvas | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
         canvas_kwargs: dict = None,
@@ -56,6 +61,7 @@ class ImguiFigure(Figure):
             controller_types=controller_types,
             controller_ids=controller_ids,
             controllers=controllers,
+            scene_ids=scene_ids,
             canvas=canvas,
             renderer=renderer,
             canvas_kwargs=canvas_kwargs,

@@ -19,6 +19,7 @@ class Subplot(PlotArea):
         camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera,
         controller: pygfx.Controller | str,
         canvas: BaseRenderCanvas | pygfx.Texture,
+        scene: pygfx.Scene = None,
         rect: np.ndarray = None,
         extent: np.ndarray = None,
         resizeable: bool = True,
@@ -48,6 +49,9 @@ class Subplot(PlotArea):
         canvas: BaseRenderCanvas, or a pygfx.Texture
             Provides surface on which a scene will be rendered.
 
+        scene: pygfx.Scene, optional
+            scene this subplot will render, if ``None``, a new scene will be created
+
         renderer: WgpuRenderer
             object used to render scenes using wgpu
 
@@ -71,7 +75,7 @@ class Subplot(PlotArea):
             parent=parent,
             camera=camera,
             controller=controller,
-            scene=pygfx.Scene(),
+            scene=scene if scene else pygfx.Scene(),
             canvas=canvas,
             renderer=renderer,
             name=name,
@@ -83,8 +87,12 @@ class Subplot(PlotArea):
             self.docks[pos] = dv
             self.children.append(dv)
 
-        self._axes = Axes(self)
-        self.scene.add(self.axes.world_object)
+        if not any([isinstance(c, Axes) for c in self.scene.children]):
+            # Create axes only if no scene is provided
+            # this doesn't find axes deeper in the scene graph... but just assume they are top level for now.
+            # TODO: rethink how axes are handled in the scene per subplot...
+            self._axes = Axes(self)
+            self.scene.add(self.axes.world_object)
 
         self._frame = Frame(
             viewport=self.viewport,

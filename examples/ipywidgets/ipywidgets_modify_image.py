@@ -1,5 +1,5 @@
 """
-ipwidgets modify an ImageGraphic
+ipywidgets modify an ImageGraphic
 ================================
 
 Use ipywidgets to modify some features of an ImageGraphic. Run in jupyterlab.
