@@ -47,6 +47,11 @@ class Figure:
             | Iterable[Iterable[str]]
         ) = None,
         controllers: pygfx.Controller | Iterable[Iterable[pygfx.Controller]] = None,
+        scene_ids: (
+            Iterable[int]
+            | Iterable[Iterable[int]]
+            | Iterable[Iterable[str]]
+        ) = None,
         canvas: str | BaseRenderCanvas | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
         canvas_kwargs: dict = None,
@@ -102,6 +107,10 @@ class Figure:
             | Example with str subplot names:
             | list of lists of subplot names, each sublist is synced: [[subplot_a, subplot_b, subplot_e], [subplot_c, subplot_d]]
             | this syncs subplot_a, subplot_b and subplot_e together; syncs subplot_c and subplot_d together
+
+        scene_ids: str, list of int, np.ndarray of int, or list with sublists of subplot str names, optional
+            | If `None` a unique scene is created for each subplot
+            | If "sync" all the subplots use the same scene
 
         controllers: pygfx.Controller | list[pygfx.Controller] | np.ndarray[pygfx.Controller], optional
             Directly provide pygfx.Controller instances(s). Useful if you want to use a ``Controller`` from an existing
@@ -392,6 +401,86 @@ class Figure:
                     for cam in cams[1:]:
                         _controller.add_camera(cam)
 
+        # lot's of code borrowed from controller_ids above...
+        # parse scene_ids to make the required scenes and match them to subplots
+        if scene_ids is None:
+            subplot_scenes = np.array([None] * n_subplots)
+            # if None, we can just let the scene creation be hadnled in the Subplot/Plot Area further down.
+        else:
+            if isinstance(scene_ids, str):
+                if scene_ids == "sync":
+                    # this will end up creating one scene to be used by every subplot
+                    scene_ids = np.zeros(n_subplots, dtype=int)
+                else:
+                    raise ValueError(
+                        f"`scene_ids` must be one of 'sync', an array/list of subplot names, or an array/list of "
+                        f"integer ids. You have passed: {scene_ids}.\n"
+                        f"See the docstring for more details."
+                    )
+        
+            # list scene_ids
+            elif isinstance(scene_ids, (list, np.ndarray)):
+                ids_flat = list(chain(*scene_ids))
+
+                # list of str of subplot names, convert this to integer ids
+                if all([isinstance(item, str) for item in ids_flat]):
+                    if subplot_names is None:
+                        raise ValueError(
+                            "must specify subplot `names` to use list of str for `scene_ids`"
+                        )
+
+                    # make sure each controller_id str is a subplot name
+                    if not all([n in subplot_names for n in ids_flat]):
+                        raise KeyError(
+                            f"all `scene_ids` strings must be one of the subplot names. You have passed "
+                            f"the following `scene_ids`:\n{scene_ids}\n\n"
+                            f"and the following subplot names:\n{subplot_names}"
+                        )
+
+                    if len(ids_flat) > len(set(ids_flat)):
+                        raise ValueError(
+                            f"id strings must not appear twice in `scene_ids`: \n{scene_ids}"
+                        )
+
+                    # initialize scene_ids array
+                    ids_init = np.arange(n_subplots)
+
+                    # set id based on subplot position for each synced sublist
+                    for row_ix, sublist in enumerate(scene_ids):
+                        for name in sublist:
+                            ids_init[subplot_names == name] = -(
+                                row_ix + 1
+                            )  # use negative numbers to avoid collision with positive numbers from np.arange
+
+                    scene_ids = ids_init
+
+                # integer ids
+                elif all([isinstance(item, (int, np.integer)) for item in ids_flat]):
+                    scene_ids = np.asarray(scene_ids).flatten()
+                    if scene_ids.max() < 0:
+                        raise ValueError(
+                            f"if passing an integer array of `scene_ids`, "
+                            f"all the integers must be positive:{scene_ids}"
+                        )
+
+                else:
+                    raise TypeError(
+                        f"list argument to `scene_ids` must be a list of `str` or `int`, "
+                        f"you have passed: {scene_ids}"
+                    )
+
+            if scene_ids.size != n_subplots:
+                raise ValueError(
+                    f"Number of scene_ids: {scene_ids.size} "
+                    f"does not match the number of subplots: {n_subplots}"
+                )
+
+            # make the real scenes for each subplot
+            subplot_scenes = np.empty(shape=n_subplots, dtype=object)
+            for sid in np.unique(scene_ids):
+                _scene = pygfx.Scene()
+                subplot_scenes[scene_ids == sid] = _scene
+
         self._canvas = canvas
         self._renderer = renderer
 
@@ -410,6 +499,7 @@ class Figure:
         for i in range(n_subplots):
             camera = subplot_cameras[i]
             controller = subplot_controllers[i]
+            scene = subplot_scenes[i]
 
             if subplot_names is not None:
                 name = subplot_names[i]
@@ -421,6 +511,7 @@ class Figure:
                 camera=camera,
                 controller=controller,
                 canvas=canvas,
+                scene=scene,
                 renderer=renderer,
                 name=name,
                 rect=rects[i],
