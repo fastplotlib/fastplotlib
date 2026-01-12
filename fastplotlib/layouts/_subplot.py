@@ -87,9 +87,10 @@ class Subplot(PlotArea):
             self.docks[pos] = dv
             self.children.append(dv)
 
-        if scene is None:
+        if not any([isinstance(c, Axes) for c in self.scene.children]):
             # Create axes only if no scene is provided
-            # TODO: this logic doesn't work with creating multiple subplots for the same scene ...
+            # this doesn't find axes deeper in the scene graph... but just assume they are top level for now.
+            # TODO: rethink how axes are handled in the scene per subplot...
             self._axes = Axes(self)
             self.scene.add(self.axes.world_object)
 
