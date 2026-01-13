@@ -174,12 +174,12 @@ class ImageGraphic(Graphic):
         )
 
         # create the _ImageTile world objects, add to group
-        for tile in self._create_image_tiles():
+        for tile in self._create_tiles():
             group.add(tile)
 
         self._set_world_object(group)
 
-    def _create_image_tiles(self) -> list[_ImageTile]:
+    def _create_tiles(self) -> list[_ImageTile]:
         tiles = list()
         # iterate through each texture chunk and create
         # an _ImageTile, offset the tile using the data indices
@@ -235,8 +235,10 @@ class ImageGraphic(Graphic):
             self.world_object.clear()
 
             # create new tiles
-            for tile in self._create_image_tiles():
+            for tile in self._create_tiles():
                 self.world_object.add(tile)
+
+            return
 
         self._data[:] = data
 

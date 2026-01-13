@@ -182,7 +182,7 @@ class ImageVolumeGraphic(Graphic):
 
         super().__init__(**kwargs)
 
-        world_object = pygfx.Group()
+        group = pygfx.Group()
 
         if isinstance(data, TextureArrayVolume):
             # share existing buffer
@@ -231,6 +231,15 @@ class ImageVolumeGraphic(Graphic):
 
         self._mode = VolumeRenderMode(mode)
 
+        # create tiles
+        for tile in self._create_tiles():
+            group.add(tile)
+
+        self._set_world_object(group)
+
+    def _create_tiles(self) -> list[_VolumeTile]:
+        tiles = list()
+
         # iterate through each texture chunk and create
         # a _VolumeTile, offset the tile using the data indices
         for texture, chunk_index, data_slice in self._data:
@@ -253,9 +262,9 @@ class ImageVolumeGraphic(Graphic):
             vol.world.x = data_col_start
             vol.world.y = data_row_start
 
-            world_object.add(vol)
+            tiles.append(vol)
 
-        self._set_world_object(world_object)
+        return tiles
 
     @property
     def data(self) -> TextureArrayVolume:
@@ -264,6 +273,20 @@ class ImageVolumeGraphic(Graphic):
 
     @data.setter
     def data(self, data):
+        # check if a new buffer is required
+        if self._data.value.shape != data.shape:
+            # create new TextureArray
+            self._data = TextureArrayVolume(data)
+
+            # clear image tiles
+            self.world_object.clear()
+
+            # create new tiles
+            for tile in self._create_tiles():
+                self.world_object.add(tile)
+
+            return
+
         self._data[:] = data
 
     @property
