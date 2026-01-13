@@ -227,7 +227,11 @@ class ImageGraphic(Graphic):
                 if self.cmap is None:  # have switched from RGBA -> grayscale image
                     # create default cmap
                     self._cmap = ImageCmap("plasma")
-                    self._material.map = pygfx.TextureMap(self._cmap.texture, filter=self._cmap_interpolation.value, wrap="clamp-to-edge")
+                    self._material.map = pygfx.TextureMap(
+                        self._cmap.texture,
+                        filter=self._cmap_interpolation.value,
+                        wrap="clamp-to-edge",
+                    )
 
             self._material.clim = quick_min_max(self.data.value)
 

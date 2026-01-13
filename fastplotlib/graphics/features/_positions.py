@@ -56,11 +56,13 @@ class VertexColors(BufferManager):
         """
         data = parse_colors(colors, n_colors)
 
-        super().__init__(
-            data=data, property_name=property_name
-        )
+        super().__init__(data=data, property_name=property_name)
 
-    def set_value(self, graphic, value: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str]):
+    def set_value(
+        self,
+        graphic,
+        value: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
+    ):
         """set the entire array, create new buffer if necessary"""
         if isinstance(value, (np.ndarray, list, tuple)):
             # check if the number of elements matches current buffer size
@@ -255,18 +257,14 @@ class VertexPositions(BufferManager):
         },
     ]
 
-    def __init__(
-        self, data: Any, property_name: str = "data"
-    ):
+    def __init__(self, data: Any, property_name: str = "data"):
         """
         Manages the vertex positions buffer shown in the graphic.
         Supports fancy indexing if the data array also supports it.
         """
 
         data = self._fix_data(data)
-        super().__init__(
-            data, property_name=property_name
-        )
+        super().__init__(data, property_name=property_name)
 
     def _fix_data(self, data):
         if data.ndim == 1:

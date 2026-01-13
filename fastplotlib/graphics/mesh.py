@@ -86,16 +86,12 @@ class MeshGraphic(Graphic):
         if isinstance(positions, VertexPositions):
             self._positions = positions
         else:
-            self._positions = VertexPositions(
-                positions, property_name="positions"
-            )
+            self._positions = VertexPositions(positions, property_name="positions")
 
         if isinstance(positions, MeshIndices):
             self._indices = indices
         else:
-            self._indices = MeshIndices(
-                indices, property_name="indices"
-            )
+            self._indices = MeshIndices(indices, property_name="indices")
 
         self._cmap = MeshCmap(cmap)
 

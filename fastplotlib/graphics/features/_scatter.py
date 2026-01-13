@@ -114,9 +114,7 @@ def parse_markers_init(markers: str | Sequence[str] | np.ndarray, n_datapoints: 
 
     marker_str_length = max(map(len, list(pygfx.MarkerShape)))
 
-    markers_readable_array = np.empty(
-        n_datapoints, dtype=f"<U{marker_str_length}"
-    )
+    markers_readable_array = np.empty(n_datapoints, dtype=f"<U{marker_str_length}")
 
     if isinstance(markers, str):
         # all markers in the array are identical, so set the entire array
@@ -126,13 +124,9 @@ def parse_markers_init(markers: str | Sequence[str] | np.ndarray, n_datapoints: 
     elif isinstance(markers, (np.ndarray, tuple, list)):
         # distinct marker for each point
         # first vectorized map from user marker strings to "standard" marker strings
-        markers_readable_array = vectorized_user_markers_to_std_markers(
-            markers
-        )
+        markers_readable_array = vectorized_user_markers_to_std_markers(markers)
         # map standard marker strings to integer array
-        markers_int_array[:] = searchsorted_markers_to_int_array(
-            markers_readable_array
-        )
+        markers_int_array[:] = searchsorted_markers_to_int_array(markers_readable_array)
 
     return markers_int_array, markers_readable_array
 
@@ -161,11 +155,11 @@ class VertexMarkers(BufferManager):
         Manages the markers buffer for the scatter points. Supports fancy indexing.
         """
 
-        markers_int_array, self._markers_readable_array = parse_markers_init(markers, n_datapoints)
-
-        super().__init__(
-            markers_int_array, property_name=property_name
+        markers_int_array, self._markers_readable_array = parse_markers_init(
+            markers, n_datapoints
         )
+
+        super().__init__(markers_int_array, property_name=property_name)
 
     @property
     def value(self) -> np.ndarray[str]:
@@ -211,7 +205,9 @@ class VertexMarkers(BufferManager):
         if isinstance(value, (np.ndarray, list, tuple)):
             if self.buffer.data.shape[0] != len(value):
                 # need to create a new buffer
-                markers_int_array, self._markers_readable_array = parse_markers_init(value, len(value))
+                markers_int_array, self._markers_readable_array = parse_markers_init(
+                    value, len(value)
+                )
                 self._buffer = pygfx.Buffer(markers_int_array)
                 graphic.geometry.markers = self.buffer
 
@@ -441,9 +437,7 @@ class VertexRotations(BufferManager):
         Manages rotations buffer of scatter points.
         """
         sizes = self._fix_rotations(rotations, n_datapoints)
-        super().__init__(
-            data=sizes, property_name=property_name
-        )
+        super().__init__(data=sizes, property_name=property_name)
 
     def _fix_rotations(
         self,
@@ -528,9 +522,7 @@ class VertexPointSizes(BufferManager):
         Manages sizes buffer of scatter points.
         """
         sizes = self._fix_sizes(sizes, n_datapoints)
-        super().__init__(
-            data=sizes, property_name=property_name
-        )
+        super().__init__(data=sizes, property_name=property_name)
 
     def _fix_sizes(
         self,
