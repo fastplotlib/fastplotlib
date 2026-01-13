@@ -125,7 +125,7 @@ class Figure:
             subplot names
 
         show_tooltips: bool, default False
-            show tooltips on graphics
+            show tooltips on graphics. Note the ``imgui`` extra is required.
 
         """
 
@@ -540,7 +540,7 @@ class Figure:
 
     @property
     def show_tooltips(self) -> bool:
-        """show/hide tooltips for all graphics"""
+        """show/hide tooltips for all graphics, ``imgui`` extra required."""
         return self._show_tooltips
 
     @property
