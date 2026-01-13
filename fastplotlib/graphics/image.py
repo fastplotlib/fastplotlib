@@ -1,6 +1,7 @@
 import math
 from typing import *
 
+import numpy as np
 import pygfx
 
 from ..utils import quick_min_max
@@ -212,37 +213,38 @@ class ImageGraphic(Graphic):
 
     @data.setter
     def data(self, data):
-        # check if a new buffer is required
-        if self._data.value.shape != data.shape:
-            # create new TextureArray
-            self._data = TextureArray(data)
+        if isinstance(data, np.ndarray):
+            # check if a new buffer is required
+            if self._data.value.shape != data.shape:
+                # create new TextureArray
+                self._data = TextureArray(data)
 
-            # cmap based on if rgb or grayscale
-            if self._data.value.ndim > 2:
-                self._cmap = None
+                # cmap based on if rgb or grayscale
+                if self._data.value.ndim > 2:
+                    self._cmap = None
 
-                # must be None if RGB(A)
-                self._material.map = None
-            else:
-                if self.cmap is None:  # have switched from RGBA -> grayscale image
-                    # create default cmap
-                    self._cmap = ImageCmap("plasma")
-                    self._material.map = pygfx.TextureMap(
-                        self._cmap.texture,
-                        filter=self._cmap_interpolation.value,
-                        wrap="clamp-to-edge",
-                    )
+                    # must be None if RGB(A)
+                    self._material.map = None
+                else:
+                    if self.cmap is None:  # have switched from RGBA -> grayscale image
+                        # create default cmap
+                        self._cmap = ImageCmap("plasma")
+                        self._material.map = pygfx.TextureMap(
+                            self._cmap.texture,
+                            filter=self._cmap_interpolation.value,
+                            wrap="clamp-to-edge",
+                        )
 
-            self._material.clim = quick_min_max(self.data.value)
+                self._material.clim = quick_min_max(self.data.value)
 
-            # clear image tiles
-            self.world_object.clear()
+                # clear image tiles
+                self.world_object.clear()
 
-            # create new tiles
-            for tile in self._create_tiles():
-                self.world_object.add(tile)
+                # create new tiles
+                for tile in self._create_tiles():
+                    self.world_object.add(tile)
 
-            return
+                return
 
         self._data[:] = data
 

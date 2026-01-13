@@ -273,19 +273,20 @@ class ImageVolumeGraphic(Graphic):
 
     @data.setter
     def data(self, data):
-        # check if a new buffer is required
-        if self._data.value.shape != data.shape:
-            # create new TextureArray
-            self._data = TextureArrayVolume(data)
+        if isinstance(data, np.ndarray):
+            # check if a new buffer is required
+            if self._data.value.shape != data.shape:
+                # create new TextureArray
+                self._data = TextureArrayVolume(data)
 
-            # clear image tiles
-            self.world_object.clear()
+                # clear image tiles
+                self.world_object.clear()
 
-            # create new tiles
-            for tile in self._create_tiles():
-                self.world_object.add(tile)
+                # create new tiles
+                for tile in self._create_tiles():
+                    self.world_object.add(tile)
 
-            return
+                return
 
         self._data[:] = data
 
