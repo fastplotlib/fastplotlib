@@ -69,11 +69,21 @@ class VertexColors(BufferManager):
                 new_colors = parse_colors(value, len(value))
                 self._buffer = pygfx.Buffer(new_colors)
                 graphic.world_object.geometry.colors = self.buffer
-            else:
-                # buffer size unchanged
-                self[:] = value
-        else:
-            self[:] = value
+
+                if len(self._event_handlers) < 1:
+                    return
+
+                event_info = {
+                    "key": slice(None),
+                    "value": new_colors,
+                    "user_value": value,
+                }
+
+                event = GraphicFeatureEvent(self._property_name, info=event_info)
+                self._call_event_handlers(event)
+                return
+
+        self[:] = value
 
     @block_reentrance
     def __setitem__(
@@ -299,11 +309,10 @@ class VertexPositions(BufferManager):
                 # create the new buffer
                 self._buffer = pygfx.Buffer(bdata)
                 graphic.world_object.geometry.positions = self.buffer
-            else:
-                # buffer size unchanged
-                self[:] = value
-        else:
-            self[:] = value
+                self._emit_event(self._property_name, key=slice(None), value=value)
+                return
+
+        self[:] = value
 
     @block_reentrance
     def __setitem__(
