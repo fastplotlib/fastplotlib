@@ -67,8 +67,13 @@ class VertexColors(BufferManager):
         if isinstance(value, (np.ndarray, list, tuple)):
             # check if the number of elements matches current buffer size
             if self.buffer.data.shape[0] != len(value):
-                # create new buffer
+                # parse the new colors
                 new_colors = parse_colors(value, len(value))
+
+                # destroy old buffer
+                self._buffer._wgpu_object.destroy()
+
+                # create new buffer
                 self._buffer = pygfx.Buffer(new_colors)
                 graphic.world_object.geometry.colors = self.buffer
 
@@ -303,6 +308,9 @@ class VertexPositions(BufferManager):
                     # need to allocate a buffer to use here
                     bdata = np.empty(value.shape, dtype=np.float32)
                     bdata[:] = value[:]
+
+                # destroy old buffer
+                self._buffer._wgpu_object.destroy()
 
                 # create the new buffer
                 self._buffer = pygfx.Buffer(bdata)
