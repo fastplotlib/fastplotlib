@@ -39,7 +39,6 @@ class VertexColors(BufferManager):
         self,
         colors: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
         n_colors: int,
-        isolated_buffer: bool = True,
         property_name: str = "colors",
     ):
         """
@@ -58,7 +57,7 @@ class VertexColors(BufferManager):
         data = parse_colors(colors, n_colors)
 
         super().__init__(
-            data=data, isolated_buffer=isolated_buffer, property_name=property_name
+            data=data, property_name=property_name
         )
 
     @block_reentrance
@@ -232,7 +231,7 @@ class VertexPositions(BufferManager):
     ]
 
     def __init__(
-        self, data: Any, isolated_buffer: bool = True, property_name: str = "data"
+        self, data: Any, property_name: str = "data"
     ):
         """
         Manages the vertex positions buffer shown in the graphic.
@@ -241,7 +240,7 @@ class VertexPositions(BufferManager):
 
         data = self._fix_data(data)
         super().__init__(
-            data, isolated_buffer=isolated_buffer, property_name=property_name
+            data, property_name=property_name
         )
 
     def _fix_data(self, data):
@@ -260,6 +259,18 @@ class VertexPositions(BufferManager):
             data = np.column_stack([data[:, 0], data[:, 1], zs])
 
         return to_gpu_supported_dtype(data)
+
+    def set_value(self, graphic, value):
+        """Sets the entire array, creates new buffer if necessary"""
+        if isinstance(value, np.ndarray):
+            if self.buffer.data.shape[0] != value.shape[0]:
+                # number of items doesn't match, create a new buffer
+                bdata = np.zeros(value.shape, dtype=np.float32)
+                bdata[:] = value[:]
+                self._buffer = pygfx.Buffer(bdata)
+                graphic.world_object.geometry.position = self.buffer
+        else:
+            self[:] = value
 
     @block_reentrance
     def __setitem__(

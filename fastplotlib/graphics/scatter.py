@@ -56,7 +56,6 @@ class ScatterGraphic(PositionsGraphic):
         sizes: float | np.ndarray | Sequence[float] = 1,
         uniform_size: bool = False,
         size_space: str = "screen",
-        isolated_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -154,10 +153,6 @@ class ScatterGraphic(PositionsGraphic):
         size_space: str, default "screen"
             coordinate space in which the size is expressed, one of ("screen", "world", "model")
 
-        isolated_buffer: bool, default True
-            whether the buffers should be isolated from the user input array.
-            Generally always ``True``, ``False`` is for rare advanced use if you have large arrays.
-
         kwargs
             passed to :class:`.Graphic`
 
@@ -169,7 +164,6 @@ class ScatterGraphic(PositionsGraphic):
             uniform_color=uniform_color,
             cmap=cmap,
             cmap_transform=cmap_transform,
-            isolated_buffer=isolated_buffer,
             size_space=size_space,
             **kwargs,
         )

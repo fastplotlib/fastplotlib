@@ -52,7 +52,7 @@ class MeshIndices(VertexPositions):
     ]
 
     def __init__(
-        self, data: Any, isolated_buffer: bool = True, property_name: str = "indices"
+        self, data: Any, property_name: str = "indices"
     ):
         """
         Manages the vertex indices buffer shown in the graphic.
@@ -61,7 +61,7 @@ class MeshIndices(VertexPositions):
 
         data = self._fix_data(data)
         super().__init__(
-            data, isolated_buffer=isolated_buffer, property_name=property_name
+            data, property_name=property_name
         )
 
     def _fix_data(self, data):

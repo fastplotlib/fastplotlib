@@ -135,7 +135,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Sequence[Any] | np.ndarray = None,
-        isolated_buffer: bool = True,
         kwargs_lines: list[dict] = None,
         **kwargs,
     ):
@@ -324,7 +323,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                 cmap=_cmap,
                 name=_name,
                 metadata=_m,
-                isolated_buffer=isolated_buffer,
                 **kwargs_lines,
             )
 
@@ -560,7 +558,6 @@ class LineStack(LineCollection):
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Sequence[Any] | np.ndarray = None,
-        isolated_buffer: bool = True,
         separation: float = 10.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
@@ -634,7 +631,6 @@ class LineStack(LineCollection):
             names=names,
             metadata=metadata,
             metadatas=metadatas,
-            isolated_buffer=isolated_buffer,
             kwargs_lines=kwargs_lines,
             **kwargs,
         )

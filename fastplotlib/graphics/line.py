@@ -39,7 +39,6 @@ class LineGraphic(PositionsGraphic):
         uniform_color: bool = False,
         cmap: str = None,
         cmap_transform: np.ndarray | Sequence = None,
-        isolated_buffer: bool = True,
         size_space: str = "screen",
         **kwargs,
     ):
@@ -87,7 +86,6 @@ class LineGraphic(PositionsGraphic):
             uniform_color=uniform_color,
             cmap=cmap,
             cmap_transform=cmap_transform,
-            isolated_buffer=isolated_buffer,
             size_space=size_space,
             **kwargs,
         )

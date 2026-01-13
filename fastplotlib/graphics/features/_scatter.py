@@ -158,7 +158,7 @@ class VertexMarkers(BufferManager):
             )
 
         super().__init__(
-            markers_int_array, isolated_buffer=False, property_name=property_name
+            markers_int_array, property_name=property_name
         )
 
     @property
@@ -414,7 +414,6 @@ class VertexRotations(BufferManager):
         self,
         rotations: int | float | np.ndarray | Sequence[int | float],
         n_datapoints: int,
-        isolated_buffer: bool = True,
         property_name: str = "point_rotations",
     ):
         """
@@ -422,7 +421,7 @@ class VertexRotations(BufferManager):
         """
         sizes = self._fix_sizes(rotations, n_datapoints)
         super().__init__(
-            data=sizes, isolated_buffer=isolated_buffer, property_name=property_name
+            data=sizes, property_name=property_name
         )
 
     def _fix_sizes(
@@ -488,7 +487,6 @@ class VertexPointSizes(BufferManager):
         self,
         sizes: int | float | np.ndarray | Sequence[int | float],
         n_datapoints: int,
-        isolated_buffer: bool = True,
         property_name: str = "sizes",
     ):
         """
@@ -496,7 +494,7 @@ class VertexPointSizes(BufferManager):
         """
         sizes = self._fix_sizes(sizes, n_datapoints)
         super().__init__(
-            data=sizes, isolated_buffer=isolated_buffer, property_name=property_name
+            data=sizes, property_name=property_name
         )
 
     def _fix_sizes(

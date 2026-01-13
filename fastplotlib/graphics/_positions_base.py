@@ -78,7 +78,6 @@ class PositionsGraphic(Graphic):
         uniform_color: bool = False,
         cmap: str | VertexCmap = None,
         cmap_transform: np.ndarray = None,
-        isolated_buffer: bool = True,
         size_space: str = "screen",
         *args,
         **kwargs,
@@ -86,7 +85,7 @@ class PositionsGraphic(Graphic):
         if isinstance(data, VertexPositions):
             self._data = data
         else:
-            self._data = VertexPositions(data, isolated_buffer=isolated_buffer)
+            self._data = VertexPositions(data)
 
         if cmap_transform is not None and cmap is None:
             raise ValueError("must pass `cmap` if passing `cmap_transform`")
