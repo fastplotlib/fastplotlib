@@ -23,7 +23,7 @@ class PositionsGraphic(Graphic):
 
     @data.setter
     def data(self, value):
-        self._data[:] = value
+        self._data.set_value(self, value)
 
     @property
     def colors(self) -> VertexColors | pygfx.Color:
@@ -36,11 +36,7 @@ class PositionsGraphic(Graphic):
 
     @colors.setter
     def colors(self, value: str | np.ndarray | Sequence[float] | Sequence[str]):
-        if isinstance(self._colors, VertexColors):
-            self._colors[:] = value
-
-        elif isinstance(self._colors, UniformColor):
-            self._colors.set_value(self, value)
+        self._colors.set_value(self, value)
 
     @property
     def cmap(self) -> VertexCmap:

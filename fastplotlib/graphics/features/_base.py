@@ -1,5 +1,5 @@
 from warnings import warn
-from typing import Literal
+from typing import Callable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -78,7 +78,7 @@ class GraphicFeature:
         """
         self._block_events = val
 
-    def add_event_handler(self, handler: callable):
+    def add_event_handler(self, handler: Callable):
         """
         Add an event handler. All added event handlers are called when this feature changes.
 
@@ -89,7 +89,7 @@ class GraphicFeature:
 
         Parameters
         ----------
-        handler: callable
+        handler: Callable
             a function to call when this feature changes
 
         """
@@ -102,7 +102,7 @@ class GraphicFeature:
 
         self._event_handlers.append(handler)
 
-    def remove_event_handler(self, handler: callable):
+    def remove_event_handler(self, handler: Callable):
         """
         Remove a registered event ``handler``.
 
@@ -148,12 +148,12 @@ class BufferManager(GraphicFeature):
             self._buffer = data
         else:
             # create a buffer
-            bdata = np.zeros(data.shape, dtype=data.dtype)
+            bdata = np.empty(data.shape, dtype=data.dtype)
             bdata[:] = data[:]
 
             self._buffer = pygfx.Buffer(bdata)
 
-        self._event_handlers: list[callable] = list()
+        self._event_handlers: list[Callable] = list()
 
     @property
     def value(self) -> np.ndarray:
@@ -165,7 +165,7 @@ class BufferManager(GraphicFeature):
         self[:] = value
 
     @property
-    def buffer(self) -> pygfx.Buffer | pygfx.Texture:
+    def buffer(self) -> pygfx.Buffer:
         """managed buffer"""
         return self._buffer
 

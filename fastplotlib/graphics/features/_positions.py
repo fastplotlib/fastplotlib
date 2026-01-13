@@ -60,6 +60,21 @@ class VertexColors(BufferManager):
             data=data, property_name=property_name
         )
 
+    def set_value(self, graphic, value: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str]):
+        """set the entire array, create new buffer if necessary"""
+        if isinstance(value, (np.ndarray, list, tuple)):
+            # check if the number of elements matches current buffer size
+            if self.buffer.data.shape[0] != len(value):
+                # create new buffer
+                new_colors = parse_colors(value, len(value))
+                self._buffer = pygfx.Buffer(new_colors)
+                graphic.world_object.geometry.colors = self.buffer
+            else:
+                # buffer size unchanged
+                self[:] = value
+        else:
+            self[:] = value
+
     @block_reentrance
     def __setitem__(
         self,
@@ -265,10 +280,28 @@ class VertexPositions(BufferManager):
         if isinstance(value, np.ndarray):
             if self.buffer.data.shape[0] != value.shape[0]:
                 # number of items doesn't match, create a new buffer
-                bdata = np.zeros(value.shape, dtype=np.float32)
-                bdata[:] = value[:]
+
+                # if data is not 3D
+                if value.ndim == 1:
+                    # this is already a newly allocated buffer
+                    # _fix_data creates a new array so we don't need to re-allocate with np.zeros
+                    bdata = self._fix_data(value)
+
+                elif value.shape[1] == 2:
+                    # this is already a newly allocated buffer
+                    bdata = self._fix_data(value)
+
+                elif value.shape[1] == 3:
+                    # need to allocate a buffer to use here
+                    bdata = np.empty(value.shape, dtype=np.float32)
+                    bdata[:] = value[:]
+
+                # create the new buffer
                 self._buffer = pygfx.Buffer(bdata)
-                graphic.world_object.geometry.position = self.buffer
+                graphic.world_object.geometry.positions = self.buffer
+            else:
+                # buffer size unchanged
+                self[:] = value
         else:
             self[:] = value
 
