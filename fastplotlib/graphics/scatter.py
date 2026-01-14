@@ -40,12 +40,12 @@ class ScatterGraphic(PositionsGraphic):
         self,
         data: Any,
         colors: str | np.ndarray | Sequence[float] | Sequence[str] = "w",
-        uniform_color: bool = False,
+        uniform_color: bool = True,
         cmap: str = None,
         cmap_transform: np.ndarray = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
-        uniform_marker: bool = False,
+        uniform_marker: bool = True,
         custom_sdf: str = None,
         edge_colors: str | np.ndarray | pygfx.Color | Sequence[float] = "black",
         uniform_edge_color: bool = True,
@@ -71,14 +71,15 @@ class ScatterGraphic(PositionsGraphic):
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        uniform_color: bool, default False
-            if True, uses a uniform buffer for the scatter point colors. Useful if you need to
-            save GPU VRAM when all points have the same color.
+        uniform_color: bool, default ``True``
+            if ``True``, uses a uniform buffer for the scatter point colors. Useful if you need to
+            save GPU VRAM when all points have the same color. If ``False``, you can set per-vertex colors.
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
-            overrides any argument passed to "colors".  For supported colormaps see the
-            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            overrides any argument passed to "colors".
+            For supported colormaps see the ``cmap`` library catalogue:
+            https://cmap-docs.readthedocs.io/en/stable/catalog/
 
         cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
@@ -102,9 +103,10 @@ class ScatterGraphic(PositionsGraphic):
             * Emojis: "❤️♠️♣️♦️💎💍✳️📍".
             * A string containing the value "custom". In this case, WGSL code defined by ``custom_sdf`` will be used.
 
-        uniform_marker: bool, default False
-            Use the same marker for all points. Only valid when `mode` is "markers". Useful if you need to use
-            the same marker for all points and want to save GPU RAM.
+        uniform_marker: bool, default ``True``
+            If ``True``, use the same marker for all points. Only valid when `mode` is "markers".
+            Useful if you need to use the same marker for all points and want to save GPU RAM. If ``False``, you can
+            set per-vertex markers.
 
         custom_sdf: str = None,
             The SDF code for the marker shape when the marker is set to custom.
@@ -124,8 +126,9 @@ class ScatterGraphic(PositionsGraphic):
         edge_colors: str | np.ndarray | pygfx.Color | Sequence[float], default "black"
             edge color of the markers, used when `mode` is "markers"
 
-        uniform_edge_color: bool, default True
-            Set the same edge color for all markers. Useful for saving GPU RAM.
+        uniform_edge_color: bool, default ``True``
+            Set the same edge color for all markers. Useful for saving GPU RAM. Set to ``False`` for per-vertex edge
+            colors
 
         edge_width: float = 1.0,
             Width of the marker edges. used when `mode` is "markers".
@@ -146,9 +149,9 @@ class ScatterGraphic(PositionsGraphic):
         sizes: float or iterable of float, optional, default 1.0
             sizes of the scatter points
 
-        uniform_size: bool, default False
-            if True, uses a uniform buffer for the scatter point sizes. Useful if you need to
-            save GPU VRAM when all points have the same size.
+        uniform_size: bool, default ``False``
+            if ``True``, uses a uniform buffer for the scatter point sizes. Useful if you need to
+            save GPU VRAM when all points have the same size. Set to ``False`` if you need per-vertex sizes.
 
         size_space: str, default "screen"
             coordinate space in which the size is expressed, one of ("screen", "world", "model")

@@ -36,7 +36,7 @@ class LineGraphic(PositionsGraphic):
         data: Any,
         thickness: float = 2.0,
         colors: str | np.ndarray | Sequence = "w",
-        uniform_color: bool = False,
+        uniform_color: bool = True,
         cmap: str = None,
         cmap_transform: np.ndarray | Sequence = None,
         size_space: str = "screen",
@@ -60,9 +60,10 @@ class LineGraphic(PositionsGraphic):
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        uniform_color: bool, default ``False``
-            if True, uses a uniform buffer for the line color,
-            basically saves GPU VRAM when the entire line has a single color
+        uniform_color: bool, default ``True``
+            if ``True``, uses a uniform buffer for the line color,
+            basically saves GPU VRAM when the entire line has a single color.
+            If ``False``, you can set per-vertex colors.
 
         cmap: str, optional
             Apply a colormap to the line instead of assigning colors manually, this

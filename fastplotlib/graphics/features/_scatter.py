@@ -210,7 +210,8 @@ class VertexMarkers(BufferManager):
                 )
 
                 # destroy old buffer
-                self._buffer._wgpu_object.destroy()
+                if self._buffer._wgpu_object is not None:
+                    self._buffer._wgpu_object.destroy()
 
                 # set new buffer
                 self._buffer = pygfx.Buffer(markers_int_array)
@@ -482,7 +483,8 @@ class VertexRotations(BufferManager):
                 data = np.empty(shape=(len(value),), dtype=np.float32)
 
                 # destroy old buffer
-                self._buffer._wgpu_object.destroy()
+                if self._buffer._wgpu_object is not None:
+                    self._buffer._wgpu_object.destroy()
 
                 # set new buffer
                 self._buffer = pygfx.Buffer(data)
@@ -577,7 +579,8 @@ class VertexPointSizes(BufferManager):
                 data = np.empty(shape=(len(value),), dtype=np.float32)
 
                 # destroy old buffer
-                self._buffer._wgpu_object.destroy()
+                if self._buffer._wgpu_object is not None:
+                    self._buffer._wgpu_object.destroy()
 
                 # set new buffer
                 self._buffer = pygfx.Buffer(data)

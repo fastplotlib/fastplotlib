@@ -71,7 +71,7 @@ class PositionsGraphic(Graphic):
         self,
         data: Any,
         colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
-        uniform_color: bool = False,
+        uniform_color: bool = True,
         cmap: str | VertexCmap = None,
         cmap_transform: np.ndarray = None,
         size_space: str = "screen",
@@ -89,7 +89,7 @@ class PositionsGraphic(Graphic):
         if cmap is not None:
             # if a cmap is specified it overrides colors argument
             if uniform_color:
-                raise TypeError("Cannot use cmap if uniform_color=True")
+                raise TypeError("Cannot use `cmap` if `uniform_color=True`, pass `uniform_color=False` to use `cmap`.")
 
             if isinstance(cmap, str):
                 # make colors from cmap
@@ -127,7 +127,7 @@ class PositionsGraphic(Graphic):
                     if not isinstance(colors, str):  # not a single color
                         if not len(colors) in [3, 4]:  # not an RGB(A) array
                             raise TypeError(
-                                "must pass a single color if using `uniform_colors=True`"
+                                "Must pass `uniform_colors=False` if using multiple colors"
                             )
                     self._colors = UniformColor(colors)
                     self._cmap = None

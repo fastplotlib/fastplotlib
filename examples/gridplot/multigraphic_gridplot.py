@@ -106,7 +106,7 @@ gaussian_cloud = np.random.multivariate_normal(mean, covariance, n_points)
 gaussian_cloud2 = np.random.multivariate_normal(mean, covariance, n_points)
 
 # add the scatter graphics to the figure
-figure["scatter"].add_scatter(data=gaussian_cloud, sizes=2, cmap="jet")
+figure["scatter"].add_scatter(data=gaussian_cloud, sizes=2, cmap="jet", uniform_color=False)
 figure["scatter"].add_scatter(data=gaussian_cloud2, colors="r", sizes=2)
 
 figure.show()

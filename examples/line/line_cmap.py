@@ -27,7 +27,8 @@ sine = figure[0, 0].add_line(
     data=sine_data,
     thickness=10,
     cmap="plasma",
-    cmap_transform=sine_data[:, 1]
+    cmap_transform=sine_data[:, 1],
+    uniform_color=False,
 )
 
 # qualitative colormaps, useful for cluster labels or other types of categorical labels
@@ -36,7 +37,8 @@ cosine = figure[0, 0].add_line(
     data=cosine_data,
     thickness=10,
     cmap="tab10",
-    cmap_transform=labels
+    cmap_transform=labels,
+    uniform_color=False,
 )
 
 figure.show()

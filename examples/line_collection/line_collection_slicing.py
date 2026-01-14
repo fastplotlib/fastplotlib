@@ -26,6 +26,7 @@ lines = figure[0, 0].add_line_stack(
     multi_data,
     thickness=[2, 10, 2, 5, 5, 5, 8, 8, 8, 9, 3, 3, 3, 4, 4],
     separation=4,
+    uniform_color=False,
     metadatas=list(range(15)),  # some metadata
     names=list("abcdefghijklmno"),  # unique name for each line
 )

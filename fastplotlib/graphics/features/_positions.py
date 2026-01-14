@@ -65,13 +65,27 @@ class VertexColors(BufferManager):
     ):
         """set the entire array, create new buffer if necessary"""
         if isinstance(value, (np.ndarray, list, tuple)):
+            # TODO: Refactor this triage so it's more elegant
+
+            # first make sure it's not representing one color
+            skip = False
+            if isinstance(value, np.ndarray):
+                if (value.shape in ((3,), (4,))) and (np.issubdtype(value.dtype, np.floating) or np.issubdtype(value.dtype, np.integer)):
+                    # represents one color
+                    skip = True
+            elif isinstance(value, (list, tuple)):
+                if len(value) in (3, 4) and all([isinstance(v, (float, int)) for v in value]):
+                    # represents one color
+                    skip = True
+
             # check if the number of elements matches current buffer size
-            if self.buffer.data.shape[0] != len(value):
+            if not skip and self.buffer.data.shape[0] != len(value):
                 # parse the new colors
                 new_colors = parse_colors(value, len(value))
 
                 # destroy old buffer
-                self._buffer._wgpu_object.destroy()
+                if self._buffer._wgpu_object is not None:
+                    self._buffer._wgpu_object.destroy()
 
                 # create new buffer
                 self._buffer = pygfx.Buffer(new_colors)
@@ -310,7 +324,8 @@ class VertexPositions(BufferManager):
                     bdata[:] = value[:]
 
                 # destroy old buffer
-                self._buffer._wgpu_object.destroy()
+                if self._buffer._wgpu_object is not None:
+                    self._buffer._wgpu_object.destroy()
 
                 # create the new buffer
                 self._buffer = pygfx.Buffer(bdata)
