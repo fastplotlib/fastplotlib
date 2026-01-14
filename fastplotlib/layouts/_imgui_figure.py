@@ -46,6 +46,7 @@ class ImguiFigure(Figure):
         names: list | np.ndarray = None,
         show_tooltips: bool = False,
         custom_fonts: list[tuple[str, float]] = None,
+        override_default_font: bool = False,
     ):
         self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
 
@@ -63,6 +64,8 @@ class ImguiFigure(Figure):
             size=size,
             names=names,
             show_tooltips=show_tooltips,
+            custom_fonts=custom_fonts,
+            override_default_font=override_default_font,
         )
 
         self._imgui_renderer = ImguiRenderer(self.renderer.device, self.canvas)
@@ -83,20 +86,21 @@ class ImguiFigure(Figure):
 
         io = imgui.get_io()
 
-        self._default_imgui_font = io.fonts.add_font_from_file_ttf(
-            sans_serif_font, 14, imgui.ImFontConfig()
-        )
+        default_fonts = [(sans_serif_font, 14), (fa_6_fonts_path, 14.0)]
+        custom_fonts = custom_fonts if custom_fonts is not None else []
 
-        font_config = imgui.ImFontConfig()
-        font_config.merge_mode = True
+        if override_default_font:
+            font_list = custom_fonts + default_fonts
+        else:
+            font_list = default_fonts + custom_fonts
 
-        self._default_imgui_font = io.fonts.add_font_from_file_ttf(
-            fa_6_fonts_path,
-            14,
-            font_config,
-        )
+        first_font = True
+        for font_path, font_size in font_list:
+            font_config = imgui.ImFontConfig()
+            if first_font:
+                font_config.merge_mode = True
+                first_font = False
 
-        for font_path, font_size in custom_fonts or []:
             self._default_imgui_font = io.fonts.add_font_from_file_ttf(
                 font_path,
                 font_size,
