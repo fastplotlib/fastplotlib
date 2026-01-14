@@ -14,6 +14,7 @@ import pygfx
 from ._figure import Figure
 from ..ui import EdgeWindow, SubplotToolbar, StandardRightClickMenu, Popup, GUI_EDGES
 from ..ui import ColormapPicker
+from ..ui._base import COLLAPSE_BUTTON_WIDTH
 
 
 class ImguiFigure(Figure):
@@ -211,7 +212,10 @@ class ImguiFigure(Figure):
 
         for edge in ["right"]:
             if self.guis[edge]:
-                width -= self._guis[edge].size
+                # when collapsed, the expand button floats over plot area
+                if not self._guis[edge].collapsed:
+                    # subtract gui size plus collapse button width
+                    width -= self._guis[edge].size + COLLAPSE_BUTTON_WIDTH
 
         for edge in ["bottom"]:
             if self.guis[edge]:
