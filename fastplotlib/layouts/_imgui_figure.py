@@ -97,8 +97,8 @@ class ImguiFigure(Figure):
         first_font = True
         for font_path, font_size in font_list:
             font_config = imgui.ImFontConfig()
+            font_config.merge_mode = not first_font
             if first_font:
-                font_config.merge_mode = True
                 first_font = False
 
             self._default_imgui_font = io.fonts.add_font_from_file_ttf(
