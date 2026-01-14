@@ -34,7 +34,9 @@ Properties
     ImageGraphic.offset
     ImageGraphic.right_click_menu
     ImageGraphic.rotation
+    ImageGraphic.scale
     ImageGraphic.supported_events
+    ImageGraphic.tooltip_format
     ImageGraphic.visible
     ImageGraphic.vmax
     ImageGraphic.vmin
@@ -52,6 +54,9 @@ Methods
     ImageGraphic.add_polygon_selector
     ImageGraphic.add_rectangle_selector
     ImageGraphic.clear_event_handlers
+    ImageGraphic.format_pick_info
+    ImageGraphic.map_model_to_world
+    ImageGraphic.map_world_to_model
     ImageGraphic.remove_event_handler
     ImageGraphic.reset_vmin_vmax
     ImageGraphic.rotate

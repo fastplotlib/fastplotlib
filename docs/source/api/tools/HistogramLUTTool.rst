@@ -32,7 +32,9 @@ Properties
     HistogramLUTTool.offset
     HistogramLUTTool.right_click_menu
     HistogramLUTTool.rotation
+    HistogramLUTTool.scale
     HistogramLUTTool.supported_events
+    HistogramLUTTool.tooltip_format
     HistogramLUTTool.visible
     HistogramLUTTool.vmax
     HistogramLUTTool.vmin
@@ -46,6 +48,9 @@ Methods
     HistogramLUTTool.add_axes
     HistogramLUTTool.add_event_handler
     HistogramLUTTool.clear_event_handlers
+    HistogramLUTTool.format_pick_info
+    HistogramLUTTool.map_model_to_world
+    HistogramLUTTool.map_world_to_model
     HistogramLUTTool.remove_event_handler
     HistogramLUTTool.rotate
     HistogramLUTTool.set_data

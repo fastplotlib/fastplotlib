@@ -38,8 +38,10 @@ Properties
     LineStack.right_click_menu
     LineStack.rotation
     LineStack.rotations
+    LineStack.scale
     LineStack.supported_events
     LineStack.thickness
+    LineStack.tooltip_format
     LineStack.visible
     LineStack.visibles
     LineStack.world_object
@@ -57,6 +59,9 @@ Methods
     LineStack.add_polygon_selector
     LineStack.add_rectangle_selector
     LineStack.clear_event_handlers
+    LineStack.format_pick_info
+    LineStack.map_model_to_world
+    LineStack.map_world_to_model
     LineStack.remove_event_handler
     LineStack.remove_graphic
     LineStack.rotate

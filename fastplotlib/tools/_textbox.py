@@ -1,11 +1,7 @@
-from functools import partial
-
 import numpy as np
 import pygfx
 
 from ..utils.enums import RenderQueue
-from ..graphics import LineGraphic, ImageGraphic, ScatterGraphic, Graphic
-from ..graphics.features import GraphicFeatureEvent
 
 
 class MeshMasks:
@@ -51,21 +47,48 @@ class MeshMasks:
 masks = MeshMasks
 
 
-class Tooltip:
-    def __init__(self):
+class TextBox:
+    def __init__(
+        self,
+        font_size: int = 12,
+        text_color: str | pygfx.Color | tuple = "w",
+        background_color: str | pygfx.Color | tuple = (0.1, 0.1, 0.3, 0.95),
+        outline_color: str | pygfx.Color | tuple = (0.8, 0.8, 1.0, 1.0),
+        padding: tuple[float, float] = (5, 5),
+    ):
+        """
+        Create a Textbox
+
+        Parameters
+        ----------
+        font_size: int, default 12
+            text font size
+
+        text_color: str | pygfx.Color | tuple, default "w"
+            text color, interpretable by pygfx.Color
+
+        background_color:  str | pygfx.Color | tuple, default (0.1, 0.1, 0.3, 0.95),
+            background color, interpretable by pygfx.Color
+
+        outline_color: str | pygfx.Color | tuple, default (0.8, 0.8, 1.0, 1.0)
+            outline color, interpretable by pygfx.Color
+
+        padding: (float, float), default (5, 5)
+            the amount of pixels in (x, y) by which to extend the rectangle behind the text
+
+        """
+
         # text object
         self._text = pygfx.Text(
             text="",
-            font_size=12,
-            screen_space=False,
+            font_size=font_size,
+            screen_space=False,  # these are added to the overlay render pass so it will actually be in screen space!
             anchor="bottom-left",
             material=pygfx.TextMaterial(
                 alpha_mode="blend",
                 aa=True,
                 render_queue=RenderQueue.overlay,
-                color="w",
-                outline_color="w",
-                outline_thickness=0.0,
+                color=text_color,
                 depth_write=False,
                 depth_test=False,
                 pick_write=False,
@@ -77,7 +100,7 @@ class Tooltip:
         material = pygfx.MeshBasicMaterial(
             alpha_mode="blend",
             render_queue=RenderQueue.overlay,
-            color=(0.1, 0.1, 0.3, 0.95),
+            color=background_color,
             depth_write=False,
             depth_test=False,
         )
@@ -101,7 +124,7 @@ class Tooltip:
                 alpha_mode="blend",
                 render_queue=RenderQueue.overlay,
                 thickness=1.0,
-                color=(0.8, 0.8, 1.0, 1.0),
+                color=outline_color,
                 depth_write=False,
                 depth_test=False,
             ),
@@ -109,18 +132,21 @@ class Tooltip:
         # Plane gets rendered before text and line
         self._plane.render_order = -1
 
-        self._world_object = pygfx.Group()
-        self._world_object.add(self._plane, self._text, self._line)
+        self._fpl_world_object = pygfx.Group()
+        self._fpl_world_object.add(self._plane, self._text, self._line)
 
         # padded to bbox so the background box behind the text extends a bit further
         # making the text easier to read
-        self._padding = np.array([[5, 5, 0], [-5, -5, 0]], dtype=np.float32)
+        self._padding = np.zeros(shape=(2, 3), dtype=np.float32)
+        self.padding = padding
 
-        self._registered_graphics = dict()
+        # position of the tooltip in screen space
+        self._position = np.array([0.0, 0.0])
 
     @property
-    def world_object(self) -> pygfx.Group:
-        return self._world_object
+    def position(self) -> np.ndarray:
+        """position of the tooltip in screen space"""
+        return self._position
 
     @property
     def font_size(self):
@@ -172,9 +198,37 @@ class Tooltip:
         self._padding[0, :2] = padding_xy
         self._padding[1, :2] = -np.asarray(padding_xy)
 
-    def _set_position(self, pos: tuple[float, float]):
+    @property
+    def visible(self) -> bool:
+        """get or set the visibility"""
+        return self._fpl_world_object.visible
+
+    @visible.setter
+    def visible(self, visible: bool):
+        self._fpl_world_object.visible = visible
+
+    def display(self, position: tuple[float, float], info: str):
         """
-        Set the position of the tooltip
+        display at the given position in screen space
+
+        Parameters
+        ----------
+        position: (x, y)
+            position in screen space
+
+        info: str
+            tooltip text to display
+
+        """
+        # set the text and top left position of the tooltip
+        self.visible = True
+        self._text.set_text(info)
+        self._draw_tooltip(position)
+        self._position[:] = position
+
+    def _draw_tooltip(self, pos: tuple[float, float]):
+        """
+        Sets the positions of the world objects so it's draw at the given position
 
         Parameters
         ----------
@@ -182,6 +236,9 @@ class Tooltip:
             position in screen space
 
         """
+        if np.array_equal(self.position, pos):
+            return
+
         # need to flip due to inverted y
         x, y = pos[0], pos[1]
 
@@ -207,110 +264,36 @@ class Tooltip:
         self._line.geometry.positions.data[:, :2] = pts
         self._line.geometry.positions.update_range()
 
-    def _event_handler(self, custom_tooltip: callable, ev: pygfx.PointerEvent):
-        """Handles the tooltip appear event, determines the text to be set in the tooltip"""
-        if custom_tooltip is not None:
-            info = custom_tooltip(ev)
-
-        elif isinstance(ev.graphic, ImageGraphic):
-            col, row = ev.pick_info["index"]
-            if ev.graphic.data.value.ndim == 2:
-                info = str(ev.graphic.data[row, col])
-            else:
-                info = "\n".join(
-                    f"{channel}: {val}"
-                    for channel, val in zip("rgba", ev.graphic.data[row, col])
-                )
-
-        elif isinstance(ev.graphic, (LineGraphic, ScatterGraphic)):
-            index = ev.pick_info["vertex_index"]
-            info = "\n".join(
-                f"{dim}: {val}" for dim, val in zip("xyz", ev.graphic.data[index])
-            )
-        else:
-            raise TypeError("Unsupported graphic")
-
-        # make the tooltip object visible
-        self.world_object.visible = True
-
-        # set the text and top left position of the tooltip
-        self._text.set_text(info)
-        self._set_position((ev.x, ev.y))
-
-    def _clear(self, ev):
+    def clear(self, *args):
+        """clear the text box and make it invisible"""
         self._text.set_text("")
-        self.world_object.visible = False
+        self._fpl_world_object.visible = False
 
-    def register(
-        self,
-        graphic: Graphic,
-        appear_event: str = "pointer_move",
-        disappear_event: str = "pointer_leave",
-        custom_info: callable = None,
-    ):
-        """
-        Register a Graphic to display tooltips.
 
-        **Note:** if the passed graphic is already registered then it first unregistered
-        and then re-registered using the given arguments.
+class Tooltip(TextBox):
+    def __init__(self):
+        super().__init__()
+        self._enabled: bool = True
+        self._continuous_update = False
+        self.visible = False
 
-        Parameters
-        ----------
-        graphic: Graphic
-            Graphic to register
+    @property
+    def enabled(self) -> bool:
+        """enable or disable the tooltip"""
+        return self._enabled
 
-        appear_event: str, default "pointer_move"
-            the pointer that triggers the tooltip to appear. Usually one of "pointer_move" | "click" | "double_click"
+    @enabled.setter
+    def enabled(self, value: bool):
+        self._enabled = bool(value)
 
-        disappear_event: str, default "pointer_leave"
-            the event that triggers the tooltip to disappear, does not have to be a pointer event.
+        if not self.enabled:
+            self.visible = False
 
-        custom_info: callable, default None
-            a custom function that takes the pointer event defined as the `appear_event` and returns the text
-            to display in the tooltip
+    @property
+    def continuous_update(self) -> bool:
+        """update the tooltip on every render"""
+        return self._continuous_update
 
-        """
-        if graphic in list(self._registered_graphics.keys()):
-            # unregister first and then re-register
-            self.unregister(graphic)
-
-        pfunc = partial(self._event_handler, custom_info)
-        graphic.add_event_handler(pfunc, appear_event)
-        graphic.add_event_handler(self._clear, disappear_event)
-
-        self._registered_graphics[graphic] = (pfunc, appear_event, disappear_event)
-
-        # automatically unregister when graphic is deleted
-        graphic.add_event_handler(self.unregister, "deleted")
-
-    def unregister(self, graphic: Graphic):
-        """
-        Unregister a Graphic to no longer display tooltips for this graphic.
-
-        **Note:** if the passed graphic is not registered then it is just ignored without raising any exception.
-
-        Parameters
-        ----------
-        graphic: Graphic
-            Graphic to unregister
-
-        """
-
-        if isinstance(graphic, GraphicFeatureEvent):
-            # this happens when the deleted event is triggered
-            graphic = graphic.graphic
-
-        if graphic not in self._registered_graphics:
-            return
-
-        # get pfunc and event names
-        pfunc, appear_event, disappear_event = self._registered_graphics.pop(graphic)
-
-        # remove handlers from graphic
-        graphic.remove_event_handler(pfunc, appear_event)
-        graphic.remove_event_handler(self._clear, disappear_event)
-
-    def unregister_all(self):
-        """unregister all graphics"""
-        for graphic in self._registered_graphics.keys():
-            self.unregister(graphic)
+    @continuous_update.setter
+    def continuous_update(self, value: bool):
+        self._continuous_update = bool(value)

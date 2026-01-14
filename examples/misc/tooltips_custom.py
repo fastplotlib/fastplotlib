@@ -31,20 +31,26 @@ scatter = figure[0, 0].add_scatter(
 )
 
 
-def tooltip_info(ev) -> str:
+def tooltip_info(pick_info: dict) -> str:
     # get index of the scatter point that is being hovered
-    index = ev.pick_info["vertex_index"]
+    index = pick_info["vertex_index"]
 
     # get the species name
     target = dataset["target"][index]
     cluster = agg.labels_[index]
-    info = f"species: {dataset['target_names'][target]}\ncluster: {cluster}"
+
+    # the default formatting of the pick info
+    default_info = scatter.format_pick_info(pick_info)
+
+    info = (f"species: {dataset['target_names'][target]}\n"
+            f"cluster: {cluster}\n\n"
+            f"{default_info}")
 
     # return this string to display it in the tooltip
     return info
 
 
-figure.tooltip_manager.register(scatter, custom_info=tooltip_info)
+scatter.tooltip_format = tooltip_info
 
 figure.show()
 

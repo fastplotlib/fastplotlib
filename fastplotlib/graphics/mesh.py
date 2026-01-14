@@ -291,6 +291,27 @@ class MeshGraphic(Graphic):
 
         self._plane.set_value(self, value)
 
+    def format_pick_info(self, pick_info: dict) -> str:
+        # Get what face was clicked
+        face_index = pick_info["face_index"]
+        coords = pick_info["face_coord"]
+        # Select which of the three vertices was closest
+        # Note that you can also select all vertices for this face,
+        # or use the coords to select the closest edge.
+        sub_index = np.argmax(coords)
+        # Look up the vertex index
+        try:
+            vertex_index = int(self.indices[face_index, sub_index])
+        except IndexError:
+            # if vertex buffer sizes change then the pointer event can have outdated pick info?
+            return "error, buffer size changed"
+
+        info = "\n".join(
+            f"{dim}: {val:.4g}" for dim, val in zip("xyz", self.positions[vertex_index])
+        )
+
+        return info
+
 
 class SurfaceGraphic(MeshGraphic):
     _features = {

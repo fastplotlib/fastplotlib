@@ -29,7 +29,7 @@ for center in product(range(0, spatial_dims[0], 15), range(0, spatial_dims[1], 1
 
 pos_xy = np.vstack(circles)
 
-figure = fpl.Figure(size=(700, 560), show_tooltips=True)
+figure = fpl.Figure(size=(700, 560))
 
 figure[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
 

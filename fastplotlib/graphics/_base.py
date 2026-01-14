@@ -1,6 +1,7 @@
+from __future__ import annotations
 from collections import defaultdict
 from functools import partial
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, TypeAlias, Callable
 import weakref
 
 import numpy as np
@@ -22,6 +23,7 @@ from .features import (
     Name,
     Offset,
     Rotation,
+    Scale,
     Alpha,
     AlphaMode,
     Visible,
@@ -29,10 +31,15 @@ from .features import (
 from ._axes import Axes
 
 HexStr: TypeAlias = str
+WorldObjectID: TypeAlias = int
 
 # dict that holds all world objects for a given python kernel/session
 # Graphic objects only use proxies to WorldObjects
 WORLD_OBJECTS: dict[HexStr, pygfx.WorldObject] = dict()  #: {hex id str: WorldObject}
+
+# maps world object to the graphic which owns it, useful when manually picking from the renderer and we
+# need to know the graphic associated with the target world object
+WORLD_OBJECT_TO_GRAPHIC: dict[WorldObjectID, Graphic] = dict()
 
 
 PYGFX_EVENTS = [
@@ -54,6 +61,11 @@ PYGFX_EVENTS = [
 class Graphic:
     _features: dict[str, type] = dict()
 
+    # It also doesn't make sense to create tooltips for some graphics
+    # ex: text, that would be very funny.
+    # They would also get in the way of selector tools
+    _fpl_support_tooltip: bool = True
+
     def __init_subclass__(cls, **kwargs):
 
         # set of all features
@@ -62,6 +74,7 @@ class Graphic:
             "name": Name,
             "offset": Offset,
             "rotation": Rotation,
+            "scale": Scale,
             "alpha": Alpha,
             "alpha_mode": AlphaMode,
             "visible": Visible,
@@ -72,8 +85,9 @@ class Graphic:
     def __init__(
         self,
         name: str = None,
-        offset: np.ndarray | list | tuple = (0.0, 0.0, 0.0),
-        rotation: np.ndarray | list | tuple = (0.0, 0.0, 0.0, 1.0),
+        offset: np.ndarray | tuple[float] = (0.0, 0.0, 0.0),
+        rotation: np.ndarray | tuple[float] = (0.0, 0.0, 0.0, 1.0),
+        scale: np.ndarray | tuple[float] = (1.0, 1.0, 1.0),
         alpha: float = 1.0,
         alpha_mode: str = "auto",
         visible: bool = True,
@@ -91,6 +105,9 @@ class Graphic:
 
         rotation: (float, float, float, float), default (0, 0, 0, 1)
             rotation quaternion
+
+        scale: (float, float, float), default (1.0, 1.0, 1.0)
+            (x, y, z) scale factors
 
         alpha: (float), default 1.0
             The global alpha value, i.e. opacity, of the graphic.
@@ -155,6 +172,7 @@ class Graphic:
         self._name = Name(name)
         self._deleted = Deleted(False)
         self._rotation = Rotation(rotation)
+        self._scale = Scale(scale)
         self._offset = Offset(offset)
         self._alpha = Alpha(alpha)
         self._alpha_mode = AlphaMode(alpha_mode)
@@ -164,6 +182,11 @@ class Graphic:
         self._axes: Axes = None
 
         self._right_click_menu = None
+
+        # store ids of all the WorldObjects that this Graphic manages/uses
+        self._world_object_ids = list()
+
+        self._tooltip_format: Callable = None
 
     @property
     def supported_events(self) -> tuple[str]:
@@ -185,7 +208,7 @@ class Graphic:
         return self._offset.value
 
     @offset.setter
-    def offset(self, value: np.ndarray | list | tuple):
+    def offset(self, value: np.ndarray | tuple[float, float, float]):
         self._offset.set_value(self, value)
 
     @property
@@ -194,8 +217,17 @@ class Graphic:
         return self._rotation.value
 
     @rotation.setter
-    def rotation(self, value: np.ndarray | list | tuple):
+    def rotation(self, value: np.ndarray | tuple[float, float, float, float]):
         self._rotation.set_value(self, value)
+
+    @property
+    def scale(self) -> np.ndarray:
+        """(x, y, z) scaling factor"""
+        return self._scale.value
+
+    @scale.setter
+    def scale(self, value: np.ndarray | tuple[float, float, float]):
+        self._scale.set_value(self, value)
 
     @property
     def alpha(self) -> float:
@@ -251,6 +283,23 @@ class Graphic:
     def _set_world_object(self, wo: pygfx.WorldObject):
         WORLD_OBJECTS[self._fpl_address] = wo
 
+        # add to world object -> graphic mapping
+        if isinstance(wo, pygfx.Group):
+            for child in wo.children:
+                if isinstance(
+                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
+                ):
+                    # unique 32 bit integer id for each world object
+                    global_id = child.id
+                    WORLD_OBJECT_TO_GRAPHIC[global_id] = self
+                    # store id to pop from dict when graphic is deleted
+                    self._world_object_ids.append(global_id)
+        else:
+            global_id = wo.id
+            WORLD_OBJECT_TO_GRAPHIC[global_id] = self
+            # store id to pop from dict when graphic is deleted
+            self._world_object_ids.append(global_id)
+
         wo.visible = self.visible
         if "Image" in self.__class__.__name__:
             # Image and ImageVolume use tiling and share one material
@@ -268,6 +317,27 @@ class Graphic:
         # set rotation if it's not (0., 0., 0., 1.)
         if not all(wo.world.rotation == self.rotation):
             self.rotation = self.rotation
+
+    @property
+    def tooltip_format(self) -> Callable[[dict], str] | None:
+        """
+        set a custom tooltip format function which takes a ``pick_info`` dict and
+        returns a str to be displayed in the tooltip
+        """
+        return self._tooltip_format
+
+    @tooltip_format.setter
+    def tooltip_format(self, func: Callable[[dict], str] | None):
+        if func is None:
+            self._tooltip_format = None
+            return
+
+        if not callable(func):
+            raise TypeError(
+                f"`tooltip_format` must be set with a callable that takes a pick_info dict, or it can be set as None"
+            )
+
+        self._tooltip_format = func
 
     @property
     def event_handlers(self) -> list[tuple[str, callable, ...]]:
@@ -427,6 +497,72 @@ class Graphic:
                 feature = getattr(self, f"_{t}")
                 feature.remove_event_handler(wrapper)
 
+    def map_model_to_world(
+        self, position: tuple[float, float, float] | tuple[float, float] | np.ndarray
+    ) -> np.ndarray:
+        """
+        map position from model (data) space to world space, basically applies the world affine transform
+
+        Parameters
+        ----------
+        position: (float, float, float) or (float, float)
+            (x, y, z) or (x, y) position. If z is not provided then the graphic's offset z is used.
+
+        Returns
+        -------
+        np.ndarray
+            (x, y, z) position in world space
+
+        """
+
+        if len(position) == 2:
+            # use z of the graphic
+            position = [*position, self.offset[-1]]
+
+        if len(position) != 3:
+            raise ValueError(
+                f"position must be tuple or array indicating (x, y, z) position in *model space*"
+            )
+
+        # apply world transform to project from model space to world space
+        return la.vec_transform(position, self.world_object.world.matrix)
+
+    def map_world_to_model(
+        self, position: tuple[float, float, float] | tuple[float, float] | np.ndarray
+    ) -> np.ndarray:
+        """
+        map position from world space to model (data) space, basically applies the inverse world affine transform
+
+        Parameters
+        ----------
+        position: (float, float, float) or (float, float)
+            (x, y, z) or (x, y) position. If z is not provided then 0 is used.
+
+        Returns
+        -------
+        np.ndarray
+            (x, y, z) position in world space
+
+        """
+
+        if len(position) == 2:
+            # use z of the graphic
+            position = [*position, self.offset[-1]]
+
+        if len(position) != 3:
+            raise ValueError(
+                f"position must be tuple or array indicating (x, y, z) position in *model space*"
+            )
+
+        return la.vec_transform(position, self.world_object.world.inverse_matrix)
+
+    def format_pick_info(self, ev: pygfx.PointerEvent) -> str:
+        """
+        Takes a pygfx.PointerEvent and returns formatted pick info.
+        """
+
+        raise NotImplementedError("must be implemented in subclass")
+
     def _fpl_add_plot_area_hook(self, plot_area):
         self._plot_area = plot_area
 
@@ -444,6 +580,10 @@ class Graphic:
 
         Optionally implemented in subclasses
         """
+        # remove from world_obj -> graphic map
+        for global_id in self._world_object_ids:
+            WORLD_OBJECT_TO_GRAPHIC.pop(global_id)
+
         # remove axes if added to this graphic
         if self._axes is not None:
             self._plot_area.scene.remove(self._axes)

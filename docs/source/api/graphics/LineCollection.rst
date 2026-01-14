@@ -38,8 +38,10 @@ Properties
     LineCollection.right_click_menu
     LineCollection.rotation
     LineCollection.rotations
+    LineCollection.scale
     LineCollection.supported_events
     LineCollection.thickness
+    LineCollection.tooltip_format
     LineCollection.visible
     LineCollection.visibles
     LineCollection.world_object
@@ -57,6 +59,9 @@ Methods
     LineCollection.add_polygon_selector
     LineCollection.add_rectangle_selector
     LineCollection.clear_event_handlers
+    LineCollection.format_pick_info
+    LineCollection.map_model_to_world
+    LineCollection.map_world_to_model
     LineCollection.remove_event_handler
     LineCollection.remove_graphic
     LineCollection.rotate

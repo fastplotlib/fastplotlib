@@ -38,7 +38,9 @@ Properties
     MeshGraphic.positions
     MeshGraphic.right_click_menu
     MeshGraphic.rotation
+    MeshGraphic.scale
     MeshGraphic.supported_events
+    MeshGraphic.tooltip_format
     MeshGraphic.visible
     MeshGraphic.world_object
 
@@ -50,6 +52,9 @@ Methods
     MeshGraphic.add_axes
     MeshGraphic.add_event_handler
     MeshGraphic.clear_event_handlers
+    MeshGraphic.format_pick_info
+    MeshGraphic.map_model_to_world
+    MeshGraphic.map_world_to_model
     MeshGraphic.remove_event_handler
     MeshGraphic.rotate
 

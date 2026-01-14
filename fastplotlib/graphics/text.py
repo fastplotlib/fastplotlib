@@ -21,6 +21,8 @@ class TextGraphic(Graphic):
         "outline_thickness": TextOutlineThickness,
     }
 
+    _fpl_support_tooltip = False
+
     def __init__(
         self,
         text: str,

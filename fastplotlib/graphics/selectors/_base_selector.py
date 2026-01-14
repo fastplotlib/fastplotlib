@@ -40,6 +40,8 @@ key_bind_direction = {
 
 # Selector base class
 class BaseSelector(Graphic):
+    _fpl_support_tooltip = False
+
     @property
     def axis(self) -> str:
         return self._axis
