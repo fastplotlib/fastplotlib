@@ -39,7 +39,6 @@ class VertexColors(BufferManager):
         self,
         colors: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
         n_colors: int,
-        isolated_buffer: bool = True,
         property_name: str = "colors",
     ):
         """
@@ -57,9 +56,55 @@ class VertexColors(BufferManager):
         """
         data = parse_colors(colors, n_colors)
 
-        super().__init__(
-            data=data, isolated_buffer=isolated_buffer, property_name=property_name
-        )
+        super().__init__(data=data, property_name=property_name)
+
+    def set_value(
+        self,
+        graphic,
+        value: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
+    ):
+        """set the entire array, create new buffer if necessary"""
+        if isinstance(value, (np.ndarray, list, tuple)):
+            # TODO: Refactor this triage so it's more elegant
+
+            # first make sure it's not representing one color
+            skip = False
+            if isinstance(value, np.ndarray):
+                if (value.shape in ((3,), (4,))) and (np.issubdtype(value.dtype, np.floating) or np.issubdtype(value.dtype, np.integer)):
+                    # represents one color
+                    skip = True
+            elif isinstance(value, (list, tuple)):
+                if len(value) in (3, 4) and all([isinstance(v, (float, int)) for v in value]):
+                    # represents one color
+                    skip = True
+
+            # check if the number of elements matches current buffer size
+            if not skip and self.buffer.data.shape[0] != len(value):
+                # parse the new colors
+                new_colors = parse_colors(value, len(value))
+
+                # destroy old buffer
+                if self._buffer._wgpu_object is not None:
+                    self._buffer._wgpu_object.destroy()
+
+                # create new buffer
+                self._buffer = pygfx.Buffer(new_colors)
+                graphic.world_object.geometry.colors = self.buffer
+
+                if len(self._event_handlers) < 1:
+                    return
+
+                event_info = {
+                    "key": slice(None),
+                    "value": new_colors,
+                    "user_value": value,
+                }
+
+                event = GraphicFeatureEvent(self._property_name, info=event_info)
+                self._call_event_handlers(event)
+                return
+
+        self[:] = value
 
     @block_reentrance
     def __setitem__(
@@ -231,18 +276,14 @@ class VertexPositions(BufferManager):
         },
     ]
 
-    def __init__(
-        self, data: Any, isolated_buffer: bool = True, property_name: str = "data"
-    ):
+    def __init__(self, data: Any, property_name: str = "data"):
         """
         Manages the vertex positions buffer shown in the graphic.
         Supports fancy indexing if the data array also supports it.
         """
 
         data = self._fix_data(data)
-        super().__init__(
-            data, isolated_buffer=isolated_buffer, property_name=property_name
-        )
+        super().__init__(data, property_name=property_name)
 
     def _fix_data(self, data):
         if data.ndim == 1:
@@ -260,6 +301,39 @@ class VertexPositions(BufferManager):
             data = np.column_stack([data[:, 0], data[:, 1], zs])
 
         return to_gpu_supported_dtype(data)
+
+    def set_value(self, graphic, value):
+        """Sets the entire array, creates new buffer if necessary"""
+        if isinstance(value, np.ndarray):
+            if self.buffer.data.shape[0] != value.shape[0]:
+                # number of items doesn't match, create a new buffer
+
+                # if data is not 3D
+                if value.ndim == 1:
+                    # this is already a newly allocated buffer
+                    # _fix_data creates a new array so we don't need to re-allocate with np.zeros
+                    bdata = self._fix_data(value)
+
+                elif value.shape[1] == 2:
+                    # this is already a newly allocated buffer
+                    bdata = self._fix_data(value)
+
+                elif value.shape[1] == 3:
+                    # need to allocate a buffer to use here
+                    bdata = np.empty(value.shape, dtype=np.float32)
+                    bdata[:] = value[:]
+
+                # destroy old buffer
+                if self._buffer._wgpu_object is not None:
+                    self._buffer._wgpu_object.destroy()
+
+                # create the new buffer
+                self._buffer = pygfx.Buffer(bdata)
+                graphic.world_object.geometry.positions = self.buffer
+                self._emit_event(self._property_name, key=slice(None), value=value)
+                return
+
+        self[:] = value
 
     @block_reentrance
     def __setitem__(

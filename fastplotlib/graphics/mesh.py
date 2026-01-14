@@ -38,7 +38,6 @@ class MeshGraphic(Graphic):
         mapcoords: Any = None,
         cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] = None,
-        isolated_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -77,12 +76,6 @@ class MeshGraphic(Graphic):
             Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
             An image can also be used, this is basically a 2D colormap.
 
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer - useful if the
-            array is large. In almost all cases this should be ``True``.
-
         **kwargs
             passed to :class:`.Graphic`
 
@@ -93,16 +86,12 @@ class MeshGraphic(Graphic):
         if isinstance(positions, VertexPositions):
             self._positions = positions
         else:
-            self._positions = VertexPositions(
-                positions, isolated_buffer=isolated_buffer, property_name="positions"
-            )
+            self._positions = VertexPositions(positions, property_name="positions")
 
         if isinstance(positions, MeshIndices):
             self._indices = indices
         else:
-            self._indices = MeshIndices(
-                indices, isolated_buffer=isolated_buffer, property_name="indices"
-            )
+            self._indices = MeshIndices(indices, property_name="indices")
 
         self._cmap = MeshCmap(cmap)
 

@@ -1,6 +1,7 @@
 import math
 from typing import *
 
+import numpy as np
 import pygfx
 
 from ..utils import quick_min_max
@@ -102,7 +103,6 @@ class ImageGraphic(Graphic):
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
-        isolated_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -130,12 +130,6 @@ class ImageGraphic(Graphic):
         cmap_interpolation: str, optional, default "linear"
             colormap interpolation method, one of "nearest" or "linear"
 
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer - useful if the
-            array is large.
-
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
 
@@ -143,7 +137,7 @@ class ImageGraphic(Graphic):
 
         super().__init__(**kwargs)
 
-        world_object = pygfx.Group()
+        group = pygfx.Group()
 
         if isinstance(data, TextureArray):
             # share buffer
@@ -151,7 +145,7 @@ class ImageGraphic(Graphic):
         else:
             # create new texture array to manage buffer
             # texture array that manages the multiple textures on the GPU that represent this image
-            self._data = TextureArray(data, isolated_buffer=isolated_buffer)
+            self._data = TextureArray(data)
 
         if (vmin is None) or (vmax is None):
             _vmin, _vmax = quick_min_max(self.data.value)
@@ -165,6 +159,7 @@ class ImageGraphic(Graphic):
         self._vmax = ImageVmax(vmax)
 
         self._interpolation = ImageInterpolation(interpolation)
+        self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
         # set map to None for RGB images
         if self._data.value.ndim > 2:
@@ -173,7 +168,6 @@ class ImageGraphic(Graphic):
         else:
             # use TextureMap for grayscale images
             self._cmap = ImageCmap(cmap)
-            self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
             _map = pygfx.TextureMap(
                 self._cmap.texture,
@@ -189,6 +183,14 @@ class ImageGraphic(Graphic):
             pick_write=True,
         )
 
+        # create the _ImageTile world objects, add to group
+        for tile in self._create_tiles():
+            group.add(tile)
+
+        self._set_world_object(group)
+
+    def _create_tiles(self) -> list[_ImageTile]:
+        tiles = list()
         # iterate through each texture chunk and create
         # an _ImageTile, offset the tile using the data indices
         for texture, chunk_index, data_slice in self._data:
@@ -209,9 +211,9 @@ class ImageGraphic(Graphic):
             img.world.x = data_col_start
             img.world.y = data_row_start
 
-            world_object.add(img)
+            tiles.append(img)
 
-        self._set_world_object(world_object)
+        return tiles
 
     @property
     def data(self) -> TextureArray:
@@ -220,6 +222,39 @@ class ImageGraphic(Graphic):
 
     @data.setter
     def data(self, data):
+        if isinstance(data, np.ndarray):
+            # check if a new buffer is required
+            if self._data.value.shape != data.shape:
+                # create new TextureArray
+                self._data = TextureArray(data)
+
+                # cmap based on if rgb or grayscale
+                if self._data.value.ndim > 2:
+                    self._cmap = None
+
+                    # must be None if RGB(A)
+                    self._material.map = None
+                else:
+                    if self.cmap is None:  # have switched from RGBA -> grayscale image
+                        # create default cmap
+                        self._cmap = ImageCmap("plasma")
+                        self._material.map = pygfx.TextureMap(
+                            self._cmap.texture,
+                            filter=self._cmap_interpolation.value,
+                            wrap="clamp-to-edge",
+                        )
+
+                self._material.clim = quick_min_max(self.data.value)
+
+                # clear image tiles
+                self.world_object.clear()
+
+                # create new tiles
+                for tile in self._create_tiles():
+                    self.world_object.add(tile)
+
+                return
+
         self._data[:] = data
 
     @property

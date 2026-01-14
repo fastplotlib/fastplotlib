@@ -100,6 +100,37 @@ def searchsorted_markers_to_int_array(markers_str_array: np.ndarray[str]):
     return marker_int_searchsorted_vals[indices]
 
 
+def parse_markers_init(markers: str | Sequence[str] | np.ndarray, n_datapoints: int):
+    # first validate then allocate buffers
+
+    if isinstance(markers, str):
+        markers = user_input_to_marker(markers)
+
+    elif isinstance(markers, (tuple, list, np.ndarray)):
+        validate_user_markers_array(markers)
+
+    # allocate buffers
+    markers_int_array = np.zeros(n_datapoints, dtype=np.int32)
+
+    marker_str_length = max(map(len, list(pygfx.MarkerShape)))
+
+    markers_readable_array = np.empty(n_datapoints, dtype=f"<U{marker_str_length}")
+
+    if isinstance(markers, str):
+        # all markers in the array are identical, so set the entire array
+        markers_readable_array[:] = markers
+        markers_int_array[:] = marker_int_mapping[markers]
+
+    elif isinstance(markers, (np.ndarray, tuple, list)):
+        # distinct marker for each point
+        # first vectorized map from user marker strings to "standard" marker strings
+        markers_readable_array = vectorized_user_markers_to_std_markers(markers)
+        # map standard marker strings to integer array
+        markers_int_array[:] = searchsorted_markers_to_int_array(markers_readable_array)
+
+    return markers_int_array, markers_readable_array
+
+
 class VertexMarkers(BufferManager):
     event_info_spec = [
         {
@@ -124,42 +155,11 @@ class VertexMarkers(BufferManager):
         Manages the markers buffer for the scatter points. Supports fancy indexing.
         """
 
-        # first validate then allocate buffers
-
-        if isinstance(markers, str):
-            markers = user_input_to_marker(markers)
-
-        elif isinstance(markers, (tuple, list, np.ndarray)):
-            validate_user_markers_array(markers)
-
-        # allocate buffers
-        markers_int_array = np.zeros(n_datapoints, dtype=np.int32)
-
-        marker_str_length = max(map(len, list(pygfx.MarkerShape)))
-
-        self._markers_readable_array = np.empty(
-            n_datapoints, dtype=f"<U{marker_str_length}"
+        markers_int_array, self._markers_readable_array = parse_markers_init(
+            markers, n_datapoints
         )
 
-        if isinstance(markers, str):
-            # all markers in the array are identical, so set the entire array
-            self._markers_readable_array[:] = markers
-            markers_int_array[:] = marker_int_mapping[markers]
-
-        elif isinstance(markers, (np.ndarray, tuple, list)):
-            # distinct marker for each point
-            # first vectorized map from user marker strings to "standard" marker strings
-            self._markers_readable_array = vectorized_user_markers_to_std_markers(
-                markers
-            )
-            # map standard marker strings to integer array
-            markers_int_array[:] = searchsorted_markers_to_int_array(
-                self._markers_readable_array
-            )
-
-        super().__init__(
-            markers_int_array, isolated_buffer=False, property_name=property_name
-        )
+        super().__init__(markers_int_array, property_name=property_name)
 
     @property
     def value(self) -> np.ndarray[str]:
@@ -199,6 +199,29 @@ class VertexMarkers(BufferManager):
             raise TypeError(
                 "new markers value must be a str, Sequence or np.ndarray of new marker values"
             )
+
+    def set_value(self, graphic, value):
+        """set all the markers, create new buffer if necessary"""
+        if isinstance(value, (np.ndarray, list, tuple)):
+            if self.buffer.data.shape[0] != len(value):
+                # need to create a new buffer
+                markers_int_array, self._markers_readable_array = parse_markers_init(
+                    value, len(value)
+                )
+
+                # destroy old buffer
+                if self._buffer._wgpu_object is not None:
+                    self._buffer._wgpu_object.destroy()
+
+                # set new buffer
+                self._buffer = pygfx.Buffer(markers_int_array)
+                graphic.geometry.markers = self.buffer
+
+                self._emit_event(self._property_name, key=slice(None), value=value)
+
+                return
+
+        self[:] = value
 
     @block_reentrance
     def __setitem__(
@@ -414,18 +437,15 @@ class VertexRotations(BufferManager):
         self,
         rotations: int | float | np.ndarray | Sequence[int | float],
         n_datapoints: int,
-        isolated_buffer: bool = True,
         property_name: str = "point_rotations",
     ):
         """
         Manages rotations buffer of scatter points.
         """
-        sizes = self._fix_sizes(rotations, n_datapoints)
-        super().__init__(
-            data=sizes, isolated_buffer=isolated_buffer, property_name=property_name
-        )
+        sizes = self._fix_rotations(rotations, n_datapoints)
+        super().__init__(data=sizes, property_name=property_name)
 
-    def _fix_sizes(
+    def _fix_rotations(
         self,
         sizes: int | float | np.ndarray | Sequence[int | float],
         n_datapoints: int,
@@ -453,6 +473,26 @@ class VertexRotations(BufferManager):
             )
 
         return sizes
+
+    def set_value(self, graphic, value):
+        """set all rotations, create new buffer if necessary"""
+        if isinstance(value, (np.ndarray, list, tuple)):
+            if self.buffer.data.shape[0] != value.shape[0]:
+                # need to create a new buffer
+                value = self._fix_rotations(value, len(value))
+                data = np.empty(shape=(len(value),), dtype=np.float32)
+
+                # destroy old buffer
+                if self._buffer._wgpu_object is not None:
+                    self._buffer._wgpu_object.destroy()
+
+                # set new buffer
+                self._buffer = pygfx.Buffer(data)
+                graphic.world_object.geometry.rotations = self.buffer
+                self._emit_event(self._property_name, key=slice(None), value=value)
+                return
+
+        self[:] = value
 
     @block_reentrance
     def __setitem__(
@@ -488,16 +528,13 @@ class VertexPointSizes(BufferManager):
         self,
         sizes: int | float | np.ndarray | Sequence[int | float],
         n_datapoints: int,
-        isolated_buffer: bool = True,
         property_name: str = "sizes",
     ):
         """
         Manages sizes buffer of scatter points.
         """
         sizes = self._fix_sizes(sizes, n_datapoints)
-        super().__init__(
-            data=sizes, isolated_buffer=isolated_buffer, property_name=property_name
-        )
+        super().__init__(data=sizes, property_name=property_name)
 
     def _fix_sizes(
         self,
@@ -532,6 +569,27 @@ class VertexPointSizes(BufferManager):
             )
 
         return sizes
+
+    def set_value(self, graphic, value):
+        """set all sizes, create new buffer if necessary"""
+        if isinstance(value, (np.ndarray, list, tuple)):
+            if self.buffer.data.shape[0] != len(value):
+                # create new buffer
+                value = self._fix_sizes(value, len(value))
+                data = np.empty(shape=(len(value),), dtype=np.float32)
+
+                # destroy old buffer
+                if self._buffer._wgpu_object is not None:
+                    self._buffer._wgpu_object.destroy()
+
+                # set new buffer
+                self._buffer = pygfx.Buffer(data)
+                graphic.geometry.sizes = self.buffer
+
+                self._emit_event(self._property_name, key=slice(None), value=value)
+                return
+
+        self[:] = value
 
     @block_reentrance
     def __setitem__(

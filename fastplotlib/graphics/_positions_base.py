@@ -23,7 +23,7 @@ class PositionsGraphic(Graphic):
 
     @data.setter
     def data(self, value):
-        self._data[:] = value
+        self._data.set_value(self, value)
 
     @property
     def colors(self) -> VertexColors | pygfx.Color:
@@ -36,11 +36,7 @@ class PositionsGraphic(Graphic):
 
     @colors.setter
     def colors(self, value: str | np.ndarray | Sequence[float] | Sequence[str]):
-        if isinstance(self._colors, VertexColors):
-            self._colors[:] = value
-
-        elif isinstance(self._colors, UniformColor):
-            self._colors.set_value(self, value)
+        self._colors.set_value(self, value)
 
     @property
     def cmap(self) -> VertexCmap:
@@ -75,10 +71,9 @@ class PositionsGraphic(Graphic):
         self,
         data: Any,
         colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
-        uniform_color: bool = False,
+        uniform_color: bool = True,
         cmap: str | VertexCmap = None,
         cmap_transform: np.ndarray = None,
-        isolated_buffer: bool = True,
         size_space: str = "screen",
         *args,
         **kwargs,
@@ -86,7 +81,7 @@ class PositionsGraphic(Graphic):
         if isinstance(data, VertexPositions):
             self._data = data
         else:
-            self._data = VertexPositions(data, isolated_buffer=isolated_buffer)
+            self._data = VertexPositions(data)
 
         if cmap_transform is not None and cmap is None:
             raise ValueError("must pass `cmap` if passing `cmap_transform`")
@@ -94,7 +89,7 @@ class PositionsGraphic(Graphic):
         if cmap is not None:
             # if a cmap is specified it overrides colors argument
             if uniform_color:
-                raise TypeError("Cannot use cmap if uniform_color=True")
+                raise TypeError("Cannot use `cmap` if `uniform_color=True`, pass `uniform_color=False` to use `cmap`.")
 
             if isinstance(cmap, str):
                 # make colors from cmap
@@ -132,7 +127,7 @@ class PositionsGraphic(Graphic):
                     if not isinstance(colors, str):  # not a single color
                         if not len(colors) in [3, 4]:  # not an RGB(A) array
                             raise TypeError(
-                                "must pass a single color if using `uniform_colors=True`"
+                                "Must pass `uniform_colors=False` if using multiple colors"
                             )
                     self._colors = UniformColor(colors)
                     self._cmap = None

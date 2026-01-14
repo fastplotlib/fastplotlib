@@ -30,11 +30,11 @@ sinc_data = np.column_stack([xs, ys])
 sine = figure[0, 0].add_line(data=sine_data, thickness=5, colors="magenta")
 
 # you can also use colormaps for lines!
-cosine = figure[0, 0].add_line(data=cosine_data, thickness=12, cmap="autumn")
+cosine = figure[0, 0].add_line(data=cosine_data, thickness=12, cmap="autumn", uniform_color=False)
 
 # or a list of colors for each datapoint
 colors = ["r"] * 25 + ["purple"] * 25 + ["y"] * 25 + ["b"] * 25
-sinc = figure[0, 0].add_line(data=sinc_data, thickness=5, colors=colors)
+sinc = figure[0, 0].add_line(data=sinc_data, thickness=5, colors=colors, uniform_color=False)
 
 figure[0, 0].axes.grids.xy.visible = True
 figure.show()

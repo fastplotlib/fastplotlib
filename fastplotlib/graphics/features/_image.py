@@ -33,7 +33,7 @@ class TextureArray(GraphicFeature):
         },
     ]
 
-    def __init__(self, data, isolated_buffer: bool = True, property_name: str = "data"):
+    def __init__(self, data, property_name: str = "data"):
         super().__init__(property_name=property_name)
 
         data = self._fix_data(data)
@@ -41,13 +41,9 @@ class TextureArray(GraphicFeature):
         shared = pygfx.renderers.wgpu.get_shared()
         self._texture_limit_2d = shared.device.limits["max-texture-dimension-2d"]
 
-        if isolated_buffer:
-            # useful if data is read-only, example: memmaps
-            self._value = np.zeros(data.shape, dtype=data.dtype)
-            self.value[:] = data[:]
-        else:
-            # user's input array is used as the buffer
-            self._value = data
+        # create a new buffer
+        self._value = np.zeros(data.shape, dtype=data.dtype)
+        self.value[:] = data[:]
 
         # data start indices for each Texture
         self._row_indices = np.arange(

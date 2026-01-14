@@ -33,7 +33,6 @@ class GraphicMethodsMixin:
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
-        isolated_buffer: bool = True,
         **kwargs,
     ) -> ImageGraphic:
         """
@@ -62,12 +61,6 @@ class GraphicMethodsMixin:
         cmap_interpolation: str, optional, default "linear"
             colormap interpolation method, one of "nearest" or "linear"
 
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer - useful if the
-            array is large.
-
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
 
@@ -81,7 +74,6 @@ class GraphicMethodsMixin:
             cmap,
             interpolation,
             cmap_interpolation,
-            isolated_buffer,
             **kwargs,
         )
 
@@ -100,7 +92,6 @@ class GraphicMethodsMixin:
         substep_size: float = 0.1,
         emissive: str | tuple | numpy.ndarray = (0, 0, 0),
         shininess: int = 30,
-        isolated_buffer: bool = True,
         **kwargs,
     ) -> ImageVolumeGraphic:
         """
@@ -158,11 +149,6 @@ class GraphicMethodsMixin:
             How shiny the specular highlight is; a higher value gives a sharper highlight.
             Used only if `mode` = "iso"
 
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then set the data, useful if the
-            data arrays are ready-only such as memmaps. If False, the input array is itself used as the
-            buffer - useful if the array is large.
-
         kwargs
             additional keyword arguments passed to :class:`.Graphic`
 
@@ -183,7 +169,6 @@ class GraphicMethodsMixin:
             substep_size,
             emissive,
             shininess,
-            isolated_buffer,
             **kwargs,
         )
 
@@ -199,7 +184,6 @@ class GraphicMethodsMixin:
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Union[Sequence[Any], numpy.ndarray] = None,
-        isolated_buffer: bool = True,
         kwargs_lines: list[dict] = None,
         **kwargs,
     ) -> LineCollection:
@@ -268,7 +252,6 @@ class GraphicMethodsMixin:
             names,
             metadata,
             metadatas,
-            isolated_buffer,
             kwargs_lines,
             **kwargs,
         )
@@ -278,10 +261,9 @@ class GraphicMethodsMixin:
         data: Any,
         thickness: float = 2.0,
         colors: Union[str, numpy.ndarray, Sequence] = "w",
-        uniform_color: bool = False,
+        uniform_color: bool = True,
         cmap: str = None,
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
-        isolated_buffer: bool = True,
         size_space: str = "screen",
         **kwargs,
     ) -> LineGraphic:
@@ -304,9 +286,10 @@ class GraphicMethodsMixin:
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        uniform_color: bool, default ``False``
-            if True, uses a uniform buffer for the line color,
-            basically saves GPU VRAM when the entire line has a single color
+        uniform_color: bool, default ``True``
+            if ``True``, uses a uniform buffer for the line color,
+            basically saves GPU VRAM when the entire line has a single color.
+            If ``False``, you can set per-vertex colors.
 
         cmap: str, optional
             Apply a colormap to the line instead of assigning colors manually, this
@@ -332,7 +315,6 @@ class GraphicMethodsMixin:
             uniform_color,
             cmap,
             cmap_transform,
-            isolated_buffer,
             size_space,
             **kwargs,
         )
@@ -348,7 +330,6 @@ class GraphicMethodsMixin:
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Union[Sequence[Any], numpy.ndarray] = None,
-        isolated_buffer: bool = True,
         separation: float = 10.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
@@ -425,7 +406,6 @@ class GraphicMethodsMixin:
             names,
             metadata,
             metadatas,
-            isolated_buffer,
             separation,
             separation_axis,
             kwargs_lines,
@@ -448,7 +428,6 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] = None,
-        isolated_buffer: bool = True,
         **kwargs,
     ) -> MeshGraphic:
         """
@@ -488,12 +467,6 @@ class GraphicMethodsMixin:
             Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
             An image can also be used, this is basically a 2D colormap.
 
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer - useful if the
-            array is large. In almost all cases this should be ``True``.
-
         **kwargs
             passed to :class:`.Graphic`
 
@@ -509,7 +482,6 @@ class GraphicMethodsMixin:
             mapcoords,
             cmap,
             clim,
-            isolated_buffer,
             **kwargs,
         )
 
@@ -574,12 +546,12 @@ class GraphicMethodsMixin:
         self,
         data: Any,
         colors: Union[str, numpy.ndarray, Sequence[float], Sequence[str]] = "w",
-        uniform_color: bool = False,
+        uniform_color: bool = True,
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: Union[str, numpy.ndarray, Sequence[str]] = "o",
-        uniform_marker: bool = False,
+        uniform_marker: bool = True,
         custom_sdf: str = None,
         edge_colors: Union[
             str, pygfx.utils.color.Color, numpy.ndarray, Sequence[float]
@@ -592,7 +564,6 @@ class GraphicMethodsMixin:
         sizes: Union[float, numpy.ndarray, Sequence[float]] = 1,
         uniform_size: bool = False,
         size_space: str = "screen",
-        isolated_buffer: bool = True,
         **kwargs,
     ) -> ScatterGraphic:
         """
@@ -609,14 +580,15 @@ class GraphicMethodsMixin:
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        uniform_color: bool, default False
-            if True, uses a uniform buffer for the scatter point colors. Useful if you need to
-            save GPU VRAM when all points have the same color.
+        uniform_color: bool, default ``True``
+            if ``True``, uses a uniform buffer for the scatter point colors. Useful if you need to
+            save GPU VRAM when all points have the same color. If ``False``, you can set per-vertex colors.
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
-            overrides any argument passed to "colors".  For supported colormaps see the
-            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            overrides any argument passed to "colors".
+            For supported colormaps see the ``cmap`` library catalogue:
+            https://cmap-docs.readthedocs.io/en/stable/catalog/
 
         cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
@@ -640,9 +612,10 @@ class GraphicMethodsMixin:
             * Emojis: "❤️♠️♣️♦️💎💍✳️📍".
             * A string containing the value "custom". In this case, WGSL code defined by ``custom_sdf`` will be used.
 
-        uniform_marker: bool, default False
-            Use the same marker for all points. Only valid when `mode` is "markers". Useful if you need to use
-            the same marker for all points and want to save GPU RAM.
+        uniform_marker: bool, default ``True``
+            If ``True``, use the same marker for all points. Only valid when `mode` is "markers".
+            Useful if you need to use the same marker for all points and want to save GPU RAM. If ``False``, you can
+            set per-vertex markers.
 
         custom_sdf: str = None,
             The SDF code for the marker shape when the marker is set to custom.
@@ -662,8 +635,9 @@ class GraphicMethodsMixin:
         edge_colors: str | np.ndarray | pygfx.Color | Sequence[float], default "black"
             edge color of the markers, used when `mode` is "markers"
 
-        uniform_edge_color: bool, default True
-            Set the same edge color for all markers. Useful for saving GPU RAM.
+        uniform_edge_color: bool, default ``True``
+            Set the same edge color for all markers. Useful for saving GPU RAM. Set to ``False`` for per-vertex edge
+            colors
 
         edge_width: float = 1.0,
             Width of the marker edges. used when `mode` is "markers".
@@ -684,16 +658,12 @@ class GraphicMethodsMixin:
         sizes: float or iterable of float, optional, default 1.0
             sizes of the scatter points
 
-        uniform_size: bool, default False
-            if True, uses a uniform buffer for the scatter point sizes. Useful if you need to
-            save GPU VRAM when all points have the same size.
+        uniform_size: bool, default ``False``
+            if ``True``, uses a uniform buffer for the scatter point sizes. Useful if you need to
+            save GPU VRAM when all points have the same size. Set to ``False`` if you need per-vertex sizes.
 
         size_space: str, default "screen"
             coordinate space in which the size is expressed, one of ("screen", "world", "model")
-
-        isolated_buffer: bool, default True
-            whether the buffers should be isolated from the user input array.
-            Generally always ``True``, ``False`` is for rare advanced use if you have large arrays.
 
         kwargs
             passed to :class:`.Graphic`
@@ -720,7 +690,6 @@ class GraphicMethodsMixin:
             sizes,
             uniform_size,
             size_space,
-            isolated_buffer,
             **kwargs,
         )
 
