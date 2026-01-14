@@ -45,6 +45,7 @@ class ImguiFigure(Figure):
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
         show_tooltips: bool = False,
+        custom_fonts: list[tuple[str, float]] = None,
     ):
         self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
 
@@ -94,6 +95,13 @@ class ImguiFigure(Figure):
             14,
             font_config,
         )
+
+        for font_path, font_size in custom_fonts or []:
+            self._default_imgui_font = io.fonts.add_font_from_file_ttf(
+                font_path,
+                font_size,
+                font_config,
+            )
 
         imgui.push_font(self._default_imgui_font, self._default_imgui_font.legacy_size)
 
