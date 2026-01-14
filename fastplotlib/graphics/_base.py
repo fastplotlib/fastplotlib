@@ -289,8 +289,7 @@ class Graphic:
                 if isinstance(
                     child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
                 ):
-                    # need to call int() on it since it's a numpy array with 1 element
-                    # and numpy arrays aren't hashable
+                    # unique 32 bit integer id for each world object
                     global_id = child.id
                     WORLD_OBJECT_TO_GRAPHIC[global_id] = self
                     # store id to pop from dict when graphic is deleted
