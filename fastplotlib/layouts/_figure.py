@@ -53,6 +53,7 @@ class Figure:
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
         show_tooltips: bool = False,
+        custom_fonts: list[tuple[str, float]] = None,
     ):
         """
         Create a Figure containing Subplots.
@@ -127,6 +128,8 @@ class Figure:
         show_tooltips: bool, default False
             show tooltips on graphics
 
+        custom_fonts: list[tuple[str, float]], optional
+            Custom font file path and pixel sizes, TrueType/OpenType are supported.
         """
 
         if rects is not None:
