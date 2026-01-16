@@ -1,5 +1,6 @@
 from pathlib import Path
 from typing import Literal, Iterable
+from importlib import resources
 
 import numpy as np
 
@@ -66,32 +67,32 @@ class ImguiFigure(Figure):
 
         # This loads both the Roboto Font and FontAwesome 6 icons and creates and merged font
         # allowing us to use both without pushing and popping to display icons or regular text
-        sans_serif_font = str(
-            Path(imgui_bundle.__file__).parent.joinpath(
-                "assets", "fonts", "Roboto", "Roboto-Regular.ttf"
-            )
+        sans_serif_font = resources.files(imgui_bundle).joinpath(
+            "assets", "fonts", "Roboto", "Roboto-Regular.ttf"
         )
 
-        fa_6_fonts_path = str(
-            Path(imgui_bundle.__file__).parent.joinpath(
-                "assets", "fonts", "Font_Awesome_6_Free-Solid-900.otf"
-            )
+        fa_6_fonts_path = resources.files(imgui_bundle).joinpath(
+            "assets", "fonts", "Font_Awesome_6_Free-Solid-900.otf"
         )
 
         io = imgui.get_io()
 
-        self._default_imgui_font = io.fonts.add_font_from_file_ttf(
-            sans_serif_font, 14, imgui.ImFontConfig()
-        )
+        with (
+            resources.as_file(sans_serif_font) as sans_serif_font,
+            resources.as_file(fa_6_fonts_path) as fa_6_fonts_path,
+        ):
+            self._default_imgui_font = io.fonts.add_font_from_file_ttf(
+                str(sans_serif_font), 14, imgui.ImFontConfig()
+            )
 
-        font_config = imgui.ImFontConfig()
-        font_config.merge_mode = True
+            font_config = imgui.ImFontConfig()
+            font_config.merge_mode = True
 
-        self._default_imgui_font = io.fonts.add_font_from_file_ttf(
-            fa_6_fonts_path,
-            14,
-            font_config,
-        )
+            self._default_imgui_font = io.fonts.add_font_from_file_ttf(
+                str(fa_6_fonts_path),
+                14,
+                font_config,
+            )
 
         imgui.push_font(self._default_imgui_font, self._default_imgui_font.legacy_size)
 
