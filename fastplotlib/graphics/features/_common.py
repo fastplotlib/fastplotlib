@@ -130,6 +130,55 @@ class Rotation(GraphicFeature):
         self._call_event_handlers(event)
 
 
+class Scale(GraphicFeature):
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "np.ndarray[float, float, float, float]",
+            "description": "new scale",
+        },
+    ]
+
+    def __init__(
+        self, value: np.ndarray | Sequence[float], property_name: str = "scale"
+    ):
+        """Graphic scaling factor"""
+
+        self._validate(value)
+        # create ones array
+        self._value = np.ones(3)
+
+        self._value[:] = value
+        super().__init__(property_name=property_name)
+
+    def _validate(self, value):
+        if not len(value) in [2, 3]:
+            raise ValueError(
+                "scale must be a list, tuple, or array of 2 or 3 float values indicating (x, y) or (x, y, z) scaling"
+            )
+
+    @property
+    def value(self) -> np.ndarray:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: np.ndarray | Sequence[float]):
+        self._validate(value)
+
+        if len(value) == 2:
+            value = (*value, graphic.world_object.world.scale_z)
+
+        value = np.asarray(value)
+
+        graphic.world_object.world.scale = value
+
+        # set value of existing feature value array
+        self._value[:] = value
+
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
+        self._call_event_handlers(event)
+
+
 class Alpha(GraphicFeature):
     """The alpha value (i.e. opacity) of a graphic."""
 

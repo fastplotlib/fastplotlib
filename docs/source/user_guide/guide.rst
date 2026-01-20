@@ -648,23 +648,29 @@ There are several spaces to consider when using ``fastplotlib``:
     World space is the 3D space in which graphical objects live. Objects
     and the camera can exist anywhere in this space.
 
-2) Data Space
+2) Model or Data Space
 
-    Data space is simply the world space plus any offset or rotation that has been applied to an object.
+    Model/Data space is simply the world space plus any offset, scaling and rotation that has been applied to an object.
 
 .. note::
-    World space does not always correspond directly to data space, you may have to adjust for any offset or rotation of the ``Graphic``.
+    World space does not always correspond directly to data space,
+    you may have to adjust for any offset, rotation, and scaling of the ``Graphic``. See below.
 
 3) Screen Space
 
     Screen space is the 2D space in which your screen pixels reside. This space is constrained by the screen width and height in pixels.
     In the rendering process, the camera is responsible for projecting the world space into screen space.
 
-.. note::
-    When interacting with ``Graphic`` objects, there is a very helpful function for mapping screen space to world space
-    (``Figure.map_screen_to_world(pos=(x, y))``). This can be particularly useful when working with click events where click
-    positions are returned in screen space but ``Graphic`` objects that you may want to interact with exist in world
-    space.
+When interacting with ``Graphic`` objects, there are helpful functions for mapping between these spaces:
+    - ``Subplot.map_screen_to_world((x, y))``
+    - ``Subplot.map_world_to_screen((x, y, z))``
+    - ``Graphic.map_model_to_world((x, y, z))``
+    - ``Graphic.map_world_to_model((x, y, z))``
+
+This can be particularly useful when working with click events where click positions are returned in screen space but
+ ``Graphic`` objects that you may want to interact with exist in world space. It can also be useful for determining
+ the screen/canvas pixel position of a datapoint on a graphic by mapping: model -> world -> screen. The entire inverse
+ transform can also be performed, screen -> world -> model.
 
 For more information on the various spaces used by rendering engines please see this `article <https://learnopengl.com/Getting-started/Coordinate-Systems>`_
 

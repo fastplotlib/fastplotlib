@@ -44,7 +44,6 @@ class ImguiFigure(Figure):
         canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
-        show_tooltips: bool = False,
         custom_fonts: list[tuple[str, float]] = None,
         override_default_font: bool = False,
     ):
@@ -63,7 +62,6 @@ class ImguiFigure(Figure):
             canvas_kwargs=canvas_kwargs,
             size=size,
             names=names,
-            show_tooltips=show_tooltips,
             custom_fonts=custom_fonts,
             override_default_font=override_default_font,
         )

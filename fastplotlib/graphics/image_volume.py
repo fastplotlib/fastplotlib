@@ -419,3 +419,18 @@ class ImageVolumeGraphic(Graphic):
         vmin, vmax = quick_min_max(self.data.value)
         self.vmin = vmin
         self.vmax = vmax
+
+    def format_pick_info(self, pick_info: dict) -> str:
+        return "image volume tooltips supported in next version"
+
+        col, row, z = pick_info["index"]
+        if self.data.value.ndim == 3:
+            val = self.data[z, row, col]
+            info = f"{val:.4g}"
+        else:
+            info = "\n".join(
+                f"{channel}: {val:.4g}"
+                for channel, val in zip("rgba", self.data[z, row, col])
+            )
+
+        return info

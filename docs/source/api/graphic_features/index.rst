@@ -48,6 +48,7 @@ Graphic Features
     Name
     Offset
     Rotation
+    Scale
     Alpha
     AlphaMode
     Visible
