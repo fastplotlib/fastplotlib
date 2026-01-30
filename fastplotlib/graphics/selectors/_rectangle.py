@@ -513,10 +513,7 @@ class RectangleSelector(BaseSelector):
             row_ixs = np.arange(ymin, ymax, dtype=int)
             return row_ixs, col_ixs
 
-        if (
-            "Line" in source.__class__.__name__
-            or "Scatter" in source.__class__.__name__
-        ):
+        if any([g in source.__class__.__name__ for g in ["Line", "Scatter"]])
             if isinstance(source, GraphicCollection):
                 ixs = list()
                 for g in source.graphics:
