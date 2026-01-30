@@ -329,10 +329,7 @@ class PolygonSelector(BaseSelector):
         if len(polygon) == 0:
             if "Image" in source.__class__.__name__:
                 return np.zeros((0, 2), np.int32)
-            if (
-                "Line" in source.__class__.__name__
-                or "Scatter" in graphic.__class__.__name__
-            ):
+            if any([g in source.__class__.__name__ for g in ["Line", "Scatter"]])
                 if isinstance(source, GraphicCollection):
                     return [np.zeros((0, 1), np.int32) for _ in source.graphics]
                 else:
