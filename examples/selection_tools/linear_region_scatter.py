@@ -13,10 +13,7 @@ import fastplotlib as fpl
 import numpy as np
 
 # names for out subplots
-names = [
-    ["scatter x", "scatter y"],
-    ["zoomed x region", "zoomed y region"]
-]
+names = [["scatter x", "scatter y"], ["zoomed x region", "zoomed y region"]]
 
 # 2 rows, 2 columns
 figure = fpl.Figure(
@@ -25,8 +22,8 @@ figure = fpl.Figure(
     names=names,
 )
 
-scatter_x_data = (100*np.random.random_sample(size=(500, 2))).astype(np.float32)
-scatter_y_data = (100*np.random.random_sample(size=(500, 2))).astype(np.float32)
+scatter_x_data = (100 * np.random.random_sample(size=(500, 2))).astype(np.float32)
+scatter_y_data = (100 * np.random.random_sample(size=(500, 2))).astype(np.float32)
 
 # plot scatter data
 scatter_x = figure[0, 0].add_scatter(scatter_x_data)
@@ -35,6 +32,7 @@ scatter_y = figure[0, 1].add_scatter(scatter_y_data)
 # add linear selectors
 selector_x = scatter_x.add_linear_region_selector((0, 100))  # default axis is "x"
 selector_y = scatter_y.add_linear_region_selector(axis="y")
+
 
 @selector_x.add_event_handler("selection")
 def set_zoom_x(ev):
@@ -52,6 +50,7 @@ def set_zoom_y(ev):
     figure[1, 1].clear()
     figure[1, 1].add_scatter(selected_data, sizes=10)
     figure[1, 1].auto_scale()
+
 
 # set initial selection
 selector_x.selection = (30, 60)
