@@ -353,10 +353,7 @@ class PolygonSelector(BaseSelector):
                         indices.append(p)
             return np.array(indices, np.int32).reshape(-1, 2)
 
-        if (
-            "Line" in source.__class__.__name__
-            or "Scatter" in source.__class__.__name__
-        ):
+            if any([g in source.__class__.__name__ for g in ["Line", "Scatter"]])
             if isinstance(source, GraphicCollection):
                 ixs = list()
                 for g in source.graphics:
