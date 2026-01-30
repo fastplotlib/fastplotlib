@@ -26,8 +26,8 @@ scatter_x_data = (100 * np.random.random_sample(size=(500, 2))).astype(np.float3
 scatter_y_data = (100 * np.random.random_sample(size=(500, 2))).astype(np.float32)
 
 # plot scatter data
-scatter_x = figure[0, 0].add_scatter(scatter_x_data)
-scatter_y = figure[0, 1].add_scatter(scatter_y_data)
+scatter_x = figure[0, 0].add_scatter(scatter_x_data, sizes=4)
+scatter_y = figure[0, 1].add_scatter(scatter_y_data, sizes=4)
 
 # add linear selectors
 selector_x = scatter_x.add_linear_region_selector((0, 100))  # default axis is "x"
