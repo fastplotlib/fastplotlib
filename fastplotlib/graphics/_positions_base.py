@@ -341,3 +341,11 @@ class PositionsGraphic(Graphic):
         center = sum(quick_min_max(magn_vals)) / 2
 
         return bounds_init, limits, size, center
+
+    def format_pick_info(self, pick_info: dict) -> str:
+        index = pick_info["vertex_index"]
+        info = "\n".join(
+            f"{dim}: {val:.4g}" for dim, val in zip("xyz", self.data[index])
+        )
+
+        return info

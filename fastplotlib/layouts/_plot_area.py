@@ -9,11 +9,12 @@ from pylinalg import vec_transform, vec_unproject
 from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
-from ..graphics._base import Graphic
+from ..graphics._base import Graphic, WORLD_OBJECT_TO_GRAPHIC
 from ..graphics import ImageGraphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
+from ..tools import Tooltip
 
 
 try:
@@ -88,6 +89,8 @@ class PlotArea(GraphicMethodsMixin):
         self._animate_funcs_pre: list[callable] = list()
         self._animate_funcs_post: list[callable] = list()
 
+        self._animate_funcs_persist: list[callable] = list()
+
         # list of all graphics managed by this PlotArea
         self._graphics: list[Graphic] = list()
 
@@ -116,6 +119,16 @@ class PlotArea(GraphicMethodsMixin):
         )
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
+
+        self._ambient_light = pygfx.AmbientLight()
+        self._directional_light = pygfx.DirectionalLight()
+
+        self.scene.add(self._ambient_light)
+        self.scene.add(self._camera.add(self._directional_light))
+
+        self._tooltip = Tooltip()
+        self.get_figure()._fpl_overlay_scene.add(self._tooltip._fpl_world_object)
+        self.renderer.add_event_handler(self._fpl_set_tooltip, "pointer_move")
 
     def get_figure(self, obj=None):
         """Get Figure instance that contains this plot area"""
@@ -166,6 +179,8 @@ class PlotArea(GraphicMethodsMixin):
         # user wants to set completely new camera, remove current camera from controller
         if isinstance(new_camera, pygfx.PerspectiveCamera):
             self.controller.remove_camera(self._camera)
+            # add directional light to new camera
+            new_camera.add(self._directional_light)
             # add new camera to controller
             self.controller.add_camera(new_camera)
 
@@ -275,20 +290,40 @@ class PlotArea(GraphicMethodsMixin):
         self._background_material.set_colors(*colors)
 
     @property
+    def ambient_light(self) -> pygfx.AmbientLight:
+        """the ambient lighting in the scene"""
+        return self._ambient_light
+
+    @property
+    def directional_light(self) -> pygfx.DirectionalLight:
+        """the directional lighting on the camera in the scene"""
+        return self._directional_light
+
+    @property
     def animations(self) -> dict[str, list[callable]]:
         """Returns a dictionary of 'pre' and 'post' animation functions."""
         return {"pre": self._animate_funcs_pre, "post": self._animate_funcs_post}
+
+    @property
+    def tooltip(self) -> Tooltip:
+        """The tooltip in this PlotArea"""
+        return self._tooltip
 
     def map_screen_to_world(
         self, pos: tuple[float, float] | pygfx.PointerEvent, allow_outside: bool = False
     ) -> np.ndarray | None:
         """
-        Map screen position to world position
+        Map screen (canvas) position to world position
 
         Parameters
         ----------
         pos: (float, float) | pygfx.PointerEvent
             ``(x, y)`` screen coordinates, or ``pygfx.PointerEvent``
+
+        Returns
+        -------
+        (float, float, float)
+            (x, y, z) position in world space, z is always 0
 
         """
         if isinstance(pos, pygfx.PointerEvent):
@@ -315,6 +350,117 @@ class PlotArea(GraphicMethodsMixin):
         # default z is zero for now
         return np.array([*pos_world[:2], 0])
 
+    def map_world_to_screen(
+        self, pos: tuple[float, float, float] | np.ndarray
+    ) -> tuple[float, float]:
+        """
+        Map world position to screen (canvas) position
+
+        Parameters
+        ----------
+        pos: (x, y, z)
+            world space position
+
+        Returns
+        -------
+        (float, float)
+            (x, y) position in screen (canvas) space
+
+        """
+
+        if not len(pos) == 3:
+            raise ValueError(f"must pass 3d (x, y, z) position, you passed: {pos}")
+
+        # apply camera transform and get NDC position
+        ndc = vec_transform(np.asarray(pos), self.camera.camera_matrix)
+
+        # get viewport rect
+        x_offset, y_offset, w, h = self.viewport.rect
+
+        # ndc to screen position
+        x_screen = x_offset + (ndc[0] + 1) * 0.5 * w
+        y_screen = y_offset + (1 - ndc[1]) * 0.5 * h
+
+        return x_screen, y_screen
+
+    def get_pick_info(self, pos):
+        """
+        Get pick info at this screen position
+
+        Parameters
+        ----------
+        pos: (x, y)
+            screen space position
+
+        Returns
+        -------
+        dict | None
+            pick info if a graphic is at this position, else None
+
+        """
+
+        info = self.renderer.get_pick_info(pos)
+
+        if info["world_object"] is not None:
+            # if this world object is owned by a graphic
+            if info["world_object"].id in WORLD_OBJECT_TO_GRAPHIC.keys():
+                info["graphic"] = WORLD_OBJECT_TO_GRAPHIC[info["world_object"].id]
+                return info
+
+    def _fpl_set_tooltip(self, ev: pygfx.PointerEvent):
+        # set tooltip using pointer position
+        if not self._tooltip.enabled:
+            return
+
+        # is pointer in this plot area
+        if not self.viewport.is_inside(ev.x, ev.y):
+            return
+
+        # is there a world object under the pointer
+        if ev.target is not None:
+            # is it owned by a graphic
+            if ev.target.id in WORLD_OBJECT_TO_GRAPHIC.keys():
+                graphic = WORLD_OBJECT_TO_GRAPHIC[ev.target.id]
+                if not graphic._fpl_support_tooltip:
+                    return
+
+                pick_info = ev.pick_info
+                if graphic.tooltip_format is not None:
+                    # custom formatter
+                    info = graphic.tooltip_format(pick_info)
+                else:
+                    # default formatter for this graphic
+                    info = graphic.format_pick_info(pick_info)
+                self._tooltip.display((ev.x, ev.y), info)
+                return
+
+        # not over a graphic that supports tooltips
+        self._tooltip.clear()
+
+    def _fpl_update_tooltip_render(self):
+        # update tooltip on every render
+        # TODO: improve performance
+        if (not self._tooltip.visible) or (not self._tooltip.enabled):
+            return
+
+        pick_info = self.get_pick_info(self._tooltip.position)
+
+        # None if no graphic is at this position
+        if pick_info is not None:
+            graphic = pick_info["graphic"]
+            if graphic._fpl_support_tooltip:
+                if graphic.tooltip_format is not None:
+                    # custom formatter
+                    info = graphic.tooltip_format(pick_info)
+                else:
+                    # default formatter for this graphic
+                    info = graphic.format_pick_info(pick_info)
+                self._tooltip.display(self._tooltip.position, info)
+                return
+
+        # tooltip cleared if none of the above condiitionals reached the tooltip display call
+        self._tooltip.clear()
+
     def _render(self):
         self._call_animate_functions(self._animate_funcs_pre)
 
@@ -325,6 +471,9 @@ class PlotArea(GraphicMethodsMixin):
             child._render()
 
         self._call_animate_functions(self._animate_funcs_post)
+
+        if self._tooltip.continuous_update:
+            self._fpl_update_tooltip_render()
 
     def _call_animate_functions(self, funcs: list[callable]):
         for fn in funcs:
@@ -446,7 +595,7 @@ class PlotArea(GraphicMethodsMixin):
         from the camera).
         """
         count = 0
-        for graphic in self._graphics:
+        for graphic in reversed(self._graphics):
             if isinstance(graphic, ImageGraphic):
                 count += 1
                 auto_depth = -count
@@ -547,10 +696,6 @@ class PlotArea(GraphicMethodsMixin):
             obj_list = self._graphics
             self._fpl_graphics_scene.add(graphic.world_object)
 
-            # add to tooltip registry
-            if self.get_figure().show_tooltips:
-                self.get_figure().tooltip_manager.register(graphic)
-
         else:
             raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
 
@@ -607,14 +752,33 @@ class PlotArea(GraphicMethodsMixin):
         if not len(self._fpl_graphics_scene.children) > 0:
             return
 
-        # scale all cameras associated with this controller
-        # else it looks wonky
-        for camera in self.controller.cameras:
-            camera.show_object(self._fpl_graphics_scene)
+        if self.parent.__class__.__name__.endswith("Figure"):
+            # always use figure._subplots.ravel() in internal fastplotlib code
+            # otherwise if we use `for subplot in figure`, this could conflict
+            # with a user's iterator where they are doing `for subplot in figure` !!!
+            for subplot in self.parent._subplots.ravel():
+                # scale all cameras associated with this controller
+                if subplot.camera in self.controller.cameras:
+                    # skip if the scene is empty
+                    if len(subplot._fpl_graphics_scene.children) < 1:
+                        continue
 
-            # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
-            # probably because camera.show_object uses bounding sphere
-            camera.zoom = zoom
+                    # center the camera in the other subplot w.r.t. the scene in that other subplot!
+                    self._auto_center_scene(
+                        subplot.camera, subplot._fpl_graphics_scene, zoom
+                    )
+        else:
+            # just change for this plot area
+            # this is probably a dock area
+            self._auto_center_scene(self.camera, self._fpl_graphics_scene, zoom)
+
+    def _auto_center_scene(
+        self, camera: pygfx.PerspectiveCamera, scene: pygfx.Scene, zoom: float
+    ):
+        camera.show_object(scene)
+        # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
+        # probably because camera.show_object uses bounding sphere
+        camera.zoom = zoom
 
     def auto_scale(
         self,
@@ -642,16 +806,43 @@ class PlotArea(GraphicMethodsMixin):
         self.center_scene()
 
         if maintain_aspect is None:  # if not provided keep current setting
+            # use the same maintain apsect for all other cameras that this controller manages
+            # I think this make sense for most use cases, even when the other controllers are
+            # only managing one or 2 axes
             maintain_aspect = self.camera.maintain_aspect
 
-        # scale all cameras associated with this controller else it looks wonky
-        for camera in self.controller.cameras:
-            camera.maintain_aspect = maintain_aspect
+        if self.parent.__class__.__name__.endswith("Figure"):
+            # always use figure._subplots.ravel() in internal fastplotlib code
+            # otherwise if we use `for subplot in figure`, this could conflict
+            # with a user's iterator where they are doing `for subplot in figure` !!!
+            for subplot in self.parent._subplots.ravel():
+                # skip if the scene is empty
+                if len(subplot._fpl_graphics_scene.children) < 1:
+                    continue
 
-        if len(self._fpl_graphics_scene.children) > 0:
-            width, height, depth = np.ptp(
-                self._fpl_graphics_scene.get_world_bounding_box(), axis=0
+                # scale the camera in the other subplot w.r.t. the scene in that other subplot!
+                if subplot.camera in self.controller.cameras:
+                    camera = subplot.camera
+                    self._auto_scale_scene(
+                        camera, subplot._fpl_graphics_scene, zoom, maintain_aspect
+                    )
+        else:
+            # just change for this plot area, this is probably a dock area
+            self._auto_scale_scene(
+                self.camera, self._fpl_graphics_scene, zoom, maintain_aspect
             )
+
+    def _auto_scale_scene(
+        self,
+        camera: pygfx.PerspectiveCamera,
+        scene: pygfx.Scene,
+        zoom: float,
+        maintain_aspect: bool,
+    ):
+        camera.maintain_aspect = maintain_aspect
+
+        if len(scene.children) > 0:
+            width, height, depth = np.ptp(scene.get_world_bounding_box(), axis=0)
         else:
             width, height, depth = (1, 1, 1)
 
@@ -661,12 +852,10 @@ class PlotArea(GraphicMethodsMixin):
         if height < 0.01:
             height = 1
 
-        # scale all cameras associated with this controller else it looks wonky
-        for camera in self.controller.cameras:
-            camera.width = width
-            camera.height = height
+        camera.width = width
+        camera.height = height
 
-            camera.zoom = zoom
+        camera.zoom = zoom
 
     def remove_graphic(self, graphic: Graphic):
         """

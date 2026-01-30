@@ -9,6 +9,9 @@ Graphic Features
     SizeSpace
     VertexPositions
     VertexCmap
+    MeshIndices
+    MeshCmap
+    SurfaceData
     Thickness
     VertexMarkers
     UniformMarker
@@ -45,6 +48,7 @@ Graphic Features
     Name
     Offset
     Rotation
+    Scale
     Alpha
     AlphaMode
     Visible

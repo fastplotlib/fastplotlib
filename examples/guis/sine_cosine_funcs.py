@@ -9,7 +9,6 @@ Identical to the Unit Circle example but you can change the angular frequencies 
 # test_example = false
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
-import glfw
 import numpy as np
 import fastplotlib as fpl
 from fastplotlib.ui import EdgeWindow

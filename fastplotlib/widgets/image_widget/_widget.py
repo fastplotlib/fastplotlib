@@ -966,10 +966,6 @@ class ImageWidget:
                     ]
                     if max_lengths[scroll_dim] == np.inf:
                         max_lengths[scroll_dim] = new_length
-                    elif max_lengths[scroll_dim] != new_length:
-                        raise ValueError(
-                            f"New arrays have differing values along dim {scroll_dim}"
-                        )
 
                     self._dims_max_bounds[scroll_dim] = max_lengths[scroll_dim]
 

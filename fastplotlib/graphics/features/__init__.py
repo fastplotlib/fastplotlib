@@ -1,9 +1,18 @@
-from ._positions_graphics import (
+from ._positions import (
     VertexColors,
     UniformColor,
     SizeSpace,
     VertexPositions,
     VertexCmap,
+)
+from ._mesh import (
+    MeshIndices,
+    MeshCmap,
+    SurfaceData,
+    PolygonData,
+    resolve_cmap_mesh,
+    surface_data_to_mesh,
+    triangulate_polygon,
 )
 from ._line import Thickness
 from ._scatter import (
@@ -62,7 +71,7 @@ from ._selection_features import (
     LinearRegionSelectionFeature,
     RectangleSelectionFeature,
 )
-from ._common import Name, Offset, Rotation, Alpha, AlphaMode, Visible, Deleted
+from ._common import Name, Offset, Rotation, Scale, Alpha, AlphaMode, Visible, Deleted
 
 
 __all__ = [
@@ -71,6 +80,9 @@ __all__ = [
     "SizeSpace",
     "VertexPositions",
     "VertexCmap",
+    "MeshIndices",
+    "MeshCmap",
+    "SurfaceData",
     "Thickness",
     "VertexMarkers",
     "UniformMarker",
@@ -107,6 +119,7 @@ __all__ = [
     "Name",
     "Offset",
     "Rotation",
+    "Scale",
     "Alpha",
     "AlphaMode",
     "Visible",
