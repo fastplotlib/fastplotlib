@@ -261,19 +261,35 @@ class NDPositions:
             self._graphic = graphic_cls(data_slice)
 
     def _create_heatmap_data(self, data_slice) -> tuple[np.ndarray, float, float]:
+        """return [n_rows, n_cols] shape data"""
         if not self.processor.multi:
             raise ValueError
 
         if self.processor.data.shape[-1] != 2:
             raise ValueError
 
-        # return [n_rows, n_cols] shape data
+        # assumes x vals in every row is the same, otherwise a heatmap representation makes no sense
+        x = data_slice[0, :, 0]  # get x from just the first row
 
-        image_data = data_slice[..., 1]
+        # check if we need to interpolate
+        norm = np.linalg.norm(np.diff(np.diff(x))) / x.size
+
+        if norm > 1e-6:
+            # x is not uniform upto float32 precision, must interpolate
+            x_uniform = np.linspace(x[0], x[-1], num=x.size)
+            y_interp = np.zeros(shape=data_slice[..., 1].shape, dtype=np.float32)
+
+            # this for loop is actually slightly faster than numpy.apply_along_axis()
+            for i in range(data_slice.shape[0]):
+                y_interp[i] = np.interp(x_uniform, x, data_slice[i, :, 1])
+
+        else:
+            # x is sufficiently uniform
+            y_interp = data_slice[..., 1]
 
         # assume all x values are the same
         x_scale = data_slice[:, -1, 0][0] / data_slice.shape[1]
 
         x0 = data_slice[0, 0, 0]
 
-        return image_data, x0, x_scale
+        return y_interp, x0, x_scale
