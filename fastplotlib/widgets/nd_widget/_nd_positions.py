@@ -250,10 +250,15 @@ class NDPositions:
         self,
         graphic_cls: Type[LineGraphic | LineCollection | LineStack | ScatterGraphic | ScatterCollection | ImageGraphic],
     ):
-
         data_slice = self.processor.get(self.indices)
 
         if issubclass(graphic_cls, ImageGraphic):
+            if not self.processor.multi:
+                raise ValueError
+
+            if self.processor.data.shape[-1] != 2:
+                raise ValueError
+
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
             self._graphic = graphic_cls(image_data, offset=(x0, 0, -1), scale=(x_scale, 1, 1))
 
@@ -262,12 +267,6 @@ class NDPositions:
 
     def _create_heatmap_data(self, data_slice) -> tuple[np.ndarray, float, float]:
         """return [n_rows, n_cols] shape data"""
-        if not self.processor.multi:
-            raise ValueError
-
-        if self.processor.data.shape[-1] != 2:
-            raise ValueError
-
         # assumes x vals in every row is the same, otherwise a heatmap representation makes no sense
         x = data_slice[0, :, 0]  # get x from just the first row
 
