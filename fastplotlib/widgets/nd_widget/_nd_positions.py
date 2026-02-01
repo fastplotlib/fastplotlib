@@ -30,7 +30,7 @@ class NDPositionsProcessor(NDProcessor):
         display_window: int | float | None = 100,  # window for n_datapoints dim only
         datapoints_window_func: Callable | None = None,
         datapoints_window_size: int | None = None,
-        **kwargs
+        **kwargs,
     ):
 
         self._display_window = display_window
@@ -208,7 +208,10 @@ class NDPositionsProcessor(NDProcessor):
                 start = max(indices[-1] - hw, 0)
                 stop = start + dw
                 # also add window size of `p` dim so window_func output has the same number of datapoints
-                if self.datapoints_window_func is not None and self.datapoints_window_size is not None:
+                if (
+                    self.datapoints_window_func is not None
+                    and self.datapoints_window_size is not None
+                ):
                     stop += self.datapoints_window_size - 1
                     # TODO: pad with constant if we're using a window func and the index is near the end
 
@@ -226,7 +229,10 @@ class NDPositionsProcessor(NDProcessor):
         graphic_data = window_output[tuple(slices)].copy()
 
         # apply window function on the `p` n_datapoints dim
-        if self.datapoints_window_func is not None and self.datapoints_window_size is not None:
+        if (
+            self.datapoints_window_func is not None
+            and self.datapoints_window_size is not None
+        ):
             # get windows
 
             # graphic_data will be of shape: [n, p + (ws - 1), 2 | 3]
@@ -249,12 +255,16 @@ class NDPositionsProcessor(NDProcessor):
             dims = tuple(map({"x": 0, "y": 1, "z": 2}.get, apply_dims))
 
             # windows will be of shape [n, p, 1 | 2 | 3, ws]
-            windows = sliding_window_view(graphic_data[..., dims], ws, axis=-2).squeeze()
+            windows = sliding_window_view(
+                graphic_data[..., dims], ws, axis=-2
+            ).squeeze()
 
             # this reshape is required to reshape wf outputs of shape [n, p] -> [n, p, 1] only when necessary
-            graphic_data[..., :self.display_window, dims] = wf(windows, axis=-1).reshape(graphic_data.shape[0], self.display_window, len(dims))
+            graphic_data[..., : self.display_window, dims] = wf(
+                windows, axis=-1
+            ).reshape(graphic_data.shape[0], self.display_window, len(dims))
 
-            return graphic_data[..., :self.display_window, :]
+            return graphic_data[..., : self.display_window, :]
 
         return graphic_data
 
@@ -263,7 +273,14 @@ class NDPositions:
     def __init__(
         self,
         data,
-        graphic: Type[LineGraphic | LineCollection | LineStack | ScatterGraphic | ScatterCollection | ImageGraphic],
+        graphic: Type[
+            LineGraphic
+            | LineCollection
+            | LineStack
+            | ScatterGraphic
+            | ScatterCollection
+            | ImageGraphic
+        ],
         multi: bool = False,
         display_window: int = 10,
         window_funcs: tuple[WindowFuncCallable | None] | None = None,
@@ -292,7 +309,12 @@ class NDPositions:
     def graphic(
         self,
     ) -> (
-        LineGraphic | LineCollection | LineStack | ScatterGraphic | ScatterCollection | ImageGraphic
+        LineGraphic
+        | LineCollection
+        | LineStack
+        | ScatterGraphic
+        | ScatterCollection
+        | ImageGraphic
     ):
         """LineStack or ImageGraphic for heatmaps"""
         return self._graphic
@@ -331,7 +353,14 @@ class NDPositions:
 
     def _create_graphic(
         self,
-        graphic_cls: Type[LineGraphic | LineCollection | LineStack | ScatterGraphic | ScatterCollection | ImageGraphic],
+        graphic_cls: Type[
+            LineGraphic
+            | LineCollection
+            | LineStack
+            | ScatterGraphic
+            | ScatterCollection
+            | ImageGraphic
+        ],
     ):
         data_slice = self.processor.get(self.indices)
 
@@ -343,7 +372,9 @@ class NDPositions:
                 raise ValueError
 
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
-            self._graphic = graphic_cls(image_data, offset=(x0, 0, -1), scale=(x_scale, 1, 1))
+            self._graphic = graphic_cls(
+                image_data, offset=(x0, 0, -1), scale=(x_scale, 1, 1)
+            )
 
         else:
             self._graphic = graphic_cls(data_slice)
