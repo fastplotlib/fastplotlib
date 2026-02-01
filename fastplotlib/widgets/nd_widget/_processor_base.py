@@ -16,14 +16,14 @@ class NDProcessor:
         self,
         data,
         n_display_dims: Literal[2, 3] = 2,
-        slider_index_maps: tuple[Callable[[Any], int] | None, ...] | None = None,
+        index_mappings: tuple[Callable[[Any], int] | None, ...] | None = None,
         window_funcs: tuple[WindowFuncCallable | None] | None = None,
         window_sizes: tuple[int | None] | None = None,
         window_order: tuple[int, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
     ):
         self._data = self._validate_data(data)
-        self._slider_index_maps = self._validate_slider_index_maps(slider_index_maps)
+        self._index_mappings = self._validate_index_mappings(index_mappings)
 
         self.window_funcs = window_funcs
         self.window_sizes = window_sizes
@@ -43,13 +43,21 @@ class NDProcessor:
 
     @property
     def ndim(self) -> int:
-        return int(np.prod(self.shape))
+        return len(self.shape)
 
     def _validate_data(self, data: ArrayProtocol):
         if not isinstance(data, ArrayProtocol):
             raise TypeError("`data` must implement the ArrayProtocol")
 
         return data
+
+    @property
+    def slider_dims(self):
+        raise NotImplementedError
+
+    @property
+    def n_slider_dims(self):
+        raise NotImplementedError
 
     @property
     def window_funcs(
@@ -64,21 +72,21 @@ class NDProcessor:
         window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None,
     ):
         if window_funcs is None:
-            self._window_funcs = None
+            self._window_funcs = tuple([None] * self.n_slider_dims)
             return
 
         if callable(window_funcs):
             window_funcs = (window_funcs,)
 
         # if all are None
-        if all([f is None for f in window_funcs]):
-            self._window_funcs = None
-            return
+        # if all([f is None for f in window_funcs]):
+        #     self._window_funcs = tuple(window_funcs)
+        #     return
 
         self._validate_window_func(window_funcs)
 
         self._window_funcs = tuple(window_funcs)
-        self._recompute_histogram()
+        # self._recompute_histogram()
 
     def _validate_window_func(self, funcs):
         if isinstance(funcs, (tuple, list)):
@@ -112,7 +120,7 @@ class NDProcessor:
     @window_sizes.setter
     def window_sizes(self, window_sizes: tuple[int | None, ...] | int | None):
         if window_sizes is None:
-            self._window_sizes = None
+            self._window_sizes = tuple([None] * self.n_slider_dims)
             return
 
         if isinstance(window_sizes, int):
@@ -197,14 +205,14 @@ class NDProcessor:
     #     pass
 
     @property
-    def slider_index_maps(self) -> tuple[Callable[[Any], int] | None, ...]:
-        return self._slider_index_maps
+    def index_mappings(self) -> tuple[Callable[[Any], int] | None, ...]:
+        return self._index_mappings
 
-    @slider_index_maps.setter
-    def slider_index_maps(self, maps):
-        self._maps = self._validate_slider_index_maps(maps)
+    @index_mappings.setter
+    def index_mappings(self, maps):
+        self._index_mappings = self._validate_index_mappings(maps)
 
-    def _validate_slider_index_maps(self, maps):
+    def _validate_index_mappings(self, maps):
         if maps is not None:
             if not all([callable(m) or m is None for m in maps]):
                 raise TypeError

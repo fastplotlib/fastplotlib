@@ -4,6 +4,7 @@ from warnings import warn
 
 import numpy as np
 from numpy.typing import ArrayLike
+from numpy.lib.stride_tricks import sliding_window_view
 
 from ...utils import subsample_array, ArrayProtocol
 
@@ -15,7 +16,7 @@ from ...graphics import (
     ScatterGraphic,
     ScatterCollection,
 )
-from ._processor_base import NDProcessor
+from ._processor_base import NDProcessor, WindowFuncCallable
 
 
 # TODO: Maybe get rid of n_display_dims in NDProcessor,
@@ -27,15 +28,21 @@ class NDPositionsProcessor(NDProcessor):
         data: ArrayProtocol,
         multi: bool = False,  # TODO: interpret [n - 2] dimension as n_lines or n_points
         display_window: int | float | None = 100,  # window for n_datapoints dim only
-        n_slider_dims: int = 0,
+        datapoints_window_func: Callable | None = None,
+        datapoints_window_size: int | None = None,
+        **kwargs
     ):
-        super().__init__(data=data)
 
         self._display_window = display_window
 
+        # TOOD: this does data validation twice and is a bit messy, cleanup
+        self._data = self._validate_data(data)
         self.multi = multi
 
-        self.n_slider_dims = n_slider_dims
+        super().__init__(data=data, **kwargs)
+
+        self._datapoints_window_func = datapoints_window_func
+        self._datapoints_window_size = datapoints_window_size
 
     def _validate_data(self, data: ArrayProtocol):
         # TODO: determine right validation shape etc.
@@ -70,6 +77,28 @@ class NDPositionsProcessor(NDProcessor):
 
         self._multi = m
 
+    @property
+    def slider_dims(self) -> tuple[int, ...]:
+        """slider dimensions"""
+        return tuple(range(self.ndim - 2 - int(self.multi))) + (self.ndim - 2,)
+
+    @property
+    def n_slider_dims(self) -> int:
+        return self.ndim - 1 - int(self.multi)
+
+    # TODO: validation for datapoints_window_func and size
+    @property
+    def datapoints_window_func(self) -> tuple[Callable, str] | None:
+        """
+        Callable and str indicating which dims to apply window function along:
+            'all', 'x', 'y', 'z', 'xyz', 'xy', 'xz', 'yz'
+        '"""
+        return self._datapoints_window_func
+
+    @property
+    def datapoints_window_size(self) -> Callable | None:
+        return self._datapoints_window_size
+
     def _apply_window_functions(self, indices: tuple[int, ...]):
         """applies the window functions for each dimension specified"""
         # window size for each dim
@@ -77,15 +106,21 @@ class NDPositionsProcessor(NDProcessor):
         # window function for each dim
         funcs = self._window_funcs
 
-        if winds is None or funcs is None:
-            # no window funcs or window sizes, just slice data and return
-            # clamp to max bounds
-            indexer = list()
-            for dim, i in enumerate(indices):
-                i = min(self.shape[dim] - 1, i)
-                indexer.append(i)
-
-            return self.data[tuple(indexer)]
+        # TODO: use tuple of None for window funcs and sizes to indicate all None, instead of just None
+        # print(winds)
+        # print(funcs)
+        #
+        # if winds is None or funcs is None:
+        #     # no window funcs or window sizes, just slice data and return
+        #     # clamp to max bounds
+        #     indexer = list()
+        #     print(indices)
+        #     print(self.shape)
+        #     for dim, i in enumerate(indices):
+        #         i = min(self.shape[dim] - 1, i)
+        #         indexer.append(i)
+        #
+        #     return self.data[tuple(indexer)]
 
         # order in which window funcs are applied
         order = self._window_order
@@ -172,6 +207,10 @@ class NDPositionsProcessor(NDProcessor):
                 # for now assume just a single index provided that indicates x axis value
                 start = max(indices[-1] - hw, 0)
                 stop = start + dw
+                # also add window size of `p` dim so window_func output has the same number of datapoints
+                if self.datapoints_window_func is not None and self.datapoints_window_size is not None:
+                    stop += self.datapoints_window_size - 1
+                    # TODO: pad with constant if we're using a window func and the index is near the end
 
                 # TODO: uncomment this once we have resizeable buffers!!
                 # stop = min(indices[-1] + hw, self.shape[-2])
@@ -182,7 +221,38 @@ class NDPositionsProcessor(NDProcessor):
                 # n - 2 dim is n_lines or n_scatters
                 slices.insert(0, slice(None))
 
-            return window_output[tuple(slices)]
+        # data that will be used for the graphical representation
+        # a copy is made, if there were no window functions then this is a view of the original data
+        graphic_data = window_output[tuple(slices)].copy()
+
+        # apply window function on the `p` n_datapoints dim
+        if self.datapoints_window_func is not None and self.datapoints_window_size is not None:
+            # get windows
+
+            # graphic_data will be of shape: [n, p + (ws - 1), 2 | 3]
+            # where:
+            #   n - number of lines, scatters, heatmap rows
+            #   p - number of datapoints/samples
+
+            # windows will be of shape [n, p, 1 | 2 | 3, ws]
+            wf = self.datapoints_window_func[0]
+            apply_dims = self.datapoints_window_func[1]
+            ws = self.datapoints_window_size
+
+            # apply user's window func and return
+            # result will be of shape [n, p, 2 | 3]
+            if apply_dims == "all":
+                windows = sliding_window_view(graphic_data, ws, axis=-2)
+                return wf(windows, axis=-1)
+
+            # map user dims str to tuple of numerical dims
+            dims = tuple(map({"x": 0, "y": 1, "z": 2}.get, apply_dims))
+            windows = sliding_window_view(graphic_data[..., dims], ws, axis=-2).squeeze()
+            graphic_data[..., :self.display_window, dims] = wf(windows, axis=-1)[..., None]
+
+            return graphic_data[..., :self.display_window, :]
+
+        return graphic_data
 
 
 class NDPositions:
@@ -192,12 +262,21 @@ class NDPositions:
         graphic: Type[LineGraphic | LineCollection | LineStack | ScatterGraphic | ScatterCollection | ImageGraphic],
         multi: bool = False,
         display_window: int = 10,
+        window_funcs: tuple[WindowFuncCallable | None] | None = None,
+        window_sizes: tuple[int | None] | None = None,
     ):
         if issubclass(graphic, LineCollection):
             multi = True
 
-        self._processor = NDPositionsProcessor(data, multi=multi, display_window=display_window, n_slider_dims=0)
-        self._indices = tuple([0] * (0 + 1))
+        self._processor = NDPositionsProcessor(
+            data,
+            multi=multi,
+            display_window=display_window,
+            window_funcs=window_funcs,
+            window_sizes=window_sizes,
+        )
+
+        self._indices = tuple([0] * self._processor.n_slider_dims)
 
         self._create_graphic(graphic)
 
