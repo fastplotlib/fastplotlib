@@ -234,7 +234,6 @@ class NDPositionsProcessor(NDProcessor):
             #   n - number of lines, scatters, heatmap rows
             #   p - number of datapoints/samples
 
-            # windows will be of shape [n, p, 1 | 2 | 3, ws]
             wf = self.datapoints_window_func[0]
             apply_dims = self.datapoints_window_func[1]
             ws = self.datapoints_window_size
@@ -242,13 +241,18 @@ class NDPositionsProcessor(NDProcessor):
             # apply user's window func and return
             # result will be of shape [n, p, 2 | 3]
             if apply_dims == "all":
+                # windows will be of shape [n, p, 1 | 2 | 3, ws]
                 windows = sliding_window_view(graphic_data, ws, axis=-2)
                 return wf(windows, axis=-1)
 
             # map user dims str to tuple of numerical dims
             dims = tuple(map({"x": 0, "y": 1, "z": 2}.get, apply_dims))
+
+            # windows will be of shape [n, p, 1 | 2 | 3, ws]
             windows = sliding_window_view(graphic_data[..., dims], ws, axis=-2).squeeze()
-            graphic_data[..., :self.display_window, dims] = wf(windows, axis=-1)[..., None]
+
+            # this reshape is required to reshape wf outputs of shape [n, p] -> [n, p, 1] only when necessary
+            graphic_data[..., :self.display_window, dims] = wf(windows, axis=-1).reshape(graphic_data.shape[0], self.display_window, len(dims))
 
             return graphic_data[..., :self.display_window, :]
 
