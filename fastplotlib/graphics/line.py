@@ -82,6 +82,7 @@ class LineGraphic(PositionsGraphic):
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
+            color_mode=color_mode,
             size_space=size_space,
             **kwargs,
         )
