@@ -17,7 +17,8 @@ from .features import (
     VertexColors,
     UniformColor,
     VertexCmap,
-    SizeSpace, UniformRotations,
+    SizeSpace,
+    UniformRotations,
 )
 from ..utils import quick_min_max
 

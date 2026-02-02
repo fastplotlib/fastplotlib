@@ -70,11 +70,16 @@ class VertexColors(BufferManager):
             # first make sure it's not representing one color
             skip = False
             if isinstance(value, np.ndarray):
-                if (value.shape in ((3,), (4,))) and (np.issubdtype(value.dtype, np.floating) or np.issubdtype(value.dtype, np.integer)):
+                if (value.shape in ((3,), (4,))) and (
+                    np.issubdtype(value.dtype, np.floating)
+                    or np.issubdtype(value.dtype, np.integer)
+                ):
                     # represents one color
                     skip = True
             elif isinstance(value, (list, tuple)):
-                if len(value) in (3, 4) and all([isinstance(v, (float, int)) for v in value]):
+                if len(value) in (3, 4) and all(
+                    [isinstance(v, (float, int)) for v in value]
+                ):
                     # represents one color
                     skip = True
 

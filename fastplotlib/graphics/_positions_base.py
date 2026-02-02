@@ -88,9 +88,7 @@ class PositionsGraphic(Graphic):
 
         # this is created so that cmap can be set later
         if isinstance(self._colors, VertexColors):
-            self._cmap = VertexCmap(
-                self._colors, cmap_name=None, transform=None
-            )
+            self._cmap = VertexCmap(self._colors, cmap_name=None, transform=None)
 
         self.world_object.material.color_mode = mode
 
@@ -142,12 +140,16 @@ class PositionsGraphic(Graphic):
 
         else:
             # determine if a single or multiple colors were passed and decide color mode
-            if isinstance(colors, (pygfx.Color, str)) or (len(colors) in [3, 4] and all(isinstance(v, Real) for v in colors)):
+            if isinstance(colors, (pygfx.Color, str)) or (
+                len(colors) in [3, 4] and all(isinstance(v, Real) for v in colors)
+            ):
                 # one color specified as a str or pygfx.Color, or one color specified with RGB(A) values
                 if color_mode in ("auto", "uniform"):
                     new_colors = UniformColor(colors)
                 else:
-                    new_colors = VertexColors(colors, n_colors=self._data.value.shape[0])
+                    new_colors = VertexColors(
+                        colors, n_colors=self._data.value.shape[0]
+                    )
 
             elif all(isinstance(c, (str, pygfx.Color)) for c in colors):
                 # sequence of colors
@@ -204,7 +206,9 @@ class PositionsGraphic(Graphic):
         if cmap is not None:
             # if a cmap is specified it overrides colors argument
             if color_mode == "uniform":
-                raise ValueError("if a `cmap` is provided, `color_mode` must be 'vertex' or 'auto', not 'uniform'")
+                raise ValueError(
+                    "if a `cmap` is provided, `color_mode` must be 'vertex' or 'auto', not 'uniform'"
+                )
 
             if isinstance(cmap, str):
                 # make colors from cmap
@@ -235,9 +239,7 @@ class PositionsGraphic(Graphic):
 
             # this is created so that cmap can be set later
             if isinstance(self._colors, VertexColors):
-                self._cmap = VertexCmap(
-                    self._colors, cmap_name=None, transform=None
-                )
+                self._cmap = VertexCmap(self._colors, cmap_name=None, transform=None)
 
         self._size_space = SizeSpace(size_space)
         super().__init__(*args, **kwargs)
