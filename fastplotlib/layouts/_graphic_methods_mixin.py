@@ -177,7 +177,6 @@ class GraphicMethodsMixin:
         data: Union[numpy.ndarray, List[numpy.ndarray]],
         thickness: Union[float, Sequence[float]] = 2.0,
         colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
-        uniform_colors: bool = False,
         cmap: Union[Sequence[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
         name: str = None,
@@ -245,7 +244,6 @@ class GraphicMethodsMixin:
             data,
             thickness,
             colors,
-            uniform_colors,
             cmap,
             cmap_transform,
             name,
@@ -261,7 +259,6 @@ class GraphicMethodsMixin:
         data: Any,
         thickness: float = 2.0,
         colors: Union[str, numpy.ndarray, Sequence] = "w",
-        uniform_color: bool = True,
         cmap: str = None,
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
         size_space: str = "screen",
@@ -286,11 +283,6 @@ class GraphicMethodsMixin:
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        uniform_color: bool, default ``True``
-            if ``True``, uses a uniform buffer for the line color,
-            basically saves GPU VRAM when the entire line has a single color.
-            If ``False``, you can set per-vertex colors.
-
         cmap: str, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
@@ -312,7 +304,6 @@ class GraphicMethodsMixin:
             data,
             thickness,
             colors,
-            uniform_color,
             cmap,
             cmap_transform,
             size_space,
@@ -546,7 +537,6 @@ class GraphicMethodsMixin:
         self,
         data: Any,
         colors: Union[str, numpy.ndarray, Sequence[float], Sequence[str]] = "w",
-        uniform_color: bool = True,
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
@@ -579,10 +569,6 @@ class GraphicMethodsMixin:
         colors: str, array, tuple, list, Sequence, default "w"
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
-
-        uniform_color: bool, default ``True``
-            if ``True``, uses a uniform buffer for the scatter point colors. Useful if you need to
-            save GPU VRAM when all points have the same color. If ``False``, you can set per-vertex colors.
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
@@ -674,7 +660,6 @@ class GraphicMethodsMixin:
             ScatterGraphic,
             data,
             colors,
-            uniform_color,
             cmap,
             cmap_transform,
             mode,

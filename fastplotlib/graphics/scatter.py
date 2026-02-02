@@ -40,7 +40,6 @@ class ScatterGraphic(PositionsGraphic):
         self,
         data: Any,
         colors: str | np.ndarray | Sequence[float] | Sequence[str] = "w",
-        uniform_color: bool = True,
         cmap: str = None,
         cmap_transform: np.ndarray = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
@@ -70,10 +69,6 @@ class ScatterGraphic(PositionsGraphic):
         colors: str, array, tuple, list, Sequence, default "w"
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
-
-        uniform_color: bool, default ``True``
-            if ``True``, uses a uniform buffer for the scatter point colors. Useful if you need to
-            save GPU VRAM when all points have the same color. If ``False``, you can set per-vertex colors.
 
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
@@ -164,7 +159,6 @@ class ScatterGraphic(PositionsGraphic):
         super().__init__(
             data=data,
             colors=colors,
-            uniform_color=uniform_color,
             cmap=cmap,
             cmap_transform=cmap_transform,
             size_space=size_space,
@@ -271,7 +265,7 @@ class ScatterGraphic(PositionsGraphic):
 
         self._size_space = SizeSpace(size_space)
 
-        if uniform_color:
+        if isinstance(self._color, UniformColor):
             material_kwargs["color_mode"] = pygfx.ColorMode.uniform
             material_kwargs["color"] = self.colors
         else:
