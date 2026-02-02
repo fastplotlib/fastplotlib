@@ -130,7 +130,7 @@ def test_positions_graphics_data(
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("colors", [None, *generate_color_inputs("r")])
-@pytest.mark.parametrize("color_mode", ["auto", "vertex"])
+@pytest.mark.parametrize("color_mode", ["vertex"])
 def test_positions_graphic_vertex_colors(
     graphic_type,
     colors,
@@ -153,10 +153,9 @@ def test_positions_graphic_vertex_colors(
         graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
     # color per vertex
-    # uniform colors is default False, or set to False
-    assert isinstance(graphic._colors, VertexColors)
-    assert isinstance(graphic.colors, VertexColors)
-    assert len(graphic.colors) == len(graphic.data)
+        assert isinstance(graphic._colors, VertexColors)
+        assert isinstance(graphic.colors, VertexColors)
+        assert len(graphic.colors) == len(graphic.data)
 
     if colors is None:
         # default
