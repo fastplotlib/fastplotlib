@@ -34,6 +34,9 @@ surface = figure[0, 0].add_surface(
     z, mode="basic", cmap="viridis", clim=(-max_z, max_z)
 )
 
+# enable continuous updates for the tooltip
+figure[0, 0].tooltip.continuous_update = True
+
 figure[0, 0].camera.show_object(surface.world_object, (-1, 3, -1), up=(0, 0, 1))
 figure.show()
 

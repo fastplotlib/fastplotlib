@@ -68,6 +68,7 @@ sphinx_gallery_conf = {
             "../../examples/text",
             "../../examples/events",
             "../../examples/selection_tools",
+            "../../examples/spaces_transforms",
             "../../examples/machine_learning",
             "../../examples/guis",
             "../../examples/ipywidgets",
