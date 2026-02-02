@@ -308,8 +308,7 @@ def test_incompatible_color_args(graphic_type, colors, color_mode):
 
 
 @pytest.mark.parametrize("sizes", [None, 5.0, np.linspace(3, 8, 10, dtype=np.float32)])
-@pytest.mark.parametrize("uniform_size", [None, False])
-def test_sizes(sizes, uniform_size):
+def test_sizes(sizes):
     # test scatter sizes
     fig = fpl.Figure()
 
@@ -321,7 +320,7 @@ def test_sizes(sizes, uniform_size):
 
     data = generate_positions_spiral_data("xy")
 
-    graphic = fig[0, 0].add_scatter(data=data, **kwargs)
+    graphic = fig[0, 0].add_scatter(data=data, uniform_size=False, **kwargs)
 
     assert isinstance(graphic.sizes, VertexPointSizes)
     assert isinstance(graphic._sizes, VertexPointSizes)
