@@ -33,7 +33,7 @@ class GraphicMethodsMixin:
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
-        **kwargs,
+        **kwargs
     ) -> ImageGraphic:
         """
 
@@ -74,7 +74,7 @@ class GraphicMethodsMixin:
             cmap,
             interpolation,
             cmap_interpolation,
-            **kwargs,
+            **kwargs
         )
 
     def add_image_volume(
@@ -92,7 +92,7 @@ class GraphicMethodsMixin:
         substep_size: float = 0.1,
         emissive: str | tuple | numpy.ndarray = (0, 0, 0),
         shininess: int = 30,
-        **kwargs,
+        **kwargs
     ) -> ImageVolumeGraphic:
         """
 
@@ -169,7 +169,7 @@ class GraphicMethodsMixin:
             substep_size,
             emissive,
             shininess,
-            **kwargs,
+            **kwargs
         )
 
     def add_line_collection(
@@ -179,12 +179,13 @@ class GraphicMethodsMixin:
         colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
         cmap: Union[Sequence[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Union[Sequence[Any], numpy.ndarray] = None,
         kwargs_lines: list[dict] = None,
-        **kwargs,
+        **kwargs
     ) -> LineCollection:
         """
 
@@ -246,12 +247,13 @@ class GraphicMethodsMixin:
             colors,
             cmap,
             cmap_transform,
+            color_mode,
             name,
             names,
             metadata,
             metadatas,
             kwargs_lines,
-            **kwargs,
+            **kwargs
         )
 
     def add_line(
@@ -261,8 +263,9 @@ class GraphicMethodsMixin:
         colors: Union[str, numpy.ndarray, Sequence] = "w",
         cmap: str = None,
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         size_space: str = "screen",
-        **kwargs,
+        **kwargs
     ) -> LineGraphic:
         """
 
@@ -306,8 +309,9 @@ class GraphicMethodsMixin:
             colors,
             cmap,
             cmap_transform,
+            color_mode,
             size_space,
-            **kwargs,
+            **kwargs
         )
 
     def add_line_stack(
@@ -324,7 +328,7 @@ class GraphicMethodsMixin:
         separation: float = 10.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
-        **kwargs,
+        **kwargs
     ) -> LineStack:
         """
 
@@ -400,7 +404,7 @@ class GraphicMethodsMixin:
             separation,
             separation_axis,
             kwargs_lines,
-            **kwargs,
+            **kwargs
         )
 
     def add_mesh(
@@ -419,7 +423,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] = None,
-        **kwargs,
+        **kwargs
     ) -> MeshGraphic:
         """
 
@@ -473,7 +477,7 @@ class GraphicMethodsMixin:
             mapcoords,
             cmap,
             clim,
-            **kwargs,
+            **kwargs
         )
 
     def add_polygon(
@@ -490,7 +494,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] | None = None,
-        **kwargs,
+        **kwargs
     ) -> PolygonGraphic:
         """
 
@@ -539,6 +543,7 @@ class GraphicMethodsMixin:
         colors: Union[str, numpy.ndarray, Sequence[float], Sequence[str]] = "w",
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: Union[str, numpy.ndarray, Sequence[str]] = "o",
         uniform_marker: bool = True,
@@ -552,9 +557,9 @@ class GraphicMethodsMixin:
         point_rotations: float | numpy.ndarray = 0,
         point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
         sizes: Union[float, numpy.ndarray, Sequence[float]] = 1,
-        uniform_size: bool = False,
+        uniform_size: bool = True,
         size_space: str = "screen",
-        **kwargs,
+        **kwargs
     ) -> ScatterGraphic:
         """
 
@@ -662,6 +667,7 @@ class GraphicMethodsMixin:
             colors,
             cmap,
             cmap_transform,
+            color_mode,
             mode,
             markers,
             uniform_marker,
@@ -675,7 +681,7 @@ class GraphicMethodsMixin:
             sizes,
             uniform_size,
             size_space,
-            **kwargs,
+            **kwargs
         )
 
     def add_surface(
@@ -692,7 +698,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] | None = None,
-        **kwargs,
+        **kwargs
     ) -> SurfaceGraphic:
         """
 
@@ -746,7 +752,7 @@ class GraphicMethodsMixin:
         screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
-        **kwargs,
+        **kwargs
     ) -> TextGraphic:
         """
 
@@ -797,7 +803,7 @@ class GraphicMethodsMixin:
             screen_space,
             offset,
             anchor,
-            **kwargs,
+            **kwargs
         )
 
     def add_vectors(
@@ -807,7 +813,7 @@ class GraphicMethodsMixin:
         color: Union[str, Sequence[float], numpy.ndarray] = "w",
         size: float = None,
         vector_shape_options: dict = None,
-        **kwargs,
+        **kwargs
     ) -> VectorsGraphic:
         """
 
@@ -852,5 +858,5 @@ class GraphicMethodsMixin:
             color,
             size,
             vector_shape_options,
-            **kwargs,
+            **kwargs
         )

@@ -42,6 +42,7 @@ class ScatterGraphic(PositionsGraphic):
         colors: str | np.ndarray | Sequence[float] | Sequence[str] = "w",
         cmap: str = None,
         cmap_transform: np.ndarray = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
         uniform_marker: bool = True,
@@ -161,6 +162,7 @@ class ScatterGraphic(PositionsGraphic):
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
+            color_mode=color_mode,
             size_space=size_space,
             **kwargs,
         )

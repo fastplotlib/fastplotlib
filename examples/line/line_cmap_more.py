@@ -26,7 +26,7 @@ figure = fpl.Figure(size=(700, 560))
 line0 = figure[0, 0].add_line(sine, thickness=10)
 
 # set colormap along line datapoints, use an offset to place it above the previous line
-line1 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", uniform_color=False, offset=(0, 2, 0))
+line1 = figure[0, 0].add_line(sine, thickness=10, cmap="jet", offset=(0, 2, 0))
 
 # set colormap by mapping data using a transform
 # here we map the color using the y-values of the sine data
@@ -36,7 +36,6 @@ line2 = figure[0, 0].add_line(
     thickness=10,
     cmap="jet",
     cmap_transform=sine[:, 1],
-    uniform_color=False,
     offset=(0, 4, 0),
 )
 
@@ -46,7 +45,6 @@ line3 = figure[0, 0].add_line(
     thickness=10,
     cmap="jet",
     cmap_transform=cosine[:, 1],
-    uniform_color=False,
     offset=(0, 6, 0)
 )
 
@@ -60,7 +58,6 @@ line4 = figure[0, 0].add_line(
     thickness=10,
     cmap="tab10",
     cmap_transform=labels,
-    uniform_color=False,
     offset=(0, 8, 0),
 )
 

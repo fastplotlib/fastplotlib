@@ -39,6 +39,7 @@ class LineGraphic(PositionsGraphic):
         colors: str | np.ndarray | Sequence = "w",
         cmap: str = None,
         cmap_transform: np.ndarray | Sequence = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         size_space: str = "screen",
         **kwargs,
     ):

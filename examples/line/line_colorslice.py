@@ -31,7 +31,7 @@ sine = figure[0, 0].add_line(
     data=sine_data,
     thickness=5,
     colors="magenta",
-    uniform_color=False,  # initialize with same color across vertices, but we will change the per-vertex colors later
+    color_mode="vertex",  # initialize with same color across vertices, but we will change the per-vertex colors later
 )
 
 # you can also use colormaps for lines!
@@ -39,7 +39,6 @@ cosine = figure[0, 0].add_line(
     data=cosine_data,
     thickness=12,
     cmap="autumn",
-    uniform_color=False,
     offset=(0, 3, 0)  # places the graphic at a y-axis offset of 3, offsets don't affect data
 )
 
@@ -49,7 +48,6 @@ sinc = figure[0, 0].add_line(
     data=sinc_data,
     thickness=5,
     colors=colors,
-    uniform_color=False,
     offset=(0, 6, 0)
 )
 
@@ -59,7 +57,7 @@ zeros = figure[0, 0].add_line(
     data=zeros_data,
     thickness=8,
     colors="w",
-    uniform_color=False,  # initialize with same color across vertices, but we will change the per-vertex colors later
+    color_mode="vertex",  # initialize with same color across vertices, but we will change the per-vertex colors later
     offset=(0, 10, 0)
 )
 
