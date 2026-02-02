@@ -184,6 +184,9 @@ class NDPositionsProcessor(NDProcessor):
         Note that we do not use __getitem__ here since the index is a tuple specifying a single integer
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
         """
+        # apply any slider index mappings
+        indices = tuple([m(i) for m, i in zip(self.index_mappings, indices)])
+
         if len(indices) > 1:
             # there are dims in addition to the n_datapoints dim
             # apply window funcs
@@ -195,7 +198,8 @@ class NDPositionsProcessor(NDProcessor):
         # TODO: window function on the `p` n_datapoints dimension
 
         if self.display_window is not None:
-            dw = self.display_window
+            # display window is interpreted using the index mapping for the `p` dim
+            dw = self.index_mappings[-1](self.display_window)
 
             if dw == 1:
                 slices = [slice(indices[-1], indices[-1] + 1)]
@@ -244,7 +248,7 @@ class NDPositionsProcessor(NDProcessor):
             apply_dims = self.datapoints_window_func[1]
             ws = self.datapoints_window_size
 
-            # apply user's window func and return
+            # apply user's window func
             # result will be of shape [n, p, 2 | 3]
             if apply_dims == "all":
                 # windows will be of shape [n, p, 1 | 2 | 3, ws]
@@ -260,11 +264,11 @@ class NDPositionsProcessor(NDProcessor):
             ).squeeze()
 
             # this reshape is required to reshape wf outputs of shape [n, p] -> [n, p, 1] only when necessary
-            graphic_data[..., : self.display_window, dims] = wf(
+            graphic_data[..., : dw, dims] = wf(
                 windows, axis=-1
-            ).reshape(graphic_data.shape[0], self.display_window, len(dims))
+            ).reshape(graphic_data.shape[0], dw, len(dims))
 
-            return graphic_data[..., : self.display_window, :]
+            return graphic_data[..., : dw, :]
 
         return graphic_data
 
@@ -285,6 +289,7 @@ class NDPositions:
         display_window: int = 10,
         window_funcs: tuple[WindowFuncCallable | None] | None = None,
         window_sizes: tuple[int | None] | None = None,
+        index_mappings: tuple[Callable[[Any], int] | None] | None = None,
     ):
         if issubclass(graphic, LineCollection):
             multi = True
@@ -295,6 +300,7 @@ class NDPositions:
             display_window=display_window,
             window_funcs=window_funcs,
             window_sizes=window_sizes,
+            index_mappings=index_mappings,
         )
 
         self._indices = tuple([0] * self._processor.n_slider_dims)

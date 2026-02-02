@@ -11,6 +11,10 @@ from ...utils import subsample_array, ArrayProtocol
 WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
 
 
+def identity(index: int) -> int:
+    return index
+
+
 class NDProcessor:
     def __init__(
         self,
@@ -23,7 +27,7 @@ class NDProcessor:
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
     ):
         self._data = self._validate_data(data)
-        self._index_mappings = self._validate_index_mappings(index_mappings)
+        self._index_mappings = tuple(self._validate_index_mappings(index_mappings))
 
         self.window_funcs = window_funcs
         self.window_sizes = window_sizes
@@ -205,19 +209,30 @@ class NDProcessor:
     #     pass
 
     @property
-    def index_mappings(self) -> tuple[Callable[[Any], int] | None, ...]:
+    def index_mappings(self) -> tuple[Callable[[Any], int]]:
         return self._index_mappings
 
     @index_mappings.setter
-    def index_mappings(self, maps):
-        self._index_mappings = self._validate_index_mappings(maps)
+    def index_mappings(self, maps: tuple[Callable[[Any], int] | None] | None):
+        self._index_mappings = tuple(self._validate_index_mappings(maps))
 
     def _validate_index_mappings(self, maps):
-        if maps is not None:
-            if not all([callable(m) or m is None for m in maps]):
+        if maps is None:
+            return tuple([identity] * self.n_slider_dims)
+
+        if len(maps) != self.n_slider_dims:
+            raise IndexError
+
+        _maps = list()
+        for m in maps:
+            if m is None:
+                _maps.append(identity)
+            elif callable(m):
+                _maps.append(identity)
+            else:
                 raise TypeError
 
-        return maps
+        return tuple(maps)
 
     def __getitem__(self, item: tuple[Any, ...]) -> ArrayProtocol:
         pass
