@@ -265,7 +265,7 @@ class ScatterGraphic(PositionsGraphic):
 
         self._size_space = SizeSpace(size_space)
 
-        if isinstance(self._color, UniformColor):
+        if isinstance(self._colors, UniformColor):
             material_kwargs["color_mode"] = pygfx.ColorMode.uniform
             material_kwargs["color"] = self.colors
         else:
