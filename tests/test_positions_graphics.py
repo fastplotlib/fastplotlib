@@ -37,12 +37,12 @@ def test_sizes_slice():
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("colors", [None, *generate_color_inputs("b")])
-@pytest.mark.parametrize("uniform_color", [True, False])
-def test_uniform_color(graphic_type, colors, uniform_color):
+@pytest.mark.parametrize("color_mode", ["uniform", "vertex"])
+def test_color_mode(graphic_type, colors, color_mode):
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["colors", "uniform_color"]:
+    for kwarg in ["colors", "color_mode"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -54,7 +54,7 @@ def test_uniform_color(graphic_type, colors, uniform_color):
     elif graphic_type == "scatter":
         graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
-    if uniform_color:
+    if color_mode == "uniform":
         assert isinstance(graphic._colors, UniformColor)
         assert isinstance(graphic.colors, pygfx.Color)
         if colors is None:
@@ -130,17 +130,17 @@ def test_positions_graphics_data(
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("colors", [None, *generate_color_inputs("r")])
-@pytest.mark.parametrize("uniform_color", [None, False])
+@pytest.mark.parametrize("color_mode", ["auto", "vertex"])
 def test_positions_graphic_vertex_colors(
     graphic_type,
     colors,
-    uniform_color,
+    color_mode,
 ):
     # test different ways of passing vertex colors
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["colors", "uniform_color"]:
+    for kwarg in ["colors", "color_mode"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -179,7 +179,7 @@ def test_positions_graphic_vertex_colors(
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("colors", [None, *generate_color_inputs("r")])
-@pytest.mark.parametrize("uniform_color", [None, False])
+@pytest.mark.parametrize("color_mode", ["auto", "vertex"])
 @pytest.mark.parametrize("cmap", ["jet"])
 @pytest.mark.parametrize(
     "cmap_transform", [None, [3, 5, 2, 1, 0, 6, 9, 7, 4, 8], np.arange(9, -1, -1)]
@@ -187,7 +187,7 @@ def test_positions_graphic_vertex_colors(
 def test_cmap(
     graphic_type,
     colors,
-    uniform_color,
+    color_mode,
     cmap,
     cmap_transform,
 ):
@@ -195,7 +195,7 @@ def test_cmap(
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["cmap", "cmap_transform", "colors", "uniform_color"]:
+    for kwarg in ["cmap", "cmap_transform", "colors", "color_mode"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -261,14 +261,14 @@ def test_cmap(
     "colors", [None, *generate_color_inputs("multi")]
 )  # cmap arg overrides colors
 @pytest.mark.parametrize(
-    "uniform_color", [True]  # none of these will work with a uniform buffer
+    "color_mode", ["uniform"]  # none of these will work with a uniform buffer
 )
-def test_incompatible_cmap_color_args(graphic_type, cmap, colors, uniform_color):
+def test_incompatible_cmap_color_args(graphic_type, cmap, colors, color_mode):
     # test incompatible cmap args
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["cmap", "colors", "uniform_color"]:
+    for kwarg in ["cmap", "colors", "color_mode"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -276,24 +276,24 @@ def test_incompatible_cmap_color_args(graphic_type, cmap, colors, uniform_color)
     data = generate_positions_spiral_data("xy")
 
     if graphic_type == "line":
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             graphic = fig[0, 0].add_line(data=data, **kwargs)
     elif graphic_type == "scatter":
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize("colors", [*generate_color_inputs("multi")])
 @pytest.mark.parametrize(
-    "uniform_color", [True]  # none of these will work with a uniform buffer
+    "color_mode", ["uniform"]  # none of these will work with a uniform buffer
 )
-def test_incompatible_color_args(graphic_type, colors, uniform_color):
+def test_incompatible_color_args(graphic_type, colors, color_mode):
     # test incompatible color args
     fig = fpl.Figure()
 
     kwargs = dict()
-    for kwarg in ["colors", "uniform_color"]:
+    for kwarg in ["colors", "color_mode"]:
         if locals()[kwarg] is not None:
             # add to dict of arguments that will be passed
             kwargs[kwarg] = locals()[kwarg]
@@ -301,10 +301,10 @@ def test_incompatible_color_args(graphic_type, colors, uniform_color):
     data = generate_positions_spiral_data("xy")
 
     if graphic_type == "line":
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             graphic = fig[0, 0].add_line(data=data, **kwargs)
     elif graphic_type == "scatter":
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError):
             graphic = fig[0, 0].add_scatter(data=data, **kwargs)
 
 
