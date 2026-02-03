@@ -331,10 +331,8 @@ class ScatterGraphic(PositionsGraphic):
             raise AttributeError(
                 f"scatter plot is: {self.mode}. The mode must be 'markers' to set the markers"
             )
-        if isinstance(self._markers, VertexMarkers):
-            self._markers[:] = value
-        elif isinstance(self._markers, UniformMarker):
-            self._markers.set_value(self, value)
+
+        self._markers.set_value(self, value)
 
     @property
     def edge_colors(self) -> str | pygfx.Color | VertexColors | None:
@@ -352,12 +350,7 @@ class ScatterGraphic(PositionsGraphic):
             raise AttributeError(
                 f"scatter plot is: {self.mode}. The mode must be 'markers' to set the edge_colors"
             )
-
-        if isinstance(self._edge_colors, VertexColors):
-            self._edge_colors[:] = value
-
-        elif isinstance(self._edge_colors, UniformEdgeColor):
-            self._edge_colors.set_value(self, value)
+        self._edge_colors.set_value(self, value)
 
     @property
     def edge_width(self) -> float | None:
@@ -399,11 +392,7 @@ class ScatterGraphic(PositionsGraphic):
                 f"it be 'uniform' or 'vertex' to set the `point_rotations`"
             )
 
-        if isinstance(self._point_rotations, VertexRotations):
-            self._point_rotations[:] = value
-
-        elif isinstance(self._point_rotations, UniformRotations):
-            self._point_rotations.set_value(self, value)
+        self._point_rotations.set_value(self, value)
 
     @property
     def image(self) -> TextureArray | None:
@@ -430,8 +419,4 @@ class ScatterGraphic(PositionsGraphic):
 
     @sizes.setter
     def sizes(self, value):
-        if isinstance(self._sizes, VertexPointSizes):
-            self._sizes[:] = value
-
-        elif isinstance(self._sizes, UniformSize):
-            self._sizes.set_value(self, value)
+        self._sizes.set_value(self, value)

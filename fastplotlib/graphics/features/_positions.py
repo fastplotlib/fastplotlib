@@ -385,7 +385,7 @@ class VertexCmap(BufferManager):
         provides a way to set colormaps with arbitrary transforms
         """
 
-        super().__init__(data=vertex_colors.buffer, property_name=property_name)
+        super().__init__(data=None, property_name=property_name)
 
         self._vertex_colors = vertex_colors
         self._cmap_name = cmap_name
@@ -409,6 +409,10 @@ class VertexCmap(BufferManager):
             )
             # set vertex colors from cmap
             self._vertex_colors[:] = colors
+
+    @property
+    def buffer(self) -> pygfx.Buffer:
+        return self._vertex_colors.buffer
 
     @block_reentrance
     def __setitem__(self, key: slice, cmap_name):

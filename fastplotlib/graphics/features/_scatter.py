@@ -215,7 +215,7 @@ class VertexMarkers(BufferManager):
 
                 # set new buffer
                 self._buffer = pygfx.Buffer(markers_int_array)
-                graphic.geometry.markers = self.buffer
+                graphic.world_object.geometry.markers = self.buffer
 
                 self._emit_event(self._property_name, key=slice(None), value=value)
 
@@ -584,7 +584,7 @@ class VertexPointSizes(BufferManager):
 
                 # set new buffer
                 self._buffer = pygfx.Buffer(data)
-                graphic.geometry.sizes = self.buffer
+                graphic.world_object.geometry.sizes = self.buffer
 
                 self._emit_event(self._property_name, key=slice(None), value=value)
                 return

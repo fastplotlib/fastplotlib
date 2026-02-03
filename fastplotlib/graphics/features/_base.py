@@ -137,21 +137,24 @@ class BufferManager(GraphicFeature):
 
     def __init__(
         self,
-        data: NDArray | pygfx.Buffer,
+        data: NDArray | pygfx.Buffer | None,
         **kwargs,
     ):
         super().__init__(**kwargs)
 
-        if isinstance(data, pygfx.Resource):
-            # already a buffer, probably used for
-            # managing another BufferManager, example: VertexCmap manages VertexColors
-            self._buffer = data
-        else:
-            # create a buffer
-            bdata = np.empty(data.shape, dtype=data.dtype)
-            bdata[:] = data[:]
+        # if data is None, then the BufferManager just provides a view into an existing buffer
+        # example: VertexCmap is basically a view into VertexColors
+        if data is not None:
+            if isinstance(data, pygfx.Resource):
+                # already a buffer, probably used for
+                # managing another BufferManager, example: VertexCmap manages VertexColors
+                self._buffer = data
+            else:
+                # create a buffer
+                bdata = np.empty(data.shape, dtype=data.dtype)
+                bdata[:] = data[:]
 
-            self._buffer = pygfx.Buffer(bdata)
+                self._buffer = pygfx.Buffer(bdata)
 
         self._event_handlers: list[Callable] = list()
 
