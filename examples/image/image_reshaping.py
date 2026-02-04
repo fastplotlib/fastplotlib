@@ -11,18 +11,15 @@ Note that the vmin-vmax is reset when you replace the buffers.
 """
 
 # test_example = false
-# sphinx_gallery_pygfx_docs = 'animate 4s'
+# sphinx_gallery_pygfx_docs = 'animate'
 
 
 import numpy as np
 import fastplotlib as fpl
 
+# create some data, diagonal sinusoidal bands
 xs = np.linspace(0, 2300, 2300, dtype=np.float16)
-
-sine = np.sin(np.sqrt(xs))
-
-full_data = np.vstack([sine * i for i in range(2_300)])
-
+full_data = np.vstack([np.cos(np.sqrt(xs + (np.pi / 2) * i)) * i for i in range(2_300)])
 
 fig = fpl.Figure()
 
@@ -44,7 +41,6 @@ def update():
 
 
 fig.add_animations(update)
-
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
