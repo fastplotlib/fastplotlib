@@ -25,6 +25,7 @@ Properties
     ScatterGraphic.axes
     ScatterGraphic.block_events
     ScatterGraphic.cmap
+    ScatterGraphic.color_mode
     ScatterGraphic.colors
     ScatterGraphic.data
     ScatterGraphic.deleted
