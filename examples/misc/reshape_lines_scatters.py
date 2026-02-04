@@ -26,11 +26,11 @@ ys = np.sin(xs)
 data = np.column_stack([xs, ys])
 
 # create a figure, add a line, scatter and line_stack
-fig = fpl.Figure(shape=(3, 1), size=(700, 700))
+figure = fpl.Figure(shape=(3, 1), size=(700, 700))
 
-line = fig[0, 0].add_line(data)
+line = figure[0, 0].add_line(data)
 
-scatter = fig[1, 0].add_scatter(
+scatter = figure[1, 0].add_scatter(
     np.random.rand(100, 3),
     colors=np.random.rand(100, 4),
     markers=np.random.choice(list("osD+x^v<>*"), size=100),
@@ -43,11 +43,11 @@ scatter = fig[1, 0].add_scatter(
     point_rotation_mode="vertex",
 )
 
-line_stack = fig[2, 0].add_line_stack(np.stack([data] * 10), cmap="viridis")
+line_stack = figure[2, 0].add_line_stack(np.stack([data] * 10), cmap="viridis")
 
-text = fig[0, 0].add_text(f"n_points: {100}", offset=(0, 1.5, 0), anchor="middle-left")
+text = figure[0, 0].add_text(f"n_points: {100}", offset=(0, 1.5, 0), anchor="middle-left")
 
-fig.show(maintain_aspect=False)
+figure.show(maintain_aspect=False)
 
 i = 0
 
@@ -83,7 +83,7 @@ def update():
     i += 0.01
 
 
-fig.add_animations(update)
+figure.add_animations(update)
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
