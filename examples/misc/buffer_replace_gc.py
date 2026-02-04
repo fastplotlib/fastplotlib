@@ -49,6 +49,7 @@ class UI(EdgeWindow):
             uniform_size=False,
             uniform_marker=False,
             uniform_edge_color=False,
+            point_rotation_mode="vertex",
             name="scatter",
         )
 
@@ -64,8 +65,6 @@ class UI(EdgeWindow):
                 for fea in features:
                     if imgui.button(f"{size} - {graphic} - {fea}"):
                         self._replace(graphic, fea, size)
-
-        imgui.text(f"VRAM usage: {self.vram_usage} MB")
 
     def _replace(
         self,
