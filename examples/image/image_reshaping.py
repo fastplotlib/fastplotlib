@@ -17,7 +17,6 @@ Note that the vmin-vmax is reset when you replace the buffers.
 import numpy as np
 import fastplotlib as fpl
 
-
 xs = np.linspace(0, 2300, 2300, dtype=np.float16)
 
 sine = np.sin(np.sqrt(xs))
@@ -32,11 +31,13 @@ image = fig[0, 0].add_image(full_data)
 fig.show()
 
 i, j = 1, 1
+
+
 def update():
     global i, j
     row = np.abs(np.sin(i)) * 2300
     col = np.abs(np.cos(i)) * 2300
-    image.data = full_data[:int(row), :int(col)]
+    image.data = full_data[: int(row), : int(col)]
 
     i += 0.1
     j += 0.1
@@ -45,4 +46,8 @@ def update():
 fig.add_animations(update)
 
 
-fpl.loop.run()
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
+if __name__ == "__main__":
+    print(__doc__)
+    fpl.loop.run()
