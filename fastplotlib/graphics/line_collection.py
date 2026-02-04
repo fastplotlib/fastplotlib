@@ -561,7 +561,7 @@ class LineStack(LineCollection):
         metadata: Any = None,
         metadatas: Sequence[Any] | np.ndarray = None,
         isolated_buffer: bool = True,
-        separation: float = 10.0,
+        separation: float = 0.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
         **kwargs,
@@ -610,7 +610,7 @@ class LineStack(LineCollection):
             metadata for each individual line associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
-        separation: float, default 10
+        separation: float, default 0.0
             space in between each line graphic in the stack
 
         separation_axis: str, default "y"
