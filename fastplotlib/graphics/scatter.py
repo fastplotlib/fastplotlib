@@ -169,7 +169,7 @@ class ScatterGraphic(PositionsGraphic):
 
         n_datapoints = self.data.value.shape[0]
 
-        geo_kwargs = {"positions": self._data.buffer}
+        geo_kwargs = {"positions": self._data._buffer}
 
         aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
 
@@ -207,7 +207,7 @@ class ScatterGraphic(PositionsGraphic):
 
                     self._markers = VertexMarkers(markers, n_datapoints)
 
-                    geo_kwargs["markers"] = self._markers.buffer
+                    geo_kwargs["markers"] = self._markers._buffer
 
                 if edge_colors is None:
                     # interpret as no edge color
@@ -230,7 +230,7 @@ class ScatterGraphic(PositionsGraphic):
                         edge_colors, n_datapoints, property_name="edge_colors"
                     )
                     material_kwargs["edge_color_mode"] = pygfx.ColorMode.vertex
-                    geo_kwargs["edge_colors"] = self._edge_colors.buffer
+                    geo_kwargs["edge_colors"] = self._edge_colors._buffer
 
                 self._edge_width = EdgeWidth(edge_width)
                 material_kwargs["edge_width"] = self._edge_width.value
@@ -272,7 +272,7 @@ class ScatterGraphic(PositionsGraphic):
             material_kwargs["color"] = self.colors
         else:
             material_kwargs["color_mode"] = pygfx.ColorMode.vertex
-            geo_kwargs["colors"] = self.colors.buffer
+            geo_kwargs["colors"] = self.colors._buffer
 
         if uniform_size:
             material_kwargs["size_mode"] = pygfx.SizeMode.uniform
@@ -281,14 +281,14 @@ class ScatterGraphic(PositionsGraphic):
         else:
             material_kwargs["size_mode"] = pygfx.SizeMode.vertex
             self._sizes = VertexPointSizes(sizes, n_datapoints=n_datapoints)
-            geo_kwargs["sizes"] = self.sizes.buffer
+            geo_kwargs["sizes"] = self.sizes._buffer
 
         match point_rotation_mode:
             case pygfx.enums.RotationMode.vertex:
                 self._point_rotations = VertexRotations(
                     point_rotations, n_datapoints=n_datapoints
                 )
-                geo_kwargs["rotations"] = self._point_rotations.buffer
+                geo_kwargs["rotations"] = self._point_rotations._buffer
 
             case pygfx.enums.RotationMode.uniform:
                 self._point_rotations = UniformRotations(point_rotations)

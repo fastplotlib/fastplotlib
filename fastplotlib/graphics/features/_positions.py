@@ -88,13 +88,9 @@ class VertexColors(BufferManager):
                 # parse the new colors
                 new_colors = parse_colors(value, len(value))
 
-                # destroy old buffer
-                if self._buffer._wgpu_object is not None:
-                    self._buffer._wgpu_object.destroy()
-
-                # create new buffer
+                # create the new buffer, old buffer should get dereferenced
                 self._buffer = pygfx.Buffer(new_colors)
-                graphic.world_object.geometry.colors = self.buffer
+                graphic.world_object.geometry.colors = self._buffer
 
                 if len(self._event_handlers) < 1:
                     return
@@ -328,13 +324,10 @@ class VertexPositions(BufferManager):
                     bdata = np.empty(value.shape, dtype=np.float32)
                     bdata[:] = value[:]
 
-                # destroy old buffer
-                if self._buffer._wgpu_object is not None:
-                    self._buffer._wgpu_object.destroy()
-
-                # create the new buffer
+                # create the new buffer, old buffer should get dereferenced
                 self._buffer = pygfx.Buffer(bdata)
-                graphic.world_object.geometry.positions = self.buffer
+                graphic.world_object.geometry.positions = self._buffer
+
                 self._emit_event(self._property_name, key=slice(None), value=value)
                 return
 
@@ -347,7 +340,14 @@ class VertexPositions(BufferManager):
         value: np.ndarray | float | list[float],
     ):
         # directly use the key to slice the buffer
-        self.buffer.data[key] = value
+        # if value is just 1D, assume these are y-values
+        if value.ndim == 1:
+            self.buffer.data[key, 1] = value
+        else:
+            # if value is [n, 1], this they just want to set y-values
+            # if value is [n, 2], this assumes they want to set xy values
+            # if value is [n, 3], it's xyz values
+            self.buffer.data[key, :value.shape[-1]] = value
 
         # _update_range handles parsing the key to
         # determine offset and size for GPU upload

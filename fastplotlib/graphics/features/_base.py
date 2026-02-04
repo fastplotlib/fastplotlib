@@ -1,3 +1,4 @@
+import weakref
 from warnings import warn
 from typing import Callable
 
@@ -169,8 +170,9 @@ class BufferManager(GraphicFeature):
 
     @property
     def buffer(self) -> pygfx.Buffer:
-        """managed buffer"""
-        return self._buffer
+        """managed buffer, returns a weakref proxy"""
+        # the user should never create their own references to the buffer
+        return weakref.proxy(self._buffer)
 
     @property
     def __array_interface__(self):

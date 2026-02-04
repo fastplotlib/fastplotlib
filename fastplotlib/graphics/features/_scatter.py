@@ -209,13 +209,9 @@ class VertexMarkers(BufferManager):
                     value, len(value)
                 )
 
-                # destroy old buffer
-                if self._buffer._wgpu_object is not None:
-                    self._buffer._wgpu_object.destroy()
-
-                # set new buffer
+                # create the new buffer, old buffer should get dereferenced
                 self._buffer = pygfx.Buffer(markers_int_array)
-                graphic.world_object.geometry.markers = self.buffer
+                graphic.world_object.geometry.markers = self._buffer
 
                 self._emit_event(self._property_name, key=slice(None), value=value)
 
@@ -482,13 +478,9 @@ class VertexRotations(BufferManager):
                 value = self._fix_rotations(value, len(value))
                 data = np.empty(shape=(len(value),), dtype=np.float32)
 
-                # destroy old buffer
-                if self._buffer._wgpu_object is not None:
-                    self._buffer._wgpu_object.destroy()
-
-                # set new buffer
+                # create the new buffer, old buffer should get dereferenced
                 self._buffer = pygfx.Buffer(data)
-                graphic.world_object.geometry.rotations = self.buffer
+                graphic.world_object.geometry.rotations = self._buffer
                 self._emit_event(self._property_name, key=slice(None), value=value)
                 return
 
@@ -578,13 +570,9 @@ class VertexPointSizes(BufferManager):
                 value = self._fix_sizes(value, len(value))
                 data = np.empty(shape=(len(value),), dtype=np.float32)
 
-                # destroy old buffer
-                if self._buffer._wgpu_object is not None:
-                    self._buffer._wgpu_object.destroy()
-
-                # set new buffer
+                # create the new buffer, old buffer should get dereferenced
                 self._buffer = pygfx.Buffer(data)
-                graphic.world_object.geometry.sizes = self.buffer
+                graphic.world_object.geometry.sizes = self._buffer
 
                 self._emit_event(self._property_name, key=slice(None), value=value)
                 return
