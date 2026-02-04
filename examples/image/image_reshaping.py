@@ -21,17 +21,18 @@ import fastplotlib as fpl
 xs = np.linspace(0, 2300, 2300, dtype=np.float16)
 full_data = np.vstack([np.cos(np.sqrt(xs + (np.pi / 2) * i)) * i for i in range(2_300)])
 
-fig = fpl.Figure()
+figure = fpl.Figure()
 
-image = fig[0, 0].add_image(full_data)
+image = figure[0, 0].add_image(full_data)
 
-fig.show()
+figure.show()
 
 i, j = 1, 1
 
 
 def update():
     global i, j
+    # set the new image data as a subset of the full data
     row = np.abs(np.sin(i)) * 2300
     col = np.abs(np.cos(i)) * 2300
     image.data = full_data[: int(row), : int(col)]
@@ -40,7 +41,7 @@ def update():
     j += 0.01
 
 
-fig.add_animations(update)
+figure.add_animations(update)
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
