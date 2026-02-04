@@ -19,8 +19,6 @@ example while monitoring VRAM usage with `nvidia-smi`
 import numpy as np
 import fastplotlib as fpl
 
-fpl.select_adapter(fpl.enumerate_adapters()[1])
-
 # create some data to start with
 xs = np.linspace(0, 10 * np.pi, 100)
 ys = np.sin(xs)
