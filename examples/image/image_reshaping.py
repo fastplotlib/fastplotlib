@@ -39,8 +39,8 @@ def update():
     col = np.abs(np.cos(i)) * 2300
     image.data = full_data[: int(row), : int(col)]
 
-    i += 0.1
-    j += 0.1
+    i += 0.01
+    j += 0.01
 
 
 fig.add_animations(update)
