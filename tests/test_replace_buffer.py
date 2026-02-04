@@ -6,11 +6,7 @@ import numpy as np
 from itertools import product
 
 import fastplotlib as fpl
-from .test_texture_array import (
-    MAX_TEXTURE_SIZE,
-)
 from .utils_textures import MAX_TEXTURE_SIZE, check_texture_array, check_image_graphic
-
 
 # These are only de-referencing tests for positions graphics, and ImageGraphic
 # they do not test that VRAM gets free, for now this can only be checked manually
@@ -22,6 +18,7 @@ from .utils_textures import MAX_TEXTURE_SIZE, check_texture_array, check_image_g
 def test_replace_positions_buffer(graphic_type, new_buffer_size):
     fig = fpl.Figure()
 
+    # create some data with an initial shape
     orig_datapoints = 100
 
     xs = np.linspace(0, 2 * np.pi, orig_datapoints)
@@ -30,6 +27,7 @@ def test_replace_positions_buffer(graphic_type, new_buffer_size):
 
     data = np.column_stack([xs, ys, zs])
 
+    # add add_line or add_scatter method
     adder = getattr(fig[0, 0], f"add_{graphic_type}")
 
     if graphic_type == "scatter":
@@ -38,32 +36,32 @@ def test_replace_positions_buffer(graphic_type, new_buffer_size):
             "uniform_marker": False,
             "sizes": np.abs(ys),
             "uniform_size": False,
+            # TODO: skipping edge_colors for now since that causes a WGPU bind group error that we will figure out later
+            #  anyways I think changing buffer sizes in combination with per-vertex edge colors is a literal edge-case
             "point_rotations": zs * 180,
             "point_rotation_mode": "vertex",
         }
     else:
         kwargs = dict()
 
+    # add a line or scatter graphic
     graphic = adder(data=data, colors=np.random.rand(orig_datapoints, 4), **kwargs)
-
-    del data
-    del xs
-    del ys
-    del zs
-    del kwargs
 
     fig.show()
 
+    # weakrefs to the original buffers
+    # these should raise a ReferenceError when the corresponding feature is replaced with data of a different shape
     orig_data_buffer = weakref.proxy(graphic.data.buffer)
     orig_colors_buffer = weakref.proxy(graphic.colors.buffer)
 
     buffers = [orig_data_buffer, orig_colors_buffer]
 
+    # extra buffers for the scatters
     if graphic_type == "scatter":
         for attr in ["markers", "sizes", "point_rotations"]:
             buffers.append(weakref.proxy(getattr(graphic, attr).buffer))
 
-    # create some new data
+    # create some new data that requires a different buffer shape
     xs = np.linspace(0, 15 * np.pi, new_buffer_size)
     ys = np.sin(xs)
     zs = np.cos(xs)
@@ -80,6 +78,7 @@ def test_replace_positions_buffer(graphic_type, new_buffer_size):
         graphic.sizes = np.abs(zs)
         graphic.point_rotations = ys * 180
 
+    # make sure old original buffers are de-referenced
     for i in range(len(buffers)):
         with pytest.raises(ReferenceError) as fail:
             buffers[i]
@@ -90,10 +89,11 @@ def test_replace_positions_buffer(graphic_type, new_buffer_size):
 
 
 # test all combination of dims that require TextureArrays of shapes 1x1, 1x2, 1x3, 2x3, 3x3 etc.
-@pytest.mark.parametrize("new_buffer_size", list(product(*[[(500, 1), (1200, 2), (2200, 3)]] * 2)))
+@pytest.mark.parametrize(
+    "new_buffer_size", list(product(*[[(500, 1), (1200, 2), (2200, 3)]] * 2))
+)
 def test_replace_image_buffer(new_buffer_size):
-
-    # should
+    # make an image with some starting shape
     orig_size = (1_500, 1_500)
 
     data = np.random.rand(*orig_size)
@@ -101,18 +101,26 @@ def test_replace_image_buffer(new_buffer_size):
     fig = fpl.Figure()
     image = fig[0, 0].add_image(data)
 
-    orig_buffers = [weakref.proxy(image.data.buffer.ravel()[i]) for i in range(image.data.buffer.size)]
+    # the original Texture buffers that represent the individual image tiles
+    orig_buffers = [
+        weakref.proxy(image.data.buffer.ravel()[i])
+        for i in range(image.data.buffer.size)
+    ]
     orig_shape = image.data.buffer.shape
 
     fig.show()
 
+    # dimensions for a new image
     new_dims = [v[0] for v in new_buffer_size]
+
+    # the number of tiles required in each dim/shape of the TextureArray
     new_shape = tuple(v[1] for v in new_buffer_size)
 
+    # make the new data and set the image
     new_data = np.random.rand(*new_dims)
     image.data = new_data
 
-    # test that old buffer is de-referenced
+    # test that old Texture buffers are de-referenced
     for i in range(len(orig_buffers)):
         with pytest.raises(ReferenceError) as fail:
             orig_buffers[i]
@@ -142,3 +150,6 @@ def test_replace_image_buffer(new_buffer_size):
             ]
         ),
     )
+
+    # check that new image tiles are arranged correctly
+    check_image_graphic(image.data, image)
