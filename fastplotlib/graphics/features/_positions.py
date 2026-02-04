@@ -338,20 +338,8 @@ class VertexPositions(BufferManager):
         key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
         value: np.ndarray | float | list[float],
     ):
-        # directly use the key to slice the buffer
-        # if value is an array and the key is not a tuple indicating a specific dimension to set
-        if not isinstance(key, tuple) and isinstance(value, np.ndarray):
-            if value.ndim == 1:
-                # assume these are y-values
-                self.buffer.data[key, 1] = value
-            else:
-                # if value is [n, 1], assume they just want to set y-values
-                # if value is [n, 2], assume they want to set xy values
-                # if value is [n, 3], it's xyz values
-                self.buffer.data[key, :value.shape[-1]] = value
-        else:
-            # key is a tuple, user has explicitly specified the dimension of the buffer they want to change
-            self.buffer.data[key] = value
+        # directly use the key to slice the buffer and set the values
+        self.buffer.data[key] = value
 
         # _update_range handles parsing the key to
         # determine offset and size for GPU upload
