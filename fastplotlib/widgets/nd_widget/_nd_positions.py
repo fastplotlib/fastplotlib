@@ -9,6 +9,7 @@ from numpy.lib.stride_tricks import sliding_window_view
 from ...utils import subsample_array, ArrayProtocol
 
 from ...graphics import (
+    Graphic,
     ImageGraphic,
     LineGraphic,
     LineStack,
@@ -264,13 +265,14 @@ class NDPositionsProcessor(NDProcessor):
             ).squeeze()
 
             # this reshape is required to reshape wf outputs of shape [n, p] -> [n, p, 1] only when necessary
+            # we need to slice upto dw since we add the `datapoints_window_size` above
             graphic_data[..., : dw, dims] = wf(
                 windows, axis=-1
             ).reshape(graphic_data.shape[0], dw, len(dims))
 
-            return graphic_data[..., : dw, :]
+            return graphic_data[..., : dw : max(1, dw // self.p_max), :]
 
-        return graphic_data
+        return graphic_data[..., : graphic_data.shape[-2] : max(1, graphic_data.shape[-2] // self.p_max), :]
 
 
 class NDPositions:
@@ -302,6 +304,8 @@ class NDPositions:
             window_sizes=window_sizes,
             index_mappings=index_mappings,
         )
+
+        self._processor.p_max = 1_000
 
         self._indices = tuple([0] * self._processor.n_slider_dims)
 
@@ -348,14 +352,20 @@ class NDPositions:
             self.graphic.data[:, : data_slice.shape[-1]] = data_slice
 
         elif isinstance(self.graphic, (LineCollection, ScatterCollection)):
-            for i in range(len(self.graphic)):
-                # data_slice shape is [n_lines, n_datapoints, 2 | 3]
-                self.graphic[i].data[:, : data_slice.shape[-1]] = data_slice[i]
+            for g, new_data in zip(self.graphic.graphics, data_slice):
+                if g.data.value.shape[0] != new_data.shape[0]:
+                    # will replace buffer internally
+                    g.data = new_data
+                else:
+                    # if data are only xy, set only xy
+                    g.data[:, :new_data.shape[1]] = new_data
 
         elif isinstance(self.graphic, ImageGraphic):
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
             self.graphic.data = image_data
             self.graphic.offset = (x0, *self.graphic.offset[1:])
+
+        self._indices = indices
 
     def _create_graphic(
         self,
@@ -368,6 +378,9 @@ class NDPositions:
             | ImageGraphic
         ],
     ):
+        if not issubclass(graphic_cls, Graphic):
+            raise TypeError
+
         data_slice = self.processor.get(self.indices)
 
         if issubclass(graphic_cls, ImageGraphic):
@@ -412,3 +425,13 @@ class NDPositions:
         x0 = data_slice[0, 0, 0]
 
         return y_interp, x0, x_scale
+
+    @property
+    def display_window(self) -> int | float | None:
+        """display window in the reference units for the n_datapoints dim"""
+        return self.processor.display_window
+
+    @display_window.setter
+    def display_window(self, dw: int | float | None):
+        self.processor.display_window = dw
+        self.indices = self.indices
