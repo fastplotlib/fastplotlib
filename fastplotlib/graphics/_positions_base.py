@@ -20,7 +20,15 @@ class PositionsGraphic(Graphic):
 
     @property
     def data(self) -> VertexPositions:
-        """Get or set the graphic's data"""
+        """
+        Get or set the graphic's data.
+
+        Note that if the number of datapoints does not match the number of
+        current datapoints a new buffer is automatically allocated. This can
+        have performance drawbacks when you have a very large number of datapoints.
+        This is usually fine as long as you don't need to do it hundreds of times
+        per second.
+        """
         return self._data
 
     @data.setter

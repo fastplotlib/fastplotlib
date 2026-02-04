@@ -80,6 +80,14 @@ class ScatterGraphic(PositionsGraphic):
         cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            "uniform" restricts to a single color for all line datapoints.
+            "vertex" allows independent colors per vertex.
+            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
+            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
+            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
+            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
+
         mode: one of: "markers", "simple", "gaussian", "image", default "markers"
             The scatter points mode, cannot be changed after the graphic has been created.
 

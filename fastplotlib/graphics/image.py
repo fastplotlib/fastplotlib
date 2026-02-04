@@ -217,7 +217,15 @@ class ImageGraphic(Graphic):
 
     @property
     def data(self) -> TextureArray:
-        """Get or set the image data"""
+        """
+        Get or set the image data.
+
+        Note that if the shape of the new data array does not equal the shape of
+        current data array, a new set of GPU Textures are automatically created.
+        This can have performance drawbacks when you have a ver large images.
+        This is usually fine as long as you don't need to do it hundreds of times
+        per second.
+        """
         return self._data
 
     @data.setter
