@@ -548,6 +548,88 @@ class GraphicMethodsMixin:
             PolygonGraphic, data, mode, colors, mapcoords, cmap, clim, **kwargs
         )
 
+    def add_scatter_collection(
+        self,
+        data: Union[numpy.ndarray, List[numpy.ndarray]],
+        colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
+        uniform_colors: bool = False,
+        cmap: Union[Sequence[str], str] = None,
+        cmap_transform: Union[numpy.ndarray, List] = None,
+        sizes: Union[float, Sequence[float]] = 2.0,
+        name: str = None,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
+        isolated_buffer: bool = True,
+        kwargs_lines: list[dict] = None,
+        **kwargs,
+    ) -> ScatterCollection:
+        """
+
+        Create a collection of :class:`.ScatterGraphic`
+
+        Parameters
+        ----------
+        data: list of array-like
+            List or array-like of multiple line data to plot
+
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
+
+        colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
+            | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
+            | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
+            | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
+            | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
+
+        cmap: Iterable of str or str, optional
+            | if ``str``, single cmap will be used for all lines
+            | if ``list`` of ``str``, each cmap will apply to the individual lines
+
+            .. note::
+                ``cmap`` overrides any arguments passed to ``colors``
+
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        name: str, optional
+            name of the line collection as a whole
+
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            meatadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
+            ``len(metadata)`` must be same as ``len(data)``
+
+        kwargs_lines: list[dict], optional
+            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
+
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
+
+
+        """
+        return self._create_graphic(
+            ScatterCollection,
+            data,
+            colors,
+            uniform_colors,
+            cmap,
+            cmap_transform,
+            sizes,
+            name,
+            names,
+            metadata,
+            metadatas,
+            isolated_buffer,
+            kwargs_lines,
+            **kwargs,
+        )
+
     def add_scatter(
         self,
         data: Any,
@@ -567,7 +649,7 @@ class GraphicMethodsMixin:
         image: numpy.ndarray = None,
         point_rotations: float | numpy.ndarray = 0,
         point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
-        sizes: Union[float, numpy.ndarray, Sequence[float]] = 1,
+        sizes: Union[float, numpy.ndarray, Sequence[float]] = 5,
         uniform_size: bool = True,
         size_space: str = "screen",
         **kwargs
