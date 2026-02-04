@@ -98,7 +98,7 @@ class LineGraphic(PositionsGraphic):
         aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
 
         if isinstance(self._colors, UniformColor):
-            geometry = pygfx.Geometry(positions=self._data._buffer)
+            geometry = pygfx.Geometry(positions=self._data._fpl_buffer)
             material = MaterialCls(
                 aa=aa,
                 thickness=self.thickness,
@@ -118,7 +118,7 @@ class LineGraphic(PositionsGraphic):
                 depth_compare="<=",
             )
             geometry = pygfx.Geometry(
-                positions=self._data._buffer, colors=self._colors._buffer
+                positions=self._data._fpl_buffer, colors=self._colors._fpl_buffer
             )
 
         world_object: pygfx.Line = pygfx.Line(geometry=geometry, material=material)

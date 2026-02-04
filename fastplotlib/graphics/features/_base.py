@@ -149,13 +149,15 @@ class BufferManager(GraphicFeature):
             if isinstance(data, pygfx.Resource):
                 # already a buffer, probably used for
                 # managing another BufferManager, example: VertexCmap manages VertexColors
-                self._buffer = data
+                self._fpl_buffer = data
             else:
                 # create a buffer
                 bdata = np.empty(data.shape, dtype=data.dtype)
                 bdata[:] = data[:]
 
-                self._buffer = pygfx.Buffer(bdata)
+                self._fpl_buffer = pygfx.Buffer(bdata)
+        else:
+            self._fpl_buffer = None
 
         self._event_handlers: list[Callable] = list()
 
@@ -172,7 +174,7 @@ class BufferManager(GraphicFeature):
     def buffer(self) -> pygfx.Buffer:
         """managed buffer, returns a weakref proxy"""
         # the user should never create their own references to the buffer
-        return weakref.proxy(self._buffer)
+        return weakref.proxy(self._fpl_buffer)
 
     @property
     def __array_interface__(self):

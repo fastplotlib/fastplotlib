@@ -219,7 +219,8 @@ def test_cmap(
 
     # make sure buffer is identical
     # cmap overrides colors argument
-    assert graphic.colors.buffer is graphic.cmap.buffer
+    # use __repr__.__self__ to get the real reference from the cmap feature instead of the weakref proxy
+    assert graphic.colors._fpl_buffer is graphic.cmap.buffer.__repr__.__self__
 
     npt.assert_almost_equal(graphic.cmap.value, truth)
     npt.assert_almost_equal(graphic.colors.value, truth)

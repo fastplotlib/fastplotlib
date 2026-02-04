@@ -49,7 +49,7 @@ def test_create_buffer(test_graphic):
         scatter = fig[0, 0].add_scatter(data, markers=MARKERS1, uniform_marker=False)
         vertex_markers = scatter.markers
         assert isinstance(vertex_markers, VertexMarkers)
-        assert vertex_markers.buffer is scatter.world_object.geometry.markers
+        assert vertex_markers._fpl_buffer is scatter.world_object.geometry.markers
     else:
         vertex_markers = VertexMarkers(MARKERS1, len(data))
 

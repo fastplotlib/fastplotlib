@@ -210,8 +210,8 @@ class VertexMarkers(BufferManager):
                 )
 
                 # create the new buffer, old buffer should get dereferenced
-                self._buffer = pygfx.Buffer(markers_int_array)
-                graphic.world_object.geometry.markers = self._buffer
+                self._fpl_buffer = pygfx.Buffer(markers_int_array)
+                graphic.world_object.geometry.markers = self._fpl_buffer
 
                 self._emit_event(self._property_name, key=slice(None), value=value)
 
@@ -479,8 +479,8 @@ class VertexRotations(BufferManager):
                 data = np.empty(shape=(len(value),), dtype=np.float32)
 
                 # create the new buffer, old buffer should get dereferenced
-                self._buffer = pygfx.Buffer(data)
-                graphic.world_object.geometry.rotations = self._buffer
+                self._fpl_buffer = pygfx.Buffer(data)
+                graphic.world_object.geometry.rotations = self._fpl_buffer
                 self._emit_event(self._property_name, key=slice(None), value=value)
                 return
 
@@ -571,8 +571,8 @@ class VertexPointSizes(BufferManager):
                 data = np.empty(shape=(len(value),), dtype=np.float32)
 
                 # create the new buffer, old buffer should get dereferenced
-                self._buffer = pygfx.Buffer(data)
-                graphic.world_object.geometry.sizes = self._buffer
+                self._fpl_buffer = pygfx.Buffer(data)
+                graphic.world_object.geometry.sizes = self._fpl_buffer
 
                 self._emit_event(self._property_name, key=slice(None), value=value)
                 return

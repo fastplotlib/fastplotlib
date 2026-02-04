@@ -128,7 +128,7 @@ class MeshGraphic(Graphic):
                 )
 
         geometry = pygfx.Geometry(
-            positions=self._positions.buffer, indices=self._indices._buffer
+            positions=self._positions.buffer, indices=self._indices._fpl_buffer
         )
 
         valid_modes = ["basic", "phong", "slice"]

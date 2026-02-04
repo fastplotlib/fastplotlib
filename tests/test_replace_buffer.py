@@ -51,15 +51,15 @@ def test_replace_positions_buffer(graphic_type, new_buffer_size):
 
     # weakrefs to the original buffers
     # these should raise a ReferenceError when the corresponding feature is replaced with data of a different shape
-    orig_data_buffer = weakref.proxy(graphic.data.buffer)
-    orig_colors_buffer = weakref.proxy(graphic.colors.buffer)
+    orig_data_buffer = weakref.proxy(graphic.data._fpl_buffer)
+    orig_colors_buffer = weakref.proxy(graphic.colors._fpl_buffer)
 
     buffers = [orig_data_buffer, orig_colors_buffer]
 
     # extra buffers for the scatters
     if graphic_type == "scatter":
         for attr in ["markers", "sizes", "point_rotations"]:
-            buffers.append(weakref.proxy(getattr(graphic, attr).buffer))
+            buffers.append(weakref.proxy(getattr(graphic, attr)._fpl_buffer))
 
     # create some new data that requires a different buffer shape
     xs = np.linspace(0, 15 * np.pi, new_buffer_size)

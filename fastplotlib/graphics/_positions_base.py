@@ -59,7 +59,7 @@ class PositionsGraphic(Graphic):
             new_colors = self._create_colors_buffer(self._colors.value, "vertex")
             # we can't clear world_object.material.color so just set the colors buffer on the geometry
             # this doesn't really matter anyways since the lingering uniform color takes up just a few bytes
-            self.world_object.geometry.colors = new_colors._buffer
+            self.world_object.geometry.colors = new_colors._fpl_buffer
 
         elif mode == "uniform" and isinstance(self._colors, VertexColors):
             # vertex -> uniform

@@ -89,8 +89,8 @@ class VertexColors(BufferManager):
                 new_colors = parse_colors(value, len(value))
 
                 # create the new buffer, old buffer should get dereferenced
-                self._buffer = pygfx.Buffer(new_colors)
-                graphic.world_object.geometry.colors = self._buffer
+                self._fpl_buffer = pygfx.Buffer(new_colors)
+                graphic.world_object.geometry.colors = self._fpl_buffer
 
                 if len(self._event_handlers) < 1:
                     return
@@ -311,12 +311,11 @@ class VertexPositions(BufferManager):
 
                 # if data is not 3D
                 if value.ndim == 1:
-                    # this is already a newly allocated buffer
                     # _fix_data creates a new array so we don't need to re-allocate with np.zeros
                     bdata = self._fix_data(value)
 
                 elif value.shape[1] == 2:
-                    # this is already a newly allocated buffer
+                    # _fix_data creates a new array so we don't need to re-allocate with np.zeros
                     bdata = self._fix_data(value)
 
                 elif value.shape[1] == 3:
@@ -325,8 +324,8 @@ class VertexPositions(BufferManager):
                     bdata[:] = value[:]
 
                 # create the new buffer, old buffer should get dereferenced
-                self._buffer = pygfx.Buffer(bdata)
-                graphic.world_object.geometry.positions = self._buffer
+                self._fpl_buffer = pygfx.Buffer(bdata)
+                graphic.world_object.geometry.positions = self._fpl_buffer
 
                 self._emit_event(self._property_name, key=slice(None), value=value)
                 return
@@ -340,14 +339,19 @@ class VertexPositions(BufferManager):
         value: np.ndarray | float | list[float],
     ):
         # directly use the key to slice the buffer
-        # if value is just 1D, assume these are y-values
-        if value.ndim == 1:
-            self.buffer.data[key, 1] = value
+        # if value is an array and the key is not a tuple indicating a specific dimension to set
+        if not isinstance(key, tuple) and isinstance(value, np.ndarray):
+            if value.ndim == 1:
+                # assume these are y-values
+                self.buffer.data[key, 1] = value
+            else:
+                # if value is [n, 1], assume they just want to set y-values
+                # if value is [n, 2], assume they want to set xy values
+                # if value is [n, 3], it's xyz values
+                self.buffer.data[key, :value.shape[-1]] = value
         else:
-            # if value is [n, 1], this they just want to set y-values
-            # if value is [n, 2], this assumes they want to set xy values
-            # if value is [n, 3], it's xyz values
-            self.buffer.data[key, :value.shape[-1]] = value
+            # key is a tuple, user has explicitly specified the dimension of the buffer they want to change
+            self.buffer.data[key] = value
 
         # _update_range handles parsing the key to
         # determine offset and size for GPU upload
