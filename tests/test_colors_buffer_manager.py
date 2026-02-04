@@ -48,10 +48,10 @@ def test_int(test_graphic):
 
         data = generate_positions_spiral_data("xyz")
         if test_graphic == "line":
-            graphic = fig[0, 0].add_line(data=data)
+            graphic = fig[0, 0].add_line(data=data, color_mode="vertex")
 
         elif test_graphic == "scatter":
-            graphic = fig[0, 0].add_scatter(data=data)
+            graphic = fig[0, 0].add_scatter(data=data, color_mode="vertex")
 
         colors = graphic.colors
         global EVENT_RETURN_VALUE
@@ -98,10 +98,10 @@ def test_tuple(test_graphic, slice_method):
 
         data = generate_positions_spiral_data("xyz")
         if test_graphic == "line":
-            graphic = fig[0, 0].add_line(data=data)
+            graphic = fig[0, 0].add_line(data=data, color_mode="vertex")
 
         elif test_graphic == "scatter":
-            graphic = fig[0, 0].add_scatter(data=data)
+            graphic = fig[0, 0].add_scatter(data=data, color_mode="vertex")
 
         colors = graphic.colors
         global EVENT_RETURN_VALUE
@@ -190,10 +190,10 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
 
         data = generate_positions_spiral_data("xyz")
         if test_graphic == "line":
-            graphic = fig[0, 0].add_line(data=data)
+            graphic = fig[0, 0].add_line(data=data, color_mode="vertex")
 
         elif test_graphic == "scatter":
-            graphic = fig[0, 0].add_scatter(data=data)
+            graphic = fig[0, 0].add_scatter(data=data, color_mode="vertex")
 
         colors = graphic.colors
 

@@ -40,12 +40,12 @@ class ScatterGraphic(PositionsGraphic):
         self,
         data: Any,
         colors: str | np.ndarray | Sequence[float] | Sequence[str] = "w",
-        uniform_color: bool = False,
         cmap: str = None,
         cmap_transform: np.ndarray = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
-        uniform_marker: bool = False,
+        uniform_marker: bool = True,
         custom_sdf: str = None,
         edge_colors: str | np.ndarray | pygfx.Color | Sequence[float] = "black",
         uniform_edge_color: bool = True,
@@ -54,9 +54,8 @@ class ScatterGraphic(PositionsGraphic):
         point_rotations: float | np.ndarray = 0,
         point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
         sizes: float | np.ndarray | Sequence[float] = 5,
-        uniform_size: bool = False,
+        uniform_size: bool = True,
         size_space: str = "screen",
-        isolated_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -72,17 +71,22 @@ class ScatterGraphic(PositionsGraphic):
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        uniform_color: bool, default False
-            if True, uses a uniform buffer for the scatter point colors. Useful if you need to
-            save GPU VRAM when all points have the same color.
-
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
-            overrides any argument passed to "colors".  For supported colormaps see the
-            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            overrides any argument passed to "colors".
+            For supported colormaps see the ``cmap`` library catalogue:
+            https://cmap-docs.readthedocs.io/en/stable/catalog/
 
         cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
+
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            "uniform" restricts to a single color for all line datapoints.
+            "vertex" allows independent colors per vertex.
+            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
+            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
+            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
+            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
 
         mode: one of: "markers", "simple", "gaussian", "image", default "markers"
             The scatter points mode, cannot be changed after the graphic has been created.
@@ -103,9 +107,10 @@ class ScatterGraphic(PositionsGraphic):
             * Emojis: "❤️♠️♣️♦️💎💍✳️📍".
             * A string containing the value "custom". In this case, WGSL code defined by ``custom_sdf`` will be used.
 
-        uniform_marker: bool, default False
-            Use the same marker for all points. Only valid when `mode` is "markers". Useful if you need to use
-            the same marker for all points and want to save GPU RAM.
+        uniform_marker: bool, default ``True``
+            If ``True``, use the same marker for all points. Only valid when `mode` is "markers".
+            Useful if you need to use the same marker for all points and want to save GPU RAM. If ``False``, you can
+            set per-vertex markers.
 
         custom_sdf: str = None,
             The SDF code for the marker shape when the marker is set to custom.
@@ -125,8 +130,9 @@ class ScatterGraphic(PositionsGraphic):
         edge_colors: str | np.ndarray | pygfx.Color | Sequence[float], default "black"
             edge color of the markers, used when `mode` is "markers"
 
-        uniform_edge_color: bool, default True
-            Set the same edge color for all markers. Useful for saving GPU RAM.
+        uniform_edge_color: bool, default ``True``
+            Set the same edge color for all markers. Useful for saving GPU RAM. Set to ``False`` for per-vertex edge
+            colors
 
         edge_width: float = 1.0,
             Width of the marker edges. used when `mode` is "markers".
@@ -147,16 +153,12 @@ class ScatterGraphic(PositionsGraphic):
         sizes: float or iterable of float, optional, default 1.0
             sizes of the scatter points
 
-        uniform_size: bool, default False
-            if True, uses a uniform buffer for the scatter point sizes. Useful if you need to
-            save GPU VRAM when all points have the same size.
+        uniform_size: bool, default ``False``
+            if ``True``, uses a uniform buffer for the scatter point sizes. Useful if you need to
+            save GPU VRAM when all points have the same size. Set to ``False`` if you need per-vertex sizes.
 
         size_space: str, default "screen"
             coordinate space in which the size is expressed, one of ("screen", "world", "model")
-
-        isolated_buffer: bool, default True
-            whether the buffers should be isolated from the user input array.
-            Generally always ``True``, ``False`` is for rare advanced use if you have large arrays.
 
         kwargs
             passed to :class:`.Graphic`
@@ -166,17 +168,16 @@ class ScatterGraphic(PositionsGraphic):
         super().__init__(
             data=data,
             colors=colors,
-            uniform_color=uniform_color,
             cmap=cmap,
             cmap_transform=cmap_transform,
-            isolated_buffer=isolated_buffer,
+            color_mode=color_mode,
             size_space=size_space,
             **kwargs,
         )
 
         n_datapoints = self.data.value.shape[0]
 
-        geo_kwargs = {"positions": self._data.buffer}
+        geo_kwargs = {"positions": self._data._fpl_buffer}
 
         aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
 
@@ -214,7 +215,7 @@ class ScatterGraphic(PositionsGraphic):
 
                     self._markers = VertexMarkers(markers, n_datapoints)
 
-                    geo_kwargs["markers"] = self._markers.buffer
+                    geo_kwargs["markers"] = self._markers._fpl_buffer
 
                 if edge_colors is None:
                     # interpret as no edge color
@@ -237,7 +238,7 @@ class ScatterGraphic(PositionsGraphic):
                         edge_colors, n_datapoints, property_name="edge_colors"
                     )
                     material_kwargs["edge_color_mode"] = pygfx.ColorMode.vertex
-                    geo_kwargs["edge_colors"] = self._edge_colors.buffer
+                    geo_kwargs["edge_colors"] = self._edge_colors._fpl_buffer
 
                 self._edge_width = EdgeWidth(edge_width)
                 material_kwargs["edge_width"] = self._edge_width.value
@@ -274,12 +275,12 @@ class ScatterGraphic(PositionsGraphic):
 
         self._size_space = SizeSpace(size_space)
 
-        if uniform_color:
+        if isinstance(self._colors, UniformColor):
             material_kwargs["color_mode"] = pygfx.ColorMode.uniform
             material_kwargs["color"] = self.colors
         else:
             material_kwargs["color_mode"] = pygfx.ColorMode.vertex
-            geo_kwargs["colors"] = self.colors.buffer
+            geo_kwargs["colors"] = self.colors._fpl_buffer
 
         if uniform_size:
             material_kwargs["size_mode"] = pygfx.SizeMode.uniform
@@ -288,14 +289,14 @@ class ScatterGraphic(PositionsGraphic):
         else:
             material_kwargs["size_mode"] = pygfx.SizeMode.vertex
             self._sizes = VertexPointSizes(sizes, n_datapoints=n_datapoints)
-            geo_kwargs["sizes"] = self.sizes.buffer
+            geo_kwargs["sizes"] = self.sizes._fpl_buffer
 
         match point_rotation_mode:
             case pygfx.enums.RotationMode.vertex:
                 self._point_rotations = VertexRotations(
                     point_rotations, n_datapoints=n_datapoints
                 )
-                geo_kwargs["rotations"] = self._point_rotations.buffer
+                geo_kwargs["rotations"] = self._point_rotations._fpl_buffer
 
             case pygfx.enums.RotationMode.uniform:
                 self._point_rotations = UniformRotations(point_rotations)
@@ -338,10 +339,8 @@ class ScatterGraphic(PositionsGraphic):
             raise AttributeError(
                 f"scatter plot is: {self.mode}. The mode must be 'markers' to set the markers"
             )
-        if isinstance(self._markers, VertexMarkers):
-            self._markers[:] = value
-        elif isinstance(self._markers, UniformMarker):
-            self._markers.set_value(self, value)
+
+        self._markers.set_value(self, value)
 
     @property
     def edge_colors(self) -> str | pygfx.Color | VertexColors | None:
@@ -359,12 +358,7 @@ class ScatterGraphic(PositionsGraphic):
             raise AttributeError(
                 f"scatter plot is: {self.mode}. The mode must be 'markers' to set the edge_colors"
             )
-
-        if isinstance(self._edge_colors, VertexColors):
-            self._edge_colors[:] = value
-
-        elif isinstance(self._edge_colors, UniformEdgeColor):
-            self._edge_colors.set_value(self, value)
+        self._edge_colors.set_value(self, value)
 
     @property
     def edge_width(self) -> float | None:
@@ -406,11 +400,7 @@ class ScatterGraphic(PositionsGraphic):
                 f"it be 'uniform' or 'vertex' to set the `point_rotations`"
             )
 
-        if isinstance(self._point_rotations, VertexRotations):
-            self._point_rotations[:] = value
-
-        elif isinstance(self._point_rotations, UniformRotations):
-            self._point_rotations.set_value(self, value)
+        self._point_rotations.set_value(self, value)
 
     @property
     def image(self) -> TextureArray | None:
@@ -437,8 +427,4 @@ class ScatterGraphic(PositionsGraphic):
 
     @sizes.setter
     def sizes(self, value):
-        if isinstance(self._sizes, VertexPointSizes):
-            self._sizes[:] = value
-
-        elif isinstance(self._sizes, UniformSize):
-            self._sizes.set_value(self, value)
+        self._sizes.set_value(self, value)

@@ -113,7 +113,6 @@ class ImageVolumeGraphic(Graphic):
         substep_size: float = 0.1,
         emissive: str | tuple | np.ndarray = (0, 0, 0),
         shininess: int = 30,
-        isolated_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -170,11 +169,6 @@ class ImageVolumeGraphic(Graphic):
             How shiny the specular highlight is; a higher value gives a sharper highlight.
             Used only if `mode` = "iso"
 
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then set the data, useful if the
-            data arrays are ready-only such as memmaps. If False, the input array is itself used as the
-            buffer - useful if the array is large.
-
         kwargs
             additional keyword arguments passed to :class:`.Graphic`
 
@@ -188,7 +182,7 @@ class ImageVolumeGraphic(Graphic):
 
         super().__init__(**kwargs)
 
-        world_object = pygfx.Group()
+        group = pygfx.Group()
 
         if isinstance(data, TextureArrayVolume):
             # share existing buffer
@@ -196,7 +190,7 @@ class ImageVolumeGraphic(Graphic):
         else:
             # create new texture array to manage buffer
             # texture array that manages the textures on the GPU that represent this image volume
-            self._data = TextureArrayVolume(data, isolated_buffer=isolated_buffer)
+            self._data = TextureArrayVolume(data)
 
         if (vmin is None) or (vmax is None):
             _vmin, _vmax = quick_min_max(self.data.value)
@@ -237,6 +231,15 @@ class ImageVolumeGraphic(Graphic):
 
         self._mode = VolumeRenderMode(mode)
 
+        # create tiles
+        for tile in self._create_tiles():
+            group.add(tile)
+
+        self._set_world_object(group)
+
+    def _create_tiles(self) -> list[_VolumeTile]:
+        tiles = list()
+
         # iterate through each texture chunk and create
         # a _VolumeTile, offset the tile using the data indices
         for texture, chunk_index, data_slice in self._data:
@@ -259,9 +262,9 @@ class ImageVolumeGraphic(Graphic):
             vol.world.x = data_col_start
             vol.world.y = data_row_start
 
-            world_object.add(vol)
+            tiles.append(vol)
 
-        self._set_world_object(world_object)
+        return tiles
 
     @property
     def data(self) -> TextureArrayVolume:
@@ -270,6 +273,21 @@ class ImageVolumeGraphic(Graphic):
 
     @data.setter
     def data(self, data):
+        if isinstance(data, np.ndarray):
+            # check if a new buffer is required
+            if self._data.value.shape != data.shape:
+                # create new TextureArray
+                self._data = TextureArrayVolume(data)
+
+                # clear image tiles
+                self.world_object.clear()
+
+                # create new tiles
+                for tile in self._create_tiles():
+                    self.world_object.add(tile)
+
+                return
+
         self._data[:] = data
 
     @property
