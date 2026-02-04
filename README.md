@@ -133,7 +133,7 @@ For more detailed information, such as use on cloud computing infrastructure, se
 
 We welcome contributions! See the contributing guide: https://github.com/fastplotlib/fastplotlib/blob/main/CONTRIBUTING.md
 
-You can also take a look at our [**Roadmap for 2025**](https://github.com/fastplotlib/fastplotlib/issues/55) and [**Issues**](https://github.com/fastplotlib/fastplotlib/issues) for ideas on how to contribute!
+You can also take a look at our [**Roadmap for 2026**](https://github.com/fastplotlib/fastplotlib/issues/55) and [**Issues**](https://github.com/fastplotlib/fastplotlib/issues) for ideas on how to contribute!
 
 # Developers :brain:
 
@@ -152,7 +152,8 @@ A special thanks to all of the `pygfx` developers and the amazing work they have
 Fastplotlib is free and open source. We would like to thank the following institutions for helping to support fastplotlib over the past few years.
 
 - UNC Chapel Hill, Giovannucci Lab & Hantman Lab
-- Flatiron Institute CCN, Chklovskii Lab
+- NYU & Flatiron Institute CCN, Williams lab & Chklovskii Lab
 - Duke University, Pearson Lab
+- Columbia University, Paninski lab
 
 We are always open to new sponsors that can help further develop and improve the library.
