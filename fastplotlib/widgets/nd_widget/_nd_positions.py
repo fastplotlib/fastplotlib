@@ -29,12 +29,14 @@ class NDPositionsProcessor(NDProcessor):
         data: ArrayProtocol,
         multi: bool = False,  # TODO: interpret [n - 2] dimension as n_lines or n_points
         display_window: int | float | None = 100,  # window for n_datapoints dim only
+        max_display_datapoints: int = 1_000,
         datapoints_window_func: Callable | None = None,
         datapoints_window_size: int | None = None,
         **kwargs,
     ):
 
         self._display_window = display_window
+        self._max_display_datapoints = max_display_datapoints
 
         # TOOD: this does data validation twice and is a bit messy, cleanup
         self._data = self._validate_data(data)
@@ -63,6 +65,19 @@ class NDPositionsProcessor(NDProcessor):
             raise TypeError
 
         self._display_window = dw
+
+    @property
+    def max_display_datapoints(self) -> int:
+        return self._max_display_datapoints
+
+    @max_display_datapoints.setter
+    def max_display_datapoints(self, n: int):
+        if not isinstance(n, (int, np.integer)):
+            raise TypeError
+        if n < 2:
+            raise ValueError
+
+        self._max_display_datapoints = n
 
     @property
     def multi(self) -> bool:
@@ -231,12 +246,15 @@ class NDPositionsProcessor(NDProcessor):
 
         # data that will be used for the graphical representation
         # a copy is made, if there were no window functions then this is a view of the original data
-        graphic_data = window_output[tuple(slices)].copy()
+        graphic_data = window_output[tuple(slices)]
 
         # apply window function on the `p` n_datapoints dim
         if (
             self.datapoints_window_func is not None
             and self.datapoints_window_size is not None
+            # if there are too many points to efficiently compute the window func
+            # applying a window func also requires making a copy so that's a further performance hit
+            and (dw < self.max_display_datapoints * 2)
         ):
             # get windows
 
@@ -264,18 +282,30 @@ class NDPositionsProcessor(NDProcessor):
                 graphic_data[..., dims], ws, axis=-2
             ).squeeze()
 
+            # make a copy because we need to modify it
+            graphic_data = graphic_data.copy()
+
             # this reshape is required to reshape wf outputs of shape [n, p] -> [n, p, 1] only when necessary
             # we need to slice upto dw since we add the `datapoints_window_size` above
-            graphic_data[..., : dw, dims] = wf(
-                windows, axis=-1
-            ).reshape(graphic_data.shape[0], dw, len(dims))
+            graphic_data[..., :dw, dims] = wf(windows, axis=-1).reshape(
+                graphic_data.shape[0], dw, len(dims)
+            )
 
-            return graphic_data[..., : dw : max(1, dw // self.p_max), :]
+            return graphic_data[
+                ..., : dw : max(1, dw // self.max_display_datapoints), :
+            ]
 
-        return graphic_data[..., : graphic_data.shape[-2] : max(1, graphic_data.shape[-2] // self.p_max), :]
+        return graphic_data[
+            ...,
+            : graphic_data.shape[-2] : max(
+                1, graphic_data.shape[-2] // self.max_display_datapoints
+            ),
+            :,
+        ]
 
 
 class NDPositions:
+
     def __init__(
         self,
         data,
@@ -292,6 +322,8 @@ class NDPositions:
         window_funcs: tuple[WindowFuncCallable | None] | None = None,
         window_sizes: tuple[int | None] | None = None,
         index_mappings: tuple[Callable[[Any], int] | None] | None = None,
+        max_display_datapoints: int = 1_000,
+        graphic_kwargs: dict = None,
     ):
         if issubclass(graphic, LineCollection):
             multi = True
@@ -300,6 +332,7 @@ class NDPositions:
             data,
             multi=multi,
             display_window=display_window,
+            max_display_datapoints=max_display_datapoints,
             window_funcs=window_funcs,
             window_sizes=window_sizes,
             index_mappings=index_mappings,
@@ -358,7 +391,7 @@ class NDPositions:
                     g.data = new_data
                 else:
                     # if data are only xy, set only xy
-                    g.data[:, :new_data.shape[1]] = new_data
+                    g.data[:, : new_data.shape[1]] = new_data
 
         elif isinstance(self.graphic, ImageGraphic):
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
@@ -396,7 +429,11 @@ class NDPositions:
             )
 
         else:
-            self._graphic = graphic_cls(data_slice)
+            if issubclass(graphic_cls, LineStack):
+                kwargs = {"separation": 0.0}
+            else:
+                kwargs = dict()
+            self._graphic = graphic_cls(data_slice, **kwargs)
 
     def _create_heatmap_data(self, data_slice) -> tuple[np.ndarray, float, float]:
         """return [n_rows, n_cols] shape data"""
