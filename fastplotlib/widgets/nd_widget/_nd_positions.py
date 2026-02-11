@@ -26,7 +26,7 @@ from ._processor_base import NDProcessor, WindowFuncCallable
 class NDPositionsProcessor(NDProcessor):
     def __init__(
         self,
-        data: ArrayProtocol,
+        data: Any,
         multi: bool = False,  # TODO: interpret [n - 2] dimension as n_lines or n_points
         display_window: int | float | None = 100,  # window for n_datapoints dim only
         max_display_datapoints: int = 1_000,
@@ -34,7 +34,6 @@ class NDPositionsProcessor(NDProcessor):
         datapoints_window_size: int | None = None,
         **kwargs,
     ):
-
         self._display_window = display_window
         self._max_display_datapoints = max_display_datapoints
 
@@ -193,6 +192,66 @@ class NDPositionsProcessor(NDProcessor):
 
         return data_sliced
 
+    def _get_dw_slices(self, indices) -> tuple[slice] | tuple[slice, slice]:
+        # given indices, return slice using display window
+
+        # display window is interpreted using the index mapping for the `p` dim
+        dw = self.display_window
+
+        if dw is None:
+            # just map p dimension at this index and return
+            index_p = self.index_mappings[-1](indices[-1])
+            return (slice(index_p, index_p + 1),)
+
+        # display window is in reference units, apply display window and then map to array indices
+        # clamp w.r.t. 0 and processor shape `p` dim
+        hw = dw / 2
+        index_p_start = max(self.index_mappings[-1](indices[-1] - hw), 0)
+        index_p_stop = min(self.index_mappings[-1](indices[-1] + hw), self.shape[-2])
+        if index_p_start >= index_p_stop:
+            index_p_stop = index_p_start + 1
+
+        slices = [slice(index_p_start, index_p_stop)]
+
+        if self.multi:
+            slices.insert(0, slice(None))
+
+        return tuple(slices)
+
+        #
+        # # clamp w.r.t. processor shape
+        #
+        # dw = self.index_mappings[-1](self.display_window)
+        #
+        # if dw == 1:
+        #     slices = [slice(index_p, index_p + 1)]
+        #
+        # else:
+        #     # half window size
+        #     hw = dw // 2
+        #
+        #     # for now assume just a single index provided that indicates x axis value
+        #     start = max(index_p - hw, 0)
+        #     stop = start + dw
+        #     # also add window size of `p` dim so window_func output has the same number of datapoints
+        #     if (
+        #             self.datapoints_window_func is not None
+        #             and self.datapoints_window_size is not None
+        #     ):
+        #         stop += self.datapoints_window_size - 1
+        #         # TODO: pad with constant if we're using a window func and the index is near the end
+        #
+        #     # TODO: uncomment this once we have resizeable buffers!!
+        #     # stop = min(index_p + hw, self.shape[-2])
+        #
+        #     slices = [slice(start, stop)]
+        #
+        # if self.multi:
+        #     # n - 2 dim is n_lines or n_scatters
+        #     slices.insert(0, slice(None))
+        #
+        # return tuple(slices)
+
     def get(self, indices: tuple[Any, ...]):
         """
         slices through all slider dims and outputs an array that can be used to set graphic data
@@ -214,39 +273,44 @@ class NDPositionsProcessor(NDProcessor):
         # TODO: window function on the `p` n_datapoints dimension
 
         if self.display_window is not None:
-            # display window is interpreted using the index mapping for the `p` dim
-            dw = self.index_mappings[-1](self.display_window)
+            slices = self._get_dw_slices(indices)
 
-            if dw == 1:
-                slices = [slice(indices[-1], indices[-1] + 1)]
-
-            else:
-                # half window size
-                hw = dw // 2
-
-                # for now assume just a single index provided that indicates x axis value
-                start = max(indices[-1] - hw, 0)
-                stop = start + dw
-                # also add window size of `p` dim so window_func output has the same number of datapoints
-                if (
-                    self.datapoints_window_func is not None
-                    and self.datapoints_window_size is not None
-                ):
-                    stop += self.datapoints_window_size - 1
-                    # TODO: pad with constant if we're using a window func and the index is near the end
-
-                # TODO: uncomment this once we have resizeable buffers!!
-                # stop = min(indices[-1] + hw, self.shape[-2])
-
-                slices = [slice(start, stop)]
-
-            if self.multi:
-                # n - 2 dim is n_lines or n_scatters
-                slices.insert(0, slice(None))
+        # if self.display_window is not None:
+        #     # display window is interpreted using the index mapping for the `p` dim
+        #     dw = self.index_mappings[-1](self.display_window)
+        #
+        #     if dw == 1:
+        #         slices = [slice(indices[-1], indices[-1] + 1)]
+        #
+        #     else:
+        #         # half window size
+        #         hw = dw // 2
+        #
+        #         # for now assume just a single index provided that indicates x axis value
+        #         start = max(indices[-1] - hw, 0)
+        #         stop = start + dw
+        #         # also add window size of `p` dim so window_func output has the same number of datapoints
+        #         if (
+        #             self.datapoints_window_func is not None
+        #             and self.datapoints_window_size is not None
+        #         ):
+        #             stop += self.datapoints_window_size - 1
+        #             # TODO: pad with constant if we're using a window func and the index is near the end
+        #
+        #         # TODO: uncomment this once we have resizeable buffers!!
+        #         # stop = min(indices[-1] + hw, self.shape[-2])
+        #
+        #         slices = [slice(start, stop)]
+        #
+        #     if self.multi:
+        #         # n - 2 dim is n_lines or n_scatters
+        #         slices.insert(0, slice(None))
 
         # data that will be used for the graphical representation
         # a copy is made, if there were no window functions then this is a view of the original data
         graphic_data = window_output[tuple(slices)]
+
+        dw = self.index_mappings[-1](self.display_window)
 
         # apply window function on the `p` n_datapoints dim
         if (
@@ -308,7 +372,7 @@ class NDPositions:
 
     def __init__(
         self,
-        data,
+        data: Any,
         graphic: Type[
             LineGraphic
             | LineCollection
@@ -317,6 +381,7 @@ class NDPositions:
             | ScatterCollection
             | ImageGraphic
         ],
+        processor: type[NDPositionsProcessor] = NDPositionsProcessor,
         multi: bool = False,
         display_window: int = 10,
         window_funcs: tuple[WindowFuncCallable | None] | None = None,
@@ -328,7 +393,7 @@ class NDPositions:
         if issubclass(graphic, LineCollection):
             multi = True
 
-        self._processor = NDPositionsProcessor(
+        self._processor = processor(
             data,
             multi=multi,
             display_window=display_window,
@@ -420,7 +485,7 @@ class NDPositions:
             if not self.processor.multi:
                 raise ValueError
 
-            if self.processor.data.shape[-1] != 2:
+            if self.processor.shape[-1] != 2:
                 raise ValueError
 
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
