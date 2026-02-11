@@ -515,3 +515,126 @@ class ScatterCollection(GraphicCollection, _ScatterCollectionProperties):
             center = bbox[:, 0].mean()
 
         return bounds, limits, size, center
+
+
+axes = {"x": 0, "y": 1, "z": 2}
+
+
+class ScatterStack(ScatterCollection):
+    def __init__(
+        self,
+        data: List[np.ndarray],
+        thickness: float | Iterable[float] = 2.0,
+        colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
+        cmap: Iterable[str] | str = None,
+        cmap_transform: np.ndarray | List = None,
+        name: str = None,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Sequence[Any] | np.ndarray = None,
+        isolated_buffer: bool = True,
+        separation: float = 0.0,
+        separation_axis: str = "y",
+        kwargs_lines: list[dict] = None,
+        **kwargs,
+    ):
+        """
+        Create a stack of :class:`.LineGraphic` that are separated along the "x" or "y" axis.
+
+        Parameters
+        ----------
+        data: list of array-like
+            List or array-like of multiple line data to plot
+
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
+
+        thickness: float or Iterable of float, default 2.0
+            | if ``float``, single thickness will be used for all lines
+            | if ``list`` of ``float``, each value will apply to the individual lines
+
+        colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
+            | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
+            | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
+            | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
+            | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
+
+        cmap: Iterable of str or str, optional
+            | if ``str``, single cmap will be used for all lines
+            | if ``list`` of ``str``, each cmap will apply to the individual lines
+
+            .. note::
+                ``cmap`` overrides any arguments passed to ``colors``
+
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        name: str, optional
+            name of the line collection as a whole
+
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            metadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
+            ``len(metadata)`` must be same as ``len(data)``
+
+        separation: float, default 0.0
+            space in between each line graphic in the stack
+
+        separation_axis: str, default "y"
+            axis in which the line graphics in the stack should be separated
+
+
+        kwargs_lines: list[dict], optional
+            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
+
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
+
+        """
+        super().__init__(
+            data=data,
+            thickness=thickness,
+            colors=colors,
+            cmap=cmap,
+            cmap_transform=cmap_transform,
+            name=name,
+            names=names,
+            metadata=metadata,
+            metadatas=metadatas,
+            isolated_buffer=isolated_buffer,
+            kwargs_lines=kwargs_lines,
+            **kwargs,
+        )
+
+        self._sepration_axis = separation_axis
+        self._separation = separation
+
+        self.separation = separation
+
+    @property
+    def separation(self) -> float:
+        """distance between each line in the stack, in world space"""
+        return self._separation
+
+    @separation.setter
+    def separation(self, value: float):
+        separation = float(value)
+
+        axis_zero = 0
+        for i, line in enumerate(self.graphics):
+            if self._sepration_axis == "x":
+                line.offset = (axis_zero, *line.offset[1:])
+
+            elif self._sepration_axis == "y":
+                line.offset = (line.offset[0], axis_zero, line.offset[2])
+
+            axis_zero = (
+                    axis_zero + line.data.value[:, axes[self._sepration_axis]].max() + separation
+            )
+
+        self._separation = value
