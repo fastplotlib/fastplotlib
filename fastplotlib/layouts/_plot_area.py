@@ -341,7 +341,7 @@ class PlotArea(GraphicMethodsMixin):
         )
 
         # convert screen position to NDC
-        pos_ndc = (pos_rel[0] / vs[0] * 2 - 1, -(pos_rel[1] / vs[1] * 2 - 1), 0)
+        pos_ndc = np.asarray([pos_rel[0] / vs[0] * 2 - 1, -(pos_rel[1] / vs[1] * 2 - 1), 0])
 
         # get world position
         pos_ndc += vec_transform(self.camera.world.position, self.camera.camera_matrix)
