@@ -114,7 +114,6 @@ class ScatterCollection(GraphicCollection, _ScatterCollectionProperties):
         self,
         data: np.ndarray | List[np.ndarray],
         colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
-        uniform_colors: bool = False,
         cmap: Sequence[str] | str = None,
         cmap_transform: np.ndarray | List = None,
         sizes: float | Sequence[float] = 5.0,
@@ -122,7 +121,6 @@ class ScatterCollection(GraphicCollection, _ScatterCollectionProperties):
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Sequence[Any] | np.ndarray = None,
-        isolated_buffer: bool = True,
         kwargs_lines: list[dict] = None,
         **kwargs,
     ):
@@ -291,12 +289,10 @@ class ScatterCollection(GraphicCollection, _ScatterCollectionProperties):
             lg = ScatterGraphic(
                 data=d,
                 colors=_c,
-                uniform_color=uniform_colors,
                 sizes=sizes,
                 cmap=_cmap,
                 name=_name,
                 metadata=_m,
-                isolated_buffer=isolated_buffer,
                 **kwargs_lines,
             )
 
