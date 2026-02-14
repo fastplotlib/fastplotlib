@@ -134,5 +134,6 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable", None),
     "pygfx": ("https://docs.pygfx.org/stable", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
+    "rendercanvas": ("https://rendercanvas.readthedocs.io/stable/", None),
     # "fastplotlib": ("https://www.fastplotlib.org/", None),
 }
