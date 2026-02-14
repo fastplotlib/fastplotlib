@@ -1,3 +1,4 @@
+from functools import partial
 import inspect
 from typing import Literal, Callable, Any, Type
 from warnings import warn
@@ -465,6 +466,13 @@ class NDPositions:
 
         self._indices = indices
 
+    def _tooltip_handler(self, graphic, pick_info):
+        if isinstance(self.graphic, (LineCollection, ScatterCollection)):
+            # get graphic within the collection
+            n_index = np.argwhere(self.graphic.graphics == graphic).item()
+            p_index = pick_info["vertex_index"]
+            return self.processor.format_tooltip(n_index, p_index)
+
     def _create_graphic(
         self,
         graphic_cls: Type[
@@ -499,6 +507,11 @@ class NDPositions:
             else:
                 kwargs = dict()
             self._graphic = graphic_cls(data_slice, **kwargs)
+
+        if hasattr(self.processor, "format_tooltip"):
+            if isinstance(self._graphic, (LineCollection, ScatterCollection)):
+                for g in self._graphic.graphics:
+                    g.tooltip_format = partial(self._tooltip_handler, g)
 
     def _create_heatmap_data(self, data_slice) -> tuple[np.ndarray, float, float]:
         """return [n_rows, n_cols] shape data"""
