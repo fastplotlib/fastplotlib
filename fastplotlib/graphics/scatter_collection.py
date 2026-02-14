@@ -6,7 +6,7 @@ import pygfx
 
 from ..utils import parse_cmap_values
 from ._collection_base import CollectionIndexer, GraphicCollection, CollectionFeature
-from .line import LineGraphic
+from .scatter import ScatterGraphic
 from .selectors import (
     LinearRegionSelector,
     LinearSelector,
@@ -15,24 +15,24 @@ from .selectors import (
 )
 
 
-class _LineCollectionProperties:
-    """Mix-in class for LineCollection properties"""
+class _ScatterCollectionProperties:
+    """Mix-in class for ScatterCollection properties"""
 
     @property
     def colors(self) -> CollectionFeature:
-        """get or set colors of lines in the collection"""
+        """get or set colors of scatters in the collection"""
         return CollectionFeature(self.graphics, "colors")
 
     @colors.setter
     def colors(self, values: str | np.ndarray | tuple[float] | list[float] | list[str]):
         if isinstance(values, str):
-            # set colors of all lines to one str color
+            # set colors of all scatter to one str color
             for g in self:
                 g.colors = values
             return
 
         elif all(isinstance(v, str) for v in values):
-            # individual str colors for each line
+            # individual str colors for each scatter
             if not len(values) == len(self):
                 raise IndexError
 
@@ -70,12 +70,12 @@ class _LineCollectionProperties:
     @property
     def cmap(self) -> CollectionFeature:
         """
-        Get or set a cmap along the line collection.
+        Get or set a cmap along the scatter collection.
 
-        Optionally set using a tuple ("cmap", <transform>) to set the transform..
+        Optionally set using a tuple ("cmap", <transform>) to set the transform.
         Example:
 
-        line_collection.cmap = ("jet", sine_transform_vals, 0.7)
+        scatter_collection.cmap = ("jet", sine_transform_vals, 0.7)
 
         """
         return CollectionFeature(self.graphics, "cmap")
@@ -99,38 +99,24 @@ class _LineCollectionProperties:
             n_colors=len(self), cmap_name=name, transform=transform
         )
 
-    @property
-    def thickness(self) -> np.ndarray:
-        """get or set the thickness of the lines"""
-        return np.asarray([g.thickness for g in self])
 
-    @thickness.setter
-    def thickness(self, values: np.ndarray | list[float]):
-        if not len(values) == len(self):
-            raise IndexError
-
-        for g, v in zip(self, values):
-            g.thickness = v
-
-
-class LineCollectionIndexer(CollectionIndexer, _LineCollectionProperties):
-    """Indexer for line collections"""
+class ScatterCollectionIndexer(CollectionIndexer, _ScatterCollectionProperties):
+    """Indexer for scatter collections"""
 
     pass
 
 
-class LineCollection(GraphicCollection, _LineCollectionProperties):
-    _child_type = LineGraphic
-    _indexer = LineCollectionIndexer
+class ScatterCollection(GraphicCollection, _ScatterCollectionProperties):
+    _child_type = ScatterGraphic
+    _indexer = ScatterCollectionIndexer
 
     def __init__(
         self,
         data: np.ndarray | List[np.ndarray],
-        thickness: float | Sequence[float] = 2.0,
         colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
         cmap: Sequence[str] | str = None,
         cmap_transform: np.ndarray | List = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        sizes: float | Sequence[float] = 5.0,
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
@@ -139,7 +125,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         **kwargs,
     ):
         """
-        Create a collection of :class:`.LineGraphic`
+        Create a collection of :class:`.ScatterGraphic`
 
         Parameters
         ----------
@@ -148,10 +134,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
             | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
             | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
-
-        thickness: float or Iterable of float, default 2.0
-            | if ``float``, single thickness will be used for all lines
-            | if ``list`` of ``float``, each value will apply to the individual lines
 
         colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
             | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
@@ -168,9 +150,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
-
-        color_mode: one of "auto", "uniform", "vertex", default "auto"
-            The color mode for each line in the collection. See `color_mode` in :class:`.LineGraphic` for details.
 
         name: str, optional
             name of the line collection as a whole
@@ -194,12 +173,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         """
 
         super().__init__(name=name, metadata=metadata, **kwargs)
-
-        if not isinstance(thickness, (float, int)):
-            if len(thickness) != len(data):
-                raise ValueError(
-                    f"len(thickness) != len(data)\n{len(thickness)} != {len(data)}"
-                )
 
         if names is not None:
             if len(names) != len(data):
@@ -292,11 +265,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         self._set_world_object(pygfx.Group())
 
         for i, d in enumerate(data):
-            if isinstance(thickness, list):
-                _s = thickness[i]
-            else:
-                _s = thickness
-
             if cmap is None:
                 _cmap = None
 
@@ -318,12 +286,11 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
             else:
                 _name = None
 
-            lg = LineGraphic(
+            lg = ScatterGraphic(
                 data=d,
-                thickness=_s,
                 colors=_c,
+                sizes=sizes,
                 cmap=_cmap,
-                color_mode=color_mode,
                 name=_name,
                 metadata=_m,
                 **kwargs_lines,
@@ -331,7 +298,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
             self.add_graphic(lg)
 
-    def __getitem__(self, item) -> LineCollectionIndexer:
+    def __getitem__(self, item) -> ScatterCollectionIndexer:
         return super().__getitem__(item)
 
     def add_linear_selector(
@@ -489,7 +456,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         Parameters
         ----------
-        selection: list[tuple[float, float]], optional
+        selection: List of positions, optional
             Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
         """
         bbox = self.world_object.get_world_bounding_box()
@@ -549,7 +516,7 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 axes = {"x": 0, "y": 1, "z": 2}
 
 
-class LineStack(LineCollection):
+class ScatterStack(ScatterCollection):
     def __init__(
         self,
         data: List[np.ndarray],
@@ -561,7 +528,8 @@ class LineStack(LineCollection):
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Sequence[Any] | np.ndarray = None,
-        separation: float = 10.0,
+        isolated_buffer: bool = True,
+        separation: float = 0.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
         **kwargs,
@@ -610,7 +578,7 @@ class LineStack(LineCollection):
             metadata for each individual line associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
-        separation: float, default 10
+        separation: float, default 0.0
             space in between each line graphic in the stack
 
         separation_axis: str, default "y"
@@ -634,20 +602,35 @@ class LineStack(LineCollection):
             names=names,
             metadata=metadata,
             metadatas=metadatas,
+            isolated_buffer=isolated_buffer,
             kwargs_lines=kwargs_lines,
             **kwargs,
         )
 
+        self._sepration_axis = separation_axis
+        self._separation = separation
+
+        self.separation = separation
+
+    @property
+    def separation(self) -> float:
+        """distance between each line in the stack, in world space"""
+        return self._separation
+
+    @separation.setter
+    def separation(self, value: float):
+        separation = float(value)
+
         axis_zero = 0
         for i, line in enumerate(self.graphics):
-            if separation_axis == "x":
+            if self._sepration_axis == "x":
                 line.offset = (axis_zero, *line.offset[1:])
 
-            elif separation_axis == "y":
+            elif self._sepration_axis == "y":
                 line.offset = (line.offset[0], axis_zero, line.offset[2])
 
             axis_zero = (
-                axis_zero + line.data.value[:, axes[separation_axis]].max() + separation
+                    axis_zero + line.data.value[:, axes[self._sepration_axis]].max() + separation
             )
 
-        self.separation = separation
+        self._separation = value

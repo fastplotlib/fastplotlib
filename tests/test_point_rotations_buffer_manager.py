@@ -35,7 +35,7 @@ def test_create_buffer(test_graphic):
         scatter = fig[0, 0].add_scatter(data, point_rotation_mode="vertex", point_rotations=ROTATIONS1)
         vertex_rotations = scatter.point_rotations
         assert isinstance(vertex_rotations, VertexRotations)
-        assert vertex_rotations.buffer is scatter.world_object.geometry.rotations
+        assert vertex_rotations._fpl_buffer is scatter.world_object.geometry.rotations
     else:
         vertex_rotations = VertexRotations(ROTATIONS1, len(data))
 

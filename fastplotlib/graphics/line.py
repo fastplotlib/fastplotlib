@@ -18,6 +18,7 @@ from .features import (
     UniformColor,
     VertexCmap,
     SizeSpace,
+    UniformRotations,
 )
 from ..utils import quick_min_max
 
@@ -36,10 +37,9 @@ class LineGraphic(PositionsGraphic):
         data: Any,
         thickness: float = 2.0,
         colors: str | np.ndarray | Sequence = "w",
-        uniform_color: bool = False,
         cmap: str = None,
         cmap_transform: np.ndarray | Sequence = None,
-        isolated_buffer: bool = True,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         size_space: str = "screen",
         **kwargs,
     ):
@@ -61,14 +61,18 @@ class LineGraphic(PositionsGraphic):
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        uniform_color: bool, default ``False``
-            if True, uses a uniform buffer for the line color,
-            basically saves GPU VRAM when the entire line has a single color
-
         cmap: str, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            "uniform" restricts to a single color for all line datapoints.
+            "vertex" allows independent colors per vertex.
+            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
+            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
+            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
+            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
@@ -84,10 +88,9 @@ class LineGraphic(PositionsGraphic):
         super().__init__(
             data=data,
             colors=colors,
-            uniform_color=uniform_color,
             cmap=cmap,
             cmap_transform=cmap_transform,
-            isolated_buffer=isolated_buffer,
+            color_mode=color_mode,
             size_space=size_space,
             **kwargs,
         )
@@ -102,8 +105,8 @@ class LineGraphic(PositionsGraphic):
 
         aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
 
-        if uniform_color:
-            geometry = pygfx.Geometry(positions=self._data.buffer)
+        if isinstance(self._colors, UniformColor):
+            geometry = pygfx.Geometry(positions=self._data._fpl_buffer)
             material = MaterialCls(
                 aa=aa,
                 thickness=self.thickness,
@@ -123,7 +126,7 @@ class LineGraphic(PositionsGraphic):
                 depth_compare="<=",
             )
             geometry = pygfx.Geometry(
-                positions=self._data.buffer, colors=self._colors.buffer
+                positions=self._data._fpl_buffer, colors=self._colors._fpl_buffer
             )
 
         world_object: pygfx.Line = pygfx.Line(geometry=geometry, material=material)

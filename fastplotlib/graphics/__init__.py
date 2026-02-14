@@ -7,7 +7,7 @@ from ._vectors import VectorsGraphic
 from .mesh import MeshGraphic, SurfaceGraphic, PolygonGraphic
 from .text import TextGraphic
 from .line_collection import LineCollection, LineStack
-
+from .scatter_collection import ScatterCollection
 
 __all__ = [
     "Graphic",
@@ -22,4 +22,5 @@ __all__ = [
     "TextGraphic",
     "LineCollection",
     "LineStack",
+    "ScatterCollection",
 ]
