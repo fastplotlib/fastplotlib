@@ -1,6 +1,6 @@
 from typing import Literal
 
-from ._processor_base import NDProcessor
+from .processor_base import NDProcessor
 
 
 class NDImageProcessor(NDProcessor):

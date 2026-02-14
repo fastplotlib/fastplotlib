@@ -1,15 +1,13 @@
 from functools import partial
-import inspect
 from typing import Literal, Callable, Any, Type
 from warnings import warn
 
 import numpy as np
-from numpy.typing import ArrayLike
 from numpy.lib.stride_tricks import sliding_window_view
 
-from ...utils import subsample_array, ArrayProtocol
+from ....utils import subsample_array, ArrayProtocol
 
-from ...graphics import (
+from ....graphics import (
     Graphic,
     ImageGraphic,
     LineGraphic,
@@ -18,7 +16,7 @@ from ...graphics import (
     ScatterGraphic,
     ScatterCollection,
 )
-from ._processor_base import NDProcessor, WindowFuncCallable
+from ..processor_base import NDProcessor, WindowFuncCallable
 
 
 # TODO: Maybe get rid of n_display_dims in NDProcessor,
@@ -219,40 +217,6 @@ class NDPositionsProcessor(NDProcessor):
 
         return tuple(slices)
 
-        #
-        # # clamp w.r.t. processor shape
-        #
-        # dw = self.index_mappings[-1](self.display_window)
-        #
-        # if dw == 1:
-        #     slices = [slice(index_p, index_p + 1)]
-        #
-        # else:
-        #     # half window size
-        #     hw = dw // 2
-        #
-        #     # for now assume just a single index provided that indicates x axis value
-        #     start = max(index_p - hw, 0)
-        #     stop = start + dw
-        #     # also add window size of `p` dim so window_func output has the same number of datapoints
-        #     if (
-        #             self.datapoints_window_func is not None
-        #             and self.datapoints_window_size is not None
-        #     ):
-        #         stop += self.datapoints_window_size - 1
-        #         # TODO: pad with constant if we're using a window func and the index is near the end
-        #
-        #     # TODO: uncomment this once we have resizeable buffers!!
-        #     # stop = min(index_p + hw, self.shape[-2])
-        #
-        #     slices = [slice(start, stop)]
-        #
-        # if self.multi:
-        #     # n - 2 dim is n_lines or n_scatters
-        #     slices.insert(0, slice(None))
-        #
-        # return tuple(slices)
-
     def get(self, indices: tuple[Any, ...]):
         """
         slices through all slider dims and outputs an array that can be used to set graphic data
@@ -370,10 +334,10 @@ class NDPositionsProcessor(NDProcessor):
 
 
 class NDPositions:
-
     def __init__(
         self,
         data: Any,
+        *args,
         graphic: Type[
             LineGraphic
             | LineCollection
@@ -390,18 +354,24 @@ class NDPositions:
         index_mappings: tuple[Callable[[Any], int] | None] | None = None,
         max_display_datapoints: int = 1_000,
         graphic_kwargs: dict = None,
+        processor_kwargs: dict = None,
     ):
         if issubclass(graphic, LineCollection):
             multi = True
 
+        if processor_kwargs is None:
+            processor_kwargs = dict()
+
         self._processor = processor(
             data,
+            *args,
             multi=multi,
             display_window=display_window,
             max_display_datapoints=max_display_datapoints,
             window_funcs=window_funcs,
             window_sizes=window_sizes,
             index_mappings=index_mappings,
+            **processor_kwargs,
         )
 
         self._processor.p_max = 1_000
@@ -471,7 +441,7 @@ class NDPositions:
             # get graphic within the collection
             n_index = np.argwhere(self.graphic.graphics == graphic).item()
             p_index = pick_info["vertex_index"]
-            return self.processor.format_tooltip(n_index, p_index)
+            return self.processor.tooltip_format(n_index, p_index)
 
     def _create_graphic(
         self,
@@ -508,7 +478,7 @@ class NDPositions:
                 kwargs = dict()
             self._graphic = graphic_cls(data_slice, **kwargs)
 
-        if hasattr(self.processor, "format_tooltip"):
+        if self.processor.tooltip:
             if isinstance(self._graphic, (LineCollection, ScatterCollection)):
                 for g in self._graphic.graphics:
                     g.tooltip_format = partial(self._tooltip_handler, g)

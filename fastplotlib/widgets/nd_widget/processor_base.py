@@ -56,6 +56,19 @@ class NDProcessor:
         return data
 
     @property
+    def tooltip(self) -> bool:
+        """
+        whether or not a custom tooltip formatter method exists
+        """
+        return False
+
+    def tooltip_format(self, *args) -> str | None:
+        """
+        Override in subclass to format custom tooltips
+        """
+        return None
+
+    @property
     def slider_dims(self):
         raise NotImplementedError
 
