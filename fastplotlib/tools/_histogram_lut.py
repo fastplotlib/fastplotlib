@@ -23,6 +23,8 @@ def _format_value(value: float):
 
 
 class HistogramLUTTool(Graphic):
+    _fpl_support_tooltip = False
+
     def __init__(
         self,
         histogram: tuple[np.ndarray, np.ndarray],

@@ -146,3 +146,11 @@ class PositionsGraphic(Graphic):
 
         self._size_space = SizeSpace(size_space)
         super().__init__(*args, **kwargs)
+
+    def format_pick_info(self, pick_info: dict) -> str:
+        index = pick_info["vertex_index"]
+        info = "\n".join(
+            f"{dim}: {val:.4g}" for dim, val in zip("xyz", self.data[index])
+        )
+
+        return info

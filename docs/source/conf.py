@@ -68,6 +68,7 @@ sphinx_gallery_conf = {
             "../../examples/text",
             "../../examples/events",
             "../../examples/selection_tools",
+            "../../examples/spaces_transforms",
             "../../examples/machine_learning",
             "../../examples/guis",
             "../../examples/ipywidgets",
@@ -133,5 +134,6 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable", None),
     "pygfx": ("https://docs.pygfx.org/stable", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
+    "rendercanvas": ("https://rendercanvas.readthedocs.io/stable/", None),
     # "fastplotlib": ("https://www.fastplotlib.org/", None),
 }

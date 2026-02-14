@@ -30,7 +30,9 @@ Properties
     Graphic.offset
     Graphic.right_click_menu
     Graphic.rotation
+    Graphic.scale
     Graphic.supported_events
+    Graphic.tooltip_format
     Graphic.visible
     Graphic.world_object
 
@@ -42,6 +44,9 @@ Methods
     Graphic.add_axes
     Graphic.add_event_handler
     Graphic.clear_event_handlers
+    Graphic.format_pick_info
+    Graphic.map_model_to_world
+    Graphic.map_world_to_model
     Graphic.remove_event_handler
     Graphic.rotate
 
