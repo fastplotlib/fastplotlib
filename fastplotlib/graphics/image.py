@@ -164,7 +164,6 @@ class ImageGraphic(Graphic):
         # set map to None for RGB images
         if self._data.value.ndim == 3:
             self._cmap = None
-            self._cmap_interpolation = None
             _map = None
 
         elif self._data.value.ndim == 2:
@@ -317,10 +316,9 @@ class ImageGraphic(Graphic):
         self._interpolation.set_value(self, value)
 
     @property
-    def cmap_interpolation(self) -> str | None:
-        """cmap interpolation method, 'linear' or 'nearest'. `None` if image is RGB(A)"""
-        if self._cmap_interpolation is not None:
-            return self._cmap_interpolation.value
+    def cmap_interpolation(self) -> str:
+        """cmap interpolation method, 'linear' or 'nearest'. Used only for grayscale images"""
+        return self._cmap_interpolation.value
 
     @cmap_interpolation.setter
     def cmap_interpolation(self, value: str):
