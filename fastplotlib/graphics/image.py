@@ -162,10 +162,11 @@ class ImageGraphic(Graphic):
         self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
         # set map to None for RGB images
-        if self._data.value.ndim > 2:
+        if self._data.value.ndim == 3:
             self._cmap = None
             _map = None
-        else:
+
+        elif self._data.value.ndim == 2:
             # use TextureMap for grayscale images
             self._cmap = ImageCmap(cmap)
 
@@ -173,6 +174,12 @@ class ImageGraphic(Graphic):
                 self._cmap.texture,
                 filter=self._cmap_interpolation.value,
                 wrap="clamp-to-edge",
+            )
+        else:
+            raise ValueError(
+                f"ImageGraphic `data` must have 2 dimensions for grayscale images, or 3 dimensions for RGB(A) images.\n"
+                f"You have passed a a data array with: {self._data.value.ndim} dimensions, "
+                f"and of shape: {self._data.value.shape}"
             )
 
         # one common material is used for every Texture chunk
@@ -275,8 +282,6 @@ class ImageGraphic(Graphic):
         if self._cmap is not None:
             return self._cmap.value
 
-        return None
-
     @cmap.setter
     def cmap(self, name: str):
         if self.data.value.ndim > 2:
@@ -312,7 +317,7 @@ class ImageGraphic(Graphic):
 
     @property
     def cmap_interpolation(self) -> str:
-        """cmap interpolation method"""
+        """cmap interpolation method, 'linear' or 'nearest'. Used only for grayscale images"""
         return self._cmap_interpolation.value
 
     @cmap_interpolation.setter

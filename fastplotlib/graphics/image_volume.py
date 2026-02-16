@@ -204,17 +204,23 @@ class ImageVolumeGraphic(Graphic):
         self._vmax = ImageVmax(vmax)
 
         self._interpolation = ImageInterpolation(interpolation)
-
-        # TODO: I'm assuming RGB volume images aren't supported???
-        # use TextureMap for grayscale images
-        self._cmap = ImageCmap(cmap)
         self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
+        # use TextureMap for grayscale images
+        self._cmap = ImageCmap(cmap)
         self._texture_map = pygfx.TextureMap(
             self._cmap.texture,
             filter=self._cmap_interpolation.value,
             wrap="clamp-to-edge",
         )
+
+        if self._data.value.ndim not in (3, 4):
+            raise ValueError(
+                f"ImageVolumeGraphic `data` must have 3 dimensions for grayscale images, "
+                f"or 4 dimensions for RGB(A) images.\n"
+                f"You have passed a a data array with: {self._data.value.ndim} dimensions, "
+                f"and of shape: {self._data.value.shape}"
+            )
 
         self._plane = VolumeSlicePlane(plane)
         self._threshold = VolumeIsoThreshold(threshold)
@@ -301,7 +307,7 @@ class ImageVolumeGraphic(Graphic):
 
     @property
     def cmap(self) -> str:
-        """Get or set colormap name"""
+        """Get or set colormap name, only used for grayscale images"""
         return self._cmap.value
 
     @cmap.setter
