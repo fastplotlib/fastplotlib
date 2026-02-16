@@ -204,23 +204,17 @@ class ImageVolumeGraphic(Graphic):
         self._vmax = ImageVmax(vmax)
 
         self._interpolation = ImageInterpolation(interpolation)
+        self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
-        if self._data.value.ndim == 4:
-            # set map to None for RGB image volumes
-            self._cmap = None
-            self._texture_map = None
-            self._cmap_interpolation = None
+        # use TextureMap for grayscale images
+        self._cmap = ImageCmap(cmap)
+        self._texture_map = pygfx.TextureMap(
+            self._cmap.texture,
+            filter=self._cmap_interpolation.value,
+            wrap="clamp-to-edge",
+        )
 
-        elif self._data.value.ndim == 3:
-            # use TextureMap for grayscale images
-            self._cmap = ImageCmap(cmap)
-            self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
-            self._texture_map = pygfx.TextureMap(
-                self._cmap.texture,
-                filter=self._cmap_interpolation.value,
-                wrap="clamp-to-edge",
-            )
-        else:
+        if self._data.value.ndim not in (3, 4):
             raise ValueError(
                 f"ImageVolumeGraphic `data` must have 3 dimensions for grayscale images, "
                 f"or 4 dimensions for RGB(A) images.\n"
@@ -312,10 +306,9 @@ class ImageVolumeGraphic(Graphic):
         self._mode.set_value(self, mode)
 
     @property
-    def cmap(self) -> str | None:
-        """Get or set colormap name"""
-        if self._cmap is not None:
-            return self._cmap.value
+    def cmap(self) -> str:
+        """Get or set colormap name, only used for grayscale images"""
+        return self._cmap.value
 
     @cmap.setter
     def cmap(self, name: str):
@@ -349,10 +342,9 @@ class ImageVolumeGraphic(Graphic):
         self._interpolation.set_value(self, value)
 
     @property
-    def cmap_interpolation(self) -> str | None:
+    def cmap_interpolation(self) -> str:
         """Get or set the cmap interpolation method"""
-        if self._cmap_interpolation is not None:
-            return self._cmap_interpolation.value
+        return self._cmap_interpolation.value
 
     @cmap_interpolation.setter
     def cmap_interpolation(self, value: str):
