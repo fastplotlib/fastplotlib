@@ -318,6 +318,10 @@ class Graphic:
         if not all(wo.world.rotation == self.rotation):
             self.rotation = self.rotation
 
+        # set scale if it's not (1, 1, 1)
+        if not all(wo.world.scale == self.scale):
+            self.scale = self.scale
+
     @property
     def tooltip_format(self) -> Callable[[dict], str] | None:
         """
