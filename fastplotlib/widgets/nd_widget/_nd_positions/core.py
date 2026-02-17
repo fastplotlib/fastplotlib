@@ -353,6 +353,7 @@ class NDPositions:
         window_sizes: tuple[int | None] | None = None,
         index_mappings: tuple[Callable[[Any], int] | None] | None = None,
         max_display_datapoints: int = 1_000,
+        auto_x_range: bool = False,
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
     ):
@@ -377,6 +378,8 @@ class NDPositions:
         self._processor.p_max = 1_000
 
         self._indices = tuple([0] * self._processor.n_slider_dims)
+
+        self._auto_x_range = auto_x_range
 
         self._create_graphic(graphic)
 
@@ -433,6 +436,12 @@ class NDPositions:
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
             self.graphic.data = image_data
             self.graphic.offset = (x0, *self.graphic.offset[1:])
+            self.graphic.scale = (x_scale, *self.graphic.scale[1:])
+
+        # x range of the data
+        xr = data_slice[0, 0, 0], data_slice[0, -1, 0]
+        if self._auto_x_range:
+            self.graphic._plot_area.x_range = xr
 
         self._indices = indices
 
@@ -504,10 +513,12 @@ class NDPositions:
             # x is sufficiently uniform
             y_interp = data_slice[..., 1]
 
-        # assume all x values are the same
-        x_scale = data_slice[:, -1, 0][0] / data_slice.shape[1]
-
         x0 = data_slice[0, 0, 0]
+
+        # assume all x values are the same across all lines
+        # otherwise a heatmap representation makes no sense anyways
+        x_stop = data_slice[:, -1, 0][0]
+        x_scale = (x_stop - x0) / data_slice.shape[1]
 
         return y_interp, x0, x_scale
 

@@ -85,7 +85,7 @@ class NDWSubplot:
         return nd
 
     def add_nd_timeseries(self, *args, graphic: type[LineCollection | LineStack | ImageGraphic] = LineStack, **kwargs):
-        nd = NDPositions(*args, graphic=LineStack, multi=True, **kwargs)
+        nd = NDPositions(*args, graphic=graphic, multi=True, auto_x_range=True,**kwargs)
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
         # TODO: think about auto-xrange for subplot camera
