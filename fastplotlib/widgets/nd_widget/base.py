@@ -6,6 +6,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from ...utils import subsample_array, ArrayProtocol
+from ...graphics import Graphic
 
 # must take arguments: array-like, `axis`: int, `keepdims`: bool
 WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
@@ -249,3 +250,25 @@ class NDProcessor:
 
     def __getitem__(self, item: tuple[Any, ...]) -> ArrayProtocol:
         pass
+
+
+class NDGraphic:
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def processor(self) -> NDProcessor:
+        raise NotImplementedError
+
+    @property
+    def graphic(self) -> Graphic:
+        raise NotImplementedError
+
+    @property
+    def indices(self) -> tuple[Any]:
+        raise NotImplementedError
+
+    @indices.setter
+    def indices(self, new: tuple):
+        raise NotImplementedError

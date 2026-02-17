@@ -16,7 +16,7 @@ from ....graphics import (
     ScatterGraphic,
     ScatterCollection,
 )
-from ..processor_base import NDProcessor, WindowFuncCallable
+from ..base import NDProcessor, NDGraphic, WindowFuncCallable
 
 
 # TODO: Maybe get rid of n_display_dims in NDProcessor,
@@ -210,7 +210,8 @@ class NDPositionsProcessor(NDProcessor):
         if index_p_start >= index_p_stop:
             index_p_stop = index_p_start + 1
 
-        slices = [slice(index_p_start, index_p_stop)]
+        # round to the nearest integer since to use as arra indices
+        slices = [slice(round(index_p_start), round(index_p_stop))]
 
         if self.multi:
             slices.insert(0, slice(None))
@@ -225,19 +226,18 @@ class NDPositionsProcessor(NDProcessor):
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
         """
         # apply any slider index mappings
-        indices = tuple([m(i) for m, i in zip(self.index_mappings, indices)])
+        array_indices = tuple([m(i) for m, i in zip(self.index_mappings, indices)])
 
-        if len(indices) > 1:
+        if len(array_indices) > 1:
             # there are dims in addition to the n_datapoints dim
             # apply window funcs
             # window_output array should be of shape [n_datapoints, 2 | 3]
-            window_output = self._apply_window_functions(indices[:-1]).squeeze()
+            window_output = self._apply_window_functions(array_indices[:-1]).squeeze()
         else:
             window_output = self.data
 
-        # TODO: window function on the `p` n_datapoints dimension
-
         if self.display_window is not None:
+            # display_window is in reference units
             slices = self._get_dw_slices(indices)
 
         # if self.display_window is not None:

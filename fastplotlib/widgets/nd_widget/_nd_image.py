@@ -7,10 +7,7 @@ from numpy.typing import ArrayLike
 
 from ...utils import subsample_array, ArrayProtocol, ARRAY_LIKE_ATTRS
 from ...graphics import ImageGraphic, ImageVolumeGraphic
-from .processor_base import NDProcessor
-
-# must take arguments: array-like, `axis`: int, `keepdims`: bool
-WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
+from .base import NDProcessor, NDGraphic, WindowFuncCallable
 
 
 class NDImageProcessor(NDProcessor):
@@ -526,7 +523,7 @@ class NDImageProcessor(NDProcessor):
         self._histogram = np.histogram(sub_real, bins=100)
 
 
-class NDImage:
+class NDImage(NDGraphic):
     def __init__(
         self,
         data: Any,
@@ -538,6 +535,7 @@ class NDImage:
         index_mappings: tuple[Callable[[Any], int] | None] | None = None,
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
+        name: str = None,
     ):
         if processor_kwargs is None:
             processor_kwargs = dict()
@@ -556,6 +554,8 @@ class NDImage:
         self._graphic = None
 
         self._create_graphic()
+
+        self._name = name
 
     @property
     def processor(self) -> NDImageProcessor:
