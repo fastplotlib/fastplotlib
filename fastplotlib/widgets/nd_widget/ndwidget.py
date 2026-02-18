@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import partial
 import os
 from time import perf_counter
 from typing import Any, Sequence
@@ -84,11 +85,18 @@ class NDWSubplot:
 
         return nd
 
-    def add_nd_timeseries(self, *args, graphic: type[LineCollection | LineStack | ImageGraphic] = LineStack, **kwargs):
-        nd = NDPositions(*args, graphic=graphic, multi=True, auto_x_range=True,**kwargs)
+    def add_nd_timeseries(
+            self,
+            *args,
+            graphic: type[LineCollection | LineStack | ImageGraphic] = LineStack,
+            **kwargs
+    ):
+        nd = NDPositions(*args, graphic=graphic, multi=True, auto_x_range=True, linear_selector=True, **kwargs)
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
-        # TODO: think about auto-xrange for subplot camera
+        self._subplot.add_graphic(nd._linear_selector)
+        nd._linear_selector.add_event_handler(partial(self._set_indices_from_selector, nd), "selection")
+
         return nd
 
     def add_nd_lines(self, *args, **kwargs):
@@ -96,6 +104,19 @@ class NDWSubplot:
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
         return nd
+
+    def _set_indices_from_selector(self, skip_graphic: NDGraphic, ev):
+        # skip the NDPosition object which has the linear selector that triggered this event
+        skip_graphic._pause = True
+
+        x = ev.info["value"]
+        indices_new = list(self.ndw.indices)
+        # linear selector for NDPositions always acts on the `p` dim
+        indices_new[-1] = x
+        self.ndw.indices = tuple(indices_new)
+
+        # restore
+        skip_graphic._pause = False
 
     # def __repr__(self):
     #     return "NDWidget Subplot"

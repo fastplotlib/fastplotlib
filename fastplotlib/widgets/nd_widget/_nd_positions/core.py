@@ -16,6 +16,8 @@ from ....graphics import (
     ScatterGraphic,
     ScatterCollection,
 )
+from ....graphics.utils import pause_events
+from ....graphics.selectors import LinearSelector
 from ..base import NDProcessor, NDGraphic, WindowFuncCallable
 
 
@@ -354,6 +356,7 @@ class NDPositions:
         index_mappings: tuple[Callable[[Any], int] | None] | None = None,
         max_display_datapoints: int = 1_000,
         auto_x_range: bool = False,
+        linear_selector: bool = False,
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
     ):
@@ -382,6 +385,13 @@ class NDPositions:
         self._auto_x_range = auto_x_range
 
         self._create_graphic(graphic)
+
+        if linear_selector:
+            self._linear_selector = LinearSelector(0, limits=(-np.inf, np.inf), edge_color="cyan")
+        else:
+            self._linear_selector = None
+
+        self._pause = False
 
     @property
     def processor(self) -> NDPositionsProcessor:
@@ -418,6 +428,9 @@ class NDPositions:
 
     @indices.setter
     def indices(self, indices):
+        if self._pause:
+            return
+
         data_slice = self.processor.get(indices)
 
         if isinstance(self.graphic, (LineGraphic, ScatterGraphic)):
@@ -443,7 +456,17 @@ class NDPositions:
         if self._auto_x_range:
             self.graphic._plot_area.x_range = xr
 
+        if self._linear_selector is not None:
+            with pause_events(self._linear_selector):#, event_handlers=[self._set_indices_from_selector]):
+                self._linear_selector.limits = xr
+                self._linear_selector.selection = indices[-1]
+                # self._set_linear_selector(x_mid, limits=xr)
+
         self._indices = indices
+
+    # def _set_linear_selector(self, x_mid, limits):
+    #     self._linear_selector.selection = x_mid
+    #     self._linear_selector.limits = limits
 
     def _tooltip_handler(self, graphic, pick_info):
         if isinstance(self.graphic, (LineCollection, ScatterCollection)):
