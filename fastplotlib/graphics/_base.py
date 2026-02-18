@@ -291,15 +291,8 @@ class Graphic:
 
         # add to world object -> graphic mapping
         if isinstance(wo, pygfx.Group):
-            for child in wo.children:
-                if isinstance(
-                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
-                ):
-                    # unique 32 bit integer id for each world object
-                    global_id = child.id
-                    WORLD_OBJECT_TO_GRAPHIC[global_id] = self
-                    # store id to pop from dict when graphic is deleted
-                    self._world_object_ids.append(global_id)
+            # for Graphics which use a pygfx.Group, ImageGraphic and graphic collections
+            self._add_group_graphic_map(wo)
         else:
             global_id = wo.id
             WORLD_OBJECT_TO_GRAPHIC[global_id] = self
@@ -323,6 +316,31 @@ class Graphic:
         # set rotation if it's not (0., 0., 0., 1.)
         if not all(wo.world.rotation == self.rotation):
             self.rotation = self.rotation
+
+    def _add_group_graphic_map(self, wo: pygfx.Group):
+        # add the children of the group to the WorldObject -> Graphic map
+        # used by images since they create new WorldObject ImageTiles when a different buffer size is required
+        # also used by GraphicCollections inititally, but not used for reseting like images
+        for child in wo.children:
+            if isinstance(
+                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
+            ):
+                # unique 32 bit integer id for each world object
+                global_id = child.id
+                WORLD_OBJECT_TO_GRAPHIC[global_id] = self
+                # store id to pop from dict when graphic is deleted
+                self._world_object_ids.append(global_id)
+
+    def _remove_group_graphic_map(self, wo: pygfx.Group):
+        # remove the children of the group to the WorldObject -> Graphic map
+        for child in wo.children:
+            if isinstance(
+                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
+            ):
+                # unique 32 bit integer id for each world object
+                global_id = child.id
+                WORLD_OBJECT_TO_GRAPHIC.pop(global_id)
+                self._world_object_ids.remove(global_id)
 
     @property
     def tooltip_format(self) -> Callable[[dict], str] | None:

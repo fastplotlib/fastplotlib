@@ -261,12 +261,18 @@ class ImageGraphic(Graphic):
 
                 self._material.clim = quick_min_max(self.data.value)
 
+                # remove tiles from the WorldObject -> Graphic map
+                self._remove_group_graphic_map(self.world_object)
+
                 # clear image tiles
                 self.world_object.clear()
 
                 # create new tiles
                 for tile in self._create_tiles():
                     self.world_object.add(tile)
+
+                # add new tiles to WorldObject -> Graphic map
+                self._add_group_graphic_map(self.world_object)
 
                 return
 
