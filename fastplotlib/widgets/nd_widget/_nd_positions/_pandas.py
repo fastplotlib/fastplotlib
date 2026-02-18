@@ -79,11 +79,19 @@ class NDPP_Pandas(NDPositionsProcessor):
     def get(self, indices: tuple[float | int, ...]) -> np.ndarray:
         if not isinstance(indices, tuple):
             raise TypeError(".get() must receive a tuple of float | int indices")
+
+        # TODO: LOD by using a step size according to max_p
+        # TODO: Also what to do if display_window is None and data
+        #  hasn't changed when indices keeps getting set, cache?
+
         # assume no additional slider dims, only time slider dim
-        self._slices = self._get_dw_slices(indices)
+        if self.display_window is not None:
+            self._slices = self._get_dw_slices(indices)
+            gdata_shape = len(self.columns), self._slices[-1].stop - self._slices[-1].start, 3
+        else:
+            gdata_shape = len(self.columns), self.data.shape[0], 3
+            self._slices = (slice(None),)
 
-
-        gdata_shape = len(self.columns), self._slices[-1].stop - self._slices[-1].start, 3
         gdata = np.zeros(shape=gdata_shape, dtype=np.float32)
 
         for i, col in enumerate(self.columns):

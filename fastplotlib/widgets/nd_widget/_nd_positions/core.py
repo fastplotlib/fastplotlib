@@ -200,6 +200,10 @@ class NDPositionsProcessor(NDProcessor):
         dw = self.display_window
 
         if dw is None:
+            # just return everything
+            return (slice(None),)
+
+        if dw == 0:
             # just map p dimension at this index and return
             index_p = self.index_mappings[-1](indices[-1])
             return (slice(index_p, index_p + 1),)
