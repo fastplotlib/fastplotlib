@@ -317,6 +317,10 @@ class Graphic:
         if not all(wo.world.rotation == self.rotation):
             self.rotation = self.rotation
 
+        # set scale if it's not (1, 1, 1)
+        if not all(wo.world.scale == self.scale):
+            self.scale = self.scale
+
     def _add_group_graphic_map(self, wo: pygfx.Group):
         # add the children of the group to the WorldObject -> Graphic map
         # used by images since they create new WorldObject ImageTiles when a different buffer size is required
