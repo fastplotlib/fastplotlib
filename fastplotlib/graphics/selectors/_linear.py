@@ -48,7 +48,7 @@ class LinearSelector(BaseSelector):
         self._limits = tuple(
             map(round, values)
         )  # if values are close to zero things get weird so round them
-        self.selection._limits = self._limits
+        self._selection._limits = self._limits
 
     @property
     def edge_color(self) -> pygfx.Color:
