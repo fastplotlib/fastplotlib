@@ -160,18 +160,34 @@ class NDWSliders(EdgeWindow):
 
         for dim_index, (current_index, refr) in enumerate(zip(self._ndwidget.indices, self._ndwidget.ref_ranges)):
             if isinstance(refr, ReferenceRangeContinuous):
-                changed, val = imgui.slider_float(
+                changed, new_index = imgui.slider_float(
                     v=current_index,
                     v_min=refr.start,
                     v_max=refr.stop,
                     label=refr.unit
                 )
 
+                # TODO: refactor all this stuff, make fully fledged UI
                 if changed:
                     new_indices = list(self._ndwidget.indices)
-                    new_indices[dim_index] = val
+                    new_indices[dim_index] = new_index
 
                     indices_changed = True
+
+                elif imgui.is_item_hovered():
+                    if imgui.is_key_pressed(imgui.Key.right_arrow):
+                        new_index = current_index + refr.step
+                        new_indices = list(self._ndwidget.indices)
+                        new_indices[dim_index] = new_index
+
+                        indices_changed = True
+
+                    if imgui.is_key_pressed(imgui.Key.left_arrow):
+                        new_index = current_index - refr.step
+                        new_indices = list(self._ndwidget.indices)
+                        new_indices[dim_index] = new_index
+
+                        indices_changed = True
 
         if indices_changed:
             self._ndwidget.indices = tuple(new_indices)
