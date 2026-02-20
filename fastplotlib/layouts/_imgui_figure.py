@@ -225,8 +225,8 @@ class ImguiFigure(Figure):
 
         for edge in ["top"]:
             if self.guis[edge]:
-               # height -= self._guis[edge].size
                 y += self._guis[edge].size
+                height -= self._guis[edge].size
 
         return x, y, max(1, width), max(1, height)
 

@@ -181,7 +181,9 @@ class EdgeWindow(Window):
                     height -= self._figure.guis["bottom"].size
 
                 if self._figure.guis["top"] is not None:
+                    # decrease the height
                     height -= self._figure.guis["top"].size
+                    # increase the y start
                     y_pos += self._figure.guis["top"].size
 
             case "top":
