@@ -62,20 +62,26 @@ class RectManager:
 
     def _set_from_screen_space(self, rect):
         """set rect from screen space representation"""
-        _, _, cw, ch = self._canvas_rect
+        x_offset, y_offset, cw, ch = self._canvas_rect
         mult = np.array([cw, ch, cw, ch])
         # for screen coords allow (x, y) = 1 or 0, but w, h must be > 1
         # check that widths, heights are valid
-        if rect[0] + rect[2] > cw:
+
+        # account for potential x and y offset
+        local = rect.copy()
+        local[0] -= x_offset
+        local[1] -= y_offset
+
+        if local[0] + local[2] > cw:
             raise ValueError(
-                f"invalid rect: {rect}\n x + width > canvas width: {rect[0]} + {rect[2]} > {cw}"
+                f"invalid rect: {rect}\n x + width > canvas width: {local[0]} + {local[2]} > {cw}"
             )
-        if rect[1] + rect[3] > ch:
+        if local[1] + local[3] > ch:
             raise ValueError(
-                f"invalid rect: {rect}\n y + height > canvas height: {rect[1]} + {rect[3]} >{ch}"
+                f"invalid rect: {rect}\n y + height > canvas height: {local[1]} + {local[3]} >{ch}"
             )
 
-        self._rect_frac[:] = rect / mult
+        self._rect_frac[:] = local / mult
         self._rect_screen_space[:] = rect
 
     @property
