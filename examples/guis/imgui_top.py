@@ -40,6 +40,7 @@ class ImguiExample(EdgeWindow):
     def update(self):
         style = imgui.get_style()
         old = style.color_(imgui.Col_.window_bg)
+        print(old)
         style.set_color_(imgui.Col_.window_bg, (0.16, 0.29, 0.48, 1.00))
 
 
@@ -47,7 +48,7 @@ class ImguiExample(EdgeWindow):
 
 
 
-        style.set_color_(imgui.Col_.window_bg, old)
+        style.set_color_(imgui.Col_.window_bg, (0.0, 0.0, 0.0, 1.00))
 
 
 
@@ -59,11 +60,16 @@ gui = ImguiExample(
     title=" ",  # window title
 )
 
+gui2 = ImguiExample(
+    figure, 250, "right", "UI"
+)
+
 # add it to the figure
 figure.add_gui(gui)
+figure.add_gui(gui2)
 
 width, height = figure.canvas.get_logical_size()
-figure[0,0]._frame.rect = np.array([0, gui.size, 640, height - gui.size])
+figure[0,0]._frame.rect = np.array([0, gui.size, 640 - gui2.size, height - gui.size])
 
 figure.show()
 

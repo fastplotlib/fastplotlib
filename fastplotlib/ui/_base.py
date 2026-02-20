@@ -180,6 +180,10 @@ class EdgeWindow(Window):
                 if self._figure.guis["bottom"] is not None:
                     height -= self._figure.guis["bottom"].size
 
+                if self._figure.guis["top"] is not None:
+                    height -= self._figure.guis["top"].size
+                    y_pos += self._figure.guis["top"].size
+
             case "top":
                 x_pos, y_pos = (0, 0)
                 width, height = (width_canvas, self.size)
