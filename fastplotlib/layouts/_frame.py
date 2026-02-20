@@ -304,7 +304,7 @@ class Frame:
         w -= 2  # subtract 2, so we get a 1 pixel edge on both sides
 
         # add 4 pixels above and below title for better spacing
-        y = y + 4 + self._title_graphic.font_size + 4
+        y = + y + 4 + self._title_graphic.font_size + 4
 
         # spacing on the bottom if imgui toolbar is visible
         if self.toolbar_visible:
