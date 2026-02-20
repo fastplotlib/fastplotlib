@@ -38,18 +38,7 @@ class ImguiExample(EdgeWindow):
         super().__init__(figure=figure, size=size, location=location, title=title, window_flags=imgui.WindowFlags_.no_title_bar | imgui.WindowFlags_.no_resize)
 
     def update(self):
-        style = imgui.get_style()
-        old = style.color_(imgui.Col_.window_bg)
-        print(old)
-        style.set_color_(imgui.Col_.window_bg, (0.16, 0.29, 0.48, 1.00))
-
-
-        imgui.text("Title: Hello World")
-
-
-
-        style.set_color_(imgui.Col_.window_bg, (0.0, 0.0, 0.0, 1.00))
-
+        imgui.text("This is a top window")
 
 
 # make GUI instance
@@ -60,19 +49,10 @@ gui = ImguiExample(
     title=" ",  # window title
 )
 
-gui2 = ImguiExample(
-    figure, 250, "right", "UI"
-)
-
 # add it to the figure
 figure.add_gui(gui)
-figure.add_gui(gui2)
-
-width, height = figure.canvas.get_logical_size()
-figure[0,0]._frame.rect = np.array([0, gui.size, 640 - gui2.size, height - gui.size])
 
 figure.show()
-
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide

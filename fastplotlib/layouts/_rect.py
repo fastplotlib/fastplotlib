@@ -39,8 +39,8 @@ class RectManager:
 
     def _set_from_fract(self, rect):
         """set rect from fractional representation"""
-        _, _, cw, ch = self._canvas_rect
-        mult = np.array([cw, ch, cw, ch])
+        rect = np.asarray(rect, dtype=float).copy()
+        x_offset, y_offset, cw, ch = self._canvas_rect
 
         # check that widths, heights are valid:
         if rect[0] + rect[2] > 1:
@@ -54,7 +54,11 @@ class RectManager:
 
         # assign values to the arrays, don't just change the reference
         self._rect_frac[:] = rect
-        self._rect_screen_space[:] = self._rect_frac * mult
+        x_px = x_offset + rect[0] * cw
+        y_px = y_offset + rect[1] * ch
+        w_px = rect[2] * cw
+        h_px = rect[3] * ch
+        self._rect_screen_space[:] = np.array([x_px, y_px, w_px, h_px])
 
     def _set_from_screen_space(self, rect):
         """set rect from screen space representation"""
