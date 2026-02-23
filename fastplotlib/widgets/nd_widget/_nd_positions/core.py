@@ -359,7 +359,7 @@ class NDPositions:
         window_sizes: tuple[int | None] | None = None,
         index_mappings: tuple[Callable[[Any], int] | None] | None = None,
         max_display_datapoints: int = 1_000,
-        auto_x_range: bool = False,
+        x_range_mode: Literal[None, "fixed-window", "view-range"] = None,
         linear_selector: bool = False,
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
@@ -386,9 +386,11 @@ class NDPositions:
 
         self._indices = tuple([0] * self._processor.n_slider_dims)
 
-        self._auto_x_range = auto_x_range
-
         self._create_graphic(graphic)
+
+        self._x_range_mode = None
+        self._last_x_range = [0, 0]
+        self._block_auto_x = False
 
         if linear_selector:
             self._linear_selector = LinearSelector(0, limits=(-np.inf, np.inf), edge_color="cyan")
@@ -457,8 +459,9 @@ class NDPositions:
 
         # x range of the data
         xr = data_slice[0, 0, 0], data_slice[0, -1, 0]
-        if self._auto_x_range:
+        if self._x_range_mode is not None:
             self.graphic._plot_area.x_range = xr
+            self._last_x_range = xr  # if the update_from_view is polling, prevents it
 
         if self._linear_selector is not None:
             with pause_events(self._linear_selector):#, event_handlers=[self._set_indices_from_selector]):
@@ -558,3 +561,34 @@ class NDPositions:
     def display_window(self, dw: int | float | None):
         self.processor.display_window = dw
         self.indices = self.indices
+
+    @property
+    def x_range_mode(self) -> Literal[None, "fixed-window", "view-range"]:
+        """x-range using a fixed window from the display window, or by polling the camera (view-range)"""
+        return self._x_range_mode
+
+    @x_range_mode.setter
+    def x_range_mode(self, mode: Literal[None, "fixed-window", "view-range"]):
+        if self._x_range_mode == "view-range":
+            # old mode was view-range
+            self.graphic._plot_area.remove_animation(
+                self._update_from_view_range
+            )
+
+        if mode == "view-range":
+            self.graphic._plot_area.add_animations(self._update_from_view_range)
+
+        self._x_range_mode = mode
+
+    def _update_from_view_range(self):
+        xr = self.graphic._plot_area.x_range
+        if xr == self._last_x_range:
+            return
+
+        self._last_x_range = self.graphic._plot_area.x_range
+
+        self.display_window = xr[1] - xr[0]
+        indices = list(self.indices)
+        indices[-1] = (xr[0] + xr[1]) / 2
+
+        self.indices = indices

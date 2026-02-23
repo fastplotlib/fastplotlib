@@ -40,6 +40,10 @@ class ReferenceRangeContinuous:
 
         return val
 
+    @property
+    def range(self) -> int | float:
+        return self.stop - self.start
+
 
 @dataclass
 class ReferenceRangeDiscrete:
@@ -95,13 +99,14 @@ class NDWSubplot:
         self,
         *args,
         graphic: type[LineCollection | LineStack | ImageGraphic] = LineStack,
+        x_range_mode="fixed-window",
         **kwargs,
     ):
         nd = NDPositions(
             *args,
             graphic=graphic,
             multi=True,
-            auto_x_range=True,
+            x_range_mode=x_range_mode,
             linear_selector=True,
             **kwargs,
         )
@@ -111,6 +116,8 @@ class NDWSubplot:
         nd._linear_selector.add_event_handler(
             partial(self._set_indices_from_selector, nd), "selection"
         )
+
+        nd.x_range_mode = x_range_mode
 
         return nd
 
@@ -122,6 +129,7 @@ class NDWSubplot:
 
     def _set_indices_from_selector(self, skip_graphic: NDGraphic, ev):
         # skip the NDPosition object which has the linear selector that triggered this event
+        print("setting from selector")
         skip_graphic._pause = True
 
         x = ev.info["value"]
@@ -253,27 +261,40 @@ class NDWSliders(EdgeWindow):
             if i < len(position_graphics) - 1:
                 imgui.same_line()
 
-
-        if isinstance(
-                nd_graphic.display_window, (int, np.integer)
-        ):
-            slider = imgui.slider_int
-            input_ = imgui.input_int
-            type_ = int
-        else:
-            slider = imgui.slider_float
-            input_ = imgui.input_float
-            type_ = float
-
-        changed, new = slider(
-            "display window",
-            v=nd_graphic.display_window,
-            v_min=type_(0),
-            v_max=type_(self._ndwidget.ref_ranges[0].stop * 0.25),
-        )
-
+        changed, val = imgui.checkbox("use display window", nd_graphic.display_window is not None)
         if changed:
-            nd_graphic.display_window = new
+            if not val:
+                nd_graphic.display_window = None
+            else:
+                # pick a value 10% of the reference range
+                nd_graphic.display_window = self._ndwidget.ref_ranges[0].range * 0.1
+
+        if nd_graphic.display_window is not None:
+            if isinstance(
+                    nd_graphic.display_window, (int, np.integer)
+            ):
+                slider = imgui.slider_int
+                input_ = imgui.input_int
+                type_ = int
+            else:
+                slider = imgui.slider_float
+                input_ = imgui.input_float
+                type_ = float
+
+            changed, new = slider(
+                "display window",
+                v=nd_graphic.display_window,
+                v_min=type_(0),
+                v_max=type_(self._ndwidget.ref_ranges[0].stop * 0.25),
+            )
+
+            if changed:
+                nd_graphic.display_window = new
+
+        options = [None, "fixed-window", "view-range"]
+        changed, option = imgui.combo("x-range mode", options.index(nd_graphic.x_range_mode), [str(o) for o in options])
+        if changed:
+            nd_graphic.x_range_mode = options[option]
 
 
 class NDWidget:
