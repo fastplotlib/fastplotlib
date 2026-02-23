@@ -129,8 +129,7 @@ class NDWSubplot:
 
     def _set_indices_from_selector(self, skip_graphic: NDGraphic, ev):
         # skip the NDPosition object which has the linear selector that triggered this event
-        print("setting from selector")
-        skip_graphic._pause = True
+        skip_graphic._block_update_indices = True
 
         x = ev.info["value"]
         indices_new = list(self.ndw.indices)
@@ -139,7 +138,7 @@ class NDWSubplot:
         self.ndw.indices = tuple(indices_new)
 
         # restore
-        skip_graphic._pause = False
+        skip_graphic._block_update_indices = False
 
     # def __repr__(self):
     #     return "NDWidget Subplot"

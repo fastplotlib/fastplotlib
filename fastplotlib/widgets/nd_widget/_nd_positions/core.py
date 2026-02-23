@@ -389,8 +389,8 @@ class NDPositions:
         self._create_graphic(graphic)
 
         self._x_range_mode = None
-        self._last_x_range = [0, 0]
-        self._block_auto_x = False
+        self._last_x_range = np.array([0.0, 0.0], dtype=np.float32)
+        self._block_update_indices = False
 
         if linear_selector:
             self._linear_selector = LinearSelector(0, limits=(-np.inf, np.inf), edge_color="cyan")
@@ -434,8 +434,11 @@ class NDPositions:
 
     @indices.setter
     def indices(self, indices):
-        if self._pause:
+        if self._block_update_indices:
             return
+
+        # this update must be non-reentrant
+        self._block_update_indices = True
 
         data_slice = self.processor.get(indices)
 
@@ -461,15 +464,18 @@ class NDPositions:
         xr = data_slice[0, 0, 0], data_slice[0, -1, 0]
         if self._x_range_mode is not None:
             self.graphic._plot_area.x_range = xr
-            self._last_x_range = xr  # if the update_from_view is polling, prevents it
+
+        self._last_x_range[:] = xr  # if the update_from_view is polling, prevents it
 
         if self._linear_selector is not None:
-            with pause_events(self._linear_selector):#, event_handlers=[self._set_indices_from_selector]):
+            with pause_events(self._linear_selector):
                 self._linear_selector.limits = xr
                 self._linear_selector.selection = indices[-1]
                 # self._set_linear_selector(x_mid, limits=xr)
 
         self._indices = indices
+
+        self._block_update_indices = False
 
     # def _set_linear_selector(self, x_mid, limits):
     #     self._linear_selector.selection = x_mid
@@ -582,13 +588,21 @@ class NDPositions:
 
     def _update_from_view_range(self):
         xr = self.graphic._plot_area.x_range
-        if xr == self._last_x_range:
+
+        # the floating point error near zero gets nasty here
+        if np.allclose(xr, self._last_x_range, atol=1e-14):
             return
 
-        self._last_x_range = self.graphic._plot_area.x_range
+        self._last_x_range[:] = xr
 
         self.display_window = xr[1] - xr[0]
+        new_index = (xr[0] + xr[1]) / 2
+
         indices = list(self.indices)
-        indices[-1] = (xr[0] + xr[1]) / 2
+        if indices[-1] == new_index:
+            return
+
+        indices[-1] = new_index
 
         self.indices = indices
+
