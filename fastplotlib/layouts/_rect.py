@@ -27,7 +27,6 @@ class RectManager:
                 raise ValueError(
                     f"Invalid rect value < 0: {rect}\n All values must be non-negative."
                 )
-
         if (rect[2:] <= 1).all():  # fractional bbox
             self._set_from_fract(rect)
 
@@ -66,7 +65,6 @@ class RectManager:
         mult = np.array([cw, ch, cw, ch])
         # for screen coords allow (x, y) = 1 or 0, but w, h must be > 1
         # check that widths, heights are valid
-
         # account for potential x and y offset
         rect_offset = rect.copy()
         rect_offset[0] -= x_offset
@@ -82,7 +80,7 @@ class RectManager:
             )
 
         self._rect_frac[:] = rect_offset / mult
-        self._rect_screen_space[:] = rect_offset
+        self._rect_screen_space[:] = rect
 
     @property
     def x(self) -> np.float64:
