@@ -68,21 +68,21 @@ class RectManager:
         # check that widths, heights are valid
 
         # account for potential x and y offset
-        local = rect.copy()
-        local[0] -= x_offset
-        local[1] -= y_offset
+        rect_offset = rect.copy()
+        rect_offset[0] -= x_offset
+        rect_offset[1] -= y_offset
 
-        if local[0] + local[2] > cw:
+        if rect_offset[0] + rect_offset[2] > cw:
             raise ValueError(
-                f"invalid rect: {rect}\n x + width > canvas width: {local[0]} + {local[2]} > {cw}"
+                f"invalid rect: {rect}\n x + width > canvas width: {rect_offset[0]} + {rect_offset[2]} > {cw}"
             )
-        if local[1] + local[3] > ch:
+        if rect_offset[1] + rect_offset[3] > ch:
             raise ValueError(
-                f"invalid rect: {rect}\n y + height > canvas height: {local[1]} + {local[3]} >{ch}"
+                f"invalid rect: {rect}\n y + height > canvas height: {rect_offset[1]} + {rect_offset[3]} >{ch}"
             )
 
-        self._rect_frac[:] = local / mult
-        self._rect_screen_space[:] = rect
+        self._rect_frac[:] = rect_offset / mult
+        self._rect_screen_space[:] = rect_offset
 
     @property
     def x(self) -> np.float64:

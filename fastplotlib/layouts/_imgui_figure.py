@@ -195,9 +195,6 @@ class ImguiFigure(Figure):
 
         self._fpl_reset_layout()
 
-    def _fpl_reset_layout(self, *ev):
-        """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
-        self.layout.canvas_resized(self.get_pygfx_render_area())
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
