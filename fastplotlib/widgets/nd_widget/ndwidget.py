@@ -8,11 +8,15 @@ from imgui_bundle import imgui, icons_fontawesome_6 as fa
 import numpy as np
 
 from ...layouts import ImguiFigure, Subplot
-from ...graphics import ScatterCollection, LineCollection, LineStack, ImageGraphic
+from ...graphics import ScatterCollection, LineCollection, LineStack, ImageGraphic, ImageVolumeGraphic
 from ...ui import EdgeWindow
 from .base import NDGraphic, NDProcessor
 from ._nd_image import NDImage, NDImageProcessor
 from ._nd_positions import NDPositions, NDPositionsProcessor
+
+
+position_graphics = [ScatterCollection, LineCollection, LineStack, ImageGraphic]
+image_graphics = [ImageGraphic, ImageVolumeGraphic]
 
 
 @dataclass
@@ -30,7 +34,9 @@ class ReferenceRangeContinuous:
 
         val = self.start + (self.step * index)
         if not self.start <= val <= self.stop:
-            raise IndexError(f"index: {index} value: {val} out of bounds: [{self.start}, {self.stop}]")
+            raise IndexError(
+                f"index: {index} value: {val} out of bounds: [{self.start}, {self.stop}]"
+            )
 
         return val
 
@@ -86,16 +92,25 @@ class NDWSubplot:
         return nd
 
     def add_nd_timeseries(
-            self,
-            *args,
-            graphic: type[LineCollection | LineStack | ImageGraphic] = LineStack,
-            **kwargs
+        self,
+        *args,
+        graphic: type[LineCollection | LineStack | ImageGraphic] = LineStack,
+        **kwargs,
     ):
-        nd = NDPositions(*args, graphic=graphic, multi=True, auto_x_range=True, linear_selector=True, **kwargs)
+        nd = NDPositions(
+            *args,
+            graphic=graphic,
+            multi=True,
+            auto_x_range=True,
+            linear_selector=True,
+            **kwargs,
+        )
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
         self._subplot.add_graphic(nd._linear_selector)
-        nd._linear_selector.add_event_handler(partial(self._set_indices_from_selector, nd), "selection")
+        nd._linear_selector.add_event_handler(
+            partial(self._set_indices_from_selector, nd), "selection"
+        )
 
         return nd
 
@@ -127,7 +142,11 @@ class NDWSubplot:
 
 class NDWSliders(EdgeWindow):
     def __init__(self, figure, size, ndwidget):
-        super().__init__(figure=figure, size=size, title="NDWidget controls", location="bottom")
+        super().__init__(
+            figure=figure, size=size, title="NDWidget controls", location="bottom",
+            window_flags=imgui.WindowFlags_.no_collapse
+        | imgui.WindowFlags_.no_resize | imgui.WindowFlags_.no_title_bar
+        )
         self._ndwidget = ndwidget
 
         # n_sliders = self._image_widget.n_sliders
@@ -155,42 +174,106 @@ class NDWSliders(EdgeWindow):
         #
         # self.pause = False
 
+        self._selected_subplot = self._ndwidget.figure[0, 0].name
+        self._selected_nd_graphic = 0
+
+        self._max_display_windows: dict[NDGraphic, float | int] = dict()
+
     def update(self):
         indices_changed = False
 
-        for dim_index, (current_index, refr) in enumerate(zip(self._ndwidget.indices, self._ndwidget.ref_ranges)):
-            if isinstance(refr, ReferenceRangeContinuous):
-                changed, new_index = imgui.slider_float(
-                    v=current_index,
-                    v_min=refr.start,
-                    v_max=refr.stop,
-                    label=refr.unit
-                )
+        if imgui.begin_tab_bar("NDWidget Controls"):
 
-                # TODO: refactor all this stuff, make fully fledged UI
-                if changed:
-                    new_indices = list(self._ndwidget.indices)
-                    new_indices[dim_index] = new_index
+            if imgui.begin_tab_item("Indices")[0]:
+                for dim_index, (current_index, refr) in enumerate(
+                    zip(self._ndwidget.indices, self._ndwidget.ref_ranges)
+                ):
+                    if isinstance(refr, ReferenceRangeContinuous):
+                        changed, new_index = imgui.slider_float(
+                            v=current_index,
+                            v_min=refr.start,
+                            v_max=refr.stop,
+                            label=refr.unit,
+                        )
 
-                    indices_changed = True
+                        # TODO: refactor all this stuff, make fully fledged UI
+                        if changed:
+                            new_indices = list(self._ndwidget.indices)
+                            new_indices[dim_index] = new_index
 
-                elif imgui.is_item_hovered():
-                    if imgui.is_key_pressed(imgui.Key.right_arrow):
-                        new_index = current_index + refr.step
-                        new_indices = list(self._ndwidget.indices)
-                        new_indices[dim_index] = new_index
+                            indices_changed = True
 
-                        indices_changed = True
+                        elif imgui.is_item_hovered():
+                            if imgui.is_key_pressed(imgui.Key.right_arrow):
+                                new_index = current_index + refr.step
+                                new_indices = list(self._ndwidget.indices)
+                                new_indices[dim_index] = new_index
 
-                    if imgui.is_key_pressed(imgui.Key.left_arrow):
-                        new_index = current_index - refr.step
-                        new_indices = list(self._ndwidget.indices)
-                        new_indices[dim_index] = new_index
+                                indices_changed = True
 
-                        indices_changed = True
+                            if imgui.is_key_pressed(imgui.Key.left_arrow):
+                                new_index = current_index - refr.step
+                                new_indices = list(self._ndwidget.indices)
+                                new_indices[dim_index] = new_index
 
-        if indices_changed:
-            self._ndwidget.indices = tuple(new_indices)
+                                indices_changed = True
+
+                if indices_changed:
+                    self._ndwidget.indices = tuple(new_indices)
+
+                imgui.end_tab_item()
+
+            if imgui.begin_tab_item("NDGraphic properties")[0]:
+                imgui.text("Subplots:")
+
+                self._draw_nd_graphics_props_tab()
+
+                imgui.end_tab_item()
+
+            imgui.end_tab_bar()
+
+    def _draw_nd_graphics_props_tab(self):
+        for subplot in self._ndwidget.figure:
+            if imgui.tree_node(subplot.name):
+                self._draw_ndgraphics_node(subplot)
+                imgui.tree_pop()
+
+    def _draw_ndgraphics_node(self, subplot: Subplot):
+        for ng in self._ndwidget[subplot].nd_graphics:
+            if imgui.tree_node(str(ng)):
+                if isinstance(ng, NDPositions):
+                    self._draw_nd_pos_ui(subplot, ng)
+                imgui.tree_pop()
+
+    def _draw_nd_pos_ui(self, subplot: Subplot, nd_graphic: NDPositions):
+        for i, cls in enumerate(position_graphics):
+            if imgui.radio_button(cls.__name__, type(nd_graphic.graphic) is cls):
+                nd_graphic.graphic = cls
+                subplot.auto_scale()
+            if i < len(position_graphics) - 1:
+                imgui.same_line()
+
+
+        if isinstance(
+                nd_graphic.display_window, (int, np.integer)
+        ):
+            slider = imgui.slider_int
+            input_ = imgui.input_int
+            type_ = int
+        else:
+            slider = imgui.slider_float
+            input_ = imgui.input_float
+            type_ = float
+
+        changed, new = slider(
+            "display window",
+            v=nd_graphic.display_window,
+            v_min=type_(0),
+            v_max=type_(self._ndwidget.ref_ranges[0].stop * 0.25),
+        )
+
+        if changed:
+            nd_graphic.display_window = new
 
 
 class NDWidget:
@@ -210,9 +293,9 @@ class NDWidget:
 
         self._figure = ImguiFigure(**kwargs)
 
-        self._subplots: dict[Subplot, NDWSubplot] = dict()
+        self._subplots_nd: dict[Subplot, NDWSubplot] = dict()
         for subplot in self.figure:
-            self._subplots[subplot] = NDWSubplot(self, subplot)
+            self._subplots_nd[subplot] = NDWSubplot(self, subplot)
 
         # starting index for all dims
         self._indices = tuple(refr[0] for refr in self.ref_ranges)
@@ -237,15 +320,16 @@ class NDWidget:
 
     @indices.setter
     def indices(self, new_indices: tuple[Any]):
-        for subplot in self._subplots.values():
+        for subplot in self._subplots_nd.values():
             for ndg in subplot.nd_graphics:
                 ndg.indices = new_indices
 
         self._indices = new_indices
 
-    def __getitem__(self, key):
-        subplot = self.figure[key]
-        return self._subplots[subplot]
+    def __getitem__(self, key: str | tuple[int, int] | Subplot):
+        if not isinstance(key, Subplot):
+            key = self.figure[key]
+        return self._subplots_nd[key]
 
     def show(self, **kwargs):
         return self.figure.show(**kwargs)

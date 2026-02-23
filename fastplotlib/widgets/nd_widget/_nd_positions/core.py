@@ -417,7 +417,7 @@ class NDPositions:
 
     @graphic.setter
     def graphic(self, graphic_type):
-        if isinstance(self.graphic, graphic_type):
+        if type(self.graphic) is graphic_type:
             return
 
         plot_area = self._graphic._plot_area
