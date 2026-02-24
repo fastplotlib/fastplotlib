@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import inspect
 from typing import Literal, Callable, Any
 from warnings import warn
@@ -252,9 +253,40 @@ class NDProcessor:
         pass
 
 
+def block_reentrance(setter):
+    # decorator to block re-entrant indices setter
+    def set_indices_wrapper(self: NDGraphic, new_indices):
+        """
+        wraps NDGraphic.indices
+
+        self: NDGraphic instance
+
+        new_indices: new indices to set
+        """
+        # set_value is already in the middle of an execution, block re-entrance
+        if self._block_indices:
+            return
+        try:
+            # block re-execution of set_value until it has *fully* finished executing
+            self._block_indices = True
+            setter(self, new_indices)
+        except Exception as exc:
+            # raise original exception
+            raise exc  # set_value has raised. The line above and the lines 2+ steps below are probably more relevant!
+        finally:
+            # set_value has finished executing, now allow future executions
+            self._block_indices = False
+
+    return set_indices_wrapper
+
+
 class NDGraphic:
+    def __init__(self, name: str | None):
+        self._name = name
+        self._block_indices = False
+
     @property
-    def name(self) -> str:
+    def name(self) -> str | None:
         return self._name
 
     @property
@@ -272,3 +304,33 @@ class NDGraphic:
     @indices.setter
     def indices(self, new: tuple):
         raise NotImplementedError
+
+
+@contextmanager
+def block_indices(ndgraphic: NDGraphic):
+    """
+    Context manager for pausing Graphic events.
+
+    Optionally pass in only specific event handlers which are blocked. Other events for the graphic will not be blocked.
+
+    Examples
+    --------
+
+    .. code-block::
+
+        # pass in any number of graphics
+        with fpl.pause_events(graphic1, graphic2, graphic3):
+            # enter context manager
+            # all events are blocked from graphic1, graphic2, graphic3
+
+        # context manager exited, event states restored.
+
+    """
+    ndgraphic._block_indices = True
+
+    try:
+        yield
+    except Exception as e:
+        raise e from None  # indices setter has raised, the line above and the lines below are probably more relevant!
+    finally:
+        ndgraphic._block_indices = False

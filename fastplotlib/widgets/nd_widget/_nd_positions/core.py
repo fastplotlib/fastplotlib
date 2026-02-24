@@ -18,7 +18,8 @@ from ....graphics import (
 )
 from ....graphics.utils import pause_events
 from ....graphics.selectors import LinearSelector
-from ..base import NDProcessor, NDGraphic, WindowFuncCallable
+from ..base import NDProcessor, NDGraphic, WindowFuncCallable, block_reentrance, block_indices
+from .._index import GlobalIndexVector
 
 
 # TODO: Maybe get rid of n_display_dims in NDProcessor,
@@ -339,9 +340,10 @@ class NDPositionsProcessor(NDProcessor):
         ]
 
 
-class NDPositions:
+class NDPositions(NDGraphic):
     def __init__(
         self,
+        global_index: GlobalIndexVector,
         data: Any,
         *args,
         graphic: Type[
@@ -359,8 +361,8 @@ class NDPositions:
         window_sizes: tuple[int | None] | None = None,
         index_mappings: tuple[Callable[[Any], int] | None] | None = None,
         max_display_datapoints: int = 1_000,
-        x_range_mode: Literal[None, "fixed-window", "view-range"] = None,
         linear_selector: bool = False,
+        name: str = None,
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
     ):
@@ -390,14 +392,18 @@ class NDPositions:
 
         self._x_range_mode = None
         self._last_x_range = np.array([0.0, 0.0], dtype=np.float32)
-        self._block_update_indices = False
 
         if linear_selector:
             self._linear_selector = LinearSelector(0, limits=(-np.inf, np.inf), edge_color="cyan")
+            self._linear_selector.add_event_handler(self._linear_selector_handler, "selection")
         else:
             self._linear_selector = None
 
         self._pause = False
+
+        self._global_index = global_index
+
+        super().__init__(name)
 
     @property
     def processor(self) -> NDPositionsProcessor:
@@ -433,13 +439,8 @@ class NDPositions:
         return self._indices
 
     @indices.setter
+    @block_reentrance
     def indices(self, indices):
-        if self._block_update_indices:
-            return
-
-        # this update must be non-reentrant
-        self._block_update_indices = True
-
         data_slice = self.processor.get(indices)
 
         if isinstance(self.graphic, (LineGraphic, ScatterGraphic)):
@@ -465,7 +466,7 @@ class NDPositions:
         if self._x_range_mode is not None:
             self.graphic._plot_area.x_range = xr
 
-        self._last_x_range[:] = xr  # if the update_from_view is polling, prevents it
+        self._last_x_range[:] = xr  # if the update_from_view is polling, prevents it from being called
 
         if self._linear_selector is not None:
             with pause_events(self._linear_selector):
@@ -475,11 +476,10 @@ class NDPositions:
 
         self._indices = indices
 
-        self._block_update_indices = False
-
-    # def _set_linear_selector(self, x_mid, limits):
-    #     self._linear_selector.selection = x_mid
-    #     self._linear_selector.limits = limits
+    def _linear_selector_handler(self, ev):
+        with block_indices(self):
+            # linear selector always acts on the `p` dim
+            self._global_index[-1] = ev.info["value"]
 
     def _tooltip_handler(self, graphic, pick_info):
         if isinstance(self.graphic, (LineCollection, ScatterCollection)):
@@ -598,11 +598,14 @@ class NDPositions:
         self.display_window = xr[1] - xr[0]
         new_index = (xr[0] + xr[1]) / 2
 
-        indices = list(self.indices)
-        if indices[-1] == new_index:
-            return
+        # set the `p` dim on the global index vector
+        self._global_index[-1] = new_index
 
-        indices[-1] = new_index
-
-        self.indices = indices
-
+        # indices = list(self.indices)
+        # if indices[-1] == new_index:
+        #     return
+        #
+        # indices[-1] = new_index
+        #
+        # self.indices = indices
+        #

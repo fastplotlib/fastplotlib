@@ -16,8 +16,8 @@ class NDWSubplot:
         self._nd_graphics = list()
 
     @property
-    def nd_graphics(self) -> list[NDGraphic]:
-        return self._nd_graphics
+    def nd_graphics(self) -> tuple[NDGraphic]:
+        return tuple(self._nd_graphics)
 
     def __getitem__(self, key):
         if isinstance(key, (int, np.integer)):
@@ -37,7 +37,9 @@ class NDWSubplot:
         return nd
 
     def add_nd_scatter(self, *args, **kwargs):
-        nd = NDPositions(*args, graphic=ScatterCollection, multi=True, **kwargs)
+        nd = NDPositions(
+            self.ndw.indices, *args, graphic=ScatterCollection, multi=True, **kwargs
+        )
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
 
@@ -51,19 +53,20 @@ class NDWSubplot:
         **kwargs,
     ):
         nd = NDPositions(
+            self.ndw.indices,
             *args,
             graphic=graphic,
             multi=True,
-            x_range_mode=x_range_mode,
+            # x_range_mode=x_range_mode,
             linear_selector=True,
             **kwargs,
         )
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
         self._subplot.add_graphic(nd._linear_selector)
-        nd._linear_selector.add_event_handler(
-            partial(self._set_indices_from_selector, nd), "selection"
-        )
+        # nd._linear_selector.add_event_handler(
+        #     partial(self._set_indices_from_selector, nd), "selection"
+        # )
 
         nd.x_range_mode = x_range_mode
 
@@ -74,19 +77,6 @@ class NDWSubplot:
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
         return nd
-
-    def _set_indices_from_selector(self, skip_graphic: NDGraphic, ev):
-        # skip the NDPosition object which has the linear selector that triggered this event
-        skip_graphic._block_update_indices = True
-
-        x = ev.info["value"]
-        indices_new = list(self.ndw.indices)
-        # linear selector for NDPositions always acts on the `p` dim
-        indices_new[-1] = x
-        self.ndw.indices = tuple(indices_new)
-
-        # restore
-        skip_graphic._block_update_indices = False
 
     # def __repr__(self):
     #     return "NDWidget Subplot"

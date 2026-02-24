@@ -1,7 +1,13 @@
 import numpy as np
 from imgui_bundle import imgui
 
-from ...graphics import ScatterCollection, LineCollection, LineStack, ImageGraphic, ImageVolumeGraphic
+from ...graphics import (
+    ScatterCollection,
+    LineCollection,
+    LineStack,
+    ImageGraphic,
+    ImageVolumeGraphic,
+)
 from ...layouts import Subplot
 from ...ui import EdgeWindow
 from . import NDPositions
@@ -15,9 +21,13 @@ image_graphics = [ImageGraphic, ImageVolumeGraphic]
 class NDWidgetUI(EdgeWindow):
     def __init__(self, figure, size, ndwidget):
         super().__init__(
-            figure=figure, size=size, title="NDWidget controls", location="bottom",
+            figure=figure,
+            size=size,
+            title="NDWidget controls",
+            location="bottom",
             window_flags=imgui.WindowFlags_.no_collapse
-        | imgui.WindowFlags_.no_resize | imgui.WindowFlags_.no_title_bar
+            | imgui.WindowFlags_.no_resize
+            | imgui.WindowFlags_.no_title_bar,
         )
         self._ndwidget = ndwidget
 
@@ -125,7 +135,9 @@ class NDWidgetUI(EdgeWindow):
             if i < len(position_graphics) - 1:
                 imgui.same_line()
 
-        changed, val = imgui.checkbox("use display window", nd_graphic.display_window is not None)
+        changed, val = imgui.checkbox(
+            "use display window", nd_graphic.display_window is not None
+        )
         if changed:
             if not val:
                 nd_graphic.display_window = None
@@ -134,9 +146,7 @@ class NDWidgetUI(EdgeWindow):
                 nd_graphic.display_window = self._ndwidget.ref_ranges[0].range * 0.1
 
         if nd_graphic.display_window is not None:
-            if isinstance(
-                    nd_graphic.display_window, (int, np.integer)
-            ):
+            if isinstance(nd_graphic.display_window, (int, np.integer)):
                 slider = imgui.slider_int
                 input_ = imgui.input_int
                 type_ = int
@@ -156,6 +166,10 @@ class NDWidgetUI(EdgeWindow):
                 nd_graphic.display_window = new
 
         options = [None, "fixed-window", "view-range"]
-        changed, option = imgui.combo("x-range mode", options.index(nd_graphic.x_range_mode), [str(o) for o in options])
+        changed, option = imgui.combo(
+            "x-range mode",
+            options.index(nd_graphic.x_range_mode),
+            [str(o) for o in options],
+        )
         if changed:
             nd_graphic.x_range_mode = options[option]

@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Sequence, Any
+from typing import Sequence, Any, Callable
+
+from .base import NDGraphic
 
 
 @dataclass
@@ -44,20 +46,39 @@ class ReferenceRangeDiscrete:
 
 
 class GlobalIndexVector:
-    def __init__(self):
-        self._ndgraphics = list()
-        self._index = list()
+    def __init__(self, ref_ranges: list, get_ndgraphics: Callable):
         self._ref_ranges = list()
 
-    @property
-    def ndgraphics(self):
-        return tuple(self._ndgraphics)
+        for r in ref_ranges:
+            if len(r) == 4:
+                # assume start, stop, step, unit
+                refr = ReferenceRangeContinuous(*r)
+            elif len(r) == 2:
+                refr = ReferenceRangeDiscrete(*r)
+            else:
+                raise ValueError
+
+            self._ref_ranges.append(refr)
+
+        self._get_ndgraphics = get_ndgraphics
+
+        # starting index for all dims
+        self._indices = [refr[0] for refr in self.ref_ranges]
 
     @property
-    def index(self) -> tuple[Any]:
-        # TODO: clamp index to given range here
+    def indices(self) -> tuple[Any]:
+        # TODO: clamp index to given ref range here
         #  graphics will clamp according to their own array sizes?
-        pass
+        return tuple(self._indices)
+
+    @indices.setter
+    def indices(self, new_indices: tuple[Any]):
+        self._indices[:] = new_indices
+        self._render_indices()
+
+    def _render_indices(self):
+        for g in self._get_ndgraphics():
+            g.indices = self.indices
 
     @property
     def dims(self) -> tuple[str]:
@@ -65,16 +86,16 @@ class GlobalIndexVector:
 
     @property
     def ref_ranges(self) -> tuple[ReferenceRangeContinuous]:
-        pass
+        return tuple(self._ref_ranges)
 
     def __getitem__(self, item):
         if isinstance(item, int):
-            # integer index in the ordered dict
-            return self.ref_ranges[item]
+            # integer index in the list
+            return self._indices[item]
 
-        for rr in self.ref_ranges:
+        for i, rr in enumerate(self.ref_ranges):
             if rr.unit == item:
-                return rr
+                return self._indices[i]
 
         raise KeyError
 
@@ -88,13 +109,30 @@ class GlobalIndexVector:
             else:
                 raise KeyError
 
-        index = list(self.index)
-
         # set index for given dim
-        index[key] = value
+        self._indices[key] = value
+        self._render_indices()
+
+    def pop_dim(self):
+        pass
+
+    def push_dim(self, ref_range: ReferenceRangeContinuous):
+        # TODO: implement pushing and popping dims
+        pass
+
+    def __iter__(self):
+        for index in self.indices:
+            yield index
+
+    def __len__(self):
+        return len(self._indices)
+
+    def __eq__(self, other):
+        return self._indices == other
 
     def __repr__(self):
-        return "\n".join([f"{d}: {i}" for d, i in zip(self.dims, self.index)])
+        named = ", ".join([f"{d}: {i}" for d, i in zip(self.dims, self.index)])
+        return f"Indices: {named}"
 
 
 class SelectionVector:
