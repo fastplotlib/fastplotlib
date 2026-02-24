@@ -1,0 +1,95 @@
+from functools import partial
+
+import numpy as np
+
+from ... import ScatterCollection, LineCollection, LineStack, ImageGraphic
+from ...layouts import Subplot
+from . import NDImage, NDPositions
+from .base import NDGraphic
+
+
+class NDWSubplot:
+    def __init__(self, ndw, subplot: Subplot):
+        self.ndw = ndw
+        self._subplot = subplot
+
+        self._nd_graphics = list()
+
+    @property
+    def nd_graphics(self) -> list[NDGraphic]:
+        return self._nd_graphics
+
+    def __getitem__(self, key):
+        if isinstance(key, (int, np.integer)):
+            return self.nd_graphics[key]
+
+        for g in self.nd_graphics:
+            if g.name == key:
+                return g
+
+        else:
+            raise KeyError(f"NDGraphc with given key not found: {key}")
+
+    def add_nd_image(self, *args, **kwargs):
+        nd = NDImage(*args, **kwargs)
+        self._nd_graphics.append(nd)
+        self._subplot.add_graphic(nd.graphic)
+        return nd
+
+    def add_nd_scatter(self, *args, **kwargs):
+        nd = NDPositions(*args, graphic=ScatterCollection, multi=True, **kwargs)
+        self._nd_graphics.append(nd)
+        self._subplot.add_graphic(nd.graphic)
+
+        return nd
+
+    def add_nd_timeseries(
+        self,
+        *args,
+        graphic: type[LineCollection | LineStack | ImageGraphic] = LineStack,
+        x_range_mode="fixed-window",
+        **kwargs,
+    ):
+        nd = NDPositions(
+            *args,
+            graphic=graphic,
+            multi=True,
+            x_range_mode=x_range_mode,
+            linear_selector=True,
+            **kwargs,
+        )
+        self._nd_graphics.append(nd)
+        self._subplot.add_graphic(nd.graphic)
+        self._subplot.add_graphic(nd._linear_selector)
+        nd._linear_selector.add_event_handler(
+            partial(self._set_indices_from_selector, nd), "selection"
+        )
+
+        nd.x_range_mode = x_range_mode
+
+        return nd
+
+    def add_nd_lines(self, *args, **kwargs):
+        nd = NDPositions(*args, graphic=LineCollection, multi=True, **kwargs)
+        self._nd_graphics.append(nd)
+        self._subplot.add_graphic(nd.graphic)
+        return nd
+
+    def _set_indices_from_selector(self, skip_graphic: NDGraphic, ev):
+        # skip the NDPosition object which has the linear selector that triggered this event
+        skip_graphic._block_update_indices = True
+
+        x = ev.info["value"]
+        indices_new = list(self.ndw.indices)
+        # linear selector for NDPositions always acts on the `p` dim
+        indices_new[-1] = x
+        self.ndw.indices = tuple(indices_new)
+
+        # restore
+        skip_graphic._block_update_indices = False
+
+    # def __repr__(self):
+    #     return "NDWidget Subplot"
+    #
+    # def __str__(self):
+    #     return "NDWidget Subplot"
