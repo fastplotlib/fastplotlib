@@ -30,12 +30,12 @@ class NDWidget:
         return self._indices
 
     @indices.setter
-    def indices(self, new_indices: tuple[Any]):
+    def indices(self, new_indices: tuple[int | float | Any, ...]):
         self._indices.indices = new_indices
 
     @property
-    def ref_ranges(self) -> tuple[ReferenceRangeContinuous | ReferenceRangeDiscrete]:
-        return tuple(self._indices.ref_ranges)
+    def ref_ranges(self) -> tuple[ReferenceRangeContinuous | ReferenceRangeDiscrete, ...]:
+        return self._indices.ref_ranges
 
     def __getitem__(self, key: str | tuple[int, int] | Subplot):
         if not isinstance(key, Subplot):

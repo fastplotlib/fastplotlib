@@ -874,7 +874,7 @@ class PlotArea(GraphicMethodsMixin):
     @x_range.setter
     def x_range(self, xr: tuple[float, float]):
         width = xr[1] - xr[0]
-        x_mid = xr[0] + (width / 2)
+        x_mid = (xr[0] + xr[1]) / 2
         self.camera.width = width
         self.camera.local.x = x_mid
 

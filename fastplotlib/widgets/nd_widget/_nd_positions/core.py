@@ -366,6 +366,8 @@ class NDPositions(NDGraphic):
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
     ):
+        self._global_index = global_index
+
         if issubclass(graphic, LineCollection):
             multi = True
 
@@ -386,8 +388,6 @@ class NDPositions(NDGraphic):
 
         self._processor.p_max = 1_000
 
-        self._indices = tuple([0] * self._processor.n_slider_dims)
-
         self._create_graphic(graphic)
 
         self._x_range_mode = None
@@ -400,8 +400,6 @@ class NDPositions(NDGraphic):
             self._linear_selector = None
 
         self._pause = False
-
-        self._global_index = global_index
 
         super().__init__(name)
 
@@ -436,7 +434,7 @@ class NDPositions(NDGraphic):
 
     @property
     def indices(self) -> tuple:
-        return self._indices
+        return self._global_index.indices
 
     @indices.setter
     @block_reentrance
@@ -466,15 +464,14 @@ class NDPositions(NDGraphic):
         if self._x_range_mode is not None:
             self.graphic._plot_area.x_range = xr
 
-        self._last_x_range[:] = xr  # if the update_from_view is polling, prevents it from being called
+        # if the update_from_view is polling, this prevents it from being called by setting the new last xrange
+        # in theory, but this doesn't seem to fully work yet, not a big deal right now can check later
+        self._last_x_range[:] = self.graphic._plot_area.x_range
 
         if self._linear_selector is not None:
             with pause_events(self._linear_selector):
                 self._linear_selector.limits = xr
                 self._linear_selector.selection = indices[-1]
-                # self._set_linear_selector(x_mid, limits=xr)
-
-        self._indices = indices
 
     def _linear_selector_handler(self, ev):
         with block_indices(self):
@@ -566,6 +563,8 @@ class NDPositions(NDGraphic):
     @display_window.setter
     def display_window(self, dw: int | float | None):
         self.processor.display_window = dw
+
+        # force re-render
         self.indices = self.indices
 
     @property
@@ -593,19 +592,15 @@ class NDPositions(NDGraphic):
         if np.allclose(xr, self._last_x_range, atol=1e-14):
             return
 
+        last_width = abs(self._last_x_range[1] - self._last_x_range[0])
         self._last_x_range[:] = xr
 
-        self.display_window = xr[1] - xr[0]
+        new_width = abs(xr[1] - xr[0])
         new_index = (xr[0] + xr[1]) / 2
 
+        if (new_index == self._global_index[-1]) and (last_width == new_width):
+            return
+
+        self.processor.display_window = new_width
         # set the `p` dim on the global index vector
         self._global_index[-1] = new_index
-
-        # indices = list(self.indices)
-        # if indices[-1] == new_index:
-        #     return
-        #
-        # indices[-1] = new_index
-        #
-        # self.indices = indices
-        #

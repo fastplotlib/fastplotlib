@@ -63,16 +63,16 @@ class GlobalIndexVector:
         self._get_ndgraphics = get_ndgraphics
 
         # starting index for all dims
-        self._indices = [refr[0] for refr in self.ref_ranges]
+        self._indices: list[int | float | Any] = [refr[0] for refr in self.ref_ranges]
 
     @property
-    def indices(self) -> tuple[Any]:
+    def indices(self) -> tuple[int | float | Any, ...]:
         # TODO: clamp index to given ref range here
         #  graphics will clamp according to their own array sizes?
         return tuple(self._indices)
 
     @indices.setter
-    def indices(self, new_indices: tuple[Any]):
+    def indices(self, new_indices: tuple[int | float | Any, ...]):
         self._indices[:] = new_indices
         self._render_indices()
 
@@ -81,11 +81,11 @@ class GlobalIndexVector:
             g.indices = self.indices
 
     @property
-    def dims(self) -> tuple[str]:
-        return tuple(ref.unit for ref in self.ref_ranges)
+    def dims(self) -> tuple[str, ...]:
+        return tuple([ref.unit for ref in self.ref_ranges])
 
     @property
-    def ref_ranges(self) -> tuple[ReferenceRangeContinuous]:
+    def ref_ranges(self) -> tuple[ReferenceRangeContinuous, ...]:
         return tuple(self._ref_ranges)
 
     def __getitem__(self, item):
@@ -131,7 +131,7 @@ class GlobalIndexVector:
         return self._indices == other
 
     def __repr__(self):
-        named = ", ".join([f"{d}: {i}" for d, i in zip(self.dims, self.index)])
+        named = ", ".join([f"{d}: {i}" for d, i in zip(self.dims, self._indices)])
         return f"Indices: {named}"
 
 

@@ -526,6 +526,7 @@ class NDImageProcessor(NDProcessor):
 class NDImage(NDGraphic):
     def __init__(
         self,
+        global_index,
         data: Any,
         *args,
         graphic: type[ImageGraphic, ImageVolumeGraphic] = None,
@@ -540,6 +541,8 @@ class NDImage(NDGraphic):
         if processor_kwargs is None:
             processor_kwargs = dict()
 
+        self._global_index = global_index
+
         self._processor = processor(
             data,
             *args,
@@ -548,8 +551,6 @@ class NDImage(NDGraphic):
             index_mappings=index_mappings,
             **processor_kwargs,
         )
-
-        self._indices = tuple([0] * self._processor.n_slider_dims)
 
         self._graphic = None
 
@@ -582,7 +583,7 @@ class NDImage(NDGraphic):
             case 3:
                 cls = ImageVolumeGraphic
 
-        data_slice = self.processor.get(self.indices)
+        data_slice = self.processor.get(self._global_index.indices)
 
         old_graphic = self._graphic
         new_graphic = cls(data_slice)
@@ -607,15 +608,13 @@ class NDImage(NDGraphic):
 
     @property
     def indices(self) -> tuple:
-        return self._indices
+        return self._global_index.indices
 
     @indices.setter
     def indices(self, indices):
         data_slice = self.processor.get(indices)
 
         self.graphic.data = data_slice
-
-        self._indices = indices
 
     def _tooltip_handler(self, graphic, pick_info):
         # get graphic within the collection

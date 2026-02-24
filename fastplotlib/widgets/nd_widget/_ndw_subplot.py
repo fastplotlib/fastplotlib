@@ -1,5 +1,3 @@
-from functools import partial
-
 import numpy as np
 
 from ... import ScatterCollection, LineCollection, LineStack, ImageGraphic
@@ -31,7 +29,7 @@ class NDWSubplot:
             raise KeyError(f"NDGraphc with given key not found: {key}")
 
     def add_nd_image(self, *args, **kwargs):
-        nd = NDImage(*args, **kwargs)
+        nd = NDImage(self.ndw.indices, *args, **kwargs)
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
         return nd
