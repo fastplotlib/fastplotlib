@@ -434,11 +434,13 @@ class NDPositions(NDGraphic):
 
     @property
     def indices(self) -> tuple:
-        return self._global_index.indices
+        return self._global_index.indices[-self.processor.n_slider_dims:]
 
     @indices.setter
     @block_reentrance
     def indices(self, indices):
+        # upto the number of slider dims in this data
+        indices = indices[-self.processor.n_slider_dims:]
         data_slice = self.processor.get(indices)
 
         if isinstance(self.graphic, (LineGraphic, ScatterGraphic)):

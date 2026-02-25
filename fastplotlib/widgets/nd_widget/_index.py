@@ -46,7 +46,7 @@ class ReferenceRangeDiscrete:
 
 
 class GlobalIndexVector:
-    def __init__(self, ref_ranges: list, get_ndgraphics: Callable):
+    def __init__(self, ref_ranges: list, get_ndgraphics: Callable[[], tuple[NDGraphic]]):
         self._ref_ranges = list()
 
         for r in ref_ranges:

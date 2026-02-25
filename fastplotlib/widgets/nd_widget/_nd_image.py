@@ -583,16 +583,15 @@ class NDImage(NDGraphic):
             case 3:
                 cls = ImageVolumeGraphic
 
-        data_slice = self.processor.get(self._global_index.indices)
+        data_slice = self.processor.get(self.indices)
 
         old_graphic = self._graphic
         new_graphic = cls(data_slice)
 
         if old_graphic is not None:
-            g = self._graphic
-            plot_area = g._plot_area
-            self._graphic._plot_area.delete_graphic(g)
-            plot_area.add_graphic(self._graphic)
+            plot_area = old_graphic._plot_area
+            plot_area.delete_graphic(old_graphic)
+            plot_area.add_graphic(new_graphic)
 
         self._graphic = new_graphic
 
@@ -608,10 +607,11 @@ class NDImage(NDGraphic):
 
     @property
     def indices(self) -> tuple:
-        return self._global_index.indices
+        return self._global_index.indices[-self.processor.n_slider_dims:]
 
     @indices.setter
     def indices(self, indices):
+        indices = indices[-self.processor.n_slider_dims:]
         data_slice = self.processor.get(indices)
 
         self.graphic.data = data_slice
