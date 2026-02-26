@@ -259,8 +259,6 @@ class ImageGraphic(Graphic):
                             wrap="clamp-to-edge",
                         )
 
-                self._material.clim = quick_min_max(self.data.value)
-
                 # remove tiles from the WorldObject -> Graphic map
                 self._remove_group_graphic_map(self.world_object)
 
