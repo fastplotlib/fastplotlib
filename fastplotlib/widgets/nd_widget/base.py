@@ -267,7 +267,7 @@ class NDProcessor:
                 start = self.index_mappings[dim](start_ref)
                 stop = self.index_mappings[dim](stop_ref)
 
-                # cmap within array bounds
+                # clamp within array bounds
                 start = max(min(self.shape[dim] - 1, start), 0)
                 stop = max(min(self.shape[dim] - 1, stop), 0)
                 indexer[dim] = slice(start, stop, 1)
