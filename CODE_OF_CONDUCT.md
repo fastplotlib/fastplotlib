@@ -87,6 +87,13 @@ Standards for behavior in the fastplotlib community are detailed in the Code of
 Conduct above. Participants in our community should uphold these standards
 in all their interactions and help others to do so as well (see next section).
 
+# AI statement 
+
+The fastplotlib project welcomes contributions by everyone. While we recognize that LLMs may be useful, at our core, we are a small team of developers who enjoy discussing code written by other humans.
+As such, our preference is that contributions are written without the use of AI. 
+
+Please see our [Contributing Guide](https://github.com/fastplotlib/fastplotlib/blob/main/CONTRIBUTING.md) for more specific details on AI usage in fastplotlib.
+
 
 # Reporting guidelines
 
