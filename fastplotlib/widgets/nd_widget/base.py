@@ -1,8 +1,11 @@
+from collections.abc import Callable, Hashable, Sequence
 from contextlib import contextmanager
 import inspect
-from typing import Literal, Callable, Any
+from numbers import Real
+from typing import Literal, Any
 from warnings import warn
 
+import xarray as xr
 import numpy as np
 from numpy.typing import ArrayLike
 
@@ -17,45 +20,107 @@ def identity(index: int) -> int:
     return index
 
 
+class BaseNDProcessor:
+    @property
+    def data(self) -> Any:
+        pass
+
+    @property
+    def shape(self) -> dict[Hashable, int]:
+        pass
+
+    @property
+    def ndim(self):
+        pass
+
+    @property
+    def spatial_dims(self) -> tuple[Hashable, ...]:
+        pass
+
+    @property
+    def slider_dims(self):
+        pass
+
+    @property
+    def window_funcs(
+        self,
+    ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]]:
+        # {dim: (func, size)}
+        pass
+
+    @property
+    def window_funcs_order(self) -> tuple[Hashable]:
+        pass
+
+    @property
+    def index_mappings(self) -> dict[Hashable, Callable[[Any], int] | ArrayLike]:
+        pass
+
+    def get(self, **indices):
+        raise NotImplementedError
+
+
 class NDProcessor:
     def __init__(
         self,
         data,
-        n_display_dims: Literal[2, 3] = 2,
-        index_mappings: tuple[Callable[[Any], int] | None, ...] | None = None,
-        window_funcs: tuple[WindowFuncCallable | None] | None = None,
-        window_sizes: tuple[int | None] | None = None,
-        window_order: tuple[int, ...] = None,
+        dims: Sequence[Hashable],
+        spatial_dims: Sequence[Hashable] | None,
+        index_mappings: dict[Hashable, Callable[[Any], int] | ArrayLike] = None,
+        window_funcs: dict[
+            Hashable, tuple[WindowFuncCallable | None, int | float | None]
+        ] = None,
+        window_funcs_order: tuple[Hashable, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
     ):
-        self._data = self._validate_data(data)
+        self._data = self._validate_data(data, dims)
+        self.spatial_dims = spatial_dims
+
         self._index_mappings = tuple(self._validate_index_mappings(index_mappings))
 
         self.window_funcs = window_funcs
-        self.window_sizes = window_sizes
-        self.window_order = window_order
+        self.window_order = window_funcs_order
 
     @property
-    def data(self) -> ArrayProtocol:
+    def data(self) -> xr.DataArray:
         return self._data
 
     @data.setter
     def data(self, data: ArrayProtocol):
-        self._data = self._validate_data(data)
+        self._data = self._validate_data(data, self.dims)
 
     @property
-    def shape(self) -> tuple[int, ...]:
-        return self.data.shape
+    def shape(self) -> dict[Hashable, int]:
+        """interpreted shape of the data"""
+        return {d: n for d, n in zip(self.dims, self.data.shape)}
 
     @property
     def ndim(self) -> int:
-        return len(self.shape)
+        """number of dims"""
+        return self.data.ndim
 
-    def _validate_data(self, data: ArrayProtocol):
+    @property
+    def dims(self) -> tuple[Hashable, ...]:
+        """dim names"""
+        return self.data.dims
+
+    @property
+    def spatial_dims(self) -> tuple[Hashable, ...]:
+        return self._spatial_dims
+
+    @spatial_dims.setter
+    def spatial_dims(self, sdims: Sequence[Hashable]):
+        for dim in tuple(sdims):
+            if dim not in self.dims:
+                raise KeyError
+
+        self._spatial_dims = tuple(sdims)
+
+    def _validate_data(self, data: ArrayProtocol, dims):
         if not isinstance(data, ArrayProtocol):
             raise TypeError("`data` must implement the ArrayProtocol")
 
-        return data
+        return xr.DataArray(data, dims=dims)
 
     @property
     def tooltip(self) -> bool:
@@ -72,146 +137,74 @@ class NDProcessor:
 
     @property
     def slider_dims(self):
-        raise NotImplementedError
+        return set(self.dims) - set(self.spatial_dims)
 
     @property
     def n_slider_dims(self):
-        raise NotImplementedError
+        return len(self.slider_dims)
 
     @property
     def window_funcs(
         self,
-    ) -> tuple[WindowFuncCallable | None, ...] | None:
+    ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]]:
         """get or set window functions, see docstring for details"""
         return self._window_funcs
 
     @window_funcs.setter
     def window_funcs(
         self,
-        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable | None,
+        window_funcs: (
+            dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]] | None
+        ),
     ):
         if window_funcs is None:
-            self._window_funcs = tuple([None] * self.n_slider_dims)
+            self._window_funcs = {d: None for d in self.data.dims}
             return
 
-        if callable(window_funcs):
-            window_funcs = (window_funcs,)
+        for k in window_funcs.keys():
+            if k not in self.dims:
+                raise KeyError
+            if k in self.spatial_dims:
+                raise KeyError
 
-        # if all are None
-        # if all([f is None for f in window_funcs]):
-        #     self._window_funcs = tuple(window_funcs)
-        #     return
+            func = window_funcs[k][0]
+            size = window_funcs[k][1]
 
-        self._validate_window_func(window_funcs)
+            if func is None:
+                pass
+            elif callable(func):
+                sig = inspect.signature(func)
 
-        self._window_funcs = tuple(window_funcs)
-        # self._recompute_histogram()
-
-    def _validate_window_func(self, funcs):
-        if isinstance(funcs, (tuple, list)):
-            for f in funcs:
-                if f is None:
-                    pass
-                elif callable(f):
-                    sig = inspect.signature(f)
-
-                    if "axis" not in sig.parameters or "keepdims" not in sig.parameters:
-                        raise TypeError(
-                            f"Each window function must take an `axis` and `keepdims` argument, "
-                            f"you passed: {f} with the following function signature: {sig}"
-                        )
-                else:
+                if "axis" not in sig.parameters or "keepdims" not in sig.parameters:
                     raise TypeError(
-                        f"`window_funcs` must be of type: tuple[Callable | None, ...], you have passed: {funcs}"
+                        f"Each window function must take an `axis` and `keepdims` argument, "
+                        f"you passed: {func} with the following function signature: {sig}"
                     )
-
-        if not (len(funcs) == self.n_slider_dims or self.n_slider_dims == 0):
-            raise IndexError(
-                f"number of `window_funcs` must be the same as the number of slider dims: {self.n_slider_dims}, "
-                f"and you passed {len(funcs)} `window_funcs`: {funcs}"
-            )
-
-    @property
-    def window_sizes(self) -> tuple[int | None, ...] | None:
-        """get or set window sizes used for the corresponding window functions, see docstring for details"""
-        return self._window_sizes
-
-    @window_sizes.setter
-    def window_sizes(self, window_sizes: tuple[int | None, ...] | int | None):
-        if window_sizes is None:
-            self._window_sizes = tuple([None] * self.n_slider_dims)
-            return
-
-        if isinstance(window_sizes, int):
-            window_sizes = (window_sizes,)
-
-        # if all are None
-        if all([w is None for w in window_sizes]):
-            self._window_sizes = None
-            return
-
-        if not all([isinstance(w, (int)) or w is None for w in window_sizes]):
-            raise TypeError(
-                f"`window_sizes` must be of type: tuple[int | None, ...] | int | None, you have passed: {window_sizes}"
-            )
-
-        # if not (len(window_sizes) == self.n_slider_dims or self.n_slider_dims == 0):
-        #     raise IndexError(
-        #         f"number of `window_sizes` must be the same as the number of slider dims, "
-        #         f"i.e. `data.ndim` - n_display_dims, your data array has {self.ndim} dimensions "
-        #         f"and you passed {len(window_sizes)} `window_sizes`: {window_sizes}"
-        #     )
-
-        # make all window sizes are valid numbers
-        _window_sizes = list()
-        for i, w in enumerate(window_sizes):
-            if w is None:
-                _window_sizes.append(None)
-                continue
-
-            if w < 0:
-                raise ValueError(
-                    f"negative window size passed, all `window_sizes` must be positive "
-                    f"integers or `None`, you passed: {_window_sizes}"
+            else:
+                raise TypeError(
+                    f"`window_funcs` must be a dict mapping dim names to a tuple of the window function callable and "
+                    f"window size, {'name': (func, size), ...}.\nYou have passed: {window_funcs}"
                 )
 
-            if w == 0 or w == 1:
-                # this is not a real window, set as None
-                w = None
+            if not isinstance(size, Real):
+                raise TypeError
+            elif size < 0:
+                raise ValueError
 
-            elif w % 2 == 0:
-                # odd window sizes makes most sense
-                warn(
-                    f"provided even window size: {w} in dim: {i}, adding `1` to make it odd"
-                )
-                w += 1
-
-            _window_sizes.append(w)
-
-        self._window_sizes = tuple(_window_sizes)
+        self._window_funcs = window_funcs
 
     @property
-    def window_order(self) -> tuple[int, ...] | None:
+    def window_order(self) -> tuple[Hashable, ...] | None:
         """get or set dimension order in which window functions are applied"""
         return self._window_order
 
     @window_order.setter
-    def window_order(self, order: tuple[int] | None):
-        if order is None:
-            self._window_order = None
-            return
-
-        if order is not None:
-            if not all([d <= self.n_slider_dims for d in order]):
-                raise IndexError(
-                    f"all `window_order` entries must be <= n_slider_dims\n"
-                    f"`n_slider_dims` is: {self.n_slider_dims}, you have passed `window_order`: {order}"
-                )
-
-            if not all([d >= 0 for d in order]):
-                raise IndexError(
-                    f"all `window_order` entires must be >= 0, you have passed: {order}"
-                )
+    def window_order(self, order: tuple[Hashable] | None):
+        for d in order:
+            if d not in self.dims:
+                raise KeyError
+            if d in self.spatial_dims:
+                raise KeyError
 
         self._window_order = tuple(order)
 
@@ -219,37 +212,27 @@ class NDProcessor:
     def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
         pass
 
-    # @property
-    # def slider_dims(self) -> tuple[int, ...] | None:
-    #     pass
-
     @property
     def index_mappings(self) -> tuple[Callable[[Any], int]]:
         return self._index_mappings
 
     @index_mappings.setter
-    def index_mappings(self, maps: tuple[Callable[[Any], int] | None] | None):
-        self._index_mappings = tuple(self._validate_index_mappings(maps))
+    def index_mappings(self, maps: dict[Hashable, Callable[[Any], int] | ArrayLike]):
+        for d in maps.keys():
+            if d not in self.dims:
+                raise KeyError
+            if d in self.spatial_dims:
+                raise KeyError
+            if isinstance(maps[d], ArrayProtocol):
+                # create a searchsorted mapping function automatically
+                maps[d] = maps[d].searchsorted
+            elif maps[d] is None:
+                # assign identity mapping
+                maps[d] = identity
 
-    def _validate_index_mappings(self, maps):
-        if maps is None:
-            return tuple([identity] * self.n_slider_dims)
+        self._index_mappings = maps
 
-        if len(maps) != self.n_slider_dims:
-            raise IndexError
-
-        _maps = list()
-        for m in maps:
-            if m is None:
-                _maps.append(identity)
-            elif callable(m):
-                _maps.append(identity)
-            else:
-                raise TypeError
-
-        return tuple(maps)
-
-    def __getitem__(self, item: tuple[Any, ...]) -> ArrayProtocol:
+    def get(self, indices: dict[Hashable, Any]):
         pass
 
 
