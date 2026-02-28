@@ -2,9 +2,9 @@
 
 `fastplotlib` is a next-generation plotting library built on top of the `pygfx` rendering engine that leverages modern 
 GPU hardware and new graphics APIs to build large-scale scientific visualizations. We welcome and encourage contributions
-from everyone! :smile: 
+from everyone! :smile:
 
-This guide explains how to contribute: if you have questions about the process, please 
+The rest of this guide explains how to contribute; if you have questions about the process, please 
 reach out on [GitHub Discussions](https://github.com/fastplotlib/fastplotlib/discussions).
 
 > **_NOTE:_** If you are already familiar with contributing to open-source software packages, 
@@ -20,12 +20,16 @@ Feel free to work on any section of the code that you believe you can improve. M
 your classes and functions, and to provide clear, detailed comments within your code. This not only aids others in using the library,
 but also facilitates future maintenance and further development.
 
+If your PR will introduce **significant** changes, or new features that are not in our Roadmap, please open an 
+Issue describing your proposed changes so we can assess whether the contribution would be accepted or not, and also so we can provide guidance 
+on how the proposed implementation can be tailored to conform with the rest of the codebase.
+
 For more detailed information about `fastplotlib` modules, including design choices and implementation details, visit the 
 [`For Develeopers`](https://www.fastplotlib.org/ver/dev/developer_notes/index.html) section of the package documentation.
 
 ## AI Policy
 
-*This policy was adapted from `pygfx`*
+*This policy was adapted from `pygfx`, `scikit-learn`, and `SciPy`*
 
 While we recognize that LLMs may be useful, at our core, we are a small team of developers who enjoy discussing code written by other humans.
 As such, our preference is that contributions are written without the use of AI. 
