@@ -76,7 +76,7 @@ class NDProcessor:
         self._data = self._validate_data(data, dims)
         self.spatial_dims = spatial_dims
 
-        self._index_mappings = tuple(self._validate_index_mappings(index_mappings))
+        self.index_mappings = index_mappings
 
         self.window_funcs = window_funcs
         self.window_order = window_funcs_order
@@ -136,7 +136,7 @@ class NDProcessor:
         return None
 
     @property
-    def slider_dims(self):
+    def slider_dims(self) -> set[Hashable]:
         return set(self.dims) - set(self.spatial_dims)
 
     @property
@@ -146,7 +146,7 @@ class NDProcessor:
     @property
     def window_funcs(
         self,
-    ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]]:
+    ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None] | None]:
         """get or set window functions, see docstring for details"""
         return self._window_funcs
 
@@ -154,7 +154,7 @@ class NDProcessor:
     def window_funcs(
         self,
         window_funcs: (
-            dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]] | None
+            dict[Hashable, tuple[WindowFuncCallable | None, int | float | None] | None] | None
         ),
     ):
         if window_funcs is None:
@@ -186,10 +186,19 @@ class NDProcessor:
                     f"window size, {'name': (func, size), ...}.\nYou have passed: {window_funcs}"
                 )
 
-            if not isinstance(size, Real):
+            if size is None:
+                pass
+
+            elif not isinstance(size, Real):
                 raise TypeError
+
             elif size < 0:
                 raise ValueError
+
+        # fill in rest with None
+        for d in self.slider_dims:
+            if d not in window_funcs.keys():
+                window_funcs[d] = None
 
         self._window_funcs = window_funcs
 
@@ -200,11 +209,8 @@ class NDProcessor:
 
     @window_order.setter
     def window_order(self, order: tuple[Hashable] | None):
-        for d in order:
-            if d not in self.dims:
-                raise KeyError
-            if d in self.spatial_dims:
-                raise KeyError
+        if set(order) != self.slider_dims:
+            raise ValueError("Order must specify all dims")
 
         self._window_order = tuple(order)
 
@@ -213,7 +219,7 @@ class NDProcessor:
         pass
 
     @property
-    def index_mappings(self) -> tuple[Callable[[Any], int]]:
+    def index_mappings(self) -> dict[Hashable, Callable[[Any], int]]:
         return self._index_mappings
 
     @index_mappings.setter
@@ -232,8 +238,63 @@ class NDProcessor:
 
         self._index_mappings = maps
 
+    def _apply_window_functions(self, indices: dict[Hashable, Any]) -> np.ndarray:
+        if set(indices.keys()) != set(self.slider_dims):
+            raise IndexError(
+                f"Must provide an index for all slider dims: {self.slider_dims}, you have provided: {indices.keys()}"
+            )
+
+        indexer = dict()
+        # go through each slider dim and accumulate slice objects
+        for dim in self.slider_dims:
+            # index for this dim in reference space
+            index_ref = indices[dim]
+
+            # if a window function exists for this dim
+            if self.window_funcs[dim] is not None:
+                # window size in reference units
+                w = self.window_funcs[dim][1]
+
+                # half window in reference units
+                hw = w / 2
+
+                # start in reference units
+                start_ref = index_ref - hw
+                # stop in ref units
+                stop_ref = index_ref + hw
+
+                # map start and stop ref to array indices
+                start = self.index_mappings[dim](start_ref)
+                stop = self.index_mappings[dim](stop_ref)
+
+                # cmap within array bounds
+                start = max(min(self.shape[dim] - 1, start), 0)
+                stop = max(min(self.shape[dim] - 1, stop), 0)
+                indexer[dim] = slice(start, stop, 1)
+            else:
+                # no window func for this dim, direct indexing
+                # index mapped to array index
+                index = self.index_mappings[dim](index_ref)
+
+                # clamp within the bounds
+                start = max(min(self.shape[dim] - 1, index), 0)
+
+                # stop index is just the start index + 1
+                indexer[dim] = slice(start, start + 1, 1)
+
+        # apply indexer with any specified windows, return the underlying numpy array
+        data_sliced = self.data.isel(indexer).values
+
+        # apply window funcs in the specified order
+        for dim in self.window_order:
+            func, _ = self.window_funcs[dim]
+
+            data_sliced = func(data_sliced, axis=self.dims.index(dim), keepdims=True)
+
+        return data_sliced
+
     def get(self, indices: dict[Hashable, Any]):
-        pass
+        window_output = self._apply_window_functions(indices)
 
 
 def block_reentrance(setter):
