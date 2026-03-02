@@ -17,7 +17,7 @@ WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
 
 
 def identity(index: int) -> int:
-    return index
+    return round(index)
 
 
 class BaseNDProcessor:
@@ -89,6 +89,12 @@ class NDProcessor:
     def data(self, data: ArrayProtocol):
         self._data = self._validate_data(data, self.dims)
 
+    def _validate_data(self, data: ArrayProtocol, dims):
+        if not isinstance(data, ArrayProtocol):
+            raise TypeError("`data` must implement the ArrayProtocol")
+
+        return xr.DataArray(data, dims=dims)
+
     @property
     def shape(self) -> dict[Hashable, int]:
         """interpreted shape of the data"""
@@ -110,17 +116,11 @@ class NDProcessor:
 
     @spatial_dims.setter
     def spatial_dims(self, sdims: Sequence[Hashable]):
-        for dim in tuple(sdims):
+        for dim in sdims:
             if dim not in self.dims:
                 raise KeyError
 
         self._spatial_dims = tuple(sdims)
-
-    def _validate_data(self, data: ArrayProtocol, dims):
-        if not isinstance(data, ArrayProtocol):
-            raise TypeError("`data` must implement the ArrayProtocol")
-
-        return xr.DataArray(data, dims=dims)
 
     @property
     def tooltip(self) -> bool:
@@ -146,7 +146,7 @@ class NDProcessor:
     @property
     def window_funcs(
         self,
-    ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None] | None]:
+    ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]]:
         """get or set window functions, see docstring for details"""
         return self._window_funcs
 
@@ -154,11 +154,13 @@ class NDProcessor:
     def window_funcs(
         self,
         window_funcs: (
-            dict[Hashable, tuple[WindowFuncCallable | None, int | float | None] | None] | None
+            dict[Hashable, tuple[WindowFuncCallable | None, int | float | None] | None]
+            | None
         ),
     ):
         if window_funcs is None:
-            self._window_funcs = {d: None for d in self.data.dims}
+            # tuple of (None, None) makes the checks easier in _apply_window_funcs
+            self._window_funcs = {d: (None, None) for d in self.data.dims}
             return
 
         for k in window_funcs.keys():
@@ -198,19 +200,26 @@ class NDProcessor:
         # fill in rest with None
         for d in self.slider_dims:
             if d not in window_funcs.keys():
-                window_funcs[d] = None
+                window_funcs[d] = (None, None)
 
         self._window_funcs = window_funcs
 
     @property
-    def window_order(self) -> tuple[Hashable, ...] | None:
+    def window_order(self) -> tuple[Hashable, ...]:
         """get or set dimension order in which window functions are applied"""
         return self._window_order
 
     @window_order.setter
     def window_order(self, order: tuple[Hashable] | None):
-        if set(order) != self.slider_dims:
-            raise ValueError("Order must specify all dims")
+        if order is None:
+            self._window_order = tuple()
+            return
+
+        if not set(order).issubset(self.slider_dims):
+            raise ValueError(
+                f"each dimension in `window_order` must be a slider dim. You passed order: {order} "
+                f"and the slider dims are: {self.slider_dims}"
+            )
 
         self._window_order = tuple(order)
 
@@ -223,17 +232,29 @@ class NDProcessor:
         return self._index_mappings
 
     @index_mappings.setter
-    def index_mappings(self, maps: dict[Hashable, Callable[[Any], int] | ArrayLike]):
+    def index_mappings(self, maps: dict[Hashable, Callable[[Any], int] | ArrayLike | None] | None):
+        if maps is None:
+            self._index_mappings = {d: identity for d in self.dims}
+            return
+
         for d in maps.keys():
             if d not in self.dims:
                 raise KeyError
+
             if d in self.spatial_dims:
-                raise KeyError
+                raise KeyError("index mappings only apply to slider dims, not spatial dims")
+
             if isinstance(maps[d], ArrayProtocol):
                 # create a searchsorted mapping function automatically
                 maps[d] = maps[d].searchsorted
+
             elif maps[d] is None:
                 # assign identity mapping
+                maps[d] = identity
+
+        for d in self.dims:
+            # fill in any unspecified maps with identity
+            if d not in maps.keys():
                 maps[d] = identity
 
         self._index_mappings = maps
@@ -250,13 +271,13 @@ class NDProcessor:
             # index for this dim in reference space
             index_ref = indices[dim]
 
-            # if a window function exists for this dim
-            if self.window_funcs[dim] is not None:
-                # window size in reference units
-                w = self.window_funcs[dim][1]
+            # get window func and size in reference units
+            wf, ws = self.window_funcs[dim]
 
+            # if a window function exists for this dim, and it's specified in the window order
+            if (wf is not None) and (ws is not None) and (dim in self.window_order):
                 # half window in reference units
-                hw = w / 2
+                hw = ws / 2
 
                 # start in reference units
                 start_ref = index_ref - hw
@@ -287,6 +308,9 @@ class NDProcessor:
 
         # apply window funcs in the specified order
         for dim in self.window_order:
+            if self.window_funcs[dim] is None:
+                continue
+
             func, _ = self.window_funcs[dim]
 
             data_sliced = func(data_sliced, axis=self.dims.index(dim), keepdims=True)
@@ -294,7 +318,7 @@ class NDProcessor:
         return data_sliced
 
     def get(self, indices: dict[Hashable, Any]):
-        window_output = self._apply_window_functions(indices)
+        raise NotImplementedError
 
 
 def block_reentrance(setter):
