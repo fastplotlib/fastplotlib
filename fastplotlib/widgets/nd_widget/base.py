@@ -70,7 +70,7 @@ class NDProcessor:
         window_funcs: dict[
             Hashable, tuple[WindowFuncCallable | None, int | float | None]
         ] = None,
-        window_funcs_order: tuple[Hashable, ...] = None,
+        window_order: tuple[Hashable, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
     ):
         self._data = self._validate_data(data, dims)
@@ -79,7 +79,8 @@ class NDProcessor:
         self.index_mappings = index_mappings
 
         self.window_funcs = window_funcs
-        self.window_order = window_funcs_order
+        self.window_order = window_order
+        self.spatial_func = spatial_func
 
     @property
     def data(self) -> xr.DataArray:
@@ -115,6 +116,7 @@ class NDProcessor:
 
     @property
     def spatial_dims(self) -> tuple[Hashable, ...]:
+        """Spatial dims, **in order**)"""
         return self._spatial_dims
 
     @spatial_dims.setter
@@ -225,8 +227,15 @@ class NDProcessor:
         self._window_order = tuple(order)
 
     @property
-    def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
-        pass
+    def spatial_func(self) -> Callable[[xr.DataArray], xr.DataArray] | None:
+        return self._spatial_func
+
+    @spatial_func.setter
+    def spatial_func(self, func: Callable[[xr.DataArray], xr.DataArray]) -> Callable | None:
+        if not callable(func) and func is not None:
+            raise TypeError
+
+        self._spatial_func = func
 
     @property
     def index_mappings(self) -> dict[Hashable, Callable[[Any], int]]:
@@ -278,8 +287,11 @@ class NDProcessor:
             # index for this dim in reference space
             index_ref = indices[dim]
 
-            # get window func and size in reference units
-            wf, ws = self.window_funcs[dim]
+            if dim not in self.window_funcs.keys():
+                wf, ws = None, None
+            else:
+                # get window func and size in reference units
+                wf, ws = self.window_funcs[dim]
 
             # if a window function exists for this dim, and it's specified in the window order
             if (wf is not None) and (ws is not None) and (dim in self.window_order):

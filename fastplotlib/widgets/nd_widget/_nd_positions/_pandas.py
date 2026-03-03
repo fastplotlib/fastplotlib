@@ -89,4 +89,6 @@ class NDPP_Pandas(NDPositionsProcessor):
                 [self.data[c][self._dw_slice] for c in col]
             )
 
+        fin
+
         return self._apply_dw_window_func(graphic_data)

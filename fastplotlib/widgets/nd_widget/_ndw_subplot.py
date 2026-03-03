@@ -32,13 +32,12 @@ class NDWSubplot:
         nd = NDImage(self.ndw.indices, *args, **kwargs)
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
+        nd._reset_camera()
         return nd
 
     def add_nd_scatter(self, *args, **kwargs):
         # TODO: better func signature here, send all kwargs to processor_kwargs
-        nd = NDPositions(
-            self.ndw.indices, *args, graphic=ScatterCollection, **kwargs
-        )
+        nd = NDPositions(self.ndw.indices, *args, graphic=ScatterCollection, **kwargs)
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
 
@@ -71,7 +70,7 @@ class NDWSubplot:
         return nd
 
     def add_nd_lines(self, *args, **kwargs):
-        nd = NDPositions(*args, graphic=LineCollection, **kwargs)
+        nd = NDPositions(self.ndw.indices, *args, graphic=LineCollection, **kwargs)
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
         return nd

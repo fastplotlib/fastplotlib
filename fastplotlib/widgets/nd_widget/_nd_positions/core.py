@@ -252,6 +252,13 @@ class NDPositionsProcessor(NDProcessor):
 
         return array[:, ::step]
 
+    def _apply_spatial_func(self, array: np.ndarray):
+        if self.spatial_func is not None:
+            return self.spatial_func(array)
+
+    def _finalize_(self, array):
+        return self._apply_spatial_func(self._apply_dw_window_func(array))
+
     def get(self, indices: dict[str, Any]):
         """
         slices through all slider dims and outputs an array that can be used to set graphic data
@@ -286,7 +293,7 @@ class NDPositionsProcessor(NDProcessor):
             window_output.isel({p_dim: dw_slice}).transpose(*self.spatial_dims).values
         )
 
-        return self._apply_dw_window_func(graphic_data)
+        return self._finalize_(graphic_data)
 
 
 class NDPositions(NDGraphic):

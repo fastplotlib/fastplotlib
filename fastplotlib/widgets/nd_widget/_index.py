@@ -75,6 +75,7 @@ class GlobalIndex:
 
     def _render_indices(self):
         for g in self._get_ndgraphics():
+            # only provide slider indices to the graphic
             g.indices = {d: self._indices[d] for d in g.processor.slider_dims}
 
     @property
