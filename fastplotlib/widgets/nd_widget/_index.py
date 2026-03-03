@@ -6,10 +6,11 @@ from .base import NDGraphic
 
 @dataclass
 class ReferenceRangeContinuous:
+    name: str
+    unit: str
     start: int | float
     stop: int | float
     step: int | float
-    unit: str
 
     def __getitem__(self, index: int):
         """return the value at the index w.r.t. the step size"""
@@ -32,8 +33,9 @@ class ReferenceRangeContinuous:
 
 @dataclass
 class ReferenceRangeDiscrete:
-    options: Sequence[Any]
+    name: str
     unit: str
+    options: Sequence[Any]
 
     def __getitem__(self, index: int):
         if index > len(self.options):
@@ -45,72 +47,51 @@ class ReferenceRangeDiscrete:
         return len(self.options)
 
 
-class GlobalIndexVector:
-    def __init__(self, ref_ranges: list, get_ndgraphics: Callable[[], tuple[NDGraphic]]):
-        self._ref_ranges = list()
+class GlobalIndex:
+    def __init__(self, ref_ranges: dict[str, tuple], get_ndgraphics: Callable[[], tuple[NDGraphic]]):
+        self._ref_ranges = dict()
 
-        for r in ref_ranges:
-            if len(r) == 4:
-                # assume start, stop, step, unit
-                refr = ReferenceRangeContinuous(*r)
-            elif len(r) == 2:
-                refr = ReferenceRangeDiscrete(*r)
+        for r in ref_ranges.values():
+            if len(r) == 5:
+                # assume name, unit, start, stop, step
+                rr = ReferenceRangeContinuous(*r)
+            elif len(r) == 3:
+                rr = ReferenceRangeDiscrete(*r)
             else:
                 raise ValueError
 
-            self._ref_ranges.append(refr)
+            self._ref_ranges[rr.name] = rr
 
         self._get_ndgraphics = get_ndgraphics
 
         # starting index for all dims
-        self._indices: list[int | float | Any] = [refr[0] for refr in self.ref_ranges]
+        self._indices: dict[str, int | float | Any] = {rr.name: rr.start for rr in self._ref_ranges.values()}
 
-    @property
-    def indices(self) -> tuple[int | float | Any, ...]:
-        # TODO: clamp index to given ref range here
-        #  graphics will clamp according to their own array sizes?
-        return tuple(self._indices)
+    def set(self, indices: dict[str, Any]):
+        for k in self._indices:
+            self._indices[k] = indices[k]
 
-    @indices.setter
-    def indices(self, new_indices: tuple[int | float | Any, ...]):
-        self._indices[:] = new_indices
         self._render_indices()
 
     def _render_indices(self):
         for g in self._get_ndgraphics():
-            g.indices = self.indices
+            g.indices = {d: self._indices[d] for d in g.processor.slider_dims}
 
     @property
-    def dims(self) -> tuple[str, ...]:
-        return tuple([ref.unit for ref in self.ref_ranges])
+    def ref_ranges(self) -> dict[str, ReferenceRangeContinuous | ReferenceRangeDiscrete]:
+        return self._ref_ranges
 
-    @property
-    def ref_ranges(self) -> tuple[ReferenceRangeContinuous, ...]:
-        return tuple(self._ref_ranges)
+    def __getitem__(self, dim):
+        return self._indices[dim]
 
-    def __getitem__(self, item):
-        if isinstance(item, int):
-            # integer index in the list
-            return self._indices[item]
+    def __setitem__(self, dim, value):
+        # set index for given dim and render
 
-        for i, rr in enumerate(self.ref_ranges):
-            if rr.unit == item:
-                return self._indices[i]
+        # clamp within reference range
+        if isinstance(self.ref_ranges[dim], ReferenceRangeContinuous):
+            value = max(min(value, self.ref_ranges[dim].stop - self.ref_ranges[dim].step), self.ref_ranges[dim].start)
 
-        raise KeyError
-
-    def __setitem__(self, key, value):
-        # TODO: set the index for the given dimension only
-        if isinstance(key, str):
-            for i, rr in enumerate(self.ref_ranges):
-                if rr.unit == key:
-                    key = i
-                    break
-            else:
-                raise KeyError
-
-        # set index for given dim
-        self._indices[key] = value
+        self._indices[dim] = value
         self._render_indices()
 
     def pop_dim(self):
@@ -121,7 +102,7 @@ class GlobalIndexVector:
         pass
 
     def __iter__(self):
-        for index in self.indices:
+        for index in self._indices:
             yield index
 
     def __len__(self):
@@ -131,8 +112,10 @@ class GlobalIndexVector:
         return self._indices == other
 
     def __repr__(self):
-        named = ", ".join([f"{d}: {i}" for d, i in zip(self.dims, self._indices)])
-        return f"Indices: {named}"
+        return f"Global Index: {self._indices}"
+
+    def __str__(self):
+        return str(self._indices)
 
 
 class SelectionVector:

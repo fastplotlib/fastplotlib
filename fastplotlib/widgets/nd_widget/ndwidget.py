@@ -1,14 +1,14 @@
 from typing import Any
 
-from ._index import ReferenceRangeContinuous, ReferenceRangeDiscrete, GlobalIndexVector
+from ._index import ReferenceRangeContinuous, ReferenceRangeDiscrete, GlobalIndex
 from ._ndw_subplot import NDWSubplot
 from ._ui import NDWidgetUI
 from ...layouts import ImguiFigure, Subplot
 
 
 class NDWidget:
-    def __init__(self, ref_ranges: list[tuple], **kwargs):
-        self._indices = GlobalIndexVector(ref_ranges, self._get_ndgraphics)
+    def __init__(self, ref_ranges: dict[str, tuple], **kwargs):
+        self._indices = GlobalIndex(ref_ranges, self._get_ndgraphics)
         self._figure = ImguiFigure(**kwargs)
 
         self._subplots_nd: dict[Subplot, NDWSubplot] = dict()
@@ -26,15 +26,15 @@ class NDWidget:
         return self._figure
 
     @property
-    def indices(self) -> GlobalIndexVector:
+    def indices(self) -> GlobalIndex:
         return self._indices
 
     @indices.setter
-    def indices(self, new_indices: tuple[int | float | Any, ...]):
-        self._indices.indices = new_indices
+    def indices(self, new_indices: dict[str, int | float | Any]):
+        self._indices.set = new_indices
 
     @property
-    def ref_ranges(self) -> tuple[ReferenceRangeContinuous | ReferenceRangeDiscrete, ...]:
+    def ref_ranges(self) -> dict[str, ReferenceRangeContinuous | ReferenceRangeDiscrete]:
         return self._indices.ref_ranges
 
     def __getitem__(self, key: str | tuple[int, int] | Subplot):

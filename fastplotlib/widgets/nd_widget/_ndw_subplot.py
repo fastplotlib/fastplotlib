@@ -35,6 +35,7 @@ class NDWSubplot:
         return nd
 
     def add_nd_scatter(self, *args, **kwargs):
+        # TODO: better func signature here, send all kwargs to processor_kwargs
         nd = NDPositions(
             self.ndw.indices, *args, graphic=ScatterCollection, **kwargs
         )

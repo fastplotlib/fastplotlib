@@ -28,7 +28,7 @@ from ..base import (
     block_reentrance,
     block_indices,
 )
-from .._index import GlobalIndexVector
+from .._index import GlobalIndex
 
 
 # TODO: Maybe get rid of n_display_dims in NDProcessor,
@@ -154,7 +154,7 @@ class NDPositionsProcessor(NDProcessor):
         if self.datapoints_window_func is not None:
             # add half datapoints_window_func size here, assumes the reference space is somewhat continuous
             # and the display_window and datapoints window size map to their actual size values
-            hw += self._ref_index_to_array_index(p_dim, self.datapoints_window_func[2] / 2)
+            hw += self.datapoints_window_func[2] / 2
 
         # display window is in reference units, apply display window and then map to array indices
         # start in reference units
@@ -215,7 +215,8 @@ class NDPositionsProcessor(NDProcessor):
             wf, apply_dims, ws = self.datapoints_window_func
 
             # map ws in ref units to array index
-            ws = self._ref_index_to_array_index(p_dim, ws)
+            # min window size is 3
+            ws = max(self._ref_index_to_array_index(p_dim, ws), 3)
 
             if ws % 2 == 0:
                 # odd size windows are easier to handle
@@ -291,8 +292,10 @@ class NDPositionsProcessor(NDProcessor):
 class NDPositions(NDGraphic):
     def __init__(
         self,
-        global_index: GlobalIndexVector,
+        global_index: GlobalIndex,
         data: Any,
+        dims: Sequence[str],
+        spatial_dims: tuple[str, str, str],
         *args,
         graphic: Type[
             LineGraphic
@@ -305,7 +308,6 @@ class NDPositions(NDGraphic):
         processor: type[NDPositionsProcessor] = NDPositionsProcessor,
         display_window: int = 10,
         window_funcs: tuple[WindowFuncCallable | None] | None = None,
-        window_sizes: tuple[int | None] | None = None,
         index_mappings: tuple[Callable[[Any], int] | None] | None = None,
         max_display_datapoints: int = 1_000,
         linear_selector: bool = False,
@@ -320,11 +322,12 @@ class NDPositions(NDGraphic):
 
         self._processor = processor(
             data,
+            dims,
+            spatial_dims,
             *args,
             display_window=display_window,
             max_display_datapoints=max_display_datapoints,
             window_funcs=window_funcs,
-            window_sizes=window_sizes,
             index_mappings=index_mappings,
             **processor_kwargs,
         )
@@ -380,14 +383,12 @@ class NDPositions(NDGraphic):
         plot_area.add_graphic(self._graphic)
 
     @property
-    def indices(self) -> tuple:
-        return self._global_index.indices[-self.processor.n_slider_dims :]
+    def indices(self) -> dict[Hashable, Any]:
+        return {d: self._global_index[d] for d in self.processor.slider_dims}
 
     @indices.setter
     @block_reentrance
     def indices(self, indices):
-        # upto the number of slider dims in this data
-        indices = indices[-self.processor.n_slider_dims :]
         data_slice = self.processor.get(indices)
 
         # TODO: set other graphic features, colors, sizes, markers, etc.
@@ -422,12 +423,13 @@ class NDPositions(NDGraphic):
         if self._linear_selector is not None:
             with pause_events(self._linear_selector):
                 self._linear_selector.limits = xr
-                self._linear_selector.selection = indices[-1]
+                # linear selector acts on `p` dim
+                self._linear_selector.selection = indices[self.processor.spatial_dims[1]]
 
     def _linear_selector_handler(self, ev):
         with block_indices(self):
             # linear selector always acts on the `p` dim
-            self._global_index[-1] = ev.info["value"]
+            self._global_index[self.processor.spatial_dims[1]] = ev.info["value"]
 
     def _tooltip_handler(self, graphic, pick_info):
         if isinstance(self.graphic, (LineCollection, ScatterCollection)):
@@ -453,7 +455,8 @@ class NDPositions(NDGraphic):
         data_slice = self.processor.get(self.indices)
 
         if issubclass(graphic_cls, ImageGraphic):
-            if self.processor.shape[-1] != 2:
+            # `d` dim must only have xy data to be interpreted as a heatmap, xyz can't become a timeseries heatmap
+            if self.processor.shape[self.processor.spatial_dims[-1]] != 2:
                 raise ValueError
 
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
@@ -544,9 +547,9 @@ class NDPositions(NDGraphic):
         new_width = abs(xr[1] - xr[0])
         new_index = (xr[0] + xr[1]) / 2
 
-        if (new_index == self._global_index[-1]) and (last_width == new_width):
+        if (new_index == self._global_index[self.processor.spatial_dims[1]]) and (last_width == new_width):
             return
 
         self.processor.display_window = new_width
         # set the `p` dim on the global index vector
-        self._global_index[-1] = new_index
+        self._global_index[self.processor.spatial_dims[1]] = new_index
