@@ -12,14 +12,25 @@ import numpy as np
 import fastplotlib as fpl
 
 
-a = np.random.rand(1000, 30, 64, 64)
+data = np.random.rand(1000, 30, 64, 64)
+
+# must define a reference range for each dim
+ref = {
+    "time": ("time", "s", 0, 1000, 1),
+    "depth": ("depth", "um", 0, 30, 1),
+}
 
 
-ndw = fpl.NDWidget(ref_ranges=[(0, 1000, 1, "t"), (0, 30, 1, "um")], size=(800, 800))
+ndw = fpl.NDWidget(ref_ranges=ref, size=(700, 560))
 ndw.show()
 
-ndi = ndw[0, 0].add_nd_image(a, index_mappings=(int, int))
-# TODO: need to think about how to "auto ignore" reference range for a dim when switching between 2 & 3 dim images
-ndi.n_display_dims = 3
+ndi = ndw[0, 0].add_nd_image(
+    data,
+    ("time", "depth", "m", "n"),  # specify all dim names
+    ("m", "n"),  # specify spatial dims IN ORDER, rest are auto slider dims
+)
+
+# change spatial dims on the fly
+ndi.spatial_dims = ("depth", "m", "n")
 
 fpl.loop.run()
