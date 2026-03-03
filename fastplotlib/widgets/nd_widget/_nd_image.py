@@ -1,3 +1,4 @@
+from collections.abc import Hashable
 import inspect
 from typing import Literal, Callable, Type, Any
 from warnings import warn
@@ -143,20 +144,12 @@ class NDImageProcessor(NDProcessor):
         self._rgb = rgb
 
     @property
-    def n_slider_dims(self) -> int:
-        """number of slider dimensions"""
-        if self._data is None:
-            return 0
-
-        return self.ndim - self.n_display_dims - int(self.rgb)
+    def slider_dims(self) -> set[Hashable]:
+        return set(self.dims) - set(self.spatial_dims)
 
     @property
-    def slider_dims(self) -> tuple[int, ...] | None:
-        """tuple indicating the slider dimension indices"""
-        if self.n_slider_dims == 0:
-            return None
-
-        return tuple(range(self.n_slider_dims))
+    def n_slider_dims(self):
+        return len(self.slider_dims)
 
     @property
     def slider_dims_shape(self) -> tuple[int, ...] | None:

@@ -1,9 +1,12 @@
+from collections.abc import Callable, Hashable, Sequence, Iterable
 from functools import partial
-from typing import Literal, Callable, Any, Type
+from typing import Literal, Any, Type
 from warnings import warn
 
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
+from numpy.typing import ArrayLike
+import xarray as xr
 
 from ....utils import subsample_array, ArrayProtocol
 
@@ -18,7 +21,13 @@ from ....graphics import (
 )
 from ....graphics.utils import pause_events
 from ....graphics.selectors import LinearSelector
-from ..base import NDProcessor, NDGraphic, WindowFuncCallable, block_reentrance, block_indices
+from ..base import (
+    NDProcessor,
+    NDGraphic,
+    WindowFuncCallable,
+    block_reentrance,
+    block_indices,
+)
 from .._index import GlobalIndexVector
 
 
@@ -29,28 +38,62 @@ class NDPositionsProcessor(NDProcessor):
     def __init__(
         self,
         data: Any,
-        multi: bool = False,  # TODO: interpret [n - 2] dimension as n_lines or n_points
+        dims: Sequence[str],
+        # TODO: allow stack_dim to be None and auto-add new dim of size 1 in get logic
+        spatial_dims: tuple[
+            str | None, str, str
+        ],  # [stack_dim, n_datapoints, spatial_dim], IN ORDER!!
+        index_mappings: dict[str, Callable[[Any], int] | ArrayLike] = None,
         display_window: int | float | None = 100,  # window for n_datapoints dim only
         max_display_datapoints: int = 1_000,
-        datapoints_window_func: Callable | None = None,
-        datapoints_window_size: int | None = None,
+        datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         **kwargs,
     ):
+        """
+
+        Parameters
+        ----------
+        data
+        dims
+        spatial_dims
+        index_mappings
+        display_window
+        max_display_datapoints
+        datapoints_window_func:
+            Important note: if used, display_window is approximate and not exact due to padding from the window size
+        kwargs
+        """
         self._display_window = display_window
         self._max_display_datapoints = max_display_datapoints
 
-        # TOOD: this does data validation twice and is a bit messy, cleanup
-        self._data = self._validate_data(data)
-        self.multi = multi
-
-        super().__init__(data=data, **kwargs)
+        super().__init__(
+            data=data,
+            dims=dims,
+            spatial_dims=spatial_dims,
+            index_mappings=index_mappings,
+            **kwargs,
+        )
 
         self._datapoints_window_func = datapoints_window_func
-        self._datapoints_window_size = datapoints_window_size
 
-    def _validate_data(self, data: ArrayProtocol):
-        # TODO: determine right validation shape etc.
-        return data
+    @property
+    def spatial_dims(self) -> tuple[str, str, str]:
+        return self._spatial_dims
+
+    @spatial_dims.setter
+    def spatial_dims(self, sdims: tuple[str, str, str]):
+        if len(sdims) != 3:
+            raise IndexError
+
+        if not all([d in self.dims for d in sdims]):
+            raise KeyError
+
+        self._spatial_dims = tuple(sdims)
+
+    @property
+    def slider_dims(self) -> set[Hashable]:
+        # append `p` dim to slider dims
+        return tuple([*super().slider_dims, self.spatial_dims[1]])
 
     @property
     def display_window(self) -> int | float | None:
@@ -80,264 +123,169 @@ class NDPositionsProcessor(NDProcessor):
 
         self._max_display_datapoints = n
 
-    @property
-    def multi(self) -> bool:
-        return self._multi
-
-    @multi.setter
-    def multi(self, m: bool):
-        if m and self.data.ndim < 3:
-            # p is p-datapoints, n is how many lines to show simultaneously (for line collection/stack)
-            raise ValueError(
-                "ndim must be >= 3 for multi, shape must be [s1..., sn, n, p, 2 | 3]"
-            )
-
-        self._multi = m
-
-    @property
-    def slider_dims(self) -> tuple[int, ...]:
-        """slider dimensions"""
-        return tuple(range(self.ndim - 2 - int(self.multi))) + (self.ndim - 2,)
-
-    @property
-    def n_slider_dims(self) -> int:
-        return self.ndim - 1 - int(self.multi)
-
     # TODO: validation for datapoints_window_func and size
     @property
-    def datapoints_window_func(self) -> tuple[Callable, str] | None:
+    def datapoints_window_func(self) -> tuple[Callable, str, int | float] | None:
         """
         Callable and str indicating which dims to apply window function along:
             'all', 'x', 'y', 'z', 'xyz', 'xy', 'xz', 'yz'
         '"""
         return self._datapoints_window_func
 
-    @property
-    def datapoints_window_size(self) -> Callable | None:
-        return self._datapoints_window_size
+    def _get_dw_slice(self, indices: dict[str, Any]) -> slice:
+        # given indices, return slice required to obtain display window
 
-    def _apply_window_functions(self, indices: tuple[int, ...]):
-        """applies the window functions for each dimension specified"""
-        # window size for each dim
-        winds = self._window_sizes
-        # window function for each dim
-        funcs = self._window_funcs
+        # n_datapoints dim name
+        # display_window acts on this dim
+        p_dim = self.spatial_dims[1]
 
-        # TODO: use tuple of None for window funcs and sizes to indicate all None, instead of just None
-        # print(winds)
-        # print(funcs)
-        #
-        # if winds is None or funcs is None:
-        #     # no window funcs or window sizes, just slice data and return
-        #     # clamp to max bounds
-        #     indexer = list()
-        #     print(indices)
-        #     print(self.shape)
-        #     for dim, i in enumerate(indices):
-        #         i = min(self.shape[dim] - 1, i)
-        #         indexer.append(i)
-        #
-        #     return self.data[tuple(indexer)]
-
-        # order in which window funcs are applied
-        order = self._window_order
-
-        if order is not None:
-            # remove any entries in `window_order` where the specified dim
-            # has a window function or window size specified as `None`
-            # example:
-            # window_sizes = (3, 2)
-            # window_funcs = (np.mean, None)
-            # order = (0, 1)
-            # `1` is removed from the order since that window_func is `None`
-            order = tuple(
-                d for d in order if winds[d] is not None and funcs[d] is not None
-            )
-        else:
-            # sequential order
-            order = list()
-            for d in range(self.n_slider_dims):
-                if winds[d] is not None and funcs[d] is not None:
-                    order.append(d)
-
-        # the final indexer which will be used on the data array
-        indexer = list()
-
-        for dim_index, (i, w, f) in enumerate(zip(indices, winds, funcs)):
-            # clamp i within the max bounds
-            i = min(self.shape[dim_index] - 1, i)
-
-            if (w is not None) and (f is not None):
-                # specify slice window if both window size and function for this dim are not None
-                hw = int((w - 1) / 2)  # half window
-
-                # start index cannot be less than 0
-                start = max(0, i - hw)
-
-                # stop index cannot exceed the bounds of this dimension
-                stop = min(self.shape[dim_index], i + hw)
-
-                s = slice(start, stop, 1)
-            else:
-                s = slice(i, i + 1, 1)
-
-            indexer.append(s)
-
-        # apply indexer to slice data with the specified windows
-        data_sliced = self.data[tuple(indexer)]
-
-        # finally apply the window functions in the specified order
-        for dim in order:
-            f = funcs[dim]
-
-            data_sliced = f(data_sliced, axis=dim, keepdims=True)
-
-        return data_sliced
-
-    def _get_dw_slices(self, indices) -> tuple[slice] | tuple[slice, slice]:
-        # given indices, return slice using display window
-
-        # display window is interpreted using the index mapping for the `p` dim
-        dw = self.display_window
-
-        if dw is None:
+        if self.display_window is None:
             # just return everything
-            return (slice(None),)
+            return slice(0, self.shape[p_dim] - 1)
 
-        if dw == 0:
+        if self.display_window == 0:
             # just map p dimension at this index and return
-            index_p = self.index_mappings[-1](indices[-1])
-            return (slice(index_p, index_p + 1),)
+            index = self._ref_index_to_array_index(p_dim, indices[p_dim])
+            return slice(index, index + 1)
+
+        # half window size, in reference units
+        hw = self.display_window / 2
+
+        if self.datapoints_window_func is not None:
+            # add half datapoints_window_func size here, assumes the reference space is somewhat continuous
+            # and the display_window and datapoints window size map to their actual size values
+            hw += self._ref_index_to_array_index(p_dim, self.datapoints_window_func[2] / 2)
 
         # display window is in reference units, apply display window and then map to array indices
-        # clamp w.r.t. 0 and processor shape `p` dim
-        hw = dw / 2
-        index_p_start = max(self.index_mappings[-1](indices[-1] - hw), 0)
-        index_p_stop = min(self.index_mappings[-1](indices[-1] + hw), self.shape[-2])
-        if index_p_start >= index_p_stop:
-            index_p_stop = index_p_start + 1
+        # start in reference units
+        start_ref = indices[p_dim] - hw
+        # stop in reference units
+        stop_ref = indices[p_dim] + hw
 
-        # round to the nearest integer since to use as arra indices
-        slices = [slice(round(index_p_start), round(index_p_stop))]
+        # map to array indices
+        start = self._ref_index_to_array_index(p_dim, start_ref)
+        stop = self._ref_index_to_array_index(p_dim, stop_ref)
 
-        if self.multi:
-            slices.insert(0, slice(None))
+        if start >= stop:
+            stop = start + 1
 
-        return tuple(slices)
+        return slice(start, stop)
 
-    def get(self, indices: tuple[Any, ...]):
+    def _apply_dw_window_func(self, array: np.ndarray) -> np.ndarray:
+        """
+        Takes array where display window has already been applied and applies window functions on the `p` dim.
+
+        Parameters
+        ----------
+        array: np.ndarray
+            array of shape: [l, display_window, 2 | 3]
+
+        Returns
+        -------
+        np.ndarray
+            array with window functions applied along `p` dim
+        """
+        if self.display_window == 0:
+            # can't apply window func when there is only 1 datapoint
+            return array
+
+        p_dim = self.spatial_dims[1]
+
+        # display window in array index space
+        dw = self.index_mappings[p_dim](self.display_window)
+
+        # step size based on max number of datapoints to render
+        step = max(1, dw // self.max_display_datapoints)
+
+        # apply window function on the `p` n_datapoints dim
+        if (
+            self.datapoints_window_func is not None
+            # if there are too many points to efficiently compute the window func, skip
+            # applying a window func also requires making a copy so that's a further performance hit
+            and (dw < self.max_display_datapoints * 2)
+        ):
+            # get windows
+
+            # graphic_data will be of shape: [n, p, 2 | 3]
+            # where:
+            #   n - number of lines, scatters, heatmap rows
+            #   p - number of datapoints/samples
+
+            # ws is in ref units
+            wf, apply_dims, ws = self.datapoints_window_func
+
+            # map ws in ref units to array index
+            ws = self._ref_index_to_array_index(p_dim, ws)
+
+            if ws % 2 == 0:
+                # odd size windows are easier to handle
+                ws += 1
+
+            hw = ws // 2
+            start, stop = hw, array.shape[1] - hw
+
+            # apply user's window func
+            # result will be of shape [n, p, 2 | 3]
+            if apply_dims == "all":
+                # windows will be of shape [n, p, 1 | 2 | 3, ws]
+                windows = sliding_window_view(array, ws, axis=-2)
+                return wf(windows, axis=-1)[:, ::step]
+
+            # map user dims str to tuple of numerical dims
+            dims = tuple(map({"x": 0, "y": 1, "z": 2}.get, apply_dims))
+
+            # windows will be of shape [n, (p - ws + 1), 1 | 2 | 3, ws]
+            windows = sliding_window_view(
+                array[..., dims], ws, axis=-2
+            ).squeeze()
+
+            # make a copy because we need to modify it
+            array = array[:, start:stop].copy()
+
+            # this reshape is required to reshape wf outputs of shape [n, p] -> [n, p, 1] only when necessary
+            array[..., dims] = wf(windows, axis=-1).reshape(
+                *array.shape[:-1], len(dims)
+            )
+
+            return array[:, ::step]
+
+        return array[:, ::step]
+
+    def get(self, indices: dict[str, Any]):
         """
         slices through all slider dims and outputs an array that can be used to set graphic data
 
         Note that we do not use __getitem__ here since the index is a tuple specifying a single integer
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
         """
-        # apply any slider index mappings
-        array_indices = tuple([m(i) for m, i in zip(self.index_mappings, indices)])
+        # # map slider dim indices to array indices
+        # array_indices = tuple([m(i) for m, i in zip(self.index_mappings, indices)])
 
-        if len(array_indices) > 1:
-            # there are dims in addition to the n_datapoints dim
-            # apply window funcs
-            # window_output array should be of shape [n_datapoints, 2 | 3]
-            window_output = self._apply_window_functions(array_indices[:-1]).squeeze()
+        if len(self.slider_dims) > 0:
+            # there are dims in addition to the spatial dims
+            window_output = self._apply_window_functions(indices).squeeze()
         else:
+            # no slider dims, use all the data
             window_output = self.data
 
-        if self.display_window is not None:
-            # display_window is in reference units
-            slices = self._get_dw_slices(indices)
+        # verify window output only has the spatial dims
+        if not set(window_output.dims) == set(self.spatial_dims):
+            raise IndexError
 
-        # if self.display_window is not None:
-        #     # display window is interpreted using the index mapping for the `p` dim
-        #     dw = self.index_mappings[-1](self.display_window)
-        #
-        #     if dw == 1:
-        #         slices = [slice(indices[-1], indices[-1] + 1)]
-        #
-        #     else:
-        #         # half window size
-        #         hw = dw // 2
-        #
-        #         # for now assume just a single index provided that indicates x axis value
-        #         start = max(indices[-1] - hw, 0)
-        #         stop = start + dw
-        #         # also add window size of `p` dim so window_func output has the same number of datapoints
-        #         if (
-        #             self.datapoints_window_func is not None
-        #             and self.datapoints_window_size is not None
-        #         ):
-        #             stop += self.datapoints_window_size - 1
-        #             # TODO: pad with constant if we're using a window func and the index is near the end
-        #
-        #         # TODO: uncomment this once we have resizeable buffers!!
-        #         # stop = min(indices[-1] + hw, self.shape[-2])
-        #
-        #         slices = [slice(start, stop)]
-        #
-        #     if self.multi:
-        #         # n - 2 dim is n_lines or n_scatters
-        #         slices.insert(0, slice(None))
+        # get slice obj for display window
+        dw_slice = self._get_dw_slice(indices)
 
         # data that will be used for the graphical representation
         # a copy is made, if there were no window functions then this is a view of the original data
-        graphic_data = window_output[tuple(slices)]
+        p_dim = self.spatial_dims[1]
 
-        dw = self.index_mappings[-1](self.display_window)
+        # slice the datapoints to be displayed in the graphic using the display window slice
+        # transpose to match spatial dims order, get numpy array, this is a view
+        graphic_data = (
+            window_output.isel({p_dim: dw_slice}).transpose(*self.spatial_dims).values
+        )
 
-        # apply window function on the `p` n_datapoints dim
-        if (
-            self.datapoints_window_func is not None
-            and self.datapoints_window_size is not None
-            # if there are too many points to efficiently compute the window func
-            # applying a window func also requires making a copy so that's a further performance hit
-            and (dw < self.max_display_datapoints * 2)
-        ):
-            # get windows
-
-            # graphic_data will be of shape: [n, p + (ws - 1), 2 | 3]
-            # where:
-            #   n - number of lines, scatters, heatmap rows
-            #   p - number of datapoints/samples
-
-            wf = self.datapoints_window_func[0]
-            apply_dims = self.datapoints_window_func[1]
-            ws = self.datapoints_window_size
-
-            # apply user's window func
-            # result will be of shape [n, p, 2 | 3]
-            if apply_dims == "all":
-                # windows will be of shape [n, p, 1 | 2 | 3, ws]
-                windows = sliding_window_view(graphic_data, ws, axis=-2)
-                return wf(windows, axis=-1)
-
-            # map user dims str to tuple of numerical dims
-            dims = tuple(map({"x": 0, "y": 1, "z": 2}.get, apply_dims))
-
-            # windows will be of shape [n, p, 1 | 2 | 3, ws]
-            windows = sliding_window_view(
-                graphic_data[..., dims], ws, axis=-2
-            ).squeeze()
-
-            # make a copy because we need to modify it
-            graphic_data = graphic_data.copy()
-
-            # this reshape is required to reshape wf outputs of shape [n, p] -> [n, p, 1] only when necessary
-            # we need to slice upto dw since we add the `datapoints_window_size` above
-            graphic_data[..., :dw, dims] = wf(windows, axis=-1).reshape(
-                graphic_data.shape[0], dw, len(dims)
-            )
-
-            return graphic_data[
-                ..., : dw : max(1, dw // self.max_display_datapoints), :
-            ]
-
-        return graphic_data[
-            ...,
-            : graphic_data.shape[-2] : max(
-                1, graphic_data.shape[-2] // self.max_display_datapoints
-            ),
-            :,
-        ]
+        return self._apply_dw_window_func(graphic_data)
 
 
 class NDPositions(NDGraphic):
@@ -355,7 +303,6 @@ class NDPositions(NDGraphic):
             | ImageGraphic
         ],
         processor: type[NDPositionsProcessor] = NDPositionsProcessor,
-        multi: bool = False,
         display_window: int = 10,
         window_funcs: tuple[WindowFuncCallable | None] | None = None,
         window_sizes: tuple[int | None] | None = None,
@@ -368,16 +315,12 @@ class NDPositions(NDGraphic):
     ):
         self._global_index = global_index
 
-        if issubclass(graphic, LineCollection):
-            multi = True
-
         if processor_kwargs is None:
             processor_kwargs = dict()
 
         self._processor = processor(
             data,
             *args,
-            multi=multi,
             display_window=display_window,
             max_display_datapoints=max_display_datapoints,
             window_funcs=window_funcs,
@@ -394,8 +337,12 @@ class NDPositions(NDGraphic):
         self._last_x_range = np.array([0.0, 0.0], dtype=np.float32)
 
         if linear_selector:
-            self._linear_selector = LinearSelector(0, limits=(-np.inf, np.inf), edge_color="cyan")
-            self._linear_selector.add_event_handler(self._linear_selector_handler, "selection")
+            self._linear_selector = LinearSelector(
+                0, limits=(-np.inf, np.inf), edge_color="cyan"
+            )
+            self._linear_selector.add_event_handler(
+                self._linear_selector_handler, "selection"
+            )
         else:
             self._linear_selector = None
 
@@ -434,14 +381,16 @@ class NDPositions(NDGraphic):
 
     @property
     def indices(self) -> tuple:
-        return self._global_index.indices[-self.processor.n_slider_dims:]
+        return self._global_index.indices[-self.processor.n_slider_dims :]
 
     @indices.setter
     @block_reentrance
     def indices(self, indices):
         # upto the number of slider dims in this data
-        indices = indices[-self.processor.n_slider_dims:]
+        indices = indices[-self.processor.n_slider_dims :]
         data_slice = self.processor.get(indices)
+
+        # TODO: set other graphic features, colors, sizes, markers, etc.
 
         if isinstance(self.graphic, (LineGraphic, ScatterGraphic)):
             self.graphic.data[:, : data_slice.shape[-1]] = data_slice
@@ -504,9 +453,6 @@ class NDPositions(NDGraphic):
         data_slice = self.processor.get(self.indices)
 
         if issubclass(graphic_cls, ImageGraphic):
-            if not self.processor.multi:
-                raise ValueError
-
             if self.processor.shape[-1] != 2:
                 raise ValueError
 
@@ -578,9 +524,7 @@ class NDPositions(NDGraphic):
     def x_range_mode(self, mode: Literal[None, "fixed-window", "view-range"]):
         if self._x_range_mode == "view-range":
             # old mode was view-range
-            self.graphic._plot_area.remove_animation(
-                self._update_from_view_range
-            )
+            self.graphic._plot_area.remove_animation(self._update_from_view_range)
 
         if mode == "view-range":
             self.graphic._plot_area.add_animations(self._update_from_view_range)

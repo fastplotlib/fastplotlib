@@ -36,7 +36,7 @@ class NDWSubplot:
 
     def add_nd_scatter(self, *args, **kwargs):
         nd = NDPositions(
-            self.ndw.indices, *args, graphic=ScatterCollection, multi=True, **kwargs
+            self.ndw.indices, *args, graphic=ScatterCollection, **kwargs
         )
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
@@ -54,7 +54,6 @@ class NDWSubplot:
             self.ndw.indices,
             *args,
             graphic=graphic,
-            multi=True,
             # x_range_mode=x_range_mode,
             linear_selector=True,
             **kwargs,
@@ -71,7 +70,7 @@ class NDWSubplot:
         return nd
 
     def add_nd_lines(self, *args, **kwargs):
-        nd = NDPositions(*args, graphic=LineCollection, multi=True, **kwargs)
+        nd = NDPositions(*args, graphic=LineCollection, **kwargs)
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
         return nd

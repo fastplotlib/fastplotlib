@@ -93,6 +93,9 @@ class NDProcessor:
         if not isinstance(data, ArrayProtocol):
             raise TypeError("`data` must implement the ArrayProtocol")
 
+        if data.ndim != len(dims):
+            raise IndexError("must specify a dim for every dimension in the data array")
+
         return xr.DataArray(data, dims=dims)
 
     @property
@@ -160,13 +163,11 @@ class NDProcessor:
     ):
         if window_funcs is None:
             # tuple of (None, None) makes the checks easier in _apply_window_funcs
-            self._window_funcs = {d: (None, None) for d in self.data.dims}
+            self._window_funcs = {d: (None, None) for d in self.slider_dims}
             return
 
         for k in window_funcs.keys():
-            if k not in self.dims:
-                raise KeyError
-            if k in self.spatial_dims:
+            if k not in self.slider_dims:
                 raise KeyError
 
             func = window_funcs[k][0]
@@ -238,11 +239,8 @@ class NDProcessor:
             return
 
         for d in maps.keys():
-            if d not in self.dims:
+            if d not in self.slider_dims:
                 raise KeyError
-
-            if d in self.spatial_dims:
-                raise KeyError("index mappings only apply to slider dims, not spatial dims")
 
             if isinstance(maps[d], ArrayProtocol):
                 # create a searchsorted mapping function automatically
@@ -259,15 +257,24 @@ class NDProcessor:
 
         self._index_mappings = maps
 
-    def _apply_window_functions(self, indices: dict[Hashable, Any]) -> np.ndarray:
+    def _ref_index_to_array_index(self, dim: str, ref_index: Any) -> int:
+        # wraps index mappings, clamps between 0 and max array index for this dimension
+        index = self.index_mappings[dim](ref_index)
+
+        return max(min(index, self.shape[dim] - 1), 0)
+
+    def _get_slider_dims_indexer(self, indices) -> dict:
         if set(indices.keys()) != set(self.slider_dims):
             raise IndexError(
                 f"Must provide an index for all slider dims: {self.slider_dims}, you have provided: {indices.keys()}"
             )
 
         indexer = dict()
+        # get only slider dims which are not also spatial dims (example: p dim for positional data)
+        # since that is dealt with separately
+        slider_dims = set(self.slider_dims) - set(self.spatial_dims)
         # go through each slider dim and accumulate slice objects
-        for dim in self.slider_dims:
+        for dim in slider_dims:
             # index for this dim in reference space
             index_ref = indices[dim]
 
@@ -303,8 +310,16 @@ class NDProcessor:
                 # stop index is just the start index + 1
                 indexer[dim] = slice(start, start + 1, 1)
 
-        # apply indexer with any specified windows, return the underlying numpy array
-        data_sliced = self.data.isel(indexer).values
+        return indexer
+
+    def _apply_window_functions(self, indices) -> xr.DataArray:
+        """slice with windows at given indices and apply window functions"""
+        indexer = self._get_slider_dims_indexer(indices)
+
+        # there is significant overhead with passing xarray objects to numpy for things like np.mean()
+        # so convert to numpy, apply window functions, then convert back to xarray
+        # creating an xarray object from a numpy array has very little overhead, ~10 microseconds
+        array = self.data.isel(indexer).values
 
         # apply window funcs in the specified order
         for dim in self.window_order:
@@ -313,9 +328,9 @@ class NDProcessor:
 
             func, _ = self.window_funcs[dim]
 
-            data_sliced = func(data_sliced, axis=self.dims.index(dim), keepdims=True)
+            array = func(array, axis=self.dims.index(dim), keepdims=True)
 
-        return data_sliced
+        return xr.DataArray(array, dims=self.dims)
 
     def get(self, indices: dict[Hashable, Any]):
         raise NotImplementedError
