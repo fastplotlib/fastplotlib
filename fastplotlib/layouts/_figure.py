@@ -609,7 +609,9 @@ class Figure:
         for subplot in self._subplots.ravel():
             for g in subplot.graphics:
                 if isinstance(g, ImageGraphic):
-                    subplot.camera.local.scale_y *= -1
+                    if subplot.camera.local.scale_y == 1:
+                        # if it's 1 it's likely not been touched manually before show was called
+                        subplot.camera.local.scale_y = -1
                     break
 
         if autoscale:
