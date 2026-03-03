@@ -31,7 +31,7 @@ class NDWidget:
 
     @indices.setter
     def indices(self, new_indices: dict[str, int | float | Any]):
-        self._indices.set = new_indices
+        self._indices.set(new_indices)
 
     @property
     def ref_ranges(self) -> dict[str, ReferenceRangeContinuous | ReferenceRangeDiscrete]:

@@ -102,7 +102,7 @@ class GlobalIndex:
         pass
 
     def __iter__(self):
-        for index in self._indices:
+        for index in self._indices.items():
             yield index
 
     def __len__(self):

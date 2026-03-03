@@ -62,46 +62,30 @@ class NDWidgetUI(EdgeWindow):
         self._max_display_windows: dict[NDGraphic, float | int] = dict()
 
     def update(self):
-        indices_changed = False
-
         if imgui.begin_tab_bar("NDWidget Controls"):
 
             if imgui.begin_tab_item("Indices")[0]:
-                for dim_index, (current_index, refr) in enumerate(
-                    zip(self._ndwidget.indices, self._ndwidget.ref_ranges)
-                ):
+                for dim, current_index in self._ndwidget.indices:
+                    refr = self._ndwidget.ref_ranges[dim]
+
                     if isinstance(refr, ReferenceRangeContinuous):
                         changed, new_index = imgui.slider_float(
                             v=current_index,
                             v_min=refr.start,
                             v_max=refr.stop,
-                            label=refr.unit,
+                            label=dim,
                         )
 
                         # TODO: refactor all this stuff, make fully fledged UI
                         if changed:
-                            new_indices = list(self._ndwidget.indices)
-                            new_indices[dim_index] = new_index
-
-                            indices_changed = True
+                            self._ndwidget.indices[dim] = new_index
 
                         elif imgui.is_item_hovered():
                             if imgui.is_key_pressed(imgui.Key.right_arrow):
-                                new_index = current_index + refr.step
-                                new_indices = list(self._ndwidget.indices)
-                                new_indices[dim_index] = new_index
+                                self._ndwidget.indices[dim] = current_index + refr.step
 
-                                indices_changed = True
-
-                            if imgui.is_key_pressed(imgui.Key.left_arrow):
-                                new_index = current_index - refr.step
-                                new_indices = list(self._ndwidget.indices)
-                                new_indices[dim_index] = new_index
-
-                                indices_changed = True
-
-                if indices_changed:
-                    self._ndwidget.indices = tuple(new_indices)
+                            elif imgui.is_key_pressed(imgui.Key.left_arrow):
+                                self._ndwidget.indices[dim] = current_index - refr.step
 
                 imgui.end_tab_item()
 
