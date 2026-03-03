@@ -265,7 +265,7 @@ class NDImage(NDGraphic):
         pass
 
     def _create_graphic(self):
-        match len(self.processor.spatial_dims):
+        match len(self.processor.spatial_dims) - int(bool(self.processor.rgb_dim)):
             case 2:
                 cls = ImageGraphic
             case 3:
@@ -282,6 +282,7 @@ class NDImage(NDGraphic):
             plot_area.add_graphic(new_graphic)
 
         self._graphic = new_graphic
+
         if self._graphic._plot_area is not None:
             self._reset_camera()
 

@@ -252,9 +252,11 @@ class NDPositionsProcessor(NDProcessor):
 
         return array[:, ::step]
 
-    def _apply_spatial_func(self, array: np.ndarray):
+    def _apply_spatial_func(self, array: xr.DataArray) -> xr.DataArray:
         if self.spatial_func is not None:
             return self.spatial_func(array)
+
+        return array
 
     def _finalize_(self, array):
         return self._apply_spatial_func(self._apply_dw_window_func(array))
@@ -266,11 +268,9 @@ class NDPositionsProcessor(NDProcessor):
         Note that we do not use __getitem__ here since the index is a tuple specifying a single integer
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
         """
-        # # map slider dim indices to array indices
-        # array_indices = tuple([m(i) for m, i in zip(self.index_mappings, indices)])
 
-        if len(self.slider_dims) > 0:
-            # there are dims in addition to the spatial dims
+        if len(self.slider_dims) > 1:
+            # there are slider dims in addition to the datapoints_dim
             window_output = self._apply_window_functions(indices).squeeze()
         else:
             # no slider dims, use all the data
@@ -290,10 +290,10 @@ class NDPositionsProcessor(NDProcessor):
         # slice the datapoints to be displayed in the graphic using the display window slice
         # transpose to match spatial dims order, get numpy array, this is a view
         graphic_data = (
-            window_output.isel({p_dim: dw_slice}).transpose(*self.spatial_dims).values
+            window_output.isel({p_dim: dw_slice}).transpose(*self.spatial_dims)
         )
 
-        return self._finalize_(graphic_data)
+        return self._finalize_(graphic_data).values
 
 
 class NDPositions(NDGraphic):

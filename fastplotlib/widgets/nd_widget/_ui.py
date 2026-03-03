@@ -122,12 +122,15 @@ class NDWidgetUI(EdgeWindow):
         changed, val = imgui.checkbox(
             "use display window", nd_graphic.display_window is not None
         )
+
+        p_dim = nd_graphic.processor.spatial_dims[1]
+
         if changed:
             if not val:
                 nd_graphic.display_window = None
             else:
                 # pick a value 10% of the reference range
-                nd_graphic.display_window = self._ndwidget.ref_ranges[0].range * 0.1
+                nd_graphic.display_window = self._ndwidget.ref_ranges[p_dim].range * 0.1
 
         if nd_graphic.display_window is not None:
             if isinstance(nd_graphic.display_window, (int, np.integer)):
@@ -143,7 +146,7 @@ class NDWidgetUI(EdgeWindow):
                 "display window",
                 v=nd_graphic.display_window,
                 v_min=type_(0),
-                v_max=type_(self._ndwidget.ref_ranges[0].stop * 0.25),
+                v_max=type_(self._ndwidget.ref_ranges[p_dim].stop * 0.25),
             )
 
             if changed:
