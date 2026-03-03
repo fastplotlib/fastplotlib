@@ -561,7 +561,7 @@ class LineStack(LineCollection):
         metadata: Any = None,
         metadatas: Sequence[Any] | np.ndarray = None,
         isolated_buffer: bool = True,
-        separation: float = 10.0,
+        separation: float = 0.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
         **kwargs,
@@ -610,7 +610,7 @@ class LineStack(LineCollection):
             metadata for each individual line associated with this collection, this is for the user to manage.
             ``len(metadata)`` must be same as ``len(data)``
 
-        separation: float, default 10
+        separation: float, default 0.0
             space in between each line graphic in the stack
 
         separation_axis: str, default "y"
@@ -639,16 +639,30 @@ class LineStack(LineCollection):
             **kwargs,
         )
 
+        self._sepration_axis = separation_axis
+        self._separation = separation
+
+        self.separation = separation
+
+    @property
+    def separation(self) -> float:
+        """distance between each line in the stack, in world space"""
+        return self._separation
+
+    @separation.setter
+    def separation(self, value: float):
+        separation = float(value)
+
         axis_zero = 0
         for i, line in enumerate(self.graphics):
-            if separation_axis == "x":
+            if self._sepration_axis == "x":
                 line.offset = (axis_zero, *line.offset[1:])
 
-            elif separation_axis == "y":
+            elif self._sepration_axis == "y":
                 line.offset = (line.offset[0], axis_zero, line.offset[2])
 
             axis_zero = (
-                axis_zero + line.data.value[:, axes[separation_axis]].max() + separation
+                    axis_zero + line.data.value[:, axes[self._sepration_axis]].max() + separation
             )
 
-        self.separation = separation
+        self._separation = value
