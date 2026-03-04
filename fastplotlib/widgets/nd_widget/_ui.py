@@ -1,5 +1,8 @@
+import os
+from time import perf_counter
+
 import numpy as np
-from imgui_bundle import imgui
+from imgui_bundle import imgui, icons_fontawesome_6 as fa
 
 from ...graphics import (
     ScatterCollection,
@@ -31,69 +34,137 @@ class NDWidgetUI(EdgeWindow):
         )
         self._ndwidget = ndwidget
 
-        # n_sliders = self._image_widget.n_sliders
-        #
-        # # whether or not a dimension is in play mode
-        # self._playing: list[bool] = [False] * n_sliders
-        #
-        # # approximate framerate for playing
-        # self._fps: list[int] = [20] * n_sliders
-        #
-        # # framerate converted to frame time
-        # self._frame_time: list[float] = [1 / 20] * n_sliders
-        #
-        # # last timepoint that a frame was displayed from a given dimension
-        # self._last_frame_time: list[float] = [perf_counter()] * n_sliders
-        #
-        # # loop playback
-        # self._loop = False
-        #
-        # # auto-plays the ImageWidget's left-most dimension in docs galleries
-        # if "DOCS_BUILD" in os.environ.keys():
-        #     if os.environ["DOCS_BUILD"] == "1":
-        #         self._playing[0] = True
-        #         self._loop = True
-        #
-        # self.pause = False
+        ref_ranges = self._ndwidget.ref_ranges
+
+        # whether or not a dimension is in play mode
+        self._playing = {dim: False for dim in ref_ranges.keys()}
+
+        # approximate framerate for playing
+        self._fps = {dim: 20 for dim in ref_ranges.keys()}
+
+        # framerate converted to frame time
+        self._frame_time = {dim: 1 / 20 for dim in ref_ranges.keys()}
+
+        # last timepoint that a frame was displayed from a given dimension
+        self._last_frame_time = {dim: perf_counter() for dim in ref_ranges.keys()}
+
+        # loop playback
+        self._loop ={dim: False for dim in ref_ranges.keys()}
+
+        # auto-plays the ImageWidget's left-most dimension in docs galleries
+        if "DOCS_BUILD" in os.environ.keys():
+            if os.environ["DOCS_BUILD"] == "1":
+                self._playing[0] = True
+                self._loop = True
 
         self._max_display_windows: dict[NDGraphic, float | int] = dict()
 
+    def _set_index(self, dim, index):
+        if index >= self._ndwidget.ref_ranges[dim].stop:
+            if self._loop[dim]:
+                index = self._ndwidget.ref_ranges[dim].start
+            else:
+                index = self._ndwidget.ref_ranges[dim].stop
+                self._playing[dim] = False
+
+        self._ndwidget.indices[dim] = index
+
     def update(self):
-        if imgui.begin_tab_bar("NDWidget Controls"):
+        now = perf_counter()
 
-            if imgui.begin_tab_item("Indices")[0]:
-                for dim, current_index in self._ndwidget.indices:
-                    refr = self._ndwidget.ref_ranges[dim]
+        for dim, current_index in self._ndwidget.indices:
+            # push id since we have the same buttons for each dim
+            imgui.push_id(f"{self._id_counter}_{dim}")
 
-                    if isinstance(refr, RangeContinuous):
-                        changed, new_index = imgui.slider_float(
-                            v=current_index,
-                            v_min=refr.start,
-                            v_max=refr.stop,
-                            label=dim,
-                        )
+            rr = self._ndwidget.ref_ranges[dim]
 
-                        # TODO: refactor all this stuff, make fully fledged UI
-                        if changed:
-                            self._ndwidget.indices[dim] = new_index
+            if self._playing[dim]:
+                # show pause button if playing
+                if imgui.button(label=fa.ICON_FA_PAUSE):
+                    # if pause button clicked, then set playing to false
+                    self._playing[dim] = False
 
-                        elif imgui.is_item_hovered():
-                            if imgui.is_key_pressed(imgui.Key.right_arrow):
-                                self._ndwidget.indices[dim] = current_index + refr.step
+                # if in play mode and enough time has elapsed w.r.t. the desired framerate, increment the index
+                if now - self._last_frame_time[dim] >= self._frame_time[dim]:
+                    self._set_index(dim, current_index + rr.step)
+                    self._last_frame_time[dim] = now
 
-                            elif imgui.is_key_pressed(imgui.Key.left_arrow):
-                                self._ndwidget.indices[dim] = current_index - refr.step
+            else:
+                # we are not playing, so display play button
+                if imgui.button(label=fa.ICON_FA_PLAY):
+                    # if play button is clicked, set last frame time to 0 so that index increments on next render
+                    self._last_frame_time[dim] = 0
+                    # set playing to True since play button was clicked
+                    self._playing[dim] = True
 
-                imgui.end_tab_item()
+            imgui.same_line()
+            # step back one frame button
+            if imgui.button(label=fa.ICON_FA_BACKWARD_STEP) and not self._playing[dim]:
+                self._set_index(dim, current_index - rr.step)
 
-            if imgui.begin_tab_item("NDGraphic properties")[0]:
-                imgui.text("Subplots:")
+            imgui.same_line()
+            # step forward one frame button
+            if imgui.button(label=fa.ICON_FA_FORWARD_STEP) and not self._playing[dim]:
+                self._set_index(dim, current_index + rr.step)
 
-                self._draw_nd_graphics_props_tab()
+            imgui.same_line()
+            # stop button
+            if imgui.button(label=fa.ICON_FA_STOP):
+                self._playing[dim] = False
+                self._last_frame_time[dim] = 0
+                self._ndwidget.indices[dim] = rr.start
 
-                imgui.end_tab_item()
+            imgui.same_line()
+            # loop checkbox
+            _, self._loop[dim] = imgui.checkbox(label=fa.ICON_FA_ROTATE, v=self._loop[dim])
+            if imgui.is_item_hovered(0):
+                imgui.set_tooltip("loop playback")
 
-            imgui.end_tab_bar()
+            imgui.same_line()
+            imgui.text("framerate :")
+            imgui.same_line()
+            imgui.set_next_item_width(100)
+            # framerate int entry
+            fps_changed, value = imgui.input_int(
+                label="fps", v=self._fps[dim], step_fast=5
+            )
+            if imgui.is_item_hovered(0):
+                imgui.set_tooltip(
+                    "framerate is approximate and less reliable as it approaches your monitor refresh rate"
+                )
+            if fps_changed:
+                if value < 1:
+                    value = 1
+                if value > 50:
+                    value = 50
+                self._fps[dim] = value
+                self._frame_time[dim] = 1 / value
+
+            imgui.text(str(dim))
+            imgui.same_line()
+            # so that slider occupies full width
+            imgui.set_next_item_width(self.width * 0.85)
+
+            if isinstance(rr, RangeContinuous):
+                changed, new_index = imgui.slider_float(
+                    v=current_index,
+                    v_min=rr.start,
+                    v_max=rr.stop - rr.step,
+                    label=f"##{dim}",
+                )
+
+                # TODO: refactor all this stuff, make fully fledged UI
+                if changed:
+                    self._ndwidget.indices[dim] = new_index
+
+                elif imgui.is_item_hovered():
+                    if imgui.is_key_pressed(imgui.Key.right_arrow):
+                        self._set_index(dim, current_index + rr.step)
+
+                    elif imgui.is_key_pressed(imgui.Key.left_arrow):
+                        self._set_index(dim, current_index - rr.step)
+
+            imgui.pop_id()
 
     def _draw_nd_graphics_props_tab(self):
         for subplot in self._ndwidget.figure:
