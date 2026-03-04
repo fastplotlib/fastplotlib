@@ -290,7 +290,7 @@ class NDImage(NDGraphic):
             plot_area.add_graphic(new_graphic)
 
             # set cmap and interpolation
-            for attr, val in attrs.keys():
+            for attr, val in attrs.items():
                 setattr(new_graphic, attr, val)
 
         self._graphic = new_graphic
