@@ -58,7 +58,8 @@ tests = [
     "ome-zarr",
 ]
 imgui = ["wgpu[imgui]"]
-dev = ["fastplotlib[docs,notebook,tests,imgui]"]
+ndwidget = ["wgpu[imgui]", "xarray"]
+dev = ["fastplotlib[docs,notebook,tests,imgui,ndwidget]"]
 
 [project.urls]
 Homepage = "https://www.fastplotlib.org/"
