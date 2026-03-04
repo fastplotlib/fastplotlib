@@ -3,7 +3,7 @@ import numpy as np
 from ... import ScatterCollection, LineCollection, LineStack, ImageGraphic
 from ...layouts import Subplot
 from . import NDImage, NDPositions
-from .base import NDGraphic
+from ._base import NDGraphic
 
 
 class NDWSubplot:

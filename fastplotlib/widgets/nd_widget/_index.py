@@ -1,16 +1,20 @@
 from dataclasses import dataclass
 from typing import Sequence, Any, Callable
 
-from .base import NDGraphic
+from ._base import NDGraphic
 
 
 @dataclass
-class ReferenceRangeContinuous:
-    name: str
-    unit: str
+class RangeContinuous:
     start: int | float
     stop: int | float
     step: int | float
+
+    def __post_init__(self):
+        if self.start >= self.stop:
+            raise IndexError(
+                f"start must be less than stop, {self.start} !< {self.stop}"
+            )
 
     def __getitem__(self, index: int):
         """return the value at the index w.r.t. the step size"""
@@ -32,9 +36,7 @@ class ReferenceRangeContinuous:
 
 
 @dataclass
-class ReferenceRangeDiscrete:
-    name: str
-    unit: str
+class RangeDiscrete:
     options: Sequence[Any]
 
     def __getitem__(self, index: int):
@@ -48,30 +50,46 @@ class ReferenceRangeDiscrete:
 
 
 class GlobalIndex:
-    def __init__(self, ref_ranges: dict[str, tuple], get_ndgraphics: Callable[[], tuple[NDGraphic]]):
+    def __init__(
+        self,
+        ref_ranges: dict[str, tuple],
+        get_ndgraphics: Callable[[], tuple[NDGraphic]],
+    ):
         self._ref_ranges = dict()
 
-        for r in ref_ranges.values():
-            if len(r) == 5:
-                # assume name, unit, start, stop, step
-                rr = ReferenceRangeContinuous(*r)
-            elif len(r) == 3:
-                rr = ReferenceRangeDiscrete(*r)
+        for name, r in ref_ranges.items():
+            if len(r) == 3:
+                # assume start, stop, step
+                self._ref_ranges[name] = RangeContinuous(*r)
+
+            elif len(r) == 1:
+                # assume just options
+                self._ref_ranges[name] = RangeDiscrete(*r)
+
             else:
                 raise ValueError
-
-            self._ref_ranges[rr.name] = rr
 
         self._get_ndgraphics = get_ndgraphics
 
         # starting index for all dims
-        self._indices: dict[str, int | float | Any] = {rr.name: rr.start for rr in self._ref_ranges.values()}
+        self._indices: dict[str, int | float | Any] = {
+            name: rr.start for name, rr in self._ref_ranges.items()
+        }
 
     def set(self, indices: dict[str, Any]):
-        for k in self._indices:
-            self._indices[k] = indices[k]
+        for dim, value in indices.items():
+            self._indices[dim] = self._clamp(value)
 
         self._render_indices()
+
+    def _clamp(self, dim, value):
+        if isinstance(self.ref_ranges[dim], RangeContinuous):
+            return max(
+                min(value, self.ref_ranges[dim].stop - self.ref_ranges[dim].step),
+                self.ref_ranges[dim].start,
+            )
+
+        return value
 
     def _render_indices(self):
         for g in self._get_ndgraphics():
@@ -79,7 +97,7 @@ class GlobalIndex:
             g.indices = {d: self._indices[d] for d in g.processor.slider_dims}
 
     @property
-    def ref_ranges(self) -> dict[str, ReferenceRangeContinuous | ReferenceRangeDiscrete]:
+    def ref_ranges(self) -> dict[str, RangeContinuous | RangeDiscrete]:
         return self._ref_ranges
 
     def __getitem__(self, dim):
@@ -87,18 +105,13 @@ class GlobalIndex:
 
     def __setitem__(self, dim, value):
         # set index for given dim and render
-
-        # clamp within reference range
-        if isinstance(self.ref_ranges[dim], ReferenceRangeContinuous):
-            value = max(min(value, self.ref_ranges[dim].stop - self.ref_ranges[dim].step), self.ref_ranges[dim].start)
-
-        self._indices[dim] = value
+        self._indices[dim] = self._clamp(dim, value)
         self._render_indices()
 
     def pop_dim(self):
         pass
 
-    def push_dim(self, ref_range: ReferenceRangeContinuous):
+    def push_dim(self, ref_range: RangeContinuous):
         # TODO: implement pushing and popping dims
         pass
 

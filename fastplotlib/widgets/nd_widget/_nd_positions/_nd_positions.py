@@ -1,14 +1,11 @@
-from collections.abc import Callable, Hashable, Sequence, Iterable
+from collections.abc import Callable, Hashable, Sequence
 from functools import partial
 from typing import Literal, Any, Type
-from warnings import warn
 
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import ArrayLike
 import xarray as xr
-
-from ....utils import subsample_array, ArrayProtocol
 
 from ....graphics import (
     Graphic,
@@ -21,7 +18,7 @@ from ....graphics import (
 )
 from ....graphics.utils import pause_events
 from ....graphics.selectors import LinearSelector
-from ..base import (
+from .._base import (
     NDProcessor,
     NDGraphic,
     WindowFuncCallable,
@@ -38,10 +35,10 @@ class NDPositionsProcessor(NDProcessor):
     def __init__(
         self,
         data: Any,
-        dims: Sequence[str],
+        dims: Sequence[Hashable],
         # TODO: allow stack_dim to be None and auto-add new dim of size 1 in get logic
         spatial_dims: tuple[
-            str | None, str, str
+            Hashable | None, Hashable, Hashable
         ],  # [stack_dim, n_datapoints, spatial_dim], IN ORDER!!
         index_mappings: dict[str, Callable[[Any], int] | ArrayLike] = None,
         display_window: int | float | None = 100,  # window for n_datapoints dim only
@@ -192,63 +189,64 @@ class NDPositionsProcessor(NDProcessor):
         p_dim = self.spatial_dims[1]
 
         # display window in array index space
-        dw = self.index_mappings[p_dim](self.display_window)
+        if self.display_window is not None:
+            dw = self.index_mappings[p_dim](self.display_window)
 
-        # step size based on max number of datapoints to render
-        step = max(1, dw // self.max_display_datapoints)
+            # step size based on max number of datapoints to render
+            step = max(1, dw // self.max_display_datapoints)
 
-        # apply window function on the `p` n_datapoints dim
-        if (
-            self.datapoints_window_func is not None
-            # if there are too many points to efficiently compute the window func, skip
-            # applying a window func also requires making a copy so that's a further performance hit
-            and (dw < self.max_display_datapoints * 2)
-        ):
-            # get windows
+            # apply window function on the `p` n_datapoints dim
+            if (
+                self.datapoints_window_func is not None
+                # if there are too many points to efficiently compute the window func, skip
+                # applying a window func also requires making a copy so that's a further performance hit
+                and (dw < self.max_display_datapoints * 2)
+            ):
+                # get windows
 
-            # graphic_data will be of shape: [n, p, 2 | 3]
-            # where:
-            #   n - number of lines, scatters, heatmap rows
-            #   p - number of datapoints/samples
+                # graphic_data will be of shape: [n, p, 2 | 3]
+                # where:
+                #   n - number of lines, scatters, heatmap rows
+                #   p - number of datapoints/samples
 
-            # ws is in ref units
-            wf, apply_dims, ws = self.datapoints_window_func
+                # ws is in ref units
+                wf, apply_dims, ws = self.datapoints_window_func
 
-            # map ws in ref units to array index
-            # min window size is 3
-            ws = max(self._ref_index_to_array_index(p_dim, ws), 3)
+                # map ws in ref units to array index
+                # min window size is 3
+                ws = max(self._ref_index_to_array_index(p_dim, ws), 3)
 
-            if ws % 2 == 0:
-                # odd size windows are easier to handle
-                ws += 1
+                if ws % 2 == 0:
+                    # odd size windows are easier to handle
+                    ws += 1
 
-            hw = ws // 2
-            start, stop = hw, array.shape[1] - hw
+                hw = ws // 2
+                start, stop = hw, array.shape[1] - hw
 
-            # apply user's window func
-            # result will be of shape [n, p, 2 | 3]
-            if apply_dims == "all":
-                # windows will be of shape [n, p, 1 | 2 | 3, ws]
-                windows = sliding_window_view(array, ws, axis=-2)
-                return wf(windows, axis=-1)[:, ::step]
+                # apply user's window func
+                # result will be of shape [n, p, 2 | 3]
+                if apply_dims == "all":
+                    # windows will be of shape [n, p, 1 | 2 | 3, ws]
+                    windows = sliding_window_view(array, ws, axis=-2)
+                    return wf(windows, axis=-1)[:, ::step]
 
-            # map user dims str to tuple of numerical dims
-            dims = tuple(map({"x": 0, "y": 1, "z": 2}.get, apply_dims))
+                # map user dims str to tuple of numerical dims
+                dims = tuple(map({"x": 0, "y": 1, "z": 2}.get, apply_dims))
 
-            # windows will be of shape [n, (p - ws + 1), 1 | 2 | 3, ws]
-            windows = sliding_window_view(
-                array[..., dims], ws, axis=-2
-            ).squeeze()
+                # windows will be of shape [n, (p - ws + 1), 1 | 2 | 3, ws]
+                windows = sliding_window_view(array[..., dims], ws, axis=-2).squeeze()
 
-            # make a copy because we need to modify it
-            array = array[:, start:stop].copy()
+                # make a copy because we need to modify it
+                array = array[:, start:stop].copy()
 
-            # this reshape is required to reshape wf outputs of shape [n, p] -> [n, p, 1] only when necessary
-            array[..., dims] = wf(windows, axis=-1).reshape(
-                *array.shape[:-1], len(dims)
-            )
+                # this reshape is required to reshape wf outputs of shape [n, p] -> [n, p, 1] only when necessary
+                array[..., dims] = wf(windows, axis=-1).reshape(
+                    *array.shape[:-1], len(dims)
+                )
 
-            return array[:, ::step]
+                return array[:, ::step]
+
+        step = max(1, array.shape[1] // self.max_display_datapoints)
 
         return array[:, ::step]
 
@@ -289,8 +287,8 @@ class NDPositionsProcessor(NDProcessor):
 
         # slice the datapoints to be displayed in the graphic using the display window slice
         # transpose to match spatial dims order, get numpy array, this is a view
-        graphic_data = (
-            window_output.isel({p_dim: dw_slice}).transpose(*self.spatial_dims)
+        graphic_data = window_output.isel({p_dim: dw_slice}).transpose(
+            *self.spatial_dims
         )
 
         return self._finalize_(graphic_data).values
@@ -431,7 +429,9 @@ class NDPositions(NDGraphic):
             with pause_events(self._linear_selector):
                 self._linear_selector.limits = xr
                 # linear selector acts on `p` dim
-                self._linear_selector.selection = indices[self.processor.spatial_dims[1]]
+                self._linear_selector.selection = indices[
+                    self.processor.spatial_dims[1]
+                ]
 
     def _linear_selector_handler(self, ev):
         with block_indices(self):
@@ -554,7 +554,9 @@ class NDPositions(NDGraphic):
         new_width = abs(xr[1] - xr[0])
         new_index = (xr[0] + xr[1]) / 2
 
-        if (new_index == self._global_index[self.processor.spatial_dims[1]]) and (last_width == new_width):
+        if (new_index == self._global_index[self.processor.spatial_dims[1]]) and (
+            last_width == new_width
+        ):
             return
 
         self.processor.display_window = new_width

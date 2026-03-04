@@ -1,6 +1,6 @@
 from typing import Any
 
-from ._index import ReferenceRangeContinuous, ReferenceRangeDiscrete, GlobalIndex
+from ._index import RangeContinuous, RangeDiscrete, GlobalIndex
 from ._ndw_subplot import NDWSubplot
 from ._ui import NDWidgetUI
 from ...layouts import ImguiFigure, Subplot
@@ -34,7 +34,7 @@ class NDWidget:
         self._indices.set(new_indices)
 
     @property
-    def ref_ranges(self) -> dict[str, ReferenceRangeContinuous | ReferenceRangeDiscrete]:
+    def ref_ranges(self) -> dict[str, RangeContinuous | RangeDiscrete]:
         return self._indices.ref_ranges
 
     def __getitem__(self, key: str | tuple[int, int] | Subplot):

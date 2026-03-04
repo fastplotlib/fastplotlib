@@ -1,6 +1,6 @@
 import importlib
 
-from .core import NDPositions, NDPositionsProcessor
+from ._nd_positions import NDPositions, NDPositionsProcessor
 
 class Extras:
     pass

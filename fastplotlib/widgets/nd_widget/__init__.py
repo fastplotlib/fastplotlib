@@ -1,10 +1,10 @@
 from ...layouts import IMGUI
 
 if IMGUI:
-    from .base import NDProcessor
+    from ._base import NDProcessor
     from ._nd_positions import NDPositions, NDPositionsProcessor, ndp_extras
     from ._nd_image import NDImageProcessor, NDImage
-    from .ndwidget import NDWidget
+    from ._ndwidget import NDWidget
 else:
     class NDWidget:
         def __init__(self, *args, **kwargs):

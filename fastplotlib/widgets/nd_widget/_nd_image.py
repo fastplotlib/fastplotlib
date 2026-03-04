@@ -1,7 +1,6 @@
 from collections.abc import Hashable, Sequence
 import inspect
-from typing import Literal, Callable, Type, Any
-from warnings import warn
+from typing import Callable, Any
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -9,7 +8,7 @@ import xarray as xr
 
 from ...utils import subsample_array, ArrayProtocol, ARRAY_LIKE_ATTRS
 from ...graphics import ImageGraphic, ImageVolumeGraphic
-from .base import NDProcessor, NDGraphic, WindowFuncCallable
+from ._base import NDProcessor, NDGraphic, WindowFuncCallable
 
 
 class NDImageProcessor(NDProcessor):

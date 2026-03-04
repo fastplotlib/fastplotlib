@@ -11,8 +11,8 @@ from ...graphics import (
 from ...layouts import Subplot
 from ...ui import EdgeWindow
 from . import NDPositions
-from ._index import ReferenceRangeContinuous
-from .base import NDGraphic
+from ._index import RangeContinuous
+from ._base import NDGraphic
 
 position_graphics = [ScatterCollection, LineCollection, LineStack, ImageGraphic]
 image_graphics = [ImageGraphic, ImageVolumeGraphic]
@@ -56,9 +56,6 @@ class NDWidgetUI(EdgeWindow):
         #
         # self.pause = False
 
-        self._selected_subplot = self._ndwidget.figure[0, 0].name
-        self._selected_nd_graphic = 0
-
         self._max_display_windows: dict[NDGraphic, float | int] = dict()
 
     def update(self):
@@ -68,7 +65,7 @@ class NDWidgetUI(EdgeWindow):
                 for dim, current_index in self._ndwidget.indices:
                     refr = self._ndwidget.ref_ranges[dim]
 
-                    if isinstance(refr, ReferenceRangeContinuous):
+                    if isinstance(refr, RangeContinuous):
                         changed, new_index = imgui.slider_float(
                             v=current_index,
                             v_min=refr.start,

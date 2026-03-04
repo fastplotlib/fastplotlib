@@ -3,7 +3,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from .core import NDPositionsProcessor
+from ._nd_positions import NDPositionsProcessor
 
 
 class NDPP_Pandas(NDPositionsProcessor):

@@ -20,46 +20,6 @@ def identity(index: int) -> int:
     return round(index)
 
 
-class BaseNDProcessor:
-    @property
-    def data(self) -> Any:
-        pass
-
-    @property
-    def shape(self) -> dict[Hashable, int]:
-        pass
-
-    @property
-    def ndim(self):
-        pass
-
-    @property
-    def spatial_dims(self) -> tuple[Hashable, ...]:
-        pass
-
-    @property
-    def slider_dims(self):
-        pass
-
-    @property
-    def window_funcs(
-        self,
-    ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]]:
-        # {dim: (func, size)}
-        pass
-
-    @property
-    def window_funcs_order(self) -> tuple[Hashable]:
-        pass
-
-    @property
-    def index_mappings(self) -> dict[Hashable, Callable[[Any], int] | ArrayLike]:
-        pass
-
-    def get(self, **indices):
-        raise NotImplementedError
-
-
 class NDProcessor:
     def __init__(
         self,
