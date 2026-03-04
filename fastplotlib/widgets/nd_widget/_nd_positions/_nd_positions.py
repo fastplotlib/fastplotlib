@@ -124,10 +124,17 @@ class NDPositionsProcessor(NDProcessor):
     @property
     def datapoints_window_func(self) -> tuple[Callable, str, int | float] | None:
         """
-        Callable and str indicating which dims to apply window function along:
+        Callable, str indicating which dims to apply window function along, window_size in reference space:
             'all', 'x', 'y', 'z', 'xyz', 'xy', 'xz', 'yz'
         '"""
         return self._datapoints_window_func
+
+    @datapoints_window_func.setter
+    def datapoints_window_func(self, funcs: tuple[Callable, str, int | float]):
+        if len(funcs) != 3:
+            raise TypeError
+
+        self._datapoints_window_func = tuple(funcs)
 
     def _get_dw_slice(self, indices: dict[str, Any]) -> slice:
         # given indices, return slice required to obtain display window
@@ -168,7 +175,7 @@ class NDPositionsProcessor(NDProcessor):
 
         return slice(start, stop)
 
-    def _apply_dw_window_func(self, array: np.ndarray) -> np.ndarray:
+    def _apply_dw_window_func(self, array: xr.DataArray) -> xr.DataArray:
         """
         Takes array where display window has already been applied and applies window functions on the `p` dim.
 
@@ -256,7 +263,7 @@ class NDPositionsProcessor(NDProcessor):
 
         return array
 
-    def _finalize_(self, array):
+    def _finalize_(self, array: xr.DataArray) -> xr.DataArray:
         return self._apply_spatial_func(self._apply_dw_window_func(array))
 
     def get(self, indices: dict[str, Any]):
@@ -534,6 +541,18 @@ class NDPositions(NDGraphic):
 
         # force re-render
         self.indices = self.indices
+
+    @property
+    def datapoints_window_func(self) -> tuple[Callable, str, int | float] | None:
+        """
+        Callable, str indicating which dims to apply window function along, window_size in reference space:
+            'all', 'x', 'y', 'z', 'xyz', 'xy', 'xz', 'yz'
+        '"""
+        return self.processor.datapoints_window_func
+
+    @datapoints_window_func.setter
+    def datapoints_window_func(self, funcs: tuple[Callable, str, int | float]):
+        self.processor.datapoints_window_func = funcs
 
     @property
     def x_range_mode(self) -> Literal[None, "fixed-window", "view-range"]:

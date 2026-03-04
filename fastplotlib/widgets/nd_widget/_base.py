@@ -391,6 +391,16 @@ class NDGraphic:
         return self.processor.dims
 
     @property
+    def spatial_dims(self) -> tuple[str, ...]:
+        # number of spatial dims for positional data is always 3
+        # for image is 2 or 3, so it must be implemented in subclass
+        raise NotImplementedError
+
+    @property
+    def slider_dims(self) -> set[Hashable]:
+        return self.processor.slider_dims
+
+    @property
     def index_mappings(self) -> dict[Hashable, Callable[[Any], int]]:
         return self.processor.index_mappings
 

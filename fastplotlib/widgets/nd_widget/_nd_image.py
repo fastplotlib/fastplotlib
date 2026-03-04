@@ -265,7 +265,7 @@ class NDImage(NDGraphic):
     @graphic.setter
     def graphic(self, graphic_type):
         # TODO implement if graphic type changes to custom user subclass
-        pass
+        raise NotImplementedError
 
     def _create_graphic(self):
         match len(self.processor.spatial_dims) - int(bool(self.processor.rgb_dim)):
