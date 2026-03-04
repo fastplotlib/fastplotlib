@@ -23,22 +23,18 @@ data = np.zeros(shape=(n_freqs, n_ampls, n_lines, n_datapoints, 2), dtype=np.flo
 
 for freq in range(data.shape[0]):
     for ampl in range(data.shape[1]):
-        ys = np.sin(xs * (freq + 1)) * (ampl + 1) + np.random.normal(0, 0.1, size=n_datapoints)
+        ys = np.sin(xs * (freq + 1)) * (ampl + 1) + np.random.normal(
+            0, 0.1, size=n_datapoints
+        )
         line = np.column_stack([xs, ys])
         data[freq, ampl] = np.stack([line] * n_lines)
 
 
 # must define a reference range, this would often be your time dimension and corresponds to your x-dimension
 ref = {
-    "freq": ("freq", "Hz", 1, n_freqs + 1, 1),
-    "ampl": ("ampl", "arbitrary", 1, n_ampls + 1, 1),
-    "angle": (
-        "angle",
-        "rad",
-        0,
-        xs[-1],
-        0.1,
-    ),
+    "freq": (1, n_freqs + 1, 1),
+    "ampl": (1, n_ampls + 1, 1),
+    "angle": (0, xs[-1], 0.1),
 }
 
 ndw = fpl.NDWidget(ref_ranges=ref, size=(700, 560))
