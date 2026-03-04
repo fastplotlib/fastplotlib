@@ -76,7 +76,7 @@ class GlobalIndex:
             name: rr.start for name, rr in self._ref_ranges.items()
         }
 
-        self._indices_changed_handlers
+        self._indices_changed_handlers = set()
 
     def set(self, indices: dict[str, Any]):
         for dim, value in indices.items():
