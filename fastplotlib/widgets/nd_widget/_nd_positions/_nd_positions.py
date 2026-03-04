@@ -388,6 +388,16 @@ class NDPositions(NDGraphic):
         plot_area.add_graphic(self._graphic)
 
     @property
+    def spatial_dims(self) -> tuple[str, str, str]:
+        return self.processor.spatial_dims
+
+    @spatial_dims.setter
+    def spatial_dims(self, dims: tuple[str, str, str]):
+        self.processor.spatial_dims = dims
+        # force re-render
+        self.indices = self.indices
+
+    @property
     def indices(self) -> dict[Hashable, Any]:
         return {d: self._global_index[d] for d in self.processor.slider_dims}
 

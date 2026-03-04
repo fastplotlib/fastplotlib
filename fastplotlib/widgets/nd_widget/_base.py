@@ -366,6 +366,43 @@ class NDGraphic:
 
     # aliases for easier access to processor properties
     @property
+    def data(self) -> Any:
+        return self.processor.data
+
+    @data.setter
+    def data(self, data: Any):
+        self.processor.data = data
+        # force a re-render
+        self.indices = self.indices
+
+    @property
+    def shape(self) -> dict[Hashable, int]:
+        """interpreted shape of the data"""
+        self.processor.shape
+
+    @property
+    def ndim(self) -> int:
+        """number of dims"""
+        return self.processor.ndim
+
+    @property
+    def dims(self) -> tuple[Hashable, ...]:
+        """dim names"""
+        return self.processor.dims
+
+    @property
+    def index_mappings(self) -> dict[Hashable, Callable[[Any], int]]:
+        return self.processor.index_mappings
+
+    @index_mappings.setter
+    def index_mappings(
+        self, maps: dict[Hashable, Callable[[Any], int] | ArrayLike | None] | None
+    ):
+        self.processor.index_mappings = maps
+        # force a re-render
+        self.indices = self.indices
+
+    @property
     def window_funcs(
         self,
     ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]]:
@@ -381,6 +418,8 @@ class NDGraphic:
         ),
     ):
         self.processor.window_funcs = window_funcs
+        # force a re-render
+        self.indices = self.indices
 
     @property
     def window_order(self) -> tuple[Hashable, ...]:
@@ -390,6 +429,8 @@ class NDGraphic:
     @window_order.setter
     def window_order(self, order: tuple[Hashable] | None):
         self.processor.window_order = order
+        # force a re-render
+        self.indices = self.indices
 
     @property
     def spatial_func(self) -> Callable[[xr.DataArray], xr.DataArray] | None:
@@ -400,6 +441,8 @@ class NDGraphic:
         self, func: Callable[[xr.DataArray], xr.DataArray]
     ) -> Callable | None:
         self.processor.spatial_func = func
+        # force a re-render
+        self.indices = self.indices
 
 
 @contextmanager

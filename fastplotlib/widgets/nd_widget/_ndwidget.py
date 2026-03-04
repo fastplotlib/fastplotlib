@@ -51,3 +51,6 @@ class NDWidget:
 
     def show(self, **kwargs):
         return self.figure.show(**kwargs)
+
+    def close(self):
+        self.figure.close()

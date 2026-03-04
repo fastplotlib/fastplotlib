@@ -76,6 +76,8 @@ class GlobalIndex:
             name: rr.start for name, rr in self._ref_ranges.items()
         }
 
+        self._indices_changed_handlers
+
     def set(self, indices: dict[str, Any]):
         for dim, value in indices.items():
             self._indices[dim] = self._clamp(value)
@@ -114,6 +116,50 @@ class GlobalIndex:
     def push_dim(self, ref_range: RangeContinuous):
         # TODO: implement pushing and popping dims
         pass
+
+    def add_event_handler(self, handler: callable, event: str = "indices"):
+        """
+        Register an event handler.
+
+        Currently the only event that ImageWidget supports is "indices". This event is
+        emitted whenever the indices of the ImageWidget changes.
+
+        Parameters
+        ----------
+        handler: callable
+            callback function, must take a tuple of int as the only argument. This tuple will be the `indices`
+
+        event: str, "indices"
+            the only supported event is "indices"
+
+        Example
+        -------
+
+        .. code-block:: py
+
+            def my_handler(indices):
+                print(indices)
+                # example prints: {"t": 100, "z": 15} if the index has 2 slider dimensions "t" and "z"
+
+            # create an NDWidget
+            ndw = NDWidget(...)
+
+            # add event handler
+            ndw.indices.add_event_handler(my_handler)
+
+        """
+        if event != "indices":
+            raise ValueError("`indices` is the only event supported by `GlobalIndex`")
+
+        self._indices_changed_handlers.add(handler)
+
+    def remove_event_handler(self, handler: callable):
+        """Remove a registered event handler"""
+        self._indices_changed_handlers.remove(handler)
+
+    def clear_event_handlers(self):
+        """Clear all registered event handlers"""
+        self._indices_changed_handlers.clear()
 
     def __iter__(self):
         for index in self._indices.items():
