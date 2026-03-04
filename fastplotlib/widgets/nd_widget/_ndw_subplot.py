@@ -33,6 +33,10 @@ class NDWSubplot:
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
         nd._reset_camera()
+
+        # graphic._plot_area must exist before this is called
+        nd._reset_histogram()
+
         return nd
 
     def add_nd_scatter(self, *args, **kwargs):
@@ -54,18 +58,18 @@ class NDWSubplot:
             self.ndw.indices,
             *args,
             graphic=graphic,
-            # x_range_mode=x_range_mode,
             linear_selector=True,
             **kwargs,
         )
         self._nd_graphics.append(nd)
         self._subplot.add_graphic(nd.graphic)
         self._subplot.add_graphic(nd._linear_selector)
-        # nd._linear_selector.add_event_handler(
-        #     partial(self._set_indices_from_selector, nd), "selection"
-        # )
 
+        # need plot_area to exist before these this can be called
         nd.x_range_mode = x_range_mode
+
+        # probably don't want to maintain aspect
+        self._subplot.camera.maintain_aspect = False
 
         return nd
 

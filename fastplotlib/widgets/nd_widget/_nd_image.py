@@ -8,6 +8,7 @@ import xarray as xr
 
 from ...utils import subsample_array, ArrayProtocol, ARRAY_LIKE_ATTRS
 from ...graphics import ImageGraphic, ImageVolumeGraphic
+from ...tools import HistogramLUTTool
 from ._base import NDProcessor, NDGraphic, WindowFuncCallable
 
 
@@ -204,7 +205,9 @@ class NDImageProcessor(NDProcessor):
         else:
             ignore_dims = None
 
-        sub = subsample_array(self.data.values, ignore_dims=ignore_dims)
+        # TODO: account for window funcs
+
+        sub = subsample_array(self.data, ignore_dims=ignore_dims)
         sub_real = sub[~(np.isnan(sub) | np.isinf(sub))]
 
         self._histogram = np.histogram(sub_real, bins=100)
@@ -242,7 +245,8 @@ class NDImage(NDGraphic):
             index_mappings=index_mappings,
         )
 
-        self._graphic = None
+        self._graphic: ImageGraphic | None = None
+        self._histogram_widget: HistogramLUTTool | None = None
 
         self._create_graphic()
         super().__init__(name)
@@ -276,14 +280,54 @@ class NDImage(NDGraphic):
         new_graphic = cls(data_slice)
 
         if old_graphic is not None:
+            # carry over some attributes from old graphic
+            attrs = dict.fromkeys(["cmap", "interpolation", "cmap_interpolation"])
+            for k in attrs:
+                attrs[k] = getattr(old_graphic, k)
+
             plot_area = old_graphic._plot_area
             plot_area.delete_graphic(old_graphic)
             plot_area.add_graphic(new_graphic)
+
+            # set cmap and interpolation
+            for attr, val in attrs.keys():
+                setattr(new_graphic, attr, val)
 
         self._graphic = new_graphic
 
         if self._graphic._plot_area is not None:
             self._reset_camera()
+
+        self._reset_histogram()
+
+    def _reset_histogram(self):
+        # reset histogram
+        if self._graphic._plot_area is None:
+            return
+
+        if not self.processor.compute_histogram:
+            # hide right dock if histogram not desired
+            self._graphic._plot_area.docks["right"].size = 0
+            return
+
+        if self.processor.histogram:
+            if self._histogram_widget:
+                # histogram widget exists, update it
+                self._histogram_widget.histogram = self.processor.histogram
+                self._histogram_widget.images = self.graphic
+                if self.graphic._plot_area.docks["right"].size < 1:
+                    self.graphic._plot_area.docks["right"].size = 80
+            else:
+                # make hist tool
+                self._histogram_widget = HistogramLUTTool(
+                    histogram=self.processor.histogram,
+                    images=self.graphic,
+                    name=f"hist-{hex(id(self.graphic))}",
+                )
+                self.graphic._plot_area.docks["right"].add_graphic(self._histogram_widget)
+                self.graphic._plot_area.docks["right"].size = 80
+
+            self.graphic.reset_vmin_vmax()
 
     def _reset_camera(self):
         plot_area = self._graphic._plot_area
@@ -338,6 +382,27 @@ class NDImage(NDGraphic):
         data_slice = self.processor.get(indices)
 
         self.graphic.data = data_slice
+
+    @property
+    def compute_histogram(self) -> bool:
+        return self.processor.compute_histogram
+
+    @compute_histogram.setter
+    def compute_histogram(self, v: bool):
+        self.processor.compute_histogram = v
+        self._reset_histogram()
+
+    @property
+    def spatial_func(self) -> Callable[[xr.DataArray], xr.DataArray] | None:
+        return self.processor.spatial_func
+
+    @spatial_func.setter
+    def spatial_func(
+        self, func: Callable[[xr.DataArray], xr.DataArray]
+    ) -> Callable | None:
+        self.processor.spatial_func = func
+        self.processor._recompute_histogram()
+        self._reset_histogram()
 
     def _tooltip_handler(self, graphic, pick_info):
         # get graphic within the collection

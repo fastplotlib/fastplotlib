@@ -191,7 +191,9 @@ class NDProcessor:
         return self._spatial_func
 
     @spatial_func.setter
-    def spatial_func(self, func: Callable[[xr.DataArray], xr.DataArray]) -> Callable | None:
+    def spatial_func(
+        self, func: Callable[[xr.DataArray], xr.DataArray]
+    ) -> Callable | None:
         if not callable(func) and func is not None:
             raise TypeError
 
@@ -202,7 +204,9 @@ class NDProcessor:
         return self._index_mappings
 
     @index_mappings.setter
-    def index_mappings(self, maps: dict[Hashable, Callable[[Any], int] | ArrayLike | None] | None):
+    def index_mappings(
+        self, maps: dict[Hashable, Callable[[Any], int] | ArrayLike | None] | None
+    ):
         if maps is None:
             self._index_mappings = {d: identity for d in self.dims}
             return
@@ -353,12 +357,49 @@ class NDGraphic:
         raise NotImplementedError
 
     @property
-    def indices(self) -> tuple[Any]:
+    def indices(self) -> dict[Hashable, Any]:
         raise NotImplementedError
 
     @indices.setter
-    def indices(self, new: tuple):
+    def indices(self, new: dict[Hashable, Any]):
         raise NotImplementedError
+
+    # aliases for easier access to processor properties
+    @property
+    def window_funcs(
+        self,
+    ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]]:
+        """get or set window functions, see docstring for details"""
+        return self.processor.window_funcs
+
+    @window_funcs.setter
+    def window_funcs(
+        self,
+        window_funcs: (
+            dict[Hashable, tuple[WindowFuncCallable | None, int | float | None] | None]
+            | None
+        ),
+    ):
+        self.processor.window_funcs = window_funcs
+
+    @property
+    def window_order(self) -> tuple[Hashable, ...]:
+        """get or set dimension order in which window functions are applied"""
+        return self.processor.window_order
+
+    @window_order.setter
+    def window_order(self, order: tuple[Hashable] | None):
+        self.processor.window_order = order
+
+    @property
+    def spatial_func(self) -> Callable[[xr.DataArray], xr.DataArray] | None:
+        return self.processor.spatial_func
+
+    @spatial_func.setter
+    def spatial_func(
+        self, func: Callable[[xr.DataArray], xr.DataArray]
+    ) -> Callable | None:
+        self.processor.spatial_func = func
 
 
 @contextmanager
