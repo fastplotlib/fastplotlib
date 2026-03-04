@@ -16,8 +16,8 @@ data = np.random.rand(1000, 30, 64, 64)
 
 # must define a reference range for each dim
 ref = {
-    "time": ("time", "s", 0, 1000, 1),
-    "depth": ("depth", "um", 0, 30, 1),
+    "time": (0, 1000, 1),
+    "depth": (0, 30, 1),
 }
 
 
