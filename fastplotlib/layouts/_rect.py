@@ -27,7 +27,6 @@ class RectManager:
                 raise ValueError(
                     f"Invalid rect value < 0: {rect}\n All values must be non-negative."
                 )
-
         if (rect[2:] <= 1).all():  # fractional bbox
             self._set_from_fract(rect)
 
@@ -39,8 +38,8 @@ class RectManager:
 
     def _set_from_fract(self, rect):
         """set rect from fractional representation"""
-        _, _, cw, ch = self._canvas_rect
-        mult = np.array([cw, ch, cw, ch])
+        rect = np.asarray(rect, dtype=float).copy()
+        x_offset, y_offset, cw, ch = self._canvas_rect
 
         # check that widths, heights are valid:
         if rect[0] + rect[2] > 1:
@@ -54,24 +53,33 @@ class RectManager:
 
         # assign values to the arrays, don't just change the reference
         self._rect_frac[:] = rect
-        self._rect_screen_space[:] = self._rect_frac * mult
+        x_px = x_offset + rect[0] * cw
+        y_px = y_offset + rect[1] * ch
+        w_px = rect[2] * cw
+        h_px = rect[3] * ch
+        self._rect_screen_space[:] = np.array([x_px, y_px, w_px, h_px])
 
     def _set_from_screen_space(self, rect):
         """set rect from screen space representation"""
-        _, _, cw, ch = self._canvas_rect
+        x_offset, y_offset, cw, ch = self._canvas_rect
         mult = np.array([cw, ch, cw, ch])
         # for screen coords allow (x, y) = 1 or 0, but w, h must be > 1
         # check that widths, heights are valid
-        if rect[0] + rect[2] > cw:
+        # account for potential x and y offset
+        rect_offset = rect.copy()
+        rect_offset[0] -= x_offset
+        rect_offset[1] -= y_offset
+
+        if rect_offset[0] + rect_offset[2] > cw:
             raise ValueError(
-                f"invalid rect: {rect}\n x + width > canvas width: {rect[0]} + {rect[2]} > {cw}"
+                f"invalid rect: {rect}\n x + width > canvas width: {rect_offset[0]} + {rect_offset[2]} > {cw}"
             )
-        if rect[1] + rect[3] > ch:
+        if rect_offset[1] + rect_offset[3] > ch:
             raise ValueError(
-                f"invalid rect: {rect}\n y + height > canvas height: {rect[1]} + {rect[3]} >{ch}"
+                f"invalid rect: {rect}\n y + height > canvas height: {rect_offset[1]} + {rect_offset[3]} >{ch}"
             )
 
-        self._rect_frac[:] = rect / mult
+        self._rect_frac[:] = rect_offset / mult
         self._rect_screen_space[:] = rect
 
     @property
