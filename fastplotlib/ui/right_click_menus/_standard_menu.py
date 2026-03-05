@@ -47,6 +47,10 @@ class StandardRightClickMenu(Popup):
         """called when the popup disappears"""
         self.is_open = False
 
+    def _extra_menu(self):
+        # extra menu items, optional, implement in subclass
+        pass
+
     def update(self):
         if imgui.is_mouse_down(1) and not self._mouse_down:
             # mouse button was pressed down, store this position
@@ -181,5 +185,7 @@ class StandardRightClickMenu(Popup):
                         self.get_subplot().controller = name
 
                 imgui.end_menu()
+
+            self._extra_menu()
 
             imgui.end_popup()

@@ -2,14 +2,15 @@ from typing import Any
 
 from ._index import RangeContinuous, RangeDiscrete, GlobalIndex
 from ._ndw_subplot import NDWSubplot
-from ._ui import NDWidgetUI
+from ._ui import NDWidgetUI, RightClickMenu
 from ...layouts import ImguiFigure, Subplot
 
 
 class NDWidget:
     def __init__(self, ref_ranges: dict[str, tuple], **kwargs):
         self._indices = GlobalIndex(ref_ranges, self._get_ndgraphics)
-        self._figure = ImguiFigure(**kwargs)
+        self._figure = ImguiFigure(std_right_click_menu=RightClickMenu, **kwargs)
+        self._figure.std_right_click_menu.set_nd_widget(self)
 
         self._subplots_nd: dict[Subplot, NDWSubplot] = dict()
         for subplot in self.figure:

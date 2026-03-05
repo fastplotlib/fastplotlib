@@ -11,14 +11,15 @@ from ...graphics import (
     ImageGraphic,
     ImageVolumeGraphic,
 )
+from ...utils import quick_min_max
 from ...layouts import Subplot
-from ...ui import EdgeWindow
-from . import NDPositions
+from ...ui import EdgeWindow, StandardRightClickMenu
 from ._index import RangeContinuous
 from ._base import NDGraphic
+from ._nd_positions import NDPositions
+from ._nd_image import NDImage
 
 position_graphics = [ScatterCollection, LineCollection, LineStack, ImageGraphic]
-image_graphics = [ImageGraphic, ImageVolumeGraphic]
 
 
 class NDWidgetUI(EdgeWindow):
@@ -49,7 +50,7 @@ class NDWidgetUI(EdgeWindow):
         self._last_frame_time = {dim: perf_counter() for dim in ref_ranges.keys()}
 
         # loop playback
-        self._loop ={dim: False for dim in ref_ranges.keys()}
+        self._loop = {dim: False for dim in ref_ranges.keys()}
 
         # auto-plays the ImageWidget's left-most dimension in docs galleries
         if "DOCS_BUILD" in os.environ.keys():
@@ -116,7 +117,9 @@ class NDWidgetUI(EdgeWindow):
 
             imgui.same_line()
             # loop checkbox
-            _, self._loop[dim] = imgui.checkbox(label=fa.ICON_FA_ROTATE, v=self._loop[dim])
+            _, self._loop[dim] = imgui.checkbox(
+                label=fa.ICON_FA_ROTATE, v=self._loop[dim]
+            )
             if imgui.is_item_hovered(0):
                 imgui.set_tooltip("loop playback")
 
@@ -166,26 +169,57 @@ class NDWidgetUI(EdgeWindow):
 
             imgui.pop_id()
 
-    def _draw_nd_graphics_props_tab(self):
-        for subplot in self._ndwidget.figure:
-            if imgui.tree_node(subplot.name):
-                self._draw_ndgraphics_node(subplot)
-                imgui.tree_pop()
 
-    def _draw_ndgraphics_node(self, subplot: Subplot):
-        for ng in self._ndwidget[subplot].nd_graphics:
-            if imgui.tree_node(str(ng)):
-                if isinstance(ng, NDPositions):
-                    self._draw_nd_pos_ui(subplot, ng)
-                imgui.tree_pop()
+class RightClickMenu(StandardRightClickMenu):
+    def __init__(self, figure):
+        self._ndwidget = None
+        super().__init__(figure=figure)
+
+    def set_nd_widget(self, ndw):
+        self._ndwidget = ndw
+
+    def _extra_menu(self):
+        if self._ndwidget is None:
+            return
+
+        if imgui.begin_menu("ND Graphics"):
+            subplot = self.get_subplot()
+            for ndg in self._ndwidget[subplot].nd_graphics:
+                if imgui.begin_menu(
+                    f"{ndg.name if ndg.name is not None else hex(id(ndg))}"
+                ):
+                    if isinstance(ndg, NDPositions):
+                        self._draw_nd_pos_ui(subplot, ndg)
+                    elif isinstance(ndg, NDImage):
+                        self._draw_nd_image_ui(subplot, ndg)
+                    imgui.end_menu()
+            imgui.end_menu()
+
+    def _draw_nd_image_ui(self, subplot, nd_image: NDImage):
+        _min, _max = quick_min_max(nd_image.graphic.data.value)
+        changed, vmin = imgui.slider_float(
+            "vmin", nd_image.graphic.vmin, v_min=_min, v_max=_max
+        )
+        if changed:
+            nd_image.graphic.vmin = vmin
+
+        changed, vmax = imgui.slider_float(
+            "vmax", nd_image.graphic.vmax, v_min=_min, v_max=_max
+        )
+        if changed:
+            nd_image.graphic.vmax = vmax
+
+        changed, new_gamma = imgui.slider_float(
+            "gamma", nd_image.graphic._material.gamma, 0.01, 5
+        )
+        if changed:
+            nd_image.graphic._material.gamma = new_gamma
 
     def _draw_nd_pos_ui(self, subplot: Subplot, nd_graphic: NDPositions):
         for i, cls in enumerate(position_graphics):
             if imgui.radio_button(cls.__name__, type(nd_graphic.graphic) is cls):
                 nd_graphic.graphic = cls
                 subplot.auto_scale()
-            if i < len(position_graphics) - 1:
-                imgui.same_line()
 
         changed, val = imgui.checkbox(
             "use display window", nd_graphic.display_window is not None
@@ -214,7 +248,7 @@ class NDWidgetUI(EdgeWindow):
                 "display window",
                 v=nd_graphic.display_window,
                 v_min=type_(0),
-                v_max=type_(self._ndwidget.ref_ranges[p_dim].stop * 0.25),
+                v_max=type_(self._ndwidget.ref_ranges[p_dim].stop * 0.1),
             )
 
             if changed:

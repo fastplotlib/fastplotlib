@@ -28,9 +28,10 @@ ndi = ndw[0, 0].add_nd_image(
     data,
     ("time", "depth", "m", "n"),  # specify all dim names
     ("m", "n"),  # specify spatial dims IN ORDER, rest are auto slider dims
+    name="4d-image",
 )
 
 # change spatial dims on the fly
-ndi.spatial_dims = ("depth", "m", "n")
+# ndi.spatial_dims = ("depth", "m", "n")
 
 fpl.loop.run()

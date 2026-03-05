@@ -49,6 +49,7 @@ nd_lines = ndw[0, 0].add_nd_timeseries(
         "freq": lambda x: int(x + 1),
     },
     x_range_mode="view-range",
+    name="nd-sine"
 )
 
 nd_lines.graphic.cmap = "tab10"
