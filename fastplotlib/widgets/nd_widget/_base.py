@@ -2,6 +2,8 @@ from collections.abc import Callable, Hashable, Sequence
 from contextlib import contextmanager
 import inspect
 from numbers import Real
+from pprint import pformat
+import textwrap
 from typing import Literal, Any
 from warnings import warn
 
@@ -311,6 +313,20 @@ class NDProcessor:
     def get(self, indices: dict[Hashable, Any]):
         raise NotImplementedError
 
+    def __repr__(self):
+        tab = "\t"
+        return (
+            f"{self.__class__.__name__}\n"
+            f"shape:\n\t{self.shape}\n"
+            f"dims:\n\t{self.dims}\n"
+            f"spatial_dims:\n\t{self.spatial_dims}\n"
+            f"slider_dims:\n\t{self.slider_dims}\n"
+            f"index_mappings:\n{textwrap.indent(pformat(self.index_mappings, width=120), prefix=tab)}\n"
+            f"window_funcs:\n{textwrap.indent(pformat(self.window_funcs, width=120), prefix=tab)}\n"
+            f"window_order:\n\t{self.window_order}\n"
+            f"spatial_func:\n\t{self.spatial_func}\n"
+        )
+
 
 def block_reentrance(setter):
     # decorator to block re-entrant indices setter
@@ -453,6 +469,12 @@ class NDGraphic:
         self.processor.spatial_func = func
         # force a re-render
         self.indices = self.indices
+
+    def __repr__(self):
+        return (
+            f"graphic: {self.graphic}\n"
+            f"processor:\n{self.processor}"
+        )
 
 
 @contextmanager
