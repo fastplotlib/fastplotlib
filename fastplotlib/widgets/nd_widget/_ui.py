@@ -2,7 +2,7 @@ import os
 from time import perf_counter
 
 import numpy as np
-from imgui_bundle import imgui, icons_fontawesome_6 as fa
+from imgui_bundle import imgui, imgui_ctx, icons_fontawesome_6 as fa
 
 from ...graphics import (
     ScatterCollection,
@@ -173,6 +173,8 @@ class NDWidgetUI(EdgeWindow):
 class RightClickMenu(StandardRightClickMenu):
     def __init__(self, figure):
         self._ndwidget = None
+        self._ndgraphic_windows = set()
+
         super().__init__(figure=figure)
 
     def set_nd_widget(self, ndw):
@@ -185,15 +187,33 @@ class RightClickMenu(StandardRightClickMenu):
         if imgui.begin_menu("ND Graphics"):
             subplot = self.get_subplot()
             for ndg in self._ndwidget[subplot].nd_graphics:
-                if imgui.begin_menu(
-                    f"{ndg.name if ndg.name is not None else hex(id(ndg))}"
-                ):
-                    if isinstance(ndg, NDPositions):
-                        self._draw_nd_pos_ui(subplot, ndg)
-                    elif isinstance(ndg, NDImage):
-                        self._draw_nd_image_ui(subplot, ndg)
-                    imgui.end_menu()
+                name = ndg.name if ndg.name is not None else hex(id(ndg))
+                if imgui.menu_item(
+                    f"{name}", "", False
+                )[0]:
+                    self._ndgraphic_windows.add(ndg)
+
             imgui.end_menu()
+
+    def update(self):
+        super().update()
+        subplot = self.get_subplot()
+
+        for ndg in list(self._ndgraphic_windows):  # set -> list so we can change size during iteration
+            name = ndg.name if ndg.name is not None else hex(id(ndg))
+            imgui.set_next_window_size((0, 0))
+            _, open = imgui.begin(name, True)
+
+            if isinstance(ndg, NDPositions):
+                self._draw_nd_pos_ui(subplot, ndg)
+
+            elif isinstance(ndg, NDImage):
+                self._draw_nd_image_ui(subplot, ndg)
+
+            if not open:
+                self._ndgraphic_windows.remove(ndg)
+
+            imgui.end()
 
     def _draw_nd_image_ui(self, subplot, nd_image: NDImage):
         _min, _max = quick_min_max(nd_image.graphic.data.value)
