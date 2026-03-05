@@ -328,33 +328,6 @@ class NDProcessor:
         )
 
 
-def block_reentrance(setter):
-    # decorator to block re-entrant indices setter
-    def set_indices_wrapper(self: NDGraphic, new_indices):
-        """
-        wraps NDGraphic.indices
-
-        self: NDGraphic instance
-
-        new_indices: new indices to set
-        """
-        # set_value is already in the middle of an execution, block re-entrance
-        if self._block_indices:
-            return
-        try:
-            # block re-execution of set_value until it has *fully* finished executing
-            self._block_indices = True
-            setter(self, new_indices)
-        except Exception as exc:
-            # raise original exception
-            raise exc  # set_value has raised. The line above and the lines 2+ steps below are probably more relevant!
-        finally:
-            # set_value has finished executing, now allow future executions
-            self._block_indices = False
-
-    return set_indices_wrapper
-
-
 class NDGraphic:
     def __init__(self, name: str | None):
         self._name = name
@@ -471,10 +444,7 @@ class NDGraphic:
         self.indices = self.indices
 
     def __repr__(self):
-        return (
-            f"graphic: {self.graphic}\n"
-            f"processor:\n{self.processor}"
-        )
+        return f"graphic: {self.graphic}\n" f"processor:\n{self.processor}"
 
 
 @contextmanager
@@ -505,3 +475,30 @@ def block_indices(ndgraphic: NDGraphic):
         raise e from None  # indices setter has raised, the line above and the lines below are probably more relevant!
     finally:
         ndgraphic._block_indices = False
+
+
+def block_reentrance(setter):
+    # decorator to block re-entrant indices setter
+    def set_indices_wrapper(self: NDGraphic, new_indices):
+        """
+        wraps NDGraphic.indices
+
+        self: NDGraphic instance
+
+        new_indices: new indices to set
+        """
+        # set_value is already in the middle of an execution, block re-entrance
+        if self._block_indices:
+            return
+        try:
+            # block re-execution of set_value until it has *fully* finished executing
+            self._block_indices = True
+            setter(self, new_indices)
+        except Exception as exc:
+            # raise original exception
+            raise exc  # set_value has raised. The line above and the lines 2+ steps below are probably more relevant!
+        finally:
+            # set_value has finished executing, now allow future executions
+            self._block_indices = False
+
+    return set_indices_wrapper

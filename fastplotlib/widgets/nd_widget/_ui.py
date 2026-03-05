@@ -197,12 +197,12 @@ class RightClickMenu(StandardRightClickMenu):
 
     def update(self):
         super().update()
-        subplot = self.get_subplot()
 
         for ndg in list(self._ndgraphic_windows):  # set -> list so we can change size during iteration
             name = ndg.name if ndg.name is not None else hex(id(ndg))
+            subplot = ndg.graphic._plot_area
             imgui.set_next_window_size((0, 0))
-            _, open = imgui.begin(name, True)
+            _, open = imgui.begin(f"subplot: {subplot.name}, {name}", True)
 
             if isinstance(ndg, NDPositions):
                 self._draw_nd_pos_ui(subplot, ndg)
