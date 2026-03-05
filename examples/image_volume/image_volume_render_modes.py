@@ -60,7 +60,9 @@ class GUI(EdgeWindow):
             _, self.graphic.substep_size = imgui.slider_float(
                 "substep_size", v=self.graphic.substep_size, v_max=10.0, v_min=0.1,
             )
-            _, self.graphic.emissive = imgui.color_picker3("emissive color", col=self.graphic.emissive.rgb)
+
+            col = imgui.ImVec4((*self.graphic.emissive.rgb, 1))
+            _, self.graphic.emissive = imgui.color_picker3("emissive color", col=col)
 
         if self.graphic.mode == "slice":
             imgui.text("Select plane defined by:\nax + by + cz + d = 0")

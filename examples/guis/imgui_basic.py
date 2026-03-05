@@ -52,10 +52,10 @@ class ImguiExample(EdgeWindow):
         # the UI will be used to modify the line
         self._line = figure[0, 0]["sine-wave"]
 
-        # get the current line RGB values
-        rgb_color = self._line.colors[:-1]
+        # get the current line RGBA values
+        rgba_color = self._line.colors
         # make color picker
-        changed_color, rgb = imgui.color_picker3("color", col=rgb_color)
+        changed_color, rgba = imgui.color_picker3("color", col=imgui.ImVec4(tuple(rgba_color)))
 
         # get current line color alpha value
         alpha = self._line.colors[-1]
@@ -65,6 +65,7 @@ class ImguiExample(EdgeWindow):
         # if RGB or alpha changed
         if changed_color | changed_alpha:
             # set new color along with alpha
+            rgb = (rgba[0], rgba[1], rgba[2])
             self._line.colors = [*rgb, new_alpha]
 
         # example of a slider, you can also use input_float
