@@ -31,6 +31,8 @@ class StandardRightClickMenu(Popup):
         # whether the right click menu is currently open or not
         self.is_open: bool = False
 
+        self._controller_window_open: bool | PlotArea = False
+
     def get_subplot(self) -> PlotArea | bool | None:
         """get the subplot that a click occurred in"""
         if self._last_right_click_pos is None:
@@ -151,41 +153,55 @@ class StandardRightClickMenu(Popup):
             imgui.separator()
 
             # controller options
-            if imgui.begin_menu("Controller"):
-                _, enabled = imgui.menu_item(
-                    "Enabled", "", self.get_subplot().controller.enabled
-                )
-
-                self.get_subplot().controller.enabled = enabled
-
-                changed, damping = imgui.slider_float(
-                    "Damping",
-                    v=self.get_subplot().controller.damping,
-                    v_min=0.0,
-                    v_max=10.0,
-                )
-
-                if changed:
-                    self.get_subplot().controller.damping = damping
-
-                imgui.separator()
-                imgui.text("Controller type:")
-                # switching between different controllers
-                for name, controller_type_iter in controller_types.items():
-                    current_type = type(self.get_subplot().controller)
-
-                    clicked, _ = imgui.menu_item(
-                        label=name,
-                        shortcut="",
-                        p_selected=current_type is controller_type_iter,
-                    )
-
-                    if clicked and (current_type is not controller_type_iter):
-                        # menu item was clicked and the desired controller isn't the current one
-                        self.get_subplot().controller = name
-
-                imgui.end_menu()
+            if imgui.menu_item("Controller Options", "", False)[0]:
+                self._controller_window_open = self.get_subplot()
 
             self._extra_menu()
 
             imgui.end_popup()
+
+        if self._controller_window_open:
+            self._draw_controller_window()
+
+    def _draw_controller_window(self):
+        subplot = self._controller_window_open
+
+        imgui.set_next_window_size((0, 0))
+        _, keep_open = imgui.begin(f"Controller", True)
+        imgui.text(f"subplot: {subplot.name}")
+        _, enabled = imgui.menu_item(
+            "Enabled", "", subplot.controller.enabled
+        )
+
+        subplot.controller.enabled = enabled
+
+        changed, damping = imgui.slider_float(
+            "Damping",
+            v=subplot.controller.damping,
+            v_min=0.0,
+            v_max=10.0,
+        )
+
+        if changed:
+            subplot.controller.damping = damping
+
+        imgui.separator()
+        imgui.text("Controller type:")
+        # switching between different controllers
+        for name, controller_type_iter in controller_types.items():
+            current_type = type(subplot.controller)
+
+            clicked, _ = imgui.menu_item(
+                label=name,
+                shortcut="",
+                p_selected=current_type is controller_type_iter,
+            )
+
+            if clicked and (current_type is not controller_type_iter):
+                # menu item was clicked and the desired controller isn't the current one
+                subplot.controller = name
+
+        if not keep_open:
+            self._controller_window_open = False
+
+        imgui.end()
