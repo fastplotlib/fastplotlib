@@ -358,7 +358,7 @@ class ImageWidget:
             passed to each ImageGraphic in the ImageWidget figure subplots
 
         """
-        warnings.warn(
+        warn(
             "`ImageWidget` is deprecated and will be removed in a"
             " future release, please migrate to NDWidget",
             DeprecationWarning
