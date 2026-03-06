@@ -25,6 +25,7 @@ Properties
     LineGraphic.axes
     LineGraphic.block_events
     LineGraphic.cmap
+    LineGraphic.color_mode
     LineGraphic.colors
     LineGraphic.data
     LineGraphic.deleted

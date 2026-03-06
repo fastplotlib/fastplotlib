@@ -178,6 +178,7 @@ class Graphic:
         self._alpha_mode = AlphaMode(alpha_mode)
         self._visible = Visible(visible)
         self._block_events = False
+        self._block_handlers = list()
 
         self._axes: Axes = None
 
@@ -275,6 +276,11 @@ class Graphic:
         self._block_events = value
 
     @property
+    def block_handlers(self) -> list:
+        """Used to block event handlers for a graphic and prevent recursion."""
+        return self._block_handlers
+
+    @property
     def world_object(self) -> pygfx.WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
         # We use weakref to simplify garbage collection
@@ -285,15 +291,8 @@ class Graphic:
 
         # add to world object -> graphic mapping
         if isinstance(wo, pygfx.Group):
-            for child in wo.children:
-                if isinstance(
-                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
-                ):
-                    # unique 32 bit integer id for each world object
-                    global_id = child.id
-                    WORLD_OBJECT_TO_GRAPHIC[global_id] = self
-                    # store id to pop from dict when graphic is deleted
-                    self._world_object_ids.append(global_id)
+            # for Graphics which use a pygfx.Group, ImageGraphic and graphic collections
+            self._add_group_graphic_map(wo)
         else:
             global_id = wo.id
             WORLD_OBJECT_TO_GRAPHIC[global_id] = self
@@ -321,6 +320,31 @@ class Graphic:
         # set scale if it's not (1, 1, 1)
         if not all(wo.world.scale == self.scale):
             self.scale = self.scale
+
+    def _add_group_graphic_map(self, wo: pygfx.Group):
+        # add the children of the group to the WorldObject -> Graphic map
+        # used by images since they create new WorldObject ImageTiles when a different buffer size is required
+        # also used by GraphicCollections inititally, but not used for reseting like images
+        for child in wo.children:
+            if isinstance(
+                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
+            ):
+                # unique 32 bit integer id for each world object
+                global_id = child.id
+                WORLD_OBJECT_TO_GRAPHIC[global_id] = self
+                # store id to pop from dict when graphic is deleted
+                self._world_object_ids.append(global_id)
+
+    def _remove_group_graphic_map(self, wo: pygfx.Group):
+        # remove the children of the group to the WorldObject -> Graphic map
+        for child in wo.children:
+            if isinstance(
+                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
+            ):
+                # unique 32 bit integer id for each world object
+                global_id = child.id
+                WORLD_OBJECT_TO_GRAPHIC.pop(global_id)
+                self._world_object_ids.remove(global_id)
 
     @property
     def tooltip_format(self) -> Callable[[dict], str] | None:
@@ -442,6 +466,9 @@ class Graphic:
         event.graphic = self
 
         if self.block_events:
+            return
+
+        if callback in self._block_handlers:
             return
 
         if event.type in self._features:

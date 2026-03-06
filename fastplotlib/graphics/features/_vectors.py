@@ -22,7 +22,6 @@ class VectorPositions(GraphicFeature):
     def __init__(
         self,
         positions: np.ndarray,
-        isolated_buffer: bool = True,
         property_name: str = "positions",
     ):
         """
@@ -111,7 +110,6 @@ class VectorDirections(GraphicFeature):
     def __init__(
         self,
         directions: np.ndarray,
-        isolated_buffer: bool = True,
         property_name: str = "directions",
     ):
         """Manages vector field positions by managing the mesh instance buffer's full transform matrix"""

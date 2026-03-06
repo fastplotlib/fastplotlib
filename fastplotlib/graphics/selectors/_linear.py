@@ -45,10 +45,8 @@ class LinearSelector(BaseSelector):
         # using `Real` here allows it to work with builtin `int` and `float` types, and numpy scaler types
         if len(values) != 2 or not all(map(lambda v: isinstance(v, Real), values)):
             raise TypeError("limits must be an iterable of two numeric values")
-        self._limits = tuple(
-            map(round, values)
-        )  # if values are close to zero things get weird so round them
-        self.selection._limits = self._limits
+        self._limits = np.asarray(values)  # if values are close to zero things get weird so round them
+        self._selection._limits = self._limits
 
     @property
     def edge_color(self) -> pygfx.Color:

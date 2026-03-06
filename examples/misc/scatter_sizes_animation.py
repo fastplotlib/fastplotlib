@@ -20,7 +20,7 @@ sizes = np.abs(ys) * 5
 
 figure = fpl.Figure(size=(700, 560))
 
-figure[0, 0].add_scatter(data, sizes=sizes, name="sine")
+figure[0, 0].add_scatter(data, sizes=sizes, uniform_size=False, name="sine")
 
 
 i = 0
