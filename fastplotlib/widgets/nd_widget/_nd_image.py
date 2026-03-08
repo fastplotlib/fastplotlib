@@ -208,6 +208,11 @@ class NDImageProcessor(NDProcessor):
         # TODO: account for window funcs
 
         sub = subsample_array(self.data, ignore_dims=ignore_dims)
+
+        if isinstance(sub, xr.DataArray):
+            # can't do the isnan and isinf boolean indexing below on xarray
+            sub = sub.values
+            
         sub_real = sub[~(np.isnan(sub) | np.isinf(sub))]
 
         self._histogram = np.histogram(sub_real, bins=100)
