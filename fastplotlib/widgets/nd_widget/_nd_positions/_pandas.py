@@ -73,7 +73,7 @@ class NDPP_Pandas(NDPositionsProcessor):
         p += self._dw_slice.start
         return str(self.data[self._tooltip_columns[n]][p])
 
-    def get(self, indices: dict[str, Any]) -> np.ndarray:
+    def get(self, indices: dict[str, Any]) -> dict[str, np.ndarray]:
         # TODO: LOD by using a step size according to max_p
         # TODO: Also what to do if display_window is None and data
         #  hasn't changed when indices keeps getting set, cache?
@@ -89,4 +89,10 @@ class NDPP_Pandas(NDPositionsProcessor):
                 [self.data[c][self._dw_slice] for c in col]
             )
 
-        return self._apply_dw_window_func(graphic_data)
+        data = self._finalize_(graphic_data)
+        other = self._get_other_features(data, self._dw_slice)
+
+        return {
+            "data": data,
+            **other,
+        }
