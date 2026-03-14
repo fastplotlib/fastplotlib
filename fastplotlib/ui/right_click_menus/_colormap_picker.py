@@ -154,7 +154,8 @@ class ColormapPicker(Popup):
             self._texture_height = (imgui.get_font_size()) - 2
 
             if imgui.menu_item("Reset vmin-vmax", "", False)[0]:
-                self._lut_tool.images[0].reset_vmin_vmax()
+                for image in self._lut_tool.images:
+                    image.reset_vmin_vmax()
 
             # add all the cmap options
             for cmap_type in COLORMAP_NAMES.keys():

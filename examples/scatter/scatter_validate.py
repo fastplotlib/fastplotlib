@@ -41,6 +41,7 @@ figure[0, 0].add_scatter(
     uniform_edge_color=False,
     edge_colors=["w"] * 3 + ["orange"] * 3 + ["blue"] * 3 + ["green"],
     markers=list("osD+x^v<>*"),
+    uniform_marker=False,
     edge_width=2.0,
     sizes=20,
     uniform_size=True,
@@ -64,6 +65,7 @@ figure[0, 0].add_scatter(
     sine,
     markers="s",
     sizes=xs * 5,
+    uniform_size=False,
     offset=(0, 2, 0)
 )
 

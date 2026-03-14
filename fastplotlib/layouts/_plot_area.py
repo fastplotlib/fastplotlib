@@ -233,7 +233,10 @@ class PlotArea(GraphicMethodsMixin):
         #  pygfx plans on refactoring viewports anyways
         if self.parent is not None:
             if self.parent.__class__.__name__.endswith("Figure"):
-                for subplot in self.parent:
+                # always use figure._subplots.ravel() in internal fastplotlib code
+                # otherwise if we use `for subplot in figure`, this could conflict
+                # with a user's iterator where they are doing `for subplot in figure` !!!
+                for subplot in self.parent._subplots.ravel():
                     if subplot.camera in cameras_list:
                         new_controller.register_events(subplot.viewport)
                         subplot._controller = new_controller
@@ -856,6 +859,42 @@ class PlotArea(GraphicMethodsMixin):
         camera.height = height
 
         camera.zoom = zoom
+
+    @property
+    def x_range(self) -> tuple[float, float]:
+        """
+        Get or set the x-range currently in view.
+        Only valid for orthographic projections of the xy plane.
+        Use camera.set_state() to set the camera position for arbitrary projections.
+        """
+        hw = self.camera.width / 2
+        x = self.camera.local.x
+        return x - hw, x + hw
+
+    @x_range.setter
+    def x_range(self, xr: tuple[float, float]):
+        width = xr[1] - xr[0]
+        x_mid = (xr[0] + xr[1]) / 2
+        self.camera.width = width
+        self.camera.local.x = x_mid
+
+    @property
+    def y_range(self) -> tuple[float, float]:
+        """
+        Get or set the y-range currently in view.
+        Only valid for orthographic projections of the xy plane.
+        Use camera.set_state() to set the camera position for arbitrary projections.
+        """
+        hh = self.camera.width / 2
+        y = self.camera.local.y
+        return y - hh, y + hh
+
+    @y_range.setter
+    def y_range(self, yr: tuple[float, float]):
+        width = yr[1] - yr[0]
+        y_mid = yr[0] + (width / 2)
+        self.camera.width = width
+        self.camera.local.y = y_mid
 
     def remove_graphic(self, graphic: Graphic):
         """

@@ -44,6 +44,7 @@ class ImguiFigure(Figure):
         canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
+        std_right_click_menu: type[Popup] = StandardRightClickMenu,
     ):
         self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
 
@@ -105,7 +106,7 @@ class ImguiFigure(Figure):
             toolbar = SubplotToolbar(subplot=subplot)
             self._subplot_toolbars[i] = toolbar
 
-        self._right_click_menu = StandardRightClickMenu(figure=self)
+        self._std_right_click_menu = std_right_click_menu(figure=self)
 
         self._popups: dict[str, Popup] = {}
 
@@ -117,6 +118,10 @@ class ImguiFigure(Figure):
     @property
     def default_imgui_font(self) -> imgui.ImFont:
         return self._default_imgui_font
+
+    @property
+    def std_right_click_menu(self) -> Popup:
+        return self._std_right_click_menu
 
     @property
     def guis(self) -> dict[str, EdgeWindow]:
@@ -158,7 +163,7 @@ class ImguiFigure(Figure):
         for popup in self._popups.values():
             popup.update()
 
-        self._right_click_menu.update()
+        self._std_right_click_menu.update()
 
         # imgui.end_frame()
 

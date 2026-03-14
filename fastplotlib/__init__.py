@@ -19,7 +19,7 @@ if IMGUI:
 else:
     from .layouts import Figure
 
-from .widgets import ImageWidget
+from .widgets import NDWidget, ImageWidget
 from .utils import config, enumerate_adapters, select_adapter, print_wgpu_report
 
 

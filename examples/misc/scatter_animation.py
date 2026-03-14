@@ -37,7 +37,7 @@ colors = ["yellow"] * n_points + ["cyan"] * n_points + ["magenta"] * n_points
 figure = fpl.Figure(size=(700, 560))
 subplot_scatter = figure[0, 0]
 # use an alpha value since this will be a lot of points
-scatter = subplot_scatter.add_scatter(data=cloud, sizes=3, colors=colors, alpha=0.6)
+scatter = subplot_scatter.add_scatter(data=cloud, sizes=3, uniform_size=False, colors=colors, alpha=0.6)
 
 
 def update_points(subplot):
