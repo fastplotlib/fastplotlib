@@ -89,7 +89,9 @@ class VertexColors(BufferManager):
                 new_colors = parse_colors(value, len(value))
 
                 # create the new buffer, old buffer should get dereferenced
-                self._fpl_buffer = pygfx.Buffer(new_colors)
+                # make sure new buffer is isolated (i.e. allocate a buffer, then set the values)
+                self._fpl_buffer = pygfx.Buffer(np.zeros(new_colors.shape, dtype=np.float32))
+                self._fpl_buffer.data[:] = new_colors
                 graphic.world_object.geometry.colors = self._fpl_buffer
 
                 if len(self._event_handlers) < 1:
