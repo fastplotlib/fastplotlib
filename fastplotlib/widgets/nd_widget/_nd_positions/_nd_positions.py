@@ -687,10 +687,12 @@ class NDPositions(NDGraphic):
 
     @cmap_each.setter
     def cmap_each(self, new: Sequence[str] | None):
-        if isinstance(new, str):
-            new = [new]
         if new is None:
             self._cmap_each = None
+            return
+
+        if isinstance(new, str):
+            new = [new]
 
         new = np.asarray(new)
 
@@ -714,6 +716,8 @@ class NDPositions(NDGraphic):
         if self.cmap_each is None:
             self.processor.cmap_transform_each = None
             warn("must set `cmap_each` before `cmap_transform_each`")
+            return
+
         if new is None and self.cmap_each is not None:
             # default transform is just a transform based on the `p` dim size
             new = partial(
