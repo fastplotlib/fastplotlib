@@ -100,7 +100,7 @@ def searchsorted_markers_to_int_array(markers_str_array: np.ndarray[str]):
     return marker_int_searchsorted_vals[indices]
 
 
-def parse_markers_init(markers: str | Sequence[str] | np.ndarray, n_datapoints: int):
+def parse_markers(markers: str | Sequence[str] | np.ndarray, n_datapoints: int):
     # first validate then allocate buffers
 
     if isinstance(markers, str):
@@ -155,7 +155,7 @@ class VertexMarkers(BufferManager):
         Manages the markers buffer for the scatter points. Supports fancy indexing.
         """
 
-        markers_int_array, self._markers_readable_array = parse_markers_init(
+        markers_int_array, self._markers_readable_array = parse_markers(
             markers, n_datapoints
         )
 
@@ -205,7 +205,7 @@ class VertexMarkers(BufferManager):
         if isinstance(value, (np.ndarray, list, tuple)):
             if self.buffer.data.shape[0] != len(value):
                 # need to create a new buffer
-                markers_int_array, self._markers_readable_array = parse_markers_init(
+                markers_int_array, self._markers_readable_array = parse_markers(
                     value, len(value)
                 )
 

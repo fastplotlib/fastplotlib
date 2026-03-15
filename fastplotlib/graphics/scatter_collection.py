@@ -102,7 +102,6 @@ class _ScatterCollectionProperties:
 
 class ScatterCollectionIndexer(CollectionIndexer, _ScatterCollectionProperties):
     """Indexer for scatter collections"""
-
     pass
 
 
@@ -117,11 +116,14 @@ class ScatterCollection(GraphicCollection, _ScatterCollectionProperties):
         cmap: Sequence[str] | str = None,
         cmap_transform: np.ndarray | List = None,
         sizes: float | Sequence[float] = 5.0,
+        uniform_size: bool = True,
+        markers: np.ndarray | Sequence[str] = None,
+        uniform_marker: bool = True,
+        edge_width: float = 1.0,
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Sequence[Any] | np.ndarray = None,
-        kwargs_lines: list[dict] = None,
         **kwargs,
     ):
         """
@@ -184,13 +186,6 @@ class ScatterCollection(GraphicCollection, _ScatterCollectionProperties):
             if len(metadatas) != len(data):
                 raise ValueError(
                     f"len(metadata) != len(data)\n{len(metadatas)} != {len(data)}"
-                )
-
-        if kwargs_lines is not None:
-            if len(kwargs_lines) != len(data):
-                raise ValueError(
-                    f"len(kwargs_lines) != len(data)\n"
-                    f"{len(kwargs_lines)} != {len(data)}"
                 )
 
         self._cmap_transform = cmap_transform
@@ -259,9 +254,6 @@ class ScatterCollection(GraphicCollection, _ScatterCollectionProperties):
                         "or must be a tuple/list of colors represented by a string with the same length as the data"
                     )
 
-        if kwargs_lines is None:
-            kwargs_lines = dict()
-
         self._set_world_object(pygfx.Group())
 
         for i, d in enumerate(data):
@@ -286,14 +278,34 @@ class ScatterCollection(GraphicCollection, _ScatterCollectionProperties):
             else:
                 _name = None
 
+            if markers is not None:
+                if isinstance(markers, (tuple, list, np.ndarray)):
+                    markers_ = markers[i]
+                else:
+                    markers_ = markers
+            else:
+                markers_ = "o"
+
+            if sizes is not None:
+                if isinstance(sizes, (tuple, list, np.ndarray)):
+                    sizes_ = sizes[i]
+                else:
+                    sizes_ = sizes
+            else:
+                sizes_ = 5
+
             lg = ScatterGraphic(
                 data=d,
                 colors=_c,
-                sizes=sizes,
+                sizes=sizes_,
+                markers=markers_,
                 cmap=_cmap,
                 name=_name,
                 metadata=_m,
-                **kwargs_lines,
+                uniform_marker=uniform_marker,
+                uniform_size=uniform_size,
+                edge_width=edge_width,
+                **kwargs,
             )
 
             self.add_graphic(lg)
@@ -519,19 +531,16 @@ axes = {"x": 0, "y": 1, "z": 2}
 class ScatterStack(ScatterCollection):
     def __init__(
         self,
-        data: List[np.ndarray],
-        thickness: float | Iterable[float] = 2.0,
-        colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
-        cmap: Iterable[str] | str = None,
+        data: np.ndarray | List[np.ndarray],
+        colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
+        cmap: Sequence[str] | str = None,
         cmap_transform: np.ndarray | List = None,
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Sequence[Any] | np.ndarray = None,
-        isolated_buffer: bool = True,
         separation: float = 0.0,
         separation_axis: str = "y",
-        kwargs_lines: list[dict] = None,
         **kwargs,
     ):
         """
@@ -584,17 +593,12 @@ class ScatterStack(ScatterCollection):
         separation_axis: str, default "y"
             axis in which the line graphics in the stack should be separated
 
-
-        kwargs_lines: list[dict], optional
-            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
-
         kwargs_collection
             kwargs for the collection, passed to GraphicCollection
 
         """
         super().__init__(
             data=data,
-            thickness=thickness,
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
@@ -602,8 +606,6 @@ class ScatterStack(ScatterCollection):
             names=names,
             metadata=metadata,
             metadatas=metadatas,
-            isolated_buffer=isolated_buffer,
-            kwargs_lines=kwargs_lines,
             **kwargs,
         )
 

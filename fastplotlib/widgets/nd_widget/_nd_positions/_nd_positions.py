@@ -15,6 +15,7 @@ from ....graphics import (
     LineCollection,
     ScatterGraphic,
     ScatterCollection,
+    ScatterStack,
 )
 from ....graphics.features.utils import parse_colors
 from ....graphics.utils import pause_events
@@ -28,12 +29,15 @@ from .._base import (
 )
 from .._index import GlobalIndex
 
+# types for the other features
+FeatureCallable = Callable[[np.ndarray, slice], np.ndarray]
+ColorsType = np.ndarray | FeatureCallable | None
+MarkersType = Sequence[str] | np.ndarray | FeatureCallable | None
+SizesType = Sequence[float] | np.ndarray | FeatureCallable | None
 
-# TODO: Maybe get rid of n_display_dims in NDProcessor,
-#  we will know the display dims automatically here from the last dim
-#  so maybe we only need it for images?
+
 class NDPositionsProcessor(NDProcessor):
-    _other_features = ["colors", "markers", "cmaps_transforms", "alphas", "sizes"]
+    _other_features = ["colors", "markers", "cmap_transform_each", "sizes"]
 
     def __init__(
         self,
@@ -47,11 +51,10 @@ class NDPositionsProcessor(NDProcessor):
         display_window: int | float | None = 100,  # window for n_datapoints dim only
         max_display_datapoints: int = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
-        colors: Sequence[str] | np.ndarray = None,
-        markers: Sequence[str] | np.ndarray = None,
-        cmaps_transforms: np.ndarray = None,
-        alpha: np.ndarray = None,
-        sizes: Sequence[float] = None,
+        colors: ColorsType = None,
+        markers: MarkersType = None,
+        cmap_transform_each: np.ndarray = None,
+        sizes: SizesType = None,
         **kwargs,
     ):
         """
@@ -63,7 +66,8 @@ class NDPositionsProcessor(NDProcessor):
         spatial_dims
         index_mappings
         display_window
-        max_display_datapoints
+        max_display_datapoints: int, default 1_000
+            this is approximate since floor division is used to determine the step size of the current display window slice
         datapoints_window_func:
             Important note: if used, display_window is approximate and not exact due to padding from the window size
         kwargs
@@ -83,29 +87,48 @@ class NDPositionsProcessor(NDProcessor):
 
         self.colors = colors
         self.markers = markers
-        self.cmaps_transforms = cmaps_transforms
-        self.alphas = alpha
+        self.cmap_transform_each = cmap_transform_each
         self.sizes = sizes
 
-    def _check_get_datapoints_dim_size(self, check_prop: str, check_shape: int) -> tuple[int, int]:
+    def _check_shape_feature(
+        self, prop: str, check_shape: tuple[int, int]
+    ) -> tuple[int, int]:
         # this function exists because it's used repeatedly for colors, markers, etc.
         # shape for [l, p] dims must match, or l must be 1
         shape = tuple([self.shape[dim] for dim in self.spatial_dims[:2]])
 
-        if check_shape[0] != 1 and check_shape != shape:
+        if check_shape[1] != shape[1]:
             raise IndexError(
-                f"Number of {check_prop} must match the size of the datapoints dim in the data"
+                f"shape of first two dims of {prop} must must be [l, p] or [1, p].\n"
+                f"required `p` dim shape is: {shape[1]}, {check_shape[1]} was provided"
+            )
+
+        if check_shape[0] != 1 and check_shape[0] != shape[0]:
+            raise IndexError(
+                f"shape of first two dims of {prop} must must be [l, p] or [1, p]\n"
+                f"required `l` dim shape is {shape[0]} | 1, {check_shape[0]} was provided"
             )
 
         return shape
 
     @property
-    def colors(self) -> np.ndarray | None | Callable:
+    def colors(self) -> ColorsType:
+        """
+        A callable that dynamically creates colors for the current display window, or array of colors per-datapoint.
+
+        Array must be of shape [l, p, 4] for unique colors per line/scatter, or [1, p, 4] for identical colors per
+        line/scatter.
+
+        Callable must return an array of shape [l, pw, 4] or [1, pw, 4], where pw is the number of currently displayed
+        datapoints given the current display window. The callable receives the current data slice array, as well as the
+        slice object that corresponds to the current display window.
+        """
         return self._colors
 
     @colors.setter
     def colors(self, new):
         if callable(new):
+            # custom callable that creates the colors
             self._colors = new
             return
 
@@ -113,65 +136,106 @@ class NDPositionsProcessor(NDProcessor):
             self._colors = None
             return
 
-        n = self._check_get_datapoints_dim_size("colors", new.shape)
-        self._colors = parse_colors(new, n_colors=n)
+        # as array so we can check shape
+        new = np.asarray(new)
+        if new.ndim == 2:
+            # only [p, 4] provided, broadcast to [1, p, 4]
+            new = new[None]
+
+        shape = self._check_shape_feature("colors", new.shape[:2])
+
+        if new.shape[0] == 1:
+            # same colors across all graphical elements
+            self._colors = parse_colors(new[0], n_colors=shape[1])[None]
+
+        else:
+            # colors specified for each individual line/scatter
+            new_ = np.zeros(shape=(*self.data.shape[:2], 4), dtype=np.float32)
+            for i in range(shape[0]):
+                new_[i] = parse_colors(new[i], n_colors=shape[1])
+
+            self._colors = new_
 
     @property
-    def markers(self) -> np.ndarray | None:
+    def markers(self) -> MarkersType:
+        """
+        A callable that dynamically creates markers for the current display window, or array of markers per-datapoint.
+
+        Array must be of shape [l, p] for unique markers per line/scatter, or [p,] or [1, p] for identical markers per
+        line/scatter.
+
+        Callable must return an array of shape [l, pw], [1, pw], or [pw,] where pw is the number of currently displayed
+        datapoints given the current display window. The callable receives the current data slice array, as well as the
+        slice object that corresponds to the current display window.
+        """
         return self._markers
 
     @markers.setter
-    def markers(self, new: Sequence[str] | None):
+    def markers(self, new: MarkersType):
+        if callable(new):
+            # custom callable that creates the markers dynamically
+            self._markers = new
+            return
+
         if new is None:
             self._markers = None
             return
 
-        self._check_get_datapoints_dim_size("markers", len(new))
+        # as array so we can check shape
+        new = np.asarray(new)
+
+        # if 1-dim, assume it's specifying markers over `p` dim, so set `l` dim to 1
+        if new.ndim == 1:
+            new = new[None]
+
+        self._check_shape_feature("markers", new.shape[:2])
+
         self._markers = np.asarray(new)
 
     @property
-    def cmaps_transforms(self) -> Sequence[str] | None:
-        return self._cmaps_transforms
+    def cmap_transform_each(self) -> Sequence[str] | None:
+        return self._cmap_transform_each
 
-    @cmaps_transforms.setter
-    def cmaps_transforms(self, new: Sequence[str] | None):
+    @cmap_transform_each.setter
+    def cmap_transform_each(self, new: Sequence[str] | None):
         if new is None:
-            self._cmaps_transforms = None
+            self._cmap_transform_each = None
             return
 
-        self._check_get_datapoints_dim_size("markers", len(new))
+        self._check_shape_feature("markers", len(new))
         self._cmap_transforms = np.asarray(new)
 
     @property
-    def alphas(self) -> np.ndarray | None:
-        return self._alphas
-
-    @alphas.setter
-    def alphas(self, new: Sequence[float] | None):
-        if new is None:
-            self._alphas = None
-            return
-
-        self._check_get_datapoints_dim_size("alphas", len(new))
-        alphas = np.asarray(new)
-
-        self._alphas = alphas
-
-    @property
-    def sizes(self) -> np.ndarray | None:
+    def sizes(self) -> SizesType:
         return self._sizes
 
     @sizes.setter
-    def sizes(self, new: Sequence[float] | None):
+    def sizes(self, new: SizesType):
+        """
+        A callable that dynamically creates sizes for the current display window, or array of sizes per-datapoint.
+
+        Array must be of shape [l, p] for unique sizes per line/scatter, or [p,] or [1, p] for identical markers per
+        line/scatter.
+
+        Callable must return an array of shape [l, pw], [1, pw], or [pw,] where pw is the number of currently displayed
+        datapoints given the current display window. The callable receives the current data slice array, as well as the
+        slice object that corresponds to the current display window.
+        """
+        if callable(new):
+            # custom callable
+            self._sizes = new
+            return
+
         if new is None:
             self._sizes = None
             return
 
-        self._check_get_datapoints_dim_size("alphas", len(new))
         new = np.array(new)
+        # if 1-dim, assume it's specifying sizes over `p` dim, set `l` dim to 1
+        if new.ndim == 1:
+            new = new[None]
 
-        if new.ndim != 1:
-            raise ValueError
+        self._check_shape_feature("sizes", new.shape)
 
         self._sizes = new
 
@@ -247,7 +311,7 @@ class NDPositionsProcessor(NDProcessor):
 
         if self.display_window is None:
             # just return everything
-            return slice(0, self.shape[p_dim] - 1)
+            return slice(0, self.shape[p_dim])
 
         if self.display_window == 0:
             # just map p dimension at this index and return
@@ -282,7 +346,9 @@ class NDPositionsProcessor(NDProcessor):
 
         return slice(start, stop, step)
 
-    def _apply_dw_window_func(self, array: xr.DataArray | np.ndarray) -> xr.DataArray | np.ndarray:
+    def _apply_dw_window_func(
+        self, array: xr.DataArray | np.ndarray
+    ) -> xr.DataArray | np.ndarray:
         """
         Takes array where display window has already been applied and applies window functions on the `p` dim.
 
@@ -364,7 +430,9 @@ class NDPositionsProcessor(NDProcessor):
 
         return array[:, ::step]
 
-    def _apply_spatial_func(self, array: xr.DataArray | np.ndarray) -> xr.DataArray | np.ndarray:
+    def _apply_spatial_func(
+        self, array: xr.DataArray | np.ndarray
+    ) -> xr.DataArray | np.ndarray:
         if self.spatial_func is not None:
             return self.spatial_func(array)
 
@@ -373,22 +441,38 @@ class NDPositionsProcessor(NDProcessor):
     def _finalize_(self, array: xr.DataArray | np.ndarray) -> xr.DataArray | np.ndarray:
         return self._apply_spatial_func(self._apply_dw_window_func(array))
 
-    def _get_other_features(self, data_slice: np.ndarray, dw_slice: slice) -> dict[str, np.ndarray]:
+    def _get_other_features(
+        self, data_slice: np.ndarray, dw_slice: slice
+    ) -> dict[str, np.ndarray]:
         other = dict.fromkeys(self._other_features)
         for attr in self._other_features:
             val = getattr(self, attr)
 
+            if val is None:
+                other[attr] = None
+                continue
+
             if callable(val):
                 # if it's a callable, give it the data and display window slice, it must return the appropriate
                 # type of array for that graphic feature
-                val = val(data_slice, dw_slice)
+                val_sliced = val(data_slice, dw_slice)
 
-            match val:
-                case None:
-                    other[attr] = None
+            else:
+                # if no l dim, broadcast to [1, p]
+                if val.ndim == 1:
+                    val = val[None]
 
-                case _:
-                    other[attr] = val[dw_slice]
+                # apply current display window slice
+                val_sliced = val[:, dw_slice]
+
+            # check if l dim size is 1
+            if val_sliced.shape[0] == 1:
+                # broadcast across all graphical elements
+                n_graphics = self.shape[self.spatial_dims[0]]
+                print(val_sliced.shape, n_graphics)
+                val_sliced = np.broadcast_to(val_sliced, shape=(n_graphics, *val_sliced.shape[1:]))
+
+            other[attr] = val_sliced
 
         return other
 
@@ -447,6 +531,7 @@ class NDPositions(NDGraphic):
             | LineStack
             | ScatterGraphic
             | ScatterCollection
+            | ScatterStack
             | ImageGraphic
         ],
         processor: type[NDPositionsProcessor] = NDPositionsProcessor,
@@ -455,15 +540,16 @@ class NDPositions(NDGraphic):
         index_mappings: tuple[Callable[[Any], int] | None] | None = None,
         max_display_datapoints: int = 1_000,
         linear_selector: bool = False,
-        colors: Sequence[str] | np.ndarray | Callable[[slice, np.ndarray], np.ndarray] = None,
+        colors: (
+            Sequence[str] | np.ndarray | Callable[[slice, np.ndarray], np.ndarray]
+        ) = None,
         # TODO: cleanup how this cmap stuff works, require a cmap to be set per-graphic
         #  before allowing cmaps_transform, validate that stuff makes sense etc.
         cmap: str = None,  # across the line/scatter collection
-        cmaps: Sequence[str] = None,  # for each individual line/scatter
-        cmaps_transforms: np.ndarray = None,  # for each individual line/scatter
+        cmap_each: Sequence[str] = None,  # for each individual line/scatter
+        cmap_transform_each: np.ndarray = None,  # for each individual line/scatter
         markers: Sequence[str] = None,
         sizes: Sequence[float] = None,
-        alpha: Sequence[float] = None,
         name: str = None,
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
@@ -475,6 +561,8 @@ class NDPositions(NDGraphic):
 
         if graphic_kwargs is None:
             self._graphic_kwargs = dict()
+        else:
+            self._graphic_kwargs = graphic_kwargs
 
         self._processor = processor(
             data,
@@ -487,8 +575,7 @@ class NDPositions(NDGraphic):
             index_mappings=index_mappings,
             colors=colors,
             markers=markers,
-            cmaps_transforms=cmaps_transforms,
-            alpha=alpha,
+            cmap_transform_each=cmap_transform_each,
             sizes=sizes,
             **processor_kwargs,
         )
@@ -527,6 +614,7 @@ class NDPositions(NDGraphic):
         | LineStack
         | ScatterGraphic
         | ScatterCollection
+        | ScatterStack
         | ImageGraphic
     ):
         """LineStack or ImageGraphic for heatmaps"""
@@ -606,14 +694,14 @@ class NDPositions(NDGraphic):
                             setattr(g, feature, value[l])
 
                 if self.cmaps is not None:
-                    match new_features["cmaps_transforms"]:
+                    match new_features["cmap_transform_each"]:
                         case None:
                             pass
                         case _:
                             setattr(
-                                getattr(g, "cmap"),  # indv_graphic.cmap
+                                getattr(g, "cmap"),  # ind_graphic.cmap
                                 "transform",
-                                new_features["cmaps_transforms"],
+                                new_features["cmap_transform_each"],
                             )
 
         elif isinstance(self.graphic, ImageGraphic):
@@ -659,6 +747,7 @@ class NDPositions(NDGraphic):
             | LineStack
             | ScatterGraphic
             | ScatterCollection
+            | ScatterStack
             | ImageGraphic
         ],
     ):
@@ -679,10 +768,10 @@ class NDPositions(NDGraphic):
             )
 
         else:
-            if issubclass(graphic_cls, LineStack):
-                kwargs = {"separation": 0.0}
+            if issubclass(graphic_cls, (LineStack, ScatterStack)):
+                kwargs = {"separation": 0.0, **self._graphic_kwargs}
             else:
-                kwargs = dict()
+                kwargs = self._graphic_kwargs
             self._graphic = graphic_cls(data_slice, **kwargs)
 
         if isinstance(self._graphic, (LineCollection, ScatterCollection)):

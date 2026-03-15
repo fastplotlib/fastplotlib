@@ -1,6 +1,6 @@
 import numpy as np
 
-from ... import ScatterCollection, LineCollection, LineStack, ImageGraphic
+from ... import ScatterCollection, ScatterStack, LineCollection, LineStack, ImageGraphic
 from ...layouts import Subplot
 from . import NDImage, NDPositions
 from ._base import NDGraphic
