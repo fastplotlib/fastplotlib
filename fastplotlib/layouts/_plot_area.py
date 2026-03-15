@@ -885,15 +885,15 @@ class PlotArea(GraphicMethodsMixin):
         Only valid for orthographic projections of the xy plane.
         Use camera.set_state() to set the camera position for arbitrary projections.
         """
-        hh = self.camera.width / 2
+        hh = self.camera.height / 2
         y = self.camera.local.y
         return y - hh, y + hh
 
     @y_range.setter
     def y_range(self, yr: tuple[float, float]):
-        width = yr[1] - yr[0]
-        y_mid = yr[0] + (width / 2)
-        self.camera.width = width
+        height = yr[1] - yr[0]
+        y_mid = yr[0] + (height / 2)
+        self.camera.height = height
         self.camera.local.y = y_mid
 
     def remove_graphic(self, graphic: Graphic):
