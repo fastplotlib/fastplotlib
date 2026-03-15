@@ -367,7 +367,7 @@ class NDGraphic:
     @property
     def shape(self) -> dict[Hashable, int]:
         """interpreted shape of the data"""
-        self.processor.shape
+        return self.processor.shape
 
     @property
     def ndim(self) -> int:

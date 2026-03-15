@@ -236,6 +236,8 @@ class NDImage(NDGraphic):
         name: str = None,
     ):
 
+        super().__init__(name)
+
         self._global_index = global_index
 
         self._processor = NDImageProcessor(
@@ -254,7 +256,6 @@ class NDImage(NDGraphic):
         self._histogram_widget: HistogramLUTTool | None = None
 
         self._create_graphic()
-        super().__init__(name)
 
     @property
     def processor(self) -> NDImageProcessor:

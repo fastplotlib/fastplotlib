@@ -1,6 +1,7 @@
 from collections.abc import Callable, Hashable, Sequence
 from functools import partial
 from typing import Literal, Any, Type
+from warnings import warn
 
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
@@ -35,6 +36,18 @@ ColorsType = np.ndarray | FeatureCallable | None
 MarkersType = Sequence[str] | np.ndarray | FeatureCallable | None
 SizesType = Sequence[float] | np.ndarray | FeatureCallable | None
 
+
+def default_cmap_transform_each(p: int, data_slice: np.ndarray, s: slice):
+    # create a cmap transform based on the `p` dim size
+    n_displayed = data_slice.shape[1]
+
+    # linspace that's just normalized 0 - 1 within `p` dim size
+    return np.linspace(
+        start=s.start / p,
+        stop=s.stop / p,
+        num=n_displayed,
+        endpoint=False  # since we use a slice object for the displayed data, the last point isn't included
+    )
 
 class NDPositionsProcessor(NDProcessor):
     _other_features = ["colors", "markers", "cmap_transform_each", "sizes"]
@@ -193,17 +206,40 @@ class NDPositionsProcessor(NDProcessor):
         self._markers = np.asarray(new)
 
     @property
-    def cmap_transform_each(self) -> Sequence[str] | None:
+    def cmap_transform_each(self) -> np.ndarray | FeatureCallable | None:
         return self._cmap_transform_each
 
     @cmap_transform_each.setter
-    def cmap_transform_each(self, new: Sequence[str] | None):
+    def cmap_transform_each(self, new: np.ndarray | FeatureCallable | None):
+        """
+        A callable that dynamically creates cmap transforms for the current display window, or array
+        of transforms per-datapoint.
+
+        Array must be of shape [l, p] for unique transforms per line/scatter, or [p,] or [1, p] for identical markers
+        per line/scatter.
+
+        Callable must return an array of shape [l, pw], [1, pw], or [pw,] where pw is the number of currently displayed
+        datapoints given the current display window. The callable receives the current data slice array, as well as the
+        slice object that corresponds to the current display window.
+        """
+        if callable(new):
+            self._cmap_transform_each = new
+            return
+
         if new is None:
+            # default transform is just a transform based on the `p` dim size
             self._cmap_transform_each = None
             return
 
-        self._check_shape_feature("markers", len(new))
-        self._cmap_transforms = np.asarray(new)
+        new = np.asarray(new)
+
+        # if 1-dim, assume it's specifying sizes over `p` dim, set `l` dim to 1
+        if new.ndim == 1:
+            new = new[None]
+
+        self._check_shape_feature("cmap_transform_each", new.shape)
+
+        self._cmap_transform_each = new
 
     @property
     def sizes(self) -> SizesType:
@@ -470,7 +506,9 @@ class NDPositionsProcessor(NDProcessor):
                 # broadcast across all graphical elements
                 n_graphics = self.shape[self.spatial_dims[0]]
                 print(val_sliced.shape, n_graphics)
-                val_sliced = np.broadcast_to(val_sliced, shape=(n_graphics, *val_sliced.shape[1:]))
+                val_sliced = np.broadcast_to(
+                    val_sliced, shape=(n_graphics, *val_sliced.shape[1:])
+                )
 
             other[attr] = val_sliced
 
@@ -554,6 +592,8 @@ class NDPositions(NDGraphic):
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
     ):
+        super().__init__(name)
+
         self._global_index = global_index
 
         if processor_kwargs is None:
@@ -580,7 +620,9 @@ class NDPositions(NDGraphic):
             **processor_kwargs,
         )
 
-        self._processor.p_max = 1_000
+        self.cmap = cmap
+        self.cmap_each = cmap_each
+        self.cmap_transform_each = cmap_transform_each
 
         self._create_graphic(graphic)
 
@@ -599,7 +641,6 @@ class NDPositions(NDGraphic):
 
         self._pause = False
 
-        super().__init__(name)
 
     @property
     def processor(self) -> NDPositionsProcessor:
@@ -633,18 +674,53 @@ class NDPositions(NDGraphic):
 
     @property
     def cmap(self) -> str | None:
-        # across all lines/scatters, or heatmap cmap
-        pass
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, new: str | None):
+        self._cmap = new
 
     @property
-    def cmaps(self) -> np.ndarray[str] | None:
+    def cmap_each(self) -> np.ndarray[str] | None:
         # per-line/scatter
-        pass
+        return self._cmap_each
+
+    @cmap_each.setter
+    def cmap_each(self, new: Sequence[str] | None):
+        if isinstance(new, str):
+            new = [new]
+        if new is None:
+            self._cmap_each = None
+
+        new = np.asarray(new)
+
+        if new.ndim != 1:
+            raise ValueError
+
+        l_dim_size = self.processor.shape[self.processor.spatial_dims[0]]
+        # same cmap for all if size == 1, or specific cmap for each in `l` dim
+        if new.size != 1 and new.size != l_dim_size:
+            raise ValueError
+
+        self._cmap_each = np.broadcast_to(new, shape=(l_dim_size,))
 
     @property
-    def cmaps_transforms(self) -> np.ndarray | None:
+    def cmap_transform_each(self) -> np.ndarray | None:
         # PER line/scatter, only allowed after `cmaps` is set.
-        pass
+        return self.processor.cmap_transform_each
+
+    @cmap_transform_each.setter
+    def cmap_transform_each(self, new: np.ndarray | FeatureCallable | None):
+        if self.cmap_each is None:
+            self.processor.cmap_transform_each = None
+            warn("must set `cmap_each` before `cmap_transform_each`")
+        if new is None and self.cmap_each is not None:
+            # default transform is just a transform based on the `p` dim size
+            new = partial(
+                default_cmap_transform_each, self.shape[self.spatial_dims[1]]
+            )
+
+        self.processor.cmap_transform_each = new
 
     @property
     def spatial_dims(self) -> tuple[str, str, str]:
@@ -693,7 +769,7 @@ class NDPositions(NDGraphic):
 
                             setattr(g, feature, value[l])
 
-                if self.cmaps is not None:
+                if self.cmap_each is not None:
                     match new_features["cmap_transform_each"]:
                         case None:
                             pass
@@ -788,15 +864,17 @@ class NDPositions(NDGraphic):
 
                             setattr(g, feature, value[l])
 
-                if self.cmaps is not None:
-                    match new_features["cmaps_transforms"]:
+                if self.cmap_each is not None:
+                    g.color_mode = "vertex"
+                    g.cmap = self.cmap_each[l]
+                    match new_features["cmap_transform_each"]:
                         case None:
                             pass
                         case _:
                             setattr(
                                 getattr(g, "cmap"),  # indv_graphic.cmap
                                 "transform",
-                                new_features["cmaps_transforms"],
+                                new_features["cmap_transform_each"],
                             )
 
         if self.processor.tooltip:
