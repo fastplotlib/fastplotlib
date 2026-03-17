@@ -6,31 +6,38 @@ Installation
 
 To install use pip:
 
+With imgui support (recommended)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Without jupyterlab support, install desired GUI framework such as glfw, PyQt6, or PySide6 separately.
+
 .. code-block::
 
-    # with imgui and jupyterlab
-    pip install -U "fastplotlib[notebook,imgui]"
-
-    # minimal install, install glfw, pyqt6 or pyside6 separately
-    pip install -U fastplotlib
-
-    # with imgui
     pip install -U "fastplotlib[imgui]"
 
-    # to use in jupyterlab, no imgui
-    pip install -U "fastplotlib[notebook]"
-
-We strongly recommend installing ``simplejpeg`` for use in notebooks, you must first install `libjpeg-turbo <https://libjpeg-turbo.org/>`_.
-
-- If you use ``conda``, you can get ``libjpeg-turbo`` through conda.
-- If you are on linux you can get it through your distro's package manager.
-- For Windows and Mac compiled binaries are available on their release page: https://github.com/libjpeg-turbo/libjpeg-turbo/releases
-
-Once you have ``libjpeg-turbo``:
+With jupyterlab support.
 
 .. code-block::
 
-    pip install simplejpeg
+    pip install -U "fastplotlib[notebook,imgui]"
+
+Without imgui
+^^^^^^^^^^^^^
+
+Minimal, install desired GUI library such as PyQt6, PySide6, or glfw separately.
+
+.. code-block::
+
+    pip install fastplotlib
+
+With jupyterlab support only.
+
+.. code-block::
+
+    pip install -U "fastplotlib[notebook]"
+
+Fastplotlib is also available on conda-forge. For imgui support you will need to separately install ``imgui-bundle``, and for jupyterlab you will need to install ``jupyter-rfb`` and ``simplejpeg`` which are all available on conda-forge.
+
 
 What is ``fastplotlib``?
 ------------------------
