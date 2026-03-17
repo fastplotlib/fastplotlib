@@ -1,14 +1,22 @@
-from typing import Any
+from __future__ import annotations
 
-from ._index import RangeContinuous, RangeDiscrete, GlobalIndex
+from typing import Any, Optional
+
+from ._index import RangeContinuous, RangeDiscrete, ReferenceIndex
 from ._ndw_subplot import NDWSubplot
 from ._ui import NDWidgetUI, RightClickMenu
 from ...layouts import ImguiFigure, Subplot
 
 
 class NDWidget:
-    def __init__(self, ref_ranges: dict[str, tuple], **kwargs):
-        self._indices = GlobalIndex(ref_ranges, self._get_ndgraphics)
+    def __init__(self, ref_ranges: dict[str, tuple], ref_index: Optional[ReferenceIndex] = None, **kwargs):
+        if ref_index is None:
+            self._indices = ReferenceIndex(ref_ranges)
+        else:
+            self._indices = ref_index
+
+        self._indices._add_ndwidget_(self)
+
         self._figure = ImguiFigure(std_right_click_menu=RightClickMenu, **kwargs)
         self._figure.std_right_click_menu.set_nd_widget(self)
 
@@ -27,7 +35,7 @@ class NDWidget:
         return self._figure
 
     @property
-    def indices(self) -> GlobalIndex:
+    def indices(self) -> ReferenceIndex:
         return self._indices
 
     @indices.setter
@@ -35,20 +43,21 @@ class NDWidget:
         self._indices.set(new_indices)
 
     @property
-    def ref_ranges(self) -> dict[str, RangeContinuous | RangeDiscrete]:
+    def ranges(self) -> dict[str, RangeContinuous | RangeDiscrete]:
         return self._indices.ref_ranges
 
-    def __getitem__(self, key: str | tuple[int, int] | Subplot):
-        if not isinstance(key, Subplot):
-            key = self.figure[key]
-        return self._subplots_nd[key]
-
-    def _get_ndgraphics(self):
+    @property
+    def ndgraphics(self):
         gs = list()
         for subplot in self._subplots_nd.values():
             gs.extend(subplot.nd_graphics)
 
         return tuple(gs)
+
+    def __getitem__(self, key: str | tuple[int, int] | Subplot):
+        if not isinstance(key, Subplot):
+            key = self.figure[key]
+        return self._subplots_nd[key]
 
     def show(self, **kwargs):
         return self.figure.show(**kwargs)

@@ -6,6 +6,7 @@ from imgui_bundle import imgui, imgui_ctx, icons_fontawesome_6 as fa
 
 from ...graphics import (
     ScatterCollection,
+    ScatterStack,
     LineCollection,
     LineStack,
     ImageGraphic,
@@ -19,7 +20,7 @@ from ._base import NDGraphic
 from ._nd_positions import NDPositions
 from ._nd_image import NDImage
 
-position_graphics = [ScatterCollection, LineCollection, LineStack, ImageGraphic]
+position_graphics = [ScatterCollection, ScatterStack, LineCollection, LineStack, ImageGraphic]
 
 
 class NDWidgetUI(EdgeWindow):
@@ -35,7 +36,7 @@ class NDWidgetUI(EdgeWindow):
         )
         self._ndwidget = ndwidget
 
-        ref_ranges = self._ndwidget.ref_ranges
+        ref_ranges = self._ndwidget.ranges
 
         # whether or not a dimension is in play mode
         self._playing = {dim: False for dim in ref_ranges.keys()}
@@ -61,11 +62,11 @@ class NDWidgetUI(EdgeWindow):
         self._max_display_windows: dict[NDGraphic, float | int] = dict()
 
     def _set_index(self, dim, index):
-        if index >= self._ndwidget.ref_ranges[dim].stop:
+        if index >= self._ndwidget.ranges[dim].stop:
             if self._loop[dim]:
-                index = self._ndwidget.ref_ranges[dim].start
+                index = self._ndwidget.ranges[dim].start
             else:
-                index = self._ndwidget.ref_ranges[dim].stop
+                index = self._ndwidget.ranges[dim].stop
                 self._playing[dim] = False
 
         self._ndwidget.indices[dim] = index
@@ -77,7 +78,7 @@ class NDWidgetUI(EdgeWindow):
             # push id since we have the same buttons for each dim
             imgui.push_id(f"{self._id_counter}_{dim}")
 
-            rr = self._ndwidget.ref_ranges[dim]
+            rr = self._ndwidget.ranges[dim]
 
             if self._playing[dim]:
                 # show pause button if playing
@@ -252,7 +253,7 @@ class RightClickMenu(StandardRightClickMenu):
                 nd_graphic.display_window = None
             else:
                 # pick a value 10% of the reference range
-                nd_graphic.display_window = self._ndwidget.ref_ranges[p_dim].range * 0.1
+                nd_graphic.display_window = self._ndwidget.ranges[p_dim].range * 0.1
 
         if nd_graphic.display_window is not None:
             if isinstance(nd_graphic.display_window, (int, np.integer)):
@@ -268,7 +269,7 @@ class RightClickMenu(StandardRightClickMenu):
                 "display window",
                 v=nd_graphic.display_window,
                 v_min=type_(0),
-                v_max=type_(self._ndwidget.ref_ranges[p_dim].stop * 0.1),
+                v_max=type_(self._ndwidget.ranges[p_dim].stop * 0.1),
             )
 
             if changed:

@@ -28,7 +28,7 @@ from .._base import (
     block_reentrance,
     block_indices,
 )
-from .._index import GlobalIndex
+from .._index import ReferenceIndex
 
 # types for the other features
 FeatureCallable = Callable[[np.ndarray, slice], np.ndarray]
@@ -46,8 +46,9 @@ def default_cmap_transform_each(p: int, data_slice: np.ndarray, s: slice):
         start=s.start / p,
         stop=s.stop / p,
         num=n_displayed,
-        endpoint=False  # since we use a slice object for the displayed data, the last point isn't included
+        endpoint=False,  # since we use a slice object for the displayed data, the last point isn't included
     )
+
 
 class NDPositionsProcessor(NDProcessor):
     _other_features = ["colors", "markers", "cmap_transform_each", "sizes"]
@@ -227,7 +228,6 @@ class NDPositionsProcessor(NDProcessor):
             return
 
         if new is None:
-            # default transform is just a transform based on the `p` dim size
             self._cmap_transform_each = None
             return
 
@@ -485,7 +485,6 @@ class NDPositionsProcessor(NDProcessor):
             val = getattr(self, attr)
 
             if val is None:
-                other[attr] = None
                 continue
 
             if callable(val):
@@ -558,7 +557,7 @@ class NDPositionsProcessor(NDProcessor):
 class NDPositions(NDGraphic):
     def __init__(
         self,
-        global_index: GlobalIndex,
+        ref_index: ReferenceIndex,
         data: Any,
         dims: Sequence[str],
         spatial_dims: tuple[str, str, str],
@@ -586,15 +585,18 @@ class NDPositions(NDGraphic):
         cmap: str = None,  # across the line/scatter collection
         cmap_each: Sequence[str] = None,  # for each individual line/scatter
         cmap_transform_each: np.ndarray = None,  # for each individual line/scatter
-        markers: Sequence[str] = None,
-        sizes: Sequence[float] = None,
+        markers: np.ndarray = None,  # across the scatter collection, shape [l,]
+        markers_each: Sequence[str] = None,  # for each individual scatter, shape [l, p]
+        sizes: np.ndarray = None,  # across the scatter collection, shape [l,]
+        sizes_each: Sequence[float] = None,  # for each individual scatter, shape [l, p]
+        thickness: np.ndarray = None,  # for each line, shape [l,]
         name: str = None,
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
     ):
         super().__init__(name)
 
-        self._global_index = global_index
+        self._ref_index = ref_index
 
         if processor_kwargs is None:
             processor_kwargs = dict()
@@ -614,13 +616,17 @@ class NDPositions(NDGraphic):
             window_funcs=window_funcs,
             index_mappings=index_mappings,
             colors=colors,
-            markers=markers,
+            markers=markers_each,
             cmap_transform_each=cmap_transform_each,
-            sizes=sizes,
+            sizes=sizes_each,
             **processor_kwargs,
         )
 
-        self.cmap = cmap
+        self._cmap = cmap
+        self._sizes = sizes
+        self._markers = markers
+        self._thickness = thickness
+
         self.cmap_each = cmap_each
         self.cmap_transform_each = cmap_transform_each
 
@@ -640,7 +646,6 @@ class NDPositions(NDGraphic):
             self._linear_selector = None
 
         self._pause = False
-
 
     @property
     def processor(self) -> NDPositionsProcessor:
@@ -673,60 +678,6 @@ class NDPositions(NDGraphic):
         plot_area.add_graphic(self._graphic)
 
     @property
-    def cmap(self) -> str | None:
-        return self._cmap
-
-    @cmap.setter
-    def cmap(self, new: str | None):
-        self._cmap = new
-
-    @property
-    def cmap_each(self) -> np.ndarray[str] | None:
-        # per-line/scatter
-        return self._cmap_each
-
-    @cmap_each.setter
-    def cmap_each(self, new: Sequence[str] | None):
-        if new is None:
-            self._cmap_each = None
-            return
-
-        if isinstance(new, str):
-            new = [new]
-
-        new = np.asarray(new)
-
-        if new.ndim != 1:
-            raise ValueError
-
-        l_dim_size = self.processor.shape[self.processor.spatial_dims[0]]
-        # same cmap for all if size == 1, or specific cmap for each in `l` dim
-        if new.size != 1 and new.size != l_dim_size:
-            raise ValueError
-
-        self._cmap_each = np.broadcast_to(new, shape=(l_dim_size,))
-
-    @property
-    def cmap_transform_each(self) -> np.ndarray | None:
-        # PER line/scatter, only allowed after `cmaps` is set.
-        return self.processor.cmap_transform_each
-
-    @cmap_transform_each.setter
-    def cmap_transform_each(self, new: np.ndarray | FeatureCallable | None):
-        if self.cmap_each is None:
-            self.processor.cmap_transform_each = None
-            warn("must set `cmap_each` before `cmap_transform_each`")
-            return
-
-        if new is None and self.cmap_each is not None:
-            # default transform is just a transform based on the `p` dim size
-            new = partial(
-                default_cmap_transform_each, self.shape[self.spatial_dims[1]]
-            )
-
-        self.processor.cmap_transform_each = new
-
-    @property
     def spatial_dims(self) -> tuple[str, str, str]:
         return self.processor.spatial_dims
 
@@ -738,7 +689,7 @@ class NDPositions(NDGraphic):
 
     @property
     def indices(self) -> dict[Hashable, Any]:
-        return {d: self._global_index[d] for d in self.processor.slider_dims}
+        return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
     @indices.setter
     @block_reentrance
@@ -810,7 +761,7 @@ class NDPositions(NDGraphic):
     def _linear_selector_handler(self, ev):
         with block_indices(self):
             # linear selector always acts on the `p` dim
-            self._global_index[self.processor.spatial_dims[1]] = ev.info["value"]
+            self._ref_index[self.processor.spatial_dims[1]] = ev.info["value"]
 
     def _tooltip_handler(self, graphic, pick_info):
         if isinstance(self.graphic, (LineCollection, ScatterCollection)):
@@ -837,6 +788,18 @@ class NDPositions(NDGraphic):
         new_features = self.processor.get(self.indices)
         data_slice = new_features["data"]
 
+        # store any cmap, sizes, thickness, etc. to assign to new graphic
+        graphic_attrs = dict()
+        for attr in ["cmap", "markers", "sizes", "thickness"]:
+            if attr in new_features.keys():
+                if new_features[attr] is not None:
+                    # markers and sizes defined for each line via processor takes priority
+                    continue
+
+            val = getattr(self, attr)
+            if val is not None:
+                graphic_attrs[attr] = val
+
         if issubclass(graphic_cls, ImageGraphic):
             # `d` dim must only have xy data to be interpreted as a heatmap, xyz can't become a timeseries heatmap
             if self.processor.shape[self.processor.spatial_dims[-1]] != 2:
@@ -853,6 +816,10 @@ class NDPositions(NDGraphic):
             else:
                 kwargs = self._graphic_kwargs
             self._graphic = graphic_cls(data_slice, **kwargs)
+
+        for attr in graphic_attrs.keys():
+            if hasattr(self._graphic, attr):
+                setattr(self._graphic, attr, graphic_attrs[attr])
 
         if isinstance(self._graphic, (LineCollection, ScatterCollection)):
             for l, g in enumerate(self.graphic.graphics):
@@ -972,11 +939,136 @@ class NDPositions(NDGraphic):
         new_width = abs(xr[1] - xr[0])
         new_index = (xr[0] + xr[1]) / 2
 
-        if (new_index == self._global_index[self.processor.spatial_dims[1]]) and (
+        if (new_index == self._ref_index[self.processor.spatial_dims[1]]) and (
             last_width == new_width
         ):
             return
 
         self.processor.display_window = new_width
         # set the `p` dim on the global index vector
-        self._global_index[self.processor.spatial_dims[1]] = new_index
+        self._ref_index[self.processor.spatial_dims[1]] = new_index
+
+    @property
+    def cmap(self) -> str | None:
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, new: str | None):
+        if new is None:
+            # just set a default
+            if isinstance(self.graphic, (LineCollection, ScatterCollection)):
+                self.graphic.colors = "w"
+            else:
+                self.graphic.cmap = "plasma"
+
+            self._cmap = None
+            return
+
+        self._graphic.cmap = new
+        self._cmap = new
+        # force a re-render
+        self.indices = self.indices
+
+    @property
+    def cmap_each(self) -> np.ndarray[str] | None:
+        # per-line/scatter
+        return self._cmap_each
+
+    @cmap_each.setter
+    def cmap_each(self, new: Sequence[str] | None):
+        if new is None:
+            self._cmap_each = None
+            return
+
+        if isinstance(new, str):
+            new = [new]
+
+        new = np.asarray(new)
+
+        if new.ndim != 1:
+            raise ValueError
+
+        l_dim_size = self.processor.shape[self.processor.spatial_dims[0]]
+        # same cmap for all if size == 1, or specific cmap for each in `l` dim
+        if new.size != 1 and new.size != l_dim_size:
+            raise ValueError
+
+        self._cmap_each = np.broadcast_to(new, shape=(l_dim_size,))
+
+    @property
+    def cmap_transform_each(self) -> np.ndarray | None:
+        # PER line/scatter, only allowed after `cmaps` is set.
+        return self.processor.cmap_transform_each
+
+    @cmap_transform_each.setter
+    def cmap_transform_each(self, new: np.ndarray | FeatureCallable | None):
+        if new is None:
+            self.processor.cmap_transform_each = None
+
+        if self.cmap_each is None:
+            self.processor.cmap_transform_each = None
+            warn("must set `cmap_each` before `cmap_transform_each`")
+            return
+
+        if new is None and self.cmap_each is not None:
+            # default transform is just a transform based on the `p` dim size
+            new = partial(default_cmap_transform_each, self.shape[self.spatial_dims[1]])
+
+        self.processor.cmap_transform_each = new
+
+    @property
+    def markers(self) -> str | Sequence[str] | None:
+        return self._markers
+
+    @markers.setter
+    def markers(self, new: str | None):
+        if not isinstance(self.graphic, ScatterCollection):
+            self._markers = None
+            return
+
+        if new is None:
+            # just set a default
+            new = "circle"
+
+        self.graphic.markers = new
+        self._markers = new
+        # force a re-render
+        self.indices = self.indices
+
+    @property
+    def sizes(self) -> float | Sequence[float] | None:
+        return self._sizes
+
+    @sizes.setter
+    def sizes(self, new: float | Sequence[float] | None):
+        if not isinstance(self.graphic, ScatterCollection):
+            self._sizes = None
+            return
+
+        if new is None:
+            # just set a default
+            new = 5.0
+
+        self.graphic.sizes = new
+        self._sizes = new
+        # force a re-render
+        self.indices = self.indices
+
+    @property
+    def thickness(self) -> float | Sequence[float] | None:
+        return self._thickness
+
+    @thickness.setter
+    def thickness(self, new: float | Sequence[float] | None):
+        if not isinstance(self.graphic, LineCollection):
+            self._thickness = None
+            return
+
+        if new is None:
+            # just set a default
+            new = 2.0
+
+        self.graphic.thickness = new
+        self._thickness = new
+        # force a re-render
+        self.indices = self.indices

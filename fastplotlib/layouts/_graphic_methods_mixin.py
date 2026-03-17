@@ -33,7 +33,7 @@ class GraphicMethodsMixin:
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
-        **kwargs,
+        **kwargs
     ) -> ImageGraphic:
         """
 
@@ -74,7 +74,7 @@ class GraphicMethodsMixin:
             cmap,
             interpolation,
             cmap_interpolation,
-            **kwargs,
+            **kwargs
         )
 
     def add_image_volume(
@@ -92,7 +92,7 @@ class GraphicMethodsMixin:
         substep_size: float = 0.1,
         emissive: str | tuple | numpy.ndarray = (0, 0, 0),
         shininess: int = 30,
-        **kwargs,
+        **kwargs
     ) -> ImageVolumeGraphic:
         """
 
@@ -169,7 +169,7 @@ class GraphicMethodsMixin:
             substep_size,
             emissive,
             shininess,
-            **kwargs,
+            **kwargs
         )
 
     def add_line_collection(
@@ -185,7 +185,7 @@ class GraphicMethodsMixin:
         metadata: Any = None,
         metadatas: Union[Sequence[Any], numpy.ndarray] = None,
         kwargs_lines: list[dict] = None,
-        **kwargs,
+        **kwargs
     ) -> LineCollection:
         """
 
@@ -256,7 +256,7 @@ class GraphicMethodsMixin:
             metadata,
             metadatas,
             kwargs_lines,
-            **kwargs,
+            **kwargs
         )
 
     def add_line(
@@ -268,7 +268,7 @@ class GraphicMethodsMixin:
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
         color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         size_space: str = "screen",
-        **kwargs,
+        **kwargs
     ) -> LineGraphic:
         """
 
@@ -322,7 +322,7 @@ class GraphicMethodsMixin:
             cmap_transform,
             color_mode,
             size_space,
-            **kwargs,
+            **kwargs
         )
 
     def add_line_stack(
@@ -339,7 +339,7 @@ class GraphicMethodsMixin:
         separation: float = 10.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
-        **kwargs,
+        **kwargs
     ) -> LineStack:
         """
 
@@ -415,7 +415,7 @@ class GraphicMethodsMixin:
             separation,
             separation_axis,
             kwargs_lines,
-            **kwargs,
+            **kwargs
         )
 
     def add_mesh(
@@ -434,7 +434,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] = None,
-        **kwargs,
+        **kwargs
     ) -> MeshGraphic:
         """
 
@@ -488,7 +488,7 @@ class GraphicMethodsMixin:
             mapcoords,
             cmap,
             clim,
-            **kwargs,
+            **kwargs
         )
 
     def add_polygon(
@@ -505,7 +505,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] | None = None,
-        **kwargs,
+        **kwargs
     ) -> PolygonGraphic:
         """
 
@@ -555,12 +555,15 @@ class GraphicMethodsMixin:
         cmap: Union[Sequence[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
         sizes: Union[float, Sequence[float]] = 5.0,
+        uniform_size: bool = True,
+        markers: Union[numpy.ndarray, Sequence[str]] = None,
+        uniform_marker: bool = True,
+        edge_width: float = 1.0,
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Union[Sequence[Any], numpy.ndarray] = None,
-        kwargs_lines: list[dict] = None,
-        **kwargs,
+        **kwargs
     ) -> ScatterCollection:
         """
 
@@ -618,12 +621,15 @@ class GraphicMethodsMixin:
             cmap,
             cmap_transform,
             sizes,
+            uniform_size,
+            markers,
+            uniform_marker,
+            edge_width,
             name,
             names,
             metadata,
             metadatas,
-            kwargs_lines,
-            **kwargs,
+            **kwargs
         )
 
     def add_scatter(
@@ -648,7 +654,7 @@ class GraphicMethodsMixin:
         sizes: Union[float, numpy.ndarray, Sequence[float]] = 5,
         uniform_size: bool = True,
         size_space: str = "screen",
-        **kwargs,
+        **kwargs
     ) -> ScatterGraphic:
         """
 
@@ -778,7 +784,92 @@ class GraphicMethodsMixin:
             sizes,
             uniform_size,
             size_space,
-            **kwargs,
+            **kwargs
+        )
+
+    def add_scatter_stack(
+        self,
+        data: Union[numpy.ndarray, List[numpy.ndarray]],
+        colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
+        cmap: Union[Sequence[str], str] = None,
+        cmap_transform: Union[numpy.ndarray, List] = None,
+        name: str = None,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
+        separation: float = 0.0,
+        separation_axis: str = "y",
+        **kwargs
+    ) -> ScatterStack:
+        """
+
+        Create a stack of :class:`.LineGraphic` that are separated along the "x" or "y" axis.
+
+        Parameters
+        ----------
+        data: list of array-like
+            List or array-like of multiple line data to plot
+
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
+
+        thickness: float or Iterable of float, default 2.0
+            | if ``float``, single thickness will be used for all lines
+            | if ``list`` of ``float``, each value will apply to the individual lines
+
+        colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
+            | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
+            | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
+            | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
+            | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
+
+        cmap: Iterable of str or str, optional
+            | if ``str``, single cmap will be used for all lines
+            | if ``list`` of ``str``, each cmap will apply to the individual lines
+
+            .. note::
+                ``cmap`` overrides any arguments passed to ``colors``
+
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        name: str, optional
+            name of the line collection as a whole
+
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            metadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
+            ``len(metadata)`` must be same as ``len(data)``
+
+        separation: float, default 0.0
+            space in between each line graphic in the stack
+
+        separation_axis: str, default "y"
+            axis in which the line graphics in the stack should be separated
+
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
+
+
+        """
+        return self._create_graphic(
+            ScatterStack,
+            data,
+            colors,
+            cmap,
+            cmap_transform,
+            name,
+            names,
+            metadata,
+            metadatas,
+            separation,
+            separation_axis,
+            **kwargs
         )
 
     def add_surface(
@@ -795,7 +886,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] | None = None,
-        **kwargs,
+        **kwargs
     ) -> SurfaceGraphic:
         """
 
@@ -849,7 +940,7 @@ class GraphicMethodsMixin:
         screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
-        **kwargs,
+        **kwargs
     ) -> TextGraphic:
         """
 
@@ -900,7 +991,7 @@ class GraphicMethodsMixin:
             screen_space,
             offset,
             anchor,
-            **kwargs,
+            **kwargs
         )
 
     def add_vectors(
@@ -910,7 +1001,7 @@ class GraphicMethodsMixin:
         color: Union[str, Sequence[float], numpy.ndarray] = "w",
         size: float = None,
         vector_shape_options: dict = None,
-        **kwargs,
+        **kwargs
     ) -> VectorsGraphic:
         """
 
@@ -955,5 +1046,5 @@ class GraphicMethodsMixin:
             color,
             size,
             vector_shape_options,
-            **kwargs,
+            **kwargs
         )

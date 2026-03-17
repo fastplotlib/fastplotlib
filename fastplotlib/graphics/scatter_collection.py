@@ -1,3 +1,5 @@
+from itertools import repeat
+from numbers import Number
 from typing import *
 
 import numpy as np
@@ -59,7 +61,7 @@ class _ScatterCollectionProperties:
 
     @property
     def data(self) -> CollectionFeature:
-        """get or set data of lines in the collection"""
+        """get or set data of scatters in the collection"""
         return CollectionFeature(self.graphics, "data")
 
     @data.setter
@@ -98,6 +100,38 @@ class _ScatterCollectionProperties:
         self.colors = parse_cmap_values(
             n_colors=len(self), cmap_name=name, transform=transform
         )
+
+    @property
+    def markers(self) -> CollectionFeature:
+        """get or set markers of scatters in the collection"""
+        return CollectionFeature(self.graphics, "markers")
+
+    @markers.setter
+    def markers(self, values: str | Sequence[str]):
+        if isinstance(values, str):
+            values = repeat(values, len(self))
+
+        elif len(values) != len(self):
+            raise IndexError("len(markers) must be the same as the number of ScatterGraphics in the collection")
+
+        for g, v in zip(self, values):
+            g.markers = v
+
+    @property
+    def sizes(self) -> CollectionFeature:
+        """get or set sizes of scatter points in the collection"""
+        return CollectionFeature(self.graphics, "sizes")
+
+    @sizes.setter
+    def sizes(self, values):
+        if isinstance(values, Number):
+            values = repeat(values, len(self))
+
+        elif len(values) != len(self):
+            raise IndexError("len(sizes) must be the same as the number of ScatterGraphics in the collection")
+
+        for g, v in zip(self, values):
+            g.sizes = v
 
 
 class ScatterCollectionIndexer(CollectionIndexer, _ScatterCollectionProperties):

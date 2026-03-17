@@ -1,3 +1,5 @@
+from itertools import repeat
+from numbers import Number
 from typing import *
 
 import numpy as np
@@ -105,8 +107,11 @@ class _LineCollectionProperties:
         return np.asarray([g.thickness for g in self])
 
     @thickness.setter
-    def thickness(self, values: np.ndarray | list[float]):
-        if not len(values) == len(self):
+    def thickness(self, values: float | Sequence[float]):
+        if isinstance(values, Number):
+            values = repeat(values, len(self))
+
+        elif not len(values) == len(self):
             raise IndexError
 
         for g, v in zip(self, values):

@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from typing import Sequence, Any, Callable
 
-from ._base import NDGraphic
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ._ndwidget import NDWidget
 
 
 @dataclass
@@ -49,11 +53,10 @@ class RangeDiscrete:
         return len(self.options)
 
 
-class GlobalIndex:
+class ReferenceIndex:
     def __init__(
         self,
         ref_ranges: dict[str, tuple],
-        get_ndgraphics: Callable[[], tuple[NDGraphic]],
     ):
         self._ref_ranges = dict()
 
@@ -69,8 +72,6 @@ class GlobalIndex:
             else:
                 raise ValueError
 
-        self._get_ndgraphics = get_ndgraphics
-
         # starting index for all dims
         self._indices: dict[str, int | float | Any] = {
             name: rr.start for name, rr in self._ref_ranges.items()
@@ -78,9 +79,18 @@ class GlobalIndex:
 
         self._indices_changed_handlers = set()
 
+        self._ndwidgets: list[NDWidget] = list()
+
+    def _add_ndwidget_(self, ndw: NDWidget):
+        from ._ndwidget import NDWidget
+        if not isinstance(ndw, NDWidget):
+            raise TypeError
+
+        self._ndwidgets.append(ndw)
+
     def set(self, indices: dict[str, Any]):
         for dim, value in indices.items():
-            self._indices[dim] = self._clamp(value)
+            self._indices[dim] = self._clamp(dim, value)
 
         self._render_indices()
 
@@ -94,9 +104,13 @@ class GlobalIndex:
         return value
 
     def _render_indices(self):
-        for g in self._get_ndgraphics():
-            # only provide slider indices to the graphic
-            g.indices = {d: self._indices[d] for d in g.processor.slider_dims}
+        for ndw in self._ndwidgets:
+            for g in ndw.ndgraphics:
+                if g.data is None:
+                    continue
+                # only provide slider indices to the graphic
+                g.indices = {d: self._indices[d] for d in g.processor.slider_dims}
+                print(g)
 
     @property
     def ref_ranges(self) -> dict[str, RangeContinuous | RangeDiscrete]:
@@ -117,7 +131,7 @@ class GlobalIndex:
         # TODO: implement pushing and popping dims
         pass
 
-    def add_event_handler(self, handler: callable, event: str = "indices"):
+    def add_event_handler(self, handler: Callable, event: str = "indices"):
         """
         Register an event handler.
 
@@ -126,7 +140,7 @@ class GlobalIndex:
 
         Parameters
         ----------
-        handler: callable
+        handler: Callable
             callback function, must take a tuple of int as the only argument. This tuple will be the `indices`
 
         event: str, "indices"
@@ -153,7 +167,7 @@ class GlobalIndex:
 
         self._indices_changed_handlers.add(handler)
 
-    def remove_event_handler(self, handler: callable):
+    def remove_event_handler(self, handler: Callable):
         """Remove a registered event handler"""
         self._indices_changed_handlers.remove(handler)
 
@@ -178,6 +192,7 @@ class GlobalIndex:
         return str(self._indices)
 
 
+# TODO: Not sure if we'll actually do this here, just a placeholder for now
 class SelectionVector:
     @property
     def selection(self):
