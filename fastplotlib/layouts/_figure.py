@@ -27,8 +27,12 @@ class Figure:
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),
-        rects: list[tuple | np.ndarray] | OrderedDict[str, tuple | np.ndarray | list] = None,
-        extents: list[tuple | np.ndarray] | OrderedDict[str, tuple | np.ndarray | list] = None,
+        rects: (
+            list[tuple | np.ndarray] | OrderedDict[str, tuple | np.ndarray | list]
+        ) = None,
+        extents: (
+            list[tuple | np.ndarray] | OrderedDict[str, tuple | np.ndarray | list]
+        ) = None,
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
