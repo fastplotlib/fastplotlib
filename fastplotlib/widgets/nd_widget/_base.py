@@ -35,7 +35,7 @@ class NDProcessor:
         window_order: tuple[Hashable, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
     ):
-        self._data = self._validate_data(data, dims)
+        self._data = self._validate_data(data, tuple(dims))
         self.spatial_dims = spatial_dims
 
         self.index_mappings = index_mappings
@@ -214,8 +214,10 @@ class NDProcessor:
             return
 
         for d in maps.keys():
-            if d not in self.slider_dims:
-                raise KeyError
+            if d not in self.dims:
+                raise KeyError(
+                    f"`index_mapping` provided for non-existent dimension: {d}, existing dims are: {self.dims}"
+                )
 
             if isinstance(maps[d], ArrayProtocol):
                 # create a searchsorted mapping function automatically
@@ -333,6 +335,9 @@ class NDGraphic:
         self._name = name
         self._block_indices = False
 
+    def _create_graphic(self, graphic_cls: type):
+        raise NotImplementedError
+
     @property
     def name(self) -> str | None:
         return self._name
@@ -361,6 +366,13 @@ class NDGraphic:
     @data.setter
     def data(self, data: Any):
         self.processor.data = data
+        # create a new graphic when data has changed
+        plot_area = self._graphic._plot_area
+        plot_area.delete_graphic(self._graphic)
+
+        self._create_graphic(self.graphic.__class__)
+        plot_area.add_graphic(self._graphic)
+
         # force a re-render
         self.indices = self.indices
 

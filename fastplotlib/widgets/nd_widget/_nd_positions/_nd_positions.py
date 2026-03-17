@@ -957,6 +957,9 @@ class NDPositions(NDGraphic):
         self._x_range_mode = mode
 
     def _update_from_view_range(self):
+        if self._graphic is None:
+            return
+
         xr = self.graphic._plot_area.x_range
 
         # the floating point error near zero gets nasty here
