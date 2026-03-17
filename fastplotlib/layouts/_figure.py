@@ -1,14 +1,13 @@
-import os
-from itertools import product, chain
-from pathlib import Path
-
-import numpy as np
-from typing import Literal, Iterable
 from inspect import getfullargspec
+from itertools import product, chain
+import os
+from pathlib import Path
+from typing import Literal, Iterable
 from warnings import warn
 
-import pygfx
+import numpy as np
 
+import pygfx
 from rendercanvas import BaseRenderCanvas
 
 from ._utils import (
@@ -27,8 +26,8 @@ class Figure:
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),
-        rects: list[tuple | np.ndarray] = None,
-        extents: list[tuple | np.ndarray] = None,
+        rects: list[tuple | np.ndarray] | dict[str, tuple | np.ndarray] = None,
+        extents: list[tuple | np.ndarray] | dict[str, tuple | np.ndarray] = None,
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
@@ -60,15 +59,17 @@ class Figure:
         shape: tuple[int, int], default (1, 1)
             shape [n_rows, n_cols] that defines a grid of subplots
 
-        rects: list of tuples or arrays
-            list of rects (x, y, width, height) that define the subplots.
+        rects: list of tuples or arrays, or a dict mapping subplot name -> rect
+            list or dict of rects (x, y, width, height) that define the subplots.
+            If it is a dict, the keys are used as the subplot names.
             rects can be defined in absolute pixels or as a fraction of the canvas.
             If width & height <= 1 the rect is assumed to be fractional.
             Conversely, if width & height > 1 the rect is assumed to be in absolute pixels.
             width & height must be > 0. Negative values are not allowed.
 
-        extents: list of tuples or arrays
-            list of extents (xmin, xmax, ymin, ymax) that define the subplots.
+        extents: list of tuples or arrays, or a dict mapping subplot name -> extent
+            list or dict of extents (xmin, xmax, ymin, ymax) that define the subplots.
+            If it is a dict, the keys are used as the subplot names.
             extents can be defined in absolute pixels or as a fraction of the canvas.
             If xmax & ymax <= 1 the extent is assumed to be fractional.
             Conversely, if xmax & ymax > 1 the extent is assumed to be in absolute pixels.
@@ -120,7 +121,7 @@ class Figure:
             starting size of canvas in absolute pixels, default (500, 300)
 
         names: list or array of str, optional
-            subplot names
+            subplot names, ignored if extents or rects are provided as a dict
 
         """
         # create canvas and renderer
@@ -148,6 +149,10 @@ class Figure:
         self._fpl_overlay_scene = pygfx.Scene()
 
         if rects is not None:
+            if isinstance(rects, dict):
+                # the actual rects are the dict values, subplot names are the keys
+                names, rects = zip(*rects.items())
+
             if not all(isinstance(v, (np.ndarray, tuple, list)) for v in rects):
                 raise TypeError(
                     f"rects must a list of arrays, tuples, or lists of rects (x, y, w, h), you have passed: {rects}"
@@ -157,6 +162,10 @@ class Figure:
             extents = [None] * n_subplots
 
         elif extents is not None:
+            if isinstance(extents, dict):
+                # the actual extents are the dict values, subplot names are the keys
+                names, extents = zip(*extents.items())
+
             if not all(isinstance(v, (np.ndarray, tuple, list)) for v in extents):
                 raise TypeError(
                     f"extents must a list of arrays, tuples, or lists of extents (xmin, xmax, ymin, ymax), "
