@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from inspect import getfullargspec
 from itertools import product, chain
 import os
@@ -27,12 +26,8 @@ class Figure:
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),
-        rects: (
-            list[tuple | np.ndarray] | OrderedDict[str, tuple | np.ndarray | list]
-        ) = None,
-        extents: (
-            list[tuple | np.ndarray] | OrderedDict[str, tuple | np.ndarray | list]
-        ) = None,
+        rects: list[tuple | np.ndarray] | dict[str, tuple | np.ndarray] = None,
+        extents: list[tuple | np.ndarray] | dict[str, tuple | np.ndarray] = None,
         cameras: (
             Literal["2d", "3d"]
             | Iterable[Iterable[Literal["2d", "3d"]]]
@@ -64,7 +59,7 @@ class Figure:
         shape: tuple[int, int], default (1, 1)
             shape [n_rows, n_cols] that defines a grid of subplots
 
-        rects: list of tuples or arrays, or an OrderedDict mapping subplot name -> rect
+        rects: list of tuples or arrays, or a dict mapping subplot name -> rect
             list or dict of rects (x, y, width, height) that define the subplots.
             If it is a dict, the keys are used as the subplot names.
             rects can be defined in absolute pixels or as a fraction of the canvas.
@@ -72,7 +67,7 @@ class Figure:
             Conversely, if width & height > 1 the rect is assumed to be in absolute pixels.
             width & height must be > 0. Negative values are not allowed.
 
-        extents: list of tuples or arrays, or an OrderedDict mapping subplot name -> extent
+        extents: list of tuples or arrays, or a dict mapping subplot name -> extent
             list or dict of extents (xmin, xmax, ymin, ymax) that define the subplots.
             If it is a dict, the keys are used as the subplot names.
             extents can be defined in absolute pixels or as a fraction of the canvas.
@@ -154,9 +149,9 @@ class Figure:
         self._fpl_overlay_scene = pygfx.Scene()
 
         if rects is not None:
-            if isinstance(rects, OrderedDict):
+            if isinstance(rects, dict):
                 # the actual rects are the dict values, subplot names are the keys
-                rects, names = list(rects.values()), list(rects.keys())
+                names, rects = zip(*rects.items())
 
             if not all(isinstance(v, (np.ndarray, tuple, list)) for v in rects):
                 raise TypeError(
@@ -167,9 +162,9 @@ class Figure:
             extents = [None] * n_subplots
 
         elif extents is not None:
-            if isinstance(extents, OrderedDict):
+            if isinstance(extents, dict):
                 # the actual extents are the dict values, subplot names are the keys
-                extents, names = list(extents.values()), list(extents.keys())
+                names, extents = zip(*extents.items())
 
             if not all(isinstance(v, (np.ndarray, tuple, list)) for v in extents):
                 raise TypeError(
