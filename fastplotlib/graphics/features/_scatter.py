@@ -569,6 +569,7 @@ class VertexPointSizes(BufferManager):
                 # create new buffer
                 value = self._fix_sizes(value, len(value))
                 data = np.empty(shape=(len(value),), dtype=np.float32)
+                data[:] = value
 
                 # create the new buffer, old buffer should get dereferenced
                 self._fpl_buffer = pygfx.Buffer(data)
