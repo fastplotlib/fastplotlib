@@ -9,13 +9,14 @@ import os
 # otherwise fpl tries to select glfw canvas
 os.environ["WGPU_FORCE_OFFSCREEN"] = "1"
 
-import fastplotlib
-from pygfx.utils.gallery_scraper import find_examples_for_gallery
-from pathlib import Path
 import sys
-from sphinx_gallery.sorting import ExplicitOrder
-import imageio.v3 as iio
+from pathlib import Path
 
+import imageio.v3 as iio
+from pygfx.utils.gallery_scraper import find_examples_for_gallery
+from sphinx_gallery.sorting import ExplicitOrder
+
+import fastplotlib
 
 ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
 EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples")
@@ -113,13 +114,19 @@ html_theme_options = {
             "name": "Github",
             "url": "https://github.com/fastplotlib/fastplotlib",
             "icon": "fa-brands fa-github",
-        }
+        },
     ],
+    "logo": {
+        "image_light": "_static/logo-light.png",
+        "image_dark": "_static/logo-dark.png",
+    },
 }
 
 html_static_path = ["_static"]
+html_js_files = ["custom.js"]
 html_logo = "_static/logo.png"
-html_title = f"v{release}"
+html_favicon = "_static/favicon.ico"
+html_title = ""
 
 autodoc_member_order = "groupwise"
 autoclass_content = "both"
