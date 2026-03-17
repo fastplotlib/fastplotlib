@@ -1,14 +1,13 @@
 from itertools import product
-
 from math import ceil
 
+import cmap as cmap_lib
 import numpy as np
 
 import pygfx
 from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
 from ...utils import (
-    make_colors,
     get_cmap_texture,
 )
 
@@ -239,8 +238,8 @@ class ImageCmap(GraphicFeature):
 
     @block_reentrance
     def set_value(self, graphic, value: str):
-        new_colors = make_colors(256, value)
-        graphic._material.map.texture.data[:] = new_colors
+        colormap = pygfx.cm.create_colormap(cmap_lib.Colormap(value).lut())
+        graphic._material.map = colormap
         graphic._material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
 
         self._value = value
