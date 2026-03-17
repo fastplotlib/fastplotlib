@@ -36,6 +36,8 @@ With jupyterlab support only.
 
     pip install -U "fastplotlib[notebook]"
 
+Fastplotlib is also available on conda-forge. For imgui support you will need to separately install ``imgui-bundle``, and for jupyterlab you will need to install ``jupyter-rfb`` and ``simplejpeg`` which are all available on conda-forge.
+
 
 What is ``fastplotlib``?
 ------------------------
