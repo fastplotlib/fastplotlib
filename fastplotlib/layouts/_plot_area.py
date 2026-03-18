@@ -10,7 +10,7 @@ from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
 from ..graphics._base import Graphic, WORLD_OBJECT_TO_GRAPHIC
-from ..graphics import ImageGraphic
+from ..graphics import ImageGraphic, MeshGraphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
@@ -120,11 +120,8 @@ class PlotArea(GraphicMethodsMixin):
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
 
-        self._ambient_light = pygfx.AmbientLight()
-        self._directional_light = pygfx.DirectionalLight()
-
-        self.scene.add(self._ambient_light)
-        self.scene.add(self._camera.add(self._directional_light))
+        self._ambient_light = None
+        self._directional_light = None
 
         self._tooltip = Tooltip()
         self.get_figure()._fpl_overlay_scene.add(self._tooltip._fpl_world_object)
@@ -293,12 +290,12 @@ class PlotArea(GraphicMethodsMixin):
         self._background_material.set_colors(*colors)
 
     @property
-    def ambient_light(self) -> pygfx.AmbientLight:
+    def ambient_light(self) -> pygfx.AmbientLight | None:
         """the ambient lighting in the scene"""
         return self._ambient_light
 
     @property
-    def directional_light(self) -> pygfx.DirectionalLight:
+    def directional_light(self) -> pygfx.DirectionalLight | None:
         """the directional lighting on the camera in the scene"""
         return self._directional_light
 
@@ -630,6 +627,13 @@ class PlotArea(GraphicMethodsMixin):
 
         if isinstance(graphic, ImageGraphic):
             self._sort_images_by_depth()
+
+        if isinstance(graphic, MeshGraphic):
+            self._ambient_light = pygfx.AmbientLight()
+            self._directional_light = pygfx.DirectionalLight()
+
+            self.scene.add(self._ambient_light)
+            self.scene.add(self._camera.add(self._directional_light))
 
     def insert_graphic(
         self,
