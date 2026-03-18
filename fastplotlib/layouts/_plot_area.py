@@ -176,8 +176,9 @@ class PlotArea(GraphicMethodsMixin):
         # user wants to set completely new camera, remove current camera from controller
         if isinstance(new_camera, pygfx.PerspectiveCamera):
             self.controller.remove_camera(self._camera)
-            # add directional light to new camera
-            new_camera.add(self._directional_light)
+            if self._directional_light is not None:
+                # add directional light to new camera
+                new_camera.add(self._directional_light)
             # add new camera to controller
             self.controller.add_camera(new_camera)
 
