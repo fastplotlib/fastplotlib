@@ -8,6 +8,7 @@ from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import ArrayLike
 import xarray as xr
 
+from ....layouts import Subplot
 from ....graphics import (
     Graphic,
     ImageGraphic,
@@ -558,11 +559,12 @@ class NDPositions(NDGraphic):
     def __init__(
         self,
         ref_index: ReferenceIndex,
+        subplot: Subplot,
         data: Any,
         dims: Sequence[str],
         spatial_dims: tuple[str, str, str],
         *args,
-        graphic: Type[
+        graphic_type: Type[
             LineGraphic
             | LineCollection
             | LineStack
@@ -577,6 +579,7 @@ class NDPositions(NDGraphic):
         index_mappings: tuple[Callable[[Any], int] | None] | None = None,
         max_display_datapoints: int = 1_000,
         linear_selector: bool = False,
+        x_range_mode: Literal["fixed", "auto"] | None = None,
         colors: (
             Sequence[str] | np.ndarray | Callable[[slice, np.ndarray], np.ndarray]
         ) = None,
@@ -594,7 +597,7 @@ class NDPositions(NDGraphic):
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
     ):
-        super().__init__(name)
+        super().__init__(subplot, name)
 
         self._ref_index = ref_index
 
@@ -630,9 +633,11 @@ class NDPositions(NDGraphic):
         self.cmap_each = cmap_each
         self.cmap_transform_each = cmap_transform_each
 
-        self._create_graphic(graphic)
+        self._graphic_type = graphic_type
+        self._create_graphic()
 
         self._x_range_mode = None
+        self.x_range_mode = x_range_mode
         self._last_x_range = np.array([0.0, 0.0], dtype=np.float32)
 
         if linear_selector:
@@ -662,20 +667,33 @@ class NDPositions(NDGraphic):
         | ScatterCollection
         | ScatterStack
         | ImageGraphic
+        | None
     ):
         """LineStack or ImageGraphic for heatmaps"""
         return self._graphic
 
-    @graphic.setter
-    def graphic(self, graphic_type):
+    @property
+    def graphic_type(
+        self,
+    ) -> Type[
+        LineGraphic
+        | LineCollection
+        | LineStack
+        | ScatterGraphic
+        | ScatterCollection
+        | ScatterStack
+        | ImageGraphic
+    ]:
+        return self._graphic_type
+
+    @graphic_type.setter
+    def graphic_type(self, graphic_type):
         if type(self.graphic) is graphic_type:
             return
 
-        plot_area = self._graphic._plot_area
-        plot_area.delete_graphic(self._graphic)
-
-        self._create_graphic(graphic_type)
-        plot_area.add_graphic(self._graphic)
+        self._subplot.delete_graphic(self._graphic)
+        self._graphic_type = graphic_type
+        self._create_graphic()
 
     @property
     def spatial_dims(self) -> tuple[str, str, str]:
@@ -694,6 +712,9 @@ class NDPositions(NDGraphic):
     @indices.setter
     @block_reentrance
     def indices(self, indices):
+        if self.data is None:
+            return
+
         new_features = self.processor.get(indices)
         data_slice = new_features["data"]
 
@@ -743,7 +764,7 @@ class NDPositions(NDGraphic):
 
         # x range of the data
         xr = data_slice[0, 0, 0], data_slice[0, -1, 0]
-        if self._x_range_mode is not None:
+        if self.x_range_mode is not None:
             self.graphic._plot_area.x_range = xr
 
         # if the update_from_view is polling, this prevents it from being called by setting the new last xrange
@@ -770,20 +791,9 @@ class NDPositions(NDGraphic):
             p_index = pick_info["vertex_index"]
             return self.processor.tooltip_format(n_index, p_index)
 
-    def _create_graphic(
-        self,
-        graphic_cls: Type[
-            LineGraphic
-            | LineCollection
-            | LineStack
-            | ScatterGraphic
-            | ScatterCollection
-            | ScatterStack
-            | ImageGraphic
-        ],
-    ):
-        if not issubclass(graphic_cls, Graphic):
-            raise TypeError
+    def _create_graphic(self):
+        if self.data is None:
+            return
 
         new_features = self.processor.get(self.indices)
         data_slice = new_features["data"]
@@ -800,22 +810,22 @@ class NDPositions(NDGraphic):
             if val is not None:
                 graphic_attrs[attr] = val
 
-        if issubclass(graphic_cls, ImageGraphic):
+        if issubclass(self._graphic_type, ImageGraphic):
             # `d` dim must only have xy data to be interpreted as a heatmap, xyz can't become a timeseries heatmap
             if self.processor.shape[self.processor.spatial_dims[-1]] != 2:
                 raise ValueError
 
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
-            self._graphic = graphic_cls(
+            self._graphic = self._graphic_type(
                 image_data, offset=(x0, 0, -1), scale=(x_scale, 1, 1)
             )
 
         else:
-            if issubclass(graphic_cls, (LineStack, ScatterStack)):
+            if issubclass(self._graphic_type, (LineStack, ScatterStack)):
                 kwargs = {"separation": 0.0, **self._graphic_kwargs}
             else:
                 kwargs = self._graphic_kwargs
-            self._graphic = graphic_cls(data_slice, **kwargs)
+            self._graphic = self._graphic_type(data_slice, **kwargs)
 
         for attr in graphic_attrs.keys():
             if hasattr(self._graphic, attr):
@@ -852,6 +862,8 @@ class NDPositions(NDGraphic):
             if isinstance(self._graphic, (LineCollection, ScatterCollection)):
                 for g in self._graphic.graphics:
                     g.tooltip_format = partial(self._tooltip_handler, g)
+
+        self._subplot.add_graphic(self._graphic)
 
     def _create_heatmap_data(self, data_slice) -> tuple[np.ndarray, float, float]:
         """return [n_rows, n_cols] shape data"""
@@ -908,18 +920,18 @@ class NDPositions(NDGraphic):
         self.processor.datapoints_window_func = funcs
 
     @property
-    def x_range_mode(self) -> Literal[None, "fixed-window", "view-range"]:
-        """x-range using a fixed window from the display window, or by polling the camera (view-range)"""
+    def x_range_mode(self) -> Literal["fixed", "auto"] | None:
+        """x-range using a fixed window from the display window, or by polling the camera (auto)"""
         return self._x_range_mode
 
     @x_range_mode.setter
-    def x_range_mode(self, mode: Literal[None, "fixed-window", "view-range"]):
-        if self._x_range_mode == "view-range":
-            # old mode was view-range
-            self.graphic._plot_area.remove_animation(self._update_from_view_range)
+    def x_range_mode(self, mode: Literal[None, "fixed", "auto"]):
+        if self._x_range_mode == "auto":
+            # old mode was auto
+            self._subplot.remove_animation(self._update_from_view_range)
 
-        if mode == "view-range":
-            self.graphic._plot_area.add_animations(self._update_from_view_range)
+        if mode == "auto":
+            self._subplot.add_animations(self._update_from_view_range)
 
         self._x_range_mode = mode
 
@@ -927,7 +939,7 @@ class NDPositions(NDGraphic):
         if self._graphic is None:
             return
 
-        xr = self.graphic._plot_area.x_range
+        xr = self._subplot.x_range
 
         # the floating point error near zero gets nasty here
         if np.allclose(xr, self._last_x_range, atol=1e-14):

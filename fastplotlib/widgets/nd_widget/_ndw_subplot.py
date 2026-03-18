@@ -1,3 +1,4 @@
+from typing import Literal
 import numpy as np
 
 from ... import ScatterCollection, ScatterStack, LineCollection, LineStack, ImageGraphic
@@ -29,40 +30,35 @@ class NDWSubplot:
             raise KeyError(f"NDGraphc with given key not found: {key}")
 
     def add_nd_image(self, *args, **kwargs):
-        nd = NDImage(self.ndw.indices, *args, **kwargs)
+        nd = NDImage(self.ndw.indices, self._subplot, *args, **kwargs)
         self._nd_graphics.append(nd)
-        self._subplot.add_graphic(nd.graphic)
-        nd._reset_camera()
-
-        # graphic._plot_area must exist before this is called
-        nd._reset_histogram()
 
         return nd
 
     def add_nd_scatter(self, *args, **kwargs):
         # TODO: better func signature here, send all kwargs to processor_kwargs
-        nd = NDPositions(self.ndw.indices, *args, graphic=ScatterCollection, **kwargs)
+        nd = NDPositions(self.ndw.indices, self._subplot, *args, graphic_type=ScatterCollection, **kwargs)
         self._nd_graphics.append(nd)
-        self._subplot.add_graphic(nd.graphic)
 
         return nd
 
     def add_nd_timeseries(
         self,
         *args,
-        graphic: type[LineCollection | LineStack | ImageGraphic] = LineStack,
-        x_range_mode="fixed-window",
+        graphic_type: type[LineCollection | LineStack | ScatterStack | ImageGraphic] = LineStack,
+        x_range_mode: Literal["fixed", "auto"] | None = "auto",
         **kwargs,
     ):
         nd = NDPositions(
             self.ndw.indices,
+            self._subplot,
             *args,
-            graphic=graphic,
+            graphic_type=graphic_type,
             linear_selector=True,
+            x_range_mode=x_range_mode,
             **kwargs,
         )
         self._nd_graphics.append(nd)
-        self._subplot.add_graphic(nd.graphic)
         self._subplot.add_graphic(nd._linear_selector)
 
         # need plot_area to exist before these this can be called
@@ -74,13 +70,6 @@ class NDWSubplot:
         return nd
 
     def add_nd_lines(self, *args, **kwargs):
-        nd = NDPositions(self.ndw.indices, *args, graphic=LineCollection, **kwargs)
+        nd = NDPositions(self.ndw.indices, self._subplot, *args, graphic_type=LineCollection, **kwargs)
         self._nd_graphics.append(nd)
-        self._subplot.add_graphic(nd.graphic)
         return nd
-
-    # def __repr__(self):
-    #     return "NDWidget Subplot"
-    #
-    # def __str__(self):
-    #     return "NDWidget Subplot"

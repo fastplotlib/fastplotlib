@@ -20,7 +20,7 @@ from ._base import NDGraphic
 from ._nd_positions import NDPositions
 from ._nd_image import NDImage
 
-position_graphics = [ScatterCollection, ScatterStack, LineCollection, LineStack, ImageGraphic]
+position_graphic_types = [ScatterCollection, ScatterStack, LineCollection, LineStack, ImageGraphic]
 
 
 class NDWidgetUI(EdgeWindow):
@@ -237,9 +237,9 @@ class RightClickMenu(StandardRightClickMenu):
             nd_image.graphic._material.gamma = new_gamma
 
     def _draw_nd_pos_ui(self, subplot: Subplot, nd_graphic: NDPositions):
-        for i, cls in enumerate(position_graphics):
+        for i, cls in enumerate(position_graphic_types):
             if imgui.radio_button(cls.__name__, type(nd_graphic.graphic) is cls):
-                nd_graphic.graphic = cls
+                nd_graphic.graphic_type = cls
                 subplot.auto_scale()
 
         changed, val = imgui.checkbox(
@@ -275,7 +275,7 @@ class RightClickMenu(StandardRightClickMenu):
             if changed:
                 nd_graphic.display_window = new
 
-        options = [None, "fixed-window", "view-range"]
+        options = [None, "fixed", "auto"]
         changed, option = imgui.combo(
             "x-range mode",
             options.index(nd_graphic.x_range_mode),

@@ -6,6 +6,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 import xarray as xr
 
+from ...layouts import Subplot
 from ...utils import subsample_array, ArrayProtocol, ARRAY_LIKE_ATTRS
 from ...graphics import ImageGraphic, ImageVolumeGraphic
 from ...tools import HistogramLUTTool
@@ -96,10 +97,10 @@ class NDImageProcessor(NDProcessor):
     @data.setter
     def data(self, data: ArrayLike):
         # check that all array-like attributes are present
-        self._data = self._validate_data(data, self.dims)
+        self._data = self._validate_data(data)
         self._recompute_histogram()
 
-    def _validate_data(self, data: ArrayProtocol, dims):
+    def _validate_data(self, data: ArrayProtocol):
         if not isinstance(data, ArrayProtocol):
             raise TypeError(
                 f"`data` arrays must have all of the following attributes to be sufficiently array-like:\n"
@@ -111,7 +112,7 @@ class NDImageProcessor(NDProcessor):
                 f"Image data must have a minimum of 2 dimensions, you have passed an array of shape: {data.shape}"
             )
 
-        return xr.DataArray(data, dims=dims)
+        return xr.DataArray(data, dims=self.dims)
 
     @property
     def rgb_dim(self) -> str | None:
@@ -221,7 +222,8 @@ class NDImageProcessor(NDProcessor):
 class NDImage(NDGraphic):
     def __init__(
         self,
-        global_index,
+        ref_index,
+        subplot: Subplot,
         data: ArrayLike | None,
         dims: Sequence[Hashable],
         spatial_dims: (
@@ -236,9 +238,9 @@ class NDImage(NDGraphic):
         name: str = None,
     ):
 
-        super().__init__(name)
+        super().__init__(subplot, name)
 
-        self._global_index = global_index
+        self._ref_index = ref_index
 
         self._processor = NDImageProcessor(
             data,
@@ -268,11 +270,6 @@ class NDImage(NDGraphic):
         """LineStack or ImageGraphic for heatmaps"""
         return self._graphic
 
-    @graphic.setter
-    def graphic(self, graphic_type):
-        # TODO implement if graphic type changes to custom user subclass
-        raise NotImplementedError
-
     def _create_graphic(self):
         match len(self.processor.spatial_dims) - int(bool(self.processor.rgb_dim)):
             case 2:
@@ -291,9 +288,8 @@ class NDImage(NDGraphic):
             for k in attrs:
                 attrs[k] = getattr(old_graphic, k)
 
-            plot_area = old_graphic._plot_area
-            plot_area.delete_graphic(old_graphic)
-            plot_area.add_graphic(new_graphic)
+            self._subplot.delete_graphic(old_graphic)
+            self._subplot.add_graphic(new_graphic)
 
             # set cmap and interpolation
             for attr, val in attrs.items():
@@ -301,19 +297,19 @@ class NDImage(NDGraphic):
 
         self._graphic = new_graphic
 
-        if self._graphic._plot_area is not None:
-            self._reset_camera()
+        self._subplot.add_graphic(self._graphic)
 
+        self._reset_camera()
         self._reset_histogram()
 
     def _reset_histogram(self):
         # reset histogram
-        if self._graphic._plot_area is None:
+        if self.graphic is None:
             return
 
         if not self.processor.compute_histogram:
             # hide right dock if histogram not desired
-            self._graphic._plot_area.docks["right"].size = 0
+            self._subplot.docks["right"].size = 0
             return
 
         if self.processor.histogram:
@@ -321,8 +317,8 @@ class NDImage(NDGraphic):
                 # histogram widget exists, update it
                 self._histogram_widget.histogram = self.processor.histogram
                 self._histogram_widget.images = self.graphic
-                if self.graphic._plot_area.docks["right"].size < 1:
-                    self.graphic._plot_area.docks["right"].size = 80
+                if self._subplot.docks["right"].size < 1:
+                    self._subplot.docks["right"].size = 80
             else:
                 # make hist tool
                 self._histogram_widget = HistogramLUTTool(
@@ -330,18 +326,16 @@ class NDImage(NDGraphic):
                     images=self.graphic,
                     name=f"hist-{hex(id(self.graphic))}",
                 )
-                self.graphic._plot_area.docks["right"].add_graphic(self._histogram_widget)
-                self.graphic._plot_area.docks["right"].size = 80
+                self._subplot.docks["right"].add_graphic(self._histogram_widget)
+                self._subplot.docks["right"].size = 80
 
             self.graphic.reset_vmin_vmax()
 
     def _reset_camera(self):
-        plot_area = self._graphic._plot_area
-
         # set camera to a nice position for 2D or 3D
         if isinstance(self._graphic, ImageGraphic):
             # set camera orthogonal to the xy plane, flip y axis
-            plot_area.camera.set_state(
+            self._subplot.camera.set_state(
                 {
                     "position": [0, 0, -1],
                     "rotation": [0, 0, 0, 1],
@@ -352,21 +346,21 @@ class NDImage(NDGraphic):
                 }
             )
 
-            plot_area.controller = "panzoom"
-            plot_area.axes.intersection = None
-            plot_area.auto_scale()
+            self._subplot.controller = "panzoom"
+            self._subplot.axes.intersection = None
+            self._subplot.auto_scale()
 
         else:
-            plot_area.camera.fov = 50
-            plot_area.controller = "orbit"
+            self._subplot.camera.fov = 50
+            self._subplot.controller = "orbit"
 
             # make sure all 3D dimension camera scales are positive
             # MIP rendering doesn't work with negative camera scales
             for dim in ["x", "y", "z"]:
-                if getattr(plot_area.camera.local, f"scale_{dim}") < 0:
-                    setattr(plot_area.camera.local, f"scale_{dim}", 1)
+                if getattr(self._subplot.camera.local, f"scale_{dim}") < 0:
+                    setattr(self._subplot.camera.local, f"scale_{dim}", 1)
 
-            plot_area.auto_scale()
+            self._subplot.auto_scale()
 
     @property
     def spatial_dims(self) -> tuple[str, str] | tuple[str, str, str]:
@@ -381,7 +375,7 @@ class NDImage(NDGraphic):
 
     @property
     def indices(self) -> dict[Hashable, Any]:
-        return {d: self._global_index[d] for d in self.processor.slider_dims}
+        return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
     @indices.setter
     def indices(self, indices):

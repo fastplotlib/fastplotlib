@@ -110,7 +110,6 @@ class ReferenceIndex:
                     continue
                 # only provide slider indices to the graphic
                 g.indices = {d: self._indices[d] for d in g.processor.slider_dims}
-                print(g)
 
     @property
     def ref_ranges(self) -> dict[str, RangeContinuous | RangeDiscrete]:

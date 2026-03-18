@@ -41,7 +41,7 @@ class NDPP_Pandas(NDPositionsProcessor):
     def data(self) -> pd.DataFrame:
         return self._data
 
-    def _validate_data(self, data: pd.DataFrame, dims):
+    def _validate_data(self, data: pd.DataFrame):
         if not isinstance(data, pd.DataFrame):
             raise TypeError
 

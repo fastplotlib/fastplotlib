@@ -4,13 +4,14 @@ import inspect
 from numbers import Real
 from pprint import pformat
 import textwrap
-from typing import Literal, Any
+from typing import Literal, Any, Type
 from warnings import warn
 
 import xarray as xr
 import numpy as np
 from numpy.typing import ArrayLike
 
+from ...layouts import Subplot
 from ...utils import subsample_array, ArrayProtocol
 from ...graphics import Graphic
 
@@ -35,7 +36,8 @@ class NDProcessor:
         window_order: tuple[Hashable, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
     ):
-        self._data = self._validate_data(data, tuple(dims))
+        self._dims = tuple(dims)
+        self._data = self._validate_data(data)
         self.spatial_dims = spatial_dims
 
         self.index_mappings = index_mappings
@@ -50,16 +52,19 @@ class NDProcessor:
 
     @data.setter
     def data(self, data: ArrayProtocol):
-        self._data = self._validate_data(data, self.dims)
+        self._data = self._validate_data(data)
 
-    def _validate_data(self, data: ArrayProtocol, dims):
+    def _validate_data(self, data: ArrayProtocol):
+        if data is None:
+            return None
+
         if not isinstance(data, ArrayProtocol):
             raise TypeError("`data` must implement the ArrayProtocol")
 
-        if data.ndim != len(dims):
+        if data.ndim != len(self.dims):
             raise IndexError("must specify a dim for every dimension in the data array")
 
-        return xr.DataArray(data, dims=dims)
+        return xr.DataArray(data, dims=self.dims)
 
     @property
     def shape(self) -> dict[Hashable, int]:
@@ -74,7 +79,7 @@ class NDProcessor:
     @property
     def dims(self) -> tuple[Hashable, ...]:
         """dim names"""
-        return self.data.dims
+        return self._dims
 
     @property
     def spatial_dims(self) -> tuple[Hashable, ...]:
@@ -316,26 +321,48 @@ class NDProcessor:
         raise NotImplementedError
 
     def __repr__(self):
+        if self.data is None:
+            return (
+                f"{self.__class__.__name__}\n"
+                f"data is None, dims: {self.dims}"
+            )
         tab = "\t"
-        return (
+
+        wf = {k: v for k, v in self.window_funcs.items() if v != (None, None)}
+
+        r = (
             f"{self.__class__.__name__}\n"
             f"shape:\n\t{self.shape}\n"
             f"dims:\n\t{self.dims}\n"
             f"spatial_dims:\n\t{self.spatial_dims}\n"
             f"slider_dims:\n\t{self.slider_dims}\n"
             f"index_mappings:\n{textwrap.indent(pformat(self.index_mappings, width=120), prefix=tab)}\n"
-            f"window_funcs:\n{textwrap.indent(pformat(self.window_funcs, width=120), prefix=tab)}\n"
-            f"window_order:\n\t{self.window_order}\n"
-            f"spatial_func:\n\t{self.spatial_func}\n"
         )
+
+        if len(wf) > 0:
+            r += (
+                f"window_funcs:\n{textwrap.indent(pformat(wf, width=120), prefix=tab)}\n"
+                f"window_order:\n\t{self.window_order}\n"
+            )
+
+        if self.spatial_func is not None:
+            r += f"spatial_func:\n\t{self.spatial_func}\n"
+
+        return r
 
 
 class NDGraphic:
-    def __init__(self, name: str | None):
+    def __init__(
+        self,
+        subplot: Subplot,
+        name: str | None,
+    ):
+        self._subplot = subplot
         self._name = name
         self._block_indices = False
+        self._graphic: Graphic | None = None
 
-    def _create_graphic(self, graphic_cls: type):
+    def _create_graphic(self):
         raise NotImplementedError
 
     @property
@@ -367,11 +394,12 @@ class NDGraphic:
     def data(self, data: Any):
         self.processor.data = data
         # create a new graphic when data has changed
-        plot_area = self._graphic._plot_area
-        plot_area.delete_graphic(self._graphic)
+        if self.graphic is not None:
+            # it is already None is it was initialized with no data
+            self._subplot.delete_graphic(self.graphic)
+            self._graphic = None
 
-        self._create_graphic(self.graphic.__class__)
-        plot_area.add_graphic(self._graphic)
+        self._create_graphic()
 
         # force a re-render
         self.indices = self.indices
@@ -456,7 +484,7 @@ class NDGraphic:
         self.indices = self.indices
 
     def __repr__(self):
-        return f"graphic: {self.graphic}\n" f"processor:\n{self.processor}"
+        return f"graphic: {self.graphic.__class__.__name__}\n" f"processor:\n{self.processor}"
 
 
 @contextmanager
