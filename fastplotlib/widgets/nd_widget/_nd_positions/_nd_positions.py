@@ -875,7 +875,6 @@ class NDPositions(NDGraphic):
         norm = np.linalg.norm(np.diff(np.diff(x))) / x.size
 
         if norm > 1e-6:
-            print(norm)
             # x is not uniform upto float32 precision, must interpolate
             x_uniform = np.linspace(x[0], x[-1], num=x.size)
             y_interp = np.empty(shape=data_slice[..., 1].shape, dtype=np.float32)
