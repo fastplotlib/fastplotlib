@@ -866,17 +866,19 @@ class NDPositions(NDGraphic):
         self._subplot.add_graphic(self._graphic)
 
     def _create_heatmap_data(self, data_slice) -> tuple[np.ndarray, float, float]:
-        """return [n_rows, n_cols] shape data"""
+        """return [n_rows, n_cols] shape data from [n_timeseries, n_timepoints, xy] data"""
         # assumes x vals in every row is the same, otherwise a heatmap representation makes no sense
+        # data slice is of shape [n_timeseries, n_timepoints, xy], where xy is x-y coordinates of each timeseries
         x = data_slice[0, :, 0]  # get x from just the first row
 
         # check if we need to interpolate
         norm = np.linalg.norm(np.diff(np.diff(x))) / x.size
 
         if norm > 1e-6:
+            print(norm)
             # x is not uniform upto float32 precision, must interpolate
             x_uniform = np.linspace(x[0], x[-1], num=x.size)
-            y_interp = np.zeros(shape=data_slice[..., 1].shape, dtype=np.float32)
+            y_interp = np.empty(shape=data_slice[..., 1].shape, dtype=np.float32)
 
             # this for loop is actually slightly faster than numpy.apply_along_axis()
             for i in range(data_slice.shape[0]):
@@ -890,7 +892,7 @@ class NDPositions(NDGraphic):
 
         # assume all x values are the same across all lines
         # otherwise a heatmap representation makes no sense anyways
-        x_stop = data_slice[:, -1, 0][0]
+        x_stop = x[-1]
         x_scale = (x_stop - x0) / data_slice.shape[1]
 
         return y_interp, x0, x_scale
