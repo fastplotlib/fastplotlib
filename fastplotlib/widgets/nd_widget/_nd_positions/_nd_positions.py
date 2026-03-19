@@ -27,7 +27,7 @@ from .._base import (
     NDGraphic,
     WindowFuncCallable,
     block_reentrance,
-    block_indices,
+    block_indices_ctx,
 )
 from .._index import ReferenceIndex
 
@@ -709,8 +709,6 @@ class NDPositions(NDGraphic):
         else:
             self._linear_selector = None
 
-        self._pause = False
-
     @property
     def processor(self) -> NDPositionsProcessor:
         return self._processor
@@ -832,7 +830,7 @@ class NDPositions(NDGraphic):
         self._last_x_range[:] = self.graphic._plot_area.x_range
 
         if self._linear_selector is not None:
-            with pause_events(self._linear_selector):
+            with pause_events(self._linear_selector):  # we don't want the linear selector change to update the indices
                 self._linear_selector.limits = xr
                 # linear selector acts on `p` dim
                 self._linear_selector.selection = indices[
@@ -840,7 +838,7 @@ class NDPositions(NDGraphic):
                 ]
 
     def _linear_selector_handler(self, ev):
-        with block_indices(self):
+        with block_indices_ctx(self):
             # linear selector always acts on the `p` dim
             self._ref_index[self.processor.spatial_dims[1]] = ev.info["value"]
 

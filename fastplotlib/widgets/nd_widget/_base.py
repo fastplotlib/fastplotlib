@@ -529,8 +529,16 @@ class NDGraphic:
     ):
         self._subplot = subplot
         self._name = name
-        self._block_indices = False
         self._graphic: Graphic | None = None
+
+        # used to indicate that the NDGraphic should ignore any requests to update the indices
+        # used by block_indices_ctx context manager, usecase is when the LinearSelector on timeseries
+        # NDGraphic changes the selection, it shouldn't change the graphic that it is on top of! Would
+        # also cause recursion
+        # It is also used by the @block_reentrance decorator which is on the ``NDGraphic.indices`` property setter
+        # this is also to block recursion
+        self._block_indices = False
+
 
     def _create_graphic(self):
         raise NotImplementedError
@@ -678,7 +686,7 @@ class NDGraphic:
 
 
 @contextmanager
-def block_indices(ndgraphic: NDGraphic):
+def block_indices_ctx(ndgraphic: NDGraphic):
     """
     Context manager for pausing an NDGraphic from updating indices
     """
