@@ -62,7 +62,7 @@ class NDPositionsProcessor(NDProcessor):
         spatial_dims: tuple[
             Hashable | None, Hashable, Hashable
         ],  # [stack_dim, n_datapoints, spatial_dim], IN ORDER!!
-        index_mappings: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
         display_window: int | float | None = 100,  # window for n_datapoints dim only
         max_display_datapoints: int = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
@@ -73,13 +73,21 @@ class NDPositionsProcessor(NDProcessor):
         **kwargs,
     ):
         """
+        ``NDProcessor`` subclass for n-dimensional positional and timeseries data.
+
+
+        The *datapoints* dimension is
+        simultaneously a slider dim and a spatial dim and is handled by a dedicated
+        :attr:`datapoints_window_func` rather than the general ``window_funcs``
+        mechanism.
+
 
         Parameters
         ----------
         data
         dims
         spatial_dims
-        index_mappings
+        slider_dim_transforms
         display_window
         max_display_datapoints: int, default 1_000
             this is approximate since floor division is used to determine the step size of the current display window slice
@@ -94,7 +102,7 @@ class NDPositionsProcessor(NDProcessor):
             data=data,
             dims=dims,
             spatial_dims=spatial_dims,
-            index_mappings=index_mappings,
+            slider_dim_transforms=slider_dim_transforms,
             **kwargs,
         )
 
@@ -407,7 +415,7 @@ class NDPositionsProcessor(NDProcessor):
 
         # display window in array index space
         if self.display_window is not None:
-            dw = self.index_mappings[p_dim](self.display_window)
+            dw = self.slider_dim_transforms[p_dim](self.display_window)
 
             # step size based on max number of datapoints to render
             step = max(1, dw // self.max_display_datapoints)
@@ -576,7 +584,7 @@ class NDPositions(NDGraphic):
         processor: type[NDPositionsProcessor] = NDPositionsProcessor,
         display_window: int = 10,
         window_funcs: tuple[WindowFuncCallable | None] | None = None,
-        index_mappings: tuple[Callable[[Any], int] | None] | None = None,
+        slider_dim_transforms: tuple[Callable[[Any], int] | None] | None = None,
         max_display_datapoints: int = 1_000,
         linear_selector: bool = False,
         x_range_mode: Literal["fixed", "auto"] | None = None,
@@ -594,9 +602,47 @@ class NDPositions(NDGraphic):
         sizes_each: Sequence[float] = None,  # for each individual scatter, shape [l, p]
         thickness: np.ndarray = None,  # for each line, shape [l,]
         name: str = None,
+        timeseries: bool = False,
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
     ):
+        """
+        Wraps an :class:`NDPositionsProcessor` and supports four interchangeable
+        graphical representations: ``LineStack``, ``LineCollection``, ``ScatterStack``,
+        and ``ScatterCollection``, as well as a heatmap view. For timeseries use-cases
+        it also manages a linear selector and automatically adjusts the view according
+        to the current x-range of the displayed data.
+
+        Parameters
+        ----------
+        ref_index
+        subplot
+        data
+        dims
+        spatial_dims
+        args
+        graphic_type
+        processor
+        display_window
+        window_funcs
+        slider_dim_transforms
+        max_display_datapoints
+        linear_selector
+        x_range_mode
+        colors
+        cmap
+        cmap_each
+        cmap_transform_each
+        markers
+        markers_each
+        sizes
+        sizes_each
+        thickness
+        name
+        graphic_kwargs
+        processor_kwargs
+        """
+
         super().__init__(subplot, name)
 
         self._ref_index = ref_index
@@ -617,7 +663,7 @@ class NDPositions(NDGraphic):
             display_window=display_window,
             max_display_datapoints=max_display_datapoints,
             window_funcs=window_funcs,
-            index_mappings=index_mappings,
+            slider_dim_transforms=slider_dim_transforms,
             colors=colors,
             markers=markers_each,
             cmap_transform_each=cmap_transform_each,
@@ -640,13 +686,26 @@ class NDPositions(NDGraphic):
         self.x_range_mode = x_range_mode
         self._last_x_range = np.array([0.0, 0.0], dtype=np.float32)
 
-        if linear_selector:
-            self._linear_selector = LinearSelector(
-                0, limits=(-np.inf, np.inf), edge_color="cyan"
-            )
-            self._linear_selector.add_event_handler(
-                self._linear_selector_handler, "selection"
-            )
+        self._timeseries = timeseries
+        # TODO: I think this is messy af, NDTimeseriesSubclass???
+        if self._timeseries:
+            # makes some assumptions about positional data that apply only to timeseries representations
+            # probably don't want to maintain aspect
+            self._subplot.camera.maintain_aspect = False
+
+            # auto x range modes make no sense for non-timeseries data
+            self.x_range_mode = x_range_mode
+
+            if linear_selector:
+                self._linear_selector = LinearSelector(
+                    0, limits=(-np.inf, np.inf), edge_color="cyan"
+                )
+                self._linear_selector.add_event_handler(
+                    self._linear_selector_handler, "selection"
+                )
+                self._subplot.add_graphic(self._linear_selector)
+            else:
+                self._linear_selector = None
         else:
             self._linear_selector = None
 
@@ -762,6 +821,7 @@ class NDPositions(NDGraphic):
             self.graphic.offset = (x0, *self.graphic.offset[1:])
             self.graphic.scale = (x_scale, *self.graphic.scale[1:])
 
+        # TODO: I think this is messy af, NDTimeseriesSubclass???
         # x range of the data
         xr = data_slice[0, 0, 0], data_slice[0, -1, 0]
         if self.x_range_mode is not None:

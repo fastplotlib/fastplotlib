@@ -11,12 +11,13 @@ from ...utils import subsample_array, ArrayProtocol, ARRAY_LIKE_ATTRS
 from ...graphics import ImageGraphic, ImageVolumeGraphic
 from ...tools import HistogramLUTTool
 from ._base import NDProcessor, NDGraphic, WindowFuncCallable
+from ._index import ReferenceIndex
 
 
 class NDImageProcessor(NDProcessor):
     def __init__(
         self,
-        data: ArrayLike | None,
+        data: ArrayProtocol | None,
         dims: Sequence[Hashable],
         spatial_dims: (
             tuple[str, str] | tuple[str, str, str]
@@ -26,60 +27,93 @@ class NDImageProcessor(NDProcessor):
         window_order: tuple[int, ...] = None,
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
-        index_mappings=None,
+        slider_dim_transforms=None,
     ):
         """
-        An ND image that supports computing window functions, and functions over spatial dimensions.
+        ``NDProcessor`` subclass for n-dimensional image data.
+
+        Produces 2-D or 3-D spatial slices for an ``ImageGraphic`` or ``ImageVolumeGraphic``.
 
         Parameters
         ----------
-        data: ArrayLike
+        data: ArrayProtocol
             array-like data, must have 2 or more dimensions
 
-        n_display_dims: int, 2 or 3, default 2
-            number of display dimensions
+                dims: Sequence[str]
+            names for each dimension in ``data``. Dimensions not listed in
+            ``spatial_dims`` are treated as slider dimensions and **must** appear as
+            keys in the parent ``NDWidget``'s ``ref_ranges``
+                Examples::
+                 ``("time", "depth", "row", "col")``
+                 ``("channels", "time", "xy")``
+                 ``("keypoints", "time", "xyz")``
 
-        rgb: bool, default False
-            whether the image data is RGB(A) or not
+            A custom subclass's ``data`` object doesn't necessarily need to have these dims, but the ``get()`` method
+            must operate as if these dimensions exist and return an array that matches the spatial dimensions.
 
-        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable, optional
-            A function or a ``tuple`` of functions that are applied to a rolling window of the data.
+        dims: Sequence[str]
+            names for each dimension in ``data``. Dimensions not listed in
+            ``spatial_dims`` are treated as slider dimensions and **must** appear as
+            keys in the parent ``NDWidget``'s ``ref_ranges``
+                Examples::
+                 ``("time", "depth", "row", "col")``
+                 ``("row", "col")``
+                 ``("other_dim", "depth", "time", "row", "col")``
 
-            You can provide unique window functions for each dimension. If you want to apply a window function
-            only to a subset of the dimensions, put ``None`` to indicate no window function for a given dimension.
+            dims in the array do not need to be in order, for example you can have a weird array where the dims are
+            interpreted as: ``("col", "depth", "row", "time")``, and then specify spatial_dims as ``("row", "col")``
+            thanks to xarray magic =D.
 
-            A "window function" must take ``axis`` argument, which is an ``int`` that specifies the axis along which
-            the window function is applied. It must also take a ``keepdims`` argument which is a ``bool``. The window
-            function **must** return an array that has the same number of dimensions as the original ``data`` array,
-            therefore the size of the dimension along which the window was applied will reduce to ``1``.
+        spatial_dims : tuple[str, str] | tuple[str, str, str]
+            The 2 or 3 spatial dimensions **in order**: ``(rows, cols)`` or ``(z, rows, cols)``.
+            This also determines whether an ``ImageGraphic`` or ``ImageVolumeGraphic`` is used for rendering.
+            The ordering determines how the Image/Volume is rendered. For example, if
+            you specify ``spatial_dims = ("rows", "cols")`` and then change it to ``("cols", "rows")``, it will display
+            the transpose.
 
-            The output array-like type from a window function **must** support a ``.squeeze()`` method, but the
-            function itself should NOT squeeze the output array.
-
-        window_sizes: tuple[int | None, ...], optional
-            ``tuple`` of ``int`` that specifies the window size for each dimension.
-
-        window_order: tuple[int, ...] | None, optional
-            order in which to apply the window functions, by default just applies it from the left-most dim to the
-            right-most slider dim.
-
-        spatial_func: Callable[[ArrayLike], ArrayLike] | None, optional
-            A function that is applied on the _spatial_ dimensions of the data array, i.e. the last 2 or 3 dimensions.
-            This function is applied after the window functions (if present).
+        rgb_dim : str, optional
+            Name of an RGB(A) dimension, if present.
 
         compute_histogram: bool, default True
-            Compute a histogram of the data, auto re-computes if window function propties or spatial_func changes.
-            Disable if slow.
+            Compute a histogram of the data, disable if random-access of data is not blazing-fast (ex: data that uses
+            video codecs), or if histograms are not useful for this data.
 
+        slider_dim_transforms : dict, optional
+            See :class:`NDProcessor`.
+
+        window_funcs : dict, optional
+            See :class:`NDProcessor`.
+
+        window_order : tuple, optional
+            See :class:`NDProcessor`.
+
+        spatial_func : callable, optional
+            See :class:`NDProcessor`.
+
+        See Also
+        --------
+            NDProcessor : Base class with full parameter documentation.
+            NDImage : The ``NDGraphic`` that wraps this processor.
         """
+
         # set as False until data, window funcs stuff and spatial func is all set
         self._compute_histogram = False
+
+        # make sure rgb dim is size 3 or 4
+        if rgb_dim is not None:
+            dim_index = dims.index(rgb_dim)
+            if data.shape[dim_index] not in (3, 4):
+                raise IndexError(
+                    f"The size of the RGB(A) dim must be 3 | 4. You have specified an array of shape: {data.shape}, "
+                    f"with dims: {dims}, and specified the ``rgb_dim`` name as: {rgb_dim} which has size "
+                    f"{data.shape[dim_index]} != 3 | 4"
+                )
 
         super().__init__(
             data=data,
             dims=dims,
             spatial_dims=spatial_dims,
-            index_mappings=index_mappings,
+            slider_dim_transforms=slider_dim_transforms,
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
@@ -91,23 +125,27 @@ class NDImageProcessor(NDProcessor):
 
     @property
     def data(self) -> xr.DataArray | None:
-        """get or set the data array"""
+        """
+        get or set managed data. If setting with new data, the new data is interpreted
+        to have the same dims (i.e. same dim names and ordering of dims).
+        """
         return self._data
 
     @data.setter
-    def data(self, data: ArrayLike):
-        # check that all array-like attributes are present
+    def data(self, data: ArrayProtocol):
         self._data = self._validate_data(data)
         self._recompute_histogram()
 
     def _validate_data(self, data: ArrayProtocol):
         if not isinstance(data, ArrayProtocol):
+            # check that it's compatible with array and generally array-like
             raise TypeError(
                 f"`data` arrays must have all of the following attributes to be sufficiently array-like:\n"
                 f"{ARRAY_LIKE_ATTRS}, or they must be `None`"
             )
 
         if data.ndim < 2:
+            # ndim < 2 makes no sense for image data
             raise IndexError(
                 f"Image data must have a minimum of 2 dimensions, you have passed an array of shape: {data.shape}"
             )
@@ -116,7 +154,9 @@ class NDImageProcessor(NDProcessor):
 
     @property
     def rgb_dim(self) -> str | None:
-        """indicates the rgb dim if one exists"""
+        """
+        get or set the RGB(A) dim name, ``None`` if no RGB(A) dim exists
+        """
         return self._rgb
 
     @rgb_dim.setter
@@ -129,6 +169,7 @@ class NDImageProcessor(NDProcessor):
 
     @property
     def compute_histogram(self) -> bool:
+        """get or set whether or not to compute the histogram"""
         return self._compute_histogram
 
     @compute_histogram.setter
@@ -213,7 +254,7 @@ class NDImageProcessor(NDProcessor):
         if isinstance(sub, xr.DataArray):
             # can't do the isnan and isinf boolean indexing below on xarray
             sub = sub.values
-            
+
         sub_real = sub[~(np.isnan(sub) | np.isinf(sub))]
 
         self._histogram = np.histogram(sub_real, bins=100)
@@ -222,10 +263,10 @@ class NDImageProcessor(NDProcessor):
 class NDImage(NDGraphic):
     def __init__(
         self,
-        ref_index,
+        ref_index: ReferenceIndex,
         subplot: Subplot,
-        data: ArrayLike | None,
-        dims: Sequence[Hashable],
+        data: ArrayProtocol | None,
+        dims: Sequence[str],
         spatial_dims: (
             tuple[str, str] | tuple[str, str, str]
         ),  # must be in order! [rows, cols] | [z, rows, cols]
@@ -234,9 +275,77 @@ class NDImage(NDGraphic):
         window_order: tuple[int, ...] = None,
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
-        index_mappings=None,
+        slider_dim_transforms=None,
         name: str = None,
     ):
+        """
+        ``NDGraphic`` subclass for n-dimensional image rendering.
+
+        Wraps an :class:`NDImageProcessor` and manages either an ``ImageGraphic`` or``ImageVolumeGraphic``.
+        swaps automatically when :attr:`spatial_dims` is reassigned at runtime. Also
+        owns a ``HistogramLUTTool`` for interactive vmin, vmax adjustment.
+
+        Every dimension that is *not* listed in ``spatial_dims`` becomes a slider
+        dimension. Each slider dim must have a ``ReferenceRange`` defined in the
+        ``ReferenceIndex`` of the parent ``NDWidget``. The widget uses this to direct
+        a change in the ``ReferenceIndex`` and update the graphics.
+
+        Parameters
+        ----------
+        ref_index : ReferenceIndex
+            The shared reference index that delivers slider updates to this graphic.
+
+        subplot : Subplot
+            parent subplot the NDGraphic is in
+
+        data : array-like or None
+            n-dimension image data array
+
+        dims : sequence of hashable
+            Name for every dimension of ``data``, in order. Non-spatial dims must
+            match keys in ``ref_index``.
+
+            ex: ``("time", "depth", "row", "col")`` — ``"time"`` and ``"depth"`` must
+            be present in ``ref_index``.
+
+        spatial_dims : tuple[str, str] | tuple[str, str, str]
+            Spatial dimensions **in order**: ``(rows, cols)`` for 2-D images or
+            ``(z, rows, cols)`` for volumes. Controls whether an ``ImageGraphic`` or
+            ``ImageVolumeGraphic`` is used.
+
+        rgb_dim : str, optional
+            Name of the RGB or channel dimension, if present.
+
+        window_funcs : dict, optional
+            See :class:`NDProcessor`.
+
+        window_order : tuple, optional
+            See :class:`NDProcessor`.
+
+        spatial_func : callable, optional
+            See :class:`NDProcessor`.
+
+        compute_histogram : bool, default ``True``
+            Whether to initialize the ``HistogramLUTTool``.
+
+        slider_dim_transforms : dict, optional
+            See :class:`NDProcessor`.
+
+        name : str, optional
+            Name for the underlying graphic.
+
+        See Also
+        --------
+        NDImageProcessor : The processor that backs this graphic.
+
+        """
+
+        if not (set(dims) - set(spatial_dims)).issubset(ref_index.dims):
+            raise IndexError(
+                f"all specified `dims` must either be a spatial dim or a slider dim "
+                f"specified in the NDWidget ref_ranges, provided dims: {dims}, "
+                f"spatial_dims: {spatial_dims}. Specified NDWidget ref_ranges: {ref_index.dims}"
+            )
 
         super().__init__(subplot, name)
 
@@ -251,47 +360,65 @@ class NDImage(NDGraphic):
             window_order=window_order,
             spatial_func=spatial_func,
             compute_histogram=compute_histogram,
-            index_mappings=index_mappings,
+            slider_dim_transforms=slider_dim_transforms,
         )
 
         self._graphic: ImageGraphic | None = None
         self._histogram_widget: HistogramLUTTool | None = None
 
+        # create a graphic
         self._create_graphic()
 
     @property
     def processor(self) -> NDImageProcessor:
+        """NDProcessor that manages the data and produces data slices to display"""
         return self._processor
 
     @property
     def graphic(
         self,
     ) -> ImageGraphic | ImageVolumeGraphic:
-        """LineStack or ImageGraphic for heatmaps"""
+        """Underlying Graphic object used to display the current data slice"""
         return self._graphic
 
     def _create_graphic(self):
+        # Creates an ``ImageGraphic`` or ``ImageVolumeGraphic`` based on the number of spatial dims,
+        # adds it to the subplot, and resets the camera and histogram.
+
+        if self.processor.data is None:
+            # no graphic if data is None, useful for initializing in null states when we want to set data later
+            return
+
+        # determine if we need a 2d image or 3d volume
+        # remove RGB spatial dim, ex: if we have an RGBA image of shape [512, 512, 4] we want to interpet this as
+        # 2D for images
+        # [30, 512, 512, 4] with an rgb dim is an RGBA volume which is also supported
         match len(self.processor.spatial_dims) - int(bool(self.processor.rgb_dim)):
             case 2:
                 cls = ImageGraphic
             case 3:
                 cls = ImageVolumeGraphic
 
+        # get the data slice for this index
+        # this will only have the dims specified by ``spatial_dims``
         data_slice = self.processor.get(self.indices)
 
-        old_graphic = self._graphic
+        # create the new graphic
         new_graphic = cls(data_slice)
 
+        old_graphic = self._graphic
+        # check if we are replacing a graphic
+        # ex: swapping from 2D <-> 3D representation after ``spatial_dims`` was changed
         if old_graphic is not None:
             # carry over some attributes from old graphic
             attrs = dict.fromkeys(["cmap", "interpolation", "cmap_interpolation"])
             for k in attrs:
                 attrs[k] = getattr(old_graphic, k)
 
+            # delete the old graphic
             self._subplot.delete_graphic(old_graphic)
-            self._subplot.add_graphic(new_graphic)
 
-            # set cmap and interpolation
+            # set any attributes that we're carrying over like cmap
             for attr, val in attrs.items():
                 setattr(new_graphic, attr, val)
 
@@ -332,7 +459,7 @@ class NDImage(NDGraphic):
             self.graphic.reset_vmin_vmax()
 
     def _reset_camera(self):
-        # set camera to a nice position for 2D or 3D
+        # set camera to a nice position based on whether it's a 2D ImageGraphic or 3D ImageVolumeGraphic
         if isinstance(self._graphic, ImageGraphic):
             # set camera orthogonal to the xy plane, flip y axis
             self._subplot.camera.set_state(
@@ -341,7 +468,7 @@ class NDImage(NDGraphic):
                     "rotation": [0, 0, 0, 1],
                     "scale": [1, -1, 1],
                     "reference_up": [0, 1, 0],
-                    "fov": 0,
+                    "fov": 0,  # orthographic projection
                     "depth_range": None,
                 }
             )
@@ -351,11 +478,12 @@ class NDImage(NDGraphic):
             self._subplot.auto_scale()
 
         else:
+            # It's not an ImageGraphic, set perspective projection
             self._subplot.camera.fov = 50
             self._subplot.controller = "orbit"
 
-            # make sure all 3D dimension camera scales are positive
-            # MIP rendering doesn't work with negative camera scales
+            # set all 3D dimension camera scales to positive since positive scales
+            # are typically used for looking at volumes
             for dim in ["x", "y", "z"]:
                 if getattr(self._subplot.camera.local, f"scale_{dim}") < 0:
                     setattr(self._subplot.camera.local, f"scale_{dim}", 1)
@@ -364,6 +492,7 @@ class NDImage(NDGraphic):
 
     @property
     def spatial_dims(self) -> tuple[str, str] | tuple[str, str, str]:
+        """get or set the spatial dims, see docstring for details"""
         return self.processor.spatial_dims
 
     @spatial_dims.setter
@@ -375,6 +504,7 @@ class NDImage(NDGraphic):
 
     @property
     def indices(self) -> dict[Hashable, Any]:
+        """get or set the indices, managed by the ReferenceIndex, users usually don't want to set this manually"""
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
     @indices.setter
@@ -385,6 +515,7 @@ class NDImage(NDGraphic):
 
     @property
     def compute_histogram(self) -> bool:
+        """whether or not to compute the histogram and display the HistogramLUTTool"""
         return self.processor.compute_histogram
 
     @compute_histogram.setter
@@ -394,6 +525,7 @@ class NDImage(NDGraphic):
 
     @property
     def spatial_func(self) -> Callable[[xr.DataArray], xr.DataArray] | None:
+        """get or set the spatial_func, see docstring for details"""
         return self.processor.spatial_func
 
     @spatial_func.setter
@@ -405,6 +537,7 @@ class NDImage(NDGraphic):
         self._reset_histogram()
 
     def _tooltip_handler(self, graphic, pick_info):
+        # TODO: need to do this better
         # get graphic within the collection
         n_index = np.argwhere(self.graphic.graphics == graphic).item()
         p_index = pick_info["vertex_index"]

@@ -43,16 +43,17 @@ nd_lines = ndw[0, 0].add_nd_timeseries(
     data,
     ("freq", "ampl", "n_lines", "angle", "d"),
     ("n_lines", "angle", "d"),
-    index_mappings={
+    slider_dim_transforms={
         "angle": xs,
         "ampl": lambda x: int(x + 1),
         "freq": lambda x: int(x + 1),
     },
-    x_range_mode="view-range",
+    cmap="jet",
+    x_range_mode="auto",
     name="nd-sine"
 )
 
-nd_lines.graphic.cmap = "tab10"
+nd_lines.cmap = "tab10"
 
 subplot = ndw.figure[0, 0]
 subplot.controller.add_camera(subplot.camera, include_state={"x", "width"})
