@@ -513,7 +513,6 @@ class NDPositionsProcessor(NDProcessor):
             if val_sliced.shape[0] == 1:
                 # broadcast across all graphical elements
                 n_graphics = self.shape[self.spatial_dims[0]]
-                print(val_sliced.shape, n_graphics)
                 val_sliced = np.broadcast_to(
                     val_sliced, shape=(n_graphics, *val_sliced.shape[1:])
                 )
