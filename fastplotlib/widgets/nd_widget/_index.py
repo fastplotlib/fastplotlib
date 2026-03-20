@@ -201,7 +201,7 @@ class ReferenceIndex:
     def _render_indices(self):
         for ndw in self._ndwidgets:
             for g in ndw.ndgraphics:
-                if g.data is None:
+                if g.data is None or g.pause:
                     continue
                 # only provide slider indices to the graphic
                 g.indices = {d: self._indices[d] for d in g.processor.slider_dims}

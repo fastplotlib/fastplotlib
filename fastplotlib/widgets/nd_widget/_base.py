@@ -539,9 +539,21 @@ class NDGraphic:
         # this is also to block recursion
         self._block_indices = False
 
+        # user settable bool to make the graphic unresponsive to change in the ReferenceIndex
+        self._pause = False
+
 
     def _create_graphic(self):
         raise NotImplementedError
+
+    @property
+    def pause(self) -> bool:
+        """if True, changes in the reference until it is set back to False"""
+        return self._pause
+
+    @pause.setter
+    def pause(self, val: bool):
+        self._pause = bool(val)
 
     @property
     def name(self) -> str | None:
