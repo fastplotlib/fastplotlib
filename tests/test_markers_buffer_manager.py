@@ -46,10 +46,10 @@ def test_create_buffer(test_graphic):
     if test_graphic:
         fig = fpl.Figure()
 
-        scatter = fig[0, 0].add_scatter(data, markers=MARKERS1)
+        scatter = fig[0, 0].add_scatter(data, markers=MARKERS1, uniform_marker=False)
         vertex_markers = scatter.markers
         assert isinstance(vertex_markers, VertexMarkers)
-        assert vertex_markers.buffer is scatter.world_object.geometry.markers
+        assert vertex_markers._fpl_buffer is scatter.world_object.geometry.markers
     else:
         vertex_markers = VertexMarkers(MARKERS1, len(data))
 
@@ -68,7 +68,7 @@ def test_int(test_graphic, index: int):
     if test_graphic:
         fig = fpl.Figure()
 
-        scatter = fig[0, 0].add_scatter(data, markers=MARKERS1)
+        scatter = fig[0, 0].add_scatter(data, markers=MARKERS1, uniform_marker=False)
         scatter.add_event_handler(event_handler, "markers")
         vertex_markers = scatter.markers
     else:
@@ -108,7 +108,7 @@ def test_slice(test_graphic, slice_method):
     if test_graphic:
         fig = fpl.Figure()
 
-        scatter = fig[0, 0].add_scatter(data, markers=MARKERS1)
+        scatter = fig[0, 0].add_scatter(data, markers=MARKERS1, uniform_marker=False)
         scatter.add_event_handler(event_handler, "markers")
         vertex_markers = scatter.markers
 

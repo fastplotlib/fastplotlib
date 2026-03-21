@@ -39,7 +39,6 @@ class VertexColors(BufferManager):
         self,
         colors: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
         n_colors: int,
-        isolated_buffer: bool = True,
         property_name: str = "colors",
     ):
         """
@@ -57,9 +56,59 @@ class VertexColors(BufferManager):
         """
         data = parse_colors(colors, n_colors)
 
-        super().__init__(
-            data=data, isolated_buffer=isolated_buffer, property_name=property_name
-        )
+        super().__init__(data=data, property_name=property_name)
+
+    def set_value(
+        self,
+        graphic,
+        value: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
+    ):
+        """set the entire array, create new buffer if necessary"""
+        if isinstance(value, (np.ndarray, list, tuple)):
+            # TODO: Refactor this triage so it's more elegant
+
+            # first make sure it's not representing one color
+            skip = False
+            if isinstance(value, np.ndarray):
+                if (value.shape in ((3,), (4,))) and (
+                    np.issubdtype(value.dtype, np.floating)
+                    or np.issubdtype(value.dtype, np.integer)
+                ):
+                    # represents one color
+                    skip = True
+            elif isinstance(value, (list, tuple)):
+                if len(value) in (3, 4) and all(
+                    [isinstance(v, (float, int)) for v in value]
+                ):
+                    # represents one color
+                    skip = True
+
+            # check if the number of elements matches current buffer size
+            if not skip and self.buffer.data.shape[0] != len(value):
+                # parse the new colors
+                new_colors = parse_colors(value, len(value))
+
+                # create the new buffer, old buffer should get dereferenced
+                # make sure new buffer is isolated (i.e. allocate a buffer, then set the values)
+                buff = np.empty(new_colors.shape, dtype=np.float32)
+                buff[:] = new_colors
+                self._fpl_buffer = pygfx.Buffer(buff)
+                graphic.world_object.geometry.colors = self._fpl_buffer
+
+                if len(self._event_handlers) < 1:
+                    return
+
+                event_info = {
+                    "key": slice(None),
+                    "value": new_colors,
+                    "user_value": value,
+                }
+
+                event = GraphicFeatureEvent(self._property_name, info=event_info)
+                self._call_event_handlers(event)
+                return
+
+        self[:] = value
 
     @block_reentrance
     def __setitem__(
@@ -231,18 +280,14 @@ class VertexPositions(BufferManager):
         },
     ]
 
-    def __init__(
-        self, data: Any, isolated_buffer: bool = True, property_name: str = "data"
-    ):
+    def __init__(self, data: Any, property_name: str = "data"):
         """
         Manages the vertex positions buffer shown in the graphic.
         Supports fancy indexing if the data array also supports it.
         """
 
         data = self._fix_data(data)
-        super().__init__(
-            data, isolated_buffer=isolated_buffer, property_name=property_name
-        )
+        super().__init__(data, property_name=property_name)
 
     def _fix_data(self, data):
         if data.ndim == 1:
@@ -261,13 +306,42 @@ class VertexPositions(BufferManager):
 
         return to_gpu_supported_dtype(data)
 
+    def set_value(self, graphic, value):
+        """Sets the entire array, creates new buffer if necessary"""
+        if isinstance(value, np.ndarray):
+            if self.buffer.data.shape[0] != value.shape[0]:
+                # number of items doesn't match, create a new buffer
+
+                # if data is not 3D
+                if value.ndim == 1:
+                    # _fix_data creates a new array so we don't need to re-allocate with np.zeros
+                    bdata = self._fix_data(value)
+
+                elif value.shape[1] == 2:
+                    # _fix_data creates a new array so we don't need to re-allocate with np.zeros
+                    bdata = self._fix_data(value)
+
+                elif value.shape[1] == 3:
+                    # need to allocate a buffer to use here
+                    bdata = np.empty(value.shape, dtype=np.float32)
+                    bdata[:] = value[:]
+
+                # create the new buffer, old buffer should get dereferenced
+                self._fpl_buffer = pygfx.Buffer(bdata)
+                graphic.world_object.geometry.positions = self._fpl_buffer
+
+                self._emit_event(self._property_name, key=slice(None), value=value)
+                return
+
+        self[:] = value
+
     @block_reentrance
     def __setitem__(
         self,
         key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
         value: np.ndarray | float | list[float],
     ):
-        # directly use the key to slice the buffer
+        # directly use the key to slice the buffer and set the values
         self.buffer.data[key] = value
 
         # _update_range handles parsing the key to
@@ -306,7 +380,7 @@ class VertexCmap(BufferManager):
         provides a way to set colormaps with arbitrary transforms
         """
 
-        super().__init__(data=vertex_colors.buffer, property_name=property_name)
+        super().__init__(data=None, property_name=property_name)
 
         self._vertex_colors = vertex_colors
         self._cmap_name = cmap_name
@@ -330,6 +404,10 @@ class VertexCmap(BufferManager):
             )
             # set vertex colors from cmap
             self._vertex_colors[:] = colors
+
+    @property
+    def buffer(self) -> pygfx.Buffer:
+        return self._vertex_colors.buffer
 
     @block_reentrance
     def __setitem__(self, key: slice, cmap_name):

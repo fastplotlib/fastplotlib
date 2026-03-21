@@ -477,3 +477,38 @@ def subsample_array(
     slices = tuple(slices)
 
     return np.asarray(arr[slices])
+
+
+def heatmap_to_positions(heatmap: np.ndarray, xvals: np.ndarray) -> np.ndarray:
+    """
+
+    Convert a heatmap of shape [n_rows, n_datapoints] to timeseries x-y data of shape [n_rows, n_datapoints, xy]
+
+    Parameters
+    ----------
+    heatmap: np.ndarray, shape [n_rows, n_datapoints]
+        timeseries data with a heatmap representation, where each column represents a timepoint.
+
+    xvals: np.ndarray, shape: [n_datapoints,]
+        x-values for the columns in the heatmap
+
+    Returns
+    -------
+    np.ndarray, shape [n_rows, n_datapoints, 2]
+        timeseries data where the xy data are explicitly stored for every row
+
+    """
+    if heatmap.ndim != 2:
+        raise ValueError
+
+    if xvals.ndim != 1:
+        raise ValueError
+
+    if xvals.size != heatmap.shape[1]:
+        raise ValueError
+
+    ts = np.empty((*heatmap.shape, 2), dtype=np.float32)
+    ts[..., 0] = xvals
+    ts[..., 1] = heatmap
+
+    return ts

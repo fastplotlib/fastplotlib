@@ -358,6 +358,11 @@ class ImageWidget:
             passed to each ImageGraphic in the ImageWidget figure subplots
 
         """
+        warn(
+            "`ImageWidget` is deprecated and will be removed in a"
+            " future release, please migrate to NDWidget",
+            DeprecationWarning
+        )
         self._initialized = False
 
         if figure_kwargs is None:

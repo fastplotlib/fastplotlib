@@ -10,7 +10,7 @@ from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
 from ..graphics._base import Graphic, WORLD_OBJECT_TO_GRAPHIC
-from ..graphics import ImageGraphic
+from ..graphics import ImageGraphic, MeshGraphic
 from ..graphics.selectors._base_selector import BaseSelector
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
@@ -120,11 +120,8 @@ class PlotArea(GraphicMethodsMixin):
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
 
-        self._ambient_light = pygfx.AmbientLight()
-        self._directional_light = pygfx.DirectionalLight()
-
-        self.scene.add(self._ambient_light)
-        self.scene.add(self._camera.add(self._directional_light))
+        self._ambient_light = None
+        self._directional_light = None
 
         self._tooltip = Tooltip()
         self.get_figure()._fpl_overlay_scene.add(self._tooltip._fpl_world_object)
@@ -179,8 +176,9 @@ class PlotArea(GraphicMethodsMixin):
         # user wants to set completely new camera, remove current camera from controller
         if isinstance(new_camera, pygfx.PerspectiveCamera):
             self.controller.remove_camera(self._camera)
-            # add directional light to new camera
-            new_camera.add(self._directional_light)
+            if self._directional_light is not None:
+                # add directional light to new camera
+                new_camera.add(self._directional_light)
             # add new camera to controller
             self.controller.add_camera(new_camera)
 
@@ -233,7 +231,10 @@ class PlotArea(GraphicMethodsMixin):
         #  pygfx plans on refactoring viewports anyways
         if self.parent is not None:
             if self.parent.__class__.__name__.endswith("Figure"):
-                for subplot in self.parent:
+                # always use figure._subplots.ravel() in internal fastplotlib code
+                # otherwise if we use `for subplot in figure`, this could conflict
+                # with a user's iterator where they are doing `for subplot in figure` !!!
+                for subplot in self.parent._subplots.ravel():
                     if subplot.camera in cameras_list:
                         new_controller.register_events(subplot.viewport)
                         subplot._controller = new_controller
@@ -290,12 +291,12 @@ class PlotArea(GraphicMethodsMixin):
         self._background_material.set_colors(*colors)
 
     @property
-    def ambient_light(self) -> pygfx.AmbientLight:
+    def ambient_light(self) -> pygfx.AmbientLight | None:
         """the ambient lighting in the scene"""
         return self._ambient_light
 
     @property
-    def directional_light(self) -> pygfx.DirectionalLight:
+    def directional_light(self) -> pygfx.DirectionalLight | None:
         """the directional lighting on the camera in the scene"""
         return self._directional_light
 
@@ -628,6 +629,13 @@ class PlotArea(GraphicMethodsMixin):
         if isinstance(graphic, ImageGraphic):
             self._sort_images_by_depth()
 
+        if isinstance(graphic, MeshGraphic):
+            self._ambient_light = pygfx.AmbientLight()
+            self._directional_light = pygfx.DirectionalLight()
+
+            self.scene.add(self._ambient_light)
+            self.scene.add(self._camera.add(self._directional_light))
+
     def insert_graphic(
         self,
         graphic: Graphic,
@@ -856,6 +864,42 @@ class PlotArea(GraphicMethodsMixin):
         camera.height = height
 
         camera.zoom = zoom
+
+    @property
+    def x_range(self) -> tuple[float, float]:
+        """
+        Get or set the x-range currently in view.
+        Only valid for orthographic projections of the xy plane.
+        Use camera.set_state() to set the camera position for arbitrary projections.
+        """
+        hw = self.camera.width / 2
+        x = self.camera.local.x
+        return x - hw, x + hw
+
+    @x_range.setter
+    def x_range(self, xr: tuple[float, float]):
+        width = xr[1] - xr[0]
+        x_mid = (xr[0] + xr[1]) / 2
+        self.camera.width = width
+        self.camera.local.x = x_mid
+
+    @property
+    def y_range(self) -> tuple[float, float]:
+        """
+        Get or set the y-range currently in view.
+        Only valid for orthographic projections of the xy plane.
+        Use camera.set_state() to set the camera position for arbitrary projections.
+        """
+        hh = self.camera.height / 2
+        y = self.camera.local.y
+        return y - hh, y + hh
+
+    @y_range.setter
+    def y_range(self, yr: tuple[float, float]):
+        height = yr[1] - yr[0]
+        y_mid = yr[0] + (height / 2)
+        self.camera.height = height
+        self.camera.local.y = y_mid
 
     def remove_graphic(self, graphic: Graphic):
         """

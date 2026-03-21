@@ -34,7 +34,7 @@ class TextureArrayVolume(GraphicFeature):
         },
     ]
 
-    def __init__(self, data, isolated_buffer: bool = True):
+    def __init__(self, data):
         super().__init__(property_name="data")
 
         data = self._fix_data(data)
@@ -43,13 +43,9 @@ class TextureArrayVolume(GraphicFeature):
 
         self._texture_size_limit = shared.device.limits["max-texture-dimension-3d"]
 
-        if isolated_buffer:
-            # useful if data is read-only, example: memmaps
-            self._value = np.zeros(data.shape, dtype=data.dtype)
-            self.value[:] = data[:]
-        else:
-            # user's input array is used as the buffer
-            self._value = data
+        # create a new buffer that will be used for the texture data
+        self._value = np.zeros(data.shape, dtype=data.dtype)
+        self.value[:] = data[:]
 
         # data start indices for each Texture
         self._row_indices = np.arange(

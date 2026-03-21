@@ -1,3 +1,5 @@
+from itertools import repeat
+from numbers import Number
 from typing import *
 
 import numpy as np
@@ -105,8 +107,11 @@ class _LineCollectionProperties:
         return np.asarray([g.thickness for g in self])
 
     @thickness.setter
-    def thickness(self, values: np.ndarray | list[float]):
-        if not len(values) == len(self):
+    def thickness(self, values: float | Sequence[float]):
+        if isinstance(values, Number):
+            values = repeat(values, len(self))
+
+        elif not len(values) == len(self):
             raise IndexError
 
         for g, v in zip(self, values):
@@ -128,14 +133,13 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         data: np.ndarray | List[np.ndarray],
         thickness: float | Sequence[float] = 2.0,
         colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
-        uniform_colors: bool = False,
         cmap: Sequence[str] | str = None,
         cmap_transform: np.ndarray | List = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Sequence[Any] | np.ndarray = None,
-        isolated_buffer: bool = True,
         kwargs_lines: list[dict] = None,
         **kwargs,
     ):
@@ -169,6 +173,9 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
+
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            The color mode for each line in the collection. See `color_mode` in :class:`.LineGraphic` for details.
 
         name: str, optional
             name of the line collection as a whole
@@ -320,11 +327,10 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                 data=d,
                 thickness=_s,
                 colors=_c,
-                uniform_color=uniform_colors,
                 cmap=_cmap,
+                color_mode=color_mode,
                 name=_name,
                 metadata=_m,
-                isolated_buffer=isolated_buffer,
                 **kwargs_lines,
             )
 
@@ -560,7 +566,6 @@ class LineStack(LineCollection):
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Sequence[Any] | np.ndarray = None,
-        isolated_buffer: bool = True,
         separation: float = 10.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
@@ -634,7 +639,6 @@ class LineStack(LineCollection):
             names=names,
             metadata=metadata,
             metadatas=metadatas,
-            isolated_buffer=isolated_buffer,
             kwargs_lines=kwargs_lines,
             **kwargs,
         )

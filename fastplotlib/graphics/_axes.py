@@ -301,6 +301,8 @@ class Axes:
         self._basis = None
         self.basis = basis
 
+        self._last_state = self._get_view_state()
+
     @property
     def world_object(self) -> pygfx.WorldObject:
         return self._world_object
@@ -402,6 +404,14 @@ class Axes:
 
         self._intersection = tuple(float(v) for v in intersection)
 
+    def _get_view_state(self) -> tuple[bytes, tuple[int, int], tuple[int, int], bytes]:
+        viewport = self._plot_area.viewport
+        cam_matrix = self._plot_area.camera.camera_matrix.tobytes()
+        scale = self._plot_area.camera.local.scale.tobytes()
+
+        return (cam_matrix, viewport.rect, viewport.logical_size, scale)
+
+
     def update_using_bbox(self, bbox):
         """
         Update the w.r.t. the given bbox
@@ -444,6 +454,10 @@ class Axes:
 
         if not self.visible:
             return
+        state = self._get_view_state()
+        if state == self._last_state:
+            # no changes in the camera or viewport rect
+            return
 
         if self._plot_area.camera.fov == 0:
             xpos, ypos, width, height = self._plot_area.viewport.rect
@@ -452,27 +466,6 @@ class Axes:
             # get range of screen space by getting the corners
             xmin, xmax = xpos, xpos + width
             ymin, ymax = ypos + height, ypos
-
-            # apply quaternion to account for rotation of axes
-            # xmin, _, _ = vec_transform_quat(
-            #     [xmin, ypos + height / 2, 0],
-            #     self.x.local.rotation
-            # )
-            #
-            # xmax, _, _ = vec_transform_quat(
-            #     [xmax, ypos + height / 2, 0],
-            #     self.x.local.rotation,
-            # )
-            #
-            # _, ymin, _ = vec_transform_quat(
-            #     [xpos + width / 2, ymin, 0],
-            #     self.y.local.rotation
-            # )
-            #
-            # _, ymax, _ = vec_transform_quat(
-            #     [xpos + width / 2, ymax, 0],
-            #     self.y.local.rotation
-            # )
 
             min_vals = self._plot_area.map_screen_to_world((xmin, ymin))
             max_vals = self._plot_area.map_screen_to_world((xmax, ymax))
@@ -514,6 +507,8 @@ class Axes:
             intersection = self.intersection
 
         self.update(bbox, intersection)
+
+        self._last_state = state
 
     def update(self, bbox, intersection):
         """
