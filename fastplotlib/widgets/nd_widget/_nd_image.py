@@ -524,6 +524,11 @@ class NDImage(NDGraphic):
         self._reset_histogram()
 
     @property
+    def histogram_widget(self) -> HistogramLUTTool:
+        """The histogram lut tool associated with this NDGraphic"""
+        return self._histogram_widget
+
+    @property
     def spatial_func(self) -> Callable[[xr.DataArray], xr.DataArray] | None:
         """get or set the spatial_func, see docstring for details"""
         return self.processor.spatial_func

@@ -211,6 +211,8 @@ class RightClickMenu(StandardRightClickMenu):
             elif isinstance(ndg, NDImage):
                 self._draw_nd_image_ui(subplot, ndg)
 
+            _, ndg.pause = imgui.checkbox("pause", ndg.pause)
+
             if not open:
                 self._ndgraphic_windows.remove(ndg)
 

@@ -188,6 +188,7 @@ class ReferenceIndex:
             self._indices[dim] = self._clamp(dim, value)
 
         self._render_indices()
+        self._indices_changed()
 
     def _clamp(self, dim, value):
         if isinstance(self.ref_ranges[dim], RangeContinuous):
@@ -201,7 +202,7 @@ class ReferenceIndex:
     def _render_indices(self):
         for ndw in self._ndwidgets:
             for g in ndw.ndgraphics:
-                if g.data is None:
+                if g.data is None or g.pause:
                     continue
                 # only provide slider indices to the graphic
                 g.indices = {d: self._indices[d] for d in g.processor.slider_dims}
@@ -215,6 +216,7 @@ class ReferenceIndex:
         # set index for given dim and render
         self._indices[dim] = self._clamp(dim, value)
         self._render_indices()
+        self._indices_changed()
 
     def _check_has_dim(self, dim):
         if dim not in self.dims:
@@ -288,6 +290,10 @@ class ReferenceIndex:
     def clear_event_handlers(self):
         """Clear all registered event handlers"""
         self._indices_changed_handlers.clear()
+
+    def _indices_changed(self):
+        for f in self._indices_changed_handlers:
+            f(self._indices)
 
     def __iter__(self):
         for index in self._indices.items():
