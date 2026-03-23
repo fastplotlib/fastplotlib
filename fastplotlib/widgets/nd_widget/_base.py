@@ -14,7 +14,6 @@ from numpy.typing import ArrayLike
 from ...layouts import Subplot
 from ...utils import subsample_array, ArrayProtocol
 from ...graphics import Graphic
-from ._repr_formatter import ndp_fmt_text, ndg_fmt_text, ndp_fmt_html, ndg_fmt_html
 from ._index import ReferenceIndex
 
 # must take arguments: array-like, `axis`: int, `keepdims`: bool
