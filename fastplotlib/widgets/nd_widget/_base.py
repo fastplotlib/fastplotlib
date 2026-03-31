@@ -12,7 +12,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from ...layouts import Subplot
-from ...utils import subsample_array, ArrayProtocol
+from ...utils import subsample_array, ArrayProtocol, CudaArrayProtocol
 from ...graphics import Graphic
 from ._repr_formatter import ndp_fmt_text, ndg_fmt_text, ndp_fmt_html, ndg_fmt_html
 from ._index import ReferenceIndex
@@ -150,6 +150,10 @@ class NDProcessor:
 
         # data can be set, but the dims must still match/have the same meaning
         return xr.DataArray(data, dims=self.dims)
+
+    @property
+    def is_async(self) -> bool:
+        return isinstance(self.data.values, CudaArrayProtocol)
 
     @property
     def shape(self) -> dict[Hashable, int]:
@@ -475,6 +479,18 @@ class NDProcessor:
             # dims names correspond after all the window funcs are applied.
             array = func(array, axis=self.dims.index(dim), keepdims=True)
 
+        if isinstance(array, CudaArrayProtocol):
+            # xarray only supports cupy arrays, so if it's a torch array convert it to a cupy one
+            # cupy.asarray() just creates a view of the torch array with the cupy interface
+            try:
+                import cupy
+            except ImportError:
+                raise ImportError(
+                    "`cupy` is required for NDWidget to work with CUDA arrays"
+                )
+
+            array = cupy.asarray(array)
+
         return xr.DataArray(array, dims=self.dims)
 
     def get(self, indices: dict[Hashable, Any]):
@@ -492,10 +508,7 @@ class NDProcessor:
 
     def _repr_text_(self):
         if self.data is None:
-            return (
-                f"{self.__class__.__name__}\n"
-                f"data is None, dims: {self.dims}"
-            )
+            return f"{self.__class__.__name__}\n" f"data is None, dims: {self.dims}"
         tab = "\t"
 
         wf = {k: v for k, v in self.window_funcs.items() if v != (None, None)}
@@ -541,7 +554,6 @@ class NDGraphic:
 
         # user settable bool to make the graphic unresponsive to change in the ReferenceIndex
         self._pause = False
-
 
     def _create_graphic(self):
         raise NotImplementedError
