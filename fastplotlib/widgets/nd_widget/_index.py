@@ -167,6 +167,9 @@ class ReferenceIndex:
 
         self._ndwidgets: list[NDWidget] = list()
 
+        self._blocked = False
+        self._synchronized_indices: dict[str, set[str]] = dict()
+
     @property
     def ref_ranges(self) -> dict[str, RangeContinuous | RangeDiscrete]:
         return self._ref_ranges
@@ -184,11 +187,68 @@ class ReferenceIndex:
         self._ndwidgets.append(ndw)
 
     def set(self, indices: dict[str, Any]):
-        for dim, value in indices.items():
-            self._indices[dim] = self._clamp(dim, value)
+        if not self.blocked:
+            for dim, value in indices.items():
+                self._check_has_dim(dim)
+                self._indices[dim] = self._clamp(dim, value)
 
-        self._render_indices()
-        self._indices_changed()
+            #Avoid re-entrance
+            self.blocked = True
+            #Make a list of synchronized ref index objects that are affected by the above change
+            updated_dims = indices.keys()
+            for ref_idx in self._synchronized_indices:
+                curr_dims_update = updated_dims & self._synchronized_indices[ref_idx]
+                if not curr_dims_update:
+                    continue
+                else:
+                    update_dict = {temp_dim: indices[temp_dim] for temp_dim in curr_dims_update}
+                    ref_idx.set(update_dict)
+
+            self.blocked = False
+
+            self._render_indices()
+            self._indices_changed()
+
+
+    @property
+    def blocked(self):
+        return self._blocked
+
+    @blocked.setter
+    def blocked(self, new_state: bool):
+        self._blocked = new_state
+
+
+    def add_synchronized_index(self, ref_index: ReferenceIndex, dim: str):
+        if self is ref_index:
+            return
+
+        if dim not in self.dims or dim not in ref_index.dims:
+            raise ValueError("Both reference indices must have this dimension")
+
+        if ref_index in self._synchronized_indices:
+            self._synchronized_indices[ref_index].add(dim)
+        else:
+            self._synchronized_indices[ref_index] = {dim}
+
+        if self in ref_index._synchronized_indices:
+            ref_index._synchronized_indices[self].add(dim)
+        else:
+            ref_index._synchronized_indices[self] = {dim}
+
+
+    def remove_synchronized_index(self, ref_index: ReferenceIndex, dim: str):
+
+        if ref_index in self._synchronized_indices:
+            self._synchronized_indices[ref_index].discard(dim)
+        else:
+            pass
+
+        if self in ref_index._synchronized_indices:
+            ref_index._synchronized_indices[self].discard(dim)
+        else:
+            pass
+
 
     def _clamp(self, dim, value):
         if isinstance(self.ref_ranges[dim], RangeContinuous):
@@ -212,11 +272,8 @@ class ReferenceIndex:
         return self._indices[dim]
 
     def __setitem__(self, dim, value):
-        self._check_has_dim(dim)
-        # set index for given dim and render
-        self._indices[dim] = self._clamp(dim, value)
-        self._render_indices()
-        self._indices_changed()
+        self.set({dim:value})
+
 
     def _check_has_dim(self, dim):
         if dim not in self.dims:
@@ -304,6 +361,9 @@ class ReferenceIndex:
 
     def __eq__(self, other):
         return self._indices == other
+
+    def __hash__(self):
+        return object.__hash__(self)
 
     def __repr__(self):
         return f"Global Index: {self._indices}"
