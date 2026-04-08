@@ -36,41 +36,40 @@ class FutureArray(Future):
         raise NotImplementedError
 
 
+# inspired by https://www.dabeaz.com/coroutines/
 def start_coroutine(func):
+    """starts coroutines for async arrays in NDProcessor"""
     def start(self, *args, **kwargs):
         cr = func(self, *args, **kwargs)
         try:
-            fut = cr.send(None)
+            # begin coroutine
+            fut: FutureArray | ArrayProtocol = cr.send(None)
         except StopIteration:
-            # NDProcessor.get() was not async
+            # NDProcessor.get() was not async, nothing to return
             return
 
-        if "block" in kwargs:
-            block = kwargs["block"]
-        else:
-            block = True
+        block = kwargs.get("block", True)
+        timeout = kwargs.get("timeout", 1.0)
 
-        if "timeout" in kwargs:
-            timeout = kwargs["timeout"]
-        else:
-            timeout = 1.0
-
-        if block:
-            # resolve Future immediately
+        if block: # resolve Future immediately
             try:
                 if isinstance(fut, FutureArrayProtocol):
+                    # array is async, resolve future and send
                     cr.send(fut.result(timeout=timeout))
                 else:
+                    # not async, just return the array
                     cr.send(fut)
             except StopIteration:
                 pass
-        else:
+        else: # no block, probably resolving multiple futures simultaneously
             if isinstance(fut, FutureArrayProtocol):
+                # data is async, return coroutine generator and future
+                # ReferenceIndex._render_indices() will manage them and wait to gather all futures
                 return cr, fut
             else:
-                # data is not async
+                # not async, just return the array
                 try:
                     cr.send(fut)
-                except StopIteration:
+                except StopIteration: # has to be here because of the yield expression, i.e. it's a generator
                     pass
     return start
