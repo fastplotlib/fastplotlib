@@ -1,5 +1,6 @@
 from itertools import product
 from math import ceil
+from warnings import warn
 
 import cmap as cmap_lib
 import numpy as np
@@ -104,8 +105,11 @@ class TextureArray(GraphicFeature):
                 "it must be of shape [rows, cols], [rows, cols, 3] or [rows, cols, 4]"
             )
 
-        # let's just cast to float32 always
-        return data.astype(np.float32)
+        if data.itemsize == 8:
+            warn(f"casting {array.dtype} array to float32")
+            return data.astype(np.float32)
+
+        return data
 
     def __iter__(self):
         self._iter = product(enumerate(self.row_indices), enumerate(self.col_indices))
