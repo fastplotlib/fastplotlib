@@ -106,7 +106,7 @@ class TextureArray(GraphicFeature):
             )
 
         if data.itemsize == 8:
-            warn(f"casting {array.dtype} array to float32")
+            warn(f"casting {data.dtype} array to float32")
             return data.astype(np.float32)
 
         return data
