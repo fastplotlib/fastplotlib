@@ -534,19 +534,19 @@ class Graphic:
         if isinstance(position, np.ndarray):
             if not 0 < position.ndim < 3:
                 raise ValueError(
-                    f"position can either be shape (num_points, 3) or (3,)"
+                    f"position must be of shape (num_points, 3) or (3,)"
                 )
 
             elif position.ndim == 1:
                 position = position[None, :]
 
             if position.shape[-1] != 3:
-                raise ValueError(f"position must have shape (num_points, 3) or (3,), provided shape of {position.shape}")
+                raise ValueError(f"position must be of shape (num_points, 3) or (3,)")
 
 
             elif position.shape[-1] != 3:
                 raise ValueError(
-                    "position must be a tuple indicating (x, y, z) or an array of shape (num_points, 3)"
+                    "position must be of shape (num_points, 3) or (3,)"
                 )
 
         else:
