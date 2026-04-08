@@ -150,6 +150,8 @@ class NDImageProcessor(NDProcessor):
                 f"Image data must have a minimum of 2 dimensions, you have passed an array of shape: {data.shape}"
             )
 
+        self._unwrapped_data = data
+
         return xr.DataArray(data, dims=self.dims)
 
     @property

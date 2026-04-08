@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Generator
+from concurrent.futures import wait
 from dataclasses import dataclass
 from numbers import Number
 from typing import Sequence, Any, Callable
@@ -8,6 +10,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ._ndwidget import NDWidget
+
+from ...utils import FutureArrayProtocol
 
 
 @dataclass
@@ -200,12 +204,31 @@ class ReferenceIndex:
         return value
 
     def _render_indices(self):
+        pending = list()
+
         for ndw in self._ndwidgets:
             for g in ndw.ndgraphics:
                 if g.data is None or g.pause:
                     continue
                 # only provide slider indices to the graphic
-                g.indices = {d: self._indices[d] for d in g.processor.slider_dims}
+                indices = {d: self._indices[d] for d in g.processor.slider_dims}
+                to_resolve: None | tuple[Generator, FutureArrayProtocol] = g.set_indices(indices, block=False)
+                if to_resolve is not None:
+                    # it's a future that we need to resolve
+                    pending.append(to_resolve)
+
+        if not pending:
+            # no futures to resolve, everything is sync
+            return
+
+        # resolve async arrays
+        wait([future for cr, future in pending], timeout=2)
+
+        for cr, future in pending:
+            try:
+                cr.send(future.result())
+            except StopIteration:
+                pass
 
     def __getitem__(self, dim):
         self._check_has_dim(dim)

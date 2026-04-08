@@ -137,7 +137,6 @@ class NDProcessor:
         self._data = self._validate_data(data)
 
     def _validate_data(self, data: ArrayProtocol):
-        self._unwrapped_data = data
         # does some basic validation
         if data is None:
             # we allow data to be None, in this case no ndgraphic is rendered
@@ -151,6 +150,8 @@ class NDProcessor:
 
         if data.ndim != len(self.dims):
             raise IndexError("must specify a dim for every dimension in the data array")
+
+        self._unwrapped_data = data
 
         # data can be set, but the dims must still match/have the same meaning
         return xr.DataArray(data, dims=self.dims)
@@ -483,12 +484,12 @@ class NDProcessor:
 
         # apply window funcs
         if len(self.slider_dims) > 0:
-            windowed_slice = self._apply_window_functions(windowed_slice)
+            windowed_slice = self._apply_window_functions(windowed_slice).squeeze()
 
         if windowed_slice.ndim != len(self.spatial_dims):
             raise ValueError
 
-        return windowed_slice.squeeze()
+        return windowed_slice
 
     def _get_raw_data_slice(self, indices: dict[str, Any]) -> Generator[FutureArrayProtocol | ArrayProtocol, ArrayProtocol, ArrayProtocol]:
         """
