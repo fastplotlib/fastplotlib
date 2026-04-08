@@ -527,15 +527,10 @@ class Graphic:
         """
         Converts position data (in the form of tuple or np.ndarray) into a (num_points, 3)-shaped np.ndarray for processing
         """
-        if not isinstance(position, (np.ndarray, tuple)):
-            raise ValueError("position must be either a tuple or np.ndarray")
-
-        position = np.array(position)
+        position = np.asarray(position)
 
         if not 0 < position.ndim < 3:
-            raise ValueError(
-                f"position must be of shape (num_points, 3) or (3,)"
-            )
+            raise ValueError(f"position must be of shape (num_points, 3) or (3,)")
 
         elif position.ndim == 1:
             position = position[None, :]
