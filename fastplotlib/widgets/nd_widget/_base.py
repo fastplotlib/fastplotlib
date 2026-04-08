@@ -484,7 +484,9 @@ class NDProcessor:
 
         # apply window funcs
         if len(self.slider_dims) > 0:
-            windowed_slice = self._apply_window_functions(windowed_slice).squeeze()
+            windowed_slice = self._apply_window_functions(windowed_slice)
+
+        windowed_slice = xr.DataArray(windowed_slice, dims=self.dims).squeeze()
 
         if windowed_slice.ndim != len(self.spatial_dims):
             raise ValueError
