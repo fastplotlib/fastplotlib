@@ -529,35 +529,28 @@ class Graphic:
         """
 
         if isinstance(position, tuple):
-            if len(position) == 2:
-                # use z of the graphic
-                position = [*position, self.offset[-1]]
+            position = np.array(position)[None, :] #Shape (1, 3)
 
-            if len(position) != 3:
+        if isinstance(position, np.ndarray):
+            if not 0 < position.ndim < 3:
                 raise ValueError(
-                    f"position must be tuple or array indicating (x, y, z) position in *model space*"
+                    f"position can either be shape (num_points, 3) or (3,)"
                 )
-        elif isinstance(position, np.ndarray):
-            if position.ndim > 2:
-                raise ValueError(
-                    f"position can either be shape (num_points, [2, 3]) or ([2, 3],)"
-                )
-            if position.ndim == 1:
+
+            elif position.ndim == 1:
                 position = position[None, :]
 
-            if position.shape[-1] == 2:
-                z_data = np.zeros((position.shape[0], 1))
-                z_data[:] = self.offset[-1]
-                position = np.concatenate(
-                    [position, z_data], axis=1
-                )  # Shape (num_points, 3)
+            if position.shape[-1] != 3:
+                raise ValueError(f"position must have shape (num_points, 3) or (3,), provided shape of {position.shape}")
+
+
             elif position.shape[-1] != 3:
                 raise ValueError(
-                    "position must be a tuple or array indicating (x, y, z). The last dimension should be either 2 or 3"
+                    "position must be a tuple indicating (x, y, z) or an array of shape (num_points, 3)"
                 )
 
         else:
-            raise ValueError("positions must be either a tuple or np.ndarray")
+            raise ValueError("position must be either a tuple or np.ndarray")
 
         return position
 
@@ -569,8 +562,8 @@ class Graphic:
 
         Parameters
         ----------
-        position: (float, float, float) or (float, float) or np.ndarray of shape (num_points, 3), (num_points, 2), (3,), or (2,)
-            The xyz or xy positions we wish to map to model space. If z is not provided then 0 is used
+        position: tuple of (x, y, z) or np.ndarray of shape (num_points, 3)
+            The xyz positions we wish to map to model space
 
         Returns
         -------
@@ -590,8 +583,8 @@ class Graphic:
 
         Parameters
         ----------
-        position: (float, float, float) or (float, float) or np.ndarray of shape (num_points, 3), (num_points, 2), (3,), or (2,)
-            The xyz or xy positions we wish to map to model space. If z is not provided then 0 is used
+        position: tuple of (x, y, z) or np.ndarray of shape (num_points, 3)
+            The xyz positions we wish to map to model space
 
         Returns
         -------
