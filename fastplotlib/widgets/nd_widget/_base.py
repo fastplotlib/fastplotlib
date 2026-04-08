@@ -510,7 +510,7 @@ class NDProcessor:
 
         return raw_slice
 
-    def get(self, indices: dict[Hashable, Any]):
+    def get(self, indices: dict[Hashable, Any]) -> Generator | ArrayProtocol:
         raise NotImplementedError
 
     # TODO: html and pretty text repr    #
