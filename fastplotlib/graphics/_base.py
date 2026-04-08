@@ -67,7 +67,6 @@ class Graphic:
     _fpl_support_tooltip: bool = True
 
     def __init_subclass__(cls, **kwargs):
-
         # set of all features
         cls._features = {
             **cls._features,
@@ -326,9 +325,7 @@ class Graphic:
         # used by images since they create new WorldObject ImageTiles when a different buffer size is required
         # also used by GraphicCollections inititally, but not used for reseting like images
         for child in wo.children:
-            if isinstance(
-                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
-            ):
+            if isinstance(child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)):
                 # unique 32 bit integer id for each world object
                 global_id = child.id
                 WORLD_OBJECT_TO_GRAPHIC[global_id] = self
@@ -338,9 +335,7 @@ class Graphic:
     def _remove_group_graphic_map(self, wo: pygfx.Group):
         # remove the children of the group to the WorldObject -> Graphic map
         for child in wo.children:
-            if isinstance(
-                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
-            ):
+            if isinstance(child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)):
                 # unique 32 bit integer id for each world object
                 global_id = child.id
                 WORLD_OBJECT_TO_GRAPHIC.pop(global_id)
@@ -528,6 +523,44 @@ class Graphic:
                 feature = getattr(self, f"_{t}")
                 feature.remove_event_handler(wrapper)
 
+    def _parse_positions(self, position: tuple | np.ndarray) -> np.ndarray:
+        """
+        Converts position data (in the form of tuple or np.ndarray) into a (num_points, 3)-shaped np.ndarray for processing
+        """
+
+        if isinstance(position, tuple):
+            if len(position) == 2:
+                # use z of the graphic
+                position = [*position, self.offset[-1]]
+
+            if len(position) != 3:
+                raise ValueError(
+                    f"position must be tuple or array indicating (x, y, z) position in *model space*"
+                )
+        elif isinstance(position, np.ndarray):
+            if position.ndim > 2:
+                raise ValueError(
+                    f"position can either be shape (num_points, [2, 3]) or ([2, 3],)"
+                )
+            if position.ndim == 1:
+                position = position[None, :]
+
+            if position.shape[-1] == 2:
+                z_data = np.zeros((position.shape[0], 1))
+                z_data[:] = self.offset[-1]
+                position = np.concatenate(
+                    [position, z_data], axis=1
+                )  # Shape (num_points, 3)
+            elif position.shape[-1] != 3:
+                raise ValueError(
+                    "position must be a tuple or array indicating (x, y, z). The last dimension should be either 2 or 3"
+                )
+
+        else:
+            raise ValueError("positions must be either a tuple or np.ndarray")
+
+        return position
+
     def map_model_to_world(
         self, position: tuple[float, float, float] | tuple[float, float] | np.ndarray
     ) -> np.ndarray:
@@ -536,27 +569,18 @@ class Graphic:
 
         Parameters
         ----------
-        position: (float, float, float) or (float, float)
-            (x, y, z) or (x, y) position. If z is not provided then the graphic's offset z is used.
+        position: (float, float, float) or (float, float) or np.ndarray of shape (num_points, 3), (num_points, 2), (3,), or (2,)
+            The xyz or xy positions we wish to map to model space. If z is not provided then 0 is used
 
         Returns
         -------
         np.ndarray
-            (x, y, z) position in world space
-
+            either shape (3,) or (num_points, 3), specifying position in world space
         """
-
-        if len(position) == 2:
-            # use z of the graphic
-            position = [*position, self.offset[-1]]
-
-        if len(position) != 3:
-            raise ValueError(
-                f"position must be tuple or array indicating (x, y, z) position in *model space*"
-            )
+        position = self._parse_positions(position)
 
         # apply world transform to project from model space to world space
-        return la.vec_transform(position, self.world_object.world.matrix)
+        return la.vec_transform(position, self.world_object.world.matrix).squeeze()
 
     def map_world_to_model(
         self, position: tuple[float, float, float] | tuple[float, float] | np.ndarray
@@ -566,26 +590,20 @@ class Graphic:
 
         Parameters
         ----------
-        position: (float, float, float) or (float, float)
-            (x, y, z) or (x, y) position. If z is not provided then 0 is used.
+        position: (float, float, float) or (float, float) or np.ndarray of shape (num_points, 3), (num_points, 2), (3,), or (2,)
+            The xyz or xy positions we wish to map to model space. If z is not provided then 0 is used
 
         Returns
         -------
         np.ndarray
-            (x, y, z) position in world space
+            either shape (3,) or (num_points, 3), specifying position in model space
 
         """
+        position = self._parse_positions(position)
 
-        if len(position) == 2:
-            # use z of the graphic
-            position = [*position, self.offset[-1]]
-
-        if len(position) != 3:
-            raise ValueError(
-                f"position must be tuple or array indicating (x, y, z) position in *model space*"
-            )
-
-        return la.vec_transform(position, self.world_object.world.inverse_matrix)
+        return la.vec_transform(
+            position, self.world_object.world.inverse_matrix
+        ).squeeze()
 
     def format_pick_info(self, ev: pygfx.PointerEvent) -> str:
         """
