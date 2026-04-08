@@ -1,5 +1,4 @@
-from collections.abc import Hashable, Sequence
-import inspect
+from collections.abc import Hashable, Sequence, Generator
 from typing import Callable, Any
 
 import numpy as np
@@ -7,11 +6,12 @@ from numpy.typing import ArrayLike
 import xarray as xr
 
 from ...layouts import Subplot
-from ...utils import subsample_array, ArrayProtocol, ARRAY_LIKE_ATTRS
+from ...utils import subsample_array, ARRAY_LIKE_ATTRS, ArrayProtocol, FutureArrayProtocol
 from ...graphics import ImageGraphic, ImageVolumeGraphic
 from ...tools import HistogramLUTTool
-from ._base import NDProcessor, NDGraphic, WindowFuncCallable
+from ._base import NDProcessor, NDGraphic, WindowFuncCallable, block_reentrance
 from ._index import ReferenceIndex
+from ._async import start_coroutine
 
 
 class NDImageProcessor(NDProcessor):
@@ -192,7 +192,9 @@ class NDImageProcessor(NDProcessor):
         """
         return self._histogram
 
-    def get(self, indices: dict[str, Any]) -> ArrayLike | None:
+    def get(self, indices: dict[str, Any]) -> Generator[
+        FutureArrayProtocol | ArrayProtocol, ArrayProtocol, dict[str, ArrayLike]
+    ]:
         """
         Get the data at the given index, process data through the window functions.
 
@@ -206,15 +208,7 @@ class NDImageProcessor(NDProcessor):
             Example: get((100, 5))
 
         """
-        if len(self.slider_dims) > 0:
-            # there are dims in addition to the spatial dims
-            window_output = self._apply_window_functions(indices).squeeze()
-        else:
-            # no slider dims, use all the data
-            window_output = self.data
-
-        if window_output.ndim != len(self.spatial_dims):
-            raise ValueError
+        window_output = yield from self.get_window_output(indices)
 
         # apply spatial_func
         if self.spatial_func is not None:
@@ -381,6 +375,7 @@ class NDImage(NDGraphic):
         """Underlying Graphic object used to display the current data slice"""
         return self._graphic
 
+    @start_coroutine
     def _create_graphic(self):
         # Creates an ``ImageGraphic`` or ``ImageVolumeGraphic`` based on the number of spatial dims,
         # adds it to the subplot, and resets the camera and histogram.
@@ -401,7 +396,8 @@ class NDImage(NDGraphic):
 
         # get the data slice for this index
         # this will only have the dims specified by ``spatial_dims``
-        data_slice = self.processor.get(self.indices)
+
+        data_slice = yield from self._get_data_slice(self.indices)
 
         # create the new graphic
         new_graphic = cls(data_slice)
@@ -507,9 +503,12 @@ class NDImage(NDGraphic):
         """get or set the indices, managed by the ReferenceIndex, users usually don't want to set this manually"""
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    @indices.setter
-    def indices(self, indices):
-        data_slice = self.processor.get(indices)
+    @block_reentrance
+    @start_coroutine
+    def set_indices(
+        self, indices: dict[Hashable, Any], block: bool = True, timeout: float = 1.0
+    ):
+        data_slice = yield from self._get_data_slice(indices)
 
         self.graphic.data = data_slice
 

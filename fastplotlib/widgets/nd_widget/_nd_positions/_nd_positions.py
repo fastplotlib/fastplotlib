@@ -1,4 +1,4 @@
-from collections.abc import Callable, Hashable, Sequence
+from collections.abc import Callable, Hashable, Sequence, Generator
 from functools import partial
 from typing import Literal, Any, Type
 from warnings import warn
@@ -29,7 +29,9 @@ from .._base import (
     block_reentrance,
     block_indices_ctx,
 )
+from ....utils import ArrayProtocol, FutureArrayProtocol
 from .._index import ReferenceIndex
+from .._async import start_coroutine
 
 # types for the other features
 FeatureCallable = Callable[[np.ndarray, slice], np.ndarray]
@@ -521,24 +523,18 @@ class NDPositionsProcessor(NDProcessor):
 
         return other
 
-    def get(self, indices: dict[str, Any]) -> dict[str, np.ndarray]:
+    def get(
+        self, indices: dict[str, Any]
+    ) -> Generator[
+        FutureArrayProtocol | ArrayProtocol, ArrayProtocol, dict[str, ArrayLike]
+    ]:
         """
         slices through all slider dims and outputs an array that can be used to set graphic data
 
         Note that we do not use __getitem__ here since the index is a tuple specifying a single integer
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
         """
-
-        if len(self.slider_dims) > 1:
-            # there are slider dims in addition to the datapoints_dim
-            window_output = self._apply_window_functions(indices).squeeze()
-        else:
-            # no slider dims, use all the data
-            window_output = self.data
-
-        # verify window output only has the spatial dims
-        if not set(window_output.dims) == set(self.spatial_dims):
-            raise IndexError
+        window_output = yield from self.get_window_output(indices)
 
         # get slice obj for display window
         dw_slice = self._get_dw_slice(indices)
@@ -759,19 +755,20 @@ class NDPositions(NDGraphic):
     def spatial_dims(self, dims: tuple[str, str, str]):
         self.processor.spatial_dims = dims
         # force re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def indices(self) -> dict[Hashable, Any]:
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    @indices.setter
     @block_reentrance
-    def indices(self, indices):
+    @start_coroutine
+    def set_indices(self, indices: dict[Hashable, Any], block: bool = True, timeout: float = 1.0):
         if self.data is None:
             return
 
-        new_features = self.processor.get(indices)
+        new_features = yield from self._get_data_slice(indices)
+
         data_slice = new_features["data"]
 
         # TODO: set other graphic features, colors, sizes, markers, etc.
@@ -829,7 +826,9 @@ class NDPositions(NDGraphic):
         self._last_x_range[:] = self.graphic._plot_area.x_range
 
         if self._linear_selector is not None:
-            with pause_events(self._linear_selector):  # we don't want the linear selector change to update the indices
+            with pause_events(
+                self._linear_selector
+            ):  # we don't want the linear selector change to update the indices
                 self._linear_selector.limits = xr
                 # linear selector acts on `p` dim
                 self._linear_selector.selection = indices[
@@ -848,11 +847,12 @@ class NDPositions(NDGraphic):
             p_index = pick_info["vertex_index"]
             return self.processor.tooltip_format(n_index, p_index)
 
+    @start_coroutine
     def _create_graphic(self):
         if self.data is None:
             return
 
-        new_features = self.processor.get(self.indices)
+        new_features = yield from self._get_data_slice(self.indices)
         data_slice = new_features["data"]
 
         # store any cmap, sizes, thickness, etc. to assign to new graphic
@@ -963,7 +963,7 @@ class NDPositions(NDGraphic):
         self.processor.display_window = dw
 
         # force re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def datapoints_window_func(self) -> tuple[Callable, str, int | float] | None:
@@ -1037,7 +1037,7 @@ class NDPositions(NDGraphic):
         self._graphic.cmap = new
         self._cmap = new
         # force a re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def cmap_each(self) -> np.ndarray[str] | None:
@@ -1103,7 +1103,7 @@ class NDPositions(NDGraphic):
         self.graphic.markers = new
         self._markers = new
         # force a re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def sizes(self) -> float | Sequence[float] | None:
@@ -1122,7 +1122,7 @@ class NDPositions(NDGraphic):
         self.graphic.sizes = new
         self._sizes = new
         # force a re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def thickness(self) -> float | Sequence[float] | None:
@@ -1141,4 +1141,4 @@ class NDPositions(NDGraphic):
         self.graphic.thickness = new
         self._thickness = new
         # force a re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)

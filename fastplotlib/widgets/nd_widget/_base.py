@@ -1,4 +1,4 @@
-from collections.abc import Callable, Hashable, Sequence
+from collections.abc import Callable, Hashable, Sequence, Generator
 from contextlib import contextmanager
 import inspect
 from numbers import Real
@@ -12,12 +12,15 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from ...layouts import Subplot
-from ...utils import subsample_array, ArrayProtocol
+from ...utils import subsample_array, ArrayProtocol, FutureArrayProtocol
 from ...graphics import Graphic
 from ._index import ReferenceIndex
+from ._async import FutureArray
 
 # must take arguments: array-like, `axis`: int, `keepdims`: bool
 WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
+#                       [YieldType, SendType, ReturnType]
+AwaitedArray = Generator[FutureArrayProtocol | ArrayProtocol, ArrayProtocol, xr.DataArray]
 
 
 def identity(index: int) -> int:
@@ -111,6 +114,7 @@ class NDProcessor:
 
         """
         self._dims = tuple(dims)
+        self._unwrapped_data = None
         self._data = self._validate_data(data)
         self.spatial_dims = spatial_dims
 
@@ -133,6 +137,7 @@ class NDProcessor:
         self._data = self._validate_data(data)
 
     def _validate_data(self, data: ArrayProtocol):
+        self._unwrapped_data = data
         # does some basic validation
         if data is None:
             # we allow data to be None, in this case no ndgraphic is rendered
@@ -433,16 +438,15 @@ class NDProcessor:
 
         return indexer
 
-    def _apply_window_functions(self, indices: dict[Hashable, Any]) -> xr.DataArray:
+    def _apply_window_functions(self, windowed_array: ArrayProtocol) -> xr.DataArray:
         """
-        Slice the data at the given indices and apply window functions in the order specified by
+        apply window functions in the order specified by
          ``window_order``.
 
         Parameters
         ----------
-        indices : dict[Hashable, Any], {dim: ref_value}
-            Reference-space values for each slider dim.
-            ex: {"time": 46.397, "depth": 23.24}
+        windowed_array: ArrayProtocol
+            array that has been sliced with the desired windows at an index
 
         Returns
         -------
@@ -452,15 +456,6 @@ class NDProcessor:
             squeezed.
 
         """
-        indexer = self._get_slider_dims_indexer(indices)
-
-        # get the data slice w.r.t. the desired windows, and get the underlying numpy array
-        # ``.values`` gives the numpy array
-        # there is significant overhead with passing xarray objects to numpy for things like np.mean()
-        # so convert to numpy, apply window functions, then convert back to xarray
-        # creating an xarray object from a numpy array has very little overhead, ~10 microseconds
-        array = self.data.isel(indexer).values
-
         # apply window funcs in the specified order
         for dim in self.window_order:
             if self.window_funcs[dim] is None:
@@ -472,9 +467,47 @@ class NDProcessor:
             # ``keepdims`` means the resultant shape is [1, 512, 512] and NOT [512, 512]
             # this is necessary for applying window functions on multiple dims separately and so that the
             # dims names correspond after all the window funcs are applied.
-            array = func(array, axis=self.dims.index(dim), keepdims=True)
+            windowed_array = func(windowed_array, axis=self.dims.index(dim), keepdims=True)
 
-        return xr.DataArray(array, dims=self.dims)
+        return xr.DataArray(windowed_array, dims=self.dims)
+
+    def get_window_output(self, indices: dict[Hashable, Any]) -> Generator[FutureArrayProtocol | ArrayProtocol, ArrayProtocol, xr.DataArray]:
+        # windowed slice if user set any window funcs
+        windowed_slice = yield from self._get_raw_data_slice(indices)
+
+        # there is significant overhead with passing xarray objects to numpy for things like np.mean()
+        # so convert to numpy, apply window functions, then convert back to xarray
+        # creating an xarray object from a numpy array has very little overhead, ~10 microseconds
+        # if this from an async array-like, then the np.asarray(FutureArray) will return the resolved numpy array
+        windowed_slice = np.asarray(windowed_slice)
+
+        # apply window funcs
+        if len(self.slider_dims) > 0:
+            windowed_slice = self._apply_window_functions(windowed_slice)
+
+        if windowed_slice.ndim != len(self.spatial_dims):
+            raise ValueError
+
+        return windowed_slice.squeeze()
+
+    def _get_raw_data_slice(self, indices: dict[str, Any]) -> Generator[FutureArrayProtocol | ArrayProtocol, ArrayProtocol, ArrayProtocol]:
+        """
+        Base implementation to get the raw data slice from the xarray-wrapped array.
+        Always yields to support async getters.
+        """
+        if len(self.slider_dims) > 0:
+            indexer = self._get_slider_dims_indexer(indices)
+            # get the data slice w.r.t. the desired windows
+            # yield so this is async if the underlying array returns a FutureArray-like
+            # we convert to a numpy array outside, not here, since that resolves the Future
+            index_tuple = tuple(indexer.get(dim, slice(None)) for dim in self.dims)
+            raw_slice = yield self._unwrapped_data[index_tuple]
+
+        else:
+            # return everything directly
+            raw_slice = yield self._unwrapped_data[:]
+
+        return raw_slice
 
     def get(self, indices: dict[Hashable, Any]):
         raise NotImplementedError
@@ -541,7 +574,6 @@ class NDGraphic:
         # user settable bool to make the graphic unresponsive to change in the ReferenceIndex
         self._pause = False
 
-
     def _create_graphic(self):
         raise NotImplementedError
 
@@ -571,9 +603,17 @@ class NDGraphic:
     def indices(self) -> dict[Hashable, Any]:
         raise NotImplementedError
 
-    @indices.setter
-    def indices(self, new: dict[Hashable, Any]):
-        raise NotImplementedError
+    def set_indices(self, indices: dict[Hashable, Any], block: bool = True, timeout: float = 1.0):
+        pass
+
+    def _get_data_slice(self, indices):
+        """gets current data slice from NDProcessor, resolves Futures if necessary"""
+        data_slice = self.processor.get(indices)
+
+        if isinstance(data_slice, Generator):
+            data_slice = yield from data_slice
+
+        return data_slice
 
     # aliases for easier access to processor properties
     @property
@@ -596,7 +636,7 @@ class NDGraphic:
         self._create_graphic()
 
         # force a render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def shape(self) -> dict[Hashable, int]:
@@ -635,7 +675,7 @@ class NDGraphic:
         """get or set the slider_dim_transforms, see docstring for details"""
         self.processor.slider_dim_transforms = maps
         # force a render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def window_funcs(
@@ -654,7 +694,7 @@ class NDGraphic:
     ):
         self.processor.window_funcs = window_funcs
         # force a render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def window_order(self) -> tuple[Hashable, ...]:
@@ -665,7 +705,7 @@ class NDGraphic:
     def window_order(self, order: tuple[Hashable] | None):
         self.processor.window_order = order
         # force a render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def spatial_func(self) -> Callable[[xr.DataArray], xr.DataArray] | None:
@@ -678,7 +718,7 @@ class NDGraphic:
         """get or set the spatial_func, see docstring for details"""
         self.processor.spatial_func = func
         # force a render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     # def _repr_text_(self) -> str:
     #     return ndg_fmt_text(self)
@@ -713,7 +753,7 @@ def block_indices_ctx(ndgraphic: NDGraphic):
 
 def block_reentrance(setter):
     # decorator to block re-entrance of indices setter
-    def set_indices_wrapper(self: NDGraphic, new_indices):
+    def set_indices_wrapper(self: NDGraphic, *args, **kwargs):
         """
         wraps NDGraphic.indices
 
@@ -727,7 +767,7 @@ def block_reentrance(setter):
         try:
             # block re-execution of set_value until it has *fully* finished executing
             self._block_indices = True
-            setter(self, new_indices)
+            return setter(self, *args, **kwargs)
         except Exception as exc:
             # raise original exception
             raise exc  # set_value has raised. The line above and the lines 2+ steps below are probably more relevant!
