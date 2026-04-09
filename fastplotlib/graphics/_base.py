@@ -549,7 +549,7 @@ class Graphic:
         Parameters
         ----------
         position: tuple of (x, y, z) or np.ndarray of shape (num_points, 3)
-            The xyz positions we wish to map to model space
+            The xyz positions we wish to map to world space
 
         Returns
         -------
