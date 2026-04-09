@@ -41,14 +41,13 @@ class NDProcessor:
         """
         Base class for managing n-dimensional data and producing array slices.
 
-        By default, wraps input data into an ``xarray.DataArray`` and provides an interface
-        for indexing slider dimensions, applying window functions, spatial functions, and mapping
-        reference-space values to local array indices. Subclasses must implement
-        :meth:`get`, which is called whenever the :class:`ReferenceIndex` updates.
+        Wraps array-like ``data`` and provides an interface for indexing slider dimensions, applying window functions,
+        spatial functions, and mapping reference-space values to local array indices. Subclasses must implement
+        :meth:`get`, which is called when the :class:`ReferenceIndex` updates.
 
-        Subclasses can implement any type of data representation, they do not necessarily need to be compatible with
-        (they dot not have to be xarray compatible). However their ``get()`` method must still return a data slice that
-        corresponds to the graphical representation they map to.
+        Subclasses can implement any type of data representation, they do not necessarily need to be array-like.
+        However their ``get()`` method must still return a data slice that corresponds to the graphical representation
+        they map to.
 
         Every dimension that is *not* listed in ``spatial_dims`` becomes a slider
         dimension. Each slider dim must have a ``ReferenceRange`` defined in the
@@ -74,8 +73,8 @@ class NDProcessor:
             must operate as if these dimensions exist and return an array that matches the spatial dimensions.
 
         spatial_dims: Sequence[str]
-            Subset of ``dims`` that are spatial (rendered) dimensions **in order**. All remaining dims are treated as
-            slider dims. See subclass for specific info.
+            Subset of ``dims`` that are spatial (rendered) dimensions **in display order**. All remaining dims are
+            treated as slider dims. See subclass for specific info.
 
         slider_dim_transforms: dict mapping dim_name -> Callable, an ArrayLike, or None
             Per-slider-dim mapping from reference-space values to local array indices.
@@ -166,7 +165,7 @@ class NDProcessor:
 
     @property
     def dims(self) -> tuple[str, ...]:
-        """dim names, **in order**"""
+        """dim names, **ordered as laid out in the array**"""
         # these are read-only and cannot be set after it's created
         # the user should create a new NDGraphic if they need different dims
         # I can't think of a use case where we'd want to change the dims, and
@@ -175,7 +174,7 @@ class NDProcessor:
 
     @property
     def spatial_dims(self) -> tuple[str, ...]:
-        """Spatial dims, **in order**"""
+        """Spatial dims, **in display order**"""
         return self._spatial_dims
 
     @spatial_dims.setter
@@ -346,7 +345,7 @@ class NDProcessor:
 
     def _get_slider_dims_indexer(self, indices: dict[str, Any]) -> dict[str, slice]:
         """
-        Creates an xarray-compatible indexer dict mapping each slider_dim -> slice object.
+        Creates an indexer dict mapping each slider_dim -> slice object.
 
         - If a window_func is defined for a dim and the dim appears in ``window_order``,
         the slice is defined as:
@@ -513,7 +512,7 @@ class NDProcessor:
 
     def _get_raw_data_slice(self, indices: dict[str, Any]) -> AwaitedArray:
         """
-        Base implementation to get the raw data slice from the xarray-wrapped array.
+        Base implementation to get the raw data slice from the wrapped array.
         Always yields to support async getters.
         """
         if len(self.slider_dims) > 0:

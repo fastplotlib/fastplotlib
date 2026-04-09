@@ -59,12 +59,12 @@ class NDImageProcessor(NDProcessor):
                  ``("row", "col")``
                  ``("other_dim", "depth", "time", "row", "col")``
 
-            dims in the array do not need to be in order, for example you can have a weird array where the dims are
-            interpreted as: ``("col", "depth", "row", "time")``, and then specify spatial_dims as ``("row", "col")``
-            thanks to xarray magic =D.
+            dims in the array do not need to be in the order that you want to display them, for example you can have a
+            weird array where the dims are interpreted as:
+            ``("col", "depth", "row", "time")``, and then specify spatial_dims as ``("row", "col")``.
 
         spatial_dims : tuple[str, str] | tuple[str, str, str]
-            The 2 or 3 spatial dimensions **in order**: ``(rows, cols)`` or ``(z, rows, cols)``.
+            The 2 or 3 spatial dimensions **in display order**: ``(rows, cols)`` or ``(z, rows, cols)``.
             This also determines whether an ``ImageGraphic`` or ``ImageVolumeGraphic`` is used for rendering.
             The ordering determines how the Image/Volume is rendered. For example, if
             you specify ``spatial_dims = ("rows", "cols")`` and then change it to ``("cols", "rows")``, it will display
@@ -151,7 +151,7 @@ class NDImageProcessor(NDProcessor):
     @property
     def spatial_dims(self) -> tuple[str, str] | tuple[str, str, str]:
         """
-        Spatial dims, **in order**.
+        Spatial dims, **in display order**.
 
         [row_dim, col_dim] or [row_dim, col_dim, rgb(a) dim]
         """

@@ -292,6 +292,7 @@ class NDPositionsProcessor(NDProcessor):
 
     @property
     def spatial_dims(self) -> tuple[str, str, str]:
+        """get or set the spatial dims, **in display order**"""
         return self._spatial_dims
 
     @spatial_dims.setter
