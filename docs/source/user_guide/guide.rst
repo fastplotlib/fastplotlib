@@ -21,6 +21,8 @@ With jupyterlab support.
 
     pip install -U "fastplotlib[notebook,imgui]"
 
+.. note:: ``imgui-bundle`` is required for the ``NDWidget``
+
 Without imgui
 ^^^^^^^^^^^^^
 
