@@ -1,14 +1,7 @@
 from ...layouts import IMGUI
 
-try:
-    import imgui_bundle
-except ImportError:
-    HAS_XARRAY = False
-else:
-    HAS_XARRAY = True
 
-
-if IMGUI and HAS_XARRAY:
+if IMGUI:
     from ._base import NDProcessor, NDGraphic
     from ._nd_positions import NDPositions, NDPositionsProcessor, ndp_extras
     from ._nd_image import NDImageProcessor, NDImage
@@ -19,6 +12,6 @@ else:
     class NDWidget:
         def __init__(self, *args, **kwargs):
             raise ModuleNotFoundError(
-                "NDWidget requires `imgui-bundle` and `xarray` to be installed.\n"
+                "NDWidget requires `imgui-bundle` to be installed.\n"
                 "pip install imgui-bundle"
             )

@@ -1,4 +1,4 @@
-from collections.abc import Callable, Hashable, Sequence
+from collections.abc import Callable, Hashable, Sequence, Generator
 from functools import partial
 from typing import Literal, Any, Type
 from warnings import warn
@@ -6,11 +6,9 @@ from warnings import warn
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import ArrayLike
-import xarray as xr
 
 from ....layouts import Subplot
 from ....graphics import (
-    Graphic,
     ImageGraphic,
     LineGraphic,
     LineStack,
@@ -29,13 +27,21 @@ from .._base import (
     block_reentrance,
     block_indices_ctx,
 )
+from ....utils import ArrayProtocol, FutureProtocol, CudaArrayProtocol
 from .._index import ReferenceIndex
+from .._async import start_coroutine
 
 # types for the other features
 FeatureCallable = Callable[[np.ndarray, slice], np.ndarray]
 ColorsType = np.ndarray | FeatureCallable | None
 MarkersType = Sequence[str] | np.ndarray | FeatureCallable | None
 SizesType = Sequence[float] | np.ndarray | FeatureCallable | None
+
+AwaitedPositionData = Generator[
+    FutureProtocol | ArrayProtocol | CudaArrayProtocol,
+    ArrayProtocol,
+    dict[str, ArrayProtocol],
+]
 
 
 def default_cmap_transform_each(p: int, data_slice: np.ndarray, s: slice):
@@ -57,10 +63,10 @@ class NDPositionsProcessor(NDProcessor):
     def __init__(
         self,
         data: Any,
-        dims: Sequence[Hashable],
+        dims: Sequence[str],
         # TODO: allow stack_dim to be None and auto-add new dim of size 1 in get logic
         spatial_dims: tuple[
-            Hashable | None, Hashable, Hashable
+            str | None, str, str
         ],  # [stack_dim, n_datapoints, spatial_dim], IN ORDER!!
         slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
         display_window: int | float | None = 100,  # window for n_datapoints dim only
@@ -286,6 +292,7 @@ class NDPositionsProcessor(NDProcessor):
 
     @property
     def spatial_dims(self) -> tuple[str, str, str]:
+        """get or set the spatial dims, **in display order**"""
         return self._spatial_dims
 
     @spatial_dims.setter
@@ -391,20 +398,18 @@ class NDPositionsProcessor(NDProcessor):
 
         return slice(start, stop, step)
 
-    def _apply_dw_window_func(
-        self, array: xr.DataArray | np.ndarray
-    ) -> xr.DataArray | np.ndarray:
+    def _apply_dw_window_func(self, array: ArrayProtocol) -> ArrayProtocol:
         """
         Takes array where display window has already been applied and applies window functions on the `p` dim.
 
         Parameters
         ----------
-        array: np.ndarray
+        array: ArrayProtocol
             array of shape: [l, display_window, 2 | 3]
 
         Returns
         -------
-        np.ndarray
+        ArrayProtocol
             array with window functions applied along `p` dim
         """
         if self.display_window == 0:
@@ -456,17 +461,19 @@ class NDPositionsProcessor(NDProcessor):
                     return wf(windows, axis=-1)[:, ::step]
 
                 # map user dims str to tuple of numerical dims
-                dims = tuple(map({"x": 0, "y": 1, "z": 2}.get, apply_dims))
+                coor_dims = tuple(map({"x": 0, "y": 1, "z": 2}.get, apply_dims))
 
                 # windows will be of shape [n, (p - ws + 1), 1 | 2 | 3, ws]
-                windows = sliding_window_view(array[..., dims], ws, axis=-2).squeeze()
+                windows = sliding_window_view(
+                    array[..., coor_dims], ws, axis=-2
+                ).squeeze()
 
                 # make a copy because we need to modify it
                 array = array[:, start:stop].copy()
 
                 # this reshape is required to reshape wf outputs of shape [n, p] -> [n, p, 1] only when necessary
-                array[..., dims] = wf(windows, axis=-1).reshape(
-                    *array.shape[:-1], len(dims)
+                array[..., coor_dims] = wf(windows, axis=-1).reshape(
+                    *array.shape[:-1], len(coor_dims)
                 )
 
                 return array[:, ::step]
@@ -475,20 +482,18 @@ class NDPositionsProcessor(NDProcessor):
 
         return array[:, ::step]
 
-    def _apply_spatial_func(
-        self, array: xr.DataArray | np.ndarray
-    ) -> xr.DataArray | np.ndarray:
+    def _apply_spatial_func(self, array: ArrayProtocol) -> ArrayProtocol:
         if self.spatial_func is not None:
             return self.spatial_func(array)
 
         return array
 
-    def _finalize_(self, array: xr.DataArray | np.ndarray) -> xr.DataArray | np.ndarray:
+    def _finalize(self, array: ArrayProtocol) -> ArrayProtocol:
         return self._apply_spatial_func(self._apply_dw_window_func(array))
 
     def _get_other_features(
-        self, data_slice: np.ndarray, dw_slice: slice
-    ) -> dict[str, np.ndarray]:
+        self, data_slice: ArrayProtocol, dw_slice: slice
+    ) -> dict[str, ArrayProtocol]:
         other = dict.fromkeys(self._other_features)
         for attr in self._other_features:
             val = getattr(self, attr)
@@ -521,39 +526,26 @@ class NDPositionsProcessor(NDProcessor):
 
         return other
 
-    def get(self, indices: dict[str, Any]) -> dict[str, np.ndarray]:
+    def get(self, indices: dict[str, Any]) -> AwaitedPositionData:
         """
         slices through all slider dims and outputs an array that can be used to set graphic data
 
         Note that we do not use __getitem__ here since the index is a tuple specifying a single integer
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
         """
-
-        if len(self.slider_dims) > 1:
-            # there are slider dims in addition to the datapoints_dim
-            window_output = self._apply_window_functions(indices).squeeze()
-        else:
-            # no slider dims, use all the data
-            window_output = self.data
-
-        # verify window output only has the spatial dims
-        if not set(window_output.dims) == set(self.spatial_dims):
-            raise IndexError
+        # already squeezed and in the correct spatial_dims order
+        window_output = yield from self.get_window_output(indices)
 
         # get slice obj for display window
         dw_slice = self._get_dw_slice(indices)
 
         # data that will be used for the graphical representation
-        # a copy is made, if there were no window functions then this is a view of the original data
-        p_dim = self.spatial_dims[1]
-
         # slice the datapoints to be displayed in the graphic using the display window slice
-        # transpose to match spatial dims order, get numpy array, this is a view
-        graphic_data = window_output.isel({p_dim: dw_slice}).transpose(
-            *self.spatial_dims
-        )
+        # data are already squeezed & transposed w.r.t the spatial_dims order after get_window_output()
+        # p_dims is dim 1
+        graphic_data = window_output[:, dw_slice]
 
-        data = self._finalize_(graphic_data).values
+        data = self._finalize(graphic_data)
         other = self._get_other_features(data, dw_slice)
 
         return {
@@ -759,19 +751,22 @@ class NDPositions(NDGraphic):
     def spatial_dims(self, dims: tuple[str, str, str]):
         self.processor.spatial_dims = dims
         # force re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def indices(self) -> dict[Hashable, Any]:
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    @indices.setter
     @block_reentrance
-    def indices(self, indices):
+    @start_coroutine
+    def set_indices(
+        self, indices: dict[Hashable, Any], block: bool = True, timeout: float = 1.0
+    ):
         if self.data is None:
             return
 
-        new_features = self.processor.get(indices)
+        new_features = yield from self._get_data_slice(indices)
+
         data_slice = new_features["data"]
 
         # TODO: set other graphic features, colors, sizes, markers, etc.
@@ -829,7 +824,9 @@ class NDPositions(NDGraphic):
         self._last_x_range[:] = self.graphic._plot_area.x_range
 
         if self._linear_selector is not None:
-            with pause_events(self._linear_selector):  # we don't want the linear selector change to update the indices
+            with pause_events(
+                self._linear_selector
+            ):  # we don't want the linear selector change to update the indices
                 self._linear_selector.limits = xr
                 # linear selector acts on `p` dim
                 self._linear_selector.selection = indices[
@@ -848,11 +845,12 @@ class NDPositions(NDGraphic):
             p_index = pick_info["vertex_index"]
             return self.processor.tooltip_format(n_index, p_index)
 
+    @start_coroutine
     def _create_graphic(self):
         if self.data is None:
             return
 
-        new_features = self.processor.get(self.indices)
+        new_features = yield from self._get_data_slice(self.indices)
         data_slice = new_features["data"]
 
         # store any cmap, sizes, thickness, etc. to assign to new graphic
@@ -963,7 +961,7 @@ class NDPositions(NDGraphic):
         self.processor.display_window = dw
 
         # force re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def datapoints_window_func(self) -> tuple[Callable, str, int | float] | None:
@@ -1037,7 +1035,7 @@ class NDPositions(NDGraphic):
         self._graphic.cmap = new
         self._cmap = new
         # force a re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def cmap_each(self) -> np.ndarray[str] | None:
@@ -1103,7 +1101,7 @@ class NDPositions(NDGraphic):
         self.graphic.markers = new
         self._markers = new
         # force a re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def sizes(self) -> float | Sequence[float] | None:
@@ -1122,7 +1120,7 @@ class NDPositions(NDGraphic):
         self.graphic.sizes = new
         self._sizes = new
         # force a re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)
 
     @property
     def thickness(self) -> float | Sequence[float] | None:
@@ -1141,4 +1139,4 @@ class NDPositions(NDGraphic):
         self.graphic.thickness = new
         self._thickness = new
         # force a re-render
-        self.indices = self.indices
+        self.set_indices(self.indices)

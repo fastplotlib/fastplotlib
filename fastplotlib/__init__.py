@@ -4,6 +4,13 @@ from ._version import __version__, version_info
 
 # this must be the first import for auto-canvas detection
 from .utils import loop  # noqa
+from .utils import (
+    config,
+    enumerate_adapters,
+    select_adapter,
+    print_wgpu_report,
+    protocols,
+)
 from .graphics import *
 from .graphics.features import GraphicFeatureEvent
 from .graphics.selectors import *
@@ -20,7 +27,6 @@ else:
     from .layouts import Figure
 
 from .widgets import NDWidget, ImageWidget
-from .utils import config, enumerate_adapters, select_adapter, print_wgpu_report
 
 
 if len(enumerate_adapters()) < 1:
