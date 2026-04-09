@@ -526,6 +526,7 @@ class NDProcessor:
 
         else:
             # return everything directly
+            # request a slice of everything with [:] so that any data fetching, compute, etc. is actually done
             raw_slice = yield self.data[:]
 
         return raw_slice
