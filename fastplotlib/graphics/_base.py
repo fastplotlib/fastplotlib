@@ -529,10 +529,10 @@ class Graphic:
         """
         position = np.asarray(position)
 
-        if not 0 < position.ndim < 3:
+        if position.ndim not in (1,2):
             raise ValueError(f"position must be of shape (num_points, 3) or (3,)")
 
-        elif position.ndim == 1:
+        if position.ndim == 1:
             position = position[None, :]
 
         if position.shape[-1] != 3:
