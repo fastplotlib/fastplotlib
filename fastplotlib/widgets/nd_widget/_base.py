@@ -1,26 +1,24 @@
-from collections.abc import Callable, Hashable, Sequence, Generator
+from collections.abc import Callable, Sequence, Generator
 from contextlib import contextmanager
 import inspect
 from numbers import Real
 from pprint import pformat
 import textwrap
-from typing import Literal, Any, Type
-from warnings import warn
+from typing import Any
 
-import xarray as xr
 import numpy as np
 from numpy.typing import ArrayLike
 
 from ...layouts import Subplot
-from ...utils import subsample_array, ArrayProtocol, FutureArrayProtocol
+from ...utils import ArrayProtocol, FutureProtocol, CudaArrayProtocol
 from ...graphics import Graphic
-from ._index import ReferenceIndex
-from ._async import FutureArray
 
 # must take arguments: array-like, `axis`: int, `keepdims`: bool
 WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
 #                       [YieldType, SendType, ReturnType]
-AwaitedArray = Generator[FutureArrayProtocol | ArrayProtocol, ArrayProtocol, xr.DataArray]
+AwaitedArray = Generator[
+    FutureProtocol | ArrayProtocol | CudaArrayProtocol, ArrayProtocol, ArrayProtocol
+]
 
 
 def identity(index: int) -> int:
@@ -30,14 +28,14 @@ def identity(index: int) -> int:
 class NDProcessor:
     def __init__(
         self,
-        data: Any,
-        dims: Sequence[Hashable],
-        spatial_dims: Sequence[Hashable] | None,
-        slider_dim_transforms: dict[Hashable, Callable[[Any], int] | ArrayLike] = None,
+        data: ArrayProtocol,
+        dims: Sequence[str],
+        spatial_dims: Sequence[str] | None,
+        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
         window_funcs: dict[
-            Hashable, tuple[WindowFuncCallable | None, int | float | None]
+            str, tuple[WindowFuncCallable | None, int | float | None]
         ] = None,
-        window_order: tuple[Hashable, ...] = None,
+        window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
     ):
         """
@@ -59,7 +57,7 @@ class NDProcessor:
 
         Parameters
         ----------
-        data: Any
+        data: ArrayProtocol
             data object that is managed, usually uses the ArrayProtocol. Custom subclasses can manage any kind of data
             object but the corresponding :meth:`get` must return an array-like that maps to a graphical representation.
 
@@ -91,7 +89,7 @@ class NDProcessor:
             If a transform is not provided for a dim then the identity mapping is used.
 
         window_funcs: dict[
-            Hashable, tuple[WindowFuncCallable | None, int | float | None]
+            str, tuple[WindowFuncCallable | None, int | float | None]
         ]
             Per-slider-dim window functions applied around the current slider position. Ex: {"time": (np.mean, 2.5)}.
             Each value is a ``(func, window_size)`` pair where:
@@ -104,7 +102,7 @@ class NDProcessor:
             * *window_size* is in reference-space units (ex: 2.5 seconds).
 
 
-        window_order: tuple[Hashable, ...]
+        window_order: tuple[str, ...]
             Order in which window functions are applied across dims. Only dims listed
             here have their window function applied. window_funcs are ignored for any
             dims not specified in ``window_order``
@@ -113,9 +111,13 @@ class NDProcessor:
             A function applied to the spatial slice *after* window_funcs right before rendering.
 
         """
-        self._dims = tuple(dims)
-        self._unwrapped_data = None
-        self._data = self._validate_data(data)
+        dims = tuple(dims)
+        if not all([isinstance(d, str) for d in dims]):
+            raise TypeError
+
+        self._dims = dims
+
+        self.data = data
         self.spatial_dims = spatial_dims
 
         self.slider_dim_transforms = slider_dim_transforms
@@ -125,7 +127,7 @@ class NDProcessor:
         self.spatial_func = spatial_func
 
     @property
-    def data(self) -> xr.DataArray:
+    def data(self) -> ArrayProtocol:
         """
         get or set managed data. If setting with new data, the new data is interpreted
         to have the same dims (i.e. same dim names and ordering of dims).
@@ -134,30 +136,26 @@ class NDProcessor:
 
     @data.setter
     def data(self, data: ArrayProtocol):
-        self._data = self._validate_data(data)
+        # data can be set, but the dims must still match/have the same meaning
 
-    def _validate_data(self, data: ArrayProtocol):
-        # does some basic validation
         if data is None:
             # we allow data to be None, in this case no ndgraphic is rendered
             # useful when we want to initialize an NDWidget with no traces for example
             # and populate it as components/channels are selected
-            return None
+            self._data = None
+            return
 
         if not isinstance(data, ArrayProtocol):
-            # This is required for xarray compatibility and general array-like requirements
+            # check for general array-like requirements
             raise TypeError("`data` must implement the ArrayProtocol")
 
         if data.ndim != len(self.dims):
             raise IndexError("must specify a dim for every dimension in the data array")
 
-        self._unwrapped_data = data
-
-        # data can be set, but the dims must still match/have the same meaning
-        return xr.DataArray(data, dims=self.dims)
+        self._data = data
 
     @property
-    def shape(self) -> dict[Hashable, int]:
+    def shape(self) -> dict[str, int]:
         """interpreted shape of the data"""
         return {d: n for d, n in zip(self.dims, self.data.shape)}
 
@@ -167,21 +165,21 @@ class NDProcessor:
         return self.data.ndim
 
     @property
-    def dims(self) -> tuple[Hashable, ...]:
-        """dim names"""
+    def dims(self) -> tuple[str, ...]:
+        """dim names, **in order**"""
         # these are read-only and cannot be set after it's created
         # the user should create a new NDGraphic if they need different dims
-        # I can't think of a usecase where we'd want to change the dims, and
+        # I can't think of a use case where we'd want to change the dims, and
         # I think that would be complicated and probably and anti-pattern
         return self._dims
 
     @property
-    def spatial_dims(self) -> tuple[Hashable, ...]:
+    def spatial_dims(self) -> tuple[str, ...]:
         """Spatial dims, **in order**"""
         return self._spatial_dims
 
     @spatial_dims.setter
-    def spatial_dims(self, sdims: Sequence[Hashable]):
+    def spatial_dims(self, sdims: Sequence[str]):
         for dim in sdims:
             if dim not in self.dims:
                 raise KeyError
@@ -202,8 +200,8 @@ class NDProcessor:
         return None
 
     @property
-    def slider_dims(self) -> set[Hashable]:
-        """Slider dim names, ``set(dims) - set(spatial_dims)"""
+    def slider_dims(self) -> set[str]:
+        """Slider dim names, ``set(dims) - set(spatial_dims), **unordered**"""
         return set(self.dims) - set(self.spatial_dims)
 
     @property
@@ -214,7 +212,7 @@ class NDProcessor:
     @property
     def window_funcs(
         self,
-    ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]]:
+    ) -> dict[str, tuple[WindowFuncCallable | None, int | float | None]]:
         """get or set window functions, see docstring for details"""
         return self._window_funcs
 
@@ -222,7 +220,7 @@ class NDProcessor:
     def window_funcs(
         self,
         window_funcs: (
-            dict[Hashable, tuple[WindowFuncCallable | None, int | float | None] | None]
+            dict[str, tuple[WindowFuncCallable | None, int | float | None] | None]
             | None
         ),
     ):
@@ -271,12 +269,12 @@ class NDProcessor:
         self._window_funcs = window_funcs
 
     @property
-    def window_order(self) -> tuple[Hashable, ...]:
+    def window_order(self) -> tuple[str, ...]:
         """get or set dimension order in which window functions are applied"""
         return self._window_order
 
     @window_order.setter
-    def window_order(self, order: tuple[Hashable] | None):
+    def window_order(self, order: tuple[str] | None):
         if order is None:
             self._window_order = tuple()
             return
@@ -290,13 +288,13 @@ class NDProcessor:
         self._window_order = tuple(order)
 
     @property
-    def spatial_func(self) -> Callable[[xr.DataArray], xr.DataArray] | None:
+    def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
         """get or set the spatial function which is applied on the data slice after the window functions"""
         return self._spatial_func
 
     @spatial_func.setter
     def spatial_func(
-        self, func: Callable[[xr.DataArray], xr.DataArray]
+        self, func: Callable[[ArrayProtocol], ArrayProtocol]
     ) -> Callable | None:
         if not callable(func) and func is not None:
             raise TypeError
@@ -304,13 +302,13 @@ class NDProcessor:
         self._spatial_func = func
 
     @property
-    def slider_dim_transforms(self) -> dict[Hashable, Callable[[Any], int]]:
+    def slider_dim_transforms(self) -> dict[str, Callable[[Any], int]]:
         """get or set the slider_dim_transforms, see docstring for details"""
         return self._index_mappings
 
     @slider_dim_transforms.setter
     def slider_dim_transforms(
-        self, maps: dict[Hashable, Callable[[Any], int] | ArrayLike | None] | None
+        self, maps: dict[str, Callable[[Any], int] | ArrayLike | None] | None
     ):
         if maps is None:
             self._index_mappings = {d: identity for d in self.dims}
@@ -346,7 +344,7 @@ class NDProcessor:
         # clamp between 0 and array size in this dim
         return max(min(index, self.shape[dim] - 1), 0)
 
-    def _get_slider_dims_indexer(self, indices: dict[Hashable, Any]) -> dict[Hashable, slice]:
+    def _get_slider_dims_indexer(self, indices: dict[str, Any]) -> dict[str, slice]:
         """
         Creates an xarray-compatible indexer dict mapping each slider_dim -> slice object.
 
@@ -369,14 +367,14 @@ class NDProcessor:
 
         Parameters
         ----------
-        indices : dict[Hashable, Any], {dim: ref_value}
+        indices : dict[str, Any], {dim: ref_value}
             Reference-space values for each slider dim. Must contain an entry
             for every slider dim; raises ``IndexError`` otherwise.
             ex: {"time": 46.397, "depth": 23.24}
 
         Returns
         -------
-        dict[Hashable, slice]
+        dict[str, slice]
             Indexer compatible for ``xr.DataArray.isel()``, with one ``slice`` per
             slider dim. These are array indices mapped from the reference space using
             the given ``slider_dim_transform``.
@@ -439,7 +437,7 @@ class NDProcessor:
 
         return indexer
 
-    def _apply_window_functions(self, windowed_array: ArrayProtocol) -> xr.DataArray:
+    def _apply_window_functions(self, windowed_array: ArrayProtocol) -> ArrayProtocol:
         """
         apply window functions in the order specified by
          ``window_order``.
@@ -451,7 +449,7 @@ class NDProcessor:
 
         Returns
         -------
-        xr.DataArray
+        ArrayProtocol
             Data slice after windowed indexing and window function application,
             with the same dims as the original data. Dims of size ``1`` are not
             squeezed.
@@ -468,32 +466,52 @@ class NDProcessor:
             # ``keepdims`` means the resultant shape is [1, 512, 512] and NOT [512, 512]
             # this is necessary for applying window functions on multiple dims separately and so that the
             # dims names correspond after all the window funcs are applied.
-            windowed_array = func(windowed_array, axis=self.dims.index(dim), keepdims=True)
+            windowed_array = func(
+                windowed_array, axis=self.dims.index(dim), keepdims=True
+            )
 
-        return xr.DataArray(windowed_array, dims=self.dims)
+        return windowed_array
 
-    def get_window_output(self, indices: dict[Hashable, Any]) -> Generator[FutureArrayProtocol | ArrayProtocol, ArrayProtocol, xr.DataArray]:
+    def get_window_output(self, indices: dict[str, Any]) -> AwaitedArray:
+        """
+        Applies any window functions and returns squeezed sliced array transposed in the order of the given spatial dims
+
+        Parameters
+        ----------
+        indices
+
+        Returns
+        -------
+
+        """
         # windowed slice if user set any window funcs
         windowed_slice = yield from self._get_raw_data_slice(indices)
 
-        # there is significant overhead with passing xarray objects to numpy for things like np.mean()
-        # so convert to numpy, apply window functions, then convert back to xarray
-        # creating an xarray object from a numpy array has very little overhead, ~10 microseconds
-        # if this from an async array-like, then the np.asarray(FutureArray) will return the resolved numpy array
+        # convert to numpy array
         windowed_slice = np.asarray(windowed_slice)
 
         # apply window funcs
         if len(self.slider_dims) > 0:
             windowed_slice = self._apply_window_functions(windowed_slice)
 
-        windowed_slice = xr.DataArray(windowed_slice, dims=self.dims).squeeze()
+        # squeeze out all slider dims which should now be size 1
+        # set(dims) - set(spatial_dims) since some spatial dims can also be slider, so get only pure non-spatial dims
+        slider_dims_int = tuple(
+            self.dims.index(d) for d in set(self.dims) - set(self.spatial_dims)
+        )
+        windowed_slice = windowed_slice.squeeze(axis=slider_dims_int)
 
         if windowed_slice.ndim != len(self.spatial_dims):
             raise ValueError
 
-        return windowed_slice
+        # transpose to spatial dims
+        spatial_dims_int = tuple(
+            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
+        )
 
-    def _get_raw_data_slice(self, indices: dict[str, Any]) -> Generator[FutureArrayProtocol | ArrayProtocol, ArrayProtocol, ArrayProtocol]:
+        return windowed_slice.transpose(spatial_dims_int)
+
+    def _get_raw_data_slice(self, indices: dict[str, Any]) -> AwaitedArray:
         """
         Base implementation to get the raw data slice from the xarray-wrapped array.
         Always yields to support async getters.
@@ -504,15 +522,15 @@ class NDProcessor:
             # yield so this is async if the underlying array returns a FutureArray-like
             # we convert to a numpy array outside, not here, since that resolves the Future
             index_tuple = tuple(indexer.get(dim, slice(None)) for dim in self.dims)
-            raw_slice = yield self._unwrapped_data[index_tuple]
+            raw_slice = yield self.data[index_tuple]
 
         else:
             # return everything directly
-            raw_slice = yield self._unwrapped_data[:]
+            raw_slice = yield self.data[:]
 
         return raw_slice
 
-    def get(self, indices: dict[Hashable, Any]) -> Generator | ArrayProtocol:
+    def get(self, indices: dict[str, Any]) -> AwaitedArray | ArrayProtocol:
         raise NotImplementedError
 
     # TODO: html and pretty text repr    #
@@ -527,10 +545,7 @@ class NDProcessor:
 
     def _repr_text_(self):
         if self.data is None:
-            return (
-                f"{self.__class__.__name__}\n"
-                f"data is None, dims: {self.dims}"
-            )
+            return f"{self.__class__.__name__}\n" f"data is None, dims: {self.dims}"
         tab = "\t"
 
         wf = {k: v for k, v in self.window_funcs.items() if v != (None, None)}
@@ -603,10 +618,12 @@ class NDGraphic:
         raise NotImplementedError
 
     @property
-    def indices(self) -> dict[Hashable, Any]:
+    def indices(self) -> dict[str, Any]:
         raise NotImplementedError
 
-    def set_indices(self, indices: dict[Hashable, Any], block: bool = True, timeout: float = 1.0):
+    def set_indices(
+        self, indices: dict[str, Any], block: bool = True, timeout: float = 1.0
+    ):
         pass
 
     def _get_data_slice(self, indices):
@@ -642,7 +659,7 @@ class NDGraphic:
         self.set_indices(self.indices)
 
     @property
-    def shape(self) -> dict[Hashable, int]:
+    def shape(self) -> dict[str, int]:
         """interpreted shape of the data"""
         return self.processor.shape
 
@@ -652,7 +669,7 @@ class NDGraphic:
         return self.processor.ndim
 
     @property
-    def dims(self) -> tuple[Hashable, ...]:
+    def dims(self) -> tuple[str, ...]:
         """dim names"""
         return self.processor.dims
 
@@ -663,17 +680,17 @@ class NDGraphic:
         raise NotImplementedError
 
     @property
-    def slider_dims(self) -> set[Hashable]:
+    def slider_dims(self) -> set[str]:
         """the slider dims"""
         return self.processor.slider_dims
 
     @property
-    def slider_dim_transforms(self) -> dict[Hashable, Callable[[Any], int]]:
+    def slider_dim_transforms(self) -> dict[str, Callable[[Any], int]]:
         return self.processor.slider_dim_transforms
 
     @slider_dim_transforms.setter
     def slider_dim_transforms(
-        self, maps: dict[Hashable, Callable[[Any], int] | ArrayLike | None] | None
+        self, maps: dict[str, Callable[[Any], int] | ArrayLike | None] | None
     ):
         """get or set the slider_dim_transforms, see docstring for details"""
         self.processor.slider_dim_transforms = maps
@@ -683,7 +700,7 @@ class NDGraphic:
     @property
     def window_funcs(
         self,
-    ) -> dict[Hashable, tuple[WindowFuncCallable | None, int | float | None]]:
+    ) -> dict[str, tuple[WindowFuncCallable | None, int | float | None]]:
         """get or set window functions, see docstring for details"""
         return self.processor.window_funcs
 
@@ -691,7 +708,7 @@ class NDGraphic:
     def window_funcs(
         self,
         window_funcs: (
-            dict[Hashable, tuple[WindowFuncCallable | None, int | float | None] | None]
+            dict[str, tuple[WindowFuncCallable | None, int | float | None] | None]
             | None
         ),
     ):
@@ -700,23 +717,24 @@ class NDGraphic:
         self.set_indices(self.indices)
 
     @property
-    def window_order(self) -> tuple[Hashable, ...]:
+    def window_order(self) -> tuple[str, ...]:
         """get or set dimension order in which window functions are applied"""
         return self.processor.window_order
 
     @window_order.setter
-    def window_order(self, order: tuple[Hashable] | None):
+    def window_order(self, order: tuple[str] | None):
         self.processor.window_order = order
         # force a render
         self.set_indices(self.indices)
 
     @property
-    def spatial_func(self) -> Callable[[xr.DataArray], xr.DataArray] | None:
+    def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
+        """get or set the spatial_func, see docstring for details"""
         return self.processor.spatial_func
 
     @spatial_func.setter
     def spatial_func(
-        self, func: Callable[[xr.DataArray], xr.DataArray]
+        self, func: Callable[[ArrayProtocol], ArrayProtocol]
     ) -> Callable | None:
         """get or set the spatial_func, see docstring for details"""
         self.processor.spatial_func = func
@@ -736,7 +754,10 @@ class NDGraphic:
     #     }
 
     def _repr_text_(self):
-        return f"graphic: {self.graphic.__class__.__name__}\n" f"processor:\n{self.processor}"
+        return (
+            f"graphic: {self.graphic.__class__.__name__}\n"
+            f"processor:\n{self.processor}"
+        )
 
 
 @contextmanager

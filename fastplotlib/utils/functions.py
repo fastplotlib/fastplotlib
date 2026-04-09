@@ -6,6 +6,8 @@ import cmap as cmap_lib
 
 from pygfx import Texture, Color
 
+from .protocols import CudaArrayProtocol
+
 
 cmap_catalog = cmap_lib.Catalog()
 
@@ -405,9 +407,22 @@ def parse_cmap_values(
         return colors
 
 
+def cuda_to_numpy(arr: CudaArrayProtocol) -> np.ndarray:
+    try:
+        import cupy
+    except ImportError:
+        raise ImportError(
+            "`cupy` is required to work with GPU arrays\npip install cupy"
+        )
+
+    return cupy.asnumpy(arr)
+
+
 def subsample_array(
-    arr: np.ndarray, max_size: int = 1e6, ignore_dims: Sequence[int] | None = None
-):
+    arr: CudaArrayProtocol,
+    max_size: int = 1e6,
+    ignore_dims: Sequence[int] | None = None,
+) -> np.ndarray:
     """
     Subsamples an input array while preserving its relative dimensional proportions.
 
@@ -476,7 +491,12 @@ def subsample_array(
 
     slices = tuple(slices)
 
-    return np.asarray(arr[slices])
+    arr_sliced = arr[slices]
+
+    if isinstance(arr_sliced, CudaArrayProtocol):
+        return cuda_to_numpy(arr_sliced)
+
+    return arr_sliced
 
 
 def heatmap_to_positions(heatmap: np.ndarray, xvals: np.ndarray) -> np.ndarray:

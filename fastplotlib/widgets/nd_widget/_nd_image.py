@@ -1,15 +1,14 @@
-from collections.abc import Hashable, Sequence, Generator
+from collections.abc import Sequence, Generator
 from typing import Callable, Any
 
 import numpy as np
 from numpy.typing import ArrayLike
-import xarray as xr
 
 from ...layouts import Subplot
-from ...utils import subsample_array, ARRAY_LIKE_ATTRS, ArrayProtocol, FutureArrayProtocol
+from ...utils import subsample_array, ARRAY_LIKE_ATTRS, ArrayProtocol
 from ...graphics import ImageGraphic, ImageVolumeGraphic
 from ...tools import HistogramLUTTool
-from ._base import NDProcessor, NDGraphic, WindowFuncCallable, block_reentrance
+from ._base import NDProcessor, NDGraphic, WindowFuncCallable, block_reentrance, AwaitedArray
 from ._index import ReferenceIndex
 from ._async import start_coroutine
 
@@ -18,7 +17,7 @@ class NDImageProcessor(NDProcessor):
     def __init__(
         self,
         data: ArrayProtocol | None,
-        dims: Sequence[Hashable],
+        dims: Sequence[str],
         spatial_dims: (
             tuple[str, str] | tuple[str, str, str]
         ),  # must be in order! [rows, cols] | [z, rows, cols]
@@ -124,7 +123,7 @@ class NDImageProcessor(NDProcessor):
         self._recompute_histogram()
 
     @property
-    def data(self) -> xr.DataArray | None:
+    def data(self) -> ArrayProtocol | None:
         """
         get or set managed data. If setting with new data, the new data is interpreted
         to have the same dims (i.e. same dim names and ordering of dims).
@@ -133,12 +132,8 @@ class NDImageProcessor(NDProcessor):
 
     @data.setter
     def data(self, data: ArrayProtocol):
-        self._data = self._validate_data(data)
-        self._recompute_histogram()
-
-    def _validate_data(self, data: ArrayProtocol):
         if not isinstance(data, ArrayProtocol):
-            # check that it's compatible with array and generally array-like
+            # check that it's generally array-like
             raise TypeError(
                 f"`data` arrays must have all of the following attributes to be sufficiently array-like:\n"
                 f"{ARRAY_LIKE_ATTRS}, or they must be `None`"
@@ -150,9 +145,31 @@ class NDImageProcessor(NDProcessor):
                 f"Image data must have a minimum of 2 dimensions, you have passed an array of shape: {data.shape}"
             )
 
-        self._unwrapped_data = data
+        self._data = data
+        self._recompute_histogram()
 
-        return xr.DataArray(data, dims=self.dims)
+    @property
+    def spatial_dims(self) -> tuple[str, str] | tuple[str, str, str]:
+        """
+        Spatial dims, **in order**.
+
+        [row_dim, col_dim] or [row_dim, col_dim, rgb(a) dim]
+        """
+        return self._spatial_dims
+
+    @spatial_dims.setter
+    def spatial_dims(self, sdims: tuple[str, str] | tuple[str, str, str]):
+        for dim in sdims:
+            if dim not in self.dims:
+                raise KeyError
+
+        if len(sdims) not in (2, 3):
+            raise ValueError(
+                f"There must be 2 or 3 spatial dims for images indicating [row_dim, col_dim] or "
+                f"[row_dims, col_dim, rgb(a) dim]. You passed: {sdims}"
+            )
+
+        self._spatial_dims = tuple(sdims)
 
     @property
     def rgb_dim(self) -> str | None:
@@ -194,9 +211,7 @@ class NDImageProcessor(NDProcessor):
         """
         return self._histogram
 
-    def get(self, indices: dict[str, Any]) -> Generator[
-        FutureArrayProtocol | ArrayProtocol, ArrayProtocol, dict[str, ArrayLike]
-    ]:
+    def get(self, indices: dict[str, Any]) -> AwaitedArray:
         """
         Get the data at the given index, process data through the window functions.
 
@@ -210,6 +225,7 @@ class NDImageProcessor(NDProcessor):
             Example: get((100, 5))
 
         """
+        # this will be squeezed output, with dims in the order of the user set spatial dims
         window_output = yield from self.get_window_output(indices)
 
         # apply spatial_func
@@ -218,9 +234,9 @@ class NDImageProcessor(NDProcessor):
             if spatial_out.ndim != len(self.spatial_dims):
                 raise ValueError
 
-            return spatial_out.transpose(*self.spatial_dims).values
+            return spatial_out
 
-        return window_output.transpose(*self.spatial_dims).values
+        return window_output
 
     def _recompute_histogram(self):
         """
@@ -246,10 +262,6 @@ class NDImageProcessor(NDProcessor):
         # TODO: account for window funcs
 
         sub = subsample_array(self.data, ignore_dims=ignore_dims)
-
-        if isinstance(sub, xr.DataArray):
-            # can't do the isnan and isinf boolean indexing below on xarray
-            sub = sub.values
 
         sub_real = sub[~(np.isnan(sub) | np.isinf(sub))]
 
@@ -490,7 +502,11 @@ class NDImage(NDGraphic):
 
     @property
     def spatial_dims(self) -> tuple[str, str] | tuple[str, str, str]:
-        """get or set the spatial dims, see docstring for details"""
+        """
+        get or set the spatial dims **in order**
+
+        [row_dim, col_dim] or [row_dim, col_dim, rgb(a) dim]
+        """
         return self.processor.spatial_dims
 
     @spatial_dims.setter
@@ -501,14 +517,14 @@ class NDImage(NDGraphic):
         self._create_graphic()
 
     @property
-    def indices(self) -> dict[Hashable, Any]:
+    def indices(self) -> dict[str, Any]:
         """get or set the indices, managed by the ReferenceIndex, users usually don't want to set this manually"""
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
     @block_reentrance
     @start_coroutine
     def set_indices(
-        self, indices: dict[Hashable, Any], block: bool = True, timeout: float = 1.0
+        self, indices: dict[str, Any], block: bool = True, timeout: float = 1.0
     ):
         data_slice = yield from self._get_data_slice(indices)
 
@@ -530,13 +546,15 @@ class NDImage(NDGraphic):
         return self._histogram_widget
 
     @property
-    def spatial_func(self) -> Callable[[xr.DataArray], xr.DataArray] | None:
+    def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
         """get or set the spatial_func, see docstring for details"""
+        # this is here even though it's the same in the base class since we can't create the image specific setter
+        # without also defining the property in this subclass.
         return self.processor.spatial_func
 
     @spatial_func.setter
     def spatial_func(
-        self, func: Callable[[xr.DataArray], xr.DataArray]
+        self, func: Callable[[ArrayProtocol], ArrayProtocol]
     ) -> Callable | None:
         self.processor.spatial_func = func
         self.processor._recompute_histogram()

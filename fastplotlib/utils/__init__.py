@@ -6,7 +6,7 @@ from .functions import *
 from .gpu import enumerate_adapters, select_adapter, print_wgpu_report
 from ._plot_helpers import *
 from .enums import *
-from .protocols import ARRAY_LIKE_ATTRS, ArrayProtocol, FutureArrayProtocol
+from .protocols import ARRAY_LIKE_ATTRS, ArrayProtocol, FutureProtocol, CudaArrayProtocol
 
 
 @dataclass

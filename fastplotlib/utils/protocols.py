@@ -16,7 +16,8 @@ ARRAY_LIKE_ATTRS = [
 
 @runtime_checkable
 class ArrayProtocol(Protocol):
-    """an object that is sufficiently array-like for xarray and fastplotlib"""
+    """an object that is sufficiently array-like"""
+
     def __array__(self) -> ArrayProtocol: ...
 
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs): ...
@@ -36,8 +37,16 @@ class ArrayProtocol(Protocol):
 
 
 @runtime_checkable
-class FutureArrayProtocol(ArrayProtocol, Protocol):
-    """An Future whose result is an array-like once it is resolved, for xarray compatibility"""
+class CudaArrayProtocol(Protocol):
+    """an object that can be converted to a cupy array"""
+
+    def __cuda_array_interface__(self) -> CudaArrayProtocol: ...
+
+
+@runtime_checkable
+class FutureProtocol(Protocol):
+    """An object that is sufficiently Future-like"""
+
     def cancel(self): ...
 
     def cancelled(self): ...

@@ -139,8 +139,8 @@ class NDWidgetUI(EdgeWindow):
             if fps_changed:
                 if value < 1:
                     value = 1
-                if value > 50:
-                    value = 50
+                if value > 100:
+                    value = 100
                 self._fps[dim] = value
                 self._frame_time[dim] = 1 / value
 

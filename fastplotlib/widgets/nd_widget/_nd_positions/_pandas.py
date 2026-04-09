@@ -26,8 +26,6 @@ class NDPP_Pandas(NDPositionsProcessor):
             self._tooltip_columns = None
             self._tooltip = False
 
-        self._dims = spatial_dims
-
         super().__init__(
             data=data,
             dims=spatial_dims,
@@ -41,11 +39,12 @@ class NDPP_Pandas(NDPositionsProcessor):
     def data(self) -> pd.DataFrame:
         return self._data
 
-    def _validate_data(self, data: pd.DataFrame):
+    @data.setter
+    def data(self, data: pd.DataFrame):
         if not isinstance(data, pd.DataFrame):
             raise TypeError
 
-        return data
+        self._data= data
 
     @property
     def columns(self) -> list[tuple[str, str] | tuple[str, str, str]]:
@@ -89,7 +88,7 @@ class NDPP_Pandas(NDPositionsProcessor):
                 [self.data[c][self._dw_slice] for c in col]
             )
 
-        data = self._finalize_(graphic_data)
+        data = self._finalize(graphic_data)
         other = self._get_other_features(data, self._dw_slice)
 
         return {

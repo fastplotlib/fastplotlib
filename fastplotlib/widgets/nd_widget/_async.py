@@ -1,6 +1,7 @@
+from collections.abc import Generator
 from concurrent.futures import Future
 
-from ...utils import ArrayProtocol, FutureArrayProtocol
+from ...utils import ArrayProtocol, FutureProtocol, CudaArrayProtocol, cuda_to_numpy
 
 
 class FutureArray(Future):
@@ -8,7 +9,7 @@ class FutureArray(Future):
         self._shape = shape
         self._dtype = dtype
         self._timeout = timeout
-        
+
         super().__init__()
 
     @property
@@ -38,38 +39,62 @@ class FutureArray(Future):
 
 # inspired by https://www.dabeaz.com/coroutines/
 def start_coroutine(func):
-    """starts coroutines for async arrays in NDProcessor"""
-    def start(self, *args, **kwargs):
+    """
+    Starts coroutines for async arrays wrapped by NDProcessor.
+    Used by all NDGraphic.set_indices and NDGraphic._create_graphic.
+
+    It also immediately starts coroutines unless block=False is provided. It handles all the triage of possible
+    sync vs. async (Future-like) objects.
+
+    The only time when block=False is when ReferenceIndex._render_indices uses it to loop through setting all
+    indices, and then collect and send the results back down to NDProcessor.get().
+    """
+
+    def start(
+        self, *args, **kwargs
+    ) -> tuple[Generator, ArrayProtocol | CudaArrayProtocol | FutureProtocol] | None:
         cr = func(self, *args, **kwargs)
         try:
             # begin coroutine
-            fut: FutureArray | ArrayProtocol = cr.send(None)
+            to_resolve: FutureProtocol | ArrayProtocol | CudaArrayProtocol = cr.send(
+                None
+            )
         except StopIteration:
-            # NDProcessor.get() was not async, nothing to return
-            return
+            # NDProcessor.get() has no `yield` expression, not async, nothing to return
+            return None
 
         block = kwargs.get("block", True)
         timeout = kwargs.get("timeout", 1.0)
 
-        if block: # resolve Future immediately
+        if block:  # resolve Future immediately
             try:
-                if isinstance(fut, FutureArrayProtocol):
+                if isinstance(to_resolve, FutureProtocol):
                     # array is async, resolve future and send
-                    cr.send(fut.result(timeout=timeout))
+                    cr.send(to_resolve.result(timeout=timeout))
+                elif isinstance(to_resolve, CudaArrayProtocol):
+                    # array is on GPU, it is technically and on GPU, convert to numpy array on CPU
+                    cr.send(cuda_to_numpy(to_resolve))
                 else:
-                    # not async, just return the array
-                    cr.send(fut)
+                    # not async, just send the array
+                    cr.send(to_resolve)
             except StopIteration:
                 pass
-        else: # no block, probably resolving multiple futures simultaneously
-            if isinstance(fut, FutureArrayProtocol):
+
+        else:  # no block, probably resolving multiple futures simultaneously
+            if isinstance(to_resolve, FutureProtocol):
                 # data is async, return coroutine generator and future
                 # ReferenceIndex._render_indices() will manage them and wait to gather all futures
-                return cr, fut
+                return cr, to_resolve
+            elif isinstance(to_resolve, CudaArrayProtocol):
+                # it is async technically, but it's a GPU array, ReferenceIndex._render_indices will manage it
+                return cr, to_resolve
             else:
-                # not async, just return the array
+                # not async, just send the array
                 try:
-                    cr.send(fut)
-                except StopIteration: # has to be here because of the yield expression, i.e. it's a generator
+                    cr.send(to_resolve)
+                except (
+                    StopIteration
+                ):  # has to be here because of the yield expression, i.e. it's a generator
                     pass
+
     return start
