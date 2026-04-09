@@ -213,7 +213,7 @@ class ReferenceIndex:
                     continue
                 # only provide slider indices to the graphic
                 indices = {d: self._indices[d] for d in g.processor.slider_dims}
-                to_resolve: None | tuple[Generator, FutureProtocol] = g.set_indices(indices, block=True)
+                to_resolve: None | tuple[Generator, FutureProtocol] = g.set_indices(indices, block=False)
 
                 if to_resolve is not None:
                     if isinstance(to_resolve[1], FutureProtocol):
