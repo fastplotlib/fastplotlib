@@ -53,6 +53,9 @@ class NDWidgetUI(EdgeWindow):
         # loop playback
         self._loop = {dim: False for dim in ref_ranges.keys()}
 
+        # last time the slider was moved, used for throttling
+        self._last_slider_movement: dict[str, float] = dict()
+
         # auto-plays the ImageWidget's left-most dimension in docs galleries
         if "DOCS_BUILD" in os.environ.keys():
             if os.environ["DOCS_BUILD"] == "1":
@@ -159,7 +162,13 @@ class NDWidgetUI(EdgeWindow):
 
                 # TODO: refactor all this stuff, make fully fledged UI
                 if changed:
-                    self._ndwidget.indices[dim] = new_index
+                    # apply throttling
+                    if not dim in self._last_slider_movement:
+                        self._last_slider_movement[dim] = 0.0
+
+                    if now - self._last_slider_movement[dim] > rr.throttle:
+                        self._ndwidget.indices[dim] = new_index
+                        self._last_slider_movement[dim] = now
 
                 elif imgui.is_item_hovered():
                     if imgui.is_key_pressed(imgui.Key.right_arrow):
@@ -255,7 +264,7 @@ class RightClickMenu(StandardRightClickMenu):
                 nd_graphic.display_window = None
             else:
                 # pick a value 10% of the reference range
-                nd_graphic.display_window = self._ndwidget.ranges[p_dim].range * 0.1
+                nd_graphic.display_window = self._ndwidget.ranges[p_dim].size * 0.1
 
         if nd_graphic.display_window is not None:
             if isinstance(nd_graphic.display_window, (int, np.integer)):

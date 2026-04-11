@@ -14,7 +14,6 @@ if TYPE_CHECKING:
 from ...utils import FutureProtocol, CudaArrayProtocol, cuda_to_numpy
 
 
-@dataclass
 class RangeContinuous:
     """
     A continuous reference range for a single slider dimension.
@@ -49,20 +48,59 @@ class RangeContinuous:
 
         RangeContinuous(start=0.0, stop=500.0, step=0.5)
     """
-
-    start: int | float
-    stop: int | float
-    step: int | float
-
-    def __post_init__(self):
-        if self.start >= self.stop:
+    def __init__(self, start: int | float, stop: int | float, step: int | float):
+        if start >= stop:
             raise IndexError(
                 f"start must be less than stop, {self.start} !< {self.stop}"
             )
 
+        self._start = start
+        self._stop = stop
+        self._step = step
+
+        self._throttle = 0.2
+
+    @property
+    def start(self) -> int | float:
+        """get or set the start boundary of the reference range"""
+        return self._start
+
+    @start.setter
+    def start(self, val: int | float):
+        self._start = val
+
+    @property
+    def stop(self) -> int | float:
+        """get or set the stop boundary of the reference range"""
+        return self._stop
+
+    @stop.setter
+    def stop(self, val: int | float):
+        self._stop = val
+
+    @property
+    def step(self) -> int | float:
+        """get or set the step size of the range, only used for UI elements"""
+        return self._step
+
+    @property
+    def throttle(self) -> float:
+        """get or set throttle value in seconds. Used for throttling UI sliders"""
+        return self._throttle
+
+    @throttle.setter
+    def throttle(self, val: float):
+        if val < 0:
+            raise ValueError("throttle value must be >= 0.0")
+        self._throttle = val
+
+    @property
+    def size(self) -> int | float:
+        """the size of the reference range"""
+        return self.stop - self.start
+
     def __getitem__(self, index: int):
         """return the value at the index w.r.t. the step size"""
-        # if index is negative, turn to positive index
         if index < 0:
             raise ValueError("negative indexing not supported")
 
@@ -73,10 +111,6 @@ class RangeContinuous:
             )
 
         return val
-
-    @property
-    def range(self) -> int | float:
-        return self.stop - self.start
 
 
 @dataclass
