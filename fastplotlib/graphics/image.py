@@ -3,6 +3,7 @@ from typing import *
 
 import numpy as np
 import pygfx
+from pygfx import Texture
 
 from ..utils import quick_min_max
 from ._base import Graphic
@@ -107,7 +108,7 @@ class ImageGraphic(Graphic):
             "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
         ] = "srgb",
         colorrange: Literal["full", "limited"] = "limited",
-        cpu_buffer: bool = True,
+        cpu_buffer: bool = False,
         **kwargs,
     ):
         """
@@ -174,12 +175,11 @@ class ImageGraphic(Graphic):
         self._interpolation = ImageInterpolation(interpolation)
         self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
-        # set map to None for RGB(A) or yuv444p images
-        if data.ndim == 3:
-            self._cmap = None
-            _map = None
+        # cmap only used for grayscale images
+        self._cmap = None
+        _map = None
 
-        elif data.ndim == 2 and colorspace != "yuv420p":
+        if data.ndim == 2 and colorspace != "yuv420p":
             # use TextureMap for grayscale images
             self._cmap = ImageCmap(cmap)
 
@@ -249,7 +249,7 @@ class ImageGraphic(Graphic):
             if self._data.shape != new_data.shape:
                 # create new TextureArray
                 self._data = TextureArray(
-                    data,
+                    new_data,
                     cpu_buffer=self.cpu_buffer,
                     colorspace=self.colorspace,
                     colorrange=self.colorrange,
@@ -300,7 +300,7 @@ class ImageGraphic(Graphic):
         """colorspace, read-only property"""
         return self.data.colorspace
 
-    @propety
+    @property
     def colorrange(self) -> Literal["full", "limited"]:
         """colorrange, read-only property"""
         return self.data.colorrange
@@ -317,8 +317,9 @@ class ImageGraphic(Graphic):
 
     @cmap.setter
     def cmap(self, name: str):
-        if self.data.value.ndim > 2:
-            raise AttributeError("RGB(A) images do not have a colormap property")
+        if len(self.data.shape) > 2:
+            raise AttributeError("cmap is only supported for grayscale images")
+
         self._cmap.set_value(self, name)
 
     @property
@@ -361,6 +362,8 @@ class ImageGraphic(Graphic):
         """
         Reset the vmin, vmax by estimating it from the data by subsampling.
         """
+        if not self.cpu_buffer:
+            return
 
         vmin, vmax = quick_min_max(self._data.value)
         self.vmin = vmin
@@ -569,6 +572,22 @@ class ImageGraphic(Graphic):
         return selector
 
     def format_pick_info(self, pick_info: dict) -> str:
+        if not self.cpu_buffer:
+            if self.data.colorspace != "yuv420p" and len(self.data.shape) == 2:
+                # inverse map from rgb pixel value to grayscale value using the colormap
+                # we can only perform a guess
+                lut = self._material.map.texture.data
+                rgb = pick_info["rgba"][:3]
+                closest = np.argmin(np.linalg.norm(lut[:, :3] - rgb, axis=1))
+                scalar = closest / (lut.shape[0] - 1)
+                val = self.vmin + scalar * (self.vmax - self.vmin)
+                return f"{val:.4g}"
+            else:
+                # rgba vals
+                rgba_val = pick_info["rgba"]
+                info = "\n".join(f"{channel}: {val: .4g}" for channel, val in zip("rgba", rgba_val))
+                return info
+
         col, row = pick_info["index"]
         if self.data.value.ndim == 2:
             val = self.data[row, col]
