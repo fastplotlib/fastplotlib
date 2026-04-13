@@ -103,6 +103,11 @@ class ImageGraphic(Graphic):
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
+        colorspace: Literal[
+            "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
+        ] = "srgb",
+        colorrange: Literal["full", "limited"] = "limited",
+        cpu_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -139,16 +144,24 @@ class ImageGraphic(Graphic):
 
         group = pygfx.Group()
 
+        self._colorspace = colorspace
+        self._colorrange = colorrange
+
         if isinstance(data, TextureArray):
             # share buffer
             self._data = data
         else:
             # create new texture array to manage buffer
             # texture array that manages the multiple textures on the GPU that represent this image
-            self._data = TextureArray(data)
+            self._data = TextureArray(
+                data,
+                cpu_buffer=cpu_buffer,
+                colorspace=colorspace,
+                colorrange=colorrange,
+            )
 
         if (vmin is None) or (vmax is None):
-            _vmin, _vmax = quick_min_max(self.data.value)
+            _vmin, _vmax = quick_min_max(data)
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
@@ -161,12 +174,12 @@ class ImageGraphic(Graphic):
         self._interpolation = ImageInterpolation(interpolation)
         self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
-        # set map to None for RGB images
-        if self._data.value.ndim == 3:
+        # set map to None for RGB(A) or yuv444p images
+        if data.ndim == 3:
             self._cmap = None
             _map = None
 
-        elif self._data.value.ndim == 2:
+        elif data.ndim == 2 and colorspace != "yuv420p":
             # use TextureMap for grayscale images
             self._cmap = ImageCmap(cmap)
 
@@ -174,12 +187,6 @@ class ImageGraphic(Graphic):
                 self._cmap.texture,
                 filter=self._cmap_interpolation.value,
                 wrap="clamp-to-edge",
-            )
-        else:
-            raise ValueError(
-                f"ImageGraphic `data` must have 2 dimensions for grayscale images, or 3 dimensions for RGB(A) images.\n"
-                f"You have passed a a data array with: {self._data.value.ndim} dimensions, "
-                f"and of shape: {self._data.value.shape}"
             )
 
         # one common material is used for every Texture chunk
@@ -229,28 +236,34 @@ class ImageGraphic(Graphic):
 
         Note that if the shape of the new data array does not equal the shape of
         current data array, a new set of GPU Textures are automatically created.
-        This can have performance drawbacks when you have a ver large images.
+        This can have performance drawbacks when you have a very large image.
         This is usually fine as long as you don't need to do it hundreds of times
         per second.
         """
         return self._data
 
     @data.setter
-    def data(self, data):
-        if isinstance(data, np.ndarray):
+    def data(self, new_data):
+        if isinstance(new_data, np.ndarray):
             # check if a new buffer is required
-            if self._data.value.shape != data.shape:
+            if self._data.shape != new_data.shape:
                 # create new TextureArray
-                self._data = TextureArray(data)
+                self._data = TextureArray(
+                    data,
+                    cpu_buffer=self.cpu_buffer,
+                    colorspace=self.colorspace,
+                    colorrange=self.colorrange,
+                )
 
-                # cmap based on if rgb or grayscale
-                if self._data.value.ndim > 2:
+                # see if the new texture data needs a cmap
+                if len(self._data.shape) == 3 and self._data.colorspace != "yuv420p":
+                    # set cmap to None since data is not grayscale
                     self._cmap = None
-
-                    # must be None if RGB(A)
                     self._material.map = None
                 else:
-                    if self.cmap is None:  # have switched from RGBA -> grayscale image
+                    if (
+                        self.cmap is None
+                    ):  # have switched from non-grayscale -> grayscale image
                         # create default cmap
                         self._cmap = ImageCmap("plasma")
                         self._material.map = pygfx.TextureMap(
@@ -274,7 +287,23 @@ class ImageGraphic(Graphic):
 
                 return
 
-        self._data[:] = data
+        self._data.set_value(self, new_data)
+
+    @property
+    def cpu_buffer(self) -> bool:
+        return self.data.cpu_buffer
+
+    @property
+    def colorspace(
+        self,
+    ) -> Literal["srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"]:
+        """colorspace, read-only property"""
+        return self.data.colorspace
+
+    @propety
+    def colorrange(self) -> Literal["full", "limited"]:
+        """colorrange, read-only property"""
+        return self.data.colorrange
 
     @property
     def cmap(self) -> str | None:
