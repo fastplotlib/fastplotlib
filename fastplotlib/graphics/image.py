@@ -581,7 +581,7 @@ class ImageGraphic(Graphic):
                 closest = np.argmin(np.linalg.norm(lut[:, :3] - rgb, axis=1))
                 scalar = closest / (lut.shape[0] - 1)
                 val = self.vmin + scalar * (self.vmax - self.vmin)
-                return f"{val:.4g}"
+                return f"{val:.4g}\n!!estimate!!, cpu_buffer=False"
             else:
                 # rgba vals
                 rgba_val = pick_info["rgba"]
