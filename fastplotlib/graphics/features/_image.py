@@ -41,7 +41,7 @@ class TextureArray(GraphicFeature):
         self,
         data,
         property_name: str = "data",
-        cpu_buffer: bool = False,
+        cpu_buffer: bool = True,
         colorspace: Literal[
             "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
         ] = "srgb",
