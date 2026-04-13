@@ -1,5 +1,5 @@
 from collections.abc import Sequence, Generator
-from typing import Callable, Any
+from typing import Callable, Any, Literal
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -8,7 +8,13 @@ from ...layouts import Subplot
 from ...utils import subsample_array, ARRAY_LIKE_ATTRS, ArrayProtocol
 from ...graphics import ImageGraphic, ImageVolumeGraphic
 from ...tools import HistogramLUTTool
-from ._base import NDProcessor, NDGraphic, WindowFuncCallable, block_reentrance, AwaitedArray
+from ._base import (
+    NDProcessor,
+    NDGraphic,
+    WindowFuncCallable,
+    block_reentrance,
+    AwaitedArray,
+)
 from ._index import ReferenceIndex
 from ._async import start_coroutine
 
@@ -284,6 +290,10 @@ class NDImage(NDGraphic):
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
         slider_dim_transforms=None,
+        colorspace: Literal[
+            "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
+        ] = "srgb",
+        colorrange: Literal["full", "limited"] = "full",
         name: str = None,
     ):
         """
@@ -371,6 +381,9 @@ class NDImage(NDGraphic):
             slider_dim_transforms=slider_dim_transforms,
         )
 
+        self._colorspace = colorspace
+        self._colorrange = colorrange
+
         self._graphic: ImageGraphic | None = None
         self._histogram_widget: HistogramLUTTool | None = None
 
@@ -414,7 +427,12 @@ class NDImage(NDGraphic):
         data_slice = yield from self._get_data_slice(self.indices)
 
         # create the new graphic
-        new_graphic = cls(data_slice)
+        new_graphic = cls(
+            data_slice,
+            cpu_buffer=False,  # faster, we usually don't need a cpu buffer for NDWidget use cases
+            colorspace=self._colorspace,
+            colorrange=self._colorrange,
+        )
 
         old_graphic = self._graphic
         # check if we are replacing a graphic

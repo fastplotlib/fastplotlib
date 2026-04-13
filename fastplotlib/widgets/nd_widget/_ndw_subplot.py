@@ -20,6 +20,7 @@ class NDWSubplot:
 
     Note: ``NDWSubplot`` is not meant to be constructed directly, it only exists as part of an ``NDWidget``
     """
+
     def __init__(self, ndw, subplot: Subplot):
         self.ndw = ndw
         self._subplot = subplot
@@ -57,8 +58,12 @@ class NDWSubplot:
         compute_histogram: bool = True,
         slider_dim_transforms=None,
         name: str = None,
+        **kwargs,
     ):
-        nd = NDImage(self.ndw.indices, self._subplot, data=data,
+        nd = NDImage(
+            self.ndw.indices,
+            self._subplot,
+            data=data,
             dims=dims,
             spatial_dims=spatial_dims,
             rgb_dim=rgb_dim,
@@ -68,7 +73,8 @@ class NDWSubplot:
             compute_histogram=compute_histogram,
             slider_dim_transforms=slider_dim_transforms,
             name=name,
-         )
+            **kwargs,
+        )
 
         self._nd_graphics.append(nd)
         return nd
