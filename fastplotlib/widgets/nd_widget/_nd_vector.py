@@ -33,7 +33,7 @@ class NDVectorProcessor(NDProcessor):
         Parameters
         ----------
         data: ArrayProtocol
-            Shape [num_vectors, 2, 2] or [num_vectors, 3, 2]. data[:, :, 0] gives the positions, data[:, :, 1] gives directions
+            Shape [num_vectors, 2, 2] or [num_vectors, 3, 2]. data[:, 0, :] gives the positions, data[:, 1, :] gives directions
             n-dimension image data array
 
         dims: Sequence[str]
@@ -110,9 +110,9 @@ class NDVectorProcessor(NDProcessor):
                 f"{ARRAY_LIKE_ATTRS}, or they must be `None`"
             )
 
-        if data.ndim < 3 or data.shape[-1] != 2 or data.shape[-2] not in (2, 3):
+        if data.ndim < 3:
             raise ValueError(
-                f"Final dimension must be , indicating spatial dimensions and magnitude of vector, you passed an array of shape {data.shape}"
+                f"Shape must be (..., num_vecs, 2, [2 or 3]) you passed an array of shape {data.shape}"
             )
 
         self._data = data
@@ -121,8 +121,7 @@ class NDVectorProcessor(NDProcessor):
     def spatial_dims(self) -> tuple[str, str]:
         """
         Spatial dims, **in display order**.
-
-        [num_vectors, 2, 2]
+        Dimensions in order are num_vectors, position/direction, xy[z], so the shape is [num_vectors, 2, 2 or 3]
         """
         return self._spatial_dims
 
@@ -134,10 +133,16 @@ class NDVectorProcessor(NDProcessor):
 
         if len(sdims) != 3:
             raise ValueError(
-                f"There must be exactly 3 spatial dims for vectors indicating [num_vectors, 2, 2] or [num_vectors, 3, 2] "
+                f"There must be exactly 3 spatial dims for vectors indicating [num_vectors, 2, 2] or [num_vectors, 2, 3] "
             )
 
         self._spatial_dims = tuple(sdims)
+
+        if self.shape[self.spatial_dims[-2]] != 2 or self.shape[self.spatial_dims[-1]] not in (2, 3):
+            raise ValueError(
+                f"Spatial dimensions must haves shape (num_vecs, 2, [2 or 3]) you passed an array of shape {data.shape}"
+            )
+
 
 
     def get(self, indices: dict[str, Any]) -> AwaitedArray:
@@ -292,28 +297,26 @@ class NDVector(NDGraphic):
 
         old_graphic = self._graphic
         # check if we are replacing a graphic
-        # ex: swapping from 2D <-> 3D representation after ``spatial_dims`` was changed
         if old_graphic is not None:
             # delete the old graphic
             self._subplot.delete_graphic(old_graphic)
 
         # create the new graphic
-        self._graphic = self._subplot.add_vectors(positions=data_slice[:, :, 0],
-                                                directions=data_slice[:, :, 1])
+        self._graphic = self._subplot.add_vectors(positions=data_slice[:, 0, :],
+                                                directions=data_slice[:, 1, :])
 
         self._subplot.add_graphic(self._graphic)
 
     @property
-    def spatial_dims(self) -> tuple[str, str] | tuple[str, str, str]:
+    def spatial_dims(self) -> tuple[str, str, str]:
         """
-        get or set the spatial dims **in order**
-
-        [row_dim, col_dim] or [row_dim, col_dim, rgb(a) dim]
+        get or set the spatial dims **in order**.
+        Spatial dim shape here is [num_vectors, position/dimension (2), xy[z] (2 or 3)]
         """
         return self.processor.spatial_dims
 
     @spatial_dims.setter
-    def spatial_dims(self, dims: tuple[str, str] | tuple[str, str, str]):
+    def spatial_dims(self, dims: tuple[str, str, str]):
         self.processor.spatial_dims = dims
 
         # shape has probably changed, recreate graphic
@@ -331,8 +334,8 @@ class NDVector(NDGraphic):
     ):
         data_slice = yield from self._get_data_slice(indices)
 
-        positions = data_slice[:, :, 0]
-        directions = data_slice[:, :, 1]
+        positions = data_slice[:, 0, :]
+        directions = data_slice[:, 1, :]
 
         self.graphic.positions = positions
         self.graphic.directions = directions
