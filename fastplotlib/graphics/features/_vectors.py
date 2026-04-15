@@ -198,7 +198,7 @@ def quat_from_vecs(source, target, out=None, dtype=None) -> np.ndarray:
 
     axis = np.cross(source, target)  # (num_pts, 3)
     axis_norm = np.linalg.norm(axis, axis=-1)  # (num_pts,)
-    angle = np.arctan2(axis_norm, np.sum(source * target, axis=-1))  # (num_pts,)
+    angle = np.arctan2(axis_norm, (target @ source.T).squeeze(1))  # (num_pts,)
 
     # Handle degenerate case: source and target are parallel (axis is zero vector).
     # Pick any axis orthogonal to source as a replacement.
@@ -231,9 +231,9 @@ def quat_from_axis_angle(axis, angle, out=None, dtype=None) -> np.ndarray:
 
     Parameters
     ----------
-    axis : ndarray, [3]
+    axis : ndarray, [num_vectors, 3] or [3]
         Unit vector
-    angle : number
+    angle : number or np.ndarray of shape [num_pts,]
         The angle (in radians) to rotate about axis
     out : ndarray, optional
         A location into which the result is stored. If provided, it
@@ -245,7 +245,7 @@ def quat_from_axis_angle(axis, angle, out=None, dtype=None) -> np.ndarray:
 
     Returns
     -------
-    ndarray, [4]
+    ndarray, [num_pts, 4] or [4]
         Quaternion.
     """
 
@@ -263,7 +263,7 @@ def quat_from_axis_angle(axis, angle, out=None, dtype=None) -> np.ndarray:
     out[..., :3] = axis * np.sin(angle / 2).reshape(lengths_shape)
     out[..., 3] = np.cos(angle / 2)
 
-    return out
+    return out.squeeze(0) if out.shape[0] == 1 else out
 
 
 def mat_compose(translation, rotation, scaling, /, *, out=None, dtype=None) -> np.ndarray:
@@ -279,7 +279,7 @@ def mat_compose(translation, rotation, scaling, /, *, out=None, dtype=None) -> n
 
     Returns
     -------
-    ndarray, [num_vectors, 4, 4]
+    ndarray, [num_vectors, 4, 4] or [4, 4]
     """
     rotation    = np.asarray(rotation, dtype=float)
     translation = np.asarray(translation, dtype=float)
@@ -328,4 +328,4 @@ def mat_compose(translation, rotation, scaling, /, *, out=None, dtype=None) -> n
     out[:, 0:3, 3] = translation
     out[:, 3, 3] = 1
 
-    return out
+    return out.squeeze(0) if out.shape[0] == 1 else out
