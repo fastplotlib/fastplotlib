@@ -45,28 +45,17 @@ class NDVectorsProcessor(NDProcessor):
             ``spatial_dims`` are treated as slider dimensions and **must** appear as
             keys in the parent ``NDWidget``'s ``ref_ranges``
                 Examples::
-                 ``("time", "depth", "row", "col")``
-                 ``("channels", "time", "xy")``
-                 ``("keypoints", "time", "xyz")``
 
             A custom subclass's ``data`` object doesn't necessarily need to have these dims, but the ``get()`` method
             must operate as if these dimensions exist and return an array that matches the spatial dimensions.
 
-        dims: Sequence[str]
-            names for each dimension in ``data``. Dimensions not listed in
-            ``spatial_dims`` are treated as slider dimensions and **must** appear as
-            keys in the parent ``NDWidget``'s ``ref_ranges``
-                Examples::
-                 ``("time", "depth", "row", "col")``
-                 ``("row", "col")``
-                 ``("other_dim", "depth", "time", "row", "col")``
 
             dims in the array do not need to be in the order that you want to display them, for example you can have a
             weird array where the dims are interpreted as:
             ``("col", "depth", "row", "time")``, and then specify spatial_dims as ``("row", "col")``.
 
         spatial_dims : tuple[str, str] | tuple[str, str, str]
-            For NDVectors, this is always the last two dimensions without exception
+            The dim names that indicate [n_vectors, positions & directions, xy(z)], **in that order**
 
         slider_dim_transforms : dict, optional
             See :class:`NDProcessor`.
@@ -83,7 +72,7 @@ class NDVectorsProcessor(NDProcessor):
         See Also
         --------
             NDProcessor : Base class with full parameter documentation.
-            NDImage : The ``NDGraphic`` that wraps this processor.
+            NDVectors : The ``NDGraphic`` that uses this processor by default.
         """
 
         super().__init__(
@@ -123,7 +112,7 @@ class NDVectorsProcessor(NDProcessor):
     @property
     def spatial_dims(self) -> tuple[str, str]:
         """
-        Spatial dims, **in display order**.
+        Spatial dims, **in order**
         Dimensions in order are num_vectors, position/direction, xy[z], so the shape is [num_vectors, 2, 2 or 3]
         """
         return self._spatial_dims
@@ -185,7 +174,7 @@ class NDVectors(NDGraphic):
         dims: Sequence[str],
         spatial_dims: tuple[
             str, str, str
-        ],  # must be in order! [rows, cols] | [z, rows, cols]
+        ],  # must be in order!
         window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
         window_order: tuple[int, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
@@ -222,7 +211,7 @@ class NDVectors(NDGraphic):
             be present in ``ref_index``.
 
         spatial_dims : tuple[str, str] | tuple[str, str, str]
-            Spatial dimensions **in order**: These dims are either (num_points, 2, 2) or (num_points, 3, 2)
+            Spatial dimensions **in order**: These dims are either [n_vectors, 2, 2] or [n_vectors, 2, 3], indicating [n_vectors, positions & directions, xy(z)]
 
         window_funcs : dict, optional
             See :class:`NDProcessor`.
