@@ -82,12 +82,7 @@ class VectorPositions(GraphicFeature):
         else:
             self._positions[:] = value
 
-        for i in range(self._positions.shape[0]):
-            # only need to update the translation vector
-            graphic.world_object.instance_buffer.data["matrix"][i][3, 0:3] = (
-                self._positions[i]
-            )
-
+        graphic.world_object.instance_buffer.data["matrix"][:, 3, 0:3] = self._positions[:]
         graphic.world_object.instance_buffer.update_full()
 
         event = GraphicFeatureEvent(type="positions", info={"value": value})
@@ -183,3 +178,4 @@ class VectorDirections(GraphicFeature):
 
         event = GraphicFeatureEvent(type="directions", info={"value": value})
         self._call_event_handlers(event)
+
