@@ -290,6 +290,7 @@ class NDImage(NDGraphic):
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
         slider_dim_transforms=None,
+        processor_type: type[NDImageProcessor] = NDImageProcessor,
         colorspace: Literal[
             "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
         ] = "srgb",
@@ -369,7 +370,7 @@ class NDImage(NDGraphic):
 
         self._ref_index = ref_index
 
-        self._processor = NDImageProcessor(
+        self._processor = processor_type(
             data,
             dims=dims,
             spatial_dims=spatial_dims,

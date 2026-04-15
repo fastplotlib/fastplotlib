@@ -233,6 +233,10 @@ class ImageGraphic(Graphic):
                 colorrange=colorrange,
             )
 
+        if isinstance(data, (tuple, list)):
+            # unpacked yuv
+            data = data[0]
+
         if (vmin is None) or (vmax is None):
             _vmin, _vmax = quick_min_max(data)
             if vmin is None:

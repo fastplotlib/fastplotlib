@@ -66,6 +66,11 @@ class TextureArray(GraphicFeature):
         if colorspace in ("yuv420p", "yuv444p"):
             # the only real use cases of yuv is video which is almost always going to be uint8
             format_ = "r8unorm"
+            if isinstance(data, (tuple, list)):
+                # yuv each provided separately
+                self._shape = data[0].shape
+            else:
+                self._shape = data.shape[0] * 2 // 3, data.shape[0][1]
         else:
             # auto-determine format, adapted from pygfx.Texture
             element_format = get_element_format_from_numpy_array(data)
@@ -80,13 +85,23 @@ class TextureArray(GraphicFeature):
                 nchannels = 1
             format_ = (f"{nchannels}x" + element_format).lstrip("1x")
 
-        self._shape = data.shape
+            self._shape = data.shape
 
         shared = pygfx.renderers.wgpu.get_shared()
         self._texture_limit_2d = shared.device.limits["max-texture-dimension-2d"]
 
         if cpu_buffer:
             # create a local buffer
+            if colorspace in ("yuv420p", "yuv444p"):
+                raise ValueError("yuv is currently not supported with `cpu_buffer=False")
+            # TODO: support yuv with local cpu buffers
+            # if colorspace in ("yuv420p", "yuv444p") and isinstance(data, (tuple, list)):
+            #     self._value = (
+            #         np.zeros(data[0].shape, dtype=data[0].dtype),
+            #         np.zeros(data[1].shape, dtype=data[1].dtype),
+            #         np.zeros(data[2].shape, dtype=data[2].dtype),
+            #     )
+            # else:
             self._value = np.zeros(data.shape, dtype=data.dtype)
             self.value[:] = data[:]
             usage = 0
@@ -130,7 +145,11 @@ class TextureArray(GraphicFeature):
         # iterate through each chunk of passed `data`
         # create a pygfx.Texture from this chunk
         for _, buffer_index, slicer in self:
-            chunk = data[slicer]
+            if isinstance(data, (tuple, list)):
+                # We only support upto max 2D texture limit for YUV anyways so don't need to slice
+                chunk = data
+            else:
+                chunk = data[slicer]
 
             if cpu_buffer:
                 # texture gets the data directly
@@ -142,17 +161,21 @@ class TextureArray(GraphicFeature):
                     format=format_,
                     usage=usage,
                 )
-                print(texture.format)
             else:
                 # we only supply the size
                 if colorspace == "yuv420p":
-                    # yuv420 data is packed, get the unpacked shape
-                    w = chunk.shape[1]
-                    # u, v is packed in the bottom 1/3rd of rows
-                    h = chunk.shape[0] * 2 // 3
+                    if isinstance(chunk, (tuple, list)):
+                        # not packed, rows, cols -> width, height
+                        w, h = chunk[0].shape[1], chunk[0].shape[0]
+                    else:
+                        # yuv420 data is packed, get the unpacked shape
+                        w = chunk.shape[1]
+                        # u, v is packed in the bottom 1/3rd of rows
+                        h = chunk.shape[0] * 2 // 3
                 else:
                     # otherwise just regular shape, no packing/unpacking stuff
                     w, h = chunk.shape[1], chunk.shape[0]
+
                 texture = pygfx.Texture(
                     size=(w, h, depth),
                     dim=2,
@@ -161,12 +184,17 @@ class TextureArray(GraphicFeature):
                     format=format_,
                     usage=usage,
                 )
+
                 # send the initial data
                 if colorspace == "yuv420p":
-                    # yuv420 data is packed, unpack, reshape and send with respective offsets
-                    y = chunk[:h]
-                    u = chunk[h : h + h // 4].reshape(h // 2, w // 2)
-                    v = chunk[h + h // 4 :].reshape(h // 2, w // 2)
+                    if isinstance(chunk, (tuple, list)):
+                        y, u, v = chunk
+                    else:
+                        # yuv420 data is packed, unpack, reshape and send with respective offsets
+                        y = chunk[:h]
+                        u = chunk[h : h + h // 4].reshape(h // 2, w // 2)
+                        v = chunk[h + h // 4 :].reshape(h // 2, w // 2)
+
                     texture.send_data((0, 0, 0), y)
                     texture.send_data((0, 0, 1), u)
                     texture.send_data((w // 2, 0, 1), v)
@@ -212,26 +240,33 @@ class TextureArray(GraphicFeature):
 
     def set_value(self, graphic, value: np.ndarray):
         if not self.cpu_buffer:
-            # if cpu_buffer is False, we directly send data to the GPU
-            if value.shape != self.shape:
-                raise ValueError(
-                    f"new data shape must be the same as the original data array"
-                    f"original data shape was: {self.shape}, data passed is of shape: {value.shape}"
-                )
+            if isinstance(value, np.ndarray):
+                # if cpu_buffer is False, we directly send data to the GPU
+                if value.shape != self.shape:
+                    raise ValueError(
+                        f"new data shape must be the same as the original data array"
+                        f"original data shape was: {self.shape}, data passed is of shape: {value.shape}"
+                    )
             # send everything
             if self.colorspace == "yuv420p":
-                # yuv data is packed. unpack, reshape and send with respective offsets
-                w = value.shape[1]
-                # u, v is packed in the bottom 1/3rd of rows
-                h = value.shape[0] * 2 // 3
+                if isinstance(value, (tuple, list)):
+                    if not len(value) == 3:
+                        raise ValueError
+                    y, u, v = value
+                else:
+                    # yuv data is packed. unpack, reshape and send with respective offsets
+                    w = value.shape[1]
+                    # u, v is packed in the bottom 1/3rd of rows
+                    h = value.shape[0] * 2 // 3
 
-                y = value[:h]
-                u = value[h : h + h // 4].reshape(h // 2, w // 2)
-                v = value[h + h // 4 :].reshape(h // 2, w // 2)
+                    y = value[:h]
+                    u = value[h : h + h // 4].reshape(h // 2, w // 2)
+                    v = value[h + h // 4 :].reshape(h // 2, w // 2)
 
                 self._buffer[0, 0].send_data((0, 0, 0), y)
                 self._buffer[0, 0].send_data((0, 0, 1), u)
-                self._buffer[0, 0].send_data((w // 2, 0, 1), v)
+                # width is y.shape[1]
+                self._buffer[0, 0].send_data((y.shape[1] // 2, 0, 1), v)
             else:
                 # all other colorspaces can be directly sent
                 for texture, buffer_index, slicer in self:
@@ -284,7 +319,17 @@ class TextureArray(GraphicFeature):
                     )
 
         elif colorspace == "yuv420p":
-            if data.ndim != 2:
+            if isinstance(data, (tuple, list)):
+                if not len(data) == 3:
+                    raise ValueError(
+                        f"if `colorspace=yuv420p`, must provide a tuple/list of arrays representing y, u, v components"
+                        f"(luma, and chroma channels), or a single arrays with packed yuv components. You passed: "
+                        f"{data}"
+                    )
+                return data
+                # TODO: more validation for YUV expected dims
+
+            elif data.ndim != 2:
                 raise ValueError(
                     "if the colorspace is 'yuv420p' the data array must have 2 dimensions, "
                     "with the `u` and `v` values packed along the bottom rows of the 2D data array"
