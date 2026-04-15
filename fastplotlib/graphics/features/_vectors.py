@@ -82,7 +82,9 @@ class VectorPositions(GraphicFeature):
         else:
             self._positions[:] = value
 
+        # Only need to update the translation vector
         graphic.world_object.instance_buffer.data["matrix"][:, 3, 0:3] = self._positions[:]
+
         graphic.world_object.instance_buffer.update_full()
 
         event = GraphicFeatureEvent(type="positions", info={"value": value})

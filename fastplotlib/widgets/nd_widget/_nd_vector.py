@@ -1,5 +1,5 @@
-from collections.abc import Sequence, Generator
-from typing import Callable, Any
+from collections.abc import Sequence, Generator, Callable
+from typing import Any
 
 import numpy as np
 from numpy.typing import ArrayLike

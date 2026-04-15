@@ -76,7 +76,7 @@ class NDWSubplot:
     def add_nd_vector(self,
                       data: ArrayProtocol | None,
                       dims: Sequence[str],
-                      spatial_dims: tuple[str, str, str],  # must be in order! [rows, cols] | [z, rows, cols]
+                      spatial_dims: tuple[str, str, str],
                       window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
                       window_order: tuple[int, ...] = None,
                       spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
