@@ -7,13 +7,18 @@ from numpy.typing import ArrayLike
 from ...layouts import Subplot
 from ...utils import subsample_array, ARRAY_LIKE_ATTRS, ArrayProtocol
 from ...graphics import VectorsGraphic
-from ._base import NDProcessor, NDGraphic, WindowFuncCallable, block_reentrance, AwaitedArray
+from ._base import (
+    NDProcessor,
+    NDGraphic,
+    WindowFuncCallable,
+    block_reentrance,
+    AwaitedArray,
+)
 from ._index import ReferenceIndex
 from ._async import start_coroutine
 
 
-
-class NDVectorProcessor(NDProcessor):
+class NDVectorsProcessor(NDProcessor):
     def __init__(
         self,
         data: ArrayProtocol | None,
@@ -27,14 +32,13 @@ class NDVectorProcessor(NDProcessor):
         """
         ``NDProcessor`` subclass for n-dimensional vector data
 
-        Produces (num_vectors, 4) slices for a ``VectorsGraphic``. The first two columns describe position of each vector,
-        the second two describe the orientation
+        Produces (num_vectors, 2, [2 or 3]) slices for a ``VectorsGraphic``. The last two dimensions describe the
+        position/direction and the 2D/3D spatial coordinate, respectively.
 
         Parameters
         ----------
         data: ArrayProtocol
-            Shape [num_vectors, 2, 2] or [num_vectors, 3, 2]. data[:, 0, :] gives the positions, data[:, 1, :] gives directions
-            n-dimension image data array
+            Shape [..., num_vectors, 2, 2] or [..., num_vectors, 2, 3]. data[..., 0, :] gives the positions, data[..., 1, :] gives directions
 
         dims: Sequence[str]
             names for each dimension in ``data``. Dimensions not listed in
@@ -92,7 +96,6 @@ class NDVectorProcessor(NDProcessor):
             spatial_func=spatial_func,
         )
 
-
     @property
     def data(self) -> ArrayProtocol | None:
         """
@@ -138,12 +141,12 @@ class NDVectorProcessor(NDProcessor):
 
         self._spatial_dims = tuple(sdims)
 
-        if self.shape[self.spatial_dims[-2]] != 2 or self.shape[self.spatial_dims[-1]] not in (2, 3):
+        if self.shape[self.spatial_dims[-2]] != 2 or self.shape[
+            self.spatial_dims[-1]
+        ] not in (2, 3):
             raise ValueError(
                 f"Spatial dimensions must haves shape (num_vecs, 2, [2 or 3]) you passed an array of shape {data.shape}"
             )
-
-
 
     def get(self, indices: dict[str, Any]) -> AwaitedArray:
         """
@@ -173,14 +176,16 @@ class NDVectorProcessor(NDProcessor):
         return window_output
 
 
-class NDVector(NDGraphic):
+class NDVectors(NDGraphic):
     def __init__(
         self,
         ref_index: ReferenceIndex,
         subplot: Subplot,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        spatial_dims: tuple[str, str, str],  # must be in order! [rows, cols] | [z, rows, cols]
+        spatial_dims: tuple[
+            str, str, str
+        ],  # must be in order! [rows, cols] | [z, rows, cols]
         window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
         window_order: tuple[int, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
@@ -188,11 +193,9 @@ class NDVector(NDGraphic):
         name: str = None,
     ):
         """
-        ``NDGraphic`` subclass for n-dimensional image rendering.
+        ``NDGraphic`` subclass for n-dimensional vector rendering
 
-        Wraps an :class:`NDImageProcessor` and manages either an ``ImageGraphic`` or``ImageVolumeGraphic``.
-        swaps automatically when :attr:`spatial_dims` is reassigned at runtime. Also
-        owns a ``HistogramLUTTool`` for interactive vmin, vmax adjustment.
+        Wraps an :class:`VectorGraphic`
 
         Every dimension that is *not* listed in ``spatial_dims`` becomes a slider
         dimension. Each slider dim must have a ``ReferenceRange`` defined in the
@@ -253,7 +256,7 @@ class NDVector(NDGraphic):
 
         self._ref_index = ref_index
 
-        self._processor = NDVectorProcessor(
+        self._processor = NDVectorsProcessor(
             data,
             dims=dims,
             spatial_dims=spatial_dims,
@@ -269,7 +272,7 @@ class NDVector(NDGraphic):
         self._create_graphic()
 
     @property
-    def processor(self) -> NDVectorProcessor:
+    def processor(self) -> NDVectorsProcessor:
         """NDProcessor that manages the data and produces data slices to display"""
         return self._processor
 
@@ -294,7 +297,6 @@ class NDVector(NDGraphic):
 
         data_slice = yield from self._get_data_slice(self.indices)
 
-
         old_graphic = self._graphic
         # check if we are replacing a graphic
         if old_graphic is not None:
@@ -302,8 +304,9 @@ class NDVector(NDGraphic):
             self._subplot.delete_graphic(old_graphic)
 
         # create the new graphic
-        self._graphic = self._subplot.add_vectors(positions=data_slice[:, 0, :],
-                                                directions=data_slice[:, 1, :])
+        self._graphic = self._subplot.add_vectors(
+            positions=data_slice[:, 0], directions=data_slice[:, 1]
+        )
 
         self._subplot.add_graphic(self._graphic)
 
@@ -334,8 +337,8 @@ class NDVector(NDGraphic):
     ):
         data_slice = yield from self._get_data_slice(indices)
 
-        positions = data_slice[:, 0, :]
-        directions = data_slice[:, 1, :]
+        positions = data_slice[:, 0]
+        directions = data_slice[:, 1]
 
         self.graphic.positions = positions
         self.graphic.directions = directions

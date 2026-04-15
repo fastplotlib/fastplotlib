@@ -168,8 +168,6 @@ class VectorDirections(GraphicFeature):
         # vector determines the size of the vector
         magnitudes = np.linalg.norm(self._directions, axis=1, ord=2)
 
-        # for i in range(self._directions.shape[0]):
-            # get quaternion to rotate vector to new direction
         rotation = quat_from_vecs(self.init_direction, self._directions[:])
         # get the new transform
         transform = mat_compose(graphic.positions[:], rotation, magnitudes[:])
