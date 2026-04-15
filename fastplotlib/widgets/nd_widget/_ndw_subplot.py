@@ -3,10 +3,17 @@ from typing import Literal, Sequence, Hashable
 
 import numpy as np
 
-from ... import ScatterCollection, ScatterStack, LineCollection, LineStack, ImageGraphic
+from ... import (
+    ScatterCollection,
+    ScatterStack,
+    LineCollection,
+    LineStack,
+    ImageGraphic,
+    VectorsGraphic,
+)
 from ...layouts import Subplot
 from ...utils import ArrayProtocol
-from . import NDImage, NDPositions
+from . import NDImage, NDPositions, NDVectors
 from ._base import NDGraphic, WindowFuncCallable
 
 
@@ -20,6 +27,7 @@ class NDWSubplot:
 
     Note: ``NDWSubplot`` is not meant to be constructed directly, it only exists as part of an ``NDWidget``
     """
+
     def __init__(self, ndw, subplot: Subplot):
         self.ndw = ndw
         self._subplot = subplot
@@ -58,7 +66,10 @@ class NDWSubplot:
         slider_dim_transforms=None,
         name: str = None,
     ):
-        nd = NDImage(self.ndw.indices, self._subplot, data=data,
+        nd = NDImage(
+            self.ndw.indices,
+            self._subplot,
+            data=data,
             dims=dims,
             spatial_dims=spatial_dims,
             rgb_dim=rgb_dim,
@@ -68,7 +79,34 @@ class NDWSubplot:
             compute_histogram=compute_histogram,
             slider_dim_transforms=slider_dim_transforms,
             name=name,
-         )
+        )
+
+        self._nd_graphics.append(nd)
+        return nd
+
+    def add_nd_vectors(
+        self,
+        data: ArrayProtocol | None,
+        dims: Sequence[str],
+        spatial_dims: tuple[str, str, str],
+        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
+        window_order: tuple[int, ...] = None,
+        spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
+        slider_dim_transforms=None,
+        name: str = None,
+    ) -> NDVectors:
+        nd = NDVectors(
+            self.ndw.indices,
+            self._subplot,
+            data=data,
+            dims=dims,
+            spatial_dims=spatial_dims,
+            window_funcs=window_funcs,
+            window_order=window_order,
+            spatial_func=spatial_func,
+            slider_dim_transforms=slider_dim_transforms,
+            name=name,
+        )
 
         self._nd_graphics.append(nd)
         return nd
