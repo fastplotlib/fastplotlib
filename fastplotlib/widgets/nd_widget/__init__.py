@@ -5,6 +5,7 @@ if IMGUI:
     from ._base import NDProcessor, NDGraphic
     from ._nd_positions import NDPositions, NDPositionsProcessor, ndp_extras
     from ._nd_image import NDImageProcessor, NDImage
+    from ._nd_vector import NDVectorProcessor, NDVector
     from ._ndwidget import NDWidget
 
 else:

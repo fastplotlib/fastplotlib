@@ -3,10 +3,10 @@ from typing import Literal, Sequence, Hashable
 
 import numpy as np
 
-from ... import ScatterCollection, ScatterStack, LineCollection, LineStack, ImageGraphic
+from ... import ScatterCollection, ScatterStack, LineCollection, LineStack, ImageGraphic, VectorsGraphic
 from ...layouts import Subplot
 from ...utils import ArrayProtocol
-from . import NDImage, NDPositions
+from . import NDImage, NDPositions, NDVector
 from ._base import NDGraphic, WindowFuncCallable
 
 
@@ -69,6 +69,32 @@ class NDWSubplot:
             slider_dim_transforms=slider_dim_transforms,
             name=name,
          )
+
+        self._nd_graphics.append(nd)
+        return nd
+
+    def add_nd_vector(self,
+                      data: ArrayProtocol | None,
+                      dims: Sequence[str],
+                      spatial_dims: tuple[str, str, str],  # must be in order! [rows, cols] | [z, rows, cols]
+                      window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
+                      window_order: tuple[int, ...] = None,
+                      spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
+                      slider_dim_transforms=None,
+                      name: str = None,
+                      ):
+        nd = NDVector(
+            self.ndw.indices,
+            self._subplot,
+            data=data,
+            dims=dims,
+            spatial_dims=spatial_dims,
+            window_funcs=window_funcs,
+            window_order=window_order,
+            spatial_func=spatial_func,
+            slider_dim_transforms=slider_dim_transforms,
+            name=name
+        )
 
         self._nd_graphics.append(nd)
         return nd
