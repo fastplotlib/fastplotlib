@@ -279,7 +279,7 @@ class NDVectors(NDGraphic):
         return self._graphic
 
     @start_coroutine
-    def _create_graphic(self, **kwargs):
+    def _create_graphic(self):
         # Creates an ``ImageGraphic`` or ``ImageVolumeGraphic`` based on the number of spatial dims,
         # adds it to the subplot, and resets the camera and histogram.
 
@@ -299,7 +299,7 @@ class NDVectors(NDGraphic):
             self._subplot.delete_graphic(old_graphic)
 
         # create the new graphic
-        self._graphic = self._subplot.add_vectors(
+        self._graphic = VectorsGraphic(
             positions=data_slice[:, 0],
             directions=data_slice[:, 1],
             **self._graphic_kwargs
