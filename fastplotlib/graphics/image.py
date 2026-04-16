@@ -88,7 +88,274 @@ class _ImageTile(pygfx.Image):
         return self._chunk_index
 
 
-class ImageGraphic(Graphic):
+class ImageBase(Graphic):
+    @property
+    def cpu_buffer(self) -> bool:
+        """whether or not a cpu buffer is used for the image data. If ``False``, then the data only exist on the GPU"""
+        return self.data.cpu_buffer
+
+    @property
+    def vmin(self) -> float:
+        """lower contrast limit"""
+        return self._vmin.value
+
+    @vmin.setter
+    def vmin(self, value: float):
+        self._vmin.set_value(self, value)
+
+    @property
+    def vmax(self) -> float:
+        """upper contrast limit"""
+        return self._vmax.value
+
+    @vmax.setter
+    def vmax(self, value: float):
+        self._vmax.set_value(self, value)
+
+    @property
+    def interpolation(self) -> str:
+        """Data interpolation method"""
+        return self._interpolation.value
+
+    @interpolation.setter
+    def interpolation(self, value: str):
+        self._interpolation.set_value(self, value)
+
+    def add_linear_selector(
+        self, selection: int = None, axis: str = "x", **kwargs
+    ) -> LinearSelector:
+        """
+        Adds a :class:`.LinearSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: int, optional
+            initial position of the selector
+
+        kwargs:
+            passed to :class:`.LinearSelector`
+
+        Returns
+        -------
+        LinearSelector
+
+        """
+
+        if axis == "x":
+            limits = (0, self._data.value.shape[1])
+        elif axis == "y":
+            limits = (0, self._data.value.shape[0])
+        else:
+            raise ValueError("`axis` must be one of 'x' | 'y'")
+
+        if selection is None:
+            selection = limits[0]
+
+        if selection < limits[0] or selection > limits[1]:
+            raise ValueError(
+                f"the passed selection: {selection} is beyond the limits: {limits}"
+            )
+
+        selector = LinearSelector(
+            selection=selection,
+            limits=limits,
+            axis=axis,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        return selector
+
+    def add_linear_region_selector(
+        self,
+        selection: tuple[float, float] = None,
+        axis: str = "x",
+        padding: float = 0.0,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
+    ) -> LinearRegionSelector:
+        """
+        Add a :class:`.LinearRegionSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: (float, float)
+            initial (min, max) of the selection
+
+        axis: "x" | "y"
+            axis the selector can move along
+
+        padding: float, default 100.0
+            Extends the linear selector along the perpendicular axis to make it easier to interact with.
+
+        kwargs
+            passed to ``LinearRegionSelector``
+
+        Returns
+        -------
+        LinearRegionSelector
+
+        """
+
+        if axis == "x":
+            size = self._data.value.shape[0]
+            center = size / 2
+            limits = (0, self._data.value.shape[1])
+        elif axis == "y":
+            size = self._data.value.shape[1]
+            center = size / 2
+            limits = (0, self._data.value.shape[0])
+        else:
+            raise ValueError("`axis` must be one of 'x' | 'y'")
+
+        # default padding is 25% the height or width of the image
+        if padding is None:
+            size *= 1.25
+        else:
+            size += padding
+
+        if selection is None:
+            selection = limits[0], int(limits[1] * 0.25)
+
+        if padding is None:
+            size *= 1.25
+
+        else:
+            size += padding
+
+        selector = LinearRegionSelector(
+            selection=selection,
+            limits=limits,
+            size=size,
+            center=center,
+            axis=axis,
+            fill_color=fill_color,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        return selector
+
+    def add_rectangle_selector(
+        self,
+        selection: tuple[float, float, float, float] = None,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
+    ) -> RectangleSelector:
+        """
+        Add a :class:`.RectangleSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: (float, float, float, float), optional
+            initial (xmin, xmax, ymin, ymax) of the selection
+
+        """
+        # default selection is 25% of the diagonal
+        if selection is None:
+            diagonal = math.sqrt(
+                self._data.value.shape[0] ** 2 + self._data.value.shape[1] ** 2
+            )
+
+            selection = (0, int(diagonal / 4), 0, int(diagonal / 4))
+
+        # min/max limits are image shape
+        # rows are ys, columns are xs
+        limits = (0, self._data.value.shape[1], 0, self._data.value.shape[0])
+
+        selector = RectangleSelector(
+            selection=selection,
+            limits=limits,
+            fill_color=fill_color,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        return selector
+
+    def add_polygon_selector(
+        self,
+        selection: List[tuple[float, float]] = None,
+        fill_color=(0, 0, 0.35, 0.2),
+        **kwargs,
+    ) -> PolygonSelector:
+        """
+        Add a :class:`.PolygonSelector`.
+
+        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
+        from a plot area just like any other ``Graphic``.
+
+        Parameters
+        ----------
+        selection: list[tuple[float, float]], optional
+            Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
+
+        """
+
+        # min/max limits are image shape
+        # rows are ys, columns are xs
+        limits = (0, self._data.value.shape[1], 0, self._data.value.shape[0])
+
+        selector = PolygonSelector(
+            selection,
+            limits,
+            fill_color=fill_color,
+            parent=self,
+            **kwargs,
+        )
+
+        self._plot_area.add_graphic(selector, center=False)
+
+        return selector
+
+    def format_pick_info(self, pick_info: dict) -> str:
+        if not self.cpu_buffer:
+            if self.colorspace not in ColorspacesYUV and len(self.data.shape) == 2:
+                # inverse map from rgb pixel value to grayscale value using the colormap
+                # we can only perform a guess
+                lut = self._material.map.texture.data
+                rgb = pick_info["rgba"][:3]
+                closest = np.argmin(np.linalg.norm(lut[:, :3] - rgb, axis=1))
+                scalar = closest / (lut.shape[0] - 1)
+                val = self.vmin + scalar * (self.vmax - self.vmin)
+                return f"{val:.4g}\n!!estimate!!, cpu_buffer=False"
+            else:
+                # direct rgba vals
+                rgba_val = pick_info["rgba"]
+                info = "\n".join(
+                    f"{channel}: {val: .4g}" for channel, val in zip("rgba", rgba_val)
+                )
+                return info
+
+        col, row = pick_info["index"]
+        if self.data.value.ndim == 2:
+            val = self.data[row, col]
+            info = f"{val:.4g}"
+        else:
+            info = "\n".join(
+                f"{channel}: {val:.4g}"
+                for channel, val in zip("rgba", self.data[row, col])
+            )
+
+        return info
+
+
+class ImageGraphic(ImageBase):
     _features = {
         "data": TextureArray,
         "cmap": ImageCmap,
@@ -166,6 +433,7 @@ class ImageGraphic(Graphic):
                 precise and reliable tooltip values for grayscale data use `cpu_buffer=True`.
                 * vmin, vmax must be explicitly provided if sharing an existing buffer from another ImageGraphic
                 * ``reset_vmin_vmax()`` is not supported
+                * selector tools will not be able to return the data under the selection
 
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
@@ -183,7 +451,9 @@ class ImageGraphic(Graphic):
         else:
             # create new texture array to manage buffer
             # texture array that manages the multiple textures on the GPU that represent this image
-            self._data = TextureArray(data, cpu_buffer)
+            self._data = TextureArray(
+                data, colorspace=colorspace, cpu_buffer=cpu_buffer
+            )
 
         if (vmin is None) or (vmax is None) and data is not None:
             _vmin, _vmax = quick_min_max(self.data.value)
@@ -193,7 +463,9 @@ class ImageGraphic(Graphic):
                 vmax = _vmax
         else:
             # this is a shared buffer and we don't have access to the actual data from here
-            raise ValueError("must provide vmin, vmax if sharing a buffer that does not exist locally")
+            raise ValueError(
+                "must provide vmin, vmax if sharing a buffer that does not exist locally"
+            )
 
         # other graphic features
         self._vmin = ImageVmin(vmin)
@@ -256,11 +528,6 @@ class ImageGraphic(Graphic):
             tiles.append(img)
 
         return tiles
-
-    @property
-    def cpu_buffer(self) -> bool:
-        """whether or not a cpu buffer is used for the image data. If ``False``, then the data only exist on the GPU"""
-        return self.data.cpu_buffer
 
     @property
     def data(self) -> TextureArray:
@@ -338,33 +605,6 @@ class ImageGraphic(Graphic):
         self._cmap.set_value(self, name)
 
     @property
-    def vmin(self) -> float:
-        """lower contrast limit"""
-        return self._vmin.value
-
-    @vmin.setter
-    def vmin(self, value: float):
-        self._vmin.set_value(self, value)
-
-    @property
-    def vmax(self) -> float:
-        """upper contrast limit"""
-        return self._vmax.value
-
-    @vmax.setter
-    def vmax(self, value: float):
-        self._vmax.set_value(self, value)
-
-    @property
-    def interpolation(self) -> str:
-        """Data interpolation method"""
-        return self._interpolation.value
-
-    @interpolation.setter
-    def interpolation(self, value: str):
-        self._interpolation.set_value(self, value)
-
-    @property
     def cmap_interpolation(self) -> str:
         """cmap interpolation method, 'linear' or 'nearest'. Used only for grayscale images"""
         return self._cmap_interpolation.value
@@ -384,240 +624,8 @@ class ImageGraphic(Graphic):
         self.vmin = vmin
         self.vmax = vmax
 
-    def add_linear_selector(
-            self, selection: int = None, axis: str = "x", **kwargs
-    ) -> LinearSelector:
-        """
-        Adds a :class:`.LinearSelector`.
 
-        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
-        from a plot area just like any other ``Graphic``.
-
-        Parameters
-        ----------
-        selection: int, optional
-            initial position of the selector
-
-        kwargs:
-            passed to :class:`.LinearSelector`
-
-        Returns
-        -------
-        LinearSelector
-
-        """
-
-        if axis == "x":
-            limits = (0, self._data.value.shape[1])
-        elif axis == "y":
-            limits = (0, self._data.value.shape[0])
-        else:
-            raise ValueError("`axis` must be one of 'x' | 'y'")
-
-        if selection is None:
-            selection = limits[0]
-
-        if selection < limits[0] or selection > limits[1]:
-            raise ValueError(
-                f"the passed selection: {selection} is beyond the limits: {limits}"
-            )
-
-        selector = LinearSelector(
-            selection=selection,
-            limits=limits,
-            axis=axis,
-            parent=self,
-            **kwargs,
-        )
-
-        self._plot_area.add_graphic(selector, center=False)
-
-        return selector
-
-    def add_linear_region_selector(
-            self,
-            selection: tuple[float, float] = None,
-            axis: str = "x",
-            padding: float = 0.0,
-            fill_color=(0, 0, 0.35, 0.2),
-            **kwargs,
-    ) -> LinearRegionSelector:
-        """
-        Add a :class:`.LinearRegionSelector`.
-
-        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
-        from a plot area just like any other ``Graphic``.
-
-        Parameters
-        ----------
-        selection: (float, float)
-            initial (min, max) of the selection
-
-        axis: "x" | "y"
-            axis the selector can move along
-
-        padding: float, default 100.0
-            Extends the linear selector along the perpendicular axis to make it easier to interact with.
-
-        kwargs
-            passed to ``LinearRegionSelector``
-
-        Returns
-        -------
-        LinearRegionSelector
-
-        """
-
-        if axis == "x":
-            size = self._data.value.shape[0]
-            center = size / 2
-            limits = (0, self._data.value.shape[1])
-        elif axis == "y":
-            size = self._data.value.shape[1]
-            center = size / 2
-            limits = (0, self._data.value.shape[0])
-        else:
-            raise ValueError("`axis` must be one of 'x' | 'y'")
-
-        # default padding is 25% the height or width of the image
-        if padding is None:
-            size *= 1.25
-        else:
-            size += padding
-
-        if selection is None:
-            selection = limits[0], int(limits[1] * 0.25)
-
-        if padding is None:
-            size *= 1.25
-
-        else:
-            size += padding
-
-        selector = LinearRegionSelector(
-            selection=selection,
-            limits=limits,
-            size=size,
-            center=center,
-            axis=axis,
-            fill_color=fill_color,
-            parent=self,
-            **kwargs,
-        )
-
-        self._plot_area.add_graphic(selector, center=False)
-
-        return selector
-
-    def add_rectangle_selector(
-            self,
-            selection: tuple[float, float, float, float] = None,
-            fill_color=(0, 0, 0.35, 0.2),
-            **kwargs,
-    ) -> RectangleSelector:
-        """
-        Add a :class:`.RectangleSelector`.
-
-        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
-        from a plot area just like any other ``Graphic``.
-
-        Parameters
-        ----------
-        selection: (float, float, float, float), optional
-            initial (xmin, xmax, ymin, ymax) of the selection
-
-        """
-        # default selection is 25% of the diagonal
-        if selection is None:
-            diagonal = math.sqrt(
-                self._data.value.shape[0] ** 2 + self._data.value.shape[1] ** 2
-            )
-
-            selection = (0, int(diagonal / 4), 0, int(diagonal / 4))
-
-        # min/max limits are image shape
-        # rows are ys, columns are xs
-        limits = (0, self._data.value.shape[1], 0, self._data.value.shape[0])
-
-        selector = RectangleSelector(
-            selection=selection,
-            limits=limits,
-            fill_color=fill_color,
-            parent=self,
-            **kwargs,
-        )
-
-        self._plot_area.add_graphic(selector, center=False)
-
-        return selector
-
-    def add_polygon_selector(
-            self,
-            selection: List[tuple[float, float]] = None,
-            fill_color=(0, 0, 0.35, 0.2),
-            **kwargs,
-    ) -> PolygonSelector:
-        """
-        Add a :class:`.PolygonSelector`.
-
-        Selectors are just ``Graphic`` objects, so you can manage, remove, or delete them
-        from a plot area just like any other ``Graphic``.
-
-        Parameters
-        ----------
-        selection: list[tuple[float, float]], optional
-            Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
-
-        """
-
-        # min/max limits are image shape
-        # rows are ys, columns are xs
-        limits = (0, self._data.value.shape[1], 0, self._data.value.shape[0])
-
-        selector = PolygonSelector(
-            selection,
-            limits,
-            fill_color=fill_color,
-            parent=self,
-            **kwargs,
-        )
-
-        self._plot_area.add_graphic(selector, center=False)
-
-        return selector
-
-    def format_pick_info(self, pick_info: dict) -> str:
-        if not self.cpu_buffer:
-            if self.data.colorspace != "yuv420p" and len(self.data.shape) == 2:
-                # inverse map from rgb pixel value to grayscale value using the colormap
-                # we can only perform a guess
-                lut = self._material.map.texture.data
-                rgb = pick_info["rgba"][:3]
-                closest = np.argmin(np.linalg.norm(lut[:, :3] - rgb, axis=1))
-                scalar = closest / (lut.shape[0] - 1)
-                val = self.vmin + scalar * (self.vmax - self.vmin)
-                return f"{val:.4g}\n!!estimate!!, cpu_buffer=False"
-            else:
-                # rgba vals
-                rgba_val = pick_info["rgba"]
-                info = "\n".join(
-                    f"{channel}: {val: .4g}" for channel, val in zip("rgba", rgba_val)
-                )
-                return info
-
-        col, row = pick_info["index"]
-        if self.data.value.ndim == 2:
-            val = self.data[row, col]
-            info = f"{val:.4g}"
-        else:
-            info = "\n".join(
-                f"{channel}: {val:.4g}"
-                for channel, val in zip("rgba", self.data[row, col])
-            )
-
-        return info
-
-class ImageYUVGraphic(ImageGraphic):
+class ImageYUVGraphic(ImageBase):
     _features = {
         "data": TextureYUV,
         "vmin": ImageVmin,
@@ -703,7 +711,7 @@ class ImageYUVGraphic(ImageGraphic):
             # share buffer
             self._data = data
         else:
-            self._data = TextureYUV(data, colorspace)
+            self._data = TextureYUV(data, colorspace=colorspace)
 
         self._vmin = ImageVmin(vmin)
         self._vmax = ImageVmax(vmax)
@@ -711,9 +719,7 @@ class ImageYUVGraphic(ImageGraphic):
         self._interpolation = ImageInterpolation(interpolation)
 
         self._material = pygfx.ImageBasicMaterial(
-            clim=(vmin, vmax),
-            interpolation=self.interpolation.value,
-            pick_write=True
+            clim=(vmin, vmax), interpolation=self.interpolation, pick_write=True
         )
 
         wo = pygfx.Image(

@@ -1,7 +1,7 @@
 from ._base import Graphic
 from .line import LineGraphic
 from .scatter import ScatterGraphic
-from .image import ImageGraphic
+from .image import ImageGraphic, ImageYUVGraphic
 from .image_volume import ImageVolumeGraphic
 from ._vectors import VectorsGraphic
 from .mesh import MeshGraphic, SurfaceGraphic, PolygonGraphic
@@ -14,6 +14,7 @@ __all__ = [
     "LineGraphic",
     "ScatterGraphic",
     "ImageGraphic",
+    "ImageYUVGraphic",
     "ImageVolumeGraphic",
     "VectorsGraphic",
     "MeshGraphic",

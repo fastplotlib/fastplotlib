@@ -77,7 +77,6 @@ class TextureArray(GraphicFeature):
 
             self._shape = data.shape
 
-
         # data start indices for each Texture
         self._row_indices = np.arange(
             0,
@@ -323,6 +322,10 @@ class TextureYUV(GraphicFeature):
         self._send_data(data)
 
     @property
+    def cpu_buffer(self) -> Literal[False]:
+        return False
+
+    @property
     def texture(self) -> pygfx.Texture:
         return self._texture
 
@@ -344,7 +347,7 @@ class TextureYUV(GraphicFeature):
             depth = 3
 
         self._texture = pygfx.Texture(
-            (self._w, self._h, depth),
+            size=(self._w, self._h, depth),
             dim=2,
             colorspace=self.colorspace.value,
             colorrange=self.colorrange.value,
@@ -400,17 +403,19 @@ class TextureYUV(GraphicFeature):
         if self.colorspace == ColorspacesYUV.yuv420p:
             err += (
                 f"For {self.colorspace} UV channels must be 4x smaller than Y. "
-                f"You provided shapes: {(d.shape for d in data)}"
+                f"You provided shapes: {tuple(d.shape for d in data)}"
             )
             shapes = tuple(np.asarray(d.shape) for d in data)
-            expected_uv_shape = shapes[0] // 4
-            if shapes[1] != expected_uv_shape or shapes[2] != expected_uv_shape:
+            expected_uv_shape = shapes[0] // 2
+            if (shapes[1] != expected_uv_shape).all() or (
+                shapes[2] != expected_uv_shape
+            ).all():
                 raise ValueError(err)
 
         else:
             err += (
                 f"For {self.colorspace} UV channels must be the same size as Y"
-                f"You provided shapes: {(d.shape for d in data)}"
+                f"You provided shapes: {tuple(d.shape for d in data)}"
             )
 
             if data[0].shape != data[1].shape or data[0].shape != data[2].shape:

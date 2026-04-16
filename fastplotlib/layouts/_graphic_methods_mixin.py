@@ -8,6 +8,8 @@ import pygfx
 
 from ..graphics import *
 from ..graphics._base import Graphic
+import typing
+import fastplotlib
 
 
 class GraphicMethodsMixin:
@@ -33,11 +35,13 @@ class GraphicMethodsMixin:
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
+        colorspace: fastplotlib.utils.enums.ColorspacesRGB = "srgb",
+        cpu_buffer: bool = True,
         **kwargs
     ) -> ImageGraphic:
         """
 
-        Create an Image Graphic
+        Create an ImageGraphic
 
         Parameters
         ----------
@@ -61,6 +65,38 @@ class GraphicMethodsMixin:
         cmap_interpolation: str, optional, default "linear"
             colormap interpolation method, one of "nearest" or "linear"
 
+        colorspace: one of "srgb", "tex-srgb", "physical", default "srgb"
+            colorspace in which to interpret the provided data.
+
+                * "srgb": the data represents intensity, rgb, or rgba pixels in the sRGB space.
+                  sRGB is a standard color space designed for consistent representation of colors
+                  across devices like monitors. Most images store colors in this space.
+                  The shader convers sRGB colors to physical in the shader before doing color computations.
+
+                * "tex-srgb": the underlying texture will be of an sRGB format. This means the data
+                  is automatically converted to sRGB when it is sampled. This results in better glTF
+                  compliance (because interpolation in the sampling happens in linear space).
+                  Note that sampling *always* results in the sRGB values, also when not interpreted as color.
+                  Only supported for rgb and rgba data.
+
+                * "physical": the colors are (already) in the physical / linear space, where lighting
+                  calculations can be applied. Shader code that interprets the data as color will use it as-is.
+
+        cpu_buffer: bool, default True
+            If ``True``, maintains a buffer of system RAM that is sychronized with a corresponding storage buffer
+            on the GPU.
+            If ``False``, setting the graphic data will send the new data directly to the GPU, we also
+            call this "bufferless". This is much faster but lacks the following features:
+                * you must update the entire data array, i.e. you can perform ``image.data = new_data``, and you
+                cannot perform partial updates such as ``image.data[indices] = <new_data_at_indices>``.
+                * RGB arrays of shape [rows, cols, 3] are not supported since wgpu does not have RGB textures,
+                use RGBA or use `cpu_buffer=True` if you really need RGB instead of RGBA.
+                * tooltip values for grayscale data are estimated using an inverse transforms on the colormap LUT.
+                The tooltip values may or may not be accurate for a given colormap and vmin, vmax. If you require
+                precise and reliable tooltip values for grayscale data use `cpu_buffer=True`.
+                * vmin, vmax must be explicitly provided if sharing an existing buffer from another ImageGraphic
+                * ``reset_vmin_vmax()`` is not supported
+
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
 
@@ -74,6 +110,8 @@ class GraphicMethodsMixin:
             cmap,
             interpolation,
             cmap_interpolation,
+            colorspace,
+            cpu_buffer,
             **kwargs
         )
 
@@ -169,6 +207,98 @@ class GraphicMethodsMixin:
             substep_size,
             emissive,
             shininess,
+            **kwargs
+        )
+
+    def add_image_yuv(
+        self,
+        data: (
+            tuple[
+                numpy.ndarray[tuple[typing.Any, ...], numpy.dtype[numpy.uint8]],
+                numpy.ndarray[tuple[typing.Any, ...], numpy.dtype[numpy.uint8]],
+                numpy.ndarray[tuple[typing.Any, ...], numpy.dtype[numpy.uint8]],
+            ]
+            | fastplotlib.graphics.features._image.TextureYUV
+        ),
+        vmin: float = 0,
+        vmax: float = 255,
+        interpolation: str = "nearest",
+        colorspace: fastplotlib.utils.enums.ColorspacesYUV = "yuv420p",
+        colorrange: fastplotlib.utils.enums.ColorRange = "limited",
+        **kwargs
+    ) -> ImageYUVGraphic:
+        """
+
+        Create an ImageYUVGraphic. Similar to ImageGraphic but handles data that is in yuv42p or yuv444p colorspace.
+
+        Note that the buffers for YUV Images only exist on the GPU. When setting the image data, the new values are
+        directly sent to the GPU.
+
+        ``reset_vmin_vmax()`` just sets (vmin, vmax) to (0, 255)
+
+        Parameters
+        ----------
+        data: TupleYUV
+            tuple of arrays that represent YUV channels. If the colorspace is yuv420p, the U and V array dims
+            must be 4 times smaller than the Y array dims.
+
+        vmin: float, optional, default 0
+            minimum value for color scaling
+
+        vmax: float, optional, default 255
+            maximum value for color scaling
+
+        interpolation: str, optional, default "nearest"
+            interpolation filter, one of "nearest" or "linear"
+
+        colorspace: "yuv42p" | "yuv444p"
+            colorspace in which to interpret the provided data.
+
+                * "yuv420p": A common video format. The data is represented as 3 planes (y, u, and v).
+                  The y represents intensity, and is at full resolution. The u and v planes are a
+                  quarter of the size.
+
+                * "yuv444p": A lesser common video format. The data is represented as 3 planes
+                  (y, u, and v) similar to yuv420p however the u and v planes are stored
+                  at full resolution.
+
+        colorrange: Literal["full", "limited"] = "limited",
+            Relevant for yuv colorspaces. Most videos use "limited".
+
+            * "limited": The luma plane (Y) is limited to the range of 16-235 for 8 bits.
+                         The chroma planes (U and V) are limited to the range of 16-240 for 8 bits
+            * "full": The luma plane and chroma plane use the full range of the storage format.
+
+            See the following links from the FFMPEG documentation for more details:
+            https://trac.ffmpeg.org/wiki/colorspace
+            https://ffmpeg.org/doxygen/7.0/pixfmt_8h_source.html#l00609
+
+        cpu_buffer: bool, default True
+            If ``True``, maintains a buffer of system RAM that is sychronized with a corresponding storage buffer
+            on the GPU.
+            If ``False``, setting the graphic data will send the new data directly to the GPU, we also
+            call this "bufferless". This is much faster but lacks the following features:
+                * you must update the entire data array, i.e. you can perform ``image.data = new_data``, and you
+                cannot perform partial updates such as ``image.data[indices] = <new_data_at_indices>``.
+                * RGB arrays of shape [rows, cols, 3] are not supported since wgpu does not have RGB textures,
+                use RGBA or use `cpu_buffer=True` if you really need RGB instead of RGBA.
+                * tooltip values for grayscale data are estimated using an inverse transforms on the colormap LUT.
+                The tooltip values may or may not be accurate for a given colormap and vmin, vmax. If you require
+                precise and reliable tooltip values for grayscale data use `cpu_buffer=True`.
+
+        kwargs:
+            additional keyword arguments passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            ImageYUVGraphic,
+            data,
+            vmin,
+            vmax,
+            interpolation,
+            colorspace,
+            colorrange,
             **kwargs
         )
 
