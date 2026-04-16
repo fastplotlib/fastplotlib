@@ -5,7 +5,7 @@ import numpy as np
 import pygfx
 from pygfx import Texture
 
-from ..utils import quick_min_max
+from ..utils import quick_min_max, ColorspacesRGB, ColorspacesYUV, ColorRange
 from ._base import Graphic
 from .selectors import (
     LinearSelector,
@@ -15,6 +15,8 @@ from .selectors import (
 )
 from .features import (
     TextureArray,
+    TextureYUV,
+    TupleYUV,
     ImageCmap,
     ImageVmin,
     ImageVmax,
@@ -104,21 +106,17 @@ class ImageGraphic(Graphic):
         cmap: str = "plasma",
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
-        colorspace: Literal[
-            "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
-        ] = "srgb",
-        colorrange: Literal["full", "limited"] = "full",
+        colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
         **kwargs,
     ):
         """
-        Create an Image Graphic
+        Create an ImageGraphic
 
         Parameters
         ----------
         data: array-like
             array-like, usually numpy.ndarray, must support ``memoryview()``
-            # TODO: update this, and also allow tuple/list of arrays for yuv420p
             | shape must be ``[n_rows, n_cols]``, ``[n_rows, n_cols, 3]`` for RGB or ``[n_rows, n_cols, 4]`` for RGBA
 
         vmin: float, optional
@@ -137,7 +135,7 @@ class ImageGraphic(Graphic):
         cmap_interpolation: str, optional, default "linear"
             colormap interpolation method, one of "nearest" or "linear"
 
-        colorspace: one of "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p", default "srgb"
+        colorspace: one of "srgb", "tex-srgb", "physical", default "srgb"
             colorspace in which to interpret the provided data.
 
                 * "srgb": the data represents intensity, rgb, or rgba pixels in the sRGB space.
@@ -154,47 +152,6 @@ class ImageGraphic(Graphic):
                 * "physical": the colors are (already) in the physical / linear space, where lighting
                   calculations can be applied. Shader code that interprets the data as color will use it as-is.
 
-                * "yuv420p": A common video format. The data is represented as 3 planes (y, u, and v).
-                  The y represents intensity, and is at full resolution. The u and v planes are a
-                  quarter of the size. data must be a 2D array which packs y, u and v:
-
-                    ======
-                    | y  |
-                    | .  |
-                    | .  |
-                    | .  |
-                    ------
-                    | u  |
-                    ------
-                    | v  |
-                    ======
-
-                  This is the same as the packed array structure that pyav provides when reading video in as yuv420p.
-
-                  If the data represents an image with width and height (w, h), then the packed data array must be of
-                  shape: [w, h * 3 // 2].
-
-                  # TODO: You can also provide a tuple of arrays to data: (y, u, v)
-
-                  For more info see: https://docs.pygfx.org/stable/_gallery/feature_demo/video_yuv.html
-                  and https://github.com/pygfx/pygfx/pull/873
-
-
-                * "yuv444p": A lesser common video format. The data is represented as 3 planes
-                  (y, u, and v) similar to yuv420p however the u and v planes are stored
-                  at full resolution.
-
-        colorrange: Literal["full", "limited"] = "limited",
-            Relevant for yuv colorspaces. Most videos use "limited".
-
-            * "limited": The luma plane (Y) is limited to the range of 16-235 for 8 bits.
-                         The chroma planes (U and V) are limited to the range of 16-240 for 8 bits
-            * "full": The luma plane and chroma plane use the full range of the storage format.
-
-            See the following links from the FFMPEG documentation for more details:
-            https://trac.ffmpeg.org/wiki/colorspace
-            https://ffmpeg.org/doxygen/7.0/pixfmt_8h_source.html#l00609
-
         cpu_buffer: bool, default True
             If ``True``, maintains a buffer of system RAM that is sychronized with a corresponding storage buffer
             on the GPU.
@@ -207,6 +164,8 @@ class ImageGraphic(Graphic):
                 * tooltip values for grayscale data are estimated using an inverse transforms on the colormap LUT.
                 The tooltip values may or may not be accurate for a given colormap and vmin, vmax. If you require
                 precise and reliable tooltip values for grayscale data use `cpu_buffer=True`.
+                * vmin, vmax must be explicitly provided if sharing an existing buffer from another ImageGraphic
+                * ``reset_vmin_vmax()`` is not supported
 
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
@@ -217,32 +176,24 @@ class ImageGraphic(Graphic):
 
         group = pygfx.Group()
 
-        self._colorspace = colorspace
-        self._colorrange = colorrange
-
         if isinstance(data, TextureArray):
             # share buffer
             self._data = data
+            data = self._data.value
         else:
             # create new texture array to manage buffer
             # texture array that manages the multiple textures on the GPU that represent this image
-            self._data = TextureArray(
-                data,
-                cpu_buffer=cpu_buffer,
-                colorspace=colorspace,
-                colorrange=colorrange,
-            )
+            self._data = TextureArray(data, cpu_buffer)
 
-        if isinstance(data, (tuple, list)):
-            # unpacked yuv
-            data = data[0]
-
-        if (vmin is None) or (vmax is None):
-            _vmin, _vmax = quick_min_max(data)
+        if (vmin is None) or (vmax is None) and data is not None:
+            _vmin, _vmax = quick_min_max(self.data.value)
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
                 vmax = _vmax
+        else:
+            # this is a shared buffer and we don't have access to the actual data from here
+            raise ValueError("must provide vmin, vmax if sharing a buffer that does not exist locally")
 
         # other graphic features
         self._vmin = ImageVmin(vmin)
@@ -251,11 +202,12 @@ class ImageGraphic(Graphic):
         self._interpolation = ImageInterpolation(interpolation)
         self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
-        # cmap only used for grayscale images
-        self._cmap = None
-        _map = None
+        # set map to None for RGB images
+        if len(self.data.shape) == 3:
+            self._cmap = None
+            _map = None
 
-        if data.ndim == 2 and colorspace != "yuv420p":
+        else:
             # use TextureMap for grayscale images
             self._cmap = ImageCmap(cmap)
 
@@ -306,40 +258,39 @@ class ImageGraphic(Graphic):
         return tiles
 
     @property
+    def cpu_buffer(self) -> bool:
+        """whether or not a cpu buffer is used for the image data. If ``False``, then the data only exist on the GPU"""
+        return self.data.cpu_buffer
+
+    @property
     def data(self) -> TextureArray:
         """
         Get or set the image data.
 
         Note that if the shape of the new data array does not equal the shape of
         current data array, a new set of GPU Textures are automatically created.
-        This can have performance drawbacks when you have a very large image.
+        This can have performance drawbacks when you have a ver large images.
         This is usually fine as long as you don't need to do it hundreds of times
         per second.
         """
         return self._data
 
     @data.setter
-    def data(self, new_data):
-        if isinstance(new_data, np.ndarray):
+    def data(self, data):
+        if isinstance(data, np.ndarray):
             # check if a new buffer is required
-            if self._data.shape != new_data.shape:
+            if self._data.value.shape != data.shape:
                 # create new TextureArray
-                self._data = TextureArray(
-                    new_data,
-                    cpu_buffer=self.cpu_buffer,
-                    colorspace=self.colorspace,
-                    colorrange=self.colorrange,
-                )
+                self._data = TextureArray(data)
 
-                # see if the new texture data needs a cmap
-                if len(self._data.shape) == 3 and self._data.colorspace != "yuv420p":
-                    # set cmap to None since data is not grayscale
+                # cmap based on if rgb or grayscale
+                if self._data.value.ndim > 2:
                     self._cmap = None
+
+                    # must be None if RGB(A)
                     self._material.map = None
                 else:
-                    if (
-                        self.cmap is None
-                    ):  # have switched from non-grayscale -> grayscale image
+                    if self.cmap is None:  # have switched from RGBA -> grayscale image
                         # create default cmap
                         self._cmap = ImageCmap("plasma")
                         self._material.map = pygfx.TextureMap(
@@ -363,23 +314,12 @@ class ImageGraphic(Graphic):
 
                 return
 
-        self._data.set_value(self, new_data)
+        self._data[:] = data
 
     @property
-    def cpu_buffer(self) -> bool:
-        return self.data.cpu_buffer
-
-    @property
-    def colorspace(
-        self,
-    ) -> Literal["srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"]:
-        """colorspace, read-only property"""
+    def colorspace(self) -> ColorspacesRGB:
+        """The image's colorspace"""
         return self.data.colorspace
-
-    @property
-    def colorrange(self) -> Literal["full", "limited"]:
-        """colorrange, read-only property"""
-        return self.data.colorrange
 
     @property
     def cmap(self) -> str | None:
@@ -393,9 +333,8 @@ class ImageGraphic(Graphic):
 
     @cmap.setter
     def cmap(self, name: str):
-        if len(self.data.shape) > 2:
-            raise AttributeError("cmap is only supported for grayscale images")
-
+        if self.data.value.ndim > 2:
+            raise AttributeError("RGB(A) images do not have a colormap property")
         self._cmap.set_value(self, name)
 
     @property
@@ -438,15 +377,15 @@ class ImageGraphic(Graphic):
         """
         Reset the vmin, vmax by estimating it from the data by subsampling.
         """
-        if not self.cpu_buffer:
-            return
+        if self.data.value is None:
+            raise NotImplemented("Cannot reset vmin, vmax if `cpu_buffer=False`")
 
         vmin, vmax = quick_min_max(self._data.value)
         self.vmin = vmin
         self.vmax = vmax
 
     def add_linear_selector(
-        self, selection: int = None, axis: str = "x", **kwargs
+            self, selection: int = None, axis: str = "x", **kwargs
     ) -> LinearSelector:
         """
         Adds a :class:`.LinearSelector`.
@@ -496,12 +435,12 @@ class ImageGraphic(Graphic):
         return selector
 
     def add_linear_region_selector(
-        self,
-        selection: tuple[float, float] = None,
-        axis: str = "x",
-        padding: float = 0.0,
-        fill_color=(0, 0, 0.35, 0.2),
-        **kwargs,
+            self,
+            selection: tuple[float, float] = None,
+            axis: str = "x",
+            padding: float = 0.0,
+            fill_color=(0, 0, 0.35, 0.2),
+            **kwargs,
     ) -> LinearRegionSelector:
         """
         Add a :class:`.LinearRegionSelector`.
@@ -571,10 +510,10 @@ class ImageGraphic(Graphic):
         return selector
 
     def add_rectangle_selector(
-        self,
-        selection: tuple[float, float, float, float] = None,
-        fill_color=(0, 0, 0.35, 0.2),
-        **kwargs,
+            self,
+            selection: tuple[float, float, float, float] = None,
+            fill_color=(0, 0, 0.35, 0.2),
+            **kwargs,
     ) -> RectangleSelector:
         """
         Add a :class:`.RectangleSelector`.
@@ -613,10 +552,10 @@ class ImageGraphic(Graphic):
         return selector
 
     def add_polygon_selector(
-        self,
-        selection: List[tuple[float, float]] = None,
-        fill_color=(0, 0, 0.35, 0.2),
-        **kwargs,
+            self,
+            selection: List[tuple[float, float]] = None,
+            fill_color=(0, 0, 0.35, 0.2),
+            **kwargs,
     ) -> PolygonSelector:
         """
         Add a :class:`.PolygonSelector`.
@@ -677,3 +616,140 @@ class ImageGraphic(Graphic):
             )
 
         return info
+
+class ImageYUVGraphic(ImageGraphic):
+    _features = {
+        "data": TextureYUV,
+        "vmin": ImageVmin,
+        "vmax": ImageVmax,
+        "interpolation": ImageInterpolation,
+    }
+
+    def __init__(
+        self,
+        data: TupleYUV | TextureYUV,
+        vmin: float = 0,
+        vmax: float = 255,
+        interpolation: str = "nearest",
+        colorspace: ColorspacesYUV = "yuv420p",
+        colorrange: ColorRange = "limited",
+        **kwargs,
+    ):
+        """
+        Create an ImageYUVGraphic. Similar to ImageGraphic but handles data that is in yuv42p or yuv444p colorspace.
+
+        Note that the buffers for YUV Images only exist on the GPU. When setting the image data, the new values are
+        directly sent to the GPU.
+
+        ``reset_vmin_vmax()`` just sets (vmin, vmax) to (0, 255)
+
+        Parameters
+        ----------
+        data: TupleYUV
+            tuple of arrays that represent YUV channels. If the colorspace is yuv420p, the U and V array dims
+            must be 4 times smaller than the Y array dims.
+
+        vmin: float, optional, default 0
+            minimum value for color scaling
+
+        vmax: float, optional, default 255
+            maximum value for color scaling
+
+        interpolation: str, optional, default "nearest"
+            interpolation filter, one of "nearest" or "linear"
+
+        colorspace: "yuv42p" | "yuv444p"
+            colorspace in which to interpret the provided data.
+
+                * "yuv420p": A common video format. The data is represented as 3 planes (y, u, and v).
+                  The y represents intensity, and is at full resolution. The u and v planes are a
+                  quarter of the size.
+
+                * "yuv444p": A lesser common video format. The data is represented as 3 planes
+                  (y, u, and v) similar to yuv420p however the u and v planes are stored
+                  at full resolution.
+
+        colorrange: Literal["full", "limited"] = "limited",
+            Relevant for yuv colorspaces. Most videos use "limited".
+
+            * "limited": The luma plane (Y) is limited to the range of 16-235 for 8 bits.
+                         The chroma planes (U and V) are limited to the range of 16-240 for 8 bits
+            * "full": The luma plane and chroma plane use the full range of the storage format.
+
+            See the following links from the FFMPEG documentation for more details:
+            https://trac.ffmpeg.org/wiki/colorspace
+            https://ffmpeg.org/doxygen/7.0/pixfmt_8h_source.html#l00609
+
+        cpu_buffer: bool, default True
+            If ``True``, maintains a buffer of system RAM that is sychronized with a corresponding storage buffer
+            on the GPU.
+            If ``False``, setting the graphic data will send the new data directly to the GPU, we also
+            call this "bufferless". This is much faster but lacks the following features:
+                * you must update the entire data array, i.e. you can perform ``image.data = new_data``, and you
+                cannot perform partial updates such as ``image.data[indices] = <new_data_at_indices>``.
+                * RGB arrays of shape [rows, cols, 3] are not supported since wgpu does not have RGB textures,
+                use RGBA or use `cpu_buffer=True` if you really need RGB instead of RGBA.
+                * tooltip values for grayscale data are estimated using an inverse transforms on the colormap LUT.
+                The tooltip values may or may not be accurate for a given colormap and vmin, vmax. If you require
+                precise and reliable tooltip values for grayscale data use `cpu_buffer=True`.
+
+        kwargs:
+            additional keyword arguments passed to :class:`.Graphic`
+
+        """
+        super().__init__(**kwargs)
+
+        if isinstance(data, TextureYUV):
+            # share buffer
+            self._data = data
+        else:
+            self._data = TextureYUV(data, colorspace)
+
+        self._vmin = ImageVmin(vmin)
+        self._vmax = ImageVmax(vmax)
+
+        self._interpolation = ImageInterpolation(interpolation)
+
+        self._material = pygfx.ImageBasicMaterial(
+            clim=(vmin, vmax),
+            interpolation=self.interpolation.value,
+            pick_write=True
+        )
+
+        wo = pygfx.Image(
+            geometry=pygfx.Geometry(grid=self.data._texture),
+            material=self._material,
+        )
+
+        self._set_world_object(wo)
+
+    @property
+    def data(self) -> TextureYUV:
+        """
+        YUV Texture data, note that no local buffer exists for YUV images, you can only set values but not get them
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data):
+        self.data.set_value(self, data)
+
+    @property
+    def colorspace(self) -> ColorspacesYUV:
+        """image's colorspace"""
+        return self.data.colorspace
+
+    @property
+    def colorrange(self) -> ColorRange:
+        return self.data.colorrange
+
+    @property
+    def cmap(self):
+        raise NotImplemented("YUV images don't have a cmap")
+
+    @property
+    def cmap_interpolation(self):
+        raise NotRequired("YUV images don't have a cmap")
+
+    def reset_vmin_vmax(self):
+        self.vmin, self.vmax = 0, 255
