@@ -279,7 +279,7 @@ class TextureArray(GraphicFeature):
 
 class TextureYUV(GraphicFeature):
     """
-    Manages a YUV texture, no chunking
+    Manages a YUV texture, no chunking, no local buffer
     """
 
     event_info_spec = [
@@ -335,6 +335,8 @@ class TextureYUV(GraphicFeature):
         return self._colorrange
 
     def _allocate_texture(self, data: TupleYUV):
+        """Create a new pygfx.Texture"""
+
         self._h, self._w = data[0].shape
         if self.colorspace == ColorspacesYUV.yuv420p:
             depth = 2
@@ -351,6 +353,7 @@ class TextureYUV(GraphicFeature):
         )
 
     def _send_data(self, data):
+        """send the data to the GPU"""
         y, u, v = data
 
         self._texture.send_data((0, 0, 0), y)
