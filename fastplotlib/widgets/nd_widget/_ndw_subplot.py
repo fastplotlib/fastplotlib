@@ -94,6 +94,7 @@ class NDWSubplot:
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_dim_transforms=None,
         name: str = None,
+        **kwargs
     ) -> NDVectors:
         nd = NDVectors(
             self.ndw.indices,
@@ -106,6 +107,7 @@ class NDWSubplot:
             spatial_func=spatial_func,
             slider_dim_transforms=slider_dim_transforms,
             name=name,
+            **kwargs
         )
 
         self._nd_graphics.append(nd)

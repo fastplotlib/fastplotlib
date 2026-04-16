@@ -180,6 +180,7 @@ class NDVectors(NDGraphic):
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_dim_transforms=None,
         name: str = None,
+        **kwargs
     ):
         """
         ``NDGraphic`` subclass for n-dimensional vector rendering
@@ -258,7 +259,7 @@ class NDVectors(NDGraphic):
         self._graphic: VectorsGraphic | None = None
 
         # create a graphic
-        self._create_graphic()
+        self._create_graphic(**kwargs)
 
     @property
     def processor(self) -> NDVectorsProcessor:
@@ -273,7 +274,7 @@ class NDVectors(NDGraphic):
         return self._graphic
 
     @start_coroutine
-    def _create_graphic(self):
+    def _create_graphic(self, **kwargs):
         # Creates an ``ImageGraphic`` or ``ImageVolumeGraphic`` based on the number of spatial dims,
         # adds it to the subplot, and resets the camera and histogram.
 
@@ -294,7 +295,7 @@ class NDVectors(NDGraphic):
 
         # create the new graphic
         self._graphic = self._subplot.add_vectors(
-            positions=data_slice[:, 0], directions=data_slice[:, 1]
+            positions=data_slice[:, 0], directions=data_slice[:, 1], **kwargs
         )
 
         self._subplot.add_graphic(self._graphic)
