@@ -10,6 +10,9 @@ at full resolution.
 YUV is also called YCbCr for digital images.
 
 For more info: https://en.wikipedia.org/wiki/Y%E2%80%B2UV
+
+You can see the slight differences between yuv420 and yuv444 if you zoom into parts of the image where colors change
+rapidly over space, such as the astronaut's patch.
 """
 
 # test_example = true
@@ -25,15 +28,23 @@ img = iio.imread("imageio:astronaut.png")
 img_yuv = rgb2ycbcr(img).astype(np.uint8)
 
 y = img_yuv[..., 0]
-u = img_yuv[::2, ::2, 1]
-v = img_yuv[::2, ::2, 2]
+u = img_yuv[..., 1]
+v = img_yuv[..., 2]
 
-figure = fpl.Figure(size=(700, 560))
-
-# plot the image data
-image = figure[0, 0].add_image_yuv(
-    data=(y, u, v), colorspace="yuv420p", name="yuv image"
+figure = fpl.Figure(
+    shape=(1, 2), names=["yuv420p", "yuv444p"], controller_ids="sync", size=(700, 400)
 )
+
+image1 = figure[0, 0].add_image_yuv(
+    data=(y, u[::2, ::2], v[::2, ::2]), colorspace="yuv420p"
+)
+
+image2 = figure[0, 1].add_image_yuv(data=(y, u, v), colorspace="yuv444p")
+
+cursor = fpl.Cursor()
+
+for subplot in figure:
+    cursor.add_subplot(subplot)
 
 figure.show()
 
