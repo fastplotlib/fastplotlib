@@ -180,7 +180,7 @@ class NDVectors(NDGraphic):
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_dim_transforms=None,
         name: str = None,
-        **kwargs
+        graphic_kwargs: dict = None,
     ):
         """
         ``NDGraphic`` subclass for n-dimensional vector rendering
@@ -258,8 +258,13 @@ class NDVectors(NDGraphic):
 
         self._graphic: VectorsGraphic | None = None
 
+        if graphic_kwargs is None:
+            self._graphic_kwargs = dict()
+        else:
+            self._graphic_kwargs = graphic_kwargs
+
         # create a graphic
-        self._create_graphic(**kwargs)
+        self._create_graphic()
 
     @property
     def processor(self) -> NDVectorsProcessor:
@@ -295,7 +300,9 @@ class NDVectors(NDGraphic):
 
         # create the new graphic
         self._graphic = self._subplot.add_vectors(
-            positions=data_slice[:, 0], directions=data_slice[:, 1], **kwargs
+            positions=data_slice[:, 0],
+            directions=data_slice[:, 1],
+            **self._graphic_kwargs
         )
 
         self._subplot.add_graphic(self._graphic)
