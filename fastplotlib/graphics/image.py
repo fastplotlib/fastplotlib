@@ -741,6 +741,7 @@ class ImageYUVGraphic(ImageGraphic):
 
     @property
     def colorrange(self) -> ColorRange:
+        """the color range, see docstring for details"""
         return self.data.colorrange
 
     @property
@@ -752,4 +753,5 @@ class ImageYUVGraphic(ImageGraphic):
         raise NotRequired("YUV images don't have a cmap")
 
     def reset_vmin_vmax(self):
+        """reset vmin, vmax to (0, 255)"""
         self.vmin, self.vmax = 0, 255
