@@ -5,8 +5,8 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 from ...layouts import Subplot
-from ...utils import subsample_array, ARRAY_LIKE_ATTRS, ArrayProtocol
-from ...graphics import ImageGraphic, ImageVolumeGraphic
+from ...utils import subsample_array, ARRAY_LIKE_ATTRS, ArrayProtocol, enums
+from ...graphics import ImageGraphic, ImageYUVGraphic, ImageVolumeGraphic
 from ...tools import HistogramLUTTool
 from ._base import (
     NDProcessor,
@@ -385,7 +385,7 @@ class NDImage(NDGraphic):
         self._colorspace = colorspace
         self._colorrange = colorrange
 
-        self._graphic: ImageGraphic | None = None
+        self._graphic: ImageGraphic | ImageYUVGraphic | None = None
         self._histogram_widget: HistogramLUTTool | None = None
 
         # create a graphic
@@ -399,7 +399,7 @@ class NDImage(NDGraphic):
     @property
     def graphic(
         self,
-    ) -> ImageGraphic | ImageVolumeGraphic:
+    ) -> ImageGraphic | ImageYUVGraphic | ImageVolumeGraphic:
         """Underlying Graphic object used to display the current data slice"""
         return self._graphic
 
@@ -412,15 +412,23 @@ class NDImage(NDGraphic):
             # no graphic if data is None, useful for initializing in null states when we want to set data later
             return
 
-        # determine if we need a 2d image or 3d volume
-        # remove RGB spatial dim, ex: if we have an RGBA image of shape [512, 512, 4] we want to interpet this as
-        # 2D for images
-        # [30, 512, 512, 4] with an rgb dim is an RGBA volume which is also supported
-        match len(self.processor.spatial_dims) - int(bool(self.processor.rgb_dim)):
-            case 2:
-                cls = ImageGraphic
-            case 3:
-                cls = ImageVolumeGraphic
+        kwargs = {
+            "colorspace": self._colorspace,
+        }
+
+        if self._colorspace in enums.ColorspacesYUV:
+            cls = ImageYUVGraphic
+            kwargs["colorrange"] = self._colorrange
+        else:
+            # determine if we need a 2d image or 3d volume
+            # remove RGB spatial dim, ex: if we have an RGBA image of shape [512, 512, 4] we want to interpet this as
+            # 2D for images
+            # [30, 512, 512, 4] with an rgb dim is an RGBA volume which is also supported
+            match len(self.processor.spatial_dims) - int(bool(self.processor.rgb_dim)):
+                case 2:
+                    cls = ImageGraphic
+                case 3:
+                    cls = ImageVolumeGraphic
 
         # get the data slice for this index
         # this will only have the dims specified by ``spatial_dims``
@@ -430,9 +438,8 @@ class NDImage(NDGraphic):
         # create the new graphic
         new_graphic = cls(
             data_slice,
-            cpu_buffer=False,  # faster, we usually don't need a cpu buffer for NDWidget use cases
-            colorspace=self._colorspace,
-            colorrange=self._colorrange,
+            # cpu_buffer=False,  # faster, we usually don't need a cpu buffer for NDWidget use cases
+            **kwargs,
         )
 
         old_graphic = self._graphic
@@ -489,7 +496,7 @@ class NDImage(NDGraphic):
 
     def _reset_camera(self):
         # set camera to a nice position based on whether it's a 2D ImageGraphic or 3D ImageVolumeGraphic
-        if isinstance(self._graphic, ImageGraphic):
+        if isinstance(self._graphic, (ImageGraphic, ImageYUVGraphic)):
             # set camera orthogonal to the xy plane, flip y axis
             self._subplot.camera.set_state(
                 {
