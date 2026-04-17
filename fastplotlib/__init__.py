@@ -6,6 +6,7 @@ from ._version import __version__, version_info
 from .utils import loop  # noqa
 from .utils import (
     config,
+    enums,
     enumerate_adapters,
     select_adapter,
     print_wgpu_report,

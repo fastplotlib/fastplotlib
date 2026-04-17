@@ -35,7 +35,10 @@ def generate_add_graphics_methods():
     f.write("import numpy\n\n")
     f.write("import pygfx\n\n")
     f.write("from ..graphics import *\n")
-    f.write("from ..graphics._base import Graphic\n\n")
+    f.write("from ..graphics._base import Graphic\n")
+    f.write("from ..utils import enums\n")
+    f.write("import typing\n")
+    f.write("import fastplotlib\n\n")
 
     f.write("\nclass GraphicMethodsMixin:\n")
 
@@ -52,11 +55,14 @@ def generate_add_graphics_methods():
     f.write("        self.add_graphic(graphic, center=center)\n\n")
     f.write("        return graphic\n\n")
 
+    # from https://stackoverflow.com/a/1176023
+    camel_to_snake = re.compile(r"(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
+
     for m in modules:
         cls = m
         cls_name = cls.__name__.replace("Graphic", "")
-        # from https://stackoverflow.com/a/1176023
-        method_name = re.sub(r"(?<!^)(?=[A-Z])", "_", cls_name).lower()
+
+        method_name = camel_to_snake.sub("_", cls_name).lower()
 
         class_args = inspect.getfullargspec(cls)[0][1:]
         class_args = [arg + ", " for arg in class_args]

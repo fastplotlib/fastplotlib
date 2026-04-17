@@ -77,3 +77,26 @@ def parse_colors(
         data = make_pygfx_colors(colors, n_colors)
 
     return to_gpu_supported_dtype(data)
+
+
+def get_element_format_from_numpy_array(array):
+    """Get the per-element format specifier from a numpy array.
+    Returns None if the format appears to be a structured array.
+    Raises an error if GPU-incompatible dtypes are used (64 bit).
+    """
+
+    # Uniform buffers are scalars with a structured dtype.
+    # But can also create storage buffers with complex formats.
+    if array.dtype.kind not in "iuf":
+        return None
+
+    # GPUs generally don't support 64-bit buffers or textures.
+    # Note: the Python docs say that l and L are 32 bit, but converting
+    # a int64 numpy array to a memoryview gives a format of 'l' instead
+    # of 'q' on some systems/configs? So we need to check the itemsize.
+    if array.itemsize == 8:
+        raise ValueError(
+            f"A dtype of {array.dtype.name} is not supported for buffers, use a 32-bit variant instead."
+        )
+
+    return array.dtype.str.lstrip("<>=|")

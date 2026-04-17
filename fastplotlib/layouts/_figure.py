@@ -19,7 +19,7 @@ from ._utils import (
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
-from .. import ImageGraphic
+from .. import ImageGraphic, ImageYUVGraphic
 
 
 class Figure:
@@ -617,7 +617,7 @@ class Figure:
         # flip y-axis if ImageGraphics are present
         for subplot in self._subplots.ravel():
             for g in subplot.graphics:
-                if isinstance(g, ImageGraphic):
+                if isinstance(g, (ImageGraphic, ImageYUVGraphic)):
                     if subplot.camera.local.scale_y == 1:
                         # if it's 1 it's likely not been touched manually before show was called
                         subplot.camera.local.scale_y = -1

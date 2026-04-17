@@ -27,6 +27,8 @@ from ._scatter import (
 )
 from ._image import (
     TextureArray,
+    TextureYUV,
+    TupleYUV,
     ImageCmap,
     ImageVmin,
     ImageVmax,
@@ -93,6 +95,8 @@ __all__ = [
     "VertexPointSizes",
     "UniformSize",
     "TextureArray",
+    "TextureYUV",
+    "TupleYUV",
     "ImageCmap",
     "ImageVmin",
     "ImageVmax",

@@ -501,7 +501,9 @@ class NDProcessor:
         windowed_slice = windowed_slice.squeeze(axis=slider_dims_int)
 
         if windowed_slice.ndim != len(self.spatial_dims):
-            raise ValueError
+            raise ValueError(
+                f"windowed_slice.ndim != len(self.spatial_dims): {windowed_slice.ndim} != {len(self.spatial_dims)}"
+            )
 
         # transpose to spatial dims
         spatial_dims_int = tuple(

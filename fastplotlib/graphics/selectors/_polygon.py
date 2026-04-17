@@ -200,6 +200,12 @@ class PolygonSelector(BaseSelector):
             view or list of views of the full array, returns empty array if selection is empty
         """
         source = self._get_source(graphic)
+
+        if source.data.value is None:
+            raise ValueError(
+                "Cannot get selected data. The graphic has no local buffer, `cpu_buffer` is probably `False`."
+            )
+
         ixs = self.get_selected_indices(source)
 
         # do not need to check for mode for images, because the selector is bounded by the image shape
