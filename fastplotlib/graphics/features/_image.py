@@ -48,6 +48,7 @@ class TextureArray(GraphicFeature):
         super().__init__(property_name=property_name)
 
         self._colorspace = ColorspacesRGB(colorspace)
+        self._cpu_buffer = cpu_buffer
         data = self._check_data(data, colorspace, cpu_buffer)
 
         self._shape = data.shape
@@ -122,9 +123,6 @@ class TextureArray(GraphicFeature):
                 texture.send_data((0, 0, 0), data[slicer])
 
             self.buffer[buffer_index] = texture
-
-        self._colorspace = colorspace
-        self._cpu_buffer = cpu_buffer
 
     @property
     def colorspace(

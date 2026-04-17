@@ -24,4 +24,4 @@ class VideoProcessor(NDImageProcessor):
             return tuple(a.squeeze() for a in windowed_slice)
 
         # convert to numpy array
-        return np.asarray(windowed_slice)
+        return np.asarray(windowed_slice).squeeze()
