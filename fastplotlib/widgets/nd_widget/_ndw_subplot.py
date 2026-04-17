@@ -12,9 +12,10 @@ from ... import (
     VectorsGraphic,
 )
 from ...layouts import Subplot
-from ...utils import ArrayProtocol
-from . import NDImage, NDPositions, NDVectors
-from ._base import NDGraphic, WindowFuncCallable
+from ...utils import ArrayProtocol, enums
+from . import NDImageProcessor, NDImage, NDPositions, NDVectors
+from ._video import VideoProcessor
+from ._base import NDProcessor, NDGraphic, WindowFuncCallable
 
 
 class NDWSubplot:
@@ -85,6 +86,28 @@ class NDWSubplot:
 
         self._nd_graphics.append(nd)
         return nd
+
+    def add_video(
+            self,
+            data: ArrayProtocol | None,
+            dims: Sequence[str],
+            spatial_dims: tuple[str, str] | tuple[str, str, str],
+            rgb_dim: str | None = None,
+            colorspace: enums.ColorspacesYUV | enums.ColorspacesRGB = "yuv420p",
+            colorrange: enums.ColorRange = "limited",
+            processor_type: NDImageProcessor = VideoProcessor,
+            **kwargs,
+    ):
+        return self.add_nd_image(
+            data=data,
+            dims=dims,
+            spatial_dims=spatial_dims,
+            rgb_dim=rgb_dim,
+            colorspace=colorspace,
+            colorrange=colorrange,
+            processor_type=processor_type,
+            **kwargs,
+        )
 
     def add_nd_vectors(
         self,

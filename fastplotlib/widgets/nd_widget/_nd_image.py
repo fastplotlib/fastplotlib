@@ -416,7 +416,7 @@ class NDImage(NDGraphic):
             "colorspace": self._colorspace,
         }
 
-        if self._colorspace in enums.ColorspacesYUV:
+        if self._colorspace in {cs.value for cs in enums.ColorspacesYUV}:
             cls = ImageYUVGraphic
             kwargs["colorrange"] = self._colorrange
         else:
