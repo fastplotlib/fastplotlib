@@ -447,7 +447,6 @@ class ImageGraphic(ImageBase):
         if isinstance(data, TextureArray):
             # share buffer
             self._data = data
-            data = self._data.value
         else:
             # create new texture array to manage buffer
             # texture array that manages the multiple textures on the GPU that represent this image
@@ -455,17 +454,17 @@ class ImageGraphic(ImageBase):
                 data, colorspace=colorspace, cpu_buffer=cpu_buffer
             )
 
-        if (vmin is None) or (vmax is None) and data is not None:
+        if (vmin is None) or (vmax is None):
+            if self.data.value is None:
+                raise ValueError(
+                    "must provide vmin, vmax if sharing a buffer that does not exist locally"
+                )
+
             _vmin, _vmax = quick_min_max(self.data.value)
             if vmin is None:
                 vmin = _vmin
             if vmax is None:
                 vmax = _vmax
-        else:
-            # this is a shared buffer and we don't have access to the actual data from here
-            raise ValueError(
-                "must provide vmin, vmax if sharing a buffer that does not exist locally"
-            )
 
         # other graphic features
         self._vmin = ImageVmin(vmin)
@@ -582,6 +581,7 @@ class ImageGraphic(ImageBase):
                 return
 
         self._data[:] = data
+
 
     @property
     def colorspace(self) -> ColorspacesRGB:

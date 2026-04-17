@@ -57,7 +57,7 @@ class TextureArray(GraphicFeature):
 
         if cpu_buffer:
             # create a local buffer
-            self._value = np.zeros(data.shape, dtype=data.dtype)
+            self._value = np.empty(data.shape, dtype=data.dtype)
             self.value[:] = data[:]
         else:
             self._value = None
@@ -99,18 +99,16 @@ class TextureArray(GraphicFeature):
         # iterate through each chunk of passed `data`
         # create a pygfx.Texture from this chunk
         for _, buffer_index, slicer in self:
-            chunk = data[slicer]
-
             if cpu_buffer:
                 # texture gets the data directly
                 texture = pygfx.Texture(
-                    chunk,
+                    self.value[slicer],
                     dim=2,
                     colorspace=colorspace,
                 )
             else:
                 # we only supply the size
-                w, h = chunk.shape[1], chunk.shape[0]
+                w, h = data[slicer].shape[1], data[slicer].shape[0]
 
                 texture = pygfx.Texture(
                     size=(w, h, 1),
@@ -121,7 +119,7 @@ class TextureArray(GraphicFeature):
                 )
 
                 # send the initial data
-                texture.send_data((0, 0, 0), chunk)
+                texture.send_data((0, 0, 0), data[slicer])
 
             self.buffer[buffer_index] = texture
 
