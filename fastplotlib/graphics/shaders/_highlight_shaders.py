@@ -172,7 +172,7 @@ def _add_ids_bindings_vs_fs(shader, group0: dict, material) -> None:
 
 
 def _add_mask_bindings(shader, group0: dict, material) -> None:
-    """Append t_highlight_mask (R8Uint texture) and s_highlight_lut bindings to group0."""
+    """Append t_highlight_mask (R8Unorm texture) and s_highlight_lut bindings to group0."""
     next_idx = max(group0.keys()) + 1
     mask_view = GfxTextureView(material._highlight_mask_texture)
     new = {
@@ -249,12 +249,13 @@ class HighlightableImageShader(ImageShader):
         if not _check(wgsl, "@fragment\nfn fs_main", "image.wgsl"):
             return wgsl
 
-        # world_pos.xy gives global image pixel coords because each tile is offset
-        # in world space by (data_col_start, data_row_start) (see image.py _create_tiles).
+        # Use texcoord (normalized 0→1) to index the mask, matching how pygfx
+        # samples integer textures in image_common.wgsl.  world_pos.xy is offset
+        # by -0.5 (image geometry spans [-0.5, W-0.5]) so floor(world_pos) is wrong.
         mask_lines = (
-            "    let fpl_px = vec2<u32>(floor(varyings.world_pos.xy));\n"
-            "    let fpl_mask_id = textureLoad(t_highlight_mask, fpl_px, 0).r;\n"
-            "    out.color = fpl_apply_highlight_img(out_color, fpl_mask_id);"
+            "    let fpl_px = vec2<u32>(varyings.texcoord * vec2<f32>(textureDimensions(t_highlight_mask)));\n"
+            "    let fpl_mask_val = textureLoad(t_highlight_mask, fpl_px, 0).r;\n"
+            "    out.color = fpl_apply_highlight_img(out_color, fpl_mask_val);"
         )
         wgsl = wgsl.replace(_FS_COLOR_ANCHOR, mask_lines, 1)
         wgsl = wgsl.replace(

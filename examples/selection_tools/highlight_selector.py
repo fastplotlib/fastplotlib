@@ -54,10 +54,10 @@ nd_hm = ndw[0, 1].add_nd_timeseries(
 )
 
 # --- highlight selectors ---
-img_sel = ImageHighlightSelector(color="cyan", alpha=0.8)
+img_sel = ImageHighlightSelector(color="w", alpha=0.4)
 img_sel.add_graphic(nd_img.graphic)
 
-hm_sel = ImageHighlightSelector(color="cyan", alpha=0.8)
+hm_sel = ImageHighlightSelector(color="w", alpha=0.4)
 hm_sel.add_graphic(nd_hm.graphic)
 
 

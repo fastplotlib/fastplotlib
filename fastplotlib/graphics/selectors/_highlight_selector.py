@@ -640,7 +640,12 @@ class ImageHighlightSelector(HighlightSelector):
             cur.data[:] = mask
             cur.update_range((0, 0, 0), cur.size)
 
-        self._write_lut(mat, _build_lut(self._color, self._lut_source, self._n_items()))
+        n = self._n_items()
+        lut = mat._highlight_lut_buffer.data
+        lut[:] = 0.0
+        if n > 0:
+            lut[:n] = _build_lut(self._color, self._lut_source, n)
+        mat._highlight_lut_buffer.update_range()
 
     def _clear_highlight_buffers(self, graphic) -> None:
         mat = graphic._material
