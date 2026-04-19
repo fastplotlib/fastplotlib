@@ -1,0 +1,380 @@
+"""
+Highlightable shader subclasses for fastplotlib.
+
+Each shader subclass:
+  1. Adds two extra bindings: s_highlight_ids (u32 storage) and s_highlight_lut (vec4 storage),
+     or t_highlight_mask (R8Uint texture) + s_highlight_lut for images.
+  2. Patches the compiled WGSL to mix a highlight color into out.color before returning,
+     leaving out.pick completely untouched.
+
+Anchor strings are validated at runtime; a warning is emitted and highlighting falls back
+to a no-op if a pygfx version change has moved them.
+"""
+
+import warnings
+
+from pygfx.objects import Points, Line, Image
+from pygfx.renderers.wgpu.shaders.pointsshader import PointsShader
+from pygfx.renderers.wgpu.shaders.lineshader import LineShader, ThinLineShader
+from pygfx.renderers.wgpu.shaders.imageshader import ImageShader
+from pygfx.renderers.wgpu import (
+    register_wgpu_render_function,
+    Binding,
+    GfxTextureView,
+)
+
+from ._highlight_materials import (
+    HighlightableLineMaterial,
+    HighlightableLineThinMaterial,
+    HighlightablePointsMaterial,
+    HighlightablePointsMarkerMaterial,
+    HighlightablePointsSpriteMaterial,
+    HighlightablePointsGaussianBlobMaterial,
+    HighlightableImageMaterial,
+)
+
+# ---------------------------------------------------------------------------
+# WGSL helper functions (prepended before the fragment entry point)
+# ---------------------------------------------------------------------------
+
+# Points: vertex_idx is a u32, looked up directly in the ids storage buffer.
+_POINTS_HELPER = """\
+fn fpl_apply_highlight(base_color: vec4<f32>, vertex_idx: u32) -> vec4<f32> {
+    if (vertex_idx >= arrayLength(&s_highlight_ids)) { return base_color; }
+    let id = s_highlight_ids[vertex_idx];
+    if (id == 0u) { return base_color; }
+    let h = s_highlight_lut[id - 1u];
+    return vec4<f32>(mix(base_color.rgb, h.rgb, h.a * u_material.highlight_alpha), base_color.a);
+}
+
+"""
+
+# Thin lines: highlight color is pre-resolved in the VS as an interpolated vec4 varying.
+# The GPU interpolates it across the line_strip for free.
+_THIN_LINE_HELPER = """\
+fn fpl_apply_highlight(base_color: vec4<f32>, hl: vec4<f32>) -> vec4<f32> {
+    if (hl.a <= 0.0) { return base_color; }
+    return vec4<f32>(mix(base_color.rgb, hl.rgb, hl.a * u_material.highlight_alpha), base_color.a);
+}
+
+"""
+
+# Thick lines: two interpolated vec4 varyings carry the highlight at each segment endpoint.
+# The FS mixes them using the same logic pygfx uses for per-vertex colors at joins.
+_LINE_HELPER = """\
+fn fpl_apply_highlight_line(
+    base_color: vec4<f32>,
+    hl_node: vec4<f32>,
+    hl_vert: vec4<f32>,
+    is_join: bool,
+    join_coord_lin: f32,
+    join_coord_fan: f32,
+) -> vec4<f32> {
+    var hl: vec4<f32> = hl_vert;
+    if (is_join) {
+        let hl_seg = hl_node - (hl_node - hl_vert) / (1.0 - abs(join_coord_lin));
+        hl = mix(hl_seg, hl_node, abs(join_coord_fan));
+    }
+    if (hl.a <= 0.0) { return base_color; }
+    return vec4<f32>(mix(base_color.rgb, hl.rgb, hl.a * u_material.highlight_alpha), base_color.a);
+}
+
+"""
+
+# Image: mask texture is R8Unorm so textureLoad returns f32 in [0, 1]; multiply by 255 to recover the uint8 id.
+_IMAGE_HELPER = """\
+fn fpl_apply_highlight_img(base_color: vec4<f32>, mask_val: f32) -> vec4<f32> {
+    let mask_id = u32(round(mask_val * 255.0));
+    if (mask_id == 0u) { return base_color; }
+    let h = s_highlight_lut[mask_id - 1u];
+    return vec4<f32>(mix(base_color.rgb, h.rgb, h.a * u_material.highlight_alpha), base_color.a);
+}
+
+"""
+
+# ---------------------------------------------------------------------------
+# Patch anchors
+# External .wgsl files (points.wgsl, line.wgsl, image.wgsl) use 4-space indent.
+# ThinLineShader's inline WGSL string uses 12-space indent.
+# ---------------------------------------------------------------------------
+
+# Shared FS patch anchor for external .wgsl files
+_FS_COLOR_ANCHOR = "    out.color = out_color;"
+
+# ThinLineShader inline WGSL anchors (12-space indent inside the method string)
+_THIN_VS_ANCHOR = "            return varyings;\n        }"
+_THIN_FS_COLOR_ANCHOR = "            out.color = out_color;"
+_THIN_FRAGMENT_ENTRY = "        @fragment\n        fn fs_main"
+
+
+def _warn_anchor_missing(label: str, anchor: str) -> None:
+    warnings.warn(
+        f"fpl highlight: anchor {anchor!r} not found in {label} WGSL. "
+        "Highlighting disabled for this graphic type. "
+        "This is likely caused by a pygfx version change — update the anchor string.",
+        stacklevel=3,
+    )
+
+
+def _check(wgsl: str, anchor: str, label: str) -> bool:
+    if wgsl.count(anchor) != 1:
+        _warn_anchor_missing(label, anchor)
+        return False
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Binding helpers
+# ---------------------------------------------------------------------------
+
+def _add_ids_bindings(shader, group0: dict, material) -> None:
+    """Append s_highlight_ids and s_highlight_lut bindings to group0."""
+    next_idx = max(group0.keys()) + 1
+    new = {
+        next_idx: Binding(
+            "s_highlight_ids",
+            "buffer/read_only_storage",
+            material._highlight_ids_buffer,
+            "FRAGMENT",
+        ),
+        next_idx + 1: Binding(
+            "s_highlight_lut",
+            "buffer/read_only_storage",
+            material._highlight_lut_buffer,
+            "FRAGMENT",
+        ),
+    }
+    shader.define_bindings(0, new)
+    group0.update(new)
+
+
+def _add_ids_bindings_vs_fs(shader, group0: dict, material) -> None:
+    """Append s_highlight_ids (VERTEX+FRAGMENT) and s_highlight_lut bindings to group0."""
+    import wgpu as _wgpu
+    vs_fs = _wgpu.ShaderStage.VERTEX | _wgpu.ShaderStage.FRAGMENT
+    next_idx = max(group0.keys()) + 1
+    new = {
+        next_idx: Binding(
+            "s_highlight_ids",
+            "buffer/read_only_storage",
+            material._highlight_ids_buffer,
+            vs_fs,
+        ),
+        next_idx + 1: Binding(
+            "s_highlight_lut",
+            "buffer/read_only_storage",
+            material._highlight_lut_buffer,
+            vs_fs,
+        ),
+    }
+    shader.define_bindings(0, new)
+    group0.update(new)
+
+
+def _add_mask_bindings(shader, group0: dict, material) -> None:
+    """Append t_highlight_mask (R8Uint texture) and s_highlight_lut bindings to group0."""
+    next_idx = max(group0.keys()) + 1
+    mask_view = GfxTextureView(material._highlight_mask_texture)
+    new = {
+        next_idx: Binding(
+            "t_highlight_mask",
+            "texture/auto",
+            mask_view,
+            "FRAGMENT",
+        ),
+        next_idx + 1: Binding(
+            "s_highlight_lut",
+            "buffer/read_only_storage",
+            material._highlight_lut_buffer,
+            "FRAGMENT",
+        ),
+    }
+    shader.define_bindings(0, new)
+    group0.update(new)
+
+
+# ---------------------------------------------------------------------------
+# Points shader  (pure FS patch, pick_idx is available as a flat u32 varying)
+# ---------------------------------------------------------------------------
+
+@register_wgpu_render_function(Points, HighlightablePointsMaterial)
+@register_wgpu_render_function(Points, HighlightablePointsMarkerMaterial)
+@register_wgpu_render_function(Points, HighlightablePointsSpriteMaterial)
+@register_wgpu_render_function(Points, HighlightablePointsGaussianBlobMaterial)
+class HighlightablePointsShader(PointsShader):
+
+    def get_bindings(self, wobject, shared, scene):
+        result = super().get_bindings(wobject, shared, scene)
+        group0 = result[0]
+        _add_ids_bindings(self, group0, wobject.material)
+        return {0: group0}
+
+    def get_code(self):
+        wgsl = super().get_code()
+        if not _check(wgsl, _FS_COLOR_ANCHOR, "points.wgsl"):
+            return wgsl
+        if not _check(wgsl, "@fragment\nfn fs_main", "points.wgsl"):
+            return wgsl
+
+        wgsl = wgsl.replace(
+            _FS_COLOR_ANCHOR,
+            "    out.color = fpl_apply_highlight(out_color, varyings.pick_idx);",
+            1,
+        )
+        wgsl = wgsl.replace(
+            "@fragment\nfn fs_main",
+            _POINTS_HELPER + "@fragment\nfn fs_main",
+            1,
+        )
+        return wgsl
+
+
+# ---------------------------------------------------------------------------
+# Image shader  (FS patch using world_pos for global pixel coordinates)
+# ---------------------------------------------------------------------------
+
+@register_wgpu_render_function(Image, HighlightableImageMaterial)
+class HighlightableImageShader(ImageShader):
+
+    def get_bindings(self, wobject, shared, scene):
+        result = super().get_bindings(wobject, shared, scene)
+        group0 = result[0]
+        _add_mask_bindings(self, group0, wobject.material)
+        return {0: group0}
+
+    def get_code(self):
+        wgsl = super().get_code()
+        if not _check(wgsl, _FS_COLOR_ANCHOR, "image.wgsl"):
+            return wgsl
+        if not _check(wgsl, "@fragment\nfn fs_main", "image.wgsl"):
+            return wgsl
+
+        # world_pos.xy gives global image pixel coords because each tile is offset
+        # in world space by (data_col_start, data_row_start) (see image.py _create_tiles).
+        mask_lines = (
+            "    let fpl_px = vec2<u32>(floor(varyings.world_pos.xy));\n"
+            "    let fpl_mask_id = textureLoad(t_highlight_mask, fpl_px, 0).r;\n"
+            "    out.color = fpl_apply_highlight_img(out_color, fpl_mask_id);"
+        )
+        wgsl = wgsl.replace(_FS_COLOR_ANCHOR, mask_lines, 1)
+        wgsl = wgsl.replace(
+            "@fragment\nfn fs_main",
+            _IMAGE_HELPER + "@fragment\nfn fs_main",
+            1,
+        )
+        return wgsl
+
+
+# ---------------------------------------------------------------------------
+# Thin line shader  (line_strip — GPU interpolates varyings between vertices)
+# The VS looks up s_highlight_ids[i0] and stores the resolved LUT color in a
+# vec4<f32> varying; the GPU linearly interpolates it across each segment for free.
+# ---------------------------------------------------------------------------
+
+_THIN_VS_INJECTION = (
+    "            let fpl_hl_id = select(0u, s_highlight_ids[u32(i0)],\n"
+    "                u32(i0) < arrayLength(&s_highlight_ids));\n"
+    "            varyings.fpl_hl_color = select(\n"
+    "                vec4<f32>(0.0), s_highlight_lut[fpl_hl_id - 1u], fpl_hl_id != 0u);\n"
+    "            return varyings;\n"
+    "        }"
+)
+
+
+@register_wgpu_render_function(Line, HighlightableLineThinMaterial)
+class HighlightableThinLineShader(ThinLineShader):
+
+    def get_bindings(self, wobject, shared, scene):
+        result = super().get_bindings(wobject, shared, scene)
+        group0 = result[0]
+        # Needs VERTEX stage so the VS can read the ids buffer
+        _add_ids_bindings_vs_fs(self, group0, wobject.material)
+        return {0: group0}
+
+    def get_code(self):
+        wgsl = super().get_code()
+
+        if not _check(wgsl, _THIN_VS_ANCHOR, "ThinLineShader VS"):
+            return wgsl
+        wgsl = wgsl.replace(_THIN_VS_ANCHOR, _THIN_VS_INJECTION, 1)
+
+        if not _check(wgsl, _THIN_FS_COLOR_ANCHOR, "ThinLineShader FS"):
+            return wgsl
+        wgsl = wgsl.replace(
+            _THIN_FS_COLOR_ANCHOR,
+            "            out.color = fpl_apply_highlight(out_color, varyings.fpl_hl_color);",
+            1,
+        )
+
+        if not _check(wgsl, _THIN_FRAGMENT_ENTRY, "ThinLineShader FS entry"):
+            return wgsl
+        wgsl = wgsl.replace(
+            _THIN_FRAGMENT_ENTRY,
+            _THIN_LINE_HELPER + _THIN_FRAGMENT_ENTRY,
+            1,
+        )
+        return wgsl
+
+
+# ---------------------------------------------------------------------------
+# Thick line shader  (triangle geometry — smooth interpolation via two varyings)
+#
+# VS injection: placed just before varyings.pick_idx assignment so that
+# node_index, node_index_prev, node_index_next, node_index_is_even and
+# ratio_interp are all already in scope.
+#
+# The two varyings (fpl_hl_color_node, fpl_hl_color_vert) mirror the pattern
+# pygfx uses for color_node / color_vert in vertex-color mode.  The FS mixes
+# them at joins using the same join_coord logic pygfx uses for vertex colors.
+# ---------------------------------------------------------------------------
+
+_LINE_VS_ANCHOR = "    varyings.pick_idx = u32(node_index);"
+
+_LINE_VS_INJECTION = """\
+    let fpl_other_idx = select(node_index_prev, node_index_next, node_index_is_even);
+    let fpl_hl_id_node = select(0u, s_highlight_ids[u32(node_index)],
+        u32(node_index) < arrayLength(&s_highlight_ids));
+    let fpl_hl_id_other = select(0u, s_highlight_ids[u32(fpl_other_idx)],
+        u32(fpl_other_idx) < arrayLength(&s_highlight_ids));
+    let fpl_hl_raw_node = select(vec4<f32>(0.0), s_highlight_lut[fpl_hl_id_node - 1u], fpl_hl_id_node != 0u);
+    let fpl_hl_raw_other = select(vec4<f32>(0.0), s_highlight_lut[fpl_hl_id_other - 1u], fpl_hl_id_other != 0u);
+    varyings.fpl_hl_color_node = fpl_hl_raw_node;
+    varyings.fpl_hl_color_vert = mix(fpl_hl_raw_node, fpl_hl_raw_other, ratio_interp);
+    varyings.pick_idx = u32(node_index);\
+"""
+
+_LINE_FS_REPLACEMENT = (
+    "    out.color = fpl_apply_highlight_line(\n"
+    "        out_color, varyings.fpl_hl_color_node, varyings.fpl_hl_color_vert,\n"
+    "        is_join, join_coord_lin, join_coord_fan);"
+)
+
+
+@register_wgpu_render_function(Line, HighlightableLineMaterial)
+class HighlightableLineShader(LineShader):
+
+    def get_bindings(self, wobject, shared, scene):
+        result = super().get_bindings(wobject, shared, scene)
+        group0 = result[0]
+        _add_ids_bindings_vs_fs(self, group0, wobject.material)
+        return {0: group0}
+
+    def get_code(self):
+        wgsl = super().get_code()
+
+        if not _check(wgsl, _LINE_VS_ANCHOR, "line.wgsl VS"):
+            return wgsl
+        wgsl = wgsl.replace(_LINE_VS_ANCHOR, _LINE_VS_INJECTION, 1)
+
+        if not _check(wgsl, _FS_COLOR_ANCHOR, "line.wgsl FS"):
+            return wgsl
+        wgsl = wgsl.replace(_FS_COLOR_ANCHOR, _LINE_FS_REPLACEMENT, 1)
+
+        if not _check(wgsl, "@fragment\nfn fs_main", "line.wgsl FS entry"):
+            return wgsl
+        wgsl = wgsl.replace(
+            "@fragment\nfn fs_main",
+            _LINE_HELPER + "@fragment\nfn fs_main",
+            1,
+        )
+        return wgsl

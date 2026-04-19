@@ -5,6 +5,7 @@ import numpy as np
 import pygfx
 from pygfx import Texture
 
+from .shaders import HighlightableImageMaterial
 from ..utils import quick_min_max, ColorspacesRGB, ColorspacesYUV, ColorRange
 from ._base import Graphic
 from .selectors import (
@@ -489,7 +490,7 @@ class ImageGraphic(ImageBase):
             )
 
         # one common material is used for every Texture chunk
-        self._material = pygfx.ImageBasicMaterial(
+        self._material = HighlightableImageMaterial(
             clim=(vmin, vmax),
             map=_map,
             interpolation=self._interpolation.value,
@@ -718,7 +719,7 @@ class ImageYUVGraphic(ImageBase):
 
         self._interpolation = ImageInterpolation(interpolation)
 
-        self._material = pygfx.ImageBasicMaterial(
+        self._material = HighlightableImageMaterial(
             clim=(vmin, vmax), interpolation=self.interpolation, pick_write=True
         )
 
