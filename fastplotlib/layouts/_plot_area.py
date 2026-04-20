@@ -5,7 +5,7 @@ from warnings import warn
 import numpy as np
 
 import pygfx
-from pylinalg import vec_transform, vec_unproject
+from pylinalg import vec_transform, vec_unproject, aabb_to_sphere
 from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
@@ -25,6 +25,26 @@ except NameError:
 else:
     IS_IPYTHON = True
     IPYTHON = get_ipython()
+
+
+def _get_visible_bounding_box(obj: pygfx.Scene | pygfx.Group | pygfx.WorldObject):
+    """Recursively compute world bounding box of only visible objects, down to leaf nodes."""
+    if not obj.visible:
+        return None
+    children = list(obj.children)
+
+    if not children:
+        return obj.get_world_bounding_box()
+
+    bboxes = []
+    for child in children:
+        bbox = _get_visible_bounding_box(child)
+        if bbox is not None:
+            bboxes.append(bbox)
+    if not bboxes:
+        return None
+    bboxes = np.array(bboxes)
+    return np.array([bboxes[:, 0, :].min(axis=0), bboxes[:, 1, :].max(axis=0)])
 
 
 class PlotArea(GraphicMethodsMixin):
@@ -783,7 +803,12 @@ class PlotArea(GraphicMethodsMixin):
     def _auto_center_scene(
         self, camera: pygfx.PerspectiveCamera, scene: pygfx.Scene, zoom: float
     ):
-        camera.show_object(scene)
+        bb = _get_visible_bounding_box(scene)
+        if bb is not None:
+            sphere = aabb_to_sphere(bb)
+            camera.show_object(sphere)
+        else:
+            camera.show_object(scene)
         # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
         # probably because camera.show_object uses bounding sphere
         camera.zoom = zoom
@@ -849,8 +874,9 @@ class PlotArea(GraphicMethodsMixin):
     ):
         camera.maintain_aspect = maintain_aspect
 
-        if len(scene.children) > 0:
-            width, height, depth = np.ptp(scene.get_world_bounding_box(), axis=0)
+        bb = _get_visible_bounding_box(scene)
+        if bb is not None:
+            width, height, depth = np.ptp(bb, axis=0)
         else:
             width, height, depth = (1, 1, 1)
 

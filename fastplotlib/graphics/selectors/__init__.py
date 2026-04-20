@@ -8,6 +8,7 @@ from ._highlight_selector import (
     CollectionHighlightSelector,
     ImageHighlightSelector,
 )
+from ._visibility_selector import VisibilitySelector, ImageVisibilitySelector
 
 
 __all__ = [
@@ -18,4 +19,6 @@ __all__ = [
     "PositionsHighlightSelector",
     "CollectionHighlightSelector",
     "ImageHighlightSelector",
+    "VisibilitySelector",
+    "ImageVisibilitySelector",
 ]

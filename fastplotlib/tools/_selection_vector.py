@@ -103,8 +103,9 @@ class SelectionVector:
         self._selectors[selector] = (map_, map_inv)
 
     def _inv_handler(self, map_inv: Callable, local_selection):
+        return
         # when a selectable changes its selection, set global index change using map inverse
-        self._selection = map_inv(local_selection)
+        # self._selection = map_inv(local_selection)
 
     def remove(self):
         pass
@@ -112,5 +113,3 @@ class SelectionVector:
     def clear_selectables(self):
         self._selectors.clear()
 
-
-sv = SelectionVector()

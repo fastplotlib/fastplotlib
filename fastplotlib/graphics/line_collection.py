@@ -655,4 +655,5 @@ class LineStack(LineCollection):
                 axis_zero + line.data.value[:, axes[separation_axis]].max() + separation
             )
 
+        self.separation_axis = separation_axis
         self.separation = separation

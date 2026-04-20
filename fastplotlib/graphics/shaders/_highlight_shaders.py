@@ -91,6 +91,26 @@ fn fpl_apply_highlight_img(base_color: vec4<f32>, mask_id: u32) -> vec4<f32> {
 
 """
 
+# Visibility pre-sample injection: LUT-based row/col remapping.
+# fpl_texcoord is always declared so the highlight block can safely reference it.
+_IMAGE_SAMPLE_ANCHOR = "    let value = sample_im(varyings.texcoord.xy, sizef);"
+
+_IMAGE_VIS_PRE_SAMPLE = """\
+    var fpl_texcoord = varyings.texcoord;
+    if (u_material.fpl_n_visible > 0u) {
+        let fpl_vis_px = vec2<u32>(varyings.texcoord * sizef);
+        let fpl_vis_idx = select(fpl_vis_px.x, fpl_vis_px.y, u_material.fpl_vis_axis_y == 1u);
+        if (fpl_vis_idx >= u_material.fpl_n_visible) { discard; }
+        let fpl_src_f = f32(s_vis_lut[fpl_vis_idx]);
+        if (u_material.fpl_vis_axis_y == 1u) {
+            fpl_texcoord.y = (fpl_src_f + 0.5) / sizef.y;
+        } else {
+            fpl_texcoord.x = (fpl_src_f + 0.5) / sizef.x;
+        }
+    }
+    let value = sample_im(fpl_texcoord.xy, sizef);\
+"""
+
 # ---------------------------------------------------------------------------
 # Patch anchors
 # External .wgsl files (points.wgsl, line.wgsl, image.wgsl) use 4-space indent.
@@ -171,7 +191,7 @@ def _add_ids_bindings_vs_fs(shader, group0: dict, material) -> None:
 
 
 def _add_mask_bindings(shader, group0: dict, material) -> None:
-    """Append t_highlight_mask (R16Uint texture) and s_highlight_lut bindings to group0."""
+    """Append t_highlight_mask, s_highlight_lut, and s_vis_lut bindings to group0."""
     next_idx = max(group0.keys()) + 1
     mask_view = GfxTextureView(material._highlight_mask_texture)
     new = {
@@ -185,6 +205,12 @@ def _add_mask_bindings(shader, group0: dict, material) -> None:
             "s_highlight_lut",
             "buffer/read_only_storage",
             material._highlight_lut_buffer,
+            "FRAGMENT",
+        ),
+        next_idx + 2: Binding(
+            "s_vis_lut",
+            "buffer/read_only_storage",
+            material._vis_lut_buffer,
             "FRAGMENT",
         ),
     }
@@ -243,20 +269,28 @@ class HighlightableImageShader(ImageShader):
 
     def get_code(self):
         wgsl = super().get_code()
+
+        # Pre-sample: inject visibility LUT remapping. fpl_texcoord is always
+        # declared here so the highlight block below can safely reference it
+        # regardless of whether visibility is active (fpl_n_visible == 0 is a no-op).
+        if not _check(wgsl, _IMAGE_SAMPLE_ANCHOR, "image.wgsl sample"):
+            return wgsl
+        wgsl = wgsl.replace(_IMAGE_SAMPLE_ANCHOR, _IMAGE_VIS_PRE_SAMPLE, 1)
+
+        # Post-sample: highlight blend. Uses fpl_texcoord (source coords) so that
+        # highlight indices always refer to original data positions whether or not
+        # visibility remapping is active.
         if not _check(wgsl, _FS_COLOR_ANCHOR, "image.wgsl"):
             return wgsl
-        if not _check(wgsl, "@fragment\nfn fs_main", "image.wgsl"):
-            return wgsl
-
-        # Use texcoord (normalized 0→1) to index the mask, matching how pygfx
-        # samples integer textures in image_common.wgsl.  world_pos.xy is offset
-        # by -0.5 (image geometry spans [-0.5, W-0.5]) so floor(world_pos) is wrong.
         mask_lines = (
-            "    let fpl_px = vec2<u32>(varyings.texcoord * vec2<f32>(textureDimensions(t_highlight_mask)));\n"
+            "    let fpl_px = vec2<u32>(fpl_texcoord * vec2<f32>(textureDimensions(t_highlight_mask)));\n"
             "    let fpl_mask_id = textureLoad(t_highlight_mask, fpl_px, 0).r;\n"
             "    out.color = fpl_apply_highlight_img(out_color, fpl_mask_id);"
         )
         wgsl = wgsl.replace(_FS_COLOR_ANCHOR, mask_lines, 1)
+
+        if not _check(wgsl, "@fragment\nfn fs_main", "image.wgsl FS entry"):
+            return wgsl
         wgsl = wgsl.replace(
             "@fragment\nfn fs_main",
             _IMAGE_HELPER + "@fragment\nfn fs_main",

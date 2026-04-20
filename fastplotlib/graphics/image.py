@@ -49,10 +49,22 @@ class _ImageTile(pygfx.Image):
         chunk_index: tuple[int, int],
         **kwargs,
     ):
+        self._vis_scale = None  # (axis_index, scale) set by ImageVisibilitySelector
         super().__init__(geometry, material, **kwargs)
 
         self._data_slice = data_slice
         self._chunk_index = chunk_index
+
+    def get_bounding_box(self):
+        aabb = super().get_bounding_box()
+        if aabb is None or self._vis_scale is None:
+            return aabb
+        ax_i, scale = self._vis_scale
+        if scale == 0.0:
+            return None
+        aabb = aabb.copy()
+        aabb[1, ax_i] = aabb[0, ax_i] + (aabb[1, ax_i] - aabb[0, ax_i]) * scale
+        return aabb
 
     def _wgpu_get_pick_info(self, pick_value):
         pick_info = super()._wgpu_get_pick_info(pick_value)
