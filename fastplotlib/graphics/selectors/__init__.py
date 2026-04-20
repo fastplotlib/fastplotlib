@@ -1,3 +1,4 @@
+from ._protocols import SelectorProtocol, MultiSelectorProtocol
 from ._linear import LinearSelector
 from ._linear_region import LinearRegionSelector
 from ._polygon import PolygonSelector

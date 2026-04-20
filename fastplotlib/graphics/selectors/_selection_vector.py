@@ -1,37 +1,8 @@
 from collections.abc import Callable
 from functools import partial
-import numpy as np
-from typing import Any, Protocol, runtime_checkable, Sequence
+from typing import Any, Sequence
 
-
-@runtime_checkable
-class Selector(Protocol):
-    @property
-    def selection(self):
-        ...
-
-    @selection.setter
-    def selection(self, new):
-        ...
-
-    def add_event_handler(self, handler: Callable):
-        ...
-
-    def remove_event_handler(self, handler: Callable):
-        ...
-
-
-@runtime_checkable
-class MultiSelector(Selector, Protocol):
-    def append(self, item):
-        ...
-
-    def remove(self, item):
-        ...
-
-    def clear(self):
-        ...
-
+from ._protocols import SelectorProtocol, MultiSelectorProtocol
 
 def identity(val: Any) -> Any:
     return val
@@ -40,7 +11,7 @@ def identity(val: Any) -> Any:
 class SelectionVector:
     def __init__(self, max_size: int = None):
         # selector -> (map, map_inv)
-        self._selectors: dict[Selector | MultiSelector, tuple[Callable, Callable]] = dict()
+        self._selectors: dict[SelectorProtocol | MultiSelectorProtocol, tuple[Callable, Callable]] = dict()
         self._selection: list[Any] = list()
 
     @property
@@ -56,7 +27,7 @@ class SelectionVector:
     def append(self, index):
         self._selection.append(index)
         for selector, (map_, map_inv) in self._selectors.items():
-            if not isinstance(selector, MultiSelector):
+            if not isinstance(selector, MultiSelectorProtocol):
                 continue
 
             index_local = map_(index)
@@ -69,17 +40,17 @@ class SelectionVector:
     def add_selector(
         self,
         new: (
-                Selector
-                | tuple[Selector, Callable]
-                | tuple[Selector, Callable, Callable]
+                SelectorProtocol
+                | tuple[SelectorProtocol, Callable]
+                | tuple[SelectorProtocol, Callable, Callable]
         ),
     ):
-        selector: Selector
+        selector: SelectorProtocol
         map_: Callable
         map_inv: Callable
 
         if isinstance(new, (tuple, list)):
-            if not isinstance(new[0], Selector):
+            if not isinstance(new[0], SelectorProtocol):
                 raise TypeError
 
             if len(new) not in (2, 3):
@@ -92,7 +63,7 @@ class SelectionVector:
             map_ = new[1]
             map_inv = new[2] if len(new) == 3 else identity
 
-        elif isinstance(new, Selector):
+        elif isinstance(new, SelectorProtocol):
             selector, map_, map_inv = new, identity, identity
 
         else:
