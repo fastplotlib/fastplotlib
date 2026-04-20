@@ -78,8 +78,16 @@ class HighlightableImageMaterial(pygfx.ImageBasicMaterial):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # 1x1 stub; replaced by HighlightSelector with the correct image dimensions
-        self._highlight_mask_texture = Texture(np.zeros((1, 1), dtype=np.uint8), dim=2)
-        self._highlight_lut_buffer = Buffer(np.zeros((255, 4), dtype=np.float32))
+        # Store through _store so the PropTracker detects replacement and re-calls get_bindings().
+        self._store.highlight_mask_texture = Texture(np.zeros((1, 1), dtype=np.uint16), dim=2)
+        self._highlight_lut_buffer = Buffer(np.zeros((65535, 4), dtype=np.float32))
         self.uniform_buffer.data["highlight_alpha"] = 1.0
         self.uniform_buffer.update_range()
+
+    @property
+    def _highlight_mask_texture(self):
+        return self._store.highlight_mask_texture
+
+    @_highlight_mask_texture.setter
+    def _highlight_mask_texture(self, texture):
+        self._store.highlight_mask_texture = texture

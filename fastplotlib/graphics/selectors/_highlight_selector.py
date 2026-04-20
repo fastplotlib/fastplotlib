@@ -481,28 +481,35 @@ class ImageHighlightSelector(HighlightSelector):
     """
     Highlights pixel regions of an ImageGraphic.
 
+    **Free-selection mode** (``selection_options`` is ``None``):
     ``selection`` is a dict with up to three keys:
 
-    * ``"rows"`` — list of row specs; each spec is an int, list of ints, or slice.
-      Selects those rows across all columns.
-    * ``"cols"`` — list of col specs; each spec is an int, list of ints, or slice.
-      Selects those cols across all rows.
+    * ``"rows"`` — list of row specs (int, list[int], or slice); selects those rows across all cols.
+    * ``"cols"`` — list of col specs (int, list[int], or slice); selects those cols across all rows.
     * ``"pixels"`` — list of ``(n, 2)`` arrays of ``[[row, col], ...]`` coordinates.
 
-    When both ``"rows"`` and ``"cols"`` are given they must have the same length
-    and are zipped: ``rows[i]`` × ``cols[i]`` defines a rectangle for LUT index i.
+    When both ``"rows"`` and ``"cols"`` are given they must have the same length and are zipped:
+    ``rows[i]`` × ``cols[i]`` defines a rectangle for LUT index i.
 
-    LUT index corresponds to position in the list (or among zipped pairs when
-    both ``"rows"`` and ``"cols"`` are present), followed by ``"pixels"`` items.
+    **Options mode** (``selection_options`` is set):
+    All options are shown with ``options_color``/``options_alpha`` (dim).
+    ``selection`` is an ``int`` or ``list[int]`` indexing into the options; those items are shown
+    with the highlight ``color``/``alpha``. Only the LUT is rewritten on selection change, not the mask.
 
     Parameters
     ----------
     color : str or array-like, default "cyan"
-        Color applied to all selected pixels when no ``lut`` is set.
+        Highlight color for selected items.
     lut : np.ndarray of shape (k, 4), optional
-        Per-item RGBA colors; ``lut[i]`` applies to the i-th item.
+        Per-item RGBA overrides in free-selection mode.
     alpha : float, default 1.0
-        Highlight blend strength in [0, 1].
+        Highlight blend strength for selected items.
+    options_color : str or array-like, default "white"
+        Color shown for unselected option items.
+    options_alpha : float, default 0.15
+        Blend strength for unselected option items.
+    selection_options : dict or None, optional
+        Pool of selectable items (same dict format as ``selection`` in free mode).
     """
 
     _VALID_KEYS = frozenset(("rows", "cols", "pixels"))
@@ -512,9 +519,28 @@ class ImageHighlightSelector(HighlightSelector):
         color: str | np.ndarray = "cyan",
         lut: np.ndarray | None = None,
         alpha: float = 1.0,
+        options_color: str | np.ndarray = "white",
+        options_alpha: float = 0.15,
+        selection_options: dict | None = None,
     ):
         super().__init__(color=color, lut=lut, alpha=alpha)
         self._selection: dict[str, list] = {}
+        self._selected_indices: list[int] = []
+        self._options_color = options_color
+        self._options_alpha = float(options_alpha)
+        # validate and store selection_options without triggering _update_all_graphics
+        # (no graphics are attached yet)
+        if selection_options is not None:
+            for k in selection_options:
+                if k not in self._VALID_KEYS:
+                    raise ValueError(f"Unknown key {k!r}. Must be one of {self._VALID_KEYS}")
+            self._selection_options: dict[str, list] | None = {
+                k: list(v) for k, v in selection_options.items()
+            }
+        else:
+            self._selection_options = None
+
+    # ------------------------------------------------------------------ helpers
 
     @staticmethod
     def _resolve_spec(spec, size: int) -> np.ndarray:
@@ -522,10 +548,10 @@ class ImageHighlightSelector(HighlightSelector):
             return np.arange(size)[spec]
         return np.atleast_1d(spec)
 
-    def _iter_items(self, n_rows: int, n_cols: int):
-        """Yield (row_indices, col_indices) arrays for each logical item."""
-        rows = self._selection.get("rows", [])
-        cols = self._selection.get("cols", [])
+    def _iter_items(self, sel: dict, n_rows: int, n_cols: int):
+        """Yield (row_indices, col_indices) for each logical item in *sel*."""
+        rows = sel.get("rows", [])
+        cols = sel.get("cols", [])
         if rows and cols:
             if len(rows) != len(cols):
                 raise ValueError(
@@ -546,74 +572,161 @@ class ImageHighlightSelector(HighlightSelector):
                 ci = self._resolve_spec(cs, n_cols)
                 rr, cc = np.meshgrid(np.arange(n_rows), ci, indexing="ij")
                 yield rr.ravel(), cc.ravel()
-        for px in self._selection.get("pixels", []):
+        for px in sel.get("pixels", []):
             arr = np.asarray(px)
             yield arr[:, 0], arr[:, 1]
 
-    def _n_items(self) -> int:
-        rows = self._selection.get("rows", [])
-        cols = self._selection.get("cols", [])
+    def _count_items(self, sel: dict) -> int:
+        rows = sel.get("rows", [])
+        cols = sel.get("cols", [])
         n = len(rows) if (rows and cols) else len(rows) + len(cols)
-        return n + len(self._selection.get("pixels", []))
+        return n + len(sel.get("pixels", []))
+
+    @staticmethod
+    def _rgba(color, alpha: float) -> np.ndarray:
+        c = np.array(pygfx.Color(color), dtype=np.float32)
+        c[3] = float(alpha)
+        return c
+
+    def _write_mask(self, mat, mask: np.ndarray, n_rows: int, n_cols: int) -> None:
+        cur = mat._highlight_mask_texture
+        if cur.data.shape[0] != n_rows or cur.data.shape[1] != n_cols:
+            mat._highlight_mask_texture = Texture(mask.copy(), dim=2)
+        else:
+            cur.data[:] = mask
+            cur.update_range((0, 0, 0), cur.size)
+
+    # ------------------------------------------------------------------ selection_options
 
     @property
-    def selection(self) -> dict[str, list]:
-        """Dict of selection specifiers. Empty selection is ``{}``."""
-        return {k: list(v) for k, v in self._selection.items()}
+    def selection_options(self) -> dict[str, list] | None:
+        """
+        Pool of selectable items (same dict format as ``selection`` in free mode).
+        When set, all options are rendered dim; ``selection`` indexes into this pool.
+        Setting to ``None`` reverts to free-selection mode and clears the selection.
+        """
+        if self._selection_options is None:
+            return None
+        return {k: list(v) for k, v in self._selection_options.items()}
 
-    @selection.setter
-    def selection(self, value: dict | None) -> None:
-        if not value:
-            self._selection = {}
+    @selection_options.setter
+    def selection_options(self, value: dict | None) -> None:
+        if value is None:
+            self._selection_options = None
         else:
             for k in value:
                 if k not in self._VALID_KEYS:
                     raise ValueError(f"Unknown key {k!r}. Must be one of {self._VALID_KEYS}")
-            self._selection = {k: list(v) for k, v in value.items()}
-        self._update_all_graphics()
-        self._emit({"value": self.selection})
-
-    def append(self, key: str, item) -> None:
-        """
-        Append one item to the selection.
-
-        Parameters
-        ----------
-        key : str
-            One of ``"rows"``, ``"cols"``, ``"pixels"``.
-        item : int | list[int] | slice | np.ndarray
-            The item to append (see class docstring for format per key).
-        """
-        if key not in self._VALID_KEYS:
-            raise ValueError(f"Unknown key {key!r}. Must be one of {self._VALID_KEYS}")
-        self._selection.setdefault(key, []).append(item)
-        self._update_all_graphics()
-        self._emit({"value": self.selection})
-
-    def remove(self, key: str, index: int = -1) -> None:
-        """
-        Remove one item from the selection.
-
-        Parameters
-        ----------
-        key : str
-            Selection key.
-        index : int, default -1
-            Index of the item within that key's list to remove.
-        """
-        if key not in self._selection:
-            raise KeyError(f"{key!r} is not in the selection.")
-        self._selection[key].pop(index)
-        if not self._selection[key]:
-            del self._selection[key]
-        self._update_all_graphics()
-        self._emit({"value": self.selection})
-
-    def clear(self) -> None:
-        """Remove all highlighted regions."""
+            self._selection_options = {k: list(v) for k, v in value.items()}
+        self._selected_indices = []
         self._selection = {}
         self._update_all_graphics()
-        self._emit({"value": {}})
+        self._emit({"value": self.selection})
+
+    @property
+    def options_color(self) -> str | np.ndarray:
+        """Color for unselected option items (options mode only)."""
+        return self._options_color
+
+    @options_color.setter
+    def options_color(self, value) -> None:
+        self._options_color = value
+        if self._selection_options is not None:
+            self._update_all_graphics()
+
+    @property
+    def options_alpha(self) -> float:
+        """Blend strength for unselected option items (options mode only)."""
+        return self._options_alpha
+
+    @options_alpha.setter
+    def options_alpha(self, value: float) -> None:
+        self._options_alpha = float(value)
+        if self._selection_options is not None:
+            self._update_all_graphics()
+
+    # ------------------------------------------------------------------ selection API
+
+    @property
+    def selection(self) -> list[int] | dict[str, list]:
+        """
+        In options mode: list of selected option indices.
+        In free mode: dict of selection specifiers.
+        """
+        if self._selection_options is not None:
+            return list(self._selected_indices)
+        return {k: list(v) for k, v in self._selection.items()}
+
+    @selection.setter
+    def selection(self, value) -> None:
+        if self._selection_options is not None:
+            if value is None:
+                self._selected_indices = []
+            elif isinstance(value, int):
+                self._selected_indices = [value]
+            else:
+                self._selected_indices = [int(i) for i in value]
+        else:
+            if not value:
+                self._selection = {}
+            else:
+                for k in value:
+                    if k not in self._VALID_KEYS:
+                        raise ValueError(f"Unknown key {k!r}. Must be one of {self._VALID_KEYS}")
+                self._selection = {k: list(v) for k, v in value.items()}
+        self._update_all_graphics()
+        self._emit({"value": self.selection})
+
+    def append(self, item_or_key, item=None) -> None:
+        """
+        In options mode: ``append(index)`` — add an option index to the selection.
+        In free mode: ``append(key, item)`` — add one item to the selection dict.
+        """
+        if self._selection_options is not None:
+            idx = int(item_or_key)
+            if idx not in self._selected_indices:
+                self._selected_indices.append(idx)
+                self._update_all_graphics()
+                self._emit({"value": self.selection})
+        else:
+            key = item_or_key
+            if key not in self._VALID_KEYS:
+                raise ValueError(f"Unknown key {key!r}. Must be one of {self._VALID_KEYS}")
+            self._selection.setdefault(key, []).append(item)
+            self._update_all_graphics()
+            self._emit({"value": self.selection})
+
+    def remove(self, item_or_key, index: int = -1) -> None:
+        """
+        In options mode: ``remove(index)`` — remove an option index from the selection.
+        In free mode: ``remove(key, list_index=-1)`` — remove one item from the selection dict.
+        """
+        if self._selection_options is not None:
+            idx = int(item_or_key)
+            if idx in self._selected_indices:
+                self._selected_indices.remove(idx)
+                self._update_all_graphics()
+                self._emit({"value": self.selection})
+        else:
+            key = item_or_key
+            if key not in self._selection:
+                raise KeyError(f"{key!r} is not in the selection.")
+            self._selection[key].pop(index)
+            if not self._selection[key]:
+                del self._selection[key]
+            self._update_all_graphics()
+            self._emit({"value": self.selection})
+
+    def clear(self) -> None:
+        """Clear the selection (options mode: deselects all; free mode: clears all regions)."""
+        if self._selection_options is not None:
+            self._selected_indices = []
+        else:
+            self._selection = {}
+        self._update_all_graphics()
+        self._emit({"value": self.selection})
+
+    # ------------------------------------------------------------------ graphic internals
 
     def _validate_graphic(self, graphic) -> None:
         mat = getattr(graphic, "_material", None)
@@ -625,46 +738,84 @@ class ImageHighlightSelector(HighlightSelector):
 
     def _update_highlight_buffers(self, graphic) -> None:
         mat = graphic._material
-        mat.uniform_buffer.data["highlight_alpha"] = self._alpha
+        # highlight_alpha uniform is always 1.0; per-item alpha is baked into the LUT.
+        mat.uniform_buffer.data["highlight_alpha"] = 1.0
         mat.uniform_buffer.update_range()
 
         n_rows, n_cols = graphic.data.value.shape[:2]
-        mask = np.zeros((n_rows, n_cols), dtype=np.uint8)
-        for mask_id, (ri, ci) in enumerate(self._iter_items(n_rows, n_cols), start=1):
-            mask[ri, ci] = np.uint8(mask_id)
-
-        cur = mat._highlight_mask_texture
-        if cur.data.shape[0] != n_rows or cur.data.shape[1] != n_cols:
-            mat._highlight_mask_texture = Texture(mask.copy(), dim=2)
+        if self._selection_options is not None:
+            self._update_options_mode(mat, n_rows, n_cols)
         else:
-            cur.data[:] = mask
-            cur.update_range((0, 0, 0), cur.size)
+            self._update_free_mode(mat, n_rows, n_cols)
 
-        n = self._n_items()
+    def _update_options_mode(self, mat, n_rows: int, n_cols: int) -> None:
+        mask = np.zeros((n_rows, n_cols), dtype=np.uint16)
+        items = list(self._iter_items(self._selection_options, n_rows, n_cols))
+        for mask_id, (ri, ci) in enumerate(items, start=1):
+            mask[ri, ci] = np.uint16(mask_id)
+        self._write_mask(mat, mask, n_rows, n_cols)
+
+        opts_rgba = self._rgba(self._options_color, self._options_alpha)
+        lut = mat._highlight_lut_buffer.data
+        lut[:] = 0.0
+        for i in range(len(items)):
+            lut[i] = opts_rgba
+        n_sel = len(self._selected_indices)
+        if n_sel > 0:
+            sel_colors = _build_lut(self._color, self._lut_source, n_sel)
+            sel_colors[:, 3] *= self._alpha
+            for i, opt_idx in enumerate(self._selected_indices):
+                lut[opt_idx] = sel_colors[i]
+        mat._highlight_lut_buffer.update_range()
+
+    def _update_free_mode(self, mat, n_rows: int, n_cols: int) -> None:
+        mask = np.zeros((n_rows, n_cols), dtype=np.uint16)
+        for mask_id, (ri, ci) in enumerate(self._iter_items(self._selection, n_rows, n_cols), start=1):
+            mask[ri, ci] = np.uint16(mask_id)
+        self._write_mask(mat, mask, n_rows, n_cols)
+
+        n = self._count_items(self._selection)
         lut = mat._highlight_lut_buffer.data
         lut[:] = 0.0
         if n > 0:
-            lut[:n] = _build_lut(self._color, self._lut_source, n)
+            built = _build_lut(self._color, self._lut_source, n)
+            built[:, 3] *= self._alpha
+            lut[:n] = built
         mat._highlight_lut_buffer.update_range()
 
     def _clear_highlight_buffers(self, graphic) -> None:
         mat = graphic._material
         n_rows, n_cols = graphic.data.value.shape[:2]
-        mat._highlight_mask_texture = Texture(
-            np.zeros((n_rows, n_cols), dtype=np.uint8), dim=2
-        )
-        self._write_lut(mat, np.zeros((1, 4), dtype=np.float32))
+        mat._highlight_mask_texture = Texture(np.zeros((n_rows, n_cols), dtype=np.uint16), dim=2)
+        mat._highlight_lut_buffer.data[:] = 0.0
+        mat._highlight_lut_buffer.update_range()
+
+    # ------------------------------------------------------------------ dunder
 
     def __len__(self) -> int:
-        return self._n_items()
+        if self._selection_options is not None:
+            return len(self._selected_indices)
+        return self._count_items(self._selection)
 
     def __contains__(self, item) -> bool:
+        if self._selection_options is not None:
+            return int(item) in self._selected_indices
         return item in self._selection
 
     def __iter__(self):
+        if self._selection_options is not None:
+            return iter(self._selected_indices)
         return iter(self._selection.values())
 
     def __repr__(self) -> str:
+        if self._selection_options is not None:
+            n_opts = self._count_items(self._selection_options)
+            return (
+                f"ImageHighlightSelector("
+                f"selected={self._selected_indices}, "
+                f"n_options={n_opts}, "
+                f"n_graphics={len(self._graphics)})"
+            )
         summary = {k: len(v) for k, v in self._selection.items()}
         return (
             f"ImageHighlightSelector("

@@ -81,10 +81,9 @@ fn fpl_apply_highlight_line(
 
 """
 
-# Image: mask texture is R8Unorm so textureLoad returns f32 in [0, 1]; multiply by 255 to recover the uint8 id.
+# Image: mask texture is R16Uint so textureLoad returns u32 directly.
 _IMAGE_HELPER = """\
-fn fpl_apply_highlight_img(base_color: vec4<f32>, mask_val: f32) -> vec4<f32> {
-    let mask_id = u32(round(mask_val * 255.0));
+fn fpl_apply_highlight_img(base_color: vec4<f32>, mask_id: u32) -> vec4<f32> {
     if (mask_id == 0u) { return base_color; }
     let h = s_highlight_lut[mask_id - 1u];
     return vec4<f32>(mix(base_color.rgb, h.rgb, h.a * u_material.highlight_alpha), base_color.a);
@@ -172,7 +171,7 @@ def _add_ids_bindings_vs_fs(shader, group0: dict, material) -> None:
 
 
 def _add_mask_bindings(shader, group0: dict, material) -> None:
-    """Append t_highlight_mask (R8Unorm texture) and s_highlight_lut bindings to group0."""
+    """Append t_highlight_mask (R16Uint texture) and s_highlight_lut bindings to group0."""
     next_idx = max(group0.keys()) + 1
     mask_view = GfxTextureView(material._highlight_mask_texture)
     new = {
@@ -254,8 +253,8 @@ class HighlightableImageShader(ImageShader):
         # by -0.5 (image geometry spans [-0.5, W-0.5]) so floor(world_pos) is wrong.
         mask_lines = (
             "    let fpl_px = vec2<u32>(varyings.texcoord * vec2<f32>(textureDimensions(t_highlight_mask)));\n"
-            "    let fpl_mask_val = textureLoad(t_highlight_mask, fpl_px, 0).r;\n"
-            "    out.color = fpl_apply_highlight_img(out_color, fpl_mask_val);"
+            "    let fpl_mask_id = textureLoad(t_highlight_mask, fpl_px, 0).r;\n"
+            "    out.color = fpl_apply_highlight_img(out_color, fpl_mask_id);"
         )
         wgsl = wgsl.replace(_FS_COLOR_ANCHOR, mask_lines, 1)
         wgsl = wgsl.replace(
