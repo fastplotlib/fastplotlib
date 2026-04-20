@@ -32,12 +32,13 @@ def _build_lut(
     color: str | np.ndarray | None,
     lut_source: np.ndarray | None,
     n: int,
+    lut_wrap: str = "fixed",
 ) -> np.ndarray:
     """
     Return an (n, 4) float32 RGBA array for n selected items.
 
-    If lut_source is provided, lut_source[i] is the color for the i-th selected
-    item. If lut_source is None, all rows are the resolved RGBA of color.
+    If lut_source is provided: "repeat" wraps via modulus, "fixed" requires len >= n.
+    If lut_source is None, all rows are color.
     """
     if n == 0:
         return np.zeros((1, 4), dtype=np.float32)
@@ -45,6 +46,8 @@ def _build_lut(
         lut = np.asarray(lut_source, dtype=np.float32)
         if lut.ndim != 2 or lut.shape[1] != 4:
             raise ValueError("`lut` must have shape (k, 4)")
+        if lut_wrap == "repeat":
+            return lut[np.arange(n) % len(lut)].copy()
         if lut.shape[0] < n:
             raise ValueError(f"`lut` has {lut.shape[0]} entries but {n} are selected")
         return lut[:n].copy()
@@ -74,10 +77,14 @@ class HighlightSelector:
         color: str | np.ndarray = "cyan",
         lut: np.ndarray | None = None,
         alpha: float = 1.0,
+        lut_wrap: str = "fixed",
     ):
+        if lut_wrap not in ("fixed", "repeat"):
+            raise ValueError(f"lut_wrap must be 'fixed' or 'repeat', got {lut_wrap!r}")
         self._color = color
         self._lut_source = lut
         self._alpha = float(alpha)
+        self._lut_wrap = lut_wrap
         self._graphics: list = []
         self._event_handlers: list[Callable] = []
 
@@ -132,6 +139,11 @@ class HighlightSelector:
     def lut(self, value: np.ndarray | None):
         self._lut_source = value
         self._update_all_graphics()
+
+    @property
+    def lut_wrap(self) -> str:
+        """LUT wrap mode: ``"fixed"`` (default) or ``"repeat"`` (modulus indexing)."""
+        return self._lut_wrap
 
     @property
     def alpha(self) -> float:
@@ -327,7 +339,7 @@ class PositionsHighlightSelector(HighlightSelector):
                 ids[idx] = rank + 1
 
         self._write_ids(mat, ids)
-        self._write_lut(mat, _build_lut(self._color, self._lut_source, len(self._selection)))
+        self._write_lut(mat, _build_lut(self._color, self._lut_source, len(self._selection), self._lut_wrap))
 
     def _clear_highlight_buffers(self, graphic) -> None:
         mat = graphic.world_object.material
@@ -434,7 +446,7 @@ class CollectionHighlightSelector(HighlightSelector):
     def _update_highlight_buffers(self, graphic) -> None:
         n_items = len(graphic)
         sel = self._selection
-        lut = _build_lut(self._color, self._lut_source, len(sel))
+        lut = _build_lut(self._color, self._lut_source, len(sel), self._lut_wrap)
         rank_map = {
             idx: rank + 1
             for rank, idx in enumerate(sel)
@@ -519,11 +531,12 @@ class ImageHighlightSelector(HighlightSelector):
         color: str | np.ndarray = "cyan",
         lut: np.ndarray | None = None,
         alpha: float = 1.0,
+        lut_wrap: str = "fixed",
         options_color: str | np.ndarray = "white",
         options_alpha: float = 0.15,
         selection_options: dict | None = None,
     ):
-        super().__init__(color=color, lut=lut, alpha=alpha)
+        super().__init__(color=color, lut=lut, alpha=alpha, lut_wrap=lut_wrap)
         self._selection: dict[str, list] = {}
         self._selected_indices: list[int] = []
         self._options_color = options_color
@@ -762,7 +775,7 @@ class ImageHighlightSelector(HighlightSelector):
             lut[i] = opts_rgba
         n_sel = len(self._selected_indices)
         if n_sel > 0:
-            sel_colors = _build_lut(self._color, self._lut_source, n_sel)
+            sel_colors = _build_lut(self._color, self._lut_source, n_sel, self._lut_wrap)
             sel_colors[:, 3] *= self._alpha
             for i, opt_idx in enumerate(self._selected_indices):
                 lut[opt_idx] = sel_colors[i]
@@ -778,7 +791,7 @@ class ImageHighlightSelector(HighlightSelector):
         lut = mat._highlight_lut_buffer.data
         lut[:] = 0.0
         if n > 0:
-            built = _build_lut(self._color, self._lut_source, n)
+            built = _build_lut(self._color, self._lut_source, n, self._lut_wrap)
             built[:, 3] *= self._alpha
             lut[:n] = built
         mat._highlight_lut_buffer.update_range()
