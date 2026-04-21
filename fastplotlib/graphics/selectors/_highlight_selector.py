@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import Callable
+from numbers import Integral
+from typing import Callable, Literal
 from warnings import warn
 
+import cmap as cmap_lib
 import numpy as np
 import pygfx
 from pygfx.resources import Buffer, Texture
@@ -27,32 +29,42 @@ _POSITIONS_MATERIAL_TYPES = (
     HighlightablePointsGaussianBlobMaterial,
 )
 
+cmap_lib.Colormap("tab10").lut()
+
 
 def _build_lut(
-    color: str | np.ndarray | None,
-    lut_source: np.ndarray | None,
-    n: int,
-    lut_wrap: str = "fixed",
+    color: str | np.ndarray = "red",
+    lut: np.ndarray | None = None,
+    n: int = 1,
+    lut_wrap: Literal["fixed", "repeat"] = "fixed",
 ) -> np.ndarray:
     """
     Return an (n, 4) float32 RGBA array for n selected items.
-
-    If lut_source is provided: "repeat" wraps via modulus, "fixed" requires len >= n.
-    If lut_source is None, all rows are color.
     """
+
     if n == 0:
         return np.zeros((1, 4), dtype=np.float32)
-    if lut_source is not None:
-        lut = np.asarray(lut_source, dtype=np.float32)
+
+    if lut is not None:
+        if isinstance(lut, str):
+            lut = cmap_lib.Colormap(lut).lut(n)
+
+        lut = np.asarray(lut, dtype=np.float32)
+
         if lut.ndim != 2 or lut.shape[1] != 4:
-            raise ValueError("`lut` must have shape (k, 4)")
+            raise ValueError("`lut` must have shape (n, 4) for n selected items")
+
         if lut_wrap == "repeat":
-            return lut[np.arange(n) % len(lut)].copy()
+            return lut[np.arange(n) % len(lut)]
+
         if lut.shape[0] < n:
-            raise ValueError(f"`lut` has {lut.shape[0]} entries but {n} are selected")
-        return lut[:n].copy()
-    rgba = np.array(pygfx.Color(color if color is not None else "cyan"), dtype=np.float32)
-    return np.tile(rgba, (n, 1))
+            raise ValueError(
+                f"`lut` has only {lut.shape[0]} entries but {n} are selected"
+            )
+
+        return lut[:n]
+
+    return np.repeat([pygfx.Color(color)], n, axis=0)
 
 
 class HighlightSelector:
@@ -63,32 +75,31 @@ class HighlightSelector:
     rendered output. Does not create extra world objects, so ``pick_info``
     is unaffected.
 
-    Use the concrete subclasses directly:
+    Use the subclasses:
 
-    * :class:`PositionsHighlightSelector` — highlight individual vertices on a
+    * :class:`PositionsHighlightSelector`: highlight individual vertices on a
       LineGraphic or ScatterGraphic
-    * :class:`CollectionHighlightSelector` — highlight whole lines/scatters in
+    * :class:`CollectionHighlightSelector`: highlight whole lines/scatters in
       a collection
-    * :class:`ImageHighlightSelector` — highlight pixel regions of an ImageGraphic
+    * :class:`ImageHighlightSelector`: highlight pixel regions of an ImageGraphic
     """
 
     def __init__(
         self,
-        color: str | np.ndarray = "cyan",
-        lut: np.ndarray | None = None,
-        alpha: float = 1.0,
-        lut_wrap: str = "fixed",
+        color: str | np.ndarray = "red",
+        lut: str | np.ndarray | None = None,
+        lut_wrap: Literal["fixed", "repeat"] = "fixed",
+        alpha: float = 0.7,
     ):
         if lut_wrap not in ("fixed", "repeat"):
             raise ValueError(f"lut_wrap must be 'fixed' or 'repeat', got {lut_wrap!r}")
+
         self._color = color
-        self._lut_source = lut
+        self._lut = lut
         self._alpha = float(alpha)
         self._lut_wrap = lut_wrap
-        self._graphics: list = []
-        self._event_handlers: list[Callable] = []
-
-    # ------------------------------------------------------------------ selection API
+        self._graphics = list()
+        self._event_handlers: list[Callable] = list()
 
     @property
     def selection(self):
@@ -107,12 +118,10 @@ class HighlightSelector:
     def clear(self) -> None:
         raise NotImplementedError
 
-    # ------------------------------------------------------------------ properties
-
     @property
     def color(self) -> str | np.ndarray:
         """
-        Color applied to all selected items when no ``lut`` is set.
+        Get or set color applied to all selected items, used if ``lut`` is ``None``.
 
         Accepts any value that ``pygfx.Color`` understands (color name string,
         RGBA tuple, hex string, etc.).
@@ -125,29 +134,33 @@ class HighlightSelector:
         self._update_all_graphics()
 
     @property
-    def lut(self) -> np.ndarray | None:
+    def lut(self) -> str | np.ndarray | None:
         """
-        Optional per-item color table, shape ``(k, 4)`` float32 RGBA.
+        Get or set per-item color lookup table, shape ``(n, 4)`` float32 RGBA, or a str
+        that defines a colormap.
 
         When set, ``lut[i]`` is the highlight color for the i-th selected item.
         Must have at least as many rows as the number of selected items.
         Set to ``None`` to fall back to ``color``.
         """
-        return self._lut_source
+        return self._lut
 
     @lut.setter
     def lut(self, value: np.ndarray | None):
-        self._lut_source = value
+        self._lut = value
         self._update_all_graphics()
 
     @property
     def lut_wrap(self) -> str:
-        """LUT wrap mode: ``"fixed"`` (default) or ``"repeat"`` (modulus indexing)."""
+        """
+        Get or set LUT wrap mode.
+        - "fixed":  no wrapping, fixed to size of the given LUT
+        - "repeat": cycles through the colormap when n_selections > lut_size"""
         return self._lut_wrap
 
     @property
     def alpha(self) -> float:
-        """Highlight blend strength in [0, 1]. 0 = invisible, 1 = full color."""
+        """Get or set alpha value, 0 - 1.0"""
         return self._alpha
 
     @alpha.setter
@@ -157,22 +170,21 @@ class HighlightSelector:
 
     @property
     def graphics(self) -> list:
-        """Attached graphics."""
+        """Get graphics the highlight selector is operating on."""
         return list(self._graphics)
 
-    # ------------------------------------------------------------------ graphic management
-
     def add_graphic(self, graphic) -> None:
-        """Attach ``graphic`` and immediately apply the current selection to it."""
+        """Add ``graphic`` and apply the current highlight selection to it."""
         if graphic in self._graphics:
             warn(f"{graphic!r} is already attached to this selector.")
             return
+
         self._validate_graphic(graphic)
         self._graphics.append(graphic)
         self._update_highlight_buffers(graphic)
 
     def remove_graphic(self, graphic) -> None:
-        """Detach ``graphic`` and clear its highlights."""
+        """remove ``graphic`` and clear its highlight buffer."""
         if graphic not in self._graphics:
             raise KeyError(f"{graphic!r} is not attached to this selector.")
         self._graphics.remove(graphic)
@@ -187,28 +199,27 @@ class HighlightSelector:
     def _clear_highlight_buffers(self, graphic) -> None:
         raise NotImplementedError
 
-    # ------------------------------------------------------------------ events
-
     def add_event_handler(self, handler: Callable) -> None:
-        """Register a callback fired when the selection changes."""
+        """Add a callback that is called when the selection changes."""
         if not callable(handler):
             raise TypeError("event handler must be callable")
+
         if handler in self._event_handlers:
             warn(f"{handler} is already registered.")
             return
+
         self._event_handlers.append(handler)
 
     def remove_event_handler(self, handler: Callable) -> None:
-        """Remove a registered event handler."""
+        """Remove an event handler."""
         if handler not in self._event_handlers:
             raise KeyError(f"{handler} is not registered.")
+
         self._event_handlers.remove(handler)
 
     def _emit(self, info: dict) -> None:
         for h in self._event_handlers:
             h({"selector": self, **info})
-
-    # ------------------------------------------------------------------ helpers
 
     def _update_all_graphics(self) -> None:
         for g in self._graphics:
@@ -230,8 +241,6 @@ class HighlightSelector:
             material._highlight_lut_buffer.data[:] = lut
             material._highlight_lut_buffer.update_range()
 
-    # ------------------------------------------------------------------ dunder
-
     def __len__(self) -> int:
         raise NotImplementedError
 
@@ -242,11 +251,7 @@ class HighlightSelector:
         raise NotImplementedError
 
     def __repr__(self) -> str:
-        return (
-            f"{self.__class__.__name__}("
-            f"n_selected={len(self)}, "
-            f"n_graphics={len(self._graphics)})"
-        )
+        return f"{self.__class__.__name__}\n" f"selection: {self.selection}"
 
 
 class PositionsHighlightSelector(HighlightSelector):
@@ -257,41 +262,54 @@ class PositionsHighlightSelector(HighlightSelector):
     ----------
     color : str or array-like, default "cyan"
         Color applied to all selected vertices when no ``lut`` is set.
-    lut : np.ndarray of shape (k, 4), optional
+
+    lut : np.ndarray of shape (n, 4), optional
         Per-vertex RGBA colors; ``lut[i]`` applies to the i-th selected vertex.
-        Must have at least as many rows as the number of selected vertices.
+
+    lut_wrap: "fixed" or "repeat"
+        - "fixed":  no wrapping, fixed to size of the given LUT
+        - "repeat": cycles through the colormap when n_selections > lut_size
+
     alpha : float, default 1.0
         Highlight blend strength in [0, 1].
+
     """
 
     def __init__(
         self,
-        color: str | np.ndarray = "cyan",
-        lut: np.ndarray | None = None,
+        color: str | np.ndarray = "red",
+        lut: str | np.ndarray | None = None,
+        lut_wrap: Literal["fixed", "repeat"] = "fixed",
         alpha: float = 1.0,
     ):
-        super().__init__(color=color, lut=lut, alpha=alpha)
-        self._selection: list[int] = []
+        super().__init__(color=color, lut=lut, lut_wrap=lut_wrap, alpha=alpha)
+        self._selection: list[int] = list()
 
     @property
-    def selection(self) -> list[int]:
+    def selection(self) -> tuple[int, ...]:
         """
-        Selected vertex indices.
-
-        Assign a list or array of integer indices to set the selection.
-        Empty selection is represented as ``[]``.
+        Get or set selected vertex indices.
         """
-        return list(self._selection)
+        return tuple(self._selection)
 
     @selection.setter
     def selection(self, value) -> None:
         if value is None or len(value) == 0:
-            self._selection = []
+            self._selection = list()
         else:
-            self._selection = [int(i) for i in np.asarray(value).ravel()]
-        self._update_all_graphics()
-        self._emit({"value": list(self._selection)})
+            if isinstance(value, Integral):
+                value = [value]
 
+            if not all([isinstance(i, Integral) for i in value]):
+                raise TypeError(f"selection must be an iterable of <int>\ngot: {value}")
+
+            # convert to list
+            self._selection = list(map(int, value))
+
+        self._update_all_graphics()
+        self._emit({"value": tuple(self._selection)})
+
+    # TODO: need to review the rest of these method
     def append(self, item) -> None:
         """
         Append one or more vertex indices to the selection.
@@ -339,7 +357,10 @@ class PositionsHighlightSelector(HighlightSelector):
                 ids[idx] = rank + 1
 
         self._write_ids(mat, ids)
-        self._write_lut(mat, _build_lut(self._color, self._lut_source, len(self._selection), self._lut_wrap))
+        self._write_lut(
+            mat,
+            _build_lut(self._color, self._lut, len(self._selection), self._lut_wrap),
+        )
 
     def _clear_highlight_buffers(self, graphic) -> None:
         mat = graphic.world_object.material
@@ -364,6 +385,7 @@ class PositionsHighlightSelector(HighlightSelector):
         )
 
 
+# TODO: review
 class CollectionHighlightSelector(HighlightSelector):
     """
     Highlights entire graphics within a LineCollection or ScatterCollection.
@@ -446,12 +468,8 @@ class CollectionHighlightSelector(HighlightSelector):
     def _update_highlight_buffers(self, graphic) -> None:
         n_items = len(graphic)
         sel = self._selection
-        lut = _build_lut(self._color, self._lut_source, len(sel), self._lut_wrap)
-        rank_map = {
-            idx: rank + 1
-            for rank, idx in enumerate(sel)
-            if 0 <= idx < n_items
-        }
+        lut = _build_lut(self._color, self._lut, len(sel), self._lut_wrap)
+        rank_map = {idx: rank + 1 for rank, idx in enumerate(sel) if 0 <= idx < n_items}
         for i, sub_graphic in enumerate(graphic):
             sub_mat = sub_graphic.world_object.material
             if not isinstance(sub_mat, _POSITIONS_MATERIAL_TYPES):
@@ -493,67 +511,79 @@ class ImageHighlightSelector(HighlightSelector):
     """
     Highlights pixel regions of an ImageGraphic.
 
-    **Free-selection mode** (``selection_options`` is ``None``):
-    ``selection`` is a dict with up to three keys:
+    Can be used in two modes:
 
-    * ``"rows"`` — list of row specs (int, list[int], or slice); selects those rows across all cols.
-    * ``"cols"`` — list of col specs (int, list[int], or slice); selects those cols across all rows.
-    * ``"pixels"`` — list of ``(n, 2)`` arrays of ``[[row, col], ...]`` coordinates.
+    **Free-selection mode**, if ``selection_options`` is ``None``:
 
-    When both ``"rows"`` and ``"cols"`` are given they must have the same length and are zipped:
-    ``rows[i]`` × ``cols[i]`` defines a rectangle for LUT index i.
+    ``selection`` is a dict with keys:
 
-    **Options mode** (``selection_options`` is set):
-    All options are shown with ``options_color``/``options_alpha`` (dim).
-    ``selection`` is an ``int`` or ``list[int]`` indexing into the options; those items are shown
-    with the highlight ``color``/``alpha``. Only the LUT is rewritten on selection change, not the mask.
+        - "rows": list of row specs (int, list[int], or slice); selects those rows across all cols.
+        - "cols": list of col specs (int, list[int], or slice); selects those cols across all rows.
+        - "pixels": list of ``(n, 2)`` arrays of ``[[row, col], ...]`` coordinates.
+
+    When both "rows" and "cols" are given they must have the same length each pair defines a rectangle.
+
+    **Options mode**, if ``selection_options`` is set:
+
+    All options are shown with ``options_color`` & ``options_alpha``.
+    ``selection`` is an ``int`` or ``list[int]`` indexing into the options, selected items are shown
+    with the highlight ``color`` or ``lut`` & ``alpha``.
+    Only the LUT is rewritten on selection change, not the mask.
 
     Parameters
     ----------
-    color : str or array-like, default "cyan"
+    color : str or array-like, default "red"
         Highlight color for selected items.
-    lut : np.ndarray of shape (k, 4), optional
-        Per-item RGBA overrides in free-selection mode.
+
+    lut : np.ndarray of shape (n, 4), optional
+        RGBA colors for each selected item
+
     alpha : float, default 1.0
-        Highlight blend strength for selected items.
-    options_color : str or array-like, default "white"
+        alpha blending value
+
+    options_color : str or array-like, default "w"
         Color shown for unselected option items.
-    options_alpha : float, default 0.15
-        Blend strength for unselected option items.
+
+    options_alpha : float, default 0.1
+        alpha blend value for unselected items
+
     selection_options : dict or None, optional
-        Pool of selectable items (same dict format as ``selection`` in free mode).
+        Pool of selectable options (same dict format as ``selection`` in free-selection mode).
+
     """
 
     _VALID_KEYS = frozenset(("rows", "cols", "pixels"))
 
     def __init__(
         self,
-        color: str | np.ndarray = "cyan",
+        color: str | np.ndarray = "red",
         lut: np.ndarray | None = None,
-        alpha: float = 1.0,
+        alpha: float = 0.7,
         lut_wrap: str = "fixed",
-        options_color: str | np.ndarray = "white",
-        options_alpha: float = 0.15,
+        options_color: str | np.ndarray = "w",
+        options_alpha: float = 0.1,
         selection_options: dict | None = None,
     ):
         super().__init__(color=color, lut=lut, alpha=alpha, lut_wrap=lut_wrap)
-        self._selection: dict[str, list] = {}
-        self._selected_indices: list[int] = []
+
+        self._selection: dict[str, list] = dict()
+        self._selected_indices: list[int] = list()
         self._options_color = options_color
         self._options_alpha = float(options_alpha)
+
         # validate and store selection_options without triggering _update_all_graphics
-        # (no graphics are attached yet)
+        # no graphics are targeted yet
         if selection_options is not None:
             for k in selection_options:
                 if k not in self._VALID_KEYS:
-                    raise ValueError(f"Unknown key {k!r}. Must be one of {self._VALID_KEYS}")
+                    raise ValueError(
+                        f"Unknown key {k!r}. Must be one of {self._VALID_KEYS}"
+                    )
             self._selection_options: dict[str, list] | None = {
                 k: list(v) for k, v in selection_options.items()
             }
         else:
             self._selection_options = None
-
-    # ------------------------------------------------------------------ helpers
 
     @staticmethod
     def _resolve_spec(spec, size: int) -> np.ndarray:
@@ -609,18 +639,19 @@ class ImageHighlightSelector(HighlightSelector):
             cur.data[:] = mask
             cur.update_range((0, 0, 0), cur.size)
 
-    # ------------------------------------------------------------------ selection_options
-
     @property
-    def selection_options(self) -> dict[str, list] | None:
+    def selection_options(self) -> dict[str, tuple] | None:
         """
-        Pool of selectable items (same dict format as ``selection`` in free mode).
-        When set, all options are rendered dim; ``selection`` indexes into this pool.
+        Get or set a pool of selectable items (same dict format as ``selection`` in free mode).
+        When set, all options highlighted using ``options_color`` and ``options_alpha``.
+        ``selection`` indexes into this pool.
         Setting to ``None`` reverts to free-selection mode and clears the selection.
         """
         if self._selection_options is None:
             return None
-        return {k: list(v) for k, v in self._selection_options.items()}
+
+        # return a new dict with a tuple of the selections so the user can't modify the objects
+        return {k: tuple(v) for k, v in self._selection_options.items()}
 
     @selection_options.setter
     def selection_options(self, value: dict | None) -> None:
@@ -629,101 +660,119 @@ class ImageHighlightSelector(HighlightSelector):
         else:
             for k in value:
                 if k not in self._VALID_KEYS:
-                    raise ValueError(f"Unknown key {k!r}. Must be one of {self._VALID_KEYS}")
+                    raise ValueError(
+                        f"Unknown key {k!r}. Must be one of {self._VALID_KEYS}"
+                    )
             self._selection_options = {k: list(v) for k, v in value.items()}
-        self._selected_indices = []
-        self._selection = {}
+
+        self._selected_indices = list()
+        self._selection = dict()
         self._update_all_graphics()
         self._emit({"value": self.selection})
 
     @property
     def options_color(self) -> str | np.ndarray:
-        """Color for unselected option items (options mode only)."""
+        """Get or set color for unselected option items (options mode only)."""
         return self._options_color
 
     @options_color.setter
-    def options_color(self, value) -> None:
+    def options_color(self, value: str | np.ndarray) -> None:
         self._options_color = value
+
         if self._selection_options is not None:
             self._update_all_graphics()
 
     @property
     def options_alpha(self) -> float:
-        """Blend strength for unselected option items (options mode only)."""
+        """Get or set alpha blend value of unselected option items (options mode only)."""
         return self._options_alpha
 
     @options_alpha.setter
     def options_alpha(self, value: float) -> None:
         self._options_alpha = float(value)
+
         if self._selection_options is not None:
             self._update_all_graphics()
 
-    # ------------------------------------------------------------------ selection API
-
     @property
-    def selection(self) -> list[int] | dict[str, list]:
+    def selection(self) -> tuple[int, ...] | dict[str, tuple]:
         """
-        In options mode: list of selected option indices.
-        In free mode: dict of selection specifiers.
+        In options mode: tuple of selection option indices.
+        In free mode: dict of selection items.
         """
         if self._selection_options is not None:
-            return list(self._selected_indices)
-        return {k: list(v) for k, v in self._selection.items()}
+            return tuple(self._selected_indices)
+
+        # return a new dict with a tuple of the selections so the user can't modify the objects
+        return {k: tuple(v) for k, v in self._selection.items()}
 
     @selection.setter
-    def selection(self, value) -> None:
+    def selection(self, value: dict[Literal["rows", "cols", "pixels"], list]) -> None:
         if self._selection_options is not None:
             if value is None:
-                self._selected_indices = []
+                self._selected_indices = list()
+
             elif isinstance(value, int):
                 self._selected_indices = [value]
+
             else:
                 self._selected_indices = [int(i) for i in value]
+
         else:
             if not value:
                 self._selection = {}
+
             else:
                 for k in value:
                     if k not in self._VALID_KEYS:
-                        raise ValueError(f"Unknown key {k!r}. Must be one of {self._VALID_KEYS}")
+                        raise ValueError(
+                            f"Unknown key {k!r}. Must be one of {self._VALID_KEYS}"
+                        )
+
                 self._selection = {k: list(v) for k, v in value.items()}
+
         self._update_all_graphics()
         self._emit({"value": self.selection})
 
     def append(self, item_or_key, item=None) -> None:
         """
-        In options mode: ``append(index)`` — add an option index to the selection.
-        In free mode: ``append(key, item)`` — add one item to the selection dict.
+        append to the current selection
         """
         if self._selection_options is not None:
-            idx = int(item_or_key)
-            if idx not in self._selected_indices:
-                self._selected_indices.append(idx)
+            # options mode
+            index = int(item_or_key)
+            if index not in self._selected_indices:
+                self._selected_indices.append(index)
                 self._update_all_graphics()
                 self._emit({"value": self.selection})
         else:
+            # TODO: modify so it can take a dict directly, like {"row": <rows to append>, "cols": <cols to also append>}
             key = item_or_key
             if key not in self._VALID_KEYS:
-                raise ValueError(f"Unknown key {key!r}. Must be one of {self._VALID_KEYS}")
-            self._selection.setdefault(key, []).append(item)
+                raise ValueError(
+                    f"Unknown key {key!r}. Must be one of {self._VALID_KEYS}"
+                )
+            self._selection.setdefault(key, list()).append(item)
             self._update_all_graphics()
             self._emit({"value": self.selection})
 
     def remove(self, item_or_key, index: int = -1) -> None:
         """
-        In options mode: ``remove(index)`` — remove an option index from the selection.
-        In free mode: ``remove(key, list_index=-1)`` — remove one item from the selection dict.
+        In options mode: ``remove(index)``: remove an option index from the selection.
+        In free mode: ``remove(key, list_index=-1)``: remove one item from the selection dict.
         """
         if self._selection_options is not None:
-            idx = int(item_or_key)
-            if idx in self._selected_indices:
-                self._selected_indices.remove(idx)
+            index = int(item_or_key)
+            if index in self._selected_indices:
+                self._selected_indices.remove(index)
                 self._update_all_graphics()
                 self._emit({"value": self.selection})
         else:
+            # TODO: modify this to also work directly with dict args like I want to modify append()
             key = item_or_key
             if key not in self._selection:
                 raise KeyError(f"{key!r} is not in the selection.")
+
             self._selection[key].pop(index)
             if not self._selection[key]:
                 del self._selection[key]
@@ -731,15 +780,13 @@ class ImageHighlightSelector(HighlightSelector):
             self._emit({"value": self.selection})
 
     def clear(self) -> None:
-        """Clear the selection (options mode: deselects all; free mode: clears all regions)."""
+        """Clear the selection (options mode: deselects all, free mode: clears all regions)."""
         if self._selection_options is not None:
-            self._selected_indices = []
+            self._selected_indices = list()
         else:
-            self._selection = {}
+            self._selection = dict()
         self._update_all_graphics()
         self._emit({"value": self.selection})
-
-    # ------------------------------------------------------------------ graphic internals
 
     def _validate_graphic(self, graphic) -> None:
         mat = getattr(graphic, "_material", None)
@@ -751,7 +798,7 @@ class ImageHighlightSelector(HighlightSelector):
 
     def _update_highlight_buffers(self, graphic) -> None:
         mat = graphic._material
-        # highlight_alpha uniform is always 1.0; per-item alpha is baked into the LUT.
+        # highlight_alpha uniform is 1.0, per-item alpha is in the LUT.
         mat.uniform_buffer.data["highlight_alpha"] = 1.0
         mat.uniform_buffer.update_range()
 
@@ -775,7 +822,7 @@ class ImageHighlightSelector(HighlightSelector):
             lut[i] = opts_rgba
         n_sel = len(self._selected_indices)
         if n_sel > 0:
-            sel_colors = _build_lut(self._color, self._lut_source, n_sel, self._lut_wrap)
+            sel_colors = _build_lut(self._color, self._lut, n_sel, self._lut_wrap)
             sel_colors[:, 3] *= self._alpha
             for i, opt_idx in enumerate(self._selected_indices):
                 lut[opt_idx] = sel_colors[i]
@@ -783,7 +830,9 @@ class ImageHighlightSelector(HighlightSelector):
 
     def _update_free_mode(self, mat, n_rows: int, n_cols: int) -> None:
         mask = np.zeros((n_rows, n_cols), dtype=np.uint16)
-        for mask_id, (ri, ci) in enumerate(self._iter_items(self._selection, n_rows, n_cols), start=1):
+        for mask_id, (ri, ci) in enumerate(
+            self._iter_items(self._selection, n_rows, n_cols), start=1
+        ):
             mask[ri, ci] = np.uint16(mask_id)
         self._write_mask(mat, mask, n_rows, n_cols)
 
@@ -791,7 +840,7 @@ class ImageHighlightSelector(HighlightSelector):
         lut = mat._highlight_lut_buffer.data
         lut[:] = 0.0
         if n > 0:
-            built = _build_lut(self._color, self._lut_source, n, self._lut_wrap)
+            built = _build_lut(self._color, self._lut, n, self._lut_wrap)
             built[:, 3] *= self._alpha
             lut[:n] = built
         mat._highlight_lut_buffer.update_range()
@@ -799,11 +848,11 @@ class ImageHighlightSelector(HighlightSelector):
     def _clear_highlight_buffers(self, graphic) -> None:
         mat = graphic._material
         n_rows, n_cols = graphic.data.value.shape[:2]
-        mat._highlight_mask_texture = Texture(np.zeros((n_rows, n_cols), dtype=np.uint16), dim=2)
+        mat._highlight_mask_texture = Texture(
+            np.zeros((n_rows, n_cols), dtype=np.uint16), dim=2
+        )
         mat._highlight_lut_buffer.data[:] = 0.0
         mat._highlight_lut_buffer.update_range()
-
-    # ------------------------------------------------------------------ dunder
 
     def __len__(self) -> int:
         if self._selection_options is not None:

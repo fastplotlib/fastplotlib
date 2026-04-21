@@ -130,7 +130,7 @@ def _warn_anchor_missing(label: str, anchor: str) -> None:
     warnings.warn(
         f"fpl highlight: anchor {anchor!r} not found in {label} WGSL. "
         "Highlighting disabled for this graphic type. "
-        "This is likely caused by a pygfx version change — update the anchor string.",
+        "This is likely caused by a pygfx version change, update the anchor string.",
         stacklevel=3,
     )
 
@@ -300,7 +300,7 @@ class HighlightableImageShader(ImageShader):
 
 
 # ---------------------------------------------------------------------------
-# Thin line shader  (line_strip — GPU interpolates varyings between vertices)
+# Thin line shader  (line_strip: GPU interpolates varyings between vertices)
 # The VS looks up s_highlight_ids[i0] and stores the resolved LUT color in a
 # vec4<f32> varying; the GPU linearly interpolates it across each segment for free.
 # ---------------------------------------------------------------------------
@@ -351,7 +351,7 @@ class HighlightableThinLineShader(ThinLineShader):
 
 
 # ---------------------------------------------------------------------------
-# Thick line shader  (triangle geometry — smooth interpolation via two varyings)
+# Thick line shader  (triangle geometry: smooth interpolation via two varyings)
 #
 # VS injection: placed just before varyings.pick_idx assignment so that
 # node_index, node_index_prev, node_index_next, node_index_is_even and

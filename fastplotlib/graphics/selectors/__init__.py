@@ -10,7 +10,14 @@ from ._highlight_selector import (
     ImageHighlightSelector,
 )
 from ._visibility_selector import VisibilitySelector, ImageVisibilitySelector
-
+from ._selector_collection import (
+    SelectorCollection,
+    LinearSelectors,
+    LinearRegionSelectors,
+    RectangleSelectors,
+    PolygonSelectors,
+)
+from ._selection_vector import SelectionVector
 
 __all__ = [
     "LinearSelector",
@@ -22,4 +29,10 @@ __all__ = [
     "ImageHighlightSelector",
     "VisibilitySelector",
     "ImageVisibilitySelector",
+    "SelectorCollection",
+    "LinearSelectors",
+    "LinearRegionSelectors",
+    "RectangleSelectors",
+    "PolygonSelectors",
+    "SelectionVector",
 ]

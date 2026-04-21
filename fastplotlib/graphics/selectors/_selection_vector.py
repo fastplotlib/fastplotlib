@@ -83,4 +83,3 @@ class SelectionVector:
 
     def clear_selectables(self):
         self._selectors.clear()
-
