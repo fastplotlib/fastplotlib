@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Iterable
 from numbers import Integral
 from typing import Callable, Literal
 from warnings import warn
@@ -596,11 +597,13 @@ class ImageHighlightSelector(HighlightSelector):
     def _len_dict(self, sel: dict) -> int:
         if "rows" in sel:
             # covers the case for a selection of rows, as well as row & col pairs
-            return len(sel["rows"].values())
+            return len(sel["rows"])
+
         if "cols" in sel:
-            return len(sel["cols"].values())
+            return len(sel["cols"])
+
         if "pixels" in sel:
-            return len(sel["pixels"].values())
+            return len(sel["pixels"])
 
         return 0
 
@@ -678,7 +681,7 @@ class ImageHighlightSelector(HighlightSelector):
         return {k: tuple(v) for k, v in self._selection.items()}
 
     @selection.setter
-    def selection(self, value: dict[Literal["rows", "cols", "pixels"], list]) -> None:
+    def selection(self, value: Iterable[int] | dict[Literal["rows", "cols", "pixels"], list]) -> None:
         if self._selection_options is not None:
             if value is None:
                 self._selected_indices = list()
