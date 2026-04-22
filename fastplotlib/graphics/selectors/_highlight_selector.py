@@ -179,7 +179,7 @@ class HighlightSelector:
             warn(f"{graphic!r} is already attached to this selector.")
             return
 
-        self._validate_graphic(graphic)
+        self._check_graphic(graphic)
         self._graphics.append(graphic)
         self._update_highlight_buffers(graphic)
 
@@ -190,7 +190,7 @@ class HighlightSelector:
         self._graphics.remove(graphic)
         self._clear_highlight_buffers(graphic)
 
-    def _validate_graphic(self, graphic) -> None:
+    def _check_graphic(self, graphic) -> None:
         raise NotImplementedError
 
     def _update_highlight_buffers(self, graphic) -> None:
@@ -336,7 +336,7 @@ class PositionsHighlightSelector(HighlightSelector):
         self._update_all_graphics()
         self._emit({"value": []})
 
-    def _validate_graphic(self, graphic) -> None:
+    def _check_graphic(self, graphic) -> None:
         mat = graphic.world_object.material
         if not isinstance(mat, _POSITIONS_MATERIAL_TYPES):
             raise TypeError(
@@ -458,7 +458,7 @@ class CollectionHighlightSelector(HighlightSelector):
         self._update_all_graphics()
         self._emit({"value": []})
 
-    def _validate_graphic(self, graphic) -> None:
+    def _check_graphic(self, graphic) -> None:
         if not isinstance(graphic, GraphicCollection):
             raise TypeError(
                 f"CollectionHighlightSelector requires a GraphicCollection, "
@@ -734,61 +734,100 @@ class ImageHighlightSelector(HighlightSelector):
         self._update_all_graphics()
         self._emit({"value": self.selection})
 
-    def append(self, item_or_key, item=None) -> None:
+    def append(self, dict_or_index: dict | int) -> None:
         """
         append to the current selection
         """
         if self._selection_options is not None:
             # options mode
-            index = int(item_or_key)
+            index = dict_or_index
+            if not isinstance(index, Integral):
+                raise TypeError(
+                    f"must provide integer index to append to selection "
+                    f"in 'options' mode, you passed: {dict_or_index!r}"
+                )
             if index not in self._selected_indices:
                 self._selected_indices.append(index)
                 self._update_all_graphics()
                 self._emit({"value": self.selection})
         else:
-            # TODO: modify so it can take a dict directly, like {"row": <rows to append>, "cols": <cols to also append>}
-            key = item_or_key
-            if key not in self._VALID_KEYS:
-                raise ValueError(
-                    f"Unknown key {key!r}. Must be one of {self._VALID_KEYS}"
-                )
-            self._selection.setdefault(key, list()).append(item)
+            d = dict_or_index
+            # check that dict is valid
+            keys = list(d.keys())
+            err = f"must provide a dict of only rows, cols, rows & cols, or pixels, you passed a dict with keys: {keys}"
+
+            if any([k not in self._VALID_KEYS for k in keys]):
+                raise KeyError(err)
+
+            if "pixels" in keys and len(keys) > 1:
+                raise KeyError(err)
+
+            if "rows" in keys and "cols" in keys:
+                if len(d["rows"]) != len(d["cols"]):
+                    raise ValueError(
+                        f"if appending pairs of rows & cols, they must be of the same length"
+                    )
+                rows, cols = d["rows"], d["cols"]
+                if not all(
+                    [
+                        isinstance(r, slice) and isinstance(c, slice)
+                        for r, c in zip(rows, cols)
+                    ]
+                ):
+                    raise ValueError(
+                        f"if appending pairs of rows & cols, each row and column pair must be a slice, you passed: {d}"
+                    )
+            for k in keys:
+                self._selection.setdefault(k, list()).append(d[k])
+
             self._update_all_graphics()
             self._emit({"value": self.selection})
 
-    def remove(self, item_or_key, index: int = -1) -> None:
+    def remove(self, dict_or_index: dict | int) -> None:
         """
         In options mode: ``remove(index)``: remove an option index from the selection.
         In free mode: ``remove(key, list_index=-1)``: remove one item from the selection dict.
         """
         if self._selection_options is not None:
-            index = int(item_or_key)
+            # options mode
+            index = dict_or_index
+            if not isinstance(index, Integral):
+                raise TypeError(
+                    f"must provide integer index to append to selection "
+                    f"in 'options' mode, you passed: {dict_or_index!r}"
+                )
             if index in self._selected_indices:
                 self._selected_indices.remove(index)
                 self._update_all_graphics()
                 self._emit({"value": self.selection})
         else:
-            # TODO: modify this to also work directly with dict args like I want to modify append()
-            key = item_or_key
-            if key not in self._selection:
-                raise KeyError(f"{key!r} is not in the selection.")
+            d = dict_or_index
+            keys = list(d.keys())
+            if any([k not in self._selection for k in keys]):
+                raise KeyError(
+                    f"You provided keys that are  not in the selection.\nkeys: {keys}\nselection: {self._selection}"
+                )
 
-            self._selection[key].pop(index)
-            if not self._selection[key]:
-                del self._selection[key]
+            for k in keys:
+                for item in d[k]:
+                    self._selection[k].remove(item)
+                if len(self._selection[k]) < 1:
+                    del self._selection[k]
+
             self._update_all_graphics()
             self._emit({"value": self.selection})
 
     def clear(self) -> None:
         """Clear the selection (options mode: deselects all, free mode: clears all regions)."""
         if self._selection_options is not None:
+            # options mode
             self._selected_indices = list()
         else:
             self._selection = dict()
         self._update_all_graphics()
         self._emit({"value": self.selection})
 
-    def _validate_graphic(self, graphic) -> None:
+    def _check_graphic(self, graphic) -> None:
         mat = getattr(graphic, "_material", None)
         if not isinstance(mat, HighlightableImageMaterial):
             raise TypeError(
