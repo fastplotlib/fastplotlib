@@ -806,9 +806,7 @@ class ImageHighlightSelector(HighlightSelector):
                 f"got {type(mat).__name__}."
             )
 
-    def _create_mask_texture(
-        self, mask: np.ndarray
-    ) -> pygfx.Texture:
+    def _create_mask_texture(self, mask: np.ndarray) -> pygfx.Texture:
         rows, cols = mask.shape
         texture = pygfx.Texture(
             size=(cols, rows, 1),  # initialize with size, no local cpu buffer
@@ -945,7 +943,10 @@ class ImageHighlightSelector(HighlightSelector):
 
         # check if a single row-col pair is in the selection
         if "rows" in item and "cols" in item:
-            if item["rows"] in self._selection["rows"] and item["cols"] in self._selection["cols"]:
+            if (
+                item["rows"] in self._selection["rows"]
+                and item["cols"] in self._selection["cols"]
+            ):
                 return True
 
         # check for basic membership
@@ -971,7 +972,4 @@ class ImageHighlightSelector(HighlightSelector):
                 f"options: {self._selection_options}\n"
             )
 
-        return (
-            f"ImageHighlightSelector\n"
-            f"selection: {self._selection}, "
-        )
+        return f"ImageHighlightSelector\n" f"selection: {self._selection}, "
