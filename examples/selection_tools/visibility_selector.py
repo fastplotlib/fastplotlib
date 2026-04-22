@@ -62,13 +62,15 @@ for session_index in range(3):
 
     # just to create diff indices per session
     local_indices = np.roll(np.arange(n_circles), shift=session_index)
-    centers_per_session.append(centers[local_indices])
 
     indices_per_session.append(local_indices)
 
     movies_sessions.append(images)
-    contours_sessions.append(contours)
-    signals_sessions.append(signals)
+
+    # re-order stuff in local index order
+    centers_per_session.append(centers[local_indices])
+    contours_sessions.append([contours[i] for i in local_indices])
+    signals_sessions.append(signals[local_indices])
 
 extents = {
     "images-0": (0, 0.33, 0, 0.33),
@@ -80,10 +82,17 @@ extents = {
 }
 
 ref_range = {"time": (0, n_t, 1)}
-ndw = fpl.NDWidget(ref_range, extents=extents, size=(1300, 500))
+ndw = fpl.NDWidget(
+    ref_range,
+    extents=extents,
+    controller_ids=[
+        ("images-0", "images-1", "images-2"),
+    ],
+    size=(1300, 1000)
+)
 
 def master_to_local_index(session_id: int, selection_indices: list[int]) -> int:
-    return selection_indices
+    return [i + session_id for i in selection_indices]
 
 
 # image click changes the selection, can change the selection vector in any other way too
@@ -95,7 +104,7 @@ def image_clicked(session, ev):
     )
 
     # inverse transform
-    master_index = indices_per_session[session][local_index]
+    master_index = local_index - session
 
     print(local_index, master_index)
 
