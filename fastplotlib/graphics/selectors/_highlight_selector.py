@@ -7,7 +7,7 @@ from warnings import warn
 import cmap as cmap_lib
 import numpy as np
 import pygfx
-from pygfx.resources import Buffer, Texture
+import wgpu
 
 from .._collection_base import GraphicCollection
 from ..shaders._highlight_materials import (
@@ -227,16 +227,18 @@ class HighlightSelector:
 
     @staticmethod
     def _write_ids(material, ids: np.ndarray) -> None:
+        # replace buffer if size changed (GPU binding must point to new object)
         if material._highlight_ids_buffer.data.shape[0] != ids.shape[0]:
-            material._highlight_ids_buffer = Buffer(ids.copy())
+            material._highlight_ids_buffer = pygfx.Buffer(ids.copy())
         else:
             material._highlight_ids_buffer.data[:] = ids
             material._highlight_ids_buffer.update_range()
 
     @staticmethod
     def _write_lut(material, lut: np.ndarray) -> None:
+        # replace buffer if size changed (GPU binding must point to new object)
         if material._highlight_lut_buffer.data.shape[0] != lut.shape[0]:
-            material._highlight_lut_buffer = Buffer(lut.copy())
+            material._highlight_lut_buffer = pygfx.Buffer(lut.copy())
         else:
             material._highlight_lut_buffer.data[:] = lut
             material._highlight_lut_buffer.update_range()
@@ -571,6 +573,11 @@ class ImageHighlightSelector(HighlightSelector):
         self._options_color = options_color
         self._options_alpha = float(options_alpha)
 
+        # 65535 is the highest number that uint16 can represent.
+        # We make a LUT of this size since the highlight mask Texture is uint16
+        self._lut_buffer = pygfx.Buffer(np.zeros((65535, 4), dtype=np.float32))
+        self._mask_texture: pygfx.Texture | None = None
+
         # validate and store selection_options without triggering _update_all_graphics
         # no graphics are targeted yet
         if selection_options is not None:
@@ -630,14 +637,6 @@ class ImageHighlightSelector(HighlightSelector):
         c = np.array(pygfx.Color(color), dtype=np.float32)
         c[3] = float(alpha)
         return c
-
-    def _write_mask(self, mat, mask: np.ndarray, n_rows: int, n_cols: int) -> None:
-        cur = mat._highlight_mask_texture
-        if cur.data.shape[0] != n_rows or cur.data.shape[1] != n_cols:
-            mat._highlight_mask_texture = Texture(mask.copy(), dim=2)
-        else:
-            cur.data[:] = mask
-            cur.update_range((0, 0, 0), cur.size)
 
     @property
     def selection_options(self) -> dict[str, tuple] | None:
@@ -835,63 +834,97 @@ class ImageHighlightSelector(HighlightSelector):
                 f"got {type(mat).__name__}."
             )
 
+    def _create_mask_texture(self, mask: np.ndarray, n_rows: int, n_cols: int) -> pygfx.Texture:
+        texture = pygfx.Texture(
+            size=(n_cols, n_rows, 1), # initialize with size, no local cpu buffer
+            dim=2,
+            format="r16uint",
+            usage=wgpu.TextureUsage.COPY_DST
+        )
+        # send initialized data directly to GPU
+        texture.send_data((0, 0, 0), mask)
+        return texture
+
+    def _compute_mask(self, n_rows: int, n_cols: int) -> np.ndarray:
+        """Build the uint16 mask array for the current selection"""
+        mask = np.zeros((n_rows, n_cols), dtype=np.uint16)
+        if self._selection_options is not None:
+            sel = self._selection_options
+        else:
+            sel = self.selection
+
+        for mask_id, (ri, ci) in enumerate(self._iter_items(sel, n_rows, n_cols), start=1):
+            mask[ri, ci] = np.uint16(mask_id)
+        return mask
+
+    def _update_lut(self, n_rows: int, n_cols: int) -> None:
+        """Write current highlight colors into the selector-owned LUT buffer."""
+        lut = self._lut_buffer.data
+        lut[:] = 0.0
+        if self._selection_options is not None:
+            items = list(self._iter_items(self._selection_options, n_rows, n_cols))
+            opts_rgba = self._rgba(self._options_color, self._options_alpha)
+            for i in range(len(items)):
+                lut[i] = opts_rgba
+            n_sel = len(self._selected_indices)
+            if n_sel > 0:
+                sel_colors = _build_lut(self._color, self._lut, n_sel, self._lut_wrap)
+                sel_colors[:, 3] *= self._alpha
+                for i, opt_idx in enumerate(self._selected_indices):
+                    lut[opt_idx] = sel_colors[i]
+        else:
+            n = self._count_items(self._selection)
+            if n > 0:
+                built = _build_lut(self._color, self._lut, n, self._lut_wrap)
+                built[:, 3] *= self._alpha
+                lut[:n] = built
+        self._lut_buffer.update_range()
+
     def _update_highlight_buffers(self, graphic) -> None:
+        # Called once per graphic on add_graphic: wire selector-owned objects into
+        # the material. Subsequent graphics just get references to the same objects.
         mat = graphic._material
-        # highlight_alpha uniform is 1.0, per-item alpha is in the LUT.
+        mat._highlight_lut_buffer = self._lut_buffer
+        if self._mask_texture is None:
+            n_rows, n_cols = graphic.data.value.shape[:2]
+            self._mask_texture = self._create_mask_texture(
+                self._compute_mask(n_rows, n_cols), n_rows, n_cols
+            )
+            self._update_lut(n_rows, n_cols)
+        mat._highlight_mask_texture = self._mask_texture
         mat.uniform_buffer.data["highlight_alpha"] = 1.0
         mat.uniform_buffer.update_range()
 
-        n_rows, n_cols = graphic.data.value.shape[:2]
-        if self._selection_options is not None:
-            self._update_options_mode(mat, n_rows, n_cols)
+    def _update_all_graphics(self) -> None:
+        if not self._graphics:
+            return
+        shapes = {g.data.value.shape[:2] for g in self._graphics}
+        if len(shapes) > 1:
+            raise ValueError(
+                f"All attached graphics must have the same shape, got {shapes}"
+            )
+        n_rows, n_cols = self._graphics[0].data.value.shape[:2]
+        mask = self._compute_mask(n_rows, n_cols)
+        # Re-create GPU texture if shape changed, otherwise send new data in-place
+        if self._mask_texture is None or self._mask_texture.size != (n_cols, n_rows, 1):
+            self._mask_texture = self._create_mask_texture(mask, n_rows, n_cols)
+            for g in self._graphics:
+                g._material._highlight_mask_texture = self._mask_texture
         else:
-            self._update_free_mode(mat, n_rows, n_cols)
-
-    def _update_options_mode(self, mat, n_rows: int, n_cols: int) -> None:
-        mask = np.zeros((n_rows, n_cols), dtype=np.uint16)
-        items = list(self._iter_items(self._selection_options, n_rows, n_cols))
-        for mask_id, (ri, ci) in enumerate(items, start=1):
-            mask[ri, ci] = np.uint16(mask_id)
-        self._write_mask(mat, mask, n_rows, n_cols)
-
-        opts_rgba = self._rgba(self._options_color, self._options_alpha)
-        lut = mat._highlight_lut_buffer.data
-        lut[:] = 0.0
-        for i in range(len(items)):
-            lut[i] = opts_rgba
-        n_sel = len(self._selected_indices)
-        if n_sel > 0:
-            sel_colors = _build_lut(self._color, self._lut, n_sel, self._lut_wrap)
-            sel_colors[:, 3] *= self._alpha
-            for i, opt_idx in enumerate(self._selected_indices):
-                lut[opt_idx] = sel_colors[i]
-        mat._highlight_lut_buffer.update_range()
-
-    def _update_free_mode(self, mat, n_rows: int, n_cols: int) -> None:
-        mask = np.zeros((n_rows, n_cols), dtype=np.uint16)
-        for mask_id, (ri, ci) in enumerate(
-            self._iter_items(self._selection, n_rows, n_cols), start=1
-        ):
-            mask[ri, ci] = np.uint16(mask_id)
-        self._write_mask(mat, mask, n_rows, n_cols)
-
-        n = self._count_items(self._selection)
-        lut = mat._highlight_lut_buffer.data
-        lut[:] = 0.0
-        if n > 0:
-            built = _build_lut(self._color, self._lut, n, self._lut_wrap)
-            built[:, 3] *= self._alpha
-            lut[:n] = built
-        mat._highlight_lut_buffer.update_range()
+            self._mask_texture.send_data((0, 0, 0), mask)
+        self._update_lut(n_rows, n_cols)
+        # uniform_buffer is per-material and cannot be shared
+        for g in self._graphics:
+            g._material.uniform_buffer.data["highlight_alpha"] = 1.0
+            g._material.uniform_buffer.update_range()
 
     def _clear_highlight_buffers(self, graphic) -> None:
+        # Restore the detached material to minimal self-owned placeholders
         mat = graphic._material
-        n_rows, n_cols = graphic.data.value.shape[:2]
-        mat._highlight_mask_texture = Texture(
-            np.zeros((n_rows, n_cols), dtype=np.uint16), dim=2
+        mat._highlight_mask_texture = pygfx.Texture(
+            np.zeros((1, 1), dtype=np.uint16), dim=2
         )
-        mat._highlight_lut_buffer.data[:] = 0.0
-        mat._highlight_lut_buffer.update_range()
+        mat._highlight_lut_buffer = pygfx.Buffer(np.zeros((1, 4), dtype=np.float32))
 
     def __len__(self) -> int:
         if self._selection_options is not None:
