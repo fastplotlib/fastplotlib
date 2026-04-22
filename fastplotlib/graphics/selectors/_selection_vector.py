@@ -4,6 +4,7 @@ from typing import Any, Sequence
 
 from ._protocols import SelectorProtocol, MultiSelectorProtocol
 
+
 def identity(val: Any) -> Any:
     return val
 
@@ -11,7 +12,9 @@ def identity(val: Any) -> Any:
 class SelectionVector:
     def __init__(self, max_size: int = None):
         # selector -> (map, map_inv)
-        self._selectors: dict[SelectorProtocol | MultiSelectorProtocol, tuple[Callable, Callable]] = dict()
+        self._selectors: dict[
+            SelectorProtocol | MultiSelectorProtocol, tuple[Callable, Callable]
+        ] = dict()
         self._selection: list[Any] = list()
 
     @property
@@ -20,9 +23,10 @@ class SelectionVector:
 
     @selection.setter
     def selection(self, new: Sequence[Any]):
-        for selector, (map_, map_inv) in self._selectors.items():
-            index_local = map_(new)
-            selector.selection = index_local
+        # iterate through each selector that operates in its own "local" space
+        for selector_local, (map_, map_inv) in self._selectors.items():
+            indices_local = map_(new)
+            selector_local.selection = indices_local
 
     def append(self, index):
         self._selection.append(index)
@@ -30,8 +34,8 @@ class SelectionVector:
             if not isinstance(selector, MultiSelectorProtocol):
                 continue
 
-            index_local = map_(index)
-            selector.append(index_local)
+            index_local = map_([index])
+            selector.append(index_local[0])
 
     def clear(self):
         self._selection.clear()
@@ -40,9 +44,9 @@ class SelectionVector:
     def add_selector(
         self,
         new: (
-                SelectorProtocol
-                | tuple[SelectorProtocol, Callable]
-                | tuple[SelectorProtocol, Callable, Callable]
+            SelectorProtocol
+            | tuple[SelectorProtocol, Callable]
+            | tuple[SelectorProtocol, Callable, Callable]
         ),
     ):
         selector: SelectorProtocol
