@@ -34,7 +34,7 @@ cmap_lib.Colormap("tab10").lut()
 
 def _build_lut(
     color: str | np.ndarray = "red",
-    lut: np.ndarray | None = None,
+    lut: str | np.ndarray | None = None,
     n: int = 1,
     lut_wrap: Literal["fixed", "repeat"] = "fixed",
 ) -> np.ndarray:
@@ -559,7 +559,7 @@ class ImageHighlightSelector(HighlightSelector):
     def __init__(
         self,
         color: str | np.ndarray = "red",
-        lut: np.ndarray | None = None,
+        lut: str | np.ndarray | None = None,
         alpha: float = 0.7,
         lut_wrap: str = "fixed",
         options_color: str | np.ndarray = "w",
@@ -574,8 +574,9 @@ class ImageHighlightSelector(HighlightSelector):
         self._options_alpha = float(options_alpha)
 
         # 65535 is the highest number that uint16 can represent.
-        # We make a LUT of this size since the highlight mask Texture is uint16
-        self._lut_buffer = pygfx.Buffer(np.zeros((65535, 4), dtype=np.float32))
+        # We make a LUT of this (65535 - 1) since the highlight mask Texture is uint16
+        # and 0 is uesd to indicate the placeholder locations for "selection_options"
+        self._lut_buffer = pygfx.Buffer(np.zeros((65534, 4), dtype=np.float32))
         self._mask_texture: pygfx.Texture | None = None
 
         # validate and store selection_options without triggering _update_all_graphics
@@ -592,45 +593,16 @@ class ImageHighlightSelector(HighlightSelector):
         else:
             self._selection_options = None
 
-    @staticmethod
-    def _resolve_spec(spec, size: int) -> np.ndarray:
-        if isinstance(spec, slice):
-            return np.arange(size)[spec]
-        return np.atleast_1d(spec)
+    def _len_dict(self, sel: dict) -> int:
+        if "rows" in sel:
+            # covers the case for a selection of rows, as well as row & col pairs
+            return len(sel["rows"].values())
+        if "cols" in sel:
+            return len(sel["cols"].values())
+        if "pixels" in sel:
+            return len(sel["pixels"].values())
 
-    def _iter_items(self, sel: dict, n_rows: int, n_cols: int):
-        """Yield (row_indices, col_indices) for each logical item in *sel*."""
-        rows = sel.get("rows", [])
-        cols = sel.get("cols", [])
-        if rows and cols:
-            if len(rows) != len(cols):
-                raise ValueError(
-                    f"'rows' and 'cols' must have the same length when both given "
-                    f"({len(rows)} vs {len(cols)})"
-                )
-            for rs, cs in zip(rows, cols):
-                ri = self._resolve_spec(rs, n_rows)
-                ci = self._resolve_spec(cs, n_cols)
-                rr, cc = np.meshgrid(ri, ci, indexing="ij")
-                yield rr.ravel(), cc.ravel()
-        else:
-            for rs in rows:
-                ri = self._resolve_spec(rs, n_rows)
-                rr, cc = np.meshgrid(ri, np.arange(n_cols), indexing="ij")
-                yield rr.ravel(), cc.ravel()
-            for cs in cols:
-                ci = self._resolve_spec(cs, n_cols)
-                rr, cc = np.meshgrid(np.arange(n_rows), ci, indexing="ij")
-                yield rr.ravel(), cc.ravel()
-        for px in sel.get("pixels", []):
-            arr = np.asarray(px)
-            yield arr[:, 0], arr[:, 1]
-
-    def _count_items(self, sel: dict) -> int:
-        rows = sel.get("rows", [])
-        cols = sel.get("cols", [])
-        n = len(rows) if (rows and cols) else len(rows) + len(cols)
-        return n + len(sel.get("pixels", []))
+        return 0
 
     @staticmethod
     def _rgba(color, alpha: float) -> np.ndarray:
@@ -834,85 +806,119 @@ class ImageHighlightSelector(HighlightSelector):
                 f"got {type(mat).__name__}."
             )
 
-    def _create_mask_texture(self, mask: np.ndarray, n_rows: int, n_cols: int) -> pygfx.Texture:
+    def _create_mask_texture(
+        self, mask: np.ndarray
+    ) -> pygfx.Texture:
+        rows, cols = mask.shape
         texture = pygfx.Texture(
-            size=(n_cols, n_rows, 1), # initialize with size, no local cpu buffer
+            size=(cols, rows, 1),  # initialize with size, no local cpu buffer
             dim=2,
             format="r16uint",
-            usage=wgpu.TextureUsage.COPY_DST
+            usage=wgpu.TextureUsage.COPY_DST,
         )
         # send initialized data directly to GPU
         texture.send_data((0, 0, 0), mask)
         return texture
 
-    def _compute_mask(self, n_rows: int, n_cols: int) -> np.ndarray:
-        """Build the uint16 mask array for the current selection"""
+    def _create_mask(self, n_rows: int, n_cols: int) -> np.ndarray:
+        """create uint16 mask array for the current selection"""
         mask = np.zeros((n_rows, n_cols), dtype=np.uint16)
-        if self._selection_options is not None:
-            sel = self._selection_options
-        else:
-            sel = self.selection
-
-        for mask_id, (ri, ci) in enumerate(self._iter_items(sel, n_rows, n_cols), start=1):
-            mask[ri, ci] = np.uint16(mask_id)
+        sel = (
+            self._selection_options
+            if self._selection_options is not None
+            else self._selection
+        )
+        if "rows" in sel and "cols" in sel:
+            if len(sel["rows"]) != len(sel["cols"]):
+                raise ValueError(
+                    f"'rows' and 'cols' must have the same length when both given "
+                    f"({len(sel['rows'])} vs {len(sel['cols'])})"
+                )
+            # start=1 since 0 indicates unselected placeholder value
+            for i, (rs, cs) in enumerate(zip(sel["rows"], sel["cols"]), start=1):
+                mask[rs, cs] = i
+        elif "rows" in sel:
+            for i, rs in enumerate(sel["rows"], start=1):
+                mask[rs, :] = i
+        elif "cols" in sel:
+            for i, cs in enumerate(sel["cols"], start=1):
+                mask[:, cs] = i
+        elif "pixels" in sel:
+            for i, px in enumerate(sel["pixels"], start=1):
+                arr = np.asarray(px)
+                mask[arr[:, 0], arr[:, 1]] = i
         return mask
 
-    def _update_lut(self, n_rows: int, n_cols: int) -> None:
-        """Write current highlight colors into the selector-owned LUT buffer."""
-        lut = self._lut_buffer.data
-        lut[:] = 0.0
+    def _fill_lut(self) -> None:
+        """Write current highlight colors into the LUT buffer."""
+        lut_buffer = self._lut_buffer.data
+        lut_buffer[:] = 0.0
+
         if self._selection_options is not None:
-            items = list(self._iter_items(self._selection_options, n_rows, n_cols))
-            opts_rgba = self._rgba(self._options_color, self._options_alpha)
-            for i in range(len(items)):
-                lut[i] = opts_rgba
+            n_placeholder = self._len_dict(self._selection_options)
+            # reset all the options to the unselected placeholder color
+            lut_buffer[:n_placeholder] = self._rgba(
+                self._options_color, self._options_alpha
+            )
             n_sel = len(self._selected_indices)
             if n_sel > 0:
-                sel_colors = _build_lut(self._color, self._lut, n_sel, self._lut_wrap)
-                sel_colors[:, 3] *= self._alpha
-                for i, opt_idx in enumerate(self._selected_indices):
-                    lut[opt_idx] = sel_colors[i]
+                current_lut = _build_lut(
+                    color=self._color, lut=self._lut, n=n_sel, lut_wrap=self._lut_wrap
+                )
+                current_lut[:, -1] *= self._alpha
+                for i, sel in enumerate(self._selected_indices):
+                    lut_buffer[sel] = current_lut[i]
         else:
-            n = self._count_items(self._selection)
+            n = self._len_dict(self._selection)
             if n > 0:
-                built = _build_lut(self._color, self._lut, n, self._lut_wrap)
-                built[:, 3] *= self._alpha
-                lut[:n] = built
-        self._lut_buffer.update_range()
+                current_lut = _build_lut(
+                    color=self._color, lut=self._lut, n=n, lut_wrap=self._lut_wrap
+                )
+                current_lut[:, 3] *= self._alpha
+                lut_buffer[:n] = current_lut
+
+        self._lut_buffer.update_full()
 
     def _update_highlight_buffers(self, graphic) -> None:
-        # Called once per graphic on add_graphic: wire selector-owned objects into
+        # Called once per graphic on add_graphic. Set selector buffers onto
         # the material. Subsequent graphics just get references to the same objects.
-        mat = graphic._material
-        mat._highlight_lut_buffer = self._lut_buffer
+        material = graphic._material
+        material._highlight_lut_buffer = self._lut_buffer
+
         if self._mask_texture is None:
             n_rows, n_cols = graphic.data.value.shape[:2]
             self._mask_texture = self._create_mask_texture(
-                self._compute_mask(n_rows, n_cols), n_rows, n_cols
+                self._create_mask(n_rows, n_cols)
             )
-            self._update_lut(n_rows, n_cols)
-        mat._highlight_mask_texture = self._mask_texture
-        mat.uniform_buffer.data["highlight_alpha"] = 1.0
-        mat.uniform_buffer.update_range()
+            self._fill_lut()
+
+        material._highlight_mask_texture = self._mask_texture
+        material.uniform_buffer.data["highlight_alpha"] = 1.0
+        material.uniform_buffer.update_range()
 
     def _update_all_graphics(self) -> None:
         if not self._graphics:
             return
+
         shapes = {g.data.value.shape[:2] for g in self._graphics}
         if len(shapes) > 1:
             raise ValueError(
-                f"All attached graphics must have the same shape, got {shapes}"
+                f"All targeted Image data must have the same shape, your images have shapes: {shapes}"
             )
+
         n_rows, n_cols = self._graphics[0].data.value.shape[:2]
-        mask = self._compute_mask(n_rows, n_cols)
-        # Re-create GPU texture if shape changed, otherwise send new data in-place
+        mask = self._create_mask(n_rows, n_cols)
+
+        # Re-create GPU texture if shape changed
         if self._mask_texture is None or self._mask_texture.size != (n_cols, n_rows, 1):
-            self._mask_texture = self._create_mask_texture(mask, n_rows, n_cols)
+            self._mask_texture = self._create_mask_texture(mask)
             for g in self._graphics:
                 g._material._highlight_mask_texture = self._mask_texture
         else:
+            # just send the new data
             self._mask_texture.send_data((0, 0, 0), mask)
-        self._update_lut(n_rows, n_cols)
+
+        self._fill_lut()
         # uniform_buffer is per-material and cannot be shared
         for g in self._graphics:
             g._material.uniform_buffer.data["highlight_alpha"] = 1.0
@@ -920,6 +926,7 @@ class ImageHighlightSelector(HighlightSelector):
 
     def _clear_highlight_buffers(self, graphic) -> None:
         # Restore the detached material to minimal self-owned placeholders
+        # this is done when a graphic is removed from the selector
         mat = graphic._material
         mat._highlight_mask_texture = pygfx.Texture(
             np.zeros((1, 1), dtype=np.uint16), dim=2
@@ -929,30 +936,42 @@ class ImageHighlightSelector(HighlightSelector):
     def __len__(self) -> int:
         if self._selection_options is not None:
             return len(self._selected_indices)
-        return self._count_items(self._selection)
 
-    def __contains__(self, item) -> bool:
+        return self._len_dict(self._selection)
+
+    def __contains__(self, item: int | dict) -> bool:
         if self._selection_options is not None:
             return int(item) in self._selected_indices
-        return item in self._selection
+
+        # check if a single row-col pair is in the selection
+        if "rows" in item and "cols" in item:
+            if item["rows"] in self._selection["rows"] and item["cols"] in self._selection["cols"]:
+                return True
+
+        # check for basic membership
+        if "rows" in item:
+            return item["rows"] in self._selection["rows"]
+        if "cols" in item:
+            return item["cols"] in self._selection["col"]
+        if "pixels" in item:
+            return item["pixels"] in self._selection["pixels"]
 
     def __iter__(self):
         if self._selection_options is not None:
             return iter(self._selected_indices)
+
         return iter(self._selection.values())
 
     def __repr__(self) -> str:
         if self._selection_options is not None:
-            n_opts = self._count_items(self._selection_options)
+            # options mode
             return (
-                f"ImageHighlightSelector("
-                f"selected={self._selected_indices}, "
-                f"n_options={n_opts}, "
-                f"n_graphics={len(self._graphics)})"
+                f"ImageHighlightSelector\n"
+                f"selected: {self._selected_indices}\n"
+                f"options: {self._selection_options}\n"
             )
-        summary = {k: len(v) for k, v in self._selection.items()}
+
         return (
-            f"ImageHighlightSelector("
-            f"selection={summary}, "
-            f"n_graphics={len(self._graphics)})"
+            f"ImageHighlightSelector\n"
+            f"selection: {self._selection}, "
         )

@@ -86,7 +86,7 @@ class HighlightableImageMaterial(pygfx.ImageBasicMaterial):
         super().__init__(*args, **kwargs)
         # Store through _store so the PropTracker detects replacement and re-calls get_bindings().
         self._store.highlight_mask_texture = Texture(np.zeros((1, 1), dtype=np.uint16), dim=2)
-        self._highlight_lut_buffer = Buffer(np.zeros((65535, 4), dtype=np.float32))
+        self._highlight_lut_buffer = Buffer(np.zeros((1, 4), dtype=np.float32))
         self._vis_lut_buffer = Buffer(np.zeros(65535, dtype=np.uint32))
         self.uniform_buffer.data["highlight_alpha"] = 1.0
         self.uniform_buffer.data["fpl_n_visible"] = np.uint32(0)
