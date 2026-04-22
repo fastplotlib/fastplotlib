@@ -35,6 +35,7 @@ signals_sessions = list()
 centers_per_session = list()
 indices_per_session = list()
 
+# just generate multi-session toy data
 for session_index in range(3):
     masks = []
     contours = []  # perimeter pixel coordinates per circle
@@ -72,6 +73,8 @@ for session_index in range(3):
     contours_sessions.append([contours[i] for i in local_indices])
     signals_sessions.append(signals[local_indices])
 
+
+# Just NDWidget & figure stuff
 extents = {
     "images-0": (0, 0.33, 0, 0.33),
     "signals-0": (0.33, 1, 0, 0.33),
@@ -91,7 +94,12 @@ ndw = fpl.NDWidget(
     size=(1300, 1000)
 )
 
-def master_to_local_index(session_id: int, selection_indices: list[int]) -> int:
+# create selection vector
+sv = fpl.SelectionVector()
+
+# mapping to go from master index -> per session index for a given session
+# this must be a vector -> vector mapping since multiple things can be selected
+def master_to_local_index(session_id: int, selection_indices: list[int]) -> list[int]:
     return [i + session_id for i in selection_indices]
 
 
@@ -103,7 +111,7 @@ def image_clicked(session, ev):
         np.linalg.norm(centers_per_session[session] - np.array([row, col]), axis=1)
     )
 
-    # inverse transform
+    # inverse transform, local scalar index -> master index
     master_index = local_index - session
 
     print(local_index, master_index)
@@ -113,6 +121,7 @@ def image_clicked(session, ev):
     if "Shift" in ev.modifiers:
         sv.append(master_index)
     else:
+        # just one item selected
         sv.selection = [master_index]
 
     for subplot in ndw.figure:
@@ -120,18 +129,18 @@ def image_clicked(session, ev):
             subplot.auto_scale()
 
 
-sv = fpl.SelectionVector()
+# iterate through all the toy data, create NDGraphics and selectors
 for session_index, (indices, movie, contours, signals) in enumerate(
     zip(indices_per_session, movies_sessions, contours_sessions, signals_sessions)
 ):
+    # create NDImage, nothing special here
     ndi = ndw[f"images-{session_index}"].add_nd_image(
         movie,
         dims=("time", "m", "n"),
         spatial_dims=list("mn"),
     )
-
     ndi.graphic.cmap = "gray"
-
+    # create ND Timeseries, again nothing special
     ndt = ndw[f"signals-{session_index}"].add_nd_timeseries(
         fpl.utils.heatmap_to_positions(signals, xvals=np.arange(0, n_t)),
         dims=("l", "time", "d"),
@@ -140,26 +149,34 @@ for session_index, (indices, movie, contours, signals) in enumerate(
         display_window=None,
     )
 
-    # selectors per-session
+    # Create selectors
+    # image highlight selector for this session
     image_selector = fpl.ImageHighlightSelector(
-        ndi.graphic,
+        ndi.graphic,  # target graphic, you can also add more target graphics later
+                      # as long as they are in the same "selection space", ex: each movie for single-session
+                      # each selector manages ONE buffer, so the same pixels will be highlighted on all graphics
+                      # targetted by a selector.
         lut="tab10",
-        selection_options={"pixels": contours},
-        options_alpha=0.1,
-        options_color="w",
-        lut_wrap="repeat",
-        alpha=0.7,
+        selection_options={"pixels": contours},  # pre-loaded selection options
+        options_alpha=0.1,  # unselected contours shown with low alpha
+        options_color="w",  # unselected contours shown this color
+        lut_wrap="repeat",  # cycles through tab10 colormap if you select > 10 items
+        alpha=0.7,  # highlight alpha
     )
 
+    # selector that toggles visibility of lines in the line stack
+    # use same lut as the image highlight
     traces_visible_selector = fpl.VisibilitySelector(
         ndt.graphic, lut="tab10", lut_wrap="repeat"
     )
 
-    # set the contour selectors on the images
+    # image selector targets the image graphic for this session
     image_selector.add_graphic(ndi.graphic)
+    # when image is double clicked, calls the handler
     ndi.graphic.add_event_handler(partial(image_clicked, session_index), "double_click")
 
-    # add selectors to SelectionVector with mapping that corresponds to this session
+    # add selectors to SelectionVector
+    # with mapping that defines how to map from master index to local index for this session
     mapping = partial(master_to_local_index, session_index)
     sv.add_selector((image_selector, mapping))
     sv.add_selector((traces_visible_selector, mapping))
