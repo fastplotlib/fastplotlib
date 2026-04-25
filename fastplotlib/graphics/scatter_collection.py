@@ -643,10 +643,15 @@ class ScatterStack(ScatterCollection):
             **kwargs,
         )
 
-        self._sepration_axis = separation_axis
+        self._separation_axis = separation_axis
         self._separation = separation
 
         self.separation = separation
+
+    @property
+    def separation_axis(self) -> str:
+        """axis along which the graphics are separated: ``'x'`` or ``'y'``"""
+        return self._separation_axis
 
     @property
     def separation(self) -> float:
@@ -659,14 +664,14 @@ class ScatterStack(ScatterCollection):
 
         axis_zero = 0
         for i, line in enumerate(self.graphics):
-            if self._sepration_axis == "x":
+            if self._separation_axis == "x":
                 line.offset = (axis_zero, *line.offset[1:])
 
-            elif self._sepration_axis == "y":
+            elif self._separation_axis == "y":
                 line.offset = (line.offset[0], axis_zero, line.offset[2])
 
             axis_zero = (
-                    axis_zero + line.data.value[:, axes[self._sepration_axis]].max() + separation
+                    axis_zero + line.data.value[:, axes[self._separation_axis]].max() + separation
             )
 
         self._separation = value

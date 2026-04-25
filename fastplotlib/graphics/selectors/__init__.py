@@ -1,7 +1,38 @@
+from ._protocols import SelectorProtocol, MultiSelectorProtocol
 from ._linear import LinearSelector
 from ._linear_region import LinearRegionSelector
 from ._polygon import PolygonSelector
 from ._rectangle import RectangleSelector
+from ._highlight_selector import (
+    HighlightSelector,
+    PositionsHighlightSelector,
+    CollectionHighlightSelector,
+    ImageHighlightSelector,
+)
+from ._visibility_selector import VisibilitySelector, ImageVisibilitySelector
+from ._selector_collection import (
+    SelectorCollection,
+    LinearSelectors,
+    LinearRegionSelectors,
+    RectangleSelectors,
+    PolygonSelectors,
+)
+from ._selection_vector import SelectionVector
 
-
-__all__ = ["LinearSelector", "LinearRegionSelector", "RectangleSelector"]
+__all__ = [
+    "LinearSelector",
+    "LinearRegionSelector",
+    "RectangleSelector",
+    "HighlightSelector",
+    "PositionsHighlightSelector",
+    "CollectionHighlightSelector",
+    "ImageHighlightSelector",
+    "VisibilitySelector",
+    "ImageVisibilitySelector",
+    "SelectorCollection",
+    "LinearSelectors",
+    "LinearRegionSelectors",
+    "RectangleSelectors",
+    "PolygonSelectors",
+    "SelectionVector",
+]

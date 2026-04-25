@@ -671,7 +671,6 @@ class NDPositions(NDGraphic):
         self.cmap_transform_each = cmap_transform_each
 
         self._graphic_type = graphic_type
-        self._create_graphic()
 
         self._x_range_mode = None
         self.x_range_mode = x_range_mode
@@ -699,6 +698,8 @@ class NDPositions(NDGraphic):
                 self._linear_selector = None
         else:
             self._linear_selector = None
+
+        self._create_graphic()
 
     @property
     def processor(self) -> NDPositionsProcessor:
@@ -919,6 +920,19 @@ class NDPositions(NDGraphic):
                     g.tooltip_format = partial(self._tooltip_handler, g)
 
         self._subplot.add_graphic(self._graphic)
+
+        # set the initial position and limits of the linear selector
+        # x range of the data
+        xr = data_slice[0, 0, 0], data_slice[0, -1, 0]
+        if self._linear_selector is not None:
+            with pause_events(
+                self._linear_selector
+            ):  # we don't want the linear selector change to update the indices
+                self._linear_selector.limits = xr
+                # linear selector acts on `p` dim
+                self._linear_selector.selection = self.indices[
+                    self.processor.spatial_dims[1]
+                ]
 
     def _create_heatmap_data(self, data_slice) -> tuple[np.ndarray, float, float]:
         """return [n_rows, n_cols] shape data from [n_timeseries, n_timepoints, xy] data"""
