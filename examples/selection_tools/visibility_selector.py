@@ -152,10 +152,6 @@ for session_index, (indices, movie, contours, signals) in enumerate(
     # Create selectors
     # image highlight selector for this session
     image_selector = fpl.ImageHighlightSelector(
-        ndi.graphic,  # target graphic, you can also add more target graphics later
-                      # as long as they are in the same "selection space", ex: each movie for single-session
-                      # each selector manages ONE buffer, so the same pixels will be highlighted on all graphics
-                      # targetted by a selector.
         lut="tab10",
         selection_options={"pixels": contours},  # pre-loaded selection options
         options_alpha=0.1,  # unselected contours shown with low alpha
@@ -170,7 +166,10 @@ for session_index, (indices, movie, contours, signals) in enumerate(
         ndt.graphic, lut="tab10", lut_wrap="repeat"
     )
 
-    # image selector targets the image graphic for this session
+    # target graphic, you can also add more target graphics later
+    # as long as they are in the same "selection space", ex: each movie for single-session
+    # each selector manages ONE buffer, so the same pixels will be highlighted on all graphics
+    # targetted by a selector.
     image_selector.add_graphic(ndi.graphic)
     # when image is double clicked, calls the handler
     ndi.graphic.add_event_handler(partial(image_clicked, session_index), "double_click")

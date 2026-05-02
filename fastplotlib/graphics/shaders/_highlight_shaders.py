@@ -101,7 +101,12 @@ _IMAGE_VIS_PRE_SAMPLE = """\
         let fpl_vis_px = vec2<u32>(varyings.texcoord * sizef);
         let fpl_vis_idx = select(fpl_vis_px.x, fpl_vis_px.y, u_material.fpl_vis_axis_y == 1u);
         if (fpl_vis_idx >= u_material.fpl_n_visible) { discard; }
-        let fpl_src_f = f32(s_vis_lut[fpl_vis_idx]);
+        
+        // discard Nones which we map to 0xFFFFFFFF
+        let fpl_src_u = s_vis_lut[fpl_vis_idx];
+        if (fpl_src_u == 0xFFFFFFFFu) { discard; }
+        let fpl_src_f = f32(fpl_src_u);
+        
         if (u_material.fpl_vis_axis_y == 1u) {
             fpl_texcoord.y = (fpl_src_f + 0.5) / sizef.y;
         } else {
