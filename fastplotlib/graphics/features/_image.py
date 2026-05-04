@@ -43,6 +43,7 @@ class TextureArray(GraphicFeature):
         data,
         property_name: str = "data",
         cpu_buffer: bool = True,
+        usage: wgpu.TextureUsage = 0,
         colorspace: ColorspacesRGB = ColorspacesRGB.srgb,
     ):
         super().__init__(property_name=property_name)
@@ -60,9 +61,10 @@ class TextureArray(GraphicFeature):
             # create a local buffer
             self._value = np.empty(data.shape, dtype=data.dtype)
             self.value[:] = data[:]
+            usage = usage
         else:
             self._value = None
-            usage = wgpu.TextureUsage.COPY_DST
+            usage = wgpu.TextureUsage.COPY_DST | usage
             # auto-determine format, adapted from pygfx.Texture
             element_format = get_element_format_from_numpy_array(data)
             if element_format is None:
@@ -106,6 +108,7 @@ class TextureArray(GraphicFeature):
                     self.value[slicer],
                     dim=2,
                     colorspace=colorspace,
+                    usage=usage
                 )
             else:
                 # we only supply the size

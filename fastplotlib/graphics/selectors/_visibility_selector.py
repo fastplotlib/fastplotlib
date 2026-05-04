@@ -21,8 +21,8 @@ def _validate_int_collection(value, name: str) -> set | int:
 
     s = set(value)
 
-    if not all(isinstance(i, Integral) for i in s):
-        raise TypeError(f"{name} must contain only integers, got: {s!r}")
+    if not all(isinstance(i, Integral) or i is None for i in s):
+        raise TypeError(f"{name} must contain only integers or None, got: {s!r}")
 
     return value
 
@@ -69,7 +69,7 @@ class VisibilitySelector:
             raise ValueError(f"lut_wrap must be 'fixed' or 'repeat', got {lut_wrap!r}")
 
         self._collection = collection
-        self._selection: list[int] = []
+        self._selection: list[int | None] = []
         self._event_handlers: list[Callable] = []
         self._lut_wrap = lut_wrap
 
@@ -109,16 +109,18 @@ class VisibilitySelector:
             g.colors = self._original_colors[i]
 
     @property
-    def selection(self) -> tuple[int, ...]:
+    def selection(self) -> tuple[int | None, ...]:
         """Get or set the selection"""
         return tuple(self._selection)
 
     @selection.setter
-    def selection(self, new_selection: Iterable[int] | int):
+    def selection(self, new_selection: Iterable[int | None] | int):
         if new_selection:
             _validate_int_collection(new_selection, "selection")
 
         for index in self._selection:
+            if index is None:
+                continue
             # set any selected things to be invisible
             self._collection.graphics[index].visible = False
 
@@ -128,6 +130,8 @@ class VisibilitySelector:
         self._selection = list(new_selection) if new_selection else list()
 
         for index in self._selection:
+            if index is None:
+                continue
             # set the new selection to be visible
             self._collection.graphics[index].visible = True
 
@@ -139,13 +143,15 @@ class VisibilitySelector:
 
     def append(self, item: int):
         """Add an index to the selection. Already-selected indices are skipped."""
-        if not isinstance(item, Integral):
-            raise TypeError(f"item must be an integer, got {type(item)}")
+        if not isinstance(item, Integral) and item is not None:
+            raise TypeError(f"item must be an integer or None, got {type(item)}")
 
-        if item in self._selection:
+        if item in self._selection and item is not None:
             return
 
-        self._collection.graphics[item].visible = True
+        if item is not None:
+            self._collection.graphics[item].visible = True
+
         self._selection.append(item)
 
         if self._is_stack:
@@ -171,13 +177,41 @@ class VisibilitySelector:
         self._apply_lut()
         self._emit({"value": list(self._selection)})
 
+    def pop(self, index: int):
+        """pop item at the given index"""
+
+        if not isinstance(index, Integral):
+            raise TypeError(
+                f"pop argument must be an integer, got: {type(index).__name__}"
+            )
+
+        if index >= len(self):
+            raise IndexError(
+                f"index: {index} out of bounds for {self.__class__.__name__} with length: {len(self)}"
+            )
+
+        item = self._selection[index]
+        if item is not None:
+            self._collection.graphics[item].visible = False
+
+        self._selection.pop(index)
+
+        if self._is_stack:
+            self._restack()
+
+        self._apply_lut()
+        self._emit({"value": list(self._selection)})
+
     def clear(self) -> None:
         """Hide all graphics. Stack offsets are left as-is."""
         for idx in self._selection:
+            if idx is None:
+                continue
             self._collection.graphics[idx].visible = False
 
         self._selection = list()
         self._emit({"value": []})
+
     @property
     def lut(self) -> np.ndarray | None:
         """Optional per-item colors, shape ``(n, 4)`` float32 RGBA"""
@@ -201,6 +235,8 @@ class VisibilitySelector:
             color=None, lut=self._lut, n=len(self._selection), lut_wrap=self._lut_wrap
         )
         for sel_index, graphic_index in enumerate(self._selection):
+            if graphic_index is None:
+                continue
             self._collection.graphics[graphic_index].colors = colors[sel_index]
 
     def _restack(self) -> None:
@@ -209,6 +245,9 @@ class VisibilitySelector:
 
         distance = 0.0
         for index in self._selection:
+            if index is None:
+                continue
+
             g = self._collection.graphics[index]
             offset = list(g.offset)
             offset[ax_i] = distance
@@ -243,10 +282,7 @@ class VisibilitySelector:
         return iter(self._selection)
 
     def __repr__(self) -> str:
-        return (
-            f"VisibilitySelector\n"
-            f"selection: {self._selection}"
-        )
+        return f"VisibilitySelector\n" f"selection: {self._selection}"
 
 
 class ImageVisibilitySelector:
@@ -334,12 +370,12 @@ class ImageVisibilitySelector:
         self._update_material()
         self._emit({"value": tuple(self._selection)})
 
-    def append(self, item) -> None:
+    def append(self, item: int | None):
         """add a row/col index to the selection"""
-        if not isinstance(item, Integral):
-            raise TypeError(f"item must be an integer, got {type(item)}")
+        if not isinstance(item, Integral) and item is not None:
+            raise TypeError(f"item must be an integer or None, got {type(item)}")
 
-        if item in self._selection:
+        if item in self._selection and item is not None:
             return
 
         self._selection.append(item)
@@ -359,6 +395,22 @@ class ImageVisibilitySelector:
         self._update_material()
         self._emit({"value": list(self._selection)})
 
+    def pop(self, index: int):
+        """pop item at the given index"""
+        if not isinstance(index, Integral):
+            raise TypeError(
+                f"pop argument must be an integer, got: {type(index).__name__}"
+            )
+
+        if index >= len(self):
+            raise IndexError(
+                f"index: {index} out of bounds for {self.__class__.__name__} with length: {len(self)}"
+            )
+
+        self._selection.pop(index)
+        self._update_material()
+        self._emit({"value": list(self._selection)})
+
     def clear(self) -> None:
         """Clear the selection (all invisible, fpl_n_visible=0)."""
         self._selection = list()
@@ -369,7 +421,16 @@ class ImageVisibilitySelector:
         mat = self._graphic._material
         n = len(self._selection)
         if n > 0:
-            mat._vis_lut_buffer.data[:n] = np.array(self._selection, dtype=np.uint32)
+            mat._vis_lut_buffer.data[:n] = np.array(
+                list(
+                    map(
+                        # 0xFFFFFFFF, 2^32 - 1, indicates None vals and shader discard
+                        lambda x: x if x is not None else np.uint32(0xFFFFFFFF),
+                        self._selection,
+                    )
+                ),
+                dtype=np.uint32,
+            )
 
         mat._vis_lut_buffer.update_range()
         mat.uniform_buffer.data["fpl_n_visible"] = np.uint32(n)

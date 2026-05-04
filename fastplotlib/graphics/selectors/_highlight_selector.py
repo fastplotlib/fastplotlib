@@ -570,7 +570,7 @@ class ImageHighlightSelector(HighlightSelector):
         super().__init__(color=color, lut=lut, alpha=alpha, lut_wrap=lut_wrap)
 
         self._selection: dict[str, list] = dict()
-        self._selected_indices: list[int] = list()
+        self._selected_indices: list[int | None] = list()
         self._options_color = options_color
         self._options_alpha = float(options_alpha)
 
@@ -669,7 +669,7 @@ class ImageHighlightSelector(HighlightSelector):
             self._update_all_graphics()
 
     @property
-    def selection(self) -> tuple[int, ...] | dict[str, tuple]:
+    def selection(self) -> tuple[int | None, ...] | dict[str, tuple]:
         """
         In options mode: tuple of selection option indices.
         In free mode: dict of selection items.
@@ -690,7 +690,7 @@ class ImageHighlightSelector(HighlightSelector):
                 self._selected_indices = [value]
 
             else:
-                self._selected_indices = [int(i) for i in value]
+                self._selected_indices = [int(i) if i is not None else None for i in value]
 
         else:
             if not value:
@@ -837,15 +837,23 @@ class ImageHighlightSelector(HighlightSelector):
                 )
             # start=1 since 0 indicates unselected placeholder value
             for i, (rs, cs) in enumerate(zip(sel["rows"], sel["cols"]), start=1):
+                if rs is None or cs in None:
+                    continue
                 mask[rs, cs] = i
         elif "rows" in sel:
             for i, rs in enumerate(sel["rows"], start=1):
+                if rs is None:
+                    continue
                 mask[rs, :] = i
         elif "cols" in sel:
             for i, cs in enumerate(sel["cols"], start=1):
+                if cs in None:
+                    continue
                 mask[:, cs] = i
         elif "pixels" in sel:
             for i, px in enumerate(sel["pixels"], start=1):
+                if px is None:
+                    continue
                 arr = np.asarray(px)
                 mask[arr[:, 0], arr[:, 1]] = i
         return mask
@@ -868,6 +876,8 @@ class ImageHighlightSelector(HighlightSelector):
                 )
                 current_lut[:, -1] *= self._alpha
                 for i, sel in enumerate(self._selected_indices):
+                    if sel is None:
+                        continue
                     lut_buffer[sel] = current_lut[i]
         else:
             n = self._len_dict(self._selection)
