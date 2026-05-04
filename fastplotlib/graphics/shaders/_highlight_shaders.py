@@ -33,11 +33,6 @@ from ._highlight_materials import (
     HighlightableImageMaterial,
 )
 
-# ---------------------------------------------------------------------------
-# WGSL helper functions (prepended before the fragment entry point)
-# ---------------------------------------------------------------------------
-
-# Points: vertex_idx is a u32, looked up directly in the ids storage buffer.
 _POINTS_HELPER = """\
 fn fpl_apply_highlight(base_color: vec4<f32>, vertex_idx: u32) -> vec4<f32> {
     if (vertex_idx >= arrayLength(&s_highlight_ids)) { return base_color; }
@@ -49,8 +44,6 @@ fn fpl_apply_highlight(base_color: vec4<f32>, vertex_idx: u32) -> vec4<f32> {
 
 """
 
-# Thin lines: highlight color is pre-resolved in the VS as an interpolated vec4 varying.
-# The GPU interpolates it across the line_strip for free.
 _THIN_LINE_HELPER = """\
 fn fpl_apply_highlight(base_color: vec4<f32>, hl: vec4<f32>) -> vec4<f32> {
     if (hl.a <= 0.0) { return base_color; }
@@ -59,8 +52,6 @@ fn fpl_apply_highlight(base_color: vec4<f32>, hl: vec4<f32>) -> vec4<f32> {
 
 """
 
-# Thick lines: two interpolated vec4 varyings carry the highlight at each segment endpoint.
-# The FS mixes them using the same logic pygfx uses for per-vertex colors at joins.
 _LINE_HELPER = """\
 fn fpl_apply_highlight_line(
     base_color: vec4<f32>,
@@ -81,7 +72,6 @@ fn fpl_apply_highlight_line(
 
 """
 
-# Image: mask texture is R16Uint so textureLoad returns u32 directly.
 _IMAGE_HELPER = """\
 fn fpl_apply_highlight_img(base_color: vec4<f32>, mask_id: u32) -> vec4<f32> {
     if (mask_id == 0u) { return base_color; }
@@ -91,8 +81,6 @@ fn fpl_apply_highlight_img(base_color: vec4<f32>, mask_id: u32) -> vec4<f32> {
 
 """
 
-# Visibility pre-sample injection: LUT-based row/col remapping.
-# fpl_texcoord is always declared so the highlight block can safely reference it.
 _IMAGE_SAMPLE_ANCHOR = "    let value = sample_im(varyings.texcoord.xy, sizef);"
 
 _IMAGE_VIS_PRE_SAMPLE = """\
@@ -101,7 +89,12 @@ _IMAGE_VIS_PRE_SAMPLE = """\
         let fpl_vis_px = vec2<u32>(varyings.texcoord * sizef);
         let fpl_vis_idx = select(fpl_vis_px.x, fpl_vis_px.y, u_material.fpl_vis_axis_y == 1u);
         if (fpl_vis_idx >= u_material.fpl_n_visible) { discard; }
-        let fpl_src_f = f32(s_vis_lut[fpl_vis_idx]);
+        
+        // discard Nones which we map to 0xFFFFFFFF
+        let fpl_src_u = s_vis_lut[fpl_vis_idx];
+        if (fpl_src_u == 0xFFFFFFFFu) { discard; }
+        let fpl_src_f = f32(fpl_src_u);
+        
         if (u_material.fpl_vis_axis_y == 1u) {
             fpl_texcoord.y = (fpl_src_f + 0.5) / sizef.y;
         } else {
@@ -111,16 +104,10 @@ _IMAGE_VIS_PRE_SAMPLE = """\
     let value = sample_im(fpl_texcoord.xy, sizef);\
 """
 
-# ---------------------------------------------------------------------------
-# Patch anchors
-# External .wgsl files (points.wgsl, line.wgsl, image.wgsl) use 4-space indent.
-# ThinLineShader's inline WGSL string uses 12-space indent.
-# ---------------------------------------------------------------------------
 
-# Shared FS patch anchor for external .wgsl files
+# fragment shader replacement position, same for most shaders
 _FS_COLOR_ANCHOR = "    out.color = out_color;"
 
-# ThinLineShader inline WGSL anchors (12-space indent inside the method string)
 _THIN_VS_ANCHOR = "            return varyings;\n        }"
 _THIN_FS_COLOR_ANCHOR = "            out.color = out_color;"
 _THIN_FRAGMENT_ENTRY = "        @fragment\n        fn fs_main"
@@ -142,10 +129,6 @@ def _check(wgsl: str, anchor: str, label: str) -> bool:
     return True
 
 
-# ---------------------------------------------------------------------------
-# Binding helpers
-# ---------------------------------------------------------------------------
-
 def _add_ids_bindings(shader, group0: dict, material) -> None:
     """Append s_highlight_ids and s_highlight_lut bindings to group0."""
     next_idx = max(group0.keys()) + 1
@@ -156,7 +139,8 @@ def _add_ids_bindings(shader, group0: dict, material) -> None:
             material._highlight_ids_buffer,
             "FRAGMENT",
         ),
-        next_idx + 1: Binding(
+        next_idx
+        + 1: Binding(
             "s_highlight_lut",
             "buffer/read_only_storage",
             material._highlight_lut_buffer,
@@ -170,6 +154,7 @@ def _add_ids_bindings(shader, group0: dict, material) -> None:
 def _add_ids_bindings_vs_fs(shader, group0: dict, material) -> None:
     """Append s_highlight_ids (VERTEX+FRAGMENT) and s_highlight_lut bindings to group0."""
     import wgpu as _wgpu
+
     vs_fs = _wgpu.ShaderStage.VERTEX | _wgpu.ShaderStage.FRAGMENT
     next_idx = max(group0.keys()) + 1
     new = {
@@ -179,7 +164,8 @@ def _add_ids_bindings_vs_fs(shader, group0: dict, material) -> None:
             material._highlight_ids_buffer,
             vs_fs,
         ),
-        next_idx + 1: Binding(
+        next_idx
+        + 1: Binding(
             "s_highlight_lut",
             "buffer/read_only_storage",
             material._highlight_lut_buffer,
@@ -201,13 +187,15 @@ def _add_mask_bindings(shader, group0: dict, material) -> None:
             mask_view,
             "FRAGMENT",
         ),
-        next_idx + 1: Binding(
+        next_idx
+        + 1: Binding(
             "s_highlight_lut",
             "buffer/read_only_storage",
             material._highlight_lut_buffer,
             "FRAGMENT",
         ),
-        next_idx + 2: Binding(
+        next_idx
+        + 2: Binding(
             "s_vis_lut",
             "buffer/read_only_storage",
             material._vis_lut_buffer,
@@ -217,10 +205,6 @@ def _add_mask_bindings(shader, group0: dict, material) -> None:
     shader.define_bindings(0, new)
     group0.update(new)
 
-
-# ---------------------------------------------------------------------------
-# Points shader  (pure FS patch, pick_idx is available as a flat u32 varying)
-# ---------------------------------------------------------------------------
 
 @register_wgpu_render_function(Points, HighlightablePointsMaterial)
 @register_wgpu_render_function(Points, HighlightablePointsMarkerMaterial)
@@ -254,10 +238,6 @@ class HighlightablePointsShader(PointsShader):
         return wgsl
 
 
-# ---------------------------------------------------------------------------
-# Image shader  (FS patch using world_pos for global pixel coordinates)
-# ---------------------------------------------------------------------------
-
 @register_wgpu_render_function(Image, HighlightableImageMaterial)
 class HighlightableImageShader(ImageShader):
 
@@ -272,7 +252,7 @@ class HighlightableImageShader(ImageShader):
 
         # Pre-sample: inject visibility LUT remapping. fpl_texcoord is always
         # declared here so the highlight block below can safely reference it
-        # regardless of whether visibility is active (fpl_n_visible == 0 is a no-op).
+        # regardless of whether visibility is active
         if not _check(wgsl, _IMAGE_SAMPLE_ANCHOR, "image.wgsl sample"):
             return wgsl
         wgsl = wgsl.replace(_IMAGE_SAMPLE_ANCHOR, _IMAGE_VIS_PRE_SAMPLE, 1)
@@ -298,12 +278,6 @@ class HighlightableImageShader(ImageShader):
         )
         return wgsl
 
-
-# ---------------------------------------------------------------------------
-# Thin line shader  (line_strip: GPU interpolates varyings between vertices)
-# The VS looks up s_highlight_ids[i0] and stores the resolved LUT color in a
-# vec4<f32> varying; the GPU linearly interpolates it across each segment for free.
-# ---------------------------------------------------------------------------
 
 _THIN_VS_INJECTION = (
     "            let fpl_hl_id = select(0u, s_highlight_ids[u32(i0)],\n"
@@ -349,18 +323,6 @@ class HighlightableThinLineShader(ThinLineShader):
         )
         return wgsl
 
-
-# ---------------------------------------------------------------------------
-# Thick line shader  (triangle geometry: smooth interpolation via two varyings)
-#
-# VS injection: placed just before varyings.pick_idx assignment so that
-# node_index, node_index_prev, node_index_next, node_index_is_even and
-# ratio_interp are all already in scope.
-#
-# The two varyings (fpl_hl_color_node, fpl_hl_color_vert) mirror the pattern
-# pygfx uses for color_node / color_vert in vertex-color mode.  The FS mixes
-# them at joins using the same join_coord logic pygfx uses for vertex colors.
-# ---------------------------------------------------------------------------
 
 _LINE_VS_ANCHOR = "    varyings.pick_idx = u32(node_index);"
 
