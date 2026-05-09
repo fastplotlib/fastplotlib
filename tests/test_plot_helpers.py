@@ -25,7 +25,7 @@ def test_get_nearest_graphics():
     fig[0, 0].add_scatter(np.array([[0, 12, 0]]))
 
     # check distances
-    nearest = fpl.utils.get_nearest_graphics((0, 12), lines)
+    nearest = fpl.get_nearest_graphics((0, 12), lines)
     assert nearest[0] is lines[1]  # closest
     assert nearest[1] is lines[0]
     assert nearest[2] is lines[3]

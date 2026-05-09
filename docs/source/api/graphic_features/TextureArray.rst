@@ -22,7 +22,10 @@ Properties
 
     TextureArray.buffer
     TextureArray.col_indices
+    TextureArray.colorspace
+    TextureArray.cpu_buffer
     TextureArray.row_indices
+    TextureArray.shape
     TextureArray.value
 
 Methods

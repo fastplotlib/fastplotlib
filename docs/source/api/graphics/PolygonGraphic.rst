@@ -24,6 +24,7 @@ Properties
     PolygonGraphic.alpha_mode
     PolygonGraphic.axes
     PolygonGraphic.block_events
+    PolygonGraphic.block_handlers
     PolygonGraphic.clim
     PolygonGraphic.cmap
     PolygonGraphic.colors

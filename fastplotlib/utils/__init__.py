@@ -5,7 +5,6 @@ from .gui import loop
 from .enums import *
 from .functions import *
 from .gpu import enumerate_adapters, select_adapter, print_wgpu_report
-from ._plot_helpers import *
 from .protocols import ARRAY_LIKE_ATTRS, ArrayProtocol, FutureProtocol, CudaArrayProtocol
 
 

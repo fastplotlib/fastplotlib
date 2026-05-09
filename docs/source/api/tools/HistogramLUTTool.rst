@@ -24,9 +24,11 @@ Properties
     HistogramLUTTool.alpha_mode
     HistogramLUTTool.axes
     HistogramLUTTool.block_events
+    HistogramLUTTool.block_handlers
     HistogramLUTTool.cmap
     HistogramLUTTool.deleted
     HistogramLUTTool.event_handlers
+    HistogramLUTTool.histogram
     HistogramLUTTool.images
     HistogramLUTTool.name
     HistogramLUTTool.offset
@@ -53,5 +55,4 @@ Methods
     HistogramLUTTool.map_world_to_model
     HistogramLUTTool.remove_event_handler
     HistogramLUTTool.rotate
-    HistogramLUTTool.set_data
 

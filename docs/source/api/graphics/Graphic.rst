@@ -24,6 +24,7 @@ Properties
     Graphic.alpha_mode
     Graphic.axes
     Graphic.block_events
+    Graphic.block_handlers
     Graphic.deleted
     Graphic.event_handlers
     Graphic.name

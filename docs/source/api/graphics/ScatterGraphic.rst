@@ -24,6 +24,7 @@ Properties
     ScatterGraphic.alpha_mode
     ScatterGraphic.axes
     ScatterGraphic.block_events
+    ScatterGraphic.block_handlers
     ScatterGraphic.cmap
     ScatterGraphic.color_mode
     ScatterGraphic.colors

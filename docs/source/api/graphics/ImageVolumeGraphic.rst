@@ -24,6 +24,7 @@ Properties
     ImageVolumeGraphic.alpha_mode
     ImageVolumeGraphic.axes
     ImageVolumeGraphic.block_events
+    ImageVolumeGraphic.block_handlers
     ImageVolumeGraphic.cmap
     ImageVolumeGraphic.cmap_interpolation
     ImageVolumeGraphic.data

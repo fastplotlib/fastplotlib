@@ -24,6 +24,7 @@ Properties
     TextGraphic.alpha_mode
     TextGraphic.axes
     TextGraphic.block_events
+    TextGraphic.block_handlers
     TextGraphic.deleted
     TextGraphic.event_handlers
     TextGraphic.face_color

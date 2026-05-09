@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from ._version import __version__, version_info
 
 # this must be the first import for auto-canvas detection
@@ -15,7 +13,7 @@ from .utils import (
 from .graphics import *
 from .graphics.features import GraphicFeatureEvent
 from .graphics.selectors import *
-from .graphics.utils import pause_events
+from .graphics.utils import pause_events, get_nearest_graphics, get_nearest_graphics_indices
 from .legends import *
 from .tools import *
 

@@ -31,6 +31,7 @@ Properties
     ImguiFigure.names
     ImguiFigure.renderer
     ImguiFigure.shape
+    ImguiFigure.std_right_click_menu
 
 Methods
 ~~~~~~~
