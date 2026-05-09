@@ -762,16 +762,11 @@ class NDPositions(NDGraphic):
     def indices(self) -> dict[Hashable, Any]:
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    async def _set_indices_(
-        self, indices: dict[Hashable, Any], should_write: Callable[[], bool] | None = None
-    ):
+    async def _set_indices_(self, indices: dict[Hashable, Any]):
         if self.data is None:
             return
 
         new_features = await self.processor.get(indices)
-        if should_write is not None and not should_write():
-            return
-
         data_slice = new_features["data"]
 
         # TODO: set other graphic features, colors, sizes, markers, etc.
@@ -840,8 +835,7 @@ class NDPositions(NDGraphic):
 
     def _linear_selector_handler(self, ev):
         with block_indices_ctx(self):
-            # linear selector always acts on the `p` dim
-            self._ref_index[self.processor.spatial_dims[1]] = ev.info["value"]
+            self._ref_index.set_dim_index(self.processor.spatial_dims[1], ev.info["value"])
 
     def _tooltip_handler(self, graphic, pick_info):
         if isinstance(self.graphic, (LineCollection, ScatterCollection)):
@@ -1030,8 +1024,7 @@ class NDPositions(NDGraphic):
             return
 
         self.processor.display_window = new_width
-        # set the `p` dim on the global index vector
-        self._ref_index[self.processor.spatial_dims[1]] = new_index
+        self._ref_index.set_dim_index(self.processor.spatial_dims[1], new_index)
 
     @property
     def cmap(self) -> str | None:

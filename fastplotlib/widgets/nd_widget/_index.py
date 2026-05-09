@@ -59,8 +59,6 @@ class RangeContinuous:
         self._stop = stop
         self._step = step
 
-        self._throttle = 0.2
-
     @property
     def start(self) -> int | float:
         """get or set the start boundary of the reference range"""
@@ -83,17 +81,6 @@ class RangeContinuous:
     def step(self) -> int | float:
         """get or set the step size of the range, only used for UI elements"""
         return self._step
-
-    @property
-    def throttle(self) -> float:
-        """get or set throttle value in seconds. Used for throttling UI sliders"""
-        return self._throttle
-
-    @throttle.setter
-    def throttle(self, val: float):
-        if val < 0:
-            raise ValueError("throttle value must be >= 0.0")
-        self._throttle = val
 
     @property
     def size(self) -> int | float:
@@ -177,8 +164,8 @@ class ReferenceIndex:
         Single shared time axis:
 
             ri = ReferenceIndex(ref_ranges={"time": (0, 1000, 1), "depth": (15, 35, 0.5)})
-            ri["time"] = 500          # update one dim and re-render
-            ri.set({"time": 500, "depth": 10})  # update several dims atomically
+            ri.set_dim_index("time", 500)           # update one dim and re-render
+            ri.set({"time": 500, "depth": 10})      # update several dims atomically
 
         Two independent time axes for data from two different recording sessions:
 
@@ -206,10 +193,8 @@ class ReferenceIndex:
 
         self._ndwidgets: list[NDWidget] = list()
 
-        # render-request bookkeeping. Each new indices update increments _tick. Any in-flight
-        # asyncio.Task per graphic is cancelled and replaced when a newer tick arrives, and
-        # _set_indices_ checks the tick right before writing to drop stale results.
-        self._tick: int = 0
+        # tracks in-flight throttled render tasks so they can be cancelled when a newer
+        # slider position arrives before the previous one has finished loading
         self._awaiting: dict[NDGraphic, asyncio.Task] = dict()
 
     @property
@@ -228,11 +213,32 @@ class ReferenceIndex:
 
         self._ndwidgets.append(ndw)
 
-    def set(self, indices: dict[str, Any]):
+    def set(self, indices: dict[str, Any], throttle: bool = False):
         for dim, value in indices.items():
             self._indices[dim] = self._clamp(dim, value)
 
-        self._render_indices()
+        self._render_indices(throttle=throttle)
+        self._indices_changed()
+
+    def set_dim_index(self, dim: str, index, throttle: bool = False):
+        """
+        Set the index for a single dimension and trigger a render.
+
+        Parameters
+        ----------
+        dim : str
+            Dimension name.
+        index : int or float
+            New reference-space value for this dimension.
+        throttle : bool, default False
+            If True, cancel any in-flight render tasks before scheduling a new one.
+            Use this only for rapid-fire inputs such as an imgui slider drag where
+            intermediate positions are disposable. All other callers (play advance,
+            step buttons, LinearSelector, programmatic updates) should leave this False.
+        """
+        self._check_has_dim(dim)
+        self._indices[dim] = self._clamp(dim, index)
+        self._render_indices(throttle=throttle)
         self._indices_changed()
 
     def _clamp(self, dim, value):
@@ -244,69 +250,51 @@ class ReferenceIndex:
 
         return value
 
-    def _render_indices(self):
+    def _render_indices(self, throttle: bool = False):
         """
         Schedule a render for every affected NDGraphic via the rendercanvas event loop.
 
-        Each call increments ``_tick`` and cancels any in-flight task per graphic, so a
-        rapid slider drag drops queued window_func/spatial_func work and never writes a
-        stale frame after a fresh one. Falls back to synchronous drain when no loop is
-        available yet (figure not shown).
+        When ``throttle=True``, any in-flight tasks from a previous throttled call are
+        cancelled before new ones are scheduled, so rapid slider drags never queue up
+        stale window_func/spatial_func work. Falls back to a synchronous drain when no
+        event loop is running yet (figure not shown).
         """
-        self._tick += 1
-        tick = self._tick
-
-        # cancel any prior in-flight tasks. Future submissions on the per-processor
-        # ThreadPoolExecutor that haven't started yet will be cancelled via asyncio's
-        # propagation through asyncio.wrap_future. Already-running submissions complete
-        # but their results are dropped by the should_write tick check.
-        for task in self._awaiting.values():
-            task.cancel()
-        self._awaiting.clear()
+        if throttle:
+            for task in self._awaiting.values():
+                task.cancel()
+            self._awaiting.clear()
 
         for ndw in self._ndwidgets:
             for g in ndw.ndgraphics:
                 if g.data is None or g.pause or g._block_indices:
                     continue
-                # only provide slider indices to the graphic
                 indices = {d: self._indices[d] for d in g.processor.slider_dims}
 
                 try:
                     asyncio.get_running_loop()
                 except RuntimeError:
-                    # no running loop (figure not shown yet): drain synchronously so
-                    # construction-time programmatic ref_index updates still take effect.
                     run_sync(g._set_indices_(indices))
                     continue
 
-                _loop.add_task(self._render_request, g, indices, tick, name="ndw-render")
+                _loop.add_task(self._render_request, g, indices, throttle, name="ndw-render")
 
     async def _render_request(
-        self, graphic: "NDGraphic", indices: dict[str, Any], tick: int
+        self, graphic: "NDGraphic", indices: dict[str, Any], throttle: bool
     ):
-        """Run the data pipeline for one graphic and write the result if still current."""
-        self._awaiting[graphic] = asyncio.current_task()
+        """Run the data pipeline for one graphic and write the result."""
+        if throttle:
+            self._awaiting[graphic] = asyncio.current_task()
         try:
-            await graphic._set_indices_(
-                indices, should_write=lambda: self._tick == tick
-            )
+            await graphic._set_indices_(indices)
         except asyncio.CancelledError:
             pass
         finally:
-            # drop self from _awaiting if still there (may have been overwritten by a newer tick)
-            if self._awaiting.get(graphic) is asyncio.current_task():
+            if throttle and self._awaiting.get(graphic) is asyncio.current_task():
                 del self._awaiting[graphic]
 
     def __getitem__(self, dim):
         self._check_has_dim(dim)
         return self._indices[dim]
-
-    def __setitem__(self, dim, value):
-        self._check_has_dim(dim)
-        # set index for given dim and render
-        self._indices[dim] = self._clamp(dim, value)
-        self._render_indices()
-        self._indices_changed()
 
     def _check_has_dim(self, dim):
         if dim not in self.dims:
