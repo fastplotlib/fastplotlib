@@ -7,7 +7,6 @@ from pylinalg import quat_from_vecs, vec_transform_quat
 
 from ..utils.enums import RenderQueue
 
-
 GRID_PLANES = ["xy", "xz", "yz"]
 
 CANONICAL_BAIS = np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]])
@@ -147,8 +146,11 @@ class Grids(pygfx.Group):
 
 class Ruler(pygfx.Ruler):
     """pygfx.Ruler subclass that adds a rotated axis label."""
+
     def __init__(self, *, color="#fff", alpha_mode=None, render_queue=None, **kwargs):
-        super().__init__(color=color, alpha_mode=alpha_mode, render_queue=render_queue, **kwargs)
+        super().__init__(
+            color=color, alpha_mode=alpha_mode, render_queue=render_queue, **kwargs
+        )
         self._label = pygfx.Text(
             screen_space=True,
             anchor="middle-center",
@@ -185,6 +187,7 @@ class Ruler(pygfx.Ruler):
         return stats
 
     def _update_label(self):
+        # update the label position
         t1, t2 = self._visible_part_coords
         if t1 == t2:
             self._label.visible = False
@@ -217,13 +220,16 @@ class Ruler(pygfx.Ruler):
             # tick labels are unrotated screen-space text, so we project their
             # axis-aligned _rect onto (px, py) directly.
             visible_blocks = [
-                b for b in self.text._text_blocks
+                b
+                for b in self.text._text_blocks
                 if b._rect.width > 0 or b._rect.height > 0
             ]
             if visible_blocks:
                 tick_extent_px = max(
-                    max(px, 0) * b._rect.right + min(px, 0) * b._rect.left
-                    + max(py, 0) * b._rect.top + min(py, 0) * b._rect.bottom
+                    max(px, 0) * b._rect.right
+                    + min(px, 0) * b._rect.left
+                    + max(py, 0) * b._rect.top
+                    + min(py, 0) * b._rect.bottom
                     for b in visible_blocks
                 )
             else:
@@ -237,7 +243,9 @@ class Ruler(pygfx.Ruler):
         vec = self._visible_part_screen_vec
         angle = math.atan2(vec[1], vec[0])
         # pylinalg uses [x, y, z, w] quaternion format
-        self._label.local.rotation = np.array([0.0, 0.0, math.sin(angle / 2), math.cos(angle / 2)])
+        self._label.local.rotation = np.array(
+            [0.0, 0.0, math.sin(angle / 2), math.cos(angle / 2)]
+        )
 
 
 class Axes:
@@ -288,15 +296,9 @@ class Axes:
         )
 
         # create ruler for each dim
-        self._x = Ruler(
-            alpha_mode="solid", render_queue=RenderQueue.axes, **x_kwargs
-        )
-        self._y = Ruler(
-            alpha_mode="solid", render_queue=RenderQueue.axes, **y_kwargs
-        )
-        self._z = Ruler(
-            alpha_mode="solid", render_queue=RenderQueue.axes, **z_kwargs
-        )
+        self._x = Ruler(alpha_mode="solid", render_queue=RenderQueue.axes, **x_kwargs)
+        self._y = Ruler(alpha_mode="solid", render_queue=RenderQueue.axes, **y_kwargs)
+        self._z = Ruler(alpha_mode="solid", render_queue=RenderQueue.axes, **z_kwargs)
 
         # We render the lines and ticks as solid, but enable aa for text for prettier glyphs
         for ruler in self._x, self._y, self._z:
@@ -520,7 +522,6 @@ class Axes:
 
         return (cam_matrix, viewport.rect, viewport.logical_size, scale)
 
-
     def update_using_bbox(self, bbox):
         """
         Update the w.r.t. the given bbox
@@ -551,7 +552,6 @@ class Axes:
 
     def _auto_intersection_pos(self, xpos, ypos, width, height):
         # returns the intersection position for the axis so they are placed in the bottom left corner
-        print("called auto intersection pos")
         margin = 4
 
         y_blocks = [b for b in self.y.text._text_blocks if b._rect.width > 0]
