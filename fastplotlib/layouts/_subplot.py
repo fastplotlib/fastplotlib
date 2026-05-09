@@ -9,7 +9,7 @@ from ..graphics import TextGraphic
 from ._utils import create_camera, create_controller
 from ._plot_area import PlotArea
 from ._frame import Frame
-from ..tools._axes import Axes
+from ..axes import Axes
 
 
 class Subplot(PlotArea):
