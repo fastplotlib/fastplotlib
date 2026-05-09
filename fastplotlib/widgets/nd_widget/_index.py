@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Generator
-from concurrent.futures import wait
+import asyncio
 from dataclasses import dataclass
 from numbers import Number
 from typing import Sequence, Any, Callable
@@ -10,8 +9,10 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from ._ndwidget import NDWidget
+    from ._base import NDGraphic
 
-from ...utils import FutureProtocol, CudaArrayProtocol, cuda_to_numpy
+from ...utils import loop as _loop
+from ._async import run_sync
 
 
 class RangeContinuous:
@@ -205,6 +206,12 @@ class ReferenceIndex:
 
         self._ndwidgets: list[NDWidget] = list()
 
+        # render-request bookkeeping. Each new indices update increments _tick. Any in-flight
+        # asyncio.Task per graphic is cancelled and replaced when a newer tick arrives, and
+        # _set_indices_ checks the tick right before writing to drop stale results.
+        self._tick: int = 0
+        self._awaiting: dict[NDGraphic, asyncio.Task] = dict()
+
     @property
     def ref_ranges(self) -> dict[str, RangeContinuous | RangeDiscrete]:
         return self._ref_ranges
@@ -238,44 +245,57 @@ class ReferenceIndex:
         return value
 
     def _render_indices(self):
-        pending_futures = list()
-        pending_cuda = list()
+        """
+        Schedule a render for every affected NDGraphic via the rendercanvas event loop.
+
+        Each call increments ``_tick`` and cancels any in-flight task per graphic, so a
+        rapid slider drag drops queued window_func/spatial_func work and never writes a
+        stale frame after a fresh one. Falls back to synchronous drain when no loop is
+        available yet (figure not shown).
+        """
+        self._tick += 1
+        tick = self._tick
+
+        # cancel any prior in-flight tasks. Future submissions on the per-processor
+        # ThreadPoolExecutor that haven't started yet will be cancelled via asyncio's
+        # propagation through asyncio.wrap_future. Already-running submissions complete
+        # but their results are dropped by the should_write tick check.
+        for task in self._awaiting.values():
+            task.cancel()
+        self._awaiting.clear()
 
         for ndw in self._ndwidgets:
             for g in ndw.ndgraphics:
-                if g.data is None or g.pause:
+                if g.data is None or g.pause or g._block_indices:
                     continue
                 # only provide slider indices to the graphic
                 indices = {d: self._indices[d] for d in g.processor.slider_dims}
-                to_resolve: None | tuple[Generator, FutureProtocol] = g.set_indices(indices, block=False)
 
-                if to_resolve is not None:
-                    if isinstance(to_resolve[1], FutureProtocol):
-                        # it's a future that we need to resolve
-                        pending_futures.append(to_resolve)
-                    elif isinstance(to_resolve[1], CudaArrayProtocol):
-                        pending_cuda.append(to_resolve)
+                try:
+                    asyncio.get_running_loop()
+                except RuntimeError:
+                    # no running loop (figure not shown yet): drain synchronously so
+                    # construction-time programmatic ref_index updates still take effect.
+                    run_sync(g._set_indices_(indices))
+                    continue
 
-        if not pending_futures and not pending_cuda:
-            # no futures or gpu arrays to resolve, everything is sync
-            return
+                _loop.add_task(self._render_request, g, indices, tick, name="ndw-render")
 
-        # resolve futures
-        wait([future for cr, future in pending_futures], timeout=2)
-
-        for cr, future in pending_futures:
-            try:
-                cr.send(future.result())
-            except StopIteration:
-                pass
-
-        # resolve GPU arrays
-        for cr, gpu_arr in pending_cuda:
-            try:
-                arr = cuda_to_numpy(gpu_arr)
-                cr.send(arr)
-            except StopIteration:
-                pass
+    async def _render_request(
+        self, graphic: "NDGraphic", indices: dict[str, Any], tick: int
+    ):
+        """Run the data pipeline for one graphic and write the result if still current."""
+        self._awaiting[graphic] = asyncio.current_task()
+        try:
+            await graphic._set_indices_(
+                indices, should_write=lambda: self._tick == tick
+            )
+        except asyncio.CancelledError:
+            pass
+        finally:
+            # drop self from _awaiting if still there (may have been overwritten by a newer tick)
+            if self._awaiting.get(graphic) is asyncio.current_task():
+                del self._awaiting[graphic]
 
     def __getitem__(self, dim):
         self._check_has_dim(dim)

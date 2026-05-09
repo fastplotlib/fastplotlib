@@ -1,4 +1,5 @@
-from collections.abc import Callable, Hashable, Sequence, Generator
+import asyncio
+from collections.abc import Callable, Hashable, Sequence
 from functools import partial
 from typing import Literal, Any, Type
 from warnings import warn
@@ -24,24 +25,17 @@ from .._base import (
     NDProcessor,
     NDGraphic,
     WindowFuncCallable,
-    block_reentrance,
     block_indices_ctx,
 )
-from ....utils import ArrayProtocol, FutureProtocol, CudaArrayProtocol
+from ....utils import ArrayProtocol, CudaArrayProtocol, cuda_to_numpy
 from .._index import ReferenceIndex
-from .._async import start_coroutine
+from .._async import run_in_thread_pool, run_sync
 
 # types for the other features
 FeatureCallable = Callable[[np.ndarray, slice], np.ndarray]
 ColorsType = np.ndarray | FeatureCallable | None
 MarkersType = Sequence[str] | np.ndarray | FeatureCallable | None
 SizesType = Sequence[float] | np.ndarray | FeatureCallable | None
-
-AwaitedPositionData = Generator[
-    FutureProtocol | ArrayProtocol | CudaArrayProtocol,
-    ArrayProtocol,
-    dict[str, ArrayProtocol],
-]
 
 
 def default_cmap_transform_each(p: int, data_slice: np.ndarray, s: slice):
@@ -526,7 +520,7 @@ class NDPositionsProcessor(NDProcessor):
 
         return other
 
-    def get(self, indices: dict[str, Any]) -> AwaitedPositionData:
+    async def get(self, indices: dict[str, Any]) -> dict[str, ArrayProtocol]:
         """
         slices through all slider dims and outputs an array that can be used to set graphic data
 
@@ -534,7 +528,7 @@ class NDPositionsProcessor(NDProcessor):
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
         """
         # already squeezed and in the correct spatial_dims order
-        window_output = yield from self.get_window_output(indices)
+        window_output = await self.get_window_output(indices)
 
         # get slice obj for display window
         dw_slice = self._get_dw_slice(indices)
@@ -545,8 +539,18 @@ class NDPositionsProcessor(NDProcessor):
         # p_dims is dim 1
         graphic_data = window_output[:, dw_slice]
 
-        data = self._finalize(graphic_data)
+        # _finalize runs the user's datapoints_window_func and spatial_func.
+        # CUDA arrays run inline, numpy goes through the thread pool.
+        if isinstance(graphic_data, CudaArrayProtocol):
+            data = self._finalize(graphic_data)
+        else:
+            data = await run_in_thread_pool(self._executor, self._finalize, graphic_data)
+
         other = self._get_other_features(data, dw_slice)
+
+        # final CUDA -> numpy conversion at the end of the pipeline
+        if isinstance(data, CudaArrayProtocol):
+            data = await asyncio.to_thread(cuda_to_numpy, data)
 
         return {
             "data": data,
@@ -699,7 +703,7 @@ class NDPositions(NDGraphic):
         else:
             self._linear_selector = None
 
-        self._create_graphic()
+        run_sync(self._create_graphic())
 
     @property
     def processor(self) -> NDPositionsProcessor:
@@ -742,7 +746,7 @@ class NDPositions(NDGraphic):
 
         self._subplot.delete_graphic(self._graphic)
         self._graphic_type = graphic_type
-        self._create_graphic()
+        run_sync(self._create_graphic())
 
     @property
     def spatial_dims(self) -> tuple[str, str, str]:
@@ -752,21 +756,21 @@ class NDPositions(NDGraphic):
     def spatial_dims(self, dims: tuple[str, str, str]):
         self.processor.spatial_dims = dims
         # force re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_(self.indices))
 
     @property
     def indices(self) -> dict[Hashable, Any]:
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    @block_reentrance
-    @start_coroutine
-    def set_indices(
-        self, indices: dict[Hashable, Any], block: bool = True, timeout: float = 1.0
+    async def _set_indices_(
+        self, indices: dict[Hashable, Any], should_write: Callable[[], bool] | None = None
     ):
         if self.data is None:
             return
 
-        new_features = yield from self._get_data_slice(indices)
+        new_features = await self.processor.get(indices)
+        if should_write is not None and not should_write():
+            return
 
         data_slice = new_features["data"]
 
@@ -846,12 +850,11 @@ class NDPositions(NDGraphic):
             p_index = pick_info["vertex_index"]
             return self.processor.tooltip_format(n_index, p_index)
 
-    @start_coroutine
-    def _create_graphic(self):
+    async def _create_graphic(self):
         if self.data is None:
             return
 
-        new_features = yield from self._get_data_slice(self.indices)
+        new_features = await self.processor.get(self.indices)
         data_slice = new_features["data"]
 
         # store any cmap, sizes, thickness, etc. to assign to new graphic
@@ -975,7 +978,7 @@ class NDPositions(NDGraphic):
         self.processor.display_window = dw
 
         # force re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_(self.indices))
 
     @property
     def datapoints_window_func(self) -> tuple[Callable, str, int | float] | None:
@@ -1049,7 +1052,7 @@ class NDPositions(NDGraphic):
         self._graphic.cmap = new
         self._cmap = new
         # force a re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_(self.indices))
 
     @property
     def cmap_each(self) -> np.ndarray[str] | None:
@@ -1115,7 +1118,7 @@ class NDPositions(NDGraphic):
         self.graphic.markers = new
         self._markers = new
         # force a re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_(self.indices))
 
     @property
     def sizes(self) -> float | Sequence[float] | None:
@@ -1134,7 +1137,7 @@ class NDPositions(NDGraphic):
         self.graphic.sizes = new
         self._sizes = new
         # force a re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_(self.indices))
 
     @property
     def thickness(self) -> float | Sequence[float] | None:
@@ -1153,4 +1156,4 @@ class NDPositions(NDGraphic):
         self.graphic.thickness = new
         self._thickness = new
         # force a re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_(self.indices))

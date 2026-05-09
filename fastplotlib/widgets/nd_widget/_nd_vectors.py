@@ -1,21 +1,26 @@
-from collections.abc import Sequence, Generator, Callable
+import asyncio
+from collections.abc import Sequence, Callable
 from typing import Any
 
 import numpy as np
 from numpy.typing import ArrayLike
 
 from ...layouts import Subplot
-from ...utils import subsample_array, ARRAY_LIKE_ATTRS, ArrayProtocol
+from ...utils import (
+    subsample_array,
+    ARRAY_LIKE_ATTRS,
+    ArrayProtocol,
+    CudaArrayProtocol,
+    cuda_to_numpy,
+)
 from ...graphics import VectorsGraphic
 from ._base import (
     NDProcessor,
     NDGraphic,
     WindowFuncCallable,
-    block_reentrance,
-    AwaitedArray,
 )
 from ._index import ReferenceIndex
-from ._async import start_coroutine
+from ._async import run_in_thread_pool, run_sync
 
 
 class NDVectorsProcessor(NDProcessor):
@@ -137,7 +142,7 @@ class NDVectorsProcessor(NDProcessor):
                 f"Spatial dimensions must haves shape (num_vecs, 2, [2 or 3]) you passed an array of shape {data.shape}"
             )
 
-    def get(self, indices: dict[str, Any]) -> AwaitedArray:
+    async def get(self, indices: dict[str, Any]) -> ArrayProtocol:
         """
         Get the data at the given index, process data through the window functions.
 
@@ -152,15 +157,22 @@ class NDVectorsProcessor(NDProcessor):
 
         """
         # this will be squeezed output, with dims in the order of the user set spatial dims
-        window_output = yield from self.get_window_output(indices)
+        window_output = await self.get_window_output(indices)
 
-        # apply spatial_func
+        # apply spatial_func; CUDA arrays run inline, numpy goes through the thread pool
         if self.spatial_func is not None:
-            spatial_out = self._spatial_func(window_output)
-            if spatial_out.ndim != len(self.spatial_dims):
+            if isinstance(window_output, CudaArrayProtocol):
+                window_output = self._spatial_func(window_output)
+            else:
+                window_output = await run_in_thread_pool(
+                    self._executor, self._spatial_func, window_output
+                )
+            if window_output.ndim != len(self.spatial_dims):
                 raise ValueError
 
-            return spatial_out
+        # final CUDA -> numpy conversion at the end of the pipeline
+        if isinstance(window_output, CudaArrayProtocol):
+            window_output = await asyncio.to_thread(cuda_to_numpy, window_output)
 
         return window_output
 
@@ -264,7 +276,7 @@ class NDVectors(NDGraphic):
             self._graphic_kwargs = graphic_kwargs
 
         # create a graphic
-        self._create_graphic()
+        run_sync(self._create_graphic())
 
     @property
     def processor(self) -> NDVectorsProcessor:
@@ -278,8 +290,7 @@ class NDVectors(NDGraphic):
         """Underlying Graphic object used to display the current data slice"""
         return self._graphic
 
-    @start_coroutine
-    def _create_graphic(self):
+    async def _create_graphic(self):
         # Creates an ``ImageGraphic`` or ``ImageVolumeGraphic`` based on the number of spatial dims,
         # adds it to the subplot, and resets the camera and histogram.
 
@@ -289,8 +300,7 @@ class NDVectors(NDGraphic):
 
         # get the data slice for this index
         # this will only have the dims specified by ``spatial_dims``
-
-        data_slice = yield from self._get_data_slice(self.indices)
+        data_slice = await self.processor.get(self.indices)
 
         old_graphic = self._graphic
         # check if we are replacing a graphic
@@ -320,25 +330,22 @@ class NDVectors(NDGraphic):
         self.processor.spatial_dims = dims
 
         # shape has probably changed, recreate graphic
-        self._create_graphic()
+        run_sync(self._create_graphic())
 
     @property
     def indices(self) -> dict[str, Any]:
         """get or set the indices, managed by the ReferenceIndex, users usually don't want to set this manually"""
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    @block_reentrance
-    @start_coroutine
-    def set_indices(
-        self, indices: dict[str, Any], block: bool = True, timeout: float = 1.0
+    async def _set_indices_(
+        self, indices: dict[str, Any], should_write: Callable[[], bool] | None = None
     ):
-        data_slice = yield from self._get_data_slice(indices)
+        data_slice = await self.processor.get(indices)
+        if should_write is not None and not should_write():
+            return
 
-        positions = data_slice[:, 0]
-        directions = data_slice[:, 1]
-
-        self.graphic.positions = positions
-        self.graphic.directions = directions
+        self.graphic.positions = data_slice[:, 0]
+        self.graphic.directions = data_slice[:, 1]
 
     @property
     def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
