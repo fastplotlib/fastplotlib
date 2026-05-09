@@ -27,7 +27,7 @@ from .features import (
     AlphaMode,
     Visible,
 )
-from ..tools._axes import Axes
+from ..axes import Axes
 
 HexStr: TypeAlias = str
 WorldObjectID: TypeAlias = int
