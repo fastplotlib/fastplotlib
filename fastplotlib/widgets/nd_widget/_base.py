@@ -643,20 +643,12 @@ class NDGraphic:
     def indices(self) -> dict[str, Any]:
         raise NotImplementedError
 
-    async def _set_indices_(
-        self, indices: dict[str, Any], should_write: Callable[[], bool] | None = None
-    ):
+    async def _set_indices_(self, indices: dict[str, Any]):
         """
         Get the data slice for ``indices`` from the processor and write it to the graphic.
 
         Semi-private: only ``ReferenceIndex`` should call this. Construction-time call
         sites use :func:`run_sync` to drive it synchronously.
-
-        ``should_write`` is checked right before the write. If supplied and it returns
-        False, the data slice is dropped. ``ReferenceIndex`` uses this to drop stale
-        results when a newer tick has superseded this one between the last ``await``
-        and the graphic write (asyncio cancellation does not fire after the final
-        ``await`` of a task, so a tick check is required here).
         """
         pass
 
