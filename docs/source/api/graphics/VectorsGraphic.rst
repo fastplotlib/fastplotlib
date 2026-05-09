@@ -24,6 +24,7 @@ Properties
     VectorsGraphic.alpha_mode
     VectorsGraphic.axes
     VectorsGraphic.block_events
+    VectorsGraphic.block_handlers
     VectorsGraphic.deleted
     VectorsGraphic.directions
     VectorsGraphic.event_handlers

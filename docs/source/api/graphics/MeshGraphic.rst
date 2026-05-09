@@ -24,6 +24,7 @@ Properties
     MeshGraphic.alpha_mode
     MeshGraphic.axes
     MeshGraphic.block_events
+    MeshGraphic.block_handlers
     MeshGraphic.clim
     MeshGraphic.cmap
     MeshGraphic.colors

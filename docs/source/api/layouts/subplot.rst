@@ -42,6 +42,8 @@ Properties
     Subplot.toolbar
     Subplot.tooltip
     Subplot.viewport
+    Subplot.x_range
+    Subplot.y_range
 
 Methods
 ~~~~~~~
@@ -52,12 +54,15 @@ Methods
     Subplot.add_graphic
     Subplot.add_image
     Subplot.add_image_volume
+    Subplot.add_image_yuv
     Subplot.add_line
     Subplot.add_line_collection
     Subplot.add_line_stack
     Subplot.add_mesh
     Subplot.add_polygon
     Subplot.add_scatter
+    Subplot.add_scatter_collection
+    Subplot.add_scatter_stack
     Subplot.add_surface
     Subplot.add_text
     Subplot.add_vectors

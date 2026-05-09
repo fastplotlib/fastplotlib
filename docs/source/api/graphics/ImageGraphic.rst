@@ -24,8 +24,11 @@ Properties
     ImageGraphic.alpha_mode
     ImageGraphic.axes
     ImageGraphic.block_events
+    ImageGraphic.block_handlers
     ImageGraphic.cmap
     ImageGraphic.cmap_interpolation
+    ImageGraphic.colorspace
+    ImageGraphic.cpu_buffer
     ImageGraphic.data
     ImageGraphic.deleted
     ImageGraphic.event_handlers

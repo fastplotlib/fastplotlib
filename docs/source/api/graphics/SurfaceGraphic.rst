@@ -24,6 +24,7 @@ Properties
     SurfaceGraphic.alpha_mode
     SurfaceGraphic.axes
     SurfaceGraphic.block_events
+    SurfaceGraphic.block_handlers
     SurfaceGraphic.clim
     SurfaceGraphic.cmap
     SurfaceGraphic.colors
