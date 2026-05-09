@@ -524,7 +524,7 @@ class Axes:
 
     def update_using_bbox(self, bbox):
         """
-        Update the w.r.t. the given bbox
+        Update the axes w.r.t. the given bbox
 
         Parameters
         ----------
