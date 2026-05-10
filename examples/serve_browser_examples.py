@@ -33,7 +33,7 @@ uharfbuzz_wheel = "https://pygfx--1273.org.readthedocs.build/1273/_static/uharfb
 pygfx_wheel = "https://pygfx--1273.org.readthedocs.build/1273/_static/pygfx-0.16.0-py3-none-any.whl"
 
 # the pygfx wheel will be listed after this. it might be possible to still get deps from pyproject.toml
-fpl_deps = [wgpu_wheel, uharfbuzz_wheel, pygfx_wheel, "hsluv", "pylinalg", "jinja2", "httpx", "trimesh", "gltflib", "imageio"]
+fpl_deps = [wgpu_wheel, uharfbuzz_wheel, pygfx_wheel, "imgui-bundle", "hsluv", "pylinalg", "jinja2", "httpx", "trimesh", "gltflib", "imageio"]
 
 root = Path(__file__).parent.parent.absolute()
 
