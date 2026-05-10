@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-import asyncio
+from collections import deque
+from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from numbers import Number
 from typing import Sequence, Any, Callable
@@ -12,7 +13,6 @@ if TYPE_CHECKING:
     from ._base import NDGraphic
 
 from ...utils import loop as _loop
-from ._async import run_sync
 
 
 class RangeContinuous:
@@ -49,6 +49,7 @@ class RangeContinuous:
 
         RangeContinuous(start=0.0, stop=500.0, step=0.5)
     """
+
     def __init__(self, start: int | float, stop: int | float, step: int | float):
         if start >= stop:
             raise IndexError(
@@ -205,9 +206,26 @@ class ReferenceIndex:
 
         self._ndwidgets: list[NDWidget] = list()
 
-        # tracks in-flight throttled render tasks so they can be cancelled when a newer
-        # slider position arrives before the previous one has finished loading
-        self._awaiting: dict[NDGraphic, asyncio.Task] = dict()
+        # per-graphic render revision. Bumped on every ``cancel_awaiting=True``
+        # call (always-latest inputs, such as slider drag). A scheduled render
+        # carries the revision it was created under and skips its final write
+        # if a newer revision has been requested in the meantime.
+        self._render_rev: dict[NDGraphic, int] = dict()
+
+        # per-graphic queue of pending render requests for the serial drain
+        # path (``cancel_awaiting=False``: play, step, programmatic,
+        # LinearSelector). Each entry is ``(indices, rev)``. Drained by
+        # :meth:`_render_request` so the underlying data source only ever sees
+        # one read at a time.
+        self._render_request_queue: dict[
+            NDGraphic, deque[tuple[dict[str, Any], int]]
+        ] = dict()
+
+        # per-graphic flag: is :meth:`_render_request` currently draining
+        # ``_render_request_queue[g]``? Ensures only one drain coroutine is
+        # alive per graphic - subsequent ``cancel_awaiting=False`` calls just
+        # append to the queue.
+        self._render_request_active: dict[NDGraphic, bool] = dict()
 
     @property
     def ref_ranges(self) -> dict[str, RangeContinuous | RangeDiscrete]:
@@ -264,45 +282,91 @@ class ReferenceIndex:
 
     def _render_indices(self, cancel_awaiting: bool = False):
         """
-        Schedule a render for every affected NDGraphic via the rendercanvas event loop.
+        Schedule renders for every affected NDGraphic.
 
-        When ``cancel_awaiting=True``, any in-flight tasks from a previous throttled
-        call are cancelled before new ones are scheduled, so rapid slider drags never
-        queue up stale window_func/spatial_func work. Falls back to a synchronous drain
-        when no event loop is running yet (figure not shown).
+        Two paths share this entry point:
+
+        - ``cancel_awaiting=True`` (rapid-fire inputs like slider drag, where
+          intermediate positions are disposable): schedule a fresh
+          ``_set_indices_`` task per call via :meth:`_render_request_latest`.
+          Older still-running tasks skip their write via the per-graphic
+          revision check.
+        - ``cancel_awaiting=False`` (play advance, step buttons,
+          LinearSelector, programmatic): every request must render. Requests
+          are queued per graphic and processed one at a time by
+          :meth:`_render_request`, so only one ``_set_indices_`` is in flight
+          per graphic from this path.
         """
-        if cancel_awaiting:
-            for task in self._awaiting.values():
-                task.cancel()
-            self._awaiting.clear()
-
         for ndw in self._ndwidgets:
             for g in ndw.ndgraphics:
                 if g.data is None or g.pause or g._block_indices:
                     continue
                 indices = {d: self._indices[d] for d in g.processor.slider_dims}
+                task_name = f"ndw-render:{type(g).__name__}"
+                if g.name is not None:
+                    task_name = f"{task_name}:{g.name}"
 
-                try:
-                    asyncio.get_running_loop()
-                except RuntimeError:
-                    run_sync(g._set_indices_(indices))
-                    continue
+                if cancel_awaiting:
+                    # bump revision so older still-running renders that complete
+                    # later see rev < current and skip their write
+                    self._render_rev[g] = self._render_rev.get(g, 0) + 1
+                    rev = self._render_rev[g]
+                    _loop.add_task(
+                        self._render_request_latest, g, indices, rev, name=task_name
+                    )
+                else:
+                    rev = self._render_rev.get(g, 0)
+                    self._render_request_queue.setdefault(g, deque()).append(
+                        (indices, rev)
+                    )
+                    # one queue processor per graphic; if one is already running,
+                    # the appended entry will be picked up by it
+                    if not self._render_request_active.get(g, False):
+                        self._render_request_active[g] = True
+                        _loop.add_task(self._render_request, g, name=task_name)
 
-                _loop.add_task(self._render_request, g, indices, cancel_awaiting, name="ndw-render")
-
-    async def _render_request(
-        self, graphic: "NDGraphic", indices: dict[str, Any], cancel_awaiting: bool
+    async def _render_request_latest(
+        self, graphic: "NDGraphic", indices: dict[str, Any], rev: int
     ):
-        """Run the data pipeline for one graphic and write the result."""
-        if cancel_awaiting:
-            self._awaiting[graphic] = asyncio.current_task()
+        """
+        Schedule one ``_set_indices_`` task. Older still-running tasks skip
+        their write when ``rev < current``. Some ``data`` objects cancel the
+        previous in-flight read when a new index is requested; the resulting
+        :class:`CancelledError` is swallowed.
+        """
+        if rev < self._render_rev.get(graphic, 0):
+            # a newer rapid-fire request superseded us; drop the write
+            return
         try:
             await graphic._set_indices_(indices)
-        except asyncio.CancelledError:
+        except CancelledError:
+            # ``data`` cancelled this read in favour of a newer one
             pass
+
+    async def _render_request(self, graphic: "NDGraphic"):
+        """
+        Process ``_render_request_queue[graphic]`` one entry at a time. Each
+        ``_set_indices_`` is awaited fully before the next entry is popped,
+        so only one ``_set_indices_`` is in flight per graphic from this
+        path. A concurrent :meth:`_render_request_latest` for the same
+        graphic can still cancel an in-flight read; the resulting
+        :class:`CancelledError` is swallowed.
+        """
+        try:
+            queue = self._render_request_queue[graphic]
+            while queue:
+                indices, rev = queue.popleft()
+                if rev < self._render_rev.get(graphic, 0):
+                    # a rapid-fire request superseded this queued entry; skip
+                    continue
+                try:
+                    await graphic._set_indices_(indices)
+                except CancelledError:
+                    # concurrent _render_request_latest cancelled our read on ``data``
+                    pass
+            del self._render_request_queue[graphic]
         finally:
-            if cancel_awaiting and self._awaiting.get(graphic) is asyncio.current_task():
-                del self._awaiting[graphic]
+            self._render_request_active[graphic] = False
 
     def __getitem__(self, dim):
         self._check_has_dim(dim)
@@ -317,10 +381,13 @@ class ReferenceIndex:
     def pop_dim(self):
         pass
 
-    def push_dims(self, ref_ranges: dict[
+    def push_dims(
+        self,
+        ref_ranges: dict[
             str,
             tuple[Number, Number, Number] | tuple[Any] | RangeContinuous,
-        ],):
+        ],
+    ):
 
         for name, r in ref_ranges.items():
             if isinstance(r, (RangeContinuous, RangeDiscrete)):

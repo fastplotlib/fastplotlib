@@ -36,6 +36,10 @@ class NDWSubplot:
         self._nd_graphics = list()
 
     @property
+    def subplot(self) -> Subplot:
+        return self._subplot
+
+    @property
     def nd_graphics(self) -> tuple[NDGraphic]:
         """all the NDGraphic instance in this subplot"""
         return tuple(self._nd_graphics)
@@ -70,7 +74,7 @@ class NDWSubplot:
     ):
         nd = NDImage(
             self.ndw.indices,
-            self._subplot,
+            nd_subplot=self,
             data=data,
             dims=dims,
             spatial_dims=spatial_dims,
@@ -123,7 +127,7 @@ class NDWSubplot:
     ) -> NDVectors:
         nd = NDVectors(
             self.ndw.indices,
-            self._subplot,
+            nd_subplot=self,
             data=data,
             dims=dims,
             spatial_dims=spatial_dims,
@@ -142,7 +146,7 @@ class NDWSubplot:
         # TODO: better func signature here, send all kwargs to processor_kwargs
         nd = NDPositions(
             self.ndw.indices,
-            self._subplot,
+            self,
             *args,
             graphic_type=ScatterCollection,
             **kwargs,
@@ -162,7 +166,7 @@ class NDWSubplot:
     ):
         nd = NDPositions(
             self.ndw.indices,
-            self._subplot,
+            self,
             *args,
             graphic_type=graphic_type,
             linear_selector=True,
@@ -177,7 +181,7 @@ class NDWSubplot:
     def add_nd_lines(self, *args, **kwargs):
         nd = NDPositions(
             self.ndw.indices,
-            self._subplot,
+            self,
             *args,
             graphic_type=LineCollection,
             **kwargs,

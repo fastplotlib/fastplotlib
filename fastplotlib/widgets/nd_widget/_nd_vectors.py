@@ -1,13 +1,11 @@
-import asyncio
-from collections.abc import Sequence, Callable
-from typing import Any
+from __future__ import annotations
 
-import numpy as np
+from collections.abc import Sequence, Callable
+from typing import Any, TYPE_CHECKING
+
 from numpy.typing import ArrayLike
 
-from ...layouts import Subplot
 from ...utils import (
-    subsample_array,
     ARRAY_LIKE_ATTRS,
     ArrayProtocol,
     CudaArrayProtocol,
@@ -21,6 +19,9 @@ from ._base import (
 )
 from ._index import ReferenceIndex
 from ._async import run_in_thread_pool, run_sync
+
+if TYPE_CHECKING:
+    from ._ndw_subplot import NDWSubplot
 
 
 class NDVectorsProcessor(NDProcessor):
@@ -139,7 +140,7 @@ class NDVectorsProcessor(NDProcessor):
             self.spatial_dims[-1]
         ] not in (2, 3):
             raise ValueError(
-                f"Spatial dimensions must haves shape (num_vecs, 2, [2 or 3]) you passed an array of shape {data.shape}"
+                f"Spatial dimensions must haves shape (num_vecs, 2, [2 or 3]) you passed {sdims}"
             )
 
     async def get(self, indices: dict[str, Any]) -> ArrayProtocol:
@@ -172,7 +173,7 @@ class NDVectorsProcessor(NDProcessor):
 
         # final CUDA -> numpy conversion at the end of the pipeline
         if isinstance(window_output, CudaArrayProtocol):
-            window_output = await asyncio.to_thread(cuda_to_numpy, window_output)
+            window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
 
         return window_output
 
@@ -181,7 +182,7 @@ class NDVectors(NDGraphic):
     def __init__(
         self,
         ref_index: ReferenceIndex,
-        subplot: Subplot,
+        nd_subplot: NDWSubplot,
         data: ArrayProtocol | None,
         dims: Sequence[str],
         spatial_dims: tuple[
@@ -209,8 +210,8 @@ class NDVectors(NDGraphic):
         ref_index : ReferenceIndex
             The shared reference index that delivers slider updates to this graphic.
 
-        subplot : Subplot
-            parent subplot the NDGraphic is in
+        nd_subplot : NDWSubplot
+            parent ndsubplot the NDGraphic is in
 
         data : array-like or None
             Shape [num_vectors, 2, 2] or [num_vectors, 3, 2]. data[:, :, 0] gives the positions, data[:, :, 1] gives directions
@@ -254,7 +255,7 @@ class NDVectors(NDGraphic):
                 f"spatial_dims: {spatial_dims}. Specified NDWidget ref_ranges: {ref_index.dims}"
             )
 
-        super().__init__(subplot, name)
+        super().__init__(nd_subplot, name)
 
         self._ref_index = ref_index
 
@@ -306,7 +307,7 @@ class NDVectors(NDGraphic):
         # check if we are replacing a graphic
         if old_graphic is not None:
             # delete the old graphic
-            self._subplot.delete_graphic(old_graphic)
+            self._nd_subplot.subplot.delete_graphic(old_graphic)
 
         # create the new graphic
         self._graphic = VectorsGraphic(
@@ -315,7 +316,7 @@ class NDVectors(NDGraphic):
             **self._graphic_kwargs
         )
 
-        self._subplot.add_graphic(self._graphic)
+        self._nd_subplot.subplot.add_graphic(self._graphic)
 
     @property
     def spatial_dims(self) -> tuple[str, str, str]:

@@ -1,4 +1,5 @@
-import asyncio
+from __future__ import annotations
+
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -6,15 +7,17 @@ import inspect
 from numbers import Real
 from pprint import pformat
 import textwrap
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import ArrayLike
 
-from ...layouts import Subplot
 from ...utils import ArrayProtocol, FutureProtocol, CudaArrayProtocol
 from ...graphics import Graphic
-from ._async import run_in_thread_pool, run_sync
+from ._async import run_in_thread_pool, run_sync, wait_for_future
+
+if TYPE_CHECKING:
+    from ._ndw_subplot import NDWSubplot
 
 # must take arguments: array-like, `axis`: int, `keepdims`: bool
 WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
@@ -447,7 +450,9 @@ class NDProcessor:
 
         return indexer
 
-    async def _apply_window_functions(self, windowed_array: ArrayProtocol) -> ArrayProtocol:
+    async def _apply_window_functions(
+        self, windowed_array: ArrayProtocol
+    ) -> ArrayProtocol:
         """
         apply window functions in the order specified by
          ``window_order``.
@@ -551,7 +556,7 @@ class NDProcessor:
             raw_slice = self.data[:]
 
         if isinstance(raw_slice, FutureProtocol):
-            return await asyncio.wrap_future(raw_slice)
+            return await wait_for_future(raw_slice)
         return raw_slice
 
     async def get(self, indices: dict[str, Any]) -> ArrayProtocol:
@@ -598,10 +603,10 @@ class NDProcessor:
 class NDGraphic:
     def __init__(
         self,
-        subplot: Subplot,
+        nd_subplot: NDWSubplot,
         name: str | None,
     ):
-        self._subplot = subplot
+        self._nd_subplot = nd_subplot
         self._name = name
         self._graphic: Graphic | None = None
 
@@ -667,7 +672,7 @@ class NDGraphic:
         # create a new graphic when data has changed
         if self.graphic is not None:
             # it is already None if NDGraphic was initialized with no data
-            self._subplot.delete_graphic(self.graphic)
+            self._nd_subplot.subplot.delete_graphic(self.graphic)
             self._graphic = None
 
         run_sync(self._create_graphic())
@@ -778,17 +783,17 @@ class NDGraphic:
 
 
 @contextmanager
-def block_indices_ctx(ndgraphic: NDGraphic):
+def block_indices_ctx(*ndgraphics: NDGraphic):
     """
-    Context manager for pausing an NDGraphic from updating indices
+    Context manager for pausing NDGraphics from updating indices
     """
-    ndgraphic._block_indices = True
+    for ndg in ndgraphics:
+        ndg._block_indices = True
 
     try:
         yield
     except Exception as e:
         raise e from None  # indices setter has raised, the line above and the lines below are probably more relevant!
     finally:
-        ndgraphic._block_indices = False
-
-
+        for ndg in ndgraphics:
+            ndg._block_indices = False
