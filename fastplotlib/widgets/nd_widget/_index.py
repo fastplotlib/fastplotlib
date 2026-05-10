@@ -58,6 +58,7 @@ class RangeContinuous:
         self._start = start
         self._stop = stop
         self._step = step
+        self._throttle = 0.05
 
     @property
     def start(self) -> int | float:
@@ -81,6 +82,17 @@ class RangeContinuous:
     def step(self) -> int | float:
         """get or set the step size of the range, only used for UI elements"""
         return self._step
+
+    @property
+    def throttle(self) -> float:
+        """get or set the minimum time in seconds between slider-drag renders"""
+        return self._throttle
+
+    @throttle.setter
+    def throttle(self, val: float):
+        if val < 0:
+            raise ValueError("throttle value must be >= 0.0")
+        self._throttle = val
 
     @property
     def size(self) -> int | float:
@@ -213,14 +225,14 @@ class ReferenceIndex:
 
         self._ndwidgets.append(ndw)
 
-    def set(self, indices: dict[str, Any], throttle: bool = False):
+    def set(self, indices: dict[str, Any], cancel_awaiting: bool = False):
         for dim, value in indices.items():
             self._indices[dim] = self._clamp(dim, value)
 
-        self._render_indices(throttle=throttle)
+        self._render_indices(cancel_awaiting=cancel_awaiting)
         self._indices_changed()
 
-    def set_dim_index(self, dim: str, index, throttle: bool = False):
+    def set_dim_index(self, dim: str, index, cancel_awaiting: bool = False):
         """
         Set the index for a single dimension and trigger a render.
 
@@ -230,7 +242,7 @@ class ReferenceIndex:
             Dimension name.
         index : int or float
             New reference-space value for this dimension.
-        throttle : bool, default False
+        cancel_awaiting : bool, default False
             If True, cancel any in-flight render tasks before scheduling a new one.
             Use this only for rapid-fire inputs such as an imgui slider drag where
             intermediate positions are disposable. All other callers (play advance,
@@ -238,7 +250,7 @@ class ReferenceIndex:
         """
         self._check_has_dim(dim)
         self._indices[dim] = self._clamp(dim, index)
-        self._render_indices(throttle=throttle)
+        self._render_indices(cancel_awaiting=cancel_awaiting)
         self._indices_changed()
 
     def _clamp(self, dim, value):
@@ -250,16 +262,16 @@ class ReferenceIndex:
 
         return value
 
-    def _render_indices(self, throttle: bool = False):
+    def _render_indices(self, cancel_awaiting: bool = False):
         """
         Schedule a render for every affected NDGraphic via the rendercanvas event loop.
 
-        When ``throttle=True``, any in-flight tasks from a previous throttled call are
-        cancelled before new ones are scheduled, so rapid slider drags never queue up
-        stale window_func/spatial_func work. Falls back to a synchronous drain when no
-        event loop is running yet (figure not shown).
+        When ``cancel_awaiting=True``, any in-flight tasks from a previous throttled
+        call are cancelled before new ones are scheduled, so rapid slider drags never
+        queue up stale window_func/spatial_func work. Falls back to a synchronous drain
+        when no event loop is running yet (figure not shown).
         """
-        if throttle:
+        if cancel_awaiting:
             for task in self._awaiting.values():
                 task.cancel()
             self._awaiting.clear()
@@ -276,20 +288,20 @@ class ReferenceIndex:
                     run_sync(g._set_indices_(indices))
                     continue
 
-                _loop.add_task(self._render_request, g, indices, throttle, name="ndw-render")
+                _loop.add_task(self._render_request, g, indices, cancel_awaiting, name="ndw-render")
 
     async def _render_request(
-        self, graphic: "NDGraphic", indices: dict[str, Any], throttle: bool
+        self, graphic: "NDGraphic", indices: dict[str, Any], cancel_awaiting: bool
     ):
         """Run the data pipeline for one graphic and write the result."""
-        if throttle:
+        if cancel_awaiting:
             self._awaiting[graphic] = asyncio.current_task()
         try:
             await graphic._set_indices_(indices)
         except asyncio.CancelledError:
             pass
         finally:
-            if throttle and self._awaiting.get(graphic) is asyncio.current_task():
+            if cancel_awaiting and self._awaiting.get(graphic) is asyncio.current_task():
                 del self._awaiting[graphic]
 
     def __getitem__(self, dim):

@@ -53,6 +53,9 @@ class NDWidgetUI(EdgeWindow):
         # loop playback
         self._loop = {dim: False for dim in ref_ranges.keys()}
 
+        # last time the slider was moved per dim, used for time-based throttling
+        self._last_slider_movement: dict[str, float] = {dim: 0.0 for dim in ref_ranges.keys()}
+
         # auto-plays the ImageWidget's left-most dimension in docs galleries
         if "DOCS_BUILD" in os.environ.keys():
             if os.environ["DOCS_BUILD"] == "1":
@@ -158,7 +161,9 @@ class NDWidgetUI(EdgeWindow):
                 )
 
                 if changed:
-                    self._ndwidget.indices.set_dim_index(dim, new_index, throttle=True)
+                    if now - self._last_slider_movement[dim] > rr.throttle:
+                        self._ndwidget.indices.set_dim_index(dim, new_index, cancel_awaiting=True)
+                        self._last_slider_movement[dim] = now
 
                 elif imgui.is_item_hovered():
                     if imgui.is_key_pressed(imgui.Key.right_arrow):
