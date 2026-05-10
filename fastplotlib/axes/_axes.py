@@ -1,10 +1,11 @@
+import math
+
 import numpy as np
 
 import pygfx
 from pylinalg import quat_from_vecs, vec_transform_quat
 
 from ..utils.enums import RenderQueue
-
 
 GRID_PLANES = ["xy", "xz", "yz"]
 
@@ -143,6 +144,110 @@ class Grids(pygfx.Group):
         return self._yz
 
 
+class Ruler(pygfx.Ruler):
+    """pygfx.Ruler subclass that adds a rotated axis label."""
+
+    def __init__(self, *, color="#fff", alpha_mode=None, render_queue=None, **kwargs):
+        super().__init__(
+            color=color, alpha_mode=alpha_mode, render_queue=render_queue, **kwargs
+        )
+        self._label = pygfx.Text(
+            screen_space=True,
+            anchor="middle-center",
+            font_size=16,
+            material=pygfx.TextMaterial(
+                color=color,
+                alpha_mode="auto",
+                render_queue=RenderQueue.overlay + 50,
+                aa=True,
+            ),
+        )
+        self._label.visible = False
+        self.add(self._label)
+
+    @property
+    def label(self) -> pygfx.Text:
+        """Axis label. Set text via ``label.set_text('label text')``"""
+        return self._label
+
+    @property
+    def color(self):
+        return self._text.material.color
+
+    @color.setter
+    def color(self, color):
+        self._text.material.color = color
+        self._line.material.color = color
+        self._points.material.edge_color = color
+        self._label.material.color = color
+
+    def update(self, camera, canvas_size):
+        stats = super().update(camera, canvas_size)
+        self._update_label()
+        return stats
+
+    def _update_label(self):
+        # update the label position
+        t1, t2 = self._visible_part_coords
+        if t1 == t2:
+            self._label.visible = False
+            return
+        self._label.visible = True
+
+        mid_t = 0.5 * (t1 + t2)
+        mid_pos = self._start_pos * (1 - mid_t) + self._end_pos * mid_t
+
+        world_vec = self._end_pos - self._start_pos
+        world_len = np.linalg.norm(world_vec)
+        screen_len = np.linalg.norm(self._screen_vec)
+
+        if world_len > 0 and screen_len > 0:
+            world_dir = world_vec / world_len
+            # perpendicular in the xy plane: CCW = "left", CW = "right"
+            if self.tick_side == "left":
+                perp_world = np.array([-world_dir[1], world_dir[0], 0.0])
+            else:
+                perp_world = np.array([world_dir[1], -world_dir[0], 0.0])
+
+            # same perpendicular in screen space, for projecting tick label rects
+            screen_dir = self._screen_vec / screen_len
+            if self.tick_side == "left":
+                px, py = -screen_dir[1], screen_dir[0]
+            else:
+                px, py = screen_dir[1], -screen_dir[0]
+
+            # max extent of tick labels in the perpendicular direction.
+            # tick labels are unrotated screen-space text, so we project their
+            # axis-aligned _rect onto (px, py) directly.
+            visible_blocks = [
+                b
+                for b in self.text._text_blocks
+                if b._rect.width > 0 or b._rect.height > 0
+            ]
+            if visible_blocks:
+                tick_extent_px = max(
+                    max(px, 0) * b._rect.right
+                    + min(px, 0) * b._rect.left
+                    + max(py, 0) * b._rect.top
+                    + min(py, 0) * b._rect.bottom
+                    for b in visible_blocks
+                )
+            else:
+                tick_extent_px = 0.0
+
+            offset_px = max(tick_extent_px, 0.0) + self._label.font_size
+            mid_pos = mid_pos + (offset_px / (screen_len / world_len)) * perp_world
+
+        self._label.local.position = mid_pos
+
+        vec = self._visible_part_screen_vec
+        angle = math.atan2(vec[1], vec[0])
+        # pylinalg uses [x, y, z, w] quaternion format
+        self._label.local.rotation = np.array(
+            [0.0, 0.0, math.sin(angle / 2), math.cos(angle / 2)]
+        )
+
+
 class Axes:
     def __init__(
         self,
@@ -191,15 +296,9 @@ class Axes:
         )
 
         # create ruler for each dim
-        self._x = pygfx.Ruler(
-            alpha_mode="solid", render_queue=RenderQueue.axes, **x_kwargs
-        )
-        self._y = pygfx.Ruler(
-            alpha_mode="solid", render_queue=RenderQueue.axes, **y_kwargs
-        )
-        self._z = pygfx.Ruler(
-            alpha_mode="solid", render_queue=RenderQueue.axes, **z_kwargs
-        )
+        self._x = Ruler(alpha_mode="solid", render_queue=RenderQueue.axes, **x_kwargs)
+        self._y = Ruler(alpha_mode="solid", render_queue=RenderQueue.axes, **y_kwargs)
+        self._z = Ruler(alpha_mode="solid", render_queue=RenderQueue.axes, **z_kwargs)
 
         # We render the lines and ticks as solid, but enable aa for text for prettier glyphs
         for ruler in self._x, self._y, self._z:
@@ -208,6 +307,7 @@ class Axes:
             ruler.text.material.depth_compare = "<="
             ruler.text.material.alpha_mode = "auto"
             ruler.text.material.aa = True
+            ruler.label.material.depth_compare = "<="
 
         self._offset = offset
 
@@ -319,7 +419,7 @@ class Axes:
 
         # apply quaternion to each of x, y, z rulers
         for dim, cbasis, new_basis in zip(["x", "y", "z"], CANONICAL_BAIS, basis):
-            ruler: pygfx.Ruler = getattr(self, dim)
+            ruler: Ruler = getattr(self, dim)
             ruler.local.rotation = quat_from_vecs(cbasis, new_basis)
 
     @property
@@ -332,17 +432,17 @@ class Axes:
         self._offset = value
 
     @property
-    def x(self) -> pygfx.Ruler:
+    def x(self) -> Ruler:
         """x axis ruler"""
         return self._x
 
     @property
-    def y(self) -> pygfx.Ruler:
+    def y(self) -> Ruler:
         """y axis ruler"""
         return self._y
 
     @property
-    def z(self) -> pygfx.Ruler:
+    def z(self) -> Ruler:
         """z axis ruler"""
         return self._z
 
@@ -363,6 +463,16 @@ class Axes:
 
         for dim, color in zip(["x", "y", "z"], colors):
             getattr(self, dim).line.material.color = color
+
+    @property
+    def color(self) -> pygfx.Color:
+        """get or set a single color for all rulers"""
+        return self._x.color
+
+    @color.setter
+    def color(self, color: pygfx.Color | str):
+        for ruler in (self._x, self._y, self._z):
+            ruler.color = color
 
     @property
     def auto_grid(self) -> bool:
@@ -390,6 +500,7 @@ class Axes:
     def intersection(self, intersection: tuple[float, float, float] | None):
         """
         intersection point of [x, y, z] rulers.
+
         Set (0, 0, 0) for origin
         Set to `None` to follow when panning through the scene with orthographic projection
         """
@@ -411,10 +522,9 @@ class Axes:
 
         return (cam_matrix, viewport.rect, viewport.logical_size, scale)
 
-
     def update_using_bbox(self, bbox):
         """
-        Update the w.r.t. the given bbox
+        Update the axes w.r.t. the given bbox
 
         Parameters
         ----------
@@ -439,6 +549,33 @@ class Axes:
             intersection = self.intersection
 
         self.update(bbox, intersection)
+
+    def _auto_intersection_pos(self, xpos, ypos, width, height):
+        # returns the intersection position for the axis so they are placed in the bottom left corner
+        margin = 4
+
+        y_blocks = [b for b in self.y.text._text_blocks if b._rect.width > 0]
+        y_extent = (
+            max(abs(b._rect.left) for b in y_blocks)
+            if y_blocks
+            else 6 * self.y.text.font_size
+        )
+        if self.y._label._text_blocks:
+            # label center is tick_extent + font_size from ruler; body adds font_size/2 more
+            y_extent += 1.5 * self.y._label.font_size
+
+        x_blocks = [b for b in self.x.text._text_blocks if b._rect.height > 0]
+        x_extent = (
+            max(abs(b._rect.bottom) for b in x_blocks)
+            if x_blocks
+            else 1.5 * self.x.text.font_size
+        )
+        if self.x._label._text_blocks:
+            x_extent += 1.5 * self.x._label.font_size
+
+        return self._plot_area.map_screen_to_world(
+            (xpos + y_extent + margin, ypos + height - x_extent - margin)
+        )
 
     def update_using_camera(self):
         """
@@ -491,12 +628,7 @@ class Axes:
 
         if self.intersection is None:
             if self._plot_area.camera.fov == 0:
-                # place the ruler close to the left and bottom edges of the viewport
-                # TODO: determine this for perspective projections
-                xscreen_10, yscreen_10 = xpos + (width * 0.1), ypos + (height * 0.9)
-                intersection = self._plot_area.map_screen_to_world(
-                    (xscreen_10, yscreen_10)
-                )
+                intersection = self._auto_intersection_pos(xpos, ypos, width, height)
             else:
                 # force origin since None is not supported for Persepctive projections
                 self._intersection = (0, 0, 0)

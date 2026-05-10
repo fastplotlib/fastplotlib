@@ -24,6 +24,7 @@ Properties
     LineStack.alpha_mode
     LineStack.axes
     LineStack.block_events
+    LineStack.block_handlers
     LineStack.cmap
     LineStack.colors
     LineStack.data

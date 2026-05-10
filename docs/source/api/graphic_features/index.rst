@@ -22,6 +22,8 @@ Graphic Features
     VertexPointSizes
     UniformSize
     TextureArray
+    TextureYUV
+    tuple
     ImageCmap
     ImageVmin
     ImageVmax

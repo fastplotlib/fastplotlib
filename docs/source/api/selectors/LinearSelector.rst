@@ -25,6 +25,7 @@ Properties
     LinearSelector.axes
     LinearSelector.axis
     LinearSelector.block_events
+    LinearSelector.block_handlers
     LinearSelector.deleted
     LinearSelector.edge_color
     LinearSelector.event_handlers

@@ -24,6 +24,7 @@ Properties
     LineCollection.alpha_mode
     LineCollection.axes
     LineCollection.block_events
+    LineCollection.block_handlers
     LineCollection.cmap
     LineCollection.colors
     LineCollection.data

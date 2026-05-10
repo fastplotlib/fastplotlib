@@ -25,6 +25,7 @@ Properties
     RectangleSelector.axes
     RectangleSelector.axis
     RectangleSelector.block_events
+    RectangleSelector.block_handlers
     RectangleSelector.deleted
     RectangleSelector.edge_color
     RectangleSelector.event_handlers

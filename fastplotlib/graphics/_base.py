@@ -18,7 +18,6 @@ else:
 import pygfx
 
 from .features import (
-    BufferManager,
     Deleted,
     Name,
     Offset,
@@ -28,7 +27,7 @@ from .features import (
     AlphaMode,
     Visible,
 )
-from ._axes import Axes
+from ..axes import Axes
 
 HexStr: TypeAlias = str
 WorldObjectID: TypeAlias = int

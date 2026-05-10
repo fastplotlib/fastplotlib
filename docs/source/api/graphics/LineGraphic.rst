@@ -24,6 +24,7 @@ Properties
     LineGraphic.alpha_mode
     LineGraphic.axes
     LineGraphic.block_events
+    LineGraphic.block_handlers
     LineGraphic.cmap
     LineGraphic.color_mode
     LineGraphic.colors
