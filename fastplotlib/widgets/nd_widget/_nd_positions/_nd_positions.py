@@ -867,6 +867,8 @@ class NDPositions(NDGraphic):
                     self.processor.spatial_dims[1]
                 ]
 
+        self._last_indices = indices
+
     def _linear_selector_handler(self, ev):
         with block_indices_ctx(*self._nd_subplot.nd_graphics):
             # block index change in all NDGraphics that are not in the same subplot

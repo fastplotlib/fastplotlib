@@ -347,6 +347,8 @@ class NDVectors(NDGraphic):
         self.graphic.positions = data_slice[:, 0]
         self.graphic.directions = data_slice[:, 1]
 
+        self._last_indices = indices
+
     @property
     def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
         """get or set the spatial_func, see docstring for details"""

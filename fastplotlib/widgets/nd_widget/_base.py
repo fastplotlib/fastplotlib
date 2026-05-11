@@ -619,6 +619,9 @@ class NDGraphic:
         # user settable bool to make the graphic unresponsive to change in the ReferenceIndex
         self._pause = False
 
+        # the indices that current graphic data reflects
+        self._last_indices = None
+
     async def _create_graphic(self):
         raise NotImplementedError
 
@@ -643,6 +646,11 @@ class NDGraphic:
     @property
     def graphic(self) -> Graphic:
         raise NotImplementedError
+
+    @property
+    def indices_displayed(self) -> dict[str, Any]:
+        """the indices that the graphic current reflects, not accounting for render time"""
+        return self._last_indices
 
     @property
     def indices(self) -> dict[str, Any]:

@@ -567,6 +567,7 @@ class NDImage(NDGraphic):
             indices = self.indices
 
         self.graphic.data = await self.processor.get(indices)
+        self._last_indices = indices
 
     @property
     def compute_histogram(self) -> bool:
