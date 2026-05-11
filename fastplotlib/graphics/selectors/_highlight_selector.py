@@ -715,12 +715,12 @@ class ImageHighlightSelector(HighlightSelector):
         if self._selection_options is not None:
             # options mode
             index = dict_or_index
-            if not isinstance(index, Integral):
+            if not isinstance(index, Integral) and index is not None:
                 raise TypeError(
                     f"must provide integer index to append to selection "
                     f"in 'options' mode, you passed: {dict_or_index!r}"
                 )
-            if index not in self._selected_indices:
+            if index not in self._selected_indices or index is None:
                 self._selected_indices.append(index)
                 self._update_all_graphics()
                 self._emit({"value": self.selection})
