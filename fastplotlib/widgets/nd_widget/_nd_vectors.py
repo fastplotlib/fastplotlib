@@ -338,8 +338,12 @@ class NDVectors(NDGraphic):
         """get or set the indices, managed by the ReferenceIndex, users usually don't want to set this manually"""
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    async def _set_indices_(self):
-        data_slice = await self.processor.get(self.indices)
+    async def _set_indices_(self, indices: dict[str, Any] = None):
+        if indices is None:
+            # use latest indices if None, else use passed indices from schedule time
+            indices = self.indices
+
+        data_slice = await self.processor.get(indices)
         self.graphic.positions = data_slice[:, 0]
         self.graphic.directions = data_slice[:, 1]
 

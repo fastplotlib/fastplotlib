@@ -785,12 +785,14 @@ class NDPositions(NDGraphic):
     def indices(self) -> dict[Hashable, Any]:
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    async def _set_indices_(self):
+    async def _set_indices_(self, indices: dict[str, Any] = None):
         if self.data is None:
             return
 
-        # fetch the latest indices from the ReferenceIndex
-        indices = self.indices
+        if indices is None:
+            # fetch the latest indices from the ReferenceIndex
+            # else used passed indices from schedule time
+            indices = self.indices
 
         new_features = await self.processor.get(indices)
         data_slice = new_features["data"]

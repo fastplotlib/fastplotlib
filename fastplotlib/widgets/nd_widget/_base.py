@@ -648,9 +648,12 @@ class NDGraphic:
     def indices(self) -> dict[str, Any]:
         raise NotImplementedError
 
-    async def _set_indices_(self):
+    async def _set_indices_(self, indices: dict[str, Any] = None):
         """
-        Get the data slice for the current index from the processor and write it to the graphic.
+        Get the data slice for the index from the processor and write it to the graphic.
+
+        If indices is None, it uses the latest indices from the ReferenceIndex. Otherwise it uses the
+        indices passed when the update was scheduled.
 
         Semi-private: only ``ReferenceIndex`` should call this. _create_graphic uses `run_sync`
         to run it sync

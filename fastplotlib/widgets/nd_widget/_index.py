@@ -4,7 +4,7 @@ from collections import deque
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from numbers import Number
-from typing import Sequence, Any, Callable
+from typing import Sequence, Any, Callable, Iterator
 
 from typing import TYPE_CHECKING
 
@@ -206,18 +206,18 @@ class ReferenceIndex:
 
         self._ndwidgets: list[NDWidget] = list()
 
-        # per-graphic render revision. Bumped on every ``cancel_awaiting=True``
+        # per-NDGraphic fetch update revision. Bumped on every ``cancel_awaiting=True``
         # call (always-latest inputs, such as slider drag). A scheduled render
         # carries the revision it was created under and skips its final write
         # if a newer revision has been requested in the meantime.
-        self._render_rev: dict[NDGraphic, int] = dict()
+        self._fetch_rev: dict[NDGraphic, int] = dict()
 
-        # per-graphic queue of pending render requests for the serial drain
+        # per-graphic queue of pending fetch requests for the serial drain
         # path (``cancel_awaiting=False``: play, step, programmatic,
         # LinearSelector). Each entry is ``(indices, rev)``. Drained by
         # :meth:`_render_request` so the underlying data source only ever sees
         # one read at a time.
-        self._render_request_queue: dict[
+        self._fetch_request_queue: dict[
             NDGraphic, deque[tuple[dict[str, Any], int]]
         ] = dict()
 
@@ -225,7 +225,7 @@ class ReferenceIndex:
         # ``_render_request_queue[g]``? Ensures only one drain coroutine is
         # alive per graphic - subsequent ``cancel_awaiting=False`` calls just
         # append to the queue.
-        self._render_request_active: dict[NDGraphic, bool] = dict()
+        self._fetch_request_active: dict[NDGraphic, bool] = dict()
 
     @property
     def ref_ranges(self) -> dict[str, RangeContinuous | RangeDiscrete]:
@@ -247,12 +247,18 @@ class ReferenceIndex:
         for dim, value in indices.items():
             self._indices[dim] = self._clamp(dim, value)
 
-        self._render_indices(cancel_awaiting=cancel_awaiting)
+        self._fetch_indices(cancel_awaiting=cancel_awaiting)
         self._indices_changed()
+
+    @property
+    def ndgraphics(self) -> Iterator[NDGraphic]:
+        """All the NDGraphics this ReferenceIndex instance manges"""
+        for ndw in self._ndwidgets:
+            yield from ndw.ndgraphics
 
     def set_dim_index(self, dim: str, index, cancel_awaiting: bool = False):
         """
-        Set the index for a single dimension and trigger a render.
+        Set the index for a single dimension and trigger a IO fetch -> process pipeline -> update graphic
 
         Parameters
         ----------
@@ -268,7 +274,12 @@ class ReferenceIndex:
         """
         self._check_has_dim(dim)
         self._indices[dim] = self._clamp(dim, index)
-        self._render_indices(cancel_awaiting=cancel_awaiting)
+
+        # set only for NDGraphics that have this dim
+        for ndg in self.ndgraphics:
+            if dim in ndg.dims:
+                self._schedule_fetch(ndg, cancel_awaiting=cancel_awaiting)
+
         self._indices_changed()
 
     def _clamp(self, dim, value):
@@ -280,9 +291,16 @@ class ReferenceIndex:
 
         return value
 
-    def _render_indices(self, cancel_awaiting: bool = False):
+    def _fetch_indices(self, cancel_awaiting: bool = False):
         """
-        Schedule renders for every affected NDGraphic.
+        Schedule IO fetch and data processing for every affected NDGraphic.
+        """
+        for g in self.ndgraphics:
+            self._schedule_fetch(g, cancel_awaiting=cancel_awaiting)
+
+    def _schedule_fetch(self, ndg: NDGraphic, cancel_awaiting: bool = False):
+        """
+        schedule fetch for an NDGraphic
 
         Two paths share this entry point:
 
@@ -296,35 +314,62 @@ class ReferenceIndex:
           are queued per graphic and processed one at a time by
           :meth:`_render_request`, so only one ``_set_indices_`` is in flight
           per graphic from this path.
+
         """
-        for ndw in self._ndwidgets:
-            for g in ndw.ndgraphics:
-                if g.data is None or g.pause or g._block_indices:
+        if ndg.data is None or ndg.pause or ndg._block_indices:
+            return
+
+        task_name = f"ndw-fetch:{type(ndg).__name__}"
+        if ndg.name is not None:
+            task_name = f"{task_name}:{ndg.name}"
+
+        if cancel_awaiting:
+            # bump revision so older still-running renders that complete
+            # later see rev < current and skip their write
+            self._fetch_rev[ndg] = self._fetch_rev.get(ndg, 0) + 1
+            rev = self._fetch_rev[ndg]
+            _loop.add_task(
+                self._fetch_request_latest, ndg, rev, name=task_name
+            )
+        else:
+            rev = self._fetch_rev.get(ndg, 0)
+            # provide index at schedule time so all data is played back sequentially
+            indices = {d: self._indices[d] for d in ndg.processor.slider_dims}
+            self._fetch_request_queue.setdefault(ndg, deque()).append(
+                (indices, rev)
+            )
+            # one queue processor per graphic; if one is already running,
+            # the appended entry will be picked up by it
+            if not self._fetch_request_active.get(ndg, False):
+                self._fetch_request_active[ndg] = True
+                _loop.add_task(self._fetch_request, ndg, name=task_name)
+
+    async def _fetch_request(self, graphic: "NDGraphic"):
+        """
+        Process ``_fetch_request_queue[graphic]`` one entry at a time. Each
+        ``_set_indices_`` is awaited fully before the next entry is popped,
+        so only one ``_set_indices_`` is in flight per graphic from this
+        path. A concurrent :meth:`_fetch_request_latest` for the same
+        graphic can still cancel an in-flight read; the resulting
+        :class:`CancelledError` is dropped.
+        """
+        try:
+            queue = self._fetch_request_queue[graphic]
+            while queue:
+                indices, rev = queue.popleft()
+                if rev < self._fetch_rev.get(graphic, 0):
+                    # a rapid-fire request superseded this queued entry; skip
                     continue
-                task_name = f"ndw-render:{type(g).__name__}"
-                if g.name is not None:
-                    task_name = f"{task_name}:{g.name}"
+                try:
+                    await graphic._set_indices_(indices)
+                except CancelledError:
+                    # concurrent _fetch_request_latest canceled our read on ``data``
+                    pass
+            del self._fetch_request_queue[graphic]
+        finally:
+            self._fetch_request_active[graphic] = False
 
-                if cancel_awaiting:
-                    # bump revision so older still-running renders that complete
-                    # later see rev < current and skip their write
-                    self._render_rev[g] = self._render_rev.get(g, 0) + 1
-                    rev = self._render_rev[g]
-                    _loop.add_task(
-                        self._render_request_latest, g, rev, name=task_name
-                    )
-                else:
-                    rev = self._render_rev.get(g, 0)
-                    self._render_request_queue.setdefault(g, deque()).append(
-                        rev
-                    )
-                    # one queue processor per graphic; if one is already running,
-                    # the appended entry will be picked up by it
-                    if not self._render_request_active.get(g, False):
-                        self._render_request_active[g] = True
-                        _loop.add_task(self._render_request, g, name=task_name)
-
-    async def _render_request_latest(
+    async def _fetch_request_latest(
         self, graphic: "NDGraphic", rev: int
     ):
         """
@@ -333,7 +378,7 @@ class ReferenceIndex:
         previous in-flight read when a new index is requested; the resulting
         :class:`CancelledError` is swallowed.
         """
-        if rev < self._render_rev.get(graphic, 0):
+        if rev < self._fetch_rev.get(graphic, 0):
             # a newer rapid-fire request superseded us; drop the write
             return
         try:
@@ -341,31 +386,6 @@ class ReferenceIndex:
         except CancelledError:
             # ``data`` cancelled this read in favour of a newer one
             pass
-
-    async def _render_request(self, graphic: "NDGraphic"):
-        """
-        Process ``_render_request_queue[graphic]`` one entry at a time. Each
-        ``_set_indices_`` is awaited fully before the next entry is popped,
-        so only one ``_set_indices_`` is in flight per graphic from this
-        path. A concurrent :meth:`_render_request_latest` for the same
-        graphic can still cancel an in-flight read; the resulting
-        :class:`CancelledError` is swallowed.
-        """
-        try:
-            queue = self._render_request_queue[graphic]
-            while queue:
-                rev = queue.popleft()
-                if rev < self._render_rev.get(graphic, 0):
-                    # a rapid-fire request superseded this queued entry; skip
-                    continue
-                try:
-                    await graphic._set_indices_()
-                except CancelledError:
-                    # concurrent _render_request_latest cancelled our read on ``data``
-                    pass
-            del self._render_request_queue[graphic]
-        finally:
-            self._render_request_active[graphic] = False
 
     def __getitem__(self, dim):
         self._check_has_dim(dim)
