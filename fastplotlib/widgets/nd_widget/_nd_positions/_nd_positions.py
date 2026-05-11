@@ -811,7 +811,7 @@ class NDPositions(NDGraphic):
                     g.data[:, : new_data.shape[1]] = new_data
 
                 for feature in ["colors", "sizes", "markers"]:
-                    value = new_features[feature]
+                    value = new_features.get(feature, None)
 
                     match value:
                         case None:
@@ -922,7 +922,7 @@ class NDPositions(NDGraphic):
         if isinstance(self._graphic, (LineCollection, ScatterCollection)):
             for l, g in enumerate(self.graphic.graphics):
                 for feature in ["colors", "sizes", "markers"]:
-                    value = new_features[feature]
+                    value = new_features.get(feature, None)
 
                     match value:
                         case None:
