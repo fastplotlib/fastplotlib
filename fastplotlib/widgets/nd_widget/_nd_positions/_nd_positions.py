@@ -779,7 +779,7 @@ class NDPositions(NDGraphic):
     def spatial_dims(self, dims: tuple[str, str, str]):
         self.processor.spatial_dims = dims
         # force re-render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())
 
     @property
     def indices(self) -> dict[Hashable, Any]:
@@ -1019,7 +1019,7 @@ class NDPositions(NDGraphic):
             self.x_range_mode = None
 
         # force re-render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())
 
     @property
     def datapoints_window_func(self) -> tuple[Callable, str, int | float] | None:

@@ -717,7 +717,7 @@ class NDGraphic:
         """get or set the slider_dim_transforms, see docstring for details"""
         self.processor.slider_dim_transforms = maps
         # force a render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())
 
     @property
     def window_funcs(
@@ -736,7 +736,7 @@ class NDGraphic:
     ):
         self.processor.window_funcs = window_funcs
         # force a render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())
 
     @property
     def window_order(self) -> tuple[str, ...]:
@@ -747,7 +747,7 @@ class NDGraphic:
     def window_order(self, order: tuple[str] | None):
         self.processor.window_order = order
         # force a render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())
 
     @property
     def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
@@ -761,7 +761,7 @@ class NDGraphic:
         """get or set the spatial_func, see docstring for details"""
         self.processor.spatial_func = func
         # force a render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())
 
     # def _repr_text_(self) -> str:
     #     return ndg_fmt_text(self)
