@@ -895,7 +895,7 @@ class PlotArea(GraphicMethodsMixin):
     def x_range(self) -> tuple[float, float]:
         """
         Get or set the x-range currently in view.
-        Only valid for orthographic projections of the xy plane.
+        Really only valid for orthographic projections of the xy plane.
         Use camera.set_state() to set the camera position for arbitrary projections.
         """
         hw = self.camera.projection_matrix_inverse[0, 0]
@@ -905,14 +905,19 @@ class PlotArea(GraphicMethodsMixin):
     @x_range.setter
     def x_range(self, xr: tuple[float, float]):
         hw = (xr[1] - xr[0]) / 2
-        self.camera.zoom *= self.camera.projection_matrix_inverse[0, 0] / hw
+        if self.camera.fov > 0:
+            # really shouldn't use this for fov > 0 but ¯\_(ツ)_/¯
+            self.camera.zoom *= self.camera.projection_matrix_inverse[0, 0] / hw
+        else:
+            # sets correct x_range for orthographic projection of xy plane
+            self.camera.width = (xr[1] - xr[0]) * self.camera.zoom
         self.camera.local.x = (xr[0] + xr[1]) / 2
 
     @property
     def y_range(self) -> tuple[float, float]:
         """
         Get or set the y-range currently in view.
-        Only valid for orthographic projections of the xy plane.
+        Really only valid for orthographic projections of the xy plane.
         Use camera.set_state() to set the camera position for arbitrary projections.
         """
         hh = self.camera.projection_matrix_inverse[1, 1]
@@ -922,7 +927,11 @@ class PlotArea(GraphicMethodsMixin):
     @y_range.setter
     def y_range(self, yr: tuple[float, float]):
         hh = (yr[1] - yr[0]) / 2
-        self.camera.zoom *= self.camera.projection_matrix_inverse[1, 1] / hh
+        if self.camera.fov > 0:
+            # shouldn't really do this but ¯\_(ツ)_/¯
+            self.camera.zoom *= self.camera.projection_matrix_inverse[1, 1] / hh
+        else:
+            self.camera.height = (yr[1] - yr[0]) * self.camera.zoom
         self.camera.local.y = (yr[0] + yr[1]) / 2
 
     def remove_graphic(self, graphic: Graphic):
