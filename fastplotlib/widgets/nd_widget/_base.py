@@ -648,12 +648,12 @@ class NDGraphic:
     def indices(self) -> dict[str, Any]:
         raise NotImplementedError
 
-    async def _set_indices_(self, indices: dict[str, Any]):
+    async def _set_indices_(self):
         """
-        Get the data slice for ``indices`` from the processor and write it to the graphic.
+        Get the data slice for the current index from the processor and write it to the graphic.
 
-        Semi-private: only ``ReferenceIndex`` should call this. Construction-time call
-        sites use :func:`run_sync` to drive it synchronously.
+        Semi-private: only ``ReferenceIndex`` should call this. _create_graphic uses `run_sync`
+        to run it sync
         """
         pass
 
@@ -678,7 +678,7 @@ class NDGraphic:
         run_sync(self._create_graphic())
 
         # force a render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())
 
     @property
     def shape(self) -> dict[str, int]:

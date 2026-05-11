@@ -561,8 +561,8 @@ class NDImage(NDGraphic):
         """get or set the indices, managed by the ReferenceIndex, users usually don't want to set this manually"""
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    async def _set_indices_(self, indices: dict[str, Any]):
-        self.graphic.data = await self.processor.get(indices)
+    async def _set_indices_(self):
+        self.graphic.data = await self.processor.get(self.indices)
 
     @property
     def compute_histogram(self) -> bool:

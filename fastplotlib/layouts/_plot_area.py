@@ -898,16 +898,15 @@ class PlotArea(GraphicMethodsMixin):
         Only valid for orthographic projections of the xy plane.
         Use camera.set_state() to set the camera position for arbitrary projections.
         """
-        hw = self.camera.width / 2
+        hw = self.camera.projection_matrix_inverse[0, 0]
         x = self.camera.local.x
         return x - hw, x + hw
 
     @x_range.setter
     def x_range(self, xr: tuple[float, float]):
-        width = xr[1] - xr[0]
-        x_mid = (xr[0] + xr[1]) / 2
-        self.camera.width = width
-        self.camera.local.x = x_mid
+        hw = (xr[1] - xr[0]) / 2
+        self.camera.zoom *= self.camera.projection_matrix_inverse[0, 0] / hw
+        self.camera.local.x = (xr[0] + xr[1]) / 2
 
     @property
     def y_range(self) -> tuple[float, float]:
@@ -916,16 +915,15 @@ class PlotArea(GraphicMethodsMixin):
         Only valid for orthographic projections of the xy plane.
         Use camera.set_state() to set the camera position for arbitrary projections.
         """
-        hh = self.camera.height / 2
+        hh = self.camera.projection_matrix_inverse[1, 1]
         y = self.camera.local.y
         return y - hh, y + hh
 
     @y_range.setter
     def y_range(self, yr: tuple[float, float]):
-        height = yr[1] - yr[0]
-        y_mid = yr[0] + (height / 2)
-        self.camera.height = height
-        self.camera.local.y = y_mid
+        hh = (yr[1] - yr[0]) / 2
+        self.camera.zoom *= self.camera.projection_matrix_inverse[1, 1] / hh
+        self.camera.local.y = (yr[0] + yr[1]) / 2
 
     def remove_graphic(self, graphic: Graphic):
         """

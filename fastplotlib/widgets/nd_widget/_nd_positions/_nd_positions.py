@@ -785,9 +785,12 @@ class NDPositions(NDGraphic):
     def indices(self) -> dict[Hashable, Any]:
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    async def _set_indices_(self, indices: dict[Hashable, Any]):
+    async def _set_indices_(self):
         if self.data is None:
             return
+
+        # fetch the latest indices from the ReferenceIndex
+        indices = self.indices
 
         new_features = await self.processor.get(indices)
         data_slice = new_features["data"]
@@ -1076,7 +1079,15 @@ class NDPositions(NDGraphic):
         new_index = (xr[0] + xr[1]) / 2
 
         self.processor.display_window = new_width
-        self._ref_index.set_dim_index(self.processor.spatial_dims[1], new_index, cancel_awaiting=True)
+
+        # block scheduling an additional async _set_indices_ for ndgraphics in this subplot
+        with block_indices_ctx(*self._nd_subplot.nd_graphics):
+            p_dim = self.processor.spatial_dims[1]
+            self._ref_index.set_dim_index(p_dim, new_index)
+
+        # run this ndgraphic update immediately so graphic data and linear selector are in sync with the
+        # camera, otherwise you get laggy movement
+        run_sync(self._set_indices_())
 
     @property
     def cmap(self) -> str | None:
@@ -1097,7 +1108,7 @@ class NDPositions(NDGraphic):
         self._graphic.cmap = new
         self._cmap = new
         # force a re-render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())
 
     @property
     def cmap_each(self) -> np.ndarray[str] | None:
@@ -1163,7 +1174,7 @@ class NDPositions(NDGraphic):
         self.graphic.markers = new
         self._markers = new
         # force a re-render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())
 
     @property
     def sizes(self) -> float | Sequence[float] | None:
@@ -1182,7 +1193,7 @@ class NDPositions(NDGraphic):
         self.graphic.sizes = new
         self._sizes = new
         # force a re-render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())
 
     @property
     def thickness(self) -> float | Sequence[float] | None:
@@ -1201,4 +1212,4 @@ class NDPositions(NDGraphic):
         self.graphic.thickness = new
         self._thickness = new
         # force a re-render
-        run_sync(self._set_indices_(self.indices))
+        run_sync(self._set_indices_())

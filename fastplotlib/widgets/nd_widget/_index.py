@@ -301,7 +301,6 @@ class ReferenceIndex:
             for g in ndw.ndgraphics:
                 if g.data is None or g.pause or g._block_indices:
                     continue
-                indices = {d: self._indices[d] for d in g.processor.slider_dims}
                 task_name = f"ndw-render:{type(g).__name__}"
                 if g.name is not None:
                     task_name = f"{task_name}:{g.name}"
@@ -312,12 +311,12 @@ class ReferenceIndex:
                     self._render_rev[g] = self._render_rev.get(g, 0) + 1
                     rev = self._render_rev[g]
                     _loop.add_task(
-                        self._render_request_latest, g, indices, rev, name=task_name
+                        self._render_request_latest, g, rev, name=task_name
                     )
                 else:
                     rev = self._render_rev.get(g, 0)
                     self._render_request_queue.setdefault(g, deque()).append(
-                        (indices, rev)
+                        rev
                     )
                     # one queue processor per graphic; if one is already running,
                     # the appended entry will be picked up by it
@@ -326,7 +325,7 @@ class ReferenceIndex:
                         _loop.add_task(self._render_request, g, name=task_name)
 
     async def _render_request_latest(
-        self, graphic: "NDGraphic", indices: dict[str, Any], rev: int
+        self, graphic: "NDGraphic", rev: int
     ):
         """
         Schedule one ``_set_indices_`` task. Older still-running tasks skip
@@ -338,7 +337,7 @@ class ReferenceIndex:
             # a newer rapid-fire request superseded us; drop the write
             return
         try:
-            await graphic._set_indices_(indices)
+            await graphic._set_indices_()
         except CancelledError:
             # ``data`` cancelled this read in favour of a newer one
             pass
@@ -355,12 +354,12 @@ class ReferenceIndex:
         try:
             queue = self._render_request_queue[graphic]
             while queue:
-                indices, rev = queue.popleft()
+                rev = queue.popleft()
                 if rev < self._render_rev.get(graphic, 0):
                     # a rapid-fire request superseded this queued entry; skip
                     continue
                 try:
-                    await graphic._set_indices_(indices)
+                    await graphic._set_indices_()
                 except CancelledError:
                     # concurrent _render_request_latest cancelled our read on ``data``
                     pass
