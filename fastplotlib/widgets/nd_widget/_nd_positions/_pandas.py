@@ -44,7 +44,7 @@ class NDPP_Pandas(NDPositionsProcessor):
         if not isinstance(data, pd.DataFrame):
             raise TypeError
 
-        self._data= data
+        self._data = data
 
     @property
     def columns(self) -> list[tuple[str, str] | tuple[str, str, str]]:
@@ -79,14 +79,23 @@ class NDPP_Pandas(NDPositionsProcessor):
 
         # assume no additional slider dims
         self._dw_slice = self._get_dw_slice(indices)
-        gdata_shape = len(self.columns), self._dw_slice.stop - self._dw_slice.start, 3
+
+        column_stacks = [
+            np.column_stack(
+                [self.data[c][self._dw_slice] for c in col]
+            ) for col in self.columns
+        ]
+        if len(column_stacks) > 0:
+            n_samples = column_stacks[0].shape[0]
+        else:
+            n_samples = 0
+
+        gdata_shape = len(self.columns), n_samples, 3
 
         graphic_data = np.zeros(shape=gdata_shape, dtype=np.float32)
 
-        for i, col in enumerate(self.columns):
-            graphic_data[i, :, :len(col)] = np.column_stack(
-                [self.data[c][self._dw_slice] for c in col]
-            )
+        for i, (col, column_stack) in enumerate(zip(self.columns, column_stacks)):
+            graphic_data[i, :, :len(col)] = column_stack
 
         data = self._finalize(graphic_data)
         other = self._get_other_features(data, self._dw_slice)
