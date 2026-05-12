@@ -50,6 +50,7 @@ nd_lines = ndw[0, 0].add_nd_timeseries(
     },
     cmap="jet",
     x_range_mode="auto",
+    display_window=np.pi * 10,
     name="nd-sine"
 )
 
