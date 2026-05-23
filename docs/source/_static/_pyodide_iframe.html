@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+<!-- adapted from pygfx, adapted from wgpu-py, adapted from rendercanvas -->
+<head>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Fastplotlib examples in the browser using Pyodide</title>
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pyodide.js"></script>
+</head>
+
+<body>
+    <dialog id="loading" style='outline: none; border: none; background: transparent;'>
+        <h1>click the button to load pyodide</h1>
+        <button id="load_button" type="button" onclick="main()">load in browser!</button>
+    </dialog>
+    <canvas id='canvas' style='width:calc(100%); height:560px; background-color: #ddd;'></canvas>
+    <div id="output" style="white-space: per-line; overflow-y: auto; height:90px; background:#eee; border:1px solid #ccc;">
+        <p>Output:</p>
+    </div>
+    <script type="text/javascript">
+        let loading = document.getElementById('loading');
+        loading.showModal();
+        async function main() {
+            let button = document.getElementById("load_button");
+            button.disabled = true;
+            button.innerText = "loading...";
+            try {
+                let example_name = document.location.hash.slice(1);
+                pythonCode = await (await fetch(window.parent.location.pathname.replace(".html", ".py"))).text();
+                let pyodide = await loadPyodide();
+                pyodide.setStdout({
+                    batched: (s) => {
+                        el = document.getElementById("output");
+                        el.innerHTML += "<br>" + s.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                        el.scrollTop = el.scrollHeight;  // scroll to bottom
+                        console.log(s); // so we also have it formatted
+                    }
+                });
+                await pyodide.loadPackage("micropip");
+                const micropip = pyodide.pyimport("micropip");
+                await micropip.install([
+                    'https://wgpu-py--753.org.readthedocs.build/en/753/_static/wgpu-0.31.0-py3-none-any.whl',
+                    'imgui-bundle',
+                    "https://pygfx--1273.org.readthedocs.build/1273/_static/uharfbuzz-0.54.1-cp310-abi3-pyodide_2025_0_wasm32.whl",
+                    'hsluv', 'pylinalg', 'jinja2', 'httpx', 'trimesh', 'gltflib', 'imageio',
+                    "https://pygfx--1273.org.readthedocs.build/1273/_static/pygfx-0.16.0-py3-none-any.whl"
+                ]);
+                await micropip.install("fastplotlib") // this one should be replaced by the wheel during docs build.
+                await pyodide.loadPackagesFromImports(pythonCode); // additional non pypi packages from the examples... like imageio (not patched...)
+                pyodide.setDebug(false);
+                let ret = await pyodide.runPythonAsync(pythonCode);
+                // maybe we can trigger a resize event from the js side to get the canvas to fit the iframe when it's in the docs?
+                console.log("Example finished:", ret);
+                loading.close();
+            } catch (err) {
+                // TODO: this could be formatted better as this overlaps and is unreadable...
+                loading.innerHTML = "Failed to load: " + err;
+                console.error(err); // so we have it here too
+            }
+        }
+    </script>
+</body>
+
+</html>
