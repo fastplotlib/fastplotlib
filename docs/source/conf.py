@@ -44,6 +44,94 @@ extensions = [
     "sphinx_gallery.gen_gallery",
 ]
 
+# note this is largely copied from the pygfx PR branch: https://github.com/pygfx/pygfx/pull/1273
+# -- Build wheel so Pyodide examples can use exactly this version of fpl -----------------------------------------------------
+import subprocess
+import shutil
+
+short_version = ".".join(str(i) for i in fastplotlib.version_info[:3])
+wheel_name = f"fastplotlib-{short_version}-py3-none-any.whl"
+
+# Build the wheel
+subprocess.run([sys.executable, "-m", "build", "-nw"], cwd=ROOT_DIR)
+wheel_filename = os.path.join(ROOT_DIR, "dist", wheel_name)
+assert os.path.isfile(wheel_filename), f"{wheel_name} does not exist"
+
+# Copy into static
+# TODO: you can use --outdir on the build command directly. also use the html_static_path in this namespace
+print("Copy wheel to _static dir")
+shutil.copy(
+    wheel_filename,
+    os.path.join(ROOT_DIR, "docs", "source", "_static", wheel_name),
+)
+
+# -- Sphix Gallery -----------------------------------------------------
+
+## pyodide demos, adapted from wgpu, adapted from rendercanvas... might make sense to put this in the scaper?
+iframe_placeholder_rst = """
+.. only:: html
+
+    Interactive example
+    -------------------
+
+    Try this example in your browser using Pyodide. Might not work with all examples and all devices. Check the output and your browser's console for details.
+
+    .. raw:: html
+
+        <iframe src="./../pyodide.html#example.py"></iframe>
+"""
+python_files = {}
+
+# I have a feeling this import might be really sketchy to have on CI... but hey - this is a hack for a hack
+from examples.server_browser_examples import patch_imageio_for_pyodide
+
+
+def add_pyodide_to_examples(app):
+    if app.builder.name != "html":
+        return
+
+    gallery_dir = ROOT_DIR / "docs" / "source" / "_gallery"
+    example_files = gallery_dir.glob("**/*.py")
+
+    for py_file in example_files:
+        fname = py_file.name
+        with open(py_file, "rb") as f:
+            py = f.read().decode()
+            py = patch_imageio_for_pyodide(py)
+        if fname:
+            print("Adding Pyodide example to", fname)
+            fname_rst = py_file.with_suffix(".rst")
+            # Update rst file
+            rst = iframe_placeholder_rst.replace("example.py", fname)
+            # we likely don't want append here?
+            with open(fname_rst, "ab") as f:
+                # TODO: skip if it already ends with the placeholder? otherwise the append will keep on appending (we have to hook this into the gen_rst to skip if possible?)
+                f.write(rst.encode())
+            python_files[py_file.relative_to(gallery_dir)] = py
+
+def add_files_to_run_pyodide_examples(app, exception):
+    if app.builder.name != "html":
+        return
+
+    gallery_build_dir = os.path.join(app.outdir, "_gallery")
+
+    # Write html file that can load pyodide examples
+    with open(
+        os.path.join(ROOT_DIR, "docs", "source", "_static", "_pyodide_iframe.html"), "rb"
+    ) as f:
+        html = f.read().decode()
+    html = html.replace('"fastplotlib"', f'"../_static/{wheel_name}"')
+    with open(os.path.join(gallery_build_dir, "pyodide.html"), "wb") as f:
+        f.write(html.encode())
+
+    # Write the python files
+    for fname, py in python_files.items():
+        print("Writing", fname)
+        with open(os.path.join(gallery_build_dir, fname), "wb") as f:
+            f.write(py.encode())
+
+
+
 sphinx_gallery_conf = {
     "gallery_dirs": "_gallery",
     "notebook_extensions": {},  # remove the download notebook button
@@ -137,3 +225,11 @@ intersphinx_mapping = {
     "rendercanvas": ("https://rendercanvas.readthedocs.io/stable/", None),
     # "fastplotlib": ("https://www.fastplotlib.org/", None),
 }
+
+html_css_files = [
+    "style.css",
+]
+
+def setup(app):
+    app.connect("builder-inited", add_pyodide_to_examples)
+    app.connect("build-finished", add_files_to_run_pyodide_examples)

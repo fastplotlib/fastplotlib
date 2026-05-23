@@ -138,3 +138,8 @@ dmypy.json
 # diffs from visual regression tests
 examples/desktop/diffs/*.png
 docs/source/_gallery/
+
+
+# not sure why this spammed my diff
+docs/source/api/
+docs/source/_static/*.whl
