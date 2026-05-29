@@ -127,16 +127,15 @@ class NDProcessor:
         self.window_order = window_order
         self.spatial_func = spatial_func
 
-        # window_funcs and spatial_func are dispatched here so they don't block
-        # the rendercanvas event loop. CUDA arrays bypass this and run inline,
-        # since GPU compute already overlaps with the loop and the user is
-        # expected to provide CUDA-aware funcs in that case.
+        # window_funcs and spatial_func are dispatched with an executor so they don't block the rendercanvas loop.
+        # CUDA arrays run directly since they are inherently async already, the user is expected to provide CUDA
+        # functions if the data arrays are CUDA (ex: torch functions, not numpy functions)
         self._executor = ThreadPoolExecutor(
             max_workers=1, thread_name_prefix=f"ndp-{id(self):x}"
         )
 
     def close(self):
-        """Shut down the per-processor thread pool."""
+        """Shut down the thread pool."""
         self._executor.shutdown(wait=False, cancel_futures=True)
 
     @property
@@ -458,8 +457,8 @@ class NDProcessor:
          ``window_order``.
 
         For numpy arrays each func is dispatched to the per-processor thread pool so it
-        does not block the rendercanvas event loop. CUDA arrays are run inline (the user
-        is expected to supply CUDA-aware funcs in that case).
+        does not block the rendercanvas event loop. CUDA arrays are run directly since
+        cuda functions (ex: torch) are already async.
 
         Parameters
         ----------
@@ -649,7 +648,7 @@ class NDGraphic:
 
     @property
     def indices_displayed(self) -> dict[str, Any]:
-        """the indices that the graphic current reflects, not accounting for render time"""
+        """the indices that the graphic currently represents"""
         return self._last_indices
 
     @property

@@ -543,10 +543,12 @@ class NDPositionsProcessor(NDProcessor):
         graphic_data = window_output[:, dw_slice]
 
         # _finalize runs the user's datapoints_window_func and spatial_func.
-        # CUDA arrays run inline, numpy goes through the thread pool.
         if isinstance(graphic_data, CudaArrayProtocol):
+            # the datapoints_window_func and spatial_func should be direct on-cuda functions
+            # ex: torch functions that can take cuda arrays directly
             data = self._finalize(graphic_data)
         else:
+            # run CPU functions, probably numpy-based, in a thread pool
             data = await run_in_thread_pool(
                 self._executor, self._finalize, graphic_data
             )

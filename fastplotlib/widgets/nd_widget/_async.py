@@ -11,8 +11,7 @@ async def wait_for_future(future: Future) -> Any:
     backend (asyncio for glfw/jupyter, the rendercanvas asyncadapter for qt/wx).
 
     ``asyncio.wrap_future`` cannot be used because the asyncadapter only
-    understands its own awaitables (see rendercanvas docs: "restrict your use
-    of async features to ``sleep`` and ``Event``"). We instead build the same
+    understands its own awaitables. We instead build the same
     primitive on top of rendercanvas's cross-framework :class:`Event`,
     signaled via the active loop's ``call_soon_threadsafe`` so the future's
     done-callback (which runs on the executor thread) hands control back to
@@ -36,10 +35,9 @@ def run_sync(coro: Coroutine) -> Any:
     """
     Drive an ``async def`` coroutine to completion synchronously, in a helper thread.
 
-    Used by construction-time call sites (NDGraphic.__init__, data setter, property
-    setters) that cannot be made async without coloring the public API.
-    ``asyncio.run`` is dispatched to a helper thread so this never collides with a
-    loop already running on the calling thread (the rendercanvas loop, Jupyter, IDEs).
+    Used by constructor calls (NDGraphic.__init__, data setter, other property setters).
+    ``asyncio.run`` is dispatched to a helper thread so this doesn't interfere with a
+    loop already running on the calling thread (the rendercanvas loop, jupyter, ipython etc.).
     """
     with ThreadPoolExecutor(max_workers=1) as ex:
         return ex.submit(asyncio.run, coro).result()
