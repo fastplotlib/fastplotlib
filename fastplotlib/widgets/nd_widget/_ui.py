@@ -53,8 +53,8 @@ class NDWidgetUI(EdgeWindow):
         # loop playback
         self._loop = {dim: False for dim in ref_ranges.keys()}
 
-        # last time the slider was moved, used for throttling
-        self._last_slider_movement: dict[str, float] = dict()
+        # last time the slider was moved per dim, used for time-based throttling
+        self._last_slider_movement: dict[str, float] = {dim: 0.0 for dim in ref_ranges.keys()}
 
         # auto-plays the ImageWidget's left-most dimension in docs galleries
         if "DOCS_BUILD" in os.environ.keys():
@@ -72,7 +72,7 @@ class NDWidgetUI(EdgeWindow):
                 index = self._ndwidget.ranges[dim].stop
                 self._playing[dim] = False
 
-        self._ndwidget.indices[dim] = index
+        self._ndwidget.indices.set_dim_index(dim, index)
 
     def update(self):
         now = perf_counter()
@@ -117,7 +117,7 @@ class NDWidgetUI(EdgeWindow):
             if imgui.button(label=fa.ICON_FA_STOP):
                 self._playing[dim] = False
                 self._last_frame_time[dim] = 0
-                self._ndwidget.indices[dim] = rr.start
+                self._ndwidget.indices.set_dim_index(dim, rr.start)
 
             imgui.same_line()
             # loop checkbox
@@ -160,14 +160,9 @@ class NDWidgetUI(EdgeWindow):
                     label=f"##{dim}",
                 )
 
-                # TODO: refactor all this stuff, make fully fledged UI
                 if changed:
-                    # apply throttling
-                    if not dim in self._last_slider_movement:
-                        self._last_slider_movement[dim] = 0.0
-
                     if now - self._last_slider_movement[dim] > rr.throttle:
-                        self._ndwidget.indices[dim] = new_index
+                        self._ndwidget.indices.set_dim_index(dim, new_index, cancel_awaiting=True)
                         self._last_slider_movement[dim] = now
 
                 elif imgui.is_item_hovered():

@@ -1,22 +1,31 @@
-from collections.abc import Sequence, Generator
-from typing import Callable, Any, Literal
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import Callable, Any, Literal, TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import ArrayLike
 
-from ...layouts import Subplot
-from ...utils import subsample_array, ARRAY_LIKE_ATTRS, ArrayProtocol, enums
+from ...utils import (
+    subsample_array,
+    ARRAY_LIKE_ATTRS,
+    ArrayProtocol,
+    CudaArrayProtocol,
+    cuda_to_numpy,
+    enums,
+)
 from ...graphics import ImageGraphic, ImageYUVGraphic, ImageVolumeGraphic
 from ...tools import HistogramLUTTool
 from ._base import (
     NDProcessor,
     NDGraphic,
     WindowFuncCallable,
-    block_reentrance,
-    AwaitedArray,
 )
 from ._index import ReferenceIndex
-from ._async import start_coroutine
+from ._async import run_in_thread_pool, run_sync
+
+if TYPE_CHECKING:
+    from ._ndw_subplot import NDWSubplot
 
 
 class NDImageProcessor(NDProcessor):
@@ -217,7 +226,7 @@ class NDImageProcessor(NDProcessor):
         """
         return self._histogram
 
-    def get(self, indices: dict[str, Any]) -> AwaitedArray:
+    async def get(self, indices: dict[str, Any]) -> ArrayProtocol:
         """
         Get the data at the given index, process data through the window functions.
 
@@ -232,15 +241,22 @@ class NDImageProcessor(NDProcessor):
 
         """
         # this will be squeezed output, with dims in the order of the user set spatial dims
-        window_output = yield from self.get_window_output(indices)
+        window_output = await self.get_window_output(indices)
 
-        # apply spatial_func
+        # apply spatial_func; CUDA arrays run inline, numpy goes through the thread pool
         if self.spatial_func is not None:
-            spatial_out = self._spatial_func(window_output)
-            if spatial_out.ndim != len(self.spatial_dims):
+            if isinstance(window_output, CudaArrayProtocol):
+                window_output = self._spatial_func(window_output)
+            else:
+                window_output = await run_in_thread_pool(
+                    self._executor, self._spatial_func, window_output
+                )
+            if window_output.ndim != len(self.spatial_dims):
                 raise ValueError
 
-            return spatial_out
+        # final CUDA -> numpy conversion at the end of the pipeline
+        if isinstance(window_output, CudaArrayProtocol):
+            window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
 
         return window_output
 
@@ -278,7 +294,7 @@ class NDImage(NDGraphic):
     def __init__(
         self,
         ref_index: ReferenceIndex,
-        subplot: Subplot,
+        nd_subplot: NDWSubplot,
         data: ArrayProtocol | None,
         dims: Sequence[str],
         spatial_dims: (
@@ -314,8 +330,8 @@ class NDImage(NDGraphic):
         ref_index : ReferenceIndex
             The shared reference index that delivers slider updates to this graphic.
 
-        subplot : Subplot
-            parent subplot the NDGraphic is in
+        nd_subplot : NDWSubplot
+            parent NDWSubplot the NDGraphic is in
 
         data : array-like or None
             n-dimension image data array
@@ -366,7 +382,7 @@ class NDImage(NDGraphic):
                 f"spatial_dims: {spatial_dims}. Specified NDWidget ref_ranges: {ref_index.dims}"
             )
 
-        super().__init__(subplot, name)
+        super().__init__(nd_subplot, name)
 
         self._ref_index = ref_index
 
@@ -389,7 +405,7 @@ class NDImage(NDGraphic):
         self._histogram_widget: HistogramLUTTool | None = None
 
         # create a graphic
-        self._create_graphic()
+        run_sync(self._create_graphic())
 
     @property
     def processor(self) -> NDImageProcessor:
@@ -403,8 +419,7 @@ class NDImage(NDGraphic):
         """Underlying Graphic object used to display the current data slice"""
         return self._graphic
 
-    @start_coroutine
-    def _create_graphic(self):
+    async def _create_graphic(self):
         # Creates an ``ImageGraphic`` or ``ImageVolumeGraphic`` based on the number of spatial dims,
         # adds it to the subplot, and resets the camera and histogram.
 
@@ -432,8 +447,7 @@ class NDImage(NDGraphic):
 
         # get the data slice for this index
         # this will only have the dims specified by ``spatial_dims``
-
-        data_slice = yield from self._get_data_slice(self.indices)
+        data_slice = await self.processor.get(self.indices)
 
         # create the new graphic
         new_graphic = cls(
@@ -452,7 +466,7 @@ class NDImage(NDGraphic):
                 attrs[k] = getattr(old_graphic, k)
 
             # delete the old graphic
-            self._subplot.delete_graphic(old_graphic)
+            self._nd_subplot.subplot.delete_graphic(old_graphic)
 
             # set any attributes that we're carrying over like cmap
             for attr, val in attrs.items():
@@ -460,7 +474,7 @@ class NDImage(NDGraphic):
 
         self._graphic = new_graphic
 
-        self._subplot.add_graphic(self._graphic)
+        self._nd_subplot.subplot.add_graphic(self._graphic)
 
         self._reset_camera()
         self._reset_histogram()
@@ -472,7 +486,7 @@ class NDImage(NDGraphic):
 
         if not self.processor.compute_histogram:
             # hide right dock if histogram not desired
-            self._subplot.docks["right"].size = 0
+            self._nd_subplot.subplot.docks["right"].size = 0
             return
 
         if self.processor.histogram:
@@ -480,8 +494,8 @@ class NDImage(NDGraphic):
                 # histogram widget exists, update it
                 self._histogram_widget.histogram = self.processor.histogram
                 self._histogram_widget.images = self.graphic
-                if self._subplot.docks["right"].size < 1:
-                    self._subplot.docks["right"].size = 80
+                if self._nd_subplot.subplot.docks["right"].size < 1:
+                    self._nd_subplot.subplot.docks["right"].size = 80
             else:
                 # make hist tool
                 self._histogram_widget = HistogramLUTTool(
@@ -489,8 +503,8 @@ class NDImage(NDGraphic):
                     images=self.graphic,
                     name=f"hist-{hex(id(self.graphic))}",
                 )
-                self._subplot.docks["right"].add_graphic(self._histogram_widget)
-                self._subplot.docks["right"].size = 80
+                self._nd_subplot.subplot.docks["right"].add_graphic(self._histogram_widget)
+                self._nd_subplot.subplot.docks["right"].size = 80
 
             self.graphic.reset_vmin_vmax()
 
@@ -498,7 +512,7 @@ class NDImage(NDGraphic):
         # set camera to a nice position based on whether it's a 2D ImageGraphic or 3D ImageVolumeGraphic
         if isinstance(self._graphic, (ImageGraphic, ImageYUVGraphic)):
             # set camera orthogonal to the xy plane, flip y axis
-            self._subplot.camera.set_state(
+            self._nd_subplot.subplot.camera.set_state(
                 {
                     "position": [0, 0, -1],
                     "rotation": [0, 0, 0, 1],
@@ -509,22 +523,22 @@ class NDImage(NDGraphic):
                 }
             )
 
-            self._subplot.controller = "panzoom"
-            self._subplot.axes.intersection = None
-            self._subplot.auto_scale()
+            self._nd_subplot.controller = "panzoom"
+            self._nd_subplot.subplot.axes.intersection = None
+            self._nd_subplot.subplot.auto_scale()
 
         else:
             # It's not an ImageGraphic, set perspective projection
-            self._subplot.camera.fov = 50
-            self._subplot.controller = "orbit"
+            self._nd_subplot.subplot.camera.fov = 50
+            self._nd_subplot.controller = "orbit"
 
             # set all 3D dimension camera scales to positive since positive scales
             # are typically used for looking at volumes
             for dim in ["x", "y", "z"]:
-                if getattr(self._subplot.camera.local, f"scale_{dim}") < 0:
-                    setattr(self._subplot.camera.local, f"scale_{dim}", 1)
+                if getattr(self._nd_subplot.subplot.camera.local, f"scale_{dim}") < 0:
+                    setattr(self._nd_subplot.subplot.camera.local, f"scale_{dim}", 1)
 
-            self._subplot.auto_scale()
+            self._nd_subplot.subplot.auto_scale()
 
     @property
     def spatial_dims(self) -> tuple[str, str] | tuple[str, str, str]:
@@ -540,21 +554,20 @@ class NDImage(NDGraphic):
         self.processor.spatial_dims = dims
 
         # shape has probably changed, recreate graphic
-        self._create_graphic()
+        run_sync(self._create_graphic())
 
     @property
     def indices(self) -> dict[str, Any]:
         """get or set the indices, managed by the ReferenceIndex, users usually don't want to set this manually"""
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    @block_reentrance
-    @start_coroutine
-    def set_indices(
-        self, indices: dict[str, Any], block: bool = True, timeout: float = 1.0
-    ):
-        data_slice = yield from self._get_data_slice(indices)
+    async def _set_indices_(self, indices: dict[str, Any] = None):
+        if indices is None:
+            # current indices, else use the indices passed at schedule time
+            indices = self.indices
 
-        self.graphic.data = data_slice
+        self.graphic.data = await self.processor.get(indices)
+        self._last_indices = indices
 
     @property
     def compute_histogram(self) -> bool:

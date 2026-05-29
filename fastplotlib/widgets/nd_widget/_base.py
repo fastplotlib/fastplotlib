@@ -1,24 +1,26 @@
-from collections.abc import Callable, Sequence, Generator
+from __future__ import annotations
+
+from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 import inspect
 from numbers import Real
 from pprint import pformat
 import textwrap
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import numpy as np
 from numpy.typing import ArrayLike
 
-from ...layouts import Subplot
 from ...utils import ArrayProtocol, FutureProtocol, CudaArrayProtocol
 from ...graphics import Graphic
+from ._async import run_in_thread_pool, run_sync, wait_for_future
+
+if TYPE_CHECKING:
+    from ._ndw_subplot import NDWSubplot
 
 # must take arguments: array-like, `axis`: int, `keepdims`: bool
 WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
-#                       [YieldType, SendType, ReturnType]
-AwaitedArray = Generator[
-    FutureProtocol | ArrayProtocol | CudaArrayProtocol, ArrayProtocol, ArrayProtocol
-]
 
 
 def identity(index: int) -> int:
@@ -124,6 +126,17 @@ class NDProcessor:
         self.window_funcs = window_funcs
         self.window_order = window_order
         self.spatial_func = spatial_func
+
+        # window_funcs and spatial_func are dispatched with an executor so they don't block the rendercanvas loop.
+        # CUDA arrays run directly since they are inherently async already, the user is expected to provide CUDA
+        # functions if the data arrays are CUDA (ex: torch functions, not numpy functions)
+        self._executor = ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix=f"ndp-{id(self):x}"
+        )
+
+    def close(self):
+        """Shut down the thread pool."""
+        self._executor.shutdown(wait=False, cancel_futures=True)
 
     @property
     def data(self) -> ArrayProtocol:
@@ -436,10 +449,16 @@ class NDProcessor:
 
         return indexer
 
-    def _apply_window_functions(self, windowed_array: ArrayProtocol) -> ArrayProtocol:
+    async def _apply_window_functions(
+        self, windowed_array: ArrayProtocol
+    ) -> ArrayProtocol:
         """
         apply window functions in the order specified by
          ``window_order``.
+
+        For numpy arrays each func is dispatched to the per-processor thread pool so it
+        does not block the rendercanvas event loop. CUDA arrays are run directly since
+        cuda functions (ex: torch) are already async.
 
         Parameters
         ----------
@@ -460,18 +479,22 @@ class NDProcessor:
                 continue
 
             func, _ = self.window_funcs[dim]
+            axis = self.dims.index(dim)
             # ``keepdims=True`` is critical, any "collapsed" dims will be of size ``1``.
             # Ex: if `array` is of shape [10, 512, 512] and we applied the np.mean() window  func on the first dim
             # ``keepdims`` means the resultant shape is [1, 512, 512] and NOT [512, 512]
             # this is necessary for applying window functions on multiple dims separately and so that the
             # dims names correspond after all the window funcs are applied.
-            windowed_array = func(
-                windowed_array, axis=self.dims.index(dim), keepdims=True
-            )
+            if isinstance(windowed_array, CudaArrayProtocol):
+                windowed_array = func(windowed_array, axis=axis, keepdims=True)
+            else:
+                windowed_array = await run_in_thread_pool(
+                    self._executor, func, windowed_array, axis=axis, keepdims=True
+                )
 
         return windowed_array
 
-    def get_window_output(self, indices: dict[str, Any]) -> AwaitedArray:
+    async def get_window_output(self, indices: dict[str, Any]) -> ArrayProtocol:
         """
         Applies any window functions and returns squeezed sliced array transposed in the order of the given spatial dims
 
@@ -484,14 +507,15 @@ class NDProcessor:
 
         """
         # windowed slice if user set any window funcs
-        windowed_slice = yield from self._get_raw_data_slice(indices)
+        windowed_slice = await self._get_raw_data_slice(indices)
 
-        # convert to numpy array
-        windowed_slice = np.asarray(windowed_slice)
+        # convert to numpy array; CUDA arrays pass through and are converted at the end of the pipeline
+        if not isinstance(windowed_slice, CudaArrayProtocol):
+            windowed_slice = np.asarray(windowed_slice)
 
         # apply window funcs
         if len(self.slider_dims) > 0:
-            windowed_slice = self._apply_window_functions(windowed_slice)
+            windowed_slice = await self._apply_window_functions(windowed_slice)
 
         # squeeze out all slider dims which should now be size 1
         # set(dims) - set(spatial_dims) since some spatial dims can also be slider, so get only pure non-spatial dims
@@ -510,29 +534,31 @@ class NDProcessor:
             self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
         )
 
-        return windowed_slice.transpose(spatial_dims_int)
+        return windowed_slice.transpose(*spatial_dims_int)
 
-    def _get_raw_data_slice(self, indices: dict[str, Any]) -> AwaitedArray:
+    async def _get_raw_data_slice(self, indices: dict[str, Any]) -> ArrayProtocol:
         """
         Base implementation to get the raw data slice from the wrapped array.
-        Always yields to support async getters.
+
+        Awaits any ``FutureProtocol`` returned by the underlying loader. CUDA arrays
+        are returned as-is and converted to numpy at the end of the pipeline.
         """
         if len(self.slider_dims) > 0:
             indexer = self._get_slider_dims_indexer(indices)
             # get the data slice w.r.t. the desired windows
-            # yield so this is async if the underlying array returns a FutureArray-like
-            # we convert to a numpy array outside, not here, since that resolves the Future
             index_tuple = tuple(indexer.get(dim, slice(None)) for dim in self.dims)
-            raw_slice = yield self.data[index_tuple]
+            raw_slice = self.data[index_tuple]
 
         else:
             # return everything directly
             # request a slice of everything with [:] so that any data fetching, compute, etc. is actually done
-            raw_slice = yield self.data[:]
+            raw_slice = self.data[:]
 
+        if isinstance(raw_slice, FutureProtocol):
+            return await wait_for_future(raw_slice)
         return raw_slice
 
-    def get(self, indices: dict[str, Any]) -> AwaitedArray | ArrayProtocol:
+    async def get(self, indices: dict[str, Any]) -> ArrayProtocol:
         raise NotImplementedError
 
     # TODO: html and pretty text repr    #
@@ -576,25 +602,26 @@ class NDProcessor:
 class NDGraphic:
     def __init__(
         self,
-        subplot: Subplot,
+        nd_subplot: NDWSubplot,
         name: str | None,
     ):
-        self._subplot = subplot
+        self._nd_subplot = nd_subplot
         self._name = name
         self._graphic: Graphic | None = None
 
-        # used to indicate that the NDGraphic should ignore any requests to update the indices
+        # used to indicate that the NDGraphic should ignore any requests to update the indices.
         # used by block_indices_ctx context manager, usecase is when the LinearSelector on timeseries
         # NDGraphic changes the selection, it shouldn't change the graphic that it is on top of! Would
-        # also cause recursion
-        # It is also used by the @block_reentrance decorator which is on the ``NDGraphic.indices`` property setter
-        # this is also to block recursion
+        # also cause recursion. ReferenceIndex._render_indices checks this flag at scheduling time.
         self._block_indices = False
 
         # user settable bool to make the graphic unresponsive to change in the ReferenceIndex
         self._pause = False
 
-    def _create_graphic(self):
+        # the indices that current graphic data reflects
+        self._last_indices = None
+
+    async def _create_graphic(self):
         raise NotImplementedError
 
     @property
@@ -620,22 +647,25 @@ class NDGraphic:
         raise NotImplementedError
 
     @property
+    def indices_displayed(self) -> dict[str, Any]:
+        """the indices that the graphic currently represents"""
+        return self._last_indices
+
+    @property
     def indices(self) -> dict[str, Any]:
         raise NotImplementedError
 
-    def set_indices(
-        self, indices: dict[str, Any], block: bool = True, timeout: float = 1.0
-    ):
+    async def _set_indices_(self, indices: dict[str, Any] = None):
+        """
+        Get the data slice for the index from the processor and write it to the graphic.
+
+        If indices is None, it uses the latest indices from the ReferenceIndex. Otherwise it uses the
+        indices passed when the update was scheduled.
+
+        Semi-private: only ``ReferenceIndex`` should call this. _create_graphic uses `run_sync`
+        to run it sync
+        """
         pass
-
-    def _get_data_slice(self, indices):
-        """gets current data slice from NDProcessor, resolves Futures if necessary"""
-        data_slice = self.processor.get(indices)
-
-        if isinstance(data_slice, Generator):
-            data_slice = yield from data_slice
-
-        return data_slice
 
     # aliases for easier access to processor properties
     @property
@@ -652,13 +682,13 @@ class NDGraphic:
         # create a new graphic when data has changed
         if self.graphic is not None:
             # it is already None if NDGraphic was initialized with no data
-            self._subplot.delete_graphic(self.graphic)
+            self._nd_subplot.subplot.delete_graphic(self.graphic)
             self._graphic = None
 
-        self._create_graphic()
+        run_sync(self._create_graphic())
 
         # force a render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
 
     @property
     def shape(self) -> dict[str, int]:
@@ -697,7 +727,7 @@ class NDGraphic:
         """get or set the slider_dim_transforms, see docstring for details"""
         self.processor.slider_dim_transforms = maps
         # force a render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
 
     @property
     def window_funcs(
@@ -716,7 +746,7 @@ class NDGraphic:
     ):
         self.processor.window_funcs = window_funcs
         # force a render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
 
     @property
     def window_order(self) -> tuple[str, ...]:
@@ -727,7 +757,7 @@ class NDGraphic:
     def window_order(self, order: tuple[str] | None):
         self.processor.window_order = order
         # force a render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
 
     @property
     def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
@@ -741,7 +771,7 @@ class NDGraphic:
         """get or set the spatial_func, see docstring for details"""
         self.processor.spatial_func = func
         # force a render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
 
     # def _repr_text_(self) -> str:
     #     return ndg_fmt_text(self)
@@ -763,42 +793,17 @@ class NDGraphic:
 
 
 @contextmanager
-def block_indices_ctx(ndgraphic: NDGraphic):
+def block_indices_ctx(*ndgraphics: NDGraphic):
     """
-    Context manager for pausing an NDGraphic from updating indices
+    Context manager for pausing NDGraphics from updating indices
     """
-    ndgraphic._block_indices = True
+    for ndg in ndgraphics:
+        ndg._block_indices = True
 
     try:
         yield
     except Exception as e:
         raise e from None  # indices setter has raised, the line above and the lines below are probably more relevant!
     finally:
-        ndgraphic._block_indices = False
-
-
-def block_reentrance(setter):
-    # decorator to block re-entrance of indices setter
-    def set_indices_wrapper(self: NDGraphic, *args, **kwargs):
-        """
-        wraps NDGraphic.indices
-
-        self: NDGraphic instance
-
-        new_indices: new indices to set
-        """
-        # set_value is already in the middle of an execution, block re-entrance
-        if self._block_indices:
-            return
-        try:
-            # block re-execution of set_value until it has *fully* finished executing
-            self._block_indices = True
-            return setter(self, *args, **kwargs)
-        except Exception as exc:
-            # raise original exception
-            raise exc  # set_value has raised. The line above and the lines 2+ steps below are probably more relevant!
-        finally:
-            # set_value has finished executing, now allow future executions
-            self._block_indices = False
-
-    return set_indices_wrapper
+        for ndg in ndgraphics:
+            ndg._block_indices = False

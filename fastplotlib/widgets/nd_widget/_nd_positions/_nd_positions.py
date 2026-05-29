@@ -1,13 +1,14 @@
-from collections.abc import Callable, Hashable, Sequence, Generator
+from __future__ import annotations
+
+from collections.abc import Callable, Hashable, Sequence
 from functools import partial
-from typing import Literal, Any, Type
+from typing import Literal, Any, Type, TYPE_CHECKING
 from warnings import warn
 
 import numpy as np
 from numpy.lib.stride_tricks import sliding_window_view
 from numpy.typing import ArrayLike
 
-from ....layouts import Subplot
 from ....graphics import (
     ImageGraphic,
     LineGraphic,
@@ -24,24 +25,20 @@ from .._base import (
     NDProcessor,
     NDGraphic,
     WindowFuncCallable,
-    block_reentrance,
     block_indices_ctx,
 )
-from ....utils import ArrayProtocol, FutureProtocol, CudaArrayProtocol
+from ....utils import ArrayProtocol, CudaArrayProtocol, cuda_to_numpy
 from .._index import ReferenceIndex
-from .._async import start_coroutine
+from .._async import run_in_thread_pool, run_sync
+
+if TYPE_CHECKING:
+    from .._ndw_subplot import NDWSubplot
 
 # types for the other features
 FeatureCallable = Callable[[np.ndarray, slice], np.ndarray]
 ColorsType = np.ndarray | FeatureCallable | None
 MarkersType = Sequence[str] | np.ndarray | FeatureCallable | None
 SizesType = Sequence[float] | np.ndarray | FeatureCallable | None
-
-AwaitedPositionData = Generator[
-    FutureProtocol | ArrayProtocol | CudaArrayProtocol,
-    ArrayProtocol,
-    dict[str, ArrayProtocol],
-]
 
 
 def default_cmap_transform_each(p: int, data_slice: np.ndarray, s: slice):
@@ -526,7 +523,7 @@ class NDPositionsProcessor(NDProcessor):
 
         return other
 
-    def get(self, indices: dict[str, Any]) -> AwaitedPositionData:
+    async def get(self, indices: dict[str, Any]) -> dict[str, ArrayProtocol]:
         """
         slices through all slider dims and outputs an array that can be used to set graphic data
 
@@ -534,7 +531,7 @@ class NDPositionsProcessor(NDProcessor):
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
         """
         # already squeezed and in the correct spatial_dims order
-        window_output = yield from self.get_window_output(indices)
+        window_output = await self.get_window_output(indices)
 
         # get slice obj for display window
         dw_slice = self._get_dw_slice(indices)
@@ -545,8 +542,22 @@ class NDPositionsProcessor(NDProcessor):
         # p_dims is dim 1
         graphic_data = window_output[:, dw_slice]
 
-        data = self._finalize(graphic_data)
+        # _finalize runs the user's datapoints_window_func and spatial_func.
+        if isinstance(graphic_data, CudaArrayProtocol):
+            # the datapoints_window_func and spatial_func should be direct on-cuda functions
+            # ex: torch functions that can take cuda arrays directly
+            data = self._finalize(graphic_data)
+        else:
+            # run CPU functions, probably numpy-based, in a thread pool
+            data = await run_in_thread_pool(
+                self._executor, self._finalize, graphic_data
+            )
+
         other = self._get_other_features(data, dw_slice)
+
+        # final CUDA -> numpy conversion at the end of the pipeline
+        if isinstance(data, CudaArrayProtocol):
+            data = await run_in_thread_pool(self._executor, cuda_to_numpy, data)
 
         return {
             "data": data,
@@ -558,7 +569,7 @@ class NDPositions(NDGraphic):
     def __init__(
         self,
         ref_index: ReferenceIndex,
-        subplot: Subplot,
+        nd_subplot: NDWSubplot,
         data: Any,
         dims: Sequence[str],
         spatial_dims: tuple[str, str, str],
@@ -607,7 +618,7 @@ class NDPositions(NDGraphic):
         Parameters
         ----------
         ref_index
-        subplot
+        nd_subplot
         data
         dims
         spatial_dims
@@ -634,7 +645,7 @@ class NDPositions(NDGraphic):
         processor_kwargs
         """
 
-        super().__init__(subplot, name)
+        super().__init__(nd_subplot, name)
 
         self._ref_index = ref_index
 
@@ -672,34 +683,52 @@ class NDPositions(NDGraphic):
 
         self._graphic_type = graphic_type
 
+        # TODO: I think this is messy af, NDTimeseriesSubclass???
+        # display_window = None overrides x_range_mode
+        if display_window is None:
+            x_range_mode = None
+
         self._x_range_mode = None
+        self._last_x_range: tuple[float, float] | None = None
         self.x_range_mode = x_range_mode
-        self._last_x_range = np.array([0.0, 0.0], dtype=np.float32)
+
+        # determine a min display_window for x_range_mode = "auto"
+        # determines required world space range for 3 datapoints
+        p_dim = self.processor.spatial_dims[1]
+        p_range = self._ref_index.ref_ranges[p_dim]
+        p_map = self.processor.slider_dim_transforms[p_dim]
+        p_span = p_range.stop - p_range.start
+        p_mid = p_range.start + p_span / 2
+        i = p_map(p_mid)
+        i_increment = p_map(p_mid + p_range.step)
+        delta_p = p_range.step / max(1, i_increment - i)
+        self._min_display_window = 3 * delta_p
 
         self._timeseries = timeseries
         # TODO: I think this is messy af, NDTimeseriesSubclass???
         if self._timeseries:
             # makes some assumptions about positional data that apply only to timeseries representations
             # probably don't want to maintain aspect
-            self._subplot.camera.maintain_aspect = False
+            self._nd_subplot.subplot.camera.maintain_aspect = False
 
             # auto x range modes make no sense for non-timeseries data
             self.x_range_mode = x_range_mode
 
-            if linear_selector:
+            # make a linear selector only if one does not already exist in this subplot
+            if linear_selector and "__ndw_manged_linear_selector" not in self._nd_subplot.subplot:
                 self._linear_selector = LinearSelector(
-                    0, limits=(-np.inf, np.inf), edge_color="cyan"
+                    0, limits=(-np.inf, np.inf), edge_color="cyan", name="__ndw_manged_linear_selector"
                 )
                 self._linear_selector.add_event_handler(
                     self._linear_selector_handler, "selection"
                 )
-                self._subplot.add_graphic(self._linear_selector)
+                self._nd_subplot.subplot.add_graphic(self._linear_selector)
             else:
                 self._linear_selector = None
         else:
             self._linear_selector = None
 
-        self._create_graphic()
+        run_sync(self._create_graphic())
 
     @property
     def processor(self) -> NDPositionsProcessor:
@@ -740,9 +769,9 @@ class NDPositions(NDGraphic):
         if type(self.graphic) is graphic_type:
             return
 
-        self._subplot.delete_graphic(self._graphic)
+        self._nd_subplot.subplot.delete_graphic(self._graphic)
         self._graphic_type = graphic_type
-        self._create_graphic()
+        run_sync(self._create_graphic())
 
     @property
     def spatial_dims(self) -> tuple[str, str, str]:
@@ -752,22 +781,22 @@ class NDPositions(NDGraphic):
     def spatial_dims(self, dims: tuple[str, str, str]):
         self.processor.spatial_dims = dims
         # force re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
 
     @property
     def indices(self) -> dict[Hashable, Any]:
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
-    @block_reentrance
-    @start_coroutine
-    def set_indices(
-        self, indices: dict[Hashable, Any], block: bool = True, timeout: float = 1.0
-    ):
+    async def _set_indices_(self, indices: dict[str, Any] = None):
         if self.data is None:
             return
 
-        new_features = yield from self._get_data_slice(indices)
+        if indices is None:
+            # fetch the latest indices from the ReferenceIndex
+            # else used passed indices from schedule time
+            indices = self.indices
 
+        new_features = await self.processor.get(indices)
         data_slice = new_features["data"]
 
         # TODO: set other graphic features, colors, sizes, markers, etc.
@@ -786,7 +815,7 @@ class NDPositions(NDGraphic):
                     g.data[:, : new_data.shape[1]] = new_data
 
                 for feature in ["colors", "sizes", "markers"]:
-                    value = new_features[feature]
+                    value = new_features.get(feature, None)
 
                     match value:
                         case None:
@@ -816,28 +845,38 @@ class NDPositions(NDGraphic):
 
         # TODO: I think this is messy af, NDTimeseriesSubclass???
         # x range of the data
-        xr = data_slice[0, 0, 0], data_slice[0, -1, 0]
-        if self.x_range_mode is not None:
-            self.graphic._plot_area.x_range = xr
+        xr_data = data_slice[0, 0, 0], data_slice[0, -1, 0]
 
-        # if the update_from_view is polling, this prevents it from being called by setting the new last xrange
-        # in theory, but this doesn't seem to fully work yet, not a big deal right now can check later
-        self._last_x_range[:] = self.graphic._plot_area.x_range
+        if self.x_range_mode is not None:
+            # set x_range directly from the display_window, NOT from the xr_data
+            # this way it doesn't fight with the update_from_view_range() polling
+            dw = self.processor.display_window
+            hw = dw / 2
+            center = indices[self.processor.spatial_dims[1]]
+            xr_view = center - hw, center + hw
+            self._nd_subplot.subplot.x_range = xr_view
+            # record post-write camera state so the polling animation does not
+            # mistake our own write for a user pan/zoom on the next tick
+            self._last_x_range = self._nd_subplot.subplot.x_range
 
         if self._linear_selector is not None:
             with pause_events(
                 self._linear_selector
             ):  # we don't want the linear selector change to update the indices
-                self._linear_selector.limits = xr
+                self._linear_selector.limits = xr_data
                 # linear selector acts on `p` dim
                 self._linear_selector.selection = indices[
                     self.processor.spatial_dims[1]
                 ]
 
+        self._last_indices = indices
+
     def _linear_selector_handler(self, ev):
-        with block_indices_ctx(self):
-            # linear selector always acts on the `p` dim
-            self._ref_index[self.processor.spatial_dims[1]] = ev.info["value"]
+        with block_indices_ctx(*self._nd_subplot.nd_graphics):
+            # block index change in all NDGraphics that are not in the same subplot
+            self._ref_index.set_dim_index(
+                self.processor.spatial_dims[1], ev.info["value"]
+            )
 
     def _tooltip_handler(self, graphic, pick_info):
         if isinstance(self.graphic, (LineCollection, ScatterCollection)):
@@ -846,12 +885,11 @@ class NDPositions(NDGraphic):
             p_index = pick_info["vertex_index"]
             return self.processor.tooltip_format(n_index, p_index)
 
-    @start_coroutine
-    def _create_graphic(self):
+    async def _create_graphic(self):
         if self.data is None:
             return
 
-        new_features = yield from self._get_data_slice(self.indices)
+        new_features = await self.processor.get(self.indices)
         data_slice = new_features["data"]
 
         # store any cmap, sizes, thickness, etc. to assign to new graphic
@@ -890,7 +928,7 @@ class NDPositions(NDGraphic):
         if isinstance(self._graphic, (LineCollection, ScatterCollection)):
             for l, g in enumerate(self.graphic.graphics):
                 for feature in ["colors", "sizes", "markers"]:
-                    value = new_features[feature]
+                    value = new_features.get(feature, None)
 
                     match value:
                         case None:
@@ -919,16 +957,26 @@ class NDPositions(NDGraphic):
                 for g in self._graphic.graphics:
                     g.tooltip_format = partial(self._tooltip_handler, g)
 
-        self._subplot.add_graphic(self._graphic)
+        self._nd_subplot.subplot.add_graphic(self._graphic)
 
         # set the initial position and limits of the linear selector
         # x range of the data
-        xr = data_slice[0, 0, 0], data_slice[0, -1, 0]
+        xr_data = data_slice[0, 0, 0], data_slice[0, -1, 0]
+
+        if self.x_range_mode is not None:
+            # set the intended view range before figure.show()'s autoscale runs
+            dw = self.processor.display_window
+            hw = dw / 2
+            center = self.indices[self.processor.spatial_dims[1]]
+            xr_view = center - hw, center + hw
+            self.graphic._plot_area.x_range = xr_view
+            self._last_x_range = self.graphic._plot_area.x_range
+
         if self._linear_selector is not None:
             with pause_events(
                 self._linear_selector
             ):  # we don't want the linear selector change to update the indices
-                self._linear_selector.limits = xr
+                self._linear_selector.limits = xr_data
                 # linear selector acts on `p` dim
                 self._linear_selector.selection = self.indices[
                     self.processor.spatial_dims[1]
@@ -973,9 +1021,11 @@ class NDPositions(NDGraphic):
     @display_window.setter
     def display_window(self, dw: int | float | None):
         self.processor.display_window = dw
+        if dw is None:
+            self.x_range_mode = None
 
         # force re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
 
     @property
     def datapoints_window_func(self) -> tuple[Callable, str, int | float] | None:
@@ -996,39 +1046,54 @@ class NDPositions(NDGraphic):
 
     @x_range_mode.setter
     def x_range_mode(self, mode: Literal[None, "fixed", "auto"]):
+        if mode not in (None, "fixed", "auto"):
+            raise ValueError(
+                f"x_range_mode must be None, 'fixed', or 'auto', got: {mode!r}"
+            )
+        if mode == self._x_range_mode:
+            return
+
         if self._x_range_mode == "auto":
             # old mode was auto
-            self._subplot.remove_animation(self._update_from_view_range)
+            self._nd_subplot.subplot.remove_animation(self._update_from_view_range)
+            self._last_x_range = None
 
         if mode == "auto":
-            self._subplot.add_animations(self._update_from_view_range)
+            # seed so the first tick does not fire spuriously
+            self._last_x_range = self._nd_subplot.subplot.x_range
+            self._nd_subplot.subplot.add_animations(self._update_from_view_range)
 
         self._x_range_mode = mode
 
     def _update_from_view_range(self):
+        # update from current x_range if it has changed
         if self._graphic is None:
             return
 
-        xr = self._subplot.x_range
-
-        # the floating point error near zero gets nasty here
-        if np.allclose(xr, self._last_x_range, atol=1e-14):
+        xr = self._nd_subplot.subplot.x_range
+        if xr == self._last_x_range:
+            # x_range hasn't changed
             return
 
-        last_width = abs(self._last_x_range[1] - self._last_x_range[0])
-        self._last_x_range[:] = xr
+        self._last_x_range = xr
 
         new_width = abs(xr[1] - xr[0])
+        # make sure width is sufficient for >= 3 datapoints
+        if new_width < self._min_display_window:
+            new_width = self._min_display_window
+
         new_index = (xr[0] + xr[1]) / 2
 
-        if (new_index == self._ref_index[self.processor.spatial_dims[1]]) and (
-            last_width == new_width
-        ):
-            return
-
         self.processor.display_window = new_width
-        # set the `p` dim on the global index vector
-        self._ref_index[self.processor.spatial_dims[1]] = new_index
+
+        # block scheduling an additional async _set_indices_ for ndgraphics in this subplot
+        with block_indices_ctx(*self._nd_subplot.nd_graphics):
+            p_dim = self.processor.spatial_dims[1]
+            self._ref_index.set_dim_index(p_dim, new_index)
+
+        # run this ndgraphic update immediately so graphic data and linear selector are in sync with the
+        # camera, otherwise you get laggy movement
+        run_sync(self._set_indices_())
 
     @property
     def cmap(self) -> str | None:
@@ -1049,7 +1114,7 @@ class NDPositions(NDGraphic):
         self._graphic.cmap = new
         self._cmap = new
         # force a re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
 
     @property
     def cmap_each(self) -> np.ndarray[str] | None:
@@ -1115,7 +1180,7 @@ class NDPositions(NDGraphic):
         self.graphic.markers = new
         self._markers = new
         # force a re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
 
     @property
     def sizes(self) -> float | Sequence[float] | None:
@@ -1134,7 +1199,7 @@ class NDPositions(NDGraphic):
         self.graphic.sizes = new
         self._sizes = new
         # force a re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
 
     @property
     def thickness(self) -> float | Sequence[float] | None:
@@ -1153,4 +1218,4 @@ class NDPositions(NDGraphic):
         self.graphic.thickness = new
         self._thickness = new
         # force a re-render
-        self.set_indices(self.indices)
+        run_sync(self._set_indices_())
