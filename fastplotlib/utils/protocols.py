@@ -5,7 +5,6 @@ from typing import Any, Protocol, runtime_checkable
 
 
 ARRAY_LIKE_ATTRS = [
-    "__array__",
     "dtype",
     "shape",
     "ndim",
@@ -15,10 +14,7 @@ ARRAY_LIKE_ATTRS = [
 
 @runtime_checkable
 class ArrayProtocol(Protocol):
-    """an object that is sufficiently array-like"""
-
-    def __array__(self) -> ArrayProtocol: ...
-
+    """an object that is sufficiently array-like for lazy loading"""
     @property
     def dtype(self) -> Any: ...
 
