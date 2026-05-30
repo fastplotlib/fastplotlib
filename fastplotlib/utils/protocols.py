@@ -6,7 +6,6 @@ from typing import Any, Protocol, runtime_checkable
 
 ARRAY_LIKE_ATTRS = [
     "__array__",
-    "__array_ufunc__",
     "dtype",
     "shape",
     "ndim",
