@@ -9,8 +9,10 @@ from ...layouts import ImguiFigure, Subplot
 
 
 class NDWidget:
-    def __init__(self, ref_ranges: dict[str, tuple], ref_index: Optional[ReferenceIndex] = None, **kwargs):
+    def __init__(self, ref_ranges: dict[str, tuple] = None, ref_index: Optional[ReferenceIndex] = None, **kwargs):
         if ref_index is None:
+            if ref_ranges is None:
+                ref_ranges = dict()
             self._indices = ReferenceIndex(ref_ranges)
         else:
             self._indices = ref_index

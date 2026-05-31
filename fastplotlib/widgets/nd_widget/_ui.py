@@ -36,25 +36,26 @@ class NDWidgetUI(EdgeWindow):
         )
         self._ndwidget = ndwidget
 
-        ref_ranges = self._ndwidget.ranges
-
         # whether or not a dimension is in play mode
-        self._playing = {dim: False for dim in ref_ranges.keys()}
+        self._playing = dict()
 
         # approximate framerate for playing
-        self._fps = {dim: 20 for dim in ref_ranges.keys()}
+        self._fps = dict()
 
         # framerate converted to frame time
-        self._frame_time = {dim: 1 / 20 for dim in ref_ranges.keys()}
+        self._frame_time = dict()
 
         # last timepoint that a frame was displayed from a given dimension
-        self._last_frame_time = {dim: perf_counter() for dim in ref_ranges.keys()}
+        self._last_frame_time = dict()
 
         # loop playback
-        self._loop = {dim: False for dim in ref_ranges.keys()}
+        self._loop = dict()
 
         # last time the slider was moved per dim, used for time-based throttling
-        self._last_slider_movement: dict[str, float] = {dim: 0.0 for dim in ref_ranges.keys()}
+        self._last_slider_movement: dict[str, float] = dict()
+
+        for dim in self._ndwidget.ranges:
+            self.push_dim(dim)
 
         # auto-plays the ImageWidget's left-most dimension in docs galleries
         if "DOCS_BUILD" in os.environ.keys():
@@ -63,6 +64,24 @@ class NDWidgetUI(EdgeWindow):
                 self._loop = True
 
         self._max_display_windows: dict[NDGraphic, float | int] = dict()
+
+    def push_dim(self, dim):
+        """initialize the playback & slider UI state for a newly added dim"""
+        self._playing[dim] = False
+        self._fps[dim] = 20
+        self._frame_time[dim] = 1 / 20
+        self._last_frame_time[dim] = perf_counter()
+        self._loop[dim] = False
+        self._last_slider_movement[dim] = 0.0
+
+    def pop_dim(self, dim):
+        """remove the playback & slider UI state for a removed dim"""
+        self._playing.pop(dim)
+        self._fps.pop(dim)
+        self._frame_time.pop(dim)
+        self._last_frame_time.pop(dim)
+        self._loop.pop(dim)
+        self._last_slider_movement.pop(dim)
 
     def _set_index(self, dim, index):
         if index >= self._ndwidget.ranges[dim].stop:
@@ -173,6 +192,14 @@ class NDWidgetUI(EdgeWindow):
                         self._set_index(dim, current_index - rr.step)
 
             imgui.pop_id()
+
+        # auto set imgui window height
+        if not self._collapsed:
+            height = round(
+                imgui.get_cursor_screen_pos().y - self.y + imgui.get_style().window_padding.y
+            )
+            if height != self.size:
+                self.size = height
 
 
 class RightClickMenu(StandardRightClickMenu):

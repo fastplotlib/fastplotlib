@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Callable
 from typing import Literal, Sequence, Hashable
 
@@ -14,6 +15,7 @@ from ... import (
 from ...layouts import Subplot
 from ...utils import ArrayProtocol, enums
 from . import NDImageProcessor, NDImage, NDPositions, NDVectors
+from ._index import AutoRangeContinuous
 from ._video import VideoProcessor
 from ._base import NDProcessor, NDGraphic, WindowFuncCallable
 
@@ -56,6 +58,45 @@ class NDWSubplot:
         else:
             raise KeyError(f"NDGraphc with given key not found: {key}")
 
+    def _check_slider_dims(
+        self,
+        dims: Sequence[Hashable],
+        spatial_dims: Sequence[Hashable],
+        data: ArrayProtocol | None,
+        positions: bool = False,
+    ):
+        """
+        Make sure every slider (non-spatial) dim of a graphic being added has a
+        reference range. A dim without one gets an ``AutoRangeContinuous`` sized to
+        the data, an existing ``AutoRangeContinuous`` is grown to fit, and an
+        explicit range is left untouched.
+        """
+        if data is None:
+            # size is unknown, an explicit range is still required
+            return
+
+        dims = tuple(dims)
+        slider_dims = set(dims) - set(spatial_dims)
+        if positions:
+            # the datapoints `p` axis is a spatial dim that also needs a reference range
+            slider_dims.add(spatial_dims[1])
+
+        for dim in slider_dims:
+            size = data.shape[dims.index(dim)]
+
+            if dim not in self.ndw.indices.dims:
+                warnings.warn(
+                    f"No reference range specified for non-spatial dim '{dim}', "
+                    f"auto-generating an `AutoRangeContinuous(0, {size}, 1)`."
+                )
+                self.ndw.indices.push_dims({dim: AutoRangeContinuous(0, size, 1)})
+
+            elif isinstance(self.ndw.indices.ref_ranges[dim], AutoRangeContinuous):
+                # grow the existing auto range to fit this array
+                self.ndw.indices.ref_ranges[dim].stop = max(
+                    self.ndw.indices.ref_ranges[dim].stop, size
+                )
+
     def add_nd_image(
         self,
         data: ArrayProtocol | None,
@@ -72,6 +113,8 @@ class NDWSubplot:
         name: str = None,
         **kwargs,
     ):
+        self._check_slider_dims(dims, spatial_dims, data)
+
         nd = NDImage(
             self.ndw.indices,
             nd_subplot=self,
@@ -125,6 +168,8 @@ class NDWSubplot:
         name: str = None,
         **kwargs
     ) -> NDVectors:
+        self._check_slider_dims(dims, spatial_dims, data)
+
         nd = NDVectors(
             self.ndw.indices,
             nd_subplot=self,
@@ -142,11 +187,16 @@ class NDWSubplot:
         self._nd_graphics.append(nd)
         return nd
 
-    def add_nd_scatter(self, *args, **kwargs):
+    def add_nd_scatter(self, data, dims, spatial_dims, *args, **kwargs):
         # TODO: better func signature here, send all kwargs to processor_kwargs
+        self._check_slider_dims(dims, spatial_dims, data, positions=True)
+
         nd = NDPositions(
             self.ndw.indices,
             self,
+            data,
+            dims,
+            spatial_dims,
             *args,
             graphic_type=ScatterCollection,
             **kwargs,
@@ -157,6 +207,9 @@ class NDWSubplot:
 
     def add_nd_timeseries(
         self,
+        data,
+        dims,
+        spatial_dims,
         *args,
         graphic_type: type[
             LineCollection | LineStack | ScatterStack | ImageGraphic
@@ -164,9 +217,14 @@ class NDWSubplot:
         x_range_mode: Literal["fixed", "auto"] | None = "auto",
         **kwargs,
     ):
+        self._check_slider_dims(dims, spatial_dims, data, positions=True)
+
         nd = NDPositions(
             self.ndw.indices,
             self,
+            data,
+            dims,
+            spatial_dims,
             *args,
             graphic_type=graphic_type,
             linear_selector=True,
@@ -178,10 +236,15 @@ class NDWSubplot:
         self._nd_graphics.append(nd)
         return nd
 
-    def add_nd_lines(self, *args, **kwargs):
+    def add_nd_lines(self, data, dims, spatial_dims, *args, **kwargs):
+        self._check_slider_dims(dims, spatial_dims, data, positions=True)
+
         nd = NDPositions(
             self.ndw.indices,
             self,
+            data,
+            dims,
+            spatial_dims,
             *args,
             graphic_type=LineCollection,
             **kwargs,

@@ -114,6 +114,13 @@ class RangeContinuous:
         return val
 
 
+class AutoRangeContinuous(RangeContinuous):
+    """
+    A continuous reference range that was auto-generated for a slider dimension
+    which had no explicit ``RangeContinuous``.
+    """
+
+
 @dataclass
 class RangeDiscrete:
     # TODO: not implemented yet, placeholder until we have a clear usecase
@@ -146,10 +153,12 @@ class ReferenceIndex:
         the new indices.
 
         Each key in ``ref_ranges`` defines a slider dimension. When adding an
-        ``NDGraphic``, every dimension listed in ``dims`` must be either a spatial
-        dimension (listed in ``spatial_dims``) or a key in ``ref_ranges``.
-        If a dim is not spatial, it must have a corresponding reference range,
-        otherwise an error will be raised.
+        ``NDGraphic``, every dimension listed in ``dims`` is either a spatial
+        dimension (listed in ``spatial_dims``) or a slider dimension. A slider
+        dim without a reference range gets an ``AutoRangeContinuous`` sized to the
+        data, so an explicit range is only needed when the slider should map
+        reference-space units to array indices rather than use a one-to-one
+        (identity) mapping.
 
         You can also define conceptually identical but *independent* reference spaces
         by using distinct names, ex: ``"time-1"`` and ``"time-2"`` for two subsets of data
@@ -195,16 +204,15 @@ class ReferenceIndex:
 
         """
         self._ref_ranges = dict()
-        self.push_dims(ref_ranges)
 
-        # starting index for all dims
-        self._indices: dict[str, int | float | Any] = {
-            name: rr.start for name, rr in self._ref_ranges.items()
-        }
-
-        self._indices_changed_handlers = set()
+        # current index for each dim
+        self._indices: dict[str, int | float | Any] = dict()
 
         self._ndwidgets: list[NDWidget] = list()
+
+        self.push_dims(ref_ranges)
+
+        self._indices_changed_handlers = set()
 
         # per-NDGraphic fetch update revision. Bumped on every ``cancel_awaiting=True``
         # call (display only latest fetch, used during slider drag). A scheduled fetch
@@ -453,6 +461,19 @@ class ReferenceIndex:
                     f"ref_ranges must be a mapping of dimension names to range specifications, "
                     f"see the docstring, you have passed: {ref_ranges}"
                 )
+
+            rr = self._ref_ranges[name]
+            if isinstance(rr, AutoRangeContinuous):
+                self._indices[name] = 0
+            elif isinstance(rr, RangeContinuous):
+                self._indices[name] = rr.start
+            elif isinstance(rr, RangeDiscrete):
+                # start at the first option
+                self._indices[name] = rr.options[0]
+
+            # set imgui UI for each NDWidget window
+            for ndw in self._ndwidgets:
+                ndw._sliders_ui.push_dim(name)
 
     def add_event_handler(self, handler: Callable, event: str = "indices"):
         """
