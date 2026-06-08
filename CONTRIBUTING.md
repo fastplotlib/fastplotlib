@@ -9,7 +9,7 @@ reach out on [GitHub Discussions](https://github.com/fastplotlib/fastplotlib/dis
 
 If your contribution/PR isn't small (ex: bugfix, small change in the docs, etc.) **please open an issue first** that briefly 
 describes what you want to contribute and how you plan to implement it. This makes it much easier for us to review your PR, and 
-also facilitates rapid approval of your PR.
+also facilitates more rapid approval of your PR.
 
 > **_NOTE:_** If you are already familiar with contributing to open-source software packages, 
 > please check out the [Quick Guide](#contributing-quick-guide)!
