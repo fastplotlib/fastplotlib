@@ -7,7 +7,7 @@ from everyone! :smile:
 The rest of this guide explains how to contribute; if you have questions about the process, please 
 reach out on [GitHub Discussions](https://github.com/fastplotlib/fastplotlib/discussions).
 
-If your contribution/PR isn't small (ex: bugfix, small change in the docs, etc.) **please open an issue first** that briefly 
+If your contribution/PR isn't minor (ex: more than a bugfix, small change in the docs, etc.) **please open an issue first** that briefly 
 describes what you want to contribute and how you plan to implement it. This makes it much easier for us to review your PR, and 
 also facilitates more rapid approval of your PR.
 
