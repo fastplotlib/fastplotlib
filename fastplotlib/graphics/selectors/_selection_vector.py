@@ -10,7 +10,10 @@ def identity(val: Any) -> Any:
 class SelectionVector:
     """
     A class for performing coordinated selections across multiple selectors.
-    The user specifies the selectors (via add_selector) and mappings from global selection indices to each individual selector's local indices.
+    For each selector in the selection vector, the user specifies how the global indices (shared across selectors)
+    maps to the local indices.
+
+    The SelectionVector manages everything else, including the coordinated updating of indices whenever a selection changes
     """
     def __init__(self, max_size: int = None):
         # selector -> (map, map_inv)
