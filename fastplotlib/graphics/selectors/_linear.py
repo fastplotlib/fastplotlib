@@ -27,7 +27,7 @@ class LinearSelector(BaseSelector):
         return self._selection.value
 
     @selection.setter
-    def selection(self, value: int):
+    def selection(self, value: float):
         graphic = self._parent
 
         if isinstance(graphic, GraphicCollection):
