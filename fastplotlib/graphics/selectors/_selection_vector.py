@@ -1,8 +1,10 @@
 from collections.abc import Callable
 from functools import partial
 from typing import Any, Sequence
+from numbers import Integral
 import numpy as np
 from ._protocols import SelectorProtocol, MultiSelectorProtocol
+from fastplotlib.graphics.features._base import GraphicFeatureEvent
 
 def identity(val: Any) -> Any:
     return val
@@ -28,15 +30,22 @@ class SelectionVector:
         return tuple(self._selection)
 
     @selection.setter
-    def selection(self, new: Sequence[Any]):
+    def selection(self, new: Integral | Sequence[Any]):
         if self._block_reentrance:
             return
         else:
             self._block_reentrance = True
+            if isinstance(new, Integral):
+                new = [new]
+            self._selection = [i for i in new]
             # iterate through each selector that operates in its own "local" space
-            for selector_local, (map_, map_inv) in self._selectors.items():
-                indices_local = map_(new)
-                selector_local.selection = indices_local
+            for selector_local, (map_, map_inv, handler) in self._selectors.items():
+                cumulated_output = []
+                for value in new:
+                    curr_indices = map_(value)
+                    cumulated_output.append(curr_indices)
+                # indices_local = map_(new)
+                selector_local.selection = cumulated_output
             self._block_reentrance = False
 
     def append(self, index):
@@ -79,11 +88,11 @@ class SelectionVector:
             ## Construct inverse mapping
             inverse_dict = dict()
             for key, val in master_to_local.items():
-                inverse_dict[val] = key
+                inverse_dict[int(val)] = int(key)
 
             ## Define the partial functions
-            master_to_local_map = lambda x:master_to_local[x] if x in master_to_local else None
-            local_to_master_map = lambda x:inverse_dict[x] if x in inverse_dict else None
+            master_to_local_map = lambda x:master_to_local[int(x)] if int(x) in master_to_local else None
+            local_to_master_map = lambda x:inverse_dict[int(x)] if x in inverse_dict and x is not None else None
 
         elif isinstance(new, SelectorProtocol):
             selector, master_to_local_map, local_to_master_map = new, identity, identity
@@ -94,8 +103,15 @@ class SelectionVector:
         handler = selector.add_event_handler(partial(self._inv_handler, local_to_master_map))
         self._selectors[selector] = (master_to_local_map, local_to_master_map, [handler])
 
-    def _inv_handler(self, map_inv: Callable, local_selection):
-        self._selection = map_inv(local_selection)
+    def _inv_handler(self, map_inv: Callable, local_selection: dict | GraphicFeatureEvent):
+        if isinstance(local_selection, dict):
+            input_to_map = local_selection['value']
+            # local_selection = list(local_selection.items())[0][1]
+        elif isinstance(local_selection, GraphicFeatureEvent):
+            input_to_map = local_selection.info['value']
+        else:
+            raise ValueError("Input to inverse handler should either be dictionary or GraphicFeatureEvent")
+        self.selection = [map_inv(input_to_map[i]) for i in range(len(input_to_map))]
 
     def remove_selector(self, selector: SelectorProtocol | MultiSelectorProtocol):
         if selector in self._selectors:
