@@ -1,26 +1,54 @@
 from collections.abc import Callable
 from functools import partial
-from typing import Any, Sequence
+from typing import Any, Sequence, TypeAlias
 from numbers import Integral
+
 import numpy as np
+
 from ._protocols import SelectorProtocol, MultiSelectorProtocol
-from fastplotlib.graphics.features._base import GraphicFeatureEvent
+
+Mapping: TypeAlias = np.ndarray | dict[int, int] | Callable
 
 def identity(val: Any) -> Any:
     return val
+
+def array_map(arr: np.ndarray, index: Integral):
+    """
+    Used to map local to global indices
+    """
+    return None if np.isnan(arr[index]) else arr[index]
+
+def inv_array_map(arr: np.ndarray,
+                value: int) -> None | Integral:
+    """
+    arr[i] gives the global index
+    """
+    x = np.flatnonzero(arr == value)
+    return None if x.size == 0 else x[0]
+
+def dict_map(my_dict: dict, key: Integral):
+    if key is None:
+        return None
+    elif int(key) not in my_dict:
+        return None
+    else:
+        return my_dict[key]
+
 
 class SelectionVector:
     """
     A class for performing coordinated selections across multiple selectors.
     For each selector in the selection vector, the user specifies how the global indices (shared across selectors)
-    maps to the local indices.
+    maps to the local indices (each selector has its own local index space).
 
-    The SelectionVector manages everything else, including the coordinated updating of indices whenever a selection changes
+    The SelectionVector coordinates across individual selectors, including the coordinated updating of indices whenever a selection changes
     """
     def __init__(self, max_size: int = None):
         # selector -> (map, map_inv)
+
+        ## Key is a selector, value is a (1) local to global index map (2) global to local index map (3) list of event handlers
         self._selectors: dict[
-            SelectorProtocol | MultiSelectorProtocol, tuple[Callable, Callable, list]
+            SelectorProtocol | MultiSelectorProtocol, tuple[Callable, Callable, list[Callable]]
         ] = dict()
         self._selection: list[Any] = list()
         self._block_reentrance = False
@@ -40,12 +68,11 @@ class SelectionVector:
             self._selection = [i for i in new]
             # iterate through each selector that operates in its own "local" space
             for selector_local, (map_, map_inv, handler) in self._selectors.items():
-                cumulated_output = []
+                local_indices = []
                 for value in new:
                     curr_indices = map_(value)
-                    cumulated_output.append(curr_indices)
-                # indices_local = map_(new)
-                selector_local.selection = cumulated_output
+                    local_indices.append(curr_indices)
+                selector_local.selection = local_indices
             self._block_reentrance = False
 
     def append(self, index):
@@ -54,14 +81,16 @@ class SelectionVector:
             if not isinstance(selector, MultiSelectorProtocol):
                 continue
 
-            index_local = map_([index])
+            index_local = map_(index)
             selector.append(index_local)
 
     def add_selector(
         self,
         new: (
             SelectorProtocol
-            | tuple[SelectorProtocol, np.ndarray | dict[int, int]]
+            | tuple[SelectorProtocol, dict]
+            | tuple[SelectorProtocol, np.ndarray]
+            |tuple[SelectorProtocol, Callable, Callable]
         ),
     ):
         """
@@ -69,48 +98,52 @@ class SelectionVector:
         mapping is given either as:
             - A 1D np.ndarray of integers. The array index is the global index, and the array value is the local index
             - A dictionary where keys (master indices) and values (local indices) are both integers
+            - Two callables. The first callable defines the global index --> local index map, the second specifies the local index --> global index map.
         """
-        selector: SelectorProtocol
         if isinstance(new, (tuple, list)):
             if not isinstance(new[0], SelectorProtocol):
                 raise TypeError
 
-            if len(new) != 2:
-                raise TypeError
+            if len(new) == 3:
+                if isinstance(new[1], Callable) and isinstance(new[2], Callable):
+                    master_to_local = new[1]
+                    local_to_master = new[2]
+                else:
+                    raise ValueError(f"Both index mappings must be Callables, you provided {type(new[1])} and {type(new[2])}")
+            elif len(new) == 2:
+                if isinstance(new[1], dict):
+                    ## Construct inverse mapping
+                    inverse_dict = dict()
+                    for key, val in new[1].items():
+                        inverse_dict[int(val)] = int(key)
+                    master_to_local = partial(dict_map, new[1])
+                    local_to_master = partial(dict_map, inverse_dict)
+
+                elif isinstance(new[1], np.ndarray):
+                    if not new[1].ndim == 1:
+                        raise ValueError("If you pass in an array mapping, it must be 1-D")
+                    master_to_local = partial(array_map, new[1])
+                    local_to_master = partial(inv_array_map, new[1])
+                else:
+                    raise ValueError(f"Must either provide a single dict or numpy array specifying the local to global index mapping, or two callables"
+                                     f"specifying the mapping in both directions")
 
             selector = new[0]
-            master_to_local = new[1]
-            if isinstance(master_to_local, np.ndarray):
-                if not master_to_local.ndim == 1:
-                    raise ValueError("If you pass in an array mapping, it must be 1-D")
-                master_to_local = dict(enumerate(master_to_local))
-
-            ## Construct inverse mapping
-            inverse_dict = dict()
-            for key, val in master_to_local.items():
-                inverse_dict[int(val)] = int(key)
-
-            ## Define the partial functions
-            master_to_local_map = lambda x:master_to_local[int(x)] if int(x) in master_to_local else None
-            local_to_master_map = lambda x:inverse_dict[int(x)] if x in inverse_dict and x is not None else None
 
         elif isinstance(new, SelectorProtocol):
-            selector, master_to_local_map, local_to_master_map = new, identity, identity
+            selector, master_to_local, local_to_master = new, identity, identity
 
         else:
             raise ValueError
 
-        handler = selector.add_event_handler(partial(self._inv_handler, local_to_master_map))
-        self._selectors[selector] = (master_to_local_map, local_to_master_map, [handler])
+        handler = selector.add_event_handler(partial(self._inv_handler, local_to_master))
+        self._selectors[selector] = (master_to_local, local_to_master, [handler])
 
-    def _inv_handler(self, map_inv: Callable, local_selection: dict | GraphicFeatureEvent):
-        if isinstance(local_selection, dict):
-            input_to_map = local_selection['value']
-            # local_selection = list(local_selection.items())[0][1]
-        elif isinstance(local_selection, GraphicFeatureEvent):
-            input_to_map = local_selection.info['value']
-        else:
-            raise ValueError("Input to inverse handler should either be dictionary or GraphicFeatureEvent")
+    def _inv_handler(self, map_inv: Callable, local_selection: dict):
+        """
+        HighlightSelector and VisibilitySelector emit a dictionary with keys selector and value
+        """
+        input_to_map = local_selection['value']
         self.selection = [map_inv(input_to_map[i]) for i in range(len(input_to_map))]
 
     def remove_selector(self, selector: SelectorProtocol | MultiSelectorProtocol):
