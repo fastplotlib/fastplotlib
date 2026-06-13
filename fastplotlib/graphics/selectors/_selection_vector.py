@@ -16,7 +16,7 @@ def array_map(arr: np.ndarray, index: Integral):
     """
     Used to map local to global indices
     """
-    return None if np.isnan(arr[index]) else arr[index]
+    return None if np.isnan(arr[index]) else int(arr[index])
 
 def inv_array_map(arr: np.ndarray,
                 value: int) -> None | Integral:
@@ -24,7 +24,7 @@ def inv_array_map(arr: np.ndarray,
     arr[i] gives the global index
     """
     x = np.flatnonzero(arr == value)
-    return None if x.size == 0 else x[0]
+    return None if x.size == 0 else int(x[0])
 
 def dict_map(my_dict: dict, key: Integral):
     if key is None:
@@ -99,6 +99,7 @@ class SelectionVector:
             - A 1D np.ndarray of integers. The array index is the global index, and the array value is the local index
             - A dictionary where keys (master indices) and values (local indices) are both integers
             - Two callables. The first callable defines the global index --> local index map, the second specifies the local index --> global index map.
+                All callables take as input nonnegative integers and output nonnegative integers. 
         """
         if isinstance(new, (tuple, list)):
             if not isinstance(new[0], SelectorProtocol):
