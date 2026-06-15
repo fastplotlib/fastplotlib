@@ -204,6 +204,9 @@ class EdgeWindow(Window):
         return x_pos, y_pos, width, height
 
     def _draw_resize_handle(self):
+        if self._location not in ("bottom", "right"):
+            return
+
         if self._location == "bottom":
             imgui.set_cursor_pos((0, 0))
             imgui.invisible_button("##resize_handle", imgui.ImVec2(imgui.get_window_width(), self._separator_thickness))
@@ -382,6 +385,7 @@ class EdgeWindow(Window):
         # begin window
         imgui.begin(self._title, p_open=None, flags=flags)
 
+        # resize handle for right and bottom windows
         self._draw_resize_handle()
 
         # push ID to prevent conflict between multiple figs with same UI
