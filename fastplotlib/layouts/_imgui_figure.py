@@ -195,6 +195,7 @@ class ImguiFigure(Figure):
 
         self._fpl_reset_layout()
 
+
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
         Get rect for the portion of the canvas that the pygfx renderer draws to,
@@ -208,6 +209,8 @@ class ImguiFigure(Figure):
         """
 
         width, height = self.canvas.get_logical_size()
+        x = 0
+        y = 0
 
         for edge in ["right"]:
             if self.guis[edge]:
@@ -217,7 +220,12 @@ class ImguiFigure(Figure):
             if self.guis[edge]:
                 height -= self._guis[edge].size
 
-        return 0, 0, max(1, width), max(1, height)
+        for edge in ["top"]:
+            if self.guis[edge]:
+                y += self._guis[edge].size
+                height -= self._guis[edge].size
+
+        return x, y, max(1, width), max(1, height)
 
     def register_popup(self, popup: Popup.__class__):
         """

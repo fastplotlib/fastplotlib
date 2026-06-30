@@ -56,15 +56,14 @@ For example let's look at ``LineGraphic`` in ``fastplotlib/graphics/line.py``. E
 ``"data", "colors", "cmap", "thickness"`` in addition to properties common to all graphics, such as ``"name", "offset", "rotation", and "visible"``
 
 Now look at the constructor for the ``LineGraphic`` base class ``PositionsGraphic``, it first creates an instance of ``VertexPositions``.
-This is a class that manages vertex positions buffer. For the user, it defines the line data, and provides additional useful functionality.
-It defines the line, and provides additional useful functionality.
+This is a class that manages vertex positions buffer. For the user, it defines the line vertex positions, and provides additional useful functionality.
 For example, every time that the ``data`` is changed, the new data will be marked for upload to the GPU before the next draw.
 In addition, event handlers will be called if any event handlers are registered.
 
-``VertexColors`` behaves similarly, but it can perform additional parsing that can create the colors buffer from different
+``VertexColors`` behaves similarly, but it can perform additional parsing that can create or set the colors buffer from different
 forms of user input. For example if a user runs: ``line_graphic.colors = "blue"``, then ``VertexColors.__setitem__()`` will
-create a buffer that corresponds to what ``pygfx.Color`` thinks is "blue". Users can also take advantage of fancy indexing,
-ex: ``line_graphics.colors[bool_array] = "red"`` 😊
+set the buffer that corresponds to what ``pygfx.Color`` thinks is "blue", i.e the RGBA array `[0, 0, 1, 1]. Users can also take advantage of fancy indexing,
+ex: ``line_graphics.colors[bool_array] = "red"`` 😊 to set the color of specific vertices.
 
 ``LineGraphic`` also has a ``VertexCmap``, this manages the line ``VertexColors`` instance to parse colormaps, for example:
 ``line_graphic.cmap = "jet"`` or even ``line_graphic.cmap[50:] = "viridis"``.

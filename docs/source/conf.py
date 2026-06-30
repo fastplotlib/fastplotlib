@@ -26,7 +26,7 @@ sys.path.insert(0, str(ROOT_DIR))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "fastplotlib"
-copyright = "2025, Kushal Kolar, Caitlin Lewis"
+copyright = "2022-2026, Kushal Kolar, Caitlin Lewis"
 author = "Kushal Kolar, Caitlin Lewis"
 release = fastplotlib.__version__
 
@@ -134,5 +134,6 @@ intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable", None),
     "pygfx": ("https://docs.pygfx.org/stable", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
+    "rendercanvas": ("https://rendercanvas.readthedocs.io/stable/", None),
     # "fastplotlib": ("https://www.fastplotlib.org/", None),
 }

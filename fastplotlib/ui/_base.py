@@ -7,7 +7,7 @@ from imgui_bundle import imgui
 from ..layouts._figure import Figure
 
 
-GUI_EDGES = ["right", "bottom"]
+GUI_EDGES = ["right", "bottom", "top"]
 
 
 class BaseGUI:
@@ -41,7 +41,7 @@ class EdgeWindow(Window):
         self,
         figure: Figure,
         size: int,
-        location: Literal["bottom", "right"],
+        location: Literal["bottom", "right", "top"],
         title: str,
         window_flags: enum.IntFlag = imgui.WindowFlags_.no_collapse
         | imgui.WindowFlags_.no_resize,
@@ -179,6 +179,16 @@ class EdgeWindow(Window):
 
                 if self._figure.guis["bottom"] is not None:
                     height -= self._figure.guis["bottom"].size
+
+                if self._figure.guis["top"] is not None:
+                    # decrease the height
+                    height -= self._figure.guis["top"].size
+                    # increase the y start
+                    y_pos += self._figure.guis["top"].size
+
+            case "top":
+                x_pos, y_pos = (0, 0)
+                width, height = (width_canvas, self.size)
 
         return x_pos, y_pos, width, height
 

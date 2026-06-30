@@ -122,7 +122,7 @@ Governance decisions, meeting minutes, and voting outcomes are publicly document
 
 ## Changes to this governance document
 
-**Effective until February 5, 2026**
+**Effective until February 5, 2027**
 
 Moving forward, `fastplotlib` will maintain the governance model as outlined above. The core maintainers (Kushal Kolar & Caitlin Lewis) will revisit in
 one year to propose any necessary changes to the governance structure. 

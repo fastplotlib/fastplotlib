@@ -466,7 +466,7 @@ class ImageGraphic(Graphic):
 
         Parameters
         ----------
-        selection: List of positions, optional
+        selection: list[tuple[float, float]], optional
             Initial points for the polygon. If not given or None, you'll start drawing the selection (clicking adds points to the polygon).
 
         """

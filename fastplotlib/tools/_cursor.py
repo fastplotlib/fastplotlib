@@ -265,7 +265,7 @@ class Cursor:
                 ):  # some graphics don't support tooltips, ex: Text
                     if graphic.tooltip_format is not None:
                         # custom formatter
-                        info = graphic.tooltip_format
+                        info = graphic.tooltip_format(pick_info)
                     else:
                         # default formatter for this graphic
                         info = graphic.format_pick_info(pick_info)
