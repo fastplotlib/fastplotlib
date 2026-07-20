@@ -10,14 +10,13 @@ from ... import (
     LineCollection,
     LineStack,
     ImageGraphic,
-    VectorsGraphic,
 )
 from ...layouts import Subplot
 from ...utils import ArrayProtocol, enums
-from . import NDImageProcessor, NDImage, NDPositions, NDVectors
+from . import NDImageProcessor, NDImage, NDPositions, NDTimeseries, NDVectors
 from ._index import AutoRangeContinuous
 from ._video import VideoProcessor
-from ._base import NDProcessor, NDGraphic, WindowFuncCallable
+from ._base import NDGraphic, WindowFuncCallable
 
 
 class NDWSubplot:
@@ -219,7 +218,7 @@ class NDWSubplot:
     ):
         self._check_slider_dims(dims, spatial_dims, data, positions=True)
 
-        nd = NDPositions(
+        nd = NDTimeseries(
             self.ndw.indices,
             self,
             data,
@@ -229,7 +228,6 @@ class NDWSubplot:
             graphic_type=graphic_type,
             linear_selector=True,
             x_range_mode=x_range_mode,
-            timeseries=True,
             **kwargs,
         )
 

@@ -17,10 +17,10 @@ from ...layouts import Subplot
 from ...ui import EdgeWindow, StandardRightClickMenu
 from ._index import RangeContinuous
 from ._base import NDGraphic
-from ._nd_positions import NDPositions
+from ._nd_positions import NDPositions, NDTimeseries
 from ._nd_image import NDImage
 
-position_graphic_types = [ScatterCollection, ScatterStack, LineCollection, LineStack, ImageGraphic]
+position_graphic_types = [ScatterCollection, ScatterStack, LineCollection, LineStack]
 
 
 class NDWidgetUI(EdgeWindow):
@@ -270,7 +270,11 @@ class RightClickMenu(StandardRightClickMenu):
             nd_image.graphic._material.gamma = new_gamma
 
     def _draw_nd_pos_ui(self, subplot: Subplot, nd_graphic: NDPositions):
-        for i, cls in enumerate(position_graphic_types):
+        graphic_types = position_graphic_types
+        if isinstance(nd_graphic, NDTimeseries):
+            # heatmap only makes sense for timeseries data
+            graphic_types = position_graphic_types + [ImageGraphic]
+        for i, cls in enumerate(graphic_types):
             if imgui.radio_button(cls.__name__, type(nd_graphic.graphic) is cls):
                 nd_graphic.graphic_type = cls
                 subplot.auto_scale()
@@ -308,11 +312,12 @@ class RightClickMenu(StandardRightClickMenu):
             if changed:
                 nd_graphic.display_window = new
 
-        options = [None, "fixed", "auto"]
-        changed, option = imgui.combo(
-            "x-range mode",
-            options.index(nd_graphic.x_range_mode),
-            [str(o) for o in options],
-        )
-        if changed:
-            nd_graphic.x_range_mode = options[option]
+        if isinstance(nd_graphic, NDTimeseries):
+            options = [None, "fixed", "auto"]
+            changed, option = imgui.combo(
+                "x-range mode",
+                options.index(nd_graphic.x_range_mode),
+                [str(o) for o in options],
+            )
+            if changed:
+                nd_graphic.x_range_mode = options[option]

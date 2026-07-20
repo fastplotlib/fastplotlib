@@ -1,6 +1,7 @@
 import importlib
 
 from ._nd_positions import NDPositions, NDPositionsProcessor
+from ._nd_timeseries import NDTimeseries
 
 class Extras:
     pass

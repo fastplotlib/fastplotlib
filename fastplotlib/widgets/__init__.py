@@ -4,6 +4,7 @@ from .nd_widget import (
     NDGraphic,
     NDPositionsProcessor,
     NDPositions,
+    NDTimeseries,
     NDImageProcessor,
     NDImage,
 )
