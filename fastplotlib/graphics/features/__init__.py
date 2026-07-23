@@ -4,6 +4,8 @@ from ._positions import (
     SizeSpace,
     VertexPositions,
     VertexCmap,
+    InfLineAxisData,
+    InfLineColors,
 )
 from ._mesh import (
     MeshIndices,
@@ -14,7 +16,7 @@ from ._mesh import (
     surface_data_to_mesh,
     triangulate_polygon,
 )
-from ._line import Thickness
+from ._line import Thickness, DashPattern, parse_dash_pattern
 from ._scatter import (
     VertexMarkers,
     UniformMarker,
@@ -82,10 +84,13 @@ __all__ = [
     "SizeSpace",
     "VertexPositions",
     "VertexCmap",
+    "InfLineAxisData",
+    "InfLineColors",
     "MeshIndices",
     "MeshCmap",
     "SurfaceData",
     "Thickness",
+    "DashPattern",
     "VertexMarkers",
     "UniformMarker",
     "UniformEdgeColor",
