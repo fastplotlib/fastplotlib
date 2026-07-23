@@ -394,6 +394,12 @@ class VertexCmap(BufferManager):
     def buffer(self) -> pygfx.Buffer:
         return self._vertex_colors.buffer
 
+    @property
+    def value(self) -> np.ndarray:
+        # mirror the managed colors feature, whose length is the number of color entries
+        # (this is per-line, not per-vertex, for an InfLineColors)
+        return self._vertex_colors.value
+
     @block_reentrance
     def __setitem__(self, key: slice, cmap_name):
         if not isinstance(key, slice):
@@ -552,7 +558,10 @@ class InfLineAxisData(VertexPositions):
                 # number of lines changed, allocate a new buffer
                 self._fpl_buffer = pygfx.Buffer(fixed)
                 graphic.world_object.geometry.positions = self._fpl_buffer
-                self._emit_event(self._property_name, slice(None), value)
+                # emit the [n_lines, 2, 3] form to match `value` and the in-place path
+                self._emit_event(
+                    self._property_name, slice(None), fixed.reshape(-1, 2, 3)
+                )
                 return
             self[:] = fixed.reshape(len(self), 2, 3)
             return
@@ -572,8 +581,12 @@ class InfLineAxisData(VertexPositions):
 
     @block_reentrance
     def __setitem__(self, key, value):
-        # key indexes lines
-        line_indices = np.atleast_1d(np.arange(len(self))[key])
+        # for axis=None, `value` is [n_lines, 2, 3] so the line index is the first
+        # element of a multi-dimensional endpoint/coordinate key
+        line_key = key[0] if (self._axis is None and isinstance(key, tuple)) else key
+        line_indices = np.atleast_1d(np.arange(len(self))[line_key])
+        if line_indices.size == 0:
+            return
 
         if self._axis is None:
             self.buffer.data.reshape(len(self), 2, 3)[key] = value
@@ -636,12 +649,23 @@ class InfLineColors(VertexColors):
 
     @block_reentrance
     def __setitem__(self, key, value):
-        # key indexes lines; write each line's color to both of its vertices
-        line_indices = np.atleast_1d(np.arange(len(self))[key])
-        colors = parse_colors(value, line_indices.size)
+        # the line index is the first element of a multi-dimensional (per-channel) key
+        line_key = key[0] if isinstance(key, tuple) else key
+        line_indices = np.atleast_1d(np.arange(len(self))[line_key])
+        if line_indices.size == 0:
+            return
 
-        self.buffer.data[2 * line_indices] = colors
-        self.buffer.data[2 * line_indices + 1] = colors
+        if isinstance(key, tuple):
+            # channel-level write, e.g. colors[i, :3]; set the value directly, no color parsing
+            colors = value
+            rest = key[1:]
+            self.buffer.data[(2 * line_indices, *rest)] = value
+            self.buffer.data[(2 * line_indices + 1, *rest)] = value
+        else:
+            # one color per selected line, written to both of the line's vertices
+            colors = parse_colors(value, line_indices.size)
+            self.buffer.data[2 * line_indices] = colors
+            self.buffer.data[2 * line_indices + 1] = colors
 
         offset = 2 * int(line_indices.min())
         size = 2 * (int(line_indices.max()) - int(line_indices.min()) + 1)

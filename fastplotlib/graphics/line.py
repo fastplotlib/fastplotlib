@@ -180,6 +180,11 @@ class LineGraphic(PositionsGraphic):
 
     @dash_pattern.setter
     def dash_pattern(self, value: str | tuple | list):
+        if self._thin and parse_dash_pattern(value):
+            warn(
+                "`dash_pattern` is ignored when `thin=True`; the thin line material does not "
+                "support dashing"
+            )
         self._dash_pattern.set_value(self, value)
 
     @property
