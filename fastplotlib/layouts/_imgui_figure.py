@@ -1,3 +1,5 @@
+from __future__ import annotations
+from collections.abc import Callable
 from pathlib import Path
 from typing import Literal, Iterable
 
@@ -12,8 +14,10 @@ from rendercanvas import BaseRenderCanvas
 import pygfx
 
 from ._figure import Figure
-from ..ui import EdgeWindow, SubplotToolbar, StandardRightClickMenu, Popup, GUI_EDGES
+from ._rect import RectManager
+from ..ui import ImguiWindow, SubplotToolbar, StandardRightClickMenu, Popup, EDGES
 from ..ui import ColormapPicker
+from ..ui._base import _resolve_window, _wrap_update_call
 
 
 class ImguiFigure(Figure):
@@ -46,7 +50,9 @@ class ImguiFigure(Figure):
         names: list | np.ndarray = None,
         std_right_click_menu: type[Popup] = StandardRightClickMenu,
     ):
-        self._guis: dict[str, EdgeWindow] = {k: None for k in GUI_EDGES}
+        # edge windows reserve canvas space, keyed by location; floating windows draw over the plots
+        self._edge_windows: dict[str, ImguiWindow] = {loc: None for loc in EDGES}
+        self._floating_windows: list[ImguiWindow] = []
 
         super().__init__(
             shape=shape,

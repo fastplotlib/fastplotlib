@@ -1,13 +1,45 @@
-import enum
+from __future__ import annotations
+import inspect
+from collections.abc import Callable
+from functools import partial
 from typing import Literal
-import numpy as np
 
 from imgui_bundle import imgui
 
-from ..layouts._figure import Figure
+
+# edges that reserve space, ordered as they are carved from the render area
+EDGES = ["left", "right", "top", "bottom"]
+
+# all valid keyed locations, "toolbar" is subplot only, "floating" uses auto-placement
+LOCATIONS = EDGES + ["toolbar", "floating"]
 
 
-GUI_EDGES = ["right", "bottom", "top"]
+def _wrap_update_call(func: Callable, host) -> Callable:
+    """
+    Wrap an imgui draw function for use as a window update call. The host, a ``Figure`` or ``Subplot``, is passed
+    as the only positional arg if the function accepts one, otherwise the function is called with no args.
+    """
+    params = inspect.signature(func).parameters.values()
+    takes_arg = any(
+        p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD, p.VAR_POSITIONAL)
+        for p in params
+    )
+    if takes_arg:
+        return partial(func, host)
+    return func
+
+
+def _resolve_window(window: "ImguiWindow" | Callable, host, title: str, window_flags) -> "ImguiWindow":
+    """return the passed ImguiWindow instance, or create one wrapping the decorated function"""
+    if isinstance(window, ImguiWindow):
+        return window
+    if callable(window):
+        return ImguiWindow(
+            title=title, window_flags=window_flags, update_call=_wrap_update_call(window, host)
+        )
+    raise TypeError(
+        "add_imgui_window() must be used as a decorator on a function, or given an `ImguiWindow` instance"
+    )
 
 
 class BaseGUI:
@@ -30,43 +62,28 @@ class BaseGUI:
         raise NotImplementedError
 
 
-class Window(BaseGUI):
-    """Base class for imgui windows drawn within Figures"""
-
-    pass
-
-
-class EdgeWindow(Window):
+class ImguiWindow(BaseGUI):
     def __init__(
         self,
-        figure: Figure,
-        size: int,
-        location: Literal["bottom", "right", "top"],
-        title: str,
-        window_flags: enum.IntFlag = imgui.WindowFlags_.no_collapse
-        | imgui.WindowFlags_.no_resize | imgui.WindowFlags_.no_title_bar,
-        *args,
-        **kwargs,
+        title: str = "",
+        window_flags: imgui.WindowFlags_ = imgui.WindowFlags_.no_collapse
+        | imgui.WindowFlags_.no_resize
+        | imgui.WindowFlags_.no_title_bar,
+        update_call: Callable = None,
     ):
         """
-        A base class for imgui windows displayed at the bottom or top edge of a Figure
+        An imgui window drawn within a Figure. The placement, i.e. location and size, is managed by the host
+        (a ``Figure`` or ``Subplot``) when the window is added using ``add_imgui_window()``. Subclass and implement
+        ``update()`` to draw imgui elements, or pass a callable as ``update_call`` (this is what the
+        ``add_imgui_window()`` decorator does).
 
         Parameters
         ----------
-        figure: Figure
-            Figure instance that this window will be placed in
-
-        size: int
-            width or height of the window, depending on its location
-
-        location: str, "bottom" | "right"
-            location of the window
-
         title: str
-            window title
+            window title, drawn as a title bar if not empty
 
-        window_flags: enum.IntFlag
-            Window flag enum, can be compared with ``|`` operator. Valid flags are:
+        window_flags: imgui.WindowFlags_
+            window flag enum, can be combined with the ``|`` operator, valid flags are:
 
             .. code-block:: py
 
@@ -94,52 +111,58 @@ class EdgeWindow(Window):
                 imgui.WindowFlags_.no_decoration
                 imgui.WindowFlags_.no_inputs
 
-        *args
-            additional args for the GUI
+        update_call: callable
+            a callable that draws imgui elements, used instead of ``update()`` when decorating. See ``add_imgui_window``.
 
-        **kwargs
-            additional kwargs for teh GUI
         """
         super().__init__()
 
-        if location not in GUI_EDGES:
-            f"GUI does not have a valid location, valid locations are: {GUI_EDGES}, you have passed: {location}"
-
-        self._figure = figure
-        self._size = size
-        self._location = location
         self._title = title
         self._window_flags = window_flags
 
+        # imgui element draw calls, run in order within the window on each render
+        if update_call is None:
+            self._update_calls = [self.update]
+        else:
+            self._update_calls = [update_call]
+
+        # placement, set by the host in add_imgui_window()
+        self._figure = None  # ImguiFigure, used for relayout and canvas
+        self._host = None  # Figure or Subplot that owns this window
+        self._location = None
+        self._size = None  # edge or toolbar thickness in pixels
+        self._rect_manager = None  # for fractional rect/extent placement
+        self._floating = False  # auto-sized, not pinned to a rect
+
+        # pixel rect, set by the host on each layout pass
+        self._x, self._y, self._width, self._height = 0, 0, 0, 0
+
+        # resize and collapse state, only used by resizeable edge windows
         self._resize_cursor_set = False
         self._resize_blocked = False
         self._right_gui_resizing = False
-
         self._separator_thickness = 14.0
-
         self._collapsed = False
-        self._old_size = self.size
-
-        self._x, self._y, self._width, self._height = self.get_rect()
-
-        self._figure.canvas.add_event_handler(self._set_rect, "resize")
-
-    @property
-    def size(self) -> int | None:
-        """width or height of the edge window"""
-        return self._size
-
-    @size.setter
-    def size(self, value):
-        if not isinstance(value, int):
-            raise TypeError(f"{self.__class__.__name__}.size must be an <int>")
-        self._size = value
-        self._set_rect()
+        self._old_size = None
 
     @property
     def location(self) -> str:
         """location of the window"""
         return self._location
+
+    @property
+    def size(self) -> int | None:
+        """edge or toolbar thickness in pixels, ``None`` for floating and fractional windows"""
+        return self._size
+
+    @size.setter
+    def size(self, value: int):
+        if not isinstance(value, int):
+            raise TypeError(f"{self.__class__.__name__}.size must be an <int>")
+        self._size = value
+        # reserving windows change the layout when resized
+        if self._figure is not None and self._reserves:
+            self._figure._fpl_reset_layout()
 
     @property
     def x(self) -> int:
@@ -153,7 +176,7 @@ class EdgeWindow(Window):
 
     @property
     def width(self) -> int:
-        """with the window"""
+        """width of the window"""
         return self._width
 
     @property
@@ -161,47 +184,14 @@ class EdgeWindow(Window):
         """height of the window"""
         return self._height
 
-    def _set_rect(self, *args):
-        self._x, self._y, self._width, self._height = self.get_rect()
-        self._figure._fpl_reset_layout()
+    @property
+    def _reserves(self) -> bool:
+        """whether this window reserves canvas space, i.e. edge or toolbar windows"""
+        return self._location in EDGES or self._location == "toolbar"
 
-    def get_rect(self) -> tuple[int, int, int, int]:
-        """
-        Compute the rect that defines the area this GUI is drawn to
-
-        Returns
-        -------
-        int, int, int, int
-            x_pos, y_pos, width, height
-
-        """
-
-        width_canvas, height_canvas = self._figure.canvas.get_logical_size()
-
-        match self._location:
-            case "bottom":
-                x_pos = 0
-                y_pos = height_canvas - self.size
-                width, height = (width_canvas, self.size)
-
-            case "right":
-                x_pos, y_pos = (width_canvas - self.size, 0)
-                width, height = (self.size, height_canvas)
-
-                if self._figure.guis["bottom"] is not None:
-                    height -= self._figure.guis["bottom"].size
-
-                if self._figure.guis["top"] is not None:
-                    # decrease the height
-                    height -= self._figure.guis["top"].size
-                    # increase the y start
-                    y_pos += self._figure.guis["top"].size
-
-            case "top":
-                x_pos, y_pos = (0, 0)
-                width, height = (width_canvas, self.size)
-
-        return x_pos, y_pos, width, height
+    def _fpl_set_rect(self, x: int, y: int, width: int, height: int):
+        """set the pixel rect, called by the host on each layout pass"""
+        self._x, self._y, self._width, self._height = x, y, width, height
 
     def _draw_resize_handle(self):
         if self._location not in ("bottom", "right"):
@@ -377,16 +367,19 @@ class EdgeWindow(Window):
     def draw_window(self):
         """helps simplify using imgui by managing window creation & position, and pushing/popping the ID"""
         # window position & size
-        x, y, w, h = self.get_rect()
-        imgui.set_next_window_size((self.width, self.height))
-        imgui.set_next_window_pos((self.x, self.y))
-        flags = self._window_flags
+        if self._floating:
+            # floating windows are auto-sized, only set the initial position
+            imgui.set_next_window_pos((self.x, self.y), imgui.Cond_.appearing)
+        else:
+            imgui.set_next_window_size((self.width, self.height))
+            imgui.set_next_window_pos((self.x, self.y))
 
-        # begin window
-        imgui.begin(self._title, p_open=None, flags=flags)
+        # append the id to keep the window unique without changing the visible title
+        imgui.begin(f"{self._title}##{self._id_counter}", p_open=None, flags=self._window_flags)
 
-        # resize handle for right and bottom windows
-        self._draw_resize_handle()
+        # resize handle for right and bottom edge windows on the figure
+        if self._reserves and self._host is self._figure:
+            self._draw_resize_handle()
 
         # push ID to prevent conflict between multiple figs with same UI
         imgui.push_id(self._id_counter)
@@ -396,11 +389,13 @@ class EdgeWindow(Window):
         main_height = 1.0 if self._collapsed else 0.0
         imgui.begin_child("##main_ui", imgui.ImVec2(0, main_height))
 
-        self._draw_title(self._title)
+        if self._title:
+            self._draw_title(self._title)
 
         imgui.indent(6.0)
-        # draw stuff from subclass into window
-        self.update()
+        # draw imgui elements from the subclass or decorated function(s)
+        for update_call in self._update_calls:
+            update_call()
 
         imgui.end_child()
 
@@ -416,7 +411,7 @@ class EdgeWindow(Window):
 
 
 class Popup(BaseGUI):
-    def __init__(self, figure: Figure, *args, **kwargs):
+    def __init__(self, figure, *args, **kwargs):
         """
         Base class for creating ImGUI popups within Figures
 
