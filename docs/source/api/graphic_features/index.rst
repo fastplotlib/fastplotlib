@@ -23,7 +23,6 @@ Graphic Features
     UniformSize
     TextureArray
     TextureYUV
-    tuple
     ImageCmap
     ImageGamma
     ImageVmin

@@ -146,8 +146,8 @@ once it has been set to ``True``::
 
 For full control of the imgui window, override ``draw()`` instead of ``update()``. You are then responsible for
 creating the window with ``imgui.begin()`` and ``imgui.end()``, and ``update()`` is not used. This is how you use
-window flags that must be set when the window is created, such as ``imgui.WindowFlags_.menu_bar`` for a menu bar. See
-the examples gallery.
+window flags that must be set when the window is created, such as ``imgui.WindowFlags_.menu_bar`` for a menu bar,
+see :ref:`imgui.WindowFlags_ <imgui.WindowFlags_>`. The examples gallery has a menu bar example.
 
 Right-click popups
 ------------------
@@ -184,7 +184,7 @@ be set on it. ``append_imgui_right_click`` adds more UI elements to the popup th
 ``remove_imgui_right_click`` removes and returns it, and ``imgui_right_click`` returns the popup that is set.
 
 Extending the standard right-click menu
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The Figure's popup is a ``StandardRightClickMenu``. Append to it to keep its items and add your own::
 
@@ -223,8 +223,8 @@ To keep the standard items, subclass ``StandardRightClickMenu`` and call ``super
             if imgui.menu_item("my item", "", False)[0]:
                 ...
 
-``window_flags`` can be passed to ``set_imgui_right_click`` and is a settable property, and ``is_open`` tells you
-whether the popup is currently open.
+``window_flags`` can be passed to ``set_imgui_right_click`` and is a settable property, see
+:ref:`imgui.WindowFlags_ <imgui.WindowFlags_>`. ``is_open`` tells you whether the popup is currently open.
 
 A window that must stay open after the popup closes cannot be drawn in ``update()``, which only runs while the popup is
 open. Override ``draw()`` and draw it after the popup::
@@ -263,5 +263,8 @@ Built-in imgui UIs
 Writing imgui elements
 ----------------------
 
-fastplotlib does not wrap imgui, you call ``imgui_bundle`` directly, so any imgui element can be used. See the "GUIs"
-section of the examples gallery for complete examples.
+fastplotlib does not wrap imgui, you call ``imgui_bundle`` directly, so any imgui element can be used. The
+:doc:`imgui element reference </imgui/reference/index>` documents each element as it exists in ``imgui_bundle``, with
+its signature, its arguments, its flags, and an example of what it looks like.
+
+The ImGUI section of the examples gallery has complete examples.
