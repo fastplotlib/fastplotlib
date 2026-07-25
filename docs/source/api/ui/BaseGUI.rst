@@ -26,5 +26,5 @@ Methods
 .. autosummary::
     :toctree: BaseGUI_api
 
-    BaseGUI.update
+    BaseGUI.draw
 

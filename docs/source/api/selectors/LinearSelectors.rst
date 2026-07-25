@@ -27,9 +27,9 @@ Properties
     LinearSelectors.block_handlers
     LinearSelectors.deleted
     LinearSelectors.event_handlers
+    LinearSelectors.imgui_right_click
     LinearSelectors.name
     LinearSelectors.offset
-    LinearSelectors.right_click_menu
     LinearSelectors.rotation
     LinearSelectors.scale
     LinearSelectors.selection
@@ -46,6 +46,7 @@ Methods
     LinearSelectors.add_axes
     LinearSelectors.add_event_handler
     LinearSelectors.append
+    LinearSelectors.append_imgui_right_click
     LinearSelectors.clear
     LinearSelectors.clear_event_handlers
     LinearSelectors.format_pick_info
@@ -53,5 +54,7 @@ Methods
     LinearSelectors.map_world_to_model
     LinearSelectors.remove
     LinearSelectors.remove_event_handler
+    LinearSelectors.remove_imgui_right_click
     LinearSelectors.rotate
+    LinearSelectors.set_imgui_right_click
 

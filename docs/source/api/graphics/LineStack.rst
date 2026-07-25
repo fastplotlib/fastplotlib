@@ -31,12 +31,12 @@ Properties
     LineStack.deleted
     LineStack.event_handlers
     LineStack.graphics
+    LineStack.imgui_right_click
     LineStack.metadatas
     LineStack.name
     LineStack.names
     LineStack.offset
     LineStack.offsets
-    LineStack.right_click_menu
     LineStack.rotation
     LineStack.rotations
     LineStack.scale
@@ -59,11 +59,14 @@ Methods
     LineStack.add_linear_selector
     LineStack.add_polygon_selector
     LineStack.add_rectangle_selector
+    LineStack.append_imgui_right_click
     LineStack.clear_event_handlers
     LineStack.format_pick_info
     LineStack.map_model_to_world
     LineStack.map_world_to_model
     LineStack.remove_event_handler
     LineStack.remove_graphic
+    LineStack.remove_imgui_right_click
     LineStack.rotate
+    LineStack.set_imgui_right_click
 

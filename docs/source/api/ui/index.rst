@@ -5,6 +5,5 @@ UI Bases
     :maxdepth: 1
 
     BaseGUI
-    Window
-    EdgeWindow
-    Popup
+    ImguiWindow
+    ImguiPopup

@@ -567,7 +567,9 @@ There is large community and many resources out there on building UIs using imgu
 To install ``fastplotlib`` with ``imgui`` use the ``imgui`` extras option, i.e. ``pip install fastplotlib[imgui]``, or ``pip install imgui_bundle`` if you've already installed fastplotlib.
 
 Fastplotlib comes built-in with imgui UIs for subplot toolbars and a standard right-click menu with a number of options.
-You can also make custom GUIs and embed them within the canvas, see the examples gallery for detailed examples.
+The standard right-click menu can be extended or replaced, and a right-click popup can also be set on a ``Subplot`` or
+a ``Graphic``. You can also make custom GUIs and embed them within the canvas, see the examples gallery for detailed
+examples.
 
 **Some tips:**
 

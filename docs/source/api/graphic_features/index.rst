@@ -25,6 +25,7 @@ Graphic Features
     TextureYUV
     tuple
     ImageCmap
+    ImageGamma
     ImageVmin
     ImageVmax
     ImageInterpolation

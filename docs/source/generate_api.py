@@ -427,7 +427,7 @@ def main():
         )
     ##############################################################################
     # ** UI classes ** #
-    ui_classes = [ui.BaseGUI, ui.ImguiWindow, ui.Popup]
+    ui_classes = [ui.BaseGUI, ui.ImguiWindow, ui.ImguiPopup]
 
     ui_class_names = [cls.__name__ for cls in ui_classes]
 
