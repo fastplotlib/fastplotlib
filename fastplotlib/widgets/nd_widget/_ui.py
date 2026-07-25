@@ -14,7 +14,7 @@ from ...graphics import (
 )
 from ...utils import quick_min_max
 from ...layouts import Subplot
-from ...ui import EdgeWindow, StandardRightClickMenu
+from ...ui import ImguiWindow, StandardRightClickMenu
 from ._index import RangeContinuous
 from ._base import NDGraphic
 from ._nd_positions import NDPositions, NDTimeseries
@@ -23,17 +23,9 @@ from ._nd_image import NDImage
 position_graphic_types = [ScatterCollection, ScatterStack, LineCollection, LineStack]
 
 
-class NDWidgetUI(EdgeWindow):
-    def __init__(self, figure, size, ndwidget):
-        super().__init__(
-            figure=figure,
-            size=size,
-            title="NDWidget controls",
-            location="bottom",
-            window_flags=imgui.WindowFlags_.no_collapse
-            | imgui.WindowFlags_.no_resize
-            | imgui.WindowFlags_.no_title_bar,
-        )
+class NDWidgetUI(ImguiWindow):
+    def __init__(self, ndwidget):
+        super().__init__()
         self._ndwidget = ndwidget
 
         # whether or not a dimension is in play mode

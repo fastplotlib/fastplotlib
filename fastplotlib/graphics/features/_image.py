@@ -479,6 +479,34 @@ class ImageVmax(GraphicFeature):
         self._call_event_handlers(event)
 
 
+class ImageGamma(GraphicFeature):
+    """gamma correction applied to the image"""
+
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float",
+            "description": "new gamma value",
+        },
+    ]
+
+    def __init__(self, value: float, property_name: str = "gamma"):
+        self._value = value
+        super().__init__(property_name=property_name)
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: float):
+        graphic._material.gamma = value
+        self._value = value
+
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
+        self._call_event_handlers(event)
+
+
 class ImageCmap(GraphicFeature):
     """colormap for texture"""
 

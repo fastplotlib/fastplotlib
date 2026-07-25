@@ -4,10 +4,13 @@ from typing import *
 
 import numpy
 
+from numpy.typing import NDArray
+
 import pygfx
 
 from ..graphics import *
 from ..graphics._base import Graphic
+from ..utils import enums
 import typing
 import fastplotlib
 
@@ -33,6 +36,7 @@ class GraphicMethodsMixin:
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
+        gamma: float = 1.0,
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
         colorspace: fastplotlib.utils.enums.ColorspacesRGB = "srgb",
@@ -96,6 +100,7 @@ class GraphicMethodsMixin:
                 precise and reliable tooltip values for grayscale data use `cpu_buffer=True`.
                 * vmin, vmax must be explicitly provided if sharing an existing buffer from another ImageGraphic
                 * ``reset_vmin_vmax()`` is not supported
+                * selector tools will not be able to return the data under the selection
 
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
@@ -108,6 +113,7 @@ class GraphicMethodsMixin:
             vmin,
             vmax,
             cmap,
+            gamma,
             interpolation,
             cmap_interpolation,
             colorspace,
@@ -122,6 +128,7 @@ class GraphicMethodsMixin:
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
+        gamma: float = 1.0,
         interpolation: str = "linear",
         cmap_interpolation: str = "linear",
         plane: tuple[float, float, float, float] = (0, 0, -1, 0),
@@ -199,6 +206,7 @@ class GraphicMethodsMixin:
             vmin,
             vmax,
             cmap,
+            gamma,
             interpolation,
             cmap_interpolation,
             plane,
@@ -213,15 +221,12 @@ class GraphicMethodsMixin:
     def add_image_yuv(
         self,
         data: (
-            tuple[
-                numpy.ndarray[tuple[typing.Any, ...], numpy.dtype[numpy.uint8]],
-                numpy.ndarray[tuple[typing.Any, ...], numpy.dtype[numpy.uint8]],
-                numpy.ndarray[tuple[typing.Any, ...], numpy.dtype[numpy.uint8]],
-            ]
+            tuple[NDArray[numpy.uint8], NDArray[numpy.uint8], NDArray[numpy.uint8]]
             | fastplotlib.graphics.features._image.TextureYUV
         ),
         vmin: float = 0,
         vmax: float = 255,
+        gamma: float = 1.0,
         interpolation: str = "nearest",
         colorspace: fastplotlib.utils.enums.ColorspacesYUV = "yuv420p",
         colorrange: fastplotlib.utils.enums.ColorRange = "limited",
@@ -296,6 +301,7 @@ class GraphicMethodsMixin:
             data,
             vmin,
             vmax,
+            gamma,
             interpolation,
             colorspace,
             colorrange,

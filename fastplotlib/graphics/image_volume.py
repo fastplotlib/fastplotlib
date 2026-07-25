@@ -8,6 +8,7 @@ from ._base import Graphic
 from .features import (
     TextureArrayVolume,
     ImageCmap,
+    ImageGamma,
     ImageVmin,
     ImageVmax,
     ImageInterpolation,
@@ -85,6 +86,7 @@ class ImageVolumeGraphic(Graphic):
     _features = {
         "data": TextureArrayVolume,
         "cmap": ImageCmap,
+        "gamma": ImageGamma,
         "vmin": ImageVmin,
         "vmax": ImageVmax,
         "interpolation": ImageInterpolation,
@@ -105,6 +107,7 @@ class ImageVolumeGraphic(Graphic):
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
+        gamma: float = 1.0,
         interpolation: str = "linear",
         cmap_interpolation: str = "linear",
         plane: tuple[float, float, float, float] = (0, 0, -1, 0),
@@ -202,6 +205,7 @@ class ImageVolumeGraphic(Graphic):
         # other graphic features
         self._vmin = ImageVmin(vmin)
         self._vmax = ImageVmax(vmax)
+        self._gamma = ImageGamma(gamma)
 
         self._interpolation = ImageInterpolation(interpolation)
         self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
@@ -234,6 +238,7 @@ class ImageVolumeGraphic(Graphic):
         VolumeMaterialCls = VOLUME_RENDER_MODES[mode]
 
         self._material = VolumeMaterialCls(**material_kwargs)
+        self._material.gamma = gamma
 
         self._mode = VolumeRenderMode(mode)
 
@@ -331,6 +336,15 @@ class ImageVolumeGraphic(Graphic):
     @vmax.setter
     def vmax(self, value: float):
         self._vmax.set_value(self, value)
+
+    @property
+    def gamma(self) -> float:
+        """gamma correction applied to the image"""
+        return self._gamma.value
+
+    @gamma.setter
+    def gamma(self, value: float):
+        self._gamma.set_value(self, value)
 
     @property
     def interpolation(self) -> str:

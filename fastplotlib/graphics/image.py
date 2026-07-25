@@ -19,6 +19,7 @@ from .features import (
     TextureYUV,
     TupleYUV,
     ImageCmap,
+    ImageGamma,
     ImageVmin,
     ImageVmax,
     ImageInterpolation,
@@ -124,6 +125,15 @@ class ImageBase(Graphic):
     @vmax.setter
     def vmax(self, value: float):
         self._vmax.set_value(self, value)
+
+    @property
+    def gamma(self) -> float:
+        """gamma correction applied to the image"""
+        return self._gamma.value
+
+    @gamma.setter
+    def gamma(self, value: float):
+        self._gamma.set_value(self, value)
 
     @property
     def interpolation(self) -> str:
@@ -372,6 +382,7 @@ class ImageGraphic(ImageBase):
     _features = {
         "data": TextureArray,
         "cmap": ImageCmap,
+        "gamma": ImageGamma,
         "vmin": ImageVmin,
         "vmax": ImageVmax,
         "interpolation": ImageInterpolation,
@@ -384,6 +395,7 @@ class ImageGraphic(ImageBase):
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
+        gamma: float = 1.0,
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
         colorspace: ColorspacesRGB = "srgb",
@@ -482,6 +494,7 @@ class ImageGraphic(ImageBase):
         # other graphic features
         self._vmin = ImageVmin(vmin)
         self._vmax = ImageVmax(vmax)
+        self._gamma = ImageGamma(gamma)
 
         self._interpolation = ImageInterpolation(interpolation)
         self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
@@ -508,6 +521,7 @@ class ImageGraphic(ImageBase):
             interpolation=self._interpolation.value,
             pick_write=True,
         )
+        self._material.gamma = gamma
 
         # create the _ImageTile world objects, add to group
         for tile in self._create_tiles():
@@ -641,6 +655,7 @@ class ImageGraphic(ImageBase):
 class ImageYUVGraphic(ImageBase):
     _features = {
         "data": TextureYUV,
+        "gamma": ImageGamma,
         "vmin": ImageVmin,
         "vmax": ImageVmax,
         "interpolation": ImageInterpolation,
@@ -651,6 +666,7 @@ class ImageYUVGraphic(ImageBase):
         data: TupleYUV | TextureYUV,
         vmin: float = 0,
         vmax: float = 255,
+        gamma: float = 1.0,
         interpolation: str = "nearest",
         colorspace: ColorspacesYUV = "yuv420p",
         colorrange: ColorRange = "limited",
@@ -728,12 +744,14 @@ class ImageYUVGraphic(ImageBase):
 
         self._vmin = ImageVmin(vmin)
         self._vmax = ImageVmax(vmax)
+        self._gamma = ImageGamma(gamma)
 
         self._interpolation = ImageInterpolation(interpolation)
 
         self._material = HighlightableImageMaterial(
             clim=(vmin, vmax), interpolation=self.interpolation, pick_write=True
         )
+        self._material.gamma = gamma
 
         wo = pygfx.Image(
             geometry=pygfx.Geometry(grid=self.data._texture),

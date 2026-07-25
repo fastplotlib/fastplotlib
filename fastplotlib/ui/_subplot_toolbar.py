@@ -1,20 +1,16 @@
 from imgui_bundle import imgui, icons_fontawesome_6 as fa, imgui_ctx
 
-from ..layouts._subplot import Subplot
 from ._base import ImguiWindow
 from ..layouts._utils import IMGUI_TOOLBAR_HEIGHT
 
 
 class SubplotToolbar(ImguiWindow):
-    def __init__(self, subplot: Subplot):
+    def __init__(self):
         """
-        Subplot toolbar shown below all subplots
+        Subplot toolbar shown below all subplots. The subplot is provided via ``_fpl_add_hook()`` when the
+        toolbar is added to the subplot.
         """
         super().__init__()
-
-        self._subplot = subplot
-        self._location = "toolbar"
-        self._size = IMGUI_TOOLBAR_HEIGHT
 
     def draw_window(self):
         # get subplot rect

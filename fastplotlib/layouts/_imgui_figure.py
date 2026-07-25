@@ -15,9 +15,10 @@ import pygfx
 
 from ._figure import Figure
 from ._rect import RectManager
+from ._utils import IMGUI_TOOLBAR_HEIGHT
 from ..ui import ImguiWindow, SubplotToolbar, StandardRightClickMenu, Popup, EDGES
 from ..ui import ColormapPicker
-from ..ui._base import _resolve_window, _wrap_update_call
+from ..ui._base import _wrap_update_call
 
 
 class ImguiFigure(Figure):
@@ -104,13 +105,10 @@ class ImguiFigure(Figure):
 
         self.imgui_renderer.set_gui(self._draw_imgui)
 
-        self._subplot_toolbars: np.ndarray[SubplotToolbar] = np.empty(
-            shape=self._subplots.size, dtype=object
-        )
-
-        for i, subplot in enumerate(self._subplots.ravel()):
-            toolbar = SubplotToolbar(subplot=subplot)
-            self._subplot_toolbars[i] = toolbar
+        for subplot in self._subplots.ravel():
+            subplot.add_imgui_window(
+                SubplotToolbar(), location="toolbar", size=IMGUI_TOOLBAR_HEIGHT
+            )
 
         self._std_right_click_menu = std_right_click_menu(figure=self)
 
@@ -130,9 +128,9 @@ class ImguiFigure(Figure):
         return self._std_right_click_menu
 
     @property
-    def guis(self) -> dict[str, EdgeWindow]:
-        """GUI windows added to the Figure"""
-        return self._guis
+    def imgui_windows(self) -> dict[str, ImguiWindow]:
+        """edge imgui windows added to the Figure, keyed by location"""
+        return self._edge_windows
 
     @property
     def imgui_renderer(self) -> ImguiRenderer:
@@ -152,60 +150,230 @@ class ImguiFigure(Figure):
         self.canvas.request_draw()
 
     def _draw_imgui(self) -> imgui.ImDrawData:
-        # imgui.new_frame()
-
-        for subplot, toolbar in zip(
-            self._subplots.ravel(), self._subplot_toolbars.ravel()
-        ):
-            if not subplot.toolbar:
-                # if subplot.toolbar is False
+        # figure-level windows: edge windows then floating windows
+        for window in (*self._edge_windows.values(), *self._floating_windows):
+            if window is None:
                 continue
-            toolbar.update()
+            self._layout_imgui_window(window)
+            window.draw_window()
 
-        for gui in self.guis.values():
-            if gui is not None:
-                gui.draw_window()
+        # subplot windows, edge window rects are set by Frame.reset_viewport
+        for subplot in self._subplots.ravel():
+            for location, window in subplot.imgui_windows.items():
+                if window is None:
+                    continue
+                if location == "toolbar" and not subplot.toolbar:
+                    continue
+                window.draw_window()
 
         for popup in self._popups.values():
             popup.update()
 
         self._std_right_click_menu.update()
 
-        # imgui.end_frame()
-
-        # imgui.render()
-
-        # return imgui.get_draw_data()
-
-    def add_gui(self, gui: EdgeWindow):
+    def add_imgui_window(
+        self,
+        window: ImguiWindow = None,
+        *,
+        location: Literal["left", "right", "top", "bottom", "floating"] = None,
+        size: int = None,
+        rect: tuple | np.ndarray = None,
+        extent: tuple | np.ndarray = None,
+        title: str = "GUI Window",
+        window_flags: imgui.WindowFlags_ = None,
+    ):
         """
-        Add a GUI to the Figure. GUIs can be added to the left or bottom edge.
+        Add an imgui window to the Figure. Can also be used as a decorator, see examples.
+
+        A window can be placed on an edge ("left", "right", "top", "bottom") where it reserves canvas space so it
+        does not cover the subplots, "floating" for an auto-sized draggable window, or at a fixed fractional or pixel
+        ``rect`` or ``extent`` of the canvas. An existing window at an edge ``location`` is replaced.
+
+        For a list of imgui elements see the imgui docs and the "imgui" section in the fastplotlib user guide.
 
         Parameters
         ----------
-        gui: EdgeWindow
-            A GUI EdgeWindow instance
+        window: ImguiWindow, optional
+            an ``ImguiWindow`` instance, omit when decorating
+
+        location: str, "left" | "right" | "top" | "bottom" | "floating"
+            edge windows reserve canvas space, "floating" is auto-sized and draggable
+
+        size: int
+            edge window thickness in pixels, required for edge windows
+
+        rect: (x, y, w, h), optional
+            fractional or pixel rect for a fixed floating window
+
+        extent: (xmin, xmax, ymin, ymax), optional
+            fractional or pixel extent for a fixed floating window
+
+        title: str
+            window title, used when decorating
+
+        window_flags: imgui.WindowFlags_
+            imgui window flags, used when decorating; if not provided, the default depends on placement — edge
+            windows use ``no_collapse | no_resize | no_title_bar`` (custom title bar), floating windows use
+            ``none`` (native title bar, collapsible and movable), fixed rect/extent windows use
+            ``no_collapse | no_move | no_resize`` (native title bar)
+
+        Examples
+        --------
+
+        As a decorator::
+
+            import numpy as np
+            import fastplotlib as fpl
+            from imgui_bundle import imgui
+
+            figure = fpl.Figure()
+            figure[0, 0].add_line(np.random.rand(100))
+
+            @figure.add_imgui_window(location="right", title="controls", size=200)
+            def gui(fig):  # the figure is passed if the function takes an argument
+                if imgui.button("reset data"):
+                    fig[0, 0].graphics[0].data[:, 1] = np.random.rand(100)
+
+        Instance::
+
+            figure.add_imgui_window(MyWindow(), location="bottom", size=100)
 
         """
-        if not isinstance(gui, EdgeWindow):
-            raise TypeError(
-                f"GUI must be of type: {EdgeWindow} you have passed a {type(gui)}"
+
+        def decorator(_window):
+            if isinstance(_window, ImguiWindow):
+                win = _window
+            elif callable(_window):
+                win = ImguiWindow(update_call=_wrap_update_call(_window, self))
+            else:
+                raise TypeError(
+                    "add_imgui_window() must be used as a decorator on a function, or given an `ImguiWindow` instance"
+                )
+
+            win._fpl_add_hook(
+                figure=self,
+                subplot=None,
+                location=location,
+                size=size,
+                rect=rect,
+                extent=extent,
+                title=title,
+                window_flags=window_flags,
             )
+            self._register_imgui_window(win)
+            return _window
 
-        location = gui.location
+        if window is None:
+            return decorator
 
-        if location not in GUI_EDGES:
+        decorator(window)
+        return window
+
+    def _register_imgui_window(self, window: ImguiWindow):
+        """store a figure-level window and reset the layout if it reserves canvas space"""
+        location = window.location
+
+        if location in EDGES:
+            if window.size is None:
+                raise ValueError(f"must provide `size` for an edge window, location: {location}")
+            self._edge_windows[location] = window
+            self._fpl_reset_layout()
+
+        elif window._floating or window._rect_manager is not None:
+            self._floating_windows.append(window)
+
+        else:
             raise ValueError(
-                f"GUI does not have a valid location, valid locations are: {GUI_EDGES}, you have passed: {location}"
+                "imgui window must have a valid `location` (an edge or 'floating'), or a `rect` or `extent`"
             )
 
-        if self.guis[location] is not None:
-            raise ValueError(f"GUI already exists in the desired location: {location}")
+    def append_imgui_window(self, gui: Callable = None, *, location: str = None):
+        """
+        Append imgui elements to an existing edge window. Can also be used as a decorator.
 
-        self.guis[location] = gui
+        Parameters
+        ----------
+        gui: callable, optional
+            function that draws imgui elements, omit when decorating
 
+        location: str, "left" | "right" | "top" | "bottom"
+            location of the existing window to append to
+
+        """
+        if location not in EDGES:
+            raise ValueError(f"valid locations to append to are: {EDGES}, you have passed: {location}")
+
+        window = self._edge_windows[location]
+        if window is None:
+            raise ValueError(f"no imgui window at location to append to: {location}")
+
+        def decorator(_gui):
+            window._update_calls.append(_wrap_update_call(_gui, self))
+            return _gui
+
+        if gui is None:
+            return decorator
+
+        return decorator(gui)
+
+    def remove_imgui_window(self, location: str) -> ImguiWindow:
+        """
+        Remove and return the edge imgui window at the given location
+
+        Parameters
+        ----------
+        location: str
+            "left" | "right" | "top" | "bottom"
+
+        Returns
+        -------
+        ImguiWindow
+            the removed window, it can be added again later
+
+        """
+        if location not in EDGES:
+            raise ValueError(f"valid locations are: {EDGES}, you have passed: {location}")
+
+        window = self._edge_windows[location]
+        self._edge_windows[location] = None
         self._fpl_reset_layout()
 
+        return window
+
+    def _edge_size(self, edge: str) -> int:
+        """thickness in pixels reserved by the edge window at ``edge``, 0 if none"""
+        window = self._edge_windows[edge]
+        return window.size if window is not None else 0
+
+    def _layout_imgui_window(self, window: ImguiWindow):
+        """compute and set the pixel rect of a figure-level imgui window"""
+        if window._floating:
+            # imgui auto-sizes a floating window from its content, nothing to compute
+            return
+
+        width, height = self.canvas.get_logical_size()
+
+        if window._rect_manager is not None:
+            window._rect_manager.canvas_resized((0, 0, width, height))
+            window._fpl_set_rect(*(round(v) for v in window._rect_manager.rect))
+            return
+
+        # edge window, spans the full edge minus any perpendicular edge windows
+        sl, sr = self._edge_size("left"), self._edge_size("right")
+        st, sb = self._edge_size("top"), self._edge_size("bottom")
+        mid_y, mid_h = st, height - st - sb
+
+        match window.location:
+            case "top":
+                rect = (0, 0, width, st)
+            case "bottom":
+                rect = (0, height - sb, width, sb)
+            case "left":
+                rect = (0, mid_y, sl, mid_h)
+            case "right":
+                rect = (width - sr, mid_y, sr, mid_h)
+
+        window._fpl_set_rect(*(round(v) for v in rect))
 
     def get_pygfx_render_area(self, *args) -> tuple[int, int, int, int]:
         """
@@ -220,21 +388,14 @@ class ImguiFigure(Figure):
         """
 
         width, height = self.canvas.get_logical_size()
-        x = 0
-        y = 0
 
-        for edge in ["right"]:
-            if self.guis[edge]:
-                width -= self._guis[edge].size
+        sl, sr = self._edge_size("left"), self._edge_size("right")
+        st, sb = self._edge_size("top"), self._edge_size("bottom")
 
-        for edge in ["bottom"]:
-            if self.guis[edge]:
-                height -= self._guis[edge].size
-
-        for edge in ["top"]:
-            if self.guis[edge]:
-                y += self._guis[edge].size
-                height -= self._guis[edge].size
+        x = sl
+        y = st
+        width = width - sl - sr
+        height = height - st - sb
 
         return x, y, max(1, width), max(1, height)
 

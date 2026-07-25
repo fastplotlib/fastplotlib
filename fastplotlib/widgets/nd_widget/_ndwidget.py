@@ -29,8 +29,10 @@ class NDWidget:
         # hard code the expected height so that the first render looks right in tests, docs etc.
         ui_size = 57 + (50 * len(self.indices))
 
-        self._sliders_ui = NDWidgetUI(self.figure, ui_size, self)
-        self.figure.add_gui(self._sliders_ui)
+        self._sliders_ui = NDWidgetUI(self)
+        self.figure.add_imgui_window(
+            self._sliders_ui, location="bottom", size=ui_size, title="NDWidget controls"
+        )
 
     @property
     def figure(self) -> ImguiFigure:
