@@ -16,10 +16,11 @@ EDGES = ["left", "right", "top", "bottom"]
 LOCATIONS = EDGES + ["toolbar", "floating"]
 
 
-def _wrap_update_call(func: Callable, host) -> Callable:
+def _wrap_update_call(func: Callable, parent) -> Callable:
     """
-    Wrap an imgui draw function for use as a window update call. The host, a ``Figure`` or ``Subplot``, is passed
-    as the only positional arg if the function accepts one, otherwise the function is called with no args.
+    Wrap an imgui draw function for use as a window or popup update call. The parent, a ``Figure``, ``Subplot`` or
+    ``Graphic``, is passed as the only positional arg if the function accepts one, otherwise the function is called
+    with no args.
     """
     params = inspect.signature(func).parameters.values()
     takes_arg = any(
@@ -27,7 +28,7 @@ def _wrap_update_call(func: Callable, host) -> Callable:
         for p in params
     )
     if takes_arg:
-        return partial(func, host)
+        return partial(func, parent)
     return func
 
 
@@ -46,7 +47,7 @@ class BaseGUI:
         BaseGUI.ID_COUNTER += 1
         self._id_counter = BaseGUI.ID_COUNTER
 
-    def update(self):
+    def draw(self):
         """must be implemented in subclass"""
         raise NotImplementedError
 
@@ -436,7 +437,7 @@ class ImguiWindow(BaseGUI):
 
         imgui.dummy(imgui.ImVec2(win_width, box_size.y))
 
-    def draw_window(self):
+    def draw(self):
         """helps simplify using imgui by managing window creation & position, and pushing/popping the ID"""
         # window position & size
         if self._floating:
@@ -489,28 +490,148 @@ class ImguiWindow(BaseGUI):
         raise NotImplementedError
 
 
-class Popup(BaseGUI):
-    def __init__(self, figure, *args, **kwargs):
+class ImguiPopup(BaseGUI):
+    def __init__(self, update_call: Callable = None):
         """
-        Base class for creating ImGUI popups within Figures
+        An imgui popup drawn within a Figure, opened by a right-click. Subclass and implement ``update()`` to draw
+        imgui elements, or pass a callable as ``update_call``.
+
+        Popups are not added directly, use ``ImguiFigure.set_imgui_right_click()``,
+        ``Subplot.set_imgui_right_click()`` or ``Graphic.set_imgui_right_click()`` which provide the parent and
+        window flags via ``_fpl_add_hook()``.
 
         Parameters
         ----------
-        figure: Figure
-            Figure instance
-        *args
-            any args to pass to subclass constructor
+        update_call: callable
+            a callable that draws imgui elements, used instead of ``update()``, see ``set_imgui_right_click``
 
-        **kwargs
-            any kwargs to pass to subclass constructor
         """
-
         super().__init__()
 
+        if update_call is None:
+            self._update_calls = [self.update]
+        else:
+            self._update_calls = [update_call]
+
+        # parent, set by the parent in set_imgui_right_click() via _fpl_add_hook()
+        self._figure = None
+        self._parent = None
+        self._window_flags = imgui.WindowFlags_.none
+
+        # popups are identified by a str id, the counter keeps it unique between popups
+        self._popup_id = f"popup##{self._id_counter}"
+
+        # what this popup was opened on, set by the right-click dispatch in Subplot
+        self._subplot = None
+        self._graphic = None
+
+        self._open_requested = False
+        self._pos = None
+        self._is_open = False
+
+    def _fpl_add_hook(
+        self,
+        figure,
+        parent,
+        window_flags: imgui.WindowFlags_ = None,
+    ):
+        """
+        Set the parent of this popup, called by ``set_imgui_right_click()``.
+
+        Parameters
+        ----------
+        figure: ImguiFigure
+            the figure this popup is drawn in
+
+        parent: ImguiFigure | Subplot | Graphic
+            the object this popup is set on
+
+        window_flags: imgui.WindowFlags_
+            window flag enum, can be combined with the ``|`` operator, see ``ImguiWindow._fpl_add_hook`` for the
+            valid flags
+
+        """
         self._figure = figure
+        self._parent = parent
 
-        self.is_open = False
+        if window_flags is not None:
+            self._window_flags = window_flags
 
-    def open(self, pos: tuple[int, int], *args, **kwargs):
-        """implement in subclass"""
+    @property
+    def parent(self):
+        """the object this popup is set on, an ``ImguiFigure``, ``Subplot`` or ``Graphic``"""
+        return self._parent
+
+    @property
+    def subplot(self):
+        """the subplot this popup was opened in"""
+        return self._subplot
+
+    @property
+    def graphic(self):
+        """the graphic this popup was opened on, ``None`` if it was not opened on a graphic"""
+        return self._graphic
+
+    @property
+    def is_open(self) -> bool:
+        """whether the popup is currently open"""
+        return self._is_open
+
+    @property
+    def window_flags(self) -> imgui.WindowFlags_:
+        """imgui window flags"""
+        return self._window_flags
+
+    @window_flags.setter
+    def window_flags(self, flags: imgui.WindowFlags_):
+        self._window_flags = flags
+
+    def open(self, pos: tuple[int, int] = None):
+        """
+        Request that this popup is opened on the next render.
+
+        Parameters
+        ----------
+        pos: (int, int), optional
+            canvas position of the popup, imgui uses the current mouse position if not provided
+
+        """
+        self._pos = pos
+        self._open_requested = True
+
+    def _fpl_open(self, subplot, graphic):
+        """set what the popup is opened on and open it, called by the right-click dispatch in ``Subplot``"""
+        self._subplot = subplot
+        self._graphic = graphic
+        self.open()
+
+    def _fpl_close(self):
+        """called when another popup replaces this one as the open popup"""
+        self._is_open = False
+
+    def draw(self):
+        """helps simplify using imgui by managing the popup open state, and pushing/popping the ID"""
+        if self._open_requested:
+            self._open_requested = False
+            if self._pos is not None:
+                imgui.set_next_window_pos(self._pos)
+            imgui.open_popup(self._popup_id)
+
+        if imgui.begin_popup(self._popup_id, self._window_flags):
+            self._is_open = True
+
+            # push ID to prevent conflict between multiple figs with same UI
+            imgui.push_id(self._id_counter)
+
+            for update_call in self._update_calls:
+                update_call()
+
+            imgui.pop_id()
+            imgui.end_popup()
+
+        else:
+            self._is_open = False
+
+    def update(self):
+        """Implement your GUI here and it will be drawn within the popup. See the GUI examples"""
         raise NotImplementedError

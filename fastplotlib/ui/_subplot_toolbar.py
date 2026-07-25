@@ -12,7 +12,7 @@ class SubplotToolbar(ImguiWindow):
         """
         super().__init__()
 
-    def draw_window(self):
+    def draw(self):
         # get subplot rect
         x, y, width, height = self._subplot.frame.rect
 

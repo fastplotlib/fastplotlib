@@ -62,10 +62,7 @@ class Subplot(PlotArea):
 
         self._docks = dict()
 
-        if "Imgui" in parent.__class__.__name__:
-            toolbar_visible = True
-        else:
-            toolbar_visible = False
+        toolbar_visible = "Imgui" in parent.__class__.__name__
 
         super().__init__(
             parent=parent,
@@ -85,6 +82,8 @@ class Subplot(PlotArea):
 
         # imgui windows confined to this subplot, keyed by location
         self._imgui_windows = {loc: None for loc in ["left", "right", "top", "bottom", "toolbar"]}
+
+        self._imgui_right_click = None
 
         self._axes = Axes(self)
         self.scene.add(self.axes.world_object)
@@ -315,6 +314,104 @@ class Subplot(PlotArea):
             self.get_figure()._fpl_reset_layout()
 
         return window
+
+    @property
+    def imgui_right_click(self):
+        """
+        The imgui popup that is opened by a right-click within this subplot.
+
+        Returns
+        -------
+        ImguiPopup | None
+
+        """
+        return self._imgui_right_click
+
+    def set_imgui_right_click(self, popup=None, *, window_flags=None):
+        """
+        Set the imgui popup that is opened by a right-click within this subplot, replaces the Figure's popup within
+        this subplot. Can also be used as a decorator, see the ``ImguiFigure.set_imgui_right_click`` examples.
+
+        Parameters
+        ----------
+        popup: ImguiPopup | callable, optional
+            an ``ImguiPopup`` instance, or a function that draws imgui elements. Omit when decorating.
+
+        window_flags: imgui.WindowFlags_, optional
+            imgui window flags for the popup
+
+        """
+        figure = self.get_figure()
+        if "Imgui" not in figure.__class__.__name__:
+            raise TypeError(
+                "imgui right-click popups can only be set on a subplot of an ImguiFigure"
+            )
+
+        from ..ui._base import ImguiPopup, _wrap_update_call
+
+        def decorator(_popup):
+            if isinstance(_popup, ImguiPopup):
+                p = _popup
+            elif callable(_popup):
+                p = ImguiPopup(update_call=_wrap_update_call(_popup, self))
+            else:
+                raise TypeError(
+                    "set_imgui_right_click() must be used as a decorator, or given an `ImguiPopup` instance or a "
+                    "function that draws imgui elements"
+                )
+
+            p._fpl_add_hook(figure=figure, parent=self, window_flags=window_flags)
+            self._imgui_right_click = p
+            return _popup
+
+        if popup is None:
+            return decorator
+
+        decorator(popup)
+        return popup
+
+    def append_imgui_right_click(self, gui=None):
+        """
+        Append imgui elements to the right-click popup of this subplot. Can also be used as a decorator.
+
+        Parameters
+        ----------
+        gui: callable, optional
+            function that draws imgui elements, omit when decorating
+
+        """
+        from ..ui._base import _wrap_update_call
+
+        popup = self._imgui_right_click
+        if popup is None:
+            raise ValueError(
+                "no imgui right-click popup set on this subplot to append to, set one using "
+                "`subplot.set_imgui_right_click()`"
+            )
+
+        def decorator(_gui):
+            popup._update_calls.append(_wrap_update_call(_gui, self))
+            return _gui
+
+        if gui is None:
+            return decorator
+
+        return decorator(gui)
+
+    def remove_imgui_right_click(self):
+        """
+        Remove and return the right-click popup of this subplot
+
+        Returns
+        -------
+        ImguiPopup
+            the removed popup, it can be set again later
+
+        """
+        popup = self._imgui_right_click
+        self._imgui_right_click = None
+
+        return popup
 
 
 class Dock(PlotArea):

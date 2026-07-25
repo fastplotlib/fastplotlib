@@ -195,22 +195,17 @@ class NDWidgetUI(ImguiWindow):
 
 
 class RightClickMenu(StandardRightClickMenu):
-    def __init__(self, figure):
-        self._ndwidget = None
+    def __init__(self, ndwidget):
+        super().__init__()
+
+        self._ndwidget = ndwidget
         self._ndgraphic_windows = set()
 
-        super().__init__(figure=figure)
-
-    def set_nd_widget(self, ndw):
-        self._ndwidget = ndw
-
-    def _extra_menu(self):
-        if self._ndwidget is None:
-            return
+    def update(self):
+        super().update()
 
         if imgui.begin_menu("ND Graphics"):
-            subplot = self.get_subplot()
-            for ndg in self._ndwidget[subplot].nd_graphics:
+            for ndg in self._ndwidget[self.subplot].nd_graphics:
                 name = ndg.name if ndg.name is not None else hex(id(ndg))
                 if imgui.menu_item(
                     f"{name}", "", False
@@ -219,9 +214,10 @@ class RightClickMenu(StandardRightClickMenu):
 
             imgui.end_menu()
 
-    def update(self):
-        super().update()
+    def draw(self):
+        super().draw()
 
+        # the ND graphic windows are not part of the popup, they stay open after the popup closes
         for ndg in list(self._ndgraphic_windows):  # set -> list so we can change size during iteration
             name = ndg.name if ndg.name is not None else hex(id(ndg))
             subplot = ndg.graphic._plot_area

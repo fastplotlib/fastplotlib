@@ -180,7 +180,7 @@ class Graphic:
 
         self._axes: Axes = None
 
-        self._right_click_menu = None
+        self._imgui_right_click = None
 
         # store ids of all the WorldObjects that this Graphic manages/uses
         self._world_object_ids = list()
@@ -692,21 +692,111 @@ class Graphic:
         self._axes.update_using_bbox(self.world_object.get_world_bounding_box())
 
     @property
-    def right_click_menu(self):
-        return self._right_click_menu
+    def imgui_right_click(self):
+        """
+        The imgui popup that is opened by a right-click on this graphic.
 
-    @right_click_menu.setter
-    def right_click_menu(self, menu):
+        Returns
+        -------
+        ImguiPopup | None
+
+        """
+        return self._imgui_right_click
+
+    def set_imgui_right_click(self, popup=None, *, window_flags=None):
+        """
+        Set the imgui popup that is opened by a right-click on this graphic, replaces the popup of the subplot or
+        Figure for this graphic. Can also be used as a decorator, see the
+        ``ImguiFigure.set_imgui_right_click`` examples.
+
+        Parameters
+        ----------
+        popup: ImguiPopup | callable, optional
+            an ``ImguiPopup`` instance, or a function that draws imgui elements. Omit when decorating.
+
+        window_flags: imgui.WindowFlags_, optional
+            imgui window flags for the popup
+
+        """
         if not IMGUI:
             raise ImportError(
-                "imgui is required to set right-click menus:\npip install imgui_bundle"
+                "imgui is required to set right-click popups:\npip install imgui_bundle"
             )
 
-        self._right_click_menu = menu
-        menu.owner = self
+        from ..layouts._subplot import Subplot
+        from ..ui._base import ImguiPopup, _wrap_update_call
 
-    def _fpl_request_right_click_menu(self):
-        pass
+        if not isinstance(self._plot_area, Subplot):
+            raise TypeError(
+                "graphic must be added to a subplot before setting an imgui right-click popup on it"
+            )
 
-    def _fpl_close_right_click_menu(self):
-        pass
+        figure = self._plot_area.get_figure()
+        if "Imgui" not in figure.__class__.__name__:
+            raise TypeError(
+                "imgui right-click popups can only be set on a graphic in an ImguiFigure"
+            )
+
+        def decorator(_popup):
+            if isinstance(_popup, ImguiPopup):
+                p = _popup
+            elif callable(_popup):
+                p = ImguiPopup(update_call=_wrap_update_call(_popup, self))
+            else:
+                raise TypeError(
+                    "set_imgui_right_click() must be used as a decorator, or given an `ImguiPopup` instance or a "
+                    "function that draws imgui elements"
+                )
+
+            p._fpl_add_hook(figure=figure, parent=self, window_flags=window_flags)
+            self._imgui_right_click = p
+            return _popup
+
+        if popup is None:
+            return decorator
+
+        decorator(popup)
+        return popup
+
+    def append_imgui_right_click(self, gui=None):
+        """
+        Append imgui elements to the right-click popup of this graphic. Can also be used as a decorator.
+
+        Parameters
+        ----------
+        gui: callable, optional
+            function that draws imgui elements, omit when decorating
+
+        """
+        from ..ui._base import _wrap_update_call
+
+        popup = self._imgui_right_click
+        if popup is None:
+            raise ValueError(
+                "no imgui right-click popup set on this graphic to append to, set one using "
+                "`graphic.set_imgui_right_click()`"
+            )
+
+        def decorator(_gui):
+            popup._update_calls.append(_wrap_update_call(_gui, self))
+            return _gui
+
+        if gui is None:
+            return decorator
+
+        return decorator(gui)
+
+    def remove_imgui_right_click(self):
+        """
+        Remove and return the right-click popup of this graphic
+
+        Returns
+        -------
+        ImguiPopup
+            the removed popup, it can be set again later
+
+        """
+        popup = self._imgui_right_click
+        self._imgui_right_click = None
+
+        return popup

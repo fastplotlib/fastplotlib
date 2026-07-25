@@ -16,8 +16,7 @@ import pygfx
 from ._figure import Figure
 from ._rect import RectManager
 from ._utils import IMGUI_TOOLBAR_HEIGHT
-from ..ui import ImguiWindow, SubplotToolbar, StandardRightClickMenu, Popup, EDGES
-from ..ui import ColormapPicker
+from ..ui import ImguiWindow, ImguiPopup, SubplotToolbar, StandardRightClickMenu, EDGES
 from ..ui._base import _wrap_update_call
 
 
@@ -49,11 +48,16 @@ class ImguiFigure(Figure):
         canvas_kwargs: dict = None,
         size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
-        std_right_click_menu: type[Popup] = StandardRightClickMenu,
     ):
         # edge windows reserve canvas space, keyed by location; floating windows draw over the plots
         self._edge_windows: dict[str, ImguiWindow] = {loc: None for loc in EDGES}
         self._floating_windows: list[ImguiWindow] = []
+
+        # figure level right-click popup, and the popup opened by the most recent right-click
+        self._imgui_right_click: ImguiPopup = None
+        self._currently_open_imgui_right_click: ImguiPopup = None
+
+        self._right_click_press_pos: imgui.ImVec2 = None
 
         super().__init__(
             shape=shape,
@@ -110,22 +114,14 @@ class ImguiFigure(Figure):
                 SubplotToolbar(), location="toolbar", size=IMGUI_TOOLBAR_HEIGHT
             )
 
-        self._std_right_click_menu = std_right_click_menu(figure=self)
-
-        self._popups: dict[str, Popup] = {}
+        self.set_imgui_right_click(StandardRightClickMenu())
 
         self.imgui_show_fps = False
         self._stats = Stats(self.renderer.device, self.canvas)
 
-        self.register_popup(ColormapPicker)
-
     @property
     def default_imgui_font(self) -> imgui.ImFont:
         return self._default_imgui_font
-
-    @property
-    def std_right_click_menu(self) -> Popup:
-        return self._std_right_click_menu
 
     @property
     def imgui_windows(self) -> dict[str, ImguiWindow]:
@@ -155,7 +151,7 @@ class ImguiFigure(Figure):
             if window is None:
                 continue
             self._layout_imgui_window(window)
-            window.draw_window()
+            window.draw()
 
         # subplot windows, edge window rects are set by Frame.reset_viewport
         for subplot in self._subplots.ravel():
@@ -164,12 +160,18 @@ class ImguiFigure(Figure):
                     continue
                 if location == "toolbar" and not subplot.toolbar:
                     continue
-                window.draw_window()
+                window.draw()
 
-        for popup in self._popups.values():
-            popup.update()
+        self._fpl_handle_right_click()
 
-        self._std_right_click_menu.update()
+        # the currently open popup is drawn first, opening it closes any other popup that is still open.
+        # it keeps being drawn after it closes so that it can also draw its own windows
+        popup = self._currently_open_imgui_right_click
+        if popup is not None:
+            popup.draw()
+
+        if self._imgui_right_click is not None and self._imgui_right_click is not popup:
+            self._imgui_right_click.draw()
 
     def add_imgui_window(
         self,
@@ -399,35 +401,176 @@ class ImguiFigure(Figure):
 
         return x, y, max(1, width), max(1, height)
 
-    def register_popup(self, popup: Popup.__class__):
+    @property
+    def imgui_right_click(self) -> ImguiPopup | None:
         """
-        Register a popup class. Note that this takes the class, not an instance
+        The imgui popup that is opened by a right-click within a subplot, a ``StandardRightClickMenu`` by default.
+        A popup set on a subplot or graphic replaces it for that subplot or graphic.
+        """
+        return self._imgui_right_click
+
+    def set_imgui_right_click(
+        self,
+        popup: ImguiPopup | Callable = None,
+        *,
+        window_flags: imgui.WindowFlags_ = None,
+    ):
+        """
+        Set the imgui popup that is opened by a right-click within a subplot, replaces the standard right-click
+        menu. Can also be used as a decorator, see examples.
+
+        For a list of imgui elements see the imgui docs and the "imgui" section in the fastplotlib user guide.
 
         Parameters
         ----------
-        popup: Popup subclass
+        popup: ImguiPopup | callable, optional
+            an ``ImguiPopup`` instance, or a function that draws imgui elements. Omit when decorating.
+
+        window_flags: imgui.WindowFlags_, optional
+            imgui window flags for the popup
+
+        Examples
+        --------
+
+        As a decorator::
+
+            import numpy as np
+            import fastplotlib as fpl
+            from imgui_bundle import imgui
+
+            figure = fpl.Figure()
+            figure[0, 0].add_line(np.random.rand(100))
+
+            @figure.set_imgui_right_click()
+            def popup(fig):  # the figure is passed if the function takes an argument
+                if imgui.menu_item("autoscale", "", False)[0]:
+                    fig.imgui_right_click.subplot.auto_scale()
+
+        Function, the same function can be set on any number of figures, subplots or graphics::
+
+            def popup(subplot):
+                imgui.text(f"subplot: {subplot.name}")
+
+            figure[0, 0].set_imgui_right_click(popup)
+            figure[0, 1].set_imgui_right_click(popup)
+
+        Instance::
+
+            figure.set_imgui_right_click(MyPopup())
 
         """
-        self._popups[popup.name] = popup(self)
 
-    def open_popup(self, name: str, pos: tuple[int, int], **kwargs):
+        def decorator(_popup):
+            if isinstance(_popup, ImguiPopup):
+                p = _popup
+            elif callable(_popup):
+                p = ImguiPopup(update_call=_wrap_update_call(_popup, self))
+            else:
+                raise TypeError(
+                    "set_imgui_right_click() must be used as a decorator, or given an `ImguiPopup` instance or a "
+                    "function that draws imgui elements"
+                )
+
+            p._fpl_add_hook(figure=self, parent=self, window_flags=window_flags)
+            self._imgui_right_click = p
+            return _popup
+
+        if popup is None:
+            return decorator
+
+        decorator(popup)
+        return popup
+
+    def append_imgui_right_click(self, gui: Callable = None):
         """
-        Open a registered popup
+        Append imgui elements to the Figure's right-click popup, the standard right-click menu by default. Can also
+        be used as a decorator.
 
         Parameters
         ----------
-        name: str
-            The registered name of the popup
-
-        pos: int, int
-            x_pos, y_pos for the popup
-
-        kwargs
-            any additional kwargs to pass to the Popup's open() method
+        gui: callable, optional
+            function that draws imgui elements, omit when decorating
 
         """
+        popup = self._imgui_right_click
+        if popup is None:
+            raise ValueError(
+                "no imgui right-click popup set on this figure to append to, set one using "
+                "`figure.set_imgui_right_click()`"
+            )
 
-        if self._popups[name].is_open:
+        def decorator(_gui):
+            popup._update_calls.append(_wrap_update_call(_gui, self))
+            return _gui
+
+        if gui is None:
+            return decorator
+
+        return decorator(gui)
+
+    def remove_imgui_right_click(self) -> ImguiPopup:
+        """
+        Remove and return the Figure's right-click popup
+
+        Returns
+        -------
+        ImguiPopup
+            the removed popup, it can be set again later
+
+        """
+        popup = self._imgui_right_click
+        self._imgui_right_click = None
+
+        return popup
+
+    def _fpl_handle_right_click(self):
+        """open the popup of the graphic, subplot or Figure that was right-clicked"""
+        if imgui.is_mouse_down(1):
+            if self._right_click_press_pos is None:
+                self._right_click_press_pos = imgui.get_mouse_pos()
             return
 
-        self._popups[name].open(pos, **kwargs)
+        press_pos = self._right_click_press_pos
+        self._right_click_press_pos = None
+
+        if press_pos is None or not imgui.is_mouse_released(1):
+            return
+
+        pos = imgui.get_mouse_pos()
+
+        if press_pos != pos:
+            # right-drag zooms the camera
+            return
+
+        if imgui.is_window_hovered(imgui.HoveredFlags_.any_window):
+            # pointer is over an imgui window, not the pygfx render area
+            return
+
+        for subplot in self._subplots.ravel():
+            if subplot.viewport.is_inside(pos.x, pos.y):
+                break
+        else:
+            return
+
+        pick_info = subplot.get_pick_info((pos.x, pos.y))
+        graphic = pick_info["graphic"] if pick_info is not None else None
+
+        # the most specific popup wins
+        if graphic is not None and graphic.imgui_right_click is not None:
+            popup = graphic.imgui_right_click
+        elif subplot.imgui_right_click is not None:
+            popup = subplot.imgui_right_click
+        else:
+            popup = self._imgui_right_click
+
+        if popup is not None:
+            self._fpl_open_imgui_right_click(popup, subplot=subplot, graphic=graphic)
+
+    def _fpl_open_imgui_right_click(self, popup: ImguiPopup, subplot, graphic):
+        """set the popup that is drawn as the open popup, and open it"""
+        previous = self._currently_open_imgui_right_click
+        if previous is not None and previous is not popup:
+            previous._fpl_close()
+
+        self._currently_open_imgui_right_click = popup
+        popup._fpl_open(subplot=subplot, graphic=graphic)

@@ -19,8 +19,8 @@ class NDWidget:
 
         self._indices._add_ndwidget_(self)
 
-        self._figure = ImguiFigure(std_right_click_menu=RightClickMenu, **kwargs)
-        self._figure.std_right_click_menu.set_nd_widget(self)
+        self._figure = ImguiFigure(**kwargs)
+        self._figure.set_imgui_right_click(RightClickMenu(self))
 
         self._subplots_nd: dict[Subplot, NDWSubplot] = dict()
         for subplot in self.figure:
