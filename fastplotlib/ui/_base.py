@@ -138,7 +138,7 @@ class ImguiWindow(ImguiBase):
         title: str, optional
             window title, drawn as a title bar for edge windows. If ``None`` no title bar is drawn.
 
-        window_flags: imgui.WindowFlags_
+        window_flags: ``imgui.WindowFlags_``
             window flag enum, can be combined with the ``|`` operator. If not provided, the default depends on the
             placement: edge and toolbar windows use ``no_collapse | no_resize | no_title_bar |
             no_bring_to_front_on_focus`` (custom title bar, and they stay behind floating and fixed overlays);
@@ -546,7 +546,7 @@ class ImguiPopup(ImguiBase):
         parent: ImguiFigure | Subplot | Graphic
             the object this popup is set on
 
-        window_flags: imgui.WindowFlags_
+        window_flags: ``imgui.WindowFlags_``
             window flag enum, can be combined with the ``|`` operator, see ``ImguiWindow._fpl_add_hook`` for the
             valid flags
 

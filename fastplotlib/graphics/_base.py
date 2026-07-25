@@ -714,7 +714,7 @@ class Graphic:
         popup: ImguiPopup | callable, optional
             an ``ImguiPopup`` instance, or a function that draws imgui elements. Omit when decorating.
 
-        window_flags: imgui.WindowFlags_, optional
+        window_flags: ``imgui.WindowFlags_``, optional
             imgui window flags for the popup
 
         """

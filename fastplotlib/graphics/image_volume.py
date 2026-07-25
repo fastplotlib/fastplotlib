@@ -139,6 +139,9 @@ class ImageVolumeGraphic(Graphic):
         cmap: str, default "plasma"
             colormap for grayscale volumes
 
+        gamma: float, default 1.0
+            gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
+
         interpolation: str, default "linear"
             interpolation method for sampling pixels
 

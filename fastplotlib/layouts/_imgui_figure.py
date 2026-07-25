@@ -213,7 +213,7 @@ class ImguiFigure(Figure):
         title: str, optional
             window title, drawn as a title bar for edge windows. If ``None`` no title bar is drawn.
 
-        window_flags: imgui.WindowFlags_
+        window_flags: ``imgui.WindowFlags_``
             imgui window flags, used when decorating; if not provided, the default depends on placement — edge
             windows use ``no_collapse | no_resize | no_title_bar | no_bring_to_front_on_focus`` (custom title bar,
             stays behind overlays), floating windows use ``none`` (native title bar, collapsible and movable),
@@ -426,7 +426,7 @@ class ImguiFigure(Figure):
         popup: ImguiPopup | callable, optional
             an ``ImguiPopup`` instance, or a function that draws imgui elements. Omit when decorating.
 
-        window_flags: imgui.WindowFlags_, optional
+        window_flags: ``imgui.WindowFlags_``, optional
             imgui window flags for the popup
 
         Examples

@@ -213,7 +213,7 @@ class Subplot(PlotArea):
         title: str, optional
             window title, drawn as a title bar for edge windows. If ``None`` no title bar is drawn.
 
-        window_flags: imgui.WindowFlags_, optional
+        window_flags: ``imgui.WindowFlags_``, optional
             imgui window flags, used when decorating, uses the ``ImguiWindow`` default flags if not provided
 
         """
@@ -337,7 +337,7 @@ class Subplot(PlotArea):
         popup: ImguiPopup | callable, optional
             an ``ImguiPopup`` instance, or a function that draws imgui elements. Omit when decorating.
 
-        window_flags: imgui.WindowFlags_, optional
+        window_flags: ``imgui.WindowFlags_``, optional
             imgui window flags for the popup
 
         """
