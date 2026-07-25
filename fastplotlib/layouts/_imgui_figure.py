@@ -213,9 +213,9 @@ class ImguiFigure(Figure):
 
         window_flags: imgui.WindowFlags_
             imgui window flags, used when decorating; if not provided, the default depends on placement — edge
-            windows use ``no_collapse | no_resize | no_title_bar`` (custom title bar), floating windows use
-            ``none`` (native title bar, collapsible and movable), fixed rect/extent windows use
-            ``no_collapse | no_move | no_resize`` (native title bar)
+            windows use ``no_collapse | no_resize | no_title_bar | no_bring_to_front_on_focus`` (custom title bar,
+            stays behind overlays), floating windows use ``none`` (native title bar, collapsible and movable),
+            fixed rect/extent windows use ``no_collapse | no_move | no_resize`` (native title bar)
 
         Examples
         --------

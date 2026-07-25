@@ -25,6 +25,8 @@ class SubplotToolbar(ImguiWindow):
             imgui.WindowFlags_.no_collapse
             | imgui.WindowFlags_.no_title_bar
             | imgui.WindowFlags_.no_background
+            # stay behind floating and fixed overlays so they remain accessible when drawn over the toolbar
+            | imgui.WindowFlags_.no_bring_to_front_on_focus
         )
 
         imgui.begin(f"Toolbar-{hex(id(self._subplot))}", p_open=None, flags=flags)

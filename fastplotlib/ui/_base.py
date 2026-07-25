@@ -139,9 +139,10 @@ class ImguiWindow(BaseGUI):
 
         window_flags: imgui.WindowFlags_
             window flag enum, can be combined with the ``|`` operator. If not provided, the default depends on the
-            placement: edge and toolbar windows use ``no_collapse | no_resize | no_title_bar`` and draw a custom
-            title bar; floating windows use ``none`` (native imgui title bar, collapsible and movable); fixed
-            rect/extent windows use ``no_collapse | no_move | no_resize`` (native imgui title bar). Valid flags are:
+            placement: edge and toolbar windows use ``no_collapse | no_resize | no_title_bar |
+            no_bring_to_front_on_focus`` (custom title bar, and they stay behind floating and fixed overlays);
+            floating windows use ``none`` (native imgui title bar, collapsible and movable); fixed rect/extent
+            windows use ``no_collapse | no_move | no_resize`` (native imgui title bar). Valid flags are:
 
             .. code-block:: py
 
@@ -188,10 +189,13 @@ class ImguiWindow(BaseGUI):
             # edge and toolbar windows draw their own title bar; floating and fixed windows use the native
             # imgui title bar so they can be collapsed, and floating windows can also be moved
             if location in EDGES or location == "toolbar":
+                # reserved windows never come to front on focus, otherwise clicking one would bury a
+                # floating or fixed overlay drawn over it and make the overlay inaccessible
                 window_flags = (
                     imgui.WindowFlags_.no_collapse
                     | imgui.WindowFlags_.no_resize
                     | imgui.WindowFlags_.no_title_bar
+                    | imgui.WindowFlags_.no_bring_to_front_on_focus
                 )
             elif location == "floating":
                 window_flags = imgui.WindowFlags_.none
