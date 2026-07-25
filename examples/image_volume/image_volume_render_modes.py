@@ -10,7 +10,7 @@ View a volume using different rendering modes.
 
 import numpy as np
 import fastplotlib as fpl
-from fastplotlib.ui import ImguiWindow
+from fastplotlib.ui import ImguiColorbar, ImguiWindow
 from fastplotlib.graphics.features import VOLUME_RENDER_MODES
 import imageio.v3 as iio
 from imgui_bundle import imgui
@@ -25,13 +25,11 @@ figure = fpl.Figure(
 
 figure[0, 0].add_image_volume(voldata, name="vol-img")
 
-# add an hlut tool
-hlut = fpl.HistogramLUTTool(voldata, figure[0, 0]["vol-img"])
-
-figure[0, 0].docks["right"].size = 80
-figure[0, 0].docks["right"].controller.enabled = False
-figure[0, 0].docks["right"].add_graphic(hlut)
-figure[0, 0].docks["right"].auto_scale(maintain_aspect=False)
+# add a colorbar with a histogram of the volume data
+colorbar = ImguiColorbar(
+    images=figure[0, 0]["vol-img"], histogram=np.histogram(voldata, bins=100)
+)
+figure[0, 0].add_imgui_window(colorbar, location="right", size=100)
 
 
 class GUI(ImguiWindow):
