@@ -5,7 +5,7 @@ ImGUI floating windows
 You can add floating and fixed-extent imgui windows that are overlaid on the Figure.
 """
 
-# test_example = false
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np

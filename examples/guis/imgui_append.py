@@ -5,7 +5,7 @@ ImGUI append to windows
 You can append imgui elements to an existing window, including the subplot toolbar.
 """
 
-# test_example = false
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np
