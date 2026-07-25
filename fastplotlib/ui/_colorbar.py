@@ -14,7 +14,7 @@ class ImguiColorbar(ImguiWindow):
     HANDLE_HEIGHT = 8
     HANDLE_OVERHANG = 3  # how far a handle extends past the bar on each side
     BAR_BORDER = 1.0  # width of the outline drawn around the bar image
-    HIST_WIDTH = 10  # width in pixels of the optional histogram drawn left of the bar
+    HIST_WIDTH = 50  # width in pixels of the optional histogram drawn left of the bar
     HIST_GAP = 4  # gap in pixels between the histogram and the bar
     FILL_OVERHANG = 4  # how far the vmin/vmax fill and lines extend past the histogram line-plot
 
@@ -23,13 +23,12 @@ class ImguiColorbar(ImguiWindow):
         images: ImageGraphic | ImageVolumeGraphic | list,
         histogram: tuple[np.ndarray, np.ndarray] | None = None,
         data_range: tuple[float, float] | None = None,
-        bar_width: int = 24,
+        bar_width: int = 16,
         region_drag: bool = True,
     ):
         """
         An imgui colorbar with draggable vmin/vmax handles, an optional histogram, a gamma slider, and a
-        right-click colormap picker. Bound to one or more images, it replaces the ``HistogramLUTTool``. Add it to a
-        subplot edge using ``subplot.add_imgui_window()``.
+        right-click colormap picker.
 
         Parameters
         ----------
@@ -143,7 +142,7 @@ class ImguiColorbar(ImguiWindow):
 
         # sync the colorbar when an image's vmin, vmax, cmap, or gamma is changed elsewhere
         for image in self._images:
-            image.add_event_handler(self._image_event_handler, "vmin", "vmax", "cmap", "gamma")
+            self._connect_image(image)
 
     @property
     def images(self) -> tuple:
@@ -165,7 +164,7 @@ class ImguiColorbar(ImguiWindow):
         self._update_bar_texture()
 
         for img in self._images:
-            img.add_event_handler(self._image_event_handler, "vmin", "vmax", "cmap", "gamma")
+            self._connect_image(img)
 
     @property
     def cmap(self) -> str:
@@ -280,6 +279,15 @@ class ImguiColorbar(ImguiWindow):
         finally:
             self._block_reentrance = False
 
+    @property
+    def bar_width(self) -> int:
+        """get or set the width of the colored bar in pixels"""
+        return self._bar_width
+
+    @bar_width.setter
+    def bar_width(self, value: int):
+        self._bar_width = int(value)
+
     @staticmethod
     def _validate_range(data_range):
         data_min, data_max = float(data_range[0]), float(data_range[1])
@@ -292,6 +300,14 @@ class ImguiColorbar(ImguiWindow):
     def _image_event_handler(self, ev):
         """when an image's vmin, vmax, or cmap changes, update this colorbar to match"""
         setattr(self, ev.type, ev.info["value"])
+
+    def _connect_image(self, image):
+        """subscribe to an image's vmin, vmax and gamma events, and its cmap if it is grayscale"""
+        events = ["vmin", "vmax", "gamma"]
+        # rgb(a) images have no cmap feature to listen to
+        if image.cmap is not None:
+            events.append("cmap")
+        image.add_event_handler(self._image_event_handler, *events)
 
     def _disconnect_images(self, *args):
         """disconnect the event handlers of the managed images"""
@@ -356,25 +372,27 @@ class ImguiColorbar(ImguiWindow):
         line_h = imgui.get_text_line_height_with_spacing()
 
         p0 = imgui.get_cursor_screen_pos()
-        total_w = max(avail.x, self._bar_width + self.HIST_WIDTH + 40)
         total_h = avail.y
 
         bar_w = self._bar_width
-        # the value axis spans the height minus a line for the data max at top and data min at bottom
+        # the value axis spans the height minus a line of padding at the top and bottom
         bar_y = p0.y + line_h
         bar_h = max(50.0, total_h - 2 * line_h)
 
-        # the colorbar bar is on the right, the histogram fills the space to its left
-        bar_x = p0.x + total_w - bar_w
-        hist_x_right = bar_x - self.HIST_GAP
-        hist_x_left = p0.x
+        # accumulated across the region lines and bar handles to drive the resize cursor
+        self._hovering_handle = False
 
-        # data min and max at the top-right and bottom-right
-        self._text_right(draw_list, f"{self._data_max:.4g}", bar_x + bar_w, p0.y)
-        self._text_right(draw_list, f"{self._data_min:.4g}", bar_x + bar_w, bar_y + bar_h)
+        # anchor the bar to the right edge of the window; the histogram and value text sit to its left,
+        # the handle overhang stays within the window padding
+        bar_x = p0.x + avail.x - self.HANDLE_OVERHANG - bar_w
 
-        # histogram line profile, inset so the vmin/vmax fill and lines extend beyond it
-        if self._histogram is not None:
+        has_hist = self._histogram is not None
+        if has_hist:
+            # the histogram has a fixed width (HIST_WIDTH), drawn to the left of the bar
+            hist_x_right = bar_x - self.HIST_GAP
+            hist_x_left = hist_x_right - self.HIST_WIDTH
+
+            # histogram line profile, inset so the vmin/vmax fill and lines extend beyond it
             self._draw_histogram(
                 draw_list,
                 hist_x_left + self.FILL_OVERHANG,
@@ -382,9 +400,8 @@ class ImguiColorbar(ImguiWindow):
                 bar_y,
                 bar_h,
             )
-
-        # draggable vmin, vmax lines and shaded region drawn over the histogram
-        self._draw_region(hist_x_left, hist_x_right, bar_y, bar_h)
+            # draggable vmin, vmax lines, shaded region, and value text drawn over the histogram
+            self._draw_region(hist_x_left, hist_x_right, bar_y, bar_h)
 
         # the colorbar bar
         imgui.set_cursor_screen_pos((bar_x, bar_y))
@@ -399,6 +416,18 @@ class ImguiColorbar(ImguiWindow):
             self._draw_popup()
             imgui.end_popup()
 
+        # without a histogram the vmin, vmax handles live on the bar itself
+        if not has_hist:
+            self._draw_bar_handles(bar_x, bar_y, bar_w, bar_h)
+
+        # show a vertical-resize cursor while hovering any handle
+        if self._hovering_handle and not self._resize_cursor_set:
+            self._figure.canvas.set_cursor("ns_resize")
+            self._resize_cursor_set = True
+        elif not self._hovering_handle and self._resize_cursor_set:
+            self._figure.canvas.set_cursor("default")
+            self._resize_cursor_set = False
+
     def _value_to_y(self, v, y0, bar_h):
         axis_min, axis_max = self._axis_range()
         return y0 + (1.0 - (v - axis_min) / (axis_max - axis_min)) * bar_h
@@ -406,11 +435,6 @@ class ImguiColorbar(ImguiWindow):
     def _y_to_value(self, y, y0, bar_h):
         axis_min, axis_max = self._axis_range()
         return axis_min + (1.0 - (y - y0) / bar_h) * (axis_max - axis_min)
-
-    def _text_right(self, draw_list, text: str, x_right: float, y: float):
-        """draw text right-aligned so it ends at x_right"""
-        tw = imgui.calc_text_size(text).x
-        draw_list.add_text((x_right - tw, y), imgui.get_color_u32(imgui.Col_.text), text)
 
     def _draw_histogram(self, draw_list, x_left, x_right, bar_y, bar_h):
         counts, edges = self._histogram
@@ -422,13 +446,15 @@ class ImguiColorbar(ImguiWindow):
 
         color = imgui.color_convert_float4_to_u32((0.7, 0.7, 0.7, 1.0))
         hist_w = x_right - x_left
-        # min count maps to the left edge, max count to the right edge, filling the width
+        if hist_w <= 0:
+            return
+        # min count maps to the right edge next to the bar, max count to the left edge, filling the width
         norm = (counts - cmin) / span
         centers = 0.5 * (edges[:-1] + edges[1:])
 
-        # frequency increases to the right, value maps to y, drawn as a line profile
+        # frequency increases to the left, away from the bar, value maps to y, drawn as a line profile
         points = [
-            imgui.ImVec2(x_left + frac * hist_w, self._value_to_y(c, bar_y, bar_h))
+            imgui.ImVec2(x_right - frac * hist_w, self._value_to_y(c, bar_y, bar_h))
             for frac, c in zip(norm, centers)
         ]
         draw_list.add_polyline(points, color, 1.5, 0)
@@ -483,6 +509,7 @@ class ImguiColorbar(ImguiWindow):
             imgui.set_cursor_screen_pos((x_left, y - grab / 2))
             imgui.invisible_button(label, (width, grab))
             hovered = imgui.is_item_hovered() or imgui.is_item_active()
+            self._hovering_handle = self._hovering_handle or hovered
             if imgui.is_item_activated():
                 self._grab_offset = cur - cursor_value()
             if imgui.is_item_active():
@@ -496,6 +523,79 @@ class ImguiColorbar(ImguiWindow):
         self._text_right(draw_list, f"{self._vmax:.4g}", x_right, y_vmax - imgui.get_text_line_height())
         self._text_right(draw_list, f"{self._vmin:.4g}", x_right, y_vmin)
 
+    def _text_right(self, draw_list, text: str, x_right: float, y: float):
+        """draw text right-aligned so it ends at x_right"""
+        tw = imgui.calc_text_size(text).x
+        draw_list.add_text((x_right - tw, y), imgui.get_color_u32(imgui.Col_.text), text)
+
+    def _draw_bar_handles(self, bar_x, bar_y, bar_w, bar_h):
+        draw_list = imgui.get_window_draw_list()
+        white = imgui.color_convert_float4_to_u32((1.0, 1.0, 1.0, 1.0))
+        # yellow highlight when a handle is hovered/dragged, like the region lines
+        yellow = imgui.color_convert_float4_to_u32((1.0, 1.0, 0.0, 1.0))
+        outline = imgui.color_convert_float4_to_u32((0.0, 0.0, 0.0, 1.0))
+        text_color = imgui.get_color_u32(imgui.Col_.text)
+
+        axis_min, axis_max = self._axis_range()
+        span = axis_max - axis_min
+        h = self.HANDLE_HEIGHT
+        # the handles extend past the bar on each side
+        x_left = bar_x - self.HANDLE_OVERHANG
+        x_right = bar_x + bar_w + self.HANDLE_OVERHANG
+        min_sep = (h / bar_h) * span
+
+        def cursor_value():
+            return self._y_to_value(imgui.get_io().mouse_pos.y, bar_y, bar_h)
+
+        # thin reference lines at the data min and max, so the flank beyond the data range is visible
+        ref = imgui.color_convert_float4_to_u32((1.0, 1.0, 1.0, 1.0))
+        for v in (self._data_min, self._data_max):
+            y = self._value_to_y(v, bar_y, bar_h)
+            draw_list.add_line((x_left, y), (x_right, y), ref, 1.0)
+
+        # drag the region between the handles to move vmin and vmax together
+        if self._region_drag:
+            y_vmax = self._value_to_y(self._vmax, bar_y, bar_h)
+            y_vmin = self._value_to_y(self._vmin, bar_y, bar_h)
+            top = y_vmax + h / 2
+            bottom = y_vmin - h / 2
+            if bottom > top:
+                imgui.set_cursor_screen_pos((x_left, top))
+                imgui.invisible_button("##bar_region", (x_right - x_left, bottom - top))
+                if imgui.is_item_activated():
+                    self._grab_offset = 0.5 * (self._vmin + self._vmax) - cursor_value()
+                if imgui.is_item_active():
+                    half = 0.5 * (self._vmax - self._vmin)
+                    center = cursor_value() + self._grab_offset
+                    center = max(axis_min + half, min(axis_max - half, center))
+                    self.vmin = center - half
+                    self.vmax = center + half
+
+        for label, attr, lo_fn, hi_fn in (
+            ("##bar_vmax", "vmax", lambda: self._vmin + min_sep, lambda: axis_max),
+            ("##bar_vmin", "vmin", lambda: axis_min, lambda: self._vmax - min_sep),
+        ):
+            cur = getattr(self, attr)
+            y = self._value_to_y(cur, bar_y, bar_h)
+            imgui.set_cursor_screen_pos((x_left, y - h / 2))
+            imgui.invisible_button(label, (x_right - x_left, h))
+            hovered = imgui.is_item_hovered() or imgui.is_item_active()
+            self._hovering_handle = self._hovering_handle or hovered
+            if imgui.is_item_activated():
+                self._grab_offset = cur - cursor_value()
+            if imgui.is_item_active():
+                setattr(self, attr, max(lo_fn(), min(hi_fn(), cursor_value() + self._grab_offset)))
+                y = self._value_to_y(getattr(self, attr), bar_y, bar_h)
+
+            draw_list.add_rect_filled((x_left, y - h / 2), (x_right, y + h / 2), yellow if hovered else white)
+            draw_list.add_rect((x_left, y - h / 2), (x_right, y + h / 2), outline, thickness=1.0)
+
+            # current value to the left of the bar, vmax above its handle and vmin below
+            text = f"{getattr(self, attr):.4g}"
+            ty = y - imgui.get_text_line_height() if attr == "vmax" else y
+            tw = imgui.calc_text_size(text).x
+            draw_list.add_text((x_left - 3 - tw, ty), text_color, text)
+
     def _draw_popup(self):
         imgui.set_next_item_width(150)
         changed, gamma = imgui.slider_float("gamma", self._gamma, 0.1, 5.0)
@@ -506,6 +606,10 @@ class ImguiColorbar(ImguiWindow):
         if imgui.menu_item("Reset vmin-vmax", "", False)[0]:
             for image in self._images:
                 image.reset_vmin_vmax()
+
+        # reset gamma to 1.0
+        if imgui.menu_item("Reset gamma", "", False)[0]:
+            self.gamma = 1.0
 
         texture_height = imgui.get_font_size() - 2
 
@@ -520,7 +624,7 @@ class ImguiColorbar(ImguiWindow):
             for name in names:
                 imgui.push_style_color(imgui.Col_.border, (1.0, 1.0, 1.0, 1.0))
                 imgui.push_style_var(imgui.StyleVar_.image_border_size, 1.0)
-                imgui.image(self._picker_tex_ids[name], image_size=(50, texture_height))
+                imgui.image(self._picker_tex_ids[name], image_size=(75, texture_height))
                 imgui.pop_style_var()
                 imgui.pop_style_color()
 

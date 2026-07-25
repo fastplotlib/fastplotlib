@@ -505,7 +505,7 @@ class NDImage(NDGraphic):
                     histogram=self.processor.histogram,
                 )
                 subplot.add_imgui_window(
-                    self._histogram_widget, location="right", size=140, title="histogram"
+                    self._histogram_widget, location="right", size=100
                 )
 
             self.graphic.reset_vmin_vmax()

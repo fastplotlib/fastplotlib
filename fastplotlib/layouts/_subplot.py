@@ -190,7 +190,7 @@ class Subplot(PlotArea):
         *,
         location: str = None,
         size: int = None,
-        title: str = "GUI Window",
+        title: str = None,
         window_flags=None,
     ):
         """
@@ -211,8 +211,8 @@ class Subplot(PlotArea):
         size: int
             edge or toolbar thickness in pixels, required for edge windows
 
-        title: str
-            window title, used when decorating
+        title: str, optional
+            window title, drawn as a title bar for edge windows. If ``None`` no title bar is drawn.
 
         window_flags: imgui.WindowFlags_, optional
             imgui window flags, used when decorating, uses the ``ImguiWindow`` default flags if not provided

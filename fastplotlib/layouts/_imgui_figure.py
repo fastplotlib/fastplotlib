@@ -179,7 +179,7 @@ class ImguiFigure(Figure):
         size: int = None,
         rect: tuple | np.ndarray = None,
         extent: tuple | np.ndarray = None,
-        title: str = "GUI Window",
+        title: str = None,
         window_flags: imgui.WindowFlags_ = None,
     ):
         """
@@ -208,8 +208,8 @@ class ImguiFigure(Figure):
         extent: (xmin, xmax, ymin, ymax), optional
             fractional or pixel extent for a fixed floating window
 
-        title: str
-            window title, used when decorating
+        title: str, optional
+            window title, drawn as a title bar for edge windows. If ``None`` no title bar is drawn.
 
         window_flags: imgui.WindowFlags_
             imgui window flags, used when decorating; if not provided, the default depends on placement — edge

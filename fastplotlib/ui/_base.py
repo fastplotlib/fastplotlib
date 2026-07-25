@@ -81,7 +81,7 @@ class ImguiWindow(BaseGUI):
         self._size = None
         self._rect_manager = None
         self._floating = False
-        self._title = ""
+        self._title = None
         self._window_flags = (
             imgui.WindowFlags_.no_collapse
             | imgui.WindowFlags_.no_resize
@@ -107,7 +107,7 @@ class ImguiWindow(BaseGUI):
         size: int = None,
         rect: tuple = None,
         extent: tuple = None,
-        title: str = "",
+        title: str = None,
         window_flags: imgui.WindowFlags_ = None,
     ):
         """
@@ -134,8 +134,8 @@ class ImguiWindow(BaseGUI):
         extent: (xmin, xmax, ymin, ymax), optional
             fractional or pixel extent for a fixed floating window
 
-        title: str
-            window title, drawn as a title bar if not empty
+        title: str, optional
+            window title, drawn as a title bar for edge windows. If ``None`` no title bar is drawn.
 
         window_flags: imgui.WindowFlags_
             window flag enum, can be combined with the ``|`` operator. If not provided, the default depends on the
@@ -443,7 +443,7 @@ class ImguiWindow(BaseGUI):
             imgui.set_next_window_pos((self.x, self.y))
 
         # append the id to keep the window unique without changing the visible title
-        expanded = imgui.begin(f"{self._title}##{self._id_counter}", p_open=None, flags=self._window_flags)
+        expanded = imgui.begin(f"{self._title or ''}##{self._id_counter}", p_open=None, flags=self._window_flags)
 
         if self._reserves:
             # edge and toolbar windows draw a custom title bar and collapse via the resize handle
@@ -459,7 +459,7 @@ class ImguiWindow(BaseGUI):
             main_height = 1.0 if self._collapsed else 0.0
             imgui.begin_child("##main_ui", imgui.ImVec2(0, main_height))
 
-            if self._title:
+            if self._title is not None:
                 self._draw_title(self._title)
 
             imgui.indent(6.0)
