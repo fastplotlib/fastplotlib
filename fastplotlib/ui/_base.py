@@ -32,7 +32,7 @@ def _wrap_update_call(func: Callable, parent) -> Callable:
     return func
 
 
-class BaseGUI:
+class ImguiBase:
     """
     Base class for all ImGUI based GUIs, windows and popups
 
@@ -44,15 +44,15 @@ class BaseGUI:
     ID_COUNTER: int = 0
 
     def __init__(self):
-        BaseGUI.ID_COUNTER += 1
-        self._id_counter = BaseGUI.ID_COUNTER
+        ImguiBase.ID_COUNTER += 1
+        self._id_counter = ImguiBase.ID_COUNTER
 
     def draw(self):
         """must be implemented in subclass"""
         raise NotImplementedError
 
 
-class ImguiWindow(BaseGUI):
+class ImguiWindow(ImguiBase):
     def __init__(self, update_call: Callable = None):
         """
         An imgui window drawn within a Figure. Subclass and implement ``update()`` to draw imgui elements, or pass a
@@ -490,7 +490,7 @@ class ImguiWindow(BaseGUI):
         raise NotImplementedError
 
 
-class ImguiPopup(BaseGUI):
+class ImguiPopup(ImguiBase):
     def __init__(self, update_call: Callable = None):
         """
         An imgui popup drawn within a Figure, opened by a right-click. Subclass and implement ``update()`` to draw
