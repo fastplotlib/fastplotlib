@@ -411,8 +411,8 @@ class ImguiColorbar(ImguiWindow):
         imgui.pop_style_var()
         imgui.pop_style_color()
 
-        # right-click the bar for the gamma slider and colormap picker
-        if imgui.begin_popup_context_item("##colorbar_popup"):
+        # right-click for the gamma slider and colormap picker
+        if imgui.begin_popup_context_window("##colorbar_popup"):
             self._draw_popup()
             imgui.end_popup()
 
