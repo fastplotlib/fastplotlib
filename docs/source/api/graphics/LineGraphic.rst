@@ -31,9 +31,9 @@ Properties
     LineGraphic.data
     LineGraphic.deleted
     LineGraphic.event_handlers
+    LineGraphic.imgui_right_click
     LineGraphic.name
     LineGraphic.offset
-    LineGraphic.right_click_menu
     LineGraphic.rotation
     LineGraphic.scale
     LineGraphic.size_space
@@ -54,10 +54,13 @@ Methods
     LineGraphic.add_linear_selector
     LineGraphic.add_polygon_selector
     LineGraphic.add_rectangle_selector
+    LineGraphic.append_imgui_right_click
     LineGraphic.clear_event_handlers
     LineGraphic.format_pick_info
     LineGraphic.map_model_to_world
     LineGraphic.map_world_to_model
     LineGraphic.remove_event_handler
+    LineGraphic.remove_imgui_right_click
     LineGraphic.rotate
+    LineGraphic.set_imgui_right_click
 

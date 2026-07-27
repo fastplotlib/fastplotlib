@@ -27,9 +27,9 @@ Properties
     PolygonSelectors.block_handlers
     PolygonSelectors.deleted
     PolygonSelectors.event_handlers
+    PolygonSelectors.imgui_right_click
     PolygonSelectors.name
     PolygonSelectors.offset
-    PolygonSelectors.right_click_menu
     PolygonSelectors.rotation
     PolygonSelectors.scale
     PolygonSelectors.selection
@@ -46,6 +46,7 @@ Methods
     PolygonSelectors.add_axes
     PolygonSelectors.add_event_handler
     PolygonSelectors.append
+    PolygonSelectors.append_imgui_right_click
     PolygonSelectors.clear
     PolygonSelectors.clear_event_handlers
     PolygonSelectors.format_pick_info
@@ -53,5 +54,7 @@ Methods
     PolygonSelectors.map_world_to_model
     PolygonSelectors.remove
     PolygonSelectors.remove_event_handler
+    PolygonSelectors.remove_imgui_right_click
     PolygonSelectors.rotate
+    PolygonSelectors.set_imgui_right_click
 

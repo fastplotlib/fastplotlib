@@ -855,9 +855,6 @@ class Figure:
 
             return iio.imwrite(uri, snapshot, **kwargs)
 
-    def open_popup(self, *args, **kwargs):
-        warn("popups only supported by ImguiFigure")
-
     def _fpl_reset_layout(self, *ev):
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
         self.layout.canvas_resized(self.get_pygfx_render_area())

@@ -19,8 +19,8 @@ class NDWidget:
 
         self._indices._add_ndwidget_(self)
 
-        self._figure = ImguiFigure(std_right_click_menu=RightClickMenu, **kwargs)
-        self._figure.std_right_click_menu.set_nd_widget(self)
+        self._figure = ImguiFigure(**kwargs)
+        self._figure.set_imgui_right_click(RightClickMenu(self))
 
         self._subplots_nd: dict[Subplot, NDWSubplot] = dict()
         for subplot in self.figure:
@@ -29,8 +29,10 @@ class NDWidget:
         # hard code the expected height so that the first render looks right in tests, docs etc.
         ui_size = 57 + (50 * len(self.indices))
 
-        self._sliders_ui = NDWidgetUI(self.figure, ui_size, self)
-        self.figure.add_gui(self._sliders_ui)
+        self._sliders_ui = NDWidgetUI(self)
+        self.figure.add_imgui_window(
+            self._sliders_ui, location="bottom", size=ui_size, title="NDWidget controls"
+        )
 
     @property
     def figure(self) -> ImguiFigure:

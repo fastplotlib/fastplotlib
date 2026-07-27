@@ -30,11 +30,11 @@ Properties
     LinearSelector.edge_color
     LinearSelector.event_handlers
     LinearSelector.fill_color
+    LinearSelector.imgui_right_click
     LinearSelector.limits
     LinearSelector.name
     LinearSelector.offset
     LinearSelector.parent
-    LinearSelector.right_click_menu
     LinearSelector.rotation
     LinearSelector.scale
     LinearSelector.selection
@@ -51,6 +51,7 @@ Methods
 
     LinearSelector.add_axes
     LinearSelector.add_event_handler
+    LinearSelector.append_imgui_right_click
     LinearSelector.clear_event_handlers
     LinearSelector.format_pick_info
     LinearSelector.get_selected_data
@@ -59,5 +60,7 @@ Methods
     LinearSelector.map_model_to_world
     LinearSelector.map_world_to_model
     LinearSelector.remove_event_handler
+    LinearSelector.remove_imgui_right_click
     LinearSelector.rotate
+    LinearSelector.set_imgui_right_click
 

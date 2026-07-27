@@ -32,10 +32,11 @@ Properties
     ImageGraphic.data
     ImageGraphic.deleted
     ImageGraphic.event_handlers
+    ImageGraphic.gamma
+    ImageGraphic.imgui_right_click
     ImageGraphic.interpolation
     ImageGraphic.name
     ImageGraphic.offset
-    ImageGraphic.right_click_menu
     ImageGraphic.rotation
     ImageGraphic.scale
     ImageGraphic.supported_events
@@ -56,11 +57,14 @@ Methods
     ImageGraphic.add_linear_selector
     ImageGraphic.add_polygon_selector
     ImageGraphic.add_rectangle_selector
+    ImageGraphic.append_imgui_right_click
     ImageGraphic.clear_event_handlers
     ImageGraphic.format_pick_info
     ImageGraphic.map_model_to_world
     ImageGraphic.map_world_to_model
     ImageGraphic.remove_event_handler
+    ImageGraphic.remove_imgui_right_click
     ImageGraphic.reset_vmin_vmax
     ImageGraphic.rotate
+    ImageGraphic.set_imgui_right_click
 

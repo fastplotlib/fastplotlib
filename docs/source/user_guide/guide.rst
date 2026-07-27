@@ -562,23 +562,16 @@ are no callbacks, but it is easy to learn if you see a few examples.
 .. image:: ../_static/guide_imgui.png
 
 We specifically use `imgui-bundle <https://github.com/pthom/imgui_bundle>`_ for the python bindings in fastplotlib.
-There is large community and many resources out there on building UIs using imgui.
 
 To install ``fastplotlib`` with ``imgui`` use the ``imgui`` extras option, i.e. ``pip install fastplotlib[imgui]``, or ``pip install imgui_bundle`` if you've already installed fastplotlib.
 
 Fastplotlib comes built-in with imgui UIs for subplot toolbars and a standard right-click menu with a number of options.
-You can also make custom GUIs and embed them within the canvas, see the examples gallery for detailed examples.
+The standard right-click menu can be extended or replaced, and a right-click popup can also be set on a ``Subplot`` or
+a ``Graphic``. You can also make custom GUIs and embed them within the canvas.
 
-**Some tips:**
-
-The ``imgui-bundle`` docs as of March 2025 don't have a nice API list (as far as I know), here is how we go about developing UIs with imgui:
-
-1. Use the ``pyimgui`` API docs to locate the type of UI element we want, for example if we want a ``slider_int``: https://pyimgui.readthedocs.io/en/latest/reference/imgui.core.html#imgui.core.slider_int
-
-2. Look at the function signature in the ``imgui-bundle`` sources. You can usually access this easily with your IDE: https://github.com/pthom/imgui_bundle/blob/a5e7d46555832c40e9be277d4747eac5a303dbfc/bindings/imgui_bundle/imgui/__init__.pyi#L1693-L1696
-
-3. ``pyimgui`` and ``imgui-bundle`` sometimes don't have the same function signature, so we use a combination of the pyimgui docs and
-imgui-bundle function signature to understand and implement the UI element.
+The :doc:`imgui guide </imgui/guide>` covers adding UIs to a Figure, and the
+:doc:`imgui element reference </imgui/reference/index>` documents every element with its signature, its arguments, and
+an image of what it draws.
 
 ImageWidget
 -----------

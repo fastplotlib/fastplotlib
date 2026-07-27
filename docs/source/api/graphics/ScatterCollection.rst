@@ -31,13 +31,13 @@ Properties
     ScatterCollection.deleted
     ScatterCollection.event_handlers
     ScatterCollection.graphics
+    ScatterCollection.imgui_right_click
     ScatterCollection.markers
     ScatterCollection.metadatas
     ScatterCollection.name
     ScatterCollection.names
     ScatterCollection.offset
     ScatterCollection.offsets
-    ScatterCollection.right_click_menu
     ScatterCollection.rotation
     ScatterCollection.rotations
     ScatterCollection.scale
@@ -60,11 +60,14 @@ Methods
     ScatterCollection.add_linear_selector
     ScatterCollection.add_polygon_selector
     ScatterCollection.add_rectangle_selector
+    ScatterCollection.append_imgui_right_click
     ScatterCollection.clear_event_handlers
     ScatterCollection.format_pick_info
     ScatterCollection.map_model_to_world
     ScatterCollection.map_world_to_model
     ScatterCollection.remove_event_handler
     ScatterCollection.remove_graphic
+    ScatterCollection.remove_imgui_right_click
     ScatterCollection.rotate
+    ScatterCollection.set_imgui_right_click
 
