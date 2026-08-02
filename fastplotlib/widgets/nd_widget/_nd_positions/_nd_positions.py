@@ -112,6 +112,11 @@ class NDPositionsProcessor(NDProcessor):
         self.cmap_transform_each = cmap_transform_each
         self.sizes = sizes
 
+        # Axis order of the spatial dimensions to display
+        self._spatial_dims_int = tuple(
+            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
+        )
+
     def _check_shape_feature(
         self, prop: str, check_shape: tuple[int, int]
     ) -> tuple[int, int]:
@@ -554,6 +559,8 @@ class NDPositionsProcessor(NDProcessor):
         # final CUDA -> numpy conversion at the end of the pipeline
         if isinstance(data, CudaArrayProtocol):
             data = await run_in_thread_pool(self._executor, cuda_to_numpy, data)
+
+        data = data.transpose(*self._spatial_dims_int)
 
         return {
             "data": data,

@@ -91,6 +91,12 @@ class NDVectorsProcessor(NDProcessor):
             spatial_func=spatial_func,
         )
 
+        # Axis order of the spatial dimensions to display
+        self._spatial_dims_int = tuple(
+            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
+        )
+
+
     @property
     def data(self) -> ArrayProtocol | None:
         """
@@ -157,7 +163,7 @@ class NDVectorsProcessor(NDProcessor):
             Example: get((100, 5))
 
         """
-        # this will be squeezed output, with dims in the order of the user set spatial dims
+        # this will be squeezed output, with dims in the order of self.dims
         window_output = await self.get_window_output(indices)
 
         # apply spatial_func; CUDA arrays run inline, numpy goes through the thread pool
@@ -175,7 +181,8 @@ class NDVectorsProcessor(NDProcessor):
         if isinstance(window_output, CudaArrayProtocol):
             window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
 
-        return window_output
+
+        return window_output.transpose(*self._spatial_dims_int)
 
 
 class NDVectors(NDGraphic):
