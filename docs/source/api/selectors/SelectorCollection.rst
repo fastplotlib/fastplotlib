@@ -27,9 +27,9 @@ Properties
     SelectorCollection.block_handlers
     SelectorCollection.deleted
     SelectorCollection.event_handlers
+    SelectorCollection.imgui_right_click
     SelectorCollection.name
     SelectorCollection.offset
-    SelectorCollection.right_click_menu
     SelectorCollection.rotation
     SelectorCollection.scale
     SelectorCollection.selection
@@ -46,6 +46,7 @@ Methods
     SelectorCollection.add_axes
     SelectorCollection.add_event_handler
     SelectorCollection.append
+    SelectorCollection.append_imgui_right_click
     SelectorCollection.clear
     SelectorCollection.clear_event_handlers
     SelectorCollection.format_pick_info
@@ -53,5 +54,7 @@ Methods
     SelectorCollection.map_world_to_model
     SelectorCollection.remove
     SelectorCollection.remove_event_handler
+    SelectorCollection.remove_imgui_right_click
     SelectorCollection.rotate
+    SelectorCollection.set_imgui_right_click
 

@@ -42,7 +42,6 @@ Methods
     Figure.export
     Figure.export_numpy
     Figure.get_pygfx_render_area
-    Figure.open_popup
     Figure.remove_animation
     Figure.remove_subplot
     Figure.show

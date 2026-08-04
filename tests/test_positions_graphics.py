@@ -389,11 +389,74 @@ def test_thickness(thickness):
     assert graphic.thickness == thickness
     assert graphic.world_object.material.thickness == thickness
 
-    if thickness == 0.5:
-        assert isinstance(graphic.world_object.material, pygfx.LineThinMaterial)
+    # the thin line material is selected via the `thin` flag, not the thickness value
+    assert not graphic.thin
+    assert isinstance(graphic.world_object.material, pygfx.LineMaterial)
+    assert not isinstance(graphic.world_object.material, pygfx.LineThinMaterial)
 
-    else:
-        assert isinstance(graphic.world_object.material, pygfx.LineMaterial)
+
+@pytest.mark.parametrize(
+    "pattern,expected",
+    [
+        ("--", (5, 5)),
+        ("dashed", (5, 5)),
+        (":", (0, 2)),
+        ("-.", (5, 2, 1, 2)),
+        ((2, 3), (2, 3)),
+    ],
+)
+def test_dash_pattern(pattern, expected):
+    fig = fpl.Figure()
+    data = generate_positions_spiral_data("xy")
+
+    graphic = fig[0, 0].add_line(data=data, dash_pattern=pattern)
+
+    # value returns the user input verbatim, the material receives the parsed tuple
+    assert graphic.dash_pattern == pattern
+    assert tuple(graphic.world_object.material.dash_pattern) == expected
+
+    # can be changed after creation
+    graphic.dash_pattern = "solid"
+    assert tuple(graphic.world_object.material.dash_pattern) == ()
+
+
+def test_thin():
+    fig = fpl.Figure()
+    data = generate_positions_spiral_data("xy")
+
+    # non-thin by default
+    graphic = fig[0, 0].add_line(data=data, thickness=5.0)
+    assert graphic.thin is False
+    assert not isinstance(graphic.world_object.material, pygfx.LineThinMaterial)
+
+    # the material is swapped when toggling `thin` after creation, keeping the geometry
+    geometry = graphic.world_object.geometry
+    graphic.thin = True
+    assert graphic.thin is True
+    assert isinstance(graphic.world_object.material, pygfx.LineThinMaterial)
+    assert graphic.world_object.geometry is geometry
+
+    graphic.thin = False
+    assert not isinstance(graphic.world_object.material, pygfx.LineThinMaterial)
+    assert isinstance(graphic.world_object.material, pygfx.LineMaterial)
+
+    # can also be set at construction
+    thin_graphic = fig[0, 0].add_line(data=data, thin=True)
+    assert isinstance(thin_graphic.world_object.material, pygfx.LineThinMaterial)
+
+
+def test_thin_ignores_dash_pattern_warns():
+    fig = fpl.Figure()
+    data = generate_positions_spiral_data("xy")
+
+    # constructing a thin line with a dash pattern warns that dashing is ignored
+    with pytest.warns(UserWarning, match="dash_pattern.*ignored"):
+        fig[0, 0].add_line(data=data, thin=True, dash_pattern="--")
+
+    # setting the dash pattern on a thin line also warns
+    graphic = fig[0, 0].add_line(data=data, thin=True)
+    with pytest.warns(UserWarning, match="dash_pattern.*ignored"):
+        graphic.dash_pattern = "--"
 
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])

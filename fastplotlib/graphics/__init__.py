@@ -1,5 +1,6 @@
 from ._base import Graphic
 from .line import LineGraphic
+from .inf_line import InfLineGraphic
 from .scatter import ScatterGraphic
 from .image import ImageGraphic, ImageYUVGraphic
 from .image_volume import ImageVolumeGraphic
@@ -12,6 +13,7 @@ from .scatter_collection import ScatterCollection, ScatterStack
 __all__ = [
     "Graphic",
     "LineGraphic",
+    "InfLineGraphic",
     "ScatterGraphic",
     "ImageGraphic",
     "ImageYUVGraphic",

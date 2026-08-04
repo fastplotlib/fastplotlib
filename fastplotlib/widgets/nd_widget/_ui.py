@@ -14,26 +14,18 @@ from ...graphics import (
 )
 from ...utils import quick_min_max
 from ...layouts import Subplot
-from ...ui import EdgeWindow, StandardRightClickMenu
+from ...ui import ImguiWindow, StandardRightClickMenu
 from ._index import RangeContinuous
 from ._base import NDGraphic
-from ._nd_positions import NDPositions
+from ._nd_positions import NDPositions, NDTimeseries
 from ._nd_image import NDImage
 
-position_graphic_types = [ScatterCollection, ScatterStack, LineCollection, LineStack, ImageGraphic]
+position_graphic_types = [ScatterCollection, ScatterStack, LineCollection, LineStack]
 
 
-class NDWidgetUI(EdgeWindow):
-    def __init__(self, figure, size, ndwidget):
-        super().__init__(
-            figure=figure,
-            size=size,
-            title="NDWidget controls",
-            location="bottom",
-            window_flags=imgui.WindowFlags_.no_collapse
-            | imgui.WindowFlags_.no_resize
-            | imgui.WindowFlags_.no_title_bar,
-        )
+class NDWidgetUI(ImguiWindow):
+    def __init__(self, ndwidget):
+        super().__init__()
         self._ndwidget = ndwidget
 
         # whether or not a dimension is in play mode
@@ -203,22 +195,17 @@ class NDWidgetUI(EdgeWindow):
 
 
 class RightClickMenu(StandardRightClickMenu):
-    def __init__(self, figure):
-        self._ndwidget = None
+    def __init__(self, ndwidget):
+        super().__init__()
+
+        self._ndwidget = ndwidget
         self._ndgraphic_windows = set()
 
-        super().__init__(figure=figure)
-
-    def set_nd_widget(self, ndw):
-        self._ndwidget = ndw
-
-    def _extra_menu(self):
-        if self._ndwidget is None:
-            return
+    def update(self):
+        super().update()
 
         if imgui.begin_menu("ND Graphics"):
-            subplot = self.get_subplot()
-            for ndg in self._ndwidget[subplot].nd_graphics:
+            for ndg in self._ndwidget[self.subplot].nd_graphics:
                 name = ndg.name if ndg.name is not None else hex(id(ndg))
                 if imgui.menu_item(
                     f"{name}", "", False
@@ -227,9 +214,10 @@ class RightClickMenu(StandardRightClickMenu):
 
             imgui.end_menu()
 
-    def update(self):
-        super().update()
+    def draw(self):
+        super().draw()
 
+        # the ND graphic windows are not part of the popup, they stay open after the popup closes
         for ndg in list(self._ndgraphic_windows):  # set -> list so we can change size during iteration
             name = ndg.name if ndg.name is not None else hex(id(ndg))
             subplot = ndg.graphic._plot_area
@@ -270,7 +258,11 @@ class RightClickMenu(StandardRightClickMenu):
             nd_image.graphic._material.gamma = new_gamma
 
     def _draw_nd_pos_ui(self, subplot: Subplot, nd_graphic: NDPositions):
-        for i, cls in enumerate(position_graphic_types):
+        graphic_types = position_graphic_types
+        if isinstance(nd_graphic, NDTimeseries):
+            # heatmap only makes sense for timeseries data
+            graphic_types = position_graphic_types + [ImageGraphic]
+        for i, cls in enumerate(graphic_types):
             if imgui.radio_button(cls.__name__, type(nd_graphic.graphic) is cls):
                 nd_graphic.graphic_type = cls
                 subplot.auto_scale()
@@ -308,11 +300,12 @@ class RightClickMenu(StandardRightClickMenu):
             if changed:
                 nd_graphic.display_window = new
 
-        options = [None, "fixed", "auto"]
-        changed, option = imgui.combo(
-            "x-range mode",
-            options.index(nd_graphic.x_range_mode),
-            [str(o) for o in options],
-        )
-        if changed:
-            nd_graphic.x_range_mode = options[option]
+        if isinstance(nd_graphic, NDTimeseries):
+            options = [None, "fixed", "auto"]
+            changed, option = imgui.combo(
+                "x-range mode",
+                options.index(nd_graphic.x_range_mode),
+                [str(o) for o in options],
+            )
+            if changed:
+                nd_graphic.x_range_mode = options[option]

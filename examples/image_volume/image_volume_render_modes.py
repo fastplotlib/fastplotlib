@@ -10,7 +10,7 @@ View a volume using different rendering modes.
 
 import numpy as np
 import fastplotlib as fpl
-from fastplotlib.ui import EdgeWindow
+from fastplotlib.ui import ImguiColorbar, ImguiWindow
 from fastplotlib.graphics.features import VOLUME_RENDER_MODES
 import imageio.v3 as iio
 from imgui_bundle import imgui
@@ -25,58 +25,52 @@ figure = fpl.Figure(
 
 figure[0, 0].add_image_volume(voldata, name="vol-img")
 
-# add an hlut tool
-hlut = fpl.HistogramLUTTool(voldata, figure[0, 0]["vol-img"])
-
-figure[0, 0].docks["right"].size = 80
-figure[0, 0].docks["right"].controller.enabled = False
-figure[0, 0].docks["right"].add_graphic(hlut)
-figure[0, 0].docks["right"].auto_scale(maintain_aspect=False)
+# add a colorbar with a histogram of the volume data
+colorbar = ImguiColorbar(
+    images=figure[0, 0]["vol-img"], histogram=np.histogram(voldata, bins=100)
+)
+figure[0, 0].add_imgui_window(colorbar, location="right", size=100)
 
 
-class GUI(EdgeWindow):
-    def __init__(self, figure, title="Render options", location="right", size=300):
-        super().__init__(figure, title=title, location=location, size=size)
-
-        # reference to the graphic for convenience
-        self.graphic: fpl.ImageVolumeGraphic = self._figure[0, 0]["vol-img"]
-
+class GUI(ImguiWindow):
     def update(self):
+        graphic: fpl.ImageVolumeGraphic = self._figure[0, 0]["vol-img"]
+
         imgui.text("Switch render mode:")
 
         # add buttons to switch between modes
         for mode in VOLUME_RENDER_MODES.keys():
             if imgui.button(mode):
-                self.graphic.mode = mode
+                graphic.mode = mode
 
         # add sliders to change iso rendering properties
-        if self.graphic.mode == "iso":
-            _, self.graphic.threshold = imgui.slider_float(
-                "threshold", v=self.graphic.threshold, v_max=255, v_min=1,
+        if graphic.mode == "iso":
+            _, graphic.threshold = imgui.slider_float(
+                "threshold", v=graphic.threshold, v_max=255, v_min=1,
             )
-            _, self.graphic.step_size = imgui.slider_float(
-                "step_size", v=self.graphic.step_size, v_max=10.0, v_min=0.1,
+            _, graphic.step_size = imgui.slider_float(
+                "step_size", v=graphic.step_size, v_max=10.0, v_min=0.1,
             )
-            _, self.graphic.substep_size = imgui.slider_float(
-                "substep_size", v=self.graphic.substep_size, v_max=10.0, v_min=0.1,
+            _, graphic.substep_size = imgui.slider_float(
+                "substep_size", v=graphic.substep_size, v_max=10.0, v_min=0.1,
             )
 
-            col = imgui.ImVec4((*self.graphic.emissive.rgb, 1))
-            _, self.graphic.emissive = imgui.color_picker3("emissive color", col=col)
+            col = imgui.ImVec4((*graphic.emissive.rgb, 1))
+            _, graphic.emissive = imgui.color_picker3("emissive color", col=col)
 
-        if self.graphic.mode == "slice":
+        if graphic.mode == "slice":
             imgui.text("Select plane defined by:\nax + by + cz + d = 0")
-            _, a = imgui.slider_float("a", v=self.graphic.plane[0], v_min=-1, v_max=1.0)
-            _, b = imgui.slider_float("b", v=self.graphic.plane[1], v_min=-1, v_max=1.0)
-            _, c = imgui.slider_float("c", v=self.graphic.plane[2], v_min=-1, v_max=1.0)
+            _, a = imgui.slider_float("a", v=graphic.plane[0], v_min=-1, v_max=1.0)
+            _, b = imgui.slider_float("b", v=graphic.plane[1], v_min=-1, v_max=1.0)
+            _, c = imgui.slider_float("c", v=graphic.plane[2], v_min=-1, v_max=1.0)
 
-            largest_dim = max(self.graphic.data.value.shape)
-            _, d = imgui.slider_float("d", v=self.graphic.plane[3], v_min=0, v_max=largest_dim * 2)
+            largest_dim = max(graphic.data.value.shape)
+            _, d = imgui.slider_float("d", v=graphic.plane[3], v_min=0, v_max=largest_dim * 2)
 
-            self.graphic.plane = (a, b, c, d)
+            graphic.plane = (a, b, c, d)
 
-gui = GUI(figure=figure)
-figure.add_gui(gui)
+gui = GUI()
+figure.add_imgui_window(gui, location="right", size=300, title="Render options")
 
 figure.show()
 

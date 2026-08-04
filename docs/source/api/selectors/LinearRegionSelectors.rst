@@ -27,9 +27,9 @@ Properties
     LinearRegionSelectors.block_handlers
     LinearRegionSelectors.deleted
     LinearRegionSelectors.event_handlers
+    LinearRegionSelectors.imgui_right_click
     LinearRegionSelectors.name
     LinearRegionSelectors.offset
-    LinearRegionSelectors.right_click_menu
     LinearRegionSelectors.rotation
     LinearRegionSelectors.scale
     LinearRegionSelectors.selection
@@ -46,6 +46,7 @@ Methods
     LinearRegionSelectors.add_axes
     LinearRegionSelectors.add_event_handler
     LinearRegionSelectors.append
+    LinearRegionSelectors.append_imgui_right_click
     LinearRegionSelectors.clear
     LinearRegionSelectors.clear_event_handlers
     LinearRegionSelectors.format_pick_info
@@ -53,5 +54,7 @@ Methods
     LinearRegionSelectors.map_world_to_model
     LinearRegionSelectors.remove
     LinearRegionSelectors.remove_event_handler
+    LinearRegionSelectors.remove_imgui_right_click
     LinearRegionSelectors.rotate
+    LinearRegionSelectors.set_imgui_right_click
 

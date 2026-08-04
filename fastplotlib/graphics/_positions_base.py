@@ -18,6 +18,9 @@ from .features import (
 class PositionsGraphic(Graphic):
     """Base class for LineGraphic and ScatterGraphic"""
 
+    # the feature used to manage a per-vertex color buffer, subclasses may override
+    _VertexColorsCls = VertexColors
+
     @property
     def data(self) -> VertexPositions:
         """
@@ -155,7 +158,7 @@ class PositionsGraphic(Graphic):
                 if color_mode in ("auto", "uniform"):
                     new_colors = UniformColor(colors)
                 else:
-                    new_colors = VertexColors(
+                    new_colors = self._VertexColorsCls(
                         colors, n_colors=self._data.value.shape[0]
                     )
 
@@ -166,7 +169,9 @@ class PositionsGraphic(Graphic):
                         "You passed `color_mode` = 'uniform', but specified a sequence of multiple colors. Use "
                         "`color_mode` = 'auto' or 'vertex' for multiple colors."
                     )
-                new_colors = VertexColors(colors, n_colors=self._data.value.shape[0])
+                new_colors = self._VertexColorsCls(
+                    colors, n_colors=self._data.value.shape[0]
+                )
 
             elif len(colors) > 4:
                 # sequence of multiple colors, must again ensure color_mode is not uniform
@@ -175,7 +180,9 @@ class PositionsGraphic(Graphic):
                         "You passed `color_mode` = 'uniform', but specified a sequence of multiple colors. Use "
                         "`color_mode` = 'auto' or 'vertex' for multiple colors."
                     )
-                new_colors = VertexColors(colors, n_colors=self._data.value.shape[0])
+                new_colors = self._VertexColorsCls(
+                    colors, n_colors=self._data.value.shape[0]
+                )
             else:
                 raise ValueError(
                     "`colors` must be a str, pygfx.Color, array, list or tuple indicating an RGB(A) color, or a "
@@ -225,7 +232,9 @@ class PositionsGraphic(Graphic):
                     self._colors = colors
                 else:
                     # create vertex colors buffer
-                    self._colors = VertexColors("w", n_colors=self._data.value.shape[0])
+                    self._colors = self._VertexColorsCls(
+                        "w", n_colors=self._data.value.shape[0]
+                    )
                     # make cmap using vertex colors buffer
                     self._cmap = VertexCmap(
                         self._colors,

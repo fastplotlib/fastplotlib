@@ -3,11 +3,15 @@
 from typing import *
 
 import numpy
+from numpy.typing import NDArray
+
+from numpy.typing import NDArray
 
 import pygfx
 
 from ..graphics import *
 from ..graphics._base import Graphic
+from ..utils import enums
 import typing
 import fastplotlib
 
@@ -33,6 +37,7 @@ class GraphicMethodsMixin:
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
+        gamma: float = 1.0,
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
         colorspace: fastplotlib.utils.enums.ColorspacesRGB = "srgb",
@@ -59,6 +64,9 @@ class GraphicMethodsMixin:
             colormap to use to display the data. For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
+        gamma: float, default 1.0
+            gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
+
         interpolation: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
 
@@ -68,34 +76,39 @@ class GraphicMethodsMixin:
         colorspace: one of "srgb", "tex-srgb", "physical", default "srgb"
             colorspace in which to interpret the provided data.
 
-                * "srgb": the data represents intensity, rgb, or rgba pixels in the sRGB space.
-                  sRGB is a standard color space designed for consistent representation of colors
-                  across devices like monitors. Most images store colors in this space.
-                  The shader convers sRGB colors to physical in the shader before doing color computations.
+            * "srgb": the data represents intensity, rgb, or rgba pixels in the sRGB space.
+              sRGB is a standard color space designed for consistent representation of colors
+              across devices like monitors. Most images store colors in this space.
+              The shader convers sRGB colors to physical in the shader before doing color computations.
 
-                * "tex-srgb": the underlying texture will be of an sRGB format. This means the data
-                  is automatically converted to sRGB when it is sampled. This results in better glTF
-                  compliance (because interpolation in the sampling happens in linear space).
-                  Note that sampling *always* results in the sRGB values, also when not interpreted as color.
-                  Only supported for rgb and rgba data.
+            * "tex-srgb": the underlying texture will be of an sRGB format. This means the data
+              is automatically converted to sRGB when it is sampled. This results in better glTF
+              compliance (because interpolation in the sampling happens in linear space).
+              Note that sampling *always* results in the sRGB values, also when not interpreted as color.
+              Only supported for rgb and rgba data.
 
-                * "physical": the colors are (already) in the physical / linear space, where lighting
-                  calculations can be applied. Shader code that interprets the data as color will use it as-is.
+            * "physical": the colors are (already) in the physical / linear space, where lighting
+              calculations can be applied. Shader code that interprets the data as color will use it as-is.
 
         cpu_buffer: bool, default True
             If ``True``, maintains a buffer of system RAM that is sychronized with a corresponding storage buffer
             on the GPU.
             If ``False``, setting the graphic data will send the new data directly to the GPU, we also
             call this "bufferless". This is much faster but lacks the following features:
-                * you must update the entire data array, i.e. you can perform ``image.data = new_data``, and you
+
+            * you must update the entire data array, i.e. you can perform ``image.data = new_data``, and you
                 cannot perform partial updates such as ``image.data[indices] = <new_data_at_indices>``.
-                * RGB arrays of shape [rows, cols, 3] are not supported since wgpu does not have RGB textures,
+
+            * RGB arrays of shape [rows, cols, 3] are not supported since wgpu does not have RGB textures,
                 use RGBA or use `cpu_buffer=True` if you really need RGB instead of RGBA.
-                * tooltip values for grayscale data are estimated using an inverse transforms on the colormap LUT.
+
+            * tooltip values for grayscale data are estimated using an inverse transforms on the colormap LUT.
                 The tooltip values may or may not be accurate for a given colormap and vmin, vmax. If you require
                 precise and reliable tooltip values for grayscale data use `cpu_buffer=True`.
-                * vmin, vmax must be explicitly provided if sharing an existing buffer from another ImageGraphic
-                * ``reset_vmin_vmax()`` is not supported
+
+            * vmin, vmax must be explicitly provided if sharing an existing buffer from another ImageGraphic
+            * ``reset_vmin_vmax()`` is not supported
+            * selector tools will not be able to return the data under the selection
 
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
@@ -108,6 +121,7 @@ class GraphicMethodsMixin:
             vmin,
             vmax,
             cmap,
+            gamma,
             interpolation,
             cmap_interpolation,
             colorspace,
@@ -122,6 +136,7 @@ class GraphicMethodsMixin:
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
+        gamma: float = 1.0,
         interpolation: str = "linear",
         cmap_interpolation: str = "linear",
         plane: tuple[float, float, float, float] = (0, 0, -1, 0),
@@ -153,6 +168,9 @@ class GraphicMethodsMixin:
 
         cmap: str, default "plasma"
             colormap for grayscale volumes
+
+        gamma: float, default 1.0
+            gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
 
         interpolation: str, default "linear"
             interpolation method for sampling pixels
@@ -199,6 +217,7 @@ class GraphicMethodsMixin:
             vmin,
             vmax,
             cmap,
+            gamma,
             interpolation,
             cmap_interpolation,
             plane,
@@ -213,15 +232,12 @@ class GraphicMethodsMixin:
     def add_image_yuv(
         self,
         data: (
-            tuple[
-                numpy.ndarray[tuple[typing.Any, ...], numpy.dtype[numpy.uint8]],
-                numpy.ndarray[tuple[typing.Any, ...], numpy.dtype[numpy.uint8]],
-                numpy.ndarray[tuple[typing.Any, ...], numpy.dtype[numpy.uint8]],
-            ]
+            tuple[NDArray[numpy.uint8], NDArray[numpy.uint8], NDArray[numpy.uint8]]
             | fastplotlib.graphics.features._image.TextureYUV
         ),
         vmin: float = 0,
         vmax: float = 255,
+        gamma: float = 1.0,
         interpolation: str = "nearest",
         colorspace: fastplotlib.utils.enums.ColorspacesYUV = "yuv420p",
         colorrange: fastplotlib.utils.enums.ColorRange = "limited",
@@ -248,25 +264,28 @@ class GraphicMethodsMixin:
         vmax: float, optional, default 255
             maximum value for color scaling
 
+        gamma: float, default 1.0
+            gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
+
         interpolation: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
 
         colorspace: "yuv42p" | "yuv444p"
             colorspace in which to interpret the provided data.
 
-                * "yuv420p": A common video format. The data is represented as 3 planes (y, u, and v).
-                  The y represents intensity, and is at full resolution. The u and v planes are a
-                  quarter of the size.
+            * "yuv420p": A common video format. The data is represented as 3 planes (y, u, and v).
+              The y represents intensity, and is at full resolution. The u and v planes are a
+              quarter of the size.
 
-                * "yuv444p": A lesser common video format. The data is represented as 3 planes
-                  (y, u, and v) similar to yuv420p however the u and v planes are stored
-                  at full resolution.
+            * "yuv444p": A lesser common video format. The data is represented as 3 planes
+              (y, u, and v) similar to yuv420p however the u and v planes are stored
+              at full resolution.
 
         colorrange: Literal["full", "limited"] = "limited",
             Relevant for yuv colorspaces. Most videos use "limited".
 
             * "limited": The luma plane (Y) is limited to the range of 16-235 for 8 bits.
-                         The chroma planes (U and V) are limited to the range of 16-240 for 8 bits
+              The chroma planes (U and V) are limited to the range of 16-240 for 8 bits
             * "full": The luma plane and chroma plane use the full range of the storage format.
 
             See the following links from the FFMPEG documentation for more details:
@@ -278,11 +297,14 @@ class GraphicMethodsMixin:
             on the GPU.
             If ``False``, setting the graphic data will send the new data directly to the GPU, we also
             call this "bufferless". This is much faster but lacks the following features:
-                * you must update the entire data array, i.e. you can perform ``image.data = new_data``, and you
+
+            * you must update the entire data array, i.e. you can perform ``image.data = new_data``, and you
                 cannot perform partial updates such as ``image.data[indices] = <new_data_at_indices>``.
-                * RGB arrays of shape [rows, cols, 3] are not supported since wgpu does not have RGB textures,
+
+            * RGB arrays of shape [rows, cols, 3] are not supported since wgpu does not have RGB textures,
                 use RGBA or use `cpu_buffer=True` if you really need RGB instead of RGBA.
-                * tooltip values for grayscale data are estimated using an inverse transforms on the colormap LUT.
+
+            * tooltip values for grayscale data are estimated using an inverse transforms on the colormap LUT.
                 The tooltip values may or may not be accurate for a given colormap and vmin, vmax. If you require
                 precise and reliable tooltip values for grayscale data use `cpu_buffer=True`.
 
@@ -296,9 +318,98 @@ class GraphicMethodsMixin:
             data,
             vmin,
             vmax,
+            gamma,
             interpolation,
             colorspace,
             colorrange,
+            **kwargs
+        )
+
+    def add_inf_line(
+        self,
+        data: Any,
+        axis: Optional[Literal["x", "y", "z"]] = None,
+        thickness: float = 2.0,
+        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        cmap: str = None,
+        cmap_transform: Union[numpy.ndarray, Sequence] = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        start_is_infinite: bool = True,
+        end_is_infinite: bool = True,
+        dash_pattern: str | tuple | list = (),
+        size_space: str = "screen",
+        **kwargs
+    ) -> InfLineGraphic:
+        """
+
+        Create a collection of infinite lines.
+
+        Parameters
+        ----------
+        data: array-like
+            The line positions. If ``axis`` is "x", "y", or "z", a 1D array of positions along
+            that axis; one infinite line is drawn at each position. If ``axis`` is None, ``data``
+            is used directly as the segment endpoints, of shape [n_points, 2 | 3], where every two
+            consecutive points define one line.
+
+        axis: "x", "y", "z", or None, default None
+            The axis along which the line positions are given. If None, ``data`` is interpreted
+            directly as the segment endpoints.
+
+        thickness: float, optional, default 2.0
+            thickness of the lines
+
+        colors: str, array, or iterable, default "w"
+            specify colors as a single human-readable string, a single RGBA array, or a Sequence
+            (array, tuple, or list) of strings or RGBA arrays. A sequence of colors provides one
+            color per line.
+
+        cmap: str, optional
+            Apply a colormap to the lines instead of assigning colors manually, one color per line.
+            This overrides any argument passed to "colors". For supported colormaps see the
+            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            "uniform" restricts to a single color for all lines.
+            "vertex" allows an independent color per line.
+            For most cases you can keep it as "auto" and the `color_mode` is determined automatically
+            based on the argument passed to `colors`.
+
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        start_is_infinite: bool, default True
+            whether the start of each line is extended to infinity
+
+        end_is_infinite: bool, default True
+            whether the end of each line is extended to infinity
+
+        dash_pattern: str, tuple, or list, default ()
+            The dash pattern. May be a matplotlib-style string, one of ``"-", "--", "-.", ":"``
+            or ``"solid", "dashed", "dashdot", "dotted"``, or a sequence of floats describing the
+            length of strokes and gaps.
+
+        size_space: str, default "screen"
+            coordinate space in which the thickness is expressed ("screen", "world", "model")
+
+        **kwargs
+            passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            InfLineGraphic,
+            data,
+            axis,
+            thickness,
+            colors,
+            cmap,
+            cmap_transform,
+            color_mode,
+            start_is_infinite,
+            end_is_infinite,
+            dash_pattern,
+            size_space,
             **kwargs
         )
 
@@ -398,6 +509,8 @@ class GraphicMethodsMixin:
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
         color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         size_space: str = "screen",
+        dash_pattern: str | tuple | list = (),
+        thin: bool = False,
         **kwargs
     ) -> LineGraphic:
         """
@@ -438,6 +551,15 @@ class GraphicMethodsMixin:
         size_space: str, default "screen"
             coordinate space in which the thickness is expressed ("screen", "world", "model")
 
+        dash_pattern: str, tuple, or list, default ()
+            The dash pattern. May be a matplotlib-style string, one of ``"-", "--", "-.", ":"``
+            or ``"solid", "dashed", "dashdot", "dotted"``, or a sequence of floats describing the
+            length of strokes and gaps. Ignored when ``thin`` is True.
+
+        thin: bool, default False
+            Use the more performant thin line material, which is always one physical pixel wide.
+            Thickness, dashing, and anti-aliasing are ignored when True.
+
         **kwargs
             passed to :class:`.Graphic`
 
@@ -452,6 +574,8 @@ class GraphicMethodsMixin:
             cmap_transform,
             color_mode,
             size_space,
+            dash_pattern,
+            thin,
             **kwargs
         )
 

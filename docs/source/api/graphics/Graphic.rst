@@ -27,9 +27,9 @@ Properties
     Graphic.block_handlers
     Graphic.deleted
     Graphic.event_handlers
+    Graphic.imgui_right_click
     Graphic.name
     Graphic.offset
-    Graphic.right_click_menu
     Graphic.rotation
     Graphic.scale
     Graphic.supported_events
@@ -44,10 +44,13 @@ Methods
 
     Graphic.add_axes
     Graphic.add_event_handler
+    Graphic.append_imgui_right_click
     Graphic.clear_event_handlers
     Graphic.format_pick_info
     Graphic.map_model_to_world
     Graphic.map_world_to_model
     Graphic.remove_event_handler
+    Graphic.remove_imgui_right_click
     Graphic.rotate
+    Graphic.set_imgui_right_click
 

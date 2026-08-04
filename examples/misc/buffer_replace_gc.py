@@ -14,7 +14,7 @@ Use while monitoring VRAM usage with nvidia-smi
 from typing import Literal
 import numpy as np
 import fastplotlib as fpl
-from fastplotlib.ui import EdgeWindow
+from fastplotlib.ui import ImguiWindow
 from imgui_bundle import imgui
 
 
@@ -37,14 +37,14 @@ datasets = {
 }
 
 
-class UI(EdgeWindow):
+class UI(ImguiWindow):
     def __init__(self, figure):
-        super().__init__(figure=figure, size=200, location="right", title="UI")
+        super().__init__()
         init_data = datasets["init"]
-        self._figure["line"].add_line(
+        figure["line"].add_line(
             data=init_data["data"], colors=init_data["colors"], name="line"
         )
-        self._figure["scatter"].add_scatter(
+        figure["scatter"].add_scatter(
             **init_data,
             uniform_size=False,
             uniform_marker=False,
@@ -79,7 +79,7 @@ class UI(EdgeWindow):
 
 figure = fpl.Figure(shape=(3, 1), size=(700, 1600), names=["line", "scatter", "image"])
 ui = UI(figure)
-figure.add_gui(ui)
+figure.add_imgui_window(ui, location="right", size=200, title="UI")
 
 figure.show()
 

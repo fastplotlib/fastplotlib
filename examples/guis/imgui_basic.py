@@ -13,8 +13,8 @@ See the imgui docs for extensive examples on how to create all UI elements: http
 import numpy as np
 import fastplotlib as fpl
 
-# subclass from EdgeWindow to make a custom ImGUI Window to place inside the figure!
-from fastplotlib.ui import EdgeWindow
+# subclass from ImguiWindow to make a custom ImGUI Window to place inside the figure!
+from fastplotlib.ui import ImguiWindow
 from imgui_bundle import imgui
 
 # make some initial data
@@ -35,12 +35,9 @@ figure[0, 0].add_scatter(data[::10], colors="cyan", sizes=15, name="sine-scatter
 figure[0, 0].add_line(data, thickness=3, colors="r", name="sine-wave")
 
 
-class ImguiExample(EdgeWindow):
-    def __init__(self, figure, size, location, title):
-        super().__init__(figure=figure, size=size, location=location, title=title)
-        # this UI will modify the line
-        self._line = self._figure[0, 0]["sine-wave"]
-
+class ImguiExample(ImguiWindow):
+    def __init__(self):
+        super().__init__()
         # set the default values
         # wave amplitude
         self._amplitude = 1
@@ -104,15 +101,10 @@ class ImguiExample(EdgeWindow):
 
 
 # make GUI instance
-gui = ImguiExample(
-    figure,  # the figure this GUI instance should live inside
-    size=275,  # width or height of the GUI window within the figure
-    location="right",  # the edge to place this window at
-    title="Imgui Window",  # window title
-)
+gui = ImguiExample()
 
-# add it to the figure
-figure.add_gui(gui)
+# add it to the right edge of the figure, 275px wide
+figure.add_imgui_window(gui, location="right", size=275, title="Imgui Window")
 
 figure.show()
 
