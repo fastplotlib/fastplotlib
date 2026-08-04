@@ -65,7 +65,7 @@ class SelectionVector:
             self._block_reentrance = True
             if isinstance(new, Integral):
                 new = [new]
-            self._selection = [i for i in new]
+            self._selection = list(new)
             # iterate through each selector that operates in its own "local" space
             for selector_local, (map_, map_inv, handler) in self._selectors.items():
                 local_indices = []
