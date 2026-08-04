@@ -5,6 +5,22 @@ from ._base import to_gpu_supported_dtype
 from ...utils import make_pygfx_colors
 
 
+def is_single_color(value) -> bool:
+    """
+    Whether ``value`` represents a single RGB(A) color rather than a sequence of colors.
+
+    A single color is a str, ``pygfx.Color``, or an RGB(A) array/list/tuple of 3-4 numbers.
+    """
+    if isinstance(value, np.ndarray):
+        return value.shape in ((3,), (4,)) and value.dtype.kind in "fiu"
+
+    if isinstance(value, (list, tuple)):
+        return len(value) in (3, 4) and all(isinstance(v, (float, int)) for v in value)
+
+    # str, pygfx.Color, or any other scalar color specifier
+    return True
+
+
 def parse_colors(
     colors: str | np.ndarray | list[str] | tuple[str], n_colors: int | None
 ):

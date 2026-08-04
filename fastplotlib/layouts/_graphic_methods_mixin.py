@@ -3,6 +3,7 @@
 from typing import *
 
 import numpy
+from numpy.typing import NDArray
 
 from numpy.typing import NDArray
 
@@ -324,6 +325,94 @@ class GraphicMethodsMixin:
             **kwargs
         )
 
+    def add_inf_line(
+        self,
+        data: Any,
+        axis: Optional[Literal["x", "y", "z"]] = None,
+        thickness: float = 2.0,
+        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        cmap: str = None,
+        cmap_transform: Union[numpy.ndarray, Sequence] = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        start_is_infinite: bool = True,
+        end_is_infinite: bool = True,
+        dash_pattern: str | tuple | list = (),
+        size_space: str = "screen",
+        **kwargs
+    ) -> InfLineGraphic:
+        """
+
+        Create a collection of infinite lines.
+
+        Parameters
+        ----------
+        data: array-like
+            The line positions. If ``axis`` is "x", "y", or "z", a 1D array of positions along
+            that axis; one infinite line is drawn at each position. If ``axis`` is None, ``data``
+            is used directly as the segment endpoints, of shape [n_points, 2 | 3], where every two
+            consecutive points define one line.
+
+        axis: "x", "y", "z", or None, default None
+            The axis along which the line positions are given. If None, ``data`` is interpreted
+            directly as the segment endpoints.
+
+        thickness: float, optional, default 2.0
+            thickness of the lines
+
+        colors: str, array, or iterable, default "w"
+            specify colors as a single human-readable string, a single RGBA array, or a Sequence
+            (array, tuple, or list) of strings or RGBA arrays. A sequence of colors provides one
+            color per line.
+
+        cmap: str, optional
+            Apply a colormap to the lines instead of assigning colors manually, one color per line.
+            This overrides any argument passed to "colors". For supported colormaps see the
+            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            "uniform" restricts to a single color for all lines.
+            "vertex" allows an independent color per line.
+            For most cases you can keep it as "auto" and the `color_mode` is determined automatically
+            based on the argument passed to `colors`.
+
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        start_is_infinite: bool, default True
+            whether the start of each line is extended to infinity
+
+        end_is_infinite: bool, default True
+            whether the end of each line is extended to infinity
+
+        dash_pattern: str, tuple, or list, default ()
+            The dash pattern. May be a matplotlib-style string, one of ``"-", "--", "-.", ":"``
+            or ``"solid", "dashed", "dashdot", "dotted"``, or a sequence of floats describing the
+            length of strokes and gaps.
+
+        size_space: str, default "screen"
+            coordinate space in which the thickness is expressed ("screen", "world", "model")
+
+        **kwargs
+            passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            InfLineGraphic,
+            data,
+            axis,
+            thickness,
+            colors,
+            cmap,
+            cmap_transform,
+            color_mode,
+            start_is_infinite,
+            end_is_infinite,
+            dash_pattern,
+            size_space,
+            **kwargs
+        )
+
     def add_line_collection(
         self,
         data: Union[numpy.ndarray, List[numpy.ndarray]],
@@ -420,6 +509,8 @@ class GraphicMethodsMixin:
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
         color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         size_space: str = "screen",
+        dash_pattern: str | tuple | list = (),
+        thin: bool = False,
         **kwargs
     ) -> LineGraphic:
         """
@@ -460,6 +551,15 @@ class GraphicMethodsMixin:
         size_space: str, default "screen"
             coordinate space in which the thickness is expressed ("screen", "world", "model")
 
+        dash_pattern: str, tuple, or list, default ()
+            The dash pattern. May be a matplotlib-style string, one of ``"-", "--", "-.", ":"``
+            or ``"solid", "dashed", "dashdot", "dotted"``, or a sequence of floats describing the
+            length of strokes and gaps. Ignored when ``thin`` is True.
+
+        thin: bool, default False
+            Use the more performant thin line material, which is always one physical pixel wide.
+            Thickness, dashing, and anti-aliasing are ignored when True.
+
         **kwargs
             passed to :class:`.Graphic`
 
@@ -474,6 +574,8 @@ class GraphicMethodsMixin:
             cmap_transform,
             color_mode,
             size_space,
+            dash_pattern,
+            thin,
             **kwargs
         )
 
