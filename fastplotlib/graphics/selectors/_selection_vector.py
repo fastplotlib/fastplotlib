@@ -7,7 +7,7 @@ import numpy as np
 
 from ._protocols import SelectorProtocol, MultiSelectorProtocol
 
-Mapping: TypeAlias = np.ndarray | dict[int, int] | Callable
+Mapping = np.ndarray | dict[int, int] | Callable
 
 def identity(val: Any) -> Any:
     return val
