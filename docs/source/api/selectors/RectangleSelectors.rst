@@ -27,9 +27,9 @@ Properties
     RectangleSelectors.block_handlers
     RectangleSelectors.deleted
     RectangleSelectors.event_handlers
+    RectangleSelectors.imgui_right_click
     RectangleSelectors.name
     RectangleSelectors.offset
-    RectangleSelectors.right_click_menu
     RectangleSelectors.rotation
     RectangleSelectors.scale
     RectangleSelectors.selection
@@ -46,6 +46,7 @@ Methods
     RectangleSelectors.add_axes
     RectangleSelectors.add_event_handler
     RectangleSelectors.append
+    RectangleSelectors.append_imgui_right_click
     RectangleSelectors.clear
     RectangleSelectors.clear_event_handlers
     RectangleSelectors.format_pick_info
@@ -53,5 +54,7 @@ Methods
     RectangleSelectors.map_world_to_model
     RectangleSelectors.remove
     RectangleSelectors.remove_event_handler
+    RectangleSelectors.remove_imgui_right_click
     RectangleSelectors.rotate
+    RectangleSelectors.set_imgui_right_click
 

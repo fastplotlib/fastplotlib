@@ -11,8 +11,8 @@ Basic examples demonstrating how to use create a header gui
 import numpy as np
 import fastplotlib as fpl
 
-# subclass from EdgeWindow to make a custom ImGUI Window to place inside the figure!
-from fastplotlib.ui import EdgeWindow
+# subclass from ImguiWindow to make a custom ImGUI Window to place inside the figure!
+from fastplotlib.ui import ImguiWindow
 from imgui_bundle import imgui
 
 # make some initial data
@@ -27,30 +27,28 @@ data = np.column_stack([xs, ys])
 figure = fpl.Figure(size=(700, 560))
 
 # make some scatter points at every 10th point
-figure[0, 0].add_scatter(data[::10], colors="cyan", sizes=15, name="sine-scatter", uniform_color=True)
+figure[0, 0].add_scatter(data[::10], colors="cyan", sizes=15, name="sine-scatter", color_mode="uniform")
 
 # place a line above the scatter
-figure[0, 0].add_line(data, thickness=3, colors="r", name="sine-wave", uniform_color=True)
+figure[0, 0].add_line(data, thickness=3, colors="r", name="sine-wave", color_mode="uniform")
 
 
-class ImguiExample(EdgeWindow):
-    def __init__(self, figure, size, location, title):
-        super().__init__(figure=figure, size=size, location=location, title=title, window_flags=imgui.WindowFlags_.no_title_bar | imgui.WindowFlags_.no_resize)
-
+class ImguiExample(ImguiWindow):
     def update(self):
         imgui.text("This is a top window")
 
 
 # make GUI instance
-gui = ImguiExample(
-    figure,  # the figure this GUI instance should live inside
-    size=30,  # width or height of the GUI window within the figure
-    location="top",  # the edge to place this window at
-    title=" ",  # window title
-)
+gui = ImguiExample()
 
-# add it to the figure
-figure.add_gui(gui)
+# add it to the top edge of the figure
+figure.add_imgui_window(
+    gui,
+    location="top",
+    size=60,
+    title="top window",
+    window_flags=imgui.WindowFlags_.no_title_bar | imgui.WindowFlags_.no_resize,
+)
 
 figure.show()
 

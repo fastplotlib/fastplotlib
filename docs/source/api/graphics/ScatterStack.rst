@@ -31,13 +31,13 @@ Properties
     ScatterStack.deleted
     ScatterStack.event_handlers
     ScatterStack.graphics
+    ScatterStack.imgui_right_click
     ScatterStack.markers
     ScatterStack.metadatas
     ScatterStack.name
     ScatterStack.names
     ScatterStack.offset
     ScatterStack.offsets
-    ScatterStack.right_click_menu
     ScatterStack.rotation
     ScatterStack.rotations
     ScatterStack.scale
@@ -62,11 +62,14 @@ Methods
     ScatterStack.add_linear_selector
     ScatterStack.add_polygon_selector
     ScatterStack.add_rectangle_selector
+    ScatterStack.append_imgui_right_click
     ScatterStack.clear_event_handlers
     ScatterStack.format_pick_info
     ScatterStack.map_model_to_world
     ScatterStack.map_world_to_model
     ScatterStack.remove_event_handler
     ScatterStack.remove_graphic
+    ScatterStack.remove_imgui_right_click
     ScatterStack.rotate
+    ScatterStack.set_imgui_right_click
 

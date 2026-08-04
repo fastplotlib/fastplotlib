@@ -298,7 +298,12 @@ def main():
         )
     ##############################################################################
     # ** GraphicFeature classes ** #
-    feature_classes = [getattr(features, f) for f in features.__all__]
+    # `features.__all__` also exports type aliases, such as TupleYUV, which has no docs page
+    feature_classes = [
+        getattr(features, f)
+        for f in features.__all__
+        if inspect.isclass(getattr(features, f))
+    ]
 
     feature_class_names = [f.__name__ for f in feature_classes]
 
@@ -427,7 +432,7 @@ def main():
         )
     ##############################################################################
     # ** UI classes ** #
-    ui_classes = [ui.BaseGUI, ui.Window, ui.EdgeWindow, ui.Popup]
+    ui_classes = [ui.ImguiBase, ui.ImguiWindow, ui.ImguiPopup]
 
     ui_class_names = [cls.__name__ for cls in ui_classes]
 

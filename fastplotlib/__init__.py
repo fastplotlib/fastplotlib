@@ -25,7 +25,7 @@ if IMGUI:
 else:
     from .layouts import Figure
 
-from .widgets import NDWidget, ImageWidget
+from .widgets import NDWidget
 
 
 if len(enumerate_adapters()) < 1:

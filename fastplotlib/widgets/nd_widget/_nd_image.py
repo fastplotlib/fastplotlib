@@ -15,7 +15,7 @@ from ...utils import (
     enums,
 )
 from ...graphics import ImageGraphic, ImageYUVGraphic, ImageVolumeGraphic
-from ...tools import HistogramLUTTool
+from ...ui import ImguiColorbar
 from ._base import (
     NDProcessor,
     NDGraphic,
@@ -318,7 +318,7 @@ class NDImage(NDGraphic):
 
         Wraps an :class:`NDImageProcessor` and manages either an ``ImageGraphic`` or``ImageVolumeGraphic``.
         swaps automatically when :attr:`spatial_dims` is reassigned at runtime. Also
-        owns a ``HistogramLUTTool`` for interactive vmin, vmax adjustment.
+        owns an ``ImguiColorbar`` for interactive vmin, vmax adjustment.
 
         Every dimension that is *not* listed in ``spatial_dims`` becomes a slider
         dimension. Each slider dim must have a ``ReferenceRange`` defined in the
@@ -361,7 +361,7 @@ class NDImage(NDGraphic):
             See :class:`NDProcessor`.
 
         compute_histogram : bool, default ``True``
-            Whether to initialize the ``HistogramLUTTool``.
+            Whether to initialize the ``ImguiColorbar``.
 
         slider_dim_transforms : dict, optional
             See :class:`NDProcessor`.
@@ -402,7 +402,7 @@ class NDImage(NDGraphic):
         self._colorrange = colorrange
 
         self._graphic: ImageGraphic | ImageYUVGraphic | None = None
-        self._histogram_widget: HistogramLUTTool | None = None
+        self._histogram_widget: ImguiColorbar | None = None
 
         # create a graphic
         run_sync(self._create_graphic())
@@ -484,27 +484,29 @@ class NDImage(NDGraphic):
         if self.graphic is None:
             return
 
+        subplot = self._nd_subplot.subplot
+
         if not self.processor.compute_histogram:
-            # hide right dock if histogram not desired
-            self._nd_subplot.subplot.docks["right"].size = 0
+            # remove the colorbar from the right edge if a histogram is not desired
+            if self._histogram_widget is not None:
+                subplot.remove_imgui_window("right")
+                self._histogram_widget = None
             return
 
         if self.processor.histogram:
-            if self._histogram_widget:
-                # histogram widget exists, update it
+            if self._histogram_widget is not None:
+                # colorbar widget exists, update it and rebind to the current graphic
                 self._histogram_widget.histogram = self.processor.histogram
                 self._histogram_widget.images = self.graphic
-                if self._nd_subplot.subplot.docks["right"].size < 1:
-                    self._nd_subplot.subplot.docks["right"].size = 80
             else:
-                # make hist tool
-                self._histogram_widget = HistogramLUTTool(
-                    histogram=self.processor.histogram,
+                # make the colorbar, it reserves space on the subplot's right edge
+                self._histogram_widget = ImguiColorbar(
                     images=self.graphic,
-                    name=f"hist-{hex(id(self.graphic))}",
+                    histogram=self.processor.histogram,
                 )
-                self._nd_subplot.subplot.docks["right"].add_graphic(self._histogram_widget)
-                self._nd_subplot.subplot.docks["right"].size = 80
+                subplot.add_imgui_window(
+                    self._histogram_widget, location="right", size=100
+                )
 
             self.graphic.reset_vmin_vmax()
 
@@ -571,7 +573,7 @@ class NDImage(NDGraphic):
 
     @property
     def compute_histogram(self) -> bool:
-        """whether or not to compute the histogram and display the HistogramLUTTool"""
+        """whether or not to compute the histogram and display the ImguiColorbar"""
         return self.processor.compute_histogram
 
     @compute_histogram.setter
@@ -580,8 +582,8 @@ class NDImage(NDGraphic):
         self._reset_histogram()
 
     @property
-    def histogram_widget(self) -> HistogramLUTTool:
-        """The histogram lut tool associated with this NDGraphic"""
+    def histogram_widget(self) -> ImguiColorbar:
+        """The colorbar associated with this NDGraphic"""
         return self._histogram_widget
 
     @property
