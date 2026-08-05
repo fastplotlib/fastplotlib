@@ -112,10 +112,6 @@ class NDPositionsProcessor(NDProcessor):
         self.cmap_transform_each = cmap_transform_each
         self.sizes = sizes
 
-        # Axis order of the spatial dimensions to display
-        self._spatial_dims_int = tuple(
-            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
-        )
 
     def _check_shape_feature(
         self, prop: str, check_shape: tuple[int, int]
@@ -302,6 +298,18 @@ class NDPositionsProcessor(NDProcessor):
             raise KeyError
 
         self._spatial_dims = tuple(sdims)
+
+        ## This is the ordered sequence of data indices that will be displayed
+        self._spatial_dims_indices = tuple(
+            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
+        )
+
+    @property
+    def spatial_dims_indices(self) -> tuple[int, ...]:
+        """
+        The ordered sequence of data indices that will be displayed
+        """
+        return self._spatial_dims_indices
 
     @property
     def slider_dims(self) -> set[Hashable]:

@@ -137,11 +137,6 @@ class NDImageProcessor(NDProcessor):
         self._compute_histogram = compute_histogram
         self._recompute_histogram()
 
-        # Axis order of the spatial dimensions to display
-        self._spatial_dims_int = tuple(
-            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
-        )
-
     @property
     def data(self) -> ArrayProtocol | None:
         """
@@ -190,6 +185,18 @@ class NDImageProcessor(NDProcessor):
             )
 
         self._spatial_dims = tuple(sdims)
+
+        ## This is the ordered sequence of data indices that will be displayed
+        self._spatial_dims_indices = tuple(
+            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
+        )
+
+    @property
+    def spatial_dims_indices(self) -> tuple[int, ...]:
+        """
+        The ordered sequence of data indices that will be displayed
+        """
+        return self._spatial_dims_indices
 
     @property
     def rgb_dim(self) -> str | None:
@@ -264,7 +271,7 @@ class NDImageProcessor(NDProcessor):
             window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
 
 
-        return window_output.transpose(*self._spatial_dims_int)
+        return window_output.transpose(*self.spatial_dims_indices)
 
     def _recompute_histogram(self):
         """

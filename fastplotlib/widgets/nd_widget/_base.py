@@ -198,6 +198,19 @@ class NDProcessor:
 
         self._spatial_dims = tuple(sdims)
 
+        ## This is the ordered sequence of data indices that will be displayed
+        self._spatial_dims_indices = tuple(
+            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
+        )
+
+    @property
+    def spatial_dims_indices(self) -> tuple[int, ...]:
+        """
+        The ordered sequence of data indices that will be displayed
+        """
+        return self._spatial_dims_indices
+
+
     @property
     def tooltip(self) -> bool:
         """
