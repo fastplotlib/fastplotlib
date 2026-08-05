@@ -2,10 +2,14 @@
 
 `fastplotlib` is a next-generation plotting library built on top of the `pygfx` rendering engine that leverages modern 
 GPU hardware and new graphics APIs to build large-scale scientific visualizations. We welcome and encourage contributions
-from everyone! :smile:
+from everyone! :smile: 
 
 The rest of this guide explains how to contribute; if you have questions about the process, please 
 reach out on [GitHub Discussions](https://github.com/fastplotlib/fastplotlib/discussions).
+
+If your contribution/PR isn't minor (ex: more than a bugfix, small change in the docs, etc.) **please open an issue first** that briefly 
+describes what you want to contribute and how you plan to implement it. This makes it much easier for us to review your PR, and 
+also facilitates more rapid approval of your PR.
 
 > **_NOTE:_** If you are already familiar with contributing to open-source software packages, 
 > please check out the [Quick Guide](#contributing-quick-guide)!
@@ -72,9 +76,10 @@ autonomously is not permitted.
 
 In order to contribute, you will need to do the following:
 
-1) Create your own branch
-2) Make sure that tests pass 
-3) Open a Pull Request
+1) If your contribution isn't trivially small (ex: bugfix, small docs change, etc.) please open an issue that briefly describes your contribution and how you plan to implement it.
+2) Create your own branch
+3) Make sure that tests pass 
+4) Open a Pull Request
 
 The `fastplotlib` package follows the [Git feature branch](https://www.atlassian.com/git/tutorials/comparing-workflows/feature-branch-workflow) workflow. In essence, `main` is the primary branch to which no one is allowed to
 push directly. All development happens in separate feature branches that are then merged into `main` once we have determined they are ready. When enough changes have accumulated, a new release is 
