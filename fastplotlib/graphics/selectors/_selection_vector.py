@@ -19,7 +19,7 @@ def array_map(arr: np.ndarray, index: Integral):
     return None if np.isnan(arr[index]) else int(arr[index])
 
 def inv_array_map(arr: np.ndarray,
-                value: int) -> None | Integral:
+                value: int) -> None | int:
     """
     arr[i] gives the global index
     """
@@ -43,7 +43,7 @@ class SelectionVector:
 
     The SelectionVector coordinates across individual selectors, including the coordinated updating of indices whenever a selection changes
     """
-    def __init__(self, max_size: int = None):
+    def __init__(self):
         # selector -> (map, map_inv)
 
         ## Key is a selector, value is a (1) local to global index map (2) global to local index map (3) list of event handlers
