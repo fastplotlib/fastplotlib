@@ -409,7 +409,7 @@ def parse_cmap_values(
 
 def cuda_to_numpy(arr: CudaArrayProtocol) -> np.ndarray:
 
-    data = np.from_dlpack(arr, device='cpu') #This requires numpy >= 2.1
+    data = np.from_dlpack(arr, device='cpu')
     return data
 
 
