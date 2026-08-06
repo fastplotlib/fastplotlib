@@ -681,7 +681,7 @@ class ImageHighlightSelector(HighlightSelector):
         return {k: tuple(v) for k, v in self._selection.items()}
 
     @selection.setter
-    def selection(self, value: Iterable[int] | dict[Literal["rows", "cols", "pixels"], list]) -> None:
+    def selection(self, value: Iterable[int | None] | dict[Literal["rows", "cols", "pixels"], list] | None) -> None:
         if self._selection_options is not None:
             if value is None:
                 self._selected_indices = list()
