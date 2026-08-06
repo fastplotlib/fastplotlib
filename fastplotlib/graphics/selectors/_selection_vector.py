@@ -66,6 +66,9 @@ class SelectionVector:
             if isinstance(new, Integral):
                 new = [new]
             self._selection = list(new)
+            for value in new:
+                if value < 0:
+                    raise ValueError("Only nonnegative selection indices are allowed")
             # iterate through each selector that operates in its own "local" space
             for selector_local, (map_, map_inv, handler) in self._selectors.items():
                 local_indices = []
