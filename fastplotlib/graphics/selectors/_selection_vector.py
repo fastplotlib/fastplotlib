@@ -148,6 +148,10 @@ class SelectionVector:
         HighlightSelector and VisibilitySelector emit a dictionary with keys selector and value
         """
         input_to_map = local_selection['value']
+        for i in range(len(input_to_map)):
+            if input_to_map[i] < 0:
+                raise ValueError("You can only provide nonnegative values as local indices to a selector")
+
         self.selection = [map_inv(input_to_map[i]) for i in range(len(input_to_map))]
 
     def remove_selector(self, selector: SelectorProtocol | MultiSelectorProtocol):
