@@ -299,18 +299,6 @@ class NDPositionsProcessor(NDProcessor):
 
         self._spatial_dims = tuple(sdims)
 
-        ## This is the ordered sequence of data indices that will be displayed
-        self._spatial_dims_indices = tuple(
-            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
-        )
-
-    @property
-    def spatial_dims_indices(self) -> tuple[int, ...]:
-        """
-        The ordered sequence of data indices that will be displayed
-        """
-        return self._spatial_dims_indices
-
     @property
     def slider_dims(self) -> set[Hashable]:
         # append `p` dim to slider dims
@@ -568,7 +556,7 @@ class NDPositionsProcessor(NDProcessor):
         if isinstance(data, CudaArrayProtocol):
             data = await run_in_thread_pool(self._executor, cuda_to_numpy, data)
 
-        data = data.transpose(*self._spatial_dims_int)
+        data = data.transpose(*self.spatial_dims_indices)
 
         return {
             "data": data,

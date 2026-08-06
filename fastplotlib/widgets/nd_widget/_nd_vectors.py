@@ -143,18 +143,6 @@ class NDVectorsProcessor(NDProcessor):
                 f"Spatial dimensions must haves shape (num_vecs, 2, [2 or 3]) you passed {sdims}"
             )
 
-        ## This is the ordered sequence of data indices that will be displayed
-        self._spatial_dims_indices = tuple(
-            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
-        )
-
-    @property
-    def spatial_dims_indices(self) -> tuple[int, ...]:
-        """
-        The ordered sequence of data indices that will be displayed
-        """
-        return self._spatial_dims_indices
-
     async def get(self, indices: dict[str, Any]) -> ArrayProtocol:
         """
         Get the data at the given index, process data through the window functions.
@@ -187,8 +175,7 @@ class NDVectorsProcessor(NDProcessor):
         if isinstance(window_output, CudaArrayProtocol):
             window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
 
-
-        return window_output.transpose(*self._spatial_dims_indices)
+        return window_output.transpose(*self.spatial_dims_indices)
 
 
 class NDVectors(NDGraphic):

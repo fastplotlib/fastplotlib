@@ -413,7 +413,6 @@ def cuda_to_numpy(arr: CudaArrayProtocol) -> np.ndarray:
     return data
 
 
-
 def subsample_array(
     arr: CudaArrayProtocol,
     max_size: int = 1e6,

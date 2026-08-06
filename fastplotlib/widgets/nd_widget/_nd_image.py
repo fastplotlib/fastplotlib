@@ -186,18 +186,6 @@ class NDImageProcessor(NDProcessor):
 
         self._spatial_dims = tuple(sdims)
 
-        ## This is the ordered sequence of data indices that will be displayed
-        self._spatial_dims_indices = tuple(
-            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
-        )
-
-    @property
-    def spatial_dims_indices(self) -> tuple[int, ...]:
-        """
-        The ordered sequence of data indices that will be displayed
-        """
-        return self._spatial_dims_indices
-
     @property
     def rgb_dim(self) -> str | None:
         """
@@ -269,7 +257,6 @@ class NDImageProcessor(NDProcessor):
         # final CUDA -> numpy conversion at the end of the pipeline
         if isinstance(window_output, CudaArrayProtocol):
             window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
-
 
         return window_output.transpose(*self.spatial_dims_indices)
 
