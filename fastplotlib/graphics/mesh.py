@@ -50,20 +50,19 @@ class MeshGraphic(Graphic):
             The 3D positions of the vertices.
 
         indices: array-like
-            The indices into the positions that make up the triangles. Each 3
-            subsequent indices form a triangle.
+            The indices into the positions that make up the triangles (3 indices per row) or quads (4 indices per row). Each row is a face.
 
         mode: one of "basic", "phong", "slice", default "phong"
             * basic: illuminate mesh with only ambient lighting
             * phong: phong lighting model, good for most use cases, see https://en.wikipedia.org/wiki/Phong_shading
             * slice: display a slice of the mesh at the specified ``plane``
-
+        
         plane: (float, float, float, float), default (0., 0., 1., 0.)
             Slice mesh at this plane. Sets (a, b, c, d) in the equation the defines a plane: ax + by + cz + d = 0.
             Used only if `mode` = "slice". The plane is defined in world space.
 
         colors: str, array, or iterable, default "w"
-            A uniform color, or the per-position colors.
+            A uniform color (name or linear-RGBA tuple), per-vertex colors (length=positions), or per-face colors (length=indices). The introduced color is assumed to be in linear RGB scale. Popular colormaps such as the ones from matplotlib give it in sRGB. Careful!
 
         mapcoords: array-like
             The per-position coordinates to which to apply the colormap (a.k.a. texcoords).
@@ -120,7 +119,7 @@ class MeshGraphic(Graphic):
         self._clim = clim
 
         uniform_color = "w"
-        per_vertex_colors = False
+        non_uniform_colors = False
 
         if cmap is None:
             if colors is None:
@@ -130,13 +129,14 @@ class MeshGraphic(Graphic):
                 uniform_color = colors
                 self._colors = UniformColor(uniform_color)
             elif isinstance(colors, VertexColors):
-                per_vertex_colors = True
+                non_uniform_colors = True
                 self._colors = colors
             else:
-                per_vertex_colors = True
+                non_uniform_colors = True
                 self._colors = VertexColors(
-                    colors, n_colors=self._positions.value.shape[0]
+                    colors, n_colors=len(colors)
                 )
+
 
         geometry = pygfx.Geometry(
             positions=self._positions.buffer, indices=self._indices._buffer
@@ -164,7 +164,7 @@ class MeshGraphic(Graphic):
         )
 
         # Set all the data
-        if per_vertex_colors:
+        if non_uniform_colors:
             geometry.colors = self._colors.buffer
         if self._mapcoords is not None:
             geometry.texcoords = self._mapcoords
@@ -179,8 +179,13 @@ class MeshGraphic(Graphic):
         # face_map = None  #: Use per-face texture coords (``geometry.texcoords``), and sample these in ``material.map``.
         if mapcoords is not None and cmap is not None:
             material.color_mode = "vertex_map"
-        elif per_vertex_colors:
-            material.color_mode = "vertex"
+        elif non_uniform_colors:
+            if self._colors.value.shape[0] == self._indices.value.shape[0]:
+                material.color_mode = "face"
+            elif self._colors.value.shape[0] == self._positions.value.shape[0]:
+                material.color_mode = "vertex"
+            else:
+                raise ValueError("colors length does not match number of vertices or faces")
         else:
             material.color_mode = "uniform"
 
