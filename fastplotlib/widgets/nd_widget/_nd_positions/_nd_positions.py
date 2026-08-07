@@ -112,6 +112,7 @@ class NDPositionsProcessor(NDProcessor):
         self.cmap_transform_each = cmap_transform_each
         self.sizes = sizes
 
+
     def _check_shape_feature(
         self, prop: str, check_shape: tuple[int, int]
     ) -> tuple[int, int]:
@@ -554,6 +555,8 @@ class NDPositionsProcessor(NDProcessor):
         # final CUDA -> numpy conversion at the end of the pipeline
         if isinstance(data, CudaArrayProtocol):
             data = await run_in_thread_pool(self._executor, cuda_to_numpy, data)
+
+        data = data.transpose(*self.spatial_dims_indices)
 
         return {
             "data": data,

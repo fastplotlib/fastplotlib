@@ -408,14 +408,9 @@ def parse_cmap_values(
 
 
 def cuda_to_numpy(arr: CudaArrayProtocol) -> np.ndarray:
-    try:
-        import cupy
-    except ImportError:
-        raise ImportError(
-            "`cupy` is required to work with GPU arrays\npip install cupy"
-        )
 
-    return cupy.asnumpy(arr)
+    data = np.from_dlpack(arr, device='cpu')
+    return data
 
 
 def subsample_array(

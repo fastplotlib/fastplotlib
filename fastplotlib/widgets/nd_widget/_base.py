@@ -199,6 +199,13 @@ class NDProcessor:
         self._spatial_dims = tuple(sdims)
 
     @property
+    def spatial_dims_indices(self) -> tuple[int, ...]:
+        """
+        The ordered spatial dim indices that correspond to the named spatial dims
+        """
+        return tuple(self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims)
+
+    @property
     def tooltip(self) -> bool:
         """
         whether or not a custom tooltip formatter method exists
@@ -529,12 +536,7 @@ class NDProcessor:
                 f"windowed_slice.ndim != len(self.spatial_dims): {windowed_slice.ndim} != {len(self.spatial_dims)}"
             )
 
-        # transpose to spatial dims
-        spatial_dims_int = tuple(
-            self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims
-        )
-
-        return windowed_slice.transpose(*spatial_dims_int)
+        return windowed_slice
 
     async def _get_raw_data_slice(self, indices: dict[str, Any]) -> ArrayProtocol:
         """
