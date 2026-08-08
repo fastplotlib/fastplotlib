@@ -52,7 +52,7 @@ class PositionsGraphic(Graphic):
         self._colors.set_value(self, value)
 
     @property
-    def color_mode(self) -> Literal["uniform", "vertex"]:
+    def color_mode(self) -> pygfx.enums.ColorMode:
         """
         Get or set the color mode. Note that after setting the color_mode, you will have to set the `colors`
         as well for switching between 'uniform' and 'vertex' modes.
@@ -60,10 +60,10 @@ class PositionsGraphic(Graphic):
         return self.world_object.material.color_mode
 
     @color_mode.setter
-    def color_mode(self, mode: Literal["uniform", "vertex"]):
-        valid = ("uniform", "vertex")
-        if mode not in valid:
-            raise ValueError(f"`color_mode` must be one of : {valid}")
+    def color_mode(self, mode: pygfx.enums.ColorMode):
+        if mode not in pygfx.enums.ColorMode:
+            raise ValueError(f"`color_mode` must be one of : {pygfx.enums.ColorMode}, not {mode!r}")
+
         if mode == "vertex" and isinstance(self._colors, UniformColor):
             # uniform -> vertex
             # need to make a new vertex buffer and get rid of uniform buffer
@@ -86,6 +86,10 @@ class PositionsGraphic(Graphic):
             # clear out cmap
             self._cmap.clear_event_handlers()
             self._cmap = None
+
+        elif mode == "vertex_map":
+            # TODO: handle new cmap stuff
+            pass
 
         else:
             # no change, return
