@@ -375,6 +375,9 @@ class LinearRegionSelector(BaseSelector):
                 # slice with min, max is faster than using all the indices
                 return source.data[s]
 
+        if "Scatter" in source.__class__.__name__:
+            return source.data[ixs]
+
         if "Image" in source.__class__.__name__:
             s = slice(ixs[0], ixs[-1] + 1)
 
