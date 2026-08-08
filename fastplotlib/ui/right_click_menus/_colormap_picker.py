@@ -79,7 +79,7 @@ class ColormapPicker(Popup):
         )
 
         # get a view
-        texture_view = texture.create_view()
+        texture_view = texture.create_view(dimension=wgpu.TextureViewDimension.d2)
 
         # return texture ref
         return self.imgui_renderer.backend.register_texture(texture_view)
