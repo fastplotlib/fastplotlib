@@ -4,6 +4,7 @@ from ._positions import (
     SizeSpace,
     VertexPositions,
     VertexCmap,
+    VertexCmapTransform,
     InfLineAxisData,
     InfLineColors,
 )

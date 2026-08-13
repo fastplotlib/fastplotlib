@@ -397,11 +397,7 @@ class VertexCmapTransform(GraphicFeature):
         },
     ]
 
-    def __init__(
-            self,
-            value: np.ndarray,
-            property_name: str = "cmap_transform"
-    ):
+    def __init__(self, value: np.ndarray, property_name: str = "cmap_transform"):
         """colormap transform"""
 
         self._value = np.asarray(value)

@@ -3,6 +3,7 @@ from typing import Any, Sequence, Literal
 from warnings import warn
 
 import numpy as np
+import cmap as cmap_lib
 
 import pygfx
 from ._base import Graphic
@@ -11,8 +12,14 @@ from .features import (
     VertexColors,
     UniformColor,
     VertexCmap,
+    VertexCmapTransform,
     SizeSpace,
 )
+from ._types import ColorLike, MultiColorLike
+
+
+# we allow a subset of all pygfx.enum.ColorMode since some are not applicable to positional graphics
+VALID_COLOR_MODES = ("auto", "uniform", "vertex", "vertex_map")
 
 
 class PositionsGraphic(Graphic):
@@ -108,18 +115,24 @@ class PositionsGraphic(Graphic):
         self.world_object.material.color_mode = mode
 
     @property
-    def cmap(self) -> VertexCmap:
+    def cmap(self) -> cmap_lib.Colormap | None:
         """
-        Control the cmap or cmap transform
+        Get or set the colormap
 
         For supported colormaps see the ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
         """
-        return self._cmap
+        if self._cmap is not None:
+            return self._cmap.value
+
+        return None
 
     @cmap.setter
     def cmap(self, name: str):
-        if self.color_mode == "uniform":
-            raise ValueError("cannot use `cmap` with `color_mode` = 'uniform'")
+        if self.color_mode not in ("auto", "vertex_map"):
+            raise ValueError(
+                f"`color_mode` must be 'auto' or 'vertex_map' to set the cmap, "
+                f"the current `color_mode` is: {self.color_mode}"
+            )
 
         self._cmap[:] = name
 
@@ -198,10 +211,10 @@ class PositionsGraphic(Graphic):
     def __init__(
         self,
         data: Any,
-        colors: str | np.ndarray | tuple[float] | list[float] | list[str] = "w",
-        cmap: str | VertexCmap = None,
-        cmap_transform: np.ndarray = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        colors: str | ColorLike | MultiColorLike = "w",
+        cmap: str | cmap_lib.ColormapLike | None = None,
+        cmap_transform: np.ndarray | None = None,
+        color_mode: Literal["auto", "uniform", "vertex", "vertex_map"] = "auto",
         size_space: str = "screen",
         *args,
         **kwargs,
@@ -214,53 +227,35 @@ class PositionsGraphic(Graphic):
         if cmap_transform is not None and cmap is None:
             raise ValueError("must pass `cmap` if passing `cmap_transform`")
 
-        valid = ("auto", "uniform", "vertex")
-
-        # default _cmap is None
+        # defaults are None
         self._cmap = None
+        self._cmap_transform = None
+        self._colors = None
 
-        if color_mode not in valid:
-            raise ValueError(f"`color_mode` must be one of {valid}")
+        if color_mode not in VALID_COLOR_MODES:
+            raise ValueError(f"`color_mode` must be one of {VALID_COLOR_MODES}")
 
         if cmap is not None:
             # if a cmap is specified it overrides colors argument
-            if color_mode == "uniform":
+            if color_mode != "vertex_map":
                 raise ValueError(
-                    "if a `cmap` is provided, `color_mode` must be 'vertex' or 'auto', not 'uniform'"
+                    f"if a `cmap` is provided, `color_mode` must be 'vertex_cmap' or 'auto', not {color_mode}"
                 )
 
-            if isinstance(cmap, str):
-                # make colors from cmap
-                if isinstance(colors, VertexColors):
-                    # share buffer with existing colors instance for the cmap
-                    self._colors = colors
-                else:
-                    # create vertex colors buffer
-                    self._colors = self._VertexColorsCls(
-                        "w", n_colors=self._data.value.shape[0]
-                    )
-                    # make cmap using vertex colors buffer
-                    self._cmap = VertexCmap(
-                        self._colors,
-                        cmap_name=cmap,
-                        transform=cmap_transform,
-                    )
-            elif isinstance(cmap, VertexCmap):
-                # use existing cmap instance
-                self._cmap = cmap
-                self._colors = cmap._vertex_colors
+            self._cmap = VertexCmap(cmap)
 
+            if cmap_transform is None:
+                # default transform is just a linspace along the datapoints
+                cmap_transform = np.linspace(0, 1, len(self))
             else:
-                raise TypeError(
-                    "`cmap` argument must be a <str> cmap name or an existing `VertexCmap` instance"
-                )
+                if len(cmap_transform) != len(self):
+                    raise ValueError("`cmap_transform` must be a 1D array of the same size as the number of datapoints")
+
+            self._cmap_transform = VertexCmapTransform(cmap_transform)
+
         else:
             # no cmap given
             self._colors = self._create_colors_buffer(colors, color_mode)
-
-            # this is created so that cmap can be set later
-            if isinstance(self._colors, VertexColors):
-                self._cmap = VertexCmap(self._colors, cmap_name=None, transform=None)
 
         self._size_space = SizeSpace(size_space)
         super().__init__(*args, **kwargs)
@@ -272,3 +267,7 @@ class PositionsGraphic(Graphic):
         )
 
         return info
+
+    def __len__(self) -> int:
+        """number of datapoints"""
+        return len(self.data)

@@ -38,7 +38,7 @@ from rendercanvas.auto import RenderCanvas, loop
 
 # Get the name of the backend ('qt', 'glfw', 'jupyter')
 GUI_BACKEND = RenderCanvas.__module__.split(".")[-1]
-IS_JUPYTER = GUI_BACKEND == "jupyter"
+IS_JUPYTER = GUI_BACKEND == "anywidget"
 
 
 # --- Some backend-specific preparations
@@ -120,7 +120,7 @@ def _notebook_print_banner():
     display(HTML(table_str))
 
 
-if GUI_BACKEND == "jupyter":
+if GUI_BACKEND == "anywidget":
     _notebook_print_banner()
 
 elif GUI_BACKEND == "qt":

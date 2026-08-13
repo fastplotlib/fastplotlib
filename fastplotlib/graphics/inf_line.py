@@ -122,7 +122,7 @@ class InfLineGraphic(LineGraphic):
         return pygfx.LineInfiniteSegmentMaterial(
             start_is_infinite=self._start_is_infinite,
             end_is_infinite=self._end_is_infinite,
-            **self._material_kwargs(),
+            **self._get_material_kwargs(),
         )
 
     @property

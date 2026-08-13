@@ -2,10 +2,10 @@ from typing import *
 from warnings import warn
 
 import numpy as np
+import cmap as cmap_lib
 
 import pygfx
 
-from ._positions_base import PositionsGraphic
 from .selectors import (
     LinearRegionSelector,
     LinearSelector,
@@ -24,7 +24,8 @@ from .features import (
     UniformRotations,
 )
 from ..utils import quick_min_max
-
+from ._positions_base import PositionsGraphic, VALID_COLOR_MODES
+from ._types import ColorLike, MultiColorLike
 
 class LineGraphic(PositionsGraphic):
     _features = {
@@ -40,10 +41,10 @@ class LineGraphic(PositionsGraphic):
         self,
         data: Any,
         thickness: float = 2.0,
-        colors: str | np.ndarray | Sequence = "w",
-        cmap: str = None,
-        cmap_transform: np.ndarray | Sequence = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        colors: str | ColorLike | MultiColorLike = "w",
+        cmap: str | cmap_lib.ColormapLike | None = None,
+        cmap_transform: np.ndarray | None = None,
+        color_mode: Literal["auto", "uniform", "vertex", "vertex_map"] = "auto",
         size_space: str = "screen",
         dash_pattern: str | tuple | list = (),
         thin: bool = False,
@@ -63,7 +64,7 @@ class LineGraphic(PositionsGraphic):
         thickness: float, optional, default 2.0
             thickness of the line
 
-        colors: str, array, or iterable, default "w"
+        colors: str, ColorLike or MultiColorLike, default "w"
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
@@ -72,13 +73,14 @@ class LineGraphic(PositionsGraphic):
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
-        color_mode: one of "auto", "uniform", "vertex", default "auto"
+        color_mode: one of "auto", "uniform", "vertex", "vertex_map", default "auto"
             "uniform" restricts to a single color for all line datapoints.
             "vertex" allows independent colors per vertex.
+            "vertex_map" uses the ``cmap`` to set per-vertex colors.
             For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
             argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
             If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
-            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
+            "vertex_map". You can switch between color_modes after creating the graphic.
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
@@ -127,7 +129,7 @@ class LineGraphic(PositionsGraphic):
 
         self._set_world_object(world_object)
 
-    def _material_kwargs(self) -> dict:
+    def _get_material_kwargs(self) -> dict:
         # pygfx line material kwargs assembled from the current feature state
         kwargs = dict(
             thickness=self.thickness,
@@ -141,6 +143,9 @@ class LineGraphic(PositionsGraphic):
         if isinstance(self._colors, UniformColor):
             kwargs["color_mode"] = "uniform"
             kwargs["color"] = self.colors
+        elif self.cmap is not None:
+            kwargs["color_mode"] = "vertex_map"
+            kwargs["map"] = self.cmap.to_pygfx()
         else:
             kwargs["color_mode"] = "vertex"
 
@@ -149,7 +154,7 @@ class LineGraphic(PositionsGraphic):
     def _make_material(self) -> pygfx.LineMaterial:
         # create the pygfx material, subclasses override to use a different line material
         material_cls = pygfx.LineThinMaterial if self._thin else pygfx.LineMaterial
-        return material_cls(**self._material_kwargs())
+        return material_cls(**self._get_material_kwargs())
 
     def _create_geometry(self) -> pygfx.Geometry:
         if isinstance(self._colors, UniformColor):
