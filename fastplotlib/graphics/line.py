@@ -21,11 +21,11 @@ from .features import (
     UniformColor,
     VertexCmap,
     SizeSpace,
-    UniformRotations,
 )
+from features.types import ColorLike, MultiColorLike
 from ..utils import quick_min_max
 from ._positions_base import PositionsGraphic, VALID_COLOR_MODES
-from ._types import ColorLike, MultiColorLike
+from features.types import ColorLike, MultiColorLike
 
 class LineGraphic(PositionsGraphic):
     _features = {
@@ -42,7 +42,7 @@ class LineGraphic(PositionsGraphic):
         data: Any,
         thickness: float = 2.0,
         colors: str | ColorLike | MultiColorLike = "w",
-        cmap: str | cmap_lib.ColormapLike | None = None,
+        cmap: cmap_lib.ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
         color_mode: Literal["auto", "uniform", "vertex", "vertex_map"] = "auto",
         size_space: str = "screen",
@@ -68,7 +68,7 @@ class LineGraphic(PositionsGraphic):
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        cmap: str, optional
+        cmap: cmap_lib.ColormapLike, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
@@ -123,7 +123,7 @@ class LineGraphic(PositionsGraphic):
             )
 
         world_object = pygfx.Line(
-            geometry=self._create_geometry(),
+            geometry=self._make_geo(),
             material=self._make_material(),
         )
 
@@ -140,14 +140,31 @@ class LineGraphic(PositionsGraphic):
             depth_compare="<=",
         )
 
-        if isinstance(self._colors, UniformColor):
-            kwargs["color_mode"] = "uniform"
-            kwargs["color"] = self.colors
-        elif self.cmap is not None:
+        if self._cmap is not None:
             kwargs["color_mode"] = "vertex_map"
             kwargs["map"] = self.cmap.to_pygfx()
+        elif isinstance(self._colors, UniformColor):
+            kwargs["color_mode"] = "uniform"
+            kwargs["color"] = self.colors
         else:
             kwargs["color_mode"] = "vertex"
+
+        return kwargs
+
+    def _get_geo_kwargs(self) -> dict:
+        kwargs = dict(
+            positions=self._data._fpl_buffer
+        )
+
+        if self._cmap is not None:
+            # cmap overrides all
+            kwargs["texcoords"] = pygfx.Buffer(self._cmap_transform.value)
+
+        elif isinstance(self._colors, VertexColors):
+            # per-vertex colors
+            kwargs["colors"] = self._colors._fpl_buffer
+
+        # no additional kwargs for uniform color
 
         return kwargs
 
@@ -156,12 +173,9 @@ class LineGraphic(PositionsGraphic):
         material_cls = pygfx.LineThinMaterial if self._thin else pygfx.LineMaterial
         return material_cls(**self._get_material_kwargs())
 
-    def _create_geometry(self) -> pygfx.Geometry:
-        if isinstance(self._colors, UniformColor):
-            return pygfx.Geometry(positions=self._data._fpl_buffer)
-        return pygfx.Geometry(
-            positions=self._data._fpl_buffer, colors=self._colors._fpl_buffer
-        )
+    def _make_geo(self) -> pygfx.Geometry:
+        kwargs = self._get_geo_kwargs()
+        return pygfx.Geometry(**kwargs)
 
     @property
     def thickness(self) -> float:

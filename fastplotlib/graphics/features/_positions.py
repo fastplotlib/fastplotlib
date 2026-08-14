@@ -15,6 +15,24 @@ from ._base import (
     block_reentrance,
 )
 from .utils import parse_colors, is_single_color
+from .types import ColorLike, MultiColorLike
+
+
+def _normalize_min_max(a, vmin: float = None, vmax: float = None, gamma: float = 1.0):
+    """
+    normalize an array between 0 - 1, clipped to (vmin, vmax)
+    """
+
+    vmin = np.min(a) if vmin is None else vmin
+    vmax = np.max(a) if vmax is None else vmax
+
+    if vmax <= vmin:
+        return np.zeros(a.size)
+
+    transform = np.clip((a - vmin) / (vmax - vmin), 0, 1)
+    if gamma == 1.0:
+        return transform
+    return transform**gamma
 
 
 class VertexColors(BufferManager):
@@ -38,16 +56,16 @@ class VertexColors(BufferManager):
 
     def __init__(
         self,
-        colors: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
+        colors: ColorLike | MultiColorLike,
         n_colors: int,
         property_name: str = "colors",
     ):
         """
-        Manages the vertex color buffer for :class:`LineGraphic` or :class:`ScatterGraphic`
+        Manages the vertex color buffer for :class:`PositionsGraphic`
 
         Parameters
         ----------
-        colors: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str]
+        colors: ColorLike | MultiColorLike
             specify colors as a single human-readable string, RGBA array,
             or an iterable of strings or RGBA arrays
 
@@ -62,7 +80,7 @@ class VertexColors(BufferManager):
     def set_value(
         self,
         graphic,
-        value: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
+        value: ColorLike | MultiColorLike,
     ):
         """set the entire array, create new buffer if necessary"""
         # a sequence of colors whose length differs from the current buffer requires a new buffer
@@ -100,7 +118,7 @@ class VertexColors(BufferManager):
     def __setitem__(
         self,
         key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
-        user_value: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
+        user_value: ColorLike | MultiColorLike,
     ):
         user_key = key
 
@@ -192,7 +210,7 @@ class UniformColor(GraphicFeature):
 
     def __init__(
         self,
-        value: str | pygfx.Color | np.ndarray | Sequence[float],
+        value: ColorLike,
         property_name: str = "colors",
     ):
         """Manages uniform color for line or scatter material"""
@@ -206,7 +224,7 @@ class UniformColor(GraphicFeature):
 
     @block_reentrance
     def set_value(
-        self, graphic, value: str | pygfx.Color | np.ndarray | Sequence[float]
+        self, graphic, value: ColorLike
     ):
         value = pygfx.Color(value)
         graphic.world_object.material.color = value
@@ -368,15 +386,12 @@ class VertexCmap(GraphicFeature):
     @block_reentrance
     def set_value(self, graphic, value: cmap_lib.ColormapLike):
         self._value = cmap_lib.Colormap(value)
-        pygfx.TextureMap
 
         # directly set the material map using the TextureMap
         graphic.world_object.material.map = self._value.to_pygfx()
-        graphic.world_object.geometry.texcoords
 
         event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
-        self.value.__rich_repr__()
 
     def __repr__(self):
         return self.value.__repr__()

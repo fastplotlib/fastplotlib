@@ -6,7 +6,7 @@ RGBA = tuple[float, float, float, float] | tuple[int, int, int, int] | list[int]
 
 ArrayRGBA = np.ndarray[tuple[int, int, int] | tuple[int, int, int, int], np.dtype[np.number]]
 
-ColorLike = RGB | RGBA | ArrayRGBA | pygfx.Color
+ColorLike = RGB | RGBA | ArrayRGBA | pygfx.Color | str
 
 # [n, 3 | 4] RGBA array
 MultiColorArray = np.ndarray[tuple[int, int], np.dtype[np.number]]
