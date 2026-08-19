@@ -415,16 +415,16 @@ class VertexCmapTransform(GraphicFeature):
     def __init__(self, value: np.ndarray, property_name: str = "cmap_transform"):
         """colormap transform"""
 
-        self._value = np.asarray(value)
+        self._value = np.asarray(value).astype(np.float32)
         super().__init__(property_name=property_name)
 
     @property
-    def valeu(self) -> np.ndarray:
+    def value(self) -> np.ndarray:
         return self._value
 
     @block_reentrance
     def set_value(self, graphic, value: np.ndarray):
-        value = np.asarray(value).squeeze()
+        value = np.asarray(value).squeeze().astype(np.float32)
 
         # make sure transform value is provided for every datapoint
         n_datapoints = len(graphic.world_object.geometry.positions.data)

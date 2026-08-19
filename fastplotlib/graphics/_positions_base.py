@@ -14,7 +14,7 @@ from .features import (
     SizeSpace,
 )
 from .features.utils import is_single_color
-from features.types import ColorLike, MultiColorLike
+from .features.types import ColorLike, MultiColorLike, ColormapLike
 
 
 class PositionsGraphic(Graphic):
@@ -27,7 +27,7 @@ class PositionsGraphic(Graphic):
         self,
         data: Any,
         colors: ColorLike | MultiColorLike = "w",
-        cmap: str | cmap_lib.ColormapLike | None = None,
+        cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
         size_space: str = "screen",
         *args,
@@ -192,7 +192,7 @@ class PositionsGraphic(Graphic):
     def _create_colors_buffer(self, colors) -> UniformColor | VertexColors:
         # creates either a UniformColor or VertexColors based on the given `colors`
 
-        if isinstance(colors, VertexColors, UniformColor):
+        if isinstance(colors, (VertexColors, UniformColor)):
             # share buffer with existing colors instance
             return colors
 

@@ -22,10 +22,10 @@ from .features import (
     VertexCmap,
     SizeSpace,
 )
-from features.types import ColorLike, MultiColorLike
+from .features.types import ColorLike, MultiColorLike
 from ..utils import quick_min_max
-from ._positions_base import PositionsGraphic, VALID_COLOR_MODES
-from features.types import ColorLike, MultiColorLike
+from ._positions_base import PositionsGraphic
+from .features.types import ColorLike, MultiColorLike, ColormapLike
 
 class LineGraphic(PositionsGraphic):
     _features = {
@@ -42,9 +42,8 @@ class LineGraphic(PositionsGraphic):
         data: Any,
         thickness: float = 2.0,
         colors: str | ColorLike | MultiColorLike = "w",
-        cmap: cmap_lib.ColormapLike | None = None,
+        cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
-        color_mode: Literal["auto", "uniform", "vertex", "vertex_map"] = "auto",
         size_space: str = "screen",
         dash_pattern: str | tuple | list = (),
         thin: bool = False,
@@ -68,19 +67,10 @@ class LineGraphic(PositionsGraphic):
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        cmap: cmap_lib.ColormapLike, optional
+        cmap: ColormapLike, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
-
-        color_mode: one of "auto", "uniform", "vertex", "vertex_map", default "auto"
-            "uniform" restricts to a single color for all line datapoints.
-            "vertex" allows independent colors per vertex.
-            "vertex_map" uses the ``cmap`` to set per-vertex colors.
-            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
-            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
-            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
-            "vertex_map". You can switch between color_modes after creating the graphic.
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
@@ -107,7 +97,6 @@ class LineGraphic(PositionsGraphic):
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
-            color_mode=color_mode,
             size_space=size_space,
             **kwargs,
         )
