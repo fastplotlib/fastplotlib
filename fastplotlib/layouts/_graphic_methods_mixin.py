@@ -1,19 +1,16 @@
 # This is an auto-generated file and should not be modified directly
 
-from typing import *
-
-import numpy
-from numpy.typing import NDArray
-
-from numpy.typing import NDArray
-
-import pygfx
-
-from ..graphics import *
-from ..graphics._base import Graphic
-from ..utils import enums
-import typing
-import fastplotlib
+from fastplotlib.graphics._vectors import *
+from fastplotlib.graphics.image import *
+from fastplotlib.graphics.image_volume import *
+from fastplotlib.graphics.inf_line import *
+from fastplotlib.graphics.line import *
+from fastplotlib.graphics.line_collection import *
+from fastplotlib.graphics.mesh import *
+from fastplotlib.graphics.scatter import *
+from fastplotlib.graphics.scatter_collection import *
+from fastplotlib.graphics.text import *
+from fastplotlib.graphics import Graphic
 
 
 class GraphicMethodsMixin:
@@ -40,7 +37,7 @@ class GraphicMethodsMixin:
         gamma: float = 1.0,
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
-        colorspace: fastplotlib.utils.enums.ColorspacesRGB = "srgb",
+        colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
         **kwargs
     ) -> ImageGraphic:
@@ -143,7 +140,7 @@ class GraphicMethodsMixin:
         threshold: float = 0.5,
         step_size: float = 1.0,
         substep_size: float = 0.1,
-        emissive: str | tuple | numpy.ndarray = (0, 0, 0),
+        emissive: str | tuple | np.ndarray = (0, 0, 0),
         shininess: int = 30,
         **kwargs
     ) -> ImageVolumeGraphic:
@@ -231,16 +228,13 @@ class GraphicMethodsMixin:
 
     def add_image_yuv(
         self,
-        data: (
-            tuple[NDArray[numpy.uint8], NDArray[numpy.uint8], NDArray[numpy.uint8]]
-            | fastplotlib.graphics.features._image.TextureYUV
-        ),
+        data: TupleYUV | TextureYUV,
         vmin: float = 0,
         vmax: float = 255,
         gamma: float = 1.0,
         interpolation: str = "nearest",
-        colorspace: fastplotlib.utils.enums.ColorspacesYUV = "yuv420p",
-        colorrange: fastplotlib.utils.enums.ColorRange = "limited",
+        colorspace: ColorspacesYUV = "yuv420p",
+        colorrange: ColorRange = "limited",
         **kwargs
     ) -> ImageYUVGraphic:
         """
@@ -328,11 +322,11 @@ class GraphicMethodsMixin:
     def add_inf_line(
         self,
         data: Any,
-        axis: Optional[Literal["x", "y", "z"]] = None,
+        axis: Literal["x", "y", "z"] | None = None,
         thickness: float = 2.0,
-        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        colors: str | np.ndarray | Sequence = "w",
         cmap: str = None,
-        cmap_transform: Union[numpy.ndarray, Sequence] = None,
+        cmap_transform: np.ndarray | Sequence = None,
         color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         start_is_infinite: bool = True,
         end_is_infinite: bool = True,
@@ -415,16 +409,16 @@ class GraphicMethodsMixin:
 
     def add_line_collection(
         self,
-        data: Union[numpy.ndarray, List[numpy.ndarray]],
-        thickness: Union[float, Sequence[float]] = 2.0,
-        colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
-        cmap: Union[Sequence[str], str] = None,
-        cmap_transform: Union[numpy.ndarray, List] = None,
+        data: np.ndarray | List[np.ndarray],
+        thickness: float | Sequence[float] = 2.0,
+        colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
+        cmap: Sequence[str] | str = None,
+        cmap_transform: np.ndarray | List = None,
         color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
-        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
+        metadatas: Sequence[Any] | np.ndarray = None,
         kwargs_lines: list[dict] = None,
         **kwargs
     ) -> LineCollection:
@@ -504,10 +498,9 @@ class GraphicMethodsMixin:
         self,
         data: Any,
         thickness: float = 2.0,
-        colors: Union[str, numpy.ndarray, Sequence] = "w",
-        cmap: str = None,
-        cmap_transform: Union[numpy.ndarray, Sequence] = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        colors: str | ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
+        cmap_transform: np.ndarray | None = None,
         size_space: str = "screen",
         dash_pattern: str | tuple | list = (),
         thin: bool = False,
@@ -528,22 +521,14 @@ class GraphicMethodsMixin:
         thickness: float, optional, default 2.0
             thickness of the line
 
-        colors: str, array, or iterable, default "w"
+        colors: str, ColorLike or MultiColorLike, default "w"
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        cmap: str, optional
+        cmap: ColormapLike, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
-
-        color_mode: one of "auto", "uniform", "vertex", default "auto"
-            "uniform" restricts to a single color for all line datapoints.
-            "vertex" allows independent colors per vertex.
-            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
-            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
-            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
-            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
@@ -572,7 +557,6 @@ class GraphicMethodsMixin:
             colors,
             cmap,
             cmap_transform,
-            color_mode,
             size_space,
             dash_pattern,
             thin,
@@ -581,15 +565,15 @@ class GraphicMethodsMixin:
 
     def add_line_stack(
         self,
-        data: List[numpy.ndarray],
-        thickness: Union[float, Iterable[float]] = 2.0,
-        colors: Union[str, Iterable[str], numpy.ndarray, Iterable[numpy.ndarray]] = "w",
-        cmap: Union[Iterable[str], str] = None,
-        cmap_transform: Union[numpy.ndarray, List] = None,
+        data: List[np.ndarray],
+        thickness: float | Iterable[float] = 2.0,
+        colors: str | Iterable[str] | np.ndarray | Iterable[np.ndarray] = "w",
+        cmap: Iterable[str] | str = None,
+        cmap_transform: np.ndarray | List = None,
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
-        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
+        metadatas: Sequence[Any] | np.ndarray = None,
         separation: float = 10.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
@@ -678,15 +662,9 @@ class GraphicMethodsMixin:
         indices: Any,
         mode: Literal["basic", "phong", "slice"] = "phong",
         plane: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 0.0),
-        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
-        cmap: (
-            str
-            | dict
-            | pygfx.resources._texture.Texture
-            | pygfx.resources._texturemap.TextureMap
-            | numpy.ndarray
-        ) = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] = None,
         **kwargs
     ) -> MeshGraphic:
@@ -747,17 +725,11 @@ class GraphicMethodsMixin:
 
     def add_polygon(
         self,
-        data: numpy.ndarray,
+        data: np.ndarray,
         mode: Literal["basic", "phong"] = "basic",
-        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
-        cmap: (
-            str
-            | dict
-            | pygfx.resources._texture.Texture
-            | pygfx.resources._texturemap.TextureMap
-            | numpy.ndarray
-        ) = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] | None = None,
         **kwargs
     ) -> PolygonGraphic:
@@ -804,19 +776,19 @@ class GraphicMethodsMixin:
 
     def add_scatter_collection(
         self,
-        data: Union[numpy.ndarray, List[numpy.ndarray]],
-        colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
-        cmap: Union[Sequence[str], str] = None,
-        cmap_transform: Union[numpy.ndarray, List] = None,
-        sizes: Union[float, Sequence[float]] = 5.0,
+        data: np.ndarray | List[np.ndarray],
+        colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
+        cmap: Sequence[str] | str = None,
+        cmap_transform: np.ndarray | List = None,
+        sizes: float | Sequence[float] = 5.0,
         uniform_size: bool = True,
-        markers: Union[numpy.ndarray, Sequence[str]] = None,
+        markers: np.ndarray | Sequence[str] = None,
         uniform_marker: bool = True,
         edge_width: float = 1.0,
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
-        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
+        metadatas: Sequence[Any] | np.ndarray = None,
         **kwargs
     ) -> ScatterCollection:
         """
@@ -889,23 +861,21 @@ class GraphicMethodsMixin:
     def add_scatter(
         self,
         data: Any,
-        colors: Union[str, numpy.ndarray, Sequence[float], Sequence[str]] = "w",
+        colors: str | np.ndarray | Sequence[float] | Sequence[str] = "w",
         cmap: str = None,
-        cmap_transform: numpy.ndarray = None,
+        cmap_transform: np.ndarray = None,
         color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
-        markers: Union[str, numpy.ndarray, Sequence[str]] = "o",
+        markers: str | np.ndarray | Sequence[str] = "o",
         uniform_marker: bool = True,
         custom_sdf: str = None,
-        edge_colors: Union[
-            str, pygfx.utils.color.Color, numpy.ndarray, Sequence[float]
-        ] = "black",
+        edge_colors: str | np.ndarray | pygfx.Color | Sequence[float] = "black",
         uniform_edge_color: bool = True,
         edge_width: float = 1.0,
-        image: numpy.ndarray = None,
-        point_rotations: float | numpy.ndarray = 0,
+        image: np.ndarray = None,
+        point_rotations: float | np.ndarray = 0,
         point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
-        sizes: Union[float, numpy.ndarray, Sequence[float]] = 5,
+        sizes: float | np.ndarray | Sequence[float] = 5,
         uniform_size: bool = True,
         size_space: str = "screen",
         **kwargs
@@ -1043,14 +1013,14 @@ class GraphicMethodsMixin:
 
     def add_scatter_stack(
         self,
-        data: Union[numpy.ndarray, List[numpy.ndarray]],
-        colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
-        cmap: Union[Sequence[str], str] = None,
-        cmap_transform: Union[numpy.ndarray, List] = None,
+        data: np.ndarray | List[np.ndarray],
+        colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
+        cmap: Sequence[str] | str = None,
+        cmap_transform: np.ndarray | List = None,
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
-        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
+        metadatas: Sequence[Any] | np.ndarray = None,
         separation: float = 0.0,
         separation_axis: str = "y",
         **kwargs
@@ -1128,17 +1098,11 @@ class GraphicMethodsMixin:
 
     def add_surface(
         self,
-        data: numpy.ndarray,
+        data: np.ndarray,
         mode: Literal["basic", "phong", "slice"] = "phong",
-        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
-        cmap: (
-            str
-            | dict
-            | pygfx.resources._texture.Texture
-            | pygfx.resources._texturemap.TextureMap
-            | numpy.ndarray
-        ) = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] | None = None,
         **kwargs
     ) -> SurfaceGraphic:
@@ -1188,8 +1152,8 @@ class GraphicMethodsMixin:
         self,
         text: str,
         font_size: float | int = 14,
-        face_color: str | numpy.ndarray | list[float] | tuple[float] = "w",
-        outline_color: str | numpy.ndarray | list[float] | tuple[float] = "w",
+        face_color: str | np.ndarray | list[float] | tuple[float] = "w",
+        outline_color: str | np.ndarray | list[float] | tuple[float] = "w",
         outline_thickness: float = 0.0,
         screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
@@ -1250,9 +1214,9 @@ class GraphicMethodsMixin:
 
     def add_vectors(
         self,
-        positions: Union[numpy.ndarray, Sequence[float]],
-        directions: Union[numpy.ndarray, Sequence[float]],
-        color: Union[str, Sequence[float], numpy.ndarray] = "w",
+        positions: np.ndarray | Sequence[float],
+        directions: np.ndarray | Sequence[float],
+        color: str | Sequence[float] | np.ndarray = "w",
         size: float = None,
         vector_shape_options: dict = None,
         **kwargs

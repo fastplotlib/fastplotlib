@@ -1,6 +1,8 @@
+import ast
 import inspect
 import pathlib
 import re
+import textwrap
 
 import black
 
@@ -31,15 +33,12 @@ def generate_add_graphics_methods():
 
     f.write("# This is an auto-generated file and should not be modified directly\n\n")
 
-    f.write("from typing import *\n\n")
-    f.write("import numpy\n")
-    f.write("from numpy.typing import NDArray\n\n")
-    f.write("import pygfx\n\n")
-    f.write("from ..graphics import *\n")
-    f.write("from ..graphics._base import Graphic\n")
-    f.write("from ..utils import enums\n")
-    f.write("import typing\n")
-    f.write("import fastplotlib\n\n")
+    # star-import each module that defines a graphic, so every reference used in the
+    # graphics' __init__ annotations (aliases, np, pygfx, typing, enums) is in scope
+    for module in sorted({cls.__module__ for cls in modules}):
+        f.write(f"from {module} import *\n")
+
+    f.write("from fastplotlib.graphics import Graphic\n\n")
 
     f.write("\nclass GraphicMethodsMixin:\n")
 
@@ -71,8 +70,11 @@ def generate_add_graphics_methods():
         for a in class_args:
             s += a
 
+        init = ast.parse(textwrap.dedent(inspect.getsource(cls.__init__))).body[0]
+        signature = ast.unparse(init.args)
+
         f.write(
-            f"    def add_{method_name}{inspect.signature(cls.__init__)} -> {cls.__name__}:\n"
+            f"    def add_{method_name}({signature}) -> {cls.__name__}:\n"
         )
         f.write('        """\n')
         f.write(f"        {cls.__init__.__doc__}\n")
