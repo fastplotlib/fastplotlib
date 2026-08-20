@@ -362,12 +362,6 @@ class GraphicMethodsMixin:
             This overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
-        color_mode: one of "auto", "uniform", "vertex", default "auto"
-            "uniform" restricts to a single color for all lines.
-            "vertex" allows an independent color per line.
-            For most cases you can keep it as "auto" and the `color_mode` is determined automatically
-            based on the argument passed to `colors`.
-
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
@@ -887,26 +881,18 @@ class GraphicMethodsMixin:
             Scatter data to plot, Can provide 2D, or a 3D data. 2D data must be of shape [n_points, 2].
             3D data must be of shape [n_points, 3]
 
-        colors: str, array, tuple, list, Sequence, default "w"
+        colors: ColorLike or MultiColorLike, default "w"
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        cmap: str, optional
+        cmap: ColormapLike, optional
             apply a colormap to the scatter instead of assigning colors manually, this
             overrides any argument passed to "colors".
             For supported colormaps see the ``cmap`` library catalogue:
             https://cmap-docs.readthedocs.io/en/stable/catalog/
 
-        cmap_transform: 1D array-like or list of numerical values, optional
-            if provided, these values are used to map the colors from the cmap
-
-        color_mode: one of "auto", "uniform", "vertex", default "auto"
-            "uniform" restricts to a single color for all line datapoints.
-            "vertex" allows independent colors per vertex.
-            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
-            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
-            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
-            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
+        cmap_transform: np.ndarray, optional
+            1D array-like or list of numerical values, these values are used to map the colors from the cmap
 
         mode: one of: "markers", "simple", "gaussian", "image", default "markers"
             The scatter points mode, cannot be changed after the graphic has been created.
