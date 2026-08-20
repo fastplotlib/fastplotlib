@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Any, Literal, Sequence
 
 import numpy as np
 import pygfx
@@ -14,25 +14,8 @@ from ._base import (
     to_gpu_supported_dtype,
     block_reentrance,
 )
-from .utils import parse_colors, is_single_color
+from .utils import parse_colors, is_single_color, normalize_min_max
 from .types import ColorLike, MultiColorLike
-
-
-def _normalize_min_max(a, vmin: float = None, vmax: float = None, gamma: float = 1.0):
-    """
-    normalize an array between 0 - 1, clipped to (vmin, vmax)
-    """
-
-    vmin = np.min(a) if vmin is None else vmin
-    vmax = np.max(a) if vmax is None else vmax
-
-    if vmax <= vmin:
-        return np.zeros(a.size)
-
-    transform = np.clip((a - vmin) / (vmax - vmin), 0, 1)
-    if gamma == 1.0:
-        return transform
-    return transform**gamma
 
 
 class VertexColors(BufferManager):
@@ -342,7 +325,7 @@ class VertexPositions(BufferManager):
     @block_reentrance
     def __setitem__(
         self,
-        key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
+        key: int | slice | np.ndarray[tuple[int, ...], np.dtype[np.integer | np.bool]] | tuple[slice, ...],
         value: np.ndarray | float | list[float],
     ):
         # directly use the key to slice the buffer and set the values
@@ -435,11 +418,59 @@ class VertexCmapTransform(GraphicFeature):
             )
 
         if graphic.world_object.geometry.texcoords is not None:
-            graphic.world_object.geometry.texcoords[:] = value
+            graphic.world_object.geometry.texcoords.data[:] = value
+            graphic.world_object.geometry.texcoords.update_full()
         else:
             graphic.world_object.geometry.texcoords = pygfx.Buffer(self.value)
 
         self._value = graphic.world_object.geometry.texcoords.data
+
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
+        self._call_event_handlers(event)
+
+
+class CmapTranformNormParam(GraphicFeature):
+    """
+    A scalar controlling how the cmap_transform is normalized into the colormap.
+
+    One instance is used for each of the ``cmap_vmin``, ``cmap_vmax``, and ``cmap_gamma``
+    of a positions graphic; the instance's ``property_name`` identifies which one it manages.
+    """
+
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "float",
+            "description": "new value",
+        },
+    ]
+
+    def __init__(
+        self, value: float, property_name: Literal["cmap_vmin", "cmap_vmax", "cmap_gamma"]
+    ):
+        self._value = value
+        super().__init__(property_name=property_name)
+
+    @property
+    def value(self) -> float:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: float):
+        self._value = value
+
+        # this instance manages one of vmin/vmax/gamma, identified by its property_name;
+        # combine it with the other two to normalize the cmap_transform into the texcoords
+        params = {
+            "vmin": graphic.cmap_vmin,
+            "vmax": graphic.cmap_vmax,
+            "gamma": graphic.cmap_gamma,
+        }
+        params[self._property_name.removeprefix("cmap_")] = value
+
+        texcoords = graphic.world_object.geometry.texcoords
+        texcoords.data[:] = normalize_min_max(graphic.cmap_transform, **params)
+        texcoords.update_range()
 
         event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)

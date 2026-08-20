@@ -11,9 +11,10 @@ from .features import (
     UniformColor,
     VertexCmap,
     VertexCmapTransform,
+    CmapTranformNormParam,
     SizeSpace,
 )
-from .features.utils import is_single_color
+from .features.utils import is_single_color, normalize_min_max
 from .features.types import ColorLike, MultiColorLike, ColormapLike
 
 
@@ -45,6 +46,12 @@ class PositionsGraphic(Graphic):
         self._cmap = None
         self._cmap_transform = None
         self._colors = None
+
+        # the cmap normalization params are created once and persist for the lifetime of the
+        # graphic; vmin, vmax default to None so the transform's own range is used
+        self._cmap_vmin = CmapTranformNormParam(None, "cmap_vmin")
+        self._cmap_vmax = CmapTranformNormParam(None, "cmap_vmax")
+        self._cmap_gamma = CmapTranformNormParam(1.0, "cmap_gamma")
 
         if cmap is not None:
             # if a cmap is specified it overrides colors argument
@@ -118,7 +125,7 @@ class PositionsGraphic(Graphic):
             case "vertex":
                 self.world_object.geometry.colors = self._colors._fpl_buffer
                 self.world_object.material.color_mode = "vertex"
-                self.world_object.material.color = None
+                self.world_object.material.color = (1, 1, 1, 1)  # back to default, material.color cannot be None
 
         if old_mode == "vertex_map":
             # clear cmap world object stuff: map and texcoords
@@ -160,7 +167,7 @@ class PositionsGraphic(Graphic):
         if self._colors is not None:
             self._colors.clear_event_handlers()
             self.world_object.geometry.colors = None
-            self.world_object.material.color = None
+            self.world_object.material.color = (1, 1, 1, 1)  # back to default, material.color cannot be None
             self._colors = None
 
     @property
@@ -175,6 +182,42 @@ class PositionsGraphic(Graphic):
             raise AttributeError("Must set `cmap` before setting `cmap_transform`")
 
         self._cmap_transform.set_value(self, value)
+
+    @property
+    def cmap_vmin(self) -> float | None:
+        """Get or set the lower bound used to normalize the cmap_transform"""
+        if self._cmap_vmin is not None:
+            return self._cmap_vmin.value
+
+    @cmap_vmin.setter
+    def cmap_vmin(self, value: float):
+        if self._cmap is None:
+            raise AttributeError("Must set `cmap` before setting `cmap_vmin`")
+        self._cmap_vmin.set_value(self, value)
+
+    @property
+    def cmap_vmax(self) -> float | None:
+        """Get or set the upper bound used to normalize the cmap_transform"""
+        if self._cmap_vmax is not None:
+            return self._cmap_vmax.value
+
+    @cmap_vmax.setter
+    def cmap_vmax(self, value: float):
+        if self._cmap is None:
+            raise AttributeError("Must set `cmap` before setting `cmap_vmax`")
+        self._cmap_vmax.set_value(self, value)
+
+    @property
+    def cmap_gamma(self) -> float | None:
+        """Get or set the gamma applied when normalizing the cmap_transform"""
+        if self._cmap_gamma is not None:
+            return self._cmap_gamma.value
+
+    @cmap_gamma.setter
+    def cmap_gamma(self, value: float):
+        if self._cmap is None:
+            raise AttributeError("Must set `cmap` before setting `cmap_gamma`")
+        self._cmap_gamma.set_value(self, value)
 
     @property
     def size_space(self):
@@ -217,9 +260,50 @@ class PositionsGraphic(Graphic):
             if len(cmap_transform) != len(self):
                 raise ValueError("`cmap_transform` must be a 1D array of the same size as the number of datapoints")
 
-        cmap_transform = VertexCmapTransform(cmap_transform)
+        # normalize the transform; the texcoords index into the colormap
+        cmap_transform = VertexCmapTransform(
+            normalize_min_max(
+                cmap_transform, self.cmap_vmin, self.cmap_vmax, self.cmap_gamma
+            )
+        )
 
         return cmap, cmap_transform
+
+    def _get_material_kwargs(self) -> dict:
+        # material kwargs shared by all positions graphics; the color mode is
+        # determined by the current color/cmap state, subclasses add their own kwargs
+        kwargs = dict(
+            pick_write=True,
+            aa=self.alpha_mode in ("blend", "weighted_blend"),
+            depth_compare="<=",
+        )
+
+        if self._cmap is not None:
+            kwargs["color_mode"] = "vertex_map"
+            kwargs["map"] = self.cmap.to_pygfx()
+        elif isinstance(self._colors, UniformColor):
+            kwargs["color_mode"] = "uniform"
+            kwargs["color"] = self.colors
+        else:
+            kwargs["color_mode"] = "vertex"
+
+        return kwargs
+
+    def _get_geo_kwargs(self) -> dict:
+        # geometry kwargs shared by all positions graphics, subclasses add their own kwargs
+        kwargs = dict(positions=self._data._fpl_buffer)
+
+        if self._cmap is not None:
+            # cmap overrides colors, uses per-vertex texcoords into the colormap
+            kwargs["texcoords"] = pygfx.Buffer(self._cmap_transform.value)
+        elif isinstance(self._colors, VertexColors):
+            kwargs["colors"] = self._colors._fpl_buffer
+        # uniform color needs no geometry buffer
+
+        return kwargs
+
+    def _make_geo(self) -> pygfx.Geometry:
+        return pygfx.Geometry(**self._get_geo_kwargs())
 
     def format_pick_info(self, pick_info: dict) -> str:
         index = pick_info["vertex_index"]

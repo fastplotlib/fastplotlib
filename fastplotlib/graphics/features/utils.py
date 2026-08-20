@@ -129,3 +129,20 @@ def get_element_format_from_numpy_array(array):
         )
 
     return array.dtype.str.lstrip("<>=|")
+
+
+def normalize_min_max(a, vmin: float = None, vmax: float = None, gamma: float = 1.0):
+    """
+    normalize an array between 0 - 1, clipped to (vmin, vmax)
+    """
+
+    vmin = np.min(a) if vmin is None else vmin
+    vmax = np.max(a) if vmax is None else vmax
+
+    if vmax <= vmin:
+        return np.zeros(a.size)
+
+    transform = np.clip((a - vmin) / (vmax - vmin), 0, 1)
+    if gamma == 1.0:
+        return transform
+    return transform**gamma

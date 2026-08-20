@@ -324,10 +324,9 @@ class GraphicMethodsMixin:
         data: Any,
         axis: Literal["x", "y", "z"] | None = None,
         thickness: float = 2.0,
-        colors: str | np.ndarray | Sequence = "w",
-        cmap: str = None,
-        cmap_transform: np.ndarray | Sequence = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike = None,
+        cmap_transform: np.ndarray | None = None,
         start_is_infinite: bool = True,
         end_is_infinite: bool = True,
         dash_pattern: str | tuple | list = (),
@@ -353,7 +352,7 @@ class GraphicMethodsMixin:
         thickness: float, optional, default 2.0
             thickness of the lines
 
-        colors: str, array, or iterable, default "w"
+        colors: ColorLike or MultiColorLike, default "w"
             specify colors as a single human-readable string, a single RGBA array, or a Sequence
             (array, tuple, or list) of strings or RGBA arrays. A sequence of colors provides one
             color per line.
@@ -399,7 +398,6 @@ class GraphicMethodsMixin:
             colors,
             cmap,
             cmap_transform,
-            color_mode,
             start_is_infinite,
             end_is_infinite,
             dash_pattern,
@@ -498,7 +496,7 @@ class GraphicMethodsMixin:
         self,
         data: Any,
         thickness: float = 2.0,
-        colors: str | ColorLike | MultiColorLike = "w",
+        colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
         size_space: str = "screen",
@@ -521,7 +519,7 @@ class GraphicMethodsMixin:
         thickness: float, optional, default 2.0
             thickness of the line
 
-        colors: str, ColorLike or MultiColorLike, default "w"
+        colors: ColorLike or MultiColorLike, default "w"
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
@@ -861,10 +859,9 @@ class GraphicMethodsMixin:
     def add_scatter(
         self,
         data: Any,
-        colors: str | np.ndarray | Sequence[float] | Sequence[str] = "w",
-        cmap: str = None,
-        cmap_transform: np.ndarray = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
+        cmap_transform: np.ndarray | None = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
         uniform_marker: bool = True,
@@ -994,7 +991,6 @@ class GraphicMethodsMixin:
             colors,
             cmap,
             cmap_transform,
-            color_mode,
             mode,
             markers,
             uniform_marker,

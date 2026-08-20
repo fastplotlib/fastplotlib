@@ -14,6 +14,7 @@ from .features import (
     SizeSpace,
     DashPattern,
 )
+from .features.types import ColorLike, MultiColorLike, ColormapLike
 
 
 class InfLineGraphic(LineGraphic):
@@ -34,10 +35,9 @@ class InfLineGraphic(LineGraphic):
         data: Any,
         axis: Literal["x", "y", "z"] | None = None,
         thickness: float = 2.0,
-        colors: str | np.ndarray | Sequence = "w",
-        cmap: str = None,
-        cmap_transform: np.ndarray | Sequence = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike = None,
+        cmap_transform: np.ndarray | None = None,
         start_is_infinite: bool = True,
         end_is_infinite: bool = True,
         dash_pattern: str | tuple | list = (),
@@ -62,7 +62,7 @@ class InfLineGraphic(LineGraphic):
         thickness: float, optional, default 2.0
             thickness of the lines
 
-        colors: str, array, or iterable, default "w"
+        colors: ColorLike or MultiColorLike, default "w"
             specify colors as a single human-readable string, a single RGBA array, or a Sequence
             (array, tuple, or list) of strings or RGBA arrays. A sequence of colors provides one
             color per line.
@@ -71,12 +71,6 @@ class InfLineGraphic(LineGraphic):
             Apply a colormap to the lines instead of assigning colors manually, one color per line.
             This overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
-
-        color_mode: one of "auto", "uniform", "vertex", default "auto"
-            "uniform" restricts to a single color for all lines.
-            "vertex" allows an independent color per line.
-            For most cases you can keep it as "auto" and the `color_mode` is determined automatically
-            based on the argument passed to `colors`.
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
@@ -111,7 +105,6 @@ class InfLineGraphic(LineGraphic):
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
-            color_mode=color_mode,
             size_space=size_space,
             dash_pattern=dash_pattern,
             thin=False,

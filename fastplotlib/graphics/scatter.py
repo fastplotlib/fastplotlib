@@ -12,6 +12,7 @@ from .features import (
     VertexColors,
     UniformColor,
     VertexCmap,
+    VertexCmapTransform,
     VertexMarkers,
     UniformMarker,
     UniformEdgeColor,
@@ -20,6 +21,7 @@ from .features import (
     VertexRotations,
     TextureArray,
 )
+from .features.types import ColorLike, MultiColorLike, ColormapLike
 
 
 class ScatterGraphic(PositionsGraphic):
@@ -28,6 +30,7 @@ class ScatterGraphic(PositionsGraphic):
         "sizes": (VertexPointSizes, UniformSize),
         "colors": (VertexColors, UniformColor),
         "cmap": (VertexCmap, None),
+        "cmap_transform": (VertexCmapTransform, None),
         "markers": (VertexMarkers, UniformMarker, None),
         "edge_colors": (UniformEdgeColor, VertexColors, None),
         "edge_width": (EdgeWidth, None),
@@ -39,10 +42,9 @@ class ScatterGraphic(PositionsGraphic):
     def __init__(
         self,
         data: Any,
-        colors: str | np.ndarray | Sequence[float] | Sequence[str] = "w",
-        cmap: str = None,
-        cmap_transform: np.ndarray = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
+        cmap_transform: np.ndarray | None = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
         uniform_marker: bool = True,
@@ -67,26 +69,18 @@ class ScatterGraphic(PositionsGraphic):
             Scatter data to plot, Can provide 2D, or a 3D data. 2D data must be of shape [n_points, 2].
             3D data must be of shape [n_points, 3]
 
-        colors: str, array, tuple, list, Sequence, default "w"
+        colors: ColorLike or MultiColorLike, default "w"
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        cmap: str, optional
+        cmap: ColormapLike, optional
             apply a colormap to the scatter instead of assigning colors manually, this
             overrides any argument passed to "colors".
             For supported colormaps see the ``cmap`` library catalogue:
             https://cmap-docs.readthedocs.io/en/stable/catalog/
 
-        cmap_transform: 1D array-like or list of numerical values, optional
-            if provided, these values are used to map the colors from the cmap
-
-        color_mode: one of "auto", "uniform", "vertex", default "auto"
-            "uniform" restricts to a single color for all line datapoints.
-            "vertex" allows independent colors per vertex.
-            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
-            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
-            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
-            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
+        cmap_transform: np.ndarray, optional
+            1D array-like or list of numerical values, these values are used to map the colors from the cmap
 
         mode: one of: "markers", "simple", "gaussian", "image", default "markers"
             The scatter points mode, cannot be changed after the graphic has been created.
@@ -170,36 +164,23 @@ class ScatterGraphic(PositionsGraphic):
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
-            color_mode=color_mode,
             size_space=size_space,
             **kwargs,
         )
 
         n_datapoints = self.data.value.shape[0]
 
-        geo_kwargs = {"positions": self._data._fpl_buffer}
-
-        aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
-
-        material_kwargs = dict(
-            pick_write=True,
-            aa=aa,
-            depth_compare="<=",
-        )
-
         self._markers: VertexMarkers | UniformMarker | None = None
         self._edge_colors: UniformEdgeColor | VertexColors | None = None
         self._edge_width: EdgeWidth | None = None
         self._point_rotations: VertexRotations | UniformRotations | None = None
         self._image: TextureArray | None = None
+        self._custom_sdf: str | None = None
 
         # material cannot be changed after the ScatterGraphic is created
         self._mode = mode
-        match self.mode:
+        match self._mode:
             case "markers":
-                # default
-                material = pygfx.PointsMarkerMaterial
-
                 if uniform_marker:
                     if not isinstance(markers, str):
                         raise TypeError(
@@ -207,15 +188,8 @@ class ScatterGraphic(PositionsGraphic):
                         )
 
                     self._markers = UniformMarker(markers)
-
-                    material_kwargs["marker_mode"] = pygfx.MarkerMode.uniform
-                    material_kwargs["marker"] = self._markers.value
                 else:
-                    material_kwargs["marker_mode"] = pygfx.MarkerMode.vertex
-
                     self._markers = VertexMarkers(markers, n_datapoints)
-
-                    geo_kwargs["markers"] = self._markers._fpl_buffer
 
                 if edge_colors is None:
                     # interpret as no edge color
@@ -231,28 +205,15 @@ class ScatterGraphic(PositionsGraphic):
                             )
 
                     self._edge_colors = UniformEdgeColor(edge_colors)
-                    material_kwargs["edge_color"] = self._edge_colors.value
-                    material_kwargs["edge_color_mode"] = pygfx.ColorMode.uniform
                 else:
                     self._edge_colors = VertexColors(
                         edge_colors, n_datapoints, property_name="edge_colors"
                     )
-                    material_kwargs["edge_color_mode"] = pygfx.ColorMode.vertex
-                    geo_kwargs["edge_colors"] = self._edge_colors._fpl_buffer
 
                 self._edge_width = EdgeWidth(edge_width)
-                material_kwargs["edge_width"] = self._edge_width.value
-                material_kwargs["custom_sdf"] = custom_sdf
-
-            case "simple":
-                # basic points material
-                material = pygfx.PointsMaterial
-
-            case "gaussian":
-                material = pygfx.PointsGaussianBlobMaterial
+                self._custom_sdf = custom_sdf
 
             case "image":
-                material = pygfx.PointsSpriteMaterial
                 # sprites should actually only be one texture, but we don't
                 # want to create a new buffer manager just for sprites.
                 # If someone is creating scatter plots with images of size
@@ -271,32 +232,16 @@ class ScatterGraphic(PositionsGraphic):
                     image / np.nanmax(image), property_name="image"
                 )
 
-                material_kwargs["sprite"] = self._image.buffer[0, 0]
-
-        self._size_space = SizeSpace(size_space)
-
-        if isinstance(self._colors, UniformColor):
-            material_kwargs["color_mode"] = pygfx.ColorMode.uniform
-            material_kwargs["color"] = self.colors
-        else:
-            material_kwargs["color_mode"] = pygfx.ColorMode.vertex
-            geo_kwargs["colors"] = self.colors._fpl_buffer
-
         if uniform_size:
-            material_kwargs["size_mode"] = pygfx.SizeMode.uniform
             self._sizes = UniformSize(sizes)
-            material_kwargs["size"] = self.sizes
         else:
-            material_kwargs["size_mode"] = pygfx.SizeMode.vertex
             self._sizes = VertexPointSizes(sizes, n_datapoints=n_datapoints)
-            geo_kwargs["sizes"] = self.sizes._fpl_buffer
 
         match point_rotation_mode:
             case pygfx.enums.RotationMode.vertex:
                 self._point_rotations = VertexRotations(
                     point_rotations, n_datapoints=n_datapoints
                 )
-                geo_kwargs["rotations"] = self._point_rotations._fpl_buffer
 
             case pygfx.enums.RotationMode.uniform:
                 self._point_rotations = UniformRotations(point_rotations)
@@ -310,15 +255,81 @@ class ScatterGraphic(PositionsGraphic):
                     f"you have passed: {point_rotation_mode}"
                 )
 
-        material_kwargs["rotation_mode"] = point_rotation_mode
-        material_kwargs["size_space"] = self.size_space
-
         world_object = pygfx.Points(
-            pygfx.Geometry(**geo_kwargs),
-            material=material(**material_kwargs),
+            geometry=self._make_geo(),
+            material=self._make_material(),
         )
 
         self._set_world_object(world_object)
+
+    def _make_material(self) -> pygfx.PointsMaterial:
+        # create the pygfx material, the material class is determined by the scatter mode
+        material_cls = {
+            "markers": pygfx.PointsMarkerMaterial,
+            "simple": pygfx.PointsMaterial,
+            "gaussian": pygfx.PointsGaussianBlobMaterial,
+            "image": pygfx.PointsSpriteMaterial,
+        }[self._mode]
+        return material_cls(**self._get_material_kwargs())
+
+    def _get_material_kwargs(self) -> dict:
+        # pygfx points material kwargs assembled from the current feature state
+        kwargs = super()._get_material_kwargs()
+        kwargs["size_space"] = self.size_space
+
+        if isinstance(self._sizes, UniformSize):
+            kwargs["size_mode"] = pygfx.SizeMode.uniform
+            kwargs["size"] = self.sizes
+        else:
+            kwargs["size_mode"] = pygfx.SizeMode.vertex
+
+        if isinstance(self._point_rotations, VertexRotations):
+            kwargs["rotation_mode"] = pygfx.enums.RotationMode.vertex
+        elif isinstance(self._point_rotations, UniformRotations):
+            kwargs["rotation_mode"] = pygfx.enums.RotationMode.uniform
+        else:
+            kwargs["rotation_mode"] = pygfx.enums.RotationMode.curve
+
+        match self._mode:
+            case "markers":
+                if isinstance(self._markers, UniformMarker):
+                    kwargs["marker_mode"] = pygfx.MarkerMode.uniform
+                    kwargs["marker"] = self._markers.value
+                else:
+                    kwargs["marker_mode"] = pygfx.MarkerMode.vertex
+
+                if isinstance(self._edge_colors, UniformEdgeColor):
+                    kwargs["edge_color_mode"] = pygfx.ColorMode.uniform
+                    kwargs["edge_color"] = self._edge_colors.value
+                else:
+                    kwargs["edge_color_mode"] = pygfx.ColorMode.vertex
+
+                kwargs["edge_width"] = self._edge_width.value
+                kwargs["custom_sdf"] = self._custom_sdf
+
+            case "image":
+                kwargs["sprite"] = self._image.buffer[0, 0]
+
+        return kwargs
+
+    def _get_geo_kwargs(self) -> dict:
+        # pygfx points geometry kwargs assembled from the current feature state
+        kwargs = super()._get_geo_kwargs()
+
+        if isinstance(self._sizes, VertexPointSizes):
+            kwargs["sizes"] = self._sizes._fpl_buffer
+
+        if isinstance(self._point_rotations, VertexRotations):
+            kwargs["rotations"] = self._point_rotations._fpl_buffer
+
+        if self._mode == "markers":
+            if isinstance(self._markers, VertexMarkers):
+                kwargs["markers"] = self._markers._fpl_buffer
+
+            if isinstance(self._edge_colors, VertexColors):
+                kwargs["edge_colors"] = self._edge_colors._fpl_buffer
+
+        return kwargs
 
     @property
     def mode(self) -> str:
@@ -393,7 +404,7 @@ class ScatterGraphic(PositionsGraphic):
             return self._point_rotations.value
 
     @point_rotations.setter
-    def point_rotations(self, value: float | np.ndarray[float]):
+    def point_rotations(self, value: float | np.ndarray[tuple[int], np.dtype[np.number]]):
         if self.point_rotation_mode not in ["uniform", "vertex"]:
             raise AttributeError(
                 f"point_rotation_mode is: {self.point_rotation_mode}. "

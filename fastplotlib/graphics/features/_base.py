@@ -191,7 +191,7 @@ class BufferManager(GraphicFeature):
 
     def _parse_offset_size(
         self,
-        key: int | slice | np.ndarray[int | bool] | list[bool | int],
+        key: int | slice | np.ndarray[tuple[int, ...], np.dtype[np.integer | np.bool]] | list[bool | int],
         upper_bound: int,
     ):
         """
@@ -270,7 +270,7 @@ class BufferManager(GraphicFeature):
     def _update_range(
         self,
         key: (
-            int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]
+            int | slice | np.ndarray[tuple[int, ...], np.dtype[np.integer | np.bool]] | list[bool | int] | tuple[slice, ...]
         ),
     ):
         """
@@ -285,7 +285,7 @@ class BufferManager(GraphicFeature):
                 raise TypeError("ellipses not supported for indexing buffers")
             # if multiple dims are sliced, we only need the key for
             # the first dimension corresponding to n_datapoints
-            key: int | np.ndarray[int | bool] | slice = key[0]
+            key: int | np.ndarray[tuple[int, ...], np.dtype[np.integer | np.bool]] | slice = key[0]
 
         if isinstance(key, slice):
             if key == slice(None):

@@ -22,7 +22,6 @@ from .features import (
     VertexCmap,
     SizeSpace,
 )
-from .features.types import ColorLike, MultiColorLike
 from ..utils import quick_min_max
 from ._positions_base import PositionsGraphic
 from .features.types import ColorLike, MultiColorLike, ColormapLike
@@ -41,7 +40,7 @@ class LineGraphic(PositionsGraphic):
         self,
         data: Any,
         thickness: float = 2.0,
-        colors: str | ColorLike | MultiColorLike = "w",
+        colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
         size_space: str = "screen",
@@ -63,7 +62,7 @@ class LineGraphic(PositionsGraphic):
         thickness: float, optional, default 2.0
             thickness of the line
 
-        colors: str, ColorLike or MultiColorLike, default "w"
+        colors: ColorLike or MultiColorLike, default "w"
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
@@ -120,51 +119,16 @@ class LineGraphic(PositionsGraphic):
 
     def _get_material_kwargs(self) -> dict:
         # pygfx line material kwargs assembled from the current feature state
-        kwargs = dict(
-            thickness=self.thickness,
-            thickness_space=self.size_space,
-            dash_pattern=parse_dash_pattern(self._dash_pattern.value),
-            aa=self.alpha_mode in ("blend", "weighted_blend"),
-            pick_write=True,
-            depth_compare="<=",
-        )
-
-        if self._cmap is not None:
-            kwargs["color_mode"] = "vertex_map"
-            kwargs["map"] = self.cmap.to_pygfx()
-        elif isinstance(self._colors, UniformColor):
-            kwargs["color_mode"] = "uniform"
-            kwargs["color"] = self.colors
-        else:
-            kwargs["color_mode"] = "vertex"
-
-        return kwargs
-
-    def _get_geo_kwargs(self) -> dict:
-        kwargs = dict(
-            positions=self._data._fpl_buffer
-        )
-
-        if self._cmap is not None:
-            # cmap overrides all
-            kwargs["texcoords"] = pygfx.Buffer(self._cmap_transform.value)
-
-        elif isinstance(self._colors, VertexColors):
-            # per-vertex colors
-            kwargs["colors"] = self._colors._fpl_buffer
-
-        # no additional kwargs for uniform color
-
+        kwargs = super()._get_material_kwargs()
+        kwargs["thickness"] = self.thickness
+        kwargs["thickness_space"] = self.size_space
+        kwargs["dash_pattern"] = parse_dash_pattern(self._dash_pattern.value)
         return kwargs
 
     def _make_material(self) -> pygfx.LineMaterial:
         # create the pygfx material, subclasses override to use a different line material
         material_cls = pygfx.LineThinMaterial if self._thin else pygfx.LineMaterial
         return material_cls(**self._get_material_kwargs())
-
-    def _make_geo(self) -> pygfx.Geometry:
-        kwargs = self._get_geo_kwargs()
-        return pygfx.Geometry(**kwargs)
 
     @property
     def thickness(self) -> float:
