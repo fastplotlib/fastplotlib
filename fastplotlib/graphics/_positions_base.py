@@ -1,4 +1,5 @@
-from typing import Any
+from collections.abc import Iterable
+from typing import Any, Literal
 
 import numpy as np
 import cmap as cmap_lib
@@ -29,7 +30,10 @@ class PositionsGraphic(Graphic):
         data: Any,
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
-        cmap_transform: np.ndarray | None = None,
+        cmap_transform: np.ndarray | Iterable[int | float] | None = None,
+        cmap_vmin: float | None = None,
+        cmap_vmax: float | None = None,
+        cmap_gamma: float = 1.0,
         size_space: str = "screen",
         *args,
         **kwargs,
@@ -49,9 +53,9 @@ class PositionsGraphic(Graphic):
 
         # the cmap normalization params are created once and persist for the lifetime of the
         # graphic; vmin, vmax default to None so the transform's own range is used
-        self._cmap_vmin = CmapTranformNormParam(None, "cmap_vmin")
-        self._cmap_vmax = CmapTranformNormParam(None, "cmap_vmax")
-        self._cmap_gamma = CmapTranformNormParam(1.0, "cmap_gamma")
+        self._cmap_vmin = CmapTranformNormParam(cmap_vmin, "cmap_vmin")
+        self._cmap_vmax = CmapTranformNormParam(cmap_vmax, "cmap_vmax")
+        self._cmap_gamma = CmapTranformNormParam(cmap_gamma, "cmap_gamma")
 
         if cmap is not None:
             # if a cmap is specified it overrides colors argument
@@ -208,7 +212,7 @@ class PositionsGraphic(Graphic):
         self._cmap_vmax.set_value(self, value)
 
     @property
-    def cmap_gamma(self) -> float | None:
+    def cmap_gamma(self) -> float:
         """Get or set the gamma applied when normalizing the cmap_transform"""
         if self._cmap_gamma is not None:
             return self._cmap_gamma.value
@@ -255,16 +259,16 @@ class PositionsGraphic(Graphic):
 
         if cmap_transform is None:
             # default transform is just a linspace along the datapoints
-            cmap_transform = np.linspace(0, 1, len(self))
-        else:
-            if len(cmap_transform) != len(self):
-                raise ValueError("`cmap_transform` must be a 1D array of the same size as the number of datapoints")
+            # this gets interpolated based on the number of datapoints
+            cmap_transform = np.array([0, 1])
 
         # normalize the transform; the texcoords index into the colormap
         cmap_transform = VertexCmapTransform(
             normalize_min_max(
                 cmap_transform, self.cmap_vmin, self.cmap_vmax, self.cmap_gamma
-            )
+            ),
+            # use buffer array length since len(self.data) returns half for inflines
+            n_datapoints=len(self.data.buffer.data)
         )
 
         return cmap, cmap_transform

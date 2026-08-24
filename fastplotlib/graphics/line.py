@@ -2,7 +2,6 @@ from typing import *
 from warnings import warn
 
 import numpy as np
-import cmap as cmap_lib
 
 import pygfx
 
@@ -42,7 +41,7 @@ class LineGraphic(PositionsGraphic):
         thickness: float = 2.0,
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
-        cmap_transform: np.ndarray | None = None,
+        cmap_transform: np.ndarray | Iterable[int | float] | None = None,
         size_space: str = "screen",
         dash_pattern: str | tuple | list = (),
         thin: bool = False,

@@ -131,11 +131,11 @@ def get_element_format_from_numpy_array(array):
     return array.dtype.str.lstrip("<>=|")
 
 
-def normalize_min_max(a, vmin: float = None, vmax: float = None, gamma: float = 1.0):
+def normalize_min_max(a, vmin: float | None = None, vmax: float | None = None, gamma: float = 1.0):
     """
     normalize an array between 0 - 1, clipped to (vmin, vmax)
     """
-
+    a = np.asarray(a)
     vmin = np.min(a) if vmin is None else vmin
     vmax = np.max(a) if vmax is None else vmax
 
