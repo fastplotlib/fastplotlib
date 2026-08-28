@@ -202,7 +202,7 @@ class Alpha(GraphicFeature):
 
         if "Image" in graphic.__class__.__name__:
             # Image and ImageVolume use tiling and share one material
-            graphic._material.alpha = value
+            graphic._material.opacity = value
 
         self._value = value
 
