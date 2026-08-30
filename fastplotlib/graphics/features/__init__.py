@@ -62,7 +62,6 @@ from ._base import (
     GraphicFeature,
     BufferManager,
     GraphicFeatureEvent,
-    to_gpu_supported_dtype,
 )
 
 from ._text import (
@@ -138,5 +137,7 @@ __all__ = [
     "AlphaMode",
     "Visible",
     "Deleted",
+    "GraphicFeature",
+    "BufferManager",
     "GraphicFeatureEvent",
 ]

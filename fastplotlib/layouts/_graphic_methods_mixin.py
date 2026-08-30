@@ -858,16 +858,12 @@ class GraphicMethodsMixin:
         cmap_transform: np.ndarray | None = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
-        uniform_marker: bool = True,
         custom_sdf: str = None,
-        edge_colors: str | np.ndarray | pygfx.Color | Sequence[float] = "black",
-        uniform_edge_color: bool = True,
+        edge_colors: ColorLike | MultiColorLike | None = "black",
         edge_width: float = 1.0,
         image: np.ndarray = None,
-        point_rotations: float | np.ndarray = 0,
-        point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
+        point_rotations: float | np.ndarray | None = None,
         sizes: float | np.ndarray | Sequence[float] = 5,
-        uniform_size: bool = True,
         size_space: str = "screen",
         **kwargs
     ) -> ScatterGraphic:
@@ -902,8 +898,9 @@ class GraphicMethodsMixin:
             * gaussian: each point is a gaussian blob
             * image: use an image for each point, pass an array to the `image` kwarg, these are also called sprites
 
-        markers: None | str | np.ndarray | Sequence[str], default "o"
-            The shape of the markers when `mode` is "markers"
+        markers: str | np.ndarray | Sequence[str], default "o"
+            The shape of the markers when `mode` is "markers". Specify a single marker to use the same
+            marker for all points, or a Sequence of markers for per-vertex markers.
 
             Supported values:
 
@@ -912,11 +909,6 @@ class GraphicMethodsMixin:
             * Unicode symbols: "●○■♦♥♠♣✳▲▼◀▶".
             * Emojis: "❤️♠️♣️♦️💎💍✳️📍".
             * A string containing the value "custom". In this case, WGSL code defined by ``custom_sdf`` will be used.
-
-        uniform_marker: bool, default ``True``
-            If ``True``, use the same marker for all points. Only valid when `mode` is "markers".
-            Useful if you need to use the same marker for all points and want to save GPU RAM. If ``False``, you can
-            set per-vertex markers.
 
         custom_sdf: str = None,
             The SDF code for the marker shape when the marker is set to custom.
@@ -933,35 +925,27 @@ class GraphicMethodsMixin:
             with the `edge_color`. Other negative distances will be colored by
             `colors`.
 
-        edge_colors: str | np.ndarray | pygfx.Color | Sequence[float], default "black"
-            edge color of the markers, used when `mode` is "markers"
-
-        uniform_edge_color: bool, default ``True``
-            Set the same edge color for all markers. Useful for saving GPU RAM. Set to ``False`` for per-vertex edge
-            colors
+        edge_colors: ColorLike, MultiColorLike, or None, default "black"
+            edge color(s) of the markers, used when `mode` is "markers". Specify a single color to use the
+            same edge color for all markers, or a Sequence of colors for per-vertex edge colors. Pass
+            ``None`` for no edge color.
 
         edge_width: float = 1.0,
             Width of the marker edges. used when `mode` is "markers".
 
-        image: ArrayLike, optional
+        image: array-like, optional
             renders an image at the scatter points, also known as sprites.
             The image color is multiplied with the point's "normal" color.
 
-        point_rotations: float | ArrayLike = 0,
-            The rotation of the scatter points in radians. Default 0. A single float rotation value can be set on all
-            points, or an array of rotation values can be used to set per-point rotations
+        point_rotations: float, array-like, or None, default None
+            The rotation of the scatter points in radians. The rotation mode is determined automatically from
+            the value: pass ``None`` (default) for "curve" mode, where each point's rotation follows the curve
+            of the data (in screen space); a single float for the same rotation on every point ("uniform"); or
+            an array of rotation values for per-point rotations ("vertex").
 
-        point_rotation_mode: one of: "uniform" | "vertex" | "curve", default "uniform"
-            * uniform: set the same rotation for every point, useful to save GPU RAM
-            * vertex: set per-vertex rotations
-            * curve: The rotation follows the curve of the line defined by the points (in screen space)
-
-        sizes: float or iterable of float, optional, default 1.0
-            sizes of the scatter points
-
-        uniform_size: bool, default ``False``
-            if ``True``, uses a uniform buffer for the scatter point sizes. Useful if you need to
-            save GPU VRAM when all points have the same size. Set to ``False`` if you need per-vertex sizes.
+        sizes: float, np.ndarray, or Sequence[float], default 5
+            size(s) of the scatter points. Specify a single size to use the same size for all points, or a
+            Sequence of sizes for per-point sizes.
 
         size_space: str, default "screen"
             coordinate space in which the size is expressed, one of ("screen", "world", "model")
@@ -979,16 +963,12 @@ class GraphicMethodsMixin:
             cmap_transform,
             mode,
             markers,
-            uniform_marker,
             custom_sdf,
             edge_colors,
-            uniform_edge_color,
             edge_width,
             image,
             point_rotations,
-            point_rotation_mode,
             sizes,
-            uniform_size,
             size_space,
             **kwargs
         )

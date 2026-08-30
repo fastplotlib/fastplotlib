@@ -96,19 +96,19 @@ class PositionsGraphic(Graphic):
 
     @colors.setter
     def colors(self, value: ColorLike | MultiColorLike):
-        new_mode = "uniform" if is_single_color(value) else "vertex"
-        old_mode = self._color_mode
-        ColorsCls = {
-            "uniform": UniformColor,
-            "vertex": self._VertexColorsCls
-        }.get(new_mode)
-
-        if isinstance(self._colors, ColorsCls):
-            # it's already the right instance type
+        # currently per-vertex: stay per-vertex, broadcasting a single color or setting a sequence
+        if isinstance(self._colors, VertexColors):
             self._colors.set_value(self, value)
             return
 
-        # clear any event handlers from old feature
+        # currently uniform: a single color stays uniform, a sequence switches to per-vertex
+        if isinstance(self._colors, UniformColor) and is_single_color(value):
+            self._colors.set_value(self, value)
+            return
+
+        # otherwise switch: from uniform to per-vertex, or away from a cmap
+        old_mode = self._color_mode
+
         if self._colors is not None:
             self._colors.clear_event_handlers()
 
@@ -121,15 +121,14 @@ class PositionsGraphic(Graphic):
         # create the new buffer and set
         self._colors = self._create_colors_buffer(value)
 
-        match new_mode:
-            case "uniform":
-                self.world_object.material.color = self._colors.value
-                self.world_object.material.color_mode = "uniform"
-                self.world_object.geometry.colors = None
-            case "vertex":
-                self.world_object.geometry.colors = self._colors._fpl_buffer
-                self.world_object.material.color_mode = "vertex"
-                self.world_object.material.color = (1, 1, 1, 1)  # back to default, material.color cannot be None
+        if isinstance(self._colors, VertexColors):
+            self.world_object.geometry.colors = self._colors._fpl_buffer
+            self.world_object.material.color_mode = "vertex"
+            self.world_object.material.color = (1, 1, 1, 1)  # back to default, material.color cannot be None
+        else:
+            self.world_object.material.color = self._colors.value
+            self.world_object.material.color_mode = "uniform"
+            self.world_object.geometry.colors = None
 
         if old_mode == "vertex_map":
             # clear cmap world object stuff: map and texcoords

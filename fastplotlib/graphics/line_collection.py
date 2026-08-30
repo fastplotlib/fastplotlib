@@ -135,7 +135,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
         colors: str | Sequence[str] | np.ndarray | Sequence[np.ndarray] = "w",
         cmap: Sequence[str] | str = None,
         cmap_transform: np.ndarray | List = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
@@ -173,9 +172,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
-
-        color_mode: one of "auto", "uniform", "vertex", default "auto"
-            The color mode for each line in the collection. See `color_mode` in :class:`.LineGraphic` for details.
 
         name: str, optional
             name of the line collection as a whole
@@ -328,7 +324,6 @@ class LineCollection(GraphicCollection, _LineCollectionProperties):
                 thickness=_s,
                 colors=_c,
                 cmap=_cmap,
-                color_mode=color_mode,
                 name=_name,
                 metadata=_m,
                 **kwargs_lines,
