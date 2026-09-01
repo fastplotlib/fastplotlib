@@ -17,6 +17,8 @@ from .types import ColorLike, MultiColorLike
 
 
 class VertexColors(BufferManager):
+    ndim = 2
+
     event_info_spec = [
         {
             "dict key": "key",
@@ -181,6 +183,8 @@ class VertexColors(BufferManager):
 
 
 class UniformColor(GraphicFeature):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "value",
@@ -389,6 +393,8 @@ class VertexCmap(GraphicFeature):
 
 
 class VertexCmapTransform(GraphicFeature):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "value",

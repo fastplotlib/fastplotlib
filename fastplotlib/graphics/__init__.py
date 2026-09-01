@@ -7,8 +7,8 @@ from .image_volume import ImageVolumeGraphic
 from ._vectors import VectorsGraphic
 from .mesh import MeshGraphic, SurfaceGraphic, PolygonGraphic
 from .text import TextGraphic
-from .line_collection import LineCollection, LineStack
-from .scatter_collection import ScatterCollection, ScatterStack
+from ._collection_base import GraphicCollection
+from ._collections import LineCollection, LineStack, ScatterCollection, ScatterStack, ImageCollection, ImageGrid
 
 __all__ = [
     "Graphic",
@@ -23,8 +23,11 @@ __all__ = [
     "SurfaceGraphic",
     "PolygonGraphic",
     "TextGraphic",
+    "GraphicCollection",
     "LineCollection",
     "LineStack",
     "ScatterCollection",
     "ScatterStack",
+    "ImageCollection",
+    "ImageGrid",
 ]

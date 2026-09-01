@@ -50,6 +50,11 @@ class GraphicFeatureEvent(pygfx.Event):
 
 
 class GraphicFeature:
+    # number of dimensions of one graphic's value for this feature
+    # e.g. ``Thickness`` is 0 (a scalar), ``Offset`` is 1 ([x, y, z]), ``VertexColors`` is 2 ([n_datapoints, RGBA])
+    # used by graphic collections to broadcast a value across graphics
+    ndim: int = 0
+
     def __init__(self, property_name: str, **kwargs):
         self._property_name = property_name
         self._event_handlers = list()

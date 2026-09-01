@@ -132,6 +132,8 @@ def parse_markers(markers: str | Sequence[str] | np.ndarray, n_datapoints: int):
 
 
 class VertexMarkers(BufferManager):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "key",
@@ -326,6 +328,8 @@ class UniformMarker(GraphicFeature):
 
 
 class UniformEdgeColor(GraphicFeature):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "value",
@@ -416,6 +420,8 @@ class UniformRotations(GraphicFeature):
 
 
 class VertexRotations(BufferManager):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "key",
@@ -503,6 +509,8 @@ class VertexRotations(BufferManager):
 
 
 class VertexPointSizes(BufferManager):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "key",

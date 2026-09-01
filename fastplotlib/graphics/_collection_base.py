@@ -1,208 +1,274 @@
-from contextlib import suppress
+from __future__ import annotations
+
+import inspect
+from collections.abc import Iterable
 from typing import Any
 
 import numpy as np
+import pygfx
+import cmap as cmap_lib
 
 from ._base import Graphic
+from ._jagged_array import Accessor, JaggedArray, ColorArray, Cmap, ARRAY_BUFFER_FEATURES
+from .features import GraphicFeature, VertexColors, UniformColor, VertexCmap
 
 
-class CollectionProperties:
+# a feature the collection also owns as a `Graphic` is exposed under a plural name, so
+# `collection.offset` is the collection's own offset and `collection.offsets` is the per-graphic
+# offsets
+PLURAL = {
+    "name": "names",
+    "offset": "offsets",
+    "rotation": "rotations",
+    "scale": "scales",
+    "alpha": "alphas",
+    "alpha_mode": "alpha_modes",
+    "visible": "visibles",
+}
+
+# features not exposed across the collection
+EXCLUDE = {"deleted"}
+
+
+def get_accessor_class(feature: str, feature_classes: tuple[type, ...]) -> type:
+    """the accessor class used to manage a feature across a collection"""
+    if UniformColor in feature_classes or VertexColors in feature_classes:
+        return ColorArray
+    if VertexCmap in feature_classes:
+        return Cmap
+    if any(issubclass(c, ARRAY_BUFFER_FEATURES) for c in feature_classes if isinstance(c, type)):
+        return JaggedArray
+    if feature in ("offset", "rotation", "scale"):
+        return JaggedArray
+    return Accessor
+
+
+def get_value_ndim(feature_classes: tuple[type[GraphicFeature], ...]) -> int:
+    """number of dimensions of a value that applies to every graphic, i.e. the uniform variant"""
+    return min((c.ndim for c in feature_classes if isinstance(c, type)), default=0)
+
+
+def cmap_across_graphics(
+    cmap_name: str, n_graphics: int, transform: np.ndarray = None
+) -> np.ndarray:
     """
-    Properties common to all Graphic Collections
+    ``n_graphics`` colors from a colormap, one per graphic.
 
-    Allows getting and setting the common properties of the individual graphics in the collection
+    Without a transform the colors are evenly spaced along the colormap. A ``transform`` maps each
+    graphic into the colormap instead: it is resampled to one value per graphic and normalized to
+    index the colormap as a lookup table.
     """
-
-    def _set_feature(self, feature, values):
-        if not len(values) == len(self):
-            raise IndexError
-
-        for g, v in zip(self, values):
-            setattr(g, feature, v)
-
-    @property
-    def names(self) -> np.ndarray[str | None]:
-        """get or set the name of the individual graphics in the collection"""
-        return np.asarray([g.name for g in self])
-
-    @names.setter
-    def names(self, values: np.ndarray[str] | list[str]):
-        self._set_feature("name", values)
-
-    @property
-    def metadatas(self) -> np.ndarray[str | None]:
-        """get or set the metadata of the individual graphics in the collection"""
-        return np.asarray([g.metadata for g in self])
-
-    @metadatas.setter
-    def metadatas(self, values: np.ndarray[str] | list[str]):
-        self._set_feature("metadata", values)
-
-    @property
-    def offsets(self) -> np.ndarray:
-        """get or set the offset of the individual graphics in the collection"""
-        return np.stack([g.offset for g in self])
-
-    @offsets.setter
-    def offsets(self, values: np.ndarray | list[np.ndarray]):
-        self._set_feature("offset", values)
-
-    @property
-    def rotations(self) -> np.ndarray:
-        """get or set the rotation of the individual graphics in the collection"""
-        return np.stack([g.rotation for g in self])
-
-    @rotations.setter
-    def rotations(self, values: np.ndarray | list[np.ndarray]):
-        self._set_feature("rotation", values)
-
-    # TODO: how to work with deleted feature in a collection
-
-    @property
-    def visibles(self) -> np.ndarray[bool]:
-        """get or set the offsets of the individual graphics in the collection"""
-        return np.asarray([g.visible for g in self])
-
-    @visibles.setter
-    def visibles(self, values: np.ndarray[bool] | list[bool]):
-        self._set_feature("visible", values)
-
-
-class CollectionIndexer(CollectionProperties):
-    """Collection Indexer"""
-
-    def __init__(self, selection: np.ndarray[Graphic], features: set[str]):
-        """
-
-        Parameters
-        ----------
-
-        selection: np.ndarray of Graphics
-            array of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
-
-        """
-
-        if isinstance(selection, Graphic):
-            selection = np.asarray([selection])
-
-        self._selection = selection
-        self.features = features
-
-    @property
-    def graphics(self) -> np.ndarray[Graphic]:
-        """Returns an array of the selected graphics"""
-        return tuple(self._selection)
-
-    def add_event_handler(self, *args):
-        """
-        Register an event handler.
-
-        Parameters
-        ----------
-        callback: callable, the first argument
-            Event handler, must accept a single event  argument
-        *types: list of strings
-            A list of event types, ex: "click", "data", "colors", "pointer_down"
-
-        For the available renderer event types, see
-        https://jupyter-rfb.readthedocs.io/en/stable/events.html
-
-        All feature support events, i.e. ``graphic.features`` will give a set of
-        all features that are evented
-
-        Can also be used as a decorator.
-
-        Example
-        -------
-
-        .. code-block:: py
-
-            def my_handler(event):
-                print(event)
-
-            graphic.add_event_handler(my_handler, "pointer_up", "pointer_down")
-
-        Decorator usage example:
-
-        .. code-block:: py
-
-            @graphic.add_event_handler("click")
-            def my_handler(event):
-                print(event)
-        """
-
-        decorating = not callable(args[0])
-        types = args if decorating else args[1:]
-
-        if decorating:
-
-            def decorator(_callback):
-                for g in self:
-                    g.add_event_handler(_callback, *types)
-                return _callback
-
-            return decorator
-
-        for g in self:
-            g.add_event_handler(*args)
-
-    def remove_event_handler(self, callback, *types):
-        for g in self:
-            g.remove_event_handler(callback, *types)
-
-    def clear_event_handlers(self):
-        for g in self:
-            g.clear_event_handlers()
-
-    def __getitem__(self, item):
-        return self.graphics[item]
-
-    def __len__(self):
-        return len(self._selection)
-
-    def __iter__(self):
-        self._iter = iter(range(len(self)))
-        return self
-
-    def __next__(self) -> Graphic:
-        index = next(self._iter)
-
-        return self.graphics[index]
-
-    def __repr__(self):
-        return (
-            f"{self.__class__.__name__} @ {hex(id(self))}\n"
-            f"Selection of <{len(self._selection)}> {self._selection[0].__class__.__name__}"
+    if transform is None:
+        values = np.linspace(0, 1, n_graphics)
+    else:
+        transform = np.asarray(transform, dtype=float)
+        # resample the transform to one value per graphic
+        transform = np.interp(
+            np.linspace(0, 1, n_graphics), np.linspace(0, 1, len(transform)), transform
         )
+        # normalize to [0, 1] so the values index the colormap
+        spread = np.ptp(transform)
+        values = (transform - transform.min()) / spread if spread else np.zeros(n_graphics)
+
+    return np.asarray(cmap_lib.Colormap(cmap_name)(values))
 
 
-class GraphicCollection(Graphic, CollectionProperties):
-    """Graphic Collection base class"""
+def make_feature_property(feature_name: str, accessor_class: type) -> property:
+    """a property that returns the feature's accessor for get/set across the collection"""
 
-    _child_type: type
-    _indexer: type
-    # tooltips will come from the child graphics
+    def getter(collection_instance):
+        return getattr(collection_instance, f"_{feature_name}")
+
+    if accessor_class is Cmap:
+        # assigning a colormap colors each graphic one color, evenly spaced across the collection
+        def setter(collection_instance, value):
+            collection_instance.colors[:] = cmap_across_graphics(value, len(collection_instance))
+    else:
+        def setter(collection_instance, value):
+            getattr(collection_instance, f"_{feature_name}")[:] = value
+
+    doc = f"get or set the {feature_name} of the graphics in the collection"
+    return property(getter, setter, doc=doc)
+
+
+def make_collection_signature(child_type: type, accessor_specs: dict) -> inspect.Signature:
+    """
+    the collection constructor's signature, derived from the child graphic
+
+    ``data`` becomes the list of per-graphic data, each managed feature accepts one value for all
+    graphics or one per graphic (``Iterable``), and construction arguments are passed through as-is.
+    """
+    parameters = [inspect.Parameter("data", inspect.Parameter.POSITIONAL_OR_KEYWORD)]
+    added = {"data"}
+
+    for name, parameter in inspect.signature(child_type.__init__).parameters.items():
+        if name in ("self", "data") or parameter.kind in (parameter.VAR_POSITIONAL, parameter.VAR_KEYWORD):
+            continue
+        feature_name = PLURAL.get(name, name)
+        annotation = parameter.annotation
+        if feature_name in accessor_specs and annotation is not parameter.empty:
+            annotation = Iterable[annotation]
+        default = parameter.default if parameter.default is not parameter.empty else None
+        parameters.append(
+            inspect.Parameter(feature_name, inspect.Parameter.KEYWORD_ONLY, default=default, annotation=annotation)
+        )
+        added.add(feature_name)
+
+    # features the collection exposes but the child takes via **kwargs, e.g. names, offsets, metadatas
+    for feature_name in accessor_specs:
+        if feature_name not in added:
+            parameters.append(inspect.Parameter(feature_name, inspect.Parameter.KEYWORD_ONLY, default=None))
+
+    return inspect.Signature(parameters)
+
+
+class GraphicCollection(Graphic):
+    """
+    A collection of graphics of the same type.
+
+    Subclasses set only ``_child_type``. Each feature of the child graphic is then exposed as a
+    property returning an accessor that gets and sets that feature across all of the graphics using
+    numpy broadcasting, e.g. ``collection.colors[:10, 30:50] = "r"``. Features the collection also
+    owns as a ``Graphic`` (``name``, ``offset``, ``rotation``, ``scale``, ``alpha``, ``alpha_mode``,
+    ``visible``, ``metadata``) are exposed under a plural name (``names``, ``offsets``, ...). The
+    constructor signature is derived from the child graphic as well.
+    """
+
+    _child_type: type[Graphic] = None
+
+    # tooltips come from the child graphics
     _fpl_support_tooltip = False
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        cls._features = cls._child_type._features
+        if cls._child_type is None:
+            return
 
-    def __init__(self, name: str = None, metadata: Any = None, **kwargs):
-        super().__init__(name=name, metadata=metadata, **kwargs)
+        # exposed feature name -> (child feature, accessor class, value_ndim)
+        specs = dict()
+        for feature, feature_classes in cls._child_type._features.items():
+            if feature in EXCLUDE:
+                continue
+            feature_classes = feature_classes if isinstance(feature_classes, tuple) else (feature_classes,)
+            feature_name = PLURAL.get(feature, feature)
+            specs[feature_name] = (
+                feature,
+                get_accessor_class(feature, feature_classes),
+                get_value_ndim(feature_classes),
+            )
+        # metadata is a plain attribute, not a graphic feature, so add it explicitly
+        specs["metadatas"] = ("metadata", Accessor, 0)
+        cls._accessor_specs = specs
 
-        # list of mem locations of the graphics
-        self._graphics: list[Graphic] = list()
+        # install a property for each feature, unless the class already defines one
+        for feature_name, (feature, accessor_class, _) in cls._accessor_specs.items():
+            if isinstance(getattr(cls, feature_name, None), property):
+                continue
+            setattr(cls, feature_name, make_feature_property(feature_name, accessor_class))
 
-        self._graphics_changed: bool = True
+        # expose the feature names so `add_event_handler` routes feature events to the accessor
+        cls._features = {**cls._features, **{name: spec[1] for name, spec in cls._accessor_specs.items()}}
 
-        self._iter = None
+        try:
+            cls.__signature__ = make_collection_signature(cls._child_type, cls._accessor_specs)
+        except (ValueError, TypeError):
+            pass
+
+    def __init__(self, data, name: str = None, metadata: Any = None, **kwargs):
+        """
+        Create a collection of graphics of the same type.
+
+        Parameters
+        ----------
+        data: list of array-like
+            one entry per graphic; its length is the number of graphics in the collection
+
+        name: str, optional
+            name of the collection
+
+        metadata: Any, optional
+            metadata attached to the collection
+
+        **kwargs
+            any feature of the child graphic (``colors``, ``thickness``, ``sizes``, ...), each
+            accepting one value for all graphics or one value per graphic. Any argument that is not
+            a feature is passed unchanged to every child graphic.
+        """
+        super().__init__(name=name, metadata=metadata)
+
+        n_graphics = len(data)
+        self._graphics = np.empty(n_graphics, dtype=object)
+        self._set_world_object(pygfx.Group())
+
+        self._create_accessors(data_value_ndim=int(np.ndim(data[0])))
+
+        feature_values = dict()  # child feature -> iterator of one value per graphic
+        graphic_kwargs = dict()  # non-feature kwargs, same for every graphic
+
+        # positions collections color the graphics with `cmap` + `cmap_transform`: a 1D transform
+        # (or none) colors each graphic one color across the collection; a 2D [n_graphics,
+        # n_datapoints] transform colors each graphic's datapoints, so the cmap is per-graphic.
+        # image collections use a per-graphic cmap and are not translated.
+        if "cmap" in kwargs and self._accessor_specs.get("cmap", (None, None, None))[1] is Cmap:
+            cmap = kwargs.pop("cmap")
+            cmap_transform = kwargs.pop("cmap_transform", None)
+            # an iterable of per-datapoint arrays (one per graphic) colors each graphic's datapoints
+            # so the cmap is applied per-graphic; an iterable of scalars (or none) colors each
+            # graphic one color across the collection
+            if cmap_transform is not None and np.ndim(cmap_transform[0]) >= 1:
+                if len(cmap_transform) != n_graphics:
+                    raise ValueError(
+                        f"a per-graphic cmap_transform must have one entry per graphic; got "
+                        f"{len(cmap_transform)} for {n_graphics} graphics"
+                    )
+                kwargs["cmap"] = cmap  # a per-graphic colormap along each graphic's datapoints
+                feature_values["cmap_transform"] = iter(cmap_transform)  # one array per graphic
+            else:
+                kwargs["colors"] = cmap_across_graphics(cmap, n_graphics, cmap_transform)
+
+        # split each feature into one value per graphic, other kwargs go to every graphic
+        for feature_name, value in kwargs.items():
+            if feature_name not in self._accessor_specs:
+                graphic_kwargs[feature_name] = value
+                continue
+            feature = self._accessor_specs[feature_name][0]
+            accessor = getattr(self, f"_{feature_name}")
+            value = accessor._parse_feature_value(value, ())
+            feature_values[feature] = iter(accessor._broadcast_over_graphics(value, n_graphics))
+
+        # one graphic per data entry, filled into the preallocated array
+        for i, graphic_data in enumerate(data):
+            feature_kwargs = {feature: next(values) for feature, values in feature_values.items()}
+            graphic = self._child_type(graphic_data, **feature_kwargs, **graphic_kwargs)
+            self._check_graphic_features_modes(graphic)
+            self._graphics[i] = graphic
+            self.world_object.add(graphic.world_object)
+
+    def _create_accessors(self, data_value_ndim: int):
+        # one accessor per exposed feature, over the collection's graphics array
+        for feature_name, (feature, accessor_class, value_ndim) in self._accessor_specs.items():
+            setattr(
+                self,
+                f"_{feature_name}",
+                accessor_class(self._graphics, feature, value_ndim, feature_name=feature_name),
+            )
+        # data is the loop driver, so its value_ndim comes from the data, not a feature class
+        self._data._value_ndim = data_value_ndim
+
+    @classmethod
+    def _from_graphics(cls, graphics: np.ndarray, data_value_ndim: int) -> GraphicCollection:
+        """a sub-collection over a subset of graphics, e.g. from slicing"""
+        subcollection = cls.__new__(cls)
+        subcollection._graphics = graphics
+        subcollection._create_accessors(data_value_ndim=data_value_ndim)
+        return subcollection
 
     @property
     def graphics(self) -> np.ndarray[Graphic]:
-        """The Graphics within this collection."""
-
-        return np.asarray(self._graphics)
+        """the graphics in the collection"""
+        graphics = self._graphics.view()
+        graphics.flags.writeable = False
+        return graphics
 
     def add_graphic(self, graphic: Graphic):
         """
@@ -211,157 +277,87 @@ class GraphicCollection(Graphic, CollectionProperties):
         Parameters
         ----------
         graphic: Graphic
-            graphic to add, must be a real ``Graphic`` not a proxy
-
+            the graphic to add; must be of the collection's ``_child_type`` and match the
+            per-vertex or uniform buffer mode of the graphics already in the collection
         """
-
-        if not type(graphic) == self._child_type:
+        if not isinstance(graphic, self._child_type):
             raise TypeError(
-                f"Can only add graphics of the same type to a collection.\n"
-                f"You can only add {self._child_type.__name__} to a {self.__class__.__name__}, "
-                f"you are trying to add a {graphic.__class__.__name__}."
+                f"cannot add a `{type(graphic).__name__}` to a collection of `{self._child_type.__name__}`"
             )
+        self._check_graphic_features_modes(graphic)
 
-        self._graphics.append(graphic)
+        graphics = np.empty(self._graphics.size + 1, dtype=object)
+        graphics[:-1] = self._graphics
+        graphics[-1] = graphic
+        self._graphics = graphics
+        self._refresh_accessors()
 
         self.world_object.add(graphic.world_object)
-
-        self._graphics_changed = True
 
     def remove_graphic(self, graphic: Graphic):
         """
         Remove a graphic from the collection.
 
-        Note: Only removes the graphic from the collection. Does not remove
-        the graphic from the scene, and does not delete the graphic.
-
         Parameters
         ----------
         graphic: Graphic
-            graphic to remove
-
+            the graphic to remove
         """
+        index = next((i for i, g in enumerate(self._graphics) if g is graphic), None)
+        if index is None:
+            raise KeyError("graphic is not in the collection")
 
-        self._graphics.remove(graphic)
+        self._graphics = np.delete(self._graphics, index)
+        self._refresh_accessors()
 
         self.world_object.remove(graphic.world_object)
 
-        self._graphics_changed = True
+    def _check_graphic_features_modes(self, graphic: Graphic):
+        # every graphic must use the same feature types (per-vertex vs uniform) as the first one,
+        # so the accessors can index them all the same way
+        if self._graphics.size == 0 or self._graphics[0] is None:
+            return
+        reference = self._graphics[0]
+        for feature, _, _ in self._accessor_specs.values():
+            reference_feature = getattr(reference, f"_{feature}", None)
+            if not isinstance(reference_feature, GraphicFeature):
+                continue  # e.g. metadata, not a graphic feature
+            if not isinstance(getattr(graphic, f"_{feature}", None), type(reference_feature)):
+                raise TypeError(
+                    f"graphics in a collection must use the same `{feature}` type; the collection "
+                    f"uses `{type(reference_feature).__name__}`"
+                )
 
-    def add_event_handler(self, *args):
-        """
-        Register an event handler.
-
-        Parameters
-        ----------
-        callback: callable, the first argument
-            Event handler, must accept a single event  argument
-        *types: list of strings
-            A list of event types, ex: "click", "data", "colors", "pointer_down"
-
-        For the available renderer event types, see
-        https://jupyter-rfb.readthedocs.io/en/stable/events.html
-
-        All feature support events, i.e. ``graphic.features`` will give a set of
-        all features that are evented
-
-        Can also be used as a decorator.
-
-        Example
-        -------
-
-        .. code-block:: py
-
-            def my_handler(event):
-                print(event)
-
-            graphic.add_event_handler(my_handler, "pointer_up", "pointer_down")
-
-        Decorator usage example:
-
-        .. code-block:: py
-
-            @graphic.add_event_handler("click")
-            def my_handler(event):
-                print(event)
-        """
-
-        return self[:].add_event_handler(*args)
-
-    def remove_event_handler(self, callback, *types):
-        """remove an event handler"""
-        self[:].remove_event_handler(callback, *types)
-
-    def clear_event_handlers(self):
-        self[:].clear_event_handlers()
+    def _refresh_accessors(self):
+        # point each accessor at the current graphics array
+        for feature_name in self._accessor_specs:
+            getattr(self, f"_{feature_name}")._graphics = self._graphics
 
     def _fpl_add_plot_area_hook(self, plot_area):
         super()._fpl_add_plot_area_hook(plot_area)
-
-        for g in self:
-            g._fpl_add_plot_area_hook(plot_area)
+        for graphic in self._graphics:
+            graphic._fpl_add_plot_area_hook(plot_area)
 
     def _fpl_prepare_del(self):
-        """
-        Cleans up the graphic in preparation for __del__(), such as removing event handlers from
-        plot renderer, feature event handlers, etc.
-
-        Optionally implemented in subclasses
-        """
-        # clear any attached event handlers and animation functions
         self.world_object._event_handlers.clear()
         self.world_object.clear()
 
-        for g in self:
-            g._fpl_prepare_del()
+        for graphic in self._graphics:
+            graphic._fpl_prepare_del()
 
-    def __getitem__(self, key) -> CollectionIndexer:
+    def __getitem__(self, key) -> Graphic | GraphicCollection:
         if np.issubdtype(type(key), np.integer):
-            return self.graphics[key]
+            return self._graphics[key]
+        return self._from_graphics(self._graphics[key], self._data._value_ndim)
 
-        return self._indexer(selection=self.graphics[key], features=self._features)
-
-    def __len__(self):
-        return len(self._graphics)
+    def __len__(self) -> int:
+        return self._graphics.size
 
     def __iter__(self):
-        self._iter = iter(range(len(self)))
-        return self
+        return iter(self._graphics)
 
-    def __next__(self) -> Graphic:
-        index = next(self._iter)
+    def __contains__(self, graphic: Graphic) -> bool:
+        return graphic in self._graphics
 
-        return self._graphics[index]
-
-    def __repr__(self):
-        rval = super().__repr__()
-        return f"{rval}\nCollection of <{len(self._graphics)}> Graphics"
-
-
-class CollectionFeature:
-    """Collection Feature"""
-
-    def __init__(self, selection: np.ndarray[Graphic], feature: str):
-        """
-        selection: list of Graphics
-            a list of the selected Graphics from the parent GraphicCollection based on the ``selection_indices``
-
-        feature: str
-            feature of Graphics in the GraphicCollection being indexed
-
-        """
-
-        self._selection = selection
-        self._feature = feature
-
-        self._feature_instances = [getattr(g, feature) for g in self._selection]
-
-    def __getitem__(self, item):
-        return np.stack([fi[item] for fi in self._feature_instances])
-
-    def __setitem__(self, key, value):
-        for fi in self._feature_instances:
-            fi[key] = value
-
-    def __repr__(self):
-        return f"Collection feature for: <{self._feature}>"
+    def __repr__(self) -> str:
+        return f"{type(self).__name__} of <{len(self)}> {self._child_type.__name__}"

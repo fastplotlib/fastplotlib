@@ -27,7 +27,8 @@ line_stack = figure[0, 0].add_line_stack(
     multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
     cmap="jet",  # applied along n_lines
     thickness=5,
-    separation=1,  # spacing between lines along the separation axis, default separation along "y" axis
+    separation=(0, 0, 0),  # spacing between lines along each axis (x, y, z)
+    separation_axis="y",
 )
 
 

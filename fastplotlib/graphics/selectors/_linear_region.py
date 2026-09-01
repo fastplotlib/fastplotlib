@@ -381,7 +381,8 @@ class LinearRegionSelector(BaseSelector):
                 # slice with min, max is faster than using all the indices
                 return source.data[s]
 
-        if "Image" in source.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in source.__class__.__name__ and not hasattr(source, "graphics"):
             s = slice(ixs[0], ixs[-1] + 1)
 
             if self.axis == "x":
@@ -444,7 +445,8 @@ class LinearRegionSelector(BaseSelector):
 
             return ixs
 
-        if "Image" in source.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in source.__class__.__name__ and not hasattr(source, "graphics"):
             # indices map directly to grid geometry for image data buffer
             return np.arange(*bounds, dtype=int)
 

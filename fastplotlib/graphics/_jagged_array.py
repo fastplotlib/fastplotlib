@@ -1,23 +1,34 @@
+import itertools
+import operator
 from collections.abc import Iterable
 
 import numpy as np
-import pygfx
 
-from .features import BufferManager
+from .features import BufferManager, TextureArray, TextureArrayVolume
+from .features._base import GraphicFeature, GraphicFeatureEvent
 from .features.utils import is_single_color
 from .features.types import ColorLike, MultiColorLike, ColormapLike
 from ._base import Graphic
 
-class Accessor:
+
+# array-buffer features are indexed along the datapoint axis (vertex buffers, image/volume
+# textures), as opposed to uniforms which hold a single value for the whole graphic
+ARRAY_BUFFER_FEATURES = (BufferManager, TextureArray, TextureArrayVolume)
+
+
+class Accessor(GraphicFeature):
     """
     Get and set a feature across the graphics of a collection, along the graphic axis.
 
     Manages features that are one value per graphic, such as ``thickness`` and
     ``edge_width``. :class:`.JaggedArray` and :class:`.Cmap` subclass this for the
     per-datapoint features and for colormaps.
+
+    Subclasses ``GraphicFeature`` so a collection can register handlers on the accessor;
+    ``__setitem__`` emits one collection-level ``GraphicFeatureEvent``.
     """
 
-    def __init__(self, graphics: np.ndarray, feature: str):
+    def __init__(self, graphics: np.ndarray, feature: str, value_ndim: int = 0, feature_name: str = None):
         """
         Parameters
         ----------
@@ -26,11 +37,60 @@ class Accessor:
             and maintains it so it can be indexed directly by the graphic-axis key
 
         feature: str
-            name of the graphic feature to manage, e.g. "data", "colors", "thickness"
+            name of the graphic feature on each graphic, used with ``getattr``/``setattr``,
+            e.g. "data", "colors", "offset"
+
+        value_ndim: int
+            number of dimensions of a value that applies to every graphic: a scalar for
+            ``thickness``/``sizes`` -> 0, a ``[3]`` for ``offset`` -> 1, one ``[n_datapoints, 3]``
+            for ``data`` -> 2. A value with more dimensions has the graphics along its first axis.
+
+        feature_name: str, optional
+            name this accessor is exposed as on the collection and used for its events;
+            defaults to ``feature``. Differs when a per-graphic feature is renamed to avoid
+            clashing with the collection's own feature, e.g. ``offset`` -> ``offsets``.
 
         """
+        feature_name = feature_name if feature_name is not None else feature
+        super().__init__(property_name=feature_name)
         self._graphics = graphics
         self._feature = feature
+        self._feature_name = feature_name
+        self._value_ndim = value_ndim
+
+    def _parse_feature_value(self, value, buffer_key: tuple):
+        # base features pass the value through; subclasses parse colors, jagged arrays, etc.
+        return value
+
+    def _is_single_value(self, value) -> bool:
+        # a single value goes to every graphic; a value with the graphics along its first
+        # axis does not. subclasses refine (e.g. a single color for ``colors``)
+        if isinstance(value, np.ndarray) and value.dtype == object:
+            return False
+        return np.ndim(value) <= self._value_ndim
+
+    def _broadcast_over_graphics(self, value, n_graphics: int):
+        # one value goes to every graphic; otherwise the first axis is the graphics axis.
+        # used by both the setters and the collection constructor
+        if self._is_single_value(value):
+            return itertools.repeat(value)
+
+        if len(value) != n_graphics:
+            raise IndexError(
+                f"got {len(value)} values along the first axis for {n_graphics} graphics"
+            )
+        return value  # value[i] for graphic i, views along the first axis
+
+    def _emit_event(self, key, value):
+        # one collection-level event; the collection registers handlers on this accessor
+        if len(self._event_handlers) < 1:
+            return
+        event = GraphicFeatureEvent(self._feature_name, info={"key": key, "value": value})
+        self._call_event_handlers(event)
+
+    def _apply_operator(self, func):
+        # one value per graphic, so the read is a plain array numpy operates on directly
+        return func(self[:])
 
     def __getitem__(self, graphic_key):
         if isinstance(graphic_key, (int, np.integer)):
@@ -40,14 +100,19 @@ class Accessor:
         return np.array([getattr(g, self._feature) for g in selected])
 
     def __setitem__(self, graphic_key, value):
+        # a single graphic -> set it directly
         if isinstance(graphic_key, (int, np.integer)):
             setattr(self._graphics[graphic_key], self._feature, value)
+            self._emit_event(graphic_key, value)
             return
 
         # broadcast the value over the selected graphics, then set it on each
         selected = self._graphics[graphic_key]
-        for graphic, v in zip(selected, np.broadcast_to(value, (len(selected),))):
-            setattr(graphic, self._feature, v)
+        for graphic, graphic_value in zip(
+            selected, self._broadcast_over_graphics(value, len(selected))
+        ):
+            setattr(graphic, self._feature, graphic_value)
+        self._emit_event(graphic_key, value)
 
     def __len__(self):
         return len(self._graphics)
@@ -65,16 +130,20 @@ class JaggedArray(Accessor):
     A graphic holds the feature per-vertex or uniform
     """
 
+    def _is_array_buffer(self, feature) -> bool:
+        # a feature indexed along the datapoint axis, as opposed to a uniform (see ARRAY_BUFFER_FEATURES)
+        return isinstance(feature, ARRAY_BUFFER_FEATURES)
+
     def _feature_value(self, graphic: Graphic) -> np.ndarray:
-        # a graphic's whole feature value: the buffer array, or the uniform value
+        # a graphic's whole feature value: the array buffer, or the uniform value
         feature = getattr(graphic, self._feature)
-        if isinstance(feature, BufferManager):
+        if self._is_array_buffer(feature):
             return feature.value
         return np.asarray(feature)
 
     def _get(self, graphic, buffer_key: tuple):
         feature = getattr(graphic, self._feature)
-        if isinstance(feature, BufferManager):
+        if self._is_array_buffer(feature):
             # a view; the buffer needs a first axis, so `()` becomes `[:]`
             return feature[buffer_key or (slice(None),)]
         value = np.asarray(feature)
@@ -82,10 +151,17 @@ class JaggedArray(Accessor):
 
     def _set(self, graphic, buffer_key: tuple, value):
         # set one graphic's feature at the buffer_key (within-graphic) key
-        feature = getattr(graphic, self._feature)
-        if isinstance(feature, BufferManager):
-            # per-vertex: write into the buffer, numpy broadcasts `value` within the graphic
-            feature[buffer_key or (slice(None),)] = value
+        feature: BufferManager = getattr(graphic, self._feature)
+        if self._is_array_buffer(feature):
+            # per-datapoint: write into the buffer, numpy broadcasts `value` within the graphic.
+            # a plain slice (not a tuple) so a whole-graphic set parses color specs
+            if buffer_key == ():
+                # was sliced with graphic.feature[:] = value
+                # we need it to call feature.set_value() rather than __setitem__ so buffer is resized if required
+                feature.set_value(graphic, value)
+            else:
+                print("slice")
+                feature[buffer_key or slice(None)] = value
             return
         # uniform: no datapoint axis, so set the whole value through the graphic's property
         if not buffer_key:
@@ -102,9 +178,9 @@ class JaggedArray(Accessor):
         return self._feature_value(self._graphics[0]).ndim + 1
 
     def _verify_homogenous_buffer_type(self, graphics):
-        # every selected graphic must use either a uniform or per-vertex buffer, not a mix
-        buffer = isinstance(getattr(graphics[0], self._feature), BufferManager)
-        if not all(isinstance(getattr(g, self._feature), BufferManager) == buffer for g in graphics):
+        # every selected graphic must use either a uniform or an array buffer, not a mix
+        buffer = self._is_array_buffer(getattr(graphics[0], self._feature))
+        if not all(self._is_array_buffer(getattr(g, self._feature)) == buffer for g in graphics):
             raise TypeError(
                 f"the selected graphics mix uniform and per-vertex '{self._feature}'; "
                 f"use either uniform or vertex for all graphics, not a mix"
@@ -126,11 +202,23 @@ class JaggedArray(Accessor):
         return key[0], key[1:]
 
     def _parse_feature_value(self, value, buffer_key: tuple):
-        # a list/tuple becomes an object array, then follows the same broadcasting
-        # buffer_key is used by teh ColorArray subclass
+        # a sequence of per-graphic values; an object array when they are jagged (differing
+        # shapes), otherwise a regular array. buffer_key is used by the ColorArray subclass
         if isinstance(value, (list, tuple)):
-            return np.array(value, dtype=object)
+            if len({np.shape(v) for v in value}) > 1:
+                return np.array(value, dtype=object)
+            return np.asarray(value)
         return value
+
+    def _apply_operator(self, func):
+        # per-datapoint feature: apply to each graphic's view (numpy broadcasting within the
+        # graphic). an object array of per-graphic results, no stacking (no copy) so it stays
+        # jagged-aware
+        views = self[:]
+        out = np.empty(len(views), dtype=object)
+        for i, view in enumerate(views):
+            out[i] = func(view)
+        return out
 
     def __getitem__(self, key):
         # split off the graphic axis; `buffer_key` is the key applied within each graphic
@@ -156,49 +244,18 @@ class JaggedArray(Accessor):
         # a single graphic -> set it directly
         if isinstance(graphic_key, (int, np.integer)):
             self._set(self._graphics[graphic_key], buffer_key, value)
+            self._emit_event(key, value)
             return
 
         # multiple graphics: they must all be the same mode, then split `value` along the
         # graphic axis and hand each graphic its piece
         selected = self._graphics[graphic_key]
         self._verify_homogenous_buffer_type(selected)
-        for graphic, v in zip(selected, self._broadcast_over_graphics(value, len(selected), selected[0], buffer_key)):
-            self._set(graphic, buffer_key, v)
-
-    def _broadcast_over_graphics(self, value, n_selected, sample, buffer_key):
-        # split the value along the graphic axis, following numpy broadcasting
-        buffer_ndim = np.ndim(self._get(sample, buffer_key))
-        value = value if isinstance(value, np.ndarray) else np.asarray(value)
-
-        if value.dtype == object:
-            # jagged per-graphic rows: cells are the data, newaxes line up the graphic axis
-            expected = (n_selected,) + (1,) * buffer_ndim
-            if value.shape != expected:
-                raise ValueError(
-                    f"a per-graphic object array must be shaped {expected} "
-                    f"(add newaxes to line up the graphic axis, e.g. "
-                    f"o[:, None{', None' * (buffer_ndim - 1)}]); got {value.shape}"
-                )
-            return list(value.reshape(n_selected))
-
-        if value.ndim == buffer_ndim + 1:
-            # the value carries a graphic axis
-            if value.shape[0] == n_selected:
-                return list(value)
-            if value.shape[0] == 1:
-                return [value[0]] * n_selected
-            raise ValueError(
-                f"could not broadcast the graphic axis: {value.shape[0]} values for "
-                f"{n_selected} selected graphics"
-            )
-
-        if value.ndim <= buffer_ndim:
-            # no graphic axis, the whole value goes into every selected graphic
-            return [value] * n_selected
-
-        raise ValueError(
-            f"value has {value.ndim} dimensions but the selection has {buffer_ndim + 1}"
-        )
+        for graphic, graphic_value in zip(
+            selected, self._broadcast_over_graphics(value, len(selected))
+        ):
+            self._set(graphic, buffer_key, graphic_value)
+        self._emit_event(key, value)
 
 
 class ColorArray(JaggedArray):
@@ -208,19 +265,17 @@ class ColorArray(JaggedArray):
     """
 
     def _parse_feature_value(self, value: ColorLike | MultiColorLike, buffer_key: tuple):
-        # the RGBA axis is the last one; it is indexed when the buffer_key reaches it
-        if len(buffer_key) >= self._feature_ndim() - 1:
+        # the RGBA axis is the last one; when the buffer_key reaches it the value is raw numbers
+        if buffer_key and len(buffer_key) >= self._feature_ndim() - 1:
             return super()._parse_feature_value(value, buffer_key)
+        # a color spec, or a sequence of them; each graphic parses its own colors
+        return value
 
-        if is_single_color(value):
-            return np.asarray(pygfx.Color(value), dtype=np.float32)
-
-        arr = np.asarray(value)
-        if arr.dtype.kind in "fiu" and arr.ndim >= 1 and arr.shape[-1] in (3, 4):
-            # already an RGB(A) array
-            return arr.astype(np.float32)
-
-        return np.asarray([pygfx.Color(c) for c in value], dtype=np.float32)
+    def _is_single_value(self, value) -> bool:
+        # a single color, or a scalar (e.g. one raw channel value), goes to every graphic
+        if isinstance(value, (list, tuple)):
+            return is_single_color(value)
+        return np.ndim(value) == 0 or is_single_color(value)
 
 
 class Cmap(Accessor):
@@ -248,20 +303,25 @@ class Cmap(Accessor):
 
     def __setitem__(self, graphic_key, value: ColormapLike | Iterable[ColormapLike]):
         if isinstance(graphic_key, (int, np.integer)):
-            setattr(self._graphics[graphic_key], self._feature, value)
+            graphic = self._graphics[graphic_key]
+            self._verify_cmap_mode([getattr(graphic, self._feature)])
+            setattr(graphic, self._feature, value)
+            self._emit_event(graphic_key, value)
             return
 
         selected = self._graphics[graphic_key]
+        self._verify_cmap_mode([getattr(g, self._feature) for g in selected])
         if isinstance(value, (list, tuple, np.ndarray)):
             if len(value) != len(selected):
                 raise ValueError(f"expected {len(selected)} colormaps, got {len(value)}")
             cmaps = value
         else:
             # one colormap for all selected graphics
-            cmaps = [value] * len(selected)
+            cmaps = itertools.repeat(value)
 
         for graphic, cmap in zip(selected, cmaps):
             setattr(graphic, self._feature, cmap)
+        self._emit_event(graphic_key, value)
 
     def _verify_cmap_mode(self, cmaps):
         if any(cmap is None for cmap in cmaps):
@@ -270,3 +330,39 @@ class Cmap(Accessor):
                 "graphic first (a single colormap across the whole collection is set with "
                 "`collection.cmap = ...`)"
             )
+
+
+def _binary_operator(op):  # collection <op> other
+    def method(self, other):
+        return self._apply_operator(lambda view: op(view, other))
+
+    return method
+
+
+def _reflected_operator(op):  # other <op> collection
+    def method(self, other):
+        return self._apply_operator(lambda view: op(other, view))
+
+    return method
+
+
+def _unary_operator(op):
+    def method(self):
+        return self._apply_operator(op)
+
+    return method
+
+
+# comparison, arithmetic, and bitwise operators act on the values across the graphics like a numpy
+# array, jagged along the datapoint axis, e.g. `collection.thickness < 3` or `collection.colors ==
+# "r"`; useful for masking the graphic axis, e.g. `collection[collection.thickness < 3]`
+for _name in ("lt", "le", "eq", "ne", "gt", "ge", "add", "sub", "mul", "truediv", "floordiv",
+              "mod", "pow", "matmul", "and_", "or_", "xor", "lshift", "rshift"):
+    setattr(Accessor, f"__{_name.rstrip('_')}__", _binary_operator(getattr(operator, _name)))
+
+for _name in ("add", "sub", "mul", "truediv", "floordiv", "mod", "pow", "matmul",
+              "and_", "or_", "xor", "lshift", "rshift"):
+    setattr(Accessor, f"__r{_name.rstrip('_')}__", _reflected_operator(getattr(operator, _name)))
+
+for _name in ("neg", "pos", "abs", "invert"):
+    setattr(Accessor, f"__{_name}__", _unary_operator(getattr(operator, _name)))
