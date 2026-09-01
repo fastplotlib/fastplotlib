@@ -160,7 +160,6 @@ class JaggedArray(Accessor):
                 # we need it to call feature.set_value() rather than __setitem__ so buffer is resized if required
                 feature.set_value(graphic, value)
             else:
-                print("slice")
                 feature[buffer_key or slice(None)] = value
             return
         # uniform: no datapoint axis, so set the whole value through the graphic's property
