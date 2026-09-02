@@ -9,10 +9,6 @@ from .features import (
     InfLineAxisData,
     InfLineColors,
     UniformColor,
-    VertexCmap,
-    Thickness,
-    SizeSpace,
-    DashPattern,
 )
 from .features.types import ColorLike, MultiColorLike, ColormapLike
 
@@ -21,10 +17,6 @@ class InfLineGraphic(LineGraphic):
     _features = {
         "data": InfLineAxisData,
         "colors": (InfLineColors, UniformColor),
-        "cmap": (VertexCmap, None),  # none if UniformColor
-        "thickness": Thickness,
-        "size_space": SizeSpace,
-        "dash_pattern": DashPattern,
     }
 
     # one color per line, each broadcast to the two vertices of the line's segment
@@ -38,6 +30,7 @@ class InfLineGraphic(LineGraphic):
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike = None,
         cmap_transform: np.ndarray | None = None,
+        cmap_range: tuple[float, float] | None = None,
         start_is_infinite: bool = True,
         end_is_infinite: bool = True,
         dash_pattern: str | tuple | list = (),
@@ -75,6 +68,9 @@ class InfLineGraphic(LineGraphic):
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
+
         start_is_infinite: bool, default True
             whether the start of each line is extended to infinity
 
@@ -105,6 +101,7 @@ class InfLineGraphic(LineGraphic):
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
             size_space=size_space,
             dash_pattern=dash_pattern,
             thin=False,

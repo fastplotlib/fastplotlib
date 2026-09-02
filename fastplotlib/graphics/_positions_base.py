@@ -12,18 +12,38 @@ from .features import (
     UniformColor,
     VertexCmap,
     VertexCmapTransform,
-    CmapTranformNormParam,
+    VertexCmapRange,
     SizeSpace,
 )
-from .features.utils import is_single_color, normalize_min_max
+from .features.utils import is_single_color
 from .features.types import ColorLike, MultiColorLike, ColormapLike
 
 
 class PositionsGraphic(Graphic):
     """Base class for LineGraphic and ScatterGraphic"""
 
+    # features shared by all positions graphics; subclasses add their own in __init_subclass__
+    _features = {
+        "data": VertexPositions,
+        "colors": (VertexColors, UniformColor),
+        "cmap": (VertexCmap, None),  # none if UniformColor
+        "cmap_transform": (VertexCmapTransform, None),
+        "cmap_range": (VertexCmapRange, None),
+        "size_space": SizeSpace,
+    }
+
     # the feature used to manage a per-vertex color buffer, subclasses may override
     _VertexColorsCls = VertexColors
+
+    def __init_subclass__(cls, **kwargs):
+        # accumulate the parent's features, then this subclass's own additions/overrides
+        inherited = {}
+        for base in cls.__bases__:
+            inherited.update(getattr(base, "_features", {}))
+        # cls.__dict__, not cls._features, so this is only what the subclass declares (not inherited)
+        own = cls.__dict__.get("_features", {})
+        cls._features = {**inherited, **own}
+        super().__init_subclass__(**kwargs)  # Graphic.__init_subclass__ adds the common features
 
     def __init__(
         self,
@@ -31,9 +51,7 @@ class PositionsGraphic(Graphic):
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
-        cmap_vmin: float | None = None,
-        cmap_vmax: float | None = None,
-        cmap_gamma: float = 1.0,
+        cmap_range: tuple[float, float] | None = None,
         size_space: str = "screen",
         *args,
         **kwargs,
@@ -49,17 +67,14 @@ class PositionsGraphic(Graphic):
         # defaults are None
         self._cmap = None
         self._cmap_transform = None
+        self._cmap_range = None
         self._colors = None
-
-        # the cmap normalization params are created once and persist for the lifetime of the
-        # graphic; vmin, vmax default to None so the transform's own range is used
-        self._cmap_vmin = CmapTranformNormParam(cmap_vmin, "cmap_vmin")
-        self._cmap_vmax = CmapTranformNormParam(cmap_vmax, "cmap_vmax")
-        self._cmap_gamma = CmapTranformNormParam(cmap_gamma, "cmap_gamma")
 
         if cmap is not None:
             # if a cmap is specified it overrides colors argument
-            self._cmap, self._cmap_transform = self._create_cmap_buffers(cmap, cmap_transform)
+            self._cmap, self._cmap_transform, self._cmap_range = self._create_cmap_buffers(
+                cmap, cmap_transform, cmap_range
+            )
 
         else:
             # no cmap given
@@ -159,12 +174,15 @@ class PositionsGraphic(Graphic):
             return
 
         # need to create cmap features
-        self._cmap, self._cmap_transform = self._create_cmap_buffers(value, self.cmap_transform)
+        self._cmap, self._cmap_transform, self._cmap_range = self._create_cmap_buffers(
+            value, self.cmap_transform, self.cmap_range
+        )
 
         # set stuff on wo
         self.world_object.material.map = self._cmap.value.to_pygfx()
         self.world_object.geometry.texcoords = pygfx.Buffer(self._cmap_transform.value)
         self.world_object.material.color_mode = "vertex_map"
+        self.world_object.material.maprange = self._cmap_range.value
 
         # clear any other color info
         if self._colors is not None:
@@ -185,42 +203,21 @@ class PositionsGraphic(Graphic):
             raise AttributeError("Must set `cmap` before setting `cmap_transform`")
 
         self._cmap_transform.set_value(self, value)
+        # new default range from the new transform's (min, max)
+        transform = self._cmap_transform.value
+        self._cmap_range.set_value(self, (transform.min(), transform.max()))
 
     @property
-    def cmap_vmin(self) -> float | None:
-        """Get or set the lower bound used to normalize the cmap_transform"""
-        if self._cmap_vmin is not None:
-            return self._cmap_vmin.value
+    def cmap_range(self) -> tuple[float, float] | None:
+        """Get or set the (min, max) of the cmap_transform that is mapped onto the colormap"""
+        if self._cmap_range is not None:
+            return self._cmap_range.value
 
-    @cmap_vmin.setter
-    def cmap_vmin(self, value: float):
+    @cmap_range.setter
+    def cmap_range(self, value: tuple[float, float]):
         if self._cmap is None:
-            raise AttributeError("Must set `cmap` before setting `cmap_vmin`")
-        self._cmap_vmin.set_value(self, value)
-
-    @property
-    def cmap_vmax(self) -> float | None:
-        """Get or set the upper bound used to normalize the cmap_transform"""
-        if self._cmap_vmax is not None:
-            return self._cmap_vmax.value
-
-    @cmap_vmax.setter
-    def cmap_vmax(self, value: float):
-        if self._cmap is None:
-            raise AttributeError("Must set `cmap` before setting `cmap_vmax`")
-        self._cmap_vmax.set_value(self, value)
-
-    @property
-    def cmap_gamma(self) -> float:
-        """Get or set the gamma applied when normalizing the cmap_transform"""
-        if self._cmap_gamma is not None:
-            return self._cmap_gamma.value
-
-    @cmap_gamma.setter
-    def cmap_gamma(self, value: float):
-        if self._cmap is None:
-            raise AttributeError("Must set `cmap` before setting `cmap_gamma`")
-        self._cmap_gamma.set_value(self, value)
+            raise AttributeError("Must set `cmap` before setting `cmap_range`")
+        self._cmap_range.set_value(self, value)
 
     @property
     def size_space(self):
@@ -253,7 +250,9 @@ class PositionsGraphic(Graphic):
                 colors, n_colors=self._data.value.shape[0]
             )
 
-    def _create_cmap_buffers(self, cmap, cmap_transform) -> tuple[VertexCmap, VertexCmapTransform]:
+    def _create_cmap_buffers(
+        self, cmap, cmap_transform, cmap_range
+    ) -> tuple[VertexCmap, VertexCmapTransform, VertexCmapRange]:
         cmap = VertexCmap(cmap)
 
         if cmap_transform is None:
@@ -261,16 +260,20 @@ class PositionsGraphic(Graphic):
             # this gets interpolated based on the number of datapoints
             cmap_transform = np.array([0, 1])
 
-        # normalize the transform; the texcoords index into the colormap
+        # the raw transform is stored as texcoords; the material's maprange maps it onto the colormap
         cmap_transform = VertexCmapTransform(
-            normalize_min_max(
-                cmap_transform, self.cmap_vmin, self.cmap_vmax, self.cmap_gamma
-            ),
+            cmap_transform,
             # use buffer array length since len(self.data) returns half for inflines
             n_datapoints=len(self.data.buffer.data)
         )
 
-        return cmap, cmap_transform
+        if cmap_range is None:
+            # default range is the transform's own (min, max), like the default [0, 1] transform
+            cmap_range = cmap_transform.value.min(), cmap_transform.value.max()
+
+        cmap_range = VertexCmapRange(cmap_range)
+
+        return cmap, cmap_transform, cmap_range
 
     def _get_material_kwargs(self) -> dict:
         # material kwargs shared by all positions graphics; the color mode is
@@ -284,6 +287,7 @@ class PositionsGraphic(Graphic):
         if self._cmap is not None:
             kwargs["color_mode"] = "vertex_map"
             kwargs["map"] = self.cmap.to_pygfx()
+            kwargs["maprange"] = self._cmap_range.value
         elif isinstance(self._colors, UniformColor):
             kwargs["color_mode"] = "uniform"
             kwargs["color"] = self.colors

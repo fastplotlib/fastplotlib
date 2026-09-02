@@ -15,11 +15,6 @@ from .features import (
     Thickness,
     DashPattern,
     parse_dash_pattern,
-    VertexPositions,
-    VertexColors,
-    UniformColor,
-    VertexCmap,
-    SizeSpace,
 )
 from ..utils import quick_min_max
 from ._positions_base import PositionsGraphic
@@ -27,11 +22,7 @@ from .features.types import ColorLike, MultiColorLike, ColormapLike
 
 class LineGraphic(PositionsGraphic):
     _features = {
-        "data": VertexPositions,
-        "colors": (VertexColors, UniformColor),
-        "cmap": (VertexCmap, None),  # none if UniformColor
         "thickness": Thickness,
-        "size_space": SizeSpace,
         "dash_pattern": DashPattern,
     }
 
@@ -42,6 +33,7 @@ class LineGraphic(PositionsGraphic):
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
+        cmap_range: tuple[float, float] | None = None,
         size_space: str = "screen",
         dash_pattern: str | tuple | list = (),
         thin: bool = False,
@@ -73,6 +65,9 @@ class LineGraphic(PositionsGraphic):
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
+
         size_space: str, default "screen"
             coordinate space in which the thickness is expressed ("screen", "world", "model")
 
@@ -95,6 +90,7 @@ class LineGraphic(PositionsGraphic):
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
             size_space=size_space,
             **kwargs,
         )

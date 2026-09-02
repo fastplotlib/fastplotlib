@@ -1,4 +1,4 @@
-from typing import Any, Literal, Sequence
+from typing import Any, Sequence
 
 import numpy as np
 import pygfx
@@ -12,7 +12,7 @@ from ._base import (
     to_gpu_supported_dtype,
     block_reentrance,
 )
-from .utils import parse_colors, is_single_color, normalize_min_max
+from .utils import parse_colors, is_single_color
 from .types import ColorLike, MultiColorLike
 
 
@@ -441,48 +441,34 @@ class VertexCmapTransform(GraphicFeature):
         self._call_event_handlers(event)
 
 
-class CmapTranformNormParam(GraphicFeature):
+class VertexCmapRange(GraphicFeature):
     """
-    A scalar controlling how the cmap_transform is normalized into the colormap.
+    The (min, max) range of the ``cmap_transform`` that is mapped onto the colormap, i.e. the
+    material's ``maprange``.
+    """
 
-    One instance is used for each of the ``cmap_vmin``, ``cmap_vmax``, and ``cmap_gamma``
-    of a positions graphic; the instance's ``property_name`` identifies which one it manages.
-    """
+    ndim = 1
 
     event_info_spec = [
         {
             "dict key": "value",
-            "type": "float",
-            "description": "new value",
+            "type": "tuple[float, float]",
+            "description": "new range",
         },
     ]
 
-    def __init__(
-            self, value: float | None, property_name: Literal["cmap_vmin", "cmap_vmax", "cmap_gamma"]
-    ):
-        self._value = value
+    def __init__(self, value: tuple[float, float], property_name: str = "cmap_range"):
+        self._value = (float(value[0]), float(value[1]))
         super().__init__(property_name=property_name)
 
     @property
-    def value(self) -> float | None:
+    def value(self) -> tuple[float, float]:
         return self._value
 
     @block_reentrance
-    def set_value(self, graphic, value: float | None):
-        self._value = value
-
-        # this instance manages one of vmin/vmax/gamma, identified by its property_name;
-        # combine it with the other two to normalize the cmap_transform into the texcoords
-        params = {
-            "vmin": graphic.cmap_vmin,
-            "vmax": graphic.cmap_vmax,
-            "gamma": graphic.cmap_gamma,
-        }
-        params[self._property_name.removeprefix("cmap_")] = value
-
-        texcoords = graphic.world_object.geometry.texcoords
-        texcoords.data[:] = normalize_min_max(graphic.cmap_transform, **params)
-        texcoords.update_range()
+    def set_value(self, graphic, value: tuple[float, float]):
+        self._value = (float(value[0]), float(value[1]))
+        graphic.world_object.material.maprange = self._value
 
         event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)

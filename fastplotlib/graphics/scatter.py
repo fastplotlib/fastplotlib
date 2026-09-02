@@ -7,12 +7,7 @@ from ._positions_base import PositionsGraphic
 from .features import (
     VertexPointSizes,
     UniformSize,
-    SizeSpace,
-    VertexPositions,
     VertexColors,
-    UniformColor,
-    VertexCmap,
-    VertexCmapTransform,
     VertexMarkers,
     UniformMarker,
     UniformEdgeColor,
@@ -27,16 +22,11 @@ from .features.utils import is_single_color
 
 class ScatterGraphic(PositionsGraphic):
     _features = {
-        "data": VertexPositions,
         "sizes": (VertexPointSizes, UniformSize),
-        "colors": (VertexColors, UniformColor),
-        "cmap": (VertexCmap, None),
-        "cmap_transform": (VertexCmapTransform, None),
         "markers": (VertexMarkers, UniformMarker, None),
         "edge_colors": (UniformEdgeColor, VertexColors, None),
         "edge_width": (EdgeWidth, None),
         "image": (TextureArray, None),
-        "size_space": SizeSpace,
         "point_rotations": (UniformRotations, VertexRotations, None),
     }
 
@@ -46,6 +36,7 @@ class ScatterGraphic(PositionsGraphic):
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
+        cmap_range: tuple[float, float] | None = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
         custom_sdf: str = None,
@@ -78,6 +69,9 @@ class ScatterGraphic(PositionsGraphic):
 
         cmap_transform: np.ndarray, optional
             1D array-like or list of numerical values, these values are used to map the colors from the cmap
+
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
 
         mode: one of: "markers", "simple", "gaussian", "image", default "markers"
             The scatter points mode, cannot be changed after the graphic has been created.
@@ -149,6 +143,7 @@ class ScatterGraphic(PositionsGraphic):
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
             size_space=size_space,
             **kwargs,
         )

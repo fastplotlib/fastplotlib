@@ -5,7 +5,7 @@ from ._positions import (
     VertexPositions,
     VertexCmap,
     VertexCmapTransform,
-    CmapTranformNormParam,
+    VertexCmapRange,
     InfLineAxisData,
     InfLineColors,
 )
@@ -86,7 +86,8 @@ __all__ = [
     "SizeSpace",
     "VertexPositions",
     "VertexCmap",
-    "CmapTranformNormParam",
+    "VertexCmapTransform",
+    "VertexCmapRange",
     "InfLineAxisData",
     "InfLineColors",
     "MeshIndices",
