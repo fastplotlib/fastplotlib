@@ -21,8 +21,6 @@ figure = fpl.Figure(size=(700, 560))
 # lay the images out in a 2 x 3 grid with a gap between rows and columns
 figure[0, 0].add_image_grid(images, shape=(2, 3), separation=(10, 10), cmap="plasma")
 
-figure[0, 0].axes.visible = False
-
 figure.show()
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions

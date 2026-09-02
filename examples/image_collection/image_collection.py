@@ -23,8 +23,6 @@ offsets = np.array([[i * 60, -i * 60, 0] for i in range(len(images))])
 
 figure[0, 0].add_image_collection(images, offsets=offsets, cmap="viridis")
 
-figure[0, 0].axes.visible = False
-
 figure.show()
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
