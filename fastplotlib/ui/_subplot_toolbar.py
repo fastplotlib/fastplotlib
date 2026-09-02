@@ -1,20 +1,18 @@
 from imgui_bundle import imgui, icons_fontawesome_6 as fa, imgui_ctx
 
-from ..layouts._subplot import Subplot
-from ._base import Window
+from ._base import ImguiWindow
 from ..layouts._utils import IMGUI_TOOLBAR_HEIGHT
 
 
-class SubplotToolbar(Window):
-    def __init__(self, subplot: Subplot):
+class SubplotToolbar(ImguiWindow):
+    def __init__(self):
         """
-        Subplot toolbar shown below all subplots
+        Subplot toolbar shown below all subplots. The subplot is provided via ``_fpl_add_hook()`` when the
+        toolbar is added to the subplot.
         """
         super().__init__()
 
-        self._subplot = subplot
-
-    def update(self):
+    def draw(self):
         # get subplot rect
         x, y, width, height = self._subplot.frame.rect
 
@@ -27,12 +25,26 @@ class SubplotToolbar(Window):
             imgui.WindowFlags_.no_collapse
             | imgui.WindowFlags_.no_title_bar
             | imgui.WindowFlags_.no_background
+            # stay behind floating and fixed overlays so they remain accessible when drawn over the toolbar
+            | imgui.WindowFlags_.no_bring_to_front_on_focus
         )
 
         imgui.begin(f"Toolbar-{hex(id(self._subplot))}", p_open=None, flags=flags)
 
         # push ID to prevent conflict between multiple figs with same UI
         imgui.push_id(self._id_counter)
+
+        # draw the toolbar and any appended imgui elements
+        for update_call in self._update_calls:
+            update_call()
+
+        # pop id when all UI has been written to window
+        imgui.pop_id()
+
+        # end window
+        imgui.end()
+
+    def update(self):
         with imgui_ctx.begin_horizontal(f"toolbar-{hex(id(self._subplot))}"):
             # autoscale button
             if imgui.button(fa.ICON_FA_MAXIMIZE):
@@ -59,9 +71,3 @@ class SubplotToolbar(Window):
             )
             if imgui.is_item_hovered(0):
                 imgui.set_tooltip("maintain aspect")
-
-        # pop id when all UI has been written to window
-        imgui.pop_id()
-
-        # end window
-        imgui.end()

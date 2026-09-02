@@ -1,4 +1,5 @@
 from typing import *
+from warnings import warn
 
 import numpy as np
 
@@ -13,11 +14,14 @@ from .selectors import (
 )
 from .features import (
     Thickness,
+    DashPattern,
+    parse_dash_pattern,
     VertexPositions,
     VertexColors,
     UniformColor,
     VertexCmap,
     SizeSpace,
+    UniformRotations,
 )
 from ..utils import quick_min_max
 
@@ -29,6 +33,7 @@ class LineGraphic(PositionsGraphic):
         "cmap": (VertexCmap, None),  # none if UniformColor
         "thickness": Thickness,
         "size_space": SizeSpace,
+        "dash_pattern": DashPattern,
     }
 
     def __init__(
@@ -36,11 +41,12 @@ class LineGraphic(PositionsGraphic):
         data: Any,
         thickness: float = 2.0,
         colors: str | np.ndarray | Sequence = "w",
-        uniform_color: bool = False,
         cmap: str = None,
         cmap_transform: np.ndarray | Sequence = None,
-        isolated_buffer: bool = True,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         size_space: str = "screen",
+        dash_pattern: str | tuple | list = (),
+        thin: bool = False,
         **kwargs,
     ):
         """
@@ -61,20 +67,33 @@ class LineGraphic(PositionsGraphic):
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        uniform_color: bool, default ``False``
-            if True, uses a uniform buffer for the line color,
-            basically saves GPU VRAM when the entire line has a single color
-
         cmap: str, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            "uniform" restricts to a single color for all line datapoints.
+            "vertex" allows independent colors per vertex.
+            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
+            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
+            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
+            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         size_space: str, default "screen"
             coordinate space in which the thickness is expressed ("screen", "world", "model")
+
+        dash_pattern: str, tuple, or list, default ()
+            The dash pattern. May be a matplotlib-style string, one of ``"-", "--", "-.", ":"``
+            or ``"solid", "dashed", "dashdot", "dotted"``, or a sequence of floats describing the
+            length of strokes and gaps. Ignored when ``thin`` is True.
+
+        thin: bool, default False
+            Use the more performant thin line material, which is always one physical pixel wide.
+            Thickness, dashing, and anti-aliasing are ignored when True.
 
         **kwargs
             passed to :class:`.Graphic`
@@ -84,51 +103,60 @@ class LineGraphic(PositionsGraphic):
         super().__init__(
             data=data,
             colors=colors,
-            uniform_color=uniform_color,
             cmap=cmap,
             cmap_transform=cmap_transform,
-            isolated_buffer=isolated_buffer,
+            color_mode=color_mode,
             size_space=size_space,
             **kwargs,
         )
 
         self._thickness = Thickness(thickness)
+        self._dash_pattern = DashPattern(dash_pattern)
+        self._thin = bool(thin)
 
-        if thickness < 1.1:
-            MaterialCls = pygfx.LineThinMaterial
-            aa = True
-        else:
-            MaterialCls = pygfx.LineMaterial
-
-        aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
-
-        if uniform_color:
-            geometry = pygfx.Geometry(positions=self._data.buffer)
-            material = MaterialCls(
-                aa=aa,
-                thickness=self.thickness,
-                color_mode="uniform",
-                color=self.colors,
-                pick_write=True,
-                thickness_space=self.size_space,
-                depth_compare="<=",
-            )
-        else:
-            material = MaterialCls(
-                aa=aa,
-                thickness=self.thickness,
-                color_mode="vertex",
-                pick_write=True,
-                thickness_space=self.size_space,
-                depth_compare="<=",
-            )
-            geometry = pygfx.Geometry(
-                positions=self._data.buffer, colors=self._colors.buffer
+        if self._thin and parse_dash_pattern(dash_pattern):
+            warn(
+                "`dash_pattern` is ignored when `thin=True`; the thin line material does not "
+                "support dashing"
             )
 
-        world_object: pygfx.Line = pygfx.Line(geometry=geometry, material=material)
+        world_object = pygfx.Line(
+            geometry=self._create_geometry(),
+            material=self._make_material(),
+        )
 
         self._set_world_object(world_object)
+
+    def _material_kwargs(self) -> dict:
+        # pygfx line material kwargs assembled from the current feature state
+        kwargs = dict(
+            thickness=self.thickness,
+            thickness_space=self.size_space,
+            dash_pattern=parse_dash_pattern(self._dash_pattern.value),
+            aa=self.alpha_mode in ("blend", "weighted_blend"),
+            pick_write=True,
+            depth_compare="<=",
+        )
+
+        if isinstance(self._colors, UniformColor):
+            kwargs["color_mode"] = "uniform"
+            kwargs["color"] = self.colors
+        else:
+            kwargs["color_mode"] = "vertex"
+
+        return kwargs
+
+    def _make_material(self) -> pygfx.LineMaterial:
+        # create the pygfx material, subclasses override to use a different line material
+        material_cls = pygfx.LineThinMaterial if self._thin else pygfx.LineMaterial
+        return material_cls(**self._material_kwargs())
+
+    def _create_geometry(self) -> pygfx.Geometry:
+        if isinstance(self._colors, UniformColor):
+            return pygfx.Geometry(positions=self._data._fpl_buffer)
+        return pygfx.Geometry(
+            positions=self._data._fpl_buffer, colors=self._colors._fpl_buffer
+        )
 
     @property
     def thickness(self) -> float:
@@ -138,6 +166,56 @@ class LineGraphic(PositionsGraphic):
     @thickness.setter
     def thickness(self, value: float):
         self._thickness.set_value(self, value)
+
+    @property
+    def dash_pattern(self) -> str | tuple | list:
+        """
+        Get or set the dash pattern.
+
+        May be a matplotlib-style string, one of ``"-", "--", "-.", ":"`` or
+        ``"solid", "dashed", "dashdot", "dotted"``, or a sequence of floats describing the
+        length of strokes and gaps. Ignored when ``thin`` is True.
+        """
+        return self._dash_pattern.value
+
+    @dash_pattern.setter
+    def dash_pattern(self, value: str | tuple | list):
+        if self._thin and parse_dash_pattern(value):
+            warn(
+                "`dash_pattern` is ignored when `thin=True`; the thin line material does not "
+                "support dashing"
+            )
+        self._dash_pattern.set_value(self, value)
+
+    @property
+    def thin(self) -> bool:
+        """
+        Get or set whether the line uses the more performant thin line material, which is
+        always one physical pixel wide. Thickness, dashing, and anti-aliasing are ignored
+        when True.
+        """
+        return self._thin
+
+    @thin.setter
+    def thin(self, value: bool):
+        value = bool(value)
+        if value == self._thin:
+            return
+
+        if value and parse_dash_pattern(self._dash_pattern.value):
+            warn(
+                "`dash_pattern` is ignored when `thin=True`; the thin line material does not "
+                "support dashing"
+            )
+
+        self._thin = value
+
+        # thin vs. non-thin is a different pygfx material, so rebuild and swap it in place,
+        # keeping the same geometry
+        material = self._make_material()
+        material.opacity = self.alpha
+        material.alpha_mode = self.alpha_mode
+        self.world_object.material = material
 
     def add_linear_selector(
         self, selection: float = None, axis: str = "x", **kwargs

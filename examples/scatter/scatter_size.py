@@ -35,7 +35,7 @@ figure["scalar_size"].add_scatter(
 )  # add a set of scalar sizes
 
 non_scalar_sizes = np.abs((y_values / np.pi))  # ensure minimum size of 5
-figure["array_size"].add_scatter(data=data, sizes=non_scalar_sizes, colors="red")
+figure["array_size"].add_scatter(data=data, sizes=non_scalar_sizes, uniform_size=False, colors="red")
 
 for graph in figure:
     graph.auto_scale(maintain_aspect=True)

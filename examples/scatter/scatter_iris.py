@@ -35,6 +35,7 @@ scatter = figure[0, 0].add_scatter(
     cmap="tab10",
     cmap_transform=clusters_labels,
     markers=markers,
+    uniform_marker=False,
 )
 
 figure.show()

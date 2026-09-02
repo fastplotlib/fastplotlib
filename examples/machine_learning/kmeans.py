@@ -80,6 +80,7 @@ digit_scatter = figure[0,0].add_scatter(
     sizes=5,
     cmap="tab10", # use a qualitative cmap
     cmap_transform=kmeans.labels_, # color by the predicted cluster
+    uniform_size=False,
 )
 
 # initial index

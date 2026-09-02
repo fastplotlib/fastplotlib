@@ -34,7 +34,7 @@ figure["moon"].add_image(img2)
 xs = np.linspace(0, 4 * np.pi, 100)
 ys = np.sin(xs)
 
-figure["sine"].add_line(np.column_stack([xs, ys]))
+figure["sine"].add_line(np.column_stack([xs, ys]), color_mode="vertex")
 
 # make a 2D gaussian cloud
 cloud_data = np.random.normal(0, scale=3, size=1000).reshape(500, 2)

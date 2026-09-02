@@ -5,13 +5,13 @@ from warnings import warn
 import numpy as np
 
 import pygfx
-from pylinalg import vec_transform, vec_unproject
+from pylinalg import vec_transform, vec_unproject, aabb_to_sphere
 from rendercanvas import BaseRenderCanvas
 
 from ._utils import create_controller
 from ..graphics._base import Graphic, WORLD_OBJECT_TO_GRAPHIC
-from ..graphics import ImageGraphic
-from ..graphics.selectors._base_selector import BaseSelector
+from ..graphics import ImageGraphic, MeshGraphic
+from ..graphics.selectors import SelectorProtocol
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
 from ..tools import Tooltip
@@ -25,6 +25,26 @@ except NameError:
 else:
     IS_IPYTHON = True
     IPYTHON = get_ipython()
+
+
+def _get_visible_bounding_box(obj: pygfx.Scene | pygfx.Group | pygfx.WorldObject):
+    """Recursively compute world bounding box of only visible objects, down to leaf nodes."""
+    if not obj.visible:
+        return None
+    children = list(obj.children)
+
+    if not children:
+        return obj.get_world_bounding_box()
+
+    bboxes = []
+    for child in children:
+        bbox = _get_visible_bounding_box(child)
+        if bbox is not None:
+            bboxes.append(bbox)
+    if not bboxes:
+        return None
+    bboxes = np.array(bboxes)
+    return np.array([bboxes[:, 0, :].min(axis=0), bboxes[:, 1, :].max(axis=0)])
 
 
 class PlotArea(GraphicMethodsMixin):
@@ -95,7 +115,7 @@ class PlotArea(GraphicMethodsMixin):
         self._graphics: list[Graphic] = list()
 
         # selectors are in their own list so they can be excluded from scene bbox calculations
-        self._selectors: list[BaseSelector] = list()
+        self._selectors: list[SelectorProtocol] = list()
 
         # legends, managed just like other graphics as explained above
         self._legends: list[Legend] = list()
@@ -120,11 +140,8 @@ class PlotArea(GraphicMethodsMixin):
         self._background = pygfx.Background(None, self._background_material)
         self.scene.add(self._background)
 
-        self._ambient_light = pygfx.AmbientLight()
-        self._directional_light = pygfx.DirectionalLight()
-
-        self.scene.add(self._ambient_light)
-        self.scene.add(self._camera.add(self._directional_light))
+        self._ambient_light = None
+        self._directional_light = None
 
         self._tooltip = Tooltip()
         self.get_figure()._fpl_overlay_scene.add(self._tooltip._fpl_world_object)
@@ -179,8 +196,9 @@ class PlotArea(GraphicMethodsMixin):
         # user wants to set completely new camera, remove current camera from controller
         if isinstance(new_camera, pygfx.PerspectiveCamera):
             self.controller.remove_camera(self._camera)
-            # add directional light to new camera
-            new_camera.add(self._directional_light)
+            if self._directional_light is not None:
+                # add directional light to new camera
+                new_camera.add(self._directional_light)
             # add new camera to controller
             self.controller.add_camera(new_camera)
 
@@ -233,7 +251,10 @@ class PlotArea(GraphicMethodsMixin):
         #  pygfx plans on refactoring viewports anyways
         if self.parent is not None:
             if self.parent.__class__.__name__.endswith("Figure"):
-                for subplot in self.parent:
+                # always use figure._subplots.ravel() in internal fastplotlib code
+                # otherwise if we use `for subplot in figure`, this could conflict
+                # with a user's iterator where they are doing `for subplot in figure` !!!
+                for subplot in self.parent._subplots.ravel():
                     if subplot.camera in cameras_list:
                         new_controller.register_events(subplot.viewport)
                         subplot._controller = new_controller
@@ -246,7 +267,7 @@ class PlotArea(GraphicMethodsMixin):
         return tuple(self._graphics)
 
     @property
-    def selectors(self) -> tuple[BaseSelector, ...]:
+    def selectors(self) -> tuple[SelectorProtocol, ...]:
         """Selectors in the plot area."""
         return tuple(self._selectors)
 
@@ -256,7 +277,7 @@ class PlotArea(GraphicMethodsMixin):
         return tuple(self._legends)
 
     @property
-    def objects(self) -> tuple[Graphic | BaseSelector | Legend, ...]:
+    def objects(self) -> tuple[Graphic | SelectorProtocol | Legend, ...]:
         return *self.graphics, *self.selectors, *self.legends
 
     @property
@@ -290,12 +311,12 @@ class PlotArea(GraphicMethodsMixin):
         self._background_material.set_colors(*colors)
 
     @property
-    def ambient_light(self) -> pygfx.AmbientLight:
+    def ambient_light(self) -> pygfx.AmbientLight | None:
         """the ambient lighting in the scene"""
         return self._ambient_light
 
     @property
-    def directional_light(self) -> pygfx.DirectionalLight:
+    def directional_light(self) -> pygfx.DirectionalLight | None:
         """the directional lighting on the camera in the scene"""
         return self._directional_light
 
@@ -628,6 +649,13 @@ class PlotArea(GraphicMethodsMixin):
         if isinstance(graphic, ImageGraphic):
             self._sort_images_by_depth()
 
+        if isinstance(graphic, MeshGraphic):
+            self._ambient_light = pygfx.AmbientLight()
+            self._directional_light = pygfx.DirectionalLight()
+
+            self.scene.add(self._ambient_light)
+            self.scene.add(self._camera.add(self._directional_light))
+
     def insert_graphic(
         self,
         graphic: Graphic,
@@ -684,7 +712,7 @@ class PlotArea(GraphicMethodsMixin):
         if graphic.name is not None:  # skip for those that have no name
             self._check_graphic_name_exists(graphic.name)
 
-        if isinstance(graphic, BaseSelector):
+        if isinstance(graphic, SelectorProtocol):
             obj_list = self._selectors
             self.scene.add(graphic.world_object)
 
@@ -697,7 +725,7 @@ class PlotArea(GraphicMethodsMixin):
             self._fpl_graphics_scene.add(graphic.world_object)
 
         else:
-            raise TypeError("graphic must be of type Graphic | BaseSelector | Legend")
+            raise TypeError("graphic must be of type Graphic | SelectorProtocol | Legend")
 
         if action == "insert":
             obj_list.insert(index, graphic)
@@ -775,7 +803,12 @@ class PlotArea(GraphicMethodsMixin):
     def _auto_center_scene(
         self, camera: pygfx.PerspectiveCamera, scene: pygfx.Scene, zoom: float
     ):
-        camera.show_object(scene)
+        bb = _get_visible_bounding_box(scene)
+        if bb is not None:
+            sphere = aabb_to_sphere(bb)
+            camera.show_object(sphere)
+        else:
+            camera.show_object(scene)
         # camera.show_object can cause the camera width and height to increase so apply a zoom to compensate
         # probably because camera.show_object uses bounding sphere
         camera.zoom = zoom
@@ -841,8 +874,9 @@ class PlotArea(GraphicMethodsMixin):
     ):
         camera.maintain_aspect = maintain_aspect
 
-        if len(scene.children) > 0:
-            width, height, depth = np.ptp(scene.get_world_bounding_box(), axis=0)
+        bb = _get_visible_bounding_box(scene)
+        if bb is not None:
+            width, height, depth = np.ptp(bb, axis=0)
         else:
             width, height, depth = (1, 1, 1)
 
@@ -857,6 +891,49 @@ class PlotArea(GraphicMethodsMixin):
 
         camera.zoom = zoom
 
+    @property
+    def x_range(self) -> tuple[float, float]:
+        """
+        Get or set the x-range currently in view.
+        Really only valid for orthographic projections of the xy plane.
+        Use camera.set_state() to set the camera position for arbitrary projections.
+        """
+        hw = self.camera.projection_matrix_inverse[0, 0]
+        x = self.camera.local.x
+        return x - hw, x + hw
+
+    @x_range.setter
+    def x_range(self, xr: tuple[float, float]):
+        hw = (xr[1] - xr[0]) / 2
+        if self.camera.fov > 0:
+            # really shouldn't use this for fov > 0 but ¯\_(ツ)_/¯
+            self.camera.zoom *= self.camera.projection_matrix_inverse[0, 0] / hw
+        else:
+            # sets correct x_range for orthographic projection of xy plane
+            self.camera.width = (xr[1] - xr[0]) * self.camera.zoom
+        self.camera.local.x = (xr[0] + xr[1]) / 2
+
+    @property
+    def y_range(self) -> tuple[float, float]:
+        """
+        Get or set the y-range currently in view.
+        Really only valid for orthographic projections of the xy plane.
+        Use camera.set_state() to set the camera position for arbitrary projections.
+        """
+        hh = self.camera.projection_matrix_inverse[1, 1]
+        y = self.camera.local.y
+        return y - hh, y + hh
+
+    @y_range.setter
+    def y_range(self, yr: tuple[float, float]):
+        hh = (yr[1] - yr[0]) / 2
+        if self.camera.fov > 0:
+            # shouldn't really do this but ¯\_(ツ)_/¯
+            self.camera.zoom *= self.camera.projection_matrix_inverse[1, 1] / hh
+        else:
+            self.camera.height = (yr[1] - yr[0]) * self.camera.zoom
+        self.camera.local.y = (yr[0] + yr[1]) / 2
+
     def remove_graphic(self, graphic: Graphic):
         """
         Remove a ``Graphic`` from the scene. Note: This does not garbage collect the graphic,
@@ -870,7 +947,7 @@ class PlotArea(GraphicMethodsMixin):
 
         """
 
-        if isinstance(graphic, (BaseSelector, Legend)):
+        if isinstance(graphic, (SelectorProtocol, Legend)):
             self.scene.remove(graphic.world_object)
 
         elif isinstance(graphic, Graphic):
@@ -889,7 +966,7 @@ class PlotArea(GraphicMethodsMixin):
         if graphic not in self:
             raise KeyError(f"Graphic not found in plot area: {graphic}")
 
-        if isinstance(graphic, BaseSelector):
+        if isinstance(graphic, SelectorProtocol):
             self._selectors.remove(graphic)
 
         elif isinstance(graphic, Legend):

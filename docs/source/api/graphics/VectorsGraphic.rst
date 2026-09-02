@@ -24,13 +24,14 @@ Properties
     VectorsGraphic.alpha_mode
     VectorsGraphic.axes
     VectorsGraphic.block_events
+    VectorsGraphic.block_handlers
     VectorsGraphic.deleted
     VectorsGraphic.directions
     VectorsGraphic.event_handlers
+    VectorsGraphic.imgui_right_click
     VectorsGraphic.name
     VectorsGraphic.offset
     VectorsGraphic.positions
-    VectorsGraphic.right_click_menu
     VectorsGraphic.rotation
     VectorsGraphic.scale
     VectorsGraphic.supported_events
@@ -45,10 +46,13 @@ Methods
 
     VectorsGraphic.add_axes
     VectorsGraphic.add_event_handler
+    VectorsGraphic.append_imgui_right_click
     VectorsGraphic.clear_event_handlers
     VectorsGraphic.format_pick_info
     VectorsGraphic.map_model_to_world
     VectorsGraphic.map_world_to_model
     VectorsGraphic.remove_event_handler
+    VectorsGraphic.remove_imgui_right_click
     VectorsGraphic.rotate
+    VectorsGraphic.set_imgui_right_click
 

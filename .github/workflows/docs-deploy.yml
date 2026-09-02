@@ -49,7 +49,7 @@ jobs:
       - name: build docs
         run: |
           cd docs
-          RTD_BUILD=1 make html SPHINXOPTS="-W --keep-going"
+          DOCS_BUILD=1 make html SPHINXOPTS="-W --keep-going"
 
       # set environment variable `DOCS_VERSION_DIR` to either the pr-branch name, "dev", or the release version tag
       - name: set output pr

@@ -1,19 +1,22 @@
 from ._base import Graphic
 from .line import LineGraphic
+from .inf_line import InfLineGraphic
 from .scatter import ScatterGraphic
-from .image import ImageGraphic
+from .image import ImageGraphic, ImageYUVGraphic
 from .image_volume import ImageVolumeGraphic
 from ._vectors import VectorsGraphic
 from .mesh import MeshGraphic, SurfaceGraphic, PolygonGraphic
 from .text import TextGraphic
 from .line_collection import LineCollection, LineStack
-
+from .scatter_collection import ScatterCollection, ScatterStack
 
 __all__ = [
     "Graphic",
     "LineGraphic",
+    "InfLineGraphic",
     "ScatterGraphic",
     "ImageGraphic",
+    "ImageYUVGraphic",
     "ImageVolumeGraphic",
     "VectorsGraphic",
     "MeshGraphic",
@@ -22,4 +25,6 @@ __all__ = [
     "TextGraphic",
     "LineCollection",
     "LineStack",
+    "ScatterCollection",
+    "ScatterStack",
 ]

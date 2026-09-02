@@ -133,7 +133,7 @@ def test_edge_colors(edge_colors):
     npt.assert_almost_equal(scatter.edge_colors.value, MULTI_COLORS_TRUTH)
 
     assert (
-        scatter.edge_colors.buffer is scatter.world_object.geometry.edge_colors
+        scatter.edge_colors._fpl_buffer is scatter.world_object.geometry.edge_colors
     )
 
     # test changes, don't need to test extensively here since it's tested in the main VertexColors test

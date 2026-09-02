@@ -18,7 +18,6 @@ else:
 import pygfx
 
 from .features import (
-    BufferManager,
     Deleted,
     Name,
     Offset,
@@ -28,7 +27,7 @@ from .features import (
     AlphaMode,
     Visible,
 )
-from ._axes import Axes
+from ..axes import Axes
 
 HexStr: TypeAlias = str
 WorldObjectID: TypeAlias = int
@@ -67,7 +66,6 @@ class Graphic:
     _fpl_support_tooltip: bool = True
 
     def __init_subclass__(cls, **kwargs):
-
         # set of all features
         cls._features = {
             **cls._features,
@@ -178,10 +176,11 @@ class Graphic:
         self._alpha_mode = AlphaMode(alpha_mode)
         self._visible = Visible(visible)
         self._block_events = False
+        self._block_handlers = list()
 
         self._axes: Axes = None
 
-        self._right_click_menu = None
+        self._imgui_right_click = None
 
         # store ids of all the WorldObjects that this Graphic manages/uses
         self._world_object_ids = list()
@@ -275,6 +274,11 @@ class Graphic:
         self._block_events = value
 
     @property
+    def block_handlers(self) -> list:
+        """Used to block event handlers for a graphic and prevent recursion."""
+        return self._block_handlers
+
+    @property
     def world_object(self) -> pygfx.WorldObject:
         """Associated pygfx WorldObject. Always returns a proxy, real object cannot be accessed directly."""
         # We use weakref to simplify garbage collection
@@ -285,15 +289,8 @@ class Graphic:
 
         # add to world object -> graphic mapping
         if isinstance(wo, pygfx.Group):
-            for child in wo.children:
-                if isinstance(
-                    child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)
-                ):
-                    # unique 32 bit integer id for each world object
-                    global_id = child.id
-                    WORLD_OBJECT_TO_GRAPHIC[global_id] = self
-                    # store id to pop from dict when graphic is deleted
-                    self._world_object_ids.append(global_id)
+            # for Graphics which use a pygfx.Group, ImageGraphic and graphic collections
+            self._add_group_graphic_map(wo)
         else:
             global_id = wo.id
             WORLD_OBJECT_TO_GRAPHIC[global_id] = self
@@ -321,6 +318,27 @@ class Graphic:
         # set scale if it's not (1, 1, 1)
         if not all(wo.world.scale == self.scale):
             self.scale = self.scale
+
+    def _add_group_graphic_map(self, wo: pygfx.Group):
+        # add the children of the group to the WorldObject -> Graphic map
+        # used by images since they create new WorldObject ImageTiles when a different buffer size is required
+        # also used by GraphicCollections inititally, but not used for reseting like images
+        for child in wo.children:
+            if isinstance(child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)):
+                # unique 32 bit integer id for each world object
+                global_id = child.id
+                WORLD_OBJECT_TO_GRAPHIC[global_id] = self
+                # store id to pop from dict when graphic is deleted
+                self._world_object_ids.append(global_id)
+
+    def _remove_group_graphic_map(self, wo: pygfx.Group):
+        # remove the children of the group to the WorldObject -> Graphic map
+        for child in wo.children:
+            if isinstance(child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)):
+                # unique 32 bit integer id for each world object
+                global_id = child.id
+                WORLD_OBJECT_TO_GRAPHIC.pop(global_id)
+                self._world_object_ids.remove(global_id)
 
     @property
     def tooltip_format(self) -> Callable[[dict], str] | None:
@@ -444,6 +462,9 @@ class Graphic:
         if self.block_events:
             return
 
+        if callback in self._block_handlers:
+            return
+
         if event.type in self._features:
             # for feature events
             event._target = self.world_object
@@ -501,6 +522,23 @@ class Graphic:
                 feature = getattr(self, f"_{t}")
                 feature.remove_event_handler(wrapper)
 
+    def _parse_positions(self, position: tuple | np.ndarray) -> np.ndarray:
+        """
+        Converts position data (in the form of tuple or np.ndarray) into a (num_points, 3)-shaped np.ndarray for processing
+        """
+        position = np.asarray(position)
+
+        if position.ndim not in (1,2):
+            raise ValueError(f"position must be of shape (num_points, 3) or (3,)")
+
+        if position.ndim == 1:
+            position = position[None, :]
+
+        if position.shape[-1] != 3:
+            raise ValueError(f"position must be of shape (num_points, 3) or (3,)")
+
+        return position
+
     def map_model_to_world(
         self, position: tuple[float, float, float] | tuple[float, float] | np.ndarray
     ) -> np.ndarray:
@@ -509,27 +547,18 @@ class Graphic:
 
         Parameters
         ----------
-        position: (float, float, float) or (float, float)
-            (x, y, z) or (x, y) position. If z is not provided then the graphic's offset z is used.
+        position: tuple of (x, y, z) or np.ndarray of shape (num_points, 3)
+            The xyz positions we wish to map to world space
 
         Returns
         -------
         np.ndarray
-            (x, y, z) position in world space
-
+            either shape (3,) or (num_points, 3), specifying position in world space
         """
-
-        if len(position) == 2:
-            # use z of the graphic
-            position = [*position, self.offset[-1]]
-
-        if len(position) != 3:
-            raise ValueError(
-                f"position must be tuple or array indicating (x, y, z) position in *model space*"
-            )
+        position = self._parse_positions(position)
 
         # apply world transform to project from model space to world space
-        return la.vec_transform(position, self.world_object.world.matrix)
+        return la.vec_transform(position, self.world_object.world.matrix).squeeze()
 
     def map_world_to_model(
         self, position: tuple[float, float, float] | tuple[float, float] | np.ndarray
@@ -539,26 +568,20 @@ class Graphic:
 
         Parameters
         ----------
-        position: (float, float, float) or (float, float)
-            (x, y, z) or (x, y) position. If z is not provided then 0 is used.
+        position: tuple of (x, y, z) or np.ndarray of shape (num_points, 3)
+            The xyz positions we wish to map to model space
 
         Returns
         -------
         np.ndarray
-            (x, y, z) position in world space
+            either shape (3,) or (num_points, 3), specifying position in model space
 
         """
+        position = self._parse_positions(position)
 
-        if len(position) == 2:
-            # use z of the graphic
-            position = [*position, self.offset[-1]]
-
-        if len(position) != 3:
-            raise ValueError(
-                f"position must be tuple or array indicating (x, y, z) position in *model space*"
-            )
-
-        return la.vec_transform(position, self.world_object.world.inverse_matrix)
+        return la.vec_transform(
+            position, self.world_object.world.inverse_matrix
+        ).squeeze()
 
     def format_pick_info(self, ev: pygfx.PointerEvent) -> str:
         """
@@ -669,21 +692,111 @@ class Graphic:
         self._axes.update_using_bbox(self.world_object.get_world_bounding_box())
 
     @property
-    def right_click_menu(self):
-        return self._right_click_menu
+    def imgui_right_click(self):
+        """
+        The imgui popup that is opened by a right-click on this graphic.
 
-    @right_click_menu.setter
-    def right_click_menu(self, menu):
+        Returns
+        -------
+        ImguiPopup | None
+
+        """
+        return self._imgui_right_click
+
+    def set_imgui_right_click(self, popup=None, *, window_flags=None):
+        """
+        Set the imgui popup that is opened by a right-click on this graphic, replaces the popup of the subplot or
+        Figure for this graphic. Can also be used as a decorator, see the
+        ``ImguiFigure.set_imgui_right_click`` examples.
+
+        Parameters
+        ----------
+        popup: ImguiPopup | callable, optional
+            an ``ImguiPopup`` instance, or a function that draws imgui elements. Omit when decorating.
+
+        window_flags: ``imgui.WindowFlags_``, optional
+            imgui window flags for the popup
+
+        """
         if not IMGUI:
             raise ImportError(
-                "imgui is required to set right-click menus:\npip install imgui_bundle"
+                "imgui is required to set right-click popups:\npip install imgui_bundle"
             )
 
-        self._right_click_menu = menu
-        menu.owner = self
+        from ..layouts._subplot import Subplot
+        from ..ui._base import ImguiPopup, _wrap_update_call
 
-    def _fpl_request_right_click_menu(self):
-        pass
+        if not isinstance(self._plot_area, Subplot):
+            raise TypeError(
+                "graphic must be added to a subplot before setting an imgui right-click popup on it"
+            )
 
-    def _fpl_close_right_click_menu(self):
-        pass
+        figure = self._plot_area.get_figure()
+        if "Imgui" not in figure.__class__.__name__:
+            raise TypeError(
+                "imgui right-click popups can only be set on a graphic in an ImguiFigure"
+            )
+
+        def decorator(_popup):
+            if isinstance(_popup, ImguiPopup):
+                p = _popup
+            elif callable(_popup):
+                p = ImguiPopup(update_call=_wrap_update_call(_popup, self))
+            else:
+                raise TypeError(
+                    "set_imgui_right_click() must be used as a decorator, or given an `ImguiPopup` instance or a "
+                    "function that draws imgui elements"
+                )
+
+            p._fpl_add_hook(figure=figure, parent=self, window_flags=window_flags)
+            self._imgui_right_click = p
+            return _popup
+
+        if popup is None:
+            return decorator
+
+        decorator(popup)
+        return popup
+
+    def append_imgui_right_click(self, gui=None):
+        """
+        Append imgui elements to the right-click popup of this graphic. Can also be used as a decorator.
+
+        Parameters
+        ----------
+        gui: callable, optional
+            function that draws imgui elements, omit when decorating
+
+        """
+        from ..ui._base import _wrap_update_call
+
+        popup = self._imgui_right_click
+        if popup is None:
+            raise ValueError(
+                "no imgui right-click popup set on this graphic to append to, set one using "
+                "`graphic.set_imgui_right_click()`"
+            )
+
+        def decorator(_gui):
+            popup._update_calls.append(_wrap_update_call(_gui, self))
+            return _gui
+
+        if gui is None:
+            return decorator
+
+        return decorator(gui)
+
+    def remove_imgui_right_click(self):
+        """
+        Remove and return the right-click popup of this graphic
+
+        Returns
+        -------
+        ImguiPopup
+            the removed popup, it can be set again later
+
+        """
+        popup = self._imgui_right_click
+        self._imgui_right_click = None
+
+        return popup

@@ -115,6 +115,7 @@ class Frame:
         resizeable,
         title,
         docks,
+        imgui_windows,
         toolbar_visible,
         canvas_rect,
     ):
@@ -144,6 +145,9 @@ class Frame:
         docks: dict[str, PlotArea]
             subplot dock
 
+        imgui_windows: dict[str, ImguiWindow]
+            imgui windows confined to this subplot, keyed by location
+
         toolbar_visible: bool
             toolbar visibility
 
@@ -154,6 +158,7 @@ class Frame:
 
         self.viewport = viewport
         self.docks = docks
+        self._imgui_windows = imgui_windows
         self._toolbar_visible = toolbar_visible
 
         # create rect manager to handle all the backend rect calculations
@@ -254,10 +259,34 @@ class Frame:
         self.reset_viewport()
 
     def reset_viewport(self):
-        """reset the viewport rect for the subplot and docks"""
+        """reset the viewport rect for the subplot, docks, and imgui windows"""
 
         # get rect of the render area
         x, y, w, h = self.get_render_rect()
+
+        # imgui edge windows reserve space outboard of the docks
+        g_left = self._imgui_size("left")
+        g_top = self._imgui_size("top")
+        g_right = self._imgui_size("right")
+        g_bottom = self._imgui_size("bottom")
+
+        # top and bottom imgui windows are inset by the left and right imgui windows
+        w_g_top_bottom = w - g_left - g_right
+        x_g_top_bottom = x + g_left
+
+        # set imgui edge window rects
+        self._set_imgui_rect("left", (x, y, g_left, h))
+        self._set_imgui_rect("top", (x_g_top_bottom, y, w_g_top_bottom, g_top))
+        self._set_imgui_rect(
+            "bottom", (x_g_top_bottom, y + h - g_bottom, w_g_top_bottom, g_bottom)
+        )
+        self._set_imgui_rect("right", (x + w - g_right, y, g_right, h))
+
+        # shrink the render area to fit inside the imgui edge windows
+        x += g_left
+        y += g_top
+        w -= g_left + g_right
+        h -= g_top + g_bottom
 
         # dock sizes
         s_left = self.docks["left"].size
@@ -290,6 +319,31 @@ class Frame:
 
         # set subplot rect
         self.viewport.rect = x, y, w, h
+
+        # toolbar occupies the reserved bottom band of the frame
+        self._set_toolbar_rect()
+
+    def _imgui_size(self, location: str) -> int:
+        """thickness in pixels reserved by the imgui edge window at ``location``, 0 if none"""
+        window = self._imgui_windows.get(location)
+        return window.size if window is not None else 0
+
+    def _set_imgui_rect(self, location: str, rect: tuple):
+        """set the pixel rect of the imgui edge window at ``location``, if present"""
+        window = self._imgui_windows.get(location)
+        if window is not None:
+            window._fpl_set_rect(*(round(v) for v in rect))
+
+    def _set_toolbar_rect(self):
+        """set the pixel rect of the subplot toolbar window, if present"""
+        window = self._imgui_windows.get("toolbar")
+        if window is None:
+            return
+
+        x, y, w, h = self.rect
+        window._fpl_set_rect(
+            round(x + 1), round(y + h - IMGUI_TOOLBAR_HEIGHT), round(w - 2), IMGUI_TOOLBAR_HEIGHT
+        )
 
     def get_render_rect(self) -> tuple[float, float, float, float]:
         """

@@ -11,7 +11,7 @@ to display a slice of the volume. We can share the data buffer on the GPU betwee
 
 from imgui_bundle import imgui
 import fastplotlib as fpl
-from fastplotlib.ui import EdgeWindow
+from fastplotlib.ui import ImguiWindow
 import imageio.v3 as iio
 from skimage.filters import gaussian
 
@@ -37,9 +37,9 @@ vol_slice = figure[0, 0].add_image_volume(
 )
 
 
-class GUI(EdgeWindow):
-    def __init__(self, figure, title="change data buffer", location="right", size=200):
-        super().__init__(figure, title=title, location=location, size=size)
+class GUI(ImguiWindow):
+    def __init__(self):
+        super().__init__()
         self._sigma = 2
 
     def update(self):
@@ -62,8 +62,8 @@ class GUI(EdgeWindow):
 
         vol_slice.plane = (a, b, c, d)
 
-gui = GUI(figure)
-figure.add_gui(gui)
+gui = GUI()
+figure.add_imgui_window(gui, location="right", size=200, title="change data buffer")
 
 figure.show()
 

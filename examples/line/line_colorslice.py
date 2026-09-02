@@ -30,7 +30,8 @@ sinc_data = np.column_stack([xs, ys])
 sine = figure[0, 0].add_line(
     data=sine_data,
     thickness=5,
-    colors="magenta"
+    colors="magenta",
+    color_mode="vertex",  # initialize with same color across vertices, but we will change the per-vertex colors later
 )
 
 # you can also use colormaps for lines!
@@ -56,6 +57,7 @@ zeros = figure[0, 0].add_line(
     data=zeros_data,
     thickness=8,
     colors="w",
+    color_mode="vertex",  # initialize with same color across vertices, but we will change the per-vertex colors later
     offset=(0, 10, 0)
 )
 

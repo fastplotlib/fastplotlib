@@ -8,6 +8,7 @@ Graphics
     LineGraphic
     ScatterGraphic
     ImageGraphic
+    ImageYUVGraphic
     ImageVolumeGraphic
     VectorsGraphic
     MeshGraphic
@@ -16,3 +17,5 @@ Graphics
     TextGraphic
     LineCollection
     LineStack
+    ScatterCollection
+    ScatterStack

@@ -22,7 +22,9 @@ Graphic Features
     VertexPointSizes
     UniformSize
     TextureArray
+    TextureYUV
     ImageCmap
+    ImageGamma
     ImageVmin
     ImageVmax
     ImageInterpolation

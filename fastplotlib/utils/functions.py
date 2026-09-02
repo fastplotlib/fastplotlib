@@ -6,6 +6,8 @@ import cmap as cmap_lib
 
 from pygfx import Texture, Color
 
+from .protocols import CudaArrayProtocol
+
 
 cmap_catalog = cmap_lib.Catalog()
 
@@ -405,9 +407,17 @@ def parse_cmap_values(
         return colors
 
 
+def cuda_to_numpy(arr: CudaArrayProtocol) -> np.ndarray:
+
+    data = np.from_dlpack(arr, device='cpu')
+    return data
+
+
 def subsample_array(
-    arr: np.ndarray, max_size: int = 1e6, ignore_dims: Sequence[int] | None = None
-):
+    arr: CudaArrayProtocol,
+    max_size: int = 1e6,
+    ignore_dims: Sequence[int] | None = None,
+) -> np.ndarray:
     """
     Subsamples an input array while preserving its relative dimensional proportions.
 
@@ -476,4 +486,44 @@ def subsample_array(
 
     slices = tuple(slices)
 
-    return np.asarray(arr[slices])
+    arr_sliced = arr[slices]
+
+    if isinstance(arr_sliced, CudaArrayProtocol):
+        return cuda_to_numpy(arr_sliced)
+
+    return arr_sliced
+
+
+def heatmap_to_positions(heatmap: np.ndarray, xvals: np.ndarray) -> np.ndarray:
+    """
+
+    Convert a heatmap of shape [n_rows, n_datapoints] to timeseries x-y data of shape [n_rows, n_datapoints, xy]
+
+    Parameters
+    ----------
+    heatmap: np.ndarray, shape [n_rows, n_datapoints]
+        timeseries data with a heatmap representation, where each column represents a timepoint.
+
+    xvals: np.ndarray, shape: [n_datapoints,]
+        x-values for the columns in the heatmap
+
+    Returns
+    -------
+    np.ndarray, shape [n_rows, n_datapoints, 2]
+        timeseries data where the xy data are explicitly stored for every row
+
+    """
+    if heatmap.ndim != 2:
+        raise ValueError
+
+    if xvals.ndim != 1:
+        raise ValueError
+
+    if xvals.size != heatmap.shape[1]:
+        raise ValueError
+
+    ts = np.empty((*heatmap.shape, 2), dtype=np.float32)
+    ts[..., 0] = xvals
+    ts[..., 1] = heatmap
+
+    return ts

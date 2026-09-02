@@ -9,6 +9,7 @@ import fastplotlib
 from fastplotlib.layouts import Subplot
 from fastplotlib import graphics
 from fastplotlib.graphics import features, selectors
+from fastplotlib import axes
 from fastplotlib import tools
 from fastplotlib import widgets
 from fastplotlib import utils
@@ -22,6 +23,7 @@ LAYOUTS_DIR = API_DIR.joinpath("layouts")
 GRAPHICS_DIR = API_DIR.joinpath("graphics")
 GRAPHIC_FEATURES_DIR = API_DIR.joinpath("graphic_features")
 SELECTORS_DIR = API_DIR.joinpath("selectors")
+AXES_DIR = API_DIR.joinpath("axes")
 TOOLS_DIR = API_DIR.joinpath("tools")
 WIDGETS_DIR = API_DIR.joinpath("widgets")
 UI_DIR = API_DIR.joinpath("ui")
@@ -33,6 +35,7 @@ doc_sources = [
     GRAPHICS_DIR,
     GRAPHIC_FEATURES_DIR,
     SELECTORS_DIR,
+    AXES_DIR,
     TOOLS_DIR,
     WIDGETS_DIR,
     UI_DIR,
@@ -295,7 +298,12 @@ def main():
         )
     ##############################################################################
     # ** GraphicFeature classes ** #
-    feature_classes = [getattr(features, f) for f in features.__all__]
+    # `features.__all__` also exports type aliases, such as TupleYUV, which has no docs page
+    feature_classes = [
+        getattr(features, f)
+        for f in features.__all__
+        if inspect.isclass(getattr(features, f))
+    ]
 
     feature_class_names = [f.__name__ for f in feature_classes]
 
@@ -371,6 +379,33 @@ def main():
         )
 
     ##############################################################################
+    # ** Aes classes ** #
+    axes_classes = [getattr(axes, obj) for obj in axes.__all__]
+
+    axes_class_names = [a.__name__ for a in axes_classes]
+
+    axes_class_names_str = "\n    ".join([""] + axes_class_names)
+
+    with open(AXES_DIR.joinpath("index.rst"), "w") as f:
+        f.write(
+            f"Axes\n"
+            f"****\n"
+            f"\n"
+            f".. toctree::\n"
+            f"    :maxdepth: 1\n"
+            f"{axes_class_names_str}\n"
+        )
+
+    for axes_cls in axes_classes:
+        generate_page(
+            page_name=axes_cls.__name__,
+            classes=[axes_cls],
+            modules=["fastplotlib.axes"],
+            source_path=AXES_DIR.joinpath(f"{axes_cls.__name__}.rst"),
+        )
+
+
+    ##############################################################################
     # ** Widget classes ** #
     widget_classes = [getattr(widgets, w) for w in widgets.__all__]
 
@@ -397,7 +432,7 @@ def main():
         )
     ##############################################################################
     # ** UI classes ** #
-    ui_classes = [ui.BaseGUI, ui.Window, ui.EdgeWindow, ui.Popup]
+    ui_classes = [ui.ImguiBase, ui.ImguiWindow, ui.ImguiPopup]
 
     ui_class_names = [cls.__name__ for cls in ui_classes]
 
@@ -424,7 +459,6 @@ def main():
     ##############################################################################
 
     utils_str = generate_functions_module(utils.functions, "fastplotlib.utils")
-    utils_str += generate_functions_module(utils._plot_helpers, "fastplotlib.utils", generate_header=False)
 
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
@@ -475,14 +509,15 @@ def main():
                 continue
             f.write(f"{graphic_cls.__name__}\n")
             f.write("-" * len(graphic_cls.__name__) + "\n\n")
-            for name, type_ in graphic_cls._features.items():
-                if isinstance(type_, tuple):
-                    for t in type_:
-                        if t is None:
-                            continue
-                        f.write(write_table(name, t))
-                else:
-                    f.write(write_table(name, type_))
+            if hasattr(graphic_cls, "_features"):  # some selectors like Highlight etc. don't have "graphic features"
+                for name, type_ in graphic_cls._features.items():
+                    if isinstance(type_, tuple):
+                        for t in type_:
+                            if t is None:
+                                continue
+                            f.write(write_table(name, t))
+                    else:
+                        f.write(write_table(name, type_))
 
 
 if __name__ == "__main__":

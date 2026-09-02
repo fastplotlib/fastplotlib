@@ -3,11 +3,17 @@
 from typing import *
 
 import numpy
+from numpy.typing import NDArray
+
+from numpy.typing import NDArray
 
 import pygfx
 
 from ..graphics import *
 from ..graphics._base import Graphic
+from ..utils import enums
+import typing
+import fastplotlib
 
 
 class GraphicMethodsMixin:
@@ -31,14 +37,16 @@ class GraphicMethodsMixin:
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
+        gamma: float = 1.0,
         interpolation: str = "nearest",
         cmap_interpolation: str = "linear",
-        isolated_buffer: bool = True,
-        **kwargs,
+        colorspace: fastplotlib.utils.enums.ColorspacesRGB = "srgb",
+        cpu_buffer: bool = True,
+        **kwargs
     ) -> ImageGraphic:
         """
 
-        Create an Image Graphic
+        Create an ImageGraphic
 
         Parameters
         ----------
@@ -56,17 +64,51 @@ class GraphicMethodsMixin:
             colormap to use to display the data. For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
+        gamma: float, default 1.0
+            gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
+
         interpolation: str, optional, default "nearest"
             interpolation filter, one of "nearest" or "linear"
 
         cmap_interpolation: str, optional, default "linear"
             colormap interpolation method, one of "nearest" or "linear"
 
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer - useful if the
-            array is large.
+        colorspace: one of "srgb", "tex-srgb", "physical", default "srgb"
+            colorspace in which to interpret the provided data.
+
+            * "srgb": the data represents intensity, rgb, or rgba pixels in the sRGB space.
+              sRGB is a standard color space designed for consistent representation of colors
+              across devices like monitors. Most images store colors in this space.
+              The shader convers sRGB colors to physical in the shader before doing color computations.
+
+            * "tex-srgb": the underlying texture will be of an sRGB format. This means the data
+              is automatically converted to sRGB when it is sampled. This results in better glTF
+              compliance (because interpolation in the sampling happens in linear space).
+              Note that sampling *always* results in the sRGB values, also when not interpreted as color.
+              Only supported for rgb and rgba data.
+
+            * "physical": the colors are (already) in the physical / linear space, where lighting
+              calculations can be applied. Shader code that interprets the data as color will use it as-is.
+
+        cpu_buffer: bool, default True
+            If ``True``, maintains a buffer of system RAM that is sychronized with a corresponding storage buffer
+            on the GPU.
+            If ``False``, setting the graphic data will send the new data directly to the GPU, we also
+            call this "bufferless". This is much faster but lacks the following features:
+
+            * you must update the entire data array, i.e. you can perform ``image.data = new_data``, and you
+                cannot perform partial updates such as ``image.data[indices] = <new_data_at_indices>``.
+
+            * RGB arrays of shape [rows, cols, 3] are not supported since wgpu does not have RGB textures,
+                use RGBA or use `cpu_buffer=True` if you really need RGB instead of RGBA.
+
+            * tooltip values for grayscale data are estimated using an inverse transforms on the colormap LUT.
+                The tooltip values may or may not be accurate for a given colormap and vmin, vmax. If you require
+                precise and reliable tooltip values for grayscale data use `cpu_buffer=True`.
+
+            * vmin, vmax must be explicitly provided if sharing an existing buffer from another ImageGraphic
+            * ``reset_vmin_vmax()`` is not supported
+            * selector tools will not be able to return the data under the selection
 
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
@@ -79,10 +121,12 @@ class GraphicMethodsMixin:
             vmin,
             vmax,
             cmap,
+            gamma,
             interpolation,
             cmap_interpolation,
-            isolated_buffer,
-            **kwargs,
+            colorspace,
+            cpu_buffer,
+            **kwargs
         )
 
     def add_image_volume(
@@ -92,6 +136,7 @@ class GraphicMethodsMixin:
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
+        gamma: float = 1.0,
         interpolation: str = "linear",
         cmap_interpolation: str = "linear",
         plane: tuple[float, float, float, float] = (0, 0, -1, 0),
@@ -100,8 +145,7 @@ class GraphicMethodsMixin:
         substep_size: float = 0.1,
         emissive: str | tuple | numpy.ndarray = (0, 0, 0),
         shininess: int = 30,
-        isolated_buffer: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ImageVolumeGraphic:
         """
 
@@ -124,6 +168,9 @@ class GraphicMethodsMixin:
 
         cmap: str, default "plasma"
             colormap for grayscale volumes
+
+        gamma: float, default 1.0
+            gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
 
         interpolation: str, default "linear"
             interpolation method for sampling pixels
@@ -158,11 +205,6 @@ class GraphicMethodsMixin:
             How shiny the specular highlight is; a higher value gives a sharper highlight.
             Used only if `mode` = "iso"
 
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then set the data, useful if the
-            data arrays are ready-only such as memmaps. If False, the input array is itself used as the
-            buffer - useful if the array is large.
-
         kwargs
             additional keyword arguments passed to :class:`.Graphic`
 
@@ -175,6 +217,7 @@ class GraphicMethodsMixin:
             vmin,
             vmax,
             cmap,
+            gamma,
             interpolation,
             cmap_interpolation,
             plane,
@@ -183,8 +226,191 @@ class GraphicMethodsMixin:
             substep_size,
             emissive,
             shininess,
-            isolated_buffer,
-            **kwargs,
+            **kwargs
+        )
+
+    def add_image_yuv(
+        self,
+        data: (
+            tuple[NDArray[numpy.uint8], NDArray[numpy.uint8], NDArray[numpy.uint8]]
+            | fastplotlib.graphics.features._image.TextureYUV
+        ),
+        vmin: float = 0,
+        vmax: float = 255,
+        gamma: float = 1.0,
+        interpolation: str = "nearest",
+        colorspace: fastplotlib.utils.enums.ColorspacesYUV = "yuv420p",
+        colorrange: fastplotlib.utils.enums.ColorRange = "limited",
+        **kwargs
+    ) -> ImageYUVGraphic:
+        """
+
+        Create an ImageYUVGraphic. Similar to ImageGraphic but handles data that is in yuv42p or yuv444p colorspace.
+
+        Note that the buffers for YUV Images only exist on the GPU. When setting the image data, the new values are
+        directly sent to the GPU.
+
+        ``reset_vmin_vmax()`` just sets (vmin, vmax) to (0, 255)
+
+        Parameters
+        ----------
+        data: TupleYUV
+            tuple of arrays that represent YUV channels. If the colorspace is yuv420p, the U and V array dims
+            must be 4 times smaller than the Y array dims.
+
+        vmin: float, optional, default 0
+            minimum value for color scaling
+
+        vmax: float, optional, default 255
+            maximum value for color scaling
+
+        gamma: float, default 1.0
+            gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
+
+        interpolation: str, optional, default "nearest"
+            interpolation filter, one of "nearest" or "linear"
+
+        colorspace: "yuv42p" | "yuv444p"
+            colorspace in which to interpret the provided data.
+
+            * "yuv420p": A common video format. The data is represented as 3 planes (y, u, and v).
+              The y represents intensity, and is at full resolution. The u and v planes are a
+              quarter of the size.
+
+            * "yuv444p": A lesser common video format. The data is represented as 3 planes
+              (y, u, and v) similar to yuv420p however the u and v planes are stored
+              at full resolution.
+
+        colorrange: Literal["full", "limited"] = "limited",
+            Relevant for yuv colorspaces. Most videos use "limited".
+
+            * "limited": The luma plane (Y) is limited to the range of 16-235 for 8 bits.
+              The chroma planes (U and V) are limited to the range of 16-240 for 8 bits
+            * "full": The luma plane and chroma plane use the full range of the storage format.
+
+            See the following links from the FFMPEG documentation for more details:
+            https://trac.ffmpeg.org/wiki/colorspace
+            https://ffmpeg.org/doxygen/7.0/pixfmt_8h_source.html#l00609
+
+        cpu_buffer: bool, default True
+            If ``True``, maintains a buffer of system RAM that is sychronized with a corresponding storage buffer
+            on the GPU.
+            If ``False``, setting the graphic data will send the new data directly to the GPU, we also
+            call this "bufferless". This is much faster but lacks the following features:
+
+            * you must update the entire data array, i.e. you can perform ``image.data = new_data``, and you
+                cannot perform partial updates such as ``image.data[indices] = <new_data_at_indices>``.
+
+            * RGB arrays of shape [rows, cols, 3] are not supported since wgpu does not have RGB textures,
+                use RGBA or use `cpu_buffer=True` if you really need RGB instead of RGBA.
+
+            * tooltip values for grayscale data are estimated using an inverse transforms on the colormap LUT.
+                The tooltip values may or may not be accurate for a given colormap and vmin, vmax. If you require
+                precise and reliable tooltip values for grayscale data use `cpu_buffer=True`.
+
+        kwargs:
+            additional keyword arguments passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            ImageYUVGraphic,
+            data,
+            vmin,
+            vmax,
+            gamma,
+            interpolation,
+            colorspace,
+            colorrange,
+            **kwargs
+        )
+
+    def add_inf_line(
+        self,
+        data: Any,
+        axis: Optional[Literal["x", "y", "z"]] = None,
+        thickness: float = 2.0,
+        colors: Union[str, numpy.ndarray, Sequence] = "w",
+        cmap: str = None,
+        cmap_transform: Union[numpy.ndarray, Sequence] = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        start_is_infinite: bool = True,
+        end_is_infinite: bool = True,
+        dash_pattern: str | tuple | list = (),
+        size_space: str = "screen",
+        **kwargs
+    ) -> InfLineGraphic:
+        """
+
+        Create a collection of infinite lines.
+
+        Parameters
+        ----------
+        data: array-like
+            The line positions. If ``axis`` is "x", "y", or "z", a 1D array of positions along
+            that axis; one infinite line is drawn at each position. If ``axis`` is None, ``data``
+            is used directly as the segment endpoints, of shape [n_points, 2 | 3], where every two
+            consecutive points define one line.
+
+        axis: "x", "y", "z", or None, default None
+            The axis along which the line positions are given. If None, ``data`` is interpreted
+            directly as the segment endpoints.
+
+        thickness: float, optional, default 2.0
+            thickness of the lines
+
+        colors: str, array, or iterable, default "w"
+            specify colors as a single human-readable string, a single RGBA array, or a Sequence
+            (array, tuple, or list) of strings or RGBA arrays. A sequence of colors provides one
+            color per line.
+
+        cmap: str, optional
+            Apply a colormap to the lines instead of assigning colors manually, one color per line.
+            This overrides any argument passed to "colors". For supported colormaps see the
+            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            "uniform" restricts to a single color for all lines.
+            "vertex" allows an independent color per line.
+            For most cases you can keep it as "auto" and the `color_mode` is determined automatically
+            based on the argument passed to `colors`.
+
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        start_is_infinite: bool, default True
+            whether the start of each line is extended to infinity
+
+        end_is_infinite: bool, default True
+            whether the end of each line is extended to infinity
+
+        dash_pattern: str, tuple, or list, default ()
+            The dash pattern. May be a matplotlib-style string, one of ``"-", "--", "-.", ":"``
+            or ``"solid", "dashed", "dashdot", "dotted"``, or a sequence of floats describing the
+            length of strokes and gaps.
+
+        size_space: str, default "screen"
+            coordinate space in which the thickness is expressed ("screen", "world", "model")
+
+        **kwargs
+            passed to :class:`.Graphic`
+
+
+        """
+        return self._create_graphic(
+            InfLineGraphic,
+            data,
+            axis,
+            thickness,
+            colors,
+            cmap,
+            cmap_transform,
+            color_mode,
+            start_is_infinite,
+            end_is_infinite,
+            dash_pattern,
+            size_space,
+            **kwargs
         )
 
     def add_line_collection(
@@ -192,16 +418,15 @@ class GraphicMethodsMixin:
         data: Union[numpy.ndarray, List[numpy.ndarray]],
         thickness: Union[float, Sequence[float]] = 2.0,
         colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
-        uniform_colors: bool = False,
         cmap: Union[Sequence[str], str] = None,
         cmap_transform: Union[numpy.ndarray, List] = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         name: str = None,
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Union[Sequence[Any], numpy.ndarray] = None,
-        isolated_buffer: bool = True,
         kwargs_lines: list[dict] = None,
-        **kwargs,
+        **kwargs
     ) -> LineCollection:
         """
 
@@ -235,6 +460,9 @@ class GraphicMethodsMixin:
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            The color mode for each line in the collection. See `color_mode` in :class:`.LineGraphic` for details.
+
         name: str, optional
             name of the line collection as a whole
 
@@ -261,16 +489,15 @@ class GraphicMethodsMixin:
             data,
             thickness,
             colors,
-            uniform_colors,
             cmap,
             cmap_transform,
+            color_mode,
             name,
             names,
             metadata,
             metadatas,
-            isolated_buffer,
             kwargs_lines,
-            **kwargs,
+            **kwargs
         )
 
     def add_line(
@@ -278,12 +505,13 @@ class GraphicMethodsMixin:
         data: Any,
         thickness: float = 2.0,
         colors: Union[str, numpy.ndarray, Sequence] = "w",
-        uniform_color: bool = False,
         cmap: str = None,
         cmap_transform: Union[numpy.ndarray, Sequence] = None,
-        isolated_buffer: bool = True,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         size_space: str = "screen",
-        **kwargs,
+        dash_pattern: str | tuple | list = (),
+        thin: bool = False,
+        **kwargs
     ) -> LineGraphic:
         """
 
@@ -304,20 +532,33 @@ class GraphicMethodsMixin:
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        uniform_color: bool, default ``False``
-            if True, uses a uniform buffer for the line color,
-            basically saves GPU VRAM when the entire line has a single color
-
         cmap: str, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            "uniform" restricts to a single color for all line datapoints.
+            "vertex" allows independent colors per vertex.
+            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
+            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
+            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
+            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
 
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
         size_space: str, default "screen"
             coordinate space in which the thickness is expressed ("screen", "world", "model")
+
+        dash_pattern: str, tuple, or list, default ()
+            The dash pattern. May be a matplotlib-style string, one of ``"-", "--", "-.", ":"``
+            or ``"solid", "dashed", "dashdot", "dotted"``, or a sequence of floats describing the
+            length of strokes and gaps. Ignored when ``thin`` is True.
+
+        thin: bool, default False
+            Use the more performant thin line material, which is always one physical pixel wide.
+            Thickness, dashing, and anti-aliasing are ignored when True.
 
         **kwargs
             passed to :class:`.Graphic`
@@ -329,12 +570,13 @@ class GraphicMethodsMixin:
             data,
             thickness,
             colors,
-            uniform_color,
             cmap,
             cmap_transform,
-            isolated_buffer,
+            color_mode,
             size_space,
-            **kwargs,
+            dash_pattern,
+            thin,
+            **kwargs
         )
 
     def add_line_stack(
@@ -348,11 +590,10 @@ class GraphicMethodsMixin:
         names: list[str] = None,
         metadata: Any = None,
         metadatas: Union[Sequence[Any], numpy.ndarray] = None,
-        isolated_buffer: bool = True,
         separation: float = 10.0,
         separation_axis: str = "y",
         kwargs_lines: list[dict] = None,
-        **kwargs,
+        **kwargs
     ) -> LineStack:
         """
 
@@ -425,11 +666,10 @@ class GraphicMethodsMixin:
             names,
             metadata,
             metadatas,
-            isolated_buffer,
             separation,
             separation_axis,
             kwargs_lines,
-            **kwargs,
+            **kwargs
         )
 
     def add_mesh(
@@ -448,8 +688,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] = None,
-        isolated_buffer: bool = True,
-        **kwargs,
+        **kwargs
     ) -> MeshGraphic:
         """
 
@@ -488,12 +727,6 @@ class GraphicMethodsMixin:
             Both 1D and 2D colormaps are supported, though the mapcoords has to match the dimensionality.
             An image can also be used, this is basically a 2D colormap.
 
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then
-            set the data, useful if the data arrays are ready-only such as memmaps.
-            If False, the input array is itself used as the buffer - useful if the
-            array is large. In almost all cases this should be ``True``.
-
         **kwargs
             passed to :class:`.Graphic`
 
@@ -509,8 +742,7 @@ class GraphicMethodsMixin:
             mapcoords,
             cmap,
             clim,
-            isolated_buffer,
-            **kwargs,
+            **kwargs
         )
 
     def add_polygon(
@@ -527,7 +759,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] | None = None,
-        **kwargs,
+        **kwargs
     ) -> PolygonGraphic:
         """
 
@@ -570,16 +802,100 @@ class GraphicMethodsMixin:
             PolygonGraphic, data, mode, colors, mapcoords, cmap, clim, **kwargs
         )
 
+    def add_scatter_collection(
+        self,
+        data: Union[numpy.ndarray, List[numpy.ndarray]],
+        colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
+        cmap: Union[Sequence[str], str] = None,
+        cmap_transform: Union[numpy.ndarray, List] = None,
+        sizes: Union[float, Sequence[float]] = 5.0,
+        uniform_size: bool = True,
+        markers: Union[numpy.ndarray, Sequence[str]] = None,
+        uniform_marker: bool = True,
+        edge_width: float = 1.0,
+        name: str = None,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
+        **kwargs
+    ) -> ScatterCollection:
+        """
+
+        Create a collection of :class:`.ScatterGraphic`
+
+        Parameters
+        ----------
+        data: list of array-like
+            List or array-like of multiple line data to plot
+
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
+
+        colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
+            | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
+            | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
+            | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
+            | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
+
+        cmap: Iterable of str or str, optional
+            | if ``str``, single cmap will be used for all lines
+            | if ``list`` of ``str``, each cmap will apply to the individual lines
+
+            .. note::
+                ``cmap`` overrides any arguments passed to ``colors``
+
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        name: str, optional
+            name of the line collection as a whole
+
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            meatadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
+            ``len(metadata)`` must be same as ``len(data)``
+
+        kwargs_lines: list[dict], optional
+            list of kwargs passed to the individual lines, ``len(kwargs_lines)`` must equal ``len(data)``
+
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
+
+
+        """
+        return self._create_graphic(
+            ScatterCollection,
+            data,
+            colors,
+            cmap,
+            cmap_transform,
+            sizes,
+            uniform_size,
+            markers,
+            uniform_marker,
+            edge_width,
+            name,
+            names,
+            metadata,
+            metadatas,
+            **kwargs
+        )
+
     def add_scatter(
         self,
         data: Any,
         colors: Union[str, numpy.ndarray, Sequence[float], Sequence[str]] = "w",
-        uniform_color: bool = False,
         cmap: str = None,
         cmap_transform: numpy.ndarray = None,
+        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: Union[str, numpy.ndarray, Sequence[str]] = "o",
-        uniform_marker: bool = False,
+        uniform_marker: bool = True,
         custom_sdf: str = None,
         edge_colors: Union[
             str, pygfx.utils.color.Color, numpy.ndarray, Sequence[float]
@@ -589,11 +905,10 @@ class GraphicMethodsMixin:
         image: numpy.ndarray = None,
         point_rotations: float | numpy.ndarray = 0,
         point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
-        sizes: Union[float, numpy.ndarray, Sequence[float]] = 1,
-        uniform_size: bool = False,
+        sizes: Union[float, numpy.ndarray, Sequence[float]] = 5,
+        uniform_size: bool = True,
         size_space: str = "screen",
-        isolated_buffer: bool = True,
-        **kwargs,
+        **kwargs
     ) -> ScatterGraphic:
         """
 
@@ -609,17 +924,22 @@ class GraphicMethodsMixin:
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        uniform_color: bool, default False
-            if True, uses a uniform buffer for the scatter point colors. Useful if you need to
-            save GPU VRAM when all points have the same color.
-
         cmap: str, optional
             apply a colormap to the scatter instead of assigning colors manually, this
-            overrides any argument passed to "colors".  For supported colormaps see the
-            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            overrides any argument passed to "colors".
+            For supported colormaps see the ``cmap`` library catalogue:
+            https://cmap-docs.readthedocs.io/en/stable/catalog/
 
         cmap_transform: 1D array-like or list of numerical values, optional
             if provided, these values are used to map the colors from the cmap
+
+        color_mode: one of "auto", "uniform", "vertex", default "auto"
+            "uniform" restricts to a single color for all line datapoints.
+            "vertex" allows independent colors per vertex.
+            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
+            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
+            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
+            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
 
         mode: one of: "markers", "simple", "gaussian", "image", default "markers"
             The scatter points mode, cannot be changed after the graphic has been created.
@@ -640,9 +960,10 @@ class GraphicMethodsMixin:
             * Emojis: "❤️♠️♣️♦️💎💍✳️📍".
             * A string containing the value "custom". In this case, WGSL code defined by ``custom_sdf`` will be used.
 
-        uniform_marker: bool, default False
-            Use the same marker for all points. Only valid when `mode` is "markers". Useful if you need to use
-            the same marker for all points and want to save GPU RAM.
+        uniform_marker: bool, default ``True``
+            If ``True``, use the same marker for all points. Only valid when `mode` is "markers".
+            Useful if you need to use the same marker for all points and want to save GPU RAM. If ``False``, you can
+            set per-vertex markers.
 
         custom_sdf: str = None,
             The SDF code for the marker shape when the marker is set to custom.
@@ -662,8 +983,9 @@ class GraphicMethodsMixin:
         edge_colors: str | np.ndarray | pygfx.Color | Sequence[float], default "black"
             edge color of the markers, used when `mode` is "markers"
 
-        uniform_edge_color: bool, default True
-            Set the same edge color for all markers. Useful for saving GPU RAM.
+        uniform_edge_color: bool, default ``True``
+            Set the same edge color for all markers. Useful for saving GPU RAM. Set to ``False`` for per-vertex edge
+            colors
 
         edge_width: float = 1.0,
             Width of the marker edges. used when `mode` is "markers".
@@ -684,16 +1006,12 @@ class GraphicMethodsMixin:
         sizes: float or iterable of float, optional, default 1.0
             sizes of the scatter points
 
-        uniform_size: bool, default False
-            if True, uses a uniform buffer for the scatter point sizes. Useful if you need to
-            save GPU VRAM when all points have the same size.
+        uniform_size: bool, default ``False``
+            if ``True``, uses a uniform buffer for the scatter point sizes. Useful if you need to
+            save GPU VRAM when all points have the same size. Set to ``False`` if you need per-vertex sizes.
 
         size_space: str, default "screen"
             coordinate space in which the size is expressed, one of ("screen", "world", "model")
-
-        isolated_buffer: bool, default True
-            whether the buffers should be isolated from the user input array.
-            Generally always ``True``, ``False`` is for rare advanced use if you have large arrays.
 
         kwargs
             passed to :class:`.Graphic`
@@ -704,9 +1022,9 @@ class GraphicMethodsMixin:
             ScatterGraphic,
             data,
             colors,
-            uniform_color,
             cmap,
             cmap_transform,
+            color_mode,
             mode,
             markers,
             uniform_marker,
@@ -720,8 +1038,92 @@ class GraphicMethodsMixin:
             sizes,
             uniform_size,
             size_space,
-            isolated_buffer,
-            **kwargs,
+            **kwargs
+        )
+
+    def add_scatter_stack(
+        self,
+        data: Union[numpy.ndarray, List[numpy.ndarray]],
+        colors: Union[str, Sequence[str], numpy.ndarray, Sequence[numpy.ndarray]] = "w",
+        cmap: Union[Sequence[str], str] = None,
+        cmap_transform: Union[numpy.ndarray, List] = None,
+        name: str = None,
+        names: list[str] = None,
+        metadata: Any = None,
+        metadatas: Union[Sequence[Any], numpy.ndarray] = None,
+        separation: float = 0.0,
+        separation_axis: str = "y",
+        **kwargs
+    ) -> ScatterStack:
+        """
+
+        Create a stack of :class:`.LineGraphic` that are separated along the "x" or "y" axis.
+
+        Parameters
+        ----------
+        data: list of array-like
+            List or array-like of multiple line data to plot
+
+            | if ``list`` each item in the list must be a 1D, 2D, or 3D numpy array
+            | if  array-like, must be of shape [n_lines, n_points_line, y | xy | xyz]
+
+        thickness: float or Iterable of float, default 2.0
+            | if ``float``, single thickness will be used for all lines
+            | if ``list`` of ``float``, each value will apply to the individual lines
+
+        colors: str, RGBA array, Iterable of RGBA array, or Iterable of str, default "w"
+            | if single ``str`` such as "w", "r", "b", etc, represents a single color for all lines
+            | if single ``RGBA array`` (tuple or list of size 4), represents a single color for all lines
+            | if ``list`` of ``str``, represents color for each individual line, example ["w", "b", "r",...]
+            | if ``RGBA array`` of shape [data_size, 4], represents a single RGBA array for each line
+
+        cmap: Iterable of str or str, optional
+            | if ``str``, single cmap will be used for all lines
+            | if ``list`` of ``str``, each cmap will apply to the individual lines
+
+            .. note::
+                ``cmap`` overrides any arguments passed to ``colors``
+
+        cmap_transform: 1D array-like of numerical values, optional
+            if provided, these values are used to map the colors from the cmap
+
+        name: str, optional
+            name of the line collection as a whole
+
+        names: list[str], optional
+            names of the individual lines in the collection, ``len(names)`` must equal ``len(data)``
+
+        metadata: Any
+            metadata associated with the collection as a whole
+
+        metadatas: Iterable or array
+            metadata for each individual line associated with this collection, this is for the user to manage.
+            ``len(metadata)`` must be same as ``len(data)``
+
+        separation: float, default 0.0
+            space in between each line graphic in the stack
+
+        separation_axis: str, default "y"
+            axis in which the line graphics in the stack should be separated
+
+        kwargs_collection
+            kwargs for the collection, passed to GraphicCollection
+
+
+        """
+        return self._create_graphic(
+            ScatterStack,
+            data,
+            colors,
+            cmap,
+            cmap_transform,
+            name,
+            names,
+            metadata,
+            metadatas,
+            separation,
+            separation_axis,
+            **kwargs
         )
 
     def add_surface(
@@ -738,7 +1140,7 @@ class GraphicMethodsMixin:
             | numpy.ndarray
         ) = None,
         clim: tuple[float, float] | None = None,
-        **kwargs,
+        **kwargs
     ) -> SurfaceGraphic:
         """
 
@@ -792,7 +1194,7 @@ class GraphicMethodsMixin:
         screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
-        **kwargs,
+        **kwargs
     ) -> TextGraphic:
         """
 
@@ -843,7 +1245,7 @@ class GraphicMethodsMixin:
             screen_space,
             offset,
             anchor,
-            **kwargs,
+            **kwargs
         )
 
     def add_vectors(
@@ -853,7 +1255,7 @@ class GraphicMethodsMixin:
         color: Union[str, Sequence[float], numpy.ndarray] = "w",
         size: float = None,
         vector_shape_options: dict = None,
-        **kwargs,
+        **kwargs
     ) -> VectorsGraphic:
         """
 
@@ -898,5 +1300,5 @@ class GraphicMethodsMixin:
             color,
             size,
             vector_shape_options,
-            **kwargs,
+            **kwargs
         )
