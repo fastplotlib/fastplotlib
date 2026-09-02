@@ -51,6 +51,9 @@ class StandardRightClickMenu(ImguiPopup):
         )
         subplot.camera.maintain_aspect = maintain_aspect
 
+        _, tooltip_enabled = imgui.menu_item("Tooltip", "", subplot.tooltip.enabled)
+        subplot.tooltip.enabled = tooltip_enabled
+
         imgui.separator()
 
         # toggles to flip axes cameras
