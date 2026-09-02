@@ -205,27 +205,6 @@ class GraphicCollection(Graphic):
         feature_values = dict()  # child feature -> iterator of one value per graphic
         graphic_kwargs = dict()  # non-feature kwargs, same for every graphic
 
-        # positions collections color the graphics with `cmap` + `cmap_transform`: a 1D transform
-        # (or none) colors each graphic one color across the collection; a 2D [n_graphics,
-        # n_datapoints] transform colors each graphic's datapoints, so the cmap is per-graphic.
-        # image collections use a per-graphic cmap and are not translated.
-        if "cmap" in kwargs and self._accessor_specs.get("cmap", (None, None, None))[1] is Cmap:
-            cmap = kwargs.pop("cmap")
-            cmap_transform = kwargs.pop("cmap_transform", None)
-            # an iterable of per-datapoint arrays (one per graphic) colors each graphic's datapoints
-            # so the cmap is applied per-graphic; an iterable of scalars (or none) colors each
-            # graphic one color across the collection
-            if cmap_transform is not None and np.ndim(cmap_transform[0]) >= 1:
-                if len(cmap_transform) != n_graphics:
-                    raise ValueError(
-                        f"a per-graphic cmap_transform must have one entry per graphic; got "
-                        f"{len(cmap_transform)} for {n_graphics} graphics"
-                    )
-                kwargs["cmap"] = cmap  # a per-graphic colormap along each graphic's datapoints
-                feature_values["cmap_transform"] = iter(cmap_transform)  # one array per graphic
-            else:
-                kwargs["colors"] = cmap_across_graphics(cmap, n_graphics, cmap_transform)
-
         # split each feature into one value per graphic, other kwargs go to every graphic
         for feature_name, value in kwargs.items():
             if feature_name not in self._accessor_specs:

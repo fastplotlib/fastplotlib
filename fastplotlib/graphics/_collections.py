@@ -1,9 +1,12 @@
+import itertools
+
+import cmap as cmap_lib
 import numpy as np
 
 from .line import LineGraphic
 from .scatter import ScatterGraphic
 from .image import ImageGraphic
-from ._collection_base import GraphicCollection
+from ._collection_base import GraphicCollection, cmap_across_graphics
 from .selectors import (
     LinearSelector,
     LinearRegionSelector,
@@ -15,6 +18,72 @@ from ..utils import calculate_figure_shape
 
 class PositionsCollection(GraphicCollection):
     """A collection of positions-based graphics (lines, scatters); adds selectors spanning all graphics."""
+
+    def __init__(self, data, *, cmap=None, cmap_transform=None, cmap_range=None, **kwargs):
+        super().__init__(data, **kwargs)
+        self._set_cmap(cmap, cmap_transform, cmap_range)
+
+    def _set_cmap(self, cmap, cmap_transform=None, cmap_range=None):
+        """
+        A single cmap (str or ``cmap_lib.Colormap``) gives each graphic a uniform color.
+        An iterable of cmaps gives each graphic its own colormap.
+        """
+        self._cmap_value = cmap
+        self._cmap_transform_value = cmap_transform
+        self._cmap_range_value = cmap_range
+
+        if cmap is None:
+            if cmap_transform is not None:
+                raise ValueError("must pass `cmap` if passing `cmap_transform`")
+            return
+
+        single_cmap = isinstance(cmap, (str, cmap_lib.Colormap))
+        # a single cmap needs a 1D transform (across graphics), an iterable needs a 2D transform (per-graphic)
+        if cmap_transform is not None and single_cmap == (np.ndim(cmap_transform[0]) >= 1):
+            raise ValueError(
+                "`cmap` and `cmap_transform` must match: a single `cmap` uses a 1D transform, "
+                "an iterable of cmaps uses a 2D transform"
+            )
+
+        if single_cmap:
+            self.colors[:] = cmap_across_graphics(cmap, len(self), cmap_transform)
+            return
+
+        transforms = cmap_transform if cmap_transform is not None else itertools.repeat(None)
+        ranges = cmap_range if np.ndim(cmap_range) == 2 else itertools.repeat(cmap_range)
+        for graphic, one_cmap, transform, rng in zip(self.graphics, cmap, transforms, ranges):
+            graphic.cmap = one_cmap
+            if transform is not None:
+                graphic.cmap_transform = transform
+            if rng is not None:
+                graphic.cmap_range = rng
+
+    @property
+    def cmap(self):
+        """get or set the cmap of the graphics in the collection"""
+        return self._cmap
+
+    @cmap.setter
+    def cmap(self, value):
+        self._set_cmap(value, self._cmap_transform_value, self._cmap_range_value)
+
+    @property
+    def cmap_transform(self):
+        """get or set the cmap_transform of the graphics in the collection"""
+        return self._cmap_transform
+
+    @cmap_transform.setter
+    def cmap_transform(self, value):
+        self._set_cmap(self._cmap_value, value, self._cmap_range_value)
+
+    @property
+    def cmap_range(self):
+        """get or set the cmap_range of the graphics in the collection"""
+        return self._cmap_range
+
+    @cmap_range.setter
+    def cmap_range(self, value):
+        self._set_cmap(self._cmap_value, self._cmap_transform_value, value)
 
     def add_linear_selector(
         self, selection: float = None, padding: float = 0.0, axis: str = "x", **kwargs
