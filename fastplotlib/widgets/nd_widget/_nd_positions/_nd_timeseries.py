@@ -14,6 +14,7 @@ from ....graphics import (
 )
 from ....graphics.utils import pause_events
 from ....graphics.selectors import LinearSelector
+from ....utils import CudaArrayProtocol, cuda_to_numpy
 from .._base import NDGraphic, WindowFuncCallable, block_indices_ctx
 from .._index import ReferenceIndex
 from .._async import run_sync
@@ -172,6 +173,31 @@ class NDTimeseries(NDPositions):
             super()._setup_graphic(new_features, indices)
 
         self._update_view(indices, new_features["data"])
+
+    async def _create_graphic(self):
+        await super()._create_graphic()
+        # use the max over the full `p` dim to account for the y-max of each line/scatter for proper spacing
+        if isinstance(self._graphic, (LineStack, ScatterStack)):
+            steps = np.zeros((len(self._graphic), 3))
+            steps[:, 1] = await self._p_y_max()
+            self._graphic.steps = steps
+
+    async def _p_y_max(self) -> np.ndarray:
+        """per-graphic max of the y values over the full `p` dim, shape [n_graphics]"""
+        proc = self.processor
+        # the indexer leaves the spatial `p` dim unsliced, so this raw slice spans every datapoint
+        raw = await proc._get_raw_data_slice(self.indices)
+        c = proc.dims.index(proc.spatial_dims[2])  # coord dim; y is index 1
+        g = proc.dims.index(proc.spatial_dims[0])  # graphics dim
+        y = raw[(slice(None),) * c + (1,)]  # y values as a view, coord dim removed
+        # keep the graphics dim (shifted down if it was past the removed coord dim), max the rest;
+        # `.max` runs on whatever the array is (numpy/cupy/torch/jax), so a GPU array reduces on-device
+        g_axis = g if g < c else g - 1
+        result = y.max(axis=tuple(i for i in range(y.ndim) if i != g_axis))
+        if isinstance(result, CudaArrayProtocol):
+            # only the small [n_graphics] result crosses back to host
+            result = cuda_to_numpy(result)
+        return result
 
     def _update_view(self, indices: dict[str, Any], data_slice: np.ndarray):
         """update the camera x-range and linear selector to the current datapoints position."""
