@@ -32,7 +32,6 @@ from ._scatter import (
 from ._image import (
     TextureArray,
     TextureYUV,
-    TupleYUV,
     ImageCmap,
     ImageGamma,
     ImageVmin,
@@ -105,7 +104,6 @@ __all__ = [
     "UniformSize",
     "TextureArray",
     "TextureYUV",
-    "TupleYUV",
     "ImageCmap",
     "ImageGamma",
     "ImageVmin",

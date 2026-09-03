@@ -1,6 +1,6 @@
 from itertools import product
 from math import ceil
-from typing import Literal, TypeAlias
+from typing import Literal
 from warnings import warn
 
 import cmap as cmap_lib
@@ -13,10 +13,8 @@ import pygfx
 from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
 from .utils import get_element_format_from_numpy_array
-from ...utils import get_cmap_texture, ColorspacesRGB, ColorspacesYUV, ColorRange
-
-TupleYUV: TypeAlias = tuple[NDArray[np.uint8], NDArray[np.uint8], NDArray[np.uint8]]
-
+from ...utils import ColorspacesRGB, ColorspacesYUV, ColorRange
+from .types import TupleYUV, ColormapLike
 
 class TextureArray(GraphicFeature):
     """
@@ -519,18 +517,23 @@ class ImageCmap(GraphicFeature):
     ]
 
     def __init__(self, value: str, property_name: str = "cmap"):
-        self._value = value
-        self.texture = get_cmap_texture(value)
+        self._value = cmap_lib.Colormap(value)
         super().__init__(property_name=property_name)
 
     @property
-    def value(self) -> str:
+    def value(self) -> cmap_lib.Colormap:
         return self._value
 
     @block_reentrance
-    def set_value(self, graphic, value: str):
-        colormap = pygfx.cm.create_colormap(cmap_lib.Colormap(value).lut())
-        graphic._material.map = colormap
+    def set_value(self, graphic, value: ColormapLike | cmap_lib.Colormap):
+        _map = cmap_lib.Colormap(value).to_pygfx()
+        _map.min_filter = graphic._cmap_interpolation.value
+        _map.mag_filter = graphic._cmap_interpolation.value
+        _map.mipmap_filter = graphic._cmap_interpolation.value
+        _map.wrap_s = "clamp-to-edge"
+        _map.wrap_t = "clamp-to-edge"
+
+        graphic._material.map = _map
         graphic._material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
 
         self._value = value

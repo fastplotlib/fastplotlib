@@ -1,4 +1,6 @@
 import numpy as np
+from numpy._typing import NDArray
+
 import pygfx
 from collections.abc import Iterable
 
@@ -16,3 +18,5 @@ MultiColorLike = tuple[ColorLike] | list[ColorLike] | MultiColorArray
 
 # our own ColormapLike type since if we use the cmap lib's ColormapLike it expands into a huge complex union
 ColormapLike = str | Iterable[ColorLike] | MultiColorLike
+
+TupleYUV = tuple[NDArray[np.uint8], NDArray[np.uint8], NDArray[np.uint8]]

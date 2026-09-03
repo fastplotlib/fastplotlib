@@ -76,12 +76,17 @@ def generate_add_graphics_methods():
             child_args = {a.arg for a in args.args} | {a.arg for a in args.kwonlyargs}
 
             own = ast.parse(textwrap.dedent(inspect.getsource(cls.__init__))).body[0].args
-            # the collection's own arguments after `data`, e.g. `name`/`metadata` or `separation`
+            # the collection's own arguments after `data`, e.g. `name`/`metadata` or `separation`;
+            # skip any the child already takes, e.g. PositionsCollection re-declares `cmap`
             own_extra = own.args[2:]
             for a, default in zip(own_extra, own.defaults[len(own.defaults) - len(own_extra):]):
+                if a.arg in child_args:
+                    continue
                 args.kwonlyargs.append(a)
                 args.kw_defaults.append(default)
             for a, default in zip(own.kwonlyargs, own.kw_defaults):
+                if a.arg in child_args:
+                    continue
                 args.kwonlyargs.append(a)
                 args.kw_defaults.append(default)
 

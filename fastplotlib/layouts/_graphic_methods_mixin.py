@@ -594,6 +594,7 @@ class GraphicMethodsMixin:
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike = None,
         cmap_transform: np.ndarray | None = None,
+        cmap_range: tuple[float, float] | None = None,
         start_is_infinite: bool = True,
         end_is_infinite: bool = True,
         dash_pattern: str | tuple | list = (),
@@ -632,6 +633,9 @@ class GraphicMethodsMixin:
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
+
         start_is_infinite: bool, default True
             whether the start of each line is extended to infinity
 
@@ -659,6 +663,7 @@ class GraphicMethodsMixin:
             colors,
             cmap,
             cmap_transform,
+            cmap_range,
             start_is_infinite,
             end_is_infinite,
             dash_pattern,
@@ -673,12 +678,11 @@ class GraphicMethodsMixin:
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
+        cmap_range: tuple[float, float] | None = None,
         size_space: str = "screen",
         dash_pattern: str | tuple | list = (),
         thin: bool = False,
         *,
-        name: str = None,
-        metadata: Any = None,
         names=None,
         offsets=None,
         rotations=None,
@@ -716,6 +720,9 @@ class GraphicMethodsMixin:
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
+
         size_space: str, default "screen"
             coordinate space in which the thickness is expressed ("screen", "world", "model")
 
@@ -740,11 +747,10 @@ class GraphicMethodsMixin:
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
             size_space=size_space,
             dash_pattern=dash_pattern,
             thin=thin,
-            name=name,
-            metadata=metadata,
             names=names,
             offsets=offsets,
             rotations=rotations,
@@ -763,6 +769,7 @@ class GraphicMethodsMixin:
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
+        cmap_range: tuple[float, float] | None = None,
         size_space: str = "screen",
         dash_pattern: str | tuple | list = (),
         thin: bool = False,
@@ -795,6 +802,9 @@ class GraphicMethodsMixin:
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
+
         size_space: str, default "screen"
             coordinate space in which the thickness is expressed ("screen", "world", "model")
 
@@ -819,6 +829,7 @@ class GraphicMethodsMixin:
             colors,
             cmap,
             cmap_transform,
+            cmap_range,
             size_space,
             dash_pattern,
             thin,
@@ -832,6 +843,7 @@ class GraphicMethodsMixin:
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
+        cmap_range: tuple[float, float] | None = None,
         size_space: str = "screen",
         dash_pattern: str | tuple | list = (),
         thin: bool = False,
@@ -875,6 +887,9 @@ class GraphicMethodsMixin:
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
 
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
+
         size_space: str, default "screen"
             coordinate space in which the thickness is expressed ("screen", "world", "model")
 
@@ -899,6 +914,7 @@ class GraphicMethodsMixin:
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
             size_space=size_space,
             dash_pattern=dash_pattern,
             thin=thin,
@@ -1039,6 +1055,7 @@ class GraphicMethodsMixin:
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
+        cmap_range: tuple[float, float] | None = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
         custom_sdf: str = None,
@@ -1049,8 +1066,6 @@ class GraphicMethodsMixin:
         sizes: float | np.ndarray | Sequence[float] = 5,
         size_space: str = "screen",
         *,
-        name: str = None,
-        metadata: Any = None,
         names=None,
         offsets=None,
         rotations=None,
@@ -1083,6 +1098,9 @@ class GraphicMethodsMixin:
 
         cmap_transform: np.ndarray, optional
             1D array-like or list of numerical values, these values are used to map the colors from the cmap
+
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
 
         mode: one of: "markers", "simple", "gaussian", "image", default "markers"
             The scatter points mode, cannot be changed after the graphic has been created.
@@ -1155,6 +1173,7 @@ class GraphicMethodsMixin:
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
             mode=mode,
             markers=markers,
             custom_sdf=custom_sdf,
@@ -1164,8 +1183,6 @@ class GraphicMethodsMixin:
             point_rotations=point_rotations,
             sizes=sizes,
             size_space=size_space,
-            name=name,
-            metadata=metadata,
             names=names,
             offsets=offsets,
             rotations=rotations,
@@ -1183,6 +1200,7 @@ class GraphicMethodsMixin:
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
+        cmap_range: tuple[float, float] | None = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
         custom_sdf: str = None,
@@ -1216,6 +1234,9 @@ class GraphicMethodsMixin:
 
         cmap_transform: np.ndarray, optional
             1D array-like or list of numerical values, these values are used to map the colors from the cmap
+
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
 
         mode: one of: "markers", "simple", "gaussian", "image", default "markers"
             The scatter points mode, cannot be changed after the graphic has been created.
@@ -1288,6 +1309,7 @@ class GraphicMethodsMixin:
             colors,
             cmap,
             cmap_transform,
+            cmap_range,
             mode,
             markers,
             custom_sdf,
@@ -1306,6 +1328,7 @@ class GraphicMethodsMixin:
         colors: ColorLike | MultiColorLike = "w",
         cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
+        cmap_range: tuple[float, float] | None = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
         custom_sdf: str = None,
@@ -1350,6 +1373,9 @@ class GraphicMethodsMixin:
 
         cmap_transform: np.ndarray, optional
             1D array-like or list of numerical values, these values are used to map the colors from the cmap
+
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
 
         mode: one of: "markers", "simple", "gaussian", "image", default "markers"
             The scatter points mode, cannot be changed after the graphic has been created.
@@ -1422,6 +1448,7 @@ class GraphicMethodsMixin:
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
             mode=mode,
             markers=markers,
             custom_sdf=custom_sdf,
