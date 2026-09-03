@@ -332,9 +332,9 @@ class ImageGrid(ImageCollection):
 class GraphicStack:
     """
     Mixin that stacks a collection's graphics along the axes in ``separation_axis``. Each graphic is
-    offset by its index times the data extent plus the ``separation`` gap, so the graphics are
-    evenly spaced and do not overlap. Set ``separation`` or ``separation_axis`` to (re)stack, e.g.
-    after changing the data.
+    offset by its index times the data max plus the ``separation`` gap, so the graphics are evenly
+    spaced and do not overlap; pass per-graphic ``steps`` to space them individually. Set
+    ``separation`` or ``separation_axis`` to (re)stack, e.g. after changing the data.
     """
 
     def __init__(
@@ -343,6 +343,7 @@ class GraphicStack:
         *,
         separation: tuple[float, float, float] = (0.0, 0.0, 0.0),
         separation_axis: str = "y",
+        steps: np.ndarray = None,
         **kwargs,
     ):
         """
@@ -354,22 +355,39 @@ class GraphicStack:
             one entry per graphic; its length is the number of graphics in the stack
 
         separation: (float, float, float), default (0.0, 0.0, 0.0)
-            (x, y, z) gap between successive graphics, added to the data extent along the
-            corresponding stacking axis
+            (x, y, z) gap between successive graphics, added to the step along the corresponding
+            stacking axis
 
         separation_axis: str, default "y"
             axes to stack along, any combination of "x", "y", "z", e.g. "y", "xy", "xyz"
+
+        steps: [n_graphics, 3] array-like, optional
+            per-graphic step along each (x, y, z) axis, i.e. the max each graphic reaches. When
+            ``None`` (default) a single max over all the data sets one uniform step. When given, each
+            graphic is offset by the cumulative step of the graphics before it, plus ``separation``.
 
         **kwargs
             passed to the collection, e.g. ``colors``, ``thickness``, ``sizes``
         """
         super().__init__(data, **kwargs)
         self._separation = np.asarray(separation, dtype=float)
+        self._steps = self._check_steps(steps)
         self.separation_axis = separation_axis  # (re)stacks
+
+    def _check_steps(self, steps) -> np.ndarray | None:
+        if steps is None:
+            return None
+        steps = np.asarray(steps, dtype=float)
+        if steps.shape != (len(self), 3):
+            raise ValueError(
+                f"steps must be a [n_graphics, 3] array, got shape {steps.shape} for "
+                f"{len(self)} graphics"
+            )
+        return steps
 
     @property
     def separation(self) -> np.ndarray:
-        """get or set the (x, y, z) gap added to the data extent along the stacking axes"""
+        """get or set the (x, y, z) gap added to the step along the stacking axes"""
         return self._separation
 
     @separation.setter
@@ -378,6 +396,16 @@ class GraphicStack:
         if value.shape != (3,):
             raise ValueError("separation must be an (x, y, z) iterable")
         self._separation = value
+        self._restack()
+
+    @property
+    def steps(self) -> np.ndarray | None:
+        """get or set the per-graphic (x, y, z) steps used to space the stack, ``None`` to auto-determine"""
+        return self._steps
+
+    @steps.setter
+    def steps(self, value: np.ndarray | None):
+        self._steps = self._check_steps(value)
         self._restack()
 
     @property
@@ -396,10 +424,16 @@ class GraphicStack:
 
     def _restack(self):
         axes = [{"x": 0, "y": 1, "z": 2}[axis] for axis in self._separation_axis]
-        # one max over all the data gives the extent to step by along each stacking axis
-        extents = np.concatenate(self.data[:, :, axes]).max(axis=0)
         offsets = np.zeros((len(self), 3))
-        offsets[:, axes] = np.arange(len(self))[:, np.newaxis] * (extents + self._separation[axes])
+        if self._steps is None:
+            # one max over all the data gives the step to stack by along each stacking axis
+            step = np.concatenate(self.data[:, :, axes]).max(axis=0)
+            offsets[:, axes] = np.arange(len(self))[:, np.newaxis] * (step + self._separation[axes])
+        else:
+            # per-graphic steps: offset each graphic past the previous ones by their cumulative step
+            offsets[1:, axes] = np.cumsum(
+                self._steps[:-1, axes] + self._separation[axes], axis=0
+            )
         self.offsets[:] = offsets
 
 
