@@ -7,10 +7,8 @@ import numpy as np
 
 from ....graphics import (
     ImageGraphic,
-    LineGraphic,
     LineStack,
     LineCollection,
-    ScatterGraphic,
     ScatterCollection,
     ScatterStack,
 )
@@ -19,7 +17,14 @@ from ....graphics.selectors import LinearSelector
 from .._base import NDGraphic, WindowFuncCallable, block_indices_ctx
 from .._index import ReferenceIndex
 from .._async import run_sync
-from ._nd_positions import NDPositions, NDPositionsProcessor
+from ._nd_positions import (
+    NDPositions,
+    NDPositionsProcessor,
+    ColorsType,
+    SizesType,
+    MarkersType,
+    FeatureCallable,
+)
 
 if TYPE_CHECKING:
     from .._ndw_subplot import NDWSubplot
@@ -35,10 +40,8 @@ class NDTimeseries(NDPositions):
         spatial_dims: tuple[str, str, str],
         *args,
         graphic_type: Type[
-            LineGraphic
-            | LineCollection
+            LineCollection
             | LineStack
-            | ScatterGraphic
             | ScatterCollection
             | ScatterStack
             | ImageGraphic
@@ -50,17 +53,13 @@ class NDTimeseries(NDPositions):
         max_display_datapoints: int = 1_000,
         linear_selector: bool = False,
         x_range_mode: Literal["fixed", "auto"] | None = None,
-        colors: (
-            Sequence[str] | np.ndarray | Callable[[slice, np.ndarray], np.ndarray]
-        ) = None,
-        cmap: str = None,
-        cmap_each: Sequence[str] = None,
-        cmap_transform_each: np.ndarray = None,
-        markers: np.ndarray = None,
-        markers_each: Sequence[str] = None,
-        sizes: np.ndarray = None,
-        sizes_each: Sequence[float] = None,
-        thickness: np.ndarray = None,
+        colors: ColorsType = None,
+        cmap: str | Sequence[str] = None,
+        cmap_transform: np.ndarray | FeatureCallable = None,
+        cmap_range: tuple[float, float] = None,
+        thickness: float | Sequence[float] = None,
+        sizes: SizesType = None,
+        markers: MarkersType = None,
         name: str = None,
         graphic_kwargs: dict = None,
         processor_kwargs: dict = None,
@@ -95,13 +94,11 @@ class NDTimeseries(NDPositions):
             max_display_datapoints=max_display_datapoints,
             colors=colors,
             cmap=cmap,
-            cmap_each=cmap_each,
-            cmap_transform_each=cmap_transform_each,
-            markers=markers,
-            markers_each=markers_each,
-            sizes=sizes,
-            sizes_each=sizes_each,
+            cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
             thickness=thickness,
+            sizes=sizes,
+            markers=markers,
             graphic_kwargs=graphic_kwargs,
             processor_kwargs=processor_kwargs,
         )
@@ -167,8 +164,9 @@ class NDTimeseries(NDPositions):
             self._graphic = self._graphic_type(
                 image_data, offset=(x0, 0, -1), scale=(x_scale, 1, 1)
             )
-            if self._cmap is not None:
-                self._graphic.cmap = self._cmap
+            cmap = self._static_features.get("cmap")
+            if cmap is not None:
+                self._graphic.cmap = cmap
             self._nd_subplot.subplot.add_graphic(self._graphic)
         else:
             super()._setup_graphic(new_features, indices)

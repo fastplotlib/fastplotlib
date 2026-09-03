@@ -72,6 +72,10 @@ class Accessor(GraphicFeature):
     def _broadcast_over_graphics(self, value, n_graphics: int):
         # one value goes to every graphic; otherwise the first axis is the graphics axis.
         # used by both the setters and the collection constructor
+        if hasattr(value, "__next__"):
+            # an iterator (itertools.repeat/cycle, a generator, ...): one value per graphic
+            return itertools.islice(value, n_graphics)
+
         if self._is_single_value(value):
             return itertools.repeat(value)
 

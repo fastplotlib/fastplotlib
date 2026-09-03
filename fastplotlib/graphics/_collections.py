@@ -28,9 +28,13 @@ class PositionsCollection(GraphicCollection):
         A single cmap (str or ``cmap_lib.Colormap``) gives each graphic a uniform color.
         An iterable of cmaps gives each graphic its own colormap.
         """
-        self._cmap_value = cmap
-        self._cmap_transform_value = cmap_transform
-        self._cmap_range_value = cmap_range
+        if hasattr(cmap, "__next__"):
+            # an iterator (itertools.repeat/cycle, a generator, ...): one cmap per graphic,
+            # materialized so re-applying it (e.g. each frame in NDPositions) stays stable
+            cmap = list(itertools.islice(cmap, len(self)))
+        self._cmap = cmap
+        self._cmap_transform = cmap_transform
+        self._cmap_range = cmap_range
 
         if cmap is None:
             if cmap_transform is not None:
@@ -65,7 +69,7 @@ class PositionsCollection(GraphicCollection):
 
     @cmap.setter
     def cmap(self, value):
-        self._set_cmap(value, self._cmap_transform_value, self._cmap_range_value)
+        self._set_cmap(value, self._cmap_transform, self._cmap_range)
 
     @property
     def cmap_transform(self):
@@ -74,7 +78,7 @@ class PositionsCollection(GraphicCollection):
 
     @cmap_transform.setter
     def cmap_transform(self, value):
-        self._set_cmap(self._cmap_value, value, self._cmap_range_value)
+        self._set_cmap(self._cmap, value, self._cmap_range)
 
     @property
     def cmap_range(self):
@@ -83,7 +87,7 @@ class PositionsCollection(GraphicCollection):
 
     @cmap_range.setter
     def cmap_range(self, value):
-        self._set_cmap(self._cmap_value, self._cmap_transform_value, value)
+        self._set_cmap(self._cmap, self._cmap_transform, value)
 
     def add_linear_selector(
         self, selection: float = None, padding: float = 0.0, axis: str = "x", **kwargs

@@ -73,6 +73,11 @@ def cmap_across_graphics(
     return np.asarray(cmap_lib.Colormap(cmap_name)(values))
 
 
+class _AccessorProperty(property):
+    """marks a property as generated for a collection feature, so a subclass's own explicit
+    property for a feature can be told apart from a generated one"""
+
+
 def make_feature_property(feature_name: str, accessor_class: type) -> property:
     """a property that returns the feature's accessor for get/set across the collection"""
 
@@ -88,7 +93,7 @@ def make_feature_property(feature_name: str, accessor_class: type) -> property:
             getattr(collection_instance, f"_{feature_name}")[:] = value
 
     doc = f"get or set the {feature_name} of the graphics in the collection"
-    return property(getter, setter, doc=doc)
+    return _AccessorProperty(getter, setter, doc=doc)
 
 
 def make_collection_signature(child_type: type, accessor_specs: dict) -> inspect.Signature:
@@ -151,6 +156,9 @@ class GraphicCollection(Graphic):
                 continue
             feature_classes = feature_classes if isinstance(feature_classes, tuple) else (feature_classes,)
             feature_name = PLURAL.get(feature, feature)
+            existing = getattr(cls, feature_name, None)
+            if isinstance(existing, property) and not isinstance(existing, _AccessorProperty):
+                continue  # the subclass implements this feature with its own property; no accessor
             specs[feature_name] = (
                 feature,
                 get_accessor_class(feature, feature_classes),
