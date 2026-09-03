@@ -45,7 +45,7 @@ class NDWSubplot:
         """all the NDGraphic instance in this subplot"""
         return tuple(self._nd_graphics)
 
-    def __getitem__(self, key):
+    def __getitem__(self, key) -> NDGraphic:
         # get a specific NDGraphic by index or name
         if isinstance(key, (int, np.integer)):
             return self.nd_graphics[key]
@@ -56,6 +56,16 @@ class NDWSubplot:
 
         else:
             raise KeyError(f"NDGraphc with given key not found: {key}")
+
+    def delete_nd_graphic(self, ndg: NDGraphic):
+        """Delete an NDGraphic from the subplot"""
+
+        # TODO: verify that this actually garbage collects
+        del ndg.data
+        self.subplot.delete_graphic(ndg.graphic)
+        self._nd_graphics.remove(ndg)
+
+        del ndg
 
     def _check_slider_dims(
         self,
