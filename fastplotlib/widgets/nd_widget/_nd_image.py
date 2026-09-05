@@ -611,7 +611,10 @@ class NDImage(NDGraphic):
 
     @property
     def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
-        """get or set the spatial_func, see docstring for details"""
+        """
+        Get or set the function applied to the spatial slice *after* the window funcs, right before rendering.
+        Setting it recomputes the histogram, since the function often changes the range of the values.
+        """
         # this is here even though it's the same in the base class since we can't create the image specific setter
         # without also defining the property in this subclass.
         return self.processor.spatial_func

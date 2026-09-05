@@ -5,16 +5,29 @@ import numpy as np
 
 
 class VideoProcessor(NDImageProcessor):
+    """
+    ``NDImageProcessor`` subclass for video data, used by ``NDWSubplot.add_video()``.
+
+    Reads the frame at the current index directly. Window functions are not currently implemented for video.
+
+    A YUV frame is a tuple of (Y, U, V) planes rather than a single array, so it is passed through as a tuple for
+    an ``ImageYUVGraphic``.
+    """
+
     async def get_window_output(self, indices: dict[str, Any]):
         """
-        Applies any window functions and returns squeezed sliced array transposed in the order of the given spatial dims
+        Get the frame at the given indices, squeezing out the slider dims.
 
         Parameters
         ----------
-        indices
+        indices: dict[str, Any]
+            Reference-space value for each slider dim, ex: ``{"time": 46.397}``. Must provide a value for every
+            slider dim.
 
         Returns
         -------
+        np.ndarray | tuple[np.ndarray, ...]
+            The frame, or a tuple of the (Y, U, V) planes if the underlying data returns YUV planes.
 
         """
         # windowed slice if user set any window funcs

@@ -123,6 +123,21 @@ class AutoRangeContinuous(RangeContinuous):
 
 @dataclass
 class RangeDiscrete:
+    """
+    A discrete reference range for a single slider dimension, where the reference-space values are arbitrary
+    objects (ex: gene names, experimental conditions) rather than a numerical range.
+
+    .. important::
+        Not implemented yet, this is a placeholder. The imgui slider is only drawn for a
+        :class:`RangeContinuous`.
+
+    Parameters
+    ----------
+    options: Sequence[Any]
+        The reference-space values of this dimension, in order.
+
+    """
+
     # TODO: not implemented yet, placeholder until we have a clear usecase
     options: Sequence[Any]
 
@@ -260,13 +275,11 @@ class ReferenceIndex:
         Parameters
         ----------
         indices: dict[str, Any]
-            indices to set, {dim: index}
+            indices to set, ``{dim: index}``, in reference-space units. Values are clamped to the reference
+            range of that dim.
 
         cancel_awaiting: bool, default ``False``
             cancel in-progress fetches, i.e. only display the latest fetch request
-
-        Returns
-        -------
 
         """
         for dim, value in indices.items():
@@ -434,6 +447,13 @@ class ReferenceIndex:
             )
 
     def pop_dim(self):
+        """
+        Remove a slider dim and its reference range.
+
+        .. important::
+            Not implemented yet, this is a placeholder that does nothing.
+
+        """
         pass
 
     def push_dims(
@@ -443,6 +463,21 @@ class ReferenceIndex:
             tuple[Number, Number, Number] | tuple[Any] | RangeContinuous,
         ],
     ):
+        """
+        Add reference ranges, i.e. register new slider dims.
+
+        The index of each new dim is initialized to the start of its range, and a slider for it is added to the
+        UI of every ``NDWidget`` managed by this ``ReferenceIndex``.
+
+        Parameters
+        ----------
+        ref_ranges: dict[str, tuple | RangeContinuous | RangeDiscrete]
+            Mapping of dim names to range specifications. A 3-tuple ``(start, stop, step)`` creates a
+            :class:`RangeContinuous`, a 1-tuple ``(options,)`` creates a :class:`RangeDiscrete`, and a
+            ``RangeContinuous`` or ``RangeDiscrete`` instance is used as given. An existing dim of the same name
+            is replaced.
+
+        """
 
         for name, r in ref_ranges.items():
             if isinstance(r, (RangeContinuous, RangeDiscrete)):
