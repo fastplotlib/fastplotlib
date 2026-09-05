@@ -132,6 +132,8 @@ def parse_markers(markers: str | Sequence[str] | np.ndarray, n_datapoints: int):
 
 
 class VertexMarkers(BufferManager):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "key",
@@ -326,6 +328,8 @@ class UniformMarker(GraphicFeature):
 
 
 class UniformEdgeColor(GraphicFeature):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "value",
@@ -392,14 +396,14 @@ class UniformRotations(GraphicFeature):
         {
             "dict key": "value",
             "type": "float",
-            "description": "new edge_width",
+            "description": "new rotation value",
         },
     ]
 
-    def __init__(self, edge_width: float, property_name: str = "point_rotations"):
-        """Manages evented uniform buffer for scatter marker rotation"""
+    def __init__(self, value: float, property_name: str = "point_rotations"):
+        """Manages uniform rotation for scatter material"""
 
-        self._value = edge_width
+        self._value = value
         super().__init__(property_name=property_name)
 
     @property
@@ -408,7 +412,7 @@ class UniformRotations(GraphicFeature):
 
     @block_reentrance
     def set_value(self, graphic, value: float):
-        graphic.world_object.material.rotations = value
+        graphic.world_object.material.rotation = value
         self._value = value
 
         event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
@@ -416,6 +420,8 @@ class UniformRotations(GraphicFeature):
 
 
 class VertexRotations(BufferManager):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "key",
@@ -503,6 +509,8 @@ class VertexRotations(BufferManager):
 
 
 class VertexPointSizes(BufferManager):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "key",

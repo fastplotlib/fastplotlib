@@ -38,13 +38,10 @@ figure[0, 0].add_scatter(sine)
 figure[0, 0].add_scatter(
     sine,
     colors=["magenta"] * 3 + ["cyan"] * 3 + ["yellow"] * 3 + ["purple"],
-    uniform_edge_color=False,
     edge_colors=["w"] * 3 + ["orange"] * 3 + ["blue"] * 3 + ["green"],
     markers=list("osD+x^v<>*"),
-    uniform_marker=False,
     edge_width=2.0,
     sizes=20,
-    uniform_size=True,
 )
 
 
@@ -53,9 +50,7 @@ figure[0, 0].add_scatter(
     sine,
     markers="^",
     sizes=20,
-    point_rotation_mode="vertex",
     point_rotations=xs,
-    uniform_size=True,
     offset=(0, 1, 0)
 )
 
@@ -65,7 +60,6 @@ figure[0, 0].add_scatter(
     sine,
     markers="s",
     sizes=xs * 5,
-    uniform_size=False,
     offset=(0, 2, 0)
 )
 

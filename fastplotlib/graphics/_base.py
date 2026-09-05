@@ -18,6 +18,7 @@ else:
 import pygfx
 
 from .features import (
+    GraphicFeature,
     Deleted,
     Name,
     Offset,
@@ -58,7 +59,7 @@ PYGFX_EVENTS = [
 
 
 class Graphic:
-    _features: dict[str, type] = dict()
+    _features: dict[str, type[GraphicFeature] | tuple[type[GraphicFeature], ...]] = dict()
 
     # It also doesn't make sense to create tooltips for some graphics
     # ex: text, that would be very funny.
@@ -298,7 +299,8 @@ class Graphic:
             self._world_object_ids.append(global_id)
 
         wo.visible = self.visible
-        if "Image" in self.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in self.__class__.__name__ and not hasattr(self, "graphics"):
             # Image and ImageVolume use tiling and share one material
             self._material.opacity = self.alpha
             self._material.alpha_mode = self.alpha_mode

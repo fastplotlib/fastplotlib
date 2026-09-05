@@ -7,11 +7,7 @@ from ._positions_base import PositionsGraphic
 from .features import (
     VertexPointSizes,
     UniformSize,
-    SizeSpace,
-    VertexPositions,
     VertexColors,
-    UniformColor,
-    VertexCmap,
     VertexMarkers,
     UniformMarker,
     UniformEdgeColor,
@@ -20,41 +16,35 @@ from .features import (
     VertexRotations,
     TextureArray,
 )
+from .features.types import ColorLike, MultiColorLike, ColormapLike
+from .features.utils import is_single_color
 
 
 class ScatterGraphic(PositionsGraphic):
     _features = {
-        "data": VertexPositions,
         "sizes": (VertexPointSizes, UniformSize),
-        "colors": (VertexColors, UniformColor),
-        "cmap": (VertexCmap, None),
         "markers": (VertexMarkers, UniformMarker, None),
         "edge_colors": (UniformEdgeColor, VertexColors, None),
         "edge_width": (EdgeWidth, None),
         "image": (TextureArray, None),
-        "size_space": SizeSpace,
         "point_rotations": (UniformRotations, VertexRotations, None),
     }
 
     def __init__(
         self,
         data: Any,
-        colors: str | np.ndarray | Sequence[float] | Sequence[str] = "w",
-        cmap: str = None,
-        cmap_transform: np.ndarray = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
+        cmap_transform: np.ndarray | None = None,
+        cmap_range: tuple[float, float] | None = None,
         mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
         markers: str | np.ndarray | Sequence[str] = "o",
-        uniform_marker: bool = True,
         custom_sdf: str = None,
-        edge_colors: str | np.ndarray | pygfx.Color | Sequence[float] = "black",
-        uniform_edge_color: bool = True,
+        edge_colors: ColorLike | MultiColorLike | None = "black",
         edge_width: float = 1.0,
         image: np.ndarray = None,
-        point_rotations: float | np.ndarray = 0,
-        point_rotation_mode: Literal["uniform", "vertex", "curve"] = "uniform",
+        point_rotations: float | np.ndarray | None = None,
         sizes: float | np.ndarray | Sequence[float] = 5,
-        uniform_size: bool = True,
         size_space: str = "screen",
         **kwargs,
     ):
@@ -67,26 +57,21 @@ class ScatterGraphic(PositionsGraphic):
             Scatter data to plot, Can provide 2D, or a 3D data. 2D data must be of shape [n_points, 2].
             3D data must be of shape [n_points, 3]
 
-        colors: str, array, tuple, list, Sequence, default "w"
+        colors: ColorLike or MultiColorLike, default "w"
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        cmap: str, optional
+        cmap: ColormapLike, optional
             apply a colormap to the scatter instead of assigning colors manually, this
             overrides any argument passed to "colors".
             For supported colormaps see the ``cmap`` library catalogue:
             https://cmap-docs.readthedocs.io/en/stable/catalog/
 
-        cmap_transform: 1D array-like or list of numerical values, optional
-            if provided, these values are used to map the colors from the cmap
+        cmap_transform: np.ndarray, optional
+            1D array-like or list of numerical values, these values are used to map the colors from the cmap
 
-        color_mode: one of "auto", "uniform", "vertex", default "auto"
-            "uniform" restricts to a single color for all line datapoints.
-            "vertex" allows independent colors per vertex.
-            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
-            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
-            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
-            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
 
         mode: one of: "markers", "simple", "gaussian", "image", default "markers"
             The scatter points mode, cannot be changed after the graphic has been created.
@@ -96,8 +81,9 @@ class ScatterGraphic(PositionsGraphic):
             * gaussian: each point is a gaussian blob
             * image: use an image for each point, pass an array to the `image` kwarg, these are also called sprites
 
-        markers: None | str | np.ndarray | Sequence[str], default "o"
-            The shape of the markers when `mode` is "markers"
+        markers: str | np.ndarray | Sequence[str], default "o"
+            The shape of the markers when `mode` is "markers". Specify a single marker to use the same
+            marker for all points, or a Sequence of markers for per-vertex markers.
 
             Supported values:
 
@@ -106,11 +92,6 @@ class ScatterGraphic(PositionsGraphic):
             * Unicode symbols: "●○■♦♥♠♣✳▲▼◀▶".
             * Emojis: "❤️♠️♣️♦️💎💍✳️📍".
             * A string containing the value "custom". In this case, WGSL code defined by ``custom_sdf`` will be used.
-
-        uniform_marker: bool, default ``True``
-            If ``True``, use the same marker for all points. Only valid when `mode` is "markers".
-            Useful if you need to use the same marker for all points and want to save GPU RAM. If ``False``, you can
-            set per-vertex markers.
 
         custom_sdf: str = None,
             The SDF code for the marker shape when the marker is set to custom.
@@ -127,35 +108,27 @@ class ScatterGraphic(PositionsGraphic):
             with the `edge_color`. Other negative distances will be colored by
             `colors`.
 
-        edge_colors: str | np.ndarray | pygfx.Color | Sequence[float], default "black"
-            edge color of the markers, used when `mode` is "markers"
-
-        uniform_edge_color: bool, default ``True``
-            Set the same edge color for all markers. Useful for saving GPU RAM. Set to ``False`` for per-vertex edge
-            colors
+        edge_colors: ColorLike, MultiColorLike, or None, default "black"
+            edge color(s) of the markers, used when `mode` is "markers". Specify a single color to use the
+            same edge color for all markers, or a Sequence of colors for per-vertex edge colors. Pass
+            ``None`` for no edge color.
 
         edge_width: float = 1.0,
             Width of the marker edges. used when `mode` is "markers".
 
-        image: ArrayLike, optional
+        image: array-like, optional
             renders an image at the scatter points, also known as sprites.
             The image color is multiplied with the point's "normal" color.
 
-        point_rotations: float | ArrayLike = 0,
-            The rotation of the scatter points in radians. Default 0. A single float rotation value can be set on all
-            points, or an array of rotation values can be used to set per-point rotations
+        point_rotations: float, array-like, or None, default None
+            The rotation of the scatter points in radians. The rotation mode is determined automatically from
+            the value: pass ``None`` (default) for "curve" mode, where each point's rotation follows the curve
+            of the data (in screen space); a single float for the same rotation on every point ("uniform"); or
+            an array of rotation values for per-point rotations ("vertex").
 
-        point_rotation_mode: one of: "uniform" | "vertex" | "curve", default "uniform"
-            * uniform: set the same rotation for every point, useful to save GPU RAM
-            * vertex: set per-vertex rotations
-            * curve: The rotation follows the curve of the line defined by the points (in screen space)
-
-        sizes: float or iterable of float, optional, default 1.0
-            sizes of the scatter points
-
-        uniform_size: bool, default ``False``
-            if ``True``, uses a uniform buffer for the scatter point sizes. Useful if you need to
-            save GPU VRAM when all points have the same size. Set to ``False`` if you need per-vertex sizes.
+        sizes: float, np.ndarray, or Sequence[float], default 5
+            size(s) of the scatter points. Specify a single size to use the same size for all points, or a
+            Sequence of sizes for per-point sizes.
 
         size_space: str, default "screen"
             coordinate space in which the size is expressed, one of ("screen", "world", "model")
@@ -170,89 +143,30 @@ class ScatterGraphic(PositionsGraphic):
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
-            color_mode=color_mode,
+            cmap_range=cmap_range,
             size_space=size_space,
             **kwargs,
         )
 
         n_datapoints = self.data.value.shape[0]
 
-        geo_kwargs = {"positions": self._data._fpl_buffer}
-
-        aa = kwargs.get("alpha_mode", "auto") in ("blend", "weighted_blend")
-
-        material_kwargs = dict(
-            pick_write=True,
-            aa=aa,
-            depth_compare="<=",
-        )
-
         self._markers: VertexMarkers | UniformMarker | None = None
         self._edge_colors: UniformEdgeColor | VertexColors | None = None
         self._edge_width: EdgeWidth | None = None
         self._point_rotations: VertexRotations | UniformRotations | None = None
         self._image: TextureArray | None = None
+        self._custom_sdf: str | None = None
 
         # material cannot be changed after the ScatterGraphic is created
         self._mode = mode
-        match self.mode:
+        match self._mode:
             case "markers":
-                # default
-                material = pygfx.PointsMarkerMaterial
-
-                if uniform_marker:
-                    if not isinstance(markers, str):
-                        raise TypeError(
-                            "must pass a single <str> marker if uniform_marker is True"
-                        )
-
-                    self._markers = UniformMarker(markers)
-
-                    material_kwargs["marker_mode"] = pygfx.MarkerMode.uniform
-                    material_kwargs["marker"] = self._markers.value
-                else:
-                    material_kwargs["marker_mode"] = pygfx.MarkerMode.vertex
-
-                    self._markers = VertexMarkers(markers, n_datapoints)
-
-                    geo_kwargs["markers"] = self._markers._fpl_buffer
-
-                if edge_colors is None:
-                    # interpret as no edge color
-                    edge_colors = (0, 0, 0, 0)
-
-                if uniform_edge_color:
-                    if not isinstance(edge_colors, (str, pygfx.Color)):
-                        if len(edge_colors) not in [3, 4]:
-                            raise TypeError(
-                                f"if `uniform_edge_color` is True, then `edge_color` must be a str, pygfx.Color, "
-                                f"or an RGB(A) tuple, list, array representation of a single color. You have passed: "
-                                f"{edge_colors}"
-                            )
-
-                    self._edge_colors = UniformEdgeColor(edge_colors)
-                    material_kwargs["edge_color"] = self._edge_colors.value
-                    material_kwargs["edge_color_mode"] = pygfx.ColorMode.uniform
-                else:
-                    self._edge_colors = VertexColors(
-                        edge_colors, n_datapoints, property_name="edge_colors"
-                    )
-                    material_kwargs["edge_color_mode"] = pygfx.ColorMode.vertex
-                    geo_kwargs["edge_colors"] = self._edge_colors._fpl_buffer
-
+                self._markers = self._create_markers_buffer(markers)
+                self._edge_colors = self._create_edge_colors_buffer(edge_colors)
                 self._edge_width = EdgeWidth(edge_width)
-                material_kwargs["edge_width"] = self._edge_width.value
-                material_kwargs["custom_sdf"] = custom_sdf
-
-            case "simple":
-                # basic points material
-                material = pygfx.PointsMaterial
-
-            case "gaussian":
-                material = pygfx.PointsGaussianBlobMaterial
+                self._custom_sdf = custom_sdf
 
             case "image":
-                material = pygfx.PointsSpriteMaterial
                 # sprites should actually only be one texture, but we don't
                 # want to create a new buffer manager just for sprites.
                 # If someone is creating scatter plots with images of size
@@ -271,54 +185,156 @@ class ScatterGraphic(PositionsGraphic):
                     image / np.nanmax(image), property_name="image"
                 )
 
-                material_kwargs["sprite"] = self._image.buffer[0, 0]
-
-        self._size_space = SizeSpace(size_space)
-
-        if isinstance(self._colors, UniformColor):
-            material_kwargs["color_mode"] = pygfx.ColorMode.uniform
-            material_kwargs["color"] = self.colors
-        else:
-            material_kwargs["color_mode"] = pygfx.ColorMode.vertex
-            geo_kwargs["colors"] = self.colors._fpl_buffer
-
-        if uniform_size:
-            material_kwargs["size_mode"] = pygfx.SizeMode.uniform
-            self._sizes = UniformSize(sizes)
-            material_kwargs["size"] = self.sizes
-        else:
-            material_kwargs["size_mode"] = pygfx.SizeMode.vertex
-            self._sizes = VertexPointSizes(sizes, n_datapoints=n_datapoints)
-            geo_kwargs["sizes"] = self.sizes._fpl_buffer
-
-        match point_rotation_mode:
-            case pygfx.enums.RotationMode.vertex:
-                self._point_rotations = VertexRotations(
-                    point_rotations, n_datapoints=n_datapoints
-                )
-                geo_kwargs["rotations"] = self._point_rotations._fpl_buffer
-
-            case pygfx.enums.RotationMode.uniform:
-                self._point_rotations = UniformRotations(point_rotations)
-
-            case pygfx.enums.RotationMode.curve:
-                pass  # nothing special for curve rotation mode
-
-            case _:
-                raise ValueError(
-                    f"`point_rotation_mode` must be one of: {pygfx.enums.RotationMode}, "
-                    f"you have passed: {point_rotation_mode}"
-                )
-
-        material_kwargs["rotation_mode"] = point_rotation_mode
-        material_kwargs["size_space"] = self.size_space
+        self._sizes = self._create_sizes_buffer(sizes)
+        self._point_rotations = self._create_point_rotations_buffer(point_rotations)
 
         world_object = pygfx.Points(
-            pygfx.Geometry(**geo_kwargs),
-            material=material(**material_kwargs),
+            geometry=self._make_geo(),
+            material=self._make_material(),
         )
 
         self._set_world_object(world_object)
+
+    def _make_material(self) -> pygfx.PointsMaterial:
+        # create the pygfx material, the material class is determined by the scatter mode
+        material_cls = {
+            "markers": pygfx.PointsMarkerMaterial,
+            "simple": pygfx.PointsMaterial,
+            "gaussian": pygfx.PointsGaussianBlobMaterial,
+            "image": pygfx.PointsSpriteMaterial,
+        }[self._mode]
+        return material_cls(**self._get_material_kwargs())
+
+    def _get_material_kwargs(self) -> dict:
+        # pygfx points material kwargs assembled from the current feature state
+        kwargs = super()._get_material_kwargs()
+        kwargs["size_space"] = self.size_space
+
+        if isinstance(self._sizes, UniformSize):
+            kwargs["size_mode"] = pygfx.SizeMode.uniform
+            kwargs["size"] = self.sizes
+        else:
+            kwargs["size_mode"] = pygfx.SizeMode.vertex
+
+        if isinstance(self._point_rotations, VertexRotations):
+            kwargs["rotation_mode"] = pygfx.enums.RotationMode.vertex
+        elif isinstance(self._point_rotations, UniformRotations):
+            kwargs["rotation_mode"] = pygfx.enums.RotationMode.uniform
+            kwargs["rotation"] = self._point_rotations.value
+        else:
+            kwargs["rotation_mode"] = pygfx.enums.RotationMode.curve
+
+        match self._mode:
+            case "markers":
+                if isinstance(self._markers, UniformMarker):
+                    kwargs["marker_mode"] = pygfx.MarkerMode.uniform
+                    kwargs["marker"] = self._markers.value
+                else:
+                    kwargs["marker_mode"] = pygfx.MarkerMode.vertex
+
+                if isinstance(self._edge_colors, UniformEdgeColor):
+                    kwargs["edge_color_mode"] = pygfx.ColorMode.uniform
+                    kwargs["edge_color"] = self._edge_colors.value
+                else:
+                    kwargs["edge_color_mode"] = pygfx.ColorMode.vertex
+
+                kwargs["edge_width"] = self._edge_width.value
+                kwargs["custom_sdf"] = self._custom_sdf
+
+            case "image":
+                kwargs["sprite"] = self._image.buffer[0, 0]
+
+        return kwargs
+
+    def _get_geo_kwargs(self) -> dict:
+        # pygfx points geometry kwargs assembled from the current feature state
+        kwargs = super()._get_geo_kwargs()
+
+        if isinstance(self._sizes, VertexPointSizes):
+            kwargs["sizes"] = self._sizes._fpl_buffer
+
+        if isinstance(self._point_rotations, VertexRotations):
+            kwargs["rotations"] = self._point_rotations._fpl_buffer
+
+        if self._mode == "markers":
+            if isinstance(self._markers, VertexMarkers):
+                kwargs["markers"] = self._markers._fpl_buffer
+
+            if isinstance(self._edge_colors, VertexColors):
+                kwargs["edge_colors"] = self._edge_colors._fpl_buffer
+
+        return kwargs
+
+    def _create_markers_buffer(self, markers) -> UniformMarker | VertexMarkers:
+        # creates either a UniformMarker or VertexMarkers based on the given `markers`
+
+        if isinstance(markers, (VertexMarkers, UniformMarker)):
+            # share buffer with existing markers instance
+            return markers
+
+        # a single marker is a str, a sequence is one marker per datapoint
+        if isinstance(markers, str):
+            return UniformMarker(markers)
+
+        else:
+            return VertexMarkers(markers, n_datapoints=self._data.value.shape[0])
+
+    def _create_edge_colors_buffer(self, edge_colors) -> UniformEdgeColor | VertexColors:
+        # creates either a UniformEdgeColor or VertexColors based on the given `edge_colors`
+
+        if edge_colors is None:
+            # interpret as no edge color
+            edge_colors = (0, 0, 0, 0)
+
+        if isinstance(edge_colors, (VertexColors, UniformEdgeColor)):
+            # share buffer with existing edge_colors instance
+            return edge_colors
+
+        # determine if a single or multiple colors were passed and decide edge_color_mode
+        if is_single_color(edge_colors):
+            # one color specified as a str or pygfx.Color, or one color specified with RGB(A) values
+            return UniformEdgeColor(edge_colors)
+
+        else:
+            # sequence of colors, one edge color per datapoint
+            return VertexColors(
+                edge_colors,
+                n_colors=self._data.value.shape[0],
+                property_name="edge_colors",
+            )
+
+    def _create_sizes_buffer(self, sizes) -> UniformSize | VertexPointSizes:
+        # creates either a UniformSize or VertexPointSizes based on the given `sizes`
+
+        if isinstance(sizes, (VertexPointSizes, UniformSize)):
+            # share buffer with existing sizes instance
+            return sizes
+
+        # a single size is a scalar, a sequence is one size per datapoint
+        if isinstance(sizes, (np.ndarray, list, tuple)):
+            return VertexPointSizes(sizes, n_datapoints=self._data.value.shape[0])
+
+        else:
+            return UniformSize(sizes)
+
+    def _create_point_rotations_buffer(
+        self, point_rotations
+    ) -> UniformRotations | VertexRotations | None:
+        # None -> curve mode (no feature, rotation follows the data curve), a single value ->
+        # uniform, a sequence -> vertex
+
+        if isinstance(point_rotations, (VertexRotations, UniformRotations)):
+            # share buffer with existing point_rotations instance
+            return point_rotations
+
+        if point_rotations is None:
+            return None
+
+        if isinstance(point_rotations, (np.ndarray, list, tuple)):
+            return VertexRotations(point_rotations, n_datapoints=self._data.value.shape[0])
+
+        else:
+            return UniformRotations(point_rotations)
 
     @property
     def mode(self) -> str:
@@ -327,7 +343,7 @@ class ScatterGraphic(PositionsGraphic):
 
     @property
     def markers(self) -> str | VertexMarkers | None:
-        """markers if mode is 'marker'"""
+        """Get or set the markers, if mode is 'markers'"""
         if isinstance(self._markers, VertexMarkers):
             return self._markers
         elif isinstance(self._markers, UniformMarker):
@@ -340,11 +356,25 @@ class ScatterGraphic(PositionsGraphic):
                 f"scatter plot is: {self.mode}. The mode must be 'markers' to set the markers"
             )
 
-        self._markers.set_value(self, value)
+        # currently per-vertex: stay per-vertex, broadcasting a single marker or setting a sequence
+        if isinstance(self._markers, VertexMarkers):
+            self._markers.set_value(self, value)
+            return
+
+        # currently uniform: a single marker stays uniform
+        if isinstance(value, str):
+            self._markers.set_value(self, value)
+            return
+
+        # currently uniform and a sequence was passed: switch uniform -> vertex
+        self._markers.clear_event_handlers()
+        self._markers = self._create_markers_buffer(value)
+        self.world_object.geometry.markers = self._markers._fpl_buffer
+        self.world_object.material.marker_mode = "vertex"
 
     @property
-    def edge_colors(self) -> str | pygfx.Color | VertexColors | None:
-        """edge_colors if mode is 'marker'"""
+    def edge_colors(self) -> VertexColors | pygfx.Color | None:
+        """Get or set the marker edge colors, if mode is 'markers'"""
 
         if isinstance(self._edge_colors, VertexColors):
             return self._edge_colors
@@ -353,12 +383,31 @@ class ScatterGraphic(PositionsGraphic):
             return self._edge_colors.value
 
     @edge_colors.setter
-    def edge_colors(self, value: str | np.ndarray | Sequence[str] | Sequence[float]):
+    def edge_colors(self, value: ColorLike | MultiColorLike | None):
         if self.mode != "markers":
             raise AttributeError(
                 f"scatter plot is: {self.mode}. The mode must be 'markers' to set the edge_colors"
             )
-        self._edge_colors.set_value(self, value)
+
+        if value is None:
+            # interpret as no edge color
+            value = (0, 0, 0, 0)
+
+        # currently per-vertex: stay per-vertex, broadcasting a single color or setting a sequence
+        if isinstance(self._edge_colors, VertexColors):
+            self._edge_colors.set_value(self, value)
+            return
+
+        # currently uniform: a single color stays uniform
+        if is_single_color(value):
+            self._edge_colors.set_value(self, value)
+            return
+
+        # currently uniform and a sequence was passed: switch uniform -> vertex
+        self._edge_colors.clear_event_handlers()
+        self._edge_colors = self._create_edge_colors_buffer(value)
+        self.world_object.geometry.edge_colors = self._edge_colors._fpl_buffer
+        self.world_object.material.edge_color_mode = "vertex"
 
     @property
     def edge_width(self) -> float | None:
@@ -384,7 +433,7 @@ class ScatterGraphic(PositionsGraphic):
 
     @property
     def point_rotations(self) -> VertexRotations | float | None:
-        """rotation of each point, in radians, if `point_rotation_mode` is 'uniform' or 'vertex'"""
+        """Get or set the point rotations in radians; returns None in 'curve' mode"""
 
         if isinstance(self._point_rotations, VertexRotations):
             return self._point_rotations
@@ -393,14 +442,41 @@ class ScatterGraphic(PositionsGraphic):
             return self._point_rotations.value
 
     @point_rotations.setter
-    def point_rotations(self, value: float | np.ndarray[float]):
-        if self.point_rotation_mode not in ["uniform", "vertex"]:
-            raise AttributeError(
-                f"point_rotation_mode is: {self.point_rotation_mode}. "
-                f"it be 'uniform' or 'vertex' to set the `point_rotations`"
-            )
+    def point_rotations(self, value: float | np.ndarray[tuple[int], np.dtype[np.number]] | None):
+        # None selects curve mode, where the rotation follows the data curve
+        if value is None:
+            if self._point_rotations is not None:
+                self._point_rotations.clear_event_handlers()
+            self._point_rotations = None
+            self.world_object.material.rotation_mode = "curve"
+            self.world_object.geometry.rotations = None
+            return
 
-        self._point_rotations.set_value(self, value)
+        # currently per-vertex: stay per-vertex, broadcasting a single value or setting a sequence
+        if isinstance(self._point_rotations, VertexRotations):
+            self._point_rotations.set_value(self, value)
+            return
+
+        # currently uniform: a single value stays uniform
+        if isinstance(self._point_rotations, UniformRotations) and not isinstance(
+            value, (np.ndarray, list, tuple)
+        ):
+            self._point_rotations.set_value(self, value)
+            return
+
+        # switch to the mode the value implies (from uniform, or from curve which has no feature)
+        if self._point_rotations is not None:
+            self._point_rotations.clear_event_handlers()
+
+        self._point_rotations = self._create_point_rotations_buffer(value)
+
+        if isinstance(self._point_rotations, VertexRotations):
+            self.world_object.geometry.rotations = self._point_rotations._fpl_buffer
+            self.world_object.material.rotation_mode = "vertex"
+        else:
+            self.world_object.material.rotation = self._point_rotations.value
+            self.world_object.material.rotation_mode = "uniform"
+            self.world_object.geometry.rotations = None
 
     @property
     def image(self) -> TextureArray | None:
@@ -426,5 +502,19 @@ class ScatterGraphic(PositionsGraphic):
             return self._sizes.value
 
     @sizes.setter
-    def sizes(self, value):
-        self._sizes.set_value(self, value)
+    def sizes(self, value: float | np.ndarray | Sequence[float]):
+        # currently per-vertex: stay per-vertex, broadcasting a single value or setting a sequence
+        if isinstance(self._sizes, VertexPointSizes):
+            self._sizes.set_value(self, value)
+            return
+
+        # currently uniform: a single value stays uniform
+        if not isinstance(value, (np.ndarray, list, tuple)):
+            self._sizes.set_value(self, value)
+            return
+
+        # currently uniform and a sequence was passed: switch uniform -> vertex
+        self._sizes.clear_event_handlers()
+        self._sizes = self._create_sizes_buffer(value)
+        self.world_object.geometry.sizes = self._sizes._fpl_buffer
+        self.world_object.material.size_mode = "vertex"

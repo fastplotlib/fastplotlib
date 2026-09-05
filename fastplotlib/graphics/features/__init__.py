@@ -4,6 +4,8 @@ from ._positions import (
     SizeSpace,
     VertexPositions,
     VertexCmap,
+    VertexCmapTransform,
+    VertexCmapRange,
     InfLineAxisData,
     InfLineColors,
 )
@@ -30,7 +32,6 @@ from ._scatter import (
 from ._image import (
     TextureArray,
     TextureYUV,
-    TupleYUV,
     ImageCmap,
     ImageGamma,
     ImageVmin,
@@ -60,7 +61,6 @@ from ._base import (
     GraphicFeature,
     BufferManager,
     GraphicFeatureEvent,
-    to_gpu_supported_dtype,
 )
 
 from ._text import (
@@ -85,6 +85,8 @@ __all__ = [
     "SizeSpace",
     "VertexPositions",
     "VertexCmap",
+    "VertexCmapTransform",
+    "VertexCmapRange",
     "InfLineAxisData",
     "InfLineColors",
     "MeshIndices",
@@ -102,7 +104,6 @@ __all__ = [
     "UniformSize",
     "TextureArray",
     "TextureYUV",
-    "TupleYUV",
     "ImageCmap",
     "ImageGamma",
     "ImageVmin",
@@ -135,5 +136,7 @@ __all__ = [
     "AlphaMode",
     "Visible",
     "Deleted",
+    "GraphicFeature",
+    "BufferManager",
     "GraphicFeatureEvent",
 ]

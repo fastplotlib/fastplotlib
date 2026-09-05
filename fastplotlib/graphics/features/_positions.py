@@ -2,10 +2,9 @@ from typing import Any, Sequence
 
 import numpy as np
 import pygfx
+import cmap as cmap_lib
 
-from ...utils import (
-    parse_cmap_values,
-)
+
 from ._base import (
     GraphicFeature,
     BufferManager,
@@ -14,9 +13,12 @@ from ._base import (
     block_reentrance,
 )
 from .utils import parse_colors, is_single_color
+from .types import ColorLike, MultiColorLike
 
 
 class VertexColors(BufferManager):
+    ndim = 2
+
     event_info_spec = [
         {
             "dict key": "key",
@@ -36,17 +38,17 @@ class VertexColors(BufferManager):
     ]
 
     def __init__(
-        self,
-        colors: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
-        n_colors: int,
-        property_name: str = "colors",
+            self,
+            colors: ColorLike | MultiColorLike,
+            n_colors: int,
+            property_name: str = "colors",
     ):
         """
-        Manages the vertex color buffer for :class:`LineGraphic` or :class:`ScatterGraphic`
+        Manages the vertex color buffer for :class:`PositionsGraphic`
 
         Parameters
         ----------
-        colors: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str]
+        colors: ColorLike | MultiColorLike
             specify colors as a single human-readable string, RGBA array,
             or an iterable of strings or RGBA arrays
 
@@ -59,16 +61,16 @@ class VertexColors(BufferManager):
         super().__init__(data=data, property_name=property_name)
 
     def set_value(
-        self,
-        graphic,
-        value: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
+            self,
+            graphic,
+            value: ColorLike | MultiColorLike,
     ):
         """set the entire array, create new buffer if necessary"""
         # a sequence of colors whose length differs from the current buffer requires a new buffer
         if (
-            isinstance(value, (np.ndarray, list, tuple))
-            and not is_single_color(value)
-            and self.buffer.data.shape[0] != len(value)
+                isinstance(value, (np.ndarray, list, tuple))
+                and not is_single_color(value)
+                and self.buffer.data.shape[0] != len(value)
         ):
             # parse the new colors
             new_colors = parse_colors(value, len(value))
@@ -97,9 +99,9 @@ class VertexColors(BufferManager):
 
     @block_reentrance
     def __setitem__(
-        self,
-        key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
-        user_value: str | pygfx.Color | np.ndarray | Sequence[float] | Sequence[str],
+            self,
+            key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
+            user_value: ColorLike | MultiColorLike,
     ):
         user_key = key
 
@@ -181,6 +183,8 @@ class VertexColors(BufferManager):
 
 
 class UniformColor(GraphicFeature):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "value",
@@ -190,9 +194,9 @@ class UniformColor(GraphicFeature):
     ]
 
     def __init__(
-        self,
-        value: str | pygfx.Color | np.ndarray | Sequence[float],
-        property_name: str = "colors",
+            self,
+            value: ColorLike,
+            property_name: str = "colors",
     ):
         """Manages uniform color for line or scatter material"""
 
@@ -205,7 +209,7 @@ class UniformColor(GraphicFeature):
 
     @block_reentrance
     def set_value(
-        self, graphic, value: str | pygfx.Color | np.ndarray | Sequence[float]
+            self, graphic, value: ColorLike
     ):
         value = pygfx.Color(value)
         graphic.world_object.material.color = value
@@ -315,6 +319,10 @@ class VertexPositions(BufferManager):
                 self._fpl_buffer = pygfx.Buffer(bdata)
                 graphic.world_object.geometry.positions = self._fpl_buffer
 
+                # reset the cmap transform because the number of datapoints has changed
+                if graphic.cmap is not None:
+                    graphic.cmap_transform = graphic.cmap_transform
+
                 self._emit_event(self._property_name, key=slice(None), value=value)
                 return
 
@@ -322,9 +330,9 @@ class VertexPositions(BufferManager):
 
     @block_reentrance
     def __setitem__(
-        self,
-        key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
-        value: np.ndarray | float | list[float],
+            self,
+            key: int | slice | np.ndarray[tuple[int, ...], np.dtype[np.integer | np.bool]] | tuple[slice, ...],
+            value: np.ndarray | float | list[float],
     ):
         # directly use the key to slice the buffer and set the values
         self.buffer.data[key] = value
@@ -339,138 +347,131 @@ class VertexPositions(BufferManager):
         return len(self.buffer.data)
 
 
-class VertexCmap(BufferManager):
+class VertexCmap(GraphicFeature):
     event_info_spec = [
         {
-            "dict key": "key",
-            "type": "slice",
-            "description": "key at cmap colors were sliced",
-        },
-        {
             "dict key": "value",
-            "type": "str",
-            "description": "new cmap to set at given slice",
+            "type": "cmap.Colormap",
+            "description": "new colormap",
         },
     ]
 
     def __init__(
-        self,
-        vertex_colors: VertexColors,
-        cmap_name: str | None,
-        transform: np.ndarray | None,
-        property_name: str = "colors",
+            self,
+            value: cmap_lib.ColormapLike,
+            property_name: str = "cmap",
     ):
         """
-        Sliceable colormap feature, manages a VertexColors instance and
-        provides a way to set colormaps with arbitrary transforms
+        colormap feature, manages a VertexColors instance and provides a way to set colormaps.
         """
+        self._value = cmap_lib.Colormap(value)
 
-        super().__init__(data=None, property_name=property_name)
-
-        self._vertex_colors = vertex_colors
-        self._cmap_name = cmap_name
-        self._transform = transform
-
-        if self._cmap_name is not None:
-            if not isinstance(self._cmap_name, str):
-                raise TypeError(
-                    f"cmap name must be of type <str>, you have passed: {self._cmap_name} of type: {type(self._cmap_name)}"
-                )
-
-            if self._transform is not None:
-                self._transform = np.asarray(self._transform)
-
-            n_datapoints = vertex_colors.value.shape[0]
-
-            colors = parse_cmap_values(
-                n_colors=n_datapoints,
-                cmap_name=self._cmap_name,
-                transform=self._transform,
-            )
-            # set vertex colors from cmap
-            self._vertex_colors[:] = colors
+        super().__init__(property_name=property_name)
 
     @property
-    def buffer(self) -> pygfx.Buffer:
-        return self._vertex_colors.buffer
+    def value(self) -> cmap_lib.Colormap:
+        return self._value
+
+    @block_reentrance
+    def set_value(self, graphic, value: cmap_lib.ColormapLike):
+        self._value = cmap_lib.Colormap(value)
+
+        # directly set the material map using the TextureMap
+        graphic.world_object.material.map = self._value.to_pygfx()
+
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
+        self._call_event_handlers(event)
+
+    def __repr__(self):
+        return self.value.__repr__()
+
+    def _repr_html_(self):
+        return self.value._repr_html_()
+
+    def _repr_png(self):
+        return self.value._repr_png_()
+
+
+class VertexCmapTransform(GraphicFeature):
+    ndim = 1
+
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "np.ndarray",
+            "description": "colormap transform",
+        },
+    ]
+
+    def __init__(self, value: np.ndarray, n_datapoints: int, property_name: str = "cmap_transform"):
+        """colormap transform"""
+
+        value = np.asarray(value)
+        self._value = self._interpolate(value, n_datapoints)
+        super().__init__(property_name=property_name)
 
     @property
     def value(self) -> np.ndarray:
-        # mirror the managed colors feature, whose length is the number of color entries
-        # (this is per-line, not per-vertex, for an InfLineColors)
-        return self._vertex_colors.value
+        return self._value
+
+    def _interpolate(self, value, n_datapoints):
+        return np.interp(
+            np.linspace(0, len(value) - 1, n_datapoints), np.arange(len(value)), value).astype(
+            np.float32
+        )
 
     @block_reentrance
-    def __setitem__(self, key: slice, cmap_name):
-        if not isinstance(key, slice):
-            raise TypeError(
-                "fancy indexing not supported for VertexCmap, only slices "
-                "of a continuous range are supported for applying a cmap"
-            )
-        if key.step is not None:
-            raise TypeError(
-                "step sized indexing not currently supported for setting VertexCmap, "
-                "slices must be a continuous range"
-            )
+    def set_value(self, graphic, value: np.ndarray):
+        value = np.asarray(value).squeeze()
 
-        # parse slice
-        start, stop, step = key.indices(self.value.shape[0])
-        n_elements = len(range(start, stop, step))
+        # make sure transform value is provided for every datapoint
+        n_datapoints = len(graphic.world_object.geometry.positions.data)
+        # interpolate to n_datapoints
+        value = self._interpolate(value, n_datapoints)
 
-        colors = parse_cmap_values(
-            n_colors=n_elements, cmap_name=cmap_name, transform=self._transform
-        )
+        if graphic.world_object.geometry.texcoords is not None and graphic.world_object.geometry.texcoords.data.size == value.size:
+            graphic.world_object.geometry.texcoords.data[:] = value
+            graphic.world_object.geometry.texcoords.update_full()
+        else:
+            graphic.world_object.geometry.texcoords = pygfx.Buffer(value)
 
-        self._cmap_name = cmap_name
-        self._vertex_colors[key] = colors
+        self._value = graphic.world_object.geometry.texcoords.data
 
-        # TODO: should we block vertex_colors from emitting an event?
-        #  Because currently this will result in 2 emitted events, one
-        #  for cmap and another from the colors
-        self._emit_event(self._property_name, key, cmap_name)
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
+        self._call_event_handlers(event)
+
+
+class VertexCmapRange(GraphicFeature):
+    """
+    The (min, max) range of the ``cmap_transform`` that is mapped onto the colormap, i.e. the
+    material's ``maprange``.
+    """
+
+    ndim = 1
+
+    event_info_spec = [
+        {
+            "dict key": "value",
+            "type": "tuple[float, float]",
+            "description": "new range",
+        },
+    ]
+
+    def __init__(self, value: tuple[float, float], property_name: str = "cmap_range"):
+        self._value = (float(value[0]), float(value[1]))
+        super().__init__(property_name=property_name)
 
     @property
-    def name(self) -> str:
-        return self._cmap_name
+    def value(self) -> tuple[float, float]:
+        return self._value
 
-    @property
-    def transform(self) -> np.ndarray | None:
-        """Get or set the cmap transform. Maps values from the transform array to the cmap colors"""
-        return self._transform
+    @block_reentrance
+    def set_value(self, graphic, value: tuple[float, float]):
+        self._value = (float(value[0]), float(value[1]))
+        graphic.world_object.material.maprange = self._value
 
-    @transform.setter
-    def transform(
-        self,
-        values: np.ndarray | list[float | int],
-        indices: slice | list | np.ndarray = None,
-    ):
-        if self._cmap_name is None:
-            raise AttributeError(
-                "cmap name is not set, set the cmap name before setting the transform"
-            )
-
-        values = np.asarray(values)
-
-        colors = parse_cmap_values(
-            n_colors=self.value.shape[0], cmap_name=self._cmap_name, transform=values
-        )
-
-        self._transform = values
-
-        if indices is None:
-            indices = slice(None)
-
-        self._vertex_colors[indices] = colors
-
-        self._emit_event("cmap.transform", indices, values)
-
-    def __len__(self):
-        raise NotImplementedError(
-            "len not implemented for `cmap`, use len(colors) instead"
-        )
-
-    def __repr__(self):
-        return f"{self.__class__.__name__} | cmap: {self.name}\ntransform: {self.transform}"
+        event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
+        self._call_event_handlers(event)
 
 
 class InfLineAxisData(VertexPositions):

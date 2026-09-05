@@ -5,7 +5,6 @@ import numpy as np
 
 import pygfx
 
-from ._positions_base import PositionsGraphic
 from .selectors import (
     LinearRegionSelector,
     LinearSelector,
@@ -16,23 +15,14 @@ from .features import (
     Thickness,
     DashPattern,
     parse_dash_pattern,
-    VertexPositions,
-    VertexColors,
-    UniformColor,
-    VertexCmap,
-    SizeSpace,
-    UniformRotations,
 )
 from ..utils import quick_min_max
-
+from ._positions_base import PositionsGraphic
+from .features.types import ColorLike, MultiColorLike, ColormapLike
 
 class LineGraphic(PositionsGraphic):
     _features = {
-        "data": VertexPositions,
-        "colors": (VertexColors, UniformColor),
-        "cmap": (VertexCmap, None),  # none if UniformColor
         "thickness": Thickness,
-        "size_space": SizeSpace,
         "dash_pattern": DashPattern,
     }
 
@@ -40,10 +30,10 @@ class LineGraphic(PositionsGraphic):
         self,
         data: Any,
         thickness: float = 2.0,
-        colors: str | np.ndarray | Sequence = "w",
-        cmap: str = None,
-        cmap_transform: np.ndarray | Sequence = None,
-        color_mode: Literal["auto", "uniform", "vertex"] = "auto",
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
+        cmap_transform: np.ndarray | Iterable[int | float] | None = None,
+        cmap_range: tuple[float, float] | None = None,
         size_space: str = "screen",
         dash_pattern: str | tuple | list = (),
         thin: bool = False,
@@ -63,25 +53,20 @@ class LineGraphic(PositionsGraphic):
         thickness: float, optional, default 2.0
             thickness of the line
 
-        colors: str, array, or iterable, default "w"
+        colors: ColorLike or MultiColorLike, default "w"
             specify colors as a single human-readable string, a single RGBA array,
             or a Sequence (array, tuple, or list) of strings or RGBA arrays
 
-        cmap: str, optional
+        cmap: ColormapLike, optional
             Apply a colormap to the line instead of assigning colors manually, this
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
-        color_mode: one of "auto", "uniform", "vertex", default "auto"
-            "uniform" restricts to a single color for all line datapoints.
-            "vertex" allows independent colors per vertex.
-            For most cases you can keep it as "auto" and the `color_mode` is determineed automatically based on the
-            argument passed to `colors`. if `colors` represents a single color, then the mode is set to "uniform".
-            If `colors` represents a unique color per-datapoint, or if a cmap is provided, then `color_mode` is set to
-            "vertex". You can switch between "uniform" and "vertex" `color_mode` after creating the graphic.
-
         cmap_transform: 1D array-like of numerical values, optional
             if provided, these values are used to map the colors from the cmap
+
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
 
         size_space: str, default "screen"
             coordinate space in which the thickness is expressed ("screen", "world", "model")
@@ -105,7 +90,7 @@ class LineGraphic(PositionsGraphic):
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
-            color_mode=color_mode,
+            cmap_range=cmap_range,
             size_space=size_space,
             **kwargs,
         )
@@ -121,42 +106,24 @@ class LineGraphic(PositionsGraphic):
             )
 
         world_object = pygfx.Line(
-            geometry=self._create_geometry(),
+            geometry=self._make_geo(),
             material=self._make_material(),
         )
 
         self._set_world_object(world_object)
 
-    def _material_kwargs(self) -> dict:
+    def _get_material_kwargs(self) -> dict:
         # pygfx line material kwargs assembled from the current feature state
-        kwargs = dict(
-            thickness=self.thickness,
-            thickness_space=self.size_space,
-            dash_pattern=parse_dash_pattern(self._dash_pattern.value),
-            aa=self.alpha_mode in ("blend", "weighted_blend"),
-            pick_write=True,
-            depth_compare="<=",
-        )
-
-        if isinstance(self._colors, UniformColor):
-            kwargs["color_mode"] = "uniform"
-            kwargs["color"] = self.colors
-        else:
-            kwargs["color_mode"] = "vertex"
-
+        kwargs = super()._get_material_kwargs()
+        kwargs["thickness"] = self.thickness
+        kwargs["thickness_space"] = self.size_space
+        kwargs["dash_pattern"] = parse_dash_pattern(self._dash_pattern.value)
         return kwargs
 
     def _make_material(self) -> pygfx.LineMaterial:
         # create the pygfx material, subclasses override to use a different line material
         material_cls = pygfx.LineThinMaterial if self._thin else pygfx.LineMaterial
-        return material_cls(**self._material_kwargs())
-
-    def _create_geometry(self) -> pygfx.Geometry:
-        if isinstance(self._colors, UniformColor):
-            return pygfx.Geometry(positions=self._data._fpl_buffer)
-        return pygfx.Geometry(
-            positions=self._data._fpl_buffer, colors=self._colors._fpl_buffer
-        )
+        return material_cls(**self._get_material_kwargs())
 
     @property
     def thickness(self) -> float:
