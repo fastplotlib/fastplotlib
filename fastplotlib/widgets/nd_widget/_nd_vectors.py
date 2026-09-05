@@ -29,51 +29,56 @@ class NDVectorsProcessor(NDProcessor):
         self,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        spatial_dims: tuple[str, str, str],  # must be in order, last dim must be 4
-        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
-        window_order: tuple[int, ...] = None,
+        spatial_dims: tuple[str, str, str],  # must be in order! [n_vectors, positions & directions, xy(z)]
+        window_funcs: dict[
+            str, tuple[WindowFuncCallable | None, int | float | None]
+        ] = None,
+        window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
-        slider_dim_transforms=None,
+        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
     ):
         """
-        ``NDProcessor`` subclass for n-dimensional vector data
+        ``NDProcessor`` subclass for n-dimensional vector data.
 
-        Produces (num_vectors, 2, [2 or 3]) slices for a ``VectorsGraphic``. The last two dimensions describe the
+        Produces ``[n_vectors, 2, 2 | 3]`` slices for a ``VectorsGraphic``. The last two dims describe the
         position/direction and the 2D/3D spatial coordinate, respectively.
 
         Parameters
         ----------
         data: ArrayProtocol
-            Shape [..., num_vectors, 2, 2] or [..., num_vectors, 2, 3]. data[..., 0, :] gives the positions, data[..., 1, :] gives directions
+            n-dimensional vector data, must have 3 or more dims. Index ``0`` along the positions/directions dim
+            gives the vector positions and index ``1`` gives the vector directions.
+
+            Ex: an electric field sampled over time, an array of shape ``[n_timepoints, n_vectors, 2, 2]`` with
+            ``dims`` of ``("time", "n_vectors", "pos_dir", "xy")`` and ``spatial_dims`` of
+            ``("n_vectors", "pos_dir", "xy")``.
 
         dims: Sequence[str]
             names for each dimension in ``data``. Dimensions not listed in
             ``spatial_dims`` are treated as slider dimensions and **must** appear as
-            keys in the parent ``NDWidget``'s ``ref_ranges``
-                Examples::
+            keys in the parent ``NDWidget``'s ``ref_ranges``.
 
-            A custom subclass's ``data`` object doesn't necessarily need to have these dims, but the ``get()`` method
-            must operate as if these dimensions exist and return an array that matches the spatial dimensions.
+            dims in the array do not need to be in the order that you want to display them, the data slice is
+            transposed into the order given by ``spatial_dims``.
 
+        spatial_dims : tuple[str, str, str]
+            The 3 spatial dims **in display order**: ``(n_vectors, positions & directions, xy(z))``. The
+            positions/directions dim must be of size 2 and the coordinate dim of size 2 or 3.
 
-            dims in the array do not need to be in the order that you want to display them, for example you can have a
-            weird array where the dims are interpreted as:
-            ``("col", "depth", "row", "time")``, and then specify spatial_dims as ``("row", "col")``.
+        slider_dim_transforms : dict[str, Callable[[Any], int] | ArrayLike], optional
+            Per-slider-dim mapping from reference-space values to local array indices, see
+            :class:`NDProcessor`.
 
-        spatial_dims : tuple[str, str] | tuple[str, str, str]
-            The dim names that indicate [n_vectors, positions & directions, xy(z)], **in that order**
+        window_funcs : dict[str, tuple[WindowFuncCallable | None, int | float | None]], optional
+            Per-slider-dim window functions applied around the current slider position, see
+            :class:`NDProcessor`.
 
-        slider_dim_transforms : dict, optional
-            See :class:`NDProcessor`.
+        window_order : tuple[str, ...], optional
+            Order in which the window functions are applied across dims. Only dims listed here have their window
+            function applied, see :class:`NDProcessor`.
 
-        window_funcs : dict, optional
-            See :class:`NDProcessor`.
-
-        window_order : tuple, optional
-            See :class:`NDProcessor`.
-
-        spatial_func : callable, optional
-            See :class:`NDProcessor`.
+        spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
+            A function applied to the spatial slice *after* the window funcs, right before rendering.
 
         See Also
         --------
@@ -116,10 +121,10 @@ class NDVectorsProcessor(NDProcessor):
         self._data = data
 
     @property
-    def spatial_dims(self) -> tuple[str, str]:
+    def spatial_dims(self) -> tuple[str, str, str]:
         """
-        Spatial dims, **in order**
-        Dimensions in order are num_vectors, position/direction, xy[z], so the shape is [num_vectors, 2, 2 or 3]
+        Spatial dims, **in display order**: ``(n_vectors, positions & directions, xy(z))``, so the data slice is
+        of shape ``[n_vectors, 2, 2 | 3]``
         """
         return self._spatial_dims
 
@@ -145,16 +150,21 @@ class NDVectorsProcessor(NDProcessor):
 
     async def get(self, indices: dict[str, Any]) -> ArrayProtocol:
         """
-        Get the data at the given index, process data through the window functions.
+        Get the data slice at the given indices, applying the window functions and the spatial func.
 
-        Note that we do not use __getitem__ here since the index is a tuple specifying a single integer
-        index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
+        Note that we do not use __getitem__ here since the indices are reference-space values keyed by slider dim
+        name, not array indices. Slices are not allowed, therefore __getitem__ is not suitable here.
 
         Parameters
         ----------
-        indices: tuple[int, ...]
-            Get the processed data at this index. Must provide a value for each dimension.
-            Example: get((100, 5))
+        indices: dict[str, Any]
+            Reference-space value for each slider dim, ex: ``{"time": 46.397}``. Must provide a value for every
+            slider dim.
+
+        Returns
+        -------
+        ArrayProtocol
+            data slice of shape ``[n_vectors, 2, 2 | 3]``, transposed into the ``spatial_dims`` display order
 
         """
         # this will be squeezed output, with dims in the order of self.dims
@@ -187,18 +197,20 @@ class NDVectors(NDGraphic):
         dims: Sequence[str],
         spatial_dims: tuple[
             str, str, str
-        ],  # must be in order!
-        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
-        window_order: tuple[int, ...] = None,
+        ],  # must be in order! [n_vectors, positions & directions, xy(z)]
+        window_funcs: dict[
+            str, tuple[WindowFuncCallable | None, int | float | None]
+        ] = None,
+        window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-        slider_dim_transforms=None,
+        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
         name: str = None,
         graphic_kwargs: dict = None,
     ):
         """
-        ``NDGraphic`` subclass for n-dimensional vector rendering
+        ``NDGraphic`` subclass for n-dimensional vector rendering.
 
-        Wraps an :class:`VectorGraphic`
+        Uses an :class:`NDVectorsProcessor` to produce the data slices and manages a :class:`.VectorsGraphic`.
 
         Every dimension that is *not* listed in ``spatial_dims`` becomes a slider
         dimension. Each slider dim must have a ``ReferenceRange`` defined in the
@@ -211,40 +223,50 @@ class NDVectors(NDGraphic):
             The shared reference index that delivers slider updates to this graphic.
 
         nd_subplot : NDWSubplot
-            parent ndsubplot the NDGraphic is in
+            parent NDWSubplot the NDGraphic is in
 
         data : array-like or None
-            Shape [num_vectors, 2, 2] or [num_vectors, 3, 2]. data[:, :, 0] gives the positions, data[:, :, 1] gives directions
-            n-dimension image data array
+            n-dimensional vector data, must have 3 or more dims. Index ``0`` along the positions/directions dim
+            gives the vector positions and index ``1`` gives the vector directions.
 
-        dims : sequence of hashable
-            Name for every dimension of ``data``, in order. Non-spatial dims must
-            match keys in ``ref_index``.
+            Ex: an electric field sampled over time, an array of shape ``[n_timepoints, n_vectors, 2, 2]`` with
+            ``dims`` of ``("time", "n_vectors", "pos_dir", "xy")`` and ``spatial_dims`` of
+            ``("n_vectors", "pos_dir", "xy")``.
 
-            ex: ``("time", "depth", "row", "col")`` — ``"time"`` and ``"depth"`` must
-            be present in ``ref_index``.
+            Pass ``None`` to create the ``NDVectors`` without a graphic and set the data later using
+            :attr:`data`.
 
-        spatial_dims : tuple[str, str] | tuple[str, str, str]
-            Spatial dimensions **in order**: These dims are either [n_vectors, 2, 2] or [n_vectors, 2, 3], indicating [n_vectors, positions & directions, xy(z)]
+        dims : Sequence[str]
+            Name for every dimension of ``data``, in order. Non-spatial dims must match keys in ``ref_index``.
 
-        window_funcs : dict, optional
-            See :class:`NDProcessor`.
+        spatial_dims : tuple[str, str, str]
+            The 3 spatial dims **in display order**: ``(n_vectors, positions & directions, xy(z))``. The
+            positions/directions dim must be of size 2 and the coordinate dim of size 2 or 3.
 
-        window_order : tuple, optional
-            See :class:`NDProcessor`.
+        window_funcs : dict[str, tuple[WindowFuncCallable | None, int | float | None]], optional
+            Per-slider-dim window functions applied around the current slider position, see
+            :class:`NDProcessor`.
 
-        spatial_func : callable, optional
-            See :class:`NDProcessor`.
+        window_order : tuple[str, ...], optional
+            Order in which the window functions are applied across dims. Only dims listed here have their window
+            function applied, see :class:`NDProcessor`.
 
-        slider_dim_transforms : dict, optional
-            See :class:`NDProcessor`.
+        spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
+            A function applied to the spatial slice *after* the window funcs, right before rendering.
+
+        slider_dim_transforms : dict[str, Callable[[Any], int] | ArrayLike], optional
+            Per-slider-dim mapping from reference-space values to local array indices, see
+            :class:`NDProcessor`.
 
         name : str, optional
-            Name for the underlying graphic.
+            Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
+
+        graphic_kwargs : dict, optional
+            passed to the underlying :class:`.VectorsGraphic`, ex: ``{"color": "cyan", "size": 0.5}``
 
         See Also
         --------
-        NDImageProcessor : The processor that backs this graphic.
+        NDVectorsProcessor : The processor that produces the data slices for this graphic.
 
         """
 
@@ -292,8 +314,8 @@ class NDVectors(NDGraphic):
         return self._graphic
 
     async def _create_graphic(self):
-        # Creates an ``ImageGraphic`` or ``ImageVolumeGraphic`` based on the number of spatial dims,
-        # adds it to the subplot, and resets the camera and histogram.
+        # Creates a ``VectorsGraphic`` from the current data slice, replacing any existing one, and adds it
+        # to the subplot.
 
         if self.processor.data is None:
             # no graphic if data is None, useful for initializing in null states when we want to set data later
@@ -321,8 +343,8 @@ class NDVectors(NDGraphic):
     @property
     def spatial_dims(self) -> tuple[str, str, str]:
         """
-        get or set the spatial dims **in order**.
-        Spatial dim shape here is [num_vectors, position/dimension (2), xy[z] (2 or 3)]
+        Get or set the spatial dims **in display order**: ``(n_vectors, positions & directions, xy(z))``, so the
+        data slice is of shape ``[n_vectors, 2, 2 | 3]``. Setting them recreates the graphic.
         """
         return self.processor.spatial_dims
 
@@ -335,7 +357,7 @@ class NDVectors(NDGraphic):
 
     @property
     def indices(self) -> dict[str, Any]:
-        """get or set the indices, managed by the ReferenceIndex, users usually don't want to set this manually"""
+        """the current index of each slider dim in reference-space units, from the ``ReferenceIndex``"""
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
     async def _set_indices_(self, indices: dict[str, Any] = None):

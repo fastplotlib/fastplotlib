@@ -28,9 +28,9 @@ if TYPE_CHECKING:
 
 # types for the other features
 FeatureCallable = Callable[[np.ndarray, slice], np.ndarray]
-ColorsType = np.ndarray | FeatureCallable | None
-MarkersType = Sequence[str] | np.ndarray | FeatureCallable | None
-SizesType = Sequence[float] | np.ndarray | FeatureCallable | None
+ColorsType = str | Sequence[str] | np.ndarray | FeatureCallable | None
+MarkersType = str | Sequence[str] | np.ndarray | FeatureCallable | None
+SizesType = float | Sequence[float] | np.ndarray | FeatureCallable | None
 
 
 class NDPositionsProcessor(NDProcessor):
@@ -51,25 +51,71 @@ class NDPositionsProcessor(NDProcessor):
         """
         ``NDProcessor`` subclass for n-dimensional positional and timeseries data.
 
+        Produces ``[n_graphics, p, <value dim>]`` slices for a ``LineCollection``, ``LineStack``,
+        ``ScatterCollection``, or ``ScatterStack``, where ``p`` is the datapoints dim.
 
-        The *datapoints* dimension is
-        simultaneously a slider dim and a spatial dim and is handled by a dedicated
-        :attr:`datapoints_window_func` rather than the general ``window_funcs``
-        mechanism.
-
+        The ``p`` dim is simultaneously a slider dim and a spatial dim. Rather than the general ``window_funcs``
+        mechanism, it is windowed by :attr:`display_window`, which selects the datapoints that are rendered, and
+        by :attr:`datapoints_window_func`, which aggregates over them.
 
         Parameters
         ----------
-        data
-        dims
-        spatial_dims
-        slider_dim_transforms
-        display_window
+        data: ArrayProtocol
+            n-dimensional positional data, must have 3 or more dims.
+
+        dims: Sequence[str]
+            names for each dimension in ``data``. Dimensions not listed in ``spatial_dims`` are treated as slider
+            dimensions and **must** appear as keys in the parent ``NDWidget``'s ``ref_ranges``.
+                Examples::
+                 ``("trial", "line", "time", "xy")``
+                 ``("keypoints", "time", "xyz")``
+
+            dims in the array do not need to be in the order that you want to display them, the data slice is
+            transposed into the order given by ``spatial_dims``.
+
+        spatial_dims : tuple[str, str, str]
+            The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``, i.e. the number of lines
+            or scatters in the collection, the number of datapoints ``p`` in each of them, and the value dim
+            which holds the xy or xyz coordinate and must be of size 2 or 3.
+
+        slider_dim_transforms : dict[str, Callable[[Any], int] | ArrayLike], optional
+            See :class:`NDProcessor`. The transform for the ``p`` dim is also used to map ``display_window`` and
+            the ``datapoints_window_func`` window size from reference units to array indices.
+
+        display_window: int, float or None, default 100
+            Size of the window of the ``p`` dim to render, in the reference units of that dim, centered on its
+            current index. Use ``None`` to render every datapoint, or ``0`` to render only the datapoint at the
+            current index.
+
         max_display_datapoints: int, default 1_000
-            this is approximate since floor division is used to determine the step size of the current display window slice
-        datapoints_window_func:
-            Important note: if used, display_window is approximate and not exact due to padding from the window size
+            Maximum number of datapoints to render per graphic. The step size of the display window slice is set
+            from this using floor division.
+
+        datapoints_window_func: tuple[Callable, str, int | float], optional
+            Window function applied along the ``p`` dim after the display window has been taken, as
+            ``(func, apply_dims, window_size)`` where:
+
+            * *func* must accept an ``axis: int`` kwarg (ex: ``np.mean``, ``np.max``). It is given a sliding
+              window view of the data and is reduced along the window axis.
+
+            * *apply_dims* names the coordinates of the value dim to apply it to, one of ``"all", "x", "y",
+              "z", "xy", "xz", "yz", "xyz"``. Coordinates that are not named are passed through unchanged.
+
+            * *window_size* is in the reference units of the ``p`` dim. It is mapped to array indices, clamped to
+              a minimum of 3, and rounded up to an odd size.
+
+            Important note: if used, ``display_window`` is approximate and not exact due to padding from the
+            window size. The window function is skipped when ``display_window`` is ``0``, or when the display
+            window spans more than ``2 * max_display_datapoints`` array indices, which would be too expensive to
+            compute.
+
         kwargs
+            passed to :class:`NDProcessor`, i.e. ``window_funcs``, ``window_order`` and ``spatial_func``.
+
+        See Also
+        --------
+            NDProcessor : Base class with full parameter documentation.
+            NDPositions : The ``NDGraphic`` that uses this processor by default.
         """
         self._display_window = display_window
         self._max_display_datapoints = max_display_datapoints
@@ -113,13 +159,14 @@ class NDPositionsProcessor(NDProcessor):
         self._spatial_dims = tuple(sdims)
 
     @property
-    def slider_dims(self) -> set[Hashable]:
+    def slider_dims(self) -> tuple[str, ...]:
+        """slider dim names, the non-spatial dims plus the ``p`` dim"""
         # append `p` dim to slider dims
         return tuple([*super().slider_dims, self.spatial_dims[1]])
 
     @property
     def display_window(self) -> int | float | None:
-        """display window in the reference units for the n_datapoints dim"""
+        """get or set the display window, in the reference units of the ``p`` dim"""
         return self._display_window
 
     @display_window.setter
@@ -134,6 +181,10 @@ class NDPositionsProcessor(NDProcessor):
 
     @property
     def max_display_datapoints(self) -> int:
+        """
+        Get or set the maximum number of datapoints to render per graphic. The step size of the display window
+        slice is set from this using floor division.
+        """
         return self._max_display_datapoints
 
     @max_display_datapoints.setter
@@ -149,9 +200,12 @@ class NDPositionsProcessor(NDProcessor):
     @property
     def datapoints_window_func(self) -> tuple[Callable, str, int | float] | None:
         """
-        Callable, str indicating which dims to apply window function along, window_size in reference space:
-            'all', 'x', 'y', 'z', 'xyz', 'xy', 'xz', 'yz'
-        '"""
+        Get or set the window function applied along the ``p`` dim, as ``(func, apply_dims, window_size)``.
+
+        ``apply_dims`` names the coordinates of the value dim that the window function is applied to, one of
+        ``"all", "x", "y", "z", "xy", "xz", "yz", "xyz"``. ``window_size`` is in the reference units of the
+        ``p`` dim.
+        """
         return self._datapoints_window_func
 
     @datapoints_window_func.setter
@@ -370,10 +424,15 @@ class NDPositions(NDGraphic):
             | ScatterStack
         ],
         processor: type[NDPositionsProcessor] = NDPositionsProcessor,
-        display_window: int = 10,
-        window_funcs: tuple[WindowFuncCallable | None] | None = None,
-        slider_dim_transforms: tuple[Callable[[Any], int] | None] | None = None,
+        display_window: int | float | None = 10,
+        window_funcs: dict[
+            str, tuple[WindowFuncCallable | None, int | float | None]
+        ] = None,
+        window_order: tuple[str, ...] = None,
+        spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
+        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
         max_display_datapoints: int = 1_000,
+        datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
         cmap: str | Sequence[str] = None,
         cmap_transform: np.ndarray | FeatureCallable = None,
@@ -386,34 +445,155 @@ class NDPositions(NDGraphic):
         processor_kwargs: dict = None,
     ):
         """
-        Wraps an :class:`NDPositionsProcessor` and supports four interchangeable
-        graphical representations: ``LineStack``, ``LineCollection``, ``ScatterStack``,
-        and ``ScatterCollection``.
+        ``NDGraphic`` subclass for n-dimensional positional data.
+
+        Uses an :class:`NDPositionsProcessor` to produce the data slices and manages one of four interchangeable
+        graphical representations: ``LineStack``, ``LineCollection``, ``ScatterStack``, and ``ScatterCollection``.
+        The representation can be changed at runtime by setting :attr:`graphic_type`.
+
+        Every dimension that is *not* listed in ``spatial_dims`` becomes a slider dimension. Each slider dim must
+        have a ``ReferenceRange`` defined in the ``ReferenceIndex`` of the parent ``NDWidget``. The datapoints
+        dim, ``p``, is both a spatial dim and a slider dim, it is windowed by ``display_window`` and
+        ``datapoints_window_func`` rather than by ``window_funcs``.
 
         Parameters
         ----------
-        ref_index
-        nd_subplot
-        data
-        dims
-        spatial_dims
+        ref_index : ReferenceIndex
+            The shared reference index that delivers slider updates to this graphic.
+
+        nd_subplot : NDWSubplot
+            parent NDWSubplot the NDGraphic is in
+
+        data : array-like or None
+            n-dimensional positional data.
+
+            Ex: an array of shape ``[n_trials, n_lines, n_timepoints, 2]`` with ``dims`` of
+            ``("trial", "line", "time", "xy")`` and ``spatial_dims`` of ``("line", "time", "xy")``.
+
+            Pass ``None`` to create the ``NDPositions`` without a graphic and set the data later using
+            :attr:`data`.
+
+        dims : Sequence[str]
+            Name for every dimension of ``data``, in order. Non-spatial dims must match keys in ``ref_index``.
+
+        spatial_dims : tuple[str, str, str]
+            The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``, i.e. the number of lines
+            or scatters in the collection, the number of datapoints ``p`` in each of them, and the value dim
+            which holds the xy or xyz coordinate and must be of size 2 or 3. The dims do not need to be in this
+            order in the array, the data slice is transposed into display order.
+
         args
-        graphic_type
-        processor
-        display_window
-        window_funcs
-        slider_dim_transforms
-        max_display_datapoints
-        colors
-        cmap
-        cmap_transform
-        cmap_range
-        thickness
-        sizes
-        markers
-        name
-        graphic_kwargs
-        processor_kwargs
+            extra positional arguments passed to the ``processor`` constructor.
+
+        graphic_type : type[LineCollection | LineStack | ScatterCollection | ScatterStack]
+            The graphical representation used to display the data slice.
+
+        processor : type[NDPositionsProcessor], default ``NDPositionsProcessor``
+            ``NDPositionsProcessor`` subclass that manages the data and produces the data slices.
+
+        display_window : int, float or None, default 10
+            Size of the window of the ``p`` dim to render, in the reference units of that dim, centered on its
+            current index. Use ``None`` to render every datapoint, or ``0`` to render only the datapoint at the
+            current index. This is what makes out-of-core rendering possible, i.e. rendering a window of a
+            dataset that is larger than GPU VRAM.
+
+        window_funcs : dict[str, tuple[WindowFuncCallable | None, int | float | None]], optional
+            Per-slider-dim window functions applied around the current slider position, see
+            :class:`NDProcessor`. Not used for the ``p`` dim, see ``datapoints_window_func``.
+
+        window_order : tuple[str, ...], optional
+            Order in which the window functions are applied across dims. Only dims listed here have their window
+            function applied, see :class:`NDProcessor`.
+
+        spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
+            A function applied to the spatial slice *after* the window funcs, right before rendering.
+
+        slider_dim_transforms : dict[str, Callable[[Any], int] | ArrayLike], optional
+            Per-slider-dim mapping from reference-space values to local array indices, see
+            :class:`NDProcessor`.
+
+        max_display_datapoints : int, default 1_000
+            Maximum number of datapoints to render per graphic. The step size of the display window slice is set
+            from this using floor division.
+
+        datapoints_window_func : tuple[Callable, str, int | float], optional
+            Window function applied along the ``p`` dim, as ``(func, apply_dims, window_size)``, see
+            :class:`NDPositionsProcessor`.
+
+        colors : str | Sequence[str] | np.ndarray | FeatureCallable, optional
+            Colors of the graphics. Mutually exclusive with ``cmap``, setting one clears the other.
+
+            * static, a single color for every graphic, ex: ``"cyan"`` or an RGBA sequence of 4 floats
+            * static, one color per graphic, ``[n_graphics]`` of str or ``[n_graphics, 4]`` RGBA
+            * windowed, one color per datapoint, ``[n_graphics, p, 4]`` RGBA
+            * windowed, a ``FeatureCallable``
+
+        cmap : str | Sequence[str], optional
+            Colormap applied to the graphics, always static. A single name for every graphic, or an iterable of
+            ``[n_graphics]`` names for a colormap per graphic. Mutually exclusive with ``colors``.
+
+        cmap_transform : np.ndarray | FeatureCallable, optional
+            Values that the colormap colors are mapped from.
+
+            * static, one value per graphic, ``[n_graphics]``, so each graphic gets a single color
+            * windowed, one value per datapoint, ``[n_graphics, p]``
+            * windowed, a ``FeatureCallable``
+
+        cmap_range : (float, float) | np.ndarray, optional
+            The (min, max) of ``cmap_transform`` mapped onto the colormap, or ``[n_graphics, 2]`` for a range per
+            graphic. A windowed array ``cmap_transform`` defaults to its own (min, max) over the full ``p`` dim,
+            so the display window keeps its position within the colormap. A ``FeatureCallable`` transform
+            requires an explicit range, its full range is not knowable without evaluating it everywhere.
+
+        thickness : float | Sequence[float], optional
+            Thickness of the lines, always static. A single value for every graphic, or ``[n_graphics]`` values
+            for a thickness per graphic.
+
+        sizes : float | Sequence[float] | np.ndarray | FeatureCallable, optional
+            Size of the scatter points.
+
+            * static, a single size for every graphic, or ``[n_graphics]`` sizes for one size per graphic
+            * windowed, one size per datapoint, ``[n_graphics, p]``
+            * windowed, a ``FeatureCallable``
+
+        markers : str | Sequence[str] | np.ndarray | FeatureCallable, optional
+            Marker shape of the scatter points.
+
+            * static, a single marker for every graphic, or ``[n_graphics]`` markers for one per graphic
+            * windowed, one marker per datapoint, ``[n_graphics, p]``
+            * windowed, a ``FeatureCallable``
+
+        name : str, optional
+            Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
+
+        graphic_kwargs : dict, optional
+            passed to the ``graphic_type`` constructor.
+
+        processor_kwargs : dict, optional
+            passed to the ``processor`` constructor.
+
+        Notes
+        -----
+        Each of the other graphic features is either *windowed* or *static*, decided from the value itself:
+
+        * **windowed**: a ``FeatureCallable``, or an array whose axis 1 spans the ``p`` dim. It is re-sliced with
+          the same display window slice as the data on every update, so the feature carries a value per
+          displayed datapoint. An array **must** span the **full** ``p`` dim of the data, i.e.
+          ``[n_graphics, p, <value dim>]``, since it is indexed with an index into the full ``p`` dim. A
+          ``FeatureCallable`` is passed the data slice and that display window slice, and returns the feature
+          values for the displayed datapoints.
+
+        * **static**: anything else. It is set once on the collection, ex: a single value for every graphic,
+          ``[n_graphics]`` values for one per graphic, or an iterator of per-graphic values such as
+          ``itertools.cycle(["jet", "viridis"])``.
+
+        A feature the graphic type does not have is ignored, ex: ``thickness`` for scatters, ``markers`` for
+        lines.
+
+        See Also
+        --------
+        NDPositionsProcessor : The processor that produces the data slices for this graphic.
+
         """
 
         super().__init__(nd_subplot, name)
@@ -428,8 +608,11 @@ class NDPositions(NDGraphic):
             processor=processor,
             display_window=display_window,
             window_funcs=window_funcs,
+            window_order=window_order,
+            spatial_func=spatial_func,
             slider_dim_transforms=slider_dim_transforms,
             max_display_datapoints=max_display_datapoints,
+            datapoints_window_func=datapoints_window_func,
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
@@ -457,10 +640,15 @@ class NDPositions(NDGraphic):
             | ScatterStack
         ],
         processor: type[NDPositionsProcessor] = NDPositionsProcessor,
-        display_window: int = 10,
-        window_funcs: tuple[WindowFuncCallable | None] | None = None,
-        slider_dim_transforms: tuple[Callable[[Any], int] | None] | None = None,
+        display_window: int | float | None = 10,
+        window_funcs: dict[
+            str, tuple[WindowFuncCallable | None, int | float | None]
+        ] = None,
+        window_order: tuple[str, ...] = None,
+        spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
+        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
         max_display_datapoints: int = 1_000,
+        datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
         cmap: str | Sequence[str] = None,
         cmap_transform: np.ndarray | FeatureCallable = None,
@@ -494,7 +682,10 @@ class NDPositions(NDGraphic):
             *args,
             display_window=display_window,
             max_display_datapoints=max_display_datapoints,
+            datapoints_window_func=datapoints_window_func,
             window_funcs=window_funcs,
+            window_order=window_order,
+            spatial_func=spatial_func,
             slider_dim_transforms=slider_dim_transforms,
             **processor_kwargs,
         )
@@ -589,6 +780,7 @@ class NDPositions(NDGraphic):
 
     @property
     def processor(self) -> NDPositionsProcessor:
+        """NDProcessor that manages the data and produces data slices to display"""
         return self._processor
 
     @property
@@ -601,6 +793,7 @@ class NDPositions(NDGraphic):
         | ScatterStack
         | None
     ):
+        """Underlying Graphic object used to display the current data slice, ``None`` if the data is ``None``"""
         return self._graphic
 
     @property
@@ -612,6 +805,10 @@ class NDPositions(NDGraphic):
         | ScatterCollection
         | ScatterStack
     ]:
+        """
+        Get or set the graphical representation used to display the data slice. Setting it deletes the current
+        graphic and creates one of the given type using the current slice.
+        """
         return self._graphic_type
 
     @graphic_type.setter
@@ -625,6 +822,10 @@ class NDPositions(NDGraphic):
 
     @property
     def spatial_dims(self) -> tuple[str, str, str]:
+        """
+        Get or set the spatial dims **in display order**: ``(n_graphics, p, <value dim>)``. Setting them
+        re-renders the current data slice.
+        """
         return self.processor.spatial_dims
 
     @spatial_dims.setter
@@ -635,6 +836,7 @@ class NDPositions(NDGraphic):
 
     @property
     def indices(self) -> dict[Hashable, Any]:
+        """the current index of each slider dim in reference-space units, from the ``ReferenceIndex``"""
         return {d: self._ref_index[d] for d in self.processor.slider_dims}
 
     async def _get_data_slice(self, indices: dict[str, Any]) -> dict[str, Any]:
@@ -719,7 +921,10 @@ class NDPositions(NDGraphic):
 
     @property
     def display_window(self) -> int | float | None:
-        """display window in the reference units for the n_datapoints dim"""
+        """
+        Get or set the display window, in the reference units of the ``p`` dim. Setting it re-renders the
+        current data slice.
+        """
         return self.processor.display_window
 
     @display_window.setter
@@ -731,9 +936,12 @@ class NDPositions(NDGraphic):
     @property
     def datapoints_window_func(self) -> tuple[Callable, str, int | float] | None:
         """
-        Callable, str indicating which dims to apply window function along, window_size in reference space:
-            'all', 'x', 'y', 'z', 'xyz', 'xy', 'xz', 'yz'
-        '"""
+        Get or set the window function applied along the ``p`` dim, as ``(func, apply_dims, window_size)``.
+
+        ``apply_dims`` names the coordinates of the value dim that the window function is applied to, one of
+        ``"all", "x", "y", "z", "xy", "xz", "yz", "xyz"``. ``window_size`` is in the reference units of the
+        ``p`` dim.
+        """
         return self.processor.datapoints_window_func
 
     @datapoints_window_func.setter

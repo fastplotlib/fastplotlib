@@ -53,18 +53,6 @@ class NDImageProcessor(NDProcessor):
         data: ArrayProtocol
             array-like data, must have 2 or more dimensions
 
-                dims: Sequence[str]
-            names for each dimension in ``data``. Dimensions not listed in
-            ``spatial_dims`` are treated as slider dimensions and **must** appear as
-            keys in the parent ``NDWidget``'s ``ref_ranges``
-                Examples::
-                 ``("time", "depth", "row", "col")``
-                 ``("channels", "time", "xy")``
-                 ``("keypoints", "time", "xyz")``
-
-            A custom subclass's ``data`` object doesn't necessarily need to have these dims, but the ``get()`` method
-            must operate as if these dimensions exist and return an array that matches the spatial dimensions.
-
         dims: Sequence[str]
             names for each dimension in ``data``. Dimensions not listed in
             ``spatial_dims`` are treated as slider dimensions and **must** appear as
@@ -79,14 +67,18 @@ class NDImageProcessor(NDProcessor):
             ``("col", "depth", "row", "time")``, and then specify spatial_dims as ``("row", "col")``.
 
         spatial_dims : tuple[str, str] | tuple[str, str, str]
-            The 2 or 3 spatial dimensions **in display order**: ``(rows, cols)`` or ``(z, rows, cols)``.
-            This also determines whether an ``ImageGraphic`` or ``ImageVolumeGraphic`` is used for rendering.
-            The ordering determines how the Image/Volume is rendered. For example, if
-            you specify ``spatial_dims = ("rows", "cols")`` and then change it to ``("cols", "rows")``, it will display
-            the transpose.
+            The 2 or 3 spatial dims **in display order**, which also determines the graphic used for rendering:
+
+            * ``(rows, cols)``, a 2D grayscale ``ImageGraphic``
+            * ``(rows, cols, rgb_dim)``, a 2D RGB(A) ``ImageGraphic``
+            * ``(z, rows, cols)``, a 3D ``ImageVolumeGraphic``
+
+            The ordering determines how the image or volume is rendered. For example, if you specify
+            ``spatial_dims = ("rows", "cols")`` and then change it to ``("cols", "rows")``, it will display the
+            transpose.
 
         rgb_dim : str, optional
-            Name of an RGB(A) dimension, if present.
+            Name of the RGB(A) dim, if present. It must be listed in ``spatial_dims`` and be of size 3 or 4.
 
         compute_histogram: bool, default True
             Compute a histogram of the data, disable if random-access of data is not blazing-fast (ex: data that uses
@@ -301,24 +293,27 @@ class NDImage(NDGraphic):
             tuple[str, str] | tuple[str, str, str]
         ),  # must be in order! [rows, cols] | [z, rows, cols]
         rgb_dim: str | None = None,
-        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
-        window_order: tuple[int, ...] = None,
+        window_funcs: dict[
+            str, tuple[WindowFuncCallable | None, int | float | None]
+        ] = None,
+        window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
-        slider_dim_transforms=None,
+        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
         processor_type: type[NDImageProcessor] = NDImageProcessor,
         colorspace: Literal[
             "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
         ] = "srgb",
         colorrange: Literal["full", "limited"] = "full",
         name: str = None,
+        graphic_kwargs: dict = None,
     ):
         """
         ``NDGraphic`` subclass for n-dimensional image rendering.
 
-        Wraps an :class:`NDImageProcessor` and manages either an ``ImageGraphic`` or``ImageVolumeGraphic``.
-        swaps automatically when :attr:`spatial_dims` is reassigned at runtime. Also
-        owns an ``ImguiColorbar`` for interactive vmin, vmax adjustment.
+        Uses an :class:`NDImageProcessor` to produce the data slices and manages an ``ImageGraphic``,
+        ``ImageYUVGraphic`` or ``ImageVolumeGraphic``, swapping between them when :attr:`spatial_dims` is
+        reassigned at runtime. It also owns an ``ImguiColorbar`` for interactive vmin, vmax adjustment.
 
         Every dimension that is *not* listed in ``spatial_dims`` becomes a slider
         dimension. Each slider dim must have a ``ReferenceRange`` defined in the
@@ -334,9 +329,10 @@ class NDImage(NDGraphic):
             parent NDWSubplot the NDGraphic is in
 
         data : array-like or None
-            n-dimension image data array
+            n-dimensional image data, must have 2 or more dims. Pass ``None`` to create the ``NDImage`` without
+            a graphic and set the data later using :attr:`data`.
 
-        dims : sequence of hashable
+        dims : Sequence[str]
             Name for every dimension of ``data``, in order. Non-spatial dims must
             match keys in ``ref_index``.
 
@@ -344,12 +340,16 @@ class NDImage(NDGraphic):
             be present in ``ref_index``.
 
         spatial_dims : tuple[str, str] | tuple[str, str, str]
-            Spatial dimensions **in order**: ``(rows, cols)`` for 2-D images or
-            ``(z, rows, cols)`` for volumes. Controls whether an ``ImageGraphic`` or
-            ``ImageVolumeGraphic`` is used.
+            The 2 or 3 spatial dims **in display order**, which also determines the graphic used for rendering:
+
+            * ``(rows, cols)``, a 2D grayscale ``ImageGraphic``
+            * ``(rows, cols, rgb_dim)``, a 2D RGB(A) ``ImageGraphic``
+            * ``(z, rows, cols)``, a 3D ``ImageVolumeGraphic``
+
+            Reassigning this at runtime swaps the graphic if the number of non-RGB(A) spatial dims changes.
 
         rgb_dim : str, optional
-            Name of the RGB or channel dimension, if present.
+            Name of the RGB(A) dim, if present. It must be listed in ``spatial_dims`` and be of size 3 or 4.
 
         window_funcs : dict, optional
             See :class:`NDProcessor`.
@@ -361,13 +361,30 @@ class NDImage(NDGraphic):
             See :class:`NDProcessor`.
 
         compute_histogram : bool, default ``True``
-            Whether to initialize the ``ImguiColorbar``.
+            Estimate a histogram of the data and display an ``ImguiColorbar`` on the right edge of the subplot,
+            which is used to interactively set vmin, vmax. Disable if random access of the data is not
+            blazing-fast (ex: data that uses video codecs), or if a histogram is not useful for this data.
 
         slider_dim_transforms : dict, optional
             See :class:`NDProcessor`.
 
+        processor_type : type[NDImageProcessor], default ``NDImageProcessor``
+            ``NDImageProcessor`` subclass that manages the data and produces the data slices, ex:
+            :class:`VideoProcessor`.
+
+        colorspace : "srgb" | "tex-srgb" | "physical" | "yuv420p" | "yuv444p", default "srgb"
+            Colorspace in which to interpret the data. The RGB colorspaces are rendered using an ``ImageGraphic``
+            or ``ImageVolumeGraphic``, see :class:`.ImageGraphic` for their meaning. The YUV colorspaces are
+            rendered using an ``ImageYUVGraphic``, see :class:`.ImageYUVGraphic`.
+
+        colorrange : "full" | "limited", default "full"
+            Used only for the YUV colorspaces, see :class:`.ImageYUVGraphic`. Most videos use "limited".
+
         name : str, optional
-            Name for the underlying graphic.
+            Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
+
+        graphic_kwargs : dict, optional
+            passed to the underlying image graphic, ex: ``{"cmap": "viridis", "interpolation": "linear"}``
 
         See Also
         --------
@@ -400,6 +417,11 @@ class NDImage(NDGraphic):
 
         self._colorspace = colorspace
         self._colorrange = colorrange
+
+        if graphic_kwargs is None:
+            self._graphic_kwargs = dict()
+        else:
+            self._graphic_kwargs = graphic_kwargs
 
         self._graphic: ImageGraphic | ImageYUVGraphic | None = None
         self._histogram_widget: ImguiColorbar | None = None
@@ -454,6 +476,7 @@ class NDImage(NDGraphic):
             data_slice,
             # cpu_buffer=False,  # faster, we usually don't need a cpu buffer for NDWidget use cases
             **kwargs,
+            **self._graphic_kwargs,
         )
 
         old_graphic = self._graphic

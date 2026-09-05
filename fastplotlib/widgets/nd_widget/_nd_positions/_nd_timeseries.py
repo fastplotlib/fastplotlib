@@ -4,6 +4,7 @@ from collections.abc import Callable, Sequence
 from typing import Literal, Any, Type, TYPE_CHECKING
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 from ....graphics import (
     ImageGraphic,
@@ -14,7 +15,7 @@ from ....graphics import (
 )
 from ....graphics.utils import pause_events
 from ....graphics.selectors import LinearSelector
-from ....utils import CudaArrayProtocol, cuda_to_numpy
+from ....utils import ArrayProtocol, CudaArrayProtocol, cuda_to_numpy
 from .._base import NDGraphic, WindowFuncCallable, block_indices_ctx
 from .._index import ReferenceIndex
 from .._async import run_sync
@@ -48,10 +49,15 @@ class NDTimeseries(NDPositions):
             | ImageGraphic
         ] = LineStack,
         processor: type[NDPositionsProcessor] = NDPositionsProcessor,
-        display_window: int = 10,
-        window_funcs: tuple[WindowFuncCallable | None] | None = None,
-        slider_dim_transforms: tuple[Callable[[Any], int] | None] | None = None,
+        display_window: int | float | None = 10,
+        window_funcs: dict[
+            str, tuple[WindowFuncCallable | None, int | float | None]
+        ] = None,
+        window_order: tuple[str, ...] = None,
+        spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
+        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
         max_display_datapoints: int = 1_000,
+        datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         linear_selector: bool = False,
         x_range_mode: Literal["fixed", "auto"] | None = None,
         colors: ColorsType = None,
@@ -66,15 +72,170 @@ class NDTimeseries(NDPositions):
         processor_kwargs: dict = None,
     ):
         """
-        ``NDPositions`` for timeseries data, where the datapoints dim is a time-like x-axis.
+        ``NDPositions`` subclass for timeseries data, where the ``p`` dim is a time-like x-axis.
 
-        Supports the same ``LineStack`` / ``LineCollection`` / ``ScatterStack`` /
-        ``ScatterCollection`` representations plus a heatmap (``ImageGraphic``) view, and
-        additionally manages a linear selector and couples the camera x-range to the current
-        datapoints position via :attr:`x_range_mode`.
+        Supports the same ``LineStack``, ``LineCollection``, ``ScatterStack`` and ``ScatterCollection``
+        representations plus a heatmap (``ImageGraphic``) view. It also manages a linear selector that tracks the
+        current ``p`` index, and couples the camera x-range to it through :attr:`x_range_mode`.
 
-        Parameters are the same as :class:`NDPositions`, plus ``linear_selector`` and
-        ``x_range_mode``.
+        Parameters
+        ----------
+        ref_index : ReferenceIndex
+            The shared reference index that delivers slider updates to this graphic.
+
+        nd_subplot : NDWSubplot
+            parent NDWSubplot the NDGraphic is in
+
+        data : array-like or None
+            n-dimensional timeseries data. The value dim holds the (x, y) of each datapoint, where x is the
+            time-like coordinate.
+
+            Ex: an array of shape ``[n_trials, n_traces, n_timepoints, 2]`` with ``dims`` of
+            ``("trial", "trace", "time", "xy")`` and ``spatial_dims`` of ``("trace", "time", "xy")``.
+
+            Pass ``None`` to create the ``NDTimeseries`` without a graphic and set the data later using
+            :attr:`data`.
+
+        dims : Sequence[str]
+            Name for every dimension of ``data``, in order. Non-spatial dims must match keys in ``ref_index``.
+
+        spatial_dims : tuple[str, str, str]
+            The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``, i.e. the number of traces
+            in the collection, the number of datapoints ``p`` in each of them, and the value dim which holds the
+            xy or xyz coordinate. A heatmap requires a value dim of size exactly 2.
+
+        args
+            extra positional arguments passed to the ``processor`` constructor.
+
+        graphic_type : type[LineCollection | LineStack | ScatterCollection | ScatterStack | ImageGraphic], default ``LineStack``
+            The graphical representation used to display the data slice. ``ImageGraphic`` renders the traces as a
+            heatmap, one row per trace, where the color represents the y coordinate. The x coordinates are
+            applied as the offset and scale of the image, and the y values are interpolated onto a uniform x grid
+            if the x sampling is not uniform.
+
+        processor : type[NDPositionsProcessor], default ``NDPositionsProcessor``
+            ``NDPositionsProcessor`` subclass that manages the data and produces the data slices.
+
+        display_window : int, float or None, default 10
+            Size of the window of the ``p`` dim to render, in the reference units of that dim, centered on its
+            current index. Use ``None`` to render every datapoint, which also forces ``x_range_mode`` to
+            ``None``. This is what makes out-of-core rendering possible, i.e. rendering a window of a dataset
+            that is larger than GPU VRAM.
+
+        window_funcs : dict[str, tuple[WindowFuncCallable | None, int | float | None]], optional
+            Per-slider-dim window functions applied around the current slider position, see
+            :class:`NDProcessor`. Not used for the ``p`` dim, see ``datapoints_window_func``.
+
+        window_order : tuple[str, ...], optional
+            Order in which the window functions are applied across dims. Only dims listed here have their window
+            function applied, see :class:`NDProcessor`.
+
+        spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
+            A function applied to the spatial slice *after* the window funcs, right before rendering.
+
+        slider_dim_transforms : dict[str, Callable[[Any], int] | ArrayLike], optional
+            Per-slider-dim mapping from reference-space values to local array indices, see
+            :class:`NDProcessor`. The transform for the ``p`` dim is typically the array of x values, ex: a
+            timestamps array, so the slider is in seconds rather than sample indices.
+
+        max_display_datapoints : int, default 1_000
+            Maximum number of datapoints to render per graphic. The step size of the display window slice is set
+            from this using floor division.
+
+        datapoints_window_func : tuple[Callable, str, int | float], optional
+            Window function applied along the ``p`` dim, as ``(func, apply_dims, window_size)``, see
+            :class:`NDPositionsProcessor`.
+
+        linear_selector : bool, default ``False``
+            Add a ``LinearSelector`` that marks the current index of the ``p`` dim. Dragging it sets that index
+            in the ``ReferenceIndex``, so it drives every other graphic that uses this dim. Only one is created
+            per subplot, if one is already present this is ignored.
+
+        x_range_mode : "fixed" | "auto" | None, default ``None``
+            How the camera x-range is coupled to the ``p`` dim.
+
+            * ``None``: the camera is left alone.
+            * ``"fixed"``: the x-range is set from ``display_window``, centered on the current ``p`` index, on
+              every update.
+            * ``"auto"``: as ``"fixed"``, and the camera x-range is also polled on every render. Panning or
+              zooming then sets ``display_window`` to the new width and the ``p`` index to the new center, with
+              a lower bound of 3 datapoints on the width.
+
+        colors : str | Sequence[str] | np.ndarray | FeatureCallable, optional
+            Colors of the graphics. Mutually exclusive with ``cmap``, setting one clears the other.
+
+            * static, a single color for every graphic, ex: ``"cyan"`` or an RGBA sequence of 4 floats
+            * static, one color per graphic, ``[n_graphics]`` of str or ``[n_graphics, 4]`` RGBA
+            * windowed, one color per datapoint, ``[n_graphics, p, 4]`` RGBA
+            * windowed, a ``FeatureCallable``
+
+        cmap : str | Sequence[str], optional
+            Colormap applied to the graphics, always static. A single name for every graphic, or an iterable of
+            ``[n_graphics]`` names for a colormap per graphic. Mutually exclusive with ``colors``. It is the only
+            feature that is carried over to the heatmap representation.
+
+        cmap_transform : np.ndarray | FeatureCallable, optional
+            Values that the colormap colors are mapped from.
+
+            * static, one value per graphic, ``[n_graphics]``, so each graphic gets a single color
+            * windowed, one value per datapoint, ``[n_graphics, p]``
+            * windowed, a ``FeatureCallable``
+
+        cmap_range : (float, float) | np.ndarray, optional
+            The (min, max) of ``cmap_transform`` mapped onto the colormap, or ``[n_graphics, 2]`` for a range per
+            graphic. A windowed array ``cmap_transform`` defaults to its own (min, max) over the full ``p`` dim,
+            so the display window keeps its position within the colormap. A ``FeatureCallable`` transform
+            requires an explicit range, its full range is not knowable without evaluating it everywhere.
+
+        thickness : float | Sequence[float], optional
+            Thickness of the lines, always static. A single value for every graphic, or ``[n_graphics]`` values
+            for a thickness per graphic.
+
+        sizes : float | Sequence[float] | np.ndarray | FeatureCallable, optional
+            Size of the scatter points.
+
+            * static, a single size for every graphic, or ``[n_graphics]`` sizes for one size per graphic
+            * windowed, one size per datapoint, ``[n_graphics, p]``
+            * windowed, a ``FeatureCallable``
+
+        markers : str | Sequence[str] | np.ndarray | FeatureCallable, optional
+            Marker shape of the scatter points.
+
+            * static, a single marker for every graphic, or ``[n_graphics]`` markers for one per graphic
+            * windowed, one marker per datapoint, ``[n_graphics, p]``
+            * windowed, a ``FeatureCallable``
+
+        name : str, optional
+            Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
+
+        graphic_kwargs : dict, optional
+            passed to the ``graphic_type`` constructor.
+
+        processor_kwargs : dict, optional
+            passed to the ``processor`` constructor.
+
+        Notes
+        -----
+        Each of the other graphic features is either *windowed* or *static*, decided from the value itself:
+
+        * **windowed**: a ``FeatureCallable``, or an array whose axis 1 spans the ``p`` dim. It is re-sliced with
+          the same display window slice as the data on every update, so the feature carries a value per
+          displayed datapoint. An array **must** span the **full** ``p`` dim of the data, i.e.
+          ``[n_graphics, p, <value dim>]``, since it is indexed with an index into the full ``p`` dim. A
+          ``FeatureCallable`` is passed the data slice and that display window slice, and returns the feature
+          values for the displayed datapoints.
+
+        * **static**: anything else. It is set once on the collection, ex: a single value for every graphic,
+          ``[n_graphics]`` values for one per graphic, or an iterator of per-graphic values such as
+          ``itertools.cycle(["jet", "viridis"])``.
+
+        A feature the graphic type does not have is ignored, ex: ``thickness`` for scatters, ``markers`` for
+        lines. The heatmap representation uses only ``cmap``.
+
+        See Also
+        --------
+        NDPositions : Base class for n-dimensional positional data.
+
         """
         # NDGraphic base init, then the shared positional setup. We deliberately do not call
         # NDPositions.__init__, since it would create the graphic before the timeseries state
@@ -91,8 +252,11 @@ class NDTimeseries(NDPositions):
             processor=processor,
             display_window=display_window,
             window_funcs=window_funcs,
+            window_order=window_order,
+            spatial_func=spatial_func,
             slider_dim_transforms=slider_dim_transforms,
             max_display_datapoints=max_display_datapoints,
+            datapoints_window_func=datapoints_window_func,
             colors=colors,
             cmap=cmap,
             cmap_transform=cmap_transform,
@@ -264,7 +428,10 @@ class NDTimeseries(NDPositions):
 
     @property
     def display_window(self) -> int | float | None:
-        """display window in the reference units for the n_datapoints dim"""
+        """
+        Get or set the display window, in the reference units of the ``p`` dim. Setting it re-renders the
+        current data slice, setting it to ``None`` also sets :attr:`x_range_mode` to ``None``.
+        """
         return self.processor.display_window
 
     @display_window.setter
@@ -278,7 +445,15 @@ class NDTimeseries(NDPositions):
 
     @property
     def x_range_mode(self) -> Literal["fixed", "auto"] | None:
-        """x-range using a fixed window from the display window, or by polling the camera (auto)"""
+        """
+        Get or set how the camera x-range is coupled to the ``p`` dim.
+
+        * ``None``: the camera is left alone.
+        * ``"fixed"``: the x-range is set from the display window, centered on the current ``p`` index, on every
+          update.
+        * ``"auto"``: as ``"fixed"``, and the camera x-range is also polled on every render. Panning or zooming
+          then sets the display window to the new width and the ``p`` index to the new center.
+        """
         return self._x_range_mode
 
     @x_range_mode.setter
