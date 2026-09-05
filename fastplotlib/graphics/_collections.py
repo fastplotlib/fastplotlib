@@ -288,7 +288,7 @@ class ImageGrid(ImageCollection):
         If ``offsets`` is given it is used directly as the per-image position. Otherwise the images
         are placed row-major into a grid of ``shape`` (rows, columns), each cell sized to the
         largest image so the rows and columns line up, with ``separation`` world-space gaps between
-        them.
+        them. By default there is separation space between the images.
 
         Parameters
         ----------
