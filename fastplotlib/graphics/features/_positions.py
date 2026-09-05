@@ -415,6 +415,7 @@ class VertexCmapTransform(GraphicFeature):
         return self._value
 
     def _interpolate(self, value, n_datapoints):
+        # interpolate so we have a transform value for every datapoint
         return np.interp(
             np.linspace(0, len(value) - 1, n_datapoints), np.arange(len(value)), value).astype(
             np.float32
