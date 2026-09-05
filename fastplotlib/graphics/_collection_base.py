@@ -9,7 +9,7 @@ import pygfx
 import cmap as cmap_lib
 
 from ._base import Graphic
-from ._jagged_array import Accessor, JaggedArray, ColorArray, Cmap, ARRAY_BUFFER_FEATURES
+from ._jagged_array import CollectionFeatureAccessor, JaggedCollectionFeature, CollectionColors, CollectionCmap, ARRAY_BUFFER_FEATURES
 from .features import GraphicFeature, VertexColors, UniformColor, VertexCmap
 
 
@@ -33,14 +33,14 @@ EXCLUDE = {"deleted"}
 def get_accessor_class(feature: str, feature_classes: tuple[type, ...]) -> type:
     """the accessor class used to manage a feature across a collection"""
     if UniformColor in feature_classes or VertexColors in feature_classes:
-        return ColorArray
+        return CollectionColors
     if VertexCmap in feature_classes:
-        return Cmap
+        return CollectionCmap
     if any(issubclass(c, ARRAY_BUFFER_FEATURES) for c in feature_classes if isinstance(c, type)):
-        return JaggedArray
+        return JaggedCollectionFeature
     if feature in ("offset", "rotation", "scale"):
-        return JaggedArray
-    return Accessor
+        return JaggedCollectionFeature
+    return CollectionFeatureAccessor
 
 
 def get_value_ndim(feature_classes: tuple[type[GraphicFeature], ...]) -> int:
@@ -84,7 +84,7 @@ def make_feature_property(feature_name: str, accessor_class: type) -> property:
     def getter(collection_instance):
         return getattr(collection_instance, f"_{feature_name}")
 
-    if accessor_class is Cmap:
+    if accessor_class is CollectionCmap:
         # assigning a colormap colors each graphic one color, evenly spaced across the collection
         def setter(collection_instance, value):
             collection_instance.colors[:] = cmap_across_graphics(value, len(collection_instance))
@@ -165,7 +165,7 @@ class GraphicCollection(Graphic):
                 get_value_ndim(feature_classes),
             )
         # metadata is a plain attribute, not a graphic feature, so add it explicitly
-        specs["metadatas"] = ("metadata", Accessor, 0)
+        specs["metadatas"] = ("metadata", CollectionFeatureAccessor, 0)
         cls._accessor_specs = specs
 
         # install a property for each feature, unless the class already defines one

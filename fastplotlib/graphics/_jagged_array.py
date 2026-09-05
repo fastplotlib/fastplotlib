@@ -16,12 +16,12 @@ from ._base import Graphic
 ARRAY_BUFFER_FEATURES = (BufferManager, TextureArray, TextureArrayVolume)
 
 
-class Accessor(GraphicFeature):
+class CollectionFeatureAccessor(GraphicFeature):
     """
     Get and set a feature across the graphics of a collection, along the graphic axis.
 
     Manages features that are one value per graphic, such as ``thickness`` and
-    ``edge_width``. :class:`.JaggedArray` and :class:`.Cmap` subclass this for the
+    ``edge_width``. :class:`.JaggedCollectionFeature` and :class:`.Cmap` subclass this for the
     per-datapoint features and for colormaps.
 
     Subclasses ``GraphicFeature`` so a collection can register handlers on the accessor;
@@ -125,7 +125,7 @@ class Accessor(GraphicFeature):
         return f"{self.__class__.__name__} of <{self._feature}> across {len(self)} graphics"
 
 
-class JaggedArray(Accessor):
+class JaggedCollectionFeature(CollectionFeatureAccessor):
     """
     Get and set a per-datapoint feature (``data``, ``colors``, ``sizes``, ...) across a
     collection. Indexing follows numpy broadcasting as if the feature were a rectangular
@@ -261,9 +261,9 @@ class JaggedArray(Accessor):
         self._emit_event(key, value)
 
 
-class ColorArray(JaggedArray):
+class CollectionColors(JaggedCollectionFeature):
     """
-    :class:`.JaggedArray` for ``colors``. Parses color specs to RGBA before the graphic-axis
+    :class:`.JaggedCollectionFeature` for ``colors``. Parses color specs to RGBA before the graphic-axis
     split, unless the key indexes the RGBA axis, in which case the value is used as-is.
     """
 
@@ -281,11 +281,13 @@ class ColorArray(JaggedArray):
         return np.ndim(value) == 0 or is_single_color(value)
 
 
-class Cmap(Accessor):
+class CollectionCmap(CollectionFeatureAccessor):
     """
-    :class:`.Accessor` for per-graphic colormaps: ``cmap[graphic_key]`` gets and sets each
+    :class:`.CollectionFeatureAccessor` for per-graphic colormaps: ``cmap[graphic_key]`` gets and sets each
     selected graphic's colormap, broadcasting one colormap to all selected graphics or a
     sequence one per graphic.
+
+    Only for `PositionsCollection`, not for image collections.
 
     Indexing requires per-graphic colormaps. A single colormap across the whole collection,
     which colors each graphic one color by its index, is set through the collection's
@@ -361,11 +363,11 @@ def _unary_operator(op):
 # "r"`; useful for masking the graphic axis, e.g. `collection[collection.thickness < 3]`
 for _name in ("lt", "le", "eq", "ne", "gt", "ge", "add", "sub", "mul", "truediv", "floordiv",
               "mod", "pow", "matmul", "and_", "or_", "xor", "lshift", "rshift"):
-    setattr(Accessor, f"__{_name.rstrip('_')}__", _binary_operator(getattr(operator, _name)))
+    setattr(CollectionFeatureAccessor, f"__{_name.rstrip('_')}__", _binary_operator(getattr(operator, _name)))
 
 for _name in ("add", "sub", "mul", "truediv", "floordiv", "mod", "pow", "matmul",
               "and_", "or_", "xor", "lshift", "rshift"):
-    setattr(Accessor, f"__r{_name.rstrip('_')}__", _reflected_operator(getattr(operator, _name)))
+    setattr(CollectionFeatureAccessor, f"__r{_name.rstrip('_')}__", _reflected_operator(getattr(operator, _name)))
 
 for _name in ("neg", "pos", "abs", "invert"):
-    setattr(Accessor, f"__{_name}__", _unary_operator(getattr(operator, _name)))
+    setattr(CollectionFeatureAccessor, f"__{_name}__", _unary_operator(getattr(operator, _name)))
