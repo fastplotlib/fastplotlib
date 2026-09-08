@@ -31,9 +31,7 @@ class GraphicMethodsMixin:
 
         return graphic
 
-    def add_collection(
-        self, data, name: str = None, metadata: Any = None, **kwargs
-    ) -> GraphicCollection:
+    def add_collection(self, data, **kwargs) -> GraphicCollection:
         """
 
         Create a collection of graphics of the same type.
@@ -43,19 +41,15 @@ class GraphicMethodsMixin:
         data: list of array-like
             one entry per graphic; its length is the number of graphics in the collection
 
-        name: str, optional
-            name of the collection
-
-        metadata: Any, optional
-            metadata attached to the collection
-
         **kwargs
             any feature of the child graphic (``colors``, ``thickness``, ``sizes``, ...), each
-            accepting one value for all graphics or one value per graphic. Any argument that is not
-            a feature is passed unchanged to every child graphic.
+            accepting one value for all graphics or one value per graphic. A ``Graphic`` argument
+            (``name``, ``offset``, ``visible``, ...) sets it on the collection itself, its plural
+            form (``names``, ``offsets``, ``visibles``, ...) sets it per graphic. Any argument that
+            is not a feature is passed unchanged to every child graphic.
 
         """
-        return self._create_graphic(GraphicCollection, data, name, metadata, **kwargs)
+        return self._create_graphic(GraphicCollection, data, **kwargs)
 
     def add_image_collection(
         self,
@@ -69,8 +63,6 @@ class GraphicMethodsMixin:
         colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
         *,
-        name: str = None,
-        metadata: Any = None,
         names=None,
         offsets=None,
         rotations=None,
@@ -163,8 +155,6 @@ class GraphicMethodsMixin:
             cmap_interpolation=cmap_interpolation,
             colorspace=colorspace,
             cpu_buffer=cpu_buffer,
-            name=name,
-            metadata=metadata,
             names=names,
             offsets=offsets,
             rotations=rotations,

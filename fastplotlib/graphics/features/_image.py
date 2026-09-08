@@ -526,8 +526,10 @@ class ImageCmap(GraphicFeature):
 
     @block_reentrance
     def set_value(self, graphic, value: ColormapLike | cmap_lib.Colormap):
+        self._value = cmap_lib.Colormap(value)
+
         # get the new TextureMap
-        _map = cmap_lib.Colormap(value).to_pygfx()
+        _map = self._value.to_pygfx()
 
         # set the cmap interpolation from the current value on the graphic
         _map.min_filter = graphic._cmap_interpolation.value
@@ -542,7 +544,6 @@ class ImageCmap(GraphicFeature):
         graphic._material.map = _map
         graphic._material.map.texture.update_range((0, 0, 0), size=(256, 1, 1))
 
-        self._value = value
         event = GraphicFeatureEvent(type=self._property_name, info={"value": value})
         self._call_event_handlers(event)
 

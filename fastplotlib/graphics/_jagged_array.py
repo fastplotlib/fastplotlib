@@ -360,7 +360,7 @@ def _unary_operator(op):
 
 # comparison, arithmetic, and bitwise operators act on the values across the graphics like a numpy
 # array, jagged along the datapoint axis, e.g. `collection.thickness < 3` or `collection.colors ==
-# "r"`; useful for masking the graphic axis, e.g. `collection[collection.thickness < 3]`
+# "r"`; useful for masking the graphic axis, e.g. `collection.colors[collection.thickness < 3] = "r"`
 for _name in ("lt", "le", "eq", "ne", "gt", "ge", "add", "sub", "mul", "truediv", "floordiv",
               "mod", "pow", "matmul", "and_", "or_", "xor", "lshift", "rshift"):
     setattr(CollectionFeatureAccessor, f"__{_name.rstrip('_')}__", _binary_operator(getattr(operator, _name)))

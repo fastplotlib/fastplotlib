@@ -50,8 +50,24 @@ class PositionsCollection(GraphicCollection):
             )
 
         if single_cmap:
-            self.colors[:] = cmap_across_graphics(cmap, len(self), cmap_transform)
+            self.colors[:] = cmap_across_graphics(cmap, len(self), cmap_transform, cmap_range)
             return
+
+        if len(cmap) != len(self):
+            raise IndexError(
+                f"len(cmap) must equal the number of graphics, got {len(cmap)} cmaps for "
+                f"{len(self)} graphics"
+            )
+        if cmap_transform is not None and len(cmap_transform) != len(self):
+            raise IndexError(
+                f"len(cmap_transform) must equal the number of graphics, got "
+                f"{len(cmap_transform)} `cmap_transform` values for {len(self)} graphics"
+            )
+        if np.ndim(cmap_range) == 2 and len(cmap_range) != len(self):
+            raise IndexError(
+                f"len(cmap_range) must equal the number of graphics, got {len(cmap_range)} "
+                f"`cmap_range` values for {len(self)} graphics"
+            )
 
         transforms = cmap_transform if cmap_transform is not None else itertools.repeat(None)
         ranges = cmap_range if np.ndim(cmap_range) == 2 else itertools.repeat(cmap_range)
@@ -193,15 +209,16 @@ class PositionsCollection(GraphicCollection):
 
         xdata = np.concatenate(self.data[:, :, 0])
         xmin, xmax = np.nanmin(xdata), np.nanmax(xdata)
-        value_25px = (xmax - xmin) / 4
 
-        ymin = np.floor(np.nanmin(np.concatenate(self.data[:, :, 1]))).astype(int)
-        ymax = np.ptp(bbox[:, 1])
+        # y from the world bounding box so that the graphics' offsets, e.g. a stack's, are included
+        ymin, ymax = bbox[0, 1], bbox[1, 1]
+        yspan = ymax - ymin
 
         if selection is None:
-            selection = (xmin, value_25px, ymin, ymax)
+            # the first quarter along x, the full y extent
+            selection = (xmin, xmin + (xmax - xmin) / 4, ymin, ymax)
 
-        limits = (xmin, xmax, ymin - (ymax * 1.5 - ymax), ymax * 1.5)
+        limits = (xmin, xmax, ymin - yspan / 2, ymax + yspan / 2)
 
         selector = RectangleSelector(
             selection=selection, limits=limits, parent=self, **kwargs
@@ -233,10 +250,11 @@ class PositionsCollection(GraphicCollection):
         xdata = np.concatenate(self.data[:, :, 0])
         xmin, xmax = np.nanmin(xdata), np.nanmax(xdata)
 
-        ymin = np.floor(np.nanmin(np.concatenate(self.data[:, :, 1]))).astype(int)
-        ymax = np.ptp(bbox[:, 1])
+        # y from the world bounding box so that the graphics' offsets, e.g. a stack's, are included
+        ymin, ymax = bbox[0, 1], bbox[1, 1]
+        yspan = ymax - ymin
 
-        limits = (xmin, xmax, ymin - (ymax * 1.5 - ymax), ymax * 1.5)
+        limits = (xmin, xmax, ymin - yspan / 2, ymax + yspan / 2)
 
         selector = PolygonSelector(selection, limits, parent=self, **kwargs)
         self._plot_area.add_graphic(selector, center=False)
@@ -251,10 +269,12 @@ class PositionsCollection(GraphicCollection):
         data = np.concatenate(self.data[:, :, axis_index])
         vmin, vmax = np.nanmin(data), np.nanmax(data)
 
-        bounds = (vmin, (vmax - vmin) / 4)
+        # the first quarter along `axis`
+        bounds = (vmin, vmin + (vmax - vmin) / 4)
         limits = (vmin, vmax)
-        # size and center on the orthogonal axis, from the world bounding box
-        size = np.ptp(bbox[:, orthogonal_index]) * 1.5
+        # size and center on the orthogonal axis, from the world bounding box so that the
+        # graphics' offsets, e.g. a stack's, are included
+        size = np.ptp(bbox[:, orthogonal_index]) * 1.5 + padding
         center = bbox[:, orthogonal_index].mean()
 
         return bounds, limits, size, center
@@ -370,9 +390,17 @@ class GraphicStack:
             passed to the collection, e.g. ``colors``, ``thickness``, ``sizes``
         """
         super().__init__(data, **kwargs)
-        self._separation = np.asarray(separation, dtype=float)
+        self._separation = self._check_separation(separation)
         self._steps = self._check_steps(steps)
         self.separation_axis = separation_axis  # (re)stacks
+
+    def _check_separation(self, separation) -> np.ndarray:
+        separation = np.asarray(separation, dtype=float)
+        if separation.shape != (3,):
+            raise ValueError(
+                f"separation must be an (x, y, z) iterable, got shape {separation.shape}"
+            )
+        return separation
 
     def _check_steps(self, steps) -> np.ndarray | None:
         if steps is None:
@@ -392,10 +420,7 @@ class GraphicStack:
 
     @separation.setter
     def separation(self, value: tuple[float, float, float]):
-        value = np.asarray(value, dtype=float)
-        if value.shape != (3,):
-            raise ValueError("separation must be an (x, y, z) iterable")
-        self._separation = value
+        self._separation = self._check_separation(value)
         self._restack()
 
     @property
@@ -426,8 +451,9 @@ class GraphicStack:
         axes = [{"x": 0, "y": 1, "z": 2}[axis] for axis in self._separation_axis]
         offsets = np.zeros((len(self), 3))
         if self._steps is None:
-            # one max over all the data gives the step to stack by along each stacking axis
-            step = np.concatenate(self.data[:, :, axes]).max(axis=0)
+            # one max over all the data gives the step to stack by along each stacking axis,
+            # reduce each graphic first so the whole dataset is never concatenated
+            step = np.max([view.max(axis=0) for view in self.data[:, :, axes]], axis=0)
             offsets[:, axes] = np.arange(len(self))[:, np.newaxis] * (step + self._separation[axes])
         else:
             # per-graphic steps: offset each graphic past the previous ones by their cumulative step

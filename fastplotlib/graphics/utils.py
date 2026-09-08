@@ -121,5 +121,8 @@ def get_nearest_graphics(
         nearest graphics to ``pos`` in order
 
     """
+    if isinstance(graphics, GraphicCollection):
+        graphics = graphics.graphics
+
     sort_indices = get_nearest_graphics_indices(pos, graphics)
     return np.asarray(graphics)[sort_indices]

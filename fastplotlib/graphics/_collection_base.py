@@ -24,6 +24,7 @@ PLURAL = {
     "alpha": "alphas",
     "alpha_mode": "alpha_modes",
     "visible": "visibles",
+    "metadata": "metadatas",
 }
 
 # features not exposed across the collection
@@ -49,28 +50,64 @@ def get_value_ndim(feature_classes: tuple[type[GraphicFeature], ...]) -> int:
 
 
 def cmap_across_graphics(
-    cmap_name: str, n_graphics: int, transform: np.ndarray = None
+    cmap_name: str,
+    n_graphics: int,
+    transform: np.ndarray = None,
+    cmap_range: tuple[float, float] = None,
 ) -> np.ndarray:
     """
     ``n_graphics`` colors from a colormap, one per graphic.
 
     Without a transform the colors are evenly spaced along the colormap. A ``transform`` maps each
-    graphic into the colormap instead: it is resampled to one value per graphic and normalized to
-    index the colormap as a lookup table.
+    graphic into the colormap instead. A qualitative colormap indexes its colors with the transform
+    values directly, so a given value always gets the same color, e.g. cluster labels. Any other
+    colormap resamples the transform to one value per graphic and normalizes it over ``cmap_range``,
+    or over the transform's own (min, max) if no range is given.
     """
-    if transform is None:
-        values = np.linspace(0, 1, n_graphics)
-    else:
-        transform = np.asarray(transform, dtype=float)
-        # resample the transform to one value per graphic
-        transform = np.interp(
-            np.linspace(0, 1, n_graphics), np.linspace(0, 1, len(transform)), transform
-        )
-        # normalize to [0, 1] so the values index the colormap
-        spread = np.ptp(transform)
-        values = (transform - transform.min()) / spread if spread else np.zeros(n_graphics)
+    cmap = cmap_lib.Colormap(cmap_name)
 
-    return np.asarray(cmap_lib.Colormap(cmap_name)(values))
+    if transform is None:
+        if cmap_range is not None:
+            raise ValueError("must pass `cmap_transform` if passing `cmap_range`")
+        return np.asarray(cmap(np.linspace(0, 1, n_graphics)))
+
+    transform = np.asarray(transform)
+
+    if cmap.interpolation == "nearest":
+        # qualitative, the transform values are indices into the colormap's colors
+        if not np.issubdtype(transform.dtype, np.integer):
+            raise TypeError(
+                f"a qualitative colormap requires an integer `cmap_transform`, got dtype: "
+                f"{transform.dtype}"
+            )
+        if len(transform) != n_graphics:
+            raise IndexError(
+                f"len(cmap_transform) must equal the number of graphics, got {len(transform)} "
+                f"`cmap_transform` values for {n_graphics} graphics"
+            )
+        if transform.min() < 0 or transform.max() >= cmap.num_colors:
+            raise IndexError(
+                f"`cmap_transform` values must be integers within the range of the number of "
+                f"colors in the provided colormap, `{cmap.name}` has {cmap.num_colors} colors, "
+                f"got range: [{transform.min()}, {transform.max()}]"
+            )
+        if cmap_range is not None:
+            raise ValueError(
+                f"`cmap_range` must be `None` for a qualitative colormap, got: {cmap_range!r}"
+            )
+        return np.asarray(cmap(transform / max(cmap.num_colors - 1, 1)))
+
+    transform = transform.astype(float)
+    # resample the transform to one value per graphic
+    transform = np.interp(
+        np.linspace(0, 1, n_graphics), np.linspace(0, 1, len(transform)), transform
+    )
+    # normalize over the range so the values index the colormap
+    vmin, vmax = cmap_range if cmap_range is not None else (transform.min(), transform.max())
+    spread = vmax - vmin
+    values = (transform - vmin) / spread if spread else np.zeros(n_graphics)
+
+    return np.asarray(cmap(values))
 
 
 class _AccessorProperty(property):
@@ -96,35 +133,49 @@ def make_feature_property(feature_name: str, accessor_class: type) -> property:
     return _AccessorProperty(getter, setter, doc=doc)
 
 
-def make_collection_signature(child_type: type, accessor_specs: dict) -> inspect.Signature:
+def make_collection_signature(cls: type) -> inspect.Signature:
     """
-    the collection constructor's signature, derived from the child graphic
+    the collection constructor's signature
 
-    ``data`` becomes the list of per-graphic data, each managed feature accepts one value for all
-    graphics or one per graphic (``Iterable``), and construction arguments are passed through as-is.
+    ``data`` becomes the list of per-graphic data and each managed feature accepts one value for all
+    graphics or one per graphic (``Iterable``), both derived from the child graphic. The parameters
+    the collection itself takes are added as-is: its own ``Graphic`` parameters, and any parameter a
+    collection subclass declares, e.g. a stack's ``separation``.
     """
-    parameters = [inspect.Parameter("data", inspect.Parameter.POSITIONAL_OR_KEYWORD)]
-    added = {"data"}
+    parameters = dict()
 
-    for name, parameter in inspect.signature(child_type.__init__).parameters.items():
+    for name, parameter in inspect.signature(cls._child_type.__init__).parameters.items():
         if name in ("self", "data") or parameter.kind in (parameter.VAR_POSITIONAL, parameter.VAR_KEYWORD):
             continue
         feature_name = PLURAL.get(name, name)
         annotation = parameter.annotation
-        if feature_name in accessor_specs and annotation is not parameter.empty:
+        if feature_name in cls._accessor_specs and annotation is not parameter.empty:
             annotation = Iterable[annotation]
         default = parameter.default if parameter.default is not parameter.empty else None
-        parameters.append(
-            inspect.Parameter(feature_name, inspect.Parameter.KEYWORD_ONLY, default=default, annotation=annotation)
+        parameters[feature_name] = inspect.Parameter(
+            feature_name, inspect.Parameter.KEYWORD_ONLY, default=default, annotation=annotation
         )
-        added.add(feature_name)
 
     # features the collection exposes but the child takes via **kwargs, e.g. names, offsets, metadatas
-    for feature_name in accessor_specs:
-        if feature_name not in added:
-            parameters.append(inspect.Parameter(feature_name, inspect.Parameter.KEYWORD_ONLY, default=None))
+    for feature_name in cls._accessor_specs:
+        if feature_name == "data" or feature_name in parameters:
+            continue
+        parameters[feature_name] = inspect.Parameter(
+            feature_name, inspect.Parameter.KEYWORD_ONLY, default=None
+        )
 
-    return inspect.Signature(parameters)
+    # the collection's own parameters, from `Graphic` and from each collection subclass `__init__`
+    for klass in reversed(cls.__mro__):
+        for name, parameter in inspect.signature(klass.__init__).parameters.items():
+            if name in ("self", "data") or name in parameters:
+                continue
+            if parameter.kind in (parameter.VAR_POSITIONAL, parameter.VAR_KEYWORD):
+                continue
+            parameters[name] = parameter.replace(kind=inspect.Parameter.KEYWORD_ONLY)
+
+    return inspect.Signature(
+        [inspect.Parameter("data", inspect.Parameter.POSITIONAL_OR_KEYWORD), *parameters.values()]
+    )
 
 
 class GraphicCollection(Graphic):
@@ -177,12 +228,9 @@ class GraphicCollection(Graphic):
         # expose the feature names so `add_event_handler` routes feature events to the accessor
         cls._features = {**cls._features, **{name: spec[1] for name, spec in cls._accessor_specs.items()}}
 
-        try:
-            cls.__signature__ = make_collection_signature(cls._child_type, cls._accessor_specs)
-        except (ValueError, TypeError):
-            pass
+        cls.__signature__ = make_collection_signature(cls)
 
-    def __init__(self, data, name: str = None, metadata: Any = None, **kwargs):
+    def __init__(self, data, **kwargs):
         """
         Create a collection of graphics of the same type.
 
@@ -191,20 +239,20 @@ class GraphicCollection(Graphic):
         data: list of array-like
             one entry per graphic; its length is the number of graphics in the collection
 
-        name: str, optional
-            name of the collection
-
-        metadata: Any, optional
-            metadata attached to the collection
-
         **kwargs
             any feature of the child graphic (``colors``, ``thickness``, ``sizes``, ...), each
-            accepting one value for all graphics or one value per graphic. Any argument that is not
-            a feature is passed unchanged to every child graphic.
+            accepting one value for all graphics or one value per graphic. A ``Graphic`` argument
+            (``name``, ``offset``, ``visible``, ...) sets it on the collection itself, its plural
+            form (``names``, ``offsets``, ``visibles``, ...) sets it per graphic. Any argument that
+            is not a feature is passed unchanged to every child graphic.
         """
-        super().__init__(name=name, metadata=metadata)
+        # the singular name sets the collection's own value, the plural form sets it per graphic
+        super().__init__(**{name: kwargs.pop(name) for name in PLURAL.keys() & kwargs.keys()})
 
         n_graphics = len(data)
+        if n_graphics == 0:
+            raise ValueError("a collection needs at least one graphic, got an empty `data`")
+
         self._graphics = np.empty(n_graphics, dtype=object)
         self._set_world_object(pygfx.Group())
 
@@ -242,14 +290,6 @@ class GraphicCollection(Graphic):
         # data is the loop driver, so its value_ndim comes from the data, not a feature class
         self._data._value_ndim = data_value_ndim
 
-    @classmethod
-    def _from_graphics(cls, graphics: np.ndarray, data_value_ndim: int) -> GraphicCollection:
-        """a sub-collection over a subset of graphics, e.g. from slicing"""
-        subcollection = cls.__new__(cls)
-        subcollection._graphics = graphics
-        subcollection._create_accessors(data_value_ndim=data_value_ndim)
-        return subcollection
-
     @property
     def graphics(self) -> np.ndarray[Graphic]:
         """the graphics in the collection"""
@@ -278,6 +318,10 @@ class GraphicCollection(Graphic):
         graphics[-1] = graphic
         self._graphics = graphics
         self._refresh_accessors()
+
+        # a collection already in a plot area passes it on, like `_fpl_add_plot_area_hook` does
+        if self._plot_area is not None:
+            graphic._fpl_add_plot_area_hook(self._plot_area)
 
         self.world_object.add(graphic.world_object)
 
@@ -326,16 +370,12 @@ class GraphicCollection(Graphic):
             graphic._fpl_add_plot_area_hook(plot_area)
 
     def _fpl_prepare_del(self):
-        self.world_object._event_handlers.clear()
+        # the base clears this world object's and its children's handlers, so it runs first
+        super()._fpl_prepare_del()
         self.world_object.clear()
 
         for graphic in self._graphics:
             graphic._fpl_prepare_del()
-
-    def __getitem__(self, key) -> Graphic | GraphicCollection:
-        if np.issubdtype(type(key), np.integer):
-            return self._graphics[key]
-        return self._from_graphics(self._graphics[key], self._data._value_ndim)
 
     def __len__(self) -> int:
         return self._graphics.size
