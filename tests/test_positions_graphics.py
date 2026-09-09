@@ -51,6 +51,8 @@ def test_uniform_colors(graphic_type, colors):
 
     assert isinstance(graphic._colors, UniformColor)
     assert isinstance(graphic.colors, pygfx.Color)
+    assert graphic.world_object.material.color_mode == pygfx.ColorMode.uniform
+
     if isinstance(colors, str) and colors == "w":
         # default white
         assert graphic.colors == pygfx.Color([1, 1, 1])
@@ -121,6 +123,8 @@ def test_positions_graphic_vertex_colors(
     assert isinstance(graphic._colors, VertexColors)
     assert isinstance(graphic.colors, VertexColors)
     assert len(graphic.colors) == len(graphic.data)
+    assert graphic.world_object.material.color_mode == pygfx.ColorMode.vertex
+    assert graphic.world_object.geometry.colors is graphic.colors._fpl_buffer
 
     # multi colors
     # use the truth for multi colors test that is pre-set
@@ -152,6 +156,7 @@ def test_cmap(
     assert isinstance(graphic.cmap, cmap_lib.Colormap)
     assert isinstance(graphic._cmap_transform, VertexCmapTransform)
     assert isinstance(graphic._cmap_range, VertexCmapRange)
+    assert graphic.world_object.material.color_mode == pygfx.ColorMode.vertex_map
 
     assert isinstance(graphic.world_object.material.map, pygfx.TextureMap)
     assert isinstance(graphic.world_object.geometry.texcoords, pygfx.Buffer)
@@ -201,6 +206,8 @@ def test_sizes(sizes):
         assert isinstance(graphic.sizes, VertexPointSizes)
         assert isinstance(graphic._sizes, VertexPointSizes)
         assert len(data) == len(graphic.sizes)
+        assert graphic.world_object.material.size_mode == pygfx.SizeMode.vertex
+
         npt.assert_almost_equal(graphic.sizes.value, sizes)
         npt.assert_almost_equal(
             graphic.world_object.geometry.sizes.data, graphic.sizes.value
@@ -208,6 +215,8 @@ def test_sizes(sizes):
     else:
         assert isinstance(graphic.sizes, float)
         assert isinstance(graphic._sizes, UniformSize)
+        assert graphic.world_object.material.size_mode == pygfx.SizeMode.uniform
+
         assert graphic.sizes == graphic._sizes.value == sizes
 
     # change sizes
@@ -222,7 +231,10 @@ def test_sizes(sizes):
     # also test uniform -> vertex switch
     new_sizes = np.abs(np.sin(np.linspace(0, 2 * np.pi, len(data))))
     graphic.sizes = new_sizes
+
     assert isinstance(graphic.sizes, VertexPointSizes)
+    assert graphic.world_object.material.size_mode == pygfx.SizeMode.vertex
+    assert graphic.world_object.geometry.sizes is graphic.sizes._fpl_buffer
 
 
 @pytest.mark.parametrize("thickness", [None, 0.5, 5.0])
@@ -357,7 +369,3 @@ def test_size_space(graphic_type, size_space):
         graphic.size_space = "world"
         assert graphic.size_space == "world"
         assert graphic.world_object.material.size_space == "world"
-
-
-if __name__ == "__main__":
-    test_cmap("scatter", None, False, "jet", None)
