@@ -34,8 +34,6 @@ figure[0, 0].add_inf_line(
     dash_pattern="--",
 )
 
-figure[0, 0].axes.intersection = (0, 0, 0)
-
 figure.show()
 
 

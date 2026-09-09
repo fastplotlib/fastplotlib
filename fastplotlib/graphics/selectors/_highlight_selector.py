@@ -30,8 +30,6 @@ _POSITIONS_MATERIAL_TYPES = (
     HighlightablePointsGaussianBlobMaterial,
 )
 
-cmap_lib.Colormap("tab10").lut()
-
 
 def _build_lut(
     color: str | np.ndarray = "red",

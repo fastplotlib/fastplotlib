@@ -24,6 +24,8 @@ position_graphic_types = [ScatterCollection, ScatterStack, LineCollection, LineS
 
 
 class NDWidgetUI(ImguiWindow):
+    """Playback controls and a slider for each slider dim, shown at the bottom of an ``NDWidget``"""
+
     def __init__(self, ndwidget):
         super().__init__()
         self._ndwidget = ndwidget
@@ -195,6 +197,11 @@ class NDWidgetUI(ImguiWindow):
 
 
 class RightClickMenu(StandardRightClickMenu):
+    """
+    Right click menu of an ``NDWidget``, adds an "ND Graphics" submenu to the standard menu. Selecting an
+    ``NDGraphic`` opens a window to change its settings, which stays open after the menu closes.
+    """
+
     def __init__(self, ndwidget):
         super().__init__()
 

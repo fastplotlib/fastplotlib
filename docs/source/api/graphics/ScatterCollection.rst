@@ -22,15 +22,22 @@ Properties
 
     ScatterCollection.alpha
     ScatterCollection.alpha_mode
+    ScatterCollection.alpha_modes
+    ScatterCollection.alphas
     ScatterCollection.axes
     ScatterCollection.block_events
     ScatterCollection.block_handlers
     ScatterCollection.cmap
+    ScatterCollection.cmap_range
+    ScatterCollection.cmap_transform
     ScatterCollection.colors
     ScatterCollection.data
     ScatterCollection.deleted
+    ScatterCollection.edge_colors
+    ScatterCollection.edge_width
     ScatterCollection.event_handlers
     ScatterCollection.graphics
+    ScatterCollection.image
     ScatterCollection.imgui_right_click
     ScatterCollection.markers
     ScatterCollection.metadatas
@@ -38,9 +45,12 @@ Properties
     ScatterCollection.names
     ScatterCollection.offset
     ScatterCollection.offsets
+    ScatterCollection.point_rotations
     ScatterCollection.rotation
     ScatterCollection.rotations
     ScatterCollection.scale
+    ScatterCollection.scales
+    ScatterCollection.size_space
     ScatterCollection.sizes
     ScatterCollection.supported_events
     ScatterCollection.tooltip_format

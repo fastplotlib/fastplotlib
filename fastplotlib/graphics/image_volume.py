@@ -2,6 +2,7 @@ from typing import *
 
 import numpy as np
 import pygfx
+import cmap as cmap_lib
 
 from ..utils import quick_min_max
 from ._base import Graphic
@@ -215,11 +216,13 @@ class ImageVolumeGraphic(Graphic):
 
         # use TextureMap for grayscale images
         self._cmap = ImageCmap(cmap)
-        self._texture_map = pygfx.TextureMap(
-            self._cmap.texture,
-            filter=self._cmap_interpolation.value,
-            wrap="clamp-to-edge",
-        )
+
+        self._texture_map = self._cmap.value.to_pygfx()
+        self._texture_map.min_filter = self._cmap_interpolation.value
+        self._texture_map.mag_filter = self._cmap_interpolation.value
+        self._texture_map.mipmap_filter = self._cmap_interpolation.value
+        self._texture_map.wrap_s = "clamp-to-edge"
+        self._texture_map.wrap_t = "clamp-to-edge"
 
         if self._data.value.ndim not in (3, 4):
             raise ValueError(
@@ -314,13 +317,13 @@ class ImageVolumeGraphic(Graphic):
         self._mode.set_value(self, mode)
 
     @property
-    def cmap(self) -> str:
-        """Get or set colormap name, only used for grayscale images"""
+    def cmap(self) -> cmap_lib.Colormap:
+        """Get or set colormap, only used for grayscale images"""
         return self._cmap.value
 
     @cmap.setter
-    def cmap(self, name: str):
-        self._cmap.set_value(self, name)
+    def cmap(self, colormap: str | cmap_lib.Colormap):
+        self._cmap.set_value(self, colormap)
 
     @property
     def vmin(self) -> float:

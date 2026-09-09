@@ -44,6 +44,7 @@ scatter2 = figure[0, 0].add_scatter(
     mode="image",
     image=wikkie,  # if an RGB(A) image is provided and no colors are provided, then the image is shown as-is
     sizes=40,
+    point_rotations=0,  # by default scatter point rotation follows the curve
 )
 
 figure.show()

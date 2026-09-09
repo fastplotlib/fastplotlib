@@ -25,6 +25,7 @@ Properties
     Grids.geometry
     Grids.id
     Grids.material
+    Grids.nonlinear_transform
     Grids.parent
     Grids.receive_shadow
     Grids.render_mask

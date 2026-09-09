@@ -22,15 +22,22 @@ Properties
 
     ScatterStack.alpha
     ScatterStack.alpha_mode
+    ScatterStack.alpha_modes
+    ScatterStack.alphas
     ScatterStack.axes
     ScatterStack.block_events
     ScatterStack.block_handlers
     ScatterStack.cmap
+    ScatterStack.cmap_range
+    ScatterStack.cmap_transform
     ScatterStack.colors
     ScatterStack.data
     ScatterStack.deleted
+    ScatterStack.edge_colors
+    ScatterStack.edge_width
     ScatterStack.event_handlers
     ScatterStack.graphics
+    ScatterStack.image
     ScatterStack.imgui_right_click
     ScatterStack.markers
     ScatterStack.metadatas
@@ -38,12 +45,16 @@ Properties
     ScatterStack.names
     ScatterStack.offset
     ScatterStack.offsets
+    ScatterStack.point_rotations
     ScatterStack.rotation
     ScatterStack.rotations
     ScatterStack.scale
+    ScatterStack.scales
     ScatterStack.separation
     ScatterStack.separation_axis
+    ScatterStack.size_space
     ScatterStack.sizes
+    ScatterStack.steps
     ScatterStack.supported_events
     ScatterStack.tooltip_format
     ScatterStack.visible

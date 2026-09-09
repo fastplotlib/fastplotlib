@@ -61,6 +61,9 @@ class Thickness(GraphicFeature):
 
 
 class DashPattern(GraphicFeature):
+    # a single dash pattern is a 1D sequence, e.g. ``()`` or ``(5, 2)``
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "value",

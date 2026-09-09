@@ -72,8 +72,8 @@ def on_heatmap_click(ev):
     col = pixel_idx % n_x
 
     if "Shift" in ev.modifiers:
-        hm_sel.append("rows", pixel_idx)
-        img_sel.append("pixels", np.array([[row, col]]))
+        hm_sel.append({"rows": pixel_idx})
+        img_sel.append({"pixels": np.array([[row, col]])})
         print(hm_sel.selection)
     else:
         hm_sel.selection = {"rows": [pixel_idx]}
@@ -81,6 +81,8 @@ def on_heatmap_click(ev):
 
 
 ndw.show(maintain_aspect=False)
+
+figure = ndw.figure
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide

@@ -44,10 +44,7 @@ line_selection_label = figure[0, 0].add_text(
     line_selector_text,
     offset=(0., 1.75, 0.),
     anchor="middle-left",
-    font_size=32,
-    face_color=line.colors[0],
-    outline_color="w",
-    outline_thickness=0.1,
+    font_size=24,
 )
 
 
@@ -65,18 +62,15 @@ def line_selector_changed(ev):
          f"y value: {line.data[index, 1]:.2f}\n"
          f"index: {index}")
 
-    # set text color based on line color at selection index
-    line_selection_label.face_color = line.colors[index]
-
 
 # line stack, sine and cosine wave
-line_stack = figure[0, 1].add_line_stack([sine, cosine], colors=["magenta", "cyan"], separation=1)
+line_stack = figure[0, 1].add_line_stack([sine, cosine], colors=["magenta", "cyan"], separation=(0, 1, 0))
 line_stack_selector = line_stack.add_linear_selector()
 
 line_stack_selector_text = (f"x value: {line_stack_selector.selection / np.pi:.2f}π\n"
                             f"index: {line_selector.get_selected_index()}\n"
-                            f"sine y value: {line_stack[0].data[0, 1]:.2f}\n"
-                            f"cosine y value: {line_stack[1].data[0, 1]:.2f}\n")
+                            f"sine y value: {line_stack.data[0, 0, 1]:.2f}\n"
+                            f"cosine y value: {line_stack.data[1, 0, 1]:.2f}\n")
 
 # a label that will change to display line_stack data based on the linear selector
 line_stack_selector_label = figure[0, 1].add_text(
@@ -99,8 +93,8 @@ def line_stack_selector_changed(ev):
     line_stack_selector_label.text = \
         (f"x value: {selection / np.pi:.2f}π\n"
          f"index: {index}\n"
-         f"sine y value: {line_stack[0].data[index, 1]:.2f}\n"
-         f"cosine y value: {line_stack[1].data[index, 1]:.2f}\n")
+         f"sine y value: {line_stack.data[0, index, 1]:.2f}\n"
+         f"cosine y value: {line_stack.data[1, index, 1]:.2f}\n")
 
 
 # add an event handler, you can also use a decorator

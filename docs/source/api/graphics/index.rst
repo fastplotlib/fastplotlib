@@ -6,6 +6,7 @@ Graphics
 
     Graphic
     LineGraphic
+    InfLineGraphic
     ScatterGraphic
     ImageGraphic
     ImageYUVGraphic
@@ -15,7 +16,10 @@ Graphics
     SurfaceGraphic
     PolygonGraphic
     TextGraphic
+    GraphicCollection
     LineCollection
     LineStack
     ScatterCollection
     ScatterStack
+    ImageCollection
+    ImageGrid

@@ -4,6 +4,7 @@ from typing import *
 import numpy as np
 import pygfx
 from pygfx import Texture
+import cmap as cmap_lib
 
 from .shaders import HighlightableImageMaterial
 from ..utils import quick_min_max, ColorspacesRGB, ColorspacesYUV, ColorRange
@@ -17,7 +18,6 @@ from .selectors import (
 from .features import (
     TextureArray,
     TextureYUV,
-    TupleYUV,
     ImageCmap,
     ImageGamma,
     ImageVmin,
@@ -25,6 +25,7 @@ from .features import (
     ImageInterpolation,
     ImageCmapInterpolation,
 )
+from .features.types import TupleYUV
 
 
 def _format_value(value: float):
@@ -515,11 +516,12 @@ class ImageGraphic(ImageBase):
             # use TextureMap for grayscale images
             self._cmap = ImageCmap(cmap)
 
-            _map = pygfx.TextureMap(
-                self._cmap.texture,
-                filter=self._cmap_interpolation.value,
-                wrap="clamp-to-edge",
-            )
+            _map = self._cmap.value.to_pygfx()
+            _map.min_filter = self._cmap_interpolation.value
+            _map.mag_filter = self._cmap_interpolation.value
+            _map.mipmap_filter = self._cmap_interpolation.value
+            _map.wrap_s = "clamp-to-edge"
+            _map.wrap_t = "clamp-to-edge"
 
         # one common material is used for every Texture chunk
         self._material = HighlightableImageMaterial(

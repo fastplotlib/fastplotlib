@@ -22,11 +22,16 @@ Properties
 
     LineStack.alpha
     LineStack.alpha_mode
+    LineStack.alpha_modes
+    LineStack.alphas
     LineStack.axes
     LineStack.block_events
     LineStack.block_handlers
     LineStack.cmap
+    LineStack.cmap_range
+    LineStack.cmap_transform
     LineStack.colors
+    LineStack.dash_pattern
     LineStack.data
     LineStack.deleted
     LineStack.event_handlers
@@ -40,6 +45,11 @@ Properties
     LineStack.rotation
     LineStack.rotations
     LineStack.scale
+    LineStack.scales
+    LineStack.separation
+    LineStack.separation_axis
+    LineStack.size_space
+    LineStack.steps
     LineStack.supported_events
     LineStack.thickness
     LineStack.tooltip_format

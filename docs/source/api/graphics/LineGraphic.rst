@@ -26,8 +26,10 @@ Properties
     LineGraphic.block_events
     LineGraphic.block_handlers
     LineGraphic.cmap
-    LineGraphic.color_mode
+    LineGraphic.cmap_range
+    LineGraphic.cmap_transform
     LineGraphic.colors
+    LineGraphic.dash_pattern
     LineGraphic.data
     LineGraphic.deleted
     LineGraphic.event_handlers
@@ -39,6 +41,7 @@ Properties
     LineGraphic.size_space
     LineGraphic.supported_events
     LineGraphic.thickness
+    LineGraphic.thin
     LineGraphic.tooltip_format
     LineGraphic.visible
     LineGraphic.world_object

@@ -40,7 +40,6 @@ spiral = figure[0, 0].add_scatter(
     edge_colors=None,
     alpha=0.5,
     sizes=sizes,
-    uniform_size=False,
 )
 
 # pre-generate normally distributed data to jitter the points before each render

@@ -32,6 +32,7 @@ Properties
     Ruler.line_width
     Ruler.material
     Ruler.min_tick_distance
+    Ruler.nonlinear_transform
     Ruler.parent
     Ruler.points
     Ruler.receive_shadow

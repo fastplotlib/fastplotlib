@@ -210,7 +210,8 @@ class PolygonSelector(BaseSelector):
 
         # do not need to check for mode for images, because the selector is bounded by the image shape
         # will always be `full`
-        if "Image" in source.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in source.__class__.__name__ and not hasattr(source, "graphics"):
             return source.data[ixs[:, 1], ixs[:, 0]]
 
         if mode not in ["full", "partial", "ignore"]:
@@ -328,7 +329,8 @@ class PolygonSelector(BaseSelector):
 
         # Empty ...
         if len(polygon) == 0:
-            if "Image" in source.__class__.__name__:
+            # exclude collections, whose class name also contains "Image"
+            if "Image" in source.__class__.__name__ and not hasattr(source, "graphics"):
                 return np.zeros((0, 2), np.int32)
             if "Line" in source.__class__.__name__:
                 if isinstance(source, GraphicCollection):
@@ -342,7 +344,8 @@ class PolygonSelector(BaseSelector):
 
         # image data does not need to check for mode because the selector is always bounded
         # to the image
-        if "Image" in source.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in source.__class__.__name__ and not hasattr(source, "graphics"):
             shape = source.data.value.shape
             col_ixs = np.arange(max(0, xmin), min(xmax, shape[1] - 1), dtype=int)
             row_ixs = np.arange(max(0, ymin), min(ymax, shape[0] - 1), dtype=int)

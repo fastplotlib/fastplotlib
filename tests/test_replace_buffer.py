@@ -33,13 +33,10 @@ def test_replace_positions_buffer(graphic_type, new_buffer_size):
     if graphic_type == "scatter":
         kwargs = {
             "markers": np.random.choice(list("osD+x^v<>*"), size=orig_datapoints),
-            "uniform_marker": False,
             "sizes": np.abs(ys),
-            "uniform_size": False,
             # TODO: skipping edge_colors for now since that causes a WGPU bind group error that we will figure out later
             #  anyways I think changing buffer sizes in combination with per-vertex edge colors is a literal edge-case
             "point_rotations": zs * 180,
-            "point_rotation_mode": "vertex",
         }
     else:
         kwargs = dict()

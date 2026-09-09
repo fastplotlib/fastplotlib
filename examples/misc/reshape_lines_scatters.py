@@ -37,10 +37,6 @@ scatter = figure[1, 0].add_scatter(
     sizes=(np.random.rand(100) + 1) * 3,
     edge_colors=np.random.rand(100, 4),
     point_rotations=np.random.rand(100) * 180,
-    uniform_marker=False,
-    uniform_size=False,
-    uniform_edge_color=False,
-    point_rotation_mode="vertex",
 )
 
 line_stack = figure[2, 0].add_line_stack(np.stack([data] * 10), cmap="viridis")

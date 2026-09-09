@@ -1,3 +1,5 @@
+import numbers
+
 import pygfx
 import numpy as np
 
@@ -12,13 +14,24 @@ def is_single_color(value) -> bool:
     A single color is a str, ``pygfx.Color``, or an RGB(A) array/list/tuple of 3-4 numbers.
     """
     if isinstance(value, np.ndarray):
+        # returns True if a 1D RGB(A) array
+        # returns False if shape is [n, 3 | 4]
         return value.shape in ((3,), (4,)) and value.dtype.kind in "fiu"
 
     if isinstance(value, (list, tuple)):
-        return len(value) in (3, 4) and all(isinstance(v, (float, int)) for v in value)
+        # returns True if RGB(A) list or tuple of int/float
+        # returns False otherwise
+        return len(value) in (3, 4) and all(isinstance(v, numbers.Real) for v in value)
 
     # str, pygfx.Color, or any other scalar color specifier
-    return True
+    if isinstance(value, (pygfx.Color, str)):
+        return True
+
+    raise ValueError(
+        "`colors` must be a str, pygfx.Color, array, list or tuple indicating an RGB(A) color, a "
+        "sequence of str, pygfx.Color, and array of shape [n_datapoints, 3 | 4], or an existing "
+        "`UniformColor` or `VertexColors` instance."
+    )
 
 
 def parse_colors(

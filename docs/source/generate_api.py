@@ -507,6 +507,10 @@ def main():
             if graphic_cls is graphics.Graphic:
                 # skip Graphic base class
                 continue
+            if issubclass(graphic_cls, graphics.GraphicCollection):
+                # a collection exposes the features of its graphics through accessors, which do
+                # not have an event info spec
+                continue
             f.write(f"{graphic_cls.__name__}\n")
             f.write("-" * len(graphic_cls.__name__) + "\n\n")
             if hasattr(graphic_cls, "_features"):  # some selectors like Highlight etc. don't have "graphic features"

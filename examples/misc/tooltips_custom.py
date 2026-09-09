@@ -14,7 +14,6 @@ import fastplotlib as fpl
 from sklearn.cluster import AgglomerativeClustering
 from sklearn import datasets
 
-
 figure = fpl.Figure(size=(700, 560))
 
 dataset = datasets.load_iris()
@@ -29,6 +28,10 @@ scatter = figure[0, 0].add_scatter(
     cmap="Set1",
     cmap_transform=agg.labels_  # use the labels as a transform to map colors from the colormap
 )
+
+# since it's a qualitative colormap, set the cmap_range as the full range of the colormap
+# otherwise it auto-sets it from the transform min, max
+scatter.cmap_range = (0, scatter.cmap.num_colors)
 
 
 def tooltip_info(pick_info: dict) -> str:

@@ -268,7 +268,8 @@ class LinearSelector(BaseSelector):
             else:
                 return round(idx)
 
-        if "Image" in graphic.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in graphic.__class__.__name__ and not hasattr(graphic, "graphics"):
             # indices map directly to grid geometry for image data buffer
             index = self.selection
             shape = graphic.data[:].shape

@@ -22,11 +22,16 @@ Properties
 
     LineCollection.alpha
     LineCollection.alpha_mode
+    LineCollection.alpha_modes
+    LineCollection.alphas
     LineCollection.axes
     LineCollection.block_events
     LineCollection.block_handlers
     LineCollection.cmap
+    LineCollection.cmap_range
+    LineCollection.cmap_transform
     LineCollection.colors
+    LineCollection.dash_pattern
     LineCollection.data
     LineCollection.deleted
     LineCollection.event_handlers
@@ -40,6 +45,8 @@ Properties
     LineCollection.rotation
     LineCollection.rotations
     LineCollection.scale
+    LineCollection.scales
+    LineCollection.size_space
     LineCollection.supported_events
     LineCollection.thickness
     LineCollection.tooltip_format

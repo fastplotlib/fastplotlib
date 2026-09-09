@@ -50,7 +50,7 @@ def color_indices(ev):
 
     # iterate through each of the selected indices, if the array size > 0 that mean it's under the selection
     selected_line_ixs = [i for i in range(len(ixs)) if ixs[i].size > 0]
-    line_collection[selected_line_ixs].colors = "w"
+    line_collection.colors[selected_line_ixs] = "w"
 
 
 # manually move selector to make a nice gallery image :D

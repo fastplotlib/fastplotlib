@@ -33,8 +33,10 @@ for center in product(range(0, spatial_dims[0], 9), range(0, spatial_dims[1], 9)
 
 pos_xy = np.vstack(circles)
 
+colors = np.random.rand(len(circles), 3)
+
 # add image
-line_collection = figure[0, 0].add_line_collection(circles, cmap="jet", thickness=5)
+line_collection = figure[0, 0].add_line_collection(circles, colors=colors, thickness=5)
 
 # add polygon selector to image graphic
 polygon_selector = line_collection.add_polygon_selector(
@@ -45,11 +47,12 @@ polygon_selector = line_collection.add_polygon_selector(
 # add event handler to highlight selected indices
 @polygon_selector.add_event_handler("selection")
 def color_indices(ev):
-    line_collection.cmap = "jet"
+    line_collection.colors = colors
     ixs = ev.get_selected_indices()
     # iterate through each of the selected indices, if the array size > 0 that mean it's under the selection
     selected_line_ixs = [i for i in range(len(ixs)) if ixs[i].size > 0]
-    line_collection[selected_line_ixs].colors = "w"
+    # boolean indexing of a collection property
+    line_collection.colors[selected_line_ixs] = "w"
 
 
 # # manually move selector to make a nice gallery image :D

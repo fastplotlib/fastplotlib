@@ -53,11 +53,15 @@ Methods
     :toctree: Subplot_api
 
     Subplot.add_animations
+    Subplot.add_collection
     Subplot.add_graphic
     Subplot.add_image
+    Subplot.add_image_collection
+    Subplot.add_image_grid
     Subplot.add_image_volume
     Subplot.add_image_yuv
     Subplot.add_imgui_window
+    Subplot.add_inf_line
     Subplot.add_line
     Subplot.add_line_collection
     Subplot.add_line_stack

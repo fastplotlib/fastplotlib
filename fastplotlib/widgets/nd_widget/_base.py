@@ -232,7 +232,18 @@ class NDProcessor:
     def window_funcs(
         self,
     ) -> dict[str, tuple[WindowFuncCallable | None, int | float | None]]:
-        """get or set window functions, see docstring for details"""
+        """
+        Get or set the per-slider-dim window functions applied around the current slider position,
+        ``{dim_name: (func, window_size)}``, ex: ``{"time": (np.mean, 2.5)}``.
+
+        *func* must accept ``axis: int`` and ``keepdims: bool`` kwargs (ex: ``np.mean``, ``np.max``). It **must**
+        return an array that has the same dims as the input, therefore the size of any dim along which it was
+        applied should reduce to ``1``. These dims must not be removed by the window func. *window_size* is in
+        reference-space units (ex: 2.5 seconds).
+
+        A window func is only applied for the dims listed in :attr:`window_order`. Any dim without an entry is
+        filled in with ``(None, None)``.
+        """
         return self._window_funcs
 
     @window_funcs.setter
@@ -322,7 +333,15 @@ class NDProcessor:
 
     @property
     def slider_dim_transforms(self) -> dict[str, Callable[[Any], int]]:
-        """get or set the slider_dim_transforms, see docstring for details"""
+        """
+        Get or set the per-slider-dim mapping from reference-space values to local array indices,
+        ``{dim_name: transform}``.
+
+        A transform may be given as a Callable that takes a reference-space value and returns an array index, or
+        as an array of reference values in which case its ``searchsorted`` is used as the transform (ex: a
+        timestamps array). Any dim given ``None``, or not given at all, uses the identity mapping, i.e. the
+        reference value is rounded to the nearest integer and used as the array index.
+        """
         return self._index_mappings
 
     @slider_dim_transforms.setter
@@ -503,14 +522,26 @@ class NDProcessor:
 
     async def get_window_output(self, indices: dict[str, Any]) -> ArrayProtocol:
         """
-        Applies any window functions and returns squeezed sliced array transposed in the order of the given spatial dims
+        Take the data slice at the given indices and apply the window functions.
 
         Parameters
         ----------
-        indices
+        indices: dict[str, Any]
+            Reference-space value for each slider dim, ex: ``{"time": 46.397, "depth": 23.24}``. Must provide a
+            value for every slider dim.
 
         Returns
         -------
+        ArrayProtocol
+            Data slice with the window funcs applied and the slider dims, which are of size ``1`` after
+            windowing, squeezed out. The remaining dims are the spatial dims, in the order they appear in
+            ``dims``, **not** in ``spatial_dims`` display order. Subclasses transpose into display order in
+            :meth:`get`.
+
+        Raises
+        ------
+        ValueError
+            If the number of dims left after squeezing does not equal the number of spatial dims.
 
         """
         # windowed slice if user set any window funcs
@@ -561,6 +592,26 @@ class NDProcessor:
         return raw_slice
 
     async def get(self, indices: dict[str, Any]) -> ArrayProtocol:
+        """
+        Get the data slice to display at the given indices. **Must** be implemented in a subclass.
+
+        Called by the ``NDGraphic`` whenever the ``ReferenceIndex`` updates. Implementations usually call
+        :meth:`get_window_output`, apply the ``spatial_func``, and transpose into the ``spatial_dims`` display
+        order.
+
+        Parameters
+        ----------
+        indices: dict[str, Any]
+            Reference-space value for each slider dim, ex: ``{"time": 46.397, "depth": 23.24}``. Must provide a
+            value for every slider dim.
+
+        Returns
+        -------
+        ArrayProtocol
+            Data slice that maps to the graphical representation, with the dims given by ``spatial_dims`` in
+            display order.
+
+        """
         raise NotImplementedError
 
     # TODO: html and pretty text repr    #
@@ -607,6 +658,28 @@ class NDGraphic:
         nd_subplot: NDWSubplot,
         name: str | None,
     ):
+        """
+        Base class that pairs an :class:`NDProcessor` with a ``Graphic``. Subclass to support a new graphical
+        representation.
+
+        The ``NDProcessor`` produces the data slice for the current index and the ``NDGraphic`` writes it to the
+        ``Graphic``. When the ``ReferenceIndex`` of the parent ``NDWidget`` changes, it schedules
+        ``_set_indices_()`` on every ``NDGraphic`` that has the dim that changed.
+
+        Subclasses must implement :meth:`_create_graphic` and ``_set_indices_()``, and the :attr:`processor`,
+        :attr:`graphic`, :attr:`indices` and :attr:`spatial_dims` properties. Most of the processor properties
+        are aliased here so users can reach them from the ``NDGraphic``, and setting one of those aliases
+        re-renders the current slice.
+
+        Parameters
+        ----------
+        nd_subplot: NDWSubplot
+            parent NDWSubplot the NDGraphic is in
+
+        name: str or None
+            Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
+
+        """
         self._nd_subplot = nd_subplot
         self._name = name
         self._graphic: Graphic | None = None
@@ -628,7 +701,10 @@ class NDGraphic:
 
     @property
     def pause(self) -> bool:
-        """if True, changes in the reference until it is set back to False"""
+        """
+        Get or set whether this graphic ignores changes in the ``ReferenceIndex``. If ``True``, it stops
+        updating until it is set back to ``False``, the other graphics in the widget are unaffected.
+        """
         return self._pause
 
     @pause.setter
@@ -642,10 +718,12 @@ class NDGraphic:
 
     @property
     def processor(self) -> NDProcessor:
+        """NDProcessor that manages the data and produces data slices to display"""
         raise NotImplementedError
 
     @property
     def graphic(self) -> Graphic:
+        """Underlying Graphic object used to display the current data slice"""
         raise NotImplementedError
 
     @property
@@ -655,6 +733,7 @@ class NDGraphic:
 
     @property
     def indices(self) -> dict[str, Any]:
+        """the current index of each slider dim in reference-space units, from the ``ReferenceIndex``"""
         raise NotImplementedError
 
     async def _set_indices_(self, indices: dict[str, Any] = None):
@@ -709,6 +788,7 @@ class NDGraphic:
 
     @property
     def spatial_dims(self) -> tuple[str, ...]:
+        """get or set the spatial dims, i.e. the rendered dims, **in display order**"""
         # number of spatial dims for positional data is always 3
         # for image is 2 or 3, so it must be implemented in subclass
         raise NotImplementedError
@@ -720,13 +800,21 @@ class NDGraphic:
 
     @property
     def slider_dim_transforms(self) -> dict[str, Callable[[Any], int]]:
+        """
+        Get or set the per-slider-dim mapping from reference-space values to local array indices,
+        ``{dim_name: transform}``. Setting it re-renders the current data slice.
+
+        A transform may be given as a Callable that takes a reference-space value and returns an array index, or
+        as an array of reference values in which case its ``searchsorted`` is used as the transform (ex: a
+        timestamps array). Any dim given ``None``, or not given at all, uses the identity mapping, i.e. the
+        reference value is rounded to the nearest integer and used as the array index.
+        """
         return self.processor.slider_dim_transforms
 
     @slider_dim_transforms.setter
     def slider_dim_transforms(
         self, maps: dict[str, Callable[[Any], int] | ArrayLike | None] | None
     ):
-        """get or set the slider_dim_transforms, see docstring for details"""
         self.processor.slider_dim_transforms = maps
         # force a render
         run_sync(self._set_indices_())
@@ -735,7 +823,19 @@ class NDGraphic:
     def window_funcs(
         self,
     ) -> dict[str, tuple[WindowFuncCallable | None, int | float | None]]:
-        """get or set window functions, see docstring for details"""
+        """
+        Get or set the per-slider-dim window functions applied around the current slider position,
+        ``{dim_name: (func, window_size)}``, ex: ``{"time": (np.mean, 2.5)}``. Setting it re-renders the current
+        data slice.
+
+        *func* must accept ``axis: int`` and ``keepdims: bool`` kwargs (ex: ``np.mean``, ``np.max``). It **must**
+        return an array that has the same dims as the input, therefore the size of any dim along which it was
+        applied should reduce to ``1``. These dims must not be removed by the window func. *window_size* is in
+        reference-space units (ex: 2.5 seconds).
+
+        A window func is only applied for the dims listed in :attr:`window_order`. Any dim without an entry is
+        filled in with ``(None, None)``.
+        """
         return self.processor.window_funcs
 
     @window_funcs.setter
@@ -763,14 +863,16 @@ class NDGraphic:
 
     @property
     def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
-        """get or set the spatial_func, see docstring for details"""
+        """
+        Get or set the function applied to the spatial slice *after* the window funcs, right before rendering.
+        Setting it re-renders the current data slice.
+        """
         return self.processor.spatial_func
 
     @spatial_func.setter
     def spatial_func(
         self, func: Callable[[ArrayProtocol], ArrayProtocol]
     ) -> Callable | None:
-        """get or set the spatial_func, see docstring for details"""
         self.processor.spatial_func = func
         # force a render
         run_sync(self._set_indices_())

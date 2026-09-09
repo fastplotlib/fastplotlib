@@ -50,7 +50,7 @@ def test_uniform_markers(marker):
 
     data = generate_positions_spiral_data("xyz")
 
-    scatter = fig[0, 0].add_scatter(data, markers=marker, uniform_marker=True)
+    scatter = fig[0, 0].add_scatter(data, markers=marker)
 
     marker_full_name = marker_names.get(marker)
 
@@ -70,27 +70,6 @@ def test_uniform_markers(marker):
     check_event(scatter, "markers", pygfx.MarkerShape.circle)
 
 
-@pytest.mark.parametrize("to_type", [list, tuple, np.array])
-@pytest.mark.parametrize("uniform_marker", [True, False])
-def test_incompatible_marker_args(to_type, uniform_marker):
-    markers = ["o"] * 3 + ["s"] * 3 + ["+"] * 3 + ["x"]
-
-    markers = to_type(markers)
-
-    data = generate_positions_spiral_data("xyz")
-
-    fig = fpl.Figure()
-
-    if uniform_marker:
-        with pytest.raises(TypeError):
-            scatter = fig[0, 0].add_scatter(data, markers=markers, uniform_marker=True)
-
-    else:
-        scatter = fig[0, 0].add_scatter(data, markers=markers, uniform_marker=False)
-        assert isinstance(scatter._markers, VertexMarkers)
-        assert scatter.world_object.material.marker_mode == pygfx.MarkerMode.vertex
-
-
 def test_uniform_custom_sdf():
     lower_right_triangle_sdf = """
     // hardcode square root of 2
@@ -108,12 +87,13 @@ def test_uniform_custom_sdf():
     fig = fpl.Figure()
 
     scatter = fig[0, 0].add_scatter(
-        data, markers="custom", uniform_marker=True, custom_sdf=lower_right_triangle_sdf
+        data, markers="custom", custom_sdf=lower_right_triangle_sdf
     )
 
     assert scatter.markers == "custom"
     assert scatter.world_object.material.marker == "custom"
     assert scatter.world_object.material.custom_sdf == lower_right_triangle_sdf
+
 
 # test with both list[str] and 2D numpy array inputs as colors
 @pytest.mark.parametrize("edge_colors",[generate_color_inputs("multi")[0], generate_color_inputs("multi")[1]])
@@ -125,10 +105,11 @@ def test_edge_colors(edge_colors):
     scatter = fig[0, 0].add_scatter(
         data=data,
         edge_colors=edge_colors,
-        uniform_edge_color=False,
     )
 
     assert isinstance(scatter._edge_colors, VertexColors)
+    assert scatter.world_object.material.edge_color_mode == pygfx.ColorMode.vertex
+    assert scatter.world_object.geometry.edge_colors is scatter.edge_colors._fpl_buffer
 
     npt.assert_almost_equal(scatter.edge_colors.value, MULTI_COLORS_TRUTH)
 
@@ -140,6 +121,7 @@ def test_edge_colors(edge_colors):
     new_colors, array = generate_color_inputs("multi2")
     scatter.edge_colors = new_colors
     npt.assert_almost_equal(scatter.edge_colors.value, array)
+    npt.assert_almost_equal(scatter.world_object.geometry.edge_colors.data, array)
 
 
 @pytest.mark.parametrize("edge_color", ["r", (1, 0, 0), [1, 0, 0], np.array([1, 0, 0])])
@@ -149,11 +131,12 @@ def test_uniform_edge_colors(edge_color):
     data = generate_positions_spiral_data("xyz")
 
     scatter = fig[0, 0].add_scatter(
-        data=data, edge_colors=edge_color, uniform_edge_color=True
+        data=data, edge_colors=edge_color,
     )
 
     assert isinstance(scatter._edge_colors, UniformEdgeColor)
     assert scatter.edge_colors == pygfx.Color(edge_color)
+    assert scatter.world_object.material.edge_color_mode == pygfx.ColorMode.uniform
     assert scatter.world_object.material.edge_color == pygfx.Color(edge_color)
 
     # test changes and event
@@ -164,22 +147,6 @@ def test_uniform_edge_colors(edge_color):
     assert scatter.world_object.material.edge_color == pygfx.Color("g")
 
     check_event(scatter, "edge_colors", pygfx.Color("g"))
-
-
-@pytest.mark.parametrize("edge_colors", [generate_color_inputs("multi")[0],generate_color_inputs("multi")[1]])
-@pytest.mark.parametrize("uniform_edge_color", [False, True])
-def test_incompatible_edge_colors_args(edge_colors, uniform_edge_color):
-    fig = fpl.Figure()
-
-    data = generate_positions_spiral_data("xyz")
-
-    if uniform_edge_color:
-        with pytest.raises(TypeError):
-            scatter = fig[0, 0].add_scatter(
-                data=data,
-                edge_colors=edge_colors,
-                uniform_edge_color=uniform_edge_color,
-            )
 
 
 @pytest.mark.parametrize("edge_width", [0.0, 0.5, 1.0, 5.0])

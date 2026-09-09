@@ -143,6 +143,12 @@ any of these properties.
 +--------------+--------------------------------------------------------------------------------------------------------------+
 | rotation     | Graphic rotation quaternion                                                                                  |
 +--------------+--------------------------------------------------------------------------------------------------------------+
+| scale        | Scale factors of the graphic, [x, y, z]                                                                      |
++--------------+--------------------------------------------------------------------------------------------------------------+
+| alpha        | Opacity of the graphic                                                                                       |
++--------------+--------------------------------------------------------------------------------------------------------------+
+| alpha_mode   | How the renderer handles the alpha, ex: "blend", "dither", "add"                                             |
++--------------+--------------------------------------------------------------------------------------------------------------+
 | visible      | Access or change the visibility                                                                              |
 +--------------+--------------------------------------------------------------------------------------------------------------+
 | deleted      | Used when a graphic is deleted, triggers events that can be useful to indicate this graphic has been deleted |
@@ -152,45 +158,81 @@ any of these properties.
 
     (a) ``ImageGraphic``
 
-    +------------------------+---------------------------------------------------+
-    | Feature Name           | Description                                       |
-    +========================+===================================================+
-    | data                   | Underlying image data                             |
-    +------------------------+---------------------------------------------------+
-    | vmin                   | Lower contrast limit of an image                  |
-    +------------------------+---------------------------------------------------+
-    | vmax                   | Upper contrast limit of an image                  |
-    +------------------------+---------------------------------------------------+
-    | cmap                   | Colormap for a grayscale image, ignored if RGB(A) |
-    +------------------------+---------------------------------------------------+
+    +--------------------+------------------------------------------------------------+
+    | Feature Name       | Description                                                |
+    +====================+============================================================+
+    | data               | Underlying image data                                      |
+    +--------------------+------------------------------------------------------------+
+    | vmin               | Lower contrast limit of an image                           |
+    +--------------------+------------------------------------------------------------+
+    | vmax               | Upper contrast limit of an image                           |
+    +--------------------+------------------------------------------------------------+
+    | gamma              | Gamma correction applied to the value scaled by vmin, vmax |
+    +--------------------+------------------------------------------------------------+
+    | cmap               | Colormap for a grayscale image, ignored if RGB(A)          |
+    +--------------------+------------------------------------------------------------+
+    | interpolation      | Data interpolation method, "nearest" or "linear"           |
+    +--------------------+------------------------------------------------------------+
+    | cmap_interpolation | Colormap interpolation method, "nearest" or "linear"       |
+    +--------------------+------------------------------------------------------------+
 
-    (b) ``LineGraphic``, ``LineCollection``, ``LineStack``
+    (b) ``LineGraphic``
 
-    +--------------+--------------------------------+
-    | Feature Name | Description                    |
-    +==============+================================+
-    | data         | underlying data of the line(s) |
-    +--------------+--------------------------------+
-    | colors       | colors of the line(s)          |
-    +--------------+--------------------------------+
-    | cmap         | colormap of the line(s)        |
-    +--------------+--------------------------------+
-    | thickness    | thickness of the line(s)       |
-    +--------------+--------------------------------+
+    +----------------+---------------------------------------------------------------+
+    | Feature Name   | Description                                                   |
+    +================+===============================================================+
+    | data           | underlying data of the line                                   |
+    +----------------+---------------------------------------------------------------+
+    | colors         | color(s) of the line                                          |
+    +----------------+---------------------------------------------------------------+
+    | cmap           | colormap of the line, overrides colors                        |
+    +----------------+---------------------------------------------------------------+
+    | cmap_transform | values used to map the colors from the cmap                   |
+    +----------------+---------------------------------------------------------------+
+    | cmap_range     | the (min, max) of the cmap_transform mapped onto the colormap |
+    +----------------+---------------------------------------------------------------+
+    | thickness      | thickness of the line                                         |
+    +----------------+---------------------------------------------------------------+
+    | dash_pattern   | dash pattern of the line                                      |
+    +----------------+---------------------------------------------------------------+
+    | size_space     | coordinate space in which the thickness is expressed          |
+    +----------------+---------------------------------------------------------------+
 
     (c) ``ScatterGraphic``
 
-    +--------------+---------------------------------------+
-    | Feature Name | Description                           |
-    +==============+=======================================+
-    | data         | underlying data of the scatter points |
-    +--------------+---------------------------------------+
-    | colors       | colors of the scatter points          |
-    +--------------+---------------------------------------+
-    | cmap         | colormap of the scatter points        |
-    +--------------+---------------------------------------+
-    | sizes        | size of the scatter points            |
-    +--------------+---------------------------------------+
+    +-----------------+----------------------------------------------------------------+
+    | Feature Name    | Description                                                    |
+    +=================+================================================================+
+    | data            | underlying data of the scatter points                          |
+    +-----------------+----------------------------------------------------------------+
+    | colors          | color(s) of the scatter points                                 |
+    +-----------------+----------------------------------------------------------------+
+    | cmap            | colormap of the scatter points, overrides colors               |
+    +-----------------+----------------------------------------------------------------+
+    | cmap_transform  | values used to map the colors from the cmap                    |
+    +-----------------+----------------------------------------------------------------+
+    | cmap_range      | the (min, max) of the cmap_transform mapped onto the colormap  |
+    +-----------------+----------------------------------------------------------------+
+    | sizes           | size(s) of the scatter points                                  |
+    +-----------------+----------------------------------------------------------------+
+    | markers         | marker shape(s), when mode is "markers"                        |
+    +-----------------+----------------------------------------------------------------+
+    | edge_colors     | marker edge color(s), when mode is "markers"                   |
+    +-----------------+----------------------------------------------------------------+
+    | edge_width      | width of the marker edges, when mode is "markers"              |
+    +-----------------+----------------------------------------------------------------+
+    | point_rotations | rotation of the points in radians, None follows the data curve |
+    +-----------------+----------------------------------------------------------------+
+    | image           | image rendered at each point, when mode is "image"             |
+    +-----------------+----------------------------------------------------------------+
+    | size_space      | coordinate space in which the sizes are expressed              |
+    +-----------------+----------------------------------------------------------------+
+
+    For ``colors``, ``sizes``, ``markers``, ``edge_colors``, and ``point_rotations`` the buffer mode is
+    determined by the value: pass one value to use a uniform buffer, or pass a sequence with one
+    value per datapoint. Setting a sequence (e.g. an array array) on a property that currently holds one
+    value switches it to per-datapoint; setting one value on a per-datapoint property broadcasts
+    it and stays per-datapoint.
 
     (d) ``TextGraphic``
 
@@ -207,6 +249,113 @@ any of these properties.
     +-------------------+---------------------------+
     | outline_thickness | thickness of the text     |
     +-------------------+---------------------------+
+
+
+    (e) ``InfLineGraphic``
+
+    +----------------+---------------------------------------------------------------------------------------------+
+    | Feature Name   | Description                                                                                 |
+    +================+=============================================================================================+
+    | data           | position of each infinite line along ``axis``, or the segment endpoints if ``axis`` is None |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | colors         | color(s) of the lines, one color per line or a uniform color for all lines                  |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | cmap           | colormap across lines, overrides colors                                                     |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | cmap_transform | values used to map the colors from the cmap                                                 |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | cmap_range     | the (min, max) of the cmap_transform mapped onto the colormap                               |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | thickness      | thickness of the lines                                                                      |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | dash_pattern   | dash pattern of the lines                                                                   |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | size_space     | coordinate space in which the thickness is expressed                                        |
+    +----------------+---------------------------------------------------------------------------------------------+
+
+    (f) ``MeshGraphic``
+
+    +--------------+-----------------------------------------------------------------------------------+
+    | Feature Name | Description                                                                       |
+    +==============+===================================================================================+
+    | positions    | 3D positions of the vertices                                                      |
+    +--------------+-----------------------------------------------------------------------------------+
+    | indices      | indices into the positions that form the triangles, every three form one triangle |
+    +--------------+-----------------------------------------------------------------------------------+
+    | colors       | a uniform color, or the per-position colors                                       |
+    +--------------+-----------------------------------------------------------------------------------+
+    | cmap         | colormap of the mesh, overrides colors                                            |
+    +--------------+-----------------------------------------------------------------------------------+
+
+    (g) ``SurfaceGraphic``
+
+    +--------------+--------------------------------------------------------+
+    | Feature Name | Description                                            |
+    +==============+========================================================+
+    | data         | a height-map, or an [m, n, 3] grid of (x, y, z) values |
+    +--------------+--------------------------------------------------------+
+    | colors       | a uniform color, or the per-position colors            |
+    +--------------+--------------------------------------------------------+
+    | cmap         | colormap of the surface, overrides colors              |
+    +--------------+--------------------------------------------------------+
+
+    (h) ``PolygonGraphic``
+
+    +--------------+------------------------------------------------+
+    | Feature Name | Description                                    |
+    +==============+================================================+
+    | data         | the polygon vertices, of shape [n_vertices, 2] |
+    +--------------+------------------------------------------------+
+    | colors       | a uniform color, or the per-position colors    |
+    +--------------+------------------------------------------------+
+    | cmap         | colormap of the polygon, overrides colors      |
+    +--------------+------------------------------------------------+
+
+    (i) ``VectorsGraphic``
+
+    +--------------+------------------------------------------------------+
+    | Feature Name | Description                                          |
+    +==============+======================================================+
+    | positions    | positions of the vectors, of shape [n, 2] or [n, 3]  |
+    +--------------+------------------------------------------------------+
+    | directions   | directions of the vectors, of shape [n, 2] or [n, 3] |
+    +--------------+------------------------------------------------------+
+
+
+(3) Graphic collections
+
+A collection, such as a ``LineCollection``, ``LineStack``, ``ScatterCollection``, ``ImageCollection``, or
+``ImageGrid``, exposes each property of the graphics it contains. Indexing a property indexes it across
+the graphics, ex: ``line_collection.colors[:10] = "r"`` sets the color of the first ten lines and
+``line_collection.data[5, :, 1] = ys`` sets the y-values of the sixth line. Fully numpy-style fancy slicing
+is supported for properties of a graphic collection.
+
+A property that the collection also has itself is exposed under a plural name, so ``collection.offset``
+is the offset of the collection and ``collection.offsets`` is the offset of each graphic in it:
+
++--------------+--------------------------------------------------+
+| Feature Name | Description                                      |
++==============+==================================================+
+| names        | ``name`` of each graphic in the collection       |
++--------------+--------------------------------------------------+
+| offsets      | ``offset`` of each graphic in the collection     |
++--------------+--------------------------------------------------+
+| rotations    | ``rotation`` of each graphic in the collection   |
++--------------+--------------------------------------------------+
+| scales       | ``scale`` of each graphic in the collection      |
++--------------+--------------------------------------------------+
+| alphas       | ``alpha`` of each graphic in the collection      |
++--------------+--------------------------------------------------+
+| alpha_modes  | ``alpha_mode`` of each graphic in the collection |
++--------------+--------------------------------------------------+
+| visibles     | ``visible`` of each graphic in the collection    |
++--------------+--------------------------------------------------+
+| metadatas    | ``metadata`` of each graphic in the collection   |
++--------------+--------------------------------------------------+
+
+The graphics themselves are available as an array, ex: ``line_collection.graphics[0]``.
+
+
 
 Using our example from above: once we add a ``Graphic`` to the figure, we can then begin to change its properties. ::
 
@@ -514,7 +663,7 @@ For example: ::
         xy = fig[0, 0].map_screen_to_world(ev)[:-1]
 
         # get the nearest graphic to the position
-        nearest = fpl.utils.get_nearest_graphics(xy, circles_graphic)[0]
+        nearest = fpl.get_nearest_graphics(xy, circles_graphic)[0]
 
         # change the closest graphic color to white
         nearest.colors = "w"
