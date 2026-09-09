@@ -14,16 +14,16 @@ from ... import (
 )
 from ...layouts import Subplot
 from ...utils import ArrayProtocol, enums
-from . import NDImageProcessor, NDImage, NDPositions, NDTimeseries, NDVectors
+from . import NDImageSlicer, NDImage, NDPositions, NDTimeseries, NDVectors
 from ._nd_positions._nd_positions import (
-    NDPositionsProcessor,
+    NDPositionsSlicer,
     ColorsType,
     FeatureCallable,
     MarkersType,
     SizesType,
 )
 from ._index import AutoRangeContinuous
-from ._video import VideoProcessor
+from ._video import VideoSlicer
 from ._base import NDGraphic, WindowFuncCallable
 
 
@@ -130,7 +130,7 @@ class NDWSubplot:
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         compute_histogram: bool = True,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
-        processor_type: type[NDImageProcessor] = NDImageProcessor,
+        slicer_type: type[NDImageSlicer] = NDImageSlicer,
         colorspace: Literal[
             "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
         ] = "srgb",
@@ -192,8 +192,8 @@ class NDWSubplot:
             timestamps array). Any dim without a transform uses the identity mapping, i.e. the current reference
             value is rounded to the nearest integer and used as the array index.
 
-        processor_type: type[NDImageProcessor], default ``NDImageProcessor``
-            ``NDImageProcessor`` subclass that manages the data and produces the data slices.
+        slicer_type: type[NDImageSlicer], default ``NDImageSlicer``
+            ``NDImageSlicer`` subclass that manages the data and produces the data slices.
 
         colorspace: "srgb" | "tex-srgb" | "physical" | "yuv420p" | "yuv444p", default "srgb"
             Colorspace in which to interpret the data. The RGB colorspaces are rendered using an ``ImageGraphic``
@@ -228,7 +228,7 @@ class NDWSubplot:
             spatial_func=spatial_func,
             compute_histogram=compute_histogram,
             slider_maps=slider_maps,
-            processor_type=processor_type,
+            slicer_type=slicer_type,
             colorspace=colorspace,
             colorrange=colorrange,
             name=name,
@@ -246,7 +246,7 @@ class NDWSubplot:
             rgb_dim: str | None = None,
             colorspace: enums.ColorspacesYUV | enums.ColorspacesRGB = "yuv420p",
             colorrange: enums.ColorRange = "limited",
-            processor_type: NDImageProcessor = VideoProcessor,
+            slicer_type: NDImageSlicer = VideoSlicer,
             window_funcs: dict[
                 str, tuple[WindowFuncCallable | None, int | float | None]
             ] = None,
@@ -267,7 +267,7 @@ class NDWSubplot:
         We strongly recommend using ``asyncvideo`` for the ``data`` object, it is the most efficient async video
         reader that we know of for visualization purposes: https://pypi.org/project/asyncvideo/
 
-        Same as :meth:`add_nd_image` but uses a :class:`VideoProcessor` and YUV defaults. The ``VideoProcessor``
+        Same as :meth:`add_nd_image` but uses a :class:`VideoSlicer` and YUV defaults. The ``VideoSlicer``
         reads the frame at the current index directly, it does not apply ``window_funcs``.
 
         Parameters
@@ -294,16 +294,16 @@ class NDWSubplot:
         colorrange: "full" | "limited", default "limited"
             Used only for the YUV colorspaces, see :class:`.ImageYUVGraphic`. Most videos use "limited".
 
-        processor_type: type[NDImageProcessor], default ``VideoProcessor``
-            ``NDImageProcessor`` subclass that manages the data and produces the data slices.
+        slicer_type: type[NDImageSlicer], default ``VideoSlicer``
+            ``NDImageSlicer`` subclass that manages the data and produces the data slices.
 
         window_funcs: dict[str, tuple[WindowFuncCallable | None, int | float | None]], optional
             Per-slider-dim window functions, see :meth:`add_nd_image`. Ignored by the default
-            ``VideoProcessor``.
+            ``VideoSlicer``.
 
         window_order: tuple[str, ...], optional
             Order in which the window functions are applied across dims. Ignored by the default
-            ``VideoProcessor``.
+            ``VideoSlicer``.
 
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice right before rendering.
@@ -335,7 +335,7 @@ class NDWSubplot:
             rgb_dim=rgb_dim,
             colorspace=colorspace,
             colorrange=colorrange,
-            processor_type=processor_type,
+            slicer_type=slicer_type,
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
@@ -438,7 +438,7 @@ class NDWSubplot:
         dims: Sequence[str],
         display_dims: tuple[str, str, str],
         *args,
-        processor: type[NDPositionsProcessor] = NDPositionsProcessor,
+        slicer: type[NDPositionsSlicer] = NDPositionsSlicer,
         display_window: int | float | None = 10,
         window_funcs: dict[
             str, tuple[WindowFuncCallable | None, int | float | None]
@@ -456,7 +456,7 @@ class NDWSubplot:
         markers: MarkersType = None,
         name: str = None,
         graphic_kwargs: dict = None,
-        processor_kwargs: dict = None,
+        slicer_kwargs: dict = None,
     ) -> NDPositions:
         """
         Add n-dimensional positional data to this subplot, rendered as a ``ScatterCollection``.
@@ -486,10 +486,10 @@ class NDWSubplot:
             in the array, the data slice is transposed into display order.
 
         args
-            extra positional arguments passed to the ``processor`` constructor.
+            extra positional arguments passed to the ``slicer`` constructor.
 
-        processor: type[NDPositionsProcessor], default ``NDPositionsProcessor``
-            ``NDPositionsProcessor`` subclass that manages the data and produces the data slices.
+        slicer: type[NDPositionsSlicer], default ``NDPositionsSlicer``
+            ``NDPositionsSlicer`` subclass that manages the data and produces the data slices.
 
         display_window: int, float or None, default 10
             Size of the window of the ``p`` dim to render, in the reference units of that dim, centered on its
@@ -586,8 +586,8 @@ class NDWSubplot:
         graphic_kwargs: dict, optional
             passed to the underlying ``ScatterCollection``
 
-        processor_kwargs: dict, optional
-            passed to the ``processor`` constructor.
+        slicer_kwargs: dict, optional
+            passed to the ``slicer`` constructor.
 
         Returns
         -------
@@ -619,7 +619,7 @@ class NDWSubplot:
             display_dims,
             *args,
             graphic_type=ScatterCollection,
-            processor=processor,
+            slicer=slicer,
             display_window=display_window,
             window_funcs=window_funcs,
             window_order=window_order,
@@ -635,7 +635,7 @@ class NDWSubplot:
             markers=markers,
             name=name,
             graphic_kwargs=graphic_kwargs,
-            processor_kwargs=processor_kwargs,
+            slicer_kwargs=slicer_kwargs,
         )
 
         self._nd_graphics.append(nd)
@@ -651,7 +651,7 @@ class NDWSubplot:
             LineCollection | LineStack | ScatterCollection | ScatterStack | ImageGraphic
         ] = LineStack,
         x_range_mode: Literal["fixed", "auto"] | None = "auto",
-        processor: type[NDPositionsProcessor] = NDPositionsProcessor,
+        slicer: type[NDPositionsSlicer] = NDPositionsSlicer,
         display_window: int | float | None = 10,
         window_funcs: dict[
             str, tuple[WindowFuncCallable | None, int | float | None]
@@ -670,7 +670,7 @@ class NDWSubplot:
         markers: MarkersType = None,
         name: str = None,
         graphic_kwargs: dict = None,
-        processor_kwargs: dict = None,
+        slicer_kwargs: dict = None,
     ) -> NDTimeseries:
         """
         Add n-dimensional timeseries data to this subplot, where the ``p`` dim is a time-like x-axis.
@@ -705,7 +705,7 @@ class NDWSubplot:
             this order in the array, the data slice is transposed into display order.
 
         args
-            extra positional arguments passed to the ``processor`` constructor.
+            extra positional arguments passed to the ``slicer`` constructor.
 
         graphic_type: type[LineCollection | LineStack | ScatterCollection | ScatterStack | ImageGraphic], default ``LineStack``
             The graphical representation used to display the data slice. ``ImageGraphic`` renders the traces as a
@@ -725,8 +725,8 @@ class NDWSubplot:
 
             Forced to ``None`` when ``display_window`` is ``None``.
 
-        processor: type[NDPositionsProcessor], default ``NDPositionsProcessor``
-            ``NDPositionsProcessor`` subclass that manages the data and produces the data slices.
+        slicer: type[NDPositionsSlicer], default ``NDPositionsSlicer``
+            ``NDPositionsSlicer`` subclass that manages the data and produces the data slices.
 
         display_window: int, float or None, default 10
             Size of the window of the ``p`` dim to render, in the reference units of that dim, centered on its
@@ -830,8 +830,8 @@ class NDWSubplot:
         graphic_kwargs: dict, optional
             passed to the ``graphic_type`` constructor.
 
-        processor_kwargs: dict, optional
-            passed to the ``processor`` constructor.
+        slicer_kwargs: dict, optional
+            passed to the ``slicer`` constructor.
 
         Returns
         -------
@@ -868,7 +868,7 @@ class NDWSubplot:
             graphic_type=graphic_type,
             linear_selector=True,
             x_range_mode=x_range_mode,
-            processor=processor,
+            slicer=slicer,
             display_window=display_window,
             window_funcs=window_funcs,
             window_order=window_order,
@@ -885,7 +885,7 @@ class NDWSubplot:
             markers=markers,
             name=name,
             graphic_kwargs=graphic_kwargs,
-            processor_kwargs=processor_kwargs,
+            slicer_kwargs=slicer_kwargs,
         )
 
         self._nd_graphics.append(nd)
@@ -897,7 +897,7 @@ class NDWSubplot:
         dims: Sequence[str],
         display_dims: tuple[str, str, str],
         *args,
-        processor: type[NDPositionsProcessor] = NDPositionsProcessor,
+        slicer: type[NDPositionsSlicer] = NDPositionsSlicer,
         display_window: int | float | None = 10,
         window_funcs: dict[
             str, tuple[WindowFuncCallable | None, int | float | None]
@@ -914,7 +914,7 @@ class NDWSubplot:
         thickness: float | Sequence[float] = None,
         name: str = None,
         graphic_kwargs: dict = None,
-        processor_kwargs: dict = None,
+        slicer_kwargs: dict = None,
     ) -> NDPositions:
         """
         Add n-dimensional positional data to this subplot, rendered as a ``LineCollection``.
@@ -944,10 +944,10 @@ class NDWSubplot:
             array, the data slice is transposed into display order.
 
         args
-            extra positional arguments passed to the ``processor`` constructor.
+            extra positional arguments passed to the ``slicer`` constructor.
 
-        processor: type[NDPositionsProcessor], default ``NDPositionsProcessor``
-            ``NDPositionsProcessor`` subclass that manages the data and produces the data slices.
+        slicer: type[NDPositionsSlicer], default ``NDPositionsSlicer``
+            ``NDPositionsSlicer`` subclass that manages the data and produces the data slices.
 
         display_window: int, float or None, default 10
             Size of the window of the ``p`` dim to render, in the reference units of that dim, centered on its
@@ -1034,8 +1034,8 @@ class NDWSubplot:
         graphic_kwargs: dict, optional
             passed to the underlying ``LineCollection``
 
-        processor_kwargs: dict, optional
-            passed to the ``processor`` constructor.
+        slicer_kwargs: dict, optional
+            passed to the ``slicer`` constructor.
 
         Returns
         -------
@@ -1067,7 +1067,7 @@ class NDWSubplot:
             display_dims,
             *args,
             graphic_type=LineCollection,
-            processor=processor,
+            slicer=slicer,
             display_window=display_window,
             window_funcs=window_funcs,
             window_order=window_order,
@@ -1082,7 +1082,7 @@ class NDWSubplot:
             thickness=thickness,
             name=name,
             graphic_kwargs=graphic_kwargs,
-            processor_kwargs=processor_kwargs,
+            slicer_kwargs=slicer_kwargs,
         )
 
         self._nd_graphics.append(nd)

@@ -1,11 +1,11 @@
 from .nd_widget import (
     NDWidget,
-    NDProcessor,
+    NDSlicer,
     NDGraphic,
-    NDPositionsProcessor,
+    NDPositionsSlicer,
     NDPositions,
     NDTimeseries,
-    NDImageProcessor,
+    NDImageSlicer,
     NDImage,
 )
 

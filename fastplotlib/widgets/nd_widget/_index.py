@@ -381,7 +381,7 @@ class ReferenceIndices:
         else:
             rev = self._fetch_rev.get(ndg, 0)
             # provide index at schedule time so all data is played back sequentially
-            indices = {d: self._indices[d] for d in ndg.processor.slider_dims}
+            indices = {d: self._indices[d] for d in ndg.slicer.slider_dims}
             self._fetch_request_queue.setdefault(ndg, deque()).append(
                 (indices, rev)
             )

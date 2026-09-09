@@ -15,7 +15,7 @@ from ....graphics import (
     ScatterStack,
 )
 from .._base import (
-    NDProcessor,
+    NDSlicer,
     NDGraphic,
     WindowFuncCallable,
 )
@@ -33,7 +33,7 @@ MarkersType = str | Sequence[str] | np.ndarray | FeatureCallable | None
 SizesType = float | Sequence[float] | np.ndarray | FeatureCallable | None
 
 
-class NDPositionsProcessor(NDProcessor):
+class NDPositionsSlicer(NDSlicer):
     def __init__(
         self,
         data: Any,
@@ -49,7 +49,7 @@ class NDPositionsProcessor(NDProcessor):
         **kwargs,
     ):
         """
-        ``NDProcessor`` subclass for n-dimensional positional and timeseries data.
+        ``NDSlicer`` subclass for n-dimensional positional and timeseries data.
 
         Produces ``[n_graphics, p, <value dim>]`` slices for a ``LineCollection``, ``LineStack``,
         ``ScatterCollection``, or ``ScatterStack``, where ``p`` is the datapoints dim.
@@ -79,7 +79,7 @@ class NDPositionsProcessor(NDProcessor):
             which holds the xy or xyz coordinate and must be of size 2 or 3.
 
         slider_maps : dict[str, Callable[[Any], int] | ArrayLike], optional
-            See :class:`NDProcessor`. The transform for the ``p`` dim is also used to map ``display_window`` and
+            See :class:`NDSlicer`. The transform for the ``p`` dim is also used to map ``display_window`` and
             the ``datapoints_window_func`` window size from reference units to array indices.
 
         display_window: int, float or None, default 100
@@ -110,12 +110,12 @@ class NDPositionsProcessor(NDProcessor):
             compute.
 
         kwargs
-            passed to :class:`NDProcessor`, i.e. ``window_funcs``, ``window_order`` and ``spatial_func``.
+            passed to :class:`NDSlicer`, i.e. ``window_funcs``, ``window_order`` and ``spatial_func``.
 
         See Also
         --------
-            NDProcessor : Base class with full parameter documentation.
-            NDPositions : The ``NDGraphic`` that uses this processor by default.
+            NDSlicer : Base class with full parameter documentation.
+            NDPositions : The ``NDGraphic`` that uses this slicer by default.
         """
         self._display_window = display_window
         self._max_display_datapoints = max_display_datapoints
@@ -423,7 +423,7 @@ class NDPositions(NDGraphic):
             | ScatterCollection
             | ScatterStack
         ],
-        processor: type[NDPositionsProcessor] = NDPositionsProcessor,
+        slicer: type[NDPositionsSlicer] = NDPositionsSlicer,
         display_window: int | float | None = 10,
         window_funcs: dict[
             str, tuple[WindowFuncCallable | None, int | float | None]
@@ -442,12 +442,12 @@ class NDPositions(NDGraphic):
         markers: MarkersType = None,
         name: str = None,
         graphic_kwargs: dict = None,
-        processor_kwargs: dict = None,
+        slicer_kwargs: dict = None,
     ):
         """
         ``NDGraphic`` subclass for n-dimensional positional data.
 
-        Uses an :class:`NDPositionsProcessor` to produce the data slices and manages one of four interchangeable
+        Uses an :class:`NDPositionsSlicer` to produce the data slices and manages one of four interchangeable
         graphical representations: ``LineStack``, ``LineCollection``, ``ScatterStack``, and ``ScatterCollection``.
         The representation can be changed at runtime by setting :attr:`graphic_type`.
 
@@ -483,13 +483,13 @@ class NDPositions(NDGraphic):
             order in the array, the data slice is transposed into display order.
 
         args
-            extra positional arguments passed to the ``processor`` constructor.
+            extra positional arguments passed to the ``slicer`` constructor.
 
         graphic_type : type[LineCollection | LineStack | ScatterCollection | ScatterStack]
             The graphical representation used to display the data slice.
 
-        processor : type[NDPositionsProcessor], default ``NDPositionsProcessor``
-            ``NDPositionsProcessor`` subclass that manages the data and produces the data slices.
+        slicer : type[NDPositionsSlicer], default ``NDPositionsSlicer``
+            ``NDPositionsSlicer`` subclass that manages the data and produces the data slices.
 
         display_window : int, float or None, default 10
             Size of the window of the ``p`` dim to render, in the reference units of that dim, centered on its
@@ -499,18 +499,18 @@ class NDPositions(NDGraphic):
 
         window_funcs : dict[str, tuple[WindowFuncCallable | None, int | float | None]], optional
             Per-slider-dim window functions applied around the current slider position, see
-            :class:`NDProcessor`. Not used for the ``p`` dim, see ``datapoints_window_func``.
+            :class:`NDSlicer`. Not used for the ``p`` dim, see ``datapoints_window_func``.
 
         window_order : tuple[str, ...], optional
             Order in which the window functions are applied across dims. Only dims listed here have their window
-            function applied, see :class:`NDProcessor`.
+            function applied, see :class:`NDSlicer`.
 
         spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice *after* the window funcs, right before rendering.
 
         slider_maps : dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices, see
-            :class:`NDProcessor`.
+            :class:`NDSlicer`.
 
         max_display_datapoints : int, default 1_000
             Maximum number of datapoints to render per graphic. The step size of the display window slice is set
@@ -518,7 +518,7 @@ class NDPositions(NDGraphic):
 
         datapoints_window_func : tuple[Callable, str, int | float], optional
             Window function applied along the ``p`` dim, as ``(func, apply_dims, window_size)``, see
-            :class:`NDPositionsProcessor`.
+            :class:`NDPositionsSlicer`.
 
         colors : str | Sequence[str] | np.ndarray | FeatureCallable, optional
             Colors of the graphics. Mutually exclusive with ``cmap``, setting one clears the other.
@@ -569,8 +569,8 @@ class NDPositions(NDGraphic):
         graphic_kwargs : dict, optional
             passed to the ``graphic_type`` constructor.
 
-        processor_kwargs : dict, optional
-            passed to the ``processor`` constructor.
+        slicer_kwargs : dict, optional
+            passed to the ``slicer`` constructor.
 
         Notes
         -----
@@ -592,7 +592,7 @@ class NDPositions(NDGraphic):
 
         See Also
         --------
-        NDPositionsProcessor : The processor that produces the data slices for this graphic.
+        NDPositionsSlicer : The slicer that produces the data slices for this graphic.
 
         """
 
@@ -605,7 +605,7 @@ class NDPositions(NDGraphic):
             spatial_dims,
             *args,
             graphic_type=graphic_type,
-            processor=processor,
+            slicer=slicer,
             display_window=display_window,
             window_funcs=window_funcs,
             window_order=window_order,
@@ -621,7 +621,7 @@ class NDPositions(NDGraphic):
             sizes=sizes,
             markers=markers,
             graphic_kwargs=graphic_kwargs,
-            processor_kwargs=processor_kwargs,
+            slicer_kwargs=slicer_kwargs,
         )
 
         run_sync(self._create_graphic())
@@ -639,7 +639,7 @@ class NDPositions(NDGraphic):
             | ScatterCollection
             | ScatterStack
         ],
-        processor: type[NDPositionsProcessor] = NDPositionsProcessor,
+        slicer: type[NDPositionsSlicer] = NDPositionsSlicer,
         display_window: int | float | None = 10,
         window_funcs: dict[
             str, tuple[WindowFuncCallable | None, int | float | None]
@@ -657,25 +657,25 @@ class NDPositions(NDGraphic):
         sizes: SizesType = None,
         markers: MarkersType = None,
         graphic_kwargs: dict = None,
-        processor_kwargs: dict = None,
+        slicer_kwargs: dict = None,
     ):
         """
-        Set up the processor and per-graphic state, i.e. everything except creating the graphic.
+        Set up the slicer and per-graphic state, i.e. everything except creating the graphic.
 
         Separated from ``__init__`` so ``NDTimeseries`` can run its own one-time setup
         between this and graphic creation.
         """
         self._ref_index = ref_index
 
-        if processor_kwargs is None:
-            processor_kwargs = dict()
+        if slicer_kwargs is None:
+            slicer_kwargs = dict()
 
         if graphic_kwargs is None:
             self._graphic_kwargs = dict()
         else:
             self._graphic_kwargs = graphic_kwargs
 
-        self._processor = processor(
+        self._slicer = slicer(
             data,
             dims,
             spatial_dims,
@@ -687,12 +687,12 @@ class NDPositions(NDGraphic):
             window_order=window_order,
             spatial_func=spatial_func,
             slider_maps=slider_maps,
-            **processor_kwargs,
+            **slicer_kwargs,
         )
 
         self._graphic_type = graphic_type
 
-        # each feature is either windowed per-datapoint (into the processor) or static (onto
+        # each feature is either windowed per-datapoint (into the slicer) or static (onto
         # the collection); _set_feature routes and stores it for re-creation on a type switch
         self._static_features: dict[str, Any] = dict()
         features = {
@@ -712,7 +712,7 @@ class NDPositions(NDGraphic):
         Route a graphic feature to the collection.
 
         A callable, or an array with the datapoint dim (``p``) at axis 1, is windowed
-        per-datapoint by the processor and set onto the collection each frame. Anything else is
+        per-datapoint by the slicer and set onto the collection each frame. Anything else is
         static: it is stored and set once onto the collection.
         """
         if value is not None:
@@ -721,13 +721,13 @@ class NDPositions(NDGraphic):
 
         if self._is_windowed(value):
             self._static_features.pop(name, None)
-            self.processor.set_other_feature(name, value)
+            self.slicer.set_other_feature(name, value)
             if self._graphic is not None:
                 run_sync(self._set_indices_())
             return
 
         # static: clear any windowed version, store, and set it onto the collection
-        self.processor.set_other_feature(name, None)
+        self.slicer.set_other_feature(name, None)
         if value is None:
             self._static_features.pop(name, None)
             return
@@ -736,10 +736,10 @@ class NDPositions(NDGraphic):
             setattr(self.graphic, name, value)
 
     def _get_feature(self, name: str):
-        # the static value, or the windowed value held by the processor
+        # the static value, or the windowed value held by the slicer
         if name in self._static_features:
             return self._static_features[name]
-        return self.processor._other_features.get(name)
+        return self.slicer._other_features.get(name)
 
     def _clear_conflicting_color_source(self, name: str):
         # a graphic's color is either explicit `colors` or a colormap, never both
@@ -751,7 +751,7 @@ class NDPositions(NDGraphic):
             return
         for other in conflicting:
             self._static_features.pop(other, None)
-            self.processor.set_other_feature(other, None)
+            self.slicer.set_other_feature(other, None)
 
     def _is_windowed(self, value) -> bool:
         # windowed features are per-datapoint and sliced to the display window each frame: a
@@ -761,7 +761,7 @@ class NDPositions(NDGraphic):
             return True
         if isinstance(value, (list, tuple, np.ndarray)):
             value = np.asarray(value)
-            p_size = self.processor.shape[self.processor.spatial_dims[1]]
+            p_size = self.slicer.shape[self.slicer.spatial_dims[1]]
             return value.ndim >= 2 and value.shape[1] == p_size
         return False
 
@@ -771,7 +771,7 @@ class NDPositions(NDGraphic):
         # isn't knowable without evaluating it everywhere, so that needs an explicit cmap_range
         if "cmap_range" in self._static_features:
             return self._static_features["cmap_range"]
-        transform = self.processor._other_features.get("cmap_transform")
+        transform = self.slicer._other_features.get("cmap_transform")
         if not isinstance(transform, np.ndarray):
             return None
         if transform.ndim == 1:
@@ -779,9 +779,9 @@ class NDPositions(NDGraphic):
         return np.stack([transform.min(axis=1), transform.max(axis=1)], axis=1)
 
     @property
-    def processor(self) -> NDPositionsProcessor:
-        """NDProcessor that manages the data and produces data slices to display"""
-        return self._processor
+    def slicer(self) -> NDPositionsSlicer:
+        """NDSlicer that manages the data and produces data slices to display"""
+        return self._slicer
 
     @property
     def graphic(
@@ -826,21 +826,21 @@ class NDPositions(NDGraphic):
         Get or set the spatial dims **in display order**: ``(n_graphics, p, <value dim>)``. Setting them
         re-renders the current data slice.
         """
-        return self.processor.spatial_dims
+        return self.slicer.spatial_dims
 
     @spatial_dims.setter
     def spatial_dims(self, dims: tuple[str, str, str]):
-        self.processor.display_dims = dims
+        self.slicer.display_dims = dims
         # force re-render
         run_sync(self._set_indices_())
 
     @property
     def indices(self) -> dict[Hashable, Any]:
         """the current index of each slider dim in reference-space units, from the ``ReferenceIndex``"""
-        return {d: self._ref_index[d] for d in self.processor.slider_dims}
+        return {d: self._ref_index[d] for d in self.slicer.slider_dims}
 
     async def _get_data_slice(self, indices: dict[str, Any]) -> dict[str, Any]:
-        return await self.processor.get(indices)
+        return await self.slicer.get(indices)
 
     async def _set_indices_(self, indices: dict[str, Any] = None):
         if self.data is None:
@@ -889,7 +889,7 @@ class NDPositions(NDGraphic):
         # get graphic within the collection
         n_index = np.argwhere(self.graphic.graphics == graphic).item()
         p_index = pick_info["vertex_index"]
-        return self.processor.tooltip_format(n_index, p_index)
+        return self.slicer.tooltip_format(n_index, p_index)
 
     async def _create_graphic(self):
         if self.data is None:
@@ -913,7 +913,7 @@ class NDPositions(NDGraphic):
         )
         self._set_other_features(new_features)
 
-        if self.processor.tooltip:
+        if self.slicer.tooltip:
             for g in self._graphic.graphics:
                 g.tooltip_format = partial(self._tooltip_handler, g)
 
@@ -925,11 +925,11 @@ class NDPositions(NDGraphic):
         Get or set the display window, in the reference units of the ``p`` dim. Setting it re-renders the
         current data slice.
         """
-        return self.processor.display_window
+        return self.slicer.display_window
 
     @display_window.setter
     def display_window(self, dw: int | float | None):
-        self.processor.display_window = dw
+        self.slicer.display_window = dw
         # force re-render
         run_sync(self._set_indices_())
 
@@ -942,11 +942,11 @@ class NDPositions(NDGraphic):
         ``"all", "x", "y", "z", "xy", "xz", "yz", "xyz"``. ``window_size`` is in the reference units of the
         ``p`` dim.
         """
-        return self.processor.datapoints_window_func
+        return self.slicer.datapoints_window_func
 
     @datapoints_window_func.setter
     def datapoints_window_func(self, funcs: tuple[Callable, str, int | float]):
-        self.processor.datapoints_window_func = funcs
+        self.slicer.datapoints_window_func = funcs
 
     @property
     def colors(self):

@@ -17,7 +17,7 @@ from ...utils import (
 from ...graphics import ImageGraphic, ImageYUVGraphic, ImageVolumeGraphic
 from ...ui import ImguiColorbar
 from ._base import (
-    NDProcessor,
+    NDSlicer,
     NDGraphic,
     WindowFuncCallable,
 )
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from ._ndw_subplot import NDWSubplot
 
 
-class NDImageProcessor(NDProcessor):
+class NDImageSlicer(NDSlicer):
     def __init__(
         self,
         data: ArrayProtocol | None,
@@ -44,7 +44,7 @@ class NDImageProcessor(NDProcessor):
         slider_maps=None,
     ):
         """
-        ``NDProcessor`` subclass for n-dimensional image data.
+        ``NDSlicer`` subclass for n-dimensional image data.
 
         Produces 2-D or 3-D spatial slices for an ``ImageGraphic`` or ``ImageVolumeGraphic``.
 
@@ -85,21 +85,21 @@ class NDImageProcessor(NDProcessor):
             video codecs), or if histograms are not useful for this data.
 
         slider_maps : dict, optional
-            See :class:`NDProcessor`.
+            See :class:`NDSlicer`.
 
         window_funcs : dict, optional
-            See :class:`NDProcessor`.
+            See :class:`NDSlicer`.
 
         window_order : tuple, optional
-            See :class:`NDProcessor`.
+            See :class:`NDSlicer`.
 
         spatial_func : callable, optional
-            See :class:`NDProcessor`.
+            See :class:`NDSlicer`.
 
         See Also
         --------
-            NDProcessor : Base class with full parameter documentation.
-            NDImage : The ``NDGraphic`` that wraps this processor.
+            NDSlicer : Base class with full parameter documentation.
+            NDImage : The ``NDGraphic`` that wraps this slicer.
         """
 
         # set as False until data, window funcs stuff and spatial func is all set
@@ -300,7 +300,7 @@ class NDImage(NDGraphic):
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
-        processor_type: type[NDImageProcessor] = NDImageProcessor,
+        slicer_type: type[NDImageSlicer] = NDImageSlicer,
         colorspace: Literal[
             "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
         ] = "srgb",
@@ -311,7 +311,7 @@ class NDImage(NDGraphic):
         """
         ``NDGraphic`` subclass for n-dimensional image rendering.
 
-        Uses an :class:`NDImageProcessor` to produce the data slices and manages an ``ImageGraphic``,
+        Uses an :class:`NDImageSlicer` to produce the data slices and manages an ``ImageGraphic``,
         ``ImageYUVGraphic`` or ``ImageVolumeGraphic``, swapping between them when :attr:`display_dims` is
         reassigned at runtime. It also owns an ``ImguiColorbar`` for interactive vmin, vmax adjustment.
 
@@ -352,13 +352,13 @@ class NDImage(NDGraphic):
             Name of the RGB(A) dim, if present. It must be listed in ``display_dims`` and be of size 3 or 4.
 
         window_funcs : dict, optional
-            See :class:`NDProcessor`.
+            See :class:`NDSlicer`.
 
         window_order : tuple, optional
-            See :class:`NDProcessor`.
+            See :class:`NDSlicer`.
 
         spatial_func : callable, optional
-            See :class:`NDProcessor`.
+            See :class:`NDSlicer`.
 
         compute_histogram : bool, default ``True``
             Estimate a histogram of the data and display an ``ImguiColorbar`` on the right edge of the subplot,
@@ -366,11 +366,11 @@ class NDImage(NDGraphic):
             blazing-fast (ex: data that uses video codecs), or if a histogram is not useful for this data.
 
         slider_maps : dict, optional
-            See :class:`NDProcessor`.
+            See :class:`NDSlicer`.
 
-        processor_type : type[NDImageProcessor], default ``NDImageProcessor``
-            ``NDImageProcessor`` subclass that manages the data and produces the data slices, ex:
-            :class:`VideoProcessor`.
+        slicer_type : type[NDImageSlicer], default ``NDImageSlicer``
+            ``NDImageSlicer`` subclass that manages the data and produces the data slices, ex:
+            :class:`VideoSlicer`.
 
         colorspace : "srgb" | "tex-srgb" | "physical" | "yuv420p" | "yuv444p", default "srgb"
             Colorspace in which to interpret the data. The RGB colorspaces are rendered using an ``ImageGraphic``
@@ -388,7 +388,7 @@ class NDImage(NDGraphic):
 
         See Also
         --------
-        NDImageProcessor : The processor that backs this graphic.
+        NDImageSlicer : The slicer that backs this graphic.
 
         """
 
@@ -403,7 +403,7 @@ class NDImage(NDGraphic):
 
         self._ref_index = ref_index
 
-        self._processor = processor_type(
+        self._slicer = slicer_type(
             data,
             dims=dims,
             display_dims=display_dims,
@@ -430,9 +430,9 @@ class NDImage(NDGraphic):
         run_sync(self._create_graphic())
 
     @property
-    def processor(self) -> NDImageProcessor:
-        """NDProcessor that manages the data and produces data slices to display"""
-        return self._processor
+    def slicer(self) -> NDImageSlicer:
+        """NDSlicer that manages the data and produces data slices to display"""
+        return self._slicer
 
     @property
     def graphic(
@@ -445,7 +445,7 @@ class NDImage(NDGraphic):
         # Creates an ``ImageGraphic`` or ``ImageVolumeGraphic`` based on the number of spatial dims,
         # adds it to the subplot, and resets the camera and histogram.
 
-        if self.processor.data is None:
+        if self.slicer.data is None:
             # no graphic if data is None, useful for initializing in null states when we want to set data later
             return
 
@@ -461,7 +461,7 @@ class NDImage(NDGraphic):
             # remove RGB spatial dim, ex: if we have an RGBA image of shape [512, 512, 4] we want to interpet this as
             # 2D for images
             # [30, 512, 512, 4] with an rgb dim is an RGBA volume which is also supported
-            match len(self.processor.display_dims) - int(bool(self.processor.rgb_dim)):
+            match len(self.slicer.display_dims) - int(bool(self.slicer.rgb_dim)):
                 case 2:
                     cls = ImageGraphic
                 case 3:
@@ -469,7 +469,7 @@ class NDImage(NDGraphic):
 
         # get the data slice for this index
         # this will only have the dims specified by ``display_dims``
-        data_slice = await self.processor.get(self.indices)
+        data_slice = await self.slicer.get(self.indices)
 
         # create the new graphic
         new_graphic = cls(
@@ -509,23 +509,23 @@ class NDImage(NDGraphic):
 
         subplot = self._nd_subplot.subplot
 
-        if not self.processor.compute_histogram:
+        if not self.slicer.compute_histogram:
             # remove the colorbar from the right edge if a histogram is not desired
             if self._histogram_widget is not None:
                 subplot.remove_imgui_window("right")
                 self._histogram_widget = None
             return
 
-        if self.processor.histogram:
+        if self.slicer.histogram:
             if self._histogram_widget is not None:
                 # colorbar widget exists, update it and rebind to the current graphic
-                self._histogram_widget.histogram = self.processor.histogram
+                self._histogram_widget.histogram = self.slicer.histogram
                 self._histogram_widget.images = self.graphic
             else:
                 # make the colorbar, it reserves space on the subplot's right edge
                 self._histogram_widget = ImguiColorbar(
                     images=self.graphic,
-                    histogram=self.processor.histogram,
+                    histogram=self.slicer.histogram,
                 )
                 subplot.add_imgui_window(
                     self._histogram_widget, location="right", size=100
@@ -572,11 +572,11 @@ class NDImage(NDGraphic):
 
         [row_dim, col_dim] or [row_dim, col_dim, rgb(a) dim]
         """
-        return self.processor.display_dims
+        return self.slicer.display_dims
 
     @display_dims.setter
     def display_dims(self, dims: tuple[str, str] | tuple[str, str, str]):
-        self.processor.display_dims = dims
+        self.slicer.display_dims = dims
 
         # shape has probably changed, recreate graphic
         run_sync(self._create_graphic())
@@ -584,24 +584,24 @@ class NDImage(NDGraphic):
     @property
     def indices(self) -> dict[str, Any]:
         """get or set the indices, managed by the ReferenceIndex, users usually don't want to set this manually"""
-        return {d: self._ref_index[d] for d in self.processor.slider_dims}
+        return {d: self._ref_index[d] for d in self.slicer.slider_dims}
 
     async def _set_indices_(self, indices: dict[str, Any] = None):
         if indices is None:
             # current indices, else use the indices passed at schedule time
             indices = self.indices
 
-        self.graphic.data = await self.processor.get(indices)
+        self.graphic.data = await self.slicer.get(indices)
         self._last_indices = indices
 
     @property
     def compute_histogram(self) -> bool:
         """whether or not to compute the histogram and display the ImguiColorbar"""
-        return self.processor.compute_histogram
+        return self.slicer.compute_histogram
 
     @compute_histogram.setter
     def compute_histogram(self, v: bool):
-        self.processor.compute_histogram = v
+        self.slicer.compute_histogram = v
         self._reset_histogram()
 
     @property
@@ -617,14 +617,14 @@ class NDImage(NDGraphic):
         """
         # this is here even though it's the same in the base class since we can't create the image specific setter
         # without also defining the property in this subclass.
-        return self.processor.spatial_func
+        return self.slicer.spatial_func
 
     @spatial_func.setter
     def spatial_func(
         self, func: Callable[[ArrayProtocol], ArrayProtocol]
     ) -> Callable | None:
-        self.processor.spatial_func = func
-        self.processor._recompute_histogram()
+        self.slicer.spatial_func = func
+        self.slicer._recompute_histogram()
         self._reset_histogram()
 
     def _tooltip_handler(self, graphic, pick_info):
@@ -632,4 +632,4 @@ class NDImage(NDGraphic):
         # get graphic within the collection
         n_index = np.argwhere(self.graphic.graphics == graphic).item()
         p_index = pick_info["vertex_index"]
-        return self.processor.tooltip_format(n_index, p_index)
+        return self.slicer.tooltip_format(n_index, p_index)

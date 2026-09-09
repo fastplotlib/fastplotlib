@@ -27,7 +27,7 @@ def identity(index: int) -> int:
     return round(index)
 
 
-class NDProcessor:
+class NDSlicer:
     def __init__(
         self,
         data: ArrayProtocol,
@@ -97,7 +97,7 @@ class NDProcessor:
 
             * *func* must accept ``axis: int`` and ``keepdims: bool`` kwargs
               (ex: ``np.mean``, ``np.max``). The window function **must** return an array that has the same dimensions
-              as specified in the NDProcessor, therefore the size of any dim along which a window_func was applied
+              as specified in the NDSlicer, therefore the size of any dim along which a window_func was applied
               should reduce to ``1``. These dims must not be removed by the window_func.
 
             * *window_size* is in reference-space units (ex: 2.5 seconds).
@@ -482,7 +482,7 @@ class NDProcessor:
         apply window functions in the order specified by
          ``window_order``.
 
-        For numpy arrays each func is dispatched to the per-processor thread pool so it
+        For numpy arrays each func is dispatched to the per-slicer thread pool so it
         does not block the rendercanvas event loop. CUDA arrays are run directly since
         cuda functions (ex: torch) are already async.
 
@@ -659,15 +659,15 @@ class NDGraphic:
         name: str | None,
     ):
         """
-        Base class that pairs an :class:`NDProcessor` with a ``Graphic``. Subclass to support a new graphical
+        Base class that pairs an :class:`NDSlicer` with a ``Graphic``. Subclass to support a new graphical
         representation.
 
-        The ``NDProcessor`` produces the data slice for the current index and the ``NDGraphic`` writes it to the
+        The ``NDSlicer`` produces the data slice for the current index and the ``NDGraphic`` writes it to the
         ``Graphic``. When the ``ReferenceIndex`` of the parent ``NDWidget`` changes, it schedules
         ``_set_indices_()`` on every ``NDGraphic`` that has the dim that changed.
 
-        Subclasses must implement :meth:`_create_graphic` and ``_set_indices_()``, and the :attr:`processor`,
-        :attr:`graphic`, :attr:`indices` and :attr:`display_dims` properties. Most of the processor properties
+        Subclasses must implement :meth:`_create_graphic` and ``_set_indices_()``, and the :attr:`slicer`,
+        :attr:`graphic`, :attr:`indices` and :attr:`display_dims` properties. Most of the slicer properties
         are aliased here so users can reach them from the ``NDGraphic``, and setting one of those aliases
         re-renders the current slice.
 
@@ -717,8 +717,8 @@ class NDGraphic:
         return self._name
 
     @property
-    def processor(self) -> NDProcessor:
-        """NDProcessor that manages the data and produces data slices to display"""
+    def slicer(self) -> NDSlicer:
+        """NDSlicer that manages the data and produces data slices to display"""
         raise NotImplementedError
 
     @property
@@ -738,7 +738,7 @@ class NDGraphic:
 
     async def _set_indices_(self, indices: dict[str, Any] = None):
         """
-        Get the data slice for the index from the processor and write it to the graphic.
+        Get the data slice for the index from the slicer and write it to the graphic.
 
         If indices is None, it uses the latest indices from the ReferenceIndex. Otherwise it uses the
         indices passed when the update was scheduled.
@@ -748,18 +748,18 @@ class NDGraphic:
         """
         pass
 
-    # aliases for easier access to processor properties
+    # aliases for easier access to slicer properties
     @property
     def data(self) -> Any:
         """
         get or set managed data. If setting with new data, the new data is interpreted
         to have the same dims (i.e. same dim names and ordering of dims).
         """
-        return self.processor.data
+        return self.slicer.data
 
     @data.setter
     def data(self, data: Any):
-        self.processor.data = data
+        self.slicer.data = data
         # create a new graphic when data has changed
         if self.graphic is not None:
             # it is already None if NDGraphic was initialized with no data
@@ -774,17 +774,17 @@ class NDGraphic:
     @property
     def shape(self) -> dict[str, int]:
         """interpreted shape of the data"""
-        return self.processor.shape
+        return self.slicer.shape
 
     @property
     def ndim(self) -> int:
         """number of dims"""
-        return self.processor.ndim
+        return self.slicer.ndim
 
     @property
     def dims(self) -> tuple[str, ...]:
         """dim names"""
-        return self.processor.dims
+        return self.slicer.dims
 
     @property
     def display_dims(self) -> tuple[str, ...]:
@@ -796,7 +796,7 @@ class NDGraphic:
     @property
     def slider_dims(self) -> set[str]:
         """the slider dims"""
-        return self.processor.slider_dims
+        return self.slicer.slider_dims
 
     @property
     def slider_maps(self) -> dict[str, Callable[[Any], int]]:
@@ -809,13 +809,13 @@ class NDGraphic:
         timestamps array). Any dim given ``None``, or not given at all, uses the identity mapping, i.e. the
         reference value is rounded to the nearest integer and used as the array index.
         """
-        return self.processor.slider_maps
+        return self.slicer.slider_maps
 
     @slider_maps.setter
     def slider_maps(
         self, maps: dict[str, Callable[[Any], int] | ArrayLike | None] | None
     ):
-        self.processor.slider_maps = maps
+        self.slicer.slider_maps = maps
         # force a render
         run_sync(self._set_indices_())
 
@@ -836,7 +836,7 @@ class NDGraphic:
         A window func is only applied for the dims listed in :attr:`window_order`. Any dim without an entry is
         filled in with ``(None, None)``.
         """
-        return self.processor.window_funcs
+        return self.slicer.window_funcs
 
     @window_funcs.setter
     def window_funcs(
@@ -846,18 +846,18 @@ class NDGraphic:
             | None
         ),
     ):
-        self.processor.window_funcs = window_funcs
+        self.slicer.window_funcs = window_funcs
         # force a render
         run_sync(self._set_indices_())
 
     @property
     def window_order(self) -> tuple[str, ...]:
         """get or set dimension order in which window functions are applied"""
-        return self.processor.window_order
+        return self.slicer.window_order
 
     @window_order.setter
     def window_order(self, order: tuple[str] | None):
-        self.processor.window_order = order
+        self.slicer.window_order = order
         # force a render
         run_sync(self._set_indices_())
 
@@ -867,13 +867,13 @@ class NDGraphic:
         Get or set the function applied to the spatial slice *after* the window funcs, right before rendering.
         Setting it re-renders the current data slice.
         """
-        return self.processor.spatial_func
+        return self.slicer.spatial_func
 
     @spatial_func.setter
     def spatial_func(
         self, func: Callable[[ArrayProtocol], ArrayProtocol]
     ) -> Callable | None:
-        self.processor.spatial_func = func
+        self.slicer.spatial_func = func
         # force a render
         run_sync(self._set_indices_())
 
@@ -892,7 +892,7 @@ class NDGraphic:
     def _repr_text_(self):
         return (
             f"graphic: {self.graphic.__class__.__name__}\n"
-            f"processor:\n{self.processor}"
+            f"slicer:\n{self.slicer}"
         )
 
 

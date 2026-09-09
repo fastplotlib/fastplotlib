@@ -21,7 +21,7 @@ from .._index import ReferenceIndices
 from .._async import run_sync
 from ._nd_positions import (
     NDPositions,
-    NDPositionsProcessor,
+    NDPositionsSlicer,
     ColorsType,
     SizesType,
     MarkersType,
@@ -48,7 +48,7 @@ class NDTimeseries(NDPositions):
             | ScatterStack
             | ImageGraphic
         ] = LineStack,
-        processor: type[NDPositionsProcessor] = NDPositionsProcessor,
+        slicer: type[NDPositionsSlicer] = NDPositionsSlicer,
         display_window: int | float | None = 10,
         window_funcs: dict[
             str, tuple[WindowFuncCallable | None, int | float | None]
@@ -69,7 +69,7 @@ class NDTimeseries(NDPositions):
         markers: MarkersType = None,
         name: str = None,
         graphic_kwargs: dict = None,
-        processor_kwargs: dict = None,
+        slicer_kwargs: dict = None,
     ):
         """
         ``NDPositions`` subclass for timeseries data, where the ``p`` dim is a time-like x-axis.
@@ -105,7 +105,7 @@ class NDTimeseries(NDPositions):
             xy or xyz coordinate. A heatmap requires a value dim of size exactly 2.
 
         args
-            extra positional arguments passed to the ``processor`` constructor.
+            extra positional arguments passed to the ``slicer`` constructor.
 
         graphic_type : type[LineCollection | LineStack | ScatterCollection | ScatterStack | ImageGraphic], default ``LineStack``
             The graphical representation used to display the data slice. ``ImageGraphic`` renders the traces as a
@@ -113,8 +113,8 @@ class NDTimeseries(NDPositions):
             applied as the offset and scale of the image, and the y values are interpolated onto a uniform x grid
             if the x sampling is not uniform.
 
-        processor : type[NDPositionsProcessor], default ``NDPositionsProcessor``
-            ``NDPositionsProcessor`` subclass that manages the data and produces the data slices.
+        slicer : type[NDPositionsSlicer], default ``NDPositionsSlicer``
+            ``NDPositionsSlicer`` subclass that manages the data and produces the data slices.
 
         display_window : int, float or None, default 10
             Size of the window of the ``p`` dim to render, in the reference units of that dim, centered on its
@@ -124,18 +124,18 @@ class NDTimeseries(NDPositions):
 
         window_funcs : dict[str, tuple[WindowFuncCallable | None, int | float | None]], optional
             Per-slider-dim window functions applied around the current slider position, see
-            :class:`NDProcessor`. Not used for the ``p`` dim, see ``datapoints_window_func``.
+            :class:`NDSlicer`. Not used for the ``p`` dim, see ``datapoints_window_func``.
 
         window_order : tuple[str, ...], optional
             Order in which the window functions are applied across dims. Only dims listed here have their window
-            function applied, see :class:`NDProcessor`.
+            function applied, see :class:`NDSlicer`.
 
         spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice *after* the window funcs, right before rendering.
 
         slider_maps : dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices, see
-            :class:`NDProcessor`. The transform for the ``p`` dim is typically the array of x values, ex: a
+            :class:`NDSlicer`. The transform for the ``p`` dim is typically the array of x values, ex: a
             timestamps array, so the slider is in seconds rather than sample indices.
 
         max_display_datapoints : int, default 1_000
@@ -144,7 +144,7 @@ class NDTimeseries(NDPositions):
 
         datapoints_window_func : tuple[Callable, str, int | float], optional
             Window function applied along the ``p`` dim, as ``(func, apply_dims, window_size)``, see
-            :class:`NDPositionsProcessor`.
+            :class:`NDPositionsSlicer`.
 
         linear_selector : bool, default ``False``
             Add a ``LinearSelector`` that marks the current index of the ``p`` dim. Dragging it sets that index
@@ -211,8 +211,8 @@ class NDTimeseries(NDPositions):
         graphic_kwargs : dict, optional
             passed to the ``graphic_type`` constructor.
 
-        processor_kwargs : dict, optional
-            passed to the ``processor`` constructor.
+        slicer_kwargs : dict, optional
+            passed to the ``slicer`` constructor.
 
         Notes
         -----
@@ -249,7 +249,7 @@ class NDTimeseries(NDPositions):
             display_dims,
             *args,
             graphic_type=graphic_type,
-            processor=processor,
+            slicer=slicer,
             display_window=display_window,
             window_funcs=window_funcs,
             window_order=window_order,
@@ -265,7 +265,7 @@ class NDTimeseries(NDPositions):
             sizes=sizes,
             markers=markers,
             graphic_kwargs=graphic_kwargs,
-            processor_kwargs=processor_kwargs,
+            slicer_kwargs=slicer_kwargs,
         )
 
         # makes some assumptions about positional data that apply only to timeseries representations
@@ -274,9 +274,9 @@ class NDTimeseries(NDPositions):
 
         # determine a min display_window for x_range_mode = "auto"
         # determines required world space range for 3 datapoints
-        p_dim = self.processor.display_dims[1]
+        p_dim = self.slicer.display_dims[1]
         p_range = self._ref_index.ref_ranges[p_dim]
-        p_map = self.processor.slider_maps[p_dim]
+        p_map = self.slicer.slider_maps[p_dim]
         p_span = p_range.stop - p_range.start
         p_mid = p_range.start + p_span / 2
         i = p_map(p_mid)
@@ -285,7 +285,7 @@ class NDTimeseries(NDPositions):
         self._min_display_window = 3 * delta_p
 
         # display_window = None overrides x_range_mode
-        if self.processor.display_window is None:
+        if self.slicer.display_window is None:
             x_range_mode = None
 
         self._x_range_mode = None
@@ -322,7 +322,7 @@ class NDTimeseries(NDPositions):
         if issubclass(self._graphic_type, ImageGraphic):
             data_slice = new_features["data"]
             # `d` dim must only have xy data to be interpreted as a heatmap, xyz can't become a timeseries heatmap
-            if self.processor.shape[self.processor.display_dims[-1]] != 2:
+            if self.slicer.shape[self.slicer.display_dims[-1]] != 2:
                 raise ValueError
 
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
@@ -348,7 +348,7 @@ class NDTimeseries(NDPositions):
 
     async def _p_y_max(self) -> np.ndarray:
         """per-graphic max of the y values over the full `p` dim, shape [n_graphics]"""
-        proc = self.processor
+        proc = self.slicer
         # the indexer leaves the spatial `p` dim unsliced, so this raw slice spans every datapoint
         raw = await proc._get_raw_data_slice(self.indices)
         c = proc.dims.index(proc.display_dims[2])  # coord dim; y is index 1
@@ -366,12 +366,12 @@ class NDTimeseries(NDPositions):
     def _update_view(self, indices: dict[str, Any], data_slice: np.ndarray):
         """update the camera x-range and linear selector to the current datapoints position."""
 
-        p_dim = self.processor.display_dims[1]
+        p_dim = self.slicer.display_dims[1]
 
         if self.x_range_mode is not None:
             # set x_range directly from the display_window, NOT from the data_slice x-range,
             # this way it doesn't fight with the _update_from_view_range() polling
-            hw = self.processor.display_window / 2
+            hw = self.slicer.display_window / 2
             center = indices[p_dim]
             self._nd_subplot.subplot.x_range = center - hw, center + hw
             # store new x_range so the auto-polling does not trigger
@@ -392,7 +392,7 @@ class NDTimeseries(NDPositions):
         with block_indices_ctx(*self._nd_subplot.nd_graphics):
             # block index change in all NDGraphics that are not in the same subplot
             self._ref_index.set_dim_index(
-                self.processor.display_dims[1], ev.info["value"]
+                self.slicer.display_dims[1], ev.info["value"]
             )
 
     def _create_heatmap_data(self, data_slice) -> tuple[np.ndarray, float, float]:
@@ -432,11 +432,11 @@ class NDTimeseries(NDPositions):
         Get or set the display window, in the reference units of the ``p`` dim. Setting it re-renders the
         current data slice, setting it to ``None`` also sets :attr:`x_range_mode` to ``None``.
         """
-        return self.processor.display_window
+        return self.slicer.display_window
 
     @display_window.setter
     def display_window(self, dw: int | float | None):
-        self.processor.display_window = dw
+        self.slicer.display_window = dw
         if dw is None:
             self.x_range_mode = None
 
@@ -496,11 +496,11 @@ class NDTimeseries(NDPositions):
 
         new_index = (xr[0] + xr[1]) / 2
 
-        self.processor.display_window = new_width
+        self.slicer.display_window = new_width
 
         # block scheduling an additional async _set_indices_ for ndgraphics in this subplot
         with block_indices_ctx(*self._nd_subplot.nd_graphics):
-            p_dim = self.processor.display_dims[1]
+            p_dim = self.slicer.display_dims[1]
             self._ref_index.set_dim_index(p_dim, new_index)
 
         # run this ndgraphic update immediately so graphic data and linear selector are in sync with the
