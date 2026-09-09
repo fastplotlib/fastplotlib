@@ -209,7 +209,7 @@ class Alpha(GraphicFeature):
         # exclude collections, whose class name also contains "Image"
         if "Image" in graphic.__class__.__name__ and not hasattr(graphic, "graphics"):
             # Image and ImageVolume use tiling and share one material
-            graphic._material.alpha = value
+            graphic._material.opacity = value
 
         self._value = value
 

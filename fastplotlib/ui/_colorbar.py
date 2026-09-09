@@ -190,7 +190,7 @@ class ImguiColorbar(ImguiWindow):
     @property
     def vmin(self) -> float:
         """get or set the lower contrast limit"""
-        return self._vmin
+        return  max(self._vmin, self.histogram[1][0])
 
     @vmin.setter
     def vmin(self, value: float):
@@ -209,7 +209,7 @@ class ImguiColorbar(ImguiWindow):
     @property
     def vmax(self) -> float:
         """get or set the upper contrast limit"""
-        return self._vmax
+        return min(self._vmax, self.histogram[1][-1])
 
     @vmax.setter
     def vmax(self, value: float):
@@ -343,8 +343,8 @@ class ImguiColorbar(ImguiWindow):
         # the bar spans the flanked axis so it aligns with the histogram and the handles
         axis_min, axis_max = self._axis_range()
         span = axis_max - axis_min
-        lo = (self._vmin - axis_min) / span
-        hi = (self._vmax - axis_min) / span
+        lo = (self.vmin - axis_min) / span
+        hi = (self.vmax - axis_min) / span
         t = np.linspace(1.0, 0.0, self.LUT_HEIGHT)
         norm = np.clip((t - lo) / (hi - lo), 0.0, 1.0)
         norm = norm ** self._gamma
@@ -479,8 +479,8 @@ class ImguiColorbar(ImguiWindow):
             return self._y_to_value(imgui.get_io().mouse_pos.y, bar_y, bar_h)
 
         # shaded fill between the vmin and vmax lines
-        y_vmax = self._value_to_y(self._vmax, bar_y, bar_h)
-        y_vmin = self._value_to_y(self._vmin, bar_y, bar_h)
+        y_vmax = self._value_to_y(self.vmax, bar_y, bar_h)
+        y_vmin = self._value_to_y(self.vmin, bar_y, bar_h)
         draw_list.add_rect_filled((x_left, y_vmax), (x_right, y_vmin), fill_color)
 
         # drag the region between the lines to move both together
@@ -491,9 +491,9 @@ class ImguiColorbar(ImguiWindow):
                 imgui.set_cursor_screen_pos((x_left, top))
                 imgui.invisible_button("##region", (width, bottom - top))
                 if imgui.is_item_activated():
-                    self._grab_offset = 0.5 * (self._vmin + self._vmax) - cursor_value()
+                    self._grab_offset = 0.5 * (self.vmin + self.vmax) - cursor_value()
                 if imgui.is_item_active():
-                    half = 0.5 * (self._vmax - self._vmin)
+                    half = 0.5 * (self.vmax - self.vmin)
                     center = cursor_value() + self._grab_offset
                     center = max(axis_min + half, min(axis_max - half, center))
                     self.vmin = center - half
@@ -501,8 +501,8 @@ class ImguiColorbar(ImguiWindow):
 
         # each line has a hit-window for hovering/dragging; the line turns yellow when hovered or dragged
         for label, attr, lo_fn, hi_fn in (
-            ("##vmax_line", "vmax", lambda: self._vmin + min_sep, lambda: axis_max),
-            ("##vmin_line", "vmin", lambda: axis_min, lambda: self._vmax - min_sep),
+            ("##vmax_line", "vmax", lambda: self.vmin + min_sep, lambda: axis_max),
+            ("##vmin_line", "vmin", lambda: axis_min, lambda: self.vmax - min_sep),
         ):
             cur = getattr(self, attr)
             y = self._value_to_y(cur, bar_y, bar_h)
@@ -518,10 +518,10 @@ class ImguiColorbar(ImguiWindow):
             draw_list.add_line((x_left, y), (x_right, y), yellow if hovered else white, 2.0)
 
         # current vmax above its line, vmin below its line
-        y_vmax = self._value_to_y(self._vmax, bar_y, bar_h)
-        y_vmin = self._value_to_y(self._vmin, bar_y, bar_h)
-        self._text_right(draw_list, f"{self._vmax:.4g}", x_right, y_vmax - imgui.get_text_line_height())
-        self._text_right(draw_list, f"{self._vmin:.4g}", x_right, y_vmin)
+        y_vmax = self._value_to_y(self.vmax, bar_y, bar_h)
+        y_vmin = self._value_to_y(self.vmin, bar_y, bar_h)
+        self._text_right(draw_list, f"{self.vmax:.4g}", x_right, y_vmax - imgui.get_text_line_height())
+        self._text_right(draw_list, f"{self.vmin:.4g}", x_right, y_vmin)
 
     def _text_right(self, draw_list, text: str, x_right: float, y: float):
         """draw text right-aligned so it ends at x_right"""
@@ -555,25 +555,25 @@ class ImguiColorbar(ImguiWindow):
 
         # drag the region between the handles to move vmin and vmax together
         if self._region_drag:
-            y_vmax = self._value_to_y(self._vmax, bar_y, bar_h)
-            y_vmin = self._value_to_y(self._vmin, bar_y, bar_h)
+            y_vmax = self._value_to_y(self.vmax, bar_y, bar_h)
+            y_vmin = self._value_to_y(self.vmin, bar_y, bar_h)
             top = y_vmax + h / 2
             bottom = y_vmin - h / 2
             if bottom > top:
                 imgui.set_cursor_screen_pos((x_left, top))
                 imgui.invisible_button("##bar_region", (x_right - x_left, bottom - top))
                 if imgui.is_item_activated():
-                    self._grab_offset = 0.5 * (self._vmin + self._vmax) - cursor_value()
+                    self._grab_offset = 0.5 * (self.vmin + self.vmax) - cursor_value()
                 if imgui.is_item_active():
-                    half = 0.5 * (self._vmax - self._vmin)
+                    half = 0.5 * (self.vmax - self.vmin)
                     center = cursor_value() + self._grab_offset
                     center = max(axis_min + half, min(axis_max - half, center))
                     self.vmin = center - half
                     self.vmax = center + half
 
         for label, attr, lo_fn, hi_fn in (
-            ("##bar_vmax", "vmax", lambda: self._vmin + min_sep, lambda: axis_max),
-            ("##bar_vmin", "vmin", lambda: axis_min, lambda: self._vmax - min_sep),
+            ("##bar_vmax", "vmax", lambda: self.vmin + min_sep, lambda: axis_max),
+            ("##bar_vmin", "vmin", lambda: axis_min, lambda: self.vmax - min_sep),
         ):
             cur = getattr(self, attr)
             y = self._value_to_y(cur, bar_y, bar_h)
