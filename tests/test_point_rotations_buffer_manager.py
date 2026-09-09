@@ -32,7 +32,7 @@ def test_create_buffer(test_graphic):
     if test_graphic:
         fig = fpl.Figure()
 
-        scatter = fig[0, 0].add_scatter(data, point_rotation_mode="vertex", point_rotations=ROTATIONS1)
+        scatter = fig[0, 0].add_scatter(data, point_rotations=ROTATIONS1)
         vertex_rotations = scatter.point_rotations
         assert isinstance(vertex_rotations, VertexRotations)
         assert vertex_rotations._fpl_buffer is scatter.world_object.geometry.rotations
@@ -50,7 +50,7 @@ def test_int(test_graphic, index: int):
     if test_graphic:
         fig = fpl.Figure()
 
-        scatter = fig[0, 0].add_scatter(data, point_rotation_mode="vertex", point_rotations=ROTATIONS1)
+        scatter = fig[0, 0].add_scatter(data, point_rotations=ROTATIONS1)
         vertex_rotations = scatter.point_rotations
 
         scatter.add_event_handler(event_handler, "point_rotations")
@@ -88,7 +88,7 @@ def test_slice(test_graphic, slice_method):
     if test_graphic:
         fig = fpl.Figure()
 
-        scatter = fig[0, 0].add_scatter(data, point_rotation_mode="vertex", point_rotations=ROTATIONS1)
+        scatter = fig[0, 0].add_scatter(data, point_rotations=ROTATIONS1)
         vertex_rotations = scatter.point_rotations
 
         scatter.add_event_handler(event_handler, "point_rotations")
