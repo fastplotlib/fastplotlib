@@ -16,9 +16,9 @@ for optional in ["pandas", "zarr"]:
         pass
     else:
         module = importlib.import_module(f"._{optional}", "fastplotlib.widgets.nd_widget._nd_positions")
-        cls = getattr(module, f"NDPP_{optional.capitalize()}")
+        cls = getattr(module, f"{optional.capitalize()}Slicer")
         setattr(
             ndp_extras,
-            f"NDPP_{optional.capitalize()}",
+            f"{optional.capitalize()}",
             cls
         )
