@@ -34,6 +34,7 @@ Properties
     Grid.minor_color
     Grid.minor_step
     Grid.minor_thickness
+    Grid.nonlinear_transform
     Grid.parent
     Grid.receive_shadow
     Grid.render_mask

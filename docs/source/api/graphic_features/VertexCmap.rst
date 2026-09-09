@@ -20,9 +20,6 @@ Properties
 .. autosummary::
     :toctree: VertexCmap_api
 
-    VertexCmap.buffer
-    VertexCmap.name
-    VertexCmap.transform
     VertexCmap.value
 
 Methods

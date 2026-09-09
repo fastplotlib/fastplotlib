@@ -9,10 +9,15 @@ Graphic Features
     SizeSpace
     VertexPositions
     VertexCmap
+    VertexCmapTransform
+    VertexCmapRange
+    InfLineAxisData
+    InfLineColors
     MeshIndices
     MeshCmap
     SurfaceData
     Thickness
+    DashPattern
     VertexMarkers
     UniformMarker
     UniformEdgeColor
@@ -55,4 +60,6 @@ Graphic Features
     AlphaMode
     Visible
     Deleted
+    GraphicFeature
+    BufferManager
     GraphicFeatureEvent

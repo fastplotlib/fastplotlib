@@ -29,7 +29,6 @@ Methods
 
     SelectionVector.add_selector
     SelectionVector.append
-    SelectionVector.clear
-    SelectionVector.clear_selectables
-    SelectionVector.remove
+    SelectionVector.clear_selectors
+    SelectionVector.remove_selector
 
