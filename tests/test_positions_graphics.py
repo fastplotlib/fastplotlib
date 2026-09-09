@@ -3,19 +3,21 @@ from numpy import testing as npt
 import pytest
 
 import pygfx
+import cmap as cmap_lib
 
 import fastplotlib as fpl
 from fastplotlib.graphics.features import (
     VertexPositions,
     VertexColors,
     VertexCmap,
+    VertexCmapTransform,
+    VertexCmapRange,
     UniformColor,
     UniformSize,
     VertexPointSizes,
     Thickness,
     GraphicFeatureEvent,
 )
-from tests.utils import TRUTH_CMAPS
 
 from .utils import (
     generate_positions_spiral_data,
@@ -36,59 +38,30 @@ def test_sizes_slice():
 
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
-@pytest.mark.parametrize("colors", [None, *generate_color_inputs("b")])
-@pytest.mark.parametrize("color_mode", ["uniform", "vertex"])
-def test_color_mode(graphic_type, colors, color_mode):
+@pytest.mark.parametrize("colors", ["w", *generate_color_inputs("b")])
+def test_uniform_colors(graphic_type, colors):
     fig = fpl.Figure()
-
-    kwargs = dict()
-    for kwarg in ["colors", "color_mode"]:
-        if locals()[kwarg] is not None:
-            # add to dict of arguments that will be passed
-            kwargs[kwarg] = locals()[kwarg]
 
     data = generate_positions_spiral_data("xy")
 
     if graphic_type == "line":
-        graphic = fig[0, 0].add_line(data=data, **kwargs)
+        graphic = fig[0, 0].add_line(data=data, colors=colors)
     elif graphic_type == "scatter":
-        graphic = fig[0, 0].add_scatter(data=data, **kwargs)
+        graphic = fig[0, 0].add_scatter(data=data, colors=colors)
 
-    if color_mode == "uniform":
-        assert isinstance(graphic._colors, UniformColor)
-        assert isinstance(graphic.colors, pygfx.Color)
-        if colors is None:
-            # default white
-            assert graphic.colors == pygfx.Color([1, 1, 1])
-        else:
-            # should be blue
-            assert graphic.colors == pygfx.Color([0, 0, 1])
-
-        # check pygfx material
-        npt.assert_almost_equal(
-            graphic.world_object.material.color, np.asarray(graphic.colors)
-        )
+    assert isinstance(graphic._colors, UniformColor)
+    assert isinstance(graphic.colors, pygfx.Color)
+    if isinstance(colors, str) and colors == "w":
+        # default white
+        assert graphic.colors == pygfx.Color([1, 1, 1])
     else:
-        assert isinstance(graphic._colors, VertexColors)
-        assert isinstance(graphic.colors, VertexColors)
-        if colors is None:
-            # default white
-            npt.assert_almost_equal(
-                graphic.colors.value,
-                np.repeat([[1, 1, 1, 1.0]], repeats=len(graphic.data), axis=0),
-            )
-        else:
-            # blue
-            npt.assert_almost_equal(
-                graphic.colors.value,
-                np.repeat([[0, 0, 1, 1.0]], repeats=len(graphic.data), axis=0),
-            )
+        # should be blue
+        assert graphic.colors == pygfx.Color([0, 0, 1])
 
-        # check geometry
-        npt.assert_almost_equal(
-            graphic.world_object.geometry.colors.data, graphic.colors.value
-        )
-
+    # check pygfx material
+    npt.assert_almost_equal(
+        graphic.world_object.material.color, np.asarray(graphic.colors)
+    )
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
 @pytest.mark.parametrize(
@@ -129,242 +102,127 @@ def test_positions_graphics_data(
 
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
-@pytest.mark.parametrize("colors", [None, *generate_color_inputs("r")])
-@pytest.mark.parametrize("color_mode", ["vertex"])
+@pytest.mark.parametrize("colors", [*generate_color_inputs("multi")])
 def test_positions_graphic_vertex_colors(
     graphic_type,
     colors,
-    color_mode,
 ):
     # test different ways of passing vertex colors
     fig = fpl.Figure()
 
-    kwargs = dict()
-    for kwarg in ["colors", "color_mode"]:
-        if locals()[kwarg] is not None:
-            # add to dict of arguments that will be passed
-            kwargs[kwarg] = locals()[kwarg]
-
     data = generate_positions_spiral_data("xy")
 
     if graphic_type == "line":
-        graphic = fig[0, 0].add_line(data=data, **kwargs)
+        graphic = fig[0, 0].add_line(data=data, colors=colors)
     elif graphic_type == "scatter":
-        graphic = fig[0, 0].add_scatter(data=data, **kwargs)
+        graphic = fig[0, 0].add_scatter(data=data, colors=colors)
 
     # color per vertex
-        assert isinstance(graphic._colors, VertexColors)
-        assert isinstance(graphic.colors, VertexColors)
-        assert len(graphic.colors) == len(graphic.data)
+    assert isinstance(graphic._colors, VertexColors)
+    assert isinstance(graphic.colors, VertexColors)
+    assert len(graphic.colors) == len(graphic.data)
 
-    if colors is None:
-        # default
-        npt.assert_almost_equal(
-            graphic.colors.value,
-            np.repeat([[1, 1, 1, 1.0]], repeats=len(graphic.data), axis=0),
-        )
-    else:
-        if len(colors) != len(graphic.data):
-            # should be single red, regardless of input variant (i.e. str, array, RGBA tuple, etc.
-            npt.assert_almost_equal(
-                graphic.colors.value,
-                np.repeat([[1, 0, 0, 1.0]], repeats=len(graphic.data), axis=0),
-            )
-        else:
-            # multi colors
-            # use the truth for multi colors test that is pre-set
-            npt.assert_almost_equal(graphic.colors.value, MULTI_COLORS_TRUTH)
+    # multi colors
+    # use the truth for multi colors test that is pre-set
+    npt.assert_almost_equal(graphic.colors.value, MULTI_COLORS_TRUTH)
 
 
 @pytest.mark.parametrize("graphic_type", ["line", "scatter"])
-@pytest.mark.parametrize("colors", [None, *generate_color_inputs("r")])
-@pytest.mark.parametrize("color_mode", ["auto", "vertex"])
-@pytest.mark.parametrize("cmap", ["jet"])
+@pytest.mark.parametrize("cmap", ["jet", cmap_lib.Colormap(["orange", "purple", "green"])])
 @pytest.mark.parametrize(
     "cmap_transform", [None, [3, 5, 2, 1, 0, 6, 9, 7, 4, 8], np.arange(9, -1, -1)]
 )
 def test_cmap(
     graphic_type,
-    colors,
-    color_mode,
     cmap,
     cmap_transform,
 ):
     # test different ways of passing cmap args
     fig = fpl.Figure()
 
-    kwargs = dict()
-    for kwarg in ["cmap", "cmap_transform", "colors", "color_mode"]:
-        if locals()[kwarg] is not None:
-            # add to dict of arguments that will be passed
-            kwargs[kwarg] = locals()[kwarg]
-
     data = generate_positions_spiral_data("xy")
 
     if graphic_type == "line":
-        graphic = fig[0, 0].add_line(data=data, **kwargs)
+        graphic = fig[0, 0].add_line(data=data, cmap=cmap, cmap_transform=cmap_transform)
     elif graphic_type == "scatter":
-        graphic = fig[0, 0].add_scatter(data=data, **kwargs)
+        graphic = fig[0, 0].add_scatter(data=data, cmap=cmap, cmap_transform=cmap_transform)
 
-    truth = TRUTH_CMAPS[cmap].copy()
-
-    # permute if transform is provided
-    if cmap_transform is not None:
-        truth = truth[cmap_transform]
-        npt.assert_almost_equal(graphic.cmap.transform, cmap_transform)
-
+    # verify types
     assert isinstance(graphic._cmap, VertexCmap)
+    assert isinstance(graphic.cmap, cmap_lib.Colormap)
+    assert isinstance(graphic._cmap_transform, VertexCmapTransform)
+    assert isinstance(graphic._cmap_range, VertexCmapRange)
 
-    assert graphic.cmap.name == cmap
+    assert isinstance(graphic.world_object.material.map, pygfx.TextureMap)
+    assert isinstance(graphic.world_object.geometry.texcoords, pygfx.Buffer)
 
-    # make sure buffer is identical
-    # cmap overrides colors argument
-    # use __repr__.__self__ to get the real reference from the cmap feature instead of the weakref proxy
-    assert graphic.colors._fpl_buffer is graphic.cmap.buffer.__repr__.__self__
+    if cmap_transform is None:
+        transform = np.linspace(0, 1, len(data))
+        npt.assert_almost_equal(
+            graphic.cmap_transform, transform
+        )
+        npt.assert_almost_equal(
+            graphic.world_object.geometry.texcoords.data, transform
+        )
+    else:
+        npt.assert_almost_equal(graphic.cmap_range, [min(cmap_transform), max(cmap_transform)])
+        npt.assert_almost_equal(
+            graphic.world_object.geometry.texcoords.data, np.asarray(cmap_transform)
+        )
 
-    npt.assert_almost_equal(graphic.cmap.value, truth)
-    npt.assert_almost_equal(graphic.colors.value, truth)
+    # verify buffer values
+    npt.assert_almost_equal(graphic.world_object.material.map.texture.data, cmap_lib.Colormap(cmap).to_pygfx().texture.data)
 
     # test changing cmap but not transform
     graphic.cmap = "viridis"
-    truth = TRUTH_CMAPS["viridis"].copy()
 
-    if cmap_transform is not None:
-        truth = truth[cmap_transform]
-
-    assert graphic.cmap.name == "viridis"
-    npt.assert_almost_equal(graphic.cmap.value, truth)
-    npt.assert_almost_equal(graphic.colors.value, truth)
+    assert graphic.cmap.name == "bids:viridis"
+    npt.assert_almost_equal(graphic.world_object.material.map.texture.data, cmap_lib.Colormap("viridis").to_pygfx().texture.data)
 
     # test changing transform
     cmap_transform = np.random.rand(10)
 
-    # cmap transform is internally normalized between 0 - 1
-    cmap_transform_norm = cmap_transform.copy()
-    cmap_transform_norm -= cmap_transform.min()
-    cmap_transform_norm /= cmap_transform_norm.max()
-    cmap_transform_norm *= 255
+    graphic.cmap_transform = cmap_transform
 
-    truth = fpl.utils.get_cmap("viridis", alpha=1)
-    truth = np.vstack([truth[val] for val in cmap_transform_norm.astype(int)])
-
-    graphic.cmap.transform = cmap_transform
-    npt.assert_almost_equal(graphic.cmap.transform, cmap_transform)
-
-    npt.assert_almost_equal(graphic.cmap.value, truth)
-    npt.assert_almost_equal(graphic.colors.value, truth)
+    npt.assert_almost_equal(graphic.cmap_transform, cmap_transform)
+    npt.assert_almost_equal(graphic.world_object.geometry.texcoords.data, cmap_transform)
 
 
-@pytest.mark.parametrize("graphic_type", ["line", "scatter"])
-@pytest.mark.parametrize("cmap", ["jet"])
-@pytest.mark.parametrize(
-    "colors", [None, *generate_color_inputs("multi")]
-)  # cmap arg overrides colors
-@pytest.mark.parametrize(
-    "color_mode", ["uniform"]  # none of these will work with a uniform buffer
-)
-def test_incompatible_cmap_color_args(graphic_type, cmap, colors, color_mode):
-    # test incompatible cmap args
-    fig = fpl.Figure()
-
-    kwargs = dict()
-    for kwarg in ["cmap", "colors", "color_mode"]:
-        if locals()[kwarg] is not None:
-            # add to dict of arguments that will be passed
-            kwargs[kwarg] = locals()[kwarg]
-
-    data = generate_positions_spiral_data("xy")
-
-    if graphic_type == "line":
-        with pytest.raises(ValueError):
-            graphic = fig[0, 0].add_line(data=data, **kwargs)
-    elif graphic_type == "scatter":
-        with pytest.raises(ValueError):
-            graphic = fig[0, 0].add_scatter(data=data, **kwargs)
-
-
-@pytest.mark.parametrize("graphic_type", ["line", "scatter"])
-@pytest.mark.parametrize("colors", [*generate_color_inputs("multi")])
-@pytest.mark.parametrize(
-    "color_mode", ["uniform"]  # none of these will work with a uniform buffer
-)
-def test_incompatible_color_args(graphic_type, colors, color_mode):
-    # test incompatible color args
-    fig = fpl.Figure()
-
-    kwargs = dict()
-    for kwarg in ["colors", "color_mode"]:
-        if locals()[kwarg] is not None:
-            # add to dict of arguments that will be passed
-            kwargs[kwarg] = locals()[kwarg]
-
-    data = generate_positions_spiral_data("xy")
-
-    if graphic_type == "line":
-        with pytest.raises(ValueError):
-            graphic = fig[0, 0].add_line(data=data, **kwargs)
-    elif graphic_type == "scatter":
-        with pytest.raises(ValueError):
-            graphic = fig[0, 0].add_scatter(data=data, **kwargs)
-
-
-@pytest.mark.parametrize("sizes", [None, 5.0, np.linspace(3, 8, 10, dtype=np.float32)])
+@pytest.mark.parametrize("sizes", [2, 5.0, np.linspace(3, 8, 10, dtype=np.float32)])
 def test_sizes(sizes):
     # test scatter sizes
     fig = fpl.Figure()
 
-    kwargs = dict()
-    for kwarg in ["sizes"]:
-        if locals()[kwarg] is not None:
-            # add to dict of arguments that will be passed
-            kwargs[kwarg] = locals()[kwarg]
-
     data = generate_positions_spiral_data("xy")
 
-    graphic = fig[0, 0].add_scatter(data=data, uniform_size=False, **kwargs)
+    graphic = fig[0, 0].add_scatter(data=data, sizes=sizes)
 
+    if isinstance(sizes, np.ndarray):
+        assert isinstance(graphic.sizes, VertexPointSizes)
+        assert isinstance(graphic._sizes, VertexPointSizes)
+        assert len(data) == len(graphic.sizes)
+        npt.assert_almost_equal(graphic.sizes.value, sizes)
+        npt.assert_almost_equal(
+            graphic.world_object.geometry.sizes.data, graphic.sizes.value
+        )
+    else:
+        assert isinstance(graphic.sizes, float)
+        assert isinstance(graphic._sizes, UniformSize)
+        assert graphic.sizes == graphic._sizes.value == sizes
+
+    # change sizes
+    new_sizes = 10
+    graphic.sizes = new_sizes
+    if isinstance(sizes, np.ndarray):
+        # broadcast
+        assert (graphic.sizes.value == new_sizes).all()
+    else:
+        assert graphic.sizes == new_sizes
+
+    # also test uniform -> vertex switch
+    new_sizes = np.abs(np.sin(np.linspace(0, 2 * np.pi, len(data))))
+    graphic.sizes = new_sizes
     assert isinstance(graphic.sizes, VertexPointSizes)
-    assert isinstance(graphic._sizes, VertexPointSizes)
-    assert len(data) == len(graphic.sizes)
-
-    if sizes is None:
-        sizes = 1  # default sizes
-
-    npt.assert_almost_equal(graphic.sizes.value, sizes)
-    npt.assert_almost_equal(
-        graphic.world_object.geometry.sizes.data, graphic.sizes.value
-    )
-
-
-@pytest.mark.parametrize("sizes", [None, 5.0])
-@pytest.mark.parametrize("uniform_size", [True])
-def test_uniform_size(sizes, uniform_size):
-    fig = fpl.Figure()
-
-    kwargs = dict()
-    for kwarg in ["sizes", "uniform_size"]:
-        if locals()[kwarg] is not None:
-            # add to dict of arguments that will be passed
-            kwargs[kwarg] = locals()[kwarg]
-
-    data = generate_positions_spiral_data("xy")
-
-    graphic = fig[0, 0].add_scatter(data=data, **kwargs)
-
-    assert isinstance(graphic.sizes, (float, int))
-    assert isinstance(graphic._sizes, UniformSize)
-
-    if sizes is None:
-        sizes = 1  # default sizes
-
-    npt.assert_almost_equal(graphic.sizes, sizes)
-    npt.assert_almost_equal(graphic.world_object.material.size, sizes)
-
-    # test changing size
-    graphic.sizes = 10.0
-    assert isinstance(graphic.sizes, float)
-    assert isinstance(graphic._sizes, UniformSize)
-    assert graphic.sizes == 10.0
 
 
 @pytest.mark.parametrize("thickness", [None, 0.5, 5.0])
