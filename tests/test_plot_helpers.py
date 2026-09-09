@@ -26,8 +26,8 @@ def test_get_nearest_graphics():
 
     # check distances
     nearest = fpl.get_nearest_graphics((0, 12), lines)
-    assert nearest[0] is lines[1]  # closest
-    assert nearest[1] is lines[0]
-    assert nearest[2] is lines[3]
-    assert nearest[3] is lines[2]  # furthest
-    assert nearest[-1] is lines[2]
+    assert nearest[0] is lines.graphics[1]  # closest
+    assert nearest[1] is lines.graphics[0]
+    assert nearest[2] is lines.graphics[3]
+    assert nearest[3] is lines.graphics[2]  # furthest
+    assert nearest[-1] is lines.graphics[2]
