@@ -281,14 +281,14 @@ class VertexPositions(BufferManager):
     def _fix_data(self, data):
         if data.ndim == 1:
             # if user provides a 1D array, assume these are y-values
-            data = np.column_stack([np.arange(data.size, dtype=data.dtype), data])
+            data = np.column_stack([np.arange(data.size, dtype=np.float32), data])
 
         if data.shape[1] != 3:
             if data.shape[1] != 2:
                 raise ValueError(f"Must pass 1D, 2D or 3D data")
 
             # zeros for z
-            zs = np.zeros(data.shape[0], dtype=data.dtype)
+            zs = np.zeros(data.shape[0], dtype=np.float32)
 
             # column stack [x, y, z] to make data of shape [n_points, 3]
             data = np.column_stack([data[:, 0], data[:, 1], zs])

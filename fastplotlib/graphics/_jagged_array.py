@@ -253,6 +253,11 @@ class JaggedCollectionFeature(CollectionFeatureAccessor):
         # multiple graphics: they must all be the same mode, then split `value` along the
         # graphic axis and hand each graphic its piece
         selected = self._graphics[graphic_key]
+
+        if len(selected < 1):
+            # nothing to set
+            return
+
         self._verify_homogenous_buffer_type(selected)
         for graphic, graphic_value in zip(
             selected, self._broadcast_over_graphics(value, len(selected))
