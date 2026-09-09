@@ -27,10 +27,10 @@ data = np.column_stack([xs, ys])
 figure = fpl.Figure(size=(700, 560))
 
 # make some scatter points at every 10th point
-figure[0, 0].add_scatter(data[::10], colors="cyan", sizes=15, name="sine-scatter", color_mode="uniform")
+figure[0, 0].add_scatter(data[::10], colors="cyan", sizes=15, name="sine-scatter")
 
 # place a line above the scatter
-figure[0, 0].add_line(data, thickness=3, colors="r", name="sine-wave", color_mode="uniform")
+figure[0, 0].add_line(data, thickness=3, colors="r", name="sine-wave")
 
 
 class ImguiExample(ImguiWindow):
