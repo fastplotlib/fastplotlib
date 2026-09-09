@@ -17,9 +17,10 @@ n_datapoints = 100_000  # number of datapoints per line
 n_lines = 8
 
 xs = np.linspace(0, 1000 * np.pi, n_datapoints)
-ys = np.sin(xs)
+ys = np.random.rand(n_datapoints)
 data = np.column_stack([xs, ys])
 n_data = np.stack([data] * n_lines)
+n_data[:4, 50_000:, 1] += 1
 
 # must define a reference range, this would often be your time dimension and corresponds to your x-dimension
 ref = {
@@ -47,6 +48,10 @@ nd_lines = ndw[0, 0].add_nd_timeseries(
 
 ndw.show(maintain_aspect=False)
 figure = ndw.figure
+
+subplot = ndw.figure[0, 0]
+subplot.controller.add_camera(subplot.camera, include_state={"x", "width"})
+
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide

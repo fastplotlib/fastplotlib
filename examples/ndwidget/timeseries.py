@@ -60,4 +60,10 @@ subplot = ndw.figure[0, 0]
 subplot.controller.add_camera(subplot.camera, include_state={"x", "width"})
 
 ndw.show(maintain_aspect=False)
-fpl.loop.run()
+figure = ndw.figure
+
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
+if __name__ == "__main__":
+    print(__doc__)
+    fpl.loop.run()

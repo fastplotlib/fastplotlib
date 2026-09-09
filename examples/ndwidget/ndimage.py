@@ -49,6 +49,14 @@ ndi2 = ndw2[0, 0].add_nd_image(
 # change spatial dims on the fly
 # ndi.spatial_dims = ("depth", "m", "n")
 
+figure = ndw.figure
+
+
 ndw.show()
 ndw2.show()
-fpl.loop.run()
+
+# NOTE: fpl.loop.run() should not be used for interactive sessions
+# See the "JupyterLab and IPython" section in the user guide
+if __name__ == "__main__":
+    print(__doc__)
+    fpl.loop.run()
