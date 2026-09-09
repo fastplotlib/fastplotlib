@@ -17,7 +17,7 @@ from ....graphics.utils import pause_events
 from ....graphics.selectors import LinearSelector
 from ....utils import ArrayProtocol, CudaArrayProtocol, cuda_to_numpy
 from .._base import NDGraphic, WindowFuncCallable, block_indices_ctx
-from .._index import ReferenceIndex
+from .._index import ReferenceIndices
 from .._async import run_sync
 from ._nd_positions import (
     NDPositions,
@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 class NDTimeseries(NDPositions):
     def __init__(
         self,
-        ref_index: ReferenceIndex,
+        ref_index: ReferenceIndices,
         nd_subplot: NDWSubplot,
         data: Any,
         dims: Sequence[str],
@@ -80,7 +80,7 @@ class NDTimeseries(NDPositions):
 
         Parameters
         ----------
-        ref_index : ReferenceIndex
+        ref_index : ReferenceIndices
             The shared reference index that delivers slider updates to this graphic.
 
         nd_subplot : NDWSubplot

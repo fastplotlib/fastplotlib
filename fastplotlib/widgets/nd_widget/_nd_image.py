@@ -21,7 +21,7 @@ from ._base import (
     NDGraphic,
     WindowFuncCallable,
 )
-from ._index import ReferenceIndex
+from ._index import ReferenceIndices
 from ._async import run_in_thread_pool, run_sync
 
 if TYPE_CHECKING:
@@ -285,7 +285,7 @@ class NDImageProcessor(NDProcessor):
 class NDImage(NDGraphic):
     def __init__(
         self,
-        ref_index: ReferenceIndex,
+        ref_index: ReferenceIndices,
         nd_subplot: NDWSubplot,
         data: ArrayProtocol | None,
         dims: Sequence[str],
@@ -322,7 +322,7 @@ class NDImage(NDGraphic):
 
         Parameters
         ----------
-        ref_index : ReferenceIndex
+        ref_index : ReferenceIndices
             The shared reference index that delivers slider updates to this graphic.
 
         nd_subplot : NDWSubplot

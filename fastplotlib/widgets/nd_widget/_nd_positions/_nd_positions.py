@@ -20,7 +20,7 @@ from .._base import (
     WindowFuncCallable,
 )
 from ....utils import ArrayProtocol, CudaArrayProtocol, cuda_to_numpy
-from .._index import ReferenceIndex
+from .._index import ReferenceIndices
 from .._async import run_in_thread_pool, run_sync
 
 if TYPE_CHECKING:
@@ -411,7 +411,7 @@ class NDPositionsProcessor(NDProcessor):
 class NDPositions(NDGraphic):
     def __init__(
         self,
-        ref_index: ReferenceIndex,
+        ref_index: ReferenceIndices,
         nd_subplot: NDWSubplot,
         data: Any,
         dims: Sequence[str],
@@ -458,7 +458,7 @@ class NDPositions(NDGraphic):
 
         Parameters
         ----------
-        ref_index : ReferenceIndex
+        ref_index : ReferenceIndices
             The shared reference index that delivers slider updates to this graphic.
 
         nd_subplot : NDWSubplot
@@ -628,7 +628,7 @@ class NDPositions(NDGraphic):
 
     def init(
         self,
-        ref_index: ReferenceIndex,
+        ref_index: ReferenceIndices,
         data: Any,
         dims: Sequence[str],
         spatial_dims: tuple[str, str, str],

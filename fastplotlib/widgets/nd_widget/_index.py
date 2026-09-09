@@ -151,7 +151,7 @@ class RangeDiscrete:
         return len(self.options)
 
 
-class ReferenceIndex:
+class ReferenceIndices:
     def __init__(
         self,
         ref_ranges: dict[
