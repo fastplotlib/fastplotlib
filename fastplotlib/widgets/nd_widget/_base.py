@@ -32,8 +32,8 @@ class NDProcessor:
         self,
         data: ArrayProtocol,
         dims: Sequence[str],
-        spatial_dims: Sequence[str] | None,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        display_dims: Sequence[str] | None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         window_funcs: dict[
             str, tuple[WindowFuncCallable | None, int | float | None]
         ] = None,
@@ -51,7 +51,7 @@ class NDProcessor:
         However their ``get()`` method must still return a data slice that corresponds to the graphical representation
         they map to.
 
-        Every dimension that is *not* listed in ``spatial_dims`` becomes a slider
+        Every dimension that is *not* listed in ``display_dims`` becomes a slider
         dimension. Each slider dim must have a ``ReferenceRange`` defined in the
         ``ReferenceIndex`` of the parent ``NDWidget``. The widget uses this to direct
         a change in the ``ReferenceIndex`` and update the graphics.
@@ -64,7 +64,7 @@ class NDProcessor:
 
         dims: Sequence[str]
             names for each dimension in ``data``. Dimensions not listed in
-            ``spatial_dims`` are treated as slider dimensions and **must** appear as
+            ``display_dims`` are treated as slider dimensions and **must** appear as
             keys in the parent ``NDWidget``'s ``ref_ranges``
                 Examples::
                  ``("time", "depth", "row", "col")``
@@ -74,11 +74,11 @@ class NDProcessor:
             A custom subclass's ``data`` object doesn't necessarily need to have these dims, but the ``get()`` method
             must operate as if these dimensions exist and return an array that matches the spatial dimensions.
 
-        spatial_dims: Sequence[str]
+        display_dims: Sequence[str]
             Subset of ``dims`` that are spatial (rendered) dimensions **in display order**. All remaining dims are
             treated as slider dims. See subclass for specific info.
 
-        slider_dim_transforms: dict mapping dim_name -> Callable, an ArrayLike, or None
+        slider_maps: dict mapping dim_name -> Callable, an ArrayLike, or None
             Per-slider-dim mapping from reference-space values to local array indices.
 
             You may also provide an array of reference values for the slider dims, ``searchsorted`` is then used
@@ -119,9 +119,9 @@ class NDProcessor:
         self._dims = dims
 
         self.data = data
-        self.spatial_dims = spatial_dims
+        self.display_dims = display_dims
 
-        self.slider_dim_transforms = slider_dim_transforms
+        self.slider_maps = slider_maps
 
         self.window_funcs = window_funcs
         self.window_order = window_order
@@ -186,24 +186,24 @@ class NDProcessor:
         return self._dims
 
     @property
-    def spatial_dims(self) -> tuple[str, ...]:
-        """Spatial dims, **in display order**"""
-        return self._spatial_dims
+    def display_dims(self) -> tuple[str, ...]:
+        """Subset of ``dims`` that are spatial (rendered) dimensions **in display order**."""
+        return self._display_dims
 
-    @spatial_dims.setter
-    def spatial_dims(self, sdims: Sequence[str]):
+    @display_dims.setter
+    def display_dims(self, sdims: Sequence[str]):
         for dim in sdims:
             if dim not in self.dims:
                 raise KeyError
 
-        self._spatial_dims = tuple(sdims)
+        self._display_dims = tuple(sdims)
 
     @property
     def spatial_dims_indices(self) -> tuple[int, ...]:
         """
         The ordered spatial dim indices that correspond to the named spatial dims
         """
-        return tuple(self.spatial_dims.index(d) for d in self.dims if d in self.spatial_dims)
+        return tuple(self.display_dims.index(d) for d in self.dims if d in self.display_dims)
 
     @property
     def tooltip(self) -> bool:
@@ -220,8 +220,8 @@ class NDProcessor:
 
     @property
     def slider_dims(self) -> set[str]:
-        """Slider dim names, ``set(dims) - set(spatial_dims), **unordered**"""
-        return set(self.dims) - set(self.spatial_dims)
+        """Slider dim names, ``set(dims) - set(display_dims), **unordered**"""
+        return set(self.dims) - set(self.display_dims)
 
     @property
     def n_slider_dims(self):
@@ -332,7 +332,7 @@ class NDProcessor:
         self._spatial_func = func
 
     @property
-    def slider_dim_transforms(self) -> dict[str, Callable[[Any], int]]:
+    def slider_maps(self) -> dict[str, Callable[[Any], int]]:
         """
         Get or set the per-slider-dim mapping from reference-space values to local array indices,
         ``{dim_name: transform}``.
@@ -344,8 +344,8 @@ class NDProcessor:
         """
         return self._index_mappings
 
-    @slider_dim_transforms.setter
-    def slider_dim_transforms(
+    @slider_maps.setter
+    def slider_maps(
         self, maps: dict[str, Callable[[Any], int] | ArrayLike | None] | None
     ):
         if maps is None:
@@ -374,10 +374,10 @@ class NDProcessor:
         self._index_mappings = maps
 
     def _ref_index_to_array_index(self, dim: str, ref_index: Any) -> int:
-        # wraps slider_dim_transforms, clamps between 0 and the array size in this dim
+        # wraps slider_maps, clamps between 0 and the array size in this dim
 
         # ref-space -> local-array-index transform
-        index = self.slider_dim_transforms[dim](ref_index)
+        index = self.slider_maps[dim](ref_index)
 
         # clamp between 0 and array size in this dim
         return max(min(index, self.shape[dim] - 1), 0)
@@ -432,7 +432,7 @@ class NDProcessor:
 
         # get only slider dims which are not also spatial dims (example: p dim for positional data)
         # since `p` dim windowing is dealt with separately for positional data
-        slider_dims = set(self.slider_dims) - set(self.spatial_dims)
+        slider_dims = set(self.slider_dims) - set(self.display_dims)
         # go through each slider dim and accumulate slice objects
         for dim in slider_dims:
             # index for this dim in reference space
@@ -455,8 +455,8 @@ class NDProcessor:
                 stop_ref = index_ref + hw
 
                 # map start and stop ref to array indices
-                start = self.slider_dim_transforms[dim](start_ref)
-                stop = self.slider_dim_transforms[dim](stop_ref)
+                start = self.slider_maps[dim](start_ref)
+                stop = self.slider_maps[dim](stop_ref)
 
                 # clamp within array bounds
                 start = max(min(self.shape[dim] - 1, start), 0)
@@ -465,7 +465,7 @@ class NDProcessor:
             else:
                 # no window func for this dim, direct indexing
                 # index mapped to array index
-                index = self.slider_dim_transforms[dim](index_ref)
+                index = self.slider_maps[dim](index_ref)
 
                 # clamp within the bounds
                 start = max(min(self.shape[dim] - 1, index), 0)
@@ -535,7 +535,7 @@ class NDProcessor:
         ArrayProtocol
             Data slice with the window funcs applied and the slider dims, which are of size ``1`` after
             windowing, squeezed out. The remaining dims are the spatial dims, in the order they appear in
-            ``dims``, **not** in ``spatial_dims`` display order. Subclasses transpose into display order in
+            ``dims``, **not** in ``display_dims`` display order. Subclasses transpose into display order in
             :meth:`get`.
 
         Raises
@@ -556,15 +556,15 @@ class NDProcessor:
             windowed_slice = await self._apply_window_functions(windowed_slice)
 
         # squeeze out all slider dims which should now be size 1
-        # set(dims) - set(spatial_dims) since some spatial dims can also be slider, so get only pure non-spatial dims
+        # set(dims) - set(display_dims) since some spatial dims can also be slider, so get only pure non-spatial dims
         slider_dims_int = tuple(
-            self.dims.index(d) for d in set(self.dims) - set(self.spatial_dims)
+            self.dims.index(d) for d in set(self.dims) - set(self.display_dims)
         )
         windowed_slice = windowed_slice.squeeze(axis=slider_dims_int)
 
-        if windowed_slice.ndim != len(self.spatial_dims):
+        if windowed_slice.ndim != len(self.display_dims):
             raise ValueError(
-                f"windowed_slice.ndim != len(self.spatial_dims): {windowed_slice.ndim} != {len(self.spatial_dims)}"
+                f"windowed_slice.ndim != len(self.display_dims): {windowed_slice.ndim} != {len(self.display_dims)}"
             )
 
         return windowed_slice
@@ -596,7 +596,7 @@ class NDProcessor:
         Get the data slice to display at the given indices. **Must** be implemented in a subclass.
 
         Called by the ``NDGraphic`` whenever the ``ReferenceIndex`` updates. Implementations usually call
-        :meth:`get_window_output`, apply the ``spatial_func``, and transpose into the ``spatial_dims`` display
+        :meth:`get_window_output`, apply the ``spatial_func``, and transpose into the ``display_dims`` display
         order.
 
         Parameters
@@ -608,7 +608,7 @@ class NDProcessor:
         Returns
         -------
         ArrayProtocol
-            Data slice that maps to the graphical representation, with the dims given by ``spatial_dims`` in
+            Data slice that maps to the graphical representation, with the dims given by ``display_dims`` in
             display order.
 
         """
@@ -635,9 +635,9 @@ class NDProcessor:
             f"{self.__class__.__name__}\n"
             f"shape:\n\t{self.shape}\n"
             f"dims:\n\t{self.dims}\n"
-            f"spatial_dims:\n\t{self.spatial_dims}\n"
+            f"display_dims:\n\t{self.display_dims}\n"
             f"slider_dims:\n\t{self.slider_dims}\n"
-            f"slider_dim_transforms:\n{textwrap.indent(pformat(self.slider_dim_transforms, width=120), prefix=tab)}\n"
+            f"slider_maps:\n{textwrap.indent(pformat(self.slider_maps, width=120), prefix=tab)}\n"
         )
 
         if len(wf) > 0:
@@ -667,7 +667,7 @@ class NDGraphic:
         ``_set_indices_()`` on every ``NDGraphic`` that has the dim that changed.
 
         Subclasses must implement :meth:`_create_graphic` and ``_set_indices_()``, and the :attr:`processor`,
-        :attr:`graphic`, :attr:`indices` and :attr:`spatial_dims` properties. Most of the processor properties
+        :attr:`graphic`, :attr:`indices` and :attr:`display_dims` properties. Most of the processor properties
         are aliased here so users can reach them from the ``NDGraphic``, and setting one of those aliases
         re-renders the current slice.
 
@@ -787,7 +787,7 @@ class NDGraphic:
         return self.processor.dims
 
     @property
-    def spatial_dims(self) -> tuple[str, ...]:
+    def display_dims(self) -> tuple[str, ...]:
         """get or set the spatial dims, i.e. the rendered dims, **in display order**"""
         # number of spatial dims for positional data is always 3
         # for image is 2 or 3, so it must be implemented in subclass
@@ -799,7 +799,7 @@ class NDGraphic:
         return self.processor.slider_dims
 
     @property
-    def slider_dim_transforms(self) -> dict[str, Callable[[Any], int]]:
+    def slider_maps(self) -> dict[str, Callable[[Any], int]]:
         """
         Get or set the per-slider-dim mapping from reference-space values to local array indices,
         ``{dim_name: transform}``. Setting it re-renders the current data slice.
@@ -809,13 +809,13 @@ class NDGraphic:
         timestamps array). Any dim given ``None``, or not given at all, uses the identity mapping, i.e. the
         reference value is rounded to the nearest integer and used as the array index.
         """
-        return self.processor.slider_dim_transforms
+        return self.processor.slider_maps
 
-    @slider_dim_transforms.setter
-    def slider_dim_transforms(
+    @slider_maps.setter
+    def slider_maps(
         self, maps: dict[str, Callable[[Any], int] | ArrayLike | None] | None
     ):
-        self.processor.slider_dim_transforms = maps
+        self.processor.slider_maps = maps
         # force a render
         run_sync(self._set_indices_())
 

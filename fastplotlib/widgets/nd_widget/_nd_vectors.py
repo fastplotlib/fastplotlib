@@ -29,13 +29,13 @@ class NDVectorsProcessor(NDProcessor):
         self,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        spatial_dims: tuple[str, str, str],  # must be in order! [n_vectors, positions & directions, xy(z)]
+        display_dims: tuple[str, str, str],  # must be in order! [n_vectors, positions & directions, xy(z)]
         window_funcs: dict[
             str, tuple[WindowFuncCallable | None, int | float | None]
         ] = None,
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
     ):
         """
         ``NDProcessor`` subclass for n-dimensional vector data.
@@ -61,11 +61,11 @@ class NDVectorsProcessor(NDProcessor):
             dims in the array do not need to be in the order that you want to display them, the data slice is
             transposed into the order given by ``spatial_dims``.
 
-        spatial_dims : tuple[str, str, str]
+        display_dims : tuple[str, str, str]
             The 3 spatial dims **in display order**: ``(n_vectors, positions & directions, xy(z))``. The
             positions/directions dim must be of size 2 and the coordinate dim of size 2 or 3.
 
-        slider_dim_transforms : dict[str, Callable[[Any], int] | ArrayLike], optional
+        slider_maps : dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices, see
             :class:`NDProcessor`.
 
@@ -89,8 +89,8 @@ class NDVectorsProcessor(NDProcessor):
         super().__init__(
             data=data,
             dims=dims,
-            spatial_dims=spatial_dims,
-            slider_dim_transforms=slider_dim_transforms,
+            display_dims=display_dims,
+            slider_maps=slider_maps,
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
@@ -121,15 +121,15 @@ class NDVectorsProcessor(NDProcessor):
         self._data = data
 
     @property
-    def spatial_dims(self) -> tuple[str, str, str]:
+    def display_dims(self) -> tuple[str, str, str]:
         """
         Spatial dims, **in display order**: ``(n_vectors, positions & directions, xy(z))``, so the data slice is
         of shape ``[n_vectors, 2, 2 | 3]``
         """
-        return self._spatial_dims
+        return self._display_dims
 
-    @spatial_dims.setter
-    def spatial_dims(self, sdims: tuple[str, str, str]):
+    @display_dims.setter
+    def display_dims(self, sdims: tuple[str, str, str]):
         for dim in sdims:
             if dim not in self.dims:
                 raise KeyError
@@ -139,10 +139,10 @@ class NDVectorsProcessor(NDProcessor):
                 f"There must be exactly 3 spatial dims for vectors indicating [num_vectors, 2, 2] or [num_vectors, 2, 3] "
             )
 
-        self._spatial_dims = tuple(sdims)
+        self._display_dims = tuple(sdims)
 
-        if self.shape[self.spatial_dims[-2]] != 2 or self.shape[
-            self.spatial_dims[-1]
+        if self.shape[self.display_dims[-2]] != 2 or self.shape[
+            self.display_dims[-1]
         ] not in (2, 3):
             raise ValueError(
                 f"Spatial dimensions must haves shape (num_vecs, 2, [2 or 3]) you passed {sdims}"
@@ -203,7 +203,7 @@ class NDVectors(NDGraphic):
         ] = None,
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         name: str = None,
         graphic_kwargs: dict = None,
     ):
@@ -254,7 +254,7 @@ class NDVectors(NDGraphic):
         spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice *after* the window funcs, right before rendering.
 
-        slider_dim_transforms : dict[str, Callable[[Any], int] | ArrayLike], optional
+        slider_maps : dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices, see
             :class:`NDProcessor`.
 
@@ -284,11 +284,11 @@ class NDVectors(NDGraphic):
         self._processor = NDVectorsProcessor(
             data,
             dims=dims,
-            spatial_dims=spatial_dims,
+            display_dims=spatial_dims,
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
-            slider_dim_transforms=slider_dim_transforms,
+            slider_maps=slider_maps,
         )
 
         self._graphic: VectorsGraphic | None = None
@@ -350,7 +350,7 @@ class NDVectors(NDGraphic):
 
     @spatial_dims.setter
     def spatial_dims(self, dims: tuple[str, str, str]):
-        self.processor.spatial_dims = dims
+        self.processor.display_dims = dims
 
         # shape has probably changed, recreate graphic
         run_sync(self._create_graphic())

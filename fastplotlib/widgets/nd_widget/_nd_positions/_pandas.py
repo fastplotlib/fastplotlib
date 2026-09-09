@@ -10,7 +10,7 @@ class NDPP_Pandas(NDPositionsProcessor):
     def __init__(
             self,
             data: pd.DataFrame,
-            spatial_dims: tuple[str, str, str],  # [l, p, d] dims in order
+            display_dims: tuple[str, str, str],  # [l, p, d] dims in order
             columns: list[tuple[str, str] | tuple[str, str, str]],
             tooltip_columns: list[str] = None,
             **kwargs,
@@ -31,7 +31,7 @@ class NDPP_Pandas(NDPositionsProcessor):
         data: pd.DataFrame
             DataFrame holding the coordinates, one column per coordinate of each graphic.
 
-        spatial_dims: tuple[str, str, str]
+        display_dims: tuple[str, str, str]
             The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``. These are also used as
             the ``dims``, since a DataFrame has no other dims to name.
 
@@ -62,8 +62,8 @@ class NDPP_Pandas(NDPositionsProcessor):
 
         super().__init__(
             data=data,
-            dims=spatial_dims,
-            spatial_dims=spatial_dims,
+            dims=display_dims,
+            display_dims=display_dims,
             **kwargs,
         )
 
@@ -88,7 +88,7 @@ class NDPP_Pandas(NDPositionsProcessor):
 
     @property
     def dims(self) -> tuple[str, str, str]:
-        """dim names, the same as :attr:`spatial_dims` since a DataFrame has no other dims"""
+        """dim names, the same as :attr:`display_dims` since a DataFrame has no other dims"""
         return self._dims
 
     @property

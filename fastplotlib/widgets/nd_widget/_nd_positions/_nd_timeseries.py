@@ -39,7 +39,7 @@ class NDTimeseries(NDPositions):
         nd_subplot: NDWSubplot,
         data: Any,
         dims: Sequence[str],
-        spatial_dims: tuple[str, str, str],
+        display_dims: tuple[str, str, str],
         *args,
         graphic_type: Type[
             LineCollection
@@ -55,7 +55,7 @@ class NDTimeseries(NDPositions):
         ] = None,
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         max_display_datapoints: int = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         linear_selector: bool = False,
@@ -91,7 +91,7 @@ class NDTimeseries(NDPositions):
             time-like coordinate.
 
             Ex: an array of shape ``[n_trials, n_traces, n_timepoints, 2]`` with ``dims`` of
-            ``("trial", "trace", "time", "xy")`` and ``spatial_dims`` of ``("trace", "time", "xy")``.
+            ``("trial", "trace", "time", "xy")`` and ``display_dims`` of ``("trace", "time", "xy")``.
 
             Pass ``None`` to create the ``NDTimeseries`` without a graphic and set the data later using
             :attr:`data`.
@@ -99,7 +99,7 @@ class NDTimeseries(NDPositions):
         dims : Sequence[str]
             Name for every dimension of ``data``, in order. Non-spatial dims must match keys in ``ref_index``.
 
-        spatial_dims : tuple[str, str, str]
+        display_dims : tuple[str, str, str]
             The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``, i.e. the number of traces
             in the collection, the number of datapoints ``p`` in each of them, and the value dim which holds the
             xy or xyz coordinate. A heatmap requires a value dim of size exactly 2.
@@ -133,7 +133,7 @@ class NDTimeseries(NDPositions):
         spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice *after* the window funcs, right before rendering.
 
-        slider_dim_transforms : dict[str, Callable[[Any], int] | ArrayLike], optional
+        slider_maps : dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices, see
             :class:`NDProcessor`. The transform for the ``p`` dim is typically the array of x values, ex: a
             timestamps array, so the slider is in seconds rather than sample indices.
@@ -246,7 +246,7 @@ class NDTimeseries(NDPositions):
             ref_index,
             data,
             dims,
-            spatial_dims,
+            display_dims,
             *args,
             graphic_type=graphic_type,
             processor=processor,
@@ -254,7 +254,7 @@ class NDTimeseries(NDPositions):
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
-            slider_dim_transforms=slider_dim_transforms,
+            slider_maps=slider_maps,
             max_display_datapoints=max_display_datapoints,
             datapoints_window_func=datapoints_window_func,
             colors=colors,
@@ -274,9 +274,9 @@ class NDTimeseries(NDPositions):
 
         # determine a min display_window for x_range_mode = "auto"
         # determines required world space range for 3 datapoints
-        p_dim = self.processor.spatial_dims[1]
+        p_dim = self.processor.display_dims[1]
         p_range = self._ref_index.ref_ranges[p_dim]
-        p_map = self.processor.slider_dim_transforms[p_dim]
+        p_map = self.processor.slider_maps[p_dim]
         p_span = p_range.stop - p_range.start
         p_mid = p_range.start + p_span / 2
         i = p_map(p_mid)
@@ -322,7 +322,7 @@ class NDTimeseries(NDPositions):
         if issubclass(self._graphic_type, ImageGraphic):
             data_slice = new_features["data"]
             # `d` dim must only have xy data to be interpreted as a heatmap, xyz can't become a timeseries heatmap
-            if self.processor.shape[self.processor.spatial_dims[-1]] != 2:
+            if self.processor.shape[self.processor.display_dims[-1]] != 2:
                 raise ValueError
 
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
@@ -351,8 +351,8 @@ class NDTimeseries(NDPositions):
         proc = self.processor
         # the indexer leaves the spatial `p` dim unsliced, so this raw slice spans every datapoint
         raw = await proc._get_raw_data_slice(self.indices)
-        c = proc.dims.index(proc.spatial_dims[2])  # coord dim; y is index 1
-        g = proc.dims.index(proc.spatial_dims[0])  # graphics dim
+        c = proc.dims.index(proc.display_dims[2])  # coord dim; y is index 1
+        g = proc.dims.index(proc.display_dims[0])  # graphics dim
         y = raw[(slice(None),) * c + (1,)]  # y values as a view, coord dim removed
         # keep the graphics dim (shifted down if it was past the removed coord dim), max the rest;
         # `.max` runs on whatever the array is (numpy/cupy/torch/jax), so a GPU array reduces on-device
@@ -366,7 +366,7 @@ class NDTimeseries(NDPositions):
     def _update_view(self, indices: dict[str, Any], data_slice: np.ndarray):
         """update the camera x-range and linear selector to the current datapoints position."""
 
-        p_dim = self.processor.spatial_dims[1]
+        p_dim = self.processor.display_dims[1]
 
         if self.x_range_mode is not None:
             # set x_range directly from the display_window, NOT from the data_slice x-range,
@@ -392,7 +392,7 @@ class NDTimeseries(NDPositions):
         with block_indices_ctx(*self._nd_subplot.nd_graphics):
             # block index change in all NDGraphics that are not in the same subplot
             self._ref_index.set_dim_index(
-                self.processor.spatial_dims[1], ev.info["value"]
+                self.processor.display_dims[1], ev.info["value"]
             )
 
     def _create_heatmap_data(self, data_slice) -> tuple[np.ndarray, float, float]:
@@ -500,7 +500,7 @@ class NDTimeseries(NDPositions):
 
         # block scheduling an additional async _set_indices_ for ndgraphics in this subplot
         with block_indices_ctx(*self._nd_subplot.nd_graphics):
-            p_dim = self.processor.spatial_dims[1]
+            p_dim = self.processor.display_dims[1]
             self._ref_index.set_dim_index(p_dim, new_index)
 
         # run this ndgraphic update immediately so graphic data and linear selector are in sync with the

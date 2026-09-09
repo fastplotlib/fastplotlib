@@ -39,10 +39,10 @@ class NDPositionsProcessor(NDProcessor):
         data: Any,
         dims: Sequence[str],
         # TODO: allow stack_dim to be None and auto-add new dim of size 1 in get logic
-        spatial_dims: tuple[
+        display_dims: tuple[
             str | None, str, str
         ],  # [stack_dim, n_datapoints, spatial_dim], IN ORDER!!
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         display_window: int | float | None = 100,  # window for n_datapoints dim only
         max_display_datapoints: int = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
@@ -73,12 +73,12 @@ class NDPositionsProcessor(NDProcessor):
             dims in the array do not need to be in the order that you want to display them, the data slice is
             transposed into the order given by ``spatial_dims``.
 
-        spatial_dims : tuple[str, str, str]
+        display_dims : tuple[str, str, str]
             The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``, i.e. the number of lines
             or scatters in the collection, the number of datapoints ``p`` in each of them, and the value dim
             which holds the xy or xyz coordinate and must be of size 2 or 3.
 
-        slider_dim_transforms : dict[str, Callable[[Any], int] | ArrayLike], optional
+        slider_maps : dict[str, Callable[[Any], int] | ArrayLike], optional
             See :class:`NDProcessor`. The transform for the ``p`` dim is also used to map ``display_window`` and
             the ``datapoints_window_func`` window size from reference units to array indices.
 
@@ -123,8 +123,8 @@ class NDPositionsProcessor(NDProcessor):
         super().__init__(
             data=data,
             dims=dims,
-            spatial_dims=spatial_dims,
-            slider_dim_transforms=slider_dim_transforms,
+            display_dims=display_dims,
+            slider_maps=slider_maps,
             **kwargs,
         )
 
@@ -149,7 +149,7 @@ class NDPositionsProcessor(NDProcessor):
         return self._spatial_dims
 
     @spatial_dims.setter
-    def spatial_dims(self, sdims: tuple[str, str, str]):
+    def display_dims(self, sdims: tuple[str, str, str]):
         if len(sdims) != 3:
             raise IndexError
 
@@ -281,7 +281,7 @@ class NDPositionsProcessor(NDProcessor):
 
         # display window in array index space
         if self.display_window is not None:
-            dw = self.slider_dim_transforms[p_dim](self.display_window)
+            dw = self.slider_maps[p_dim](self.display_window)
 
             # step size based on max number of datapoints to render
             step = max(1, dw // self.max_display_datapoints)
@@ -430,7 +430,7 @@ class NDPositions(NDGraphic):
         ] = None,
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         max_display_datapoints: int = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
@@ -508,7 +508,7 @@ class NDPositions(NDGraphic):
         spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice *after* the window funcs, right before rendering.
 
-        slider_dim_transforms : dict[str, Callable[[Any], int] | ArrayLike], optional
+        slider_maps : dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices, see
             :class:`NDProcessor`.
 
@@ -610,7 +610,7 @@ class NDPositions(NDGraphic):
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
-            slider_dim_transforms=slider_dim_transforms,
+            slider_maps=slider_maps,
             max_display_datapoints=max_display_datapoints,
             datapoints_window_func=datapoints_window_func,
             colors=colors,
@@ -646,7 +646,7 @@ class NDPositions(NDGraphic):
         ] = None,
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         max_display_datapoints: int = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
@@ -686,7 +686,7 @@ class NDPositions(NDGraphic):
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
-            slider_dim_transforms=slider_dim_transforms,
+            slider_maps=slider_maps,
             **processor_kwargs,
         )
 
@@ -830,7 +830,7 @@ class NDPositions(NDGraphic):
 
     @spatial_dims.setter
     def spatial_dims(self, dims: tuple[str, str, str]):
-        self.processor.spatial_dims = dims
+        self.processor.display_dims = dims
         # force re-render
         run_sync(self._set_indices_())
 

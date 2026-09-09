@@ -33,7 +33,7 @@ class NDImageProcessor(NDProcessor):
         self,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        spatial_dims: (
+        display_dims: (
             tuple[str, str] | tuple[str, str, str]
         ),  # must be in order! [rows, cols] | [z, rows, cols]
         rgb_dim: str | None = None,
@@ -41,7 +41,7 @@ class NDImageProcessor(NDProcessor):
         window_order: tuple[int, ...] = None,
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
-        slider_dim_transforms=None,
+        slider_maps=None,
     ):
         """
         ``NDProcessor`` subclass for n-dimensional image data.
@@ -55,7 +55,7 @@ class NDImageProcessor(NDProcessor):
 
         dims: Sequence[str]
             names for each dimension in ``data``. Dimensions not listed in
-            ``spatial_dims`` are treated as slider dimensions and **must** appear as
+            ``display_dims`` are treated as slider dimensions and **must** appear as
             keys in the parent ``NDWidget``'s ``ref_ranges``
                 Examples::
                  ``("time", "depth", "row", "col")``
@@ -64,9 +64,9 @@ class NDImageProcessor(NDProcessor):
 
             dims in the array do not need to be in the order that you want to display them, for example you can have a
             weird array where the dims are interpreted as:
-            ``("col", "depth", "row", "time")``, and then specify spatial_dims as ``("row", "col")``.
+            ``("col", "depth", "row", "time")``, and then specify display_dims as ``("row", "col")``.
 
-        spatial_dims : tuple[str, str] | tuple[str, str, str]
+        display_dims : tuple[str, str] | tuple[str, str, str]
             The 2 or 3 spatial dims **in display order**, which also determines the graphic used for rendering:
 
             * ``(rows, cols)``, a 2D grayscale ``ImageGraphic``
@@ -74,17 +74,17 @@ class NDImageProcessor(NDProcessor):
             * ``(z, rows, cols)``, a 3D ``ImageVolumeGraphic``
 
             The ordering determines how the image or volume is rendered. For example, if you specify
-            ``spatial_dims = ("rows", "cols")`` and then change it to ``("cols", "rows")``, it will display the
+            ``display_dims = ("rows", "cols")`` and then change it to ``("cols", "rows")``, it will display the
             transpose.
 
         rgb_dim : str, optional
-            Name of the RGB(A) dim, if present. It must be listed in ``spatial_dims`` and be of size 3 or 4.
+            Name of the RGB(A) dim, if present. It must be listed in ``display_dims`` and be of size 3 or 4.
 
         compute_histogram: bool, default True
             Compute a histogram of the data, disable if random-access of data is not blazing-fast (ex: data that uses
             video codecs), or if histograms are not useful for this data.
 
-        slider_dim_transforms : dict, optional
+        slider_maps : dict, optional
             See :class:`NDProcessor`.
 
         window_funcs : dict, optional
@@ -118,8 +118,8 @@ class NDImageProcessor(NDProcessor):
         super().__init__(
             data=data,
             dims=dims,
-            spatial_dims=spatial_dims,
-            slider_dim_transforms=slider_dim_transforms,
+            display_dims=display_dims,
+            slider_maps=slider_maps,
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
@@ -156,16 +156,16 @@ class NDImageProcessor(NDProcessor):
         self._recompute_histogram()
 
     @property
-    def spatial_dims(self) -> tuple[str, str] | tuple[str, str, str]:
+    def display_dims(self) -> tuple[str, str] | tuple[str, str, str]:
         """
-        Spatial dims, **in display order**.
+        Subset of ``dims`` that are spatial (rendered) dimensions **in display order**.
 
         [row_dim, col_dim] or [row_dim, col_dim, rgb(a) dim]
         """
-        return self._spatial_dims
+        return self._display_dims
 
-    @spatial_dims.setter
-    def spatial_dims(self, sdims: tuple[str, str] | tuple[str, str, str]):
+    @display_dims.setter
+    def display_dims(self, sdims: tuple[str, str] | tuple[str, str, str]):
         for dim in sdims:
             if dim not in self.dims:
                 raise KeyError
@@ -176,7 +176,7 @@ class NDImageProcessor(NDProcessor):
                 f"[row_dims, col_dim, rgb(a) dim]. You passed: {sdims}"
             )
 
-        self._spatial_dims = tuple(sdims)
+        self._display_dims = tuple(sdims)
 
     @property
     def rgb_dim(self) -> str | None:
@@ -243,7 +243,7 @@ class NDImageProcessor(NDProcessor):
                 window_output = await run_in_thread_pool(
                     self._executor, self._spatial_func, window_output
                 )
-            if window_output.ndim != len(self.spatial_dims):
+            if window_output.ndim != len(self.display_dims):
                 raise ValueError
 
         # final CUDA -> numpy conversion at the end of the pipeline
@@ -269,7 +269,7 @@ class NDImageProcessor(NDProcessor):
             # spatial functions often operate on the spatial dims, ex: a gaussian kernel
             # so their results require the full spatial resolution, the histogram of a
             # spatially subsampled image will be very different
-            ignore_dims = [self.dims.index(dim) for dim in self.spatial_dims]
+            ignore_dims = [self.dims.index(dim) for dim in self.display_dims]
         else:
             ignore_dims = None
 
@@ -289,7 +289,7 @@ class NDImage(NDGraphic):
         nd_subplot: NDWSubplot,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        spatial_dims: (
+        display_dims: (
             tuple[str, str] | tuple[str, str, str]
         ),  # must be in order! [rows, cols] | [z, rows, cols]
         rgb_dim: str | None = None,
@@ -299,7 +299,7 @@ class NDImage(NDGraphic):
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         processor_type: type[NDImageProcessor] = NDImageProcessor,
         colorspace: Literal[
             "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
@@ -312,10 +312,10 @@ class NDImage(NDGraphic):
         ``NDGraphic`` subclass for n-dimensional image rendering.
 
         Uses an :class:`NDImageProcessor` to produce the data slices and manages an ``ImageGraphic``,
-        ``ImageYUVGraphic`` or ``ImageVolumeGraphic``, swapping between them when :attr:`spatial_dims` is
+        ``ImageYUVGraphic`` or ``ImageVolumeGraphic``, swapping between them when :attr:`display_dims` is
         reassigned at runtime. It also owns an ``ImguiColorbar`` for interactive vmin, vmax adjustment.
 
-        Every dimension that is *not* listed in ``spatial_dims`` becomes a slider
+        Every dimension that is *not* listed in ``display_dims`` becomes a slider
         dimension. Each slider dim must have a ``ReferenceRange`` defined in the
         ``ReferenceIndex`` of the parent ``NDWidget``. The widget uses this to direct
         a change in the ``ReferenceIndex`` and update the graphics.
@@ -339,7 +339,7 @@ class NDImage(NDGraphic):
             ex: ``("time", "depth", "row", "col")`` — ``"time"`` and ``"depth"`` must
             be present in ``ref_index``.
 
-        spatial_dims : tuple[str, str] | tuple[str, str, str]
+        display_dims : tuple[str, str] | tuple[str, str, str]
             The 2 or 3 spatial dims **in display order**, which also determines the graphic used for rendering:
 
             * ``(rows, cols)``, a 2D grayscale ``ImageGraphic``
@@ -349,7 +349,7 @@ class NDImage(NDGraphic):
             Reassigning this at runtime swaps the graphic if the number of non-RGB(A) spatial dims changes.
 
         rgb_dim : str, optional
-            Name of the RGB(A) dim, if present. It must be listed in ``spatial_dims`` and be of size 3 or 4.
+            Name of the RGB(A) dim, if present. It must be listed in ``display_dims`` and be of size 3 or 4.
 
         window_funcs : dict, optional
             See :class:`NDProcessor`.
@@ -365,7 +365,7 @@ class NDImage(NDGraphic):
             which is used to interactively set vmin, vmax. Disable if random access of the data is not
             blazing-fast (ex: data that uses video codecs), or if a histogram is not useful for this data.
 
-        slider_dim_transforms : dict, optional
+        slider_maps : dict, optional
             See :class:`NDProcessor`.
 
         processor_type : type[NDImageProcessor], default ``NDImageProcessor``
@@ -392,11 +392,11 @@ class NDImage(NDGraphic):
 
         """
 
-        if not (set(dims) - set(spatial_dims)).issubset(ref_index.dims):
+        if not (set(dims) - set(display_dims)).issubset(ref_index.dims):
             raise IndexError(
                 f"all specified `dims` must either be a spatial dim or a slider dim "
                 f"specified in the NDWidget ref_ranges, provided dims: {dims}, "
-                f"spatial_dims: {spatial_dims}. Specified NDWidget ref_ranges: {ref_index.dims}"
+                f"display_dims: {display_dims}. Specified NDWidget ref_ranges: {ref_index.dims}"
             )
 
         super().__init__(nd_subplot, name)
@@ -406,13 +406,13 @@ class NDImage(NDGraphic):
         self._processor = processor_type(
             data,
             dims=dims,
-            spatial_dims=spatial_dims,
+            display_dims=display_dims,
             rgb_dim=rgb_dim,
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
             compute_histogram=compute_histogram,
-            slider_dim_transforms=slider_dim_transforms,
+            slider_maps=slider_maps,
         )
 
         self._colorspace = colorspace
@@ -461,14 +461,14 @@ class NDImage(NDGraphic):
             # remove RGB spatial dim, ex: if we have an RGBA image of shape [512, 512, 4] we want to interpet this as
             # 2D for images
             # [30, 512, 512, 4] with an rgb dim is an RGBA volume which is also supported
-            match len(self.processor.spatial_dims) - int(bool(self.processor.rgb_dim)):
+            match len(self.processor.display_dims) - int(bool(self.processor.rgb_dim)):
                 case 2:
                     cls = ImageGraphic
                 case 3:
                     cls = ImageVolumeGraphic
 
         # get the data slice for this index
-        # this will only have the dims specified by ``spatial_dims``
+        # this will only have the dims specified by ``display_dims``
         data_slice = await self.processor.get(self.indices)
 
         # create the new graphic
@@ -481,7 +481,7 @@ class NDImage(NDGraphic):
 
         old_graphic = self._graphic
         # check if we are replacing a graphic
-        # ex: swapping from 2D <-> 3D representation after ``spatial_dims`` was changed
+        # ex: swapping from 2D <-> 3D representation after ``display_dims`` was changed
         if old_graphic is not None:
             # carry over some attributes from old graphic
             attrs = dict.fromkeys(["cmap", "interpolation", "cmap_interpolation"])
@@ -566,17 +566,17 @@ class NDImage(NDGraphic):
             self._nd_subplot.subplot.auto_scale()
 
     @property
-    def spatial_dims(self) -> tuple[str, str] | tuple[str, str, str]:
+    def display_dims(self) -> tuple[str, str] | tuple[str, str, str]:
         """
-        get or set the spatial dims **in order**
+        Subset of ``dims`` that are spatial (rendered) dimensions **in display order**.
 
         [row_dim, col_dim] or [row_dim, col_dim, rgb(a) dim]
         """
-        return self.processor.spatial_dims
+        return self.processor.display_dims
 
-    @spatial_dims.setter
-    def spatial_dims(self, dims: tuple[str, str] | tuple[str, str, str]):
-        self.processor.spatial_dims = dims
+    @display_dims.setter
+    def display_dims(self, dims: tuple[str, str] | tuple[str, str, str]):
+        self.processor.display_dims = dims
 
         # shape has probably changed, recreate graphic
         run_sync(self._create_graphic())
