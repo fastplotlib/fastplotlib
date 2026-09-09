@@ -707,8 +707,8 @@ class GraphicMethodsMixin:
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
-        cmap_transform: 1D array-like of numerical values, optional
-            if provided, these values are used to map the colors from the cmap
+        cmap_transform: np.ndarray, optional
+            1D array-like of numerical values, if provided, these values are used to map the colors from the cmap
 
         cmap_range: (float, float), optional
             the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
@@ -789,8 +789,8 @@ class GraphicMethodsMixin:
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
-        cmap_transform: 1D array-like of numerical values, optional
-            if provided, these values are used to map the colors from the cmap
+        cmap_transform: np.ndarray, optional
+            1D array-like of numerical values, if provided, these values are used to map the colors from the cmap
 
         cmap_range: (float, float), optional
             the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
@@ -875,8 +875,8 @@ class GraphicMethodsMixin:
             overrides any argument passed to "colors". For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
 
-        cmap_transform: 1D array-like of numerical values, optional
-            if provided, these values are used to map the colors from the cmap
+        cmap_transform: np.ndarray, optional
+            1D array-like of numerical values, if provided, these values are used to map the colors from the cmap
 
         cmap_range: (float, float), optional
             the (min, max) of the cmap_transform mapped onto the colormap, defaults to the transform's own range
