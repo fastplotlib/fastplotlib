@@ -5,6 +5,9 @@ Volume rendering of toy data
 Volume rendering of toy trig data
 """
 
+# test_example = false
+# sphinx_gallery_pygfx_docs = 'screenshot'
+
 import fastplotlib as fpl
 import numpy as np
 
@@ -18,7 +21,7 @@ sine = np.sin(np.sqrt(xs))
 
 data = np.dstack([np.vstack([sine * i for i in range(n_rows)]).astype(np.float32) * j for j in range(z)])
 
-figure = fpl.Figure(cameras="3d", controller_types="orbit")
+figure = fpl.Figure(cameras="3d", controller_types="orbit", size=(700, 560))
 
 volume = figure[0, 0].add_image_volume(data)
 
