@@ -79,7 +79,7 @@ class NDWSubplot:
     def _check_slider_dims(
         self,
         dims: Sequence[Hashable],
-        spatial_dims: Sequence[Hashable],
+        display_dims: Sequence[Hashable],
         data: ArrayProtocol | None,
         positions: bool = False,
     ):
@@ -94,10 +94,10 @@ class NDWSubplot:
             return
 
         dims = tuple(dims)
-        slider_dims = set(dims) - set(spatial_dims)
+        slider_dims = set(dims) - set(display_dims)
         if positions:
             # the datapoints `p` axis is a spatial dim that also needs a reference range
-            slider_dims.add(spatial_dims[1])
+            slider_dims.add(display_dims[1])
 
         for dim in slider_dims:
             size = data.shape[dims.index(dim)]
@@ -119,7 +119,7 @@ class NDWSubplot:
         self,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        spatial_dims: (
+        display_dims: (
             tuple[str, str] | tuple[str, str, str]
         ),  # must be in order! [rows, cols] | [z, rows, cols]
         rgb_dim: str | None = None,
@@ -129,7 +129,7 @@ class NDWSubplot:
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         compute_histogram: bool = True,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         processor_type: type[NDImageProcessor] = NDImageProcessor,
         colorspace: Literal[
             "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
@@ -141,7 +141,7 @@ class NDWSubplot:
         """
         Add an n-dimensional image or volume to this subplot.
 
-        Every dim that is not listed in ``spatial_dims`` becomes a slider dim.
+        Every dim that is not listed in ``display_dims`` becomes a slider dim.
 
         Parameters
         ----------
@@ -152,9 +152,9 @@ class NDWSubplot:
 
         dims: Sequence[str]
             name for every dim of ``data``, in order. They do not need to be in display order, ex: an array whose
-            dims are ``("col", "depth", "row", "time")`` with ``spatial_dims`` of ``("row", "col")``.
+            dims are ``("col", "depth", "row", "time")`` with ``display_dims`` of ``("row", "col")``.
 
-        spatial_dims: tuple[str, str] | tuple[str, str, str]
+        display_dims: tuple[str, str] | tuple[str, str, str]
             The 2 or 3 spatial dims **in display order**, which also determines the graphic used for rendering:
 
             * ``(rows, cols)``, a 2D grayscale ``ImageGraphic``
@@ -162,7 +162,7 @@ class NDWSubplot:
             * ``(z, rows, cols)``, a 3D ``ImageVolumeGraphic``
 
         rgb_dim: str, optional
-            Name of the RGB(A) dim, if present. It must be listed in ``spatial_dims`` and be of size 3 or 4.
+            Name of the RGB(A) dim, if present. It must be listed in ``display_dims`` and be of size 3 or 4.
 
         window_funcs: dict[str, tuple[WindowFuncCallable | None, int | float | None]], optional
             Per-slider-dim window functions applied around the current slider position, ex:
@@ -186,7 +186,7 @@ class NDWSubplot:
             which is used to interactively set vmin, vmax. Disable if random access of the data is not
             blazing-fast (ex: data that uses video codecs), or if a histogram is not useful for this data.
 
-        slider_dim_transforms: dict mapping dim_name -> Callable, an ArrayLike, or None, optional
+        slider_maps: dict mapping dim_name -> Callable, an ArrayLike, or None, optional
             Per-slider-dim mapping from reference-space values to local array indices. An array of reference
             values may be given instead of a callable, ``searchsorted`` is then used as the transform (ex: a
             timestamps array). Any dim without a transform uses the identity mapping, i.e. the current reference
@@ -214,20 +214,20 @@ class NDWSubplot:
         NDImage
 
         """
-        self._check_slider_dims(dims, spatial_dims, data)
+        self._check_slider_dims(dims, display_dims, data)
 
         nd = NDImage(
             self.ndw.indices,
             nd_subplot=self,
             data=data,
             dims=dims,
-            display_dims=spatial_dims,
+            display_dims=display_dims,
             rgb_dim=rgb_dim,
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
             compute_histogram=compute_histogram,
-            slider_maps=slider_dim_transforms,
+            slider_maps=slider_maps,
             processor_type=processor_type,
             colorspace=colorspace,
             colorrange=colorrange,
@@ -242,7 +242,7 @@ class NDWSubplot:
             self,
             data: ArrayProtocol | None,
             dims: Sequence[str],
-            spatial_dims: tuple[str, str] | tuple[str, str, str],
+            display_dims: tuple[str, str] | tuple[str, str, str],
             rgb_dim: str | None = None,
             colorspace: enums.ColorspacesYUV | enums.ColorspacesRGB = "yuv420p",
             colorrange: enums.ColorRange = "limited",
@@ -253,7 +253,7 @@ class NDWSubplot:
             window_order: tuple[str, ...] = None,
             spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
             compute_histogram: bool = True,
-            slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+            slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
             name: str = None,
             graphic_kwargs: dict = None,
     ) -> NDImage:
@@ -280,11 +280,11 @@ class NDWSubplot:
         dims: Sequence[str]
             name for every dim of ``data``, in order. They do not need to be in display order.
 
-        spatial_dims: tuple[str, str] | tuple[str, str, str]
+        display_dims: tuple[str, str] | tuple[str, str, str]
             The 2 or 3 spatial dims **in display order**, see :meth:`add_nd_image`.
 
         rgb_dim: str, optional
-            Name of the RGB(A) dim, if present. It must be listed in ``spatial_dims`` and be of size 3 or 4.
+            Name of the RGB(A) dim, if present. It must be listed in ``display_dims`` and be of size 3 or 4.
 
         colorspace: "yuv420p" | "yuv444p" | "srgb" | "tex-srgb" | "physical", default "yuv420p"
             Colorspace in which to interpret the data. The YUV colorspaces are rendered using an
@@ -313,7 +313,7 @@ class NDWSubplot:
             which is used to interactively set vmin, vmax. Usually disabled for video since it requires random
             access of frames, which is slow for data that uses video codecs.
 
-        slider_dim_transforms: dict mapping dim_name -> Callable, an ArrayLike, or None, optional
+        slider_maps: dict mapping dim_name -> Callable, an ArrayLike, or None, optional
             Per-slider-dim mapping from reference-space values to local array indices, ex: an array of frame
             timestamps to map seconds onto frame indices. See :meth:`add_nd_image`.
 
@@ -331,7 +331,7 @@ class NDWSubplot:
         return self.add_nd_image(
             data=data,
             dims=dims,
-            spatial_dims=spatial_dims,
+            display_dims=display_dims,
             rgb_dim=rgb_dim,
             colorspace=colorspace,
             colorrange=colorrange,
@@ -340,7 +340,7 @@ class NDWSubplot:
             window_order=window_order,
             spatial_func=spatial_func,
             compute_histogram=compute_histogram,
-            slider_dim_transforms=slider_dim_transforms,
+            slider_maps=slider_maps,
             name=name,
             graphic_kwargs=graphic_kwargs,
         )
@@ -349,20 +349,20 @@ class NDWSubplot:
         self,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        spatial_dims: tuple[str, str, str],
+        display_dims: tuple[str, str, str],
         window_funcs: dict[
             str, tuple[WindowFuncCallable | None, int | float | None]
         ] = None,
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         name: str = None,
         graphic_kwargs: dict = None,
     ) -> NDVectors:
         """
         Add n-dimensional vectors to this subplot, similar to matplotlib quiver.
 
-        Every dim that is not listed in ``spatial_dims`` becomes a slider dim.
+        Every dim that is not listed in ``display_dims`` becomes a slider dim.
 
         Parameters
         ----------
@@ -375,7 +375,7 @@ class NDWSubplot:
         dims: Sequence[str]
             name for every dim of ``data``, in order. They do not need to be in display order.
 
-        spatial_dims: tuple[str, str, str]
+        display_dims: tuple[str, str, str]
             The 3 spatial dims **in order**: ``(n_vectors, positions_and_directions, xy(z))``. The
             positions/directions dim must be of size 2 and the coordinate dim of size 2 or 3.
 
@@ -396,7 +396,7 @@ class NDWSubplot:
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice *after* the window funcs, right before rendering.
 
-        slider_dim_transforms: dict mapping dim_name -> Callable, an ArrayLike, or None, optional
+        slider_maps: dict mapping dim_name -> Callable, an ArrayLike, or None, optional
             Per-slider-dim mapping from reference-space values to local array indices. An array of reference
             values may be given instead of a callable, ``searchsorted`` is then used as the transform (ex: a
             timestamps array). Any dim without a transform uses the identity mapping, i.e. the current reference
@@ -413,18 +413,18 @@ class NDWSubplot:
         NDVectors
 
         """
-        self._check_slider_dims(dims, spatial_dims, data)
+        self._check_slider_dims(dims, display_dims, data)
 
         nd = NDVectors(
             self.ndw.indices,
             nd_subplot=self,
             data=data,
             dims=dims,
-            spatial_dims=spatial_dims,
+            display_dims=display_dims,
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
-            slider_dim_transforms=slider_dim_transforms,
+            slider_maps=slider_maps,
             name=name,
             graphic_kwargs=graphic_kwargs,
         )
@@ -436,7 +436,7 @@ class NDWSubplot:
         self,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        spatial_dims: tuple[str, str, str],
+        display_dims: tuple[str, str, str],
         *args,
         processor: type[NDPositionsProcessor] = NDPositionsProcessor,
         display_window: int | float | None = 10,
@@ -445,7 +445,7 @@ class NDWSubplot:
         ] = None,
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         max_display_datapoints: int = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
@@ -461,7 +461,7 @@ class NDWSubplot:
         """
         Add n-dimensional positional data to this subplot, rendered as a ``ScatterCollection``.
 
-        Every dim that is not listed in ``spatial_dims`` becomes a slider dim. The datapoints dim, ``p``, is both
+        Every dim that is not listed in ``display_dims`` becomes a slider dim. The datapoints dim, ``p``, is both
         a spatial dim and a slider dim, it is windowed by ``display_window`` and ``datapoints_window_func``
         rather than by ``window_funcs``.
 
@@ -471,7 +471,7 @@ class NDWSubplot:
             n-dimensional positional data.
 
             Ex: an array of shape ``[n_trials, n_scatters, n_points, 2]`` with ``dims`` of
-            ``("trial", "scatter", "point", "xy")`` and ``spatial_dims`` of ``("scatter", "point", "xy")``.
+            ``("trial", "scatter", "point", "xy")`` and ``display_dims`` of ``("scatter", "point", "xy")``.
 
             Pass ``None`` to create the ``NDPositions`` without a graphic and set the data later using
             ``nd_positions.data``, the slider dims then require an explicit reference range in the ``NDWidget``.
@@ -479,7 +479,7 @@ class NDWSubplot:
         dims: Sequence[str]
             name for every dim of ``data``, in order.
 
-        spatial_dims: tuple[str, str, str]
+        display_dims: tuple[str, str, str]
             The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``, i.e. the number of
             scatters in the collection, the number of datapoints ``p`` in each of them, and the value dim which
             holds the xy or xyz coordinate and must be of size 2 or 3. The dims do not need to be in this order
@@ -516,7 +516,7 @@ class NDWSubplot:
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice *after* the window funcs, right before rendering.
 
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike], optional
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices. An array of reference
             values may be given instead of a Callable, ``searchsorted`` is then used as the transform (ex: a
             timestamps array). Any dim without a transform uses the identity mapping, i.e. the current reference
@@ -609,14 +609,14 @@ class NDWSubplot:
           ``itertools.cycle(["jet", "viridis"])``.
 
         """
-        self._check_slider_dims(dims, spatial_dims, data, positions=True)
+        self._check_slider_dims(dims, display_dims, data, positions=True)
 
         nd = NDPositions(
             self.ndw.indices,
             self,
             data,
             dims,
-            spatial_dims,
+            display_dims,
             *args,
             graphic_type=ScatterCollection,
             processor=processor,
@@ -624,7 +624,7 @@ class NDWSubplot:
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
-            slider_dim_transforms=slider_dim_transforms,
+            slider_maps=slider_maps,
             max_display_datapoints=max_display_datapoints,
             datapoints_window_func=datapoints_window_func,
             colors=colors,
@@ -645,7 +645,7 @@ class NDWSubplot:
         self,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        spatial_dims: tuple[str, str, str],
+        display_dims: tuple[str, str, str],
         *args,
         graphic_type: type[
             LineCollection | LineStack | ScatterCollection | ScatterStack | ImageGraphic
@@ -658,7 +658,7 @@ class NDWSubplot:
         ] = None,
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         max_display_datapoints: int = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
@@ -675,7 +675,7 @@ class NDWSubplot:
         """
         Add n-dimensional timeseries data to this subplot, where the ``p`` dim is a time-like x-axis.
 
-        Every dim that is not listed in ``spatial_dims`` becomes a slider dim. The datapoints dim, ``p``, is both
+        Every dim that is not listed in ``display_dims`` becomes a slider dim. The datapoints dim, ``p``, is both
         a spatial dim and a slider dim, it is windowed by ``display_window`` and ``datapoints_window_func``
         rather than by ``window_funcs``.
 
@@ -690,7 +690,7 @@ class NDWSubplot:
             time-like coordinate.
 
             Ex: an array of shape ``[n_trials, n_traces, n_timepoints, 2]`` with ``dims`` of
-            ``("trial", "trace", "time", "xy")`` and ``spatial_dims`` of ``("trace", "time", "xy")``.
+            ``("trial", "trace", "time", "xy")`` and ``display_dims`` of ``("trace", "time", "xy")``.
 
             Pass ``None`` to create the ``NDTimeseries`` without a graphic and set the data later using
             ``nd_timeseries.data``, the slider dims then require an explicit reference range in the ``NDWidget``.
@@ -698,7 +698,7 @@ class NDWSubplot:
         dims: Sequence[str]
             name for every dim of ``data``, in order.
 
-        spatial_dims: tuple[str, str, str]
+        display_dims: tuple[str, str, str]
             The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``, i.e. the number of traces
             in the collection, the number of datapoints ``p`` in each of them, and the value dim which holds the
             xy or xyz coordinate. A heatmap requires a value dim of size exactly 2. The dims do not need to be in
@@ -753,7 +753,7 @@ class NDWSubplot:
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice *after* the window funcs, right before rendering.
 
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike], optional
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices. An array of reference
             values may be given instead of a Callable, ``searchsorted`` is then used as the transform. The
             transform for the ``p`` dim is typically the array of x values, ex: a timestamps array, so the
@@ -856,14 +856,14 @@ class NDWSubplot:
         lines. The heatmap representation uses only ``cmap``.
 
         """
-        self._check_slider_dims(dims, spatial_dims, data, positions=True)
+        self._check_slider_dims(dims, display_dims, data, positions=True)
 
         nd = NDTimeseries(
             self.ndw.indices,
             self,
             data,
             dims,
-            spatial_dims,
+            display_dims,
             *args,
             graphic_type=graphic_type,
             linear_selector=True,
@@ -873,7 +873,7 @@ class NDWSubplot:
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
-            slider_dim_transforms=slider_dim_transforms,
+            slider_maps=slider_maps,
             max_display_datapoints=max_display_datapoints,
             datapoints_window_func=datapoints_window_func,
             colors=colors,
@@ -895,7 +895,7 @@ class NDWSubplot:
         self,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        spatial_dims: tuple[str, str, str],
+        display_dims: tuple[str, str, str],
         *args,
         processor: type[NDPositionsProcessor] = NDPositionsProcessor,
         display_window: int | float | None = 10,
@@ -904,7 +904,7 @@ class NDWSubplot:
         ] = None,
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         max_display_datapoints: int = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
@@ -919,7 +919,7 @@ class NDWSubplot:
         """
         Add n-dimensional positional data to this subplot, rendered as a ``LineCollection``.
 
-        Every dim that is not listed in ``spatial_dims`` becomes a slider dim. The datapoints dim, ``p``, is both
+        Every dim that is not listed in ``display_dims`` becomes a slider dim. The datapoints dim, ``p``, is both
         a spatial dim and a slider dim, it is windowed by ``display_window`` and ``datapoints_window_func``
         rather than by ``window_funcs``.
 
@@ -929,7 +929,7 @@ class NDWSubplot:
             n-dimensional positional data.
 
             Ex: an array of shape ``[n_trials, n_keypoints, n_timepoints, 2]`` with ``dims`` of
-            ``("trial", "keypoint", "time", "xy")`` and ``spatial_dims`` of ``("keypoint", "time", "xy")``.
+            ``("trial", "keypoint", "time", "xy")`` and ``display_dims`` of ``("keypoint", "time", "xy")``.
 
             Pass ``None`` to create the ``NDPositions`` without a graphic and set the data later using
             ``nd_positions.data``, the slider dims then require an explicit reference range in the ``NDWidget``.
@@ -937,7 +937,7 @@ class NDWSubplot:
         dims: Sequence[str]
             name for every dim of ``data``, in order.
 
-        spatial_dims: tuple[str, str, str]
+        display_dims: tuple[str, str, str]
             The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``, i.e. the number of lines
             in the collection, the number of datapoints ``p`` in each of them, and the value dim which holds the
             xy or xyz coordinate and must be of size 2 or 3. The dims do not need to be in this order in the
@@ -974,7 +974,7 @@ class NDWSubplot:
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice *after* the window funcs, right before rendering.
 
-        slider_dim_transforms: dict[str, Callable[[Any], int] | ArrayLike], optional
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices. An array of reference
             values may be given instead of a Callable, ``searchsorted`` is then used as the transform (ex: a
             timestamps array). Any dim without a transform uses the identity mapping, i.e. the current reference
@@ -1057,14 +1057,14 @@ class NDWSubplot:
           ``itertools.cycle(["jet", "viridis"])``.
 
         """
-        self._check_slider_dims(dims, spatial_dims, data, positions=True)
+        self._check_slider_dims(dims, display_dims, data, positions=True)
 
         nd = NDPositions(
             self.ndw.indices,
             self,
             data,
             dims,
-            spatial_dims,
+            display_dims,
             *args,
             graphic_type=LineCollection,
             processor=processor,
@@ -1072,7 +1072,7 @@ class NDWSubplot:
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
-            slider_dim_transforms=slider_dim_transforms,
+            slider_maps=slider_maps,
             max_display_datapoints=max_display_datapoints,
             datapoints_window_func=datapoints_window_func,
             colors=colors,

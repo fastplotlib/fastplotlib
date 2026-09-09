@@ -37,13 +37,13 @@ ref = {
     "angle": (0, xs[-1], 0.1),
 }
 
-ndw = fpl.NDWidget(ref_ranges=ref, size=(700, 560))
+ndw = fpl.NDWidget(ranges=ref, size=(700, 560))
 
 nd_lines = ndw[0, 0].add_nd_timeseries(
     data,
     ("freq", "ampl", "n_lines", "angle", "d"),
     ("n_lines", "angle", "d"),
-    slider_dim_transforms={
+    slider_maps={
         "angle": xs,
         "ampl": lambda x: int(x + 1),
         "freq": lambda x: int(x + 1),
