@@ -254,7 +254,7 @@ class JaggedCollectionFeature(CollectionFeatureAccessor):
         # graphic axis and hand each graphic its piece
         selected = self._graphics[graphic_key]
 
-        if len(selected < 1):
+        if len(selected) < 1:
             # nothing to set
             return
 
