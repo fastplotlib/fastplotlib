@@ -47,11 +47,12 @@ def test_int(test_graphic):
         fig = fpl.Figure()
 
         data = generate_positions_spiral_data("xyz")
+        colors = np.ones(shape=(len(data), 4), dtype=np.float32)
         if test_graphic == "line":
-            graphic = fig[0, 0].add_line(data=data, color_mode="vertex")
+            graphic = fig[0, 0].add_line(data=data, colors=colors)
 
         elif test_graphic == "scatter":
-            graphic = fig[0, 0].add_scatter(data=data, color_mode="vertex")
+            graphic = fig[0, 0].add_scatter(data=data, colors=colors)
 
         colors = graphic.colors
         global EVENT_RETURN_VALUE
@@ -97,11 +98,12 @@ def test_tuple(test_graphic, slice_method):
         fig = fpl.Figure()
 
         data = generate_positions_spiral_data("xyz")
+        colors = np.ones(shape=(len(data), 4), dtype=np.float32)
         if test_graphic == "line":
-            graphic = fig[0, 0].add_line(data=data, color_mode="vertex")
+            graphic = fig[0, 0].add_line(data=data, colors=colors)
 
         elif test_graphic == "scatter":
-            graphic = fig[0, 0].add_scatter(data=data, color_mode="vertex")
+            graphic = fig[0, 0].add_scatter(data=data, colors=colors)
 
         colors = graphic.colors
         global EVENT_RETURN_VALUE
@@ -189,11 +191,12 @@ def test_slice(color_input, slice_method: dict, test_graphic: bool):
         fig = fpl.Figure()
 
         data = generate_positions_spiral_data("xyz")
+        colors = np.ones(shape=(len(data), 4), dtype=np.float32)
         if test_graphic == "line":
-            graphic = fig[0, 0].add_line(data=data, color_mode="vertex")
+            graphic = fig[0, 0].add_line(data=data, colors=colors)
 
         elif test_graphic == "scatter":
-            graphic = fig[0, 0].add_scatter(data=data, color_mode="vertex")
+            graphic = fig[0, 0].add_scatter(data=data, colors=colors)
 
         colors = graphic.colors
 
