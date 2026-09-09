@@ -342,7 +342,11 @@ class LinearRegionSelector(BaseSelector):
 
         source = self._get_source(graphic)
 
-        if source.data.value is None:
+        if hasattr(source, "graphics"):
+            fail = any([g.data.value is None for g in source.graphics])
+        else:
+            fail = source.data.value is None
+        if fail:
             raise ValueError(
                 "Cannot get selected data. The graphic has no local buffer, `cpu_buffer` is probably `False`."
             )

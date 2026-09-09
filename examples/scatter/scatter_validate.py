@@ -42,6 +42,7 @@ figure[0, 0].add_scatter(
     markers=list("osD+x^v<>*"),
     edge_width=2.0,
     sizes=20,
+    point_rotations=0,
 )
 
 
@@ -60,7 +61,8 @@ figure[0, 0].add_scatter(
     sine,
     markers="s",
     sizes=xs * 5,
-    offset=(0, 2, 0)
+    offset=(0, 2, 0),
+    point_rotations=0,
 )
 
 figure.show()
