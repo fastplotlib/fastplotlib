@@ -278,7 +278,7 @@ class RightClickMenu(StandardRightClickMenu):
             "use display window", nd_graphic.display_window is not None
         )
 
-        p_dim = nd_graphic.slicer.spatial_dims[1]
+        p_dim = nd_graphic.slicer.display_dims[1]
 
         if changed:
             if not val:

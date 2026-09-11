@@ -64,14 +64,14 @@ class NDPositionsSlicer(NDSlicer):
             n-dimensional positional data, must have 3 or more dims.
 
         dims: Sequence[str]
-            names for each dimension in ``data``. Dimensions not listed in ``spatial_dims`` are treated as slider
+            names for each dimension in ``data``. Dimensions not listed in ``display_dims`` are treated as slider
             dimensions and **must** appear as keys in the parent ``NDWidget``'s ``ref_ranges``.
                 Examples::
                  ``("trial", "line", "time", "xy")``
                  ``("keypoints", "time", "xyz")``
 
             dims in the array do not need to be in the order that you want to display them, the data slice is
-            transposed into the order given by ``spatial_dims``.
+            transposed into the order given by ``display_dims``.
 
         display_dims : tuple[str, str, str]
             The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``, i.e. the number of lines
@@ -144,11 +144,11 @@ class NDPositionsSlicer(NDSlicer):
             self._other_features[name] = np.asarray(value)
 
     @property
-    def spatial_dims(self) -> tuple[str, str, str]:
+    def display_dims(self) -> tuple[str, str, str]:
         """get or set the spatial dims, **in display order**"""
-        return self._spatial_dims
+        return self._display_dims
 
-    @spatial_dims.setter
+    @display_dims.setter
     def display_dims(self, sdims: tuple[str, str, str]):
         if len(sdims) != 3:
             raise IndexError
@@ -156,13 +156,13 @@ class NDPositionsSlicer(NDSlicer):
         if not all([d in self.dims for d in sdims]):
             raise KeyError
 
-        self._spatial_dims = tuple(sdims)
+        self._display_dims = tuple(sdims)
 
     @property
     def slider_dims(self) -> tuple[str, ...]:
         """slider dim names, the non-spatial dims plus the ``p`` dim"""
         # append `p` dim to slider dims
-        return tuple([*super().slider_dims, self.spatial_dims[1]])
+        return tuple([*super().slider_dims, self.display_dims[1]])
 
     @property
     def display_window(self) -> int | float | None:
@@ -220,7 +220,7 @@ class NDPositionsSlicer(NDSlicer):
 
         # n_datapoints dim name
         # display_window acts on this dim
-        p_dim = self.spatial_dims[1]
+        p_dim = self.display_dims[1]
 
         if self.display_window is None:
             # just return everything
@@ -277,7 +277,7 @@ class NDPositionsSlicer(NDSlicer):
             # can't apply window func when there is only 1 datapoint
             return array
 
-        p_dim = self.spatial_dims[1]
+        p_dim = self.display_dims[1]
 
         # display window in array index space
         if self.display_window is not None:
@@ -371,7 +371,7 @@ class NDPositionsSlicer(NDSlicer):
         Note that we do not use __getitem__ here since the index is a tuple specifying a single integer
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
         """
-        # already squeezed and in the correct spatial_dims order
+        # already squeezed and in the correct display_dims order
         window_output = await self.get_window_output(indices)
 
         # get slice obj for display window
@@ -415,7 +415,7 @@ class NDPositions(NDGraphic):
         nd_subplot: NDWSubplot,
         data: Any,
         dims: Sequence[str],
-        spatial_dims: tuple[str, str, str],
+        display_dims: tuple[str, str, str],
         *args,
         graphic_type: Type[
             LineCollection
@@ -468,7 +468,7 @@ class NDPositions(NDGraphic):
             n-dimensional positional data.
 
             Ex: an array of shape ``[n_trials, n_lines, n_timepoints, 2]`` with ``dims`` of
-            ``("trial", "line", "time", "xy")`` and ``spatial_dims`` of ``("line", "time", "xy")``.
+            ``("trial", "line", "time", "xy")`` and ``display_dims`` of ``("line", "time", "xy")``.
 
             Pass ``None`` to create the ``NDPositions`` without a graphic and set the data later using
             :attr:`data`.
@@ -476,7 +476,7 @@ class NDPositions(NDGraphic):
         dims : Sequence[str]
             Name for every dimension of ``data``, in order. Non-spatial dims must match keys in ``ref_index``.
 
-        spatial_dims : tuple[str, str, str]
+        display_dims : tuple[str, str, str]
             The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``, i.e. the number of lines
             or scatters in the collection, the number of datapoints ``p`` in each of them, and the value dim
             which holds the xy or xyz coordinate and must be of size 2 or 3. The dims do not need to be in this
@@ -602,7 +602,7 @@ class NDPositions(NDGraphic):
             ref_index,
             data,
             dims,
-            spatial_dims,
+            display_dims,
             *args,
             graphic_type=graphic_type,
             slicer=slicer,
@@ -631,7 +631,7 @@ class NDPositions(NDGraphic):
         ref_index: ReferenceIndices,
         data: Any,
         dims: Sequence[str],
-        spatial_dims: tuple[str, str, str],
+        display_dims: tuple[str, str, str],
         *args,
         graphic_type: Type[
             LineCollection
@@ -678,7 +678,7 @@ class NDPositions(NDGraphic):
         self._slicer = slicer(
             data,
             dims,
-            spatial_dims,
+            display_dims,
             *args,
             display_window=display_window,
             max_display_datapoints=max_display_datapoints,
@@ -761,7 +761,7 @@ class NDPositions(NDGraphic):
             return True
         if isinstance(value, (list, tuple, np.ndarray)):
             value = np.asarray(value)
-            p_size = self.slicer.shape[self.slicer.spatial_dims[1]]
+            p_size = self.slicer.shape[self.slicer.display_dims[1]]
             return value.ndim >= 2 and value.shape[1] == p_size
         return False
 
@@ -821,15 +821,15 @@ class NDPositions(NDGraphic):
         run_sync(self._create_graphic())
 
     @property
-    def spatial_dims(self) -> tuple[str, str, str]:
+    def display_dims(self) -> tuple[str, str, str]:
         """
         Get or set the spatial dims **in display order**: ``(n_graphics, p, <value dim>)``. Setting them
         re-renders the current data slice.
         """
-        return self.slicer.spatial_dims
+        return self.slicer.display_dims
 
-    @spatial_dims.setter
-    def spatial_dims(self, dims: tuple[str, str, str]):
+    @display_dims.setter
+    def display_dims(self, dims: tuple[str, str, str]):
         self.slicer.display_dims = dims
         # force re-render
         run_sync(self._set_indices_())
