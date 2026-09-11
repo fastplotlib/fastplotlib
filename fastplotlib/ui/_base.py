@@ -3,6 +3,7 @@ import inspect
 from collections.abc import Callable
 from functools import partial
 from typing import Literal
+from warnings import warn
 
 from imgui_bundle import imgui
 
@@ -256,6 +257,22 @@ class ImguiWindow(ImguiBase):
     def height(self) -> int:
         """height of the window"""
         return self._height
+
+    @property
+    def collapsed(self) -> bool:
+        if self._location not in ("bottom", "right"):
+            # TODO: for now only bottom and right UIs support collapsing due to legacy reasons, will fix later
+            return False
+
+        return self._collapsed
+
+    @collapsed.setter
+    def collapsed(self, val: bool):
+        if self._location not in ("bottom", "right"):
+            warn("only 'bottom' and 'right' locations support `collapsed`")
+            return
+        
+        self._collapsed = val
 
     @property
     def _reserves(self) -> bool:
