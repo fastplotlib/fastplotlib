@@ -28,6 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -46,28 +47,53 @@ jobs:
       - name: Show wgpu backend
         run:
           python -c "from examples.tests.testutils import wgpu_backend; print(wgpu_backend)"
-      - name: build docs
+
+      # set DOCS_VERSION_DIR (deploy path) and DOCS_VERSION_MATCH (switcher highlight)
+      # before the build so conf.py and switcher.json generation can use them
+      - name: Set version environment variables
+        run: |
+          if [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${{ github.ref_name }}"
+            echo "DOCS_VERSION_DIR=${TAG}" >> "$GITHUB_ENV"
+            echo "DOCS_VERSION_MATCH=${TAG#v}" >> "$GITHUB_ENV"
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "DOCS_VERSION_DIR=dev" >> "$GITHUB_ENV"
+            echo "DOCS_VERSION_MATCH=dev" >> "$GITHUB_ENV"
+          else
+            echo "DOCS_VERSION_DIR=${{ github.head_ref }}" >> "$GITHUB_ENV"
+            echo "DOCS_VERSION_MATCH=dev" >> "$GITHUB_ENV"
+          fi
+
+      - name: Generate switcher.json
+        run: |
+          python - <<'EOF'
+          import json, subprocess, re, pathlib
+
+          tags = subprocess.run(
+              ["git", "tag", "--sort=-version:refname"],
+              capture_output=True, text=True
+          ).stdout.splitlines()
+          # exclude pre-v0.3.0 tags (no docs exist for those)
+          tags = [t for t in tags if re.match(r"^v\d+\.\d+\.\d+$", t) and t >= "v0.3.0"]
+
+          entries = [{"name": "dev", "version": "dev", "url": "https://www.fastplotlib.org/ver/dev/"}]
+          for i, tag in enumerate(tags):
+              ver = tag.lstrip("v")
+              if i == 0:
+                  entries.append({"name": f"{ver} (stable)", "version": ver,
+                                  "url": "https://www.fastplotlib.org/", "preferred": True})
+              else:
+                  entries.append({"name": ver, "version": ver,
+                                  "url": f"https://www.fastplotlib.org/ver/{tag}/"})
+
+          p = pathlib.Path("docs/source/_static/switcher.json")
+          p.write_text(json.dumps(entries, indent=2) + "\n")
+          EOF
+
+      - name: Build docs
         run: |
           cd docs
-          RTD_BUILD=1 make html SPHINXOPTS="-W --keep-going"
-
-      # set environment variable `DOCS_VERSION_DIR` to either the pr-branch name, "dev", or the release version tag
-      - name: set output pr
-        if: ${{ github.ref != 'refs/heads/main' }}
-        # sets dir to the branch name when it's a PR
-        # ex: fastplotlib.org/ver/feature-branch
-        run: echo "DOCS_VERSION_DIR=$GITHUB_HEAD_REF" >> "$GITHUB_ENV"
-
-      - name: set output release
-        if: ${{ github.ref_type == 'tag' }}
-        # sets dir to the release version tag, ex. v0.3.0 (I think...)
-        # ex: fastplotlib.org/ver/v0.3.0
-        run: echo "DOCS_VERSION_DIR=$GITHUB_REF_NAME" >> "$GITHUB_ENV"
-
-      - name: set output dev
-        if: ${{ github.ref == 'refs/heads/main' }}
-        # any push to main goes to fastplotlib.org/ver/dev
-        run: echo "DOCS_VERSION_DIR=dev" >> "$GITHUB_ENV"
+          DOCS_BUILD=1 make html SPHINXOPTS="-W --keep-going"
 
       # upload docs via SCP
       - name: Deploy docs

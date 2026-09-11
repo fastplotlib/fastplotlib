@@ -105,8 +105,8 @@ html_theme_options = {
     "show_version_warning_banner": True,
     "check_switcher": True,
     "switcher": {
-        "json_url": "http://www.fastplotlib.org/_static/switcher.json",
-        "version_match": release,
+        "json_url": "https://www.fastplotlib.org/_static/switcher.json",
+        "version_match": os.environ.get("DOCS_VERSION_MATCH", release),
     },
     "icon_links": [
         {
