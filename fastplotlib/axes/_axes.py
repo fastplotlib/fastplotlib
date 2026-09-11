@@ -160,10 +160,12 @@ class Ruler(pygfx.Ruler):
                 alpha_mode="auto",
                 render_queue=RenderQueue.overlay + 50,
                 aa=True,
+                outline_thickness=0.05,
             ),
         )
         self._label.visible = False
         self.add(self._label)
+        self.text.material.outline_thickness = 0.05
 
     @property
     def label(self) -> pygfx.Text:
@@ -195,57 +197,71 @@ class Ruler(pygfx.Ruler):
         self._label.visible = True
 
         mid_t = 0.5 * (t1 + t2)
-        mid_pos = self._start_pos * (1 - mid_t) + self._end_pos * mid_t
-
-        world_vec = self._end_pos - self._start_pos
-        world_len = np.linalg.norm(world_vec)
-        screen_len = np.linalg.norm(self._screen_vec)
-
-        if world_len > 0 and screen_len > 0:
-            world_dir = world_vec / world_len
-            # perpendicular in the xy plane: CCW = "left", CW = "right"
-            if self.tick_side == "left":
-                perp_world = np.array([-world_dir[1], world_dir[0], 0.0])
-            else:
-                perp_world = np.array([world_dir[1], -world_dir[0], 0.0])
-
-            # same perpendicular in screen space, for projecting tick label rects
-            screen_dir = self._screen_vec / screen_len
-            if self.tick_side == "left":
-                px, py = -screen_dir[1], screen_dir[0]
-            else:
-                px, py = screen_dir[1], -screen_dir[0]
-
-            # max extent of tick labels in the perpendicular direction.
-            # tick labels are unrotated screen-space text, so we project their
-            # axis-aligned _rect onto (px, py) directly.
-            visible_blocks = [
-                b
-                for b in self.text._text_blocks
-                if b._rect.width > 0 or b._rect.height > 0
-            ]
-            if visible_blocks:
-                tick_extent_px = max(
-                    max(px, 0) * b._rect.right
-                    + min(px, 0) * b._rect.left
-                    + max(py, 0) * b._rect.top
-                    + min(py, 0) * b._rect.bottom
-                    for b in visible_blocks
-                )
-            else:
-                tick_extent_px = 0.0
-
-            offset_px = max(tick_extent_px, 0.0) + self._label.font_size
-            mid_pos = mid_pos + (offset_px / (screen_len / world_len)) * perp_world
-
-        self._label.local.position = mid_pos
+        self._label.local.position = (
+            self._start_pos * (1 - mid_t) + self._end_pos * mid_t
+        )
 
         vec = self._visible_part_screen_vec
         angle = math.atan2(vec[1], vec[0])
+
+        # the side of the line that the tick labels are on, as a screen space unit vector. this is
+        # the same rule that pygfx uses to anchor the tick labels themselves, and the screen vector
+        # already carries the camera scale, the viewport aspect and the ruler's orientation, so
+        # none of those need a case of their own.
+        if self.tick_side == "left":
+            px, py = -math.sin(angle), math.cos(angle)
+        else:
+            px, py = math.sin(angle), -math.cos(angle)
+
+        # a ruler that runs right to left, or top to bottom, on screen would render the label
+        # upside down, so turn it around. that turns the label's own axes around with it
+        upside_down = not (-0.5 * math.pi < angle <= 0.5 * math.pi)
+        if upside_down:
+            angle -= math.copysign(math.pi, angle)
+
         # pylinalg uses [x, y, z, w] quaternion format
         self._label.local.rotation = np.array(
             [0.0, 0.0, math.sin(angle / 2), math.cos(angle / 2)]
         )
+
+        # the label is rotated onto the line, so in its own frame the line runs along x and the
+        # ticks sit on one side of it, +y or -y. anchoring it to that side offsets it in screen
+        # pixels, which is what keeps the camera scale and the viewport aspect out of the placement
+        if (self.tick_side == "left") != upside_down:
+            anchor = "bottom-center"
+        else:
+            anchor = "top-center"
+
+        # max extent of the tick labels in that same perpendicular direction.
+        # tick labels are unrotated screen-space text, so we project their
+        # axis-aligned _rect onto (px, py) directly.
+        px_pos, px_neg = max(px, 0), min(px, 0)
+        py_pos, py_neg = max(py, 0), min(py, 0)
+        tick_extent_px = max(
+            (
+                px_pos * b._rect.right
+                + px_neg * b._rect.left
+                + py_pos * b._rect.top
+                + py_neg * b._rect.bottom
+                for b in self.text._text_blocks
+                if b._rect.width > 0 or b._rect.height > 0
+            ),
+            default=0.0,
+        )
+
+        # gap between the tick labels and the label. a text rect is tight on its left and right,
+        # but its top and bottom are the font's ascender and descender, which neither a tick
+        # number nor most labels reach. that padding already separates the two where the offset is
+        # vertical, so only add a gap to the extent that the offset is horizontal
+        gap_px = abs(px) * 0.5 * self._label.font_size
+
+        anchor_offset = max(tick_extent_px, 0.0) + gap_px
+
+        # both of these re-run the text layout, so only set them when they actually change
+        if self._label._anchor != anchor:
+            self._label.anchor = anchor
+        if self._label._anchor_offset != anchor_offset:
+            self._label.anchor_offset = anchor_offset
 
 
 class Axes:
