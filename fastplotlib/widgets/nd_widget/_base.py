@@ -27,6 +27,50 @@ def identity(index: int) -> int:
     return round(index)
 
 
+def get_init_args(graphic_type: type[Graphic]) -> set[str]:
+    """
+    Named arguments of every ``__init__`` in the MRO of ``graphic_type``.
+
+    Graphics take ``**kwargs`` and pass them up, so the arguments a type accepts are spread
+    over its whole MRO: ``vmin`` is defined by ``ImageGraphic`` and ``rotation`` by ``Graphic``.
+    """
+    args = set()
+
+    for klass in graphic_type.__mro__:
+        init = klass.__dict__.get("__init__")
+
+        if init is None:
+            continue
+
+        for name, param in inspect.signature(init).parameters.items():
+            if name == "self" or param.kind in (
+                param.VAR_KEYWORD,
+                param.VAR_POSITIONAL,
+            ):
+                continue
+
+            args.add(name)
+
+    return args
+
+
+def get_supported_kwargs(graphic_type: type[Graphic], **kwargs) -> dict[str, Any]:
+    """
+    Keep only the kwargs that ``graphic_type`` accepts.
+
+    The graphic type can change at runtime, and passing ``vmin`` to a line, or ``thickness``
+    to an image, raises.
+    """
+    accepted = get_init_args(graphic_type)
+
+    # a collection forwards its kwargs to the graphics it holds
+    child_type = getattr(graphic_type, "_child_type", None)
+    if child_type is not None:
+        accepted |= get_init_args(child_type)
+
+    return {name: value for name, value in kwargs.items() if name in accepted}
+
+
 class NDSlicer:
     def __init__(
         self,

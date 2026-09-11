@@ -54,6 +54,6 @@ class VideoSlicer(NDImageSlicer):
             )
 
         if isinstance(window_output, tuple):
-            return tuple(a.transpose(*self.spatial_dims_indices) for a in window_output)
+            return tuple(a.transpose(*self.display_dims_indices) for a in window_output)
 
-        return window_output.transpose(*self.spatial_dims_indices)
+        return window_output.transpose(*self.display_dims_indices)

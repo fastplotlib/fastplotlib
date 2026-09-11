@@ -18,6 +18,7 @@ from .._base import (
     NDSlicer,
     NDGraphic,
     WindowFuncCallable,
+    get_supported_kwargs,
 )
 from ....utils import ArrayProtocol, CudaArrayProtocol, cuda_to_numpy
 from .._index import ReferenceIndices
@@ -902,14 +903,11 @@ class NDPositions(NDGraphic):
         """Build and add the graphic for the current slice."""
         data_slice = new_features["data"]  # [n_graphics, n_datapoints, xy(z)]
 
-        # skip any static feature the graphic type doesn't have, e.g. thickness on scatters
-        static = {
-            name: value
-            for name, value in self._static_features.items()
-            if hasattr(self._graphic_type, name)
-        }
         self._graphic = self._graphic_type(
-            data_slice, **static, **self._graphic_kwargs
+            data_slice,
+            **get_supported_kwargs(
+                self._graphic_type, **self._static_features, **self._graphic_kwargs
+            ),
         )
         self._set_other_features(new_features)
 

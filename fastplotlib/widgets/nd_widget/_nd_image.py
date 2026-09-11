@@ -20,6 +20,7 @@ from ._base import (
     NDSlicer,
     NDGraphic,
     WindowFuncCallable,
+    get_supported_kwargs,
 )
 from ._index import ReferenceIndices
 from ._async import run_in_thread_pool, run_sync
@@ -299,6 +300,7 @@ class NDImage(NDGraphic):
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayLike], ArrayLike] = None,
         compute_histogram: bool = True,
+        clim_quantiles: tuple[float, float] | None = None,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         slicer_type: type[NDImageSlicer] = NDImageSlicer,
         colorspace: Literal[
@@ -365,6 +367,11 @@ class NDImage(NDGraphic):
             which is used to interactively set vmin, vmax. Disable if random access of the data is not
             blazing-fast (ex: data that uses video codecs), or if a histogram is not useful for this data.
 
+        clim_quantiles : (float, float), optional
+            ``(low, high)`` quantiles of the histogram, within ``[0, 1]``, used as vmin, vmax. Requires
+            ``compute_histogram=True``, overrides any passed vmin, vmax in ``graphic_kwargs``. The limits
+            are recomputed whenever the histogram is, so they follow the data.
+
         slider_maps : dict, optional
             See :class:`NDSlicer`.
 
@@ -426,6 +433,10 @@ class NDImage(NDGraphic):
         self._graphic: ImageGraphic | ImageYUVGraphic | None = None
         self._histogram_widget: ImguiColorbar | None = None
 
+        # validated and stored now, applied by _create_graphic() once the graphic exists
+        self._clim_quantiles: tuple[float, float] | None = None
+        self.clim_quantiles = clim_quantiles
+
         # create a graphic
         run_sync(self._create_graphic())
 
@@ -466,8 +477,12 @@ class NDImage(NDGraphic):
                     cls = ImageGraphic
                 case 3:
                     cls = ImageVolumeGraphic
-                    # ImageVolumeGraphic takes no colorspace arg
-                    kwargs.pop("colorspace")
+                case _:
+                    raise ValueError(
+                        f"Invalid combination of data dims and display_dims for image data."
+                        f"Your passed data object is: {self.data}\n"
+                        f"With dims: {self.dims}, display_dims: {self.display_dims}"
+                    )
 
         # get the data slice for this index
         # this will only have the dims specified by ``display_dims``
@@ -477,8 +492,7 @@ class NDImage(NDGraphic):
         new_graphic = cls(
             data_slice,
             # cpu_buffer=False,  # faster, we usually don't need a cpu buffer for NDWidget use cases
-            **kwargs,
-            **self._graphic_kwargs,
+            **get_supported_kwargs(cls, **kwargs, **self._graphic_kwargs),
         )
 
         old_graphic = self._graphic
@@ -533,7 +547,13 @@ class NDImage(NDGraphic):
                     self._histogram_widget, location="right", size=100
                 )
 
-            self.graphic.reset_vmin_vmax()
+            if self.clim_quantiles is not None:
+                self._set_clim_from_quantiles()
+
+            elif {"vmin", "vmax"}.isdisjoint(self._graphic_kwargs):
+                # limits passed in `graphic_kwargs` are explicit, an estimate from the
+                # data must not replace them
+                self.graphic.reset_vmin_vmax()
 
     def _reset_camera(self):
         # set camera to a nice position based on whether it's a 2D ImageGraphic or 3D ImageVolumeGraphic
@@ -605,6 +625,50 @@ class NDImage(NDGraphic):
     def compute_histogram(self, v: bool):
         self.slicer.compute_histogram = v
         self._reset_histogram()
+
+    @property
+    def clim_quantiles(self) -> tuple[float, float] | None:
+        """get or set the ``(low, high)`` quantiles of the histogram used as ``vmin``, ``vmax``"""
+        return self._clim_quantiles
+
+    @clim_quantiles.setter
+    def clim_quantiles(self, quantiles: tuple[float, float] | None):
+        if quantiles is not None:
+            if not self.compute_histogram:
+                raise ValueError(
+                    "`clim_quantiles` are taken from the histogram, so they require "
+                    "`compute_histogram=True`"
+                )
+
+            low, high = (float(q) for q in quantiles)
+
+            if not 0 <= low < high <= 1:
+                raise ValueError(
+                    f"`clim_quantiles` must be (low, high) within [0, 1] and low < high, "
+                    f"you passed: {quantiles}"
+                )
+
+            quantiles = (low, high)
+
+        self._clim_quantiles = quantiles
+
+        if quantiles is not None and self._graphic is not None:
+            self._set_clim_from_quantiles()
+
+    def _set_clim_from_quantiles(self):
+        """set vmin, vmax from the values at the ``clim_quantiles`` of the histogram"""
+        counts, edges = self.slicer.histogram
+        total = counts.sum()
+
+        if total == 0:
+            # nothing to take a quantile of, ex: data that is entirely nan
+            return
+
+        # fraction of the data at or below the right edge of each bin
+        cdf = np.cumsum(counts) / total
+        low, high = np.searchsorted(cdf, self._clim_quantiles)
+
+        self.graphic.vmin, self.graphic.vmax = float(edges[low]), float(edges[high + 1])
 
     @property
     def histogram_widget(self) -> ImguiColorbar:

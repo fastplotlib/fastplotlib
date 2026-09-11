@@ -16,7 +16,12 @@ from ....graphics import (
 from ....graphics.utils import pause_events
 from ....graphics.selectors import LinearSelector
 from ....utils import ArrayProtocol, CudaArrayProtocol, cuda_to_numpy
-from .._base import NDGraphic, WindowFuncCallable, block_indices_ctx
+from .._base import (
+    NDGraphic,
+    WindowFuncCallable,
+    block_indices_ctx,
+    get_supported_kwargs,
+)
 from .._index import ReferenceIndices
 from .._async import run_sync
 from ._nd_positions import (
@@ -326,12 +331,15 @@ class NDTimeseries(NDPositions):
                 raise ValueError
 
             image_data, x0, x_scale = self._create_heatmap_data(data_slice)
+
             self._graphic = self._graphic_type(
-                image_data, offset=(x0, 0, -1), scale=(x_scale, 1, 1)
+                image_data,
+                offset=(x0, 0, -1),
+                scale=(x_scale, 1, 1),
+                **get_supported_kwargs(
+                    self._graphic_type, **self._static_features, **self._graphic_kwargs
+                ),
             )
-            cmap = self._static_features.get("cmap")
-            if cmap is not None:
-                self._graphic.cmap = cmap
             self._nd_subplot.subplot.add_graphic(self._graphic)
         else:
             super()._setup_graphic(new_features, indices)

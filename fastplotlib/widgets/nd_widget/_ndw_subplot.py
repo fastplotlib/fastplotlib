@@ -132,6 +132,7 @@ class NDWSubplot:
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         compute_histogram: bool = True,
+        clim_quantiles: tuple[float, float] | None = None,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         slicer_type: type[NDImageSlicer] = NDImageSlicer,
         colorspace: Literal[
@@ -189,6 +190,11 @@ class NDWSubplot:
             which is used to interactively set vmin, vmax. Disable if random access of the data is not
             blazing-fast (ex: data that uses video codecs), or if a histogram is not useful for this data.
 
+        clim_quantiles: (float, float), optional
+            ``(low, high)`` quantiles of the histogram, within ``[0, 1]``, used as vmin, vmax. Requires
+            ``compute_histogram=True``, overrides any passed vmin, vmax in ``graphic_kwargs``. The limits
+            are recomputed whenever the histogram is, so they follow the data.
+
         slider_maps: dict mapping dim_name -> Callable, an ArrayLike, or None, optional
             Per-slider-dim mapping from reference-space values to local array indices. An array of reference
             values may be given instead of a callable, ``searchsorted`` is then used as the transform (ex: a
@@ -230,6 +236,7 @@ class NDWSubplot:
             window_order=window_order,
             spatial_func=spatial_func,
             compute_histogram=compute_histogram,
+            clim_quantiles=clim_quantiles,
             slider_maps=slider_maps,
             slicer_type=slicer_type,
             colorspace=colorspace,
@@ -255,7 +262,6 @@ class NDWSubplot:
             ] = None,
             window_order: tuple[str, ...] = None,
             spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-            compute_histogram: bool = True,
             slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
             name: str = None,
             graphic_kwargs: dict = None,
@@ -311,11 +317,6 @@ class NDWSubplot:
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
             A function applied to the spatial slice right before rendering.
 
-        compute_histogram: bool, default ``True``
-            Estimate a histogram of the data and display an ``ImguiColorbar`` on the right edge of the subplot,
-            which is used to interactively set vmin, vmax. Usually disabled for video since it requires random
-            access of frames, which is slow for data that uses video codecs.
-
         slider_maps: dict mapping dim_name -> Callable, an ArrayLike, or None, optional
             Per-slider-dim mapping from reference-space values to local array indices, ex: an array of frame
             timestamps to map seconds onto frame indices. See :meth:`add_nd_image`.
@@ -342,7 +343,7 @@ class NDWSubplot:
             window_funcs=window_funcs,
             window_order=window_order,
             spatial_func=spatial_func,
-            compute_histogram=compute_histogram,
+            compute_histogram=False,
             slider_maps=slider_maps,
             name=name,
             graphic_kwargs=graphic_kwargs,

@@ -16,6 +16,7 @@ from ._base import (
     NDSlicer,
     NDGraphic,
     WindowFuncCallable,
+    get_supported_kwargs,
 )
 from ._index import ReferenceIndices
 from ._async import run_in_thread_pool, run_sync
@@ -335,7 +336,7 @@ class NDVectors(NDGraphic):
         self._graphic = VectorsGraphic(
             positions=data_slice[:, 0],
             directions=data_slice[:, 1],
-            **self._graphic_kwargs
+            **get_supported_kwargs(VectorsGraphic, **self._graphic_kwargs),
         )
 
         self._nd_subplot.subplot.add_graphic(self._graphic)
