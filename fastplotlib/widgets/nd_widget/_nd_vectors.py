@@ -185,7 +185,7 @@ class NDVectorsSlicer(NDSlicer):
         if isinstance(window_output, CudaArrayProtocol):
             window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
 
-        return window_output.transpose(*self.spatial_dims_indices)
+        return window_output.transpose(*self.display_dims_indices)
 
 
 class NDVectors(NDGraphic):

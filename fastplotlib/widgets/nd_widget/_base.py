@@ -199,7 +199,7 @@ class NDSlicer:
         self._display_dims = tuple(sdims)
 
     @property
-    def spatial_dims_indices(self) -> tuple[int, ...]:
+    def display_dims_indices(self) -> tuple[int, ...]:
         """
         The ordered spatial dim indices that correspond to the named spatial dims
         """

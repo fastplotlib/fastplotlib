@@ -400,7 +400,7 @@ class NDPositionsSlicer(NDSlicer):
         if isinstance(data, CudaArrayProtocol):
             data = await run_in_thread_pool(self._executor, cuda_to_numpy, data)
 
-        data = data.transpose(*self.spatial_dims_indices)
+        data = data.transpose(*self.display_dims_indices)
 
         return {
             "data": data,
