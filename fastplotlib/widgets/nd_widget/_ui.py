@@ -251,18 +251,21 @@ class RightClickMenu(StandardRightClickMenu):
             imgui.end()
 
     def _draw_nd_image_ui(self, subplot, nd_image: NDImage):
-        _min, _max = quick_min_max(nd_image.graphic.data.value)
-        changed, vmin = imgui.slider_float(
-            "vmin", nd_image.graphic.vmin, v_min=_min, v_max=_max
-        )
-        if changed:
-            nd_image.graphic.vmin = vmin
+        if nd_image.graphic.data.value is not None:
+            # if it doesn't have a CPU buffer the value is None
+            # i.e. data is only on the GPU, e.g. YUV
+            _min, _max = quick_min_max(nd_image.graphic.data.value)
+            changed, vmin = imgui.slider_float(
+                "vmin", nd_image.graphic.vmin, v_min=_min, v_max=_max
+            )
+            if changed:
+                nd_image.graphic.vmin = vmin
 
-        changed, vmax = imgui.slider_float(
-            "vmax", nd_image.graphic.vmax, v_min=_min, v_max=_max
-        )
-        if changed:
-            nd_image.graphic.vmax = vmax
+            changed, vmax = imgui.slider_float(
+                "vmax", nd_image.graphic.vmax, v_min=_min, v_max=_max
+            )
+            if changed:
+                nd_image.graphic.vmax = vmax
 
         changed, new_gamma = imgui.slider_float(
             "gamma", nd_image.graphic._material.gamma, 0.01, 5
