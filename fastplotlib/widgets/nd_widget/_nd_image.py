@@ -466,6 +466,8 @@ class NDImage(NDGraphic):
                     cls = ImageGraphic
                 case 3:
                     cls = ImageVolumeGraphic
+                    # ImageVolumeGraphic takes no colorspace arg
+                    kwargs.pop("colorspace")
 
         # get the data slice for this index
         # this will only have the dims specified by ``display_dims``
