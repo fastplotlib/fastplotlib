@@ -8,6 +8,19 @@ from ..utils.functions import COLORMAP_NAMES, quick_min_max
 from ._base import ImguiWindow
 
 
+def colormaps_equal(a: str | Colormap, b: str | Colormap) -> bool:
+    """
+    Whether two colormaps, given as names or as ``Colormap`` instances, are the same.
+
+    ``Colormap.__eq__`` compares the color stops and raises if the two colormaps do not have the
+    same number of them, which means they are not the same colormap.
+    """
+    try:
+        return a == b
+    except ValueError:
+        return False
+
+
 class ImguiColorbar(ImguiWindow):
     LUT_HEIGHT = 256
     TEX_WIDTH = 2
@@ -173,7 +186,10 @@ class ImguiColorbar(ImguiWindow):
 
     @cmap.setter
     def cmap(self, name: str):
-        if self._block_reentrance or name is None or name == self._cmap_name:
+        if self._block_reentrance or name is None:
+            return
+
+        if colormaps_equal(name, self._cmap_name):
             return
         self._block_reentrance = True
         try:
@@ -190,7 +206,7 @@ class ImguiColorbar(ImguiWindow):
     @property
     def vmin(self) -> float:
         """get or set the lower contrast limit"""
-        return  max(self._vmin, self.histogram[1][0])
+        return  max(self._vmin, self._axis_range()[0])
 
     @vmin.setter
     def vmin(self, value: float):
@@ -209,7 +225,7 @@ class ImguiColorbar(ImguiWindow):
     @property
     def vmax(self) -> float:
         """get or set the upper contrast limit"""
-        return min(self._vmax, self.histogram[1][-1])
+        return min(self._vmax, self._axis_range()[1])
 
     @vmax.setter
     def vmax(self, value: float):
@@ -630,6 +646,8 @@ class ImguiColorbar(ImguiWindow):
 
                 imgui.same_line()
 
-                clicked, selected = imgui.selectable(name, p_selected=(name == self._cmap_name))
+                clicked, selected = imgui.selectable(
+                    name, p_selected=colormaps_equal(name, self._cmap_name)
+                )
                 if clicked and selected:
                     self.cmap = name
