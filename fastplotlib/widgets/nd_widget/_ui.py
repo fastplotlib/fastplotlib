@@ -88,6 +88,12 @@ class NDWidgetUI(ImguiWindow):
         self._ndwidget.indices.set_dim_index(dim, index)
 
     def update(self):
+        if len(self._ndwidget.indices) < 1 and len(self._update_calls) < 2:
+            # there are no slider dims AND there are no appended UI elements to this window
+            self.size = 0
+            self.collapsed = True
+            return
+
         now = perf_counter()
 
         for dim, current_index in self._ndwidget.indices:

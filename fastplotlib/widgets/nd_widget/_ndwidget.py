@@ -123,6 +123,10 @@ class NDWidget:
         return self._indices.ref_ranges
 
     @property
+    def ui_sliders(self) -> NDWidgetUI:
+        return self._sliders_ui
+
+    @property
     def ndgraphics(self):
         """all the ``NDGraphic`` instances in every subplot of this widget"""
         gs = list()
