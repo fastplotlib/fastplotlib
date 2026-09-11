@@ -176,9 +176,15 @@ class NDPositionsSlicer(NDSlicer):
     def display_window(self, dw: int | float | None):
         if dw is None:
             self._display_window = None
+            return
 
-        elif not isinstance(dw, (int, float)):
-            raise TypeError
+        if not (
+            np.issubdtype(type(dw), np.integer) or np.issubdtype(type(dw), np.floating)
+        ):
+            raise TypeError(
+                f"`display_window` must be an int, float, or `None`, you passed a "
+                f"{type(dw).__name__}: {dw}"
+            )
 
         self._display_window = dw
 
