@@ -9,7 +9,7 @@ class Extras:
 ndp_extras = Extras()
 
 
-for optional in ["pandas", "zarr"]:
+for optional in ["pandas"]:
     try:
         importlib.import_module(optional)
     except ImportError:
