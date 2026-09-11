@@ -93,6 +93,9 @@ class NDWSubplot:
             # size is unknown, an explicit range is still required
             return
 
+        if not isinstance(data, ArrayProtocol):
+            return
+
         dims = tuple(dims)
         slider_dims = set(dims) - set(display_dims)
         if positions:
