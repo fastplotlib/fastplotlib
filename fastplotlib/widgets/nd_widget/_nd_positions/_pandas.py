@@ -10,6 +10,7 @@ class PandasSlicer(NDPositionsSlicer):
     def __init__(
             self,
             data: pd.DataFrame,
+            dims: tuple[str, str, str],
             display_dims: tuple[str, str, str],  # [l, p, d] dims in order
             columns: list[tuple[str, str] | tuple[str, str, str]],
             tooltip_columns: list[str] = None,
@@ -31,9 +32,12 @@ class PandasSlicer(NDPositionsSlicer):
         data: pd.DataFrame
             DataFrame holding the coordinates, one column per coordinate of each graphic.
 
+        dims: tuple[str, str, str]
+            Names for the 3 dims. A DataFrame has no further dims to name, so these are the same 3 names
+            as ``display_dims``.
+
         display_dims: tuple[str, str, str]
-            The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``. These are also used as
-            the ``dims``, since a DataFrame has no other dims to name.
+            The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``.
 
         columns: list[tuple[str, str] | tuple[str, str, str]]
             One entry per graphic, each a tuple of 2 or 3 column names giving the (x, y) or (x, y, z)
@@ -62,7 +66,7 @@ class PandasSlicer(NDPositionsSlicer):
 
         super().__init__(
             data=data,
-            dims=display_dims,
+            dims=dims,
             display_dims=display_dims,
             **kwargs,
         )
