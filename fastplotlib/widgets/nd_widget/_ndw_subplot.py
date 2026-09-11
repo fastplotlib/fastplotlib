@@ -450,7 +450,7 @@ class NDWSubplot:
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
-        max_display_datapoints: int = 1_000,
+        max_display_datapoints: int | None = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
         cmap: str | Sequence[str] = None,
@@ -526,9 +526,11 @@ class NDWSubplot:
             timestamps array). Any dim without a transform uses the identity mapping, i.e. the current reference
             value is rounded to the nearest integer and used as the array index.
 
-        max_display_datapoints: int, default 1_000
+        max_display_datapoints: int | None, default 1_000
             Maximum number of datapoints to render per graphic. The step size of the display window slice is set
-            from this using floor division.
+            from this using floor division. ``None`` renders every datapoint in the window, with no decimation.
+            Neither ``None`` nor a very large value is recommended: the entire window is then read into RAM and
+            uploaded, which is slow for a large window over a large array.
 
         datapoints_window_func: tuple[Callable, str, int | float], optional
             Window function applied along the ``p`` dim after the display window has been taken, as
@@ -663,7 +665,7 @@ class NDWSubplot:
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
-        max_display_datapoints: int = 1_000,
+        max_display_datapoints: int | None = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
         cmap: str | Sequence[str] = None,
@@ -765,9 +767,11 @@ class NDWSubplot:
             mapping, i.e. the current reference value is rounded to the nearest integer and used as the array
             index.
 
-        max_display_datapoints: int, default 1_000
+        max_display_datapoints: int | None, default 1_000
             Maximum number of datapoints to render per graphic. The step size of the display window slice is set
-            from this using floor division.
+            from this using floor division. ``None`` renders every datapoint in the window, with no decimation.
+            Neither ``None`` nor a very large value is recommended: the entire window is then read into RAM and
+            uploaded, which is slow for a large window over a large array.
 
         datapoints_window_func: tuple[Callable, str, int | float], optional
             Window function applied along the ``p`` dim after the display window has been taken, as
@@ -909,7 +913,7 @@ class NDWSubplot:
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
-        max_display_datapoints: int = 1_000,
+        max_display_datapoints: int | None = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
         cmap: str | Sequence[str] = None,
@@ -984,9 +988,11 @@ class NDWSubplot:
             timestamps array). Any dim without a transform uses the identity mapping, i.e. the current reference
             value is rounded to the nearest integer and used as the array index.
 
-        max_display_datapoints: int, default 1_000
+        max_display_datapoints: int | None, default 1_000
             Maximum number of datapoints to render per graphic. The step size of the display window slice is set
-            from this using floor division.
+            from this using floor division. ``None`` renders every datapoint in the window, with no decimation.
+            Neither ``None`` nor a very large value is recommended: the entire window is then read into RAM and
+            uploaded, which is slow for a large window over a large array.
 
         datapoints_window_func: tuple[Callable, str, int | float], optional
             Window function applied along the ``p`` dim after the display window has been taken, as

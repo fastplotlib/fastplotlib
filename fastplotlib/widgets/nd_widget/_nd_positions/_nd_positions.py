@@ -45,7 +45,7 @@ class NDPositionsSlicer(NDSlicer):
         ],  # [stack_dim, n_datapoints, spatial_dim], IN ORDER!!
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
         display_window: int | float | None = 100,  # window for n_datapoints dim only
-        max_display_datapoints: int = 1_000,
+        max_display_datapoints: int | None = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         **kwargs,
     ):
@@ -88,9 +88,11 @@ class NDPositionsSlicer(NDSlicer):
             current index. Use ``None`` to render every datapoint, or ``0`` to render only the datapoint at the
             current index.
 
-        max_display_datapoints: int, default 1_000
+        max_display_datapoints: int | None, default 1_000
             Maximum number of datapoints to render per graphic. The step size of the display window slice is set
-            from this using floor division.
+            from this using floor division. ``None`` renders every datapoint in the window, with no decimation.
+            Neither ``None`` nor a very large value is recommended: the entire window is then read into RAM and
+            uploaded, which is slow for a large window over a large array.
 
         datapoints_window_func: tuple[Callable, str, int | float], optional
             Window function applied along the ``p`` dim after the display window has been taken, as
@@ -181,21 +183,40 @@ class NDPositionsSlicer(NDSlicer):
         self._display_window = dw
 
     @property
-    def max_display_datapoints(self) -> int:
+    def max_display_datapoints(self) -> int | None:
         """
         Get or set the maximum number of datapoints to render per graphic. The step size of the display window
         slice is set from this using floor division.
+
+        ``None`` renders every datapoint in the window, with no decimation. Neither ``None`` nor a very
+        large value is recommended: the entire window is then read into RAM and uploaded, which is slow
+        for a large window over a large array.
         """
         return self._max_display_datapoints
 
     @max_display_datapoints.setter
-    def max_display_datapoints(self, n: int):
-        if not isinstance(n, (int, np.integer)):
-            raise TypeError
+    def max_display_datapoints(self, n: int | None):
+        if n is None:
+            self._max_display_datapoints = None
+            return
+
+        if not np.issubdtype(type(n), np.integer):
+            raise TypeError(
+                f"`max_display_datapoints` must be an integer or `None`, you passed a "
+                f"{type(n).__name__}: {n}"
+            )
+
         if n < 2:
-            raise ValueError
+            raise ValueError(f"`max_display_datapoints` must be >= 2, you passed: {n}")
 
         self._max_display_datapoints = n
+
+    def _get_display_slice_step(self, n_datapoints: int) -> int:
+        """step that keeps a slice of ``n_datapoints`` within ``max_display_datapoints``"""
+        if self.max_display_datapoints is None:
+            return 1
+
+        return max(1, n_datapoints // self.max_display_datapoints)
 
     # TODO: validation for datapoints_window_func and size
     @property
@@ -256,7 +277,7 @@ class NDPositionsSlicer(NDSlicer):
         w = stop - start
 
         # get step size
-        step = max(1, w // self.max_display_datapoints)
+        step = self._get_display_slice_step(w)
 
         return slice(start, stop, step)
 
@@ -285,14 +306,18 @@ class NDPositionsSlicer(NDSlicer):
             dw = self.slider_maps[p_dim](self.display_window)
 
             # step size based on max number of datapoints to render
-            step = max(1, dw // self.max_display_datapoints)
+            step = self._get_display_slice_step(dw)
 
             # apply window function on the `p` n_datapoints dim
             if (
                 self.datapoints_window_func is not None
                 # if there are too many points to efficiently compute the window func, skip
                 # applying a window func also requires making a copy so that's a further performance hit
-                and (dw < self.max_display_datapoints * 2)
+                # `max_display_datapoints = None` caps nothing, so there is no threshold to exceed
+                and (
+                    self.max_display_datapoints is None
+                    or dw < self.max_display_datapoints * 2
+                )
             ):
                 # get windows
 
@@ -340,7 +365,7 @@ class NDPositionsSlicer(NDSlicer):
 
                 return array[:, ::step]
 
-        step = max(1, array.shape[1] // self.max_display_datapoints)
+        step = self._get_display_slice_step(array.shape[1])
 
         return array[:, ::step]
 
@@ -432,7 +457,7 @@ class NDPositions(NDGraphic):
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
-        max_display_datapoints: int = 1_000,
+        max_display_datapoints: int | None = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
         cmap: str | Sequence[str] = None,
@@ -513,9 +538,11 @@ class NDPositions(NDGraphic):
             Per-slider-dim mapping from reference-space values to local array indices, see
             :class:`NDSlicer`.
 
-        max_display_datapoints : int, default 1_000
+        max_display_datapoints : int | None, default 1_000
             Maximum number of datapoints to render per graphic. The step size of the display window slice is set
-            from this using floor division.
+            from this using floor division. ``None`` renders every datapoint in the window, with no decimation.
+            Neither ``None`` nor a very large value is recommended: the entire window is then read into RAM and
+            uploaded, which is slow for a large window over a large array.
 
         datapoints_window_func : tuple[Callable, str, int | float], optional
             Window function applied along the ``p`` dim, as ``(func, apply_dims, window_size)``, see
@@ -648,7 +675,7 @@ class NDPositions(NDGraphic):
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
-        max_display_datapoints: int = 1_000,
+        max_display_datapoints: int | None = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         colors: ColorsType = None,
         cmap: str | Sequence[str] = None,
@@ -928,6 +955,41 @@ class NDPositions(NDGraphic):
     @display_window.setter
     def display_window(self, dw: int | float | None):
         self.slicer.display_window = dw
+        # force re-render
+        run_sync(self._set_indices_())
+
+    @property
+    def display_range(self) -> tuple[float, float] | None:
+        """
+        The current range of the display window, ``[min, max]``, in reference units of the ``p`` dim.
+
+        The window is centered on the current ``p`` index, so this moves with the sliders. It is
+        ``None`` when :attr:`display_window` is, since every datapoint is then displayed.
+        """
+        if self.display_window is None:
+            return None
+
+        p_dim = self.slicer.display_dims[1]
+        center = self.indices[p_dim]
+        half_window = self.display_window / 2
+
+        return center - half_window, center + half_window
+
+    @property
+    def max_display_datapoints(self) -> int | None:
+        """
+        Get or set the maximum number of datapoints rendered per graphic. Setting it re-renders the
+        current data slice.
+
+        ``None`` renders every datapoint in the window, with no decimation. Neither ``None`` nor a very
+        large value is recommended: the entire window is then read into RAM and uploaded, which is slow
+        for a large window over a large array.
+        """
+        return self.slicer.max_display_datapoints
+
+    @max_display_datapoints.setter
+    def max_display_datapoints(self, n: int | None):
+        self.slicer.max_display_datapoints = n
         # force re-render
         run_sync(self._set_indices_())
 

@@ -61,7 +61,7 @@ class NDTimeseries(NDPositions):
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
-        max_display_datapoints: int = 1_000,
+        max_display_datapoints: int | None = 1_000,
         datapoints_window_func: tuple[Callable, str, int | float] | None = None,
         linear_selector: bool = False,
         x_range_mode: Literal["fixed", "auto"] | None = None,
@@ -143,9 +143,11 @@ class NDTimeseries(NDPositions):
             :class:`NDSlicer`. The transform for the ``p`` dim is typically the array of x values, ex: a
             timestamps array, so the slider is in seconds rather than sample indices.
 
-        max_display_datapoints : int, default 1_000
+        max_display_datapoints : int | None, default 1_000
             Maximum number of datapoints to render per graphic. The step size of the display window slice is set
-            from this using floor division.
+            from this using floor division. ``None`` renders every datapoint in the window, with no decimation.
+            Neither ``None`` nor a very large value is recommended: the entire window is then read into RAM and
+            uploaded, which is slow for a large window over a large array.
 
         datapoints_window_func : tuple[Callable, str, int | float], optional
             Window function applied along the ``p`` dim, as ``(func, apply_dims, window_size)``, see
