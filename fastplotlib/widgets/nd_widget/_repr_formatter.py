@@ -56,7 +56,7 @@ def ndprocessor_fmt_txt(processor) -> str:
 
     for dim in processor.dims:
         size  = processor.shape[dim]
-        is_sp = dim in processor.spatial_dims
+        is_sp = dim in processor.display_dims
         role_s = (_c("spatial", f"{'spatial':<10}") if is_sp
                   else _c("slider",  f"{'slider':<10}"))
 
@@ -398,7 +398,7 @@ def _dim_rows_html(proc) -> str:
     rows = []
     for dim in proc.dims:
         size  = proc.shape[dim]
-        is_sp = dim in proc.spatial_dims
+        is_sp = dim in proc.display_dims
         badge = _badge("spatial" if is_sp else "slider")
 
         # window_func - size column

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from ._index import RangeContinuous, RangeDiscrete, ReferenceIndex
+from ._index import RangeContinuous, RangeDiscrete, ReferenceIndices
 from ._ndw_subplot import NDWSubplot
 from ._ui import NDWidgetUI, RightClickMenu
 from ...layouts import ImguiFigure, Subplot
 
 
 class NDWidget:
-    def __init__(self, ref_ranges: dict[str, tuple] = None, ref_index: Optional[ReferenceIndex] = None, **kwargs):
+    def __init__(self, ranges: dict[str, tuple] = None, indices: Optional[ReferenceIndices] = None, **kwargs):
         """
         Explore n-dimensional multi-modal datasets through synchronized graphical representations.
 
@@ -29,7 +29,7 @@ class NDWidget:
 
         Parameters
         ----------
-        ref_ranges: dict[str, tuple[float, float, float] | RangeContinuous], optional
+        ranges: dict[str, tuple[float, float, float] | RangeContinuous], optional
             Reference range for each slider dim, ``{dim_name: (start, stop, step)}`` or a :class:`RangeContinuous`
             instance. These are in reference-space units, ``start`` and ``stop`` bound the slider and ``step`` is
             the increment used by the step and play buttons.
@@ -45,7 +45,7 @@ class NDWidget:
             ``slider_dim_transform`` that maps seconds onto the indices of that array. The size is unknown for a
             graphic added with ``data=None``, so its slider dims must be given a range here.
 
-        ref_index: ReferenceIndex, optional
+        indices: ReferenceIndex, optional
             Use an existing ``ReferenceIndex`` instead of creating one from ``ref_ranges``, which is then ignored.
             Multiple ``NDWidget`` instances that share a ``ReferenceIndex`` are synchronized, so one set of sliders
             can drive data displayed across several windows.
@@ -73,12 +73,12 @@ class NDWidget:
             ndw.show()
 
         """
-        if ref_index is None:
-            if ref_ranges is None:
-                ref_ranges = dict()
-            self._indices = ReferenceIndex(ref_ranges)
+        if indices is None:
+            if ranges is None:
+                ranges = dict()
+            self._indices = ReferenceIndices(ranges)
         else:
-            self._indices = ref_index
+            self._indices = indices
 
         self._indices._add_ndwidget_(self)
 
@@ -103,7 +103,7 @@ class NDWidget:
         return self._figure
 
     @property
-    def indices(self) -> ReferenceIndex:
+    def indices(self) -> ReferenceIndices:
         """
         Get or set the current index of each slider dim.
 

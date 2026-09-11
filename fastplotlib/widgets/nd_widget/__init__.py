@@ -2,11 +2,11 @@ from ...layouts import IMGUI
 
 
 if IMGUI:
-    from ._base import NDProcessor, NDGraphic
-    from ._nd_positions import NDPositions, NDPositionsProcessor, NDTimeseries, ndp_extras
-    from ._nd_image import NDImageProcessor, NDImage
-    from ._video import VideoProcessor
-    from ._nd_vectors import NDVectorsProcessor, NDVectors
+    from ._base import NDSlicer, NDGraphic
+    from ._nd_positions import NDPositions, NDPositionsSlicer, NDTimeseries, ndp_extras
+    from ._nd_image import NDImageSlicer, NDImage
+    from ._video import VideoSlicer
+    from ._nd_vectors import NDVectorsSlicer, NDVectors
     from ._ndwidget import NDWidget
 
 else:

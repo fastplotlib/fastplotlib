@@ -3,27 +3,27 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ._nd_positions import NDPositionsProcessor
+from ._nd_positions import NDPositionsSlicer
 
 
-class NDPP_Pandas(NDPositionsProcessor):
+class PandasSlicer(NDPositionsSlicer):
     def __init__(
             self,
             data: pd.DataFrame,
-            spatial_dims: tuple[str, str, str],  # [l, p, d] dims in order
+            display_dims: tuple[str, str, str],  # [l, p, d] dims in order
             columns: list[tuple[str, str] | tuple[str, str, str]],
             tooltip_columns: list[str] = None,
             **kwargs,
     ):
         """
-        ``NDPositionsProcessor`` subclass that reads positional data from the columns of a ``pandas.DataFrame``
+        ``NDPositionsSlicer`` subclass that reads positional data from the columns of a ``pandas.DataFrame``
         instead of an n-dimensional array.
 
         Each entry in ``columns`` names the columns that hold the coordinates of one graphic, so the number of
         entries is the number of graphics in the collection and the number of rows is the size of the ``p`` dim.
         There are no additional slider dims, ``p`` is the only one.
 
-        Available as ``ndp_extras.NDPP_Pandas`` when ``pandas`` is installed, pass it as the ``processor`` to
+        Available as ``ndp_extras.NDPP_Pandas`` when ``pandas`` is installed, pass it as the ``slicer`` to
         ``NDWSubplot.add_nd_lines()``, ``add_nd_scatter()`` or ``add_nd_timeseries()``.
 
         Parameters
@@ -31,7 +31,7 @@ class NDPP_Pandas(NDPositionsProcessor):
         data: pd.DataFrame
             DataFrame holding the coordinates, one column per coordinate of each graphic.
 
-        spatial_dims: tuple[str, str, str]
+        display_dims: tuple[str, str, str]
             The 3 spatial dims **in display order**: ``(n_graphics, p, <value dim>)``. These are also used as
             the ``dims``, since a DataFrame has no other dims to name.
 
@@ -45,7 +45,7 @@ class NDPP_Pandas(NDPositionsProcessor):
             tooltip, ex: a per-keypoint likelihood column. Must be the same length as ``columns``.
 
         kwargs
-            passed to :class:`.NDPositionsProcessor`, i.e. ``display_window``, ``max_display_datapoints``,
+            passed to :class:`.NDPositionsSlicer`, i.e. ``display_window``, ``max_display_datapoints``,
             ``slider_dim_transforms``, ``datapoints_window_func`` and ``spatial_func``.
 
         """
@@ -62,8 +62,8 @@ class NDPP_Pandas(NDPositionsProcessor):
 
         super().__init__(
             data=data,
-            dims=spatial_dims,
-            spatial_dims=spatial_dims,
+            dims=display_dims,
+            display_dims=display_dims,
             **kwargs,
         )
 
@@ -88,7 +88,7 @@ class NDPP_Pandas(NDPositionsProcessor):
 
     @property
     def dims(self) -> tuple[str, str, str]:
-        """dim names, the same as :attr:`spatial_dims` since a DataFrame has no other dims"""
+        """dim names, the same as :attr:`display_dims` since a DataFrame has no other dims"""
         return self._dims
 
     @property

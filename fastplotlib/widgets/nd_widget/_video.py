@@ -3,13 +3,13 @@ from typing import Callable, Any, Literal
 import numpy as np
 
 from ...graphics.image import TupleYUV
-from ._nd_image import NDImageProcessor
+from ._nd_image import NDImageSlicer
 from ._async import run_in_thread_pool
 
 
-class VideoProcessor(NDImageProcessor):
+class VideoSlicer(NDImageSlicer):
     """
-    ``NDImageProcessor`` subclass for video data, used by ``NDWSubplot.add_video()``.
+    ``NDImageSlicer`` subclass for video data, used by ``NDWSubplot.add_video()``.
 
     Reads the frame at the current index directly. Window functions are not currently implemented for video.
 

@@ -23,12 +23,12 @@ ref = {
 
 
 ndw = fpl.NDWidget(
-    ref_ranges=ref,
+    ranges=ref,
     size=(700, 560)
 )
 ndw2 = fpl.NDWidget(
-    ref_ranges=ref,
-    ref_index=ndw.indices, # can create another NDWidget that shared the reference index! So multiple windows are possible
+    ranges=ref,
+    indices=ndw.indices, # can create another NDWidget that shared the reference index! So multiple windows are possible
     size=(700, 560)
 )
 
