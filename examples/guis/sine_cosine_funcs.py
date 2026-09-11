@@ -11,7 +11,7 @@ Identical to the Unit Circle example but you can change the angular frequencies 
 
 import numpy as np
 import fastplotlib as fpl
-from fastplotlib.ui import EdgeWindow
+from fastplotlib.ui import ImguiWindow
 from imgui_bundle import imgui
 
 
@@ -129,9 +129,9 @@ cosine_selector.add_event_handler(set_x_val, "selection")
 sine_selector.selection = 50
 
 
-class GUIWindow(EdgeWindow):
-    def __init__(self, figure, size, location, title):
-        super().__init__(figure=figure, size=size, location=location, title=title)
+class GUIWindow(ImguiWindow):
+    def __init__(self):
+        super().__init__()
 
         self._p = 1
         self._q = 1
@@ -166,14 +166,9 @@ class GUIWindow(EdgeWindow):
             self._set_data()
 
 
-gui = GUIWindow(
-    figure=figure,
-    size=100,
-    location="right",
-    title="Freq. coeffs"
-)
+gui = GUIWindow()
 
-figure.add_gui(gui)
+figure.add_imgui_window(gui, location="right", size=150, title="Freq. coeffs")
 
 figure.show()
 

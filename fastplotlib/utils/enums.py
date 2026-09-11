@@ -1,4 +1,4 @@
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 
 
 class RenderQueue(IntEnum):
@@ -13,3 +13,19 @@ class RenderQueue(IntEnum):
     # the graphics. Axes (rulers) have depth_compare '<=' and selectors don't compare depth.
     axes = 3400  # still in 'object' group
     selector = 3600  # considered in 'overlay' group
+
+
+class ColorspacesRGB(StrEnum):
+    srgb = "srgb"
+    tex_srgb = "tex-srgb"
+    physical = "physical"
+
+
+class ColorspacesYUV(StrEnum):
+    yuv420p = "yuv420p"
+    yuv444p = "yuv444p"
+
+
+class ColorRange(StrEnum):
+    full = "full"
+    limited = "limited"

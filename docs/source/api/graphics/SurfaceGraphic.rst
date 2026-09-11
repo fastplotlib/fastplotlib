@@ -24,12 +24,14 @@ Properties
     SurfaceGraphic.alpha_mode
     SurfaceGraphic.axes
     SurfaceGraphic.block_events
+    SurfaceGraphic.block_handlers
     SurfaceGraphic.clim
     SurfaceGraphic.cmap
     SurfaceGraphic.colors
     SurfaceGraphic.data
     SurfaceGraphic.deleted
     SurfaceGraphic.event_handlers
+    SurfaceGraphic.imgui_right_click
     SurfaceGraphic.indices
     SurfaceGraphic.mapcoords
     SurfaceGraphic.mode
@@ -37,7 +39,6 @@ Properties
     SurfaceGraphic.offset
     SurfaceGraphic.plane
     SurfaceGraphic.positions
-    SurfaceGraphic.right_click_menu
     SurfaceGraphic.rotation
     SurfaceGraphic.scale
     SurfaceGraphic.supported_events
@@ -52,10 +53,13 @@ Methods
 
     SurfaceGraphic.add_axes
     SurfaceGraphic.add_event_handler
+    SurfaceGraphic.append_imgui_right_click
     SurfaceGraphic.clear_event_handlers
     SurfaceGraphic.format_pick_info
     SurfaceGraphic.map_model_to_world
     SurfaceGraphic.map_world_to_model
     SurfaceGraphic.remove_event_handler
+    SurfaceGraphic.remove_imgui_right_click
     SurfaceGraphic.rotate
+    SurfaceGraphic.set_imgui_right_click
 

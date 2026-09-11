@@ -30,7 +30,7 @@ line_stack = figure[0, 0].add_line_stack(
     multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
     cmap="jet",  # applied along n_lines
     thickness=3,
-    separation=1,  # spacing between lines along the separation axis, default separation along "y" axis
+    separation=(0, 1, 0),  # spacing between lines along the separation axis, default separation along "y" axis
     name="lines",
 )
 
@@ -75,7 +75,8 @@ def animate_colors(subplot):
     cmap_transform = np.roll(np.arange(10), shift=int(colors_iteration / 50))
 
     # set cmap with the transform
-    subplot["lines"].cmap = "jet", cmap_transform
+    subplot["lines"].cmap = "jet"
+    subplot["lines"].cmap_transform = cmap_transform
 
     colors_iteration += 1
 

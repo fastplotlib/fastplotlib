@@ -2,12 +2,14 @@ from typing import *
 
 import numpy as np
 import pygfx
+import cmap as cmap_lib
 
 from ..utils import quick_min_max
 from ._base import Graphic
 from .features import (
     TextureArrayVolume,
     ImageCmap,
+    ImageGamma,
     ImageVmin,
     ImageVmax,
     ImageInterpolation,
@@ -85,6 +87,7 @@ class ImageVolumeGraphic(Graphic):
     _features = {
         "data": TextureArrayVolume,
         "cmap": ImageCmap,
+        "gamma": ImageGamma,
         "vmin": ImageVmin,
         "vmax": ImageVmax,
         "interpolation": ImageInterpolation,
@@ -105,6 +108,7 @@ class ImageVolumeGraphic(Graphic):
         vmin: float = None,
         vmax: float = None,
         cmap: str = "plasma",
+        gamma: float = 1.0,
         interpolation: str = "linear",
         cmap_interpolation: str = "linear",
         plane: tuple[float, float, float, float] = (0, 0, -1, 0),
@@ -113,7 +117,6 @@ class ImageVolumeGraphic(Graphic):
         substep_size: float = 0.1,
         emissive: str | tuple | np.ndarray = (0, 0, 0),
         shininess: int = 30,
-        isolated_buffer: bool = True,
         **kwargs,
     ):
         """
@@ -136,6 +139,9 @@ class ImageVolumeGraphic(Graphic):
 
         cmap: str, default "plasma"
             colormap for grayscale volumes
+
+        gamma: float, default 1.0
+            gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
 
         interpolation: str, default "linear"
             interpolation method for sampling pixels
@@ -170,11 +176,6 @@ class ImageVolumeGraphic(Graphic):
             How shiny the specular highlight is; a higher value gives a sharper highlight.
             Used only if `mode` = "iso"
 
-        isolated_buffer: bool, default True
-            If True, initialize a buffer with the same shape as the input data and then set the data, useful if the
-            data arrays are ready-only such as memmaps. If False, the input array is itself used as the
-            buffer - useful if the array is large.
-
         kwargs
             additional keyword arguments passed to :class:`.Graphic`
 
@@ -188,7 +189,7 @@ class ImageVolumeGraphic(Graphic):
 
         super().__init__(**kwargs)
 
-        world_object = pygfx.Group()
+        group = pygfx.Group()
 
         if isinstance(data, TextureArrayVolume):
             # share existing buffer
@@ -196,7 +197,7 @@ class ImageVolumeGraphic(Graphic):
         else:
             # create new texture array to manage buffer
             # texture array that manages the textures on the GPU that represent this image volume
-            self._data = TextureArrayVolume(data, isolated_buffer=isolated_buffer)
+            self._data = TextureArrayVolume(data)
 
         if (vmin is None) or (vmax is None):
             _vmin, _vmax = quick_min_max(self.data.value)
@@ -208,19 +209,28 @@ class ImageVolumeGraphic(Graphic):
         # other graphic features
         self._vmin = ImageVmin(vmin)
         self._vmax = ImageVmax(vmax)
+        self._gamma = ImageGamma(gamma)
 
         self._interpolation = ImageInterpolation(interpolation)
-
-        # TODO: I'm assuming RGB volume images aren't supported???
-        # use TextureMap for grayscale images
-        self._cmap = ImageCmap(cmap)
         self._cmap_interpolation = ImageCmapInterpolation(cmap_interpolation)
 
-        self._texture_map = pygfx.TextureMap(
-            self._cmap.texture,
-            filter=self._cmap_interpolation.value,
-            wrap="clamp-to-edge",
-        )
+        # use TextureMap for grayscale images
+        self._cmap = ImageCmap(cmap)
+
+        self._texture_map = self._cmap.value.to_pygfx()
+        self._texture_map.min_filter = self._cmap_interpolation.value
+        self._texture_map.mag_filter = self._cmap_interpolation.value
+        self._texture_map.mipmap_filter = self._cmap_interpolation.value
+        self._texture_map.wrap_s = "clamp-to-edge"
+        self._texture_map.wrap_t = "clamp-to-edge"
+
+        if self._data.value.ndim not in (3, 4):
+            raise ValueError(
+                f"ImageVolumeGraphic `data` must have 3 dimensions for grayscale images, "
+                f"or 4 dimensions for RGB(A) images.\n"
+                f"You have passed a a data array with: {self._data.value.ndim} dimensions, "
+                f"and of shape: {self._data.value.shape}"
+            )
 
         self._plane = VolumeSlicePlane(plane)
         self._threshold = VolumeIsoThreshold(threshold)
@@ -234,8 +244,18 @@ class ImageVolumeGraphic(Graphic):
         VolumeMaterialCls = VOLUME_RENDER_MODES[mode]
 
         self._material = VolumeMaterialCls(**material_kwargs)
+        self._material.gamma = gamma
 
         self._mode = VolumeRenderMode(mode)
+
+        # create tiles
+        for tile in self._create_tiles():
+            group.add(tile)
+
+        self._set_world_object(group)
+
+    def _create_tiles(self) -> list[_VolumeTile]:
+        tiles = list()
 
         # iterate through each texture chunk and create
         # a _VolumeTile, offset the tile using the data indices
@@ -259,9 +279,9 @@ class ImageVolumeGraphic(Graphic):
             vol.world.x = data_col_start
             vol.world.y = data_row_start
 
-            world_object.add(vol)
+            tiles.append(vol)
 
-        self._set_world_object(world_object)
+        return tiles
 
     @property
     def data(self) -> TextureArrayVolume:
@@ -270,6 +290,21 @@ class ImageVolumeGraphic(Graphic):
 
     @data.setter
     def data(self, data):
+        if isinstance(data, np.ndarray):
+            # check if a new buffer is required
+            if self._data.value.shape != data.shape:
+                # create new TextureArray
+                self._data = TextureArrayVolume(data)
+
+                # clear image tiles
+                self.world_object.clear()
+
+                # create new tiles
+                for tile in self._create_tiles():
+                    self.world_object.add(tile)
+
+                return
+
         self._data[:] = data
 
     @property
@@ -282,13 +317,13 @@ class ImageVolumeGraphic(Graphic):
         self._mode.set_value(self, mode)
 
     @property
-    def cmap(self) -> str:
-        """Get or set colormap name"""
+    def cmap(self) -> cmap_lib.Colormap:
+        """Get or set colormap, only used for grayscale images"""
         return self._cmap.value
 
     @cmap.setter
-    def cmap(self, name: str):
-        self._cmap.set_value(self, name)
+    def cmap(self, colormap: str | cmap_lib.Colormap):
+        self._cmap.set_value(self, colormap)
 
     @property
     def vmin(self) -> float:
@@ -307,6 +342,15 @@ class ImageVolumeGraphic(Graphic):
     @vmax.setter
     def vmax(self, value: float):
         self._vmax.set_value(self, value)
+
+    @property
+    def gamma(self) -> float:
+        """gamma correction applied to the image"""
+        return self._gamma.value
+
+    @gamma.setter
+    def gamma(self, value: float):
+        self._gamma.set_value(self, value)
 
     @property
     def interpolation(self) -> str:

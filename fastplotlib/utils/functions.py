@@ -6,6 +6,8 @@ import cmap as cmap_lib
 
 from pygfx import Texture, Color
 
+from .protocols import ArrayProtocol, CudaArrayProtocol
+
 
 cmap_catalog = cmap_lib.Catalog()
 
@@ -204,10 +206,6 @@ def make_colors(n_colors: int, cmap: str, alpha: float = 1.0) -> np.ndarray:
     return cm(cm_ixs).astype(np.float32)
 
 
-def get_cmap_texture(name: str, alpha: float = 1.0) -> Texture:
-    return Texture(get_cmap(name, alpha), dim=1)
-
-
 def make_colors_dict(labels: Sequence, cmap: str, **kwargs) -> OrderedDict:
     """
     Get a dict for mapping labels onto colors.
@@ -337,77 +335,17 @@ def normalize_min_max(a):
     return (a - np.min(a)) / (np.max(a - np.min(a)))
 
 
-def parse_cmap_values(
-    n_colors: int,
-    cmap_name: str,
-    transform: np.ndarray | list[int | float] = None,
-) -> np.ndarray:
-    """
+def cuda_to_numpy(arr: CudaArrayProtocol) -> np.ndarray:
 
-    Parameters
-    ----------
-    n_colors: int
-        number of graphics in collection
-
-    cmap_name: str
-        colormap name
-
-    transform: np.ndarray | List[int | float], optional
-        cmap transform
-    Returns
-    -------
-
-    """
-    if transform is None:
-        colors = make_colors(n_colors, cmap_name)
-        return colors
-
-    else:
-        if not isinstance(transform, np.ndarray):
-            transform = np.array(transform)
-
-        # use the of the cmap_transform to set the color of the corresponding data
-        # each individual data[i] has its color based on the transform values
-        if len(transform) != n_colors:
-            raise ValueError(
-                f"len(cmap_values) != len(data): {len(transform)} != {n_colors}"
-            )
-
-        colormap = get_cmap(cmap_name)
-
-        n_colors = colormap.shape[0] - 1
-
-        # can also use cm.category == "qualitative"
-        if cmap_lib.Colormap(cmap_name).interpolation == "nearest":
-
-            # check that cmap_values are <int> and within the number of colors `n_colors`
-
-            # do not scale, use directly
-            if not np.issubdtype(transform.dtype, np.integer):
-                raise TypeError(
-                    f"<int> `cmap_transform` values should be used with qualitative colormaps, "
-                    f"the dtype you have passed is {transform.dtype}"
-                )
-            if max(transform) > n_colors:
-                raise IndexError(
-                    f"You have chosen the qualitative colormap <'{cmap_name}'> which only has "
-                    f"<{n_colors}> colors, which is lower than the max value of your `cmap_transform`."
-                    f"Choose a cmap with more colors, or a non-quantitative colormap."
-                )
-            norm_cmap_values = transform
-        else:
-            # scale between 0 - n_colors so we can just index the colormap as a LUT
-            norm_cmap_values = (normalize_min_max(transform) * n_colors).astype(int)
-
-        # use colormap as LUT to map the cmap_values to the colormap index
-        colors = np.vstack([colormap[val] for val in norm_cmap_values])
-
-        return colors
+    data = np.from_dlpack(arr, device='cpu')
+    return data
 
 
 def subsample_array(
-    arr: np.ndarray, max_size: int = 1e6, ignore_dims: Sequence[int] | None = None
-):
+    arr: ArrayProtocol | CudaArrayProtocol,
+    max_size: int = 1e6,
+    ignore_dims: Sequence[int] | None = None,
+) -> np.ndarray:
     """
     Subsamples an input array while preserving its relative dimensional proportions.
 
@@ -476,4 +414,44 @@ def subsample_array(
 
     slices = tuple(slices)
 
-    return np.asarray(arr[slices])
+    arr_sliced = arr[slices]
+
+    if isinstance(arr_sliced, CudaArrayProtocol):
+        return cuda_to_numpy(arr_sliced)
+
+    return arr_sliced
+
+
+def heatmap_to_positions(heatmap: np.ndarray, xvals: np.ndarray) -> np.ndarray:
+    """
+
+    Convert a heatmap of shape [n_rows, n_datapoints] to timeseries x-y data of shape [n_rows, n_datapoints, xy]
+
+    Parameters
+    ----------
+    heatmap: np.ndarray, shape [n_rows, n_datapoints]
+        timeseries data with a heatmap representation, where each column represents a timepoint.
+
+    xvals: np.ndarray, shape: [n_datapoints,]
+        x-values for the columns in the heatmap
+
+    Returns
+    -------
+    np.ndarray, shape [n_rows, n_datapoints, 2]
+        timeseries data where the xy data are explicitly stored for every row
+
+    """
+    if heatmap.ndim != 2:
+        raise ValueError
+
+    if xvals.ndim != 1:
+        raise ValueError
+
+    if xvals.size != heatmap.shape[1]:
+        raise ValueError
+
+    ts = np.empty((*heatmap.shape, 2), dtype=np.float32)
+    ts[..., 0] = xvals
+    ts[..., 1] = heatmap
+
+    return ts

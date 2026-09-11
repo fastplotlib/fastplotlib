@@ -88,14 +88,15 @@ class Cursor:
             return
 
         # mode has changed, clear and create new world objects
-        subplots = list(self._cursors.keys())
+        transforms = {subplot: self._transforms[subplot] for subplot in self._cursors}
 
         self.clear()
 
-        for subplot in subplots:
-            self.add_subplot(subplot)
-
+        # must be set before re-adding, `add_subplot` creates the world object for the current mode
         self._mode = mode
+
+        for subplot, transform in transforms.items():
+            self.add_subplot(subplot, transform)
 
     @property
     def size(self) -> float:
@@ -147,7 +148,13 @@ class Cursor:
         new_color = pygfx.Color(new_color)
 
         for c in self._cursors.values():
-            c.material.color = new_color
+            if self.mode == "marker":
+                c.material.color = new_color
+
+            elif self.mode == "crosshair":
+                h, v = c.children
+                h.material.color = new_color
+                v.material.color = new_color
 
         self._color = new_color
 
@@ -200,7 +207,13 @@ class Cursor:
     @alpha.setter
     def alpha(self, value: float):
         for c in self._cursors.values():
-            c.material.opacity = value
+            if self.mode == "marker":
+                c.material.opacity = value
+
+            elif self.mode == "crosshair":
+                h, v = c.children
+                h.material.opacity = value
+                v.material.opacity = value
 
         self._alpha = value
 
@@ -321,13 +334,14 @@ class Cursor:
             raise KeyError("cursor not in given supblot")
 
         subplot.scene.remove(self._cursors.pop(subplot))
+        self._transforms.pop(subplot)
 
         # give back tooltip control to the subplot
         subplot.renderer.add_event_handler(subplot._fpl_set_tooltip, "pointer_move")
 
     def clear(self):
         """remove all subplots"""
-        for subplot in self._cursors.keys():
+        for subplot in list(self._cursors.keys()):
             self.remove_subplot(subplot)
 
     def _create_marker(self) -> pygfx.Points:

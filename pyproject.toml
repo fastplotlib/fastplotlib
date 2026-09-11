@@ -19,8 +19,8 @@ keywords = [
 ]
 requires-python = ">= 3.11"
 dependencies = [
-    "numpy>=1.23.0",
-    "pygfx==0.15.3",
+    "numpy>=2.1.0",
+    "pygfx==0.16.0",
     "wgpu",          # Let pygfx constrain the wgpu version
     "cmap>=0.1.3",
     # (this comment keeps this list multiline in VSCode)
@@ -46,6 +46,7 @@ notebook = [
     "jupyter-rfb>=0.5.1",
     "ipywidgets>=8.0.0,<9",
     "sidecar",
+    "simplejpeg",
 ]
 tests = [
     "pytest",

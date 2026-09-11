@@ -7,6 +7,7 @@ import pygfx
 
 from pygfx import WorldObject, Line, Mesh, Points
 
+from ._protocols import SelectorProtocol
 from .._base import Graphic
 
 
@@ -39,7 +40,7 @@ key_bind_direction = {
 
 
 # Selector base class
-class BaseSelector(Graphic):
+class BaseSelector(Graphic, SelectorProtocol):
     _fpl_support_tooltip = False
 
     @property

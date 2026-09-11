@@ -91,7 +91,7 @@ sine = np.column_stack([xs, ys])
 sine_waves = 10 * [sine]
 
 # add the line stack to the figure
-figure["line-stack"].add_line_stack(data=sine_waves, cmap="Wistia", separation=1)
+figure["line-stack"].add_line_stack(data=sine_waves, cmap="Wistia", separation=(0, 1, 0))
 
 figure["line-stack"].auto_scale(maintain_aspect=True)
 

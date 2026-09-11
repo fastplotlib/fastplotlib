@@ -51,18 +51,14 @@ class MeshIndices(VertexPositions):
         },
     ]
 
-    def __init__(
-        self, data: Any, isolated_buffer: bool = True, property_name: str = "indices"
-    ):
+    def __init__(self, data: Any, property_name: str = "indices"):
         """
         Manages the vertex indices buffer shown in the graphic.
         Supports fancy indexing if the data array also supports it.
         """
 
         data = self._fix_data(data)
-        super().__init__(
-            data, isolated_buffer=isolated_buffer, property_name=property_name
-        )
+        super().__init__(data, property_name=property_name)
 
     def _fix_data(self, data):
         if data.ndim != 2 or data.shape[1] not in (3, 4):

@@ -21,6 +21,7 @@ ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
 EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples")
 
 sys.path.insert(0, str(ROOT_DIR))
+sys.path.insert(0, str(Path(__file__).parent.joinpath("_ext")))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -42,6 +43,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx_gallery.gen_gallery",
+    "imgui_docs",
 ]
 
 sphinx_gallery_conf = {
@@ -54,9 +56,10 @@ sphinx_gallery_conf = {
     "subsection_order": ExplicitOrder(
         [
             "../../examples/image",
+            "../../examples/image_collection",
             "../../examples/image_volume",
             "../../examples/heatmap",
-            "../../examples/image_widget",
+            # "../../examples/image_widget",
             "../../examples/gridplot",
             "../../examples/window_layouts",
             "../../examples/controllers",
@@ -69,6 +72,7 @@ sphinx_gallery_conf = {
             "../../examples/events",
             "../../examples/selection_tools",
             "../../examples/spaces_transforms",
+            "../../examples/ndwidget",
             "../../examples/machine_learning",
             "../../examples/guis",
             "../../examples/ipywidgets",

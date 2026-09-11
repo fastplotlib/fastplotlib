@@ -1,0 +1,702 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
+from typing import Callable, Any, Literal, TYPE_CHECKING
+
+import numpy as np
+from numpy.typing import ArrayLike
+
+from ...utils import (
+    subsample_array,
+    ARRAY_LIKE_ATTRS,
+    ArrayProtocol,
+    CudaArrayProtocol,
+    cuda_to_numpy,
+    enums,
+)
+from ...graphics import ImageGraphic, ImageYUVGraphic, ImageVolumeGraphic
+from ...ui import ImguiColorbar
+from ._base import (
+    NDSlicer,
+    NDGraphic,
+    WindowFuncCallable,
+    get_supported_kwargs,
+)
+from ._index import ReferenceIndices
+from ._async import run_in_thread_pool, run_sync
+
+if TYPE_CHECKING:
+    from ._ndw_subplot import NDWSubplot
+
+
+class NDImageSlicer(NDSlicer):
+    def __init__(
+        self,
+        data: ArrayProtocol | None,
+        dims: Sequence[str],
+        display_dims: (
+            tuple[str, str] | tuple[str, str, str]
+        ),  # must be in order! [rows, cols] | [z, rows, cols]
+        rgb_dim: str | None = None,
+        window_funcs: tuple[WindowFuncCallable | None, ...] | WindowFuncCallable = None,
+        window_order: tuple[int, ...] = None,
+        spatial_func: Callable[[ArrayLike], ArrayLike] = None,
+        compute_histogram: bool = True,
+        slider_maps=None,
+    ):
+        """
+        ``NDSlicer`` subclass for n-dimensional image data.
+
+        Produces 2-D or 3-D spatial slices for an ``ImageGraphic`` or ``ImageVolumeGraphic``.
+
+        Parameters
+        ----------
+        data: ArrayProtocol
+            array-like data, must have 2 or more dimensions
+
+        dims: Sequence[str]
+            names for each dimension in ``data``. Dimensions not listed in
+            ``display_dims`` are treated as slider dimensions and **must** appear as
+            keys in the parent ``NDWidget``'s ``ref_ranges``
+                Examples::
+                 ``("time", "depth", "row", "col")``
+                 ``("row", "col")``
+                 ``("other_dim", "depth", "time", "row", "col")``
+
+            dims in the array do not need to be in the order that you want to display them, for example you can have a
+            weird array where the dims are interpreted as:
+            ``("col", "depth", "row", "time")``, and then specify display_dims as ``("row", "col")``.
+
+        display_dims : tuple[str, str] | tuple[str, str, str]
+            The 2 or 3 spatial dims **in display order**, which also determines the graphic used for rendering:
+
+            * ``(rows, cols)``, a 2D grayscale ``ImageGraphic``
+            * ``(rows, cols, rgb_dim)``, a 2D RGB(A) ``ImageGraphic``
+            * ``(z, rows, cols)``, a 3D ``ImageVolumeGraphic``
+
+            The ordering determines how the image or volume is rendered. For example, if you specify
+            ``display_dims = ("rows", "cols")`` and then change it to ``("cols", "rows")``, it will display the
+            transpose.
+
+        rgb_dim : str, optional
+            Name of the RGB(A) dim, if present. It must be listed in ``display_dims`` and be of size 3 or 4.
+
+        compute_histogram: bool, default True
+            Compute a histogram of the data, disable if random-access of data is not blazing-fast (ex: data that uses
+            video codecs), or if histograms are not useful for this data.
+
+        slider_maps : dict, optional
+            See :class:`NDSlicer`.
+
+        window_funcs : dict, optional
+            See :class:`NDSlicer`.
+
+        window_order : tuple, optional
+            See :class:`NDSlicer`.
+
+        spatial_func : callable, optional
+            See :class:`NDSlicer`.
+
+        See Also
+        --------
+            NDSlicer : Base class with full parameter documentation.
+            NDImage : The ``NDGraphic`` that wraps this slicer.
+        """
+
+        # set as False until data, window funcs stuff and spatial func is all set
+        self._compute_histogram = False
+
+        # make sure rgb dim is size 3 or 4
+        if rgb_dim is not None:
+            dim_index = dims.index(rgb_dim)
+            if data.shape[dim_index] not in (3, 4):
+                raise IndexError(
+                    f"The size of the RGB(A) dim must be 3 | 4. You have specified an array of shape: {data.shape}, "
+                    f"with dims: {dims}, and specified the ``rgb_dim`` name as: {rgb_dim} which has size "
+                    f"{data.shape[dim_index]} != 3 | 4"
+                )
+
+        super().__init__(
+            data=data,
+            dims=dims,
+            display_dims=display_dims,
+            slider_maps=slider_maps,
+            window_funcs=window_funcs,
+            window_order=window_order,
+            spatial_func=spatial_func,
+        )
+
+        self.rgb_dim = rgb_dim
+        self._compute_histogram = compute_histogram
+        self._recompute_histogram()
+
+    @property
+    def data(self) -> ArrayProtocol | None:
+        """
+        get or set managed data. If setting with new data, the new data is interpreted
+        to have the same dims (i.e. same dim names and ordering of dims).
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data: ArrayProtocol):
+        if not isinstance(data, ArrayProtocol):
+            # check that it's generally array-like
+            raise TypeError(
+                f"`data` arrays must have all of the following attributes to be sufficiently array-like:\n"
+                f"{ARRAY_LIKE_ATTRS}, or they must be `None`"
+            )
+
+        if data.ndim < 2:
+            # ndim < 2 makes no sense for image data
+            raise IndexError(
+                f"Image data must have a minimum of 2 dimensions, you have passed an array of shape: {data.shape}"
+            )
+
+        self._data = data
+        self._recompute_histogram()
+
+    @property
+    def display_dims(self) -> tuple[str, str] | tuple[str, str, str]:
+        """
+        Subset of ``dims`` that are spatial (rendered) dimensions **in display order**.
+
+        [row_dim, col_dim] or [row_dim, col_dim, rgb(a) dim]
+        """
+        return self._display_dims
+
+    @display_dims.setter
+    def display_dims(self, sdims: tuple[str, str] | tuple[str, str, str]):
+        for dim in sdims:
+            if dim not in self.dims:
+                raise KeyError
+
+        if len(sdims) not in (2, 3):
+            raise ValueError(
+                f"There must be 2 or 3 spatial dims for images indicating [row_dim, col_dim] or "
+                f"[row_dims, col_dim, rgb(a) dim]. You passed: {sdims}"
+            )
+
+        self._display_dims = tuple(sdims)
+
+    @property
+    def rgb_dim(self) -> str | None:
+        """
+        get or set the RGB(A) dim name, ``None`` if no RGB(A) dim exists
+        """
+        return self._rgb
+
+    @rgb_dim.setter
+    def rgb_dim(self, rgb: str | None):
+        if rgb is not None:
+            if rgb not in self.dims:
+                raise KeyError
+
+        self._rgb = rgb
+
+    @property
+    def compute_histogram(self) -> bool:
+        """get or set whether or not to compute the histogram"""
+        return self._compute_histogram
+
+    @compute_histogram.setter
+    def compute_histogram(self, compute: bool):
+        if compute:
+            if not self._compute_histogram:
+                # compute a histogram
+                self._recompute_histogram()
+                self._compute_histogram = True
+        else:
+            self._compute_histogram = False
+            self._histogram = None
+
+    @property
+    def histogram(self) -> tuple[np.ndarray, np.ndarray] | None:
+        """
+        an estimate of the histogram of the data, (histogram_values, bin_edges).
+
+        returns `None` if `compute_histogram` is `False`
+        """
+        return self._histogram
+
+    async def get(self, indices: dict[str, Any]) -> ArrayProtocol:
+        """
+        Get the data at the given index, process data through the window functions.
+
+        Note that we do not use __getitem__ here since the index is a tuple specifying a single integer
+        index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
+
+        Parameters
+        ----------
+        indices: tuple[int, ...]
+            Get the processed data at this index. Must provide a value for each dimension.
+            Example: get((100, 5))
+
+        """
+        # this will be squeezed output, with dims in the order of the user set spatial dims
+        window_output = await self.get_window_output(indices)
+
+        # apply spatial_func; CUDA arrays run inline, numpy goes through the thread pool
+        if self.spatial_func is not None:
+            if isinstance(window_output, CudaArrayProtocol):
+                window_output = self._spatial_func(window_output)
+            else:
+                window_output = await run_in_thread_pool(
+                    self._executor, self._spatial_func, window_output
+                )
+            if window_output.ndim != len(self.display_dims):
+                raise ValueError
+
+        # final CUDA -> numpy conversion at the end of the pipeline
+        if isinstance(window_output, CudaArrayProtocol):
+            window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
+
+        return window_output.transpose(*self.display_dims_indices)
+
+    def _recompute_histogram(self):
+        """
+
+        Returns
+        -------
+        (histogram_values, bin_edges)
+
+        """
+        if not self._compute_histogram or self.data is None:
+            self._histogram = None
+            return
+
+        if self.spatial_func is not None:
+            # don't subsample spatial dims if a spatial function is used
+            # spatial functions often operate on the spatial dims, ex: a gaussian kernel
+            # so their results require the full spatial resolution, the histogram of a
+            # spatially subsampled image will be very different
+            ignore_dims = [self.dims.index(dim) for dim in self.display_dims]
+        else:
+            ignore_dims = None
+
+        # TODO: account for window funcs
+
+        sub = subsample_array(self.data, ignore_dims=ignore_dims)
+
+        sub_real = sub[~(np.isnan(sub) | np.isinf(sub))]
+
+        self._histogram = np.histogram(sub_real, bins=100)
+
+
+class NDImage(NDGraphic):
+    def __init__(
+        self,
+        ref_index: ReferenceIndices,
+        nd_subplot: NDWSubplot,
+        data: ArrayProtocol | None,
+        dims: Sequence[str],
+        display_dims: (
+            tuple[str, str] | tuple[str, str, str]
+        ),  # must be in order! [rows, cols] | [z, rows, cols]
+        rgb_dim: str | None = None,
+        window_funcs: dict[
+            str, tuple[WindowFuncCallable | None, int | float | None]
+        ] = None,
+        window_order: tuple[str, ...] = None,
+        spatial_func: Callable[[ArrayLike], ArrayLike] = None,
+        compute_histogram: bool = True,
+        clim_quantiles: tuple[float, float] | None = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        slicer_type: type[NDImageSlicer] = NDImageSlicer,
+        colorspace: Literal[
+            "srgb", "tex-srgb", "physical", "yuv420p", "yuv444p"
+        ] = "srgb",
+        colorrange: Literal["full", "limited"] = "full",
+        name: str = None,
+        graphic_kwargs: dict = None,
+    ):
+        """
+        ``NDGraphic`` subclass for n-dimensional image rendering.
+
+        Uses an :class:`NDImageSlicer` to produce the data slices and manages an ``ImageGraphic``,
+        ``ImageYUVGraphic`` or ``ImageVolumeGraphic``, swapping between them when :attr:`display_dims` is
+        reassigned at runtime. It also owns an ``ImguiColorbar`` for interactive vmin, vmax adjustment.
+
+        Every dimension that is *not* listed in ``display_dims`` becomes a slider
+        dimension. Each slider dim must have a ``ReferenceRange`` defined in the
+        ``ReferenceIndex`` of the parent ``NDWidget``. The widget uses this to direct
+        a change in the ``ReferenceIndex`` and update the graphics.
+
+        Parameters
+        ----------
+        ref_index : ReferenceIndices
+            The shared reference index that delivers slider updates to this graphic.
+
+        nd_subplot : NDWSubplot
+            parent NDWSubplot the NDGraphic is in
+
+        data : array-like or None
+            n-dimensional image data, must have 2 or more dims. Pass ``None`` to create the ``NDImage`` without
+            a graphic and set the data later using :attr:`data`.
+
+        dims : Sequence[str]
+            Name for every dimension of ``data``, in order. Non-spatial dims must
+            match keys in ``ref_index``.
+
+            ex: ``("time", "depth", "row", "col")`` — ``"time"`` and ``"depth"`` must
+            be present in ``ref_index``.
+
+        display_dims : tuple[str, str] | tuple[str, str, str]
+            The 2 or 3 spatial dims **in display order**, which also determines the graphic used for rendering:
+
+            * ``(rows, cols)``, a 2D grayscale ``ImageGraphic``
+            * ``(rows, cols, rgb_dim)``, a 2D RGB(A) ``ImageGraphic``
+            * ``(z, rows, cols)``, a 3D ``ImageVolumeGraphic``
+
+            Reassigning this at runtime swaps the graphic if the number of non-RGB(A) spatial dims changes.
+
+        rgb_dim : str, optional
+            Name of the RGB(A) dim, if present. It must be listed in ``display_dims`` and be of size 3 or 4.
+
+        window_funcs : dict, optional
+            See :class:`NDSlicer`.
+
+        window_order : tuple, optional
+            See :class:`NDSlicer`.
+
+        spatial_func : callable, optional
+            See :class:`NDSlicer`.
+
+        compute_histogram : bool, default ``True``
+            Estimate a histogram of the data and display an ``ImguiColorbar`` on the right edge of the subplot,
+            which is used to interactively set vmin, vmax. Disable if random access of the data is not
+            blazing-fast (ex: data that uses video codecs), or if a histogram is not useful for this data.
+
+        clim_quantiles : (float, float), optional
+            ``(low, high)`` quantiles of the histogram, within ``[0, 1]``, used as vmin, vmax. Requires
+            ``compute_histogram=True``, overrides any passed vmin, vmax in ``graphic_kwargs``. The limits
+            are recomputed whenever the histogram is, so they follow the data.
+
+        slider_maps : dict, optional
+            See :class:`NDSlicer`.
+
+        slicer_type : type[NDImageSlicer], default ``NDImageSlicer``
+            ``NDImageSlicer`` subclass that manages the data and produces the data slices, ex:
+            :class:`VideoSlicer`.
+
+        colorspace : "srgb" | "tex-srgb" | "physical" | "yuv420p" | "yuv444p", default "srgb"
+            Colorspace in which to interpret the data. The RGB colorspaces are rendered using an ``ImageGraphic``
+            or ``ImageVolumeGraphic``, see :class:`.ImageGraphic` for their meaning. The YUV colorspaces are
+            rendered using an ``ImageYUVGraphic``, see :class:`.ImageYUVGraphic`.
+
+        colorrange : "full" | "limited", default "full"
+            Used only for the YUV colorspaces, see :class:`.ImageYUVGraphic`. Most videos use "limited".
+
+        name : str, optional
+            Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
+
+        graphic_kwargs : dict, optional
+            passed to the underlying image graphic, ex: ``{"cmap": "viridis", "interpolation": "linear"}``
+
+        See Also
+        --------
+        NDImageSlicer : The slicer that backs this graphic.
+
+        """
+
+        if not (set(dims) - set(display_dims)).issubset(ref_index.dims):
+            raise IndexError(
+                f"all specified `dims` must either be a spatial dim or a slider dim "
+                f"specified in the NDWidget ref_ranges, provided dims: {dims}, "
+                f"display_dims: {display_dims}. Specified NDWidget ref_ranges: {ref_index.dims}"
+            )
+
+        super().__init__(nd_subplot, name)
+
+        self._ref_index = ref_index
+
+        self._slicer = slicer_type(
+            data,
+            dims=dims,
+            display_dims=display_dims,
+            rgb_dim=rgb_dim,
+            window_funcs=window_funcs,
+            window_order=window_order,
+            spatial_func=spatial_func,
+            compute_histogram=compute_histogram,
+            slider_maps=slider_maps,
+        )
+
+        self._colorspace = colorspace
+        self._colorrange = colorrange
+
+        if graphic_kwargs is None:
+            self._graphic_kwargs = dict()
+        else:
+            self._graphic_kwargs = graphic_kwargs
+
+        self._graphic: ImageGraphic | ImageYUVGraphic | None = None
+        self._histogram_widget: ImguiColorbar | None = None
+
+        # validated and stored now, applied by _create_graphic() once the graphic exists
+        self._clim_quantiles: tuple[float, float] | None = None
+        self.clim_quantiles = clim_quantiles
+
+        # create a graphic
+        run_sync(self._create_graphic())
+
+    @property
+    def slicer(self) -> NDImageSlicer:
+        """NDSlicer that manages the data and produces data slices to display"""
+        return self._slicer
+
+    @property
+    def graphic(
+        self,
+    ) -> ImageGraphic | ImageYUVGraphic | ImageVolumeGraphic:
+        """Underlying Graphic object used to display the current data slice"""
+        return self._graphic
+
+    async def _create_graphic(self):
+        # Creates an ``ImageGraphic`` or ``ImageVolumeGraphic`` based on the number of spatial dims,
+        # adds it to the subplot, and resets the camera and histogram.
+
+        if self.slicer.data is None:
+            # no graphic if data is None, useful for initializing in null states when we want to set data later
+            return
+
+        kwargs = {
+            "colorspace": self._colorspace,
+        }
+
+        if self._colorspace in {cs.value for cs in enums.ColorspacesYUV}:
+            cls = ImageYUVGraphic
+            kwargs["colorrange"] = self._colorrange
+        else:
+            # determine if we need a 2d image or 3d volume
+            # remove RGB spatial dim, ex: if we have an RGBA image of shape [512, 512, 4] we want to interpet this as
+            # 2D for images
+            # [30, 512, 512, 4] with an rgb dim is an RGBA volume which is also supported
+            match len(self.slicer.display_dims) - int(bool(self.slicer.rgb_dim)):
+                case 2:
+                    cls = ImageGraphic
+                case 3:
+                    cls = ImageVolumeGraphic
+                case _:
+                    raise ValueError(
+                        f"Invalid combination of data dims and display_dims for image data."
+                        f"Your passed data object is: {self.data}\n"
+                        f"With dims: {self.dims}, display_dims: {self.display_dims}"
+                    )
+
+        # get the data slice for this index
+        # this will only have the dims specified by ``display_dims``
+        data_slice = await self.slicer.get(self.indices)
+
+        # create the new graphic
+        new_graphic = cls(
+            data_slice,
+            # cpu_buffer=False,  # faster, we usually don't need a cpu buffer for NDWidget use cases
+            **get_supported_kwargs(cls, **kwargs, **self._graphic_kwargs),
+        )
+
+        old_graphic = self._graphic
+        # check if we are replacing a graphic
+        # ex: swapping from 2D <-> 3D representation after ``display_dims`` was changed
+        if old_graphic is not None:
+            # carry over some attributes from old graphic
+            attrs = dict.fromkeys(["cmap", "interpolation", "cmap_interpolation"])
+            for k in attrs:
+                attrs[k] = getattr(old_graphic, k)
+
+            # delete the old graphic
+            self._nd_subplot.subplot.delete_graphic(old_graphic)
+
+            # set any attributes that we're carrying over like cmap
+            for attr, val in attrs.items():
+                setattr(new_graphic, attr, val)
+
+        self._graphic = new_graphic
+
+        self._nd_subplot.subplot.add_graphic(self._graphic)
+        self._set_graphic_right_click()
+
+        self._reset_camera()
+        self._reset_histogram()
+
+    def _reset_histogram(self):
+        # reset histogram
+        if self.graphic is None:
+            return
+
+        subplot = self._nd_subplot.subplot
+
+        if not self.slicer.compute_histogram:
+            # remove the colorbar from the right edge if a histogram is not desired
+            if self._histogram_widget is not None:
+                subplot.remove_imgui_window("right")
+                self._histogram_widget = None
+            return
+
+        if self.slicer.histogram:
+            if self._histogram_widget is not None:
+                # colorbar widget exists, update it and rebind to the current graphic
+                self._histogram_widget.histogram = self.slicer.histogram
+                self._histogram_widget.images = self.graphic
+            else:
+                # make the colorbar, it reserves space on the subplot's right edge
+                self._histogram_widget = ImguiColorbar(
+                    images=self.graphic,
+                    histogram=self.slicer.histogram,
+                )
+                subplot.add_imgui_window(
+                    self._histogram_widget, location="right", size=100
+                )
+
+            if self.clim_quantiles is not None:
+                self._set_clim_from_quantiles()
+
+            elif {"vmin", "vmax"}.isdisjoint(self._graphic_kwargs):
+                # limits passed in `graphic_kwargs` are explicit, an estimate from the
+                # data must not replace them
+                self.graphic.reset_vmin_vmax()
+
+    def _reset_camera(self):
+        # set camera to a nice position based on whether it's a 2D ImageGraphic or 3D ImageVolumeGraphic
+        if isinstance(self._graphic, (ImageGraphic, ImageYUVGraphic)):
+            # set camera orthogonal to the xy plane, flip y axis
+            self._nd_subplot.subplot.camera.set_state(
+                {
+                    "position": [0, 0, -1],
+                    "rotation": [0, 0, 0, 1],
+                    "scale": [1, -1, 1],
+                    "reference_up": [0, 1, 0],
+                    "fov": 0,  # orthographic projection
+                    "depth_range": None,
+                }
+            )
+
+            self._nd_subplot.controller = "panzoom"
+            self._nd_subplot.subplot.axes.intersection = None
+            self._nd_subplot.subplot.auto_scale()
+
+        else:
+            # It's not an ImageGraphic, set perspective projection
+            self._nd_subplot.subplot.camera.fov = 50
+            self._nd_subplot.controller = "orbit"
+
+            # set all 3D dimension camera scales to positive since positive scales
+            # are typically used for looking at volumes
+            for dim in ["x", "y", "z"]:
+                if getattr(self._nd_subplot.subplot.camera.local, f"scale_{dim}") < 0:
+                    setattr(self._nd_subplot.subplot.camera.local, f"scale_{dim}", 1)
+
+            self._nd_subplot.subplot.auto_scale()
+
+    @property
+    def display_dims(self) -> tuple[str, str] | tuple[str, str, str]:
+        """
+        Subset of ``dims`` that are spatial (rendered) dimensions **in display order**.
+
+        [row_dim, col_dim] or [row_dim, col_dim, rgb(a) dim]
+        """
+        return self.slicer.display_dims
+
+    @display_dims.setter
+    def display_dims(self, dims: tuple[str, str] | tuple[str, str, str]):
+        self.slicer.display_dims = dims
+
+        # shape has probably changed, recreate graphic
+        run_sync(self._create_graphic())
+
+    @property
+    def indices(self) -> dict[str, Any]:
+        """get or set the indices, managed by the ReferenceIndex, users usually don't want to set this manually"""
+        return {d: self._ref_index[d] for d in self.slicer.slider_dims}
+
+    async def _set_indices_(self, indices: dict[str, Any] = None):
+        if indices is None:
+            # current indices, else use the indices passed at schedule time
+            indices = self.indices
+
+        self.graphic.data = await self.slicer.get(indices)
+        self._last_indices = indices
+
+    @property
+    def compute_histogram(self) -> bool:
+        """whether or not to compute the histogram and display the ImguiColorbar"""
+        return self.slicer.compute_histogram
+
+    @compute_histogram.setter
+    def compute_histogram(self, v: bool):
+        self.slicer.compute_histogram = v
+        self._reset_histogram()
+
+    @property
+    def clim_quantiles(self) -> tuple[float, float] | None:
+        """get or set the ``(low, high)`` quantiles of the histogram used as ``vmin``, ``vmax``"""
+        return self._clim_quantiles
+
+    @clim_quantiles.setter
+    def clim_quantiles(self, quantiles: tuple[float, float] | None):
+        if quantiles is not None:
+            if not self.compute_histogram:
+                raise ValueError(
+                    "`clim_quantiles` are taken from the histogram, so they require "
+                    "`compute_histogram=True`"
+                )
+
+            low, high = (float(q) for q in quantiles)
+
+            if not 0 <= low < high <= 1:
+                raise ValueError(
+                    f"`clim_quantiles` must be (low, high) within [0, 1] and low < high, "
+                    f"you passed: {quantiles}"
+                )
+
+            quantiles = (low, high)
+
+        self._clim_quantiles = quantiles
+
+        if quantiles is not None and self._graphic is not None:
+            self._set_clim_from_quantiles()
+
+    def _set_clim_from_quantiles(self):
+        """set vmin, vmax from the values at the ``clim_quantiles`` of the histogram"""
+        counts, edges = self.slicer.histogram
+        total = counts.sum()
+
+        if total == 0:
+            # nothing to take a quantile of, ex: data that is entirely nan
+            return
+
+        # fraction of the data at or below the right edge of each bin
+        cdf = np.cumsum(counts) / total
+        low, high = np.searchsorted(cdf, self._clim_quantiles)
+
+        self.graphic.vmin, self.graphic.vmax = float(edges[low]), float(edges[high + 1])
+
+    @property
+    def histogram_widget(self) -> ImguiColorbar:
+        """The colorbar associated with this NDGraphic"""
+        return self._histogram_widget
+
+    @property
+    def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
+        """
+        Get or set the function applied to the spatial slice *after* the window funcs, right before rendering.
+        Setting it recomputes the histogram, since the function often changes the range of the values.
+        """
+        # this is here even though it's the same in the base class since we can't create the image specific setter
+        # without also defining the property in this subclass.
+        return self.slicer.spatial_func
+
+    @spatial_func.setter
+    def spatial_func(
+        self, func: Callable[[ArrayProtocol], ArrayProtocol]
+    ) -> Callable | None:
+        self.slicer.spatial_func = func
+        self.slicer._recompute_histogram()
+        self._reset_histogram()
+
+    def _tooltip_handler(self, graphic, pick_info):
+        # TODO: need to do this better
+        # get graphic within the collection
+        n_index = np.argwhere(self.graphic.graphics == graphic).item()
+        p_index = pick_info["vertex_index"]
+        return self.slicer.tooltip_format(n_index, p_index)

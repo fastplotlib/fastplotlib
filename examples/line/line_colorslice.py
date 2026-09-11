@@ -30,14 +30,14 @@ sinc_data = np.column_stack([xs, ys])
 sine = figure[0, 0].add_line(
     data=sine_data,
     thickness=5,
-    colors="magenta"
+    colors="magenta",
 )
 
-# you can also use colormaps for lines!
+# per-vertex colors (same color initially) so we can slice into them below
 cosine = figure[0, 0].add_line(
     data=cosine_data,
     thickness=12,
-    cmap="autumn",
+    colors=["orange"] * cosine_data.shape[0],
     offset=(0, 3, 0)  # places the graphic at a y-axis offset of 3, offsets don't affect data
 )
 
@@ -55,7 +55,8 @@ zeros_data = np.column_stack([xs, zeros])
 zeros = figure[0, 0].add_line(
     data=zeros_data,
     thickness=8,
-    colors="w",
+    # per-vertex colors (same color initially) so we can change them individually later
+    colors=["w"] * xs.size,
     offset=(0, 10, 0)
 )
 
@@ -76,11 +77,8 @@ sinc.colors[key] = "Red"
 # boolean fancy indexing
 zeros.colors[xs < -5] = "green"
 
-# assign colormap to an entire line
+# assign a colormap to an entire line
 sine.cmap = "seismic"
-# or to segments of a line
-zeros.cmap[50:75] = "jet"
-zeros.cmap[75:] = "viridis"
 
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions

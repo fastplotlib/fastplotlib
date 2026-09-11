@@ -10,6 +10,8 @@ Example showing how to plot a stack of lines
 
 import numpy as np
 import fastplotlib as fpl
+import cmap as cmap_lib
+from itertools import repeat
 
 
 xs = np.linspace(0, np.pi * 10, 100)
@@ -20,14 +22,33 @@ data = np.column_stack([xs, ys])
 multi_data = np.stack([data] * 10)
 
 figure = fpl.Figure(
-    size=(700, 560),
+    shape=(3, 1),
+    size=(700, 1200),
 )
 
+# colormap per-line
 line_stack = figure[0, 0].add_line_stack(
     multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
-    cmap="jet",  # applied along n_lines
-    thickness=5,
-    separation=1,  # spacing between lines along the separation axis, default separation along "y" axis
+    cmap=["jet"] * 10,
+    separation=(0, 0, 0),  # spacing between lines along each axis (x, y, z)
+    separation_axis="y",
+)
+
+# colormap per-line with per-line transform
+line_stack2 = figure[1, 0].add_line_stack(
+    multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
+    cmap=["bwr"] * 10,
+    cmap_transform=np.broadcast_to(ys, (10, ys.size)),
+    separation=(0, 0, 0),  # spacing between lines along each axis (x, y, z)
+    separation_axis="y",
+)
+
+# colormap across-lines
+line_stack3 = figure[2, 0].add_line_stack(
+    multi_data,  # shape: (10, 100, 2), i.e. [n_lines, n_points, xy]
+    cmap="viridis",
+    separation=(0, 0, 0),  # spacing between lines along each axis (x, y, z)
+    separation_axis="y",
 )
 
 

@@ -6,31 +6,40 @@ Installation
 
 To install use pip:
 
+With imgui support (recommended)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Without jupyterlab support, install desired GUI framework such as glfw, PyQt6, or PySide6 separately.
+
 .. code-block::
 
-    # with imgui and jupyterlab
-    pip install -U "fastplotlib[notebook,imgui]"
-
-    # minimal install, install glfw, pyqt6 or pyside6 separately
-    pip install -U fastplotlib
-
-    # with imgui
     pip install -U "fastplotlib[imgui]"
 
-    # to use in jupyterlab, no imgui
-    pip install -U "fastplotlib[notebook]"
-
-We strongly recommend installing ``simplejpeg`` for use in notebooks, you must first install `libjpeg-turbo <https://libjpeg-turbo.org/>`_.
-
-- If you use ``conda``, you can get ``libjpeg-turbo`` through conda.
-- If you are on linux you can get it through your distro's package manager.
-- For Windows and Mac compiled binaries are available on their release page: https://github.com/libjpeg-turbo/libjpeg-turbo/releases
-
-Once you have ``libjpeg-turbo``:
+With jupyterlab support.
 
 .. code-block::
 
-    pip install simplejpeg
+    pip install -U "fastplotlib[notebook,imgui]"
+
+.. note:: ``imgui-bundle`` is required for the ``NDWidget``
+
+Without imgui
+^^^^^^^^^^^^^
+
+Minimal, install desired GUI library such as PyQt6, PySide6, or glfw separately.
+
+.. code-block::
+
+    pip install fastplotlib
+
+With jupyterlab support only.
+
+.. code-block::
+
+    pip install -U "fastplotlib[notebook]"
+
+Fastplotlib is also available on conda-forge. For imgui support you will need to separately install ``imgui-bundle``, and for jupyterlab you will need to install ``jupyter-rfb`` and ``simplejpeg`` which are all available on conda-forge.
+
 
 What is ``fastplotlib``?
 ------------------------
@@ -134,6 +143,12 @@ any of these properties.
 +--------------+--------------------------------------------------------------------------------------------------------------+
 | rotation     | Graphic rotation quaternion                                                                                  |
 +--------------+--------------------------------------------------------------------------------------------------------------+
+| scale        | Scale factors of the graphic, [x, y, z]                                                                      |
++--------------+--------------------------------------------------------------------------------------------------------------+
+| alpha        | Opacity of the graphic                                                                                       |
++--------------+--------------------------------------------------------------------------------------------------------------+
+| alpha_mode   | How the renderer handles the alpha, ex: "blend", "dither", "add"                                             |
++--------------+--------------------------------------------------------------------------------------------------------------+
 | visible      | Access or change the visibility                                                                              |
 +--------------+--------------------------------------------------------------------------------------------------------------+
 | deleted      | Used when a graphic is deleted, triggers events that can be useful to indicate this graphic has been deleted |
@@ -143,45 +158,81 @@ any of these properties.
 
     (a) ``ImageGraphic``
 
-    +------------------------+---------------------------------------------------+
-    | Feature Name           | Description                                       |
-    +========================+===================================================+
-    | data                   | Underlying image data                             |
-    +------------------------+---------------------------------------------------+
-    | vmin                   | Lower contrast limit of an image                  |
-    +------------------------+---------------------------------------------------+
-    | vmax                   | Upper contrast limit of an image                  |
-    +------------------------+---------------------------------------------------+
-    | cmap                   | Colormap for a grayscale image, ignored if RGB(A) |
-    +------------------------+---------------------------------------------------+
+    +--------------------+------------------------------------------------------------+
+    | Feature Name       | Description                                                |
+    +====================+============================================================+
+    | data               | Underlying image data                                      |
+    +--------------------+------------------------------------------------------------+
+    | vmin               | Lower contrast limit of an image                           |
+    +--------------------+------------------------------------------------------------+
+    | vmax               | Upper contrast limit of an image                           |
+    +--------------------+------------------------------------------------------------+
+    | gamma              | Gamma correction applied to the value scaled by vmin, vmax |
+    +--------------------+------------------------------------------------------------+
+    | cmap               | Colormap for a grayscale image, ignored if RGB(A)          |
+    +--------------------+------------------------------------------------------------+
+    | interpolation      | Data interpolation method, "nearest" or "linear"           |
+    +--------------------+------------------------------------------------------------+
+    | cmap_interpolation | Colormap interpolation method, "nearest" or "linear"       |
+    +--------------------+------------------------------------------------------------+
 
-    (b) ``LineGraphic``, ``LineCollection``, ``LineStack``
+    (b) ``LineGraphic``
 
-    +--------------+--------------------------------+
-    | Feature Name | Description                    |
-    +==============+================================+
-    | data         | underlying data of the line(s) |
-    +--------------+--------------------------------+
-    | colors       | colors of the line(s)          |
-    +--------------+--------------------------------+
-    | cmap         | colormap of the line(s)        |
-    +--------------+--------------------------------+
-    | thickness    | thickness of the line(s)       |
-    +--------------+--------------------------------+
+    +----------------+---------------------------------------------------------------+
+    | Feature Name   | Description                                                   |
+    +================+===============================================================+
+    | data           | underlying data of the line                                   |
+    +----------------+---------------------------------------------------------------+
+    | colors         | color(s) of the line                                          |
+    +----------------+---------------------------------------------------------------+
+    | cmap           | colormap of the line, overrides colors                        |
+    +----------------+---------------------------------------------------------------+
+    | cmap_transform | values used to map the colors from the cmap                   |
+    +----------------+---------------------------------------------------------------+
+    | cmap_range     | the (min, max) of the cmap_transform mapped onto the colormap |
+    +----------------+---------------------------------------------------------------+
+    | thickness      | thickness of the line                                         |
+    +----------------+---------------------------------------------------------------+
+    | dash_pattern   | dash pattern of the line                                      |
+    +----------------+---------------------------------------------------------------+
+    | size_space     | coordinate space in which the thickness is expressed          |
+    +----------------+---------------------------------------------------------------+
 
     (c) ``ScatterGraphic``
 
-    +--------------+---------------------------------------+
-    | Feature Name | Description                           |
-    +==============+=======================================+
-    | data         | underlying data of the scatter points |
-    +--------------+---------------------------------------+
-    | colors       | colors of the scatter points          |
-    +--------------+---------------------------------------+
-    | cmap         | colormap of the scatter points        |
-    +--------------+---------------------------------------+
-    | sizes        | size of the scatter points            |
-    +--------------+---------------------------------------+
+    +-----------------+----------------------------------------------------------------+
+    | Feature Name    | Description                                                    |
+    +=================+================================================================+
+    | data            | underlying data of the scatter points                          |
+    +-----------------+----------------------------------------------------------------+
+    | colors          | color(s) of the scatter points                                 |
+    +-----------------+----------------------------------------------------------------+
+    | cmap            | colormap of the scatter points, overrides colors               |
+    +-----------------+----------------------------------------------------------------+
+    | cmap_transform  | values used to map the colors from the cmap                    |
+    +-----------------+----------------------------------------------------------------+
+    | cmap_range      | the (min, max) of the cmap_transform mapped onto the colormap  |
+    +-----------------+----------------------------------------------------------------+
+    | sizes           | size(s) of the scatter points                                  |
+    +-----------------+----------------------------------------------------------------+
+    | markers         | marker shape(s), when mode is "markers"                        |
+    +-----------------+----------------------------------------------------------------+
+    | edge_colors     | marker edge color(s), when mode is "markers"                   |
+    +-----------------+----------------------------------------------------------------+
+    | edge_width      | width of the marker edges, when mode is "markers"              |
+    +-----------------+----------------------------------------------------------------+
+    | point_rotations | rotation of the points in radians, None follows the data curve |
+    +-----------------+----------------------------------------------------------------+
+    | image           | image rendered at each point, when mode is "image"             |
+    +-----------------+----------------------------------------------------------------+
+    | size_space      | coordinate space in which the sizes are expressed              |
+    +-----------------+----------------------------------------------------------------+
+
+    For ``colors``, ``sizes``, ``markers``, ``edge_colors``, and ``point_rotations`` the buffer mode is
+    determined by the value: pass one value to use a uniform buffer, or pass a sequence with one
+    value per datapoint. Setting a sequence (e.g. an array array) on a property that currently holds one
+    value switches it to per-datapoint; setting one value on a per-datapoint property broadcasts
+    it and stays per-datapoint.
 
     (d) ``TextGraphic``
 
@@ -198,6 +249,113 @@ any of these properties.
     +-------------------+---------------------------+
     | outline_thickness | thickness of the text     |
     +-------------------+---------------------------+
+
+
+    (e) ``InfLineGraphic``
+
+    +----------------+---------------------------------------------------------------------------------------------+
+    | Feature Name   | Description                                                                                 |
+    +================+=============================================================================================+
+    | data           | position of each infinite line along ``axis``, or the segment endpoints if ``axis`` is None |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | colors         | color(s) of the lines, one color per line or a uniform color for all lines                  |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | cmap           | colormap across lines, overrides colors                                                     |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | cmap_transform | values used to map the colors from the cmap                                                 |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | cmap_range     | the (min, max) of the cmap_transform mapped onto the colormap                               |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | thickness      | thickness of the lines                                                                      |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | dash_pattern   | dash pattern of the lines                                                                   |
+    +----------------+---------------------------------------------------------------------------------------------+
+    | size_space     | coordinate space in which the thickness is expressed                                        |
+    +----------------+---------------------------------------------------------------------------------------------+
+
+    (f) ``MeshGraphic``
+
+    +--------------+-----------------------------------------------------------------------------------+
+    | Feature Name | Description                                                                       |
+    +==============+===================================================================================+
+    | positions    | 3D positions of the vertices                                                      |
+    +--------------+-----------------------------------------------------------------------------------+
+    | indices      | indices into the positions that form the triangles, every three form one triangle |
+    +--------------+-----------------------------------------------------------------------------------+
+    | colors       | a uniform color, or the per-position colors                                       |
+    +--------------+-----------------------------------------------------------------------------------+
+    | cmap         | colormap of the mesh, overrides colors                                            |
+    +--------------+-----------------------------------------------------------------------------------+
+
+    (g) ``SurfaceGraphic``
+
+    +--------------+--------------------------------------------------------+
+    | Feature Name | Description                                            |
+    +==============+========================================================+
+    | data         | a height-map, or an [m, n, 3] grid of (x, y, z) values |
+    +--------------+--------------------------------------------------------+
+    | colors       | a uniform color, or the per-position colors            |
+    +--------------+--------------------------------------------------------+
+    | cmap         | colormap of the surface, overrides colors              |
+    +--------------+--------------------------------------------------------+
+
+    (h) ``PolygonGraphic``
+
+    +--------------+------------------------------------------------+
+    | Feature Name | Description                                    |
+    +==============+================================================+
+    | data         | the polygon vertices, of shape [n_vertices, 2] |
+    +--------------+------------------------------------------------+
+    | colors       | a uniform color, or the per-position colors    |
+    +--------------+------------------------------------------------+
+    | cmap         | colormap of the polygon, overrides colors      |
+    +--------------+------------------------------------------------+
+
+    (i) ``VectorsGraphic``
+
+    +--------------+------------------------------------------------------+
+    | Feature Name | Description                                          |
+    +==============+======================================================+
+    | positions    | positions of the vectors, of shape [n, 2] or [n, 3]  |
+    +--------------+------------------------------------------------------+
+    | directions   | directions of the vectors, of shape [n, 2] or [n, 3] |
+    +--------------+------------------------------------------------------+
+
+
+(3) Graphic collections
+
+A collection, such as a ``LineCollection``, ``LineStack``, ``ScatterCollection``, ``ImageCollection``, or
+``ImageGrid``, exposes each property of the graphics it contains. Indexing a property indexes it across
+the graphics, ex: ``line_collection.colors[:10] = "r"`` sets the color of the first ten lines and
+``line_collection.data[5, :, 1] = ys`` sets the y-values of the sixth line. Fully numpy-style fancy slicing
+is supported for properties of a graphic collection.
+
+A property that the collection also has itself is exposed under a plural name, so ``collection.offset``
+is the offset of the collection and ``collection.offsets`` is the offset of each graphic in it:
+
++--------------+--------------------------------------------------+
+| Feature Name | Description                                      |
++==============+==================================================+
+| names        | ``name`` of each graphic in the collection       |
++--------------+--------------------------------------------------+
+| offsets      | ``offset`` of each graphic in the collection     |
++--------------+--------------------------------------------------+
+| rotations    | ``rotation`` of each graphic in the collection   |
++--------------+--------------------------------------------------+
+| scales       | ``scale`` of each graphic in the collection      |
++--------------+--------------------------------------------------+
+| alphas       | ``alpha`` of each graphic in the collection      |
++--------------+--------------------------------------------------+
+| alpha_modes  | ``alpha_mode`` of each graphic in the collection |
++--------------+--------------------------------------------------+
+| visibles     | ``visible`` of each graphic in the collection    |
++--------------+--------------------------------------------------+
+| metadatas    | ``metadata`` of each graphic in the collection   |
++--------------+--------------------------------------------------+
+
+The graphics themselves are available as an array, ex: ``line_collection.graphics[0]``.
+
+
 
 Using our example from above: once we add a ``Graphic`` to the figure, we can then begin to change its properties. ::
 
@@ -505,7 +663,7 @@ For example: ::
         xy = fig[0, 0].map_screen_to_world(ev)[:-1]
 
         # get the nearest graphic to the position
-        nearest = fpl.utils.get_nearest_graphics(xy, circles_graphic)[0]
+        nearest = fpl.get_nearest_graphics(xy, circles_graphic)[0]
 
         # change the closest graphic color to white
         nearest.colors = "w"
@@ -553,23 +711,16 @@ are no callbacks, but it is easy to learn if you see a few examples.
 .. image:: ../_static/guide_imgui.png
 
 We specifically use `imgui-bundle <https://github.com/pthom/imgui_bundle>`_ for the python bindings in fastplotlib.
-There is large community and many resources out there on building UIs using imgui.
 
 To install ``fastplotlib`` with ``imgui`` use the ``imgui`` extras option, i.e. ``pip install fastplotlib[imgui]``, or ``pip install imgui_bundle`` if you've already installed fastplotlib.
 
 Fastplotlib comes built-in with imgui UIs for subplot toolbars and a standard right-click menu with a number of options.
-You can also make custom GUIs and embed them within the canvas, see the examples gallery for detailed examples.
+The standard right-click menu can be extended or replaced, and a right-click popup can also be set on a ``Subplot`` or
+a ``Graphic``. You can also make custom GUIs and embed them within the canvas.
 
-**Some tips:**
-
-The ``imgui-bundle`` docs as of March 2025 don't have a nice API list (as far as I know), here is how we go about developing UIs with imgui:
-
-1. Use the ``pyimgui`` API docs to locate the type of UI element we want, for example if we want a ``slider_int``: https://pyimgui.readthedocs.io/en/latest/reference/imgui.core.html#imgui.core.slider_int
-
-2. Look at the function signature in the ``imgui-bundle`` sources. You can usually access this easily with your IDE: https://github.com/pthom/imgui_bundle/blob/a5e7d46555832c40e9be277d4747eac5a303dbfc/bindings/imgui_bundle/imgui/__init__.pyi#L1693-L1696
-
-3. ``pyimgui`` and ``imgui-bundle`` sometimes don't have the same function signature, so we use a combination of the pyimgui docs and
-imgui-bundle function signature to understand and implement the UI element.
+The :doc:`imgui guide </imgui/guide>` covers adding UIs to a Figure, and the
+:doc:`imgui element reference </imgui/reference/index>` documents every element with its signature, its arguments, and
+an image of what it draws.
 
 ImageWidget
 -----------

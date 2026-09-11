@@ -6,6 +6,17 @@ Welcome to fastplotlib's documentation!
    :maxdepth:  2
 
    user_guide/index
+
+.. toctree::
+   :caption: imgui
+   :maxdepth: 2
+
+   imgui/index
+
+.. toctree::
+   :caption: Developer notes
+   :maxdepth: 2
+
    developer_notes/index
 
 .. toctree::

@@ -1,0 +1,971 @@
+from __future__ import annotations
+
+from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
+from functools import partial
+import inspect
+from numbers import Real
+from pprint import pformat
+import textwrap
+from typing import Any, TYPE_CHECKING
+
+import numpy as np
+from numpy.typing import ArrayLike
+
+from ...utils import ArrayProtocol, FutureProtocol, CudaArrayProtocol
+from ...graphics import Graphic
+from ._async import run_in_thread_pool, run_sync, wait_for_future
+
+if TYPE_CHECKING:
+    from ._ndw_subplot import NDWSubplot
+
+# must take arguments: array-like, `axis`: int, `keepdims`: bool
+WindowFuncCallable = Callable[[ArrayLike, int, bool], ArrayLike]
+
+
+def identity(index: int) -> int:
+    return round(index)
+
+
+def get_init_args(graphic_type: type[Graphic]) -> set[str]:
+    """
+    Named arguments of every ``__init__`` in the MRO of ``graphic_type``.
+
+    Graphics take ``**kwargs`` and pass them up, so the arguments a type accepts are spread
+    over its whole MRO: ``vmin`` is defined by ``ImageGraphic`` and ``rotation`` by ``Graphic``.
+    """
+    args = set()
+
+    for klass in graphic_type.__mro__:
+        init = klass.__dict__.get("__init__")
+
+        if init is None:
+            continue
+
+        for name, param in inspect.signature(init).parameters.items():
+            if name == "self" or param.kind in (
+                param.VAR_KEYWORD,
+                param.VAR_POSITIONAL,
+            ):
+                continue
+
+            args.add(name)
+
+    return args
+
+
+def get_supported_kwargs(graphic_type: type[Graphic], **kwargs) -> dict[str, Any]:
+    """
+    Keep only the kwargs that ``graphic_type`` accepts.
+
+    The graphic type can change at runtime, and passing ``vmin`` to a line, or ``thickness``
+    to an image, raises.
+    """
+    accepted = get_init_args(graphic_type)
+
+    # a collection forwards its kwargs to the graphics it holds
+    child_type = getattr(graphic_type, "_child_type", None)
+    if child_type is not None:
+        accepted |= get_init_args(child_type)
+
+    return {name: value for name, value in kwargs.items() if name in accepted}
+
+
+class NDSlicer:
+    def __init__(
+        self,
+        data: ArrayProtocol,
+        dims: Sequence[str],
+        display_dims: Sequence[str] | None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        window_funcs: dict[
+            str, tuple[WindowFuncCallable | None, int | float | None]
+        ] = None,
+        window_order: tuple[str, ...] = None,
+        spatial_func: Callable[[ArrayProtocol], ArrayProtocol] | None = None,
+    ):
+        """
+        Base class for managing n-dimensional data and producing array slices.
+
+        Wraps array-like ``data`` and provides an interface for indexing slider dimensions, applying window functions,
+        spatial functions, and mapping reference-space values to local array indices. Subclasses must implement
+        :meth:`get`, which is called when the :class:`ReferenceIndex` updates.
+
+        Subclasses can implement any type of data representation, they do not necessarily need to be array-like.
+        However their ``get()`` method must still return a data slice that corresponds to the graphical representation
+        they map to.
+
+        Every dimension that is *not* listed in ``display_dims`` becomes a slider
+        dimension. Each slider dim must have a ``ReferenceRange`` defined in the
+        ``ReferenceIndex`` of the parent ``NDWidget``. The widget uses this to direct
+        a change in the ``ReferenceIndex`` and update the graphics.
+
+        Parameters
+        ----------
+        data: ArrayProtocol
+            data object that is managed, usually uses the ArrayProtocol. Custom subclasses can manage any kind of data
+            object but the corresponding :meth:`get` must return an array-like that maps to a graphical representation.
+
+        dims: Sequence[str]
+            names for each dimension in ``data``. Dimensions not listed in
+            ``display_dims`` are treated as slider dimensions and **must** appear as
+            keys in the parent ``NDWidget``'s ``ref_ranges``
+                Examples::
+                 ``("time", "depth", "row", "col")``
+                 ``("channels", "time", "xy")``
+                 ``("keypoints", "time", "xyz")``
+
+            A custom subclass's ``data`` object doesn't necessarily need to have these dims, but the ``get()`` method
+            must operate as if these dimensions exist and return an array that matches the spatial dimensions.
+
+        display_dims: Sequence[str]
+            Subset of ``dims`` that are spatial (rendered) dimensions **in display order**. All remaining dims are
+            treated as slider dims. See subclass for specific info.
+
+        slider_maps: dict mapping dim_name -> Callable, an ArrayLike, or None
+            Per-slider-dim mapping from reference-space values to local array indices.
+
+            You may also provide an array of reference values for the slider dims, ``searchsorted`` is then used
+            as the transform (ex: a timestamps array).
+
+            If ``None`` and identity mapping is used, i.e. rounds the current reference index value to the nearest
+            integer for array indexing.
+
+            If a transform is not provided for a dim then the identity mapping is used.
+
+        window_funcs: dict[
+            str, tuple[WindowFuncCallable | None, int | float | None]
+        ]
+            Per-slider-dim window functions applied around the current slider position. Ex: {"time": (np.mean, 2.5)}.
+            Each value is a ``(func, window_size)`` pair where:
+
+            * *func* must accept ``axis: int`` and ``keepdims: bool`` kwargs
+              (ex: ``np.mean``, ``np.max``). The window function **must** return an array that has the same dimensions
+              as specified in the NDSlicer, therefore the size of any dim along which a window_func was applied
+              should reduce to ``1``. These dims must not be removed by the window_func.
+
+            * *window_size* is in reference-space units (ex: 2.5 seconds).
+
+
+        window_order: tuple[str, ...]
+            Order in which window functions are applied across dims. Only dims listed
+            here have their window function applied. window_funcs are ignored for any
+            dims not specified in ``window_order``
+
+        spatial_func:
+            A function applied to the spatial slice *after* window_funcs right before rendering.
+
+        """
+        dims = tuple(dims)
+        if not all([isinstance(d, str) for d in dims]):
+            raise TypeError
+
+        self._dims = dims
+
+        self.data = data
+        self.display_dims = display_dims
+
+        self.slider_maps = slider_maps
+
+        self.window_funcs = window_funcs
+        self.window_order = window_order
+        self.spatial_func = spatial_func
+
+        # window_funcs and spatial_func are dispatched with an executor so they don't block the rendercanvas loop.
+        # CUDA arrays run directly since they are inherently async already, the user is expected to provide CUDA
+        # functions if the data arrays are CUDA (ex: torch functions, not numpy functions)
+        self._executor = ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix=f"ndp-{id(self):x}"
+        )
+
+    def close(self):
+        """Shut down the thread pool."""
+        self._executor.shutdown(wait=False, cancel_futures=True)
+
+    @property
+    def data(self) -> ArrayProtocol:
+        """
+        get or set managed data. If setting with new data, the new data is interpreted
+        to have the same dims (i.e. same dim names and ordering of dims).
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data: ArrayProtocol):
+        # data can be set, but the dims must still match/have the same meaning
+
+        if data is None:
+            # we allow data to be None, in this case no ndgraphic is rendered
+            # useful when we want to initialize an NDWidget with no traces for example
+            # and populate it as components/channels are selected
+            self._data = None
+            return
+
+        if not isinstance(data, ArrayProtocol):
+            # check for general array-like requirements
+            raise TypeError("`data` must implement the ArrayProtocol")
+
+        if data.ndim != len(self.dims):
+            raise IndexError("must specify a dim for every dimension in the data array")
+
+        self._data = data
+
+    @property
+    def shape(self) -> dict[str, int]:
+        """interpreted shape of the data"""
+        return {d: n for d, n in zip(self.dims, self.data.shape)}
+
+    @property
+    def ndim(self) -> int:
+        """number of dims"""
+        return self.data.ndim
+
+    @property
+    def dims(self) -> tuple[str, ...]:
+        """dim names, **ordered as laid out in the array**"""
+        # these are read-only and cannot be set after it's created
+        # the user should create a new NDGraphic if they need different dims
+        # I can't think of a use case where we'd want to change the dims, and
+        # I think that would be complicated and probably and anti-pattern
+        return self._dims
+
+    @property
+    def display_dims(self) -> tuple[str, ...]:
+        """Subset of ``dims`` that are spatial (rendered) dimensions **in display order**."""
+        return self._display_dims
+
+    @display_dims.setter
+    def display_dims(self, sdims: Sequence[str]):
+        for dim in sdims:
+            if dim not in self.dims:
+                raise KeyError
+
+        self._display_dims = tuple(sdims)
+
+    @property
+    def display_dims_indices(self) -> tuple[int, ...]:
+        """
+        The ordered spatial dim indices that correspond to the named spatial dims
+        """
+        return tuple(self.display_dims.index(d) for d in self.dims if d in self.display_dims)
+
+    @property
+    def tooltip(self) -> bool:
+        """
+        whether or not a custom tooltip formatter method exists
+        """
+        return False
+
+    def tooltip_format(self, *args) -> str | None:
+        """
+        Override in subclass to format custom tooltips
+        """
+        return None
+
+    @property
+    def slider_dims(self) -> set[str]:
+        """Slider dim names, ``set(dims) - set(display_dims), **unordered**"""
+        return set(self.dims) - set(self.display_dims)
+
+    @property
+    def n_slider_dims(self):
+        """number of slider dims, i.e. len(slider_dims)"""
+        return len(self.slider_dims)
+
+    @property
+    def window_funcs(
+        self,
+    ) -> dict[str, tuple[WindowFuncCallable | None, int | float | None]]:
+        """
+        Get or set the per-slider-dim window functions applied around the current slider position,
+        ``{dim_name: (func, window_size)}``, ex: ``{"time": (np.mean, 2.5)}``.
+
+        *func* must accept ``axis: int`` and ``keepdims: bool`` kwargs (ex: ``np.mean``, ``np.max``). It **must**
+        return an array that has the same dims as the input, therefore the size of any dim along which it was
+        applied should reduce to ``1``. These dims must not be removed by the window func. *window_size* is in
+        reference-space units (ex: 2.5 seconds).
+
+        A window func is only applied for the dims listed in :attr:`window_order`. Any dim without an entry is
+        filled in with ``(None, None)``.
+        """
+        return self._window_funcs
+
+    @window_funcs.setter
+    def window_funcs(
+        self,
+        window_funcs: (
+            dict[str, tuple[WindowFuncCallable | None, int | float | None] | None]
+            | None
+        ),
+    ):
+        if window_funcs is None:
+            # tuple of (None, None) makes the checks easier in _apply_window_funcs
+            self._window_funcs = {d: (None, None) for d in self.slider_dims}
+            return
+
+        for k in window_funcs.keys():
+            if k not in self.slider_dims:
+                raise KeyError
+
+            func = window_funcs[k][0]
+            size = window_funcs[k][1]
+
+            if func is None:
+                pass
+            elif callable(func):
+                sig = inspect.signature(func)
+
+                if "axis" not in sig.parameters or "keepdims" not in sig.parameters:
+                    raise TypeError(
+                        f"Each window function must take an `axis` and `keepdims` argument, "
+                        f"you passed: {func} with the following function signature: {sig}"
+                    )
+            else:
+                raise TypeError(
+                    f"`window_funcs` must be a dict mapping dim names to a tuple of the window function callable and "
+                    f"window size, {'name': (func, size), ...}.\nYou have passed: {window_funcs}"
+                )
+
+            if size is None:
+                pass
+
+            elif not isinstance(size, Real):
+                raise TypeError
+
+            elif size < 0:
+                raise ValueError
+
+        # fill in rest with None
+        for d in self.slider_dims:
+            if d not in window_funcs.keys():
+                window_funcs[d] = (None, None)
+
+        self._window_funcs = window_funcs
+
+    @property
+    def window_order(self) -> tuple[str, ...]:
+        """get or set dimension order in which window functions are applied"""
+        return self._window_order
+
+    @window_order.setter
+    def window_order(self, order: tuple[str] | None):
+        if order is None:
+            self._window_order = tuple()
+            return
+
+        if not set(order).issubset(self.slider_dims):
+            raise ValueError(
+                f"each dimension in `window_order` must be a slider dim. You passed order: {order} "
+                f"and the slider dims are: {self.slider_dims}"
+            )
+
+        self._window_order = tuple(order)
+
+    @property
+    def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
+        """get or set the spatial function which is applied on the data slice after the window functions"""
+        return self._spatial_func
+
+    @spatial_func.setter
+    def spatial_func(
+        self, func: Callable[[ArrayProtocol], ArrayProtocol]
+    ) -> Callable | None:
+        if not callable(func) and func is not None:
+            raise TypeError
+
+        self._spatial_func = func
+
+    @property
+    def slider_maps(self) -> dict[str, Callable[[Any], int]]:
+        """
+        Get or set the per-slider-dim mapping from reference-space values to local array indices,
+        ``{dim_name: transform}``.
+
+        A transform may be given as a Callable that takes a reference-space value and returns an array index, or
+        as an array of reference values in which case its ``searchsorted`` is used as the transform (ex: a
+        timestamps array). Any dim given ``None``, or not given at all, uses the identity mapping, i.e. the
+        reference value is rounded to the nearest integer and used as the array index.
+        """
+        return self._index_mappings
+
+    @slider_maps.setter
+    def slider_maps(
+        self, maps: dict[str, Callable[[Any], int] | ArrayLike | None] | None
+    ):
+        if maps is None:
+            self._index_mappings = {d: identity for d in self.dims}
+            return
+
+        for d in maps.keys():
+            if d not in self.dims:
+                raise KeyError(
+                    f"`index_mapping` provided for non-existent dimension: {d}, existing dims are: {self.dims}"
+                )
+
+            if isinstance(maps[d], ArrayProtocol):
+                # create a searchsorted mapping function automatically
+                maps[d] = maps[d].searchsorted
+
+            elif maps[d] is None:
+                # assign identity mapping
+                maps[d] = identity
+
+        for d in self.dims:
+            # fill in any unspecified maps with identity
+            if d not in maps.keys():
+                maps[d] = identity
+
+        self._index_mappings = maps
+
+    def _ref_index_to_array_index(self, dim: str, ref_index: Any) -> int:
+        # wraps slider_maps, clamps between 0 and the array size in this dim
+
+        # ref-space -> local-array-index transform
+        index = self.slider_maps[dim](ref_index)
+
+        # clamp between 0 and array size in this dim
+        return max(min(index, self.shape[dim] - 1), 0)
+
+    def _get_slider_dims_indexer(self, indices: dict[str, Any]) -> dict[str, slice]:
+        """
+        Creates an indexer dict mapping each slider_dim -> slice object.
+
+        - If a window_func is defined for a dim and the dim appears in ``window_order``,
+        the slice is defined as:
+            start: index - half_window
+            stop: index + half_window
+            step: 1
+
+            It then applies the slider_dim_transform to the start and stop to map these values from reference-space to
+            the local array index, and then finally produces the slice object in local array indices.
+
+            ex: if we have indices = {"time": 50.0}, a window size of 5.0s and the ``slider_dim_transform``
+            for time is based on a sampling rate of 10Hz, the window in ref units is [45.0, 55.0], and the final
+            slice object would be ``slice(450, 550, 1)``.
+
+        - If no window func is specified, the final slice just corresponds to that index as an int array-index.
+
+        This exists separate from ``_apply_window_functions()`` because it is useful for debugging purposes.
+
+        Parameters
+        ----------
+        indices : dict[str, Any], {dim: ref_value}
+            Reference-space values for each slider dim. Must contain an entry
+            for every slider dim; raises ``IndexError`` otherwise.
+            ex: {"time": 46.397, "depth": 23.24}
+
+        Returns
+        -------
+        dict[str, slice]
+            Indexer compatible for ``xr.DataArray.isel()``, with one ``slice`` per
+            slider dim. These are array indices mapped from the reference space using
+            the given ``slider_dim_transform``.
+
+        Raises
+        ------
+        IndexError
+            If ``indices`` are not provided for every ``slider_dim``
+        """
+
+        if set(indices.keys()) != set(self.slider_dims):
+            raise IndexError(
+                f"Must provide an index for all slider dims: {self.slider_dims}, you have provided: {indices.keys()}"
+            )
+
+        indexer = dict()
+
+        # get only slider dims which are not also spatial dims (example: p dim for positional data)
+        # since `p` dim windowing is dealt with separately for positional data
+        slider_dims = set(self.slider_dims) - set(self.display_dims)
+        # go through each slider dim and accumulate slice objects
+        for dim in slider_dims:
+            # index for this dim in reference space
+            index_ref = indices[dim]
+
+            if dim not in self.window_funcs.keys():
+                wf, ws = None, None
+            else:
+                # get window func and size in reference units
+                wf, ws = self.window_funcs[dim]
+
+            # if a window function exists for this dim, and it's specified in the window order
+            if (wf is not None) and (ws is not None) and (dim in self.window_order):
+                # half window in reference units
+                hw = ws / 2
+
+                # start in reference units
+                start_ref = index_ref - hw
+                # stop in ref units
+                stop_ref = index_ref + hw
+
+                # map start and stop ref to array indices
+                start = self.slider_maps[dim](start_ref)
+                stop = self.slider_maps[dim](stop_ref)
+
+                # clamp within array bounds
+                start = max(min(self.shape[dim] - 1, start), 0)
+                stop = max(min(self.shape[dim] - 1, stop), 0)
+                indexer[dim] = slice(start, stop, 1)
+            else:
+                # no window func for this dim, direct indexing
+                # index mapped to array index
+                index = self.slider_maps[dim](index_ref)
+
+                # clamp within the bounds
+                start = max(min(self.shape[dim] - 1, index), 0)
+
+                # stop index is just the start index + 1
+                indexer[dim] = slice(start, start + 1, 1)
+
+        return indexer
+
+    async def _apply_window_functions(
+        self, windowed_array: ArrayProtocol
+    ) -> ArrayProtocol:
+        """
+        apply window functions in the order specified by
+         ``window_order``.
+
+        For numpy arrays each func is dispatched to the per-slicer thread pool so it
+        does not block the rendercanvas event loop. CUDA arrays are run directly since
+        cuda functions (ex: torch) are already async.
+
+        Parameters
+        ----------
+        windowed_array: ArrayProtocol
+            array that has been sliced with the desired windows at an index
+
+        Returns
+        -------
+        ArrayProtocol
+            Data slice after windowed indexing and window function application,
+            with the same dims as the original data. Dims of size ``1`` are not
+            squeezed.
+
+        """
+        # apply window funcs in the specified order
+        for dim in self.window_order:
+            if self.window_funcs[dim] is None:
+                continue
+
+            func, _ = self.window_funcs[dim]
+            axis = self.dims.index(dim)
+            # ``keepdims=True`` is critical, any "collapsed" dims will be of size ``1``.
+            # Ex: if `array` is of shape [10, 512, 512] and we applied the np.mean() window  func on the first dim
+            # ``keepdims`` means the resultant shape is [1, 512, 512] and NOT [512, 512]
+            # this is necessary for applying window functions on multiple dims separately and so that the
+            # dims names correspond after all the window funcs are applied.
+            if isinstance(windowed_array, CudaArrayProtocol):
+                windowed_array = func(windowed_array, axis=axis, keepdims=True)
+            else:
+                windowed_array = await run_in_thread_pool(
+                    self._executor, func, windowed_array, axis=axis, keepdims=True
+                )
+
+        return windowed_array
+
+    async def get_window_output(self, indices: dict[str, Any]) -> ArrayProtocol:
+        """
+        Take the data slice at the given indices and apply the window functions.
+
+        Parameters
+        ----------
+        indices: dict[str, Any]
+            Reference-space value for each slider dim, ex: ``{"time": 46.397, "depth": 23.24}``. Must provide a
+            value for every slider dim.
+
+        Returns
+        -------
+        ArrayProtocol
+            Data slice with the window funcs applied and the slider dims, which are of size ``1`` after
+            windowing, squeezed out. The remaining dims are the spatial dims, in the order they appear in
+            ``dims``, **not** in ``display_dims`` display order. Subclasses transpose into display order in
+            :meth:`get`.
+
+        Raises
+        ------
+        ValueError
+            If the number of dims left after squeezing does not equal the number of spatial dims.
+
+        """
+        # windowed slice if user set any window funcs
+        windowed_slice = await self._get_raw_data_slice(indices)
+
+        # convert to numpy array; CUDA arrays pass through and are converted at the end of the pipeline
+        if not isinstance(windowed_slice, CudaArrayProtocol):
+            windowed_slice = np.asarray(windowed_slice)
+
+        # apply window funcs
+        if len(self.slider_dims) > 0:
+            windowed_slice = await self._apply_window_functions(windowed_slice)
+
+        # squeeze out all slider dims which should now be size 1
+        # set(dims) - set(display_dims) since some spatial dims can also be slider, so get only pure non-spatial dims
+        slider_dims_int = tuple(
+            self.dims.index(d) for d in set(self.dims) - set(self.display_dims)
+        )
+        windowed_slice = windowed_slice.squeeze(axis=slider_dims_int)
+
+        if windowed_slice.ndim != len(self.display_dims):
+            raise ValueError(
+                f"windowed_slice.ndim != len(self.display_dims): {windowed_slice.ndim} != {len(self.display_dims)}"
+            )
+
+        return windowed_slice
+
+    async def _get_raw_data_slice(self, indices: dict[str, Any]) -> ArrayProtocol:
+        """
+        Base implementation to get the raw data slice from the wrapped array.
+
+        Awaits any ``FutureProtocol`` returned by the underlying loader. CUDA arrays
+        are returned as-is and converted to numpy at the end of the pipeline.
+        """
+        if len(self.slider_dims) > 0:
+            indexer = self._get_slider_dims_indexer(indices)
+            # get the data slice w.r.t. the desired windows
+            index_tuple = tuple(indexer.get(dim, slice(None)) for dim in self.dims)
+            raw_slice = self.data[index_tuple]
+
+        else:
+            # return everything directly
+            # request a slice of everything with [:] so that any data fetching, compute, etc. is actually done
+            raw_slice = self.data[:]
+
+        if isinstance(raw_slice, FutureProtocol):
+            return await wait_for_future(raw_slice)
+        return raw_slice
+
+    async def get(self, indices: dict[str, Any]) -> ArrayProtocol:
+        """
+        Get the data slice to display at the given indices. **Must** be implemented in a subclass.
+
+        Called by the ``NDGraphic`` whenever the ``ReferenceIndex`` updates. Implementations usually call
+        :meth:`get_window_output`, apply the ``spatial_func``, and transpose into the ``display_dims`` display
+        order.
+
+        Parameters
+        ----------
+        indices: dict[str, Any]
+            Reference-space value for each slider dim, ex: ``{"time": 46.397, "depth": 23.24}``. Must provide a
+            value for every slider dim.
+
+        Returns
+        -------
+        ArrayProtocol
+            Data slice that maps to the graphical representation, with the dims given by ``display_dims`` in
+            display order.
+
+        """
+        raise NotImplementedError
+
+    # TODO: html and pretty text repr    #
+    # def _repr_html_(self) -> str:
+    #     return ndp_fmt_html(self)
+    #
+    # def _repr_mimebundle_(self, **kwargs) -> dict:
+    #     return {
+    #         "text/plain": self._repr_text_(),
+    #         "text/html": self._repr_html_(),
+    #     }
+
+    def _repr_text_(self):
+        if self.data is None:
+            return f"{self.__class__.__name__}\n" f"data is None, dims: {self.dims}"
+        tab = "\t"
+
+        wf = {k: v for k, v in self.window_funcs.items() if v != (None, None)}
+
+        r = (
+            f"{self.__class__.__name__}\n"
+            f"shape:\n\t{self.shape}\n"
+            f"dims:\n\t{self.dims}\n"
+            f"display_dims:\n\t{self.display_dims}\n"
+            f"slider_dims:\n\t{self.slider_dims}\n"
+            f"slider_maps:\n{textwrap.indent(pformat(self.slider_maps, width=120), prefix=tab)}\n"
+        )
+
+        if len(wf) > 0:
+            r += (
+                f"window_funcs:\n{textwrap.indent(pformat(wf, width=120), prefix=tab)}\n"
+                f"window_order:\n\t{self.window_order}\n"
+            )
+
+        if self.spatial_func is not None:
+            r += f"spatial_func:\n\t{self.spatial_func}\n"
+
+        return r
+
+
+class NDGraphic:
+    def __init__(
+        self,
+        nd_subplot: NDWSubplot,
+        name: str | None,
+    ):
+        """
+        Base class that pairs an :class:`NDSlicer` with a ``Graphic``. Subclass to support a new graphical
+        representation.
+
+        The ``NDSlicer`` produces the data slice for the current index and the ``NDGraphic`` writes it to the
+        ``Graphic``. When the ``ReferenceIndex`` of the parent ``NDWidget`` changes, it schedules
+        ``_set_indices_()`` on every ``NDGraphic`` that has the dim that changed.
+
+        Subclasses must implement :meth:`_create_graphic` and ``_set_indices_()``, and the :attr:`slicer`,
+        :attr:`graphic`, :attr:`indices` and :attr:`display_dims` properties. Most of the slicer properties
+        are aliased here so users can reach them from the ``NDGraphic``, and setting one of those aliases
+        re-renders the current slice.
+
+        Parameters
+        ----------
+        nd_subplot: NDWSubplot
+            parent NDWSubplot the NDGraphic is in
+
+        name: str or None
+            Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
+
+        """
+        self._nd_subplot = nd_subplot
+        self._name = name
+        self._graphic: Graphic | None = None
+
+        # used to indicate that the NDGraphic should ignore any requests to update the indices.
+        # used by block_indices_ctx context manager, usecase is when the LinearSelector on timeseries
+        # NDGraphic changes the selection, it shouldn't change the graphic that it is on top of! Would
+        # also cause recursion. ReferenceIndex._render_indices checks this flag at scheduling time.
+        self._block_indices = False
+
+        # user settable bool to make the graphic unresponsive to change in the ReferenceIndex
+        self._pause = False
+
+        # the indices that current graphic data reflects
+        self._last_indices = None
+
+    async def _create_graphic(self):
+        raise NotImplementedError
+
+    @property
+    def pause(self) -> bool:
+        """
+        Get or set whether this graphic ignores changes in the ``ReferenceIndex``. If ``True``, it stops
+        updating until it is set back to ``False``, the other graphics in the widget are unaffected.
+        """
+        return self._pause
+
+    @pause.setter
+    def pause(self, val: bool):
+        self._pause = bool(val)
+
+    @property
+    def name(self) -> str | None:
+        """name given to the NDGraphic"""
+        return self._name
+
+    @property
+    def slicer(self) -> NDSlicer:
+        """NDSlicer that manages the data and produces data slices to display"""
+        raise NotImplementedError
+
+    @property
+    def graphic(self) -> Graphic:
+        """Underlying Graphic object used to display the current data slice"""
+        raise NotImplementedError
+
+    def _set_graphic_right_click(self):
+        """
+        Set the popup that a right-click on the graphic opens, which shows this NDGraphic's settings.
+
+        Called whenever the graphic is created, since switching ``graphic_type`` or changing the shape
+        of the data replaces the ``Graphic``, and its popup with it. To replace this popup set your own
+        on ``ndgraphic.graphic``, or add to it with ``ndgraphic.graphic.append_imgui_right_click()``.
+        """
+        # `_ui` imports the NDGraphic subclasses, so it cannot be imported at the header
+        from ._ui import draw_nd_graphic_ui
+
+        self.graphic.set_imgui_right_click(partial(draw_nd_graphic_ui, self))
+
+    @property
+    def indices_displayed(self) -> dict[str, Any]:
+        """the indices that the graphic currently represents"""
+        return self._last_indices
+
+    @property
+    def indices(self) -> dict[str, Any]:
+        """the current index of each slider dim in reference-space units, from the ``ReferenceIndex``"""
+        raise NotImplementedError
+
+    async def _set_indices_(self, indices: dict[str, Any] = None):
+        """
+        Get the data slice for the index from the slicer and write it to the graphic.
+
+        If indices is None, it uses the latest indices from the ReferenceIndex. Otherwise it uses the
+        indices passed when the update was scheduled.
+
+        Semi-private: only ``ReferenceIndex`` should call this. _create_graphic uses `run_sync`
+        to run it sync
+        """
+        pass
+
+    # aliases for easier access to slicer properties
+    @property
+    def data(self) -> Any:
+        """
+        get or set managed data. If setting with new data, the new data is interpreted
+        to have the same dims (i.e. same dim names and ordering of dims).
+        """
+        return self.slicer.data
+
+    @data.setter
+    def data(self, data: Any):
+        self.slicer.data = data
+        # create a new graphic when data has changed
+        if self.graphic is not None:
+            # it is already None if NDGraphic was initialized with no data
+            self._nd_subplot.subplot.delete_graphic(self.graphic)
+            self._graphic = None
+
+        run_sync(self._create_graphic())
+
+        # force a render
+        run_sync(self._set_indices_())
+
+    @property
+    def shape(self) -> dict[str, int]:
+        """interpreted shape of the data"""
+        return self.slicer.shape
+
+    @property
+    def ndim(self) -> int:
+        """number of dims"""
+        return self.slicer.ndim
+
+    @property
+    def dims(self) -> tuple[str, ...]:
+        """dim names"""
+        return self.slicer.dims
+
+    @property
+    def display_dims(self) -> tuple[str, ...]:
+        """get or set the spatial dims, i.e. the rendered dims, **in display order**"""
+        # number of spatial dims for positional data is always 3
+        # for image is 2 or 3, so it must be implemented in subclass
+        raise NotImplementedError
+
+    @property
+    def slider_dims(self) -> set[str]:
+        """the slider dims"""
+        return self.slicer.slider_dims
+
+    @property
+    def slider_maps(self) -> dict[str, Callable[[Any], int]]:
+        """
+        Get or set the per-slider-dim mapping from reference-space values to local array indices,
+        ``{dim_name: transform}``. Setting it re-renders the current data slice.
+
+        A transform may be given as a Callable that takes a reference-space value and returns an array index, or
+        as an array of reference values in which case its ``searchsorted`` is used as the transform (ex: a
+        timestamps array). Any dim given ``None``, or not given at all, uses the identity mapping, i.e. the
+        reference value is rounded to the nearest integer and used as the array index.
+        """
+        return self.slicer.slider_maps
+
+    @slider_maps.setter
+    def slider_maps(
+        self, maps: dict[str, Callable[[Any], int] | ArrayLike | None] | None
+    ):
+        self.slicer.slider_maps = maps
+        # force a render
+        run_sync(self._set_indices_())
+
+    @property
+    def window_funcs(
+        self,
+    ) -> dict[str, tuple[WindowFuncCallable | None, int | float | None]]:
+        """
+        Get or set the per-slider-dim window functions applied around the current slider position,
+        ``{dim_name: (func, window_size)}``, ex: ``{"time": (np.mean, 2.5)}``. Setting it re-renders the current
+        data slice.
+
+        *func* must accept ``axis: int`` and ``keepdims: bool`` kwargs (ex: ``np.mean``, ``np.max``). It **must**
+        return an array that has the same dims as the input, therefore the size of any dim along which it was
+        applied should reduce to ``1``. These dims must not be removed by the window func. *window_size* is in
+        reference-space units (ex: 2.5 seconds).
+
+        A window func is only applied for the dims listed in :attr:`window_order`. Any dim without an entry is
+        filled in with ``(None, None)``.
+        """
+        return self.slicer.window_funcs
+
+    @window_funcs.setter
+    def window_funcs(
+        self,
+        window_funcs: (
+            dict[str, tuple[WindowFuncCallable | None, int | float | None] | None]
+            | None
+        ),
+    ):
+        self.slicer.window_funcs = window_funcs
+        # force a render
+        run_sync(self._set_indices_())
+
+    @property
+    def window_order(self) -> tuple[str, ...]:
+        """get or set dimension order in which window functions are applied"""
+        return self.slicer.window_order
+
+    @window_order.setter
+    def window_order(self, order: tuple[str] | None):
+        self.slicer.window_order = order
+        # force a render
+        run_sync(self._set_indices_())
+
+    @property
+    def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
+        """
+        Get or set the function applied to the spatial slice *after* the window funcs, right before rendering.
+        Setting it re-renders the current data slice.
+        """
+        return self.slicer.spatial_func
+
+    @spatial_func.setter
+    def spatial_func(
+        self, func: Callable[[ArrayProtocol], ArrayProtocol]
+    ) -> Callable | None:
+        self.slicer.spatial_func = func
+        # force a render
+        run_sync(self._set_indices_())
+
+    # def _repr_text_(self) -> str:
+    #     return ndg_fmt_text(self)
+    #
+    # def _repr_html_(self) -> str:
+    #     return ndg_fmt_html(self)
+    #
+    # def _repr_mimebundle_(self, **kwargs) -> dict:
+    #     return {
+    #         "text/plain": self._repr_text_(),
+    #         "text/html": self._repr_html_(),
+    #     }
+
+    def _repr_text_(self):
+        return (
+            f"graphic: {self.graphic.__class__.__name__}\n"
+            f"slicer:\n{self.slicer}"
+        )
+
+
+@contextmanager
+def block_indices_ctx(*ndgraphics: NDGraphic):
+    """
+    Context manager for pausing NDGraphics from updating indices
+    """
+    for ndg in ndgraphics:
+        ndg._block_indices = True
+
+    try:
+        yield
+    except Exception as e:
+        raise e from None  # indices setter has raised, the line above and the lines below are probably more relevant!
+    finally:
+        for ndg in ndgraphics:
+            ndg._block_indices = False

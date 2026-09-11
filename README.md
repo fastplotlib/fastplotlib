@@ -63,31 +63,28 @@ Questions, issues, ideas? You are welcome to post an [issue](https://github.com/
 
 To install use pip:
 
-```bash
-# with imgui and jupyterlab
-pip install -U "fastplotlib[notebook,imgui]"
+### With imgui support (recommended)
 
-# minimal install, install glfw, pyqt6 or pyside6 separately
-pip install -U fastplotlib
+Without jupyterlab support, install desired GUI framework such as glfw, PyQt6, or PySide6 separately.
 
-# with imgui
-pip install -U "fastplotlib[imgui]"
+    pip install -U "fastplotlib[imgui]"
 
-# to use in jupyterlab without imgui
-pip install -U "fastplotlib[notebook]"
-```
+With jupyterlab support.
 
-We strongly recommend installing ``simplejpeg`` for use in notebooks, you must first install [libjpeg-turbo](https://libjpeg-turbo.org/)
+    pip install -U "fastplotlib[notebook,imgui]"
 
-- If you use ``conda``, you can get ``libjpeg-turbo`` through conda.
-- If you are on linux, you can get it through your distro's package manager.
-- For Windows and Mac compiled binaries are available on their release page: https://github.com/libjpeg-turbo/libjpeg-turbo/releases
+### Without imgui
 
-Once you have ``libjpeg-turbo``:
+Minimal, install desired GUI library such as PyQt6, PySide6, or glfw separately.
 
-```bash
-pip install simplejpeg
-```
+    pip install fastplotlib
+
+With jupyterlab support only.
+
+    pip install -U "fastplotlib[notebook]"
+
+Fastplotlib is also available on conda-forge. For imgui support you will need to separately install `imgui-bundle`, and for jupyterlab you will need to install `jupyter-rfb` and `simplejpeg` which are all available on conda-forge.
+
 
 > **Note:**
 > `fastplotlib` and `pygfx` are fast evolving projects, the version available through pip might be outdated, you will need to follow the "For developers" instructions below if you want the latest features. You can find the release history here: https://github.com/fastplotlib/fastplotlib/releases

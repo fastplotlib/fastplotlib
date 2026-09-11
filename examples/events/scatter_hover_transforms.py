@@ -22,6 +22,7 @@ from sklearn.preprocessing import (
 
 import fastplotlib as fpl
 import pygfx
+import numpy as np
 
 # get the dataset
 dataset = load_diabetes(scaled=False)
@@ -50,7 +51,9 @@ s = figure["Original Data"].add_scatter(
     data=X,
     cmap="viridis",
     cmap_transform=y,
-    sizes=3,
+    sizes=np.repeat(5, len(X)),
+    edge_colors=np.zeros((len(X), 4)),  # per-point edge colors that we will change
+    edge_width=5,
 )
 
 # append to list of scatters
@@ -59,13 +62,20 @@ scatters.append(s)
 # add the scaled data as scatter graphics
 for scaler in scalers:
     name = scaler.__name__
-    s = figure[name].add_scatter(scaler().fit_transform(X), cmap="viridis", cmap_transform=y, sizes=3)
+    s = figure[name].add_scatter(
+        scaler().fit_transform(X),
+        cmap="viridis",
+        cmap_transform=y,
+        sizes=np.repeat(5, len(X)),
+        edge_colors=np.zeros((len(X), 4)),  # per-point edge colors that we will change
+        edge_width=5,
+    )
     scatters.append(s)
 
 
 # simple dict to restore the original scatter color and size
 # of the previously clicked point upon clicking a new point
-old_props = {"index": None, "size": None, "color": None}
+old_props = {"index": None, "size": None, "edge_colors": None}
 
 
 def highlight_point(ev: pygfx.PointerEvent):
@@ -82,19 +92,19 @@ def highlight_point(ev: pygfx.PointerEvent):
             # same point was clicked, ignore
             return
         for s in scatters:
-            s.colors[old_index] = old_props["color"]
+            s.edge_colors[old_index] = old_props["edge_colors"]
             s.sizes[old_index] = old_props["size"]
 
     # store the current property values of this new point
     old_props["index"] = new_index
     # all the scatters have the same colors and size for the corresponding index
     # so we can just use the first scatter's original color and size
-    old_props["color"] = scatters[0].colors[new_index].copy()  # if you do not copy you will just get a view of the array!
+    old_props["edge_colors"] = scatters[0].edge_colors[new_index].copy()  # if you do not copy you will just get a view of the array!
     old_props["size"] = scatters[0].sizes[new_index]
 
     # highlight this new point
     for s in scatters:
-        s.colors[new_index] = "magenta"
+        s.edge_colors[new_index] = "magenta"
         s.sizes[new_index] = 15
 
 

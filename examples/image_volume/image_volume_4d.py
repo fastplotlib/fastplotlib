@@ -11,6 +11,7 @@ View 4D data of a volume over time by updating the volume data.
 import numpy as np
 from scipy.ndimage import gaussian_filter
 import fastplotlib as fpl
+from fastplotlib.ui import ImguiColorbar
 
 
 def generate_data(
@@ -67,12 +68,9 @@ volume = figure[0, 0].add_image_volume(
     alpha_mode="add",
 )
 
-hlut = fpl.HistogramLUTTool(voldata, volume)
-
-figure[0, 0].docks["right"].size = 100
-figure[0, 0].docks["right"].controller.enabled = False
-figure[0, 0].docks["right"].add_graphic(hlut)
-figure[0, 0].docks["right"].auto_scale(maintain_aspect=False)
+# a colorbar with a histogram of the entire 4D dataset
+colorbar = ImguiColorbar(images=volume, histogram=np.histogram(voldata, bins=100))
+figure[0, 0].add_imgui_window(colorbar, location="right", size=100)
 
 figure.show()
 

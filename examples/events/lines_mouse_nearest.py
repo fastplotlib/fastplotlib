@@ -45,7 +45,7 @@ def highlight_nearest(ev: pygfx.PointerEvent):
 
     # get_nearest_graphics() is a helper function
     # sorted the passed array or collection of graphics from nearest to furthest from the passed `pos`
-    nearest = fpl.utils.get_nearest_graphics(pos, line_collection)[0]
+    nearest = fpl.get_nearest_graphics(pos, line_collection)[0]
 
     nearest.colors = "r"
 

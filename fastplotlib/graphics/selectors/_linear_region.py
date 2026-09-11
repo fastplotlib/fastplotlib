@@ -341,6 +341,16 @@ class LinearRegionSelector(BaseSelector):
         """
 
         source = self._get_source(graphic)
+
+        if hasattr(source, "graphics"):
+            fail = any([g.data.value is None for g in source.graphics])
+        else:
+            fail = source.data.value is None
+        if fail:
+            raise ValueError(
+                "Cannot get selected data. The graphic has no local buffer, `cpu_buffer` is probably `False`."
+            )
+
         ixs = self.get_selected_indices(source)
 
         if "Line" in source.__class__.__name__:
@@ -375,7 +385,8 @@ class LinearRegionSelector(BaseSelector):
                 # slice with min, max is faster than using all the indices
                 return source.data[s]
 
-        if "Image" in source.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in source.__class__.__name__ and not hasattr(source, "graphics"):
             s = slice(ixs[0], ixs[-1] + 1)
 
             if self.axis == "x":
@@ -438,7 +449,8 @@ class LinearRegionSelector(BaseSelector):
 
             return ixs
 
-        if "Image" in source.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in source.__class__.__name__ and not hasattr(source, "graphics"):
             # indices map directly to grid geometry for image data buffer
             return np.arange(*bounds, dtype=int)
 
@@ -472,9 +484,9 @@ class LinearRegionSelector(BaseSelector):
         if move_info.source == self._edges[0]:
             # change only left or bottom bound
             new_min = min(cur_min + delta, cur_max)
-            self._selection.set_value(self, (new_min, cur_max))
+            self._selection.set_value(self, (new_min, cur_max), change="min")
 
         elif move_info.source == self._edges[1]:
             # change only right or top bound
             new_max = max(cur_max + delta, cur_min)
-            self._selection.set_value(self, (cur_min, new_max))
+            self._selection.set_value(self, (cur_min, new_max), change="max")

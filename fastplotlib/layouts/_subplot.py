@@ -9,7 +9,7 @@ from ..graphics import TextGraphic
 from ._utils import create_camera, create_controller
 from ._plot_area import PlotArea
 from ._frame import Frame
-from ..graphics._axes import Axes
+from ..axes import Axes
 
 
 class Subplot(PlotArea):
@@ -62,10 +62,7 @@ class Subplot(PlotArea):
 
         self._docks = dict()
 
-        if "Imgui" in parent.__class__.__name__:
-            toolbar_visible = True
-        else:
-            toolbar_visible = False
+        toolbar_visible = "Imgui" in parent.__class__.__name__
 
         super().__init__(
             parent=parent,
@@ -83,6 +80,11 @@ class Subplot(PlotArea):
             self.docks[pos] = dv
             self.children.append(dv)
 
+        # imgui windows confined to this subplot, keyed by location
+        self._imgui_windows = {loc: None for loc in ["left", "right", "top", "bottom", "toolbar"]}
+
+        self._imgui_right_click = None
+
         self._axes = Axes(self)
         self.scene.add(self.axes.world_object)
 
@@ -93,6 +95,7 @@ class Subplot(PlotArea):
             resizeable=resizeable,
             title=name,
             docks=self.docks,
+            imgui_windows=self._imgui_windows,
             toolbar_visible=toolbar_visible,
             canvas_rect=parent.get_pygfx_render_area(),
         )
@@ -164,6 +167,251 @@ class Subplot(PlotArea):
     def frame(self) -> Frame:
         """Frame that the subplot lives in"""
         return self._frame
+
+    @property
+    def imgui_windows(self) -> dict:
+        """
+        The imgui windows of this subplot, keyed by location.
+
+        The locations are the four edges ["left", "right", "top", "bottom"] and "toolbar"
+
+        Returns
+        -------
+        dict[str, ImguiWindow]
+            {location: ImguiWindow}
+
+        """
+        return self._imgui_windows
+
+    def add_imgui_window(
+        self,
+        window=None,
+        *,
+        location: str = None,
+        size: int = None,
+        title: str = None,
+        window_flags=None,
+    ):
+        """
+        Add an imgui window confined to this subplot. Can also be used as a decorator, see the
+        ``Figure.add_imgui_window`` examples.
+
+        Edge windows ("left", "right", "top", "bottom") reserve space outboard of the subplot dock on that edge.
+        The "toolbar" location replaces the subplot toolbar. An existing window at a ``location`` is replaced.
+
+        Parameters
+        ----------
+        window: ImguiWindow, optional
+            an ``ImguiWindow`` instance, omit when decorating
+
+        location: str, "left" | "right" | "top" | "bottom" | "toolbar"
+            edge windows reserve canvas space, "toolbar" replaces the subplot toolbar
+
+        size: int
+            edge or toolbar thickness in pixels, required for edge windows
+
+        title: str, optional
+            window title, drawn as a title bar for edge windows. If ``None`` no title bar is drawn.
+
+        window_flags: ``imgui.WindowFlags_``, optional
+            imgui window flags, used when decorating, uses the ``ImguiWindow`` default flags if not provided
+
+        """
+        figure = self.get_figure()
+        if "Imgui" not in figure.__class__.__name__:
+            raise TypeError("imgui windows can only be added to a subplot of an ImguiFigure")
+
+        from ..ui._base import ImguiWindow, EDGES, _wrap_update_call
+
+        valid = EDGES + ["toolbar"]
+        if location not in valid:
+            raise ValueError(
+                f"subplot imgui window location must be one of: {valid}, you have passed: {location}"
+            )
+        if location in EDGES and size is None:
+            raise ValueError(f"must provide `size` for an edge window, location: {location}")
+
+        hook_kwargs = dict(figure=figure, subplot=self, location=location, size=size, title=title)
+        if window_flags is not None:
+            hook_kwargs["window_flags"] = window_flags
+
+        def decorator(_window):
+            if isinstance(_window, ImguiWindow):
+                win = _window
+            elif callable(_window):
+                win = ImguiWindow(update_call=_wrap_update_call(_window, self))
+            else:
+                raise TypeError(
+                    "add_imgui_window() must be used as a decorator on a function, or given an `ImguiWindow` instance"
+                )
+
+            win._fpl_add_hook(**hook_kwargs)
+            self._imgui_windows[location] = win
+
+            # edge windows reserve space, reset the layout
+            if location in EDGES:
+                figure._fpl_reset_layout()
+
+            return _window
+
+        if window is None:
+            return decorator
+
+        decorator(window)
+        return window
+
+    def append_imgui_window(self, gui=None, *, location: str = None):
+        """
+        Append imgui elements to an existing window of this subplot. Can also be used as a decorator. Useful for
+        appending elements to the subplot toolbar with ``location="toolbar"``.
+
+        Parameters
+        ----------
+        gui: callable, optional
+            function that draws imgui elements, omit when decorating
+
+        location: str, "left" | "right" | "top" | "bottom" | "toolbar"
+            location of the existing window to append to
+
+        """
+        from ..ui._base import _wrap_update_call
+
+        window = self._imgui_windows.get(location)
+        if window is None:
+            raise ValueError(f"no imgui window at location to append to: {location}")
+
+        def decorator(_gui):
+            window._update_calls.append(_wrap_update_call(_gui, self))
+            return _gui
+
+        if gui is None:
+            return decorator
+
+        return decorator(gui)
+
+    def remove_imgui_window(self, location: str):
+        """
+        Remove and return the imgui window at the given location
+
+        Parameters
+        ----------
+        location: str
+            "left" | "right" | "top" | "bottom" | "toolbar"
+
+        Returns
+        -------
+        ImguiWindow
+            the removed window, it can be added again later
+
+        """
+        from ..ui._base import EDGES
+
+        window = self._imgui_windows.get(location)
+        self._imgui_windows[location] = None
+
+        # edge windows reserve space, reset the layout
+        if location in EDGES:
+            self.get_figure()._fpl_reset_layout()
+
+        return window
+
+    @property
+    def imgui_right_click(self):
+        """
+        The imgui popup that is opened by a right-click within this subplot.
+
+        Returns
+        -------
+        ImguiPopup | None
+
+        """
+        return self._imgui_right_click
+
+    def set_imgui_right_click(self, popup=None, *, window_flags=None):
+        """
+        Set the imgui popup that is opened by a right-click within this subplot, replaces the Figure's popup within
+        this subplot. Can also be used as a decorator, see the ``ImguiFigure.set_imgui_right_click`` examples.
+
+        Parameters
+        ----------
+        popup: ImguiPopup | callable, optional
+            an ``ImguiPopup`` instance, or a function that draws imgui elements. Omit when decorating.
+
+        window_flags: ``imgui.WindowFlags_``, optional
+            imgui window flags for the popup
+
+        """
+        figure = self.get_figure()
+        if "Imgui" not in figure.__class__.__name__:
+            raise TypeError(
+                "imgui right-click popups can only be set on a subplot of an ImguiFigure"
+            )
+
+        from ..ui._base import ImguiPopup, _wrap_update_call
+
+        def decorator(_popup):
+            if isinstance(_popup, ImguiPopup):
+                p = _popup
+            elif callable(_popup):
+                p = ImguiPopup(update_call=_wrap_update_call(_popup, self))
+            else:
+                raise TypeError(
+                    "set_imgui_right_click() must be used as a decorator, or given an `ImguiPopup` instance or a "
+                    "function that draws imgui elements"
+                )
+
+            p._fpl_add_hook(figure=figure, parent=self, window_flags=window_flags)
+            self._imgui_right_click = p
+            return _popup
+
+        if popup is None:
+            return decorator
+
+        decorator(popup)
+        return popup
+
+    def append_imgui_right_click(self, gui=None):
+        """
+        Append imgui elements to the right-click popup of this subplot. Can also be used as a decorator.
+
+        Parameters
+        ----------
+        gui: callable, optional
+            function that draws imgui elements, omit when decorating
+
+        """
+        from ..ui._base import _wrap_update_call
+
+        popup = self._imgui_right_click
+        if popup is None:
+            raise ValueError(
+                "no imgui right-click popup set on this subplot to append to, set one using "
+                "`subplot.set_imgui_right_click()`"
+            )
+
+        def decorator(_gui):
+            popup._update_calls.append(_wrap_update_call(_gui, self))
+            return _gui
+
+        if gui is None:
+            return decorator
+
+        return decorator(gui)
+
+    def remove_imgui_right_click(self):
+        """
+        Remove and return the right-click popup of this subplot
+
+        Returns
+        -------
+        ImguiPopup
+            the removed popup, it can be set again later
+
+        """
+        popup = self._imgui_right_click
+        self._imgui_right_click = None
+
+        return popup
 
 
 class Dock(PlotArea):

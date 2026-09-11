@@ -60,7 +60,12 @@ lorenz_line = figure[0, 0].add_line_collection(data=lorenz_data, thickness=.1, c
 scatter_markers = list()
 
 for graphic in lorenz_line:
-    marker = figure[0, 0].add_scatter(graphic.data.value[0], sizes=16, colors=graphic.colors[0])
+    marker = figure[0, 0].add_scatter(
+        graphic.data.value[0],
+        sizes=16,
+        colors=graphic.colors,
+        edge_colors="w",
+    )
     scatter_markers.append(marker)
 
 # initialize time
