@@ -514,6 +514,7 @@ class NDImage(NDGraphic):
         self._graphic = new_graphic
 
         self._nd_subplot.subplot.add_graphic(self._graphic)
+        self._set_graphic_right_click()
 
         self._reset_camera()
         self._reset_histogram()

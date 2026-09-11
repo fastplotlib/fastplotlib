@@ -364,6 +364,69 @@ class GraphicCollection(Graphic):
         for feature_name in self._accessor_specs:
             getattr(self, f"_{feature_name}")._graphics = self._graphics
 
+    @property
+    def imgui_right_click(self) -> tuple:
+        """
+        The imgui popup of each graphic of this collection, in order.
+
+        A right-click picks the graphic under the pointer, never the collection, so each graphic has
+        its own popup. Passing a function to :meth:`set_imgui_right_click` wraps it in a separate
+        popup per graphic, passing an ``ImguiPopup`` shares that one instance between them.
+        """
+        return tuple(graphic.imgui_right_click for graphic in self._graphics)
+
+    def set_imgui_right_click(self, popup=None, *, window_flags=None):
+        """
+        Set the imgui popup opened by a right-click on any graphic of this collection.
+
+        A right-click picks the graphic under the pointer, never the collection, so the popup is set
+        on each graphic. Takes the same arguments as :meth:`Graphic.set_imgui_right_click`.
+        """
+
+        def decorator(_popup):
+            for graphic in self._graphics:
+                graphic.set_imgui_right_click(_popup, window_flags=window_flags)
+            return _popup
+
+        if popup is None:
+            return decorator
+
+        decorator(popup)
+
+    def append_imgui_right_click(self, gui=None):
+        """
+        Append imgui elements to the popup of every graphic of this collection.
+
+        Takes the same arguments as :meth:`Graphic.append_imgui_right_click`.
+        """
+
+        def decorator(_gui):
+            for graphic in self._graphics:
+                graphic.append_imgui_right_click(_gui)
+            return _gui
+
+        if gui is None:
+            return decorator
+
+        decorator(gui)
+
+    def remove_imgui_right_click(self, popup):
+        """
+        Remove ``popup`` from every graphic of this collection that has it set.
+
+        Unlike :meth:`Graphic.remove_imgui_right_click` this takes the popup to remove, since the
+        graphics of a collection do not necessarily share one.
+
+        Parameters
+        ----------
+        popup: ImguiPopup
+            the popup to remove, one of those returned by :attr:`imgui_right_click`
+
+        """
+        for graphic in self._graphics:
+            if graphic.imgui_right_click is popup:
+                graphic.remove_imgui_right_click()
+
     def _fpl_add_plot_area_hook(self, plot_area):
         super()._fpl_add_plot_area_hook(plot_area)
         for graphic in self._graphics:

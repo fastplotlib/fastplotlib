@@ -237,91 +237,142 @@ class RightClickMenu(StandardRightClickMenu):
             imgui.set_next_window_size((0, 0))
             _, open = imgui.begin(f"subplot: {subplot.name}, {name}", True)
 
-            if isinstance(ndg, NDPositions):
-                self._draw_nd_pos_ui(subplot, ndg)
-
-            elif isinstance(ndg, NDImage):
-                self._draw_nd_image_ui(subplot, ndg)
-
-            _, ndg.pause = imgui.checkbox("pause", ndg.pause)
+            draw_nd_graphic_ui(ndg)
 
             if not open:
                 self._ndgraphic_windows.remove(ndg)
 
             imgui.end()
 
-    def _draw_nd_image_ui(self, subplot, nd_image: NDImage):
-        if nd_image.graphic.data.value is not None:
-            # if it doesn't have a CPU buffer the value is None
-            # i.e. data is only on the GPU, e.g. YUV
-            _min, _max = quick_min_max(nd_image.graphic.data.value)
-            changed, vmin = imgui.slider_float(
-                "vmin", nd_image.graphic.vmin, v_min=_min, v_max=_max
-            )
-            if changed:
-                nd_image.graphic.vmin = vmin
+def draw_nd_graphic_ui(nd_graphic: NDGraphic):
+    """
+    Draw the settings of an ``NDGraphic``.
 
-            changed, vmax = imgui.slider_float(
-                "vmax", nd_image.graphic.vmax, v_min=_min, v_max=_max
-            )
-            if changed:
-                nd_image.graphic.vmax = vmax
+    Used both by the popup that a right-click on the graphic opens, and by the window that the
+    "ND Graphics" submenu of the ``NDWidget`` right-click menu opens. A right-click can be hard to
+    land on a thin graphic, ex: a line or a scatter, which is why both exist.
+    """
+    if isinstance(nd_graphic, NDTimeseries):
+        _draw_nd_timeseries_ui(nd_graphic)
 
-        changed, new_gamma = imgui.slider_float(
-            "gamma", nd_image.graphic._material.gamma, 0.01, 5
+    elif isinstance(nd_graphic, NDPositions):
+        _draw_nd_positions_ui(nd_graphic)
+
+    elif isinstance(nd_graphic, NDImage):
+        _draw_nd_image_ui(nd_graphic)
+
+    _, nd_graphic.pause = imgui.checkbox("pause", nd_graphic.pause)
+
+
+def _draw_magnitude_sliders(
+    label: str, value: float, exponent_min: int, exponent_max: int
+) -> tuple[bool, float]:
+    """
+    A value slider paired with an order of magnitude slider, ``value * 10 ** exponent``.
+
+    The pair covers many decades without any one slider having to. The value is decomposed on every
+    frame rather than kept as UI state, so the sliders follow the property when something else moves
+    it, ex: a camera zoom writing ``display_window``.
+    """
+    if value > 0:
+        exponent = int(np.floor(np.log10(value)))
+        exponent = min(max(exponent, exponent_min), exponent_max)
+    else:
+        # log10 is undefined at 0, which is a valid display window: only the current datapoint
+        exponent = exponent_min
+
+    changed_value, value = imgui.slider_float(
+        label, v=value / 10.0**exponent, v_min=0.0, v_max=10.0
+    )
+    changed_exponent, exponent = imgui.slider_int(
+        f"{label} 10^", v=exponent, v_min=exponent_min, v_max=exponent_max
+    )
+
+    return (changed_value or changed_exponent), value * 10.0**exponent
+
+
+def _draw_nd_image_ui(nd_image: NDImage):
+    if nd_image.graphic.data.value is not None:
+        # if it doesn't have a CPU buffer the value is None
+        # i.e. data is only on the GPU, e.g. YUV
+        _min, _max = quick_min_max(nd_image.graphic.data.value)
+        changed, vmin = imgui.slider_float(
+            "vmin", nd_image.graphic.vmin, v_min=_min, v_max=_max
         )
         if changed:
-            nd_image.graphic._material.gamma = new_gamma
+            nd_image.graphic.vmin = vmin
 
-    def _draw_nd_pos_ui(self, subplot: Subplot, nd_graphic: NDPositions):
-        graphic_types = position_graphic_types
-        if isinstance(nd_graphic, NDTimeseries):
-            # heatmap only makes sense for timeseries data
-            graphic_types = position_graphic_types + [ImageGraphic]
-        for i, cls in enumerate(graphic_types):
-            if imgui.radio_button(cls.__name__, type(nd_graphic.graphic) is cls):
-                nd_graphic.graphic_type = cls
-                subplot.auto_scale()
+        changed, vmax = imgui.slider_float(
+            "vmax", nd_image.graphic.vmax, v_min=_min, v_max=_max
+        )
+        if changed:
+            nd_image.graphic.vmax = vmax
 
-        changed, val = imgui.checkbox(
-            "use display window", nd_graphic.display_window is not None
+    changed, new_gamma = imgui.slider_float(
+        "gamma", nd_image.graphic._material.gamma, 0.01, 5
+    )
+    if changed:
+        nd_image.graphic._material.gamma = new_gamma
+
+
+def _draw_nd_positions_ui(
+    nd_graphic: NDPositions, graphic_types: list = position_graphic_types
+):
+    subplot = nd_graphic._nd_subplot.subplot
+    ndwidget = nd_graphic._nd_subplot.ndw
+
+    for cls in graphic_types:
+        if imgui.radio_button(cls.__name__, type(nd_graphic.graphic) is cls):
+            nd_graphic.graphic_type = cls
+            subplot.auto_scale()
+
+    changed, val = imgui.checkbox(
+        "use display_window", nd_graphic.display_window is not None
+    )
+
+    p_dim = nd_graphic.slicer.display_dims[1]
+
+    if changed:
+        if not val:
+            nd_graphic.display_window = None
+        else:
+            # pick a value 10% of the reference range
+            nd_graphic.display_window = ndwidget.ranges[p_dim].size * 0.1
+
+    if nd_graphic.display_window is not None:
+        changed, new = _draw_magnitude_sliders(
+            "display_window", nd_graphic.display_window, -10, 8
         )
 
-        p_dim = nd_graphic.slicer.display_dims[1]
+        if changed:
+            nd_graphic.display_window = new
+
+    changed, limit = imgui.checkbox(
+        "use max_display_datapoints", nd_graphic.max_display_datapoints is not None
+    )
+
+    if changed:
+        nd_graphic.max_display_datapoints = 1_000 if limit else None
+
+    if nd_graphic.max_display_datapoints is not None:
+        changed, new = _draw_magnitude_sliders(
+            "max_display_datapoints", nd_graphic.max_display_datapoints, 0, 8
+        )
 
         if changed:
-            if not val:
-                nd_graphic.display_window = None
-            else:
-                # pick a value 10% of the reference range
-                nd_graphic.display_window = self._ndwidget.ranges[p_dim].size * 0.1
+            # the sliders can reach 0, the minimum is 2
+            nd_graphic.max_display_datapoints = max(2, int(new))
 
-        if nd_graphic.display_window is not None:
-            if isinstance(nd_graphic.display_window, (int, np.integer)):
-                slider = imgui.slider_int
-                input_ = imgui.input_int
-                type_ = int
-            else:
-                slider = imgui.slider_float
-                input_ = imgui.input_float
-                type_ = float
 
-            changed, new = slider(
-                "display window",
-                v=nd_graphic.display_window,
-                v_min=type_(0),
-                v_max=type_(self._ndwidget.ranges[p_dim].stop * 0.1),
-            )
+def _draw_nd_timeseries_ui(nd_graphic: NDTimeseries):
+    # a heatmap only makes sense for timeseries data
+    _draw_nd_positions_ui(nd_graphic, position_graphic_types + [ImageGraphic])
 
-            if changed:
-                nd_graphic.display_window = new
-
-        if isinstance(nd_graphic, NDTimeseries):
-            options = [None, "fixed", "auto"]
-            changed, option = imgui.combo(
-                "x-range mode",
-                options.index(nd_graphic.x_range_mode),
-                [str(o) for o in options],
-            )
-            if changed:
-                nd_graphic.x_range_mode = options[option]
+    options = [None, "fixed", "auto"]
+    changed, option = imgui.combo(
+        "x-range mode",
+        options.index(nd_graphic.x_range_mode),
+        [str(o) for o in options],
+    )
+    if changed:
+        nd_graphic.x_range_mode = options[option]

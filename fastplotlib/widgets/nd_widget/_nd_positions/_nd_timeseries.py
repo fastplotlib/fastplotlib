@@ -343,6 +343,7 @@ class NDTimeseries(NDPositions):
                 ),
             )
             self._nd_subplot.subplot.add_graphic(self._graphic)
+            self._set_graphic_right_click()
         else:
             super()._setup_graphic(new_features, indices)
 

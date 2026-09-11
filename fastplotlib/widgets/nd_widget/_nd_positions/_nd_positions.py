@@ -949,6 +949,7 @@ class NDPositions(NDGraphic):
                 g.tooltip_format = partial(self._tooltip_handler, g)
 
         self._nd_subplot.subplot.add_graphic(self._graphic)
+        self._set_graphic_right_click()
 
     @property
     def display_window(self) -> int | float | None:

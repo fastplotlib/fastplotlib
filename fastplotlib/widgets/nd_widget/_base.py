@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
+from functools import partial
 import inspect
 from numbers import Real
 from pprint import pformat
@@ -769,6 +770,19 @@ class NDGraphic:
     def graphic(self) -> Graphic:
         """Underlying Graphic object used to display the current data slice"""
         raise NotImplementedError
+
+    def _set_graphic_right_click(self):
+        """
+        Set the popup that a right-click on the graphic opens, which shows this NDGraphic's settings.
+
+        Called whenever the graphic is created, since switching ``graphic_type`` or changing the shape
+        of the data replaces the ``Graphic``, and its popup with it. To replace this popup set your own
+        on ``ndgraphic.graphic``, or add to it with ``ndgraphic.graphic.append_imgui_right_click()``.
+        """
+        # `_ui` imports the NDGraphic subclasses, so it cannot be imported at the header
+        from ._ui import draw_nd_graphic_ui
+
+        self.graphic.set_imgui_right_click(partial(draw_nd_graphic_ui, self))
 
     @property
     def indices_displayed(self) -> dict[str, Any]:

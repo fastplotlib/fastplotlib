@@ -340,6 +340,7 @@ class NDVectors(NDGraphic):
         )
 
         self._nd_subplot.subplot.add_graphic(self._graphic)
+        self._set_graphic_right_click()
 
     @property
     def display_dims(self) -> tuple[str, str, str]:
