@@ -55,6 +55,9 @@ Methods
 
     ScatterGraphic.add_axes
     ScatterGraphic.add_event_handler
+    ScatterGraphic.add_linear_region_selector
+    ScatterGraphic.add_linear_selector
+    ScatterGraphic.add_rectangle_selector
     ScatterGraphic.clear_event_handlers
     ScatterGraphic.format_pick_info
     ScatterGraphic.map_model_to_world
