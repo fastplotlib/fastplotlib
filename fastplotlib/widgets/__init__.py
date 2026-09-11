@@ -8,5 +8,6 @@ from .nd_widget import (
     NDImageSlicer,
     NDImage,
 )
+from .image_widget import ImageWidget
 
-__all__ = ["NDWidget"]
+__all__ = ["NDWidget", "ImageWidget"]
