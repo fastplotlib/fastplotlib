@@ -6,7 +6,7 @@ import cmap as cmap_lib
 
 from pygfx import Texture, Color
 
-from .protocols import CudaArrayProtocol
+from .protocols import ArrayProtocol, CudaArrayProtocol
 
 
 cmap_catalog = cmap_lib.Catalog()
@@ -342,7 +342,7 @@ def cuda_to_numpy(arr: CudaArrayProtocol) -> np.ndarray:
 
 
 def subsample_array(
-    arr: CudaArrayProtocol,
+    arr: ArrayProtocol | CudaArrayProtocol,
     max_size: int = 1e6,
     ignore_dims: Sequence[int] | None = None,
 ) -> np.ndarray:
