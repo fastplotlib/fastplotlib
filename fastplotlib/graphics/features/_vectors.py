@@ -277,7 +277,8 @@ def mat_compose(translation, rotation, scaling, /, *, out=None, dtype=None) -> n
 
     Returns
     -------
-    ndarray, [num_vectors, 4, 4] or [4, 4]
+    np.ndarray
+        [num_vectors, 4, 4] or [4, 4]
     """
     rotation    = np.asarray(rotation, dtype=float)
     translation = np.asarray(translation, dtype=float)
