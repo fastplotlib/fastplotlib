@@ -51,6 +51,18 @@ def identify(val):
     return val
 
 
+def merge(current, new):
+    # nested kwargs, e.g. frame_kwargs["title_kwargs"], merge instead of replacing
+    if not (isinstance(current, dict) and isinstance(new, dict)):
+        return new
+
+    merged = dict(current)
+    for key, value in new.items():
+        merged[key] = merge(current.get(key), value)
+
+    return merged
+
+
 def _config_setattr(self, name, value):
     if name not in self.__slots__:
         cls_qual, method = self._fpl_owner
@@ -279,6 +291,24 @@ class Config:
             return injector
 
         return wrapper
+
+    def update(self, method_config, **options):
+        """
+        Set config options for a method, merging into what is already configured.
+
+        A dict value is merged key by key, recursing into nested dicts, so keys set by an
+        earlier call are kept unless this call names them. Any other value replaces what is
+        there. This is what makes the options that are themselves kwargs composable, e.g.
+        with ``Subplot.config.init.frame_kwargs`` already
+        ``{"title_kwargs": {"face_color": "black"}}``::
+
+            global_config.update(
+                Subplot.config.init, frame_kwargs={"title_kwargs": {"font_size": 10}}
+            )
+            # -> {"title_kwargs": {"face_color": "black", "font_size": 10}}
+        """
+        for option, value in options.items():
+            setattr(method_config, option, merge(getattr(method_config, option), value))
 
     def __getitem__(self, cls: type):
         if cls not in self._registry:

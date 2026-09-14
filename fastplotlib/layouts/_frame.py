@@ -119,7 +119,7 @@ class Frame:
         canvas_rect,
         spacing: dict = None,
         title_kwargs: dict = None,
-        color: str = None,
+        plane_color: dict = None,
     ):
         """
         Manages the plane mesh, resize handle point, and subplot title.
@@ -182,11 +182,9 @@ class Frame:
         if title_kwargs is not None:
             _title_kwargs = {**_title_kwargs, **title_kwargs}
 
-        if color is not None:
+        if plane_color is not None:
             self.plane_color = SelectorColorStates(
-                idle=color,
-                highlight=self.plane_color.highlight,
-                action=self.plane_color.action,
+                **plane_color
             )
 
         # create rect manager to handle all the backend rect calculations
