@@ -51,6 +51,24 @@ def identify(val):
     return val
 
 
+def _config_setattr(self, name, value):
+    if name not in self.__slots__:
+        cls_qual, method = self._fpl_owner
+        raise AttributeError(
+            f"'{method}' config for {cls_qual} has no option '{name}'\n"
+            f"Valid options: {sorted(self.__slots__)}"
+        ) from None
+    object.__setattr__(self, name, value)
+
+
+def _config_getattr(self, name):
+    cls_qual, method = self._fpl_owner
+    raise AttributeError(
+        f"'{method}' config for {cls_qual} has no option '{name}'\n"
+        f"Valid options: {sorted(self.__slots__)}"
+    )
+
+
 @dataclass
 class Pending:
     method: Callable  # the actual method obj
@@ -127,6 +145,11 @@ class Pending:
             fields=signature,
             slots=True,  # fields are fixed, user can't do method.something_random = value
             eq=False,  # == operator makes no sense since values can be any object, arrays, buffers, etc.
+            namespace={
+                "__setattr__": _config_setattr,
+                "__getattr__": _config_getattr,
+                "_fpl_owner": (self.cls, self.method.__name__),
+            },
         )
 
         return mc()
@@ -264,8 +287,16 @@ class Config:
         return self._registry[cls]
 
     def print_config(self):
-        for cls in self._registry:
-            print(repr(self._registry[cls]))
+        """print the config of every registered class, yaml-like"""
+        for cls, class_config in self._registry.items():
+            print(f"{cls.__name__}:")
+
+            for method in fields(class_config):
+                method_config = getattr(class_config, method.name)
+                print(f"  {method.name}:")
+
+                for arg in fields(method_config):
+                    print(f"    {arg.name}: {getattr(method_config, arg.name)!r}")
 
 
 global_config = Config()

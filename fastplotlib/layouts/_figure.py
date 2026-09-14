@@ -19,10 +19,15 @@ from ._utils import (
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
-from .. import ImageGraphic, ImageYUVGraphic
+from ..graphics import ImageGraphic, ImageYUVGraphic
+from ..utils import global_config, ConfigValue
 
 
+@global_config.register
 class Figure:
+    config = global_config.descriptor
+
+    @global_config.set(size=(500, 300))
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),
@@ -48,7 +53,7 @@ class Figure:
         canvas: str | BaseRenderCanvas | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
         canvas_kwargs: dict = None,
-        size: tuple[int, int] = (500, 300),
+        size: tuple[int, int] = ConfigValue,
         names: list | np.ndarray = None,
     ):
         """
@@ -569,11 +574,16 @@ class Figure:
         """start render cycle"""
         self.canvas.request_draw(self._render)
 
+    @global_config.set(
+        autoscale=True,
+        maintain_aspect=True,
+        axes_visible=True,
+    )
     def show(
         self,
-        autoscale: bool = True,
-        maintain_aspect: bool = None,
-        axes_visible: bool = True,
+        autoscale: bool = ConfigValue,
+        maintain_aspect: bool = ConfigValue,
+        axes_visible: bool = ConfigValue,
         sidecar: bool = False,
         sidecar_kwargs: dict = None,
     ):
@@ -585,8 +595,8 @@ class Figure:
         autoscale: bool, default ``True``
             autoscale the Scene
 
-        maintain_aspect: bool, default ``True``
-            maintain aspect ratio
+        maintain_aspect: bool, default ``None``
+            maintain aspect ratio, if ``None`` uses the existing value from the camera
 
         axes_visible: bool, default ``True``
             show axes

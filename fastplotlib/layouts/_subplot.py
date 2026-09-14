@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Literal, Union
 
 import numpy as np
@@ -10,20 +12,26 @@ from ._utils import create_camera, create_controller
 from ._plot_area import PlotArea
 from ._frame import Frame
 from ..axes import Axes
+from ..utils import global_config, ConfigValue
 
 
+@global_config.register
 class Subplot(PlotArea):
+    @global_config.set(toolbar=True, background_color=["black"], frame_kwargs=None)
     def __init__(
         self,
-        parent: Union["Figure"],
+        parent,
         camera: Literal["2d", "3d"] | pygfx.PerspectiveCamera,
         controller: pygfx.Controller | str,
         canvas: BaseRenderCanvas | pygfx.Texture,
         rect: np.ndarray = None,
         extent: np.ndarray = None,
         resizeable: bool = True,
+        toolbar: bool = ConfigValue,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
+        background_color: str | tuple[float, ...] | pygfx.Color = ConfigValue,
+        frame_kwargs: dict = ConfigValue,
     ):
         """
         Subplot class.
@@ -33,7 +41,7 @@ class Subplot(PlotArea):
 
         Parameters
         ----------
-        parent: 'Figure' | None
+        parent: 'Figure'
             parent Figure instance
 
         camera: str or pygfx.PerspectiveCamera, default '2d'
@@ -62,7 +70,7 @@ class Subplot(PlotArea):
 
         self._docks = dict()
 
-        toolbar_visible = "Imgui" in parent.__class__.__name__
+        toolbar_visible = "Imgui" in parent.__class__.__name__ and toolbar
 
         super().__init__(
             parent=parent,
@@ -72,6 +80,7 @@ class Subplot(PlotArea):
             canvas=canvas,
             renderer=renderer,
             name=name,
+            background_color=background_color,
         )
 
         for pos in ["left", "top", "right", "bottom"]:
@@ -98,6 +107,7 @@ class Subplot(PlotArea):
             imgui_windows=self._imgui_windows,
             toolbar_visible=toolbar_visible,
             canvas_rect=parent.get_pygfx_render_area(),
+            **frame_kwargs,
         )
 
     @property
@@ -167,6 +177,10 @@ class Subplot(PlotArea):
     def frame(self) -> Frame:
         """Frame that the subplot lives in"""
         return self._frame
+
+    @property
+    def frame_spacing(self) -> dict:
+        return self._frame.spacing
 
     @property
     def imgui_windows(self) -> dict:
@@ -414,6 +428,7 @@ class Subplot(PlotArea):
         return popup
 
 
+@global_config.register
 class Dock(PlotArea):
     def __init__(
         self,
@@ -429,6 +444,7 @@ class Dock(PlotArea):
             scene=pygfx.Scene(),
             canvas=parent.canvas,
             renderer=parent.renderer,
+            background_color=parent.background_color,
         )
 
     @property

@@ -49,18 +49,18 @@ class GraphicMethodsMixin:
             is not a feature is passed unchanged to every child graphic.
 
         """
-        return self._create_graphic(GraphicCollection, data, **kwargs)
+        return self._create_graphic(GraphicCollection, data=data, **kwargs)
 
     def add_image_collection(
         self,
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
-        gamma: float = 1.0,
-        interpolation: str = "nearest",
-        cmap_interpolation: str = "linear",
-        colorspace: ColorspacesRGB = "srgb",
+        cmap: str = ConfigValue,
+        gamma: float = ConfigValue,
+        interpolation: Literal["nearest", "linear"] = ConfigValue,
+        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
+        colorspace: ColorspacesRGB = ConfigValue,
         cpu_buffer: bool = True,
         *,
         names=None,
@@ -171,11 +171,11 @@ class GraphicMethodsMixin:
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
-        gamma: float = 1.0,
-        interpolation: str = "nearest",
-        cmap_interpolation: str = "linear",
-        colorspace: ColorspacesRGB = "srgb",
+        cmap: str = ConfigValue,
+        gamma: float = ConfigValue,
+        interpolation: Literal["nearest", "linear"] = ConfigValue,
+        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
+        colorspace: ColorspacesRGB = ConfigValue,
         cpu_buffer: bool = True,
         **kwargs
     ) -> ImageGraphic:
@@ -252,15 +252,15 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(
             ImageGraphic,
-            data,
-            vmin,
-            vmax,
-            cmap,
-            gamma,
-            interpolation,
-            cmap_interpolation,
-            colorspace,
-            cpu_buffer,
+            data=data,
+            vmin=vmin,
+            vmax=vmax,
+            cmap=cmap,
+            gamma=gamma,
+            interpolation=interpolation,
+            cmap_interpolation=cmap_interpolation,
+            colorspace=colorspace,
+            cpu_buffer=cpu_buffer,
             **kwargs
         )
 
@@ -269,11 +269,11 @@ class GraphicMethodsMixin:
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
-        gamma: float = 1.0,
-        interpolation: str = "nearest",
-        cmap_interpolation: str = "linear",
-        colorspace: ColorspacesRGB = "srgb",
+        cmap: str = ConfigValue,
+        gamma: float = ConfigValue,
+        interpolation: Literal["nearest", "linear"] = ConfigValue,
+        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
+        colorspace: ColorspacesRGB = ConfigValue,
         cpu_buffer: bool = True,
         *,
         shape: tuple[int, int] = None,
@@ -386,19 +386,19 @@ class GraphicMethodsMixin:
     def add_image_volume(
         self,
         data: Any,
-        mode: str = "mip",
+        mode: str = ConfigValue,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
-        gamma: float = 1.0,
-        interpolation: str = "linear",
-        cmap_interpolation: str = "linear",
-        plane: tuple[float, float, float, float] = (0, 0, -1, 0),
-        threshold: float = 0.5,
-        step_size: float = 1.0,
-        substep_size: float = 0.1,
-        emissive: str | tuple | np.ndarray = (0, 0, 0),
-        shininess: int = 30,
+        cmap: str = ConfigValue,
+        gamma: float = ConfigValue,
+        interpolation: Literal["nearest", "linear"] = ConfigValue,
+        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
+        plane: tuple[float, float, float, float] = ConfigValue,
+        threshold: float = ConfigValue,
+        step_size: float = ConfigValue,
+        substep_size: float = ConfigValue,
+        emissive: str | tuple | np.ndarray = ConfigValue,
+        shininess: int = ConfigValue,
         **kwargs
     ) -> ImageVolumeGraphic:
         """
@@ -466,20 +466,20 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(
             ImageVolumeGraphic,
-            data,
-            mode,
-            vmin,
-            vmax,
-            cmap,
-            gamma,
-            interpolation,
-            cmap_interpolation,
-            plane,
-            threshold,
-            step_size,
-            substep_size,
-            emissive,
-            shininess,
+            data=data,
+            mode=mode,
+            vmin=vmin,
+            vmax=vmax,
+            cmap=cmap,
+            gamma=gamma,
+            interpolation=interpolation,
+            cmap_interpolation=cmap_interpolation,
+            plane=plane,
+            threshold=threshold,
+            step_size=step_size,
+            substep_size=substep_size,
+            emissive=emissive,
+            shininess=shininess,
             **kwargs
         )
 
@@ -489,9 +489,9 @@ class GraphicMethodsMixin:
         vmin: float = 0,
         vmax: float = 255,
         gamma: float = 1.0,
-        interpolation: str = "nearest",
-        colorspace: ColorspacesYUV = "yuv420p",
-        colorrange: ColorRange = "limited",
+        interpolation: Literal["nearest", "linear"] = ConfigValue,
+        colorspace: ColorspacesYUV = ConfigValue,
+        colorrange: ColorRange = ConfigValue,
         **kwargs
     ) -> ImageYUVGraphic:
         """
@@ -566,13 +566,13 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(
             ImageYUVGraphic,
-            data,
-            vmin,
-            vmax,
-            gamma,
-            interpolation,
-            colorspace,
-            colorrange,
+            data=data,
+            vmin=vmin,
+            vmax=vmax,
+            gamma=gamma,
+            interpolation=interpolation,
+            colorspace=colorspace,
+            colorrange=colorrange,
             **kwargs
         )
 
@@ -580,15 +580,15 @@ class GraphicMethodsMixin:
         self,
         data: Any,
         axis: Literal["x", "y", "z"] | None = None,
-        thickness: float = 2.0,
-        colors: ColorLike | MultiColorLike = "w",
-        cmap: ColormapLike = None,
+        thickness: float = ConfigValue,
+        colors: ColorLike | MultiColorLike = ConfigValue,
+        cmap: ColormapLike = ConfigValue,
         cmap_transform: np.ndarray | None = None,
         cmap_range: tuple[float, float] | None = None,
-        start_is_infinite: bool = True,
-        end_is_infinite: bool = True,
-        dash_pattern: str | tuple | list = (),
-        size_space: str = "screen",
+        start_is_infinite: bool = ConfigValue,
+        end_is_infinite: bool = ConfigValue,
+        dash_pattern: str | tuple | list = ConfigValue,
+        size_space: Literal["screen", "world", "model"] = ConfigValue,
         **kwargs
     ) -> InfLineGraphic:
         """
@@ -647,31 +647,31 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(
             InfLineGraphic,
-            data,
-            axis,
-            thickness,
-            colors,
-            cmap,
-            cmap_transform,
-            cmap_range,
-            start_is_infinite,
-            end_is_infinite,
-            dash_pattern,
-            size_space,
+            data=data,
+            axis=axis,
+            thickness=thickness,
+            colors=colors,
+            cmap=cmap,
+            cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
+            start_is_infinite=start_is_infinite,
+            end_is_infinite=end_is_infinite,
+            dash_pattern=dash_pattern,
+            size_space=size_space,
             **kwargs
         )
 
     def add_line_collection(
         self,
         data: Any,
-        thickness: float = 2.0,
-        colors: ColorLike | MultiColorLike = "w",
-        cmap: ColormapLike | None = None,
+        thickness: float | ConfigValue = ConfigValue,
+        colors: ColorLike | MultiColorLike | ConfigValue = ConfigValue,
+        cmap: ColormapLike | None | ConfigValue = ConfigValue,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
         cmap_range: tuple[float, float] | None = None,
-        size_space: str = "screen",
-        dash_pattern: str | tuple | list = (),
-        thin: bool = False,
+        size_space: Literal["screen", "world", "model"] = ConfigValue,
+        dash_pattern: str | tuple | list | ConfigValue = ConfigValue,
+        thin: bool | ConfigValue = ConfigValue,
         *,
         names=None,
         offsets=None,
@@ -755,14 +755,14 @@ class GraphicMethodsMixin:
     def add_line(
         self,
         data: Any,
-        thickness: float = 2.0,
-        colors: ColorLike | MultiColorLike = "w",
-        cmap: ColormapLike | None = None,
+        thickness: float | ConfigValue = ConfigValue,
+        colors: ColorLike | MultiColorLike | ConfigValue = ConfigValue,
+        cmap: ColormapLike | None | ConfigValue = ConfigValue,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
         cmap_range: tuple[float, float] | None = None,
-        size_space: str = "screen",
-        dash_pattern: str | tuple | list = (),
-        thin: bool = False,
+        size_space: Literal["screen", "world", "model"] = ConfigValue,
+        dash_pattern: str | tuple | list | ConfigValue = ConfigValue,
+        thin: bool | ConfigValue = ConfigValue,
         **kwargs
     ) -> LineGraphic:
         """
@@ -814,29 +814,29 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(
             LineGraphic,
-            data,
-            thickness,
-            colors,
-            cmap,
-            cmap_transform,
-            cmap_range,
-            size_space,
-            dash_pattern,
-            thin,
+            data=data,
+            thickness=thickness,
+            colors=colors,
+            cmap=cmap,
+            cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
+            size_space=size_space,
+            dash_pattern=dash_pattern,
+            thin=thin,
             **kwargs
         )
 
     def add_line_stack(
         self,
         data: Any,
-        thickness: float = 2.0,
-        colors: ColorLike | MultiColorLike = "w",
-        cmap: ColormapLike | None = None,
+        thickness: float | ConfigValue = ConfigValue,
+        colors: ColorLike | MultiColorLike | ConfigValue = ConfigValue,
+        cmap: ColormapLike | None | ConfigValue = ConfigValue,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
         cmap_range: tuple[float, float] | None = None,
-        size_space: str = "screen",
-        dash_pattern: str | tuple | list = (),
-        thin: bool = False,
+        size_space: Literal["screen", "world", "model"] = ConfigValue,
+        dash_pattern: str | tuple | list | ConfigValue = ConfigValue,
+        thin: bool | ConfigValue = ConfigValue,
         *,
         separation: tuple[float, float, float] = (0.0, 0.0, 0.0),
         separation_axis: str = "y",
@@ -927,11 +927,11 @@ class GraphicMethodsMixin:
         self,
         positions: Any,
         indices: Any,
-        mode: Literal["basic", "phong", "slice"] = "phong",
-        plane: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 0.0),
-        colors: str | np.ndarray | Sequence = "w",
+        mode: Literal["basic", "phong", "slice"] = ConfigValue,
+        plane: tuple[float, float, float, float] = ConfigValue,
+        colors: str | np.ndarray | Sequence = ConfigValue,
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
         clim: tuple[float, float] = None,
         **kwargs
     ) -> MeshGraphic:
@@ -979,24 +979,24 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(
             MeshGraphic,
-            positions,
-            indices,
-            mode,
-            plane,
-            colors,
-            mapcoords,
-            cmap,
-            clim,
+            positions=positions,
+            indices=indices,
+            mode=mode,
+            plane=plane,
+            colors=colors,
+            mapcoords=mapcoords,
+            cmap=cmap,
+            clim=clim,
             **kwargs
         )
 
     def add_polygon(
         self,
         data: np.ndarray,
-        mode: Literal["basic", "phong"] = "basic",
-        colors: str | np.ndarray | Sequence = "w",
+        mode: Literal["basic", "phong"] = ConfigValue,
+        colors: str | np.ndarray | Sequence = ConfigValue,
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
         clim: tuple[float, float] | None = None,
         **kwargs
     ) -> PolygonGraphic:
@@ -1038,25 +1038,32 @@ class GraphicMethodsMixin:
 
         """
         return self._create_graphic(
-            PolygonGraphic, data, mode, colors, mapcoords, cmap, clim, **kwargs
+            PolygonGraphic,
+            data=data,
+            mode=mode,
+            colors=colors,
+            mapcoords=mapcoords,
+            cmap=cmap,
+            clim=clim,
+            **kwargs
         )
 
     def add_scatter_collection(
         self,
         data: Any,
-        colors: ColorLike | MultiColorLike = "w",
-        cmap: ColormapLike | None = None,
+        colors: ColorLike | MultiColorLike = ConfigValue,
+        cmap: ColormapLike | None = ConfigValue,
         cmap_transform: np.ndarray | None = None,
         cmap_range: tuple[float, float] | None = None,
-        mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
-        markers: str | np.ndarray | Sequence[str] = "o",
-        custom_sdf: str = None,
-        edge_colors: ColorLike | MultiColorLike | None = "black",
-        edge_width: float = 1.0,
-        image: np.ndarray = None,
-        point_rotations: float | np.ndarray | None = None,
-        sizes: float | np.ndarray | Sequence[float] = 5,
-        size_space: str = "screen",
+        mode: Literal["markers", "simple", "gaussian", "image"] = ConfigValue,
+        markers: str | np.ndarray | Sequence[str] = ConfigValue,
+        custom_sdf: str = ConfigValue,
+        edge_colors: ColorLike | MultiColorLike | None = ConfigValue,
+        edge_width: float = ConfigValue,
+        image: np.ndarray = ConfigValue,
+        point_rotations: float | np.ndarray | None = ConfigValue,
+        sizes: float | np.ndarray | Sequence[float] = ConfigValue,
+        size_space: str = ConfigValue,
         *,
         names=None,
         offsets=None,
@@ -1189,19 +1196,19 @@ class GraphicMethodsMixin:
     def add_scatter(
         self,
         data: Any,
-        colors: ColorLike | MultiColorLike = "w",
-        cmap: ColormapLike | None = None,
+        colors: ColorLike | MultiColorLike = ConfigValue,
+        cmap: ColormapLike | None = ConfigValue,
         cmap_transform: np.ndarray | None = None,
         cmap_range: tuple[float, float] | None = None,
-        mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
-        markers: str | np.ndarray | Sequence[str] = "o",
-        custom_sdf: str = None,
-        edge_colors: ColorLike | MultiColorLike | None = "black",
-        edge_width: float = 1.0,
-        image: np.ndarray = None,
-        point_rotations: float | np.ndarray | None = None,
-        sizes: float | np.ndarray | Sequence[float] = 5,
-        size_space: str = "screen",
+        mode: Literal["markers", "simple", "gaussian", "image"] = ConfigValue,
+        markers: str | np.ndarray | Sequence[str] = ConfigValue,
+        custom_sdf: str = ConfigValue,
+        edge_colors: ColorLike | MultiColorLike | None = ConfigValue,
+        edge_width: float = ConfigValue,
+        image: np.ndarray = ConfigValue,
+        point_rotations: float | np.ndarray | None = ConfigValue,
+        sizes: float | np.ndarray | Sequence[float] = ConfigValue,
+        size_space: str = ConfigValue,
         **kwargs
     ) -> ScatterGraphic:
         """
@@ -1297,39 +1304,39 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(
             ScatterGraphic,
-            data,
-            colors,
-            cmap,
-            cmap_transform,
-            cmap_range,
-            mode,
-            markers,
-            custom_sdf,
-            edge_colors,
-            edge_width,
-            image,
-            point_rotations,
-            sizes,
-            size_space,
+            data=data,
+            colors=colors,
+            cmap=cmap,
+            cmap_transform=cmap_transform,
+            cmap_range=cmap_range,
+            mode=mode,
+            markers=markers,
+            custom_sdf=custom_sdf,
+            edge_colors=edge_colors,
+            edge_width=edge_width,
+            image=image,
+            point_rotations=point_rotations,
+            sizes=sizes,
+            size_space=size_space,
             **kwargs
         )
 
     def add_scatter_stack(
         self,
         data: Any,
-        colors: ColorLike | MultiColorLike = "w",
-        cmap: ColormapLike | None = None,
+        colors: ColorLike | MultiColorLike = ConfigValue,
+        cmap: ColormapLike | None = ConfigValue,
         cmap_transform: np.ndarray | None = None,
         cmap_range: tuple[float, float] | None = None,
-        mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
-        markers: str | np.ndarray | Sequence[str] = "o",
-        custom_sdf: str = None,
-        edge_colors: ColorLike | MultiColorLike | None = "black",
-        edge_width: float = 1.0,
-        image: np.ndarray = None,
-        point_rotations: float | np.ndarray | None = None,
-        sizes: float | np.ndarray | Sequence[float] = 5,
-        size_space: str = "screen",
+        mode: Literal["markers", "simple", "gaussian", "image"] = ConfigValue,
+        markers: str | np.ndarray | Sequence[str] = ConfigValue,
+        custom_sdf: str = ConfigValue,
+        edge_colors: ColorLike | MultiColorLike | None = ConfigValue,
+        edge_width: float = ConfigValue,
+        image: np.ndarray = ConfigValue,
+        point_rotations: float | np.ndarray | None = ConfigValue,
+        sizes: float | np.ndarray | Sequence[float] = ConfigValue,
+        size_space: str = ConfigValue,
         *,
         separation: tuple[float, float, float] = (0.0, 0.0, 0.0),
         separation_axis: str = "y",
@@ -1468,10 +1475,10 @@ class GraphicMethodsMixin:
     def add_surface(
         self,
         data: np.ndarray,
-        mode: Literal["basic", "phong", "slice"] = "phong",
-        colors: str | np.ndarray | Sequence = "w",
+        mode: Literal["basic", "phong", "slice"] = ConfigValue,
+        colors: str | np.ndarray | Sequence = ConfigValue,
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
         clim: tuple[float, float] | None = None,
         **kwargs
     ) -> SurfaceGraphic:
@@ -1514,19 +1521,26 @@ class GraphicMethodsMixin:
 
         """
         return self._create_graphic(
-            SurfaceGraphic, data, mode, colors, mapcoords, cmap, clim, **kwargs
+            SurfaceGraphic,
+            data=data,
+            mode=mode,
+            colors=colors,
+            mapcoords=mapcoords,
+            cmap=cmap,
+            clim=clim,
+            **kwargs
         )
 
     def add_text(
         self,
         text: str,
-        font_size: float | int = 14,
-        face_color: str | np.ndarray | list[float] | tuple[float] = "w",
-        outline_color: str | np.ndarray | list[float] | tuple[float] = "w",
-        outline_thickness: float = 0.0,
-        screen_space: bool = True,
+        font_size: float | int = ConfigValue,
+        face_color: str | np.ndarray | list[float] | tuple[float] = ConfigValue,
+        outline_color: str | np.ndarray | list[float] | tuple[float] = ConfigValue,
+        outline_thickness: float = ConfigValue,
+        screen_space: bool = ConfigValue,
         offset: tuple[float] = (0, 0, 0),
-        anchor: str = "middle-center",
+        anchor: str = ConfigValue,
         **kwargs
     ) -> TextGraphic:
         """
@@ -1570,14 +1584,14 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(
             TextGraphic,
-            text,
-            font_size,
-            face_color,
-            outline_color,
-            outline_thickness,
-            screen_space,
-            offset,
-            anchor,
+            text=text,
+            font_size=font_size,
+            face_color=face_color,
+            outline_color=outline_color,
+            outline_thickness=outline_thickness,
+            screen_space=screen_space,
+            offset=offset,
+            anchor=anchor,
             **kwargs
         )
 
@@ -1585,7 +1599,7 @@ class GraphicMethodsMixin:
         self,
         positions: np.ndarray | Sequence[float],
         directions: np.ndarray | Sequence[float],
-        color: str | Sequence[float] | np.ndarray = "w",
+        color: str | Sequence[float] | np.ndarray | ConfigValue = ConfigValue,
         size: float = None,
         vector_shape_options: dict = None,
         **kwargs
@@ -1628,10 +1642,10 @@ class GraphicMethodsMixin:
         """
         return self._create_graphic(
             VectorsGraphic,
-            positions,
-            directions,
-            color,
-            size,
-            vector_shape_options,
+            positions=positions,
+            directions=directions,
+            color=color,
+            size=size,
+            vector_shape_options=vector_shape_options,
             **kwargs
         )
