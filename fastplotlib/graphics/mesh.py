@@ -18,8 +18,10 @@ from .features import (
     PolygonData,
     triangulate_polygon,
 )
+from ..utils import global_config, ConfigValue
 
 
+@global_config.register
 class MeshGraphic(Graphic):
     _features = {
         "positions": VertexPositions,
@@ -28,15 +30,16 @@ class MeshGraphic(Graphic):
         "cmap": MeshCmap,
     }
 
+    @global_config.set(mode="phong", plane=(0.0, 0.0, 1.0, 0.0), colors="w", cmap=None)
     def __init__(
         self,
         positions: Any,
         indices: Any,
-        mode: Literal["basic", "phong", "slice"] = "phong",
-        plane: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 0.0),
-        colors: str | np.ndarray | Sequence = "w",
+        mode: Literal["basic", "phong", "slice"] = ConfigValue,
+        plane: tuple[float, float, float, float] = ConfigValue,
+        colors: str | np.ndarray | Sequence = ConfigValue,
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
         clim: tuple[float, float] = None,
         **kwargs,
     ):
@@ -302,6 +305,7 @@ class MeshGraphic(Graphic):
         return info
 
 
+@global_config.register
 class SurfaceGraphic(MeshGraphic):
     _features = {
         "data": SurfaceData,
@@ -309,13 +313,14 @@ class SurfaceGraphic(MeshGraphic):
         "cmap": MeshCmap,
     }
 
+    @global_config.set(mode="phong", colors="w", cmap=None)
     def __init__(
         self,
         data: np.ndarray,
-        mode: Literal["basic", "phong", "slice"] = "phong",
-        colors: str | np.ndarray | Sequence = "w",
+        mode: Literal["basic", "phong", "slice"] = ConfigValue,
+        colors: str | np.ndarray | Sequence = ConfigValue,
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
         clim: tuple[float, float] | None = None,
         **kwargs,
     ):
@@ -391,6 +396,7 @@ class SurfaceGraphic(MeshGraphic):
         self._data.set_value(self, new_data)
 
 
+@global_config.register
 class PolygonGraphic(MeshGraphic):
     _features = {
         "data": SurfaceData,
@@ -398,13 +404,14 @@ class PolygonGraphic(MeshGraphic):
         "cmap": MeshCmap,
     }
 
+    @global_config.set(mode="basic", colors="w", cmap=None)
     def __init__(
         self,
         data: np.ndarray,
-        mode: Literal["basic", "phong"] = "basic",
-        colors: str | np.ndarray | Sequence = "w",
+        mode: Literal["basic", "phong"] = ConfigValue,
+        colors: str | np.ndarray | Sequence = ConfigValue,
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
         clim: tuple[float, float] | None = None,
         **kwargs,
     ):

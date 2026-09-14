@@ -16,27 +16,30 @@ from .features import (
     DashPattern,
     parse_dash_pattern,
 )
-from ..utils import quick_min_max
+from ..utils import quick_min_max, global_config, ConfigValue
 from ._positions_base import PositionsGraphic
 from .features.types import ColorLike, MultiColorLike, ColormapLike
 
+
+@global_config.register
 class LineGraphic(PositionsGraphic):
     _features = {
         "thickness": Thickness,
         "dash_pattern": DashPattern,
     }
 
+    @global_config.set(thickness=2.0, colors="w", cmap=None, size_space="screen", dash_pattern=(), thin=False)
     def __init__(
         self,
         data: Any,
-        thickness: float = 2.0,
-        colors: ColorLike | MultiColorLike = "w",
-        cmap: ColormapLike | None = None,
+        thickness: float | ConfigValue = ConfigValue,
+        colors: ColorLike | MultiColorLike | ConfigValue = ConfigValue,
+        cmap: ColormapLike | None | ConfigValue = ConfigValue,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
         cmap_range: tuple[float, float] | None = None,
-        size_space: str = "screen",
-        dash_pattern: str | tuple | list = (),
-        thin: bool = False,
+        size_space: Literal["screen", "world", "model"] = ConfigValue,
+        dash_pattern: str | tuple | list | ConfigValue = ConfigValue,
+        thin: bool | ConfigValue= ConfigValue,
         **kwargs,
     ):
         """
@@ -84,6 +87,7 @@ class LineGraphic(PositionsGraphic):
             passed to :class:`.Graphic`
 
         """
+        print(colors, thickness)
 
         super().__init__(
             data=data,

@@ -7,7 +7,14 @@ from pygfx import Texture
 import cmap as cmap_lib
 
 from .shaders import HighlightableImageMaterial
-from ..utils import quick_min_max, ColorspacesRGB, ColorspacesYUV, ColorRange
+from ..utils import (
+    global_config,
+    ConfigValue,
+    quick_min_max,
+    ColorspacesRGB,
+    ColorspacesYUV,
+    ColorRange,
+)
 from ._base import Graphic
 from .selectors import (
     LinearSelector,
@@ -379,6 +386,7 @@ class ImageBase(Graphic):
         return info
 
 
+@global_config.register
 class ImageGraphic(ImageBase):
     _features = {
         "data": TextureArray,
@@ -390,16 +398,23 @@ class ImageGraphic(ImageBase):
         "cmap_interpolation": ImageCmapInterpolation,
     }
 
+    @global_config.set(
+        cmap="plasma",
+        gamma=1.0,
+        interpolation="nearest",
+        cmap_interpolation="linear",
+        colorspace="srgb",
+    )
     def __init__(
         self,
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
-        gamma: float = 1.0,
-        interpolation: str = "nearest",
-        cmap_interpolation: str = "linear",
-        colorspace: ColorspacesRGB = "srgb",
+        cmap: str = ConfigValue,
+        gamma: float = ConfigValue,
+        interpolation: Literal["nearest", "linear"] = ConfigValue,
+        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
+        colorspace: ColorspacesRGB = ConfigValue,
         cpu_buffer: bool = True,
         **kwargs,
     ):
@@ -618,7 +633,6 @@ class ImageGraphic(ImageBase):
 
         self._data[:] = data
 
-
     @property
     def colorspace(self) -> ColorspacesRGB:
         """The image's colorspace"""
@@ -661,6 +675,7 @@ class ImageGraphic(ImageBase):
         self.vmax = vmax
 
 
+@global_config.register
 class ImageYUVGraphic(ImageBase):
     _features = {
         "data": TextureYUV,
@@ -670,15 +685,18 @@ class ImageYUVGraphic(ImageBase):
         "interpolation": ImageInterpolation,
     }
 
+    @global_config.set(
+        interpolation="nearest", colorspace="yuv420p", colorrange="limited"
+    )
     def __init__(
         self,
         data: TupleYUV | TextureYUV,
         vmin: float = 0,
         vmax: float = 255,
         gamma: float = 1.0,
-        interpolation: str = "nearest",
-        colorspace: ColorspacesYUV = "yuv420p",
-        colorrange: ColorRange = "limited",
+        interpolation: Literal["nearest", "linear"] = ConfigValue,
+        colorspace: ColorspacesYUV = ConfigValue,
+        colorrange: ColorRange = ConfigValue,
         **kwargs,
     ):
         """

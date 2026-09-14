@@ -4,7 +4,7 @@ import numpy as np
 import pygfx
 import cmap as cmap_lib
 
-from ..utils import quick_min_max
+from ..utils import quick_min_max, global_config, ConfigValue
 from ._base import Graphic
 from .features import (
     TextureArrayVolume,
@@ -83,6 +83,7 @@ class _VolumeTile(pygfx.Volume):
         return self._chunk_index
 
 
+@global_config.register
 class ImageVolumeGraphic(Graphic):
     _features = {
         "data": TextureArrayVolume,
@@ -101,22 +102,35 @@ class ImageVolumeGraphic(Graphic):
         "plane": VolumeSlicePlane,
     }
 
+    @global_config.set(
+        mode="mip",
+        cmap="plasma",
+        gamma=1.0,
+        interpolation="linear",
+        cmap_interpolation="linear",
+        plane=(0, 0, -1, 0),
+        threshold=0.5,
+        step_size=1.0,
+        substep_size=0.1,
+        emissive=(0, 0, 0),
+        shininess=30,
+    )
     def __init__(
         self,
         data: Any,
-        mode: str = "mip",
+        mode: str = ConfigValue,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
-        gamma: float = 1.0,
-        interpolation: str = "linear",
-        cmap_interpolation: str = "linear",
-        plane: tuple[float, float, float, float] = (0, 0, -1, 0),
-        threshold: float = 0.5,
-        step_size: float = 1.0,
-        substep_size: float = 0.1,
-        emissive: str | tuple | np.ndarray = (0, 0, 0),
-        shininess: int = 30,
+        cmap: str = ConfigValue,
+        gamma: float = ConfigValue,
+        interpolation: Literal["nearest", "linear"] = ConfigValue,
+        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
+        plane: tuple[float, float, float, float] = ConfigValue,
+        threshold: float = ConfigValue,
+        step_size: float = ConfigValue,
+        substep_size: float = ConfigValue,
+        emissive: str | tuple | np.ndarray = ConfigValue,
+        shininess: int = ConfigValue,
         **kwargs,
     ):
         """

@@ -18,8 +18,10 @@ from .features import (
 )
 from .features.types import ColorLike, MultiColorLike, ColormapLike
 from .features.utils import is_single_color
+from ..utils import global_config, ConfigValue
 
 
+@global_config.register
 class ScatterGraphic(PositionsGraphic):
     _features = {
         "sizes": (VertexPointSizes, UniformSize),
@@ -30,22 +32,35 @@ class ScatterGraphic(PositionsGraphic):
         "point_rotations": (UniformRotations, VertexRotations, None),
     }
 
+    @global_config.set(
+        colors="w",
+        cmap=None,
+        mode="markers",
+        markers="o",
+        custom_sdf=None,
+        edge_colors="black",
+        edge_width=1.0,
+        image=None,
+        point_rotations=None,
+        sizes=5,
+        size_space="screen",
+    )
     def __init__(
         self,
         data: Any,
-        colors: ColorLike | MultiColorLike = "w",
-        cmap: ColormapLike | None = None,
+        colors: ColorLike | MultiColorLike = ConfigValue,
+        cmap: ColormapLike | None = ConfigValue,
         cmap_transform: np.ndarray | None = None,
         cmap_range: tuple[float, float] | None = None,
-        mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
-        markers: str | np.ndarray | Sequence[str] = "o",
-        custom_sdf: str = None,
-        edge_colors: ColorLike | MultiColorLike | None = "black",
-        edge_width: float = 1.0,
-        image: np.ndarray = None,
-        point_rotations: float | np.ndarray | None = None,
-        sizes: float | np.ndarray | Sequence[float] = 5,
-        size_space: str = "screen",
+        mode: Literal["markers", "simple", "gaussian", "image"] = ConfigValue,
+        markers: str | np.ndarray | Sequence[str] = ConfigValue,
+        custom_sdf: str = ConfigValue,
+        edge_colors: ColorLike | MultiColorLike | None = ConfigValue,
+        edge_width: float = ConfigValue,
+        image: np.ndarray = ConfigValue,
+        point_rotations: float | np.ndarray | None = ConfigValue,
+        sizes: float | np.ndarray | Sequence[float] = ConfigValue,
+        size_space: str = ConfigValue,
         **kwargs,
     ):
         """

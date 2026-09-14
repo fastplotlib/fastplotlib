@@ -257,5 +257,15 @@ class Config:
 
         return wrapper
 
+    def __getitem__(self, cls: type):
+        if cls not in self._registry:
+            raise KeyError(f"{cls} not registered in global config")
+
+        return self._registry[cls]
+
+    def print_config(self):
+        for cls in self._registry:
+            print(repr(self._registry[cls]))
+
 
 global_config = Config()
