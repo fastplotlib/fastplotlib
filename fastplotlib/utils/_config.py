@@ -47,6 +47,10 @@ class ConfigDescriptor:
         raise AttributeError("Cannot set")
 
 
+def identify(val):
+    return val
+
+
 @dataclass
 class Pending:
     method: Callable  # the actual method obj
@@ -96,13 +100,13 @@ class Pending:
         if missing_default:
             raise TypeError(
                 f"{self.method.__qualname__}: signature marks {sorted(missing_default)} "
-                f"as ConfigValue but @config.set declares no value for them"
+                f"as ConfigValue but @global_config.set declares no value for them"
             )
 
         missing_marker = self.defaults.keys() - sig_value_is_config
         if missing_marker:
             raise TypeError(
-                f"{self.method.__qualname__}: @config.set declares {sorted(missing_marker)} "
+                f"{self.method.__qualname__}: @global_config.set declares {sorted(missing_marker)} "
                 f"but the signature doesn't mark them as ConfigValue, so they'll be ignored"
             )
 
@@ -111,7 +115,12 @@ class Pending:
             # if the type isn't declared in the function signature fill with Any
             type_annot = type_hints.get(arg, Any)
             # for each parameter: (arg, type, default value)
-            signature.append((arg, type_annot, field(default=val)))
+            if val.__class__.__hash__ is None:
+                # need to handle unhashable differently, i.e. mutable, objects like arrays and lists differently
+                f = field(default_factory=partial(identify, val))
+            else:
+                f = field(default=val)
+            signature.append((arg, type_annot, f))
 
         mc = make_dataclass(
             self.name,
@@ -144,6 +153,17 @@ class Config:
         if self._pending and not self._pending[-1].belongs_to(cls):
             raise TypeError(
                 f"{self._pending[-1].cls_qual} is not registered with the global config"
+            )
+
+        for parent in cls.__mro__:
+            # can't use getattr since that will call ConfigDescriptor.__get__
+            if isinstance(parent.__dict__.get("config"), ConfigDescriptor):
+                break
+
+        else:
+            raise AttributeError(
+                f"{cls} is registered with @global_config.register but doesn't have a "
+                f"config descriptor class attribute."
             )
 
         method_configs = {p.name: p.to_config() for p in self._pending}
@@ -238,33 +258,4 @@ class Config:
         return wrapper
 
 
-config = Config()
-
-
-# TODO: usage plan
-class Graphic:
-    config = config.descriptor
-
-
-@config.register
-class LineGraphic(Graphic):
-    @config.set(colors="w", thickness=2.0)
-    def __init__(
-        self,
-        data,
-        colors: str | tuple[float, float, float] = ConfigValue,
-        thickness: float = ConfigValue,
-        cmap: str | None = None,
-    ):
-        print(data, colors, thickness, cmap)
-        print(LineGraphic.config)
-
-
-@config.register
-class Figure:
-    def __init__(self):
-        pass
-
-    @config.set(show=True)
-    def show(self, toolbar: bool = ConfigValue):
-        pass
+global_config = Config()
