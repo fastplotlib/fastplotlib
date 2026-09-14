@@ -6,6 +6,7 @@ import pygfx
 from pylinalg import quat_from_vecs, vec_transform_quat
 
 from ..utils.enums import RenderQueue
+from ..utils import global_config, ConfigValue
 
 GRID_PLANES = ["xy", "xz", "yz"]
 
@@ -264,17 +265,34 @@ class Ruler(pygfx.Ruler):
             self._label.anchor_offset = anchor_offset
 
 
+@global_config.register
 class Axes:
+    config = global_config.descriptor
+
+    @global_config.set(
+        intersection=None,
+        tick_size=8.0,
+        line_width=2.0,
+        tick_marker="tick",
+        color="#fff",
+        grids=True,
+        grid_kwargs=None,
+        auto_grid=True,
+    )
     def __init__(
         self,
         plot_area,
-        intersection: tuple[int, int, int] | None = None,
+        intersection: tuple[int, int, int] | None = ConfigValue,
+        tick_size: float = ConfigValue,
+        line_width: float = ConfigValue,
+        tick_marker: str = ConfigValue,
+        color: str = ConfigValue,
         x_kwargs: dict = None,
         y_kwargs: dict = None,
         z_kwargs: dict = None,
-        grids: bool = True,
-        grid_kwargs: dict = None,
-        auto_grid: bool = True,
+        grids: bool = ConfigValue,
+        grid_kwargs: dict = ConfigValue,
+        auto_grid: bool = ConfigValue,
         offset: np.ndarray = np.array([0.0, 0.0, 0.0]),
         basis: np.ndarray = np.array(
             [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
@@ -287,10 +305,10 @@ class Axes:
         z_kwargs = z_kwargs or {}
 
         generic_kwargs = dict(
-            tick_size=8.0,
-            line_width=2.0,
-            tick_marker="tick",  # 'tick' for both-sides, 'tick_left' or 'tick_right' for one-sided
-            color="#fff",
+            tick_size=tick_size,
+            line_width=line_width,
+            tick_marker=tick_marker,  # 'tick' for both-sides, 'tick_left' or 'tick_right' for one-sided
+            color=color,
         )
 
         x_kwargs = dict(
@@ -531,12 +549,22 @@ class Axes:
 
         self._intersection = tuple(float(v) for v in intersection)
 
-    def _get_view_state(self) -> tuple[bytes, tuple[int, int], tuple[int, int], bytes]:
+    def _get_view_state(self) -> tuple:
         viewport = self._plot_area.viewport
         cam_matrix = self._plot_area.camera.camera_matrix.tobytes()
         scale = self._plot_area.camera.local.scale.tobytes()
 
-        return (cam_matrix, viewport.rect, viewport.logical_size, scale)
+        # the label margins are the other half of what places the rulers, and they are not known
+        # until the text has been laid out, which only happens once it has been drawn. tracking
+        # them here is what redoes the placement on the frame after that, and on any later change
+        # in the width of a tick label
+        return (
+            cam_matrix,
+            viewport.rect,
+            viewport.logical_size,
+            scale,
+            self._get_label_margins(),
+        )
 
     def update_using_bbox(self, bbox):
         """
@@ -566,32 +594,34 @@ class Axes:
 
         self.update(bbox, intersection)
 
-    def _auto_intersection_pos(self, xpos, ypos, width, height):
-        # returns the intersection position for the axis so they are placed in the bottom left corner
-        margin = 4
+    def _get_label_margins(self) -> tuple[float, float]:
+        """
+        How far the x and y tick labels, plus their axis labels, reach from their ruler, in pixels
 
-        y_blocks = [b for b in self.y.text._text_blocks if b._rect.width > 0]
-        y_extent = (
-            max(abs(b._rect.left) for b in y_blocks)
-            if y_blocks
-            else 6 * self.y.text.font_size
-        )
-        if self.y._label._text_blocks:
-            # label center is tick_extent + font_size from ruler; body adds font_size/2 more
-            y_extent += 1.5 * self.y._label.font_size
+        The fallbacks are for text that has not been laid out yet, which is the case until it has
+        been drawn once.
+        """
 
         x_blocks = [b for b in self.x.text._text_blocks if b._rect.height > 0]
-        x_extent = (
+        x_margin = (
             max(abs(b._rect.bottom) for b in x_blocks)
             if x_blocks
             else 1.5 * self.x.text.font_size
         )
         if self.x._label._text_blocks:
-            x_extent += 1.5 * self.x._label.font_size
+            # the axis label starts at the tick margin, and its own body follows
+            x_margin += 1.5 * self.x._label.font_size
 
-        return self._plot_area.map_screen_to_world(
-            (xpos + y_extent + margin, ypos + height - x_extent - margin)
+        y_blocks = [b for b in self.y.text._text_blocks if b._rect.width > 0]
+        y_margin = (
+            max(abs(b._rect.left) for b in y_blocks)
+            if y_blocks
+            else 6 * self.y.text.font_size
         )
+        if self.y._label._text_blocks:
+            y_margin += 1.5 * self.y._label.font_size
+
+        return x_margin, y_margin
 
     def update_using_camera(self):
         """
@@ -609,8 +639,9 @@ class Axes:
             return
         state = self._get_view_state()
         if state == self._last_state:
-            # no changes in the camera or viewport rect
+            # no changes in the camera, the viewport rect, or the size of the labels
             return
+        *_, (x_margin, y_margin) = state
 
         if self._plot_area.camera.fov == 0:
             xpos, ypos, width, height = self._plot_area.viewport.rect
@@ -644,7 +675,11 @@ class Axes:
 
         if self.intersection is None:
             if self._plot_area.camera.fov == 0:
-                intersection = self._auto_intersection_pos(xpos, ypos, width, height)
+                # put the rulers in the bottom left corner, clear of their own labels
+                padding = 4
+                intersection = self._plot_area.map_screen_to_world(
+                    (xpos + y_margin + padding, ypos + height - x_margin - padding)
+                )
             else:
                 # force origin since None is not supported for Persepctive projections
                 self._intersection = (0, 0, 0)
