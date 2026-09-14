@@ -83,11 +83,22 @@ def _config_getattr(self, name):
 
 @dataclass
 class Pending:
+    """
+    A method that is 'pending', waiting for the class to be registered.
+
+    These are created for method decorated with `@GlobalConfig.set()`.
+    They are converted to the config dataclass using the `to_config()` method
+    once the python interpreter reaches the `@GlobalConfig.register` for the
+    created class.
+
+    """
+
     method: Callable  # the actual method obj
     defaults: dict
 
     @property
     def name(self) -> str:
+        """method's name as a string, resolves __init__ -> init"""
         return get_method_name(self.method)
 
     @property
@@ -109,11 +120,11 @@ class Pending:
         return (self.module, self.cls)
 
     def is_sibling(self, other: Pending) -> bool:
-        """check if other Pending belong to the same class as this one"""
+        """check if other Pending object belongs to the same class as this one"""
         return self.cls_qual == other.cls_qual
 
     def belongs_to(self, cls: type) -> bool:
-        """check if this module belongs to this fully created class object, used for @Config.register"""
+        """check if this module belongs to this fully created class object, used for @GlobalConfig.register"""
         return self.cls_qual == (cls.__module__, cls.__qualname__)
 
     def to_config(self) -> object:
@@ -167,7 +178,7 @@ class Pending:
         return mc()
 
 
-class Config:
+class GlobalConfig:
     """Global config system"""
 
     def __init__(self):
@@ -184,7 +195,7 @@ class Config:
         return self._descriptor
 
     def register(self, cls):
-        """Register a class"""
+        """Register a class to the GlobalConfig"""
         if self._pending and not self._pending[-1].belongs_to(cls):
             raise TypeError(
                 f"{self._pending[-1].cls_qual} is not registered with the global config"
@@ -192,6 +203,7 @@ class Config:
 
         for parent in cls.__mro__:
             # can't use getattr since that will call ConfigDescriptor.__get__
+            # getting ir from __dict__ provides the actual descriptor object
             if isinstance(parent.__dict__.get("config"), ConfigDescriptor):
                 break
 
@@ -203,12 +215,10 @@ class Config:
 
         method_configs = {p.name: p.to_config() for p in self._pending}
 
-        # derive any un-registered methods from closest parent class that has it
+        # derive any un-set methods from closest parent class that has it
         # this is mainly for the ImguiFigure class
-        # we want Figure.config.show to derive from ImguiFigure.show
-
-        # [1:-1] skips the class itself and bare object
-        parents = cls.__mro__[1:-1]
+        # we want ImguiFigure.config.init to just use Figure.config.init
+        parents = cls.__mro__[1:-1]  # [1:-1] skips the class itself and bare object
         for parent in parents:
             if parent in self._registry:
                 # get the names of all configurable methods on this parent
@@ -245,11 +255,15 @@ class Config:
 
         self._registry[cls] = dc()
 
-    def set(self, **defaults):
-        """register a method with default kwargs"""
+    def set(self, **configured_kwargs):
+        """
+        Set a method with configured default kwargs.
+
+        **configured_kwargs are provided to the decorator for each method: `@GlobalConfig.set(<configured_kwargs>)`
+        """
 
         def wrapper(method):
-            new_pending = Pending(method, defaults)
+            new_pending = Pending(method, configured_kwargs)
             if self._pending and not new_pending.is_sibling(self._pending[-1]):
                 raise TypeError(
                     f"{self._pending[-1].cls_qual} is not registered with the global config"
@@ -329,4 +343,4 @@ class Config:
                     print(f"    {arg.name}: {getattr(method_config, arg.name)!r}")
 
 
-global_config = Config()
+global_config = GlobalConfig()
