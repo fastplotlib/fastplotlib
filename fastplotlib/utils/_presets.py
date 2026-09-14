@@ -7,6 +7,7 @@ class presets:
 
     @staticmethod
     def light():
+        """light color mode, white background, black axes, dark graphic colors, light subplot frame"""
         axes.Axes.config.init.color = "k"
 
         layouts.Subplot.config.init.background_color = "w"
@@ -30,6 +31,7 @@ class presets:
 
     @staticmethod
     def dark():
+        """dark color mode, black background, white axes, light graphic colors, dark subplot frame"""
         axes.Axes.config.init.color = "w"
 
         layouts.Subplot.config.init.background_color = "k"
@@ -49,6 +51,7 @@ class presets:
 
     @staticmethod
     def spaced():
+        """subplot toolbar is shown, well spaced subplot frame"""
         layouts.Subplot.config.init.toolbar = True
 
         global_config.update(
@@ -63,11 +66,13 @@ class presets:
 
     @staticmethod
     def default():
+        """default configuration"""
         presets.dark()
         presets.spaced()
 
     @staticmethod
     def compact():
+        """subplot toolbar is not shown, thin subplot frame"""
         layouts.Subplot.config.init.toolbar = False
 
         global_config.update(
@@ -82,6 +87,7 @@ class presets:
 
     @staticmethod
     def very_compact():
+        """same as compact() with no visible subplot frame"""
         layouts.Subplot.config.init.toolbar = False
 
         global_config.update(
@@ -96,6 +102,7 @@ class presets:
 
     @staticmethod
     def flynn():
+        """preset that optical physiology like"""
         presets.very_compact()
 
         layouts.Subplot.config.auto_scale.zoom = 0.99
