@@ -29,6 +29,8 @@ else:
 
 from .widgets import NDWidget, ImageWidget
 
+from .utils._presets import presets
+
 
 if len(enumerate_adapters()) < 1:
     from warnings import warn

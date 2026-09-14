@@ -87,7 +87,6 @@ class LineGraphic(PositionsGraphic):
             passed to :class:`.Graphic`
 
         """
-        print(colors, thickness)
 
         super().__init__(
             data=data,
