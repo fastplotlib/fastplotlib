@@ -113,8 +113,8 @@ def generate_add_graphics_methods():
             init = ast.parse(textwrap.dedent(inspect.getsource(cls.__init__))).body[0]
             signature = ast.unparse(init.args)
             docstring = cls.__init__.__doc__
-            class_args = inspect.getfullargspec(cls)[0][1:]
-            call = "".join(a + ", " for a in class_args) + "**kwargs"
+            class_args = [a.arg for a in init.args.args if a.arg != "self"]
+            call = "".join(a + "=" + a + ", " for a in class_args) + "**kwargs"
 
         f.write(f"    def add_{method_name}({signature}) -> {cls.__name__}:\n")
         f.write('        """\n')
