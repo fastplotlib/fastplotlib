@@ -2,6 +2,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import make_dataclass, field, fields, dataclass
 from functools import wraps, partial
+import inspect
 from typing import get_type_hints, Any
 
 
@@ -85,6 +86,26 @@ class Pending:
         """create the config dataclass for this method"""
         type_hints = get_type_hints(self.method)
 
+        params = inspect.signature(self.method).parameters
+
+        sig_value_is_config = {
+            name for name, p in params.items() if p.default is ConfigValue
+        }
+
+        missing_default = sig_value_is_config - self.defaults.keys()
+        if missing_default:
+            raise TypeError(
+                f"{self.method.__qualname__}: signature marks {sorted(missing_default)} "
+                f"as ConfigValue but @config.set declares no value for them"
+            )
+
+        missing_marker = self.defaults.keys() - sig_value_is_config
+        if missing_marker:
+            raise TypeError(
+                f"{self.method.__qualname__}: @config.set declares {sorted(missing_marker)} "
+                f"but the signature doesn't mark them as ConfigValue, so they'll be ignored"
+            )
+
         signature = list()
         for arg, val in self.defaults.items():
             # if the type isn't declared in the function signature fill with Any
@@ -138,7 +159,9 @@ class Config:
                 # get the names of all configurable methods on this parent
                 for f in fields(self._registry[parent]):
                     # if the parent has a configurable method that this subclass doesn't have defaults for
-                    if f.name not in method_configs.keys() and hasattr(cls, inv_get_method_name(f.name)):
+                    if f.name not in method_configs.keys() and hasattr(
+                        cls, inv_get_method_name(f.name)
+                    ):
                         # use the same method dataclass configuration object for this subclass
                         method_configs[f.name] = getattr(self._registry[parent], f.name)
 
@@ -157,7 +180,9 @@ class Config:
         # actually adds the class along with all the method configurable dataclasses to the registry
         dc = make_dataclass(
             cls.__name__,
-            fields=[(m, type(mdc), field(default=mdc)) for m, mdc in method_dcs.items()],
+            fields=[
+                (m, type(mdc), field(default=mdc)) for m, mdc in method_dcs.items()
+            ],
             slots=True,  # fields are fixed, each class set a fixed set of methods
             frozen=True,  # can't change method config instances
             eq=False,  # == operator makes no sense here, every config class is unique anyways
@@ -165,7 +190,7 @@ class Config:
 
         self._registry[cls] = dc()
 
-    def defaults(self, **defaults):
+    def set(self, **defaults):
         """register a method with default kwargs"""
 
         def wrapper(method):
@@ -177,10 +202,36 @@ class Config:
 
             self._pending.append(new_pending)
 
+            # keep these to use them in the injector
+            method_name = new_pending.name
+            # create signature object just once when the method is decorated instead of every time the method is called
+            sig = inspect.signature(method)
+
             @wraps(method)
-            def injector(*args, **kwargs):
-                print("inside injector")
-                return method(*args, **kwargs)
+            def injector(instance, *args, **kwargs):
+                # get the method config dataclass
+                method_config = getattr(type(instance).config, method_name)
+
+                # create a binding
+                try:
+                    binding = sig.bind(instance, *args, **kwargs)
+                except TypeError as e:
+                    # if *args and **kwargs don't match the signature raises a TypeError
+                    # useful if the user passed wrong things, we need to catch and tell them what method it was
+                    # since binding has no idea of the full namespace when we're handling it here
+                    raise TypeError(f"{method.__qualname__}: {e}") from None
+
+                # apply the default vals from the method signature
+                # these are the default vals in the method signature itself
+                binding.apply_defaults()
+
+                for arg, val in binding.arguments.items():
+                    # configurable value
+                    if val is ConfigValue:
+                        # fill in from current config
+                        binding.arguments[arg] = getattr(method_config, arg)
+
+                return method(*binding.args, **binding.kwargs)
 
             return injector
 
@@ -197,7 +248,7 @@ class Graphic:
 
 @config.register
 class LineGraphic(Graphic):
-    @config.defaults(colors="w", thickness=2.0)
+    @config.set(colors="w", thickness=2.0)
     def __init__(
         self,
         data,
@@ -214,6 +265,6 @@ class Figure:
     def __init__(self):
         pass
 
-    @config.defaults(show=True)
+    @config.set(show=True)
     def show(self, toolbar: bool = ConfigValue):
         pass
