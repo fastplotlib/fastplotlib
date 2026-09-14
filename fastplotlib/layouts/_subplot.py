@@ -31,7 +31,7 @@ class Subplot(PlotArea):
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
         background_color: str | tuple[float, ...] | pygfx.Color = ConfigValue,
-        frame_kwargs: dict = ConfigValue,
+        frame_kwargs: dict | None = ConfigValue,
     ):
         """
         Subplot class.
@@ -96,6 +96,9 @@ class Subplot(PlotArea):
 
         self._axes = Axes(self)
         self.scene.add(self.axes.world_object)
+
+        if frame_kwargs is None:
+            frame_kwargs = {}
 
         self._frame = Frame(
             viewport=self.viewport,
