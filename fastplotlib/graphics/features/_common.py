@@ -35,6 +35,8 @@ class Name(GraphicFeature):
 
 
 class Offset(GraphicFeature):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "value",
@@ -82,6 +84,8 @@ class Offset(GraphicFeature):
 
 
 class Rotation(GraphicFeature):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "value",
@@ -131,6 +135,8 @@ class Rotation(GraphicFeature):
 
 
 class Scale(GraphicFeature):
+    ndim = 1
+
     event_info_spec = [
         {
             "dict key": "value",
@@ -200,9 +206,10 @@ class Alpha(GraphicFeature):
         if wo.material is not None:
             wo.material.opacity = value
 
-        if "Image" in graphic.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in graphic.__class__.__name__ and not hasattr(graphic, "graphics"):
             # Image and ImageVolume use tiling and share one material
-            graphic._material.alpha = value
+            graphic._material.opacity = value
 
         self._value = value
 
@@ -231,7 +238,8 @@ class AlphaMode(GraphicFeature):
         if wo.material is not None:
             wo.alpha_mode = value
 
-        if "Image" in graphic.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in graphic.__class__.__name__ and not hasattr(graphic, "graphics"):
             # Image and ImageVolume use tiling and share one material
             graphic._material.alpha_mode = value
 

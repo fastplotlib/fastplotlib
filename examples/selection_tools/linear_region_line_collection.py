@@ -26,7 +26,7 @@ zoomed_prealloc = 1_000
 data = [sine, cosine, sine, cosine]
 
 # make line stack
-line_stack = figure[0, 0].add_line_stack(data, separation=2)
+line_stack = figure[0, 0].add_line_stack(data, separation=(0, 2, 0), separation_axis="y")
 
 # make selector
 selector = line_stack.add_linear_region_selector()

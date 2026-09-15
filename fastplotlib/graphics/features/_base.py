@@ -1,5 +1,6 @@
+import weakref
 from warnings import warn
-from typing import Literal
+from typing import Callable
 
 import numpy as np
 from numpy.typing import NDArray
@@ -49,6 +50,11 @@ class GraphicFeatureEvent(pygfx.Event):
 
 
 class GraphicFeature:
+    # number of dimensions of one graphic's value for this feature
+    # e.g. ``Thickness`` is 0 (a scalar), ``Offset`` is 1 ([x, y, z]), ``VertexColors`` is 2 ([n_datapoints, RGBA])
+    # used by graphic collections to broadcast a value across graphics
+    ndim: int = 0
+
     def __init__(self, property_name: str, **kwargs):
         self._property_name = property_name
         self._event_handlers = list()
@@ -78,7 +84,7 @@ class GraphicFeature:
         """
         self._block_events = val
 
-    def add_event_handler(self, handler: callable):
+    def add_event_handler(self, handler: Callable):
         """
         Add an event handler. All added event handlers are called when this feature changes.
 
@@ -89,7 +95,7 @@ class GraphicFeature:
 
         Parameters
         ----------
-        handler: callable
+        handler: Callable
             a function to call when this feature changes
 
         """
@@ -102,7 +108,7 @@ class GraphicFeature:
 
         self._event_handlers.append(handler)
 
-    def remove_event_handler(self, handler: callable):
+    def remove_event_handler(self, handler: Callable):
         """
         Remove a registered event ``handler``.
 
@@ -137,32 +143,28 @@ class BufferManager(GraphicFeature):
 
     def __init__(
         self,
-        data: NDArray | pygfx.Buffer,
-        buffer_type: Literal["buffer", "texture", "texture-array"] = "buffer",
-        isolated_buffer: bool = True,
+        data: NDArray | pygfx.Buffer | None,
         **kwargs,
     ):
         super().__init__(**kwargs)
-        if isolated_buffer and not isinstance(data, pygfx.Resource):
-            # useful if data is read-only, example: memmaps
-            bdata = np.zeros(data.shape, dtype=data.dtype)
-            bdata[:] = data[:]
-        else:
-            # user's input array is used as the buffer
-            bdata = data
 
-        if isinstance(data, pygfx.Resource):
-            # already a buffer, probably used for
-            # managing another BufferManager, example: VertexCmap manages VertexColors
-            self._buffer = data
-        elif buffer_type == "buffer":
-            self._buffer = pygfx.Buffer(bdata)
-        else:
-            raise ValueError(
-                "`data` must be a pygfx.Buffer instance or `buffer_type` must be one of: 'buffer' or 'texture'"
-            )
+        # if data is None, then the BufferManager just provides a view into an existing buffer
+        # example: VertexCmap is basically a view into VertexColors
+        if data is not None:
+            if isinstance(data, pygfx.Resource):
+                # already a buffer, probably used for
+                # managing another BufferManager, example: VertexCmap manages VertexColors
+                self._fpl_buffer = data
+            else:
+                # create a buffer
+                bdata = np.empty(data.shape, dtype=data.dtype)
+                bdata[:] = data[:]
 
-        self._event_handlers: list[callable] = list()
+                self._fpl_buffer = pygfx.Buffer(bdata)
+        else:
+            self._fpl_buffer = None
+
+        self._event_handlers: list[Callable] = list()
 
     @property
     def value(self) -> np.ndarray:
@@ -174,9 +176,10 @@ class BufferManager(GraphicFeature):
         self[:] = value
 
     @property
-    def buffer(self) -> pygfx.Buffer | pygfx.Texture:
-        """managed buffer"""
-        return self._buffer
+    def buffer(self) -> pygfx.Buffer:
+        """managed buffer, returns a weakref proxy"""
+        # the user should never create their own references to the buffer
+        return weakref.proxy(self._fpl_buffer)
 
     @property
     def __array_interface__(self):
@@ -193,7 +196,7 @@ class BufferManager(GraphicFeature):
 
     def _parse_offset_size(
         self,
-        key: int | slice | np.ndarray[int | bool] | list[bool | int],
+        key: int | slice | np.ndarray[tuple[int, ...], np.dtype[np.integer | np.bool]] | list[bool | int],
         upper_bound: int,
     ):
         """
@@ -272,7 +275,7 @@ class BufferManager(GraphicFeature):
     def _update_range(
         self,
         key: (
-            int | slice | np.ndarray[int | bool] | list[bool | int] | tuple[slice, ...]
+            int | slice | np.ndarray[tuple[int, ...], np.dtype[np.integer | np.bool]] | list[bool | int] | tuple[slice, ...]
         ),
     ):
         """
@@ -287,7 +290,7 @@ class BufferManager(GraphicFeature):
                 raise TypeError("ellipses not supported for indexing buffers")
             # if multiple dims are sliced, we only need the key for
             # the first dimension corresponding to n_datapoints
-            key: int | np.ndarray[int | bool] | slice = key[0]
+            key: int | np.ndarray[tuple[int, ...], np.dtype[np.integer | np.bool]] | slice = key[0]
 
         if isinstance(key, slice):
             if key == slice(None):
@@ -320,7 +323,7 @@ class BufferManager(GraphicFeature):
 def block_reentrance(set_value):
     # decorator to block re-entrant set_value methods
     # useful when creating complex, circular, bidirectional event graphs
-    def set_value_wrapper(self: GraphicFeature, graphic_or_key, value):
+    def set_value_wrapper(self: GraphicFeature, graphic_or_key, value, **kwargs):
         """
         wraps GraphicFeature.set_value
 
@@ -336,7 +339,7 @@ def block_reentrance(set_value):
         try:
             # block re-execution of set_value until it has *fully* finished executing
             self._reentrant_block = True
-            set_value(self, graphic_or_key, value)
+            set_value(self, graphic_or_key, value, **kwargs)
         except Exception as exc:
             # raise original exception
             raise exc  # set_value has raised. The line above and the lines 2+ steps below are probably more relevant!

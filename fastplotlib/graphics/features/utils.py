@@ -1,8 +1,37 @@
+import numbers
+
 import pygfx
 import numpy as np
 
 from ._base import to_gpu_supported_dtype
 from ...utils import make_pygfx_colors
+
+
+def is_single_color(value) -> bool:
+    """
+    Whether ``value`` represents a single RGB(A) color rather than a sequence of colors.
+
+    A single color is a str, ``pygfx.Color``, or an RGB(A) array/list/tuple of 3-4 numbers.
+    """
+    if isinstance(value, np.ndarray):
+        # returns True if a 1D RGB(A) array
+        # returns False if shape is [n, 3 | 4]
+        return value.shape in ((3,), (4,)) and value.dtype.kind in "fiu"
+
+    if isinstance(value, (list, tuple)):
+        # returns True if RGB(A) list or tuple of int/float
+        # returns False otherwise
+        return len(value) in (3, 4) and all(isinstance(v, numbers.Real) for v in value)
+
+    # str, pygfx.Color, or any other scalar color specifier
+    if isinstance(value, (pygfx.Color, str)):
+        return True
+
+    raise ValueError(
+        "`colors` must be a str, pygfx.Color, array, list or tuple indicating an RGB(A) color, a "
+        "sequence of str, pygfx.Color, and array of shape [n_datapoints, 3 | 4], or an existing "
+        "`UniformColor` or `VertexColors` instance."
+    )
 
 
 def parse_colors(
@@ -77,3 +106,26 @@ def parse_colors(
         data = make_pygfx_colors(colors, n_colors)
 
     return to_gpu_supported_dtype(data)
+
+
+def get_element_format_from_numpy_array(array):
+    """Get the per-element format specifier from a numpy array.
+    Returns None if the format appears to be a structured array.
+    Raises an error if GPU-incompatible dtypes are used (64 bit).
+    """
+
+    # Uniform buffers are scalars with a structured dtype.
+    # But can also create storage buffers with complex formats.
+    if array.dtype.kind not in "iuf":
+        return None
+
+    # GPUs generally don't support 64-bit buffers or textures.
+    # Note: the Python docs say that l and L are 32 bit, but converting
+    # a int64 numpy array to a memoryview gives a format of 'l' instead
+    # of 'q' on some systems/configs? So we need to check the itemsize.
+    if array.itemsize == 8:
+        raise ValueError(
+            f"A dtype of {array.dtype.name} is not supported for buffers, use a 32-bit variant instead."
+        )
+
+    return array.dtype.str.lstrip("<>=|")

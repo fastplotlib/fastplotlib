@@ -28,12 +28,12 @@ import imageio.v3 as iio
 
 data = iio.imread("imageio:camera.png")
 
-iw = fpl.ImageWidget(data, figure_kwargs={"size": (700, 560)})
+figure = fpl.Figure(size=(700, 560))
 
-image = iw.managed_graphics[0]
+image = figure[0, 0].add_image(data)
 
 
-@iw.figure.renderer.add_event_handler("key_down")
+@figure.renderer.add_event_handler("key_down")
 def handle_event(ev: pygfx.KeyboardEvent):
     match ev.key:
         # change the cmap
@@ -46,13 +46,13 @@ def handle_event(ev: pygfx.KeyboardEvent):
 
         # keys to change vmin/vmax
         case "-":
-            image.vmin -= 1
+            image.vmin -= 10
         case "=":
-            image.vmin += 1
+            image.vmin += 10
         case "_":
-            image.vmax -= 1
+            image.vmax -= 10
         case "+":
-            image.vmax += 1
+            image.vmax += 10
 
         # rotate
         case "r":
@@ -71,10 +71,7 @@ def handle_event(ev: pygfx.KeyboardEvent):
             image.offset = image.offset + [10, 0, 0]
 
 
-iw.show()
-
-
-figure = iw.figure  # ignore, this is just so the docs gallery scraper picks up the figure
+figure.show()
 
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions

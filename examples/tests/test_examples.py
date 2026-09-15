@@ -67,6 +67,8 @@ def prep_environment():
     finally:
         del os.environ["RENDERCANVAS_FORCE_OFFSCREEN"]
         del os.environ["PYGFX_DEFAULT_PPAA"]
+        # every example runs in this same process, so restore the config that an example has set
+        fpl.style.default()
 
 
 def test_that_we_are_on_lavapipe():

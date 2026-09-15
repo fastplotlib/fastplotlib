@@ -71,15 +71,16 @@ figure[0, 1].title = "handwritten digit"
 # plot the centroids
 figure[0, 0].add_scatter(
     data=np.vstack([centroids[:, 0], centroids[:, 1], centroids[:, 2]]).T,
-    colors="white",
+    colors="r",
     sizes=15
 )
 # plot the down-projected data
 digit_scatter = figure[0,0].add_scatter(
     data=np.vstack([reduced_data[:, 0], reduced_data[:, 1], reduced_data[:, 2]]).T,
-    sizes=5,
+    sizes=np.full(reduced_data.shape[0], 5),  # per-point so the selected point can be enlarged
     cmap="tab10", # use a qualitative cmap
     cmap_transform=kmeans.labels_, # color by the predicted cluster
+    edge_colors=np.full((reduced_data.shape[0], 4), (1, 1, 1, 0.2))
 )
 
 # initial index
@@ -94,7 +95,7 @@ digit_img = figure[0, 1].add_image(
 )
 
 # change the color and size of the initial selected data point
-digit_scatter.colors[ix] = "magenta"
+digit_scatter.edge_colors[ix] = "magenta"
 digit_scatter.sizes[ix] = 10
 
 
@@ -102,13 +103,13 @@ digit_scatter.sizes[ix] = 10
 @digit_scatter.add_event_handler("pointer_enter")
 def update(ev):
     # reset colors and sizes
-    digit_scatter.cmap = "tab10"
+    digit_scatter.edge_colors = (1, 1, 1, 0.2)
     digit_scatter.sizes = 5
 
     # update with new seleciton
     ix = ev.pick_info["vertex_index"]
 
-    digit_scatter.colors[ix] = "magenta"
+    digit_scatter.edge_colors[ix] = "w"
     digit_scatter.sizes[ix] = 10
 
     # update digit fig

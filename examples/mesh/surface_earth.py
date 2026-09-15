@@ -42,7 +42,7 @@ texcoords = np.dstack([u, v]).reshape(-1, 2)
 
 # get an image of the earth from nasa
 image = iio.imread(
-    "https://svs.gsfc.nasa.gov/vis/a000000/a003600/a003615/flat_earth_Largest_still.0330.jpg"
+    "https://assets.science.nasa.gov/content/dam/science/esd/eo/images/bmng/bmng-base/february/world.200402.3x5400x2700.jpg"
 )
 # images coordinate systems are typically inverted in y, so flip the image
 image = np.ascontiguousarray(np.flipud(image))
