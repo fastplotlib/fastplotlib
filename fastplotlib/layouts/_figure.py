@@ -596,7 +596,8 @@ class Figure:
             autoscale the Scene
 
         maintain_aspect: bool, default ``None``
-            maintain aspect ratio, if ``None`` uses the existing value from the camera
+            maintain aspect ratio, if ``None`` the ``auto_scale`` config of the subplots is used,
+            which uses the existing value from the camera unless it has been configured
 
         axes_visible: bool, default ``True``
             show axes
@@ -634,12 +635,14 @@ class Figure:
                     break
 
         if autoscale:
+            # only pass forward `maintain_aspect` to `auto_scale()` if it was provided, an
+            # explicitly passed argument would shadow the `auto_scale` config
+            auto_scale_kwargs = dict()
+            if maintain_aspect is not None:
+                auto_scale_kwargs["maintain_aspect"] = maintain_aspect
+
             for subplot in self._subplots.ravel():
-                if maintain_aspect is None:
-                    _maintain_aspect = subplot.camera.maintain_aspect
-                else:
-                    _maintain_aspect = maintain_aspect
-                subplot.auto_scale(maintain_aspect=maintain_aspect)
+                subplot.auto_scale(**auto_scale_kwargs)
 
         # set axes visibility if False
         if not axes_visible:

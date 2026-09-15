@@ -15,12 +15,8 @@ import fastplotlib as fpl
 fpl.Figure.config.init.size = (700, 1000)
 
 # used by Figure.show()
-# update multiple config values
-fpl.global_config.update(
-    fpl.Figure.config.show,
-    maintain_aspect=False,
-    axes_visible=False,
-)
+fpl.Figure.config.show.axes_visible = False
+fpl.layouts.Subplot.config.auto_scale.maintain_aspect = False
 
 xs = np.linspace(0, 4 * np.pi, 100)
 ys = np.sin(xs)
@@ -34,7 +30,6 @@ figure = fpl.Figure()
 figure[0, 0].add_line_stack(stack_data)
 
 figure.show()
-
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide
