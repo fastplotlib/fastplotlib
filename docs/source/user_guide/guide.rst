@@ -883,3 +883,101 @@ notebook.
 Note that this only works if you are using jupyterlab or ipython locally, this cannot be used for remote rendering.
 You can forward windows (ex: X11 forwarding) but this is much slower than the remote rendering described in the
 previous section.
+
+Global configuration
+--------------------
+
+You can configure global defaults for various components such as ``Figure``, ``Subplot``, ``Axes``
+and the graphics. Defaults are set on the class under ``config``, grouped by the method that takes
+the argument, where ``init`` is the constructor::
+
+    import fastplotlib as fpl
+
+    fpl.LineGraphic.config.init.colors = "magenta"
+    fpl.LineGraphic.config.init.thickness = 5.0
+    fpl.ImageGraphic.config.init.cmap = "gray"
+    fpl.Axes.config.init.grids = False
+    fpl.Figure.config.init.size = (900, 700)
+    fpl.Figure.config.show.axes_visible = False
+    fpl.layouts.Subplot.config.init.toolbar = False
+    fpl.layouts.Subplot.config.auto_scale.zoom = 0.9
+
+Configurable components:
+
++----------------------------------------------------+--------------------------+
+| component                                          | configurable methods     |
++====================================================+==========================+
+| ``fastplotlib.Figure``                             | ``init``, ``show``       |
++----------------------------------------------------+--------------------------+
+| ``fastplotlib.layouts.Subplot``                    | ``init``, ``auto_scale`` |
++----------------------------------------------------+--------------------------+
+| ``fastplotlib.Axes``                               | ``init``                 |
++----------------------------------------------------+--------------------------+
+| every ``Graphic``, ex. ``fastplotlib.LineGraphic`` | ``init``                 |
++----------------------------------------------------+--------------------------+
+
+Print every configurable class with all of its options and their current values::
+
+    fpl.global_config.print_config()
+
+Get the same thing as a dict of ``{class: {method: {option: value}}}``::
+
+    import copy
+
+    config = fpl.global_config.to_dict()
+
+    config[fpl.LineGraphic]["init"]["colors"]  # "magenta"
+
+    # deepcopy for a snapshot since some config options are mutable, ex: dicts
+    snapshot = copy.deepcopy(fpl.global_config.to_dict())
+
+A config value is only used if an argument value is not explicitly provided::
+
+    import numpy as np
+
+    ys = np.sin(np.linspace(0, 2 * np.pi, 100))
+
+    fig = fpl.Figure()
+
+    line = fig[0, 0].add_line(ys)                     # magenta, from the config
+    other = fig[0, 0].add_line(ys, colors="w")        # white
+
+Config values are read when an object is created, so setting one affects everything created after it
+and nothing that already exists.
+
+Options are set on the class, not on an instance::
+
+    fpl.LineGraphic.config.init.colors = "magenta"   # this is how you set it
+    line.config.init.colors = "magenta"              # raises AttributeError
+
+Setting an option that does not exist raises an ``AttributeError`` that lists the valid options.
+
+Graphic collections have no config of their own. The graphics in a collection are created from the
+config of the graphic it holds, so ``LineGraphic.config.init.colors`` is also the color of the
+lines in a ``LineCollection``.
+
+Options that are dicts
+^^^^^^^^^^^^^^^^^^^^^^
+
+Some options are themselves kwargs, such as ``Subplot.config.init.frame_kwargs`` and
+``Axes.config.init.grid_kwargs``. Assigning to one of these replaces the whole dict.
+``fastplotlib.global_config.update()`` merges dicts instead, recursing into nested dicts::
+
+    fpl.global_config.update(
+        fpl.layouts.Subplot.config.init,
+        # changes the title font size, but keeps the current title face_color config
+        frame_kwargs={"title_kwargs": {"font_size": 10}},
+    )
+
+Styles
+^^^^^^
+
+``fastplotlib.style`` holds preset styles, and styles can be merged with subsequent calls::
+
+    fpl.style.light()
+    fpl.style.compact()
+
+Available styles are:
+
+.. autoclass:: fastplotlib.style
+    :members:
