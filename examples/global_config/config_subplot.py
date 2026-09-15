@@ -18,7 +18,7 @@ Subplot.config.init.toolbar = False
 Subplot.config.init.background_color = ["black", "gray"]
 
 # used by Subplot.auto_scale(), which Figure.show() calls for every subplot
-Subplot.config.auto_scale.zoom = 4
+Subplot.config.auto_scale.zoom = 0.5
 
 data = iio.imread("imageio:camera.png")
 
