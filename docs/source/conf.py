@@ -60,6 +60,7 @@ sphinx_gallery_conf = {
             "../../examples/image_volume",
             "../../examples/heatmap",
             # "../../examples/image_widget",
+            "../../examples/global_config",
             "../../examples/gridplot",
             "../../examples/window_layouts",
             "../../examples/controllers",

@@ -22,6 +22,7 @@ from ..utils import global_config
 
 @global_config.register
 class ImguiFigure(Figure):
+    @global_config.declare("size")
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),
