@@ -20,6 +20,7 @@ Properties
 .. autosummary::
     :toctree: ImguiWindow_api
 
+    ImguiWindow.collapsed
     ImguiWindow.height
     ImguiWindow.location
     ImguiWindow.size
