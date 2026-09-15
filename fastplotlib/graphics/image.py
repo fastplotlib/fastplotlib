@@ -7,7 +7,13 @@ from pygfx import Texture
 import cmap as cmap_lib
 
 from .shaders import HighlightableImageMaterial
-from ..utils import quick_min_max, ColorspacesRGB, ColorspacesYUV, ColorRange
+from ..utils import (
+    global_config,
+    quick_min_max,
+    ColorspacesRGB,
+    ColorspacesYUV,
+    ColorRange,
+)
 from ._base import Graphic
 from .selectors import (
     LinearSelector,
@@ -379,6 +385,7 @@ class ImageBase(Graphic):
         return info
 
 
+@global_config.register
 class ImageGraphic(ImageBase):
     _features = {
         "data": TextureArray,
@@ -390,6 +397,13 @@ class ImageGraphic(ImageBase):
         "cmap_interpolation": ImageCmapInterpolation,
     }
 
+    @global_config.declare(
+        "cmap",
+        "gamma",
+        "interpolation",
+        "cmap_interpolation",
+        "colorspace",
+    )
     def __init__(
         self,
         data: Any,
@@ -397,8 +411,8 @@ class ImageGraphic(ImageBase):
         vmax: float = None,
         cmap: str = "plasma",
         gamma: float = 1.0,
-        interpolation: str = "nearest",
-        cmap_interpolation: str = "linear",
+        interpolation: Literal["nearest", "linear"] = "nearest",
+        cmap_interpolation: Literal["nearest", "linear"] = "linear",
         colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
         **kwargs,
@@ -618,7 +632,6 @@ class ImageGraphic(ImageBase):
 
         self._data[:] = data
 
-
     @property
     def colorspace(self) -> ColorspacesRGB:
         """The image's colorspace"""
@@ -661,6 +674,7 @@ class ImageGraphic(ImageBase):
         self.vmax = vmax
 
 
+@global_config.register
 class ImageYUVGraphic(ImageBase):
     _features = {
         "data": TextureYUV,
@@ -670,13 +684,16 @@ class ImageYUVGraphic(ImageBase):
         "interpolation": ImageInterpolation,
     }
 
+    @global_config.declare(
+        "interpolation", "colorspace", "colorrange"
+    )
     def __init__(
         self,
         data: TupleYUV | TextureYUV,
         vmin: float = 0,
         vmax: float = 255,
         gamma: float = 1.0,
-        interpolation: str = "nearest",
+        interpolation: Literal["nearest", "linear"] = "nearest",
         colorspace: ColorspacesYUV = "yuv420p",
         colorrange: ColorRange = "limited",
         **kwargs,

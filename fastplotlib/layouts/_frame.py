@@ -7,7 +7,6 @@ from ._utils import IMGUI_TOOLBAR_HEIGHT
 from ..utils.types import SelectorColorStates
 from ..graphics import TextGraphic
 
-
 """
 Each Subplot is framed by a 2D plane mesh, a rectangle.
 The rectangles are viewed using the UnderlayCamera  where (0, 0) is the top left corner.
@@ -118,6 +117,9 @@ class Frame:
         imgui_windows,
         toolbar_visible,
         canvas_rect,
+        spacing: dict = None,
+        title_kwargs: dict = None,
+        plane_color: dict = None,
     ):
         """
         Manages the plane mesh, resize handle point, and subplot title.
@@ -154,12 +156,36 @@ class Frame:
         canvas_rect: tuple
             figure canvas rect, the render area excluding any areas taken by imgui edge windows
 
+        spacing: dict, optional
+            {
+
         """
 
         self.viewport = viewport
         self.docks = docks
         self._imgui_windows = imgui_windows
         self._toolbar_visible = toolbar_visible
+
+        _spacing = {
+            "x0": 1,
+            "sides": 2,
+            "title_flanks": 8,
+            "resize_handle_space": 13,
+            "bottom": 8,
+        }
+        if spacing is not None:
+            _spacing = {**_spacing, **spacing}
+
+        self._spacing = _spacing
+
+        _title_kwargs = {"font_size": 16, "face_color": "w"}
+        if title_kwargs is not None:
+            _title_kwargs = {**_title_kwargs, **title_kwargs}
+
+        if plane_color is not None:
+            self.plane_color = SelectorColorStates(
+                **plane_color
+            )
 
         # create rect manager to handle all the backend rect calculations
         if rect is not None:
@@ -176,7 +202,7 @@ class Frame:
             title_text = ""
         else:
             title_text = title
-        self._title_graphic = TextGraphic(title_text, font_size=16, face_color="white")
+        self._title_graphic = TextGraphic(title_text, **_title_kwargs)
         m = self._title_graphic.world_object.material
         m.alpha_mode = "blend"
         m.render_queue = RenderQueue.background
@@ -230,6 +256,10 @@ class Frame:
 
         self._reset()
         self.reset_viewport()
+
+    @property
+    def spacing(self) -> dict:
+        return self._spacing
 
     @property
     def rect_manager(self) -> RectManager:
@@ -342,7 +372,10 @@ class Frame:
 
         x, y, w, h = self.rect
         window._fpl_set_rect(
-            round(x + 1), round(y + h - IMGUI_TOOLBAR_HEIGHT), round(w - 2), IMGUI_TOOLBAR_HEIGHT
+            round(x + 1),
+            round(y + h - IMGUI_TOOLBAR_HEIGHT),
+            round(w - 2),
+            IMGUI_TOOLBAR_HEIGHT,
         )
 
     def get_render_rect(self) -> tuple[float, float, float, float]:
@@ -354,11 +387,13 @@ class Frame:
         # the rect of the entire Frame
         x, y, w, h = self.rect
 
-        x += 1  # add 1 so a 1 pixel edge is visible
-        w -= 2  # subtract 2, so we get a 1 pixel edge on both sides
+        x += self._spacing["x0"]  # add 1 so a 1 pixel edge is visible
+        w -= self._spacing[
+            "sides"
+        ]  # subtract 2, so we get a 1 pixel edge on both sides
 
         # add 4 pixels above and below title for better spacing
-        y = y + 4 + self._title_graphic.font_size + 4
+        y = y + self._title_graphic.font_size + self._spacing["title_flanks"]
 
         # spacing on the bottom if imgui toolbar is visible
         if self.toolbar_visible:
@@ -367,16 +402,15 @@ class Frame:
         else:
             toolbar_space = 0
             # need some space for resize handler if imgui toolbar isn't present
-            resize_handle_space = 13
+            resize_handle_space = self._spacing["resize_handle_space"]
 
         # adjust for the 4 pixels from the line above
         # also give space for resize handler if imgui toolbar is not present
         h = (
             h
-            - 4
             - self._title_graphic.font_size
             - toolbar_space
-            - 4
+            - self._spacing["bottom"]
             - resize_handle_space
         )
 

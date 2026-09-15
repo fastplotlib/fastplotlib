@@ -60,6 +60,7 @@ sphinx_gallery_conf = {
             "../../examples/image_volume",
             "../../examples/heatmap",
             # "../../examples/image_widget",
+            "../../examples/global_config",
             "../../examples/gridplot",
             "../../examples/window_layouts",
             "../../examples/controllers",
@@ -83,6 +84,8 @@ sphinx_gallery_conf = {
     "ignore_pattern": r"__init__\.py",
     "nested_sections": False,
     "thumbnail_size": (250, 250),
+    # run before each example, must be a string since a callable is not serializable
+    "reset_modules": ("gallery_reset.reset_fastplotlib_style",),
 }
 
 extra_conf = find_examples_for_gallery(EXAMPLES_DIR)

@@ -14,13 +14,15 @@ from rendercanvas import BaseRenderCanvas
 import pygfx
 
 from ._figure import Figure
-from ._rect import RectManager
 from ._utils import IMGUI_TOOLBAR_HEIGHT
 from ..ui import ImguiWindow, ImguiPopup, SubplotToolbar, StandardRightClickMenu, EDGES
 from ..ui._base import _wrap_update_call
+from ..utils import global_config
 
 
+@global_config.register
 class ImguiFigure(Figure):
+    @global_config.declare("size")
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),

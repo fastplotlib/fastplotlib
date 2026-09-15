@@ -11,8 +11,10 @@ from .features import (
     UniformColor,
 )
 from .features.types import ColorLike, MultiColorLike, ColormapLike
+from ..utils import global_config
 
 
+@global_config.register
 class InfLineGraphic(LineGraphic):
     _features = {
         "data": InfLineAxisData,
@@ -22,6 +24,15 @@ class InfLineGraphic(LineGraphic):
     # one color per line, each broadcast to the two vertices of the line's segment
     _VertexColorsCls = InfLineColors
 
+    @global_config.declare(
+        "thickness",
+        "colors",
+        "cmap",
+        "start_is_infinite",
+        "end_is_infinite",
+        "dash_pattern",
+        "size_space",
+    )
     def __init__(
         self,
         data: Any,
@@ -34,7 +45,7 @@ class InfLineGraphic(LineGraphic):
         start_is_infinite: bool = True,
         end_is_infinite: bool = True,
         dash_pattern: str | tuple | list = (),
-        size_space: str = "screen",
+        size_space: Literal["screen", "world", "model"] = "screen",
         **kwargs,
     ):
         """

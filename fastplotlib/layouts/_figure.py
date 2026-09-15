@@ -19,10 +19,15 @@ from ._utils import (
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
-from .. import ImageGraphic, ImageYUVGraphic
+from ..graphics import ImageGraphic, ImageYUVGraphic
+from ..utils import global_config
 
 
+@global_config.register
 class Figure:
+    config = global_config.descriptor
+
+    @global_config.declare("size")
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),
@@ -569,10 +574,15 @@ class Figure:
         """start render cycle"""
         self.canvas.request_draw(self._render)
 
+    @global_config.declare(
+        "autoscale",
+        "maintain_aspect",
+        "axes_visible",
+    )
     def show(
         self,
         autoscale: bool = True,
-        maintain_aspect: bool = None,
+        maintain_aspect: bool | None = None,
         axes_visible: bool = True,
         sidecar: bool = False,
         sidecar_kwargs: dict = None,
@@ -585,8 +595,9 @@ class Figure:
         autoscale: bool, default ``True``
             autoscale the Scene
 
-        maintain_aspect: bool, default ``True``
-            maintain aspect ratio
+        maintain_aspect: bool, default ``None``
+            maintain aspect ratio, if ``None`` the ``auto_scale`` config of the subplots is used,
+            which uses the existing value from the camera unless it has been configured
 
         axes_visible: bool, default ``True``
             show axes
@@ -624,12 +635,14 @@ class Figure:
                     break
 
         if autoscale:
+            # only pass forward `maintain_aspect` to `auto_scale()` if it was provided, an
+            # explicitly passed argument would shadow the `auto_scale` config
+            auto_scale_kwargs = dict()
+            if maintain_aspect is not None:
+                auto_scale_kwargs["maintain_aspect"] = maintain_aspect
+
             for subplot in self._subplots.ravel():
-                if maintain_aspect is None:
-                    _maintain_aspect = subplot.camera.maintain_aspect
-                else:
-                    _maintain_aspect = maintain_aspect
-                subplot.auto_scale(maintain_aspect=maintain_aspect)
+                subplot.auto_scale(**auto_scale_kwargs)
 
         # set axes visibility if False
         if not axes_visible:

@@ -20,6 +20,7 @@ example_globs = [
     "image/*.py",
     "image_volume/*.py",
     "image_widget/*.py",
+    "global_config/*.py",
     "heatmap/*.py",
     "scatter/*.py",
     "line/*.py",

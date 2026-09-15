@@ -18,8 +18,10 @@ from .features import (
 )
 from .features.types import ColorLike, MultiColorLike, ColormapLike
 from .features.utils import is_single_color
+from ..utils import global_config
 
 
+@global_config.register
 class ScatterGraphic(PositionsGraphic):
     _features = {
         "sizes": (VertexPointSizes, UniformSize),
@@ -30,6 +32,19 @@ class ScatterGraphic(PositionsGraphic):
         "point_rotations": (UniformRotations, VertexRotations, None),
     }
 
+    @global_config.declare(
+        "colors",
+        "cmap",
+        "mode",
+        "markers",
+        "custom_sdf",
+        "edge_colors",
+        "edge_width",
+        "image",
+        "point_rotations",
+        "sizes",
+        "size_space",
+    )
     def __init__(
         self,
         data: Any,
@@ -43,7 +58,7 @@ class ScatterGraphic(PositionsGraphic):
         edge_colors: ColorLike | MultiColorLike | None = "black",
         edge_width: float = 1.0,
         image: np.ndarray = None,
-        point_rotations: float | np.ndarray | None = None,
+        point_rotations: float | np.ndarray | None = 0.0,
         sizes: float | np.ndarray | Sequence[float] = 5,
         size_space: str = "screen",
         **kwargs,
@@ -120,11 +135,11 @@ class ScatterGraphic(PositionsGraphic):
             renders an image at the scatter points, also known as sprites.
             The image color is multiplied with the point's "normal" color.
 
-        point_rotations: float, array-like, or None, default None
+        point_rotations: float, array-like, or None, default 0.0
             The rotation of the scatter points in radians. The rotation mode is determined automatically from
             the value: pass ``None`` (default) for "curve" mode, where each point's rotation follows the curve
             of the data (in screen space); a single float for the same rotation on every point ("uniform"); or
-            an array of rotation values for per-point rotations ("vertex").
+            an array of rotation values for per-point rotations ("vertex"). Units are in radians.
 
         sizes: float, np.ndarray, or Sequence[float], default 5
             size(s) of the scatter points. Specify a single size to use the same size for all points, or a
@@ -279,7 +294,9 @@ class ScatterGraphic(PositionsGraphic):
         else:
             return VertexMarkers(markers, n_datapoints=self._data.value.shape[0])
 
-    def _create_edge_colors_buffer(self, edge_colors) -> UniformEdgeColor | VertexColors:
+    def _create_edge_colors_buffer(
+        self, edge_colors
+    ) -> UniformEdgeColor | VertexColors:
         # creates either a UniformEdgeColor or VertexColors based on the given `edge_colors`
 
         if edge_colors is None:
@@ -331,7 +348,9 @@ class ScatterGraphic(PositionsGraphic):
             return None
 
         if isinstance(point_rotations, (np.ndarray, list, tuple)):
-            return VertexRotations(point_rotations, n_datapoints=self._data.value.shape[0])
+            return VertexRotations(
+                point_rotations, n_datapoints=self._data.value.shape[0]
+            )
 
         else:
             return UniformRotations(point_rotations)
@@ -442,7 +461,9 @@ class ScatterGraphic(PositionsGraphic):
             return self._point_rotations.value
 
     @point_rotations.setter
-    def point_rotations(self, value: float | np.ndarray[tuple[int], np.dtype[np.number]] | None):
+    def point_rotations(
+        self, value: float | np.ndarray[tuple[int], np.dtype[np.number]] | None
+    ):
         # None selects curve mode, where the rotation follows the data curve
         if value is None:
             if self._point_rotations is not None:

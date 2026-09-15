@@ -18,8 +18,10 @@ from .features import (
     PolygonData,
     triangulate_polygon,
 )
+from ..utils import global_config
 
 
+@global_config.register
 class MeshGraphic(Graphic):
     _features = {
         "positions": VertexPositions,
@@ -28,6 +30,7 @@ class MeshGraphic(Graphic):
         "cmap": MeshCmap,
     }
 
+    @global_config.declare("mode", "plane", "colors", "cmap")
     def __init__(
         self,
         positions: Any,
@@ -302,6 +305,7 @@ class MeshGraphic(Graphic):
         return info
 
 
+@global_config.register
 class SurfaceGraphic(MeshGraphic):
     _features = {
         "data": SurfaceData,
@@ -309,6 +313,7 @@ class SurfaceGraphic(MeshGraphic):
         "cmap": MeshCmap,
     }
 
+    @global_config.declare("mode", "colors", "cmap")
     def __init__(
         self,
         data: np.ndarray,
@@ -391,6 +396,7 @@ class SurfaceGraphic(MeshGraphic):
         self._data.set_value(self, new_data)
 
 
+@global_config.register
 class PolygonGraphic(MeshGraphic):
     _features = {
         "data": SurfaceData,
@@ -398,6 +404,7 @@ class PolygonGraphic(MeshGraphic):
         "cmap": MeshCmap,
     }
 
+    @global_config.declare("mode", "colors", "cmap")
     def __init__(
         self,
         data: np.ndarray,

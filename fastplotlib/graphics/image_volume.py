@@ -4,7 +4,7 @@ import numpy as np
 import pygfx
 import cmap as cmap_lib
 
-from ..utils import quick_min_max
+from ..utils import quick_min_max, global_config
 from ._base import Graphic
 from .features import (
     TextureArrayVolume,
@@ -83,6 +83,7 @@ class _VolumeTile(pygfx.Volume):
         return self._chunk_index
 
 
+@global_config.register
 class ImageVolumeGraphic(Graphic):
     _features = {
         "data": TextureArrayVolume,
@@ -101,6 +102,19 @@ class ImageVolumeGraphic(Graphic):
         "plane": VolumeSlicePlane,
     }
 
+    @global_config.declare(
+        "mode",
+        "cmap",
+        "gamma",
+        "interpolation",
+        "cmap_interpolation",
+        "plane",
+        "threshold",
+        "step_size",
+        "substep_size",
+        "emissive",
+        "shininess",
+    )
     def __init__(
         self,
         data: Any,
@@ -109,8 +123,8 @@ class ImageVolumeGraphic(Graphic):
         vmax: float = None,
         cmap: str = "plasma",
         gamma: float = 1.0,
-        interpolation: str = "linear",
-        cmap_interpolation: str = "linear",
+        interpolation: Literal["nearest", "linear"] = "linear",
+        cmap_interpolation: Literal["nearest", "linear"] = "linear",
         plane: tuple[float, float, float, float] = (0, 0, -1, 0),
         threshold: float = 0.5,
         step_size: float = 1.0,

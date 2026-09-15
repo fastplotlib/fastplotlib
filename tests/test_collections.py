@@ -697,7 +697,7 @@ def test_scatter_edge_colors_and_width():
     ],
 )
 def test_scatter_point_rotations(value, expected_type):
-    kwargs = {} if value is None else {"point_rotations": value}
+    kwargs = {"point_rotations": value}
     collection = ScatterCollection(lines_data(), **kwargs)
     for graphic in collection.graphics:
         assert isinstance(graphic._point_rotations, expected_type)

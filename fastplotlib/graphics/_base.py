@@ -29,6 +29,7 @@ from .features import (
     Visible,
 )
 from ..axes import Axes
+from ..utils import global_config
 
 HexStr: TypeAlias = str
 WorldObjectID: TypeAlias = int
@@ -59,6 +60,8 @@ PYGFX_EVENTS = [
 
 
 class Graphic:
+    config = global_config.descriptor
+
     _features: dict[str, type[GraphicFeature] | tuple[type[GraphicFeature], ...]] = dict()
 
     # It also doesn't make sense to create tooltips for some graphics

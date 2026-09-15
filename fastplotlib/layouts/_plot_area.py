@@ -15,7 +15,7 @@ from ..graphics.selectors import SelectorProtocol
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
 from ..tools import Tooltip
-
+from ..utils import global_config
 
 try:
     get_ipython()
@@ -47,16 +47,21 @@ def _get_visible_bounding_box(obj: pygfx.Scene | pygfx.Group | pygfx.WorldObject
     return np.array([bboxes[:, 0, :].min(axis=0), bboxes[:, 1, :].max(axis=0)])
 
 
+@global_config.register
 class PlotArea(GraphicMethodsMixin):
+    config = global_config.descriptor
+
+    @global_config.declare("background_color")
     def __init__(
         self,
-        parent: Union["PlotArea", "Figure"],
+        parent,
         camera: pygfx.PerspectiveCamera,
         controller: pygfx.Controller,
         scene: pygfx.Scene,
         canvas: BaseRenderCanvas,
         renderer: pygfx.WgpuRenderer,
         name: str = None,
+        background_color: tuple[str | pygfx.Color, ...] = ["black"],
     ):
         """
         Base class for plot creation and management. ``PlotArea`` is not intended to be instantiated by users
@@ -88,6 +93,9 @@ class PlotArea(GraphicMethodsMixin):
 
         name: str, optional
             name this plot area
+
+        background_color: tuple[str | pygfx.Color, ...], default ["black"]
+            background color, upto 4 colors, one for each corner
 
         """
 
@@ -131,10 +139,7 @@ class PlotArea(GraphicMethodsMixin):
         self.children = list()
 
         self._background_material = pygfx.BackgroundMaterial(
-            (0.0, 0.0, 0.0, 1.0),
-            (0.0, 0.0, 0.0, 1.0),
-            (0.0, 0.0, 0.0, 1.0),
-            (0.0, 0.0, 0.0, 1.0),
+            *background_color,
             alpha_mode="blend",
         )
         self._background = pygfx.Background(None, self._background_material)
@@ -813,6 +818,7 @@ class PlotArea(GraphicMethodsMixin):
         # probably because camera.show_object uses bounding sphere
         camera.zoom = zoom
 
+    @global_config.declare("maintain_aspect", "zoom")
     def auto_scale(
         self,
         *,  # since this is often used as an event handler, don't want to coerce maintain_aspect = True
@@ -828,7 +834,7 @@ class PlotArea(GraphicMethodsMixin):
             Maintain the camera aspect ratio for all dimensions. If ``None``, the aspect is left unchanged.
             if ``False`` the camera is scaled to the bounding box of the current scene.
 
-        zoom: float
+        zoom: float, default 0.75
             zoom value for the camera after auto-scaling
 
         """

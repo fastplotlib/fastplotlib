@@ -30,6 +30,7 @@ Properties
     Subplot.directional_light
     Subplot.docks
     Subplot.frame
+    Subplot.frame_spacing
     Subplot.graphics
     Subplot.imgui_right_click
     Subplot.imgui_windows
@@ -53,7 +54,6 @@ Methods
     :toctree: Subplot_api
 
     Subplot.add_animations
-    Subplot.add_collection
     Subplot.add_graphic
     Subplot.add_image
     Subplot.add_image_collection

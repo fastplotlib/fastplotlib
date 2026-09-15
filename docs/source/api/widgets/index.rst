@@ -5,3 +5,4 @@ Widgets
     :maxdepth: 1
 
     NDWidget
+    ImageWidget

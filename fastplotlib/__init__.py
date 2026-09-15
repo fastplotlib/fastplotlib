@@ -3,7 +3,7 @@ from ._version import __version__, version_info
 # this must be the first import for auto-canvas detection
 from .utils import loop  # noqa
 from .utils import (
-    config,
+    global_config,
     enums,
     enumerate_adapters,
     select_adapter,
@@ -16,6 +16,7 @@ from .graphics.selectors import *
 from .graphics.utils import pause_events, get_nearest_graphics, get_nearest_graphics_indices
 from .legends import *
 from .tools import *
+from .axes import Axes, Grids
 
 from .layouts import IMGUI
 
@@ -26,6 +27,8 @@ else:
     from .layouts import Figure
 
 from .widgets import NDWidget, ImageWidget
+
+from .utils._style import style
 
 
 if len(enumerate_adapters()) < 1:

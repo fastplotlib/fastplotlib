@@ -10,14 +10,17 @@ from .features import (
     VectorPositions,
     VectorDirections,
 )
+from ..utils import global_config
 
 
+@global_config.register
 class VectorsGraphic(Graphic):
     _features = {
         "positions": VectorPositions,
         "directions": VectorDirections,
     }
 
+    @global_config.declare("color")
     def __init__(
         self,
         positions: np.ndarray | Sequence[float],

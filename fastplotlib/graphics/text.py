@@ -2,6 +2,7 @@ import pygfx
 import numpy as np
 
 from ..utils.enums import RenderQueue
+from ..utils import global_config
 from ._base import Graphic
 from .features import (
     TextData,
@@ -12,6 +13,7 @@ from .features import (
 )
 
 
+@global_config.register
 class TextGraphic(Graphic):
     _features = {
         "text": TextData,
@@ -23,6 +25,14 @@ class TextGraphic(Graphic):
 
     _fpl_support_tooltip = False
 
+    @global_config.declare(
+        "font_size",
+        "face_color",
+        "outline_color",
+        "outline_thickness",
+        "screen_space",
+        "anchor",
+    )
     def __init__(
         self,
         text: str,

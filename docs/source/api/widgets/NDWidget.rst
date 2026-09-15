@@ -24,6 +24,7 @@ Properties
     NDWidget.indices
     NDWidget.ndgraphics
     NDWidget.ranges
+    NDWidget.ui_sliders
 
 Methods
 ~~~~~~~
