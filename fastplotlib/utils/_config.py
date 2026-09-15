@@ -305,6 +305,9 @@ class GlobalConfig:
                 method_config = getattr(type(instance).config, method_name)
 
                 # create a binding
+                # binding.argumetns is a dictionary mapping ONLY user-provided arguments with their values
+                # no default arguments and their values are in a binding, this is the key to what
+                # makes it possible to fill them with the config values!
                 try:
                     binding = sig.bind(instance, *args, **kwargs)
                 except TypeError as e:
@@ -314,7 +317,7 @@ class GlobalConfig:
                     raise TypeError(f"{method.__qualname__}: {e}") from None
 
                 config_dict = method_config.to_dict()
-                # merge config values with the binding
+                # merge binding into the config dict
                 # any values that the user explicitly provided will be in binding.arguments
                 # therefore an explicit user provided value will override the config value
                 binding.arguments = {**config_dict, **binding.arguments}
