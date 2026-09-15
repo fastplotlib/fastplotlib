@@ -358,6 +358,21 @@ class GlobalConfig:
 
         return self._registry[cls]
 
+    def to_dict(self) -> dict[type, dict[str, dict]]:
+        """
+        the config of every registered class, as {class: {method: {option: value}}}
+
+        The option values are the configured objects themselves, not copies, so a mutable value
+        is shared with the config. Deepcopy the result for a snapshot of the current config.
+        """
+        return {
+            cls: {
+                method.name: getattr(class_config, method.name).to_dict()
+                for method in fields(class_config)
+            }
+            for cls, class_config in self._registry.items()
+        }
+
     def print_config(self):
         """print the config of every registered class, yaml-like"""
         for cls, class_config in self._registry.items():

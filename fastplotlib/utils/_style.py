@@ -1,9 +1,14 @@
+from copy import deepcopy
+
 from ._config import global_config
 from .. import graphics, layouts, axes
 
 
 class style:
     """Sets of config defaults applied together"""
+
+    # the config as it exists on fastplotlib import i.e. the defaults from the method signatures
+    __default_config = deepcopy(global_config.to_dict())
 
     @staticmethod
     def light():
@@ -67,8 +72,10 @@ class style:
     @staticmethod
     def default():
         """default configuration"""
-        style.dark()
-        style.spaced()
+        for cls, method_configs in style.__default_config.items():
+            for method, options in method_configs.items():
+                # deepcopy since some config values can be mutable, e.g. dicts
+                global_config.update(getattr(cls.config, method), **deepcopy(options))
 
     @staticmethod
     def compact():
