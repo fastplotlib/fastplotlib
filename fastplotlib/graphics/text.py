@@ -2,7 +2,7 @@ import pygfx
 import numpy as np
 
 from ..utils.enums import RenderQueue
-from ..utils import global_config, ConfigValue
+from ..utils import global_config
 from ._base import Graphic
 from .features import (
     TextData,
@@ -25,24 +25,24 @@ class TextGraphic(Graphic):
 
     _fpl_support_tooltip = False
 
-    @global_config.set(
-        font_size=14,
-        face_color="w",
-        outline_color="w",
-        outline_thickness=0.0,
-        screen_space=True,
-        anchor="middle-center"
+    @global_config.declare(
+        "font_size",
+        "face_color",
+        "outline_color",
+        "outline_thickness",
+        "screen_space",
+        "anchor",
     )
     def __init__(
         self,
         text: str,
-        font_size: float | int = ConfigValue,
-        face_color: str | np.ndarray | list[float] | tuple[float] = ConfigValue,
-        outline_color: str | np.ndarray | list[float] | tuple[float] = ConfigValue,
-        outline_thickness: float = ConfigValue,
-        screen_space: bool = ConfigValue,
+        font_size: float | int = 14,
+        face_color: str | np.ndarray | list[float] | tuple[float] = "w",
+        outline_color: str | np.ndarray | list[float] | tuple[float] = "w",
+        outline_thickness: float = 0.0,
+        screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
-        anchor: str = ConfigValue,
+        anchor: str = "middle-center",
         **kwargs,
     ):
         """

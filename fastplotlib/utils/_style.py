@@ -2,7 +2,7 @@ from ._config import global_config
 from .. import graphics, layouts, axes
 
 
-class presets:
+class style:
     """Sets of config defaults applied together"""
 
     @staticmethod
@@ -67,8 +67,8 @@ class presets:
     @staticmethod
     def default():
         """default configuration"""
-        presets.dark()
-        presets.spaced()
+        style.dark()
+        style.spaced()
 
     @staticmethod
     def compact():
@@ -103,6 +103,6 @@ class presets:
     @staticmethod
     def flynn():
         """preset that optical physiology like"""
-        presets.very_compact()
+        style.very_compact()
 
         layouts.Subplot.config.auto_scale.zoom = 0.99

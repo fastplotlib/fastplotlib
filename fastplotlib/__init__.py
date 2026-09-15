@@ -4,7 +4,6 @@ from ._version import __version__, version_info
 from .utils import loop  # noqa
 from .utils import (
     global_config,
-    ConfigValue,
     enums,
     enumerate_adapters,
     select_adapter,
@@ -29,7 +28,7 @@ else:
 
 from .widgets import NDWidget, ImageWidget
 
-from .utils._presets import presets
+from .utils._style import style
 
 
 if len(enumerate_adapters()) < 1:

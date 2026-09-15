@@ -1,6 +1,6 @@
 from __future__ import annotations
 from collections.abc import Callable
-from dataclasses import make_dataclass, field, fields, dataclass
+from dataclasses import make_dataclass, field, fields, dataclass, asdict
 from functools import wraps, partial
 import inspect
 from typing import get_type_hints, Any
@@ -22,12 +22,6 @@ def inv_get_method_name(name: str) -> str:
     return name
 
 
-class ConfigValue:
-    """Just used to mark a configurable argument"""
-
-    pass
-
-
 class ConfigDescriptor:
     """Descriptor pattern so classes can access their configuration for users to set/get config options"""
 
@@ -38,7 +32,7 @@ class ConfigDescriptor:
         if instance is not None:
             raise AttributeError("set config options on the class, not an instance")
 
-        if cls not in self.__classes.keys():
+        if cls not in self.__classes:
             raise AttributeError("Class is not registered")
 
         return self.__classes[cls]
@@ -81,12 +75,20 @@ def _config_getattr(self, name):
     )
 
 
+def _config_to_dict(self) -> dict:
+    """
+    get the current method config as a dict
+    do this instead of `asdict()` from dataclasses because that creates a copy
+    """
+    return {f.name: getattr(self, f.name) for f in fields(self)}
+
+
 @dataclass
 class Pending:
     """
     A method that is 'pending', waiting for the class to be registered.
 
-    These are created for method decorated with `@GlobalConfig.set()`.
+    These are created for decorated methods with `@GlobalConfig.declare()`.
     They are converted to the config dataclass using the `to_config()` method
     once the python interpreter reaches the `@GlobalConfig.register` for the
     created class.
@@ -94,7 +96,7 @@ class Pending:
     """
 
     method: Callable  # the actual method obj
-    defaults: dict
+    configurable: tuple[str, ...]
 
     @property
     def name(self) -> str:
@@ -129,32 +131,44 @@ class Pending:
 
     def to_config(self) -> object:
         """create the config dataclass for this method"""
+        if "to_dict" in self.configurable:
+            raise ValueError(
+                "`to_dict` is not a valid configurable argument name "
+                "since this is reserved for the configuration system."
+            )
+
         type_hints = get_type_hints(self.method)
 
         params = inspect.signature(self.method).parameters
 
-        sig_value_is_config = {
-            name for name, p in params.items() if p.default is ConfigValue
-        }
+        invalid_args = set(self.configurable) - set(params.keys())
 
-        missing_default = sig_value_is_config - self.defaults.keys()
-        if missing_default:
-            raise TypeError(
-                f"{self.method.__qualname__}: signature marks {sorted(missing_default)} "
-                f"as ConfigValue but @global_config.set declares no value for them"
+        if invalid_args:
+            raise LookupError(
+                f"{self.method.__qualname__}: `@global_config.declare` lists {invalid_args} as configurable "
+                f"but they are not valid arguments for this method. Valid arguments are: {params.keys()}"
             )
 
-        missing_marker = self.defaults.keys() - sig_value_is_config
-        if missing_marker:
-            raise TypeError(
-                f"{self.method.__qualname__}: @global_config.set declares {sorted(missing_marker)} "
-                f"but the signature doesn't mark them as ConfigValue, so they'll be ignored"
+        missing_defaults = [
+            arg
+            for arg in self.configurable
+            if params[arg].default is inspect.Parameter.empty
+        ]
+        if missing_defaults:
+            raise ValueError(
+                f"{self.method.__qualname__}: `@global_config.declare` lists {missing_defaults} as configurable "
+                f"arguments but they do not have a default value set in the function signature. A default value "
+                f"is required to initialize the default configuration"
             )
 
         signature = list()
-        for arg, val in self.defaults.items():
+        for arg in self.configurable:
             # if the type isn't declared in the function signature fill with Any
             type_annot = type_hints.get(arg, Any)
+
+            # get the default value
+            val = params[arg].default
+
             # for each parameter: (arg, type, default value)
             if val.__class__.__hash__ is None:
                 # need to handle unhashable differently, i.e. mutable, objects like arrays and lists differently
@@ -172,6 +186,7 @@ class Pending:
                 "__setattr__": _config_setattr,
                 "__getattr__": _config_getattr,
                 "_fpl_owner": (self.cls, self.method.__name__),
+                "to_dict": _config_to_dict,
             },
         )
 
@@ -203,7 +218,7 @@ class GlobalConfig:
 
         for parent in cls.__mro__:
             # can't use getattr since that will call ConfigDescriptor.__get__
-            # getting ir from __dict__ provides the actual descriptor object
+            # getting it from __dict__ provides the actual descriptor object
             if isinstance(parent.__dict__.get("config"), ConfigDescriptor):
                 break
 
@@ -224,7 +239,7 @@ class GlobalConfig:
                 # get the names of all configurable methods on this parent
                 for f in fields(self._registry[parent]):
                     # if the parent has a configurable method that this subclass doesn't have defaults for
-                    if f.name not in method_configs.keys() and hasattr(
+                    if f.name not in method_configs and hasattr(
                         cls, inv_get_method_name(f.name)
                     ):
                         # use the same method dataclass configuration object for this subclass
@@ -255,15 +270,18 @@ class GlobalConfig:
 
         self._registry[cls] = dc()
 
-    def set(self, **configured_kwargs):
+    def declare(self, *configurable):
         """
-        Set a method with configured default kwargs.
-
-        **configured_kwargs are provided to the decorator for each method: `@GlobalConfig.set(<configured_kwargs>)`
+        Declare configurable arguments for a method.
         """
+        if not configurable:
+            raise IndexError(
+                "No configurable arguments declared, this cannot be left empty. "
+                "Either declare configurable arguments or don't decorate this method."
+            )
 
-        def wrapper(method):
-            new_pending = Pending(method, configured_kwargs)
+        def append_to_config(method):
+            new_pending = Pending(method, configurable)
             if self._pending and not new_pending.is_sibling(self._pending[-1]):
                 raise TypeError(
                     f"{self._pending[-1].cls_qual} is not registered with the global config"
@@ -275,6 +293,11 @@ class GlobalConfig:
             method_name = new_pending.name
             # create signature object just once when the method is decorated instead of every time the method is called
             sig = inspect.signature(method)
+
+            # NOTE: variables within here are available in the injector because they exist in its __closure__
+            # any variables from the outer function that are used in the inner function are always in the __closure__
+            # source: https://stackoverflow.com/questions/14413946/what-exactly-is-contained-within-a-obj-closure
+            # official docs: https://docs.python.org/3/reference/datamodel.html#function.__closure__
 
             @wraps(method)
             def injector(instance, *args, **kwargs):
@@ -290,21 +313,23 @@ class GlobalConfig:
                     # since binding has no idea of the full namespace when we're handling it here
                     raise TypeError(f"{method.__qualname__}: {e}") from None
 
-                # apply the default vals from the method signature
-                # these are the default vals in the method signature itself
+                config_dict = method_config.to_dict()
+                # merge config values with the binding
+                # any values that the user explicitly provided will be in binding.arguments
+                # therefore an explicit user provided value will override the config value
+                binding.arguments = {**config_dict, **binding.arguments}
+
+                # apply any missing default vals from the method signature
+                # this isn't actually necessary but is just a robust failsafe
+                # I think it should account for any weirdness with methods that have positional-only arguments
                 binding.apply_defaults()
 
-                for arg, val in binding.arguments.items():
-                    # configurable value
-                    if val is ConfigValue:
-                        # fill in from current config
-                        binding.arguments[arg] = getattr(method_config, arg)
-
+                # finally call method with updated binding from config
                 return method(*binding.args, **binding.kwargs)
 
             return injector
 
-        return wrapper
+        return append_to_config
 
     def update(self, method_config, **options):
         """

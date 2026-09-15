@@ -11,7 +11,7 @@ from .features import (
     UniformColor,
 )
 from .features.types import ColorLike, MultiColorLike, ColormapLike
-from ..utils import global_config, ConfigValue
+from ..utils import global_config
 
 
 @global_config.register
@@ -24,20 +24,28 @@ class InfLineGraphic(LineGraphic):
     # one color per line, each broadcast to the two vertices of the line's segment
     _VertexColorsCls = InfLineColors
 
-    @global_config.set(thickness=2.0, colors="w", cmap=None, start_is_infinite=True, end_is_infinite=True, dash_pattern=(), size_space="screen")
+    @global_config.declare(
+        "thickness",
+        "colors",
+        "cmap",
+        "start_is_infinite",
+        "end_is_infinite",
+        "dash_pattern",
+        "size_space",
+    )
     def __init__(
         self,
         data: Any,
         axis: Literal["x", "y", "z"] | None = None,
-        thickness: float = ConfigValue,
-        colors: ColorLike | MultiColorLike = ConfigValue,
-        cmap: ColormapLike = ConfigValue,
+        thickness: float = 2.0,
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike = None,
         cmap_transform: np.ndarray | None = None,
         cmap_range: tuple[float, float] | None = None,
-        start_is_infinite: bool = ConfigValue,
-        end_is_infinite: bool = ConfigValue,
-        dash_pattern: str | tuple | list = ConfigValue,
-        size_space: Literal["screen", "world", "model"] = ConfigValue,
+        start_is_infinite: bool = True,
+        end_is_infinite: bool = True,
+        dash_pattern: str | tuple | list = (),
+        size_space: Literal["screen", "world", "model"] = "screen",
         **kwargs,
     ):
         """

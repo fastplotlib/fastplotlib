@@ -9,7 +9,6 @@ import cmap as cmap_lib
 from .shaders import HighlightableImageMaterial
 from ..utils import (
     global_config,
-    ConfigValue,
     quick_min_max,
     ColorspacesRGB,
     ColorspacesYUV,
@@ -398,23 +397,23 @@ class ImageGraphic(ImageBase):
         "cmap_interpolation": ImageCmapInterpolation,
     }
 
-    @global_config.set(
-        cmap="plasma",
-        gamma=1.0,
-        interpolation="nearest",
-        cmap_interpolation="linear",
-        colorspace="srgb",
+    @global_config.declare(
+        "cmap",
+        "gamma",
+        "interpolation",
+        "cmap_interpolation",
+        "colorspace",
     )
     def __init__(
         self,
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = ConfigValue,
-        gamma: float = ConfigValue,
-        interpolation: Literal["nearest", "linear"] = ConfigValue,
-        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
-        colorspace: ColorspacesRGB = ConfigValue,
+        cmap: str = "plasma",
+        gamma: float = 1.0,
+        interpolation: Literal["nearest", "linear"] = "nearest",
+        cmap_interpolation: Literal["nearest", "linear"] = "linear",
+        colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
         **kwargs,
     ):
@@ -685,8 +684,8 @@ class ImageYUVGraphic(ImageBase):
         "interpolation": ImageInterpolation,
     }
 
-    @global_config.set(
-        interpolation="nearest", colorspace="yuv420p", colorrange="limited"
+    @global_config.declare(
+        "interpolation", "colorspace", "colorrange"
     )
     def __init__(
         self,
@@ -694,9 +693,9 @@ class ImageYUVGraphic(ImageBase):
         vmin: float = 0,
         vmax: float = 255,
         gamma: float = 1.0,
-        interpolation: Literal["nearest", "linear"] = ConfigValue,
-        colorspace: ColorspacesYUV = ConfigValue,
-        colorrange: ColorRange = ConfigValue,
+        interpolation: Literal["nearest", "linear"] = "nearest",
+        colorspace: ColorspacesYUV = "yuv420p",
+        colorrange: ColorRange = "limited",
         **kwargs,
     ):
         """

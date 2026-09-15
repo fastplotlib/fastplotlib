@@ -17,7 +17,7 @@ from ._figure import Figure
 from ._utils import IMGUI_TOOLBAR_HEIGHT
 from ..ui import ImguiWindow, ImguiPopup, SubplotToolbar, StandardRightClickMenu, EDGES
 from ..ui._base import _wrap_update_call
-from ..utils import global_config, ConfigValue
+from ..utils import global_config
 
 
 @global_config.register
@@ -47,7 +47,7 @@ class ImguiFigure(Figure):
         canvas: str | BaseRenderCanvas | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
         canvas_kwargs: dict = None,
-        size: tuple[int, int] = ConfigValue,
+        size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
     ):
         # edge windows reserve canvas space, keyed by location; floating windows draw over the plots

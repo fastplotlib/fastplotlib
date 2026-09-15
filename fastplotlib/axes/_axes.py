@@ -6,7 +6,7 @@ import pygfx
 from pylinalg import quat_from_vecs, vec_transform_quat
 
 from ..utils.enums import RenderQueue
-from ..utils import global_config, ConfigValue
+from ..utils import global_config
 
 GRID_PLANES = ["xy", "xz", "yz"]
 
@@ -269,30 +269,30 @@ class Ruler(pygfx.Ruler):
 class Axes:
     config = global_config.descriptor
 
-    @global_config.set(
-        intersection=None,
-        tick_size=8.0,
-        line_width=2.0,
-        tick_marker="tick",
-        color="#fff",
-        grids=True,
-        grid_kwargs=None,
-        auto_grid=True,
+    @global_config.declare(
+        "intersection",
+        "tick_size",
+        "line_width",
+        "tick_marker",
+        "color",
+        "grids",
+        "grid_kwargs",
+        "auto_grid",
     )
     def __init__(
         self,
         plot_area,
-        intersection: tuple[int, int, int] | None = ConfigValue,
-        tick_size: float = ConfigValue,
-        line_width: float = ConfigValue,
-        tick_marker: str = ConfigValue,
-        color: str = ConfigValue,
+        intersection: tuple[int, int, int] | None = None,
+        tick_size: float = 8.0,
+        line_width: float = 2.0,
+        tick_marker: str = "tick",
+        color: str = "#fff",
         x_kwargs: dict = None,
         y_kwargs: dict = None,
         z_kwargs: dict = None,
-        grids: bool = ConfigValue,
-        grid_kwargs: dict = ConfigValue,
-        auto_grid: bool = ConfigValue,
+        grids: bool = True,
+        grid_kwargs: dict = None,
+        auto_grid: bool = True,
         offset: np.ndarray = np.array([0.0, 0.0, 0.0]),
         basis: np.ndarray = np.array(
             [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]

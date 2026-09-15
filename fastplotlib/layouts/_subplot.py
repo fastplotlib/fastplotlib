@@ -12,12 +12,12 @@ from ._utils import create_camera, create_controller
 from ._plot_area import PlotArea
 from ._frame import Frame
 from ..axes import Axes
-from ..utils import global_config, ConfigValue
+from ..utils import global_config
 
 
 @global_config.register
 class Subplot(PlotArea):
-    @global_config.set(toolbar=True, background_color=["black"], frame_kwargs=None)
+    @global_config.declare("toolbar", "background_color", "frame_kwargs")
     def __init__(
         self,
         parent,
@@ -27,11 +27,11 @@ class Subplot(PlotArea):
         rect: np.ndarray = None,
         extent: np.ndarray = None,
         resizeable: bool = True,
-        toolbar: bool = ConfigValue,
+        toolbar: bool = True,
         renderer: pygfx.WgpuRenderer = None,
         name: str = None,
-        background_color: str | tuple[float, ...] | pygfx.Color = ConfigValue,
-        frame_kwargs: dict | None = ConfigValue,
+        background_color: str | tuple[float, ...] | pygfx.Color = ["black"],
+        frame_kwargs: dict | None = None,
     ):
         """
         Subplot class.
@@ -61,6 +61,43 @@ class Subplot(PlotArea):
 
         name: str, optional
             name of the subplot, will appear as ``TextGraphic`` above the subplot
+
+        background_color: tuple[str | pygfx.Color, ...], default ["black"]
+            background color, upto 4 colors, one for each corner
+
+        frame_kwargs: dict | None, default None
+            options for the Subplot Frame. May contain any of the keys ``"spacing"``,
+            ``"title_kwargs"``, and ``"plane_color"``. Each value is itself a dict that is
+            merged with the defaults, so only the entries you want to change need to be passed.
+
+            **"spacing"**: dict, spacing of the frame elements in pixels
+
+            - ``"x0"``: int, default 1, offset of the frame from the left edge
+            - ``"sides"``: int, default 2, padding at the left and right sides
+            - ``"title_flanks"``: int, default 8, space above and below the title text
+            - ``"resize_handle_space"``: int, default 13, space reserved for the resize handle
+            - ``"bottom"``: int, default 8, padding along the bottom edge
+
+            **"title_kwargs"**: dict, options for the title ``TextGraphic``
+
+            - ``"font_size"``: float, default 16
+            - ``"face_color"``: str | tuple[float, ...] | pygfx.Color, default "w"
+
+            **"plane_color"**: dict, colors of the frame plane for each interaction state,
+            used to construct a ``SelectorColorStates``. Each value is a
+            str | tuple[float, ...] | pygfx.Color.
+
+            - ``"idle"``: color when the frame is not being interacted with
+            - ``"highlight"``: color when the frame is hovered
+            - ``"action"``: color while the frame is being moved or resized
+
+            Example::
+
+                frame_kwargs = {
+                    "spacing": {"bottom": 12},
+                    "title_kwargs": {"font_size": 20},
+                    "plane_color": {"idle": "w", "highlight": "gray"},
+                }
 
         """
 

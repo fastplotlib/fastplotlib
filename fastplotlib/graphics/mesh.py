@@ -18,7 +18,7 @@ from .features import (
     PolygonData,
     triangulate_polygon,
 )
-from ..utils import global_config, ConfigValue
+from ..utils import global_config
 
 
 @global_config.register
@@ -30,16 +30,16 @@ class MeshGraphic(Graphic):
         "cmap": MeshCmap,
     }
 
-    @global_config.set(mode="phong", plane=(0.0, 0.0, 1.0, 0.0), colors="w", cmap=None)
+    @global_config.declare("mode", "plane", "colors", "cmap")
     def __init__(
         self,
         positions: Any,
         indices: Any,
-        mode: Literal["basic", "phong", "slice"] = ConfigValue,
-        plane: tuple[float, float, float, float] = ConfigValue,
-        colors: str | np.ndarray | Sequence = ConfigValue,
+        mode: Literal["basic", "phong", "slice"] = "phong",
+        plane: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 0.0),
+        colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] = None,
         **kwargs,
     ):
@@ -313,14 +313,14 @@ class SurfaceGraphic(MeshGraphic):
         "cmap": MeshCmap,
     }
 
-    @global_config.set(mode="phong", colors="w", cmap=None)
+    @global_config.declare("mode", "colors", "cmap")
     def __init__(
         self,
         data: np.ndarray,
-        mode: Literal["basic", "phong", "slice"] = ConfigValue,
-        colors: str | np.ndarray | Sequence = ConfigValue,
+        mode: Literal["basic", "phong", "slice"] = "phong",
+        colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] | None = None,
         **kwargs,
     ):
@@ -404,14 +404,14 @@ class PolygonGraphic(MeshGraphic):
         "cmap": MeshCmap,
     }
 
-    @global_config.set(mode="basic", colors="w", cmap=None)
+    @global_config.declare("mode", "colors", "cmap")
     def __init__(
         self,
         data: np.ndarray,
-        mode: Literal["basic", "phong"] = ConfigValue,
-        colors: str | np.ndarray | Sequence = ConfigValue,
+        mode: Literal["basic", "phong"] = "basic",
+        colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] | None = None,
         **kwargs,
     ):

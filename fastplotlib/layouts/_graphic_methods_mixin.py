@@ -56,11 +56,11 @@ class GraphicMethodsMixin:
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = ConfigValue,
-        gamma: float = ConfigValue,
-        interpolation: Literal["nearest", "linear"] = ConfigValue,
-        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
-        colorspace: ColorspacesRGB = ConfigValue,
+        cmap: str = "plasma",
+        gamma: float = 1.0,
+        interpolation: Literal["nearest", "linear"] = "nearest",
+        cmap_interpolation: Literal["nearest", "linear"] = "linear",
+        colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
         *,
         names=None,
@@ -171,11 +171,11 @@ class GraphicMethodsMixin:
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = ConfigValue,
-        gamma: float = ConfigValue,
-        interpolation: Literal["nearest", "linear"] = ConfigValue,
-        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
-        colorspace: ColorspacesRGB = ConfigValue,
+        cmap: str = "plasma",
+        gamma: float = 1.0,
+        interpolation: Literal["nearest", "linear"] = "nearest",
+        cmap_interpolation: Literal["nearest", "linear"] = "linear",
+        colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
         **kwargs
     ) -> ImageGraphic:
@@ -269,11 +269,11 @@ class GraphicMethodsMixin:
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = ConfigValue,
-        gamma: float = ConfigValue,
-        interpolation: Literal["nearest", "linear"] = ConfigValue,
-        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
-        colorspace: ColorspacesRGB = ConfigValue,
+        cmap: str = "plasma",
+        gamma: float = 1.0,
+        interpolation: Literal["nearest", "linear"] = "nearest",
+        cmap_interpolation: Literal["nearest", "linear"] = "linear",
+        colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
         *,
         shape: tuple[int, int] = None,
@@ -386,19 +386,19 @@ class GraphicMethodsMixin:
     def add_image_volume(
         self,
         data: Any,
-        mode: str = ConfigValue,
+        mode: str = "mip",
         vmin: float = None,
         vmax: float = None,
-        cmap: str = ConfigValue,
-        gamma: float = ConfigValue,
-        interpolation: Literal["nearest", "linear"] = ConfigValue,
-        cmap_interpolation: Literal["nearest", "linear"] = ConfigValue,
-        plane: tuple[float, float, float, float] = ConfigValue,
-        threshold: float = ConfigValue,
-        step_size: float = ConfigValue,
-        substep_size: float = ConfigValue,
-        emissive: str | tuple | np.ndarray = ConfigValue,
-        shininess: int = ConfigValue,
+        cmap: str = "plasma",
+        gamma: float = 1.0,
+        interpolation: Literal["nearest", "linear"] = "linear",
+        cmap_interpolation: Literal["nearest", "linear"] = "linear",
+        plane: tuple[float, float, float, float] = (0, 0, -1, 0),
+        threshold: float = 0.5,
+        step_size: float = 1.0,
+        substep_size: float = 0.1,
+        emissive: str | tuple | np.ndarray = (0, 0, 0),
+        shininess: int = 30,
         **kwargs
     ) -> ImageVolumeGraphic:
         """
@@ -489,9 +489,9 @@ class GraphicMethodsMixin:
         vmin: float = 0,
         vmax: float = 255,
         gamma: float = 1.0,
-        interpolation: Literal["nearest", "linear"] = ConfigValue,
-        colorspace: ColorspacesYUV = ConfigValue,
-        colorrange: ColorRange = ConfigValue,
+        interpolation: Literal["nearest", "linear"] = "nearest",
+        colorspace: ColorspacesYUV = "yuv420p",
+        colorrange: ColorRange = "limited",
         **kwargs
     ) -> ImageYUVGraphic:
         """
@@ -580,15 +580,15 @@ class GraphicMethodsMixin:
         self,
         data: Any,
         axis: Literal["x", "y", "z"] | None = None,
-        thickness: float = ConfigValue,
-        colors: ColorLike | MultiColorLike = ConfigValue,
-        cmap: ColormapLike = ConfigValue,
+        thickness: float = 2.0,
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike = None,
         cmap_transform: np.ndarray | None = None,
         cmap_range: tuple[float, float] | None = None,
-        start_is_infinite: bool = ConfigValue,
-        end_is_infinite: bool = ConfigValue,
-        dash_pattern: str | tuple | list = ConfigValue,
-        size_space: Literal["screen", "world", "model"] = ConfigValue,
+        start_is_infinite: bool = True,
+        end_is_infinite: bool = True,
+        dash_pattern: str | tuple | list = (),
+        size_space: Literal["screen", "world", "model"] = "screen",
         **kwargs
     ) -> InfLineGraphic:
         """
@@ -664,14 +664,14 @@ class GraphicMethodsMixin:
     def add_line_collection(
         self,
         data: Any,
-        thickness: float | ConfigValue = ConfigValue,
-        colors: ColorLike | MultiColorLike | ConfigValue = ConfigValue,
-        cmap: ColormapLike | None | ConfigValue = ConfigValue,
+        thickness: float = 2.0,
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
         cmap_range: tuple[float, float] | None = None,
-        size_space: Literal["screen", "world", "model"] = ConfigValue,
-        dash_pattern: str | tuple | list | ConfigValue = ConfigValue,
-        thin: bool | ConfigValue = ConfigValue,
+        size_space: Literal["screen", "world", "model"] = "screen",
+        dash_pattern: str | tuple | list = (),
+        thin: bool = False,
         *,
         names=None,
         offsets=None,
@@ -755,14 +755,14 @@ class GraphicMethodsMixin:
     def add_line(
         self,
         data: Any,
-        thickness: float | ConfigValue = ConfigValue,
-        colors: ColorLike | MultiColorLike | ConfigValue = ConfigValue,
-        cmap: ColormapLike | None | ConfigValue = ConfigValue,
+        thickness: float = 2.0,
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
         cmap_range: tuple[float, float] | None = None,
-        size_space: Literal["screen", "world", "model"] = ConfigValue,
-        dash_pattern: str | tuple | list | ConfigValue = ConfigValue,
-        thin: bool | ConfigValue = ConfigValue,
+        size_space: Literal["screen", "world", "model"] = "screen",
+        dash_pattern: str | tuple | list = (),
+        thin: bool = False,
         **kwargs
     ) -> LineGraphic:
         """
@@ -829,14 +829,14 @@ class GraphicMethodsMixin:
     def add_line_stack(
         self,
         data: Any,
-        thickness: float | ConfigValue = ConfigValue,
-        colors: ColorLike | MultiColorLike | ConfigValue = ConfigValue,
-        cmap: ColormapLike | None | ConfigValue = ConfigValue,
+        thickness: float = 2.0,
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | Iterable[int | float] | None = None,
         cmap_range: tuple[float, float] | None = None,
-        size_space: Literal["screen", "world", "model"] = ConfigValue,
-        dash_pattern: str | tuple | list | ConfigValue = ConfigValue,
-        thin: bool | ConfigValue = ConfigValue,
+        size_space: Literal["screen", "world", "model"] = "screen",
+        dash_pattern: str | tuple | list = (),
+        thin: bool = False,
         *,
         separation: tuple[float, float, float] = (0.0, 0.0, 0.0),
         separation_axis: str = "y",
@@ -927,11 +927,11 @@ class GraphicMethodsMixin:
         self,
         positions: Any,
         indices: Any,
-        mode: Literal["basic", "phong", "slice"] = ConfigValue,
-        plane: tuple[float, float, float, float] = ConfigValue,
-        colors: str | np.ndarray | Sequence = ConfigValue,
+        mode: Literal["basic", "phong", "slice"] = "phong",
+        plane: tuple[float, float, float, float] = (0.0, 0.0, 1.0, 0.0),
+        colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] = None,
         **kwargs
     ) -> MeshGraphic:
@@ -993,10 +993,10 @@ class GraphicMethodsMixin:
     def add_polygon(
         self,
         data: np.ndarray,
-        mode: Literal["basic", "phong"] = ConfigValue,
-        colors: str | np.ndarray | Sequence = ConfigValue,
+        mode: Literal["basic", "phong"] = "basic",
+        colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] | None = None,
         **kwargs
     ) -> PolygonGraphic:
@@ -1051,19 +1051,19 @@ class GraphicMethodsMixin:
     def add_scatter_collection(
         self,
         data: Any,
-        colors: ColorLike | MultiColorLike = ConfigValue,
-        cmap: ColormapLike | None = ConfigValue,
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
         cmap_range: tuple[float, float] | None = None,
-        mode: Literal["markers", "simple", "gaussian", "image"] = ConfigValue,
-        markers: str | np.ndarray | Sequence[str] = ConfigValue,
-        custom_sdf: str = ConfigValue,
-        edge_colors: ColorLike | MultiColorLike | None = ConfigValue,
-        edge_width: float = ConfigValue,
-        image: np.ndarray = ConfigValue,
-        point_rotations: float | np.ndarray | None = ConfigValue,
-        sizes: float | np.ndarray | Sequence[float] = ConfigValue,
-        size_space: str = ConfigValue,
+        mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
+        markers: str | np.ndarray | Sequence[str] = "o",
+        custom_sdf: str = None,
+        edge_colors: ColorLike | MultiColorLike | None = "black",
+        edge_width: float = 1.0,
+        image: np.ndarray = None,
+        point_rotations: float | np.ndarray | None = 0.0,
+        sizes: float | np.ndarray | Sequence[float] = 5,
+        size_space: str = "screen",
         *,
         names=None,
         offsets=None,
@@ -1148,11 +1148,11 @@ class GraphicMethodsMixin:
             renders an image at the scatter points, also known as sprites.
             The image color is multiplied with the point's "normal" color.
 
-        point_rotations: float, array-like, or None, default None
+        point_rotations: float, array-like, or None, default 0.0
             The rotation of the scatter points in radians. The rotation mode is determined automatically from
             the value: pass ``None`` (default) for "curve" mode, where each point's rotation follows the curve
             of the data (in screen space); a single float for the same rotation on every point ("uniform"); or
-            an array of rotation values for per-point rotations ("vertex").
+            an array of rotation values for per-point rotations ("vertex"). Units are in radians.
 
         sizes: float, np.ndarray, or Sequence[float], default 5
             size(s) of the scatter points. Specify a single size to use the same size for all points, or a
@@ -1196,19 +1196,19 @@ class GraphicMethodsMixin:
     def add_scatter(
         self,
         data: Any,
-        colors: ColorLike | MultiColorLike = ConfigValue,
-        cmap: ColormapLike | None = ConfigValue,
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
         cmap_range: tuple[float, float] | None = None,
-        mode: Literal["markers", "simple", "gaussian", "image"] = ConfigValue,
-        markers: str | np.ndarray | Sequence[str] = ConfigValue,
-        custom_sdf: str = ConfigValue,
-        edge_colors: ColorLike | MultiColorLike | None = ConfigValue,
-        edge_width: float = ConfigValue,
-        image: np.ndarray = ConfigValue,
-        point_rotations: float | np.ndarray | None = ConfigValue,
-        sizes: float | np.ndarray | Sequence[float] = ConfigValue,
-        size_space: str = ConfigValue,
+        mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
+        markers: str | np.ndarray | Sequence[str] = "o",
+        custom_sdf: str = None,
+        edge_colors: ColorLike | MultiColorLike | None = "black",
+        edge_width: float = 1.0,
+        image: np.ndarray = None,
+        point_rotations: float | np.ndarray | None = 0.0,
+        sizes: float | np.ndarray | Sequence[float] = 5,
+        size_space: str = "screen",
         **kwargs
     ) -> ScatterGraphic:
         """
@@ -1284,11 +1284,11 @@ class GraphicMethodsMixin:
             renders an image at the scatter points, also known as sprites.
             The image color is multiplied with the point's "normal" color.
 
-        point_rotations: float, array-like, or None, default None
+        point_rotations: float, array-like, or None, default 0.0
             The rotation of the scatter points in radians. The rotation mode is determined automatically from
             the value: pass ``None`` (default) for "curve" mode, where each point's rotation follows the curve
             of the data (in screen space); a single float for the same rotation on every point ("uniform"); or
-            an array of rotation values for per-point rotations ("vertex").
+            an array of rotation values for per-point rotations ("vertex"). Units are in radians.
 
         sizes: float, np.ndarray, or Sequence[float], default 5
             size(s) of the scatter points. Specify a single size to use the same size for all points, or a
@@ -1324,19 +1324,19 @@ class GraphicMethodsMixin:
     def add_scatter_stack(
         self,
         data: Any,
-        colors: ColorLike | MultiColorLike = ConfigValue,
-        cmap: ColormapLike | None = ConfigValue,
+        colors: ColorLike | MultiColorLike = "w",
+        cmap: ColormapLike | None = None,
         cmap_transform: np.ndarray | None = None,
         cmap_range: tuple[float, float] | None = None,
-        mode: Literal["markers", "simple", "gaussian", "image"] = ConfigValue,
-        markers: str | np.ndarray | Sequence[str] = ConfigValue,
-        custom_sdf: str = ConfigValue,
-        edge_colors: ColorLike | MultiColorLike | None = ConfigValue,
-        edge_width: float = ConfigValue,
-        image: np.ndarray = ConfigValue,
-        point_rotations: float | np.ndarray | None = ConfigValue,
-        sizes: float | np.ndarray | Sequence[float] = ConfigValue,
-        size_space: str = ConfigValue,
+        mode: Literal["markers", "simple", "gaussian", "image"] = "markers",
+        markers: str | np.ndarray | Sequence[str] = "o",
+        custom_sdf: str = None,
+        edge_colors: ColorLike | MultiColorLike | None = "black",
+        edge_width: float = 1.0,
+        image: np.ndarray = None,
+        point_rotations: float | np.ndarray | None = 0.0,
+        sizes: float | np.ndarray | Sequence[float] = 5,
+        size_space: str = "screen",
         *,
         separation: tuple[float, float, float] = (0.0, 0.0, 0.0),
         separation_axis: str = "y",
@@ -1424,11 +1424,11 @@ class GraphicMethodsMixin:
             renders an image at the scatter points, also known as sprites.
             The image color is multiplied with the point's "normal" color.
 
-        point_rotations: float, array-like, or None, default None
+        point_rotations: float, array-like, or None, default 0.0
             The rotation of the scatter points in radians. The rotation mode is determined automatically from
             the value: pass ``None`` (default) for "curve" mode, where each point's rotation follows the curve
             of the data (in screen space); a single float for the same rotation on every point ("uniform"); or
-            an array of rotation values for per-point rotations ("vertex").
+            an array of rotation values for per-point rotations ("vertex"). Units are in radians.
 
         sizes: float, np.ndarray, or Sequence[float], default 5
             size(s) of the scatter points. Specify a single size to use the same size for all points, or a
@@ -1475,10 +1475,10 @@ class GraphicMethodsMixin:
     def add_surface(
         self,
         data: np.ndarray,
-        mode: Literal["basic", "phong", "slice"] = ConfigValue,
-        colors: str | np.ndarray | Sequence = ConfigValue,
+        mode: Literal["basic", "phong", "slice"] = "phong",
+        colors: str | np.ndarray | Sequence = "w",
         mapcoords: Any = None,
-        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = ConfigValue,
+        cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] | None = None,
         **kwargs
     ) -> SurfaceGraphic:
@@ -1534,13 +1534,13 @@ class GraphicMethodsMixin:
     def add_text(
         self,
         text: str,
-        font_size: float | int = ConfigValue,
-        face_color: str | np.ndarray | list[float] | tuple[float] = ConfigValue,
-        outline_color: str | np.ndarray | list[float] | tuple[float] = ConfigValue,
-        outline_thickness: float = ConfigValue,
-        screen_space: bool = ConfigValue,
+        font_size: float | int = 14,
+        face_color: str | np.ndarray | list[float] | tuple[float] = "w",
+        outline_color: str | np.ndarray | list[float] | tuple[float] = "w",
+        outline_thickness: float = 0.0,
+        screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
-        anchor: str = ConfigValue,
+        anchor: str = "middle-center",
         **kwargs
     ) -> TextGraphic:
         """
@@ -1599,7 +1599,7 @@ class GraphicMethodsMixin:
         self,
         positions: np.ndarray | Sequence[float],
         directions: np.ndarray | Sequence[float],
-        color: str | Sequence[float] | np.ndarray | ConfigValue = ConfigValue,
+        color: str | Sequence[float] | np.ndarray = "w",
         size: float = None,
         vector_shape_options: dict = None,
         **kwargs

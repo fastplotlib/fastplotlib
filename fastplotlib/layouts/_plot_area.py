@@ -15,7 +15,7 @@ from ..graphics.selectors import SelectorProtocol
 from ._graphic_methods_mixin import GraphicMethodsMixin
 from ..legends import Legend
 from ..tools import Tooltip
-from ..utils import global_config, ConfigValue
+from ..utils import global_config
 
 try:
     get_ipython()
@@ -51,7 +51,7 @@ def _get_visible_bounding_box(obj: pygfx.Scene | pygfx.Group | pygfx.WorldObject
 class PlotArea(GraphicMethodsMixin):
     config = global_config.descriptor
 
-    @global_config.set(background_color=["black"])
+    @global_config.declare("background_color")
     def __init__(
         self,
         parent,
@@ -61,7 +61,7 @@ class PlotArea(GraphicMethodsMixin):
         canvas: BaseRenderCanvas,
         renderer: pygfx.WgpuRenderer,
         name: str = None,
-        background_color: tuple[str | float | pygfx.Color, ...] = ConfigValue,
+        background_color: tuple[str | pygfx.Color, ...] = ["black"],
     ):
         """
         Base class for plot creation and management. ``PlotArea`` is not intended to be instantiated by users
@@ -93,6 +93,9 @@ class PlotArea(GraphicMethodsMixin):
 
         name: str, optional
             name this plot area
+
+        background_color: tuple[str | pygfx.Color, ...], default ["black"]
+            background color, upto 4 colors, one for each corner
 
         """
 
@@ -815,12 +818,12 @@ class PlotArea(GraphicMethodsMixin):
         # probably because camera.show_object uses bounding sphere
         camera.zoom = zoom
 
-    @global_config.set(maintain_aspect=None, zoom=0.75)
+    @global_config.declare("maintain_aspect", "zoom")
     def auto_scale(
         self,
         *,  # since this is often used as an event handler, don't want to coerce maintain_aspect = True
-        maintain_aspect: None | bool = ConfigValue,
-        zoom: float = ConfigValue,
+        maintain_aspect: None | bool = None,
+        zoom: float = 0.75,
     ):
         """
         Auto-scale the camera w.r.t to the scene

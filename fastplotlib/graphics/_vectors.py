@@ -10,7 +10,7 @@ from .features import (
     VectorPositions,
     VectorDirections,
 )
-from ..utils import global_config, ConfigValue
+from ..utils import global_config
 
 
 @global_config.register
@@ -20,12 +20,12 @@ class VectorsGraphic(Graphic):
         "directions": VectorDirections,
     }
 
-    @global_config.set(color="w")
+    @global_config.declare("color")
     def __init__(
         self,
         positions: np.ndarray | Sequence[float],
         directions: np.ndarray | Sequence[float],
-        color: str | Sequence[float] | np.ndarray | ConfigValue = ConfigValue,
+        color: str | Sequence[float] | np.ndarray = "w",
         size: float = None,
         vector_shape_options: dict = None,
         **kwargs,

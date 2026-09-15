@@ -20,14 +20,14 @@ from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
 from ..graphics import ImageGraphic, ImageYUVGraphic
-from ..utils import global_config, ConfigValue
+from ..utils import global_config
 
 
 @global_config.register
 class Figure:
     config = global_config.descriptor
 
-    @global_config.set(size=(500, 300))
+    @global_config.declare("size")
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),
@@ -53,7 +53,7 @@ class Figure:
         canvas: str | BaseRenderCanvas | pygfx.Texture = None,
         renderer: pygfx.WgpuRenderer = None,
         canvas_kwargs: dict = None,
-        size: tuple[int, int] = ConfigValue,
+        size: tuple[int, int] = (500, 300),
         names: list | np.ndarray = None,
     ):
         """
@@ -574,16 +574,16 @@ class Figure:
         """start render cycle"""
         self.canvas.request_draw(self._render)
 
-    @global_config.set(
-        autoscale=True,
-        maintain_aspect=True,
-        axes_visible=True,
+    @global_config.declare(
+        "autoscale",
+        "maintain_aspect",
+        "axes_visible",
     )
     def show(
         self,
-        autoscale: bool = ConfigValue,
-        maintain_aspect: bool = ConfigValue,
-        axes_visible: bool = ConfigValue,
+        autoscale: bool = True,
+        maintain_aspect: bool | None = None,
+        axes_visible: bool = True,
         sidecar: bool = False,
         sidecar_kwargs: dict = None,
     ):
