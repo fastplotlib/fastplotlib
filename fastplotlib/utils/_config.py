@@ -24,6 +24,16 @@ def inv_get_method_name(name: str) -> str:
 
 class ConfigDescriptor:
     """Descriptor pattern so classes can access their configuration for users to set/get config options"""
+    # Reason this exists, we can't do:
+    # class A:
+    #     config = global_config._registry[A]
+    #
+    # Because A doesn't exist yet when the python interpreter is creating the config variable! By using the
+    # descriptor you don't need A to exist yet, it only needs to exist when the user calls A.config
+    #
+    # The interpreter parses everything in the class and creates all declared objects in the class (methods as well)
+    # and the class is created only after everything in the class has been created!
+    # It's like filling a cup of water but the cup exists only after all the water has been poured into it.
 
     def __init__(self, classes):
         self.__classes = classes
