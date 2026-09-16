@@ -27,7 +27,7 @@ ref = {
     "angle": (0, xs[-1], 0.1),
 }
 
-ndw = fpl.NDWidget(ref_ranges=ref, size=(700, 560))
+ndw = fpl.NDWidget(ranges=ref, size=(700, 560))
 
 nd_lines = ndw[0, 0].add_nd_timeseries(
     n_data,
