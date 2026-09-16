@@ -6,7 +6,7 @@ from ._nd_timeseries import NDTimeseries
 class Extras:
     pass
 
-ndp_extras = Extras()
+nds_extras = Extras()
 
 
 for optional in ["pandas"]:
@@ -18,7 +18,7 @@ for optional in ["pandas"]:
         module = importlib.import_module(f"._{optional}", "fastplotlib.widgets.nd_widget._nd_positions")
         cls = getattr(module, f"{optional.capitalize()}Slicer")
         setattr(
-            ndp_extras,
+            nds_extras,
             f"{optional.capitalize()}",
             cls
         )

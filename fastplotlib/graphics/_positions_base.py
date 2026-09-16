@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Any, Literal
+from typing import Any
 
 import numpy as np
 import cmap as cmap_lib
@@ -16,7 +16,7 @@ from .features import (
     SizeSpace,
 )
 from .features.utils import is_single_color
-from .features.types import ColorLike, MultiColorLike, ColormapLike
+from ..utils.types import ColorLike, MultiColorLike, ColormapLike
 
 
 class PositionsGraphic(Graphic):

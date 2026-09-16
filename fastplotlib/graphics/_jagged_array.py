@@ -7,7 +7,7 @@ import numpy as np
 from .features import BufferManager, TextureArray, TextureArrayVolume
 from .features._base import GraphicFeature, GraphicFeatureEvent
 from .features.utils import is_single_color
-from .features.types import ColorLike, MultiColorLike, ColormapLike
+from ..utils.types import ColorLike, MultiColorLike, ColormapLike
 from ._base import Graphic
 
 

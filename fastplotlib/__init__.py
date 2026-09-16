@@ -5,6 +5,7 @@ from .utils import loop  # noqa
 from .utils import (
     global_config,
     enums,
+    types,
     enumerate_adapters,
     select_adapter,
     print_wgpu_report,
@@ -26,7 +27,7 @@ if IMGUI:
 else:
     from .layouts import Figure
 
-from .widgets import NDWidget, ImageWidget
+from .widgets import *
 
 from .utils._style import style
 

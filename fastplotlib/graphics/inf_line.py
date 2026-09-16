@@ -10,7 +10,7 @@ from .features import (
     InfLineColors,
     UniformColor,
 )
-from .features.types import ColorLike, MultiColorLike, ColormapLike
+from ..utils.types import ColorLike, MultiColorLike, ColormapLike
 from ..utils import global_config
 
 

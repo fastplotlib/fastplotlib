@@ -31,7 +31,7 @@ from .features import (
     ImageInterpolation,
     ImageCmapInterpolation,
 )
-from .features.types import TupleYUV
+from ..utils.types import TupleYUV
 
 
 def _format_value(value: float):

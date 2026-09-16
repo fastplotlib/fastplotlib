@@ -13,7 +13,7 @@ from ._base import (
     block_reentrance,
 )
 from .utils import parse_colors, is_single_color
-from .types import ColorLike, MultiColorLike
+from ...utils.types import ColorLike, MultiColorLike
 
 
 class VertexColors(BufferManager):

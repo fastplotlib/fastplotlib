@@ -1,8 +1,8 @@
-from typing import Callable, Any, Literal
+from typing import Any
 
 import numpy as np
 
-from ...graphics.image import TupleYUV
+from ...utils.types import TupleYUV
 from ._nd_image import NDImageSlicer
 from ._async import run_in_thread_pool
 

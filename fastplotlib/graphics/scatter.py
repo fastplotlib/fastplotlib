@@ -16,7 +16,7 @@ from .features import (
     VertexRotations,
     TextureArray,
 )
-from .features.types import ColorLike, MultiColorLike, ColormapLike
+from ..utils.types import ColorLike, MultiColorLike, ColormapLike
 from .features.utils import is_single_color
 from ..utils import global_config
 

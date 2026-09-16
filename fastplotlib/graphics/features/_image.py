@@ -14,7 +14,8 @@ from ._base import GraphicFeature, GraphicFeatureEvent, block_reentrance
 
 from .utils import get_element_format_from_numpy_array
 from ...utils import ColorspacesRGB, ColorspacesYUV, ColorRange
-from .types import TupleYUV, ColormapLike
+from ...utils.types import ColormapLike, TupleYUV
+
 
 class TextureArray(GraphicFeature):
     """

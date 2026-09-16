@@ -18,7 +18,7 @@ from .features import (
 )
 from ..utils import quick_min_max, global_config
 from ._positions_base import PositionsGraphic
-from .features.types import ColorLike, MultiColorLike, ColormapLike
+from ..utils.types import ColorLike, MultiColorLike, ColormapLike
 
 
 @global_config.register
