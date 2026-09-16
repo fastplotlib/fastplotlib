@@ -571,20 +571,3 @@ class ReferenceIndices:
 
     def __str__(self):
         return str(self._indices)
-
-
-# TODO: Not sure if we'll actually do this here, just a placeholder for now
-class SelectionVector:
-    @property
-    def selection(self):
-        pass
-
-    @property
-    def graphics(self):
-        pass
-
-    def add_graphic(self):
-        pass
-
-    def remove_graphic(self):
-        pass
