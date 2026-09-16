@@ -39,14 +39,14 @@ xvals = np.arange(n_t, dtype=np.float32)
 heatmap_pos = heatmap_to_positions(heatmap, xvals)  # (n_pixels, n_t, 2)
 
 # --- layout ---
-ndw = fpl.NDWidget(ref_ranges={"t": (0, n_t, 1)}, shape=(1, 2), size=(1400, 560))
+ndw = fpl.NDWidget(ranges={"t": (0, n_t, 1)}, shape=(1, 2), size=(1400, 560))
 
 nd_img = ndw[0, 0].add_nd_image(vol, ("t", "y", "x"), ("y", "x"), name="image")
 
 nd_hm = ndw[0, 1].add_nd_timeseries(
     heatmap_pos,
     dims=("pixel", "t", "xy"),
-    spatial_dims=("pixel", "t", "xy"),
+    display_dims=("pixel", "t", "xy"),
     graphic_type=ImageGraphic,
     x_range_mode="fixed",
     display_window=None,
