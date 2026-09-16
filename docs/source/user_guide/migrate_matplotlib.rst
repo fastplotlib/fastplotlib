@@ -2,11 +2,11 @@ Migrating from matplotlib
 =========================
 
 ``fastplotlib`` and ``matplotlib`` are completely unrelated libraries with very different models. Fastplotlib uses the
-GPU for realtime interactive visualization which requires very different implementation, object models, and user-APIs
+GPU for realtime interactive visualization which requires a different implementation, object model, and user-API
 to optimally leverage the underlying rendering engine.
 
 A ``Figure`` is a live object on a canvas that is rendered continuously, and every ``Graphic`` in it stays mutable for
-as long as it exists. You change a visualization by setting the properties of the graphic that is already there. There
+as long as it exists. You change a visualization by setting the properties of the graphic in a subplot. There
 is nothing for you to redraw.
 
 This is fundamentally different from making an animation in ``matplotlib``, where each frame comes from a callback
