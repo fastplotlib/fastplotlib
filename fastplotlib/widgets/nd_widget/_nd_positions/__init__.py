@@ -9,7 +9,7 @@ class Extras:
 nds_extras = Extras()
 
 
-for optional in ["pandas"]:
+for optional in ["pandas", "pynapple"]:
     try:
         importlib.import_module(optional)
     except ImportError:

@@ -24,7 +24,7 @@ from ._nd_positions._nd_positions import (
 )
 from ._index import AutoRangeContinuous
 from ._video import VideoSlicer
-from ._base import NDGraphic, WindowFuncCallable
+from ._base import NDGraphic, WindowFuncCallable, get_init_args
 
 
 class NDWSubplot:
@@ -348,6 +348,197 @@ class NDWSubplot:
             name=name,
             graphic_kwargs=graphic_kwargs,
         )
+
+    def add_pynapple_obj(
+        self,
+        data,
+        dims: Sequence[str],
+        display_dims: Sequence[str],
+        *,
+        slicer: type = None,
+        graphic_type: type = None,
+        x_range_mode: Literal["fixed", "auto"] | None = "auto",
+        ep=None,
+        sort_by: str = None,
+        color_by: str = None,
+        cmap: str = None,
+        name: str = None,
+        slicer_kwargs: dict = None,
+        **kwargs,
+    ) -> NDGraphic:
+        """
+        Add a pynapple object to this subplot.
+
+        Picks the slicer and the graphic from the type of ``data``, so the two cannot be
+        mismatched, and takes the timebase from the object itself. Requires ``pynapple``.
+
+        ============= ================================= =========================================
+        type          default representation            slicer
+        ============= ================================= =========================================
+        ``Tsd``       one line                          ``PynappleSlicer.TsdFrame``
+        ``TsdFrame``  a ``LineStack``, one per column    ``PynappleSlicer.TsdFrame``
+        ``TsdTensor`` an image, one frame at a time     ``PynappleSlicer.TsdTensor``
+        ``TsGroup``   a firing rate heatmap             ``PynappleSlicer.TsGroupRate``
+        ``IntervalSet`` an ethogram of coverage         ``PynappleSlicer.IntervalSet``
+        ============= ================================= =========================================
+
+        A ``TsGroup`` defaults to binned rates. Pass ``slicer=nds_extras.Pynapple.TsGroupSpikes``
+        to draw the individual spikes instead.
+
+        Parameters
+        ----------
+        data: pynapple object
+            A ``Tsd``, ``TsdFrame``, ``TsdTensor``, ``TsGroup`` or ``IntervalSet``.
+
+        dims: Sequence[str]
+            Name for every dim. For the positional types these are the same 3 names as
+            ``display_dims``, ``(n_graphics, p, <value dim>)``. For a ``TsdTensor`` they name every
+            dim of the array, and ``dims[0]`` is the time axis.
+
+        display_dims: Sequence[str]
+            The spatial dims **in display order**, see :meth:`add_nd_timeseries` for the positional
+            types and :meth:`add_nd_image` for a ``TsdTensor``.
+
+        slicer: type, optional
+            Override the slicer chosen from the type of ``data``.
+
+        graphic_type: type, optional
+            Override the representation, which otherwise comes from the slicer's
+            ``default_graphic_type``. Not used for a ``TsdTensor``, whose graphic follows
+            ``display_dims``.
+
+        x_range_mode: "fixed" | "auto" | None, default "auto"
+            How the camera x-range is coupled to the time dim, see :meth:`add_nd_timeseries`. Not
+            used for a ``TsdTensor``.
+
+        ep: pynapple.IntervalSet, optional
+            Restrict to these epochs. Also settable afterwards as ``ndgraphic.ep``.
+
+        sort_by: str, optional
+            Name of a metadata column to order the graphics by. Also settable afterwards as
+            ``ndgraphic.sort_by``, and ``color_by`` follows it.
+
+        color_by: str, optional
+            Name of a metadata column to color the graphics by. A numeric column is mapped onto
+            ``cmap`` between its percentile bounds, a categorical one onto a qualitative colormap
+            so that category *k* is always color *k*, and a column that already names colors is
+            used as-is. The colors are kept in step with ``sort_by``, including when it is changed
+            later.
+
+        cmap: str, optional
+            Colormap used by ``color_by``. Defaults to ``"tab10"`` for a categorical column and
+            ``"viridis"`` for a numeric one.
+
+        name: str, optional
+            Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
+
+        slicer_kwargs: dict, optional
+            passed to the slicer, ex: ``{"column": "behavior"}`` to choose the metadata column
+            whose categories become the rows of an ``IntervalSet`` ethogram, or ``{"y": "depth"}``
+            to place the spikes of a ``TsGroup`` by depth rather than by unit key.
+
+        kwargs
+            passed to the ``NDGraphic``, ex: ``display_window``, ``max_display_datapoints``,
+            ``x_range_mode`` and ``graphic_kwargs`` for the positional types, or
+            ``compute_histogram`` and ``graphic_kwargs`` for a ``TsdTensor``.
+
+        Returns
+        -------
+        NDPynappleTimeseries | NDPynappleImage
+
+        """
+        from ._nd_positions import nds_extras
+
+        pynapple_slicer = getattr(nds_extras, "Pynapple", None)
+        if pynapple_slicer is None:
+            raise ModuleNotFoundError(
+                "`add_pynapple_obj` requires `pynapple` to be installed.\n"
+                "pip install pynapple"
+            )
+
+        default_slicer, colors_helper = pynapple_slicer.dispatch(data)
+        if slicer is None:
+            slicer = default_slicer
+
+        is_image = issubclass(slicer, NDImageSlicer)
+
+        # a TsdTensor is indexed along its own axis 0, the positional slicers along the `p` dim
+        time_dim = dims[0] if is_image else display_dims[1]
+
+        if time_dim not in self.ndw.indices.dims:
+            raise KeyError(
+                f"'{time_dim}' has no reference range. A pynapple object is indexed in seconds, "
+                f"so an auto-generated range over its array indices would be wrong. Build one "
+                f"with `nds_extras.Pynapple.ranges_from_time_support(...)` and pass it as the "
+                f"`ranges` of the NDWidget."
+            )
+
+        if is_image:
+            for unsupported, value in (("sort_by", sort_by), ("color_by", color_by)):
+                if value is not None:
+                    raise TypeError(
+                        f"`{unsupported}` orders or colors the graphics of a collection, which a "
+                        f"{type(data).__name__} is not"
+                    )
+
+            if slicer_kwargs:
+                raise TypeError(
+                    f"the only slicer argument for a {type(data).__name__} is `ep`, which is its "
+                    f"own parameter, you passed: {sorted(slicer_kwargs)}"
+                )
+
+            # the remaining dims of a TsdTensor are real array dims, so they auto-range as usual
+            self._check_slider_dims(dims, display_dims, data.values)
+
+            nd = slicer.nd_graphic_type(
+                self.ndw.indices,
+                nd_subplot=self,
+                data=data,
+                dims=dims,
+                display_dims=display_dims,
+                slicer_type=slicer,
+                ep=ep,
+                name=name,
+                **kwargs,
+            )
+            self._nd_graphics.append(nd)
+            return nd
+
+        slicer_kwargs = dict(slicer_kwargs) if slicer_kwargs is not None else dict()
+
+        # route the arguments that belong to the slicer rather than the graphic, ex: `bin_size`
+        # for a TsGroupRateSlicer or `column` for an IntervalSetSlicer. Anything both accept, such
+        # as `display_window`, stays with the graphic, which passes it down itself.
+        slicer_only = get_init_args(slicer) - get_init_args(slicer.nd_graphic_type)
+        for arg in slicer_only & set(kwargs):
+            slicer_kwargs[arg] = kwargs.pop(arg)
+
+        slicer_kwargs.update(ep=ep, sort_by=sort_by)
+
+        nd = slicer.nd_graphic_type(
+            self.ndw.indices,
+            self,
+            data,
+            dims,
+            display_dims,
+            graphic_type=(
+                graphic_type if graphic_type is not None else slicer.default_graphic_type
+            ),
+            slicer=slicer,
+            linear_selector=True,
+            x_range_mode=x_range_mode,
+            name=name,
+            slicer_kwargs=slicer_kwargs,
+            **kwargs,
+        )
+
+        if color_by is not None:
+            nd.color_cmap = cmap
+            # derived on the NDGraphic so they are re-permuted whenever `sort_by` changes
+            nd.color_by = color_by
+
+        self._nd_graphics.append(nd)
+        return nd
 
     def add_nd_vectors(
         self,

@@ -407,7 +407,8 @@ def main():
 
     ##############################################################################
     # ** Widget classes ** #
-    widget_classes = [getattr(widgets, w) for w in widgets.__all__]
+    # skip nds_extras for now
+    widget_classes = [getattr(widgets, w) for w in widgets.__all__ if hasattr(w, "__name__")]
 
     widget_class_names = [w.__name__ for w in widget_classes]
 

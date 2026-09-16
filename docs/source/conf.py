@@ -22,6 +22,8 @@ EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples")
 
 sys.path.insert(0, str(ROOT_DIR))
 sys.path.insert(0, str(Path(__file__).parent.joinpath("_ext")))
+# gallery_reset lives here; Sphinx 9 no longer adds the confdir to sys.path automatically
+sys.path.insert(0, str(Path(__file__).parent))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -59,7 +61,7 @@ sphinx_gallery_conf = {
             "../../examples/image_collection",
             "../../examples/image_volume",
             "../../examples/heatmap",
-            # "../../examples/image_widget",
+            "../../examples/image_widget",
             "../../examples/global_config",
             "../../examples/gridplot",
             "../../examples/window_layouts",
