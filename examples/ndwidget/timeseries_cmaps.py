@@ -33,7 +33,7 @@ nd_lines = ndw[0, 0].add_nd_timeseries(
     n_data,
     ("n_lines", "angle", "d"),
     ("n_lines", "angle", "d"),
-    slider_dim_transforms={
+    slider_maps={
         "angle": xs,
     },
     # some alternating colormaps per-line
