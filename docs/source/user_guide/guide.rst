@@ -884,6 +884,8 @@ Note that this only works if you are using jupyterlab or ipython locally, this c
 You can forward windows (ex: X11 forwarding) but this is much slower than the remote rendering described in the
 previous section.
 
+.. _global_configuration:
+
 Global configuration
 --------------------
 

@@ -140,6 +140,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "pygfx": ("https://docs.pygfx.org/stable", None),
+    "cmap": ("https://cmap-docs.readthedocs.io/en/stable", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
     "rendercanvas": ("https://rendercanvas.readthedocs.io/stable/", None),
     # "fastplotlib": ("https://www.fastplotlib.org/", None),

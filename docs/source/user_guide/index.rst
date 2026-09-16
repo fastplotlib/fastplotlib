@@ -9,3 +9,4 @@ User Guide
    event_tables
    gpu
    faq
+   migrate_matplotlib
