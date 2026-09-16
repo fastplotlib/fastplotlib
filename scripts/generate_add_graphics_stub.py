@@ -90,7 +90,7 @@ def blacken():
     with open(filename, "r", encoding="utf-8") as f:
         text = f.read()
 
-    mode = black.FileMode(line_length=88, is_pyi=True)
+    mode = black.FileMode(is_pyi=True)
     text = black.format_str(text, mode=mode)
 
     with open(filename, "w", encoding="utf-8") as f:
