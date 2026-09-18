@@ -5,6 +5,7 @@ import numpy as np
 import pygfx
 from pygfx import Texture
 import cmap as cmap_lib
+import wgpu
 
 from .shaders import HighlightableImageMaterial
 from ..utils import (
@@ -415,6 +416,7 @@ class ImageGraphic(ImageBase):
         cmap_interpolation: Literal["nearest", "linear"] = "linear",
         colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
+        texture_usage: wgpu.TextureUsage = 0,
         **kwargs,
     ):
         """
@@ -482,6 +484,9 @@ class ImageGraphic(ImageBase):
             * ``reset_vmin_vmax()`` is not supported
             * selector tools will not be able to return the data under the selection
 
+        texture_usage: wgpu.TextureUsage, default 0
+            Extra wgpu texture usage flags. Usage cannot be changed after the texture is created
+
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
 
@@ -498,7 +503,7 @@ class ImageGraphic(ImageBase):
             # create new texture array to manage buffer
             # texture array that manages the multiple textures on the GPU that represent this image
             self._data = TextureArray(
-                data, colorspace=colorspace, cpu_buffer=cpu_buffer
+                data, colorspace=colorspace, cpu_buffer=cpu_buffer, usage=texture_usage
             )
 
         if (vmin is None) or (vmax is None):
