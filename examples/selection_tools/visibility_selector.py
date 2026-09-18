@@ -130,56 +130,57 @@ def image_clicked(session, ev):
 
 
 # iterate through all the toy data, create NDGraphics and selectors
-for session_index, (indices, movie, contours, signals) in enumerate(
-    zip(indices_per_session, movies_sessions, contours_sessions, signals_sessions)
-):
-    # create NDImage, nothing special here
-    ndi = ndw[f"images-{session_index}"].add_nd_image(
-        movie,
-        dims=("time", "m", "n"),
-        spatial_dims=list("mn"),
-    )
-    ndi.graphic.cmap = "gray"
-    # create ND Timeseries, again nothing special
-    ndt = ndw[f"signals-{session_index}"].add_nd_timeseries(
-        fpl.utils.heatmap_to_positions(signals, xvals=np.arange(0, n_t)),
-        dims=("l", "time", "d"),
-        spatial_dims=("l", "time", "d"),
-        x_range_mode="fixed",
-        display_window=None,
-    )
-
-    # Create selectors
-    # image highlight selector for this session
-    image_selector = fpl.ImageHighlightSelector(
-        lut="tab10",
-        selection_options={"pixels": contours},  # pre-loaded selection options
-        options_alpha=0.1,  # unselected contours shown with low alpha
-        options_color="w",  # unselected contours shown this color
-        lut_wrap="repeat",  # cycles through tab10 colormap if you select > 10 items
-        alpha=0.7,  # highlight alpha
-    )
-
-    # selector that toggles visibility of lines in the line stack
-    # use same lut as the image highlight
-    traces_visible_selector = fpl.VisibilitySelector(
-        ndt.graphic, lut="tab10", lut_wrap="repeat"
-    )
-
-    # target graphic, you can also add more target graphics later
-    # as long as they are in the same "selection space", ex: each movie for single-session
-    # each selector manages ONE buffer, so the same pixels will be highlighted on all graphics
-    # targetted by a selector.
-    image_selector.add_graphic(ndi.graphic)
-    # when image is double clicked, calls the handler
-    ndi.graphic.add_event_handler(partial(image_clicked, session_index), "double_click")
-
-    # add selectors to SelectionVector
-    # with mapping that defines how to map from master index to local index for this session
-    mapping = partial(master_to_local_index, session_index)
-    sv.add_selector((image_selector, mapping))
-    sv.add_selector((traces_visible_selector, mapping))
+# for session_index, (indices, movie, contours, signals) in enumerate(
+#     zip(indices_per_session, movies_sessions, contours_sessions, signals_sessions)
+# ):
+#     # create NDImage, nothing special here
+#     ndi = ndw[f"images-{session_index}"].add_nd_image(
+#         movie,
+#         dims=("time", "m", "n"),
+#         display_dims=list("mn"),
+#     )
+#     ndi.graphic.cmap = "gray"
+#     # create ND Timeseries, again nothing special
+#     ndt = ndw[f"signals-{session_index}"].add_nd_timeseries(
+#         fpl.utils.heatmap_to_positions(signals, xvals=np.arange(0, n_t)),
+#         dims=("l", "time", "d"),
+#         display_dims=("l", "time", "d"),
+#         x_range_mode="fixed",
+#         display_window=None,
+#     )
+#
+#     # Create selectors
+#     # image highlight selector for this session
+#     image_selector = fpl.ImageHighlightSelector(
+#         lut="tab10",
+#         selection_options={"pixels": contours},  # pre-loaded selection options
+#         options_alpha=0.1,  # unselected contours shown with low alpha
+#         options_color="w",  # unselected contours shown this color
+#         lut_wrap="repeat",  # cycles through tab10 colormap if you select > 10 items
+#         alpha=0.7,  # highlight alpha
+#     )
+#
+#     # selector that toggles visibility of lines in the line stack
+#     # use same lut as the image highlight
+#     traces_visible_selector = fpl.VisibilitySelector(
+#         ndt.graphic, lut="tab10", lut_wrap="repeat"
+#     )
+#
+#     # target graphic, you can also add more target graphics later
+#     # as long as they are in the same "selection space", ex: each movie for single-session
+#     # each selector manages ONE buffer, so the same pixels will be highlighted on all graphics
+#     # targetted by a selector.
+#     image_selector.add_graphic(ndi.graphic)
+#     # when image is double clicked, calls the handler
+#     ndi.graphic.add_event_handler(partial(image_clicked, session_index), "double_click")
+#
+#     # add selectors to SelectionVector
+#     # with mapping that defines how to map from master index to local index for this session
+#     mapping = partial(master_to_local_index, session_index)
+#     sv.add_selector((image_selector, mapping))
+#     sv.add_selector((traces_visible_selector, mapping))
 
 ndw.show()
+figure = ndw.figure
 
 fpl.loop.run()
