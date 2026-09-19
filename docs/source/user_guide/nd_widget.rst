@@ -423,3 +423,89 @@ Holds the data and turns :math:`\Lambda` into the slice to render. ::
 The data does not have to be an array. It has to behave as though the declared dims exist, and ``get`` has
 to return a slice that the graphic can render, which is how a ``pandas.DataFrame`` or a ``spikeinterface``
 recording is used as a data source.
+
+The graphics and the slicers
+----------------------------
+
++------------------+------------------------------+------------------+------------------------+-----------------------+
+| ``NDGraphic``    | nd shape                     | NDSlicer output  | ``Graphic``            | added with            |
++==================+==============================+==================+========================+=======================+
+| ``NDImage``      | ``[s_1, s_2, ..., r, c]``    | ``[r, c]``,      | ``ImageGraphic``,      | ``add_nd_image``,     |
+|                  |                              | ``[r, c, v]``,   | ``ImageYUVGraphic``,   | ``add_video``         |
+|                  |                              | ``[z, r, c]``    | ``ImageVolumeGraphic`` |                       |
++------------------+------------------------------+------------------+------------------------+-----------------------+
+| ``NDPositions``  | ``[s_1, s_2, ..., l, p, d]`` | ``[l, p', d]``   | ``LineCollection``,    | ``add_nd_lines``,     |
+|                  |                              |                  | ``LineStack``,         | ``add_nd_scatter``    |
+|                  |                              |                  | ``ScatterCollection``, |                       |
+|                  |                              |                  | ``ScatterStack``       |                       |
++------------------+------------------------------+------------------+------------------------+-----------------------+
+| ``NDTimeseries`` | ``[s_1, s_2, ..., l, p, d]`` | ``[l, p', d]``   | the four above and     | ``add_nd_timeseries`` |
+|                  |                              |                  | ``ImageGraphic``       |                       |
++------------------+------------------------------+------------------+------------------------+-----------------------+
+| ``NDVectors``    | ``[s_1, s_2, ..., k, 2, d]`` | ``[k, 2, d]``    | ``VectorsGraphic``     | ``add_nd_vectors``    |
++------------------+------------------------------+------------------+------------------------+-----------------------+
+
+``NDImage``
+^^^^^^^^^^^
+
+``display_dims`` determines the graphic. ``[rows, cols]`` is a grayscale ``ImageGraphic``,
+``[rows, cols, rgb_dim]`` is an RGB(A) ``ImageGraphic``, ``[depth, rows, cols]`` is an
+``ImageVolumeGraphic``, and a YUV ``colorspace`` is an ``ImageYUVGraphic``. Reassigning ``display_dims``
+swaps the graphic when the number of rendered dims changes, so a volume can become a single plane while the
+widget is running.
+
+``compute_histogram=True``, the default, estimates a histogram of the data and puts an ``ImguiColorbar`` on
+the edge of the subplot for setting vmin and vmax. ``clim_quantiles`` takes vmin and vmax from quantiles of
+that histogram instead, and follows the data as the histogram is recomputed.
+
+``NDPositions``
+^^^^^^^^^^^^^^^
+
+Four interchangeable representations of the same ``[l, p', d]`` slice. ``LineCollection`` and
+``ScatterCollection`` draw the ``l`` graphical elements in one coordinate system, ``LineStack`` and
+``ScatterStack`` separate them along y. ``graphic_type`` is mutable at runtime.
+
+``NDTimeseries``
+^^^^^^^^^^^^^^^^
+
+``NDPositions`` for the case where ``p`` is a time-like x axis. It adds three things:
+
+* ``ImageGraphic`` as a representation, which draws the slice as a heatmap of ``l`` rows where the color is
+  the y coordinate and the x coordinates become the offset and scale of the image. This requires a value
+  dim of exactly 2.
+* a ``LinearSelector`` that marks :math:`\Lambda_p`. Dragging it sets that index, so it drives every
+  graphic that declares the dim.
+* ``x_range_mode``, which couples the camera x-range to the display window.
+
+``fpl.utils.heatmap_to_positions(heatmap, xvals)`` converts an array shaped ``[n_rows, n_timepoints]`` into
+the ``[n_rows, n_timepoints, 2]`` that these expect.
+
+``NDVectors``
+^^^^^^^^^^^^^
+
+A ``VectorsGraphic`` of ``k`` vectors, the equivalent of a quiver plot, where the slice holds a position
+and a direction for each vector.
+
+Slicers
+^^^^^^^
+
+``NDImageSlicer``, ``NDPositionsSlicer`` and ``NDVectorsSlicer`` read anything that satisfies
+``fpl.protocols.ArrayProtocol``, i.e. ``dtype``, ``ndim``, ``shape`` and ``__getitem__``. That covers numpy,
+zarr, HDF5, torch and CUDA arrays, and lazy readers of your own. A reader that returns futures is awaited.
+
+``VideoSlicer`` subclasses ``NDImageSlicer`` for video. It reads the frame at the current index directly
+and does not apply window functions. ``add_video`` uses it with YUV defaults, which sends the YUV planes
+straight to the GPU instead of converting each frame to RGB.
+
+``PandasSlicer`` subclasses ``NDPositionsSlicer`` and reads the coordinates of each graphical element from
+named columns of a ``pandas.DataFrame`` instead of from an array. It takes one ``(x_col, y_col)`` tuple per
+element, which is the shape of pose tracking output, so ``l`` is the number of tuples and ``p`` is the
+number of rows. It is reached through ``fpl.nds_extras.pandas.PandasSlicer``. Every module under
+``fpl.nds_extras`` is named after the library that it requires and is imported when you access it, so
+nothing there is imported along with fastplotlib.
+
+To read from something else, subclass the slicer whose output the graphic expects and implement ``get``,
+which receives :math:`\Lambda` and returns the slice. ``_get_dw_slice(indices)`` gives the display window
+slice and ``_ref_index_to_array_index(dim, value)`` maps a single dim. Pass the subclass as
+``slicer_type=`` to ``add_nd_image`` and ``add_video``, or as ``slicer=`` to the positional methods, with
+extra arguments in ``slicer_kwargs``.
