@@ -26,6 +26,7 @@ SELECTORS_DIR = API_DIR.joinpath("selectors")
 AXES_DIR = API_DIR.joinpath("axes")
 TOOLS_DIR = API_DIR.joinpath("tools")
 WIDGETS_DIR = API_DIR.joinpath("widgets")
+NDS_EXTRAS_DIR = API_DIR.joinpath("nds_extras")
 UI_DIR = API_DIR.joinpath("ui")
 GUIDE_DIR = current_dir.joinpath("user_guide")
 
@@ -38,6 +39,7 @@ doc_sources = [
     AXES_DIR,
     TOOLS_DIR,
     WIDGETS_DIR,
+    NDS_EXTRAS_DIR,
     UI_DIR,
 ]
 
@@ -406,12 +408,7 @@ def main():
 
     ##############################################################################
     # ** Widget classes ** #
-    # `widgets.__all__` also exports nds_extras, an instance which has no docs page
-    widget_classes = [
-        getattr(widgets, w)
-        for w in widgets.__all__
-        if inspect.isclass(getattr(widgets, w))
-    ]
+    widget_classes = [getattr(widgets, w) for w in widgets.__all__]
 
     widget_class_names = [w.__name__ for w in widget_classes]
 
@@ -433,6 +430,44 @@ def main():
             classes=[widget_cls],
             modules=["fastplotlib"],
             source_path=WIDGETS_DIR.joinpath(f"{widget_cls.__name__}.rst"),
+        )
+    ##############################################################################
+    # ** nds_extras modules ** #
+    # one page per extras module, generating them requires their optional dependencies
+    extras_names = dir(fastplotlib.nds_extras)
+
+    extras_names_str = "\n    ".join([""] + extras_names)
+
+    with open(NDS_EXTRAS_DIR.joinpath("index.rst"), "w") as f:
+        f.write(
+            f"ND Slicer Extras\n"
+            f"****************\n"
+            f"\n"
+            f"Slicers for data sources that require an optional dependency. Each module is named\n"
+            f"after the library that it requires and is imported when you access it, ex.\n"
+            f"``fpl.nds_extras.pandas``. Accessing one whose library is not installed raises\n"
+            f"``ModuleNotFoundError`` naming the package to install.\n"
+            f"\n"
+            f".. toctree::\n"
+            f"    :maxdepth: 1\n"
+            f"{extras_names_str}\n"
+        )
+
+    for extra in extras_names:
+        module = getattr(fastplotlib.nds_extras, extra)
+
+        # the classes the extras module defines, not the ones it imports
+        extras_classes = [
+            cls
+            for name, cls in inspect.getmembers(module, inspect.isclass)
+            if not name.startswith("_") and cls.__module__ == module.__name__
+        ]
+
+        generate_page(
+            page_name=extra,
+            classes=extras_classes,
+            modules=[module.__name__] * len(extras_classes),
+            source_path=NDS_EXTRAS_DIR.joinpath(f"{extra}.rst"),
         )
     ##############################################################################
     # ** UI classes ** #
@@ -490,6 +525,7 @@ def main():
             "    axes/index\n"
             "    ui/index\n"
             "    widgets/index\n"
+            "    nds_extras/index\n"
             "    fastplotlib\n"
             "    utils\n"
         )

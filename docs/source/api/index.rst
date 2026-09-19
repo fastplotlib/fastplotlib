@@ -13,5 +13,6 @@ API Reference
     axes/index
     ui/index
     widgets/index
+    nds_extras/index
     fastplotlib
     utils
