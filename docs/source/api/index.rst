@@ -10,6 +10,7 @@ API Reference
     graphic_features/index
     selectors/index
     tools/index
+    axes/index
     ui/index
     widgets/index
     fastplotlib

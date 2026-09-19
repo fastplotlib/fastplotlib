@@ -404,11 +404,14 @@ def main():
             source_path=AXES_DIR.joinpath(f"{axes_cls.__name__}.rst"),
         )
 
-
     ##############################################################################
     # ** Widget classes ** #
-    # skip nds_extras for now
-    widget_classes = [getattr(widgets, w) for w in widgets.__all__ if hasattr(w, "__name__")]
+    # `widgets.__all__` also exports nds_extras, an instance which has no docs page
+    widget_classes = [
+        getattr(widgets, w)
+        for w in widgets.__all__
+        if inspect.isclass(getattr(widgets, w))
+    ]
 
     widget_class_names = [w.__name__ for w in widget_classes]
 
@@ -464,7 +467,14 @@ def main():
     with open(API_DIR.joinpath("utils.rst"), "w") as f:
         f.write(utils_str)
 
+    ##############################################################################
+
     # make API index file
+    top_level_namespaces = [
+        "layouts",
+        "graphics",
+
+    ]
     with open(API_DIR.joinpath("index.rst"), "w") as f:
         f.write(
             "API Reference\n"
@@ -477,6 +487,7 @@ def main():
             "    graphic_features/index\n"
             "    selectors/index\n"
             "    tools/index\n"
+            "    axes/index\n"
             "    ui/index\n"
             "    widgets/index\n"
             "    fastplotlib\n"
