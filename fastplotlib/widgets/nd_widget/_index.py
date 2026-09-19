@@ -438,15 +438,64 @@ class ReferenceIndices:
                 f"provided dimension: {dim} has no associated ReferenceRange in this ReferenceIndex, valid dims in this ReferenceIndex are: {self.dims}"
             )
 
-    def pop_dim(self):
+    def pop_dims(self, *dims: str) -> dict[str, RangeContinuous | RangeDiscrete]:
         """
-        Remove a slider dim and its reference range.
+        Remove slider dims, i.e. unregister their reference ranges.
 
-        .. important::
-            Not implemented yet, this is a placeholder that does nothing.
+        A dim can only be removed once no ``NDGraphic`` uses it as a slider dim, since its reference range
+        and current index are what those graphics are sliced with. Delete those graphics first using
+        ``nd_subplot.delete_nd_graphic()``. Every given dim is checked before any of them are removed, so
+        nothing is removed if one of them is still in use. The slider for each removed dim is also removed
+        from the UI of every ``NDWidget`` managed by this ``ReferenceIndex``.
+
+        Parameters
+        ----------
+        dims: str
+            names of the dims to remove
+
+        Returns
+        -------
+        dict[str, RangeContinuous | RangeDiscrete]
+            the removed reference ranges, ``{dim_name: range}``, can be passed back to :meth:`push_dims`
+
+        Raises
+        ------
+        KeyError
+            if a given dim has no reference range in this ``ReferenceIndex``
+
+        ValueError
+            if an ``NDGraphic`` still uses one of the given dims as a slider dim
 
         """
-        pass
+        # a dim given more than once must not be popped twice
+        dims = tuple(dict.fromkeys(dims))
+
+        for dim in dims:
+            self._check_has_dim(dim)
+
+            in_use = [g for g in self.ndgraphics if dim in g.slider_dims]
+            if in_use:
+                names = ", ".join(
+                    f"{type(g).__name__}: {g.name if g.name is not None else hex(id(g))}"
+                    for g in in_use
+                )
+                raise ValueError(
+                    f"cannot pop dim: {dim}, it is a slider dim of the following NDGraphics: {names}\n"
+                    f"delete them first using `nd_subplot.delete_nd_graphic()`"
+                )
+
+        popped = dict()
+        for dim in dims:
+            popped[dim] = self._ref_ranges.pop(dim)
+            self._indices.pop(dim)
+
+            # remove the slider from the imgui UI of each NDWidget window
+            for ndw in self._ndwidgets:
+                ndw._sliders_ui.pop_dim(dim)
+
+        self._indices_changed()
+
+        return popped
 
     def push_dims(
         self,
