@@ -29,6 +29,9 @@ else:
 
 from .widgets import *
 
+# slicers for data sources that require an optional dependency, imported on access
+from .widgets.nd_widget import extras as nds_extras
+
 from .utils._style import style
 
 

@@ -3,7 +3,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from ._nd_positions import NDPositionsSlicer
+from .._nd_positions import NDPositionsSlicer
 
 
 class PandasSlicer(NDPositionsSlicer):
@@ -24,7 +24,7 @@ class PandasSlicer(NDPositionsSlicer):
         entries is the number of graphics in the collection and the number of rows is the size of the ``p`` dim.
         There are no additional slider dims, ``p`` is the only one.
 
-        Available as ``ndp_extras.NDPP_Pandas`` when ``pandas`` is installed, pass it as the ``slicer`` to
+        Available as ``fpl.nds_extras.pandas.PandasSlicer``, pass it as the ``slicer`` to
         ``NDWSubplot.add_nd_lines()``, ``add_nd_scatter()`` or ``add_nd_timeseries()``.
 
         Parameters
