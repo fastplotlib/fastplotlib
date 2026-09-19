@@ -381,11 +381,18 @@ class RectangleSelector(BaseSelector):
             view or list of views of the full array, returns empty array if selection is empty
         """
         source = self._get_source(graphic)
+
+        if source.data.value is None:
+            raise ValueError(
+                "Cannot get selected data. The graphic has no local buffer, `cpu_buffer` is probably `False`."
+            )
+
         ixs = self.get_selected_indices(source)
 
         # do not need to check for mode for images, because the selector is bounded by the image shape
         # will always be `full`
-        if "Image" in source.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in source.__class__.__name__ and not hasattr(source, "graphics"):
             row_ixs, col_ixs = ixs
             row_slice = slice(row_ixs[0], row_ixs[-1] + 1)
             col_slice = slice(col_ixs[0], col_ixs[-1] + 1)
@@ -508,7 +515,8 @@ class RectangleSelector(BaseSelector):
 
         # image data does not need to check for mode because the selector is always bounded
         # to the image
-        if "Image" in source.__class__.__name__:
+        # exclude collections, whose class name also contains "Image"
+        if "Image" in source.__class__.__name__ and not hasattr(source, "graphics"):
             col_ixs = np.arange(xmin, xmax, dtype=int)
             row_ixs = np.arange(ymin, ymax, dtype=int)
             return row_ixs, col_ixs

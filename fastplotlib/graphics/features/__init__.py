@@ -4,6 +4,10 @@ from ._positions import (
     SizeSpace,
     VertexPositions,
     VertexCmap,
+    VertexCmapTransform,
+    VertexCmapRange,
+    InfLineAxisData,
+    InfLineColors,
 )
 from ._mesh import (
     MeshIndices,
@@ -14,7 +18,7 @@ from ._mesh import (
     surface_data_to_mesh,
     triangulate_polygon,
 )
-from ._line import Thickness
+from ._line import Thickness, DashPattern, parse_dash_pattern
 from ._scatter import (
     VertexMarkers,
     UniformMarker,
@@ -27,7 +31,9 @@ from ._scatter import (
 )
 from ._image import (
     TextureArray,
+    TextureYUV,
     ImageCmap,
+    ImageGamma,
     ImageVmin,
     ImageVmax,
     ImageInterpolation,
@@ -55,7 +61,6 @@ from ._base import (
     GraphicFeature,
     BufferManager,
     GraphicFeatureEvent,
-    to_gpu_supported_dtype,
 )
 
 from ._text import (
@@ -80,10 +85,15 @@ __all__ = [
     "SizeSpace",
     "VertexPositions",
     "VertexCmap",
+    "VertexCmapTransform",
+    "VertexCmapRange",
+    "InfLineAxisData",
+    "InfLineColors",
     "MeshIndices",
     "MeshCmap",
     "SurfaceData",
     "Thickness",
+    "DashPattern",
     "VertexMarkers",
     "UniformMarker",
     "UniformEdgeColor",
@@ -93,7 +103,9 @@ __all__ = [
     "VertexPointSizes",
     "UniformSize",
     "TextureArray",
+    "TextureYUV",
     "ImageCmap",
+    "ImageGamma",
     "ImageVmin",
     "ImageVmax",
     "ImageInterpolation",
@@ -124,5 +136,7 @@ __all__ = [
     "AlphaMode",
     "Visible",
     "Deleted",
+    "GraphicFeature",
+    "BufferManager",
     "GraphicFeatureEvent",
 ]

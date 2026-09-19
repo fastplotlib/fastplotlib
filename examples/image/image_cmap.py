@@ -2,7 +2,7 @@
 Image Colormap
 ==============
 
-Example showing simple plot creation and subsequent cmap change with Standard image from imageio.
+Example showing simple plot creation and subsequent cmap change with a standard image from imageio.
 """
 
 # test_example = true
@@ -11,6 +11,7 @@ Example showing simple plot creation and subsequent cmap change with Standard im
 import imageio.v3 as iio
 
 import fastplotlib as fpl
+import cmap as cmap_lib
 
 im = iio.imread("imageio:camera.png")
 
@@ -22,6 +23,9 @@ image = figure[0, 0].add_image(data=im, name="random-image")
 figure.show()
 
 image.cmap = "viridis"
+
+# create your own colormap using the cmap lib
+image.cmap = cmap_lib.Colormap(["orange", "purple", "green"])
 
 # NOTE: fpl.loop.run() should not be used for interactive sessions
 # See the "JupyterLab and IPython" section in the user guide

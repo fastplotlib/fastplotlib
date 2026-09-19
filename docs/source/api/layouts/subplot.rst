@@ -30,7 +30,10 @@ Properties
     Subplot.directional_light
     Subplot.docks
     Subplot.frame
+    Subplot.frame_spacing
     Subplot.graphics
+    Subplot.imgui_right_click
+    Subplot.imgui_windows
     Subplot.legends
     Subplot.name
     Subplot.objects
@@ -42,6 +45,8 @@ Properties
     Subplot.toolbar
     Subplot.tooltip
     Subplot.viewport
+    Subplot.x_range
+    Subplot.y_range
 
 Methods
 ~~~~~~~
@@ -51,16 +56,25 @@ Methods
     Subplot.add_animations
     Subplot.add_graphic
     Subplot.add_image
+    Subplot.add_image_collection
+    Subplot.add_image_grid
     Subplot.add_image_volume
+    Subplot.add_image_yuv
+    Subplot.add_imgui_window
+    Subplot.add_inf_line
     Subplot.add_line
     Subplot.add_line_collection
     Subplot.add_line_stack
     Subplot.add_mesh
     Subplot.add_polygon
     Subplot.add_scatter
+    Subplot.add_scatter_collection
+    Subplot.add_scatter_stack
     Subplot.add_surface
     Subplot.add_text
     Subplot.add_vectors
+    Subplot.append_imgui_right_click
+    Subplot.append_imgui_window
     Subplot.auto_scale
     Subplot.center_graphic
     Subplot.center_scene
@@ -74,4 +88,7 @@ Methods
     Subplot.map_world_to_screen
     Subplot.remove_animation
     Subplot.remove_graphic
+    Subplot.remove_imgui_right_click
+    Subplot.remove_imgui_window
+    Subplot.set_imgui_right_click
 

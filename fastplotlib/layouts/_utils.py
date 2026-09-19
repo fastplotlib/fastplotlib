@@ -4,7 +4,7 @@ from itertools import product
 import numpy as np
 
 import pygfx
-from pygfx import WgpuRenderer, Texture, Renderer
+from pygfx import WgpuRenderer, Texture
 
 from ..utils.gui import BaseRenderCanvas, RenderCanvas
 
@@ -22,7 +22,7 @@ IMGUI_TOOLBAR_HEIGHT = 36
 
 def make_canvas_and_renderer(
     canvas: str | BaseRenderCanvas | Texture | None,
-    renderer: Renderer | None,
+    renderer: WgpuRenderer | None,
     canvas_kwargs: dict,
 ):
     """
@@ -45,9 +45,13 @@ def make_canvas_and_renderer(
 
     if renderer is None:
         renderer = WgpuRenderer(canvas)
-    elif not isinstance(renderer, Renderer):
+
+        # disable AA and set pixel_scale = 1.0 for performance
+        renderer.ppaa = "none"
+        renderer.pixel_scale = 1.0
+    elif not isinstance(renderer, WgpuRenderer):
         raise TypeError(
-            f"renderer option must be a pygfx.Renderer instance such as pygfx.WgpuRenderer"
+            f"renderer option must be a pygfx.WgpuRenderer instance"
         )
 
     return canvas, renderer

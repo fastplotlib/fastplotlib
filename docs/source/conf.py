@@ -21,6 +21,9 @@ ROOT_DIR = Path(__file__).parents[1].parents[0]  # repo root
 EXAMPLES_DIR = Path.joinpath(ROOT_DIR, "examples")
 
 sys.path.insert(0, str(ROOT_DIR))
+sys.path.insert(0, str(Path(__file__).parent.joinpath("_ext")))
+# gallery_reset lives here; Sphinx 9 no longer adds the confdir to sys.path automatically
+sys.path.insert(0, str(Path(__file__).parent))
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -42,6 +45,7 @@ extensions = [
     "sphinx_copybutton",
     "sphinx_design",
     "sphinx_gallery.gen_gallery",
+    "imgui_docs",
 ]
 
 sphinx_gallery_conf = {
@@ -54,9 +58,11 @@ sphinx_gallery_conf = {
     "subsection_order": ExplicitOrder(
         [
             "../../examples/image",
+            "../../examples/image_collection",
             "../../examples/image_volume",
             "../../examples/heatmap",
             "../../examples/image_widget",
+            "../../examples/global_config",
             "../../examples/gridplot",
             "../../examples/window_layouts",
             "../../examples/controllers",
@@ -69,6 +75,7 @@ sphinx_gallery_conf = {
             "../../examples/events",
             "../../examples/selection_tools",
             "../../examples/spaces_transforms",
+            "../../examples/ndwidget",
             "../../examples/machine_learning",
             "../../examples/guis",
             "../../examples/ipywidgets",
@@ -79,6 +86,8 @@ sphinx_gallery_conf = {
     "ignore_pattern": r"__init__\.py",
     "nested_sections": False,
     "thumbnail_size": (250, 250),
+    # run before each example, must be a string since a callable is not serializable
+    "reset_modules": ("gallery_reset.reset_fastplotlib_style",),
 }
 
 extra_conf = find_examples_for_gallery(EXAMPLES_DIR)
@@ -133,6 +142,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "numpy": ("https://numpy.org/doc/stable", None),
     "pygfx": ("https://docs.pygfx.org/stable", None),
+    "cmap": ("https://cmap-docs.readthedocs.io/en/stable", None),
     "wgpu": ("https://wgpu-py.readthedocs.io/en/latest", None),
     "rendercanvas": ("https://rendercanvas.readthedocs.io/stable/", None),
     # "fastplotlib": ("https://www.fastplotlib.org/", None),

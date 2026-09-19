@@ -19,10 +19,15 @@ from ._utils import (
 from ._utils import controller_types as valid_controller_types
 from ._subplot import Subplot
 from ._engine import GridLayout, WindowLayout, ScreenSpaceCamera
-from .. import ImageGraphic
+from ..graphics import ImageGraphic, ImageYUVGraphic
+from ..utils import global_config
 
 
+@global_config.register
 class Figure:
+    config = global_config.descriptor
+
+    @global_config.declare("size")
     def __init__(
         self,
         shape: tuple[int, int] = (1, 1),
@@ -548,7 +553,7 @@ class Figure:
 
         # call the animation functions before render
         self._call_animate_functions(self._animate_funcs_pre)
-        for subplot in self:
+        for subplot in self._subplots.ravel():
             subplot._render()
 
         # overlay render pass
@@ -569,10 +574,15 @@ class Figure:
         """start render cycle"""
         self.canvas.request_draw(self._render)
 
+    @global_config.declare(
+        "autoscale",
+        "maintain_aspect",
+        "axes_visible",
+    )
     def show(
         self,
         autoscale: bool = True,
-        maintain_aspect: bool = None,
+        maintain_aspect: bool | None = None,
         axes_visible: bool = True,
         sidecar: bool = False,
         sidecar_kwargs: dict = None,
@@ -585,8 +595,9 @@ class Figure:
         autoscale: bool, default ``True``
             autoscale the Scene
 
-        maintain_aspect: bool, default ``True``
-            maintain aspect ratio
+        maintain_aspect: bool, default ``None``
+            maintain aspect ratio, if ``None`` the ``auto_scale`` config of the subplots is used,
+            which uses the existing value from the camera unless it has been configured
 
         axes_visible: bool, default ``True``
             show axes
@@ -615,23 +626,27 @@ class Figure:
             sidecar_kwargs = dict()
 
         # flip y-axis if ImageGraphics are present
-        for subplot in self:
+        for subplot in self._subplots.ravel():
             for g in subplot.graphics:
-                if isinstance(g, ImageGraphic):
-                    subplot.camera.local.scale_y *= -1
+                if isinstance(g, (ImageGraphic, ImageYUVGraphic)):
+                    if subplot.camera.local.scale_y == 1:
+                        # if it's 1 it's likely not been touched manually before show was called
+                        subplot.camera.local.scale_y = -1
                     break
 
         if autoscale:
-            for subplot in self:
-                if maintain_aspect is None:
-                    _maintain_aspect = subplot.camera.maintain_aspect
-                else:
-                    _maintain_aspect = maintain_aspect
-                subplot.auto_scale(maintain_aspect=maintain_aspect)
+            # only pass forward `maintain_aspect` to `auto_scale()` if it was provided, an
+            # explicitly passed argument would shadow the `auto_scale` config
+            auto_scale_kwargs = dict()
+            if maintain_aspect is not None:
+                auto_scale_kwargs["maintain_aspect"] = maintain_aspect
+
+            for subplot in self._subplots.ravel():
+                subplot.auto_scale(**auto_scale_kwargs)
 
         # set axes visibility if False
         if not axes_visible:
-            for subplot in self:
+            for subplot in self._subplots.ravel():
                 subplot.axes.visible = False
 
         # parse based on canvas type
@@ -655,15 +670,15 @@ class Figure:
         elif self.canvas.__class__.__name__ == "OffscreenRenderCanvas":
             # for test and docs gallery screenshots
             self._fpl_reset_layout()
-            for subplot in self:
+            for subplot in self._subplots.ravel():
                 subplot.axes.update_using_camera()
 
                 # render call is blocking only on github actions for some reason,
                 # but not for rtd build, this is a workaround
                 # for CI tests, the render call works if it's in test_examples
                 # but it is necessary for the gallery images too so that's why this check is here
-                if "RTD_BUILD" in os.environ.keys():
-                    if os.environ["RTD_BUILD"] == "1":
+                if "DOCS_BUILD" in os.environ.keys():
+                    if os.environ["DOCS_BUILD"] == "1":
                         self._render()
 
         else:  # assume GLFW
@@ -779,7 +794,7 @@ class Figure:
 
     def clear(self):
         """Clear all Subplots"""
-        for subplot in self:
+        for subplot in self._subplots.ravel():
             subplot.clear()
 
     def export_numpy(self, rgb: bool = False) -> np.ndarray:
@@ -852,9 +867,6 @@ class Figure:
             snapshot = self.export_numpy(rgb=rgb)
 
             return iio.imwrite(uri, snapshot, **kwargs)
-
-    def open_popup(self, *args, **kwargs):
-        warn("popups only supported by ImguiFigure")
 
     def _fpl_reset_layout(self, *ev):
         """set the viewport rects for all subplots, *ev argument is not used, exists because of renderer resize event"""
@@ -938,18 +950,20 @@ class Figure:
                     return subplot
             raise IndexError(f"no subplot with given name: {index}")
 
+        if isinstance(index, (int, np.integer)):
+            return self._subplots.ravel()[index]
+
         if isinstance(self.layout, GridLayout):
             return self._subplots[index[0], index[1]]
 
-        return self._subplots[index]
+        raise TypeError(
+            f"Can index figure using <str> subplot name, numerical <int> subplot index, or a "
+            f"tuple[int, int] if the layout is a grid"
+        )
 
     def __iter__(self):
-        self._current_iter = iter(range(len(self)))
-        return self
-
-    def __next__(self) -> Subplot:
-        pos = self._current_iter.__next__()
-        return self._subplots.ravel()[pos]
+        for subplot in self._subplots.ravel():
+            yield subplot
 
     def __len__(self):
         """number of subplots"""
@@ -964,6 +978,6 @@ class Figure:
         return (
             f"fastplotlib.{self.__class__.__name__}"
             f"  Subplots:\n"
-            f"\t{newline.join(subplot.__str__() for subplot in self)}"
+            f"\t{newline.join(subplot.__str__() for subplot in self._subplots.ravel())}"
             f"\n"
         )
