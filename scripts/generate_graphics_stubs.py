@@ -191,7 +191,13 @@ def generate_collections_stub():
         if cls in constructors:
             # graphic_signature already includes `self` (it is the child __init__'s first arg)
             body.append(f"    def __init__({graphic_signature(cls)}) -> None:")
-            body += docstring_body(cls._child_type.__init__.__doc__)
+            doc = cls._child_type.__init__.__doc__
+            # a collection may append collection-specific notes, e.g. how cmap works across graphics;
+            # authored at column 0 like the child docstring, black re-indents both together
+            note = getattr(cls, "_stub_constructor_notes", None)
+            if note is not None:
+                doc = f"{doc.rstrip()}\n\n{note}"
+            body += docstring_body(doc)
 
         # the per-graphic feature accessors, on the classes that set the child type: a property whose
         # getter returns the feature's accessor (indexable) and whose setter takes the feature's value

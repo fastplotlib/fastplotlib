@@ -21,7 +21,12 @@ class PositionsCollection(GraphicCollection):
     @property
     def cmap(self) -> str | list | None:
         """
-        get or set the cmap of the graphics in the collection
+
+        get or set the colormap(s) across the collection
+
+        A single colormap gives each graphic one color, spread across the colormap. An iterable of
+        colormaps gives each graphic its own colormap along its datapoints.
+
         """
 
     @cmap.setter
@@ -29,7 +34,13 @@ class PositionsCollection(GraphicCollection):
     @property
     def cmap_transform(self) -> np.ndarray | None:
         """
-        get or set the cmap_transform of the graphics in the collection
+
+        get or set the cmap_transform across the collection
+
+        With a single ``cmap`` the transform is 1D, one value per graphic, selecting each graphic's
+        color. With an iterable of colormaps the transform is per-graphic, coloring each graphic
+        along its datapoints.
+
         """
 
     @cmap_transform.setter
@@ -210,7 +221,12 @@ class LineCollection(PositionsCollection):
         **kwargs
             passed to :class:`.Graphic`
 
-
+        Notes
+        -----
+        ``cmap`` and ``cmap_transform`` apply across the collection. A single ``cmap`` gives each graphic
+        one color spread across the colormap, selected by a 1D ``cmap_transform`` (one value per graphic).
+        An iterable of colormaps gives each graphic its own colormap along its datapoints, with a
+        per-graphic ``cmap_transform``.
         """
 
     @property
@@ -457,7 +473,12 @@ class ScatterCollection(PositionsCollection):
         kwargs
             passed to :class:`.Graphic`
 
-
+        Notes
+        -----
+        ``cmap`` and ``cmap_transform`` apply across the collection. A single ``cmap`` gives each graphic
+        one color spread across the colormap, selected by a 1D ``cmap_transform`` (one value per graphic).
+        An iterable of colormaps gives each graphic its own colormap along its datapoints, with a
+        per-graphic ``cmap_transform``.
         """
 
     @property
@@ -1073,7 +1094,12 @@ class LineStack(GraphicStack, LineCollection):
         **kwargs
             passed to :class:`.Graphic`
 
-
+        Notes
+        -----
+        ``cmap`` and ``cmap_transform`` apply across the collection. A single ``cmap`` gives each graphic
+        one color spread across the colormap, selected by a 1D ``cmap_transform`` (one value per graphic).
+        An iterable of colormaps gives each graphic its own colormap along its datapoints, with a
+        per-graphic ``cmap_transform``.
         """
 
 class ScatterStack(GraphicStack, ScatterCollection):
@@ -1196,5 +1222,10 @@ class ScatterStack(GraphicStack, ScatterCollection):
         kwargs
             passed to :class:`.Graphic`
 
-
+        Notes
+        -----
+        ``cmap`` and ``cmap_transform`` apply across the collection. A single ``cmap`` gives each graphic
+        one color spread across the colormap, selected by a 1D ``cmap_transform`` (one value per graphic).
+        An iterable of colormaps gives each graphic its own colormap along its datapoints, with a
+        per-graphic ``cmap_transform``.
         """
