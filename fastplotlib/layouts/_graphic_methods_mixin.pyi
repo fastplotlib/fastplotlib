@@ -1,5 +1,5 @@
 # This is an auto-generated file and should not be modified directly
-# regenerate with: python scripts/generate_add_graphics_stub.py
+# regenerate with: python scripts/generate_graphics_stubs.py
 
 from fastplotlib.graphics._collections import *
 from fastplotlib.graphics._vectors import *
@@ -648,6 +648,7 @@ class GraphicMethodsMixin:
         cmap_interpolation: Literal["nearest", "linear"] = "linear",
         colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
+        texture_usage: wgpu.TextureUsage = 0,
         **kwargs
     ) -> ImageGraphic:
         """
@@ -715,6 +716,9 @@ class GraphicMethodsMixin:
             * vmin, vmax must be explicitly provided if sharing an existing buffer from another ImageGraphic
             * ``reset_vmin_vmax()`` is not supported
             * selector tools will not be able to return the data under the selection
+
+        texture_usage: wgpu.TextureUsage, default 0
+            Extra wgpu texture usage flags. Usage cannot be changed after the texture is created
 
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
@@ -897,6 +901,7 @@ class GraphicMethodsMixin:
         cmap_interpolation: Literal["nearest", "linear"] = "linear",
         colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
+        texture_usage: wgpu.TextureUsage = 0,
         *,
         names=None,
         offsets=None,
@@ -974,6 +979,9 @@ class GraphicMethodsMixin:
             * ``reset_vmin_vmax()`` is not supported
             * selector tools will not be able to return the data under the selection
 
+        texture_usage: wgpu.TextureUsage, default 0
+            Extra wgpu texture usage flags. Usage cannot be changed after the texture is created
+
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
 
@@ -991,6 +999,7 @@ class GraphicMethodsMixin:
         cmap_interpolation: Literal["nearest", "linear"] = "linear",
         colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
+        texture_usage: wgpu.TextureUsage = 0,
         *,
         shape: tuple[int, int] = None,
         separation: tuple[float, float] = (0.0, 0.0),
@@ -1069,6 +1078,9 @@ class GraphicMethodsMixin:
             * vmin, vmax must be explicitly provided if sharing an existing buffer from another ImageGraphic
             * ``reset_vmin_vmax()`` is not supported
             * selector tools will not be able to return the data under the selection
+
+        texture_usage: wgpu.TextureUsage, default 0
+            Extra wgpu texture usage flags. Usage cannot be changed after the texture is created
 
         kwargs:
             additional keyword arguments passed to :class:`.Graphic`
