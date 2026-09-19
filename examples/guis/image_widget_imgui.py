@@ -15,7 +15,7 @@ import imageio.v3 as iio
 import fastplotlib as fpl
 
 # subclass from EdgeWindow to make a custom ImGUI Window to place inside the figure!
-from fastplotlib.ui import EdgeWindow
+from fastplotlib.ui import ImguiWindow
 from imgui_bundle import imgui
 
 a = iio.imread("imageio:camera.png")
@@ -24,9 +24,9 @@ iw.show()
 
 
 # GUI for some basic image processing
-class ImageProcessingWindow(EdgeWindow):
-    def __init__(self, figure, size, location, title):
-        super().__init__(figure=figure, size=size, location=location, title=title)
+class ImageProcessingWindow(ImguiWindow):
+    def __init__(self):
+        super().__init__()
 
         self.sigma = 0.0
         self.order_x, self.order_y = 0, 0
@@ -67,10 +67,10 @@ class ImageProcessingWindow(EdgeWindow):
         iw.set_data(processed)
 
 
-gui = ImageProcessingWindow(iw.figure, size=200, location="right", title="Gaussian Filter")
+gui = ImageProcessingWindow()
 
 
-iw.figure.add_gui(gui)
+iw.figure.add_imgui_window(gui, size=200, location="right", title="Gaussian Filter")
 
 figure = iw.figure
 
