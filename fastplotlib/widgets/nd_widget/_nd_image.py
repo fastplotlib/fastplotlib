@@ -58,10 +58,12 @@ class NDImageSlicer(NDSlicer):
             names for each dimension in ``data``. Dimensions not listed in
             ``display_dims`` are treated as slider dimensions and **must** appear as
             keys in the parent ``NDWidget``'s ``ref_ranges``
-                Examples::
-                 ``("time", "depth", "row", "col")``
-                 ``("row", "col")``
-                 ``("other_dim", "depth", "time", "row", "col")``
+
+            Examples::
+
+                ("time", "depth", "row", "col")
+                ("row", "col")
+                ("other_dim", "depth", "time", "row", "col")
 
             dims in the array do not need to be in the order that you want to display them, for example you can have a
             weird array where the dims are interpreted as:

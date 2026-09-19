@@ -67,9 +67,11 @@ class NDPositionsSlicer(NDSlicer):
         dims: Sequence[str]
             names for each dimension in ``data``. Dimensions not listed in ``display_dims`` are treated as slider
             dimensions and **must** appear as keys in the parent ``NDWidget``'s ``ref_ranges``.
-                Examples::
-                 ``("trial", "line", "time", "xy")``
-                 ``("keypoints", "time", "xyz")``
+
+            Examples::
+
+                ("trial", "line", "time", "xy")
+                ("keypoints", "time", "xyz")
 
             dims in the array do not need to be in the order that you want to display them, the data slice is
             transposed into the order given by ``display_dims``.

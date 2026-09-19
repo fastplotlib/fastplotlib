@@ -188,23 +188,15 @@ class ReferenceIndices:
             ``(start, stop, step)`` creates a :class:`RangeContinuous`. A 1-tuple
             ``(options,)`` creates a :class:`RangeDiscrete`.
 
-        Attributes
-        ----------
-        ref_ranges : dict[str, RangeContinuous | RangeDiscrete]
-            The reference range for each registered slider dimension.
-
-        dims: set[str]
-            the set of "slider dims"
-
         Examples
         --------
-        Single shared time axis:
+        Single shared time axis::
 
             ri = ReferenceIndex(ref_ranges={"time": (0, 1000, 1), "depth": (15, 35, 0.5)})
             ri.set_dim_index("time", 500)           # update one dim and re-render
             ri.set({"time": 500, "depth": 10})      # update several dims atomically
 
-        Two independent time axes for data from two different recording sessions:
+        Two independent time axes for data from two different recording sessions::
 
             ri = ReferenceIndex({
                 "time-1": (0, 3600, 1),   # session 1 — 1 h at 1 s resolution
@@ -212,7 +204,7 @@ class ReferenceIndices:
             })
 
         Each ``NDGraphic`` declares matching names for slider dims to indicate that these should be
-        synced across graphics.
+        synced across graphics::
 
             ndw[0, 0].add_nd_image(data_s1, ("time-s1", "row", "col"), ("row", "col"))
             ndw[0, 1].add_nd_image(data_s2, ("time-s2", "row", "col"), ("row", "col"))

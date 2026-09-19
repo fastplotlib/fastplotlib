@@ -429,16 +429,17 @@ def heatmap_to_positions(heatmap: np.ndarray, xvals: np.ndarray) -> np.ndarray:
 
     Parameters
     ----------
-    heatmap: np.ndarray, shape [n_rows, n_datapoints]
-        timeseries data with a heatmap representation, where each column represents a timepoint.
+    heatmap: np.ndarray
+        shape [n_rows, n_datapoints], timeseries data with a heatmap representation, where each column
+        represents a timepoint.
 
-    xvals: np.ndarray, shape: [n_datapoints,]
-        x-values for the columns in the heatmap
+    xvals: np.ndarray
+        shape [n_datapoints,], x-values for the columns in the heatmap
 
     Returns
     -------
-    np.ndarray, shape [n_rows, n_datapoints, 2]
-        timeseries data where the xy data are explicitly stored for every row
+    np.ndarray
+        shape [n_rows, n_datapoints, 2], timeseries data where the xy data are explicitly stored for every row
 
     """
     if heatmap.ndim != 2:

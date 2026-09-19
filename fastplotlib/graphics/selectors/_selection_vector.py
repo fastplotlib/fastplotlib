@@ -99,10 +99,12 @@ class SelectionVector:
         """
         User specifies (1) the selector and (2) The master --> local index mapping. This
         mapping is given either as:
-            - A 1D np.ndarray of integers. The array index is the global index, and the array value is the local index
-            - A dictionary where keys (master indices) and values (local indices) are both integers
-            - Two callables. The first callable defines the global index --> local index map, the second specifies the local index --> global index map.
-                All callables take as input nonnegative integers and output nonnegative integers. 
+
+        - A 1D np.ndarray of integers. The array index is the global index, and the array value is the local index
+        - A dictionary where keys (master indices) and values (local indices) are both integers
+        - Two callables. The first callable defines the global index --> local index map, the second specifies the
+          local index --> global index map. All callables take as input nonnegative integers and output nonnegative
+          integers.
         """
         if isinstance(new, (tuple, list)):
             if not isinstance(new[0], SelectorProtocol):

@@ -111,10 +111,12 @@ class NDSlicer:
             names for each dimension in ``data``. Dimensions not listed in
             ``display_dims`` are treated as slider dimensions and **must** appear as
             keys in the parent ``NDWidget``'s ``ref_ranges``
-                Examples::
-                 ``("time", "depth", "row", "col")``
-                 ``("channels", "time", "xy")``
-                 ``("keypoints", "time", "xyz")``
+
+            Examples::
+
+                ("time", "depth", "row", "col")
+                ("channels", "time", "xy")
+                ("keypoints", "time", "xyz")
 
             A custom subclass's ``data`` object doesn't necessarily need to have these dims, but the ``get()`` method
             must operate as if these dimensions exist and return an array that matches the spatial dimensions.
@@ -265,7 +267,7 @@ class NDSlicer:
 
     @property
     def slider_dims(self) -> set[str]:
-        """Slider dim names, ``set(dims) - set(display_dims), **unordered**"""
+        """Slider dim names, ``set(dims) - set(display_dims)``, **unordered**"""
         return set(self.dims) - set(self.display_dims)
 
     @property

@@ -8,6 +8,7 @@ if IMGUI:
     from ._video import VideoSlicer
     from ._nd_vectors import NDVectorsSlicer, NDVectors
     from ._ndwidget import NDWidget
+    from ._ndw_subplot import NDWSubplot
 
     __all__ = [
         "RangeContinuous",
@@ -25,6 +26,7 @@ if IMGUI:
         "NDVectorsSlicer",
         "NDVectors",
         "NDWidget",
+        "NDWSubplot",
     ]
 
 
