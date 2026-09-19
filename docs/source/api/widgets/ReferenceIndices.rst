@@ -31,7 +31,7 @@ Methods
 
     ReferenceIndices.add_event_handler
     ReferenceIndices.clear_event_handlers
-    ReferenceIndices.pop_dim
+    ReferenceIndices.pop_dims
     ReferenceIndices.push_dims
     ReferenceIndices.remove_event_handler
     ReferenceIndices.set
