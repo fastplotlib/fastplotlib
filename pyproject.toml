@@ -40,6 +40,7 @@ docs = [
     "matplotlib",
     "scikit-learn",
     "ome-zarr",
+    "pandas",        # nds_extras, the api docs for an extra need its library installed
 ]
 notebook = [
     "jupyterlab",
