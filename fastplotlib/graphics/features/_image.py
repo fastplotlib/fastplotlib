@@ -60,10 +60,8 @@ class TextureArray(GraphicFeature):
             # create a local buffer
             self._value = np.empty(data.shape, dtype=data.dtype)
             self.value[:] = data[:]
-            usage = usage
         else:
             self._value = None
-            usage = wgpu.TextureUsage.COPY_DST | usage
             # auto-determine format, adapted from pygfx.Texture
             element_format = get_element_format_from_numpy_array(data)
             if element_format is None:
