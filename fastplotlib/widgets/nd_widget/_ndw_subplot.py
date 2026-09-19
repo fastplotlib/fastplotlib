@@ -67,14 +67,22 @@ class NDWSubplot:
             raise KeyError(f"NDGraphc with given key not found: {key}")
 
     def delete_nd_graphic(self, ndg: NDGraphic):
-        """Delete an NDGraphic from the subplot"""
+        """
+        Delete an NDGraphic from the subplot
 
-        # TODO: verify that this actually garbage collects
-        del ndg.data
-        self.subplot.delete_graphic(ndg.graphic)
-        self._nd_graphics.remove(ndg)
+        .. important::
+            Not implemented yet.
 
-        del ndg
+        """
+        raise NotImplementedError("Not yet implemented")
+
+        # TODO: verify that this actually garbage collects, and shut down the
+        #  slicer's thread pool with `ndg.slicer.close()`
+        # del ndg.data
+        # self.subplot.delete_graphic(ndg.graphic)
+        # self._nd_graphics.remove(ndg)
+        #
+        # del ndg
 
     def _check_slider_dims(
         self,

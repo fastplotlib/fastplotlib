@@ -106,7 +106,12 @@ class NDVectorsSlicer(NDSlicer):
         return self._data
 
     @data.setter
-    def data(self, data: ArrayProtocol):
+    def data(self, data: ArrayProtocol | None):
+        if data is None:
+            # no graphic is rendered until data is set, see ``NDSlicer.data``
+            self._data = None
+            return
+
         if not isinstance(data, ArrayProtocol):
             # check that it's generally array-like
             raise TypeError(
@@ -141,6 +146,10 @@ class NDVectorsSlicer(NDSlicer):
             )
 
         self._display_dims = tuple(sdims)
+
+        if self.data is None:
+            # the sizes cannot be checked until data is set
+            return
 
         if self.shape[self.display_dims[-2]] != 2 or self.shape[
             self.display_dims[-1]
@@ -363,6 +372,9 @@ class NDVectors(NDGraphic):
         return {d: self._ref_index[d] for d in self.slicer.slider_dims}
 
     async def _set_indices_(self, indices: dict[str, Any] = None):
+        if self.data is None:
+            return
+
         if indices is None:
             # use latest indices if None, else use passed indices from schedule time
             indices = self.indices

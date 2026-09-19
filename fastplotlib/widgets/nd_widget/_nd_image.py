@@ -109,7 +109,7 @@ class NDImageSlicer(NDSlicer):
         self._compute_histogram = False
 
         # make sure rgb dim is size 3 or 4
-        if rgb_dim is not None:
+        if rgb_dim is not None and data is not None:
             dim_index = dims.index(rgb_dim)
             if data.shape[dim_index] not in (3, 4):
                 raise IndexError(
@@ -141,7 +141,13 @@ class NDImageSlicer(NDSlicer):
         return self._data
 
     @data.setter
-    def data(self, data: ArrayProtocol):
+    def data(self, data: ArrayProtocol | None):
+        if data is None:
+            # no graphic is rendered until data is set, see ``NDSlicer.data``
+            self._data = None
+            self._recompute_histogram()
+            return
+
         if not isinstance(data, ArrayProtocol):
             # check that it's generally array-like
             raise TypeError(
@@ -612,6 +618,9 @@ class NDImage(NDGraphic):
         return {d: self._ref_index[d] for d in self.slicer.slider_dims}
 
     async def _set_indices_(self, indices: dict[str, Any] = None):
+        if self.data is None:
+            return
+
         if indices is None:
             # current indices, else use the indices passed at schedule time
             indices = self.indices
