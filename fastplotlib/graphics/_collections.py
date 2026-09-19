@@ -79,7 +79,7 @@ class PositionsCollection(GraphicCollection):
                 graphic.cmap_range = rng
 
     @property
-    def cmap(self):
+    def cmap(self) -> str | list | None:
         """get or set the cmap of the graphics in the collection"""
         return self._cmap
 
@@ -88,7 +88,7 @@ class PositionsCollection(GraphicCollection):
         self._set_cmap(value, self._cmap_transform, self._cmap_range)
 
     @property
-    def cmap_transform(self):
+    def cmap_transform(self) -> np.ndarray | None:
         """get or set the cmap_transform of the graphics in the collection"""
         return self._cmap_transform
 
@@ -97,7 +97,7 @@ class PositionsCollection(GraphicCollection):
         self._set_cmap(self._cmap, value, self._cmap_range)
 
     @property
-    def cmap_range(self):
+    def cmap_range(self) -> tuple[float, float] | None:
         """get or set the cmap_range of the graphics in the collection"""
         return self._cmap_range
 
