@@ -26,8 +26,6 @@ class ArrayProtocol(Protocol):
 
     def __getitem__(self, key) -> ArrayProtocol: ...
 
-    def transpose(self, param) -> ArrayProtocol: ...
-
 
 @runtime_checkable
 class CudaArrayProtocol(Protocol):
