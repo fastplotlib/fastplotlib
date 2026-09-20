@@ -32,7 +32,7 @@ from .features import (
     ImageInterpolation,
     ImageCmapInterpolation,
 )
-from ..utils.types import TupleYUV
+from ..utils.types import TupleYUV, ColormapLike
 
 
 def _format_value(value: float):
@@ -410,7 +410,7 @@ class ImageGraphic(ImageBase):
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
+        cmap: ColormapLike = "plasma",
         gamma: float = 1.0,
         interpolation: Literal["nearest", "linear"] = "nearest",
         cmap_interpolation: Literal["nearest", "linear"] = "linear",
@@ -434,9 +434,10 @@ class ImageGraphic(ImageBase):
         vmax: float, optional
             maximum value for color scaling, estimated from data if not provided
 
-        cmap: str, optional, default "plasma"
+        cmap: ColormapLike, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            You can also pass a list of colors or a cmap.Colormap object.
 
         gamma: float, default 1.0
             gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
@@ -643,7 +644,7 @@ class ImageGraphic(ImageBase):
         return self.data.colorspace
 
     @property
-    def cmap(self) -> str | None:
+    def cmap(self) -> cmap_lib.Colormap | None:
         """
         Get or set the colormap for grayscale images. Returns ``None`` if image is RGB(A).
 
@@ -653,7 +654,7 @@ class ImageGraphic(ImageBase):
             return self._cmap.value
 
     @cmap.setter
-    def cmap(self, name: str):
+    def cmap(self, name: ColormapLike):
         if self.data.value.ndim > 2:
             raise AttributeError("RGB(A) images do not have a colormap property")
         self._cmap.set_value(self, name)
