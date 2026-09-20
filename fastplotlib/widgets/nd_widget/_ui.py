@@ -68,6 +68,10 @@ class NDWidgetUI(ImguiWindow):
                 dim = list(self._ndwidget.indices.ref_ranges.keys())[0]
                 self._playing[dim] = True
                 self._loop[dim] = True
+                # a gallery movie is a fixed number of rendered frames, not a span of real time,
+                # so step once per frame. otherwise the framerate gate below holds the same index
+                # for however many frames the machine can render within 1 / fps seconds
+                self._frame_time[dim] = 0
 
     def pop_dim(self, dim):
         """remove the playback & slider UI state for a removed dim"""

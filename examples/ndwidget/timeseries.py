@@ -6,7 +6,7 @@ NDWidget timeseries example
 """
 
 # test_example = true
-# sphinx_gallery_pygfx_docs = 'screenshot'
+# sphinx_gallery_pygfx_docs = 'animate 6s 20fps'
 
 import numpy as np
 import fastplotlib as fpl

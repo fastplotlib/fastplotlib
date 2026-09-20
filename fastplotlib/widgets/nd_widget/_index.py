@@ -4,6 +4,7 @@ from collections import deque
 from concurrent.futures import CancelledError
 from dataclasses import dataclass
 from numbers import Number
+import os
 from typing import Sequence, Any, Callable, Iterator
 
 from typing import TYPE_CHECKING
@@ -13,6 +14,7 @@ if TYPE_CHECKING:
     from ._base import NDGraphic
 
 from ...utils import loop
+from ._async import run_sync
 
 
 class RangeContinuous:
@@ -355,6 +357,12 @@ class ReferenceIndices:
 
         if ndg.data is None or ndg.pause or ndg._block_indices:
             # skip fetch for this graphic
+            return
+
+        if os.environ.get("DOCS_BUILD") == "1":
+            # the docs gallery draws its frames in a plain loop with no event loop running, so a
+            # task handed to the scheduler is never picked up and the graphic never updates
+            run_sync(ndg._set_indices_())
             return
 
         task_name = f"ndw-fetch:{type(ndg).__name__}"
