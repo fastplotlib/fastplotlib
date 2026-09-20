@@ -97,14 +97,14 @@ rendered slice of a positional array is
 
 .. math::
 
-    S_A(\lambda) = A\big[\lambda_1, \ldots, \lambda_n,\ :,\ :,\ :\big] \in
+    S_A(\lambda) = A\left[\lambda_1, \ldots, \lambda_n,\ :,\ :,\ :\right] \in
     \mathbb{R}^{\ell \times p \times d}
 
 and of an image array is
 
 .. math::
 
-    S_M(\lambda) = M\big[\lambda_1, \ldots, \lambda_n,\ :,\ :,\ :\big] \in \mathbb{R}^{r \times c \times v}
+    S_M(\lambda) = M\left[\lambda_1, \ldots, \lambda_n,\ :,\ :,\ :\right] \in \mathbb{R}^{r \times c \times v}
 
 after which the slice is transposed to display order. For positional data :math:`p` is both rendered and
 navigable, so it is windowed.
@@ -195,7 +195,7 @@ dimension and centered on the current index, which defines a window of datapoint
 
 .. math::
 
-    W(\Lambda_p, w) = \big[\,\Phi_p(\Lambda_p - w/2),\ \ \Phi_p(\Lambda_p + w/2)\,\big)
+    W(\Lambda_p, w) = \left[\,\Phi_p(\Lambda_p - w/2),\ \ \Phi_p(\Lambda_p + w/2)\,\right)
 
 taken with a step
 
@@ -207,7 +207,7 @@ where :math:`m` is ``max_display_datapoints``. The rendered slice of a positiona
 
 .. math::
 
-    S_A(\Lambda) = A\big[\lambda_1, \ldots, \lambda_n,\ :,\ W(\Lambda_p, w)\!:\!\sigma,\ :\big] \in
+    S_A(\Lambda) = A\left[\lambda_1, \ldots, \lambda_n,\ :,\ W(\Lambda_p, w)\!:\!\sigma,\ :\right] \in
     \mathbb{R}^{\ell \times p' \times d}
 
 with :math:`p' \leq m` datapoints per graphical element.
@@ -244,7 +244,7 @@ The dim is sliced over
 
 .. math::
 
-    \big[\,\Phi_j(\Lambda_j - w_j/2),\ \ \Phi_j(\Lambda_j + w_j/2)\,\big]
+    \left[\,\Phi_j(\Lambda_j - w_j/2),\ \ \Phi_j(\Lambda_j + w_j/2)\,\right]
 
 and then reduced by :math:`\omega_j`. A rolling average, a rolling median, a maximum projection and a
 Gaussian smoothing are all of this form::

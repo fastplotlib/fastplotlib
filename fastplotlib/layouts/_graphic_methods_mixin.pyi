@@ -642,7 +642,7 @@ class GraphicMethodsMixin:
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
+        cmap: ColormapLike = "plasma",
         gamma: float = 1.0,
         interpolation: Literal["nearest", "linear"] = "nearest",
         cmap_interpolation: Literal["nearest", "linear"] = "linear",
@@ -667,9 +667,10 @@ class GraphicMethodsMixin:
         vmax: float, optional
             maximum value for color scaling, estimated from data if not provided
 
-        cmap: str, optional, default "plasma"
+        cmap: ColormapLike, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            You can also pass a list of colors or a cmap.Colormap object.
 
         gamma: float, default 1.0
             gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
@@ -895,7 +896,7 @@ class GraphicMethodsMixin:
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
+        cmap: ColormapLike = "plasma",
         gamma: float = 1.0,
         interpolation: Literal["nearest", "linear"] = "nearest",
         cmap_interpolation: Literal["nearest", "linear"] = "linear",
@@ -929,9 +930,10 @@ class GraphicMethodsMixin:
         vmax: float, optional
             maximum value for color scaling, estimated from data if not provided
 
-        cmap: str, optional, default "plasma"
+        cmap: ColormapLike, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            You can also pass a list of colors or a cmap.Colormap object.
 
         gamma: float, default 1.0
             gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
@@ -993,7 +995,7 @@ class GraphicMethodsMixin:
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
+        cmap: ColormapLike = "plasma",
         gamma: float = 1.0,
         interpolation: Literal["nearest", "linear"] = "nearest",
         cmap_interpolation: Literal["nearest", "linear"] = "linear",
@@ -1029,9 +1031,10 @@ class GraphicMethodsMixin:
         vmax: float, optional
             maximum value for color scaling, estimated from data if not provided
 
-        cmap: str, optional, default "plasma"
+        cmap: ColormapLike, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            You can also pass a list of colors or a cmap.Colormap object.
 
         gamma: float, default 1.0
             gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``

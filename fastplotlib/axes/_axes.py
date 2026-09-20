@@ -155,18 +155,17 @@ class Ruler(pygfx.Ruler):
         self._label = pygfx.Text(
             screen_space=True,
             anchor="middle-center",
-            font_size=16,
+            font_size=20,
             material=pygfx.TextMaterial(
                 color=color,
                 alpha_mode="auto",
                 render_queue=RenderQueue.overlay + 50,
                 aa=True,
-                outline_thickness=0.05,
             ),
         )
         self._label.visible = False
         self.add(self._label)
-        self.text.material.outline_thickness = 0.05
+        self.text.material.outline_thickness = 0.5
 
     @property
     def label(self) -> pygfx.Text:

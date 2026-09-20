@@ -51,12 +51,6 @@ class NDWidgetUI(ImguiWindow):
         for dim in self._ndwidget.ranges:
             self.push_dim(dim)
 
-        # auto-plays the ImageWidget's left-most dimension in docs galleries
-        if "DOCS_BUILD" in os.environ.keys():
-            if os.environ["DOCS_BUILD"] == "1":
-                self._playing[0] = True
-                self._loop = True
-
         self._max_display_windows: dict[NDGraphic, float | int] = dict()
 
     def push_dim(self, dim):
@@ -67,6 +61,13 @@ class NDWidgetUI(ImguiWindow):
         self._last_frame_time[dim] = perf_counter()
         self._loop[dim] = False
         self._last_slider_movement[dim] = 0.0
+
+        # auto-plays first inserted dim in docs galleries
+        if "DOCS_BUILD" in os.environ.keys():
+            if os.environ["DOCS_BUILD"] == "1":
+                dim = list(self._ndwidget.indices.ref_ranges.keys())[0]
+                self._playing[dim] = True
+                self._loop[dim] = True
 
     def pop_dim(self, dim):
         """remove the playback & slider UI state for a removed dim"""

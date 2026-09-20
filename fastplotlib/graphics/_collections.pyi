@@ -668,7 +668,7 @@ class ImageCollection(GraphicCollection):
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
+        cmap: ColormapLike = "plasma",
         gamma: float = 1.0,
         interpolation: Literal["nearest", "linear"] = "nearest",
         cmap_interpolation: Literal["nearest", "linear"] = "linear",
@@ -702,9 +702,10 @@ class ImageCollection(GraphicCollection):
         vmax: float, optional
             maximum value for color scaling, estimated from data if not provided
 
-        cmap: str, optional, default "plasma"
+        cmap: ColormapLike, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            You can also pass a list of colors or a cmap.Colormap object.
 
         gamma: float, default 1.0
             gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``
@@ -775,10 +776,11 @@ class ImageCollection(GraphicCollection):
         """
         colormap to use to display the data. For supported colormaps see the
         ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+        You can also pass a list of colors or a cmap.Colormap object.
         """
 
     @cmap.setter
-    def cmap(self, value: str | Iterable[str]) -> None: ...
+    def cmap(self, value: ColormapLike | Iterable[ColormapLike]) -> None: ...
     @property
     def gamma(self) -> CollectionFeatureAccessor:
         """
@@ -902,7 +904,7 @@ class ImageGrid(ImageCollection):
         data: Any,
         vmin: float = None,
         vmax: float = None,
-        cmap: str = "plasma",
+        cmap: ColormapLike = "plasma",
         gamma: float = 1.0,
         interpolation: Literal["nearest", "linear"] = "nearest",
         cmap_interpolation: Literal["nearest", "linear"] = "linear",
@@ -938,9 +940,10 @@ class ImageGrid(ImageCollection):
         vmax: float, optional
             maximum value for color scaling, estimated from data if not provided
 
-        cmap: str, optional, default "plasma"
+        cmap: ColormapLike, optional, default "plasma"
             colormap to use to display the data. For supported colormaps see the
             ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+            You can also pass a list of colors or a cmap.Colormap object.
 
         gamma: float, default 1.0
             gamma correction, the value scaled by ``vmin`` and ``vmax`` is raised to the power of ``gamma``

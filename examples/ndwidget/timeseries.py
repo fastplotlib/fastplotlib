@@ -32,9 +32,9 @@ for freq in range(data.shape[0]):
 
 # must define a reference range, this would often be your time dimension and corresponds to your x-dimension
 ref = {
+    "angle": (0, xs[-1], 0.1),
     "freq": (1, n_freqs + 1, 1),
     "ampl": (1, n_ampls + 1, 1),
-    "angle": (0, xs[-1], 0.1),
 }
 
 ndw = fpl.NDWidget(ranges=ref, size=(700, 560))
