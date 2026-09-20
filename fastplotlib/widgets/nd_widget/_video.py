@@ -45,15 +45,20 @@ class VideoSlicer(NDImageSlicer):
         """
         Similar to NDImage.get() but accounts for TupleYUV output.
         """
-        # this will be squeezed output, with dims in the order of the user set spatial dims
+        # squeezed output, dims in array order
         window_output = await self.get_window_output(indices)
+
+        # transpose into display order, the spatial_func gets the frame as it is rendered
+        if isinstance(window_output, tuple):
+            window_output = tuple(
+                a.transpose(*self.display_dims_indices) for a in window_output
+            )
+        else:
+            window_output = window_output.transpose(*self.display_dims_indices)
 
         if self.spatial_func is not None:
             window_output = await run_in_thread_pool(
                 self._executor, self._spatial_func, window_output
             )
 
-        if isinstance(window_output, tuple):
-            return tuple(a.transpose(*self.display_dims_indices) for a in window_output)
-
-        return window_output.transpose(*self.display_dims_indices)
+        return window_output

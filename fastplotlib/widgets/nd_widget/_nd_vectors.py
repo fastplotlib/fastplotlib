@@ -79,7 +79,9 @@ class NDVectorsSlicer(NDSlicer):
             function applied, see :class:`NDSlicer`.
 
         spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
-            A function applied to the spatial slice *after* the window funcs, right before rendering.
+            A function applied to the spatial slice *after* the window funcs, right before rendering. It is
+            given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return an
+            array with those same dims.
 
         See Also
         --------
@@ -177,8 +179,11 @@ class NDVectorsSlicer(NDSlicer):
             data slice of shape ``[n_vectors, 2, 2 | 3]``, transposed into the ``display_dims`` display order
 
         """
-        # this will be squeezed output, with dims in the order of self.dims
+        # squeezed output, dims in array order
         window_output = await self.get_window_output(indices)
+
+        # transpose into display order, the spatial_func gets the slice as it is rendered
+        window_output = window_output.transpose(*self.display_dims_indices)
 
         # apply spatial_func; CUDA arrays run inline, numpy goes through the thread pool
         if self.spatial_func is not None:
@@ -195,7 +200,7 @@ class NDVectorsSlicer(NDSlicer):
         if isinstance(window_output, CudaArrayProtocol):
             window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
 
-        return window_output.transpose(*self.display_dims_indices)
+        return window_output
 
 
 class NDVectors(NDGraphic):
@@ -262,7 +267,9 @@ class NDVectors(NDGraphic):
             function applied, see :class:`NDSlicer`.
 
         spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
-            A function applied to the spatial slice *after* the window funcs, right before rendering.
+            A function applied to the spatial slice *after* the window funcs, right before rendering. It is
+            given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return an
+            array with those same dims.
 
         slider_maps : dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices, see

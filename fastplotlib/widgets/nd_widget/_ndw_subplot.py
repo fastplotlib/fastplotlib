@@ -191,7 +191,9 @@ class NDWSubplot:
             function applied, ``window_funcs`` are ignored for any dim not specified in ``window_order``.
 
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
-            A function applied to the spatial slice *after* the window funcs, right before rendering.
+            A function applied to the spatial slice *after* the window funcs, right before rendering. It is
+            given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return an
+            array with those same dims.
 
         compute_histogram: bool, default ``True``
             Estimate a histogram of the data and display an ``ImguiColorbar`` on the right edge of the subplot,
@@ -323,7 +325,9 @@ class NDWSubplot:
             ``VideoSlicer``.
 
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
-            A function applied to the spatial slice right before rendering.
+            A function applied to the spatial slice right before rendering. It is given the frame in
+            ``display_dims`` order, i.e. the array as it is rendered, and must return an array with those
+            same dims.
 
         slider_maps: dict mapping dim_name -> Callable, an ArrayLike, or None, optional
             Per-slider-dim mapping from reference-space values to local array indices, ex: an array of frame
@@ -406,7 +410,9 @@ class NDWSubplot:
             function applied, ``window_funcs`` are ignored for any dim not specified in ``window_order``.
 
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
-            A function applied to the spatial slice *after* the window funcs, right before rendering.
+            A function applied to the spatial slice *after* the window funcs, right before rendering. It is
+            given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return an
+            array with those same dims.
 
         slider_maps: dict mapping dim_name -> Callable, an ArrayLike, or None, optional
             Per-slider-dim mapping from reference-space values to local array indices. An array of reference
@@ -526,7 +532,9 @@ class NDWSubplot:
             function applied, ``window_funcs`` are ignored for any dim not specified in ``window_order``.
 
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
-            A function applied to the spatial slice *after* the window funcs, right before rendering.
+            A function applied to the spatial slice *after* the window funcs, right before rendering. It is
+            given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return an
+            array with those same dims.
 
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices. An array of reference
@@ -765,7 +773,9 @@ class NDWSubplot:
             function applied, ``window_funcs`` are ignored for any dim not specified in ``window_order``.
 
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
-            A function applied to the spatial slice *after* the window funcs, right before rendering.
+            A function applied to the spatial slice *after* the window funcs, right before rendering. It is
+            given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return an
+            array with those same dims.
 
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices. An array of reference
@@ -988,7 +998,9 @@ class NDWSubplot:
             function applied, ``window_funcs`` are ignored for any dim not specified in ``window_order``.
 
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
-            A function applied to the spatial slice *after* the window funcs, right before rendering.
+            A function applied to the spatial slice *after* the window funcs, right before rendering. It is
+            given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return an
+            array with those same dims.
 
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices. An array of reference

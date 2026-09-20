@@ -244,9 +244,11 @@ The dim is sliced over
 
 .. math::
 
-    \left[\,\Phi_j(\Lambda_j - w_j/2),\ \ \Phi_j(\Lambda_j + w_j/2)\,\right]
+    \left[\,\Phi_j(\Lambda_j - w_j/2),\ \ \Phi_j(\Lambda_j + w_j/2)\,\right)
 
-and then reduced by :math:`\omega_j`. A rolling average, a rolling median, a maximum projection and a
+and then reduced by :math:`\omega_j`. The upper bound is exclusive and clamped into
+:math:`[0, \text{size}]`, so a window at either end of the range still reaches the first and last elements
+and always covers at least one of them. A rolling average, a rolling median, a maximum projection and a
 Gaussian smoothing are all of this form::
 
     window_funcs={"time": (np.mean, 2.5)},   # average over 2.5 seconds around the current index
@@ -266,8 +268,9 @@ and ``keepdims``, and must not drop the dimension.
 coordinates of the value dim that it applies to, one of ``"all", "x", "y", "z", "xy", "xz", "yz", "xyz"``,
 with the rest passed through unchanged.
 
-``spatial_func`` is applied to the data slice after the window functions, just before it is rendered. It
-takes the slice and returns an array with the same dims, such as a spatial gaussian filter.
+``spatial_func`` is applied to the data slice after the window functions, just before it is rendered, such
+as a spatial gaussian filter. It is given the slice in ``display_dims`` order, i.e. the array as it is
+rendered, and must return an array with those same dims.
 
 Graphic features
 ----------------
@@ -416,9 +419,11 @@ Holds the data and turns :math:`\Lambda` into the slice to render. ::
         │  W, σ     display window on p, positional data only,
         │           then datapoints_window_func
         v
+   transposed to display order
+        │
         │  spatial_func
         v
-   transposed to display order                 the data slice
+   the data slice
 
 The data does not have to be an array. It has to behave as though the declared dims exist, and ``get`` has
 to return a slice that the graphic can render, which is how a ``pandas.DataFrame`` or a ``spikeinterface``

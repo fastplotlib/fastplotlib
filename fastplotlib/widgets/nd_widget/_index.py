@@ -54,9 +54,7 @@ class RangeContinuous:
 
     def __init__(self, start: int | float, stop: int | float, step: int | float):
         if start >= stop:
-            raise IndexError(
-                f"start must be less than stop, {self.start} !< {self.stop}"
-            )
+            raise IndexError(f"start must be less than stop, {start} !< {stop}")
 
         self._start = start
         self._stop = stop
@@ -108,9 +106,9 @@ class RangeContinuous:
             raise ValueError("negative indexing not supported")
 
         val = self.start + (self.step * index)
-        if not self.start <= val <= self.stop:
+        if not self.start <= val < self.stop:
             raise IndexError(
-                f"index: {index} value: {val} out of bounds: [{self.start}, {self.stop}]"
+                f"index: {index} value: {val} out of bounds: [{self.start}, {self.stop})"
             )
 
         return val

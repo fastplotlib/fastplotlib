@@ -275,12 +275,10 @@ class NDPositionsSlicer(NDSlicer):
         # stop in reference units
         stop_ref = indices[p_dim] + hw
 
-        # map to array indices
+        # map to array indices, stop is exclusive so it goes up to the size of the dim and is kept
+        # above start so the window always has at least one datapoint
         start = self._ref_index_to_array_index(p_dim, start_ref)
-        stop = self._ref_index_to_array_index(p_dim, stop_ref)
-
-        if start >= stop:
-            stop = start + 1
+        stop = max(min(self.slider_maps[p_dim](stop_ref), self.shape[p_dim]), start + 1)
 
         w = stop - start
 
@@ -541,7 +539,9 @@ class NDPositions(NDGraphic):
             function applied, see :class:`NDSlicer`.
 
         spatial_func : Callable[[ArrayProtocol], ArrayProtocol], optional
-            A function applied to the spatial slice *after* the window funcs, right before rendering.
+            A function applied to the spatial slice *after* the window funcs, right before rendering. It is
+            given the slice as ``[n_graphics, p, xy(z)]``, i.e. the array as it is rendered, and must return
+            an array with those same dims.
 
         slider_maps : dict[str, Callable[[Any], int] | ArrayLike], optional
             Per-slider-dim mapping from reference-space values to local array indices, see

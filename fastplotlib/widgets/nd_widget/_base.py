@@ -156,7 +156,9 @@ class NDSlicer:
             dims not specified in ``window_order``
 
         spatial_func:
-            A function applied to the spatial slice *after* window_funcs right before rendering.
+            A function applied to the spatial slice *after* window_funcs right before rendering. It is
+            given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return
+            an array with those same dims.
 
         """
         dims = tuple(dims)
@@ -370,7 +372,11 @@ class NDSlicer:
 
     @property
     def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
-        """get or set the spatial function which is applied on the data slice after the window functions"""
+        """
+        Get or set the spatial function which is applied on the data slice after the window functions. It is
+        given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return an array
+        with those same dims.
+        """
         return self._spatial_func
 
     @spatial_func.setter
@@ -509,9 +515,10 @@ class NDSlicer:
                 start = self.slider_maps[dim](start_ref)
                 stop = self.slider_maps[dim](stop_ref)
 
-                # clamp within array bounds
+                # clamp within array bounds, stop is exclusive so it goes up to the size of the dim
+                # and is kept above start so the window always has at least one element
                 start = max(min(self.shape[dim] - 1, start), 0)
-                stop = max(min(self.shape[dim] - 1, stop), 0)
+                stop = max(min(self.shape[dim], stop), start + 1)
                 indexer[dim] = slice(start, stop, 1)
             else:
                 # no window func for this dim, direct indexing
@@ -929,7 +936,8 @@ class NDGraphic:
     def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
         """
         Get or set the function applied to the spatial slice *after* the window funcs, right before rendering.
-        Setting it re-renders the current data slice.
+        It is given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return an
+        array with those same dims. Setting it re-renders the current data slice.
         """
         return self.slicer.spatial_func
 

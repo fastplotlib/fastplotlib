@@ -241,8 +241,11 @@ class NDImageSlicer(NDSlicer):
             Example: get((100, 5))
 
         """
-        # this will be squeezed output, with dims in the order of the user set spatial dims
+        # squeezed output, dims in array order
         window_output = await self.get_window_output(indices)
+
+        # transpose into display order, the spatial_func gets the slice as it is rendered
+        window_output = window_output.transpose(*self.display_dims_indices)
 
         # apply spatial_func; CUDA arrays run inline, numpy goes through the thread pool
         if self.spatial_func is not None:
@@ -259,7 +262,7 @@ class NDImageSlicer(NDSlicer):
         if isinstance(window_output, CudaArrayProtocol):
             window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
 
-        return window_output.transpose(*self.display_dims_indices)
+        return window_output
 
     def _recompute_histogram(self):
         """
@@ -691,7 +694,9 @@ class NDImage(NDGraphic):
     def spatial_func(self) -> Callable[[ArrayProtocol], ArrayProtocol] | None:
         """
         Get or set the function applied to the spatial slice *after* the window funcs, right before rendering.
-        Setting it recomputes the histogram, since the function often changes the range of the values.
+        It is given the slice in ``display_dims`` order, i.e. the array as it is rendered, and must return an
+        array with those same dims. Setting it recomputes the histogram, since the function often changes the
+        range of the values.
         """
         # this is here even though it's the same in the base class since we can't create the image specific setter
         # without also defining the property in this subclass.
