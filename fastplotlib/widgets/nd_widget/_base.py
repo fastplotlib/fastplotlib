@@ -250,7 +250,11 @@ class NDSlicer:
         """
         The ordered spatial dim indices that correspond to the named spatial dims
         """
-        return tuple(self.display_dims.index(d) for d in self.dims if d in self.display_dims)
+        # the dims after slider dims have been squeezed out in the order that they
+        # originate from the data array
+        squeezed_dims = tuple(filter(lambda d: d in self.display_dims, self.dims))
+
+        return tuple(squeezed_dims.index(d) for d in self.display_dims)
 
     @property
     def tooltip(self) -> bool:

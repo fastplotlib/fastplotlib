@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, Protocol, runtime_checkable
 
-
 ARRAY_LIKE_ATTRS = [
     "dtype",
     "shape",
@@ -15,6 +14,7 @@ ARRAY_LIKE_ATTRS = [
 @runtime_checkable
 class ArrayProtocol(Protocol):
     """an object that is sufficiently array-like for lazy loading"""
+
     @property
     def dtype(self) -> Any: ...
 
@@ -25,6 +25,8 @@ class ArrayProtocol(Protocol):
     def shape(self) -> tuple[int, ...]: ...
 
     def __getitem__(self, key) -> ArrayProtocol: ...
+
+    def transpose(self, param) -> ArrayProtocol: ...
 
 
 @runtime_checkable

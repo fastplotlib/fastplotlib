@@ -405,16 +405,19 @@ class NDPositionsSlicer(NDSlicer):
         Note that we do not use __getitem__ here since the index is a tuple specifying a single integer
         index for each dimension. Slices are not allowed, therefore __getitem__ is not suitable here.
         """
-        # already squeezed and in the correct display_dims order
+        # squeezed, dims in array order
         window_output = await self.get_window_output(indices)
+
+        # transpose into display order, [n_graphics, p, xy(z)], which is what the display window
+        # slice below and everything in _finalize() index against
+        window_output = window_output.transpose(*self.display_dims_indices)
 
         # get slice obj for display window
         dw_slice = self._get_dw_slice(indices)
 
         # data that will be used for the graphical representation
         # slice the datapoints to be displayed in the graphic using the display window slice
-        # data are already squeezed & transposed w.r.t the spatial_dims order after get_window_output()
-        # p_dims is dim 1
+        # `p` dim is dim 1 after the transpose above
         graphic_data = window_output[:, dw_slice]
 
         # _finalize runs the user's datapoints_window_func and spatial_func.
@@ -433,8 +436,6 @@ class NDPositionsSlicer(NDSlicer):
         # final CUDA -> numpy conversion at the end of the pipeline
         if isinstance(data, CudaArrayProtocol):
             data = await run_in_thread_pool(self._executor, cuda_to_numpy, data)
-
-        data = data.transpose(*self.display_dims_indices)
 
         return {
             "data": data,
