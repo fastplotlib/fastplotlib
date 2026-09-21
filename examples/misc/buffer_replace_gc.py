@@ -46,10 +46,6 @@ class UI(ImguiWindow):
         )
         figure["scatter"].add_scatter(
             **init_data,
-            uniform_size=False,
-            uniform_marker=False,
-            uniform_edge_color=False,
-            point_rotation_mode="vertex",
             name="scatter",
         )
 
