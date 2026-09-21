@@ -367,7 +367,9 @@ class PlotArea(GraphicMethodsMixin):
         )
 
         # convert screen position to NDC
-        pos_ndc = np.asarray([pos_rel[0] / vs[0] * 2 - 1, -(pos_rel[1] / vs[1] * 2 - 1), 0])
+        pos_ndc = np.asarray(
+            [pos_rel[0] / vs[0] * 2 - 1, -(pos_rel[1] / vs[1] * 2 - 1), 0]
+        )
 
         # get world position
         pos_ndc += vec_transform(self.camera.world.position, self.camera.camera_matrix)
@@ -730,7 +732,9 @@ class PlotArea(GraphicMethodsMixin):
             self._fpl_graphics_scene.add(graphic.world_object)
 
         else:
-            raise TypeError("graphic must be of type Graphic | SelectorProtocol | Legend")
+            raise TypeError(
+                "graphic must be of type Graphic | SelectorProtocol | Legend"
+            )
 
         if action == "insert":
             obj_list.insert(index, graphic)

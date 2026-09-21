@@ -9,7 +9,6 @@ from imgui_bundle import imgui
 
 from ..layouts._rect import RectManager
 
-
 # edges that reserve space, ordered as they are carved from the render area
 EDGES = ["left", "right", "top", "bottom"]
 
@@ -105,7 +104,9 @@ class ImguiWindow(ImguiBase):
         self,
         figure,
         subplot=None,
-        location: Literal["left", "right", "top", "bottom", "toolbar", "floating"] = None,
+        location: Literal[
+            "left", "right", "top", "bottom", "toolbar", "floating"
+        ] = None,
         size: int = None,
         rect: tuple = None,
         extent: tuple = None,
@@ -271,7 +272,7 @@ class ImguiWindow(ImguiBase):
         if self._location not in ("bottom", "right"):
             warn("only 'bottom' and 'right' locations support `collapsed`")
             return
-        
+
         self._collapsed = val
 
     @property
@@ -289,7 +290,10 @@ class ImguiWindow(ImguiBase):
 
         if self._location == "bottom":
             imgui.set_cursor_pos((0, 0))
-            imgui.invisible_button("##resize_handle", imgui.ImVec2(imgui.get_window_width(), self._separator_thickness))
+            imgui.invisible_button(
+                "##resize_handle",
+                imgui.ImVec2(imgui.get_window_width(), self._separator_thickness),
+            )
 
             hovered = imgui.is_item_hovered()
             active = imgui.is_item_active()
@@ -305,7 +309,9 @@ class ImguiWindow(ImguiBase):
             mouse_pos = imgui.get_mouse_pos()
 
             rect_min = imgui.ImVec2(screen_pos.x, screen_pos.y)
-            rect_max = imgui.ImVec2(screen_pos.x + self._separator_thickness, screen_pos.y + win_height)
+            rect_max = imgui.ImVec2(
+                screen_pos.x + self._separator_thickness, screen_pos.y + win_height
+            )
 
             hovered = (
                 rect_min.x <= mouse_pos.x <= rect_max.x
@@ -413,9 +419,13 @@ class ImguiWindow(ImguiBase):
             center_x = (rect_min.x + rect_max.x) * 0.5
             for i in (-1, 0, 1):
                 cx = center_x + i * dot_spacing
-                draw_list.add_circle_filled(imgui.ImVec2(cx, mid_y), dot_radius, line_color)
+                draw_list.add_circle_filled(
+                    imgui.ImVec2(cx, mid_y), dot_radius, line_color
+                )
 
-            imgui.set_cursor_pos((0, imgui.get_cursor_pos_y() - imgui.get_style().item_spacing.y))
+            imgui.set_cursor_pos(
+                (0, imgui.get_cursor_pos_y() - imgui.get_style().item_spacing.y)
+            )
 
         elif self._location == "right":
             mid_x = (rect_min.x + rect_max.x) * 0.5
@@ -465,7 +475,11 @@ class ImguiWindow(ImguiBase):
             imgui.set_next_window_pos((self.x, self.y))
 
         # append the id to keep the window unique without changing the visible title
-        expanded = imgui.begin(f"{self._title or ''}##{self._id_counter}", p_open=None, flags=self._window_flags)
+        expanded = imgui.begin(
+            f"{self._title or ''}##{self._id_counter}",
+            p_open=None,
+            flags=self._window_flags,
+        )
 
         if self._reserves:
             # edge and toolbar windows draw a custom title bar and collapse via the resize handle

@@ -38,10 +38,10 @@ class VertexColors(BufferManager):
     ]
 
     def __init__(
-            self,
-            colors: ColorLike | MultiColorLike,
-            n_colors: int,
-            property_name: str = "colors",
+        self,
+        colors: ColorLike | MultiColorLike,
+        n_colors: int,
+        property_name: str = "colors",
     ):
         """
         Manages the vertex color buffer for :class:`PositionsGraphic`
@@ -61,16 +61,16 @@ class VertexColors(BufferManager):
         super().__init__(data=data, property_name=property_name)
 
     def set_value(
-            self,
-            graphic,
-            value: ColorLike | MultiColorLike,
+        self,
+        graphic,
+        value: ColorLike | MultiColorLike,
     ):
         """set the entire array, create new buffer if necessary"""
         # a sequence of colors whose length differs from the current buffer requires a new buffer
         if (
-                isinstance(value, (np.ndarray, list, tuple))
-                and not is_single_color(value)
-                and self.buffer.data.shape[0] != len(value)
+            isinstance(value, (np.ndarray, list, tuple))
+            and not is_single_color(value)
+            and self.buffer.data.shape[0] != len(value)
         ):
             # parse the new colors
             new_colors = parse_colors(value, len(value))
@@ -99,9 +99,9 @@ class VertexColors(BufferManager):
 
     @block_reentrance
     def __setitem__(
-            self,
-            key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
-            user_value: ColorLike | MultiColorLike,
+        self,
+        key: int | slice | np.ndarray[int | bool] | tuple[slice, ...],
+        user_value: ColorLike | MultiColorLike,
     ):
         user_key = key
 
@@ -194,9 +194,9 @@ class UniformColor(GraphicFeature):
     ]
 
     def __init__(
-            self,
-            value: ColorLike,
-            property_name: str = "colors",
+        self,
+        value: ColorLike,
+        property_name: str = "colors",
     ):
         """Manages uniform color for line or scatter material"""
 
@@ -208,9 +208,7 @@ class UniformColor(GraphicFeature):
         return self._value
 
     @block_reentrance
-    def set_value(
-            self, graphic, value: ColorLike
-    ):
+    def set_value(self, graphic, value: ColorLike):
         value = pygfx.Color(value)
         graphic.world_object.material.color = value
         self._value = value
@@ -330,9 +328,14 @@ class VertexPositions(BufferManager):
 
     @block_reentrance
     def __setitem__(
-            self,
-            key: int | slice | np.ndarray[tuple[int, ...], np.dtype[np.integer | np.bool]] | tuple[slice, ...],
-            value: np.ndarray | float | list[float],
+        self,
+        key: (
+            int
+            | slice
+            | np.ndarray[tuple[int, ...], np.dtype[np.integer | np.bool]]
+            | tuple[slice, ...]
+        ),
+        value: np.ndarray | float | list[float],
     ):
         # directly use the key to slice the buffer and set the values
         self.buffer.data[key] = value
@@ -357,9 +360,9 @@ class VertexCmap(GraphicFeature):
     ]
 
     def __init__(
-            self,
-            value: cmap_lib.ColormapLike,
-            property_name: str = "cmap",
+        self,
+        value: cmap_lib.ColormapLike,
+        property_name: str = "cmap",
     ):
         """
         colormap feature, manages a VertexColors instance and provides a way to set colormaps.
@@ -403,7 +406,12 @@ class VertexCmapTransform(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: np.ndarray, n_datapoints: int, property_name: str = "cmap_transform"):
+    def __init__(
+        self,
+        value: np.ndarray,
+        n_datapoints: int,
+        property_name: str = "cmap_transform",
+    ):
         """colormap transform"""
 
         value = np.asarray(value)
@@ -417,9 +425,8 @@ class VertexCmapTransform(GraphicFeature):
     def _interpolate(self, value, n_datapoints):
         # interpolate so we have a transform value for every datapoint
         return np.interp(
-            np.linspace(0, len(value) - 1, n_datapoints), np.arange(len(value)), value).astype(
-            np.float32
-        )
+            np.linspace(0, len(value) - 1, n_datapoints), np.arange(len(value)), value
+        ).astype(np.float32)
 
     @block_reentrance
     def set_value(self, graphic, value: np.ndarray):
@@ -430,7 +437,10 @@ class VertexCmapTransform(GraphicFeature):
         # interpolate to n_datapoints
         value = self._interpolate(value, n_datapoints)
 
-        if graphic.world_object.geometry.texcoords is not None and graphic.world_object.geometry.texcoords.data.size == value.size:
+        if (
+            graphic.world_object.geometry.texcoords is not None
+            and graphic.world_object.geometry.texcoords.data.size == value.size
+        ):
             graphic.world_object.geometry.texcoords.data[:] = value
             graphic.world_object.geometry.texcoords.update_full()
         else:

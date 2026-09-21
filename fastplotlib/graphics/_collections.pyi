@@ -85,7 +85,7 @@ class PositionsCollection(GraphicCollection):
         selection: tuple[float, float] = None,
         padding: float = 0.0,
         axis: str = "x",
-        **kwargs
+        **kwargs,
     ) -> LinearRegionSelector:
         """
 
@@ -174,7 +174,7 @@ class LineCollection(PositionsCollection):
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
 
@@ -382,7 +382,7 @@ class ScatterCollection(PositionsCollection):
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
 
@@ -684,7 +684,7 @@ class ImageCollection(GraphicCollection):
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
 
@@ -922,7 +922,7 @@ class ImageGrid(ImageCollection):
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
 
@@ -1050,7 +1050,7 @@ class LineStack(GraphicStack, LineCollection):
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
 
@@ -1134,7 +1134,7 @@ class ScatterStack(GraphicStack, ScatterCollection):
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
 

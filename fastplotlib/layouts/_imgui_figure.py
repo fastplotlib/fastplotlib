@@ -279,7 +279,9 @@ class ImguiFigure(Figure):
 
         if location in EDGES:
             if window.size is None:
-                raise ValueError(f"must provide `size` for an edge window, location: {location}")
+                raise ValueError(
+                    f"must provide `size` for an edge window, location: {location}"
+                )
             self._edge_windows[location] = window
             self._fpl_reset_layout()
 
@@ -305,7 +307,9 @@ class ImguiFigure(Figure):
 
         """
         if location not in EDGES:
-            raise ValueError(f"valid locations to append to are: {EDGES}, you have passed: {location}")
+            raise ValueError(
+                f"valid locations to append to are: {EDGES}, you have passed: {location}"
+            )
 
         window = self._edge_windows[location]
         if window is None:
@@ -336,7 +340,9 @@ class ImguiFigure(Figure):
 
         """
         if location not in EDGES:
-            raise ValueError(f"valid locations are: {EDGES}, you have passed: {location}")
+            raise ValueError(
+                f"valid locations are: {EDGES}, you have passed: {location}"
+            )
 
         window = self._edge_windows[location]
         self._edge_windows[location] = None

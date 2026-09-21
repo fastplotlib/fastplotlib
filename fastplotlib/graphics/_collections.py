@@ -29,7 +29,9 @@ one color spread across the colormap, selected by a 1D ``cmap_transform`` (one v
 An iterable of colormaps gives each graphic its own colormap along its datapoints, with a
 per-graphic ``cmap_transform``."""
 
-    def __init__(self, data, *, cmap=None, cmap_transform=None, cmap_range=None, **kwargs):
+    def __init__(
+        self, data, *, cmap=None, cmap_transform=None, cmap_range=None, **kwargs
+    ):
         super().__init__(data, **kwargs)
         self._set_cmap(cmap, cmap_transform, cmap_range)
 
@@ -53,14 +55,18 @@ per-graphic ``cmap_transform``."""
 
         single_cmap = isinstance(cmap, (str, cmap_lib.Colormap))
         # a single cmap needs a 1D transform (across graphics), an iterable needs a 2D transform (per-graphic)
-        if cmap_transform is not None and single_cmap == (np.ndim(cmap_transform[0]) >= 1):
+        if cmap_transform is not None and single_cmap == (
+            np.ndim(cmap_transform[0]) >= 1
+        ):
             raise ValueError(
                 "`cmap` and `cmap_transform` must match: a single `cmap` uses a 1D transform, "
                 "an iterable of cmaps uses a 2D transform"
             )
 
         if single_cmap:
-            self.colors[:] = cmap_across_graphics(cmap, len(self), cmap_transform, cmap_range)
+            self.colors[:] = cmap_across_graphics(
+                cmap, len(self), cmap_transform, cmap_range
+            )
             return
 
         if len(cmap) != len(self):
@@ -79,9 +85,15 @@ per-graphic ``cmap_transform``."""
                 f"`cmap_range` values for {len(self)} graphics"
             )
 
-        transforms = cmap_transform if cmap_transform is not None else itertools.repeat(None)
-        ranges = cmap_range if np.ndim(cmap_range) == 2 else itertools.repeat(cmap_range)
-        for graphic, one_cmap, transform, rng in zip(self.graphics, cmap, transforms, ranges):
+        transforms = (
+            cmap_transform if cmap_transform is not None else itertools.repeat(None)
+        )
+        ranges = (
+            cmap_range if np.ndim(cmap_range) == 2 else itertools.repeat(cmap_range)
+        )
+        for graphic, one_cmap, transform, rng in zip(
+            self.graphics, cmap, transforms, ranges
+        ):
             graphic.cmap = one_cmap
             if transform is not None:
                 graphic.cmap_transform = transform
@@ -150,7 +162,9 @@ per-graphic ``cmap_transform``."""
         -------
         LinearSelector
         """
-        bounds_init, limits, size, center = self._get_linear_selector_init_args(axis, padding)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(
+            axis, padding
+        )
 
         if selection is None:
             selection = bounds_init[0]
@@ -190,7 +204,9 @@ per-graphic ``cmap_transform``."""
         -------
         LinearRegionSelector
         """
-        bounds_init, limits, size, center = self._get_linear_selector_init_args(axis, padding)
+        bounds_init, limits, size, center = self._get_linear_selector_init_args(
+            axis, padding
+        )
 
         if selection is None:
             selection = bounds_init
@@ -355,11 +371,15 @@ class ImageGrid(ImageCollection):
             if shape is None:
                 shape = calculate_figure_shape(n)  # roughly square (rows, cols)
             if np.prod(shape) < n:
-                raise ValueError(f"grid shape {shape} has fewer cells than the {n} images")
+                raise ValueError(
+                    f"grid shape {shape} has fewer cells than the {n} images"
+                )
 
             rows, cols = np.divmod(np.arange(n), shape[1])
             # cell size = the largest image, via the data accessor, so rows and columns line up
-            sizes = np.array([image.shape[:2] for image in self.data[:]])  # (rows, cols) per image
+            sizes = np.array(
+                [image.shape[:2] for image in self.data[:]]
+            )  # (rows, cols) per image
             cell_height, cell_width = sizes.max(axis=0)
             row_sep, col_sep = separation
 
@@ -456,7 +476,7 @@ class GraphicStack:
 
     @property
     def separation_axis(self) -> str:
-        """get or set the axes to stack along, e.g. "y", "xy", "xyz\""""
+        """get or set the axes to stack along, e.g. "y", "xy", "xyz\" """
         return self._separation_axis
 
     @separation_axis.setter
@@ -475,7 +495,9 @@ class GraphicStack:
             # one max over all the data gives the step to stack by along each stacking axis,
             # reduce each graphic first so the whole dataset is never concatenated
             step = np.max([view.max(axis=0) for view in self.data[:, :, axes]], axis=0)
-            offsets[:, axes] = np.arange(len(self))[:, np.newaxis] * (step + self._separation[axes])
+            offsets[:, axes] = np.arange(len(self))[:, np.newaxis] * (
+                step + self._separation[axes]
+            )
         else:
             # per-graphic steps: offset each graphic past the previous ones by their cumulative step
             offsets[1:, axes] = np.cumsum(

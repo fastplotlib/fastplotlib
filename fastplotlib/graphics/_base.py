@@ -62,7 +62,9 @@ PYGFX_EVENTS = [
 class Graphic:
     config = global_config.descriptor
 
-    _features: dict[str, type[GraphicFeature] | tuple[type[GraphicFeature], ...]] = dict()
+    _features: dict[str, type[GraphicFeature] | tuple[type[GraphicFeature], ...]] = (
+        dict()
+    )
 
     # It also doesn't make sense to create tooltips for some graphics
     # ex: text, that would be very funny.
@@ -533,7 +535,7 @@ class Graphic:
         """
         position = np.asarray(position)
 
-        if position.ndim not in (1,2):
+        if position.ndim not in (1, 2):
             raise ValueError(f"position must be of shape (num_points, 3) or (3,)")
 
         if position.ndim == 1:

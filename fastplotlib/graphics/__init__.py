@@ -8,7 +8,14 @@ from ._vectors import VectorsGraphic
 from .mesh import MeshGraphic, SurfaceGraphic, PolygonGraphic
 from .text import TextGraphic
 from ._collection_base import GraphicCollection
-from ._collections import LineCollection, LineStack, ScatterCollection, ScatterStack, ImageCollection, ImageGrid
+from ._collections import (
+    LineCollection,
+    LineStack,
+    ScatterCollection,
+    ScatterStack,
+    ImageCollection,
+    ImageGrid,
+)
 
 __all__ = [
     "Graphic",

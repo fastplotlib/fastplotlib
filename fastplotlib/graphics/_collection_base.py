@@ -9,9 +9,14 @@ import pygfx
 import cmap as cmap_lib
 
 from ._base import Graphic
-from ._jagged_array import CollectionFeatureAccessor, JaggedCollectionFeature, CollectionColors, CollectionCmap, ARRAY_BUFFER_FEATURES
+from ._jagged_array import (
+    CollectionFeatureAccessor,
+    JaggedCollectionFeature,
+    CollectionColors,
+    CollectionCmap,
+    ARRAY_BUFFER_FEATURES,
+)
 from .features import GraphicFeature, VertexColors, UniformColor, VertexCmap
-
 
 # a feature the collection also owns as a `Graphic` is exposed under a plural name, so
 # `collection.offset` is the collection's own offset and `collection.offsets` is the per-graphic
@@ -37,7 +42,11 @@ def get_accessor_class(feature: str, feature_classes: tuple[type, ...]) -> type:
         return CollectionColors
     if VertexCmap in feature_classes:
         return CollectionCmap
-    if any(issubclass(c, ARRAY_BUFFER_FEATURES) for c in feature_classes if isinstance(c, type)):
+    if any(
+        issubclass(c, ARRAY_BUFFER_FEATURES)
+        for c in feature_classes
+        if isinstance(c, type)
+    ):
         return JaggedCollectionFeature
     if feature in ("offset", "rotation", "scale"):
         return JaggedCollectionFeature
@@ -103,7 +112,9 @@ def cmap_across_graphics(
         np.linspace(0, 1, n_graphics), np.linspace(0, 1, len(transform)), transform
     )
     # normalize over the range so the values index the colormap
-    vmin, vmax = cmap_range if cmap_range is not None else (transform.min(), transform.max())
+    vmin, vmax = (
+        cmap_range if cmap_range is not None else (transform.min(), transform.max())
+    )
     spread = vmax - vmin
     values = (transform - vmin) / spread if spread else np.zeros(n_graphics)
 
@@ -124,8 +135,12 @@ def make_feature_property(feature_name: str, accessor_class: type) -> property:
     if accessor_class is CollectionCmap:
         # assigning a colormap colors each graphic one color, evenly spaced across the collection
         def setter(collection_instance, value):
-            collection_instance.colors[:] = cmap_across_graphics(value, len(collection_instance))
+            collection_instance.colors[:] = cmap_across_graphics(
+                value, len(collection_instance)
+            )
+
     else:
+
         def setter(collection_instance, value):
             getattr(collection_instance, f"_{feature_name}")[:] = value
 
@@ -144,16 +159,26 @@ def make_collection_signature(cls: type) -> inspect.Signature:
     """
     parameters = dict()
 
-    for name, parameter in inspect.signature(cls._child_type.__init__).parameters.items():
-        if name in ("self", "data") or parameter.kind in (parameter.VAR_POSITIONAL, parameter.VAR_KEYWORD):
+    for name, parameter in inspect.signature(
+        cls._child_type.__init__
+    ).parameters.items():
+        if name in ("self", "data") or parameter.kind in (
+            parameter.VAR_POSITIONAL,
+            parameter.VAR_KEYWORD,
+        ):
             continue
         feature_name = PLURAL.get(name, name)
         annotation = parameter.annotation
         if feature_name in cls._accessor_specs and annotation is not parameter.empty:
             annotation = Iterable[annotation]
-        default = parameter.default if parameter.default is not parameter.empty else None
+        default = (
+            parameter.default if parameter.default is not parameter.empty else None
+        )
         parameters[feature_name] = inspect.Parameter(
-            feature_name, inspect.Parameter.KEYWORD_ONLY, default=default, annotation=annotation
+            feature_name,
+            inspect.Parameter.KEYWORD_ONLY,
+            default=default,
+            annotation=annotation,
         )
 
     # features the collection exposes but the child takes via **kwargs, e.g. names, offsets, metadatas
@@ -174,7 +199,10 @@ def make_collection_signature(cls: type) -> inspect.Signature:
             parameters[name] = parameter.replace(kind=inspect.Parameter.KEYWORD_ONLY)
 
     return inspect.Signature(
-        [inspect.Parameter("data", inspect.Parameter.POSITIONAL_OR_KEYWORD), *parameters.values()]
+        [
+            inspect.Parameter("data", inspect.Parameter.POSITIONAL_OR_KEYWORD),
+            *parameters.values(),
+        ]
     )
 
 
@@ -205,10 +233,16 @@ class GraphicCollection(Graphic):
         for feature, feature_classes in cls._child_type._features.items():
             if feature in EXCLUDE:
                 continue
-            feature_classes = feature_classes if isinstance(feature_classes, tuple) else (feature_classes,)
+            feature_classes = (
+                feature_classes
+                if isinstance(feature_classes, tuple)
+                else (feature_classes,)
+            )
             feature_name = PLURAL.get(feature, feature)
             existing = getattr(cls, feature_name, None)
-            if isinstance(existing, property) and not isinstance(existing, _AccessorProperty):
+            if isinstance(existing, property) and not isinstance(
+                existing, _AccessorProperty
+            ):
                 continue  # the subclass implements this feature with its own property; no accessor
             specs[feature_name] = (
                 feature,
@@ -223,10 +257,15 @@ class GraphicCollection(Graphic):
         for feature_name, (feature, accessor_class, _) in cls._accessor_specs.items():
             if isinstance(getattr(cls, feature_name, None), property):
                 continue
-            setattr(cls, feature_name, make_feature_property(feature_name, accessor_class))
+            setattr(
+                cls, feature_name, make_feature_property(feature_name, accessor_class)
+            )
 
         # expose the feature names so `add_event_handler` routes feature events to the accessor
-        cls._features = {**cls._features, **{name: spec[1] for name, spec in cls._accessor_specs.items()}}
+        cls._features = {
+            **cls._features,
+            **{name: spec[1] for name, spec in cls._accessor_specs.items()},
+        }
 
         cls.__signature__ = make_collection_signature(cls)
 
@@ -247,11 +286,15 @@ class GraphicCollection(Graphic):
             is not a feature is passed unchanged to every child graphic.
         """
         # the singular name sets the collection's own value, the plural form sets it per graphic
-        super().__init__(**{name: kwargs.pop(name) for name in PLURAL.keys() & kwargs.keys()})
+        super().__init__(
+            **{name: kwargs.pop(name) for name in PLURAL.keys() & kwargs.keys()}
+        )
 
         n_graphics = len(data)
         if n_graphics == 0:
-            raise ValueError("a collection needs at least one graphic, got an empty `data`")
+            raise ValueError(
+                "a collection needs at least one graphic, got an empty `data`"
+            )
 
         self._graphics = np.empty(n_graphics, dtype=object)
         self._set_world_object(pygfx.Group())
@@ -269,11 +312,15 @@ class GraphicCollection(Graphic):
             feature = self._accessor_specs[feature_name][0]
             accessor = getattr(self, f"_{feature_name}")
             value = accessor._parse_feature_value(value, ())
-            feature_values[feature] = iter(accessor._broadcast_over_graphics(value, n_graphics))
+            feature_values[feature] = iter(
+                accessor._broadcast_over_graphics(value, n_graphics)
+            )
 
         # one graphic per data entry, filled into the preallocated array
         for i, graphic_data in enumerate(data):
-            feature_kwargs = {feature: next(values) for feature, values in feature_values.items()}
+            feature_kwargs = {
+                feature: next(values) for feature, values in feature_values.items()
+            }
             graphic = self._child_type(graphic_data, **feature_kwargs, **graphic_kwargs)
             self._check_graphic_features_modes(graphic)
             self._graphics[i] = graphic
@@ -281,11 +328,17 @@ class GraphicCollection(Graphic):
 
     def _create_accessors(self, data_value_ndim: int):
         # one accessor per exposed feature, over the collection's graphics array
-        for feature_name, (feature, accessor_class, value_ndim) in self._accessor_specs.items():
+        for feature_name, (
+            feature,
+            accessor_class,
+            value_ndim,
+        ) in self._accessor_specs.items():
             setattr(
                 self,
                 f"_{feature_name}",
-                accessor_class(self._graphics, feature, value_ndim, feature_name=feature_name),
+                accessor_class(
+                    self._graphics, feature, value_ndim, feature_name=feature_name
+                ),
             )
         # data is the loop driver, so its value_ndim comes from the data, not a feature class
         self._data._value_ndim = data_value_ndim
@@ -353,7 +406,9 @@ class GraphicCollection(Graphic):
             reference_feature = getattr(reference, f"_{feature}", None)
             if not isinstance(reference_feature, GraphicFeature):
                 continue  # e.g. metadata, not a graphic feature
-            if not isinstance(getattr(graphic, f"_{feature}", None), type(reference_feature)):
+            if not isinstance(
+                getattr(graphic, f"_{feature}", None), type(reference_feature)
+            ):
                 raise TypeError(
                     f"graphics in a collection must use the same `{feature}` type; the collection "
                     f"uses `{type(reference_feature).__name__}`"

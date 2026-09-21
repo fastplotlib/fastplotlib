@@ -24,6 +24,7 @@ def inv_get_method_name(name: str) -> str:
 
 class ConfigDescriptor:
     """Descriptor pattern so classes can access their configuration for users to set/get config options"""
+
     # Reason this exists, we can't do:
     # class A:
     #     config = global_config._registry[A]

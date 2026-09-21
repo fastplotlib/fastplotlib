@@ -10,7 +10,6 @@ from ._base import (
     block_reentrance,
 )
 
-
 marker_names = {
     # MPL
     "o": "circle",

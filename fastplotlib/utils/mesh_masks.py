@@ -1,6 +1,5 @@
 import numpy as np
 
-
 """
 positions for indexing the BoxGeometry to set the "width" and "size" of the box
 hacky, but I don't think we can morph meshes in pygfx yet: https://github.com/pygfx/pygfx/issues/346

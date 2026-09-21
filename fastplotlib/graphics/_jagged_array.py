@@ -10,7 +10,6 @@ from .features.utils import is_single_color
 from ..utils.types import ColorLike, MultiColorLike, ColormapLike
 from ._base import Graphic
 
-
 # array-buffer features are indexed along the datapoint axis (vertex buffers, image/volume
 # textures), as opposed to uniforms which hold a single value for the whole graphic
 ARRAY_BUFFER_FEATURES = (BufferManager, TextureArray, TextureArrayVolume)
@@ -28,7 +27,13 @@ class CollectionFeatureAccessor(GraphicFeature):
     ``__setitem__`` emits one collection-level ``GraphicFeatureEvent``.
     """
 
-    def __init__(self, graphics: np.ndarray, feature: str, value_ndim: int = 0, feature_name: str = None):
+    def __init__(
+        self,
+        graphics: np.ndarray,
+        feature: str,
+        value_ndim: int = 0,
+        feature_name: str = None,
+    ):
         """
         Parameters
         ----------
@@ -89,7 +94,9 @@ class CollectionFeatureAccessor(GraphicFeature):
         # one collection-level event; the collection registers handlers on this accessor
         if len(self._event_handlers) < 1:
             return
-        event = GraphicFeatureEvent(self._feature_name, info={"key": key, "value": value})
+        event = GraphicFeatureEvent(
+            self._feature_name, info={"key": key, "value": value}
+        )
         self._call_event_handlers(event)
 
     def _apply_operator(self, func):
@@ -183,7 +190,9 @@ class JaggedCollectionFeature(CollectionFeatureAccessor):
     def _verify_homogenous_buffer_type(self, graphics):
         # every selected graphic must use either a uniform or an array buffer, not a mix
         buffer = self._is_array_buffer(getattr(graphics[0], self._feature))
-        if not all(self._is_array_buffer(getattr(g, self._feature)) == buffer for g in graphics):
+        if not all(
+            self._is_array_buffer(getattr(g, self._feature)) == buffer for g in graphics
+        ):
             raise TypeError(
                 f"the selected graphics mix uniform and per-vertex '{self._feature}'; "
                 f"use either uniform or vertex for all graphics, not a mix"
@@ -272,7 +281,9 @@ class CollectionColors(JaggedCollectionFeature):
     split, unless the key indexes the RGBA axis, in which case the value is used as-is.
     """
 
-    def _parse_feature_value(self, value: ColorLike | MultiColorLike, buffer_key: tuple):
+    def _parse_feature_value(
+        self, value: ColorLike | MultiColorLike, buffer_key: tuple
+    ):
         # the RGBA axis is the last one; when the buffer_key reaches it the value is raw numbers
         if buffer_key and len(buffer_key) >= self._feature_ndim() - 1:
             return super()._parse_feature_value(value, buffer_key)
@@ -323,7 +334,9 @@ class CollectionCmap(CollectionFeatureAccessor):
         self._verify_cmap_mode([getattr(g, self._feature) for g in selected])
         if isinstance(value, (list, tuple, np.ndarray)):
             if len(value) != len(selected):
-                raise ValueError(f"expected {len(selected)} colormaps, got {len(value)}")
+                raise ValueError(
+                    f"expected {len(selected)} colormaps, got {len(value)}"
+                )
             cmaps = value
         else:
             # one colormap for all selected graphics
@@ -366,13 +379,57 @@ def _unary_operator(op):
 # comparison, arithmetic, and bitwise operators act on the values across the graphics like a numpy
 # array, jagged along the datapoint axis, e.g. `collection.thickness < 3` or `collection.colors ==
 # "r"`; useful for masking the graphic axis, e.g. `collection.colors[collection.thickness < 3] = "r"`
-for _name in ("lt", "le", "eq", "ne", "gt", "ge", "add", "sub", "mul", "truediv", "floordiv",
-              "mod", "pow", "matmul", "and_", "or_", "xor", "lshift", "rshift"):
-    setattr(CollectionFeatureAccessor, f"__{_name.rstrip('_')}__", _binary_operator(getattr(operator, _name)))
+for _name in (
+    "lt",
+    "le",
+    "eq",
+    "ne",
+    "gt",
+    "ge",
+    "add",
+    "sub",
+    "mul",
+    "truediv",
+    "floordiv",
+    "mod",
+    "pow",
+    "matmul",
+    "and_",
+    "or_",
+    "xor",
+    "lshift",
+    "rshift",
+):
+    setattr(
+        CollectionFeatureAccessor,
+        f"__{_name.rstrip('_')}__",
+        _binary_operator(getattr(operator, _name)),
+    )
 
-for _name in ("add", "sub", "mul", "truediv", "floordiv", "mod", "pow", "matmul",
-              "and_", "or_", "xor", "lshift", "rshift"):
-    setattr(CollectionFeatureAccessor, f"__r{_name.rstrip('_')}__", _reflected_operator(getattr(operator, _name)))
+for _name in (
+    "add",
+    "sub",
+    "mul",
+    "truediv",
+    "floordiv",
+    "mod",
+    "pow",
+    "matmul",
+    "and_",
+    "or_",
+    "xor",
+    "lshift",
+    "rshift",
+):
+    setattr(
+        CollectionFeatureAccessor,
+        f"__r{_name.rstrip('_')}__",
+        _reflected_operator(getattr(operator, _name)),
+    )
 
 for _name in ("neg", "pos", "abs", "invert"):
-    setattr(CollectionFeatureAccessor, f"__{_name}__", _unary_operator(getattr(operator, _name)))
+    setattr(
+        CollectionFeatureAccessor,
+        f"__{_name}__",
+        _unary_operator(getattr(operator, _name)),
+    )

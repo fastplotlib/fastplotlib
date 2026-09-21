@@ -183,9 +183,7 @@ class Frame:
             _title_kwargs = {**_title_kwargs, **title_kwargs}
 
         if plane_color is not None:
-            self.plane_color = SelectorColorStates(
-                **plane_color
-            )
+            self.plane_color = SelectorColorStates(**plane_color)
 
         # create rect manager to handle all the backend rect calculations
         if rect is not None:

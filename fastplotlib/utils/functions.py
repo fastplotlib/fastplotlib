@@ -8,7 +8,6 @@ from pygfx import Texture, Color
 
 from .protocols import ArrayProtocol, CudaArrayProtocol
 
-
 cmap_catalog = cmap_lib.Catalog()
 
 COLORMAPS = sorted(
@@ -337,7 +336,7 @@ def normalize_min_max(a):
 
 def cuda_to_numpy(arr: CudaArrayProtocol) -> np.ndarray:
 
-    data = np.from_dlpack(arr, device='cpu')
+    data = np.from_dlpack(arr, device="cpu")
     return data
 
 

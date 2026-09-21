@@ -127,7 +127,9 @@ class Subplot(PlotArea):
             self.children.append(dv)
 
         # imgui windows confined to this subplot, keyed by location
-        self._imgui_windows = {loc: None for loc in ["left", "right", "top", "bottom", "toolbar"]}
+        self._imgui_windows = {
+            loc: None for loc in ["left", "right", "top", "bottom", "toolbar"]
+        }
 
         self._imgui_right_click = None
 
@@ -273,7 +275,9 @@ class Subplot(PlotArea):
         """
         figure = self.get_figure()
         if "Imgui" not in figure.__class__.__name__:
-            raise TypeError("imgui windows can only be added to a subplot of an ImguiFigure")
+            raise TypeError(
+                "imgui windows can only be added to a subplot of an ImguiFigure"
+            )
 
         from ..ui._base import ImguiWindow, EDGES, _wrap_update_call
 
@@ -283,9 +287,13 @@ class Subplot(PlotArea):
                 f"subplot imgui window location must be one of: {valid}, you have passed: {location}"
             )
         if location in EDGES and size is None:
-            raise ValueError(f"must provide `size` for an edge window, location: {location}")
+            raise ValueError(
+                f"must provide `size` for an edge window, location: {location}"
+            )
 
-        hook_kwargs = dict(figure=figure, subplot=self, location=location, size=size, title=title)
+        hook_kwargs = dict(
+            figure=figure, subplot=self, location=location, size=size, title=title
+        )
         if window_flags is not None:
             hook_kwargs["window_flags"] = window_flags
 

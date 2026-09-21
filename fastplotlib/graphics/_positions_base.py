@@ -43,7 +43,9 @@ class PositionsGraphic(Graphic):
         # cls.__dict__, not cls._features, so this is only what the subclass declares (not inherited)
         own = cls.__dict__.get("_features", {})
         cls._features = {**inherited, **own}
-        super().__init_subclass__(**kwargs)  # Graphic.__init_subclass__ adds the common features
+        super().__init_subclass__(
+            **kwargs
+        )  # Graphic.__init_subclass__ adds the common features
 
     def __init__(
         self,
@@ -72,8 +74,8 @@ class PositionsGraphic(Graphic):
 
         if cmap is not None:
             # if a cmap is specified it overrides colors argument
-            self._cmap, self._cmap_transform, self._cmap_range = self._create_cmap_buffers(
-                cmap, cmap_transform, cmap_range
+            self._cmap, self._cmap_transform, self._cmap_range = (
+                self._create_cmap_buffers(cmap, cmap_transform, cmap_range)
             )
 
         else:
@@ -139,7 +141,12 @@ class PositionsGraphic(Graphic):
         if isinstance(self._colors, VertexColors):
             self.world_object.geometry.colors = self._colors._fpl_buffer
             self.world_object.material.color_mode = "vertex"
-            self.world_object.material.color = (1, 1, 1, 1)  # back to default, material.color cannot be None
+            self.world_object.material.color = (
+                1,
+                1,
+                1,
+                1,
+            )  # back to default, material.color cannot be None
         else:
             self.world_object.material.color = self._colors.value
             self.world_object.material.color_mode = "uniform"
@@ -188,7 +195,12 @@ class PositionsGraphic(Graphic):
         if self._colors is not None:
             self._colors.clear_event_handlers()
             self.world_object.geometry.colors = None
-            self.world_object.material.color = (1, 1, 1, 1)  # back to default, material.color cannot be None
+            self.world_object.material.color = (
+                1,
+                1,
+                1,
+                1,
+            )  # back to default, material.color cannot be None
             self._colors = None
 
     @property
@@ -246,9 +258,7 @@ class PositionsGraphic(Graphic):
 
         else:
             # sequence of colors
-            return self._VertexColorsCls(
-                colors, n_colors=self._data.value.shape[0]
-            )
+            return self._VertexColorsCls(colors, n_colors=self._data.value.shape[0])
 
     def _create_cmap_buffers(
         self, cmap, cmap_transform, cmap_range
@@ -264,7 +274,7 @@ class PositionsGraphic(Graphic):
         cmap_transform = VertexCmapTransform(
             cmap_transform,
             # use buffer array length since len(self.data) returns half for inflines
-            n_datapoints=len(self.data.buffer.data)
+            n_datapoints=len(self.data.buffer.data),
         )
 
         if cmap_range is None:

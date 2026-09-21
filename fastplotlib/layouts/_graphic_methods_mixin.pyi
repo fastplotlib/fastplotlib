@@ -23,7 +23,7 @@ class GraphicMethodsMixin:
         size_space: Literal["screen", "world", "model"] = "screen",
         dash_pattern: str | tuple | list = (),
         thin: bool = False,
-        **kwargs
+        **kwargs,
     ) -> LineGraphic:
         """
 
@@ -86,7 +86,7 @@ class GraphicMethodsMixin:
         end_is_infinite: bool = True,
         dash_pattern: str | tuple | list = (),
         size_space: Literal["screen", "world", "model"] = "screen",
-        **kwargs
+        **kwargs,
     ) -> InfLineGraphic:
         """
 
@@ -163,7 +163,7 @@ class GraphicMethodsMixin:
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> LineCollection:
         """
 
@@ -236,7 +236,7 @@ class GraphicMethodsMixin:
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> LineStack:
         """
 
@@ -302,7 +302,7 @@ class GraphicMethodsMixin:
         point_rotations: float | np.ndarray | None = 0.0,
         sizes: float | np.ndarray | Sequence[float] = 5,
         size_space: str = "screen",
-        **kwargs
+        **kwargs,
     ) -> ScatterGraphic:
         """
 
@@ -421,7 +421,7 @@ class GraphicMethodsMixin:
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> ScatterCollection:
         """
 
@@ -543,7 +543,7 @@ class GraphicMethodsMixin:
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> ScatterStack:
         """
 
@@ -649,7 +649,7 @@ class GraphicMethodsMixin:
         colorspace: ColorspacesRGB = "srgb",
         cpu_buffer: bool = True,
         texture_usage: wgpu.TextureUsage = 0,
-        **kwargs
+        **kwargs,
     ) -> ImageGraphic:
         """
 
@@ -736,7 +736,7 @@ class GraphicMethodsMixin:
         interpolation: Literal["nearest", "linear"] = "nearest",
         colorspace: ColorspacesYUV = "yuv420p",
         colorrange: ColorRange = "limited",
-        **kwargs
+        **kwargs,
     ) -> ImageYUVGraphic:
         """
 
@@ -825,7 +825,7 @@ class GraphicMethodsMixin:
         substep_size: float = 0.1,
         emissive: str | tuple | np.ndarray = (0, 0, 0),
         shininess: int = 30,
-        **kwargs
+        **kwargs,
     ) -> ImageVolumeGraphic:
         """
 
@@ -912,7 +912,7 @@ class GraphicMethodsMixin:
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> ImageCollection:
         """
 
@@ -1013,7 +1013,7 @@ class GraphicMethodsMixin:
         alpha_modes=None,
         visibles=None,
         metadatas=None,
-        **kwargs
+        **kwargs,
     ) -> ImageGrid:
         """
 
@@ -1101,7 +1101,7 @@ class GraphicMethodsMixin:
         mapcoords: Any = None,
         cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] = None,
-        **kwargs
+        **kwargs,
     ) -> MeshGraphic:
         """
 
@@ -1154,7 +1154,7 @@ class GraphicMethodsMixin:
         mapcoords: Any = None,
         cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] | None = None,
-        **kwargs
+        **kwargs,
     ) -> SurfaceGraphic:
         """
 
@@ -1203,7 +1203,7 @@ class GraphicMethodsMixin:
         mapcoords: Any = None,
         cmap: str | dict | pygfx.Texture | pygfx.TextureMap | np.ndarray = None,
         clim: tuple[float, float] | None = None,
-        **kwargs
+        **kwargs,
     ) -> PolygonGraphic:
         """
 
@@ -1250,7 +1250,7 @@ class GraphicMethodsMixin:
         color: str | Sequence[float] | np.ndarray = "w",
         size: float = None,
         vector_shape_options: dict = None,
-        **kwargs
+        **kwargs,
     ) -> VectorsGraphic:
         """
 
@@ -1299,7 +1299,7 @@ class GraphicMethodsMixin:
         screen_space: bool = True,
         offset: tuple[float] = (0, 0, 0),
         anchor: str = "middle-center",
-        **kwargs
+        **kwargs,
     ) -> TextGraphic:
         """
 

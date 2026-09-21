@@ -50,9 +50,7 @@ def make_canvas_and_renderer(
         renderer.ppaa = "none"
         renderer.pixel_scale = 1.0
     elif not isinstance(renderer, WgpuRenderer):
-        raise TypeError(
-            f"renderer option must be a pygfx.WgpuRenderer instance"
-        )
+        raise TypeError(f"renderer option must be a pygfx.WgpuRenderer instance")
 
     return canvas, renderer
 

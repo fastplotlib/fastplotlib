@@ -9,8 +9,10 @@ from ._protocols import SelectorProtocol, MultiSelectorProtocol
 
 Mapping = np.ndarray | dict[int, int] | Callable
 
+
 def identity(val: Any) -> Any:
     return val
+
 
 def array_map(arr: np.ndarray, index: Integral):
     """
@@ -18,13 +20,14 @@ def array_map(arr: np.ndarray, index: Integral):
     """
     return None if np.isnan(arr[index]) else int(arr[index])
 
-def inv_array_map(arr: np.ndarray,
-                value: int) -> None | int:
+
+def inv_array_map(arr: np.ndarray, value: int) -> None | int:
     """
     arr[i] gives the global index
     """
     x = np.flatnonzero(arr == value)
     return None if x.size == 0 else int(x[0])
+
 
 def dict_map(my_dict: dict, key: Integral):
     if key is None:
@@ -43,12 +46,14 @@ class SelectionVector:
 
     The SelectionVector coordinates across individual selectors, including the coordinated updating of indices whenever a selection changes
     """
+
     def __init__(self):
         # selector -> (map, map_inv)
 
         ## Key is a selector, value is a (1) local to global index map (2) global to local index map (3) list of event handlers
         self._selectors: dict[
-            SelectorProtocol | MultiSelectorProtocol, tuple[Callable, Callable, list[Callable]]
+            SelectorProtocol | MultiSelectorProtocol,
+            tuple[Callable, Callable, list[Callable]],
         ] = dict()
         self._selection: list[Any] = list()
         self._block_reentrance = False
@@ -93,7 +98,7 @@ class SelectionVector:
             SelectorProtocol
             | tuple[SelectorProtocol, dict]
             | tuple[SelectorProtocol, np.ndarray]
-            |tuple[SelectorProtocol, Callable, Callable]
+            | tuple[SelectorProtocol, Callable, Callable]
         ),
     ):
         """
@@ -115,7 +120,9 @@ class SelectionVector:
                     master_to_local = new[1]
                     local_to_master = new[2]
                 else:
-                    raise ValueError(f"Both index mappings must be Callables, you provided {type(new[1])} and {type(new[2])}")
+                    raise ValueError(
+                        f"Both index mappings must be Callables, you provided {type(new[1])} and {type(new[2])}"
+                    )
             elif len(new) == 2:
                 if isinstance(new[1], dict):
                     ## Construct inverse mapping
@@ -127,12 +134,16 @@ class SelectionVector:
 
                 elif isinstance(new[1], np.ndarray):
                     if not new[1].ndim == 1:
-                        raise ValueError("If you pass in an array mapping, it must be 1-D")
+                        raise ValueError(
+                            "If you pass in an array mapping, it must be 1-D"
+                        )
                     master_to_local = partial(array_map, new[1])
                     local_to_master = partial(inv_array_map, new[1])
                 else:
-                    raise ValueError(f"Must either provide a single dict or numpy array specifying the local to global index mapping, or two callables"
-                                     f"specifying the mapping in both directions")
+                    raise ValueError(
+                        f"Must either provide a single dict or numpy array specifying the local to global index mapping, or two callables"
+                        f"specifying the mapping in both directions"
+                    )
 
             selector = new[0]
 
@@ -142,17 +153,21 @@ class SelectionVector:
         else:
             raise ValueError
 
-        handler = selector.add_event_handler(partial(self._inv_handler, local_to_master))
+        handler = selector.add_event_handler(
+            partial(self._inv_handler, local_to_master)
+        )
         self._selectors[selector] = (master_to_local, local_to_master, [handler])
 
     def _inv_handler(self, map_inv: Callable, local_selection: dict):
         """
         HighlightSelector and VisibilitySelector emit a dictionary with keys selector and value
         """
-        input_to_map = local_selection['value']
+        input_to_map = local_selection["value"]
         for i in range(len(input_to_map)):
             if isinstance(input_to_map[i], Integral) and input_to_map[i] < 0:
-                raise ValueError("You can only provide nonnegative values as local indices to a selector")
+                raise ValueError(
+                    "You can only provide nonnegative values as local indices to a selector"
+                )
 
         self.selection = [map_inv(input_to_map[i]) for i in range(len(input_to_map))]
 
@@ -166,5 +181,5 @@ class SelectionVector:
 
     def clear_selectors(self):
         for selector in self._selectors.keys():
-                if isinstance(selector, MultiSelectorProtocol):
-                    selector.clear()
+            if isinstance(selector, MultiSelectorProtocol):
+                selector.clear()

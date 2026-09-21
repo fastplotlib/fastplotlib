@@ -102,10 +102,7 @@ class TextureArray(GraphicFeature):
             if cpu_buffer:
                 # texture gets the data directly
                 texture = pygfx.Texture(
-                    self.value[slicer],
-                    dim=2,
-                    colorspace=colorspace,
-                    usage=usage
+                    self.value[slicer], dim=2, colorspace=colorspace, usage=usage
                 )
             else:
                 # we only supply the size

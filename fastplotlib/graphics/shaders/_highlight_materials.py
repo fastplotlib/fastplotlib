@@ -6,7 +6,7 @@ _HIGHLIGHT_UNIFORM_FIELDS = dict(highlight_alpha="f4")
 
 _IMAGE_HIGHLIGHT_UNIFORM_FIELDS = dict(
     highlight_alpha="f4",
-    fpl_n_visible="u4",   # 0 = visibility disabled; >0 = number of visible rows/cols
+    fpl_n_visible="u4",  # 0 = visibility disabled; >0 = number of visible rows/cols
     fpl_vis_axis_y="u4",  # 1 = rows (y-axis), 0 = cols (x-axis)
 )
 
@@ -23,7 +23,9 @@ class HighlightableLineMaterial(pygfx.LineMaterial):
 
 
 class HighlightableLineThinMaterial(pygfx.LineThinMaterial):
-    uniform_type = dict(pygfx.LineThinMaterial.uniform_type, **_HIGHLIGHT_UNIFORM_FIELDS)
+    uniform_type = dict(
+        pygfx.LineThinMaterial.uniform_type, **_HIGHLIGHT_UNIFORM_FIELDS
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -45,7 +47,9 @@ class HighlightablePointsMaterial(pygfx.PointsMaterial):
 
 
 class HighlightablePointsMarkerMaterial(pygfx.PointsMarkerMaterial):
-    uniform_type = dict(pygfx.PointsMarkerMaterial.uniform_type, **_HIGHLIGHT_UNIFORM_FIELDS)
+    uniform_type = dict(
+        pygfx.PointsMarkerMaterial.uniform_type, **_HIGHLIGHT_UNIFORM_FIELDS
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -56,7 +60,9 @@ class HighlightablePointsMarkerMaterial(pygfx.PointsMarkerMaterial):
 
 
 class HighlightablePointsSpriteMaterial(pygfx.PointsSpriteMaterial):
-    uniform_type = dict(pygfx.PointsSpriteMaterial.uniform_type, **_HIGHLIGHT_UNIFORM_FIELDS)
+    uniform_type = dict(
+        pygfx.PointsSpriteMaterial.uniform_type, **_HIGHLIGHT_UNIFORM_FIELDS
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -80,12 +86,16 @@ class HighlightablePointsGaussianBlobMaterial(pygfx.PointsGaussianBlobMaterial):
 
 
 class HighlightableImageMaterial(pygfx.ImageBasicMaterial):
-    uniform_type = dict(pygfx.ImageBasicMaterial.uniform_type, **_IMAGE_HIGHLIGHT_UNIFORM_FIELDS)
+    uniform_type = dict(
+        pygfx.ImageBasicMaterial.uniform_type, **_IMAGE_HIGHLIGHT_UNIFORM_FIELDS
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Store through _store so the PropTracker detects replacement and re-calls get_bindings().
-        self._store.highlight_mask_texture = Texture(np.zeros((1, 1), dtype=np.uint16), dim=2)
+        self._store.highlight_mask_texture = Texture(
+            np.zeros((1, 1), dtype=np.uint16), dim=2
+        )
         self._highlight_lut_buffer = Buffer(np.zeros((1, 4), dtype=np.float32))
         self._vis_lut_buffer = Buffer(np.zeros(65535, dtype=np.uint32))
         self.uniform_buffer.data["highlight_alpha"] = 1.0

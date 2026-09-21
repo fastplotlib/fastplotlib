@@ -78,7 +78,6 @@ from ._selection_features import (
 )
 from ._common import Name, Offset, Rotation, Scale, Alpha, AlphaMode, Visible, Deleted
 
-
 __all__ = [
     "VertexColors",
     "UniformColor",

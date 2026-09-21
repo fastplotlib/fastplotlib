@@ -106,9 +106,7 @@ class StandardRightClickMenu(ImguiPopup):
         imgui.set_next_window_size((0, 0))
         _, keep_open = imgui.begin(f"Controller", True)
         imgui.text(f"subplot: {subplot.name}")
-        _, enabled = imgui.menu_item(
-            "Enabled", "", subplot.controller.enabled
-        )
+        _, enabled = imgui.menu_item("Enabled", "", subplot.controller.enabled)
 
         subplot.controller.enabled = enabled
 

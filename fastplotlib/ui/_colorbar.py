@@ -29,7 +29,9 @@ class ImguiColorbar(ImguiWindow):
     BAR_BORDER = 1.0  # width of the outline drawn around the bar image
     HIST_WIDTH = 50  # width in pixels of the optional histogram drawn left of the bar
     HIST_GAP = 4  # gap in pixels between the histogram and the bar
-    FILL_OVERHANG = 4  # how far the vmin/vmax fill and lines extend past the histogram line-plot
+    FILL_OVERHANG = (
+        4  # how far the vmin/vmax fill and lines extend past the histogram line-plot
+    )
 
     def __init__(
         self,
@@ -206,7 +208,7 @@ class ImguiColorbar(ImguiWindow):
     @property
     def vmin(self) -> float:
         """get or set the lower contrast limit"""
-        return  max(self._vmin, self._axis_range()[0])
+        return max(self._vmin, self._axis_range()[0])
 
     @vmin.setter
     def vmin(self, value: float):
@@ -363,7 +365,7 @@ class ImguiColorbar(ImguiWindow):
         hi = (self.vmax - axis_min) / span
         t = np.linspace(1.0, 0.0, self.LUT_HEIGHT)
         norm = np.clip((t - lo) / (hi - lo), 0.0, 1.0)
-        norm = norm ** self._gamma
+        norm = norm**self._gamma
         colors = (Colormap(self._cmap_name)(norm) * 255).astype(np.uint8)
         data = np.ascontiguousarray(np.tile(colors[:, None, :], (1, self.TEX_WIDTH, 1)))
         self._device.queue.write_texture(
@@ -529,20 +531,33 @@ class ImguiColorbar(ImguiWindow):
             if imgui.is_item_activated():
                 self._grab_offset = cur - cursor_value()
             if imgui.is_item_active():
-                setattr(self, attr, max(lo_fn(), min(hi_fn(), cursor_value() + self._grab_offset)))
+                setattr(
+                    self,
+                    attr,
+                    max(lo_fn(), min(hi_fn(), cursor_value() + self._grab_offset)),
+                )
                 y = self._value_to_y(getattr(self, attr), bar_y, bar_h)
-            draw_list.add_line((x_left, y), (x_right, y), yellow if hovered else white, 2.0)
+            draw_list.add_line(
+                (x_left, y), (x_right, y), yellow if hovered else white, 2.0
+            )
 
         # current vmax above its line, vmin below its line
         y_vmax = self._value_to_y(self.vmax, bar_y, bar_h)
         y_vmin = self._value_to_y(self.vmin, bar_y, bar_h)
-        self._text_right(draw_list, f"{self.vmax:.4g}", x_right, y_vmax - imgui.get_text_line_height())
+        self._text_right(
+            draw_list,
+            f"{self.vmax:.4g}",
+            x_right,
+            y_vmax - imgui.get_text_line_height(),
+        )
         self._text_right(draw_list, f"{self.vmin:.4g}", x_right, y_vmin)
 
     def _text_right(self, draw_list, text: str, x_right: float, y: float):
         """draw text right-aligned so it ends at x_right"""
         tw = imgui.calc_text_size(text).x
-        draw_list.add_text((x_right - tw, y), imgui.get_color_u32(imgui.Col_.text), text)
+        draw_list.add_text(
+            (x_right - tw, y), imgui.get_color_u32(imgui.Col_.text), text
+        )
 
     def _draw_bar_handles(self, bar_x, bar_y, bar_w, bar_h):
         draw_list = imgui.get_window_draw_list()
@@ -600,11 +615,19 @@ class ImguiColorbar(ImguiWindow):
             if imgui.is_item_activated():
                 self._grab_offset = cur - cursor_value()
             if imgui.is_item_active():
-                setattr(self, attr, max(lo_fn(), min(hi_fn(), cursor_value() + self._grab_offset)))
+                setattr(
+                    self,
+                    attr,
+                    max(lo_fn(), min(hi_fn(), cursor_value() + self._grab_offset)),
+                )
                 y = self._value_to_y(getattr(self, attr), bar_y, bar_h)
 
-            draw_list.add_rect_filled((x_left, y - h / 2), (x_right, y + h / 2), yellow if hovered else white)
-            draw_list.add_rect((x_left, y - h / 2), (x_right, y + h / 2), outline, thickness=1.0)
+            draw_list.add_rect_filled(
+                (x_left, y - h / 2), (x_right, y + h / 2), yellow if hovered else white
+            )
+            draw_list.add_rect(
+                (x_left, y - h / 2), (x_right, y + h / 2), outline, thickness=1.0
+            )
 
             # current value to the left of the bar, vmax above its handle and vmin below
             text = f"{getattr(self, attr):.4g}"

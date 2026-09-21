@@ -690,9 +690,7 @@ class ImageYUVGraphic(ImageBase):
         "interpolation": ImageInterpolation,
     }
 
-    @global_config.declare(
-        "interpolation", "colorspace", "colorrange"
-    )
+    @global_config.declare("interpolation", "colorspace", "colorrange")
     def __init__(
         self,
         data: TupleYUV | TextureYUV,

@@ -4,7 +4,6 @@ from ._base import (
     block_reentrance,
 )
 
-
 # matplotlib-style dash pattern presets, expressed in units relative to the line thickness
 DASH_PATTERNS: dict[str, tuple] = {
     "-": (),
@@ -72,7 +71,9 @@ class DashPattern(GraphicFeature):
         },
     ]
 
-    def __init__(self, value: str | tuple | list = (), property_name: str = "dash_pattern"):
+    def __init__(
+        self, value: str | tuple | list = (), property_name: str = "dash_pattern"
+    ):
         # parse to validate, but store the user's original value so it stays readable
         parse_dash_pattern(value)
         self._value = value

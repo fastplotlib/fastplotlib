@@ -14,7 +14,11 @@ from .utils import (
 from .graphics import *
 from .graphics.features import GraphicFeatureEvent
 from .graphics.selectors import *
-from .graphics.utils import pause_events, get_nearest_graphics, get_nearest_graphics_indices
+from .graphics.utils import (
+    pause_events,
+    get_nearest_graphics,
+    get_nearest_graphics_indices,
+)
 from .legends import *
 from .tools import *
 from .axes import Axes, Grids
@@ -33,7 +37,6 @@ from .widgets import *
 from .widgets.nd_widget import extras as nds_extras
 
 from .utils._style import style
-
 
 if len(enumerate_adapters()) < 1:
     from warnings import warn

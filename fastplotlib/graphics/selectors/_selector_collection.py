@@ -13,8 +13,12 @@ from ._linear_region import LinearRegionSelector
 from ._polygon import PolygonSelector
 from ._rectangle import RectangleSelector
 
-
-_SELECTOR_TYPES = (LinearSelector, LinearRegionSelector, RectangleSelector, PolygonSelector)
+_SELECTOR_TYPES = (
+    LinearSelector,
+    LinearRegionSelector,
+    RectangleSelector,
+    PolygonSelector,
+)
 
 
 class SelectorCollection(Graphic):
@@ -220,7 +224,9 @@ class LinearSelectors(SelectorCollection):
         name: str = None,
     ):
         super().__init__(
-            parent, selection, name=name,
+            parent,
+            selection,
+            name=name,
             limits=limits,
             axis=axis,
             edge_color=edge_color,
@@ -275,7 +281,9 @@ class LinearRegionSelectors(SelectorCollection):
         name: str = None,
     ):
         super().__init__(
-            parent, selection, name=name,
+            parent,
+            selection,
+            name=name,
             limits=limits,
             size=size,
             center=center,
@@ -328,7 +336,9 @@ class RectangleSelectors(SelectorCollection):
         name: str = None,
     ):
         super().__init__(
-            parent, selection, name=name,
+            parent,
+            selection,
+            name=name,
             limits=limits,
             resizable=resizable,
             fill_color=fill_color,
@@ -378,7 +388,9 @@ class PolygonSelectors(SelectorCollection):
         name: str = None,
     ):
         super().__init__(
-            parent, selection, name=name,
+            parent,
+            selection,
+            name=name,
             limits=limits,
             resizable=resizable,
             fill_color=fill_color,

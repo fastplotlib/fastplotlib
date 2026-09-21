@@ -83,7 +83,9 @@ class VectorPositions(GraphicFeature):
             self._positions[:] = value
 
         # Only need to update the translation vector
-        graphic.world_object.instance_buffer.data["matrix"][:, 3, 0:3] = self._positions[:]
+        graphic.world_object.instance_buffer.data["matrix"][:, 3, 0:3] = (
+            self._positions[:]
+        )
 
         graphic.world_object.instance_buffer.update_full()
 
@@ -172,13 +174,14 @@ class VectorDirections(GraphicFeature):
         # get the new transform
         transform = mat_compose(graphic.positions[:], rotation, magnitudes[:])
         # set the buffer
-        graphic.world_object.instance_buffer.data["matrix"][:] = transform.transpose(0, 2, 1)
+        graphic.world_object.instance_buffer.data["matrix"][:] = transform.transpose(
+            0, 2, 1
+        )
 
         graphic.world_object.instance_buffer.update_full()
 
         event = GraphicFeatureEvent(type="directions", info={"value": value})
         self._call_event_handlers(event)
-
 
 
 def quat_from_vecs(source, target, out=None, dtype=None) -> np.ndarray:
@@ -210,11 +213,11 @@ def quat_from_vecs(source, target, out=None, dtype=None) -> np.ndarray:
         neither_zero = ~y_zero & ~z_zero
 
         fb = np.empty((y_zero.shape[0], 3), dtype=float)
-        fb[y_zero]      = (0., 1., 0.)
-        fb[~y_zero & z_zero] = (0., 0., 1.)
-        fb[neither_zero, 0] =  0.
+        fb[y_zero] = (0.0, 1.0, 0.0)
+        fb[~y_zero & z_zero] = (0.0, 0.0, 1.0)
+        fb[neither_zero, 0] = 0.0
         fb[neither_zero, 1] = -t[neither_zero, 2]
-        fb[neither_zero, 2] =  t[neither_zero, 1]
+        fb[neither_zero, 2] = t[neither_zero, 1]
 
         axis[use_fallback] = fb
 
@@ -264,7 +267,9 @@ def quat_from_axis_angle(axis, angle, out=None, dtype=None) -> np.ndarray:
     return out.squeeze(0) if out.shape[0] == 1 else out
 
 
-def mat_compose(translation, rotation, scaling, /, *, out=None, dtype=None) -> np.ndarray:
+def mat_compose(
+    translation, rotation, scaling, /, *, out=None, dtype=None
+) -> np.ndarray:
     """
     Compose transformation matrices given translation vectors, quaternions,
     and scaling vectors.
@@ -280,9 +285,9 @@ def mat_compose(translation, rotation, scaling, /, *, out=None, dtype=None) -> n
     np.ndarray
         [num_vectors, 4, 4] or [4, 4]
     """
-    rotation    = np.asarray(rotation, dtype=float)
+    rotation = np.asarray(rotation, dtype=float)
     translation = np.asarray(translation, dtype=float)
-    scaling     = np.asarray(scaling, dtype=float)
+    scaling = np.asarray(scaling, dtype=float)
 
     if rotation.ndim == 1:
         rotation = rotation[None, :]
@@ -310,7 +315,6 @@ def mat_compose(translation, rotation, scaling, /, *, out=None, dtype=None) -> n
     wx, wy, wz = w * x2, w * y2, w * z2
 
     sx, sy, sz = scaling[:, 0], scaling[:, 1], scaling[:, 2]
-
 
     out[:, 0, 0] = (1 - (yy + zz)) * sx
     out[:, 1, 0] = (xy + wz) * sx
