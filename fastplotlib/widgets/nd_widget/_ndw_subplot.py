@@ -11,10 +11,21 @@ from ... import (
     LineCollection,
     LineStack,
     ImageGraphic,
+    StreamGraphic,
+    VectorsGraphic,
 )
 from ...layouts import Subplot
 from ...utils import ArrayProtocol, enums
-from . import NDImageSlicer, NDImage, NDPositions, NDTimeseries, NDVectors
+from . import (
+    NDImageSlicer,
+    NDImage,
+    NDPositions,
+    NDTimeseries,
+    NDVectors,
+    NDVectorsSlicer,
+    NDField,
+    NDFieldSlicer,
+)
 from ._nd_positions._nd_positions import (
     NDPositionsSlicer,
     ColorsType,
@@ -372,8 +383,11 @@ class NDWSubplot:
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        graphic_type: type[VectorsGraphic | StreamGraphic] = VectorsGraphic,
+        slicer: type[NDVectorsSlicer] = NDVectorsSlicer,
         name: str = None,
         graphic_kwargs: dict = None,
+        slicer_kwargs: dict = None,
     ) -> NDVectors:
         """
         Add n-dimensional vectors to this subplot, similar to matplotlib quiver.
@@ -420,11 +434,22 @@ class NDWSubplot:
             timestamps array). Any dim without a transform uses the identity mapping, i.e. the current reference
             value is rounded to the nearest integer and used as the array index.
 
+        graphic_type: type[VectorsGraphic | StreamGraphic], default ``VectorsGraphic``
+            Graphical representation of the data slice. Both take the same ``[n_vectors, 2, 2 | 3]`` slice,
+            :class:`.VectorsGraphic` draws one arrow per sample and :class:`.StreamGraphic` draws streamlines
+            through them. Can be changed at runtime with ``nd_vectors.graphic_type``.
+
+        slicer: type[NDVectorsSlicer], default ``NDVectorsSlicer``
+            The slicer type that produces the data slices.
+
         name: str, optional
             Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
 
         graphic_kwargs: dict, optional
-            passed to the underlying :class:`.VectorsGraphic`, ex: ``{"color": "cyan", "size": 0.5}``
+            passed to the underlying ``graphic_type``, ex: ``{"color": "cyan", "size": 0.5}``
+
+        slicer_kwargs: dict, optional
+            passed to the ``slicer`` constructor.
 
         Returns
         -------
@@ -443,8 +468,150 @@ class NDWSubplot:
             window_order=window_order,
             spatial_func=spatial_func,
             slider_maps=slider_maps,
+            graphic_type=graphic_type,
+            slicer=slicer,
             name=name,
             graphic_kwargs=graphic_kwargs,
+            slicer_kwargs=slicer_kwargs,
+        )
+
+        self._nd_graphics.append(nd)
+        return nd
+
+    def add_nd_field(
+        self,
+        data: Callable | None,
+        dims: Sequence[str],
+        display_dims: Sequence[str],
+        extents: dict[str, tuple[float, float]],
+        resolution: int | dict[str, int] = 24,
+        extents_mode: Literal["auto"] | None = None,
+        zoom_factor: float = 2.0,
+        debounce: float = 0.2,
+        spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
+        slider_maps: dict[str, Callable[[Any], Any]] = None,
+        graphic_type: type[VectorsGraphic | StreamGraphic] = StreamGraphic,
+        slicer: type[NDFieldSlicer] = NDFieldSlicer,
+        name: str = None,
+        graphic_kwargs: dict = None,
+        slicer_kwargs: dict = None,
+    ) -> NDField:
+        """
+        Add a vector field given as an equation to this subplot, drawn as streamlines or as arrows.
+
+        The field is a callable rather than data, so only the samples that are drawn are ever computed and
+        nothing is held in memory for the dims that are not drawn. The dims in ``display_dims`` are sampled on
+        a regular grid over ``extents``, every dim that is not becomes a slider dim and is passed to the field
+        as a scalar, so a parameter of the field gets a slider exactly like time does.
+
+        Parameters
+        ----------
+        data: Callable or None
+            The vector field. Called with one keyword argument per dim, so every dim name must be a valid
+            Python identifier. The ``display_dims`` arrive as 1D float32 arrays of length ``n_vectors`` holding
+            the grid sample coordinates, the slider dims arrive as scalars. It must return one component per
+            display dim, each broadcastable to ``[n_vectors]``.
+
+            Ex: a field over ``("x", "y", "t")`` drawn on ``("x", "y")`` is called as
+            ``data(x=<[n] array>, y=<[n] array>, t=1.37)`` and returns ``(u, v)``.
+
+            Vectors the field returns as non-finite are zeroed so that a pole in the field does not corrupt
+            the drawing, ``nd_field.slicer.n_nonfinite`` reports how many there were. Pass ``None`` to create
+            the ``NDField`` without a graphic and set the field later using ``nd_field.data``.
+
+        dims: Sequence[str]
+            Name for every variable of the field. Every dim that is not in ``display_dims`` becomes a slider
+            dim and must have a reference range in the ``NDWidget``.
+
+        display_dims: Sequence[str]
+            The 2 or 3 dims that are visualized, **in display order**. These are the dims sampled on the grid,
+            so they are also the coordinate axes of the drawing, and the field returns one component per
+            display dim. A 3D field drawn on a plane is therefore given as its 2 in-plane components.
+
+        extents: dict[str, tuple[float, float]]
+            The ``(min, max)`` the field is sampled over along each display dim, one entry per display dim.
+            The field is never evaluated outside these.
+
+        resolution: int | dict[str, int], default 24
+            Number of grid samples along each display dim, either one value for all of them or one per dim.
+
+        extents_mode: "auto" or None, default ``None``
+            How the sampled extents are coupled to the camera.
+
+            * ``None``: the extents are fixed at what was passed.
+
+            * ``"auto"``: the extents follow the view, quantized to zoom levels. Each level covers a factor of
+              ``zoom_factor`` in view width, and the field is resampled only when the view crosses into another
+              level or pans off the sampled grid, so zooming within a level costs nothing. The number of
+              samples is held constant, so zooming in samples the same field more finely. Requires 2 display
+              dims, since it reads ``x_range`` and ``y_range``.
+
+              Leave ``separating_distance`` and ``size`` unset in ``graphic_kwargs`` so that a
+              ``StreamGraphic`` derives them from the new sample spacing at each level, otherwise the
+              streamline density stays fixed in world space and the view empties out as you zoom in. Set
+              ``cmap_range`` explicitly if the colors need to be comparable across zoom levels.
+
+              This resamples a field, it does not reveal detail that is not in one. Wrapping sampled data in
+              an interpolator and zooming in draws streamlines through values nothing ever computed.
+
+        zoom_factor: float, default 2.0
+            Ratio in view width between consecutive zoom levels, i.e. how far you have to zoom before the
+            sampling changes. Only used when ``extents_mode`` is ``"auto"``.
+
+        debounce: float, default 0.2
+            Seconds the view must be still before the field is resampled. Resampling places every streamline
+            again, which is far too expensive to do while a gesture is still in progress. Only used when
+            ``extents_mode`` is ``"auto"``.
+
+        spatial_func: Callable[[ArrayProtocol], ArrayProtocol], optional
+            A function applied to the ``[n_vectors, 2, 2 | 3]`` slice right before rendering, ex: normalizing
+            the directions so that arrow length does not encode magnitude.
+
+        slider_maps: dict[str, Callable[[Any], Any]], optional
+            Per-slider-dim mapping from a reference-space value onto the value passed to the field, ex: a
+            slider in degrees driving a field written in radians. Unlike the array-backed ``add_nd_*`` methods
+            these do not map onto array indices, so they must be callables and the result is not rounded.
+
+        graphic_type: type[VectorsGraphic | StreamGraphic], default ``StreamGraphic``
+            Graphical representation of the field. Can be changed at runtime with ``nd_field.graphic_type``.
+            A ``StreamGraphic`` places every streamline again on each update, so a field animated over a
+            slider dim is much cheaper to draw as a ``VectorsGraphic``.
+
+        slicer: type[NDFieldSlicer], default ``NDFieldSlicer``
+            The slicer type that evaluates the field.
+
+        name: str, optional
+            Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
+
+        graphic_kwargs: dict, optional
+            passed to the underlying ``graphic_type``, ex: ``{"cmap": "viridis"}``
+
+        slicer_kwargs: dict, optional
+            passed to the ``slicer`` constructor.
+
+        Returns
+        -------
+        NDField
+
+        """
+        nd = NDField(
+            self.ndw.indices,
+            nd_subplot=self,
+            data=data,
+            dims=dims,
+            display_dims=display_dims,
+            extents=extents,
+            resolution=resolution,
+            extents_mode=extents_mode,
+            zoom_factor=zoom_factor,
+            debounce=debounce,
+            spatial_func=spatial_func,
+            slider_maps=slider_maps,
+            graphic_type=graphic_type,
+            slicer=slicer,
+            name=name,
+            graphic_kwargs=graphic_kwargs,
+            slicer_kwargs=slicer_kwargs,
         )
 
         self._nd_graphics.append(nd)
