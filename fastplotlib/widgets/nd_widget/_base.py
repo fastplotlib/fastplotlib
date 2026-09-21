@@ -9,6 +9,7 @@ from numbers import Real
 from pprint import pformat
 import textwrap
 from typing import Any, TYPE_CHECKING
+import weakref
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -795,7 +796,16 @@ class NDGraphic:
         # `_ui` imports the NDGraphic subclasses, so it cannot be imported at the header
         from ._ui import draw_nd_graphic_ui
 
-        self.graphic.set_imgui_right_click(partial(draw_nd_graphic_ui, self))
+        # weak, this NDGraphic owns the graphic that owns the popup, so a strong reference here would
+        # put them in a cycle and the graphic would outlive its last reference
+        self_ref = weakref.ref(self)
+
+        def draw():
+            ndg = self_ref()
+            if ndg is not None:
+                draw_nd_graphic_ui(ndg)
+
+        self.graphic.set_imgui_right_click(draw)
 
     @property
     def indices_displayed(self) -> dict[str, Any]:

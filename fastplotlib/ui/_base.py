@@ -4,6 +4,7 @@ from collections.abc import Callable
 from functools import partial
 from typing import Literal
 from warnings import warn
+import weakref
 
 from imgui_bundle import imgui
 
@@ -21,15 +22,27 @@ def _wrap_update_call(func: Callable, parent) -> Callable:
     Wrap an imgui draw function for use as a window or popup update call. The parent, a ``Figure``, ``Subplot`` or
     ``Graphic``, is passed as the only positional arg if the function accepts one, otherwise the function is called
     with no args.
+
+    The parent is held weakly. The parent owns the window or popup, so a strong reference here would put them in a
+    reference cycle and a graphic would only be released once the cyclic collector runs, not when the last
+    reference to it is dropped.
     """
     params = inspect.signature(func).parameters.values()
     takes_arg = any(
         p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD, p.VAR_POSITIONAL)
         for p in params
     )
-    if takes_arg:
-        return partial(func, parent)
-    return func
+    if not takes_arg:
+        return func
+
+    parent_ref = weakref.ref(parent)
+
+    def update_call():
+        parent = parent_ref()
+        if parent is not None:
+            func(parent)
+
+    return update_call
 
 
 class ImguiBase:
@@ -583,7 +596,8 @@ class ImguiPopup(ImguiBase):
 
         """
         self._figure = figure
-        self._parent = parent
+        # weak, the parent owns this popup and a strong reference here would put them in a cycle
+        self._parent = weakref.ref(parent)
 
         if window_flags is not None:
             self._window_flags = window_flags
@@ -591,7 +605,10 @@ class ImguiPopup(ImguiBase):
     @property
     def parent(self):
         """the object this popup is set on, an ``ImguiFigure``, ``Subplot`` or ``Graphic``"""
-        return self._parent
+        if self._parent is None:
+            return None
+
+        return self._parent()
 
     @property
     def subplot(self):
