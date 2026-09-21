@@ -37,12 +37,16 @@ examples_to_test = find_examples(query="# test_example = true")
 
 
 def check_skip_imgui(module):
-    # skip any imgui or ImageWidget tests
+    # skip any imgui, NDWidget or ImageWidget tests
     with open(module, "r") as f:
         contents = f.read()
         if "ImageWidget" in contents:
             pytest.skip("skipping ImageWidget tests since they require imgui")
-        elif "imgui" in contents or "imgui_bundle" in contents:
+        elif (
+            "imgui" in contents
+            or "imgui_bundle" in contents
+            or "NDWidget" in contents
+        ):
             pytest.skip("skipping tests that require imgui")
 
 
