@@ -28,12 +28,11 @@ import fastplotlib
 # sphinx_gallery_pygfx_test = 'off'
 
 # "hosted" upstream deps, will break in the future
-wgpu_wheel = "https://wgpu-py--753.org.readthedocs.build/en/753/_static/wgpu-0.31.0-py3-none-any.whl" # very hacky way to serve this but it does work...
-uharfbuzz_wheel = "https://pygfx--1273.org.readthedocs.build/1273/_static/uharfbuzz-0.54.1-cp310-abi3-pyodide_2025_0_wasm32.whl" # try to get it from the github release, so we don't need to include it... 
-pygfx_wheel = "https://pygfx--1273.org.readthedocs.build/1273/_static/pygfx-0.16.0-py3-none-any.whl"
+wgpu_wheel = "https://wgpu-py--753.org.readthedocs.build/en/753/_static/wgpu-0.32.0-py3-none-any.whl" # very hacky way to serve this but it does work...
+pygfx_wheel = "https://pygfx--1273.org.readthedocs.build/1273/_static/pygfx-0.17.0-py3-none-any.whl"
 
 # the pygfx wheel will be listed after this. it might be possible to still get deps from pyproject.toml
-fpl_deps = [wgpu_wheel, uharfbuzz_wheel, pygfx_wheel, "imgui-bundle", "hsluv", "pylinalg", "jinja2", "httpx", "trimesh", "gltflib", "imageio"]
+fpl_deps = [wgpu_wheel, pygfx_wheel, "imgui-bundle", "hsluv", "pylinalg", "jinja2", "httpx", "trimesh", "gltflib", "imageio"]
 
 root = Path(__file__).parent.parent.absolute()
 
@@ -52,7 +51,7 @@ def get_html_index():
     <head>
         <meta name="viewport" content="width=device-width,initial-scale=1.0">
         <title>fastplotlib browser examples</title>
-        <script type="module" src="https://pyscript.net/releases/2025.11.2/core.js"></script>
+        <script type="module" src="https://pyscript.net/releases/2026.7.3/core.js"></script>
     </head>
     <body>
 
@@ -76,7 +75,7 @@ pyodide_compute_template = """
 <head>
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>{example_script} via Pyodide</title>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pyodide.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.js"></script>
 </head>
 <base href="/">
 

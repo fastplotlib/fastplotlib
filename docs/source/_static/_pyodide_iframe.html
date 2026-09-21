@@ -4,7 +4,7 @@
 <head>
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title>Fastplotlib examples in the browser using Pyodide</title>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.29.4/full/pyodide.js"></script>
+    <script src="https://cdn.jsdelivr.net/pyodide/v314.0.7/full/pyodide.js"></script>
 </head>
 
 <body>
@@ -38,11 +38,11 @@
                 await pyodide.loadPackage("micropip");
                 const micropip = pyodide.pyimport("micropip");
                 await micropip.install([
-                    'https://wgpu-py--753.org.readthedocs.build/en/753/_static/wgpu-0.31.0-py3-none-any.whl',
+                    'https://wgpu-py--753.org.readthedocs.build/en/753/_static/wgpu-0.32.0-py3-none-any.whl',
                     'imgui-bundle',
-                    "https://pygfx--1273.org.readthedocs.build/1273/_static/uharfbuzz-0.54.1-cp310-abi3-pyodide_2025_0_wasm32.whl",
+                    "uharfbuzz",
                     'hsluv', 'pylinalg', 'jinja2', 'httpx', 'trimesh', 'gltflib', 'imageio',
-                    "https://pygfx--1273.org.readthedocs.build/1273/_static/pygfx-0.16.0-py3-none-any.whl"
+                    "https://pygfx--1273.org.readthedocs.build/1273/_static/pygfx-0.17.0-py3-none-any.whl"
                 ]);
                 await micropip.install("fastplotlib") // this one should be replaced by the wheel during docs build.
                 await pyodide.loadPackagesFromImports(pythonCode); // additional non pypi packages from the examples... like imageio (not patched...)
