@@ -331,7 +331,9 @@ class Graphic:
         # used by images since they create new WorldObject ImageTiles when a different buffer size is required
         # also used by GraphicCollections inititally, but not used for reseting like images
         for child in wo.children:
-            if isinstance(child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)):
+            if isinstance(
+                child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line, pygfx.Mesh)
+            ):
                 # unique 32 bit integer id for each world object
                 global_id = child.id
                 WORLD_OBJECT_TO_GRAPHIC[global_id] = self
@@ -341,7 +343,9 @@ class Graphic:
     def _remove_group_graphic_map(self, wo: pygfx.Group):
         # remove the children of the group to the WorldObject -> Graphic map
         for child in wo.children:
-            if isinstance(child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line)):
+            if isinstance(
+                child, (pygfx.Image, pygfx.Volume, pygfx.Points, pygfx.Line, pygfx.Mesh)
+            ):
                 # unique 32 bit integer id for each world object
                 global_id = child.id
                 WORLD_OBJECT_TO_GRAPHIC.pop(global_id)

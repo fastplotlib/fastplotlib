@@ -20,6 +20,7 @@ class style:
         graphics.LineGraphic.config.init.colors = "blue"
         graphics.ScatterGraphic.config.init.colors = "blue"
         graphics.VectorsGraphic.config.init.color = "k"
+        graphics.StreamGraphic.config.init.color = "k"
 
         # update function is useful when config options are dicts or nested dicts
         global_config.update(
@@ -44,6 +45,7 @@ class style:
         graphics.LineGraphic.config.init.colors = "w"
         graphics.ScatterGraphic.config.init.colors = "w"
         graphics.VectorsGraphic.config.init.color = "w"
+        graphics.StreamGraphic.config.init.color = "w"
 
         # update function is useful when config options are dicts or nested dicts
         global_config.update(

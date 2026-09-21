@@ -2,6 +2,7 @@
 # regenerate with: python scripts/generate_graphics_stubs.py
 
 from fastplotlib.graphics._collections import *
+from fastplotlib.graphics._stream import *
 from fastplotlib.graphics._vectors import *
 from fastplotlib.graphics.image import *
 from fastplotlib.graphics.image_volume import *
@@ -1284,6 +1285,92 @@ class GraphicMethodsMixin:
                 * stalk_height
 
         **kwargs
+            passed to :class:`.Graphic`
+
+
+        """
+
+    def add_stream(
+        self,
+        positions: np.ndarray | Sequence[float],
+        directions: np.ndarray | Sequence[float],
+        color: ColorLike = "w",
+        cmap: ColormapLike | None = None,
+        cmap_transform: np.ndarray | None = None,
+        cmap_range: tuple[float, float] | None = None,
+        thickness: float = None,
+        size_space: Literal["screen", "world", "model"] = "world",
+        separating_distance: float = None,
+        separating_distance_ratio: float = 0.5,
+        max_length: float = None,
+        size: float = None,
+        arrow_shape_options: dict = None,
+        **kwargs,
+    ) -> StreamGraphic:
+        """
+
+        Create graphic that draws streamlines of a vector field. Similar to Mathematica StreamPlot.
+
+        Parameters
+        ----------
+        positions: np.ndarray | Sequence[float]
+            positions of the field samples, array-like, must lie on a regular grid, shape must be [n, 2] or [n, 3]
+            where n is the number of samples.
+
+        directions: np.ndarray | Sequence[float]
+            field vector at each position, array-like, shape must be the same as ``positions``.
+
+        color: str | pygfx.Color | Sequence[float] | np.ndarray, default "w"
+            color of the streamlines
+
+        cmap: ColormapLike, optional
+            Apply a colormap to the streamlines instead of assigning a color manually, this
+            overrides any argument passed to "color". For supported colormaps see the
+            ``cmap`` library catalogue: https://cmap-docs.readthedocs.io/en/stable/catalog/
+
+        cmap_transform: np.ndarray, optional
+            1D array-like of numerical values, one per field position, if provided these values are used to map the
+            colors from the cmap. The arrow length follows it as well, so a low value gives a short arrow. Defaults
+            to the magnitude of the field, which is what Mathematica colors by.
+
+        cmap_range: (float, float), optional
+            the (min, max) of the cmap_transform mapped onto the colormap and onto the arrow length, defaults to the
+            transform's own range
+
+        thickness: float or None
+            Width of the arrow stalks, in the coordinate space given by ``size_space``.
+            Derived from the arrow shape if not provided.
+
+        size_space: str, default "world"
+            coordinate space in which the stalk thickness is expressed ("screen", "world", "model"). The arrowheads
+            are always in world space, so "world" keeps the whole arrow in proportion at any zoom.
+
+        separating_distance: float or None
+            Distance a new streamline keeps from the streamlines already placed, i.e. d_sep, which is what sets the
+            density. Estimated from density if not provided.
+
+        separating_distance_ratio: float, default 0.5
+            How close a growing streamline may come to one already placed, as a fraction of ``separating_distance``,
+            i.e. d_test / d_sep. Lower values give longer streamlines.
+
+        max_length: float or None
+            Maximum arc length of one streamline. Unbounded if not provided, so a streamline stops only where it
+            leaves the field, stalls, or meets another streamline.
+
+        size: float or None
+            Arc length taken up by one arrow and the gap after it in world space, i.e. the spacing between
+            consecutive arrowheads along a streamline. Derived from ``separating_distance`` if not provided.
+
+        arrow_shape_options: dict
+            dict with the following fields that directly describes the shape of the arrows.
+            Overrides ``size`` argument.
+
+                * cone_radius
+                * cone_height
+                * stalk_length
+                * gap
+
+        **kwargs,
             passed to :class:`.Graphic`
 
 

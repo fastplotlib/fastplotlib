@@ -17,6 +17,7 @@ from ..graphics import (
     ScatterCollection,
     ScatterGraphic,
     ScatterStack,
+    StreamGraphic,
     SurfaceGraphic,
     TextGraphic,
     VectorsGraphic,
@@ -97,6 +98,7 @@ class GraphicMethodsMixin:
     add_polygon = GraphicMethod(PolygonGraphic)
 
     add_vectors = GraphicMethod(VectorsGraphic)
+    add_stream = GraphicMethod(StreamGraphic)
 
     add_text = GraphicMethod(TextGraphic)
 

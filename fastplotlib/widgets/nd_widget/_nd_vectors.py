@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence, Callable
 from typing import Any, TYPE_CHECKING
 
+import numpy as np
 from numpy.typing import ArrayLike
 
 from ...utils import (
@@ -11,7 +12,7 @@ from ...utils import (
     CudaArrayProtocol,
     cuda_to_numpy,
 )
-from ...graphics import VectorsGraphic
+from ...graphics import StreamGraphic, VectorsGraphic
 from ._base import (
     NDSlicer,
     NDGraphic,
@@ -223,13 +224,17 @@ class NDVectors(NDGraphic):
         window_order: tuple[str, ...] = None,
         spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
         slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        graphic_type: type[VectorsGraphic | StreamGraphic] = VectorsGraphic,
+        slicer: type[NDVectorsSlicer] = NDVectorsSlicer,
         name: str = None,
         graphic_kwargs: dict = None,
+        slicer_kwargs: dict = None,
     ):
         """
         ``NDGraphic`` subclass for n-dimensional vector rendering.
 
-        Uses an :class:`NDVectorsSlicer` to produce the data slices and manages a :class:`.VectorsGraphic`.
+        Uses an :class:`NDVectorsSlicer` to produce the data slices and manages a :class:`.VectorsGraphic` or
+        :class:`.StreamGraphic`.
 
         Every dimension that is *not* listed in ``display_dims`` becomes a slider
         dimension. Each slider dim must have a ``ReferenceRange`` defined in the
@@ -279,11 +284,22 @@ class NDVectors(NDGraphic):
             Per-slider-dim mapping from reference-space values to local array indices, see
             :class:`NDSlicer`.
 
+        graphic_type : type[VectorsGraphic | StreamGraphic], default ``VectorsGraphic``
+            Graphical representation of the data slice. Both take the same ``[n_vectors, 2, 2 | 3]`` slice,
+            :class:`.VectorsGraphic` draws one arrow per sample and :class:`.StreamGraphic` draws streamlines
+            through them. Can be changed at runtime with :attr:`graphic_type`.
+
+        slicer : type[NDVectorsSlicer], default ``NDVectorsSlicer``
+            The slicer type that produces the data slices.
+
         name : str, optional
             Name for this ``NDGraphic``, used to retrieve it with ``nd_subplot[name]``.
 
         graphic_kwargs : dict, optional
-            passed to the underlying :class:`.VectorsGraphic`, ex: ``{"color": "cyan", "size": 0.5}``
+            passed to the underlying ``graphic_type``, ex: ``{"color": "cyan", "size": 0.5}``
+
+        slicer_kwargs : dict, optional
+            passed to the ``slicer`` constructor.
 
         See Also
         --------
@@ -302,7 +318,10 @@ class NDVectors(NDGraphic):
 
         self._ref_index = ref_index
 
-        self._slicer = NDVectorsSlicer(
+        if slicer_kwargs is None:
+            slicer_kwargs = dict()
+
+        self._slicer = slicer(
             data,
             dims=dims,
             display_dims=display_dims,
@@ -310,9 +329,11 @@ class NDVectors(NDGraphic):
             window_order=window_order,
             spatial_func=spatial_func,
             slider_maps=slider_maps,
+            **slicer_kwargs,
         )
 
-        self._graphic: VectorsGraphic | None = None
+        self._graphic: VectorsGraphic | StreamGraphic | None = None
+        self._graphic_type = graphic_type
 
         if graphic_kwargs is None:
             self._graphic_kwargs = dict()
@@ -330,12 +351,30 @@ class NDVectors(NDGraphic):
     @property
     def graphic(
         self,
-    ) -> VectorsGraphic:
+    ) -> VectorsGraphic | StreamGraphic:
         """Underlying Graphic object used to display the current data slice"""
         return self._graphic
 
+    @property
+    def graphic_type(self) -> type[VectorsGraphic | StreamGraphic]:
+        """
+        Get or set the graphical representation used to display the data slice. Setting it deletes the current
+        graphic and creates one of the given type using the current slice.
+        """
+        return self._graphic_type
+
+    @graphic_type.setter
+    def graphic_type(self, graphic_type: type[VectorsGraphic | StreamGraphic]):
+        if type(self.graphic) is graphic_type:
+            return
+
+        self._nd_subplot.subplot.delete_graphic(self._graphic)
+        self._graphic = None
+        self._graphic_type = graphic_type
+        run_sync(self._create_graphic())
+
     async def _create_graphic(self):
-        # Creates a ``VectorsGraphic`` from the current data slice, replacing any existing one, and adds it
+        # Creates a ``graphic_type`` from the current data slice, replacing any existing one, and adds it
         # to the subplot.
 
         if self.slicer.data is None:
@@ -353,10 +392,10 @@ class NDVectors(NDGraphic):
             self._nd_subplot.subplot.delete_graphic(old_graphic)
 
         # create the new graphic
-        self._graphic = VectorsGraphic(
+        self._graphic = self._graphic_type(
             positions=data_slice[:, 0],
             directions=data_slice[:, 1],
-            **get_supported_kwargs(VectorsGraphic, **self._graphic_kwargs),
+            **get_supported_kwargs(self._graphic_type, **self._graphic_kwargs),
         )
 
         self._nd_subplot.subplot.add_graphic(self._graphic)
@@ -383,7 +422,9 @@ class NDVectors(NDGraphic):
         return {d: self._ref_index[d] for d in self.slicer.slider_dims}
 
     async def _set_indices_(self, indices: dict[str, Any] = None):
-        if self.data is None:
+        if self.data is None or self.graphic is None:
+            # the graphic is transiently None while it is being replaced, and _create_graphic()
+            # renders the current slice itself
             return
 
         if indices is None:
@@ -391,8 +432,22 @@ class NDVectors(NDGraphic):
             indices = self.indices
 
         data_slice = await self.slicer.get(indices)
-        self.graphic.positions = data_slice[:, 0]
-        self.graphic.directions = data_slice[:, 1]
+        positions, directions = data_slice[:, 0], data_slice[:, 1]
+
+        if positions.shape[0] != self.graphic.positions.value.shape[0]:
+            # neither graphic can change its number of samples in place, so build a new one
+            await self._create_graphic()
+            self._last_indices = indices
+            return
+
+        # both features pad [n, 2] to [n, 3], so compare only the coordinates in the slice.
+        # writing positions that have not moved costs a full streamline replacement on a StreamGraphic
+        if not np.array_equal(
+            positions, self.graphic.positions.value[:, : positions.shape[1]]
+        ):
+            self.graphic.positions = positions
+
+        self.graphic.directions = directions
 
         self._last_indices = indices
 

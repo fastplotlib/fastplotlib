@@ -5,6 +5,7 @@ from .scatter import ScatterGraphic
 from .image import ImageGraphic, ImageYUVGraphic
 from .image_volume import ImageVolumeGraphic
 from ._vectors import VectorsGraphic
+from ._stream import StreamGraphic
 from .mesh import MeshGraphic, SurfaceGraphic, PolygonGraphic
 from .text import TextGraphic
 from ._collection_base import GraphicCollection
@@ -26,6 +27,7 @@ __all__ = [
     "ImageYUVGraphic",
     "ImageVolumeGraphic",
     "VectorsGraphic",
+    "StreamGraphic",
     "MeshGraphic",
     "SurfaceGraphic",
     "PolygonGraphic",

@@ -7,6 +7,7 @@ if IMGUI:
     from ._nd_image import NDImageSlicer, NDImage
     from ._video import VideoSlicer
     from ._nd_vectors import NDVectorsSlicer, NDVectors
+    from ._nd_field import NDFieldSlicer, NDField
     from ._ndwidget import NDWidget
     from ._ndw_subplot import NDWSubplot
 
@@ -24,6 +25,8 @@ if IMGUI:
         "VideoSlicer",
         "NDVectorsSlicer",
         "NDVectors",
+        "NDFieldSlicer",
+        "NDField",
         "NDWidget",
         "NDWSubplot",
     ]
