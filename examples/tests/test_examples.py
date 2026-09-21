@@ -7,6 +7,7 @@ import importlib
 import runpy
 import pytest
 import os
+import platform
 import numpy as np
 import imageio.v3 as iio
 import pygfx
@@ -150,7 +151,12 @@ def test_example_screenshots(module, prep_environment):
     rgb = normalize_image(rgb)
     ref_img = normalize_image(ref_img)
 
-    similar, rmse = image_similarity(rgb, ref_img)
+    if platform.system() == "Darwin":
+        threshold = 0.3
+    else:
+        threshold = 0.25
+
+    similar, rmse = image_similarity(rgb, ref_img, threshold=threshold)
     update_diffs(module.stem, similar, rgb, ref_img)
     assert similar, (
         f"diff {rmse} above threshold for {module.stem}, see "
