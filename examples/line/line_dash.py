@@ -5,7 +5,7 @@ Line Dash Patterns
 Draw lines with different dash patterns using matplotlib-style strings.
 """
 
-# test_example = true
+# test_example = false
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import fastplotlib as fpl
