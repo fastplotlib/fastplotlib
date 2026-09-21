@@ -25,13 +25,13 @@ iw = fpl.ImageWidget(movie_sub, rgb=True, figure_kwargs={"size": (700, 560)})
 # ImageWidget supports setting window functions the `time` "t" or `volume` "z" dimension
 # These can also be given as kwargs to `ImageWidget` during instantiation
 # to set a window function, give a dict in the form of {dim: (func, window_size)}
-iw.window_funcs = {"t": (np.mean, 13)}
+iw.window_funcs = {"t": (np.mean, 5)}
 
 # change the window size
-iw.window_funcs["t"].window_size = 33
+iw.window_funcs = {"t": (np.mean, 2)}
 
 # change the function
-iw.window_funcs["t"].func = np.max
+iw.window_funcs = {"t": (np.max, 2)}
 
 # or reset it
 iw.window_funcs = None

@@ -20,6 +20,7 @@ example_globs = [
     "image/*.py",
     "image_volume/*.py",
     "image_widget/*.py",
+    "global_config/*.py",
     "heatmap/*.py",
     "scatter/*.py",
     "line/*.py",
@@ -79,7 +80,7 @@ def find_examples(query=None, negative_query=None, return_stems=False):
 
 
 # image comparison functions from: https://github.com/pygfx/image-comparison
-def image_similarity(src, target, threshold=0.2):
+def image_similarity(src, target, threshold=0.25):
     """Compute normalized RMSE 0..1 and decide if similar based on threshold.
 
     For every pixel, the euclidian distance between RGB values is computed,

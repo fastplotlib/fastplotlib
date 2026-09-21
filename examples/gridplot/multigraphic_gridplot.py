@@ -88,12 +88,12 @@ ys = np.sin(xs)
 sine = np.column_stack([xs, ys])
 
 # make 10 identical waves
-sine_waves = 10 * [sine]
+sine_waves = 15 * [sine]
 
 # add the line stack to the figure
-figure["line-stack"].add_line_stack(data=sine_waves, cmap="Wistia", separation=1)
+figure["line-stack"].add_line_stack(data=sine_waves, cmap="Wistia", separation=(0, 1, 0))
 
-figure["line-stack"].auto_scale(maintain_aspect=True)
+figure["line-stack"].auto_scale(maintain_aspect=False)
 
 # generate some scatter data
 # create a gaussian cloud of 500 points

@@ -31,6 +31,10 @@ scatter = figure[0, 0].add_scatter(
 figure.show()
 
 scatter.cmap = "tab10"
+# since it's a qualitative colormap, set the cmap_range as the full range of the colormap
+# otherwise it auto-sets it from the transform min, max
+scatter.cmap_range = (0, scatter.cmap.num_colors)
+
 
 
 if __name__ == "__main__":

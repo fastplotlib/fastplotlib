@@ -25,15 +25,16 @@ Properties
     LinearRegionSelector.axes
     LinearRegionSelector.axis
     LinearRegionSelector.block_events
+    LinearRegionSelector.block_handlers
     LinearRegionSelector.deleted
     LinearRegionSelector.edge_color
     LinearRegionSelector.event_handlers
     LinearRegionSelector.fill_color
+    LinearRegionSelector.imgui_right_click
     LinearRegionSelector.limits
     LinearRegionSelector.name
     LinearRegionSelector.offset
     LinearRegionSelector.parent
-    LinearRegionSelector.right_click_menu
     LinearRegionSelector.rotation
     LinearRegionSelector.scale
     LinearRegionSelector.selection
@@ -50,6 +51,7 @@ Methods
 
     LinearRegionSelector.add_axes
     LinearRegionSelector.add_event_handler
+    LinearRegionSelector.append_imgui_right_click
     LinearRegionSelector.clear_event_handlers
     LinearRegionSelector.format_pick_info
     LinearRegionSelector.get_selected_data
@@ -58,5 +60,7 @@ Methods
     LinearRegionSelector.map_model_to_world
     LinearRegionSelector.map_world_to_model
     LinearRegionSelector.remove_event_handler
+    LinearRegionSelector.remove_imgui_right_click
     LinearRegionSelector.rotate
+    LinearRegionSelector.set_imgui_right_click
 

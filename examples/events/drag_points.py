@@ -26,7 +26,7 @@ figure = fpl.Figure(size=(700, 560))
 line = figure[0, 0].add_line(data)
 
 # add a scatter, share the line graphic buffer!
-scatter = figure[0, 0].add_scatter(data=line.data, sizes=25, colors="r")
+scatter = figure[0, 0].add_scatter(data=line.data, sizes=25, colors=["r"] * len(data))
 
 is_moving = False
 vertex_index = None

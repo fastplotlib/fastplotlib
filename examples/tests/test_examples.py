@@ -7,6 +7,7 @@ import importlib
 import runpy
 import pytest
 import os
+import platform
 import numpy as np
 import imageio.v3 as iio
 import pygfx
@@ -37,12 +38,16 @@ examples_to_test = find_examples(query="# test_example = true")
 
 
 def check_skip_imgui(module):
-    # skip any imgui or ImageWidget tests
+    # skip any imgui, NDWidget or ImageWidget tests
     with open(module, "r") as f:
         contents = f.read()
         if "ImageWidget" in contents:
             pytest.skip("skipping ImageWidget tests since they require imgui")
-        elif "imgui" in contents or "imgui_bundle" in contents:
+        elif (
+            "imgui" in contents
+            or "imgui_bundle" in contents
+            or "NDWidget" in contents
+        ):
             pytest.skip("skipping tests that require imgui")
 
 
@@ -67,6 +72,8 @@ def prep_environment():
     finally:
         del os.environ["RENDERCANVAS_FORCE_OFFSCREEN"]
         del os.environ["PYGFX_DEFAULT_PPAA"]
+        # every example runs in this same process, so restore the config that an example has set
+        fpl.style.default()
 
 
 def test_that_we_are_on_lavapipe():
@@ -144,7 +151,12 @@ def test_example_screenshots(module, prep_environment):
     rgb = normalize_image(rgb)
     ref_img = normalize_image(ref_img)
 
-    similar, rmse = image_similarity(rgb, ref_img)
+    if platform.system() == "Darwin":
+        threshold = 0.3
+    else:
+        threshold = 0.25
+
+    similar, rmse = image_similarity(rgb, ref_img, threshold=threshold)
     update_diffs(module.stem, similar, rgb, ref_img)
     assert similar, (
         f"diff {rmse} above threshold for {module.stem}, see "

@@ -42,7 +42,8 @@ class LineLegendItem(LegendItem):
 
         label: str
 
-        position: [x, y]
+        position: tuple[float, float]
+            the (x, y) position
         """
 
         if label is not None:

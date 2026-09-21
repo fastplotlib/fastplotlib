@@ -262,6 +262,12 @@ examples/desktop/screenshots
 examples/notebooks/screenshots
 ```
 
+To regenerate screenshots:
+
+```
+REGENERATE_SCREENSHOTS=1 RENDERCANVAS_FORCE_OFFSCREEN=1 pytest -v examples/
+```
+
 3. Commit your new screenshots and push them to your branch to get picked up by `git-lfs`
 
 ```bash
@@ -275,6 +281,7 @@ git commit -m "update screenshots"
 # push changes
 git push origin my_feature_branch
 ```
+
 
 #### Adding tests
 

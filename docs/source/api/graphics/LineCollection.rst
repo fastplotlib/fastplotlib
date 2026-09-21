@@ -22,23 +22,31 @@ Properties
 
     LineCollection.alpha
     LineCollection.alpha_mode
+    LineCollection.alpha_modes
+    LineCollection.alphas
     LineCollection.axes
     LineCollection.block_events
+    LineCollection.block_handlers
     LineCollection.cmap
+    LineCollection.cmap_range
+    LineCollection.cmap_transform
     LineCollection.colors
+    LineCollection.dash_pattern
     LineCollection.data
     LineCollection.deleted
     LineCollection.event_handlers
     LineCollection.graphics
+    LineCollection.imgui_right_click
     LineCollection.metadatas
     LineCollection.name
     LineCollection.names
     LineCollection.offset
     LineCollection.offsets
-    LineCollection.right_click_menu
     LineCollection.rotation
     LineCollection.rotations
     LineCollection.scale
+    LineCollection.scales
+    LineCollection.size_space
     LineCollection.supported_events
     LineCollection.thickness
     LineCollection.tooltip_format
@@ -58,11 +66,14 @@ Methods
     LineCollection.add_linear_selector
     LineCollection.add_polygon_selector
     LineCollection.add_rectangle_selector
+    LineCollection.append_imgui_right_click
     LineCollection.clear_event_handlers
     LineCollection.format_pick_info
     LineCollection.map_model_to_world
     LineCollection.map_world_to_model
     LineCollection.remove_event_handler
     LineCollection.remove_graphic
+    LineCollection.remove_imgui_right_click
     LineCollection.rotate
+    LineCollection.set_imgui_right_click
 

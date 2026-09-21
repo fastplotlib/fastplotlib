@@ -213,8 +213,8 @@ class TextBox:
 
         Parameters
         ----------
-        position: (x, y)
-            position in screen space
+        position: tuple[float, float]
+            (x, y) position in screen space
 
         info: str
             tooltip text to display

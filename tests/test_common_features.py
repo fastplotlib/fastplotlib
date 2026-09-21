@@ -19,6 +19,8 @@ def make_graphic(kind: str, **kwargs):
             return fpl.ImageGraphic(np.random.rand(10, 10), **kwargs)
         case "line":
             return fpl.LineGraphic(np.random.rand(10), **kwargs)
+        case "inf_line":
+            return fpl.InfLineGraphic(np.random.rand(10), axis="x", **kwargs)
         case "scatter":
             return fpl.ScatterGraphic(
                 np.column_stack([np.random.rand(10), np.random.rand(10)]), **kwargs
@@ -30,6 +32,7 @@ def make_graphic(kind: str, **kwargs):
 graphic_kinds = [
     "image",
     "line",
+    "inf_line",
     "scatter",
     "text",
 ]

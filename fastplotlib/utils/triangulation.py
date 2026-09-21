@@ -3,7 +3,6 @@ import logging
 import numpy as np
 from .mapbox_earcut import earcut as mapbox_earcut
 
-
 logger = logging.getLogger("fastplotlib")
 
 
