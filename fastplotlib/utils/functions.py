@@ -60,7 +60,7 @@ COLORMAPS = sorted(
         "RdYlBu",
         "RdYlGn",
         "Spectral",
-        "coolwarm",
+        "matplotlib:coolwarm",
         "bwr",
         "seismic",
         "berlin",
