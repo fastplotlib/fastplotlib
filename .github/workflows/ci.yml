@@ -42,7 +42,7 @@ jobs:
     - name: Set up Homebrew
       if: ${{ matrix.os == 'macos-latest' }}
       id: set-up-homebrew
-      uses: Homebrew/actions/setup-homebrew@master
+      uses: Homebrew/actions/setup-homebrew@1f8e202ffddf94def7f42f6fa3a482e821489f9c
     - name: Install gsed
       if: ${{ matrix.os == 'macos-latest' }}
       run: |
