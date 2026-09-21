@@ -1,0 +1,5 @@
+section[id^="interactive-example"] iframe {
+    width: 100%;
+    height: 520px;
+    border: none;
+}
