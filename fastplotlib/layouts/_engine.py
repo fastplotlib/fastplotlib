@@ -88,8 +88,8 @@ class BaseLayout:
 
         Parameters
         ----------
-        canvas_rect: (x, y, w, h)
-            the rect that pygfx can render to, excludes any areas used by imgui.
+        canvas_rect: tuple[float, float, float, float]
+            the (x, y, w, h) rect that pygfx can render to, excludes any areas used by imgui.
 
         """
 
@@ -283,8 +283,8 @@ class WindowLayout(BaseLayout):
         subplot: Subplot
             the subplot to set the rect of
 
-        rect: (x, y, w, h)
-            as absolute pixels or fractional.
+        rect: tuple[float, float, float, float]
+            the (x, y, w, h) rect, as absolute pixels or fractional.
             If width & height <= 1 the rect is assumed to be fractional.
             Conversely, if width & height > 1 the rect is assumed to be in absolute pixels.
             width & height must be > 0. Negative values are not allowed.

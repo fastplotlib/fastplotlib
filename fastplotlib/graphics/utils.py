@@ -60,8 +60,9 @@ def get_nearest_graphics_indices(
 
     Parameters
     ----------
-    pos: (x, y) | (x, y, z)
-        position in world space, z-axis is ignored when calculating L2 norms if ``pos`` is 2D
+    pos: tuple[float, float] | tuple[float, float, float]
+        (x, y) or (x, y, z) position in world space, the z-axis is ignored when calculating L2
+        norms if ``pos`` is 2D
 
     graphics: Sequence, i.e. array, list, tuple, etc. of Graphic | GraphicCollection
         the graphics from which to return a sorted array of graphics in order of closest
@@ -108,8 +109,9 @@ def get_nearest_graphics(
 
     Parameters
     ----------
-    pos: (x, y) | (x, y, z)
-        position in world space, z-axis is ignored when calculating L2 norms if ``pos`` is 2D
+    pos: tuple[float, float] | tuple[float, float, float]
+        (x, y) or (x, y, z) position in world space, the z-axis is ignored when calculating L2
+        norms if ``pos`` is 2D
 
     graphics: Sequence, i.e. array, list, tuple, etc. of Graphic | GraphicCollection
         the graphics from which to return a sorted array of graphics in order of closest

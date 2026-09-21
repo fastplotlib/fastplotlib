@@ -46,8 +46,8 @@ class VisibilitySelector:
     selection : list[int] or None
         Initial selection.
 
-    lut : str or array-like of shape (n, 4), optional
-        color or stack of RGBA arrays
+    lut : str | np.ndarray, optional
+        a color, or a stack of RGBA arrays of shape (n, 4)
 
     lut_wrap : "fixed" or "repeat"
         How to handle selection indices beyond the end of the lut.

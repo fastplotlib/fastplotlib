@@ -386,8 +386,8 @@ class PlotArea(GraphicMethodsMixin):
 
         Parameters
         ----------
-        pos: (x, y, z)
-            world space position
+        pos: tuple[float, float, float]
+            (x, y, z) position in world space
 
         Returns
         -------
@@ -417,8 +417,8 @@ class PlotArea(GraphicMethodsMixin):
 
         Parameters
         ----------
-        pos: (x, y)
-            screen space position
+        pos: tuple[float, float]
+            (x, y) position in screen space
 
         Returns
         -------

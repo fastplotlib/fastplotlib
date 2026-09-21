@@ -234,8 +234,8 @@ def quat_from_axis_angle(axis, angle, out=None, dtype=None) -> np.ndarray:
     ----------
     axis : ndarray, [num_vectors, 3] or [3]
         Unit vector
-    angle : number or np.ndarray of shape [num_pts,]
-        The angle (in radians) to rotate about axis
+    angle : float | np.ndarray
+        The angle (in radians) to rotate about axis, a scalar or an array of shape [num_pts,]
     out : ndarray, optional
         A location into which the result is stored. If provided, it
         must have a shape that the inputs broadcast to. If not provided or

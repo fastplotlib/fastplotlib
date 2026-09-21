@@ -554,8 +554,9 @@ class Graphic:
 
         Parameters
         ----------
-        position: tuple of (x, y, z) or np.ndarray of shape (num_points, 3)
-            The xyz positions we wish to map to world space
+        position: tuple[float, float, float] | np.ndarray
+            The xyz positions we wish to map to world space, an (x, y, z) tuple or an array of
+            shape (num_points, 3)
 
         Returns
         -------
@@ -575,8 +576,9 @@ class Graphic:
 
         Parameters
         ----------
-        position: tuple of (x, y, z) or np.ndarray of shape (num_points, 3)
-            The xyz positions we wish to map to model space
+        position: tuple[float, float, float] | np.ndarray
+            The xyz positions we wish to map to model space, an (x, y, z) tuple or an array of
+            shape (num_points, 3)
 
         Returns
         -------

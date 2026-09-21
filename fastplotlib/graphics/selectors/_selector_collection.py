@@ -201,7 +201,7 @@ class LinearSelectors(SelectorCollection):
     selection : list[float], optional
         Initial selector positions.
     axis : "x" or "y"
-    edge_color : color
+    edge_color : str | tuple | np.ndarray
     thickness : float
     arrow_keys_modifier : str
     extra_width : float
@@ -253,8 +253,8 @@ class LinearRegionSelectors(SelectorCollection):
         Initial ``(min, max)`` pairs.
     axis : "x" or "y"
     resizable : bool
-    fill_color : color
-    edge_color : color
+    fill_color : str | tuple | np.ndarray
+    edge_color : str | tuple | np.ndarray
     edge_thickness : float
     arrow_keys_modifier : str
     extra_width : float
@@ -309,10 +309,10 @@ class RectangleSelectors(SelectorCollection):
     selection : list[tuple[float, float, float, float]], optional
         Initial ``(xmin, xmax, ymin, ymax)`` rectangles.
     resizable : bool
-    fill_color : color
-    edge_color : color
+    fill_color : str | tuple | np.ndarray
+    edge_color : str | tuple | np.ndarray
     edge_thickness : float
-    vertex_color : color
+    vertex_color : str | tuple | np.ndarray
     vertex_size : float
     arrow_keys_modifier : str
     name : str, optional
@@ -363,10 +363,10 @@ class PolygonSelectors(SelectorCollection):
         Initial polygon vertex lists; each element is a sequence of
         ``(x, y)`` or ``(x, y, 0)`` points, or ``None`` for an empty polygon.
     resizable : bool
-    fill_color : color
-    edge_color : color
+    fill_color : str | tuple | np.ndarray
+    edge_color : str | tuple | np.ndarray
     edge_thickness : float
-    vertex_color : color
+    vertex_color : str | tuple | np.ndarray
     vertex_size : float
     name : str, optional
     """

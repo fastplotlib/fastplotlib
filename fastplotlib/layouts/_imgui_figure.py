@@ -206,11 +206,11 @@ class ImguiFigure(Figure):
         size: int
             edge window thickness in pixels, required for edge windows
 
-        rect: (x, y, w, h), optional
-            fractional or pixel rect for a fixed floating window
+        rect: tuple[float, float, float, float], optional
+            fractional or pixel (x, y, w, h) rect for a fixed floating window
 
-        extent: (xmin, xmax, ymin, ymax), optional
-            fractional or pixel extent for a fixed floating window
+        extent: tuple[float, float, float, float], optional
+            fractional or pixel (xmin, xmax, ymin, ymax) extent for a fixed floating window
 
         title: str, optional
             window title, drawn as a title bar for edge windows. If ``None`` no title bar is drawn.

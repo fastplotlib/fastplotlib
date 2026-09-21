@@ -264,8 +264,8 @@ class PositionsHighlightSelector(HighlightSelector):
     color : str or array-like, default "cyan"
         Color applied to all selected vertices when no ``lut`` is set.
 
-    lut : np.ndarray of shape (n, 4), optional
-        Per-vertex RGBA colors; ``lut[i]`` applies to the i-th selected vertex.
+    lut : np.ndarray, optional
+        Per-vertex RGBA colors of shape (n, 4); ``lut[i]`` applies to the i-th selected vertex.
 
     lut_wrap: "fixed" or "repeat"
         - "fixed":  no wrapping, fixed to size of the given LUT
@@ -398,8 +398,8 @@ class CollectionHighlightSelector(HighlightSelector):
     ----------
     color : str or array-like, default "cyan"
         Color applied to all selected items when no ``lut`` is set.
-    lut : np.ndarray of shape (k, 4), optional
-        Per-item RGBA colors; ``lut[i]`` applies to the i-th selected item.
+    lut : np.ndarray, optional
+        Per-item RGBA colors of shape (k, 4); ``lut[i]`` applies to the i-th selected item.
         Must have at least as many rows as the number of selected items.
     alpha : float, default 1.0
         Highlight blend strength in [0, 1].
@@ -536,8 +536,8 @@ class ImageHighlightSelector(HighlightSelector):
     color : str or array-like, default "red"
         Highlight color for selected items.
 
-    lut : np.ndarray of shape (n, 4), optional
-        RGBA colors for each selected item
+    lut : np.ndarray, optional
+        RGBA colors of shape (n, 4), one for each selected item
 
     alpha : float, default 1.0
         alpha blending value
