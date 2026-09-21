@@ -122,8 +122,9 @@ class NDPositionsSlicer(NDSlicer):
             NDSlicer : Base class with full parameter documentation.
             NDPositions : The ``NDGraphic`` that uses this slicer by default.
         """
-        self._display_window = display_window
-        self._max_display_datapoints = max_display_datapoints
+        # through the setters so they are validated the same way here as they are when set later
+        self.display_window = display_window
+        self.max_display_datapoints = max_display_datapoints
 
         super().__init__(
             data=data,

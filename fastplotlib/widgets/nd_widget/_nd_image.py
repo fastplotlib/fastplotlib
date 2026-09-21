@@ -211,9 +211,8 @@ class NDImageSlicer(NDSlicer):
     def compute_histogram(self, compute: bool):
         if compute:
             if not self._compute_histogram:
-                # compute a histogram
-                self._recompute_histogram()
                 self._compute_histogram = True
+                self._recompute_histogram()
         else:
             self._compute_histogram = False
             self._histogram = None
