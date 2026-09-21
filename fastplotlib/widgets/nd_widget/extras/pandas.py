@@ -8,13 +8,13 @@ from .._nd_positions import NDPositionsSlicer
 
 class PandasSlicer(NDPositionsSlicer):
     def __init__(
-            self,
-            data: pd.DataFrame,
-            dims: tuple[str, str, str],
-            display_dims: tuple[str, str, str],  # [l, p, d] dims in order
-            columns: list[tuple[str, str] | tuple[str, str, str]],
-            tooltip_columns: list[str] = None,
-            **kwargs,
+        self,
+        data: pd.DataFrame,
+        dims: tuple[str, str, str],
+        display_dims: tuple[str, str, str],  # [l, p, d] dims in order
+        columns: list[tuple[str, str] | tuple[str, str, str]],
+        tooltip_columns: list[str] = None,
+        **kwargs,
     ):
         """
         ``NDPositionsSlicer`` subclass that reads positional data from the columns of a ``pandas.DataFrame``
@@ -99,7 +99,11 @@ class PandasSlicer(NDPositionsSlicer):
     def shape(self) -> dict[str, int]:
         """interpreted shape of the data, the number of graphics, the number of rows, and the value dim"""
         # n_graphical_elements, n_timepoints, 2
-        return {self.dims[0]: len(self.columns), self.dims[1]: self.data.index.size, self.dims[2]: 2}
+        return {
+            self.dims[0]: len(self.columns),
+            self.dims[1]: self.data.index.size,
+            self.dims[2]: 2,
+        }
 
     @property
     def ndim(self) -> int:
@@ -160,9 +164,8 @@ class PandasSlicer(NDPositionsSlicer):
         self._dw_slice = self._get_dw_slice(indices)
 
         column_stacks = [
-            np.column_stack(
-                [self.data[c][self._dw_slice] for c in col]
-            ) for col in self.columns
+            np.column_stack([self.data[c][self._dw_slice] for c in col])
+            for col in self.columns
         ]
         if len(column_stacks) > 0:
             n_samples = column_stacks[0].shape[0]
@@ -174,7 +177,7 @@ class PandasSlicer(NDPositionsSlicer):
         graphic_data = np.zeros(shape=gdata_shape, dtype=np.float32)
 
         for i, (col, column_stack) in enumerate(zip(self.columns, column_stacks)):
-            graphic_data[i, :, :len(col)] = column_stack
+            graphic_data[i, :, : len(col)] = column_stack
 
         data = self._finalize(graphic_data)
         other = self._get_other_features(data, self._dw_slice)

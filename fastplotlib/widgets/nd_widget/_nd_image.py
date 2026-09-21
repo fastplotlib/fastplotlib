@@ -259,7 +259,9 @@ class NDImageSlicer(NDSlicer):
 
         # final CUDA -> numpy conversion at the end of the pipeline
         if isinstance(window_output, CudaArrayProtocol):
-            window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
+            window_output = await run_in_thread_pool(
+                self._executor, cuda_to_numpy, window_output
+            )
 
         return window_output
 

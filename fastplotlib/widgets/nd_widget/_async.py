@@ -24,9 +24,7 @@ async def wait_for_future(future: Future) -> Any:
     return future.result()
 
 
-async def run_in_thread_pool(
-    executor: Executor, fn: Callable, *args, **kwargs
-) -> Any:
+async def run_in_thread_pool(executor: Executor, fn: Callable, *args, **kwargs) -> Any:
     """Submit ``fn(*args, **kwargs)`` to ``executor`` and await the result."""
     return await wait_for_future(executor.submit(fn, *args, **kwargs))
 

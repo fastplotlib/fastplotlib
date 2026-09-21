@@ -139,7 +139,6 @@ class NDPositionsSlicer(NDSlicer):
         # other graphic features windowed per-datapoint (arrays or callables), keyed by feature name
         self._other_features: dict[str, Any] = dict()
 
-
     def set_other_feature(self, name: str, value):
         """set, or clear if ``value`` is None, an other graphic feature to window per-datapoint"""
         if value is None:
@@ -452,10 +451,7 @@ class NDPositions(NDGraphic):
         display_dims: tuple[str, str, str],
         *args,
         graphic_type: Type[
-            LineCollection
-            | LineStack
-            | ScatterCollection
-            | ScatterStack
+            LineCollection | LineStack | ScatterCollection | ScatterStack
         ],
         slicer: type[NDPositionsSlicer] = NDPositionsSlicer,
         display_window: int | float | None = 10,
@@ -672,10 +668,7 @@ class NDPositions(NDGraphic):
         display_dims: tuple[str, str, str],
         *args,
         graphic_type: Type[
-            LineCollection
-            | LineStack
-            | ScatterCollection
-            | ScatterStack
+            LineCollection | LineStack | ScatterCollection | ScatterStack
         ],
         slicer: type[NDPositionsSlicer] = NDPositionsSlicer,
         display_window: int | float | None = 10,
@@ -824,25 +817,14 @@ class NDPositions(NDGraphic):
     @property
     def graphic(
         self,
-    ) -> (
-        LineCollection
-        | LineStack
-        | ScatterCollection
-        | ScatterStack
-        | None
-    ):
+    ) -> LineCollection | LineStack | ScatterCollection | ScatterStack | None:
         """Underlying Graphic object used to display the current data slice, ``None`` if the data is ``None``"""
         return self._graphic
 
     @property
     def graphic_type(
         self,
-    ) -> Type[
-        LineCollection
-        | LineStack
-        | ScatterCollection
-        | ScatterStack
-    ]:
+    ) -> Type[LineCollection | LineStack | ScatterCollection | ScatterStack]:
         """
         Get or set the graphical representation used to display the data slice. Setting it deletes the current
         graphic and creates one of the given type using the current slice.
@@ -906,7 +888,9 @@ class NDPositions(NDGraphic):
         # a windowed cmap_transform makes the graphic auto-set cmap_range to just the displayed
         # datapoints; override it with the range over the full `p` dimension so the display
         # window maps to its position in the colormap
-        if "cmap_transform" in new_features and hasattr(type(self.graphic), "cmap_range"):
+        if "cmap_transform" in new_features and hasattr(
+            type(self.graphic), "cmap_range"
+        ):
             cmap_range = self._cmap_range()
             if cmap_range is not None:
                 self.graphic.cmap_range = cmap_range

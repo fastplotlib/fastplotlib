@@ -6,7 +6,6 @@ import numpy as np
 from ...utils import ArrayProtocol, calculate_figure_shape, quick_min_max
 from ..nd_widget import NDWidget
 
-
 # slider dims in order, "t" then "z", matching the old ImageWidget convention
 SLIDER_DIMS = ("t", "z")
 
@@ -89,7 +88,9 @@ class ImageWidget:
         if isinstance(data, ArrayProtocol):
             data = [data]
 
-        if not (isinstance(data, list) and all(isinstance(d, ArrayProtocol) for d in data)):
+        if not (
+            isinstance(data, list) and all(isinstance(d, ArrayProtocol) for d in data)
+        ):
             raise TypeError(
                 "`data` must be an array-like or a list of array-like, you have passed: "
                 f"{type(data)}"
@@ -110,7 +111,9 @@ class ImageWidget:
             if not all(isinstance(n, str) for n in names):
                 raise TypeError("`names` must be a list of str")
             if len(names) != len(data):
-                raise ValueError("number of `names` must equal the number of data arrays")
+                raise ValueError(
+                    "number of `names` must equal the number of data arrays"
+                )
 
         # dims, display_dims, rgb_dim and number of slider dims for each array (validates the arrays)
         image_dims = [self._dims_for(arr, is_rgb) for arr, is_rgb in zip(data, rgb)]
@@ -201,7 +204,12 @@ class ImageWidget:
 
         slider_dims = SLIDER_DIMS[:n_slider_dims]
         if rgb:
-            return (*slider_dims, "row", "col", "c"), ("row", "col", "c"), "c", n_slider_dims
+            return (
+                (*slider_dims, "row", "col", "c"),
+                ("row", "col", "c"),
+                "c",
+                n_slider_dims,
+            )
         return (*slider_dims, "row", "col"), ("row", "col"), None, n_slider_dims
 
     def _translate_window_funcs(
@@ -291,14 +299,18 @@ class ImageWidget:
             names = [names] * len(self._nd_images)
         elif isinstance(names, list):
             if not all(isinstance(n, str) for n in names):
-                raise TypeError(f"cmap names must be a str or list of str, you passed: {names}")
+                raise TypeError(
+                    f"cmap names must be a str or list of str, you passed: {names}"
+                )
             if len(names) != len(self._nd_images):
                 raise IndexError(
                     f"a list of cmap names must have one name per subplot, you passed "
                     f"{len(names)} names for {len(self._nd_images)} subplots"
                 )
         else:
-            raise TypeError(f"cmap names must be a str or list of str, you passed: {names}")
+            raise TypeError(
+                f"cmap names must be a str or list of str, you passed: {names}"
+            )
 
         for name, nd in zip(names, self._nd_images):
             nd.graphic.cmap = name
@@ -368,7 +380,9 @@ class ImageWidget:
         ``current_index`` dict as the only argument. "current_index" is the only supported event.
         """
         if event != "current_index":
-            raise ValueError("`current_index` is the only event supported by `ImageWidget`")
+            raise ValueError(
+                "`current_index` is the only event supported by `ImageWidget`"
+            )
         self._current_index_changed_handlers.add(handler)
 
     def remove_event_handler(self, handler: Callable):

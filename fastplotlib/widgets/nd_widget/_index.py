@@ -287,7 +287,9 @@ class ReferenceIndices:
         for ndw in self._ndwidgets:
             yield from ndw.ndgraphics
 
-    def set_dim_index(self, dim: str, index: int | float, cancel_awaiting: bool = False):
+    def set_dim_index(
+        self, dim: str, index: int | float, cancel_awaiting: bool = False
+    ):
         """
         Set the index for a single dimension and trigger an update.
 
@@ -373,16 +375,12 @@ class ReferenceIndices:
             rev = self._fetch_rev[ndg]
 
             # add to rendercanvas scheduler
-            loop.add_task(
-                self._fetch_request_latest, ndg, rev, name=task_name
-            )
+            loop.add_task(self._fetch_request_latest, ndg, rev, name=task_name)
         else:
             rev = self._fetch_rev.get(ndg, 0)
             # provide index at schedule time so all data is played back sequentially
             indices = {d: self._indices[d] for d in ndg.slicer.slider_dims}
-            self._fetch_request_queue.setdefault(ndg, deque()).append(
-                (indices, rev)
-            )
+            self._fetch_request_queue.setdefault(ndg, deque()).append((indices, rev))
             # one queue per graphic
             # if one is already running the appended entry will be picked up by it
             if not self._fetch_request_active.get(ndg, False):
@@ -415,9 +413,7 @@ class ReferenceIndices:
         finally:
             self._fetch_request_active[graphic] = False
 
-    async def _fetch_request_latest(
-        self, graphic: "NDGraphic", rev: int
-    ):
+    async def _fetch_request_latest(self, graphic: "NDGraphic", rev: int):
         """
         Schedule one ``_set_indices_`` task. Older still-running tasks skip
         their graphic data write when ``rev < current``.

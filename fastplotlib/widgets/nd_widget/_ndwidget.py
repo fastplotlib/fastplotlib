@@ -9,7 +9,12 @@ from ...layouts import ImguiFigure, Subplot
 
 
 class NDWidget:
-    def __init__(self, ranges: dict[str, tuple] = None, indices: Optional[ReferenceIndices] = None, **kwargs):
+    def __init__(
+        self,
+        ranges: dict[str, tuple] = None,
+        indices: Optional[ReferenceIndices] = None,
+        **kwargs,
+    ):
         """
         Explore n-dimensional multi-modal datasets through synchronized graphical representations.
 

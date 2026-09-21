@@ -30,7 +30,9 @@ class NDVectorsSlicer(NDSlicer):
         self,
         data: ArrayProtocol | None,
         dims: Sequence[str],
-        display_dims: tuple[str, str, str],  # must be in order! [n_vectors, positions & directions, xy(z)]
+        display_dims: tuple[
+            str, str, str
+        ],  # must be in order! [n_vectors, positions & directions, xy(z)]
         window_funcs: dict[
             str, tuple[WindowFuncCallable | None, int | float | None]
         ] = None,
@@ -198,7 +200,9 @@ class NDVectorsSlicer(NDSlicer):
 
         # final CUDA -> numpy conversion at the end of the pipeline
         if isinstance(window_output, CudaArrayProtocol):
-            window_output = await run_in_thread_pool(self._executor, cuda_to_numpy, window_output)
+            window_output = await run_in_thread_pool(
+                self._executor, cuda_to_numpy, window_output
+            )
 
         return window_output
 

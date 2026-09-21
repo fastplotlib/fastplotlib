@@ -259,22 +259,22 @@ class NDWSubplot:
         return nd
 
     def add_video(
-            self,
-            data: ArrayProtocol | None,
-            dims: Sequence[str],
-            display_dims: tuple[str, str] | tuple[str, str, str],
-            rgb_dim: str | None = None,
-            colorspace: enums.ColorspacesYUV | enums.ColorspacesRGB = "yuv420p",
-            colorrange: enums.ColorRange = "limited",
-            slicer_type: NDImageSlicer = VideoSlicer,
-            window_funcs: dict[
-                str, tuple[WindowFuncCallable | None, int | float | None]
-            ] = None,
-            window_order: tuple[str, ...] = None,
-            spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
-            slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
-            name: str = None,
-            graphic_kwargs: dict = None,
+        self,
+        data: ArrayProtocol | None,
+        dims: Sequence[str],
+        display_dims: tuple[str, str] | tuple[str, str, str],
+        rgb_dim: str | None = None,
+        colorspace: enums.ColorspacesYUV | enums.ColorspacesRGB = "yuv420p",
+        colorrange: enums.ColorRange = "limited",
+        slicer_type: NDImageSlicer = VideoSlicer,
+        window_funcs: dict[
+            str, tuple[WindowFuncCallable | None, int | float | None]
+        ] = None,
+        window_order: tuple[str, ...] = None,
+        spatial_func: Callable[[ArrayProtocol], ArrayProtocol] = None,
+        slider_maps: dict[str, Callable[[Any], int] | ArrayLike] = None,
+        name: str = None,
+        graphic_kwargs: dict = None,
     ) -> NDImage:
         """
         Add a video to this subplot.

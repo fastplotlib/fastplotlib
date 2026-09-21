@@ -186,7 +186,9 @@ class NDWidgetUI(ImguiWindow):
 
                 if changed:
                     if now - self._last_slider_movement[dim] > rr.throttle:
-                        self._ndwidget.indices.set_dim_index(dim, new_index, cancel_awaiting=True)
+                        self._ndwidget.indices.set_dim_index(
+                            dim, new_index, cancel_awaiting=True
+                        )
                         self._last_slider_movement[dim] = now
 
                 elif imgui.is_item_hovered():
@@ -201,7 +203,9 @@ class NDWidgetUI(ImguiWindow):
         # auto set imgui window height
         if not self._collapsed:
             height = round(
-                imgui.get_cursor_screen_pos().y - self.y + imgui.get_style().window_padding.y
+                imgui.get_cursor_screen_pos().y
+                - self.y
+                + imgui.get_style().window_padding.y
             )
             if height != self.size:
                 self.size = height
@@ -225,9 +229,7 @@ class RightClickMenu(StandardRightClickMenu):
         if imgui.begin_menu("ND Graphics"):
             for ndg in self._ndwidget[self.subplot].nd_graphics:
                 name = ndg.name if ndg.name is not None else hex(id(ndg))
-                if imgui.menu_item(
-                    f"{name}", "", False
-                )[0]:
+                if imgui.menu_item(f"{name}", "", False)[0]:
                     self._ndgraphic_windows.add(ndg)
 
             imgui.end_menu()
@@ -236,7 +238,9 @@ class RightClickMenu(StandardRightClickMenu):
         super().draw()
 
         # the ND graphic windows are not part of the popup, they stay open after the popup closes
-        for ndg in list(self._ndgraphic_windows):  # set -> list so we can change size during iteration
+        for ndg in list(
+            self._ndgraphic_windows
+        ):  # set -> list so we can change size during iteration
             name = ndg.name if ndg.name is not None else hex(id(ndg))
             subplot = ndg.graphic._plot_area
             imgui.set_next_window_size((0, 0))
@@ -248,6 +252,7 @@ class RightClickMenu(StandardRightClickMenu):
                 self._ndgraphic_windows.remove(ndg)
 
             imgui.end()
+
 
 def draw_nd_graphic_ui(nd_graphic: NDGraphic):
     """

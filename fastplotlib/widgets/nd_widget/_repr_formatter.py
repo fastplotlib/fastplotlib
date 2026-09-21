@@ -4,20 +4,19 @@ import html
 from collections.abc import Callable
 from typing import Any
 
-
 _RESET = "\033[0m"
-_BOLD  = "\033[1m"
-_DIM   = "\033[2m"
+_BOLD = "\033[1m"
+_DIM = "\033[2m"
 
 _C = {
-    "title":   "\033[38;5;75m",   # sky-blue
+    "title": "\033[38;5;75m",  # sky-blue
     "spatial": "\033[38;5;114m",  # sage-green
-    "slider":  "\033[38;5;215m",  # soft-orange
-    "label":   "\033[38;5;246m",  # mid-grey
-    "value":   "\033[38;5;252m",  # near-white
-    "section": "\033[38;5;68m",   # steel-blue
-    "muted":   "\033[38;5;240m",  # dark-grey
-    "warn":    "\033[38;5;222m",  # amber
+    "slider": "\033[38;5;215m",  # soft-orange
+    "label": "\033[38;5;246m",  # mid-grey
+    "value": "\033[38;5;252m",  # near-white
+    "section": "\033[38;5;68m",  # steel-blue
+    "muted": "\033[38;5;240m",  # dark-grey
+    "warn": "\033[38;5;222m",  # amber
 }
 
 
@@ -29,7 +28,7 @@ def _callable_name(f: Callable | None) -> str:
     if f is None:
         return "—"
     module = getattr(f, "__module__", "") or ""
-    qname  = getattr(f, "__qualname__", None) or getattr(f, "__name__", repr(f))
+    qname = getattr(f, "__qualname__", None) or getattr(f, "__name__", repr(f))
     if module and not module.startswith("__"):
         short = module.split(".")[-1]
         return f"{short}.{qname}"
@@ -48,17 +47,18 @@ def ndprocessor_fmt_txt(processor) -> str:
 
     lines.append(_c("section", "  Dimensions"))
 
-    header = (
-        f"  {'dim':<14}{'size':>6}   {'role':<10}  {'window_func  size':<26}  index_mapping"
-    )
+    header = f"  {'dim':<14}{'size':>6}   {'role':<10}  {'window_func  size':<26}  index_mapping"
     lines.append(_c("label", header))
     lines.append(_c("muted", "  " + "─" * 70))
 
     for dim in processor.dims:
-        size  = processor.shape[dim]
+        size = processor.shape[dim]
         is_sp = dim in processor.display_dims
-        role_s = (_c("spatial", f"{'spatial':<10}") if is_sp
-                  else _c("slider",  f"{'slider':<10}"))
+        role_s = (
+            _c("spatial", f"{'spatial':<10}")
+            if is_sp
+            else _c("slider", f"{'slider':<10}")
+        )
 
         # window_func - size column
         if not is_sp:
@@ -83,6 +83,7 @@ def ndprocessor_fmt_txt(processor) -> str:
 
         # pad win_s to fixed visible width (strip ANSI for measuring)
         import re
+
         _ansi_re = re.compile(r"\033\[[^m]*m")
         win_visible = len(_ansi_re.sub("", win_s))
         win_pad = win_s + " " * max(0, 26 - win_visible)
@@ -114,7 +115,7 @@ def ndprocessor_fmt_txt(processor) -> str:
 
 def ndgraphic_fmt_txt(ndg) -> str:
     """Text repr for NDGraphic."""
-    cls  = type(ndg).__name__
+    cls = type(ndg).__name__
     gcls = type(ndg.graphic).__name__ if ndg.graphic is not None else "—"
     name = ndg.name or "—"
 
@@ -130,6 +131,7 @@ def ndgraphic_fmt_txt(ndg) -> str:
     # indent processor block
     indented = "\n".join("  " + l for l in proc_block.splitlines())
     return header + indented
+
 
 _CSS = """
 <style>
@@ -380,24 +382,22 @@ def _code(s: str) -> str:
 
 def _section(title: str, content_html: str, count: str = "", open_: bool = True) -> str:
     open_attr = " open" if open_ else ""
-    count_badge = (
-        f'<span class="fpl-section-count">{_h(count)}</span>' if count else ""
-    )
+    count_badge = f'<span class="fpl-section-count">{_h(count)}</span>' if count else ""
     return (
         f'<details class="fpl-section"{open_attr}>'
-        f'<summary>'
+        f"<summary>"
         f'<span class="fpl-section-title-text">{_h(title)}</span>'
-        f'{count_badge}'
-        f'</summary>'
-        f'{content_html}'
-        f'</details>'
+        f"{count_badge}"
+        f"</summary>"
+        f"{content_html}"
+        f"</details>"
     )
 
 
 def _dim_rows_html(proc) -> str:
     rows = []
     for dim in proc.dims:
-        size  = proc.shape[dim]
+        size = proc.shape[dim]
         is_sp = dim in proc.display_dims
         badge = _badge("spatial" if is_sp else "slider")
 
@@ -407,34 +407,34 @@ def _dim_rows_html(proc) -> str:
             if wf is not None and ws is not None:
                 win_td = (
                     f'<td class="fpl-dim-win">'
-                    f'{_code(_callable_name(wf))}'
+                    f"{_code(_callable_name(wf))}"
                     f'<span style="margin:0 4px;opacity:.4">-</span>'
-                    f'{_code(str(ws))}'
-                    f'</td>'
+                    f"{_code(str(ws))}"
+                    f"</td>"
                 )
             else:
                 win_td = '<td class="fpl-dim-win" style="opacity:.35">—</td>'
         else:
-            win_td = '<td></td>'
+            win_td = "<td></td>"
 
         # index_mapping column (slider dims only; hide identity)
         if not is_sp:
-            imap  = proc.index_mappings.get(dim)
+            imap = proc.index_mappings.get(dim)
             if imap is not None:
                 idx_td = f'<td class="fpl-dim-win">{_code(_callable_name(imap))}</td>'
             else:
                 idx_td = '<td class="fpl-dim-win" style="opacity:.35">—</td>'
         else:
-            idx_td = '<td></td>'
+            idx_td = "<td></td>"
 
         rows.append(
-            f'<tr>'
+            f"<tr>"
             f'<td class="fpl-dim-name">{_h(str(dim))}</td>'
             f'<td class="fpl-dim-size">{size:,}</td>'
-            f'<td>{badge}</td>'
-            f'{win_td}'
-            f'{idx_td}'
-            f'</tr>'
+            f"<td>{badge}</td>"
+            f"{win_td}"
+            f"{idx_td}"
+            f"</tr>"
         )
 
     # column header row
@@ -445,18 +445,15 @@ def _dim_rows_html(proc) -> str:
         f'<th class="fpl-dim-th">role</th>'
         f'<th class="fpl-dim-th">window_func - size</th>'
         f'<th class="fpl-dim-th">index_mapping</th>'
-        f'</tr>'
+        f"</tr>"
     )
 
     table = (
         '<table class="fpl-dim-table">'
-        '<colgroup>'
+        "<colgroup>"
         '<col style="min-width:80px"><col style="min-width:55px">'
-        '<col><col><col>'
-        '</colgroup>'
-        + header
-        + "".join(rows)
-        + "</table>"
+        "<col><col><col>"
+        "</colgroup>" + header + "".join(rows) + "</table>"
     )
     return table
 
@@ -489,30 +486,32 @@ def _html_processor(proc) -> str:
     ndim_pill = (
         f'<span class="fpl-repr-pill" style="'
         f'background:#f0f3fa;border:1px solid #c8d2e0;color:#444">'
-        f'{proc.ndim}D</span>'
+        f"{proc.ndim}D</span>"
     )
     header = (
         f'<div class="fpl-repr-header">'
         f'<span class="fpl-repr-classname">{cls}</span>'
-        f'{ndim_pill}'
-        f'</div>'
+        f"{ndim_pill}"
+        f"</div>"
     )
 
     # dims section (always open)
     dim_content = _dim_rows_html(proc)
-    sections    = _section("Dimensions", dim_content,
-                            count=str(proc.ndim), open_=True)
+    sections = _section("Dimensions", dim_content, count=str(proc.ndim), open_=True)
 
     # always-visible footer rows
     footer_pairs: list[tuple[str, str]] = []
 
     if proc.window_order:
         chain = " → ".join(
-            f'<span class="fpl-arrow">&#x25B6;</span>{_h(str(d))}'
-            if i > 0 else _h(str(d))
+            (
+                f'<span class="fpl-arrow">&#x25B6;</span>{_h(str(d))}'
+                if i > 0
+                else _h(str(d))
+            )
             for i, d in enumerate(proc.window_order)
         )
-        footer_pairs.append(("window order", f'<span>{chain}</span>'))
+        footer_pairs.append(("window order", f"<span>{chain}</span>"))
 
     if proc.spatial_func is not None:
         footer_pairs.append(("spatial func", _code(_callable_name(proc.spatial_func))))
@@ -525,43 +524,51 @@ def _html_processor(proc) -> str:
 
 
 def ndgraphic_fmt_html(ndg) -> str:
-    cls  = _h(type(ndg).__name__)
+    cls = _h(type(ndg).__name__)
     gcls = _h(type(ndg.graphic).__name__) if ndg.graphic is not None else "—"
     name = _h(ndg.name or "—")
 
-    graphic_pill = f'<span class="fpl-repr-pill fpl-pill-graphic">graphic: {gcls}</span>'
-    name_pill    = f'<span class="fpl-repr-pill fpl-pill-name">name: {name}</span>'
+    graphic_pill = (
+        f'<span class="fpl-repr-pill fpl-pill-graphic">graphic: {gcls}</span>'
+    )
+    name_pill = f'<span class="fpl-repr-pill fpl-pill-name">name: {name}</span>'
 
     header = (
         f'<div class="fpl-repr-header">'
         f'<span class="fpl-repr-classname">{cls}</span>'
         f'<span class="fpl-repr-sep">·</span>'
-        f'{graphic_pill}{name_pill}'
-        f'</div>'
+        f"{graphic_pill}{name_pill}"
+        f"</div>"
     )
 
     # embed processor repr (without its own outer box) inside a section
     proc_inner = _dim_rows_html(ndg.processor)
-    sections   = _section("Processor · Dimensions", proc_inner, open_=True)
+    sections = _section("Processor · Dimensions", proc_inner, open_=True)
 
     footer_pairs: list[tuple[str, str]] = []
 
     if ndg.processor.window_order:
         chain = " → ".join(
-            f'<span class="fpl-arrow">&#x25B6;</span>{_h(str(d))}'
-            if i > 0 else _h(str(d))
+            (
+                f'<span class="fpl-arrow">&#x25B6;</span>{_h(str(d))}'
+                if i > 0
+                else _h(str(d))
+            )
             for i, d in enumerate(ndg.processor.window_order)
         )
-        footer_pairs.append(("window order", f'<span>{chain}</span>'))
+        footer_pairs.append(("window order", f"<span>{chain}</span>"))
 
     if ndg.processor.spatial_func is not None:
-        footer_pairs.append(("spatial func", _code(_callable_name(ndg.processor.spatial_func))))
+        footer_pairs.append(
+            ("spatial func", _code(_callable_name(ndg.processor.spatial_func)))
+        )
 
     if footer_pairs:
         sections += _footer_kv(footer_pairs)
 
     body = f'<div class="fpl-repr-body">{sections}</div>'
     return f'{_CSS}<div class="fpl-repr">{header}{body}</div>'
+
 
 class ReprMixin:
     """
@@ -580,18 +587,19 @@ class ReprMixin:
             return ndgraphic_fmt_txt(self)
         return ndprocessor_fmt_txt(self)
 
-    def _repr_html_(self) -> str:
-            return ndgraphic_fmt_html(self)
-        return _html_processor(self)
-
-    def __repr__(self) -> str:
-        return self._repr_text_()
-
-    def _repr_mimebundle_(self, **kwargs) -> dict:
-        return {
-            "text/plain": self._repr_text_(),
-            "text/html":  self._repr_html_(),
-        }
+    #
+    # def _repr_html_(self) -> str:
+    #         return ndgraphic_fmt_html(self)
+    #     return _html_processor(self)
+    #
+    # def __repr__(self) -> str:
+    #     return self._repr_text_()
+    #
+    # def _repr_mimebundle_(self, **kwargs) -> dict:
+    #     return {
+    #         "text/plain": self._repr_text_(),
+    #         "text/html":  self._repr_html_(),
+    #     }
 
 
 def _is_ndgraphic(obj) -> bool:

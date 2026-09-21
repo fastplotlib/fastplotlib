@@ -47,11 +47,7 @@ class NDTimeseries(NDPositions):
         display_dims: tuple[str, str, str],
         *args,
         graphic_type: Type[
-            LineCollection
-            | LineStack
-            | ScatterCollection
-            | ScatterStack
-            | ImageGraphic
+            LineCollection | LineStack | ScatterCollection | ScatterStack | ImageGraphic
         ] = LineStack,
         slicer: type[NDPositionsSlicer] = NDPositionsSlicer,
         display_window: int | float | None = 10,
@@ -302,9 +298,15 @@ class NDTimeseries(NDPositions):
         self.x_range_mode = x_range_mode
 
         # make a linear selector only if one does not already exist in this subplot
-        if linear_selector and "__ndw_manged_linear_selector" not in self._nd_subplot.subplot:
+        if (
+            linear_selector
+            and "__ndw_manged_linear_selector" not in self._nd_subplot.subplot
+        ):
             self._linear_selector = LinearSelector(
-                0, limits=(-np.inf, np.inf), edge_color="cyan", name="__ndw_manged_linear_selector"
+                0,
+                limits=(-np.inf, np.inf),
+                edge_color="cyan",
+                name="__ndw_manged_linear_selector",
             )
             self._linear_selector.add_event_handler(
                 self._linear_selector_handler, "selection"
@@ -404,9 +406,7 @@ class NDTimeseries(NDPositions):
     def _linear_selector_handler(self, ev):
         with block_indices_ctx(*self._nd_subplot.nd_graphics):
             # block index change in all NDGraphics that are not in the same subplot
-            self._ref_index.set_dim_index(
-                self.slicer.display_dims[1], ev.info["value"]
-            )
+            self._ref_index.set_dim_index(self.slicer.display_dims[1], ev.info["value"])
 
     def _create_heatmap_data(self, data_slice) -> tuple[np.ndarray, float, float]:
         """return [n_rows, n_cols] shape data from [n_timeseries, n_timepoints, xy] data"""

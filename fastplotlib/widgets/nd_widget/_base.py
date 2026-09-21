@@ -962,10 +962,7 @@ class NDGraphic:
     #     }
 
     def _repr_text_(self):
-        return (
-            f"graphic: {self.graphic.__class__.__name__}\n"
-            f"slicer:\n{self.slicer}"
-        )
+        return f"graphic: {self.graphic.__class__.__name__}\n" f"slicer:\n{self.slicer}"
 
 
 @contextmanager

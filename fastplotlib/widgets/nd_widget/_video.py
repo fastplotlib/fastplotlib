@@ -16,6 +16,7 @@ class VideoSlicer(NDImageSlicer):
     A YUV frame is a tuple of (Y, U, V) planes rather than a single array, so it is passed through as a tuple for
     an ``ImageYUVGraphic``.
     """
+
     async def get_window_output(self, indices: dict[str, Any]) -> TupleYUV | np.ndarray:
         """
         Get the frame at the given indices, squeezing out the slider dims.
