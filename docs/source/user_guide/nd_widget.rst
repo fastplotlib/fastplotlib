@@ -1,516 +1,319 @@
-NDWidget
-========
+Visualizing multi-modal neuroscience data with the fastplotlib NDWidget
+=======================================================================
 
-The problem
------------
+.. figure:: ../_static/ndw_guide/3.jpg
+    :alt: NDWidget with calcium imaging movies, neuron traces, an ethogram and two behavior videos
 
-Scientific data is n-dimensional. A volumetric time-lapse microscopy acquisition is (time, z, channel, rows,
-columns), an MRI volume is (x, y, z, time), a climate model writes (time, level, latitude, longitude), and
-behavior point tracking gives (keypoints, frames, xy).
+    Calcium imaging movies, neuron traces, an ethogram, and two behavior videos with tracked keypoints, all on
+    one time slider.
 
-Different instruments produce arrays of different shapes, sampled at different rates, i.e. multi modal data
-which has to be visualized together.
+A systems neuroscience session can produce many n-dimensional arrays. A multi-plane, multi-FOV calcium imaging
+movie has dimensions for the FOV, plane, time, rows and columns. Alongside it there may be electrophysiology
+recordings, videos from several behavior cameras, the keypoints tracked in each video, and behavioral labels. Each
+of these comes from its own acquisition system with its own shape, dimension order and sampling rate, such as 30 Hz
+for a behavior camera, 30 kHz for an electrophysiology probe, and a few Hz for each imaging plane.
 
-Systems neuroscience probably produces the most complex multi-modal n-dimensional data of any scientific
-discipline. A single session can draw on calcium imaging, electrophysiology and behavior tracking at the same
-time: a movie of shape :math:`\mathbb{R}^{T \times Z \times M \times N}` (time, depth, rows, columns), traces
-of shape :math:`\mathbb{R}^{K \times T}` (channels, samples), a behavior video, the keypoints tracked in it of
-shape :math:`\mathbb{R}^{K \times T \times 2}` (keypoints, frames, xy), and the spike times of sorted units.
-Each comes from a different acquisition system with its own sampling rate.
+The ``NDWidget`` provides a declarative interface for interacting with large volumes of this data, with ease and at
+speed. For each array you name its dimensions and declare which of them are drawn. Arrays that share a dimension
+name stay in sync, whatever their shape, dimension order or sampling rate. The widget works out the rest: a slider
+for every dimension that is not drawn, the mapping from a slider position onto each array's own indices, windowing,
+asynchronous reads, and which graphics need to update.
 
-Existing tools each cover part of this. Domain-specific applications such as Suite2p, Phy and SimBA give a
-fixed set of visualizations for one analysis pipeline, but are difficult to extend and not composable.
-Multi-modal environments such as NWB Widgets and Bento link neural and behavioral views, but those views are
-hard-coded and tied to particular data formats. General-purpose plotting libraries such as pyqtgraph, Plotly,
-Bokeh and HoloViews are flexible for tabular data, but leave n-dimensional slicing, cross-modality
-coordination and graphical update logic to be written by hand as callbacks. Image-focused tools such as
-napari and ImageJ are built for imaging data rather than for timeseries representations or for coordination
-across heterogeneously sampled data.
+We built the ``NDWidget`` for:
 
-The ``NDWidget`` uses a coordination model to provide a declarative API. You declare what each dimension of
-each array means and which of those dimensions are drawn, and the widget works out the rest: slicing, mapping
-from a slider position onto each array's own indices, windowing, asynchronous reads, transferring CUDA
-arrays, and which graphics have to update. It also manages spatial coordinates to make timeseries data easier
-to explore, such as the auto range mode and out-of-core rendering, where only the slices needed for the
-current view are read so that arrays can be lazy and far larger than RAM or VRAM. The graphical
-representation is not fixed by the shape of the data, so the same array can be drawn as a line collection, a
-stack, a scatter or a heatmap, and the representation can be changed while the widget is running.
+* better quality control of experimental data
+* prototyping new analysis ideas and algorithms
+* visualizing large datasets on the remote infrastructure where the analysis usually happens
+* developing new scientific insights by exploring all of the modalities together
 
-``NDWidget`` requires ``imgui-bundle``, install it with ``pip install "fastplotlib[imgui]"``.
+Any n-dimensional data, any graphical representation
+----------------------------------------------------
 
-The data model
---------------
+Each array is added with two declarations. ``dims`` names every dimension of the array, in the order in which it
+appears in the array, and ``display_dims`` names the dimensions that are drawn, in display order. Every other
+dimension becomes a slider::
 
-For each nd array you want to view, you must declare:
-
-* ``dims``: the name of every dimension of the array, in the order in which it appears in the array
-* ``display_dims``: the dimensions to render, in display order, which is the order that corresponds to the
-  rendered representation, ``[rows, cols]`` or ``[depth, rows, cols]`` for images and :math:`[\ell, p, d]`
-  for positional data
-
-Every dimension that is not rendered becomes a **slider dim** and is given a slider. A 4D movie displayed as a
-2D image therefore leaves a slider for time and a slider for depth::
-
-    ndw[0, 0].add_nd_image(
-        movie,                            # data
-        ("time", "depth", "row", "col"),  # dims
-        ("row", "col"),                   # display_dims
+    # a multi-plane calcium imaging movie, [time, plane, rows, cols]
+    ndw["movie"].add_nd_image(
+        movie,
+        dims=("time", "plane", "m", "n"),
+        display_dims=("m", "n"),  # "time" and "plane" become sliders
     )
 
-The dimensions do not have to appear in display order in the array. ``dims`` names them in the order they
-appear and ``display_dims`` gives the order they are drawn in, so an array declared as
-``("col", "depth", "row", "time")`` and displayed as ``("row", "col")`` is transposed for you.
+With ``display_dims=("plane", "m", "n")`` the same movie is drawn as a volume, and only ``"time"`` is a slider.
 
-Positional data, which covers lines, scatters and heatmaps, is an array of the form
+Positional data, such as traces or keypoints, is an array of shape ``[..., l, p, d]``, where ``l`` is the number of
+lines, scatters or heatmap rows, ``p`` is the number of datapoints in each of them, often timepoints, and ``d`` holds
+the (x, y) or (x, y, z) coordinate of each datapoint. ``p`` is both drawn and given a slider, and the widget draws a
+window of ``p`` around the slider position.
 
-.. math::
++-----------------------+----------------------------------------------------------------+
+| method                | draws                                                          |
++=======================+================================================================+
+| ``add_nd_image``      | grayscale or RGB(A) images and volumes, such as calcium        |
+|                       | imaging movies                                                 |
++-----------------------+----------------------------------------------------------------+
+| ``add_video``         | video frames, with the YUV components sent straight to the     |
+|                       | GPU, such as behavior videos                                   |
++-----------------------+----------------------------------------------------------------+
+| ``add_nd_timeseries`` | stacked lines, lines, scatters or a heatmap on a time axis,    |
+|                       | such as traces, spike rasters, spectrograms and ethograms      |
++-----------------------+----------------------------------------------------------------+
+| ``add_nd_scatter``    | scatters, such as tracked keypoints                            |
++-----------------------+----------------------------------------------------------------+
+| ``add_nd_lines``      | lines, such as keypoint trajectories                           |
++-----------------------+----------------------------------------------------------------+
+| ``add_nd_vectors``    | vectors                                                        |
++-----------------------+----------------------------------------------------------------+
 
-    A \in \mathbb{R}^{s_1 \times \cdots \times s_n \times \ell \times p \times d}
+Several of these can share a subplot, such as keypoints drawn over the video they were tracked in.
 
-where :math:`s_1, \ldots, s_n` are the slider dims, any navigable dimension such as time, trial, depth or
-experimental condition, :math:`\ell` is the number of graphical elements, i.e. the lines or scatters in the
-collection or the rows of the heatmap, :math:`p` is the number of datapoints in each of them, often the
-number of sampled timepoints, and :math:`d \in \{2, 3\}` holds the :math:`(x, y)` or :math:`(x, y, z)`
-coordinate of a datapoint.
+``add_nd_timeseries`` draws a ``LineStack`` by default. The graphical representation of positional data is not
+fixed by its shape, and ``graphic_type`` can be changed while the widget is running, from code or from the
+right-click menu of the graphic::
 
-Image data is an array of the form
+    ndg = ndw["traces"].add_nd_timeseries(
+        traces,  # [cell, time, xy]
+        dims=("cell", "time", "xy"),
+        display_dims=("cell", "time", "xy"),
+    )
 
-.. math::
+    ndg.graphic_type = fpl.ImageGraphic  # the same traces as a heatmap
 
-    M \in \mathbb{R}^{s_1 \times \cdots \times s_n \times r \times c \times v}
+The data does not have to be a numpy array. Anything with ``dtype``, ``ndim``, ``shape`` and ``__getitem__`` can be
+used, such as a zarr or HDF5 dataset, a torch tensor, or a lazy reader of your own. The data can even be a function
+of the index: an object whose ``__getitem__`` computes the requested slice is used in the same way, such as a calcium
+imaging movie that is computed from a matrix factorization one frame at a time. For any other data source, subclass
+the slicer for that representation, ``NDImageSlicer`` for images or ``NDPositionsSlicer`` for positional data, and
+implement ``get``, which is given the current slider positions and returns the slice to draw.
+``fastplotlib.nds_extras.pandas.PandasSlicer`` reads the coordinates from the columns of a ``pandas.DataFrame``, so
+pose tracking output can be used directly.
 
-where :math:`r` and :math:`c` are the rows and columns of the image, and :math:`v \in \{3, 4\}` is an
-optional RGB(A) dimension that is declared with ``rgb_dim``. Rendering :math:`(z, r, c)` gives a volume
-instead of a 2D image.
+Different sampling rates, any dim order
+---------------------------------------
 
-Vector data is an array of the form
+A slider position is not an array index. It is a value in reference units, the scientific units of that dimension,
+such as seconds or depth in microns. Each slider dimension is given a range in these units, and ``step`` is the
+increment used by the step buttons and by playback::
 
-.. math::
+    ndw = fpl.NDWidget(
+        ranges={"time": (0.0, 600.0, 1 / 30)},  # (start, stop, step) in seconds
+        shape=(1, 2),
+        names=["video", "ephys"],
+    )
 
-    V \in \mathbb{R}^{s_1 \times \cdots \times s_n \times k \times 2 \times d}
-
-of :math:`k` vectors, where the size-2 dimension holds a position at index ``0`` and a direction at index
-``1``.
-
-Each slider dim is indexed at a single value, so given an index :math:`\lambda_j` along each slider dim the
-rendered slice of a positional array is
-
-.. math::
-
-    S_A(\lambda) = A\left[\lambda_1, \ldots, \lambda_n,\ :,\ :,\ :\right] \in
-    \mathbb{R}^{\ell \times p \times d}
-
-and of an image array is
-
-.. math::
-
-    S_M(\lambda) = M\left[\lambda_1, \ldots, \lambda_n,\ :,\ :,\ :\right] \in \mathbb{R}^{r \times c \times v}
-
-after which the slice is transposed to display order. For positional data :math:`p` is both rendered and
-navigable, so it is windowed.
-
-The slice is then mapped onto a graphical representation,
-
-.. math::
-
-    G : \mathbb{R}^{\ell \times p \times d} \to \{\text{LineCollection},\ \text{LineStack},\
-    \text{ScatterCollection},\ \text{ScatterStack},\ \text{ImageGraphic}\}
-
-for positional data and
-
-.. math::
-
-    G : \mathbb{R}^{r \times c \times v} \to \{\text{ImageGraphic},\ \text{ImageYUVGraphic},\
-    \text{ImageVolumeGraphic}\}
-
-for images. The shape of the slice does not determine :math:`G`. For images it follows from
-``display_dims`` and ``colorspace``, and for positional data it is declared with ``graphic_type`` which is
-mutable at runtime.
-
-Reference space
----------------
-
-A slider position is not an array index, it is a value in **reference units**, the scientific units of that
-dimension, such as seconds, milliseconds, depth in microns, frequency in Hz, etc. The reference index is
-
-.. math::
-
-    \Lambda = (\Lambda_1, \ldots, \Lambda_n) \in \mathbb{U}^{n}
-
-with one value :math:`\Lambda_j \in \mathbb{U}` for each slider dim. Every graphic in the widget shares it.
-
-Each slider dim needs a range in these units. ``start`` and ``stop`` set the start and stop positions of the
-slider for that dimension, and ``step`` is the increment used by the step buttons and by playback::
-
-    ndw = fpl.NDWidget(ranges={"time": (0.0, 600.0, 1 / 30)})
-
-For each array and each of its slider dims we define a mapping
-
-.. math::
-
-    \Phi_j : \mathbb{U} \to \mathbb{N}, \qquad \lambda_j = \Phi_j(\Lambda_j)
-
-from a reference value onto an index of that array, declared as ``slider_maps``. An array of reference
-values, such as timestamps, is used through its ``searchsorted``. An arbitrary callable that defines a
-mapping can also be used. If a mapping isn't provided for a dimension, then the identity mapping is used,
-i.e. the current reference index is used directly as an integer array index. The result is clamped into
-:math:`[0, \text{size} - 1]`.
-
-:math:`\Phi` is what lets arrays that were sampled at different rates share one slider::
+Each array maps a slider position onto its own indices with ``slider_maps``. An array of reference values, such as
+the timestamp of every frame or sample, is used through its ``searchsorted``, and a callable can be given for any
+other mapping::
 
     ndw["video"].add_video(
-        video,                # data
-        ("time", "m", "n"),   # dims
-        ("m", "n"),           # display_dims
-        slider_maps={"time": frame_times},
+        video,
+        dims=("time", "m", "n"),
+        display_dims=("m", "n"),
+        slider_maps={"time": frame_times},  # seconds, one per video frame
     )
 
-    ndw["traces"].add_nd_timeseries(
-        traces,                  # data
-        ("l", "time", "d"),      # dims
-        ("l", "time", "d"),      # display_dims
-        slider_maps={"time": sample_times},
+    ndw["ephys"].add_nd_timeseries(
+        traces,  # [channel, time, xy]
+        dims=("channel", "time", "xy"),
+        display_dims=("channel", "time", "xy"),
+        slider_maps={"time": sample_times},  # seconds, one per sample
     )
 
-Both of these declare a dim named ``"time"`` and each one provides its own timestamps, so a slider position
-of 30 seconds resolves to frame 900 in a 30 Hz video and to sample 900,000 in a 30 kHz recording. Nothing is
-resampled onto a common rate, and no modality is expressed in the indices of another.
+A slider position of 30 seconds resolves to frame 3,000 of a 100 Hz video and to sample 600,000 of a 20 kHz
+recording. Nothing is resampled onto a common rate, and no modality is expressed in the indices of another.
 
-The current reference index is ``ndw.indices``. Assigning to it moves the sliders and re-renders every
-graphic that declares the dims given, and values are clamped to the range of their dim::
+Dimensions are matched by name, so the arrays can have any number of dimensions in any order. An array declared as
+``("col", "depth", "row", "time")`` and displayed as ``("row", "col")`` is transposed for you, and it shares the
+``"time"`` and ``"depth"`` sliders with every other array that has those dimensions. Different names keep timelines
+apart: two recording sessions whose time dimensions are named ``"time-s1"`` and ``"time-s2"`` get a slider each, in
+the same widget.
 
-    ndw.indices = {"time": 12.5}
-    ndw.indices["time"]
+The current slider positions are ``ndw.indices``. Moving a slider, playback, the step buttons, and dragging the line
+that marks the current time in a timeseries subplot all change it, and it can be set programmatically::
 
-A slider dim with no entry in ``ranges`` is given an ``AutoRangeContinuous`` of ``(0, size, 1)``, and a
-warning is raised. The reference value is then the array index itself, which is correct only when the units
-of that dim really are indices.
+    ndw.indices = {"time": 12.5}  # moves the sliders and updates every NDGraphic with a time dimension
 
-The display window
-------------------
+Several widgets can share one set of sliders, which spreads a session across separate windows::
 
-For positional data the datapoints dim :math:`p` is both rendered and navigable, so it is not indexed at a
-single value. For :math:`p` we define a **display window** :math:`w`, in the reference units of that
-dimension and centered on the current index, which defines a window of datapoints that are rendered
+    ndw_behavior = fpl.NDWidget(
+        ranges={"time": (0.0, 600.0, 1 / 30)},
+        shape=(1, 2),
+        names=["camera-left", "camera-right"],
+    )
 
-.. math::
-
-    W(\Lambda_p, w) = \left[\,\Phi_p(\Lambda_p - w/2),\ \ \Phi_p(\Lambda_p + w/2)\,\right)
-
-taken with a step
-
-.. math::
-
-    \sigma = \max\left(1,\ \left\lfloor \frac{|W|}{m} \right\rfloor\right)
-
-where :math:`m` is ``max_display_datapoints``. The rendered slice of a positional array is therefore
-
-.. math::
-
-    S_A(\Lambda) = A\left[\lambda_1, \ldots, \lambda_n,\ :,\ W(\Lambda_p, w)\!:\!\sigma,\ :\right] \in
-    \mathbb{R}^{\ell \times p' \times d}
-
-with :math:`p' \leq m` datapoints per graphical element.
-
-This is a form of out-of-core rendering for timeseries data. Only :math:`S_A` is rendered and uploaded to
-the GPU, so the array can be much larger than VRAM. The default slicer reads the full :math:`p` dim and
-windows it in memory. To read only :math:`W` from a dataset that does not fit in RAM, implement ``get`` in
-an ``NDSlicer`` subclass for that data source. ``display_window=None`` renders every datapoint of
-:math:`p`, and ``display_window=0`` renders the single datapoint at :math:`\Lambda_p`.
-
-``max_display_datapoints`` caps the cost of a wide window by decimating it, and defaults to 1000. Use a
-large ``max_display_datapoints`` for things like scatter rasters where you want to see every point.
-
-On an ``NDTimeseries``, ``x_range_mode`` couples the camera x-range to the display window:
-
-* ``None``: the camera is left alone
-* ``"fixed"``: the camera x-range is set from :math:`w`, centered on :math:`\Lambda_p`, on every update
-* ``"auto"``: as ``"fixed"``, and the camera x-range is also read on every render, so panning or zooming
-  sets :math:`w` to the new width and :math:`\Lambda_p` to the new center
+    ndw_ephys = fpl.NDWidget(indices=ndw_behavior.indices, names=["ephys"])
 
 Window functions
 ----------------
 
-For any slider dim we define a **window function** :math:`\omega` that aggregates or transforms the data
-within a window around the current index
+A window function reduces a slider dimension over a window around the current position, such as a rolling mean, a
+rolling median, a maximum projection or a Gaussian smoothing. The window size is in reference units, and any function
+that takes ``axis`` and ``keepdims`` can be used::
 
-.. math::
-
-    \omega : \mathbb{R}^{w} \to \mathbb{R}
-
-Note that this window is different from the display window. It is declared as ``window_funcs``, a mapping of
-a dim name onto a ``(func, window_size)`` pair where ``window_size`` is in the reference units of that dim.
-The dim is sliced over
-
-.. math::
-
-    \left[\,\Phi_j(\Lambda_j - w_j/2),\ \ \Phi_j(\Lambda_j + w_j/2)\,\right)
-
-and then reduced by :math:`\omega_j`. The upper bound is exclusive and clamped into
-:math:`[0, \text{size}]`, so a window at either end of the range still reaches the first and last elements
-and always covers at least one of them. A rolling average, a rolling median, a maximum projection and a
-Gaussian smoothing are all of this form::
-
-    window_funcs={"time": (np.mean, 2.5)},   # average over 2.5 seconds around the current index
-    window_order=("time",),
-
-``window_order`` is the order in which the functions are applied. If a dim has a window function defined but
-it is not included in ``window_order``, the window function is ignored and the dim is indexed at a single
-value.
-
-:math:`\omega` is applied with ``axis`` and ``keepdims=True``, so the dim that it was applied to reduces to
-size 1 and survives until every window function has run. This is why a window function must accept ``axis``
-and ``keepdims``, and must not drop the dimension.
-
-``datapoints_window_func`` is the equivalent for the datapoints dim of positional data, and is applied along
-:math:`p` after the display window has been taken. It is a ``(func, apply_dims, window_size)`` tuple.
-``func`` is given a sliding window view and reduces along the window axis, and ``apply_dims`` names the
-coordinates of the value dim that it applies to, one of ``"all", "x", "y", "z", "xy", "xz", "yz", "xyz"``,
-with the rest passed through unchanged.
-
-``spatial_func`` is applied to the data slice after the window functions, just before it is rendered, such
-as a spatial gaussian filter. It is given the slice in ``display_dims`` order, i.e. the array as it is
-rendered, and must return an array with those same dims.
-
-Graphic features
-----------------
-
-Colors, colormaps, and other features can also be mapped onto NDGraphics. The colors, sizes, markers,
-thickness and colormap transform of positional data are **graphic features**, and each one is either
-**static** or **windowed** based on the value that is passed.
-
-A static feature does not change w.r.t. the current reference indices. It is a single value shared by every
-graphical element, one value per element, or an iterator of per-element values such as
-``itertools.cycle(["jet", "viridis"])``. ``cmap`` and ``thickness`` are always static.
-
-A windowed feature carries one value per rendered datapoint and is re-sliced whenever the data is. As an
-array it must span the full ``p`` dim of the data, ``[l, p, n_values]``, where ``n_values`` is what that
-feature needs, 4 for an RGBA color and 1 for a size. It is sliced with the same display window as the data.
-
-A windowed feature can also be a callable that takes the data slice and the display window slice, and
-returns the values for the rendered datapoints. Use it to derive a feature from the data itself or from
-another signal, such as the tracking likelihood of each keypoint::
-
-    def alpha_from_likelihood(data_slice, dw_slice):
-        # data_slice is [l, p, d] for the rendered datapoints
-        colors = keypoint_colors[:, None, :].repeat(data_slice.shape[1], axis=1)  # [l, p, 4]
-        colors[:, :, -1] = likelihoods[:, dw_slice]
-        return colors
-
-    ndw["video"].add_nd_scatter(
-        keypoints,
-        ("kp", "time", "xy"),
-        ("kp", "time", "xy"),
-        colors=alpha_from_likelihood,
+    ndw["movie"].add_nd_image(
+        movie,  # [time, plane, rows, cols]
+        dims=("time", "plane", "m", "n"),
+        display_dims=("m", "n"),
+        slider_maps={"time": frame_times},
+        window_funcs={"time": (np.mean, 2.5)},  # mean over 2.5 seconds around the current time
+        window_order=("time",),
     )
 
-``colors`` and ``cmap`` are mutually exclusive and setting one clears the other. ``cmap_transform`` holds
-the values that the colormap colors are mapped from, and ``cmap_range`` is the ``(min, max)`` of that
-transform mapped onto the colormap. A windowed ``cmap_transform`` array takes its range from its own minimum
-and maximum over the full ``p`` dim, so a datapoint keeps its color as the window slides over it. A callable
-has no knowable range and so requires an explicit ``cmap_range``.
+Only the dimensions in ``window_order`` are windowed, in that order. ``spatial_func`` is applied to the slice after
+the window functions, such as a spatial Gaussian filter, and ``datapoints_window_func`` applies a window function
+along the datapoints of positional data, such as smoothing a trace.
 
-A feature that the graphic type does not have is ignored, such as ``thickness`` on a scatter or ``markers``
-on a line.
+For positional data, ``display_window`` sets the window of datapoints that is drawn around the current position, in
+reference units, such as 10 seconds of traces. Only that window is sent to the GPU, so the array can be much larger
+than GPU memory. Panning or zooming a timeseries subplot moves and resizes the display window.
 
-The objects
------------
+Asynchronous reads and CUDA arrays
+----------------------------------
 
-An ``NDWidget`` contains a figure, a shared reference index, and one ``NDGraphic`` per array, each with its
-own slicer.
+When a slider moves, the widget schedules a fetch on every ``NDGraphic`` that has that dimension. Fetches are
+asynchronous tasks on the render loop. While a slider is dragged, fetches for positions that have already been
+passed are skipped, so the drag stays responsive on data that cannot be read at frame rate. Playback, the step
+buttons and ``ndw.indices`` queue their fetches instead, and each one is drawn in order.
 
-``NDWidget``
-^^^^^^^^^^^^
+A data object whose ``__getitem__`` returns a future, such as an
+`asyncvideo <https://pypi.org/project/asyncvideo/>`_ reader that decodes frames in its own process, is awaited
+without blocking the render loop. For numpy arrays, window functions and ``spatial_func`` run in a thread pool.
 
-Contains an ``ImguiFigure``, the ``ReferenceIndices`` that holds :math:`\Lambda`, and one ``NDWSubplot``
-per subplot of that figure. ::
+CUDA arrays, such as torch tensors, stay on the GPU while they are sliced and windowed. Window functions and
+``spatial_func`` are applied to them directly, so they should run on the GPU, for example written with torch, and only
+the slice that is drawn is copied to host memory, in the thread pool, before it is uploaded for rendering. CUDA work
+is itself asynchronous, so lazy GPU compute does not block the visualization. For example, an array that
+reconstructs a calcium imaging movie from a matrix factorization on the GPU computes each frame as you scroll to it.
+We are currently working on direct within-GPU transfer of data from CUDA to the renderer, with no host roundtrip.
 
-              sliders, play, step, a linear selector, ndw.indices = {...}
-                                  │
-                                  v
-                     ┌─────────────────────────┐
-                     │    ReferenceIndices     │  Λ, in reference units
-                     │   {"time": 46.4, ...}   │  one range per slider dim
-                     └────────────┬────────────┘
-                                  │  Λ, to every NDGraphic that
-                                  │  declares the dim that changed
-            ┌─────────────────────┼─────────────────────┐
-            v                     v                     v
-      ┌───────────┐         ┌───────────┐         ┌───────────┐
-      │ NDGraphic │         │ NDGraphic │         │ NDGraphic │
-      └───────────┘         └───────────┘         └───────────┘
-       NDWSubplot            NDWSubplot            NDWSubplot
-       ndw["video"]          ndw["traces"]         ndw["raster"]
-      └──────────────────── ImguiFigure ─────────────────────┘
+Desktop, notebooks and remote
+-----------------------------
 
-Several widgets can share one ``ReferenceIndices``, which is how one set of sliders drives subplots in
-separate windows. The first is given ``ranges`` and the rest are given ``indices``::
+The same code runs everywhere. A script or application can use Qt, glfw, or wx::
 
-    ndw_main = fpl.NDWidget(ranges={"time": (0, 600, 1 / 30)}, names=["video", "traces"])
-    ndw_ephys = fpl.NDWidget(indices=ndw_main.indices, names=["spikes"])
+    ndw.show()
 
-``ReferenceIndices``
-^^^^^^^^^^^^^^^^^^^^
+    if __name__ == "__main__":
+        fpl.loop.run()
 
-Holds :math:`\Lambda` and the range of each slider dim, and schedules the updates. When an index changes it
-schedules a fetch on every ``NDGraphic`` that declares that dim, and no other graphic is touched. Slider
-dims can also be added and removed while the widget is running with ``push_dims`` and ``pop_dims``.
+In a notebook, such as Jupyter, marimo or VS Code, ``ndw.show()`` as the last line of a cell puts the widget in the
+output cell. Remote rendering can also be streamed over http. With ``uvicorn`` installed, the address is printed when
+the server starts:
 
-Fetches are asynchronous and run on the render loop's scheduler, so a slow or lazy data object does not
-freeze the canvas. Dragging a slider displays only the latest fetch and drops older ones that are still in
-progress, which keeps the drag responsive on data that cannot be read at frame rate. Playback, the step
-buttons, a linear selector and assignment to ``ndw.indices`` queue their requests per graphic instead, and
-every one of them is rendered in order.
+.. code-block:: bash
 
-``NDWSubplot``
-^^^^^^^^^^^^^^
+    RENDERCANVAS_BACKEND=http python viewer.py
 
-One ``Subplot`` and the ``NDGraphic`` objects drawn on it, reached with ``ndw[row, col]`` or
-``ndw["name"]``. This is where the ``add_nd_*`` methods are. Several ``NDGraphic`` objects can share a
-subplot, which is how keypoints are drawn over a video. ::
+In a notebook and over http, the rendering is done on the machine that runs Python, and the browser receives a
+stream of rendered frames. The data never leaves that machine, so large datasets can be visualized on the remote
+infrastructure where the analysis happens. The sliders, playback controls and menus of the widget are drawn on the
+canvas, so they are the same in every environment. We are currently working on faster remote rendering.
 
-      NDWSubplot                              ndw["video"]
-      ├── Subplot                             ndw.figure["video"]
-      │     camera, axes, tooltip, selectors, imgui windows
-      └── NDGraphic list                      ndw["video"].nd_graphics
-            ├── NDImage      "frame"          add_video(...)
-            └── NDPositions  "keypoints"      add_nd_scatter(...)
+Built on WGPU, with few dependencies
+------------------------------------
 
-``NDGraphic``
-^^^^^^^^^^^^^
+``fastplotlib`` is built on the `pygfx <https://github.com/pygfx/pygfx>`_ rendering engine, which is powered by
+`WGPU <https://github.com/gfx-rs/wgpu-native>`_, the cross-platform modern GPU API. WGPU runs on Windows, Linux and
+Mac via DX12, Vulkan, or Metal, and is the de facto successor to older OpenGL. Everything the ``NDWidget`` draws is
+rendered through WGPU, including its sliders and menus.
 
-An n-dimensional graphical representation of data that is sliced by an ``NDSlicer``. It asks the slicer for
-the slice at the current index and writes it into the graphic's buffers, allocating new buffers only when
-the shape of the slice changes. ::
+``fastplotlib`` depends on ``numpy``, ``pygfx``, ``wgpu`` and ``cmap``, and the ``NDWidget`` also requires
+``imgui-bundle``. See the :doc:`user guide </user_guide/guide>` for installation instructions.
 
-            Λ
-            │
-            v
-      ┌─────────────────────────────────────────────────┐
-      │ NDGraphic                                       │
-      │   slicer.get(Λ)  ->  {"data": ..., <features>}  │
-      │   write the result into the Graphic's buffers   │
-      └───────────────────────┬─────────────────────────┘
-                              v
-                           Graphic     LineStack, ImageGraphic, ScatterCollection, ...
+Example: a multi-modal viewer
+-----------------------------
 
-``ndg.graphic`` is the ``Graphic`` itself, so tooltips, event handlers, selectors and colormaps work on it
-as they do anywhere else in fastplotlib.
+This example builds a viewer for one session with calcium imaging, two behavior cameras read with
+`asyncvideo <https://pypi.org/project/asyncvideo/>`_, keypoints tracked with
+`Lightning Pose <https://github.com/paninski-lab/lightning-pose>`_, and an ethogram built with lightning actions. The
+imaging was demixed with `masknmf <https://github.com/apasarkar/masknmf-toolbox>`_, whose results include the
+denoised movie and the movies of the demixed signal, the residual and the background, each computed on the GPU one
+frame at a time. Every modality comes with the timestamp of each of its samples, in seconds on the session clock::
 
-``NDSlicer``
-^^^^^^^^^^^^
+    ndw = fpl.NDWidget(ranges={"time": (start_time, stop_time, step)})
 
-Holds the data and turns :math:`\Lambda` into the slice to render. ::
+    ndw["pmd"].add_nd_image(
+        pmd_array,  # [time, m, n]
+        dims=("time", "m", "n"),
+        display_dims=("m", "n"),
+        slider_maps={"time": ca_timestamps},  # [2050.02, 2050.22, 2050.42, ...]
+    )
 
-   Λ = {"time": 46.397, "depth": 23.2}         reference units
-        │
-        │  Φ        slider_maps
-        v
-   array indices, clamped into [0, size - 1]
-        │
-        │  a window for each slider dim that has one, a single index for the rest
-        v
-   data[...]                                   the read from the data object
-        │
-        │  ω        window_funcs, in window_order
-        v
-   the windowed dims are size 1 and are squeezed out
-        │
-        │  W, σ     display window on p, positional data only,
-        │           then datapoints_window_func
-        v
-   transposed to display order
-        │
-        │  spatial_func
-        v
-   the data slice
+    # demixed_movie, residual_movie and background_movie are added in the same way
 
-The data does not have to be an array. It has to behave as though the declared dims exist, and ``get`` has
-to return a slice that the graphic can render, which is how a ``pandas.DataFrame`` or a ``spikeinterface``
-recording is used as a data source.
+.. image:: ../_static/ndw_guide/1.jpg
 
-The graphics and the slicers
-----------------------------
+The traces and the ethogram are timeseries, and the ethogram is drawn as a heatmap::
 
-+------------------+------------------------------+------------------+------------------------+-----------------------+
-| ``NDGraphic``    | nd shape                     | NDSlicer output  | ``Graphic``            | added with            |
-+==================+==============================+==================+========================+=======================+
-| ``NDImage``      | ``[s_1, s_2, ..., r, c]``    | ``[r, c]``,      | ``ImageGraphic``,      | ``add_nd_image``,     |
-|                  |                              | ``[r, c, v]``,   | ``ImageYUVGraphic``,   | ``add_video``         |
-|                  |                              | ``[z, r, c]``    | ``ImageVolumeGraphic`` |                       |
-+------------------+------------------------------+------------------+------------------------+-----------------------+
-| ``NDPositions``  | ``[s_1, s_2, ..., l, p, d]`` | ``[l, p', d]``   | ``LineCollection``,    | ``add_nd_lines``,     |
-|                  |                              |                  | ``LineStack``,         | ``add_nd_scatter``    |
-|                  |                              |                  | ``ScatterCollection``, |                       |
-|                  |                              |                  | ``ScatterStack``       |                       |
-+------------------+------------------------------+------------------+------------------------+-----------------------+
-| ``NDTimeseries`` | ``[s_1, s_2, ..., l, p, d]`` | ``[l, p', d]``   | the four above and     | ``add_nd_timeseries`` |
-|                  |                              |                  | ``ImageGraphic``       |                       |
-+------------------+------------------------------+------------------+------------------------+-----------------------+
-| ``NDVectors``    | ``[s_1, s_2, ..., k, 2, d]`` | ``[k, 2, d]``    | ``VectorsGraphic``     | ``add_nd_vectors``    |
-+------------------+------------------------------+------------------+------------------------+-----------------------+
+    ndw["traces"].add_nd_timeseries(
+        traces,  # [n_neurons, time, xy]
+        dims=("l", "time", "d"),
+        display_dims=("l", "time", "d"),
+        slider_maps={"time": ca_timestamps},
+    )
 
-``NDImage``
-^^^^^^^^^^^
+    ndw["ethogram"].add_nd_timeseries(
+        ethogram,  # a probability distribution per timepoint, from lightning actions
+        dims=("l", "time", "d"),
+        display_dims=("l", "time", "d"),
+        graphic_type=fpl.ImageGraphic,
+        slider_maps={"time": left_cam_timestamps},
+    )
 
-``display_dims`` determines the graphic. ``[rows, cols]`` is a grayscale ``ImageGraphic``,
-``[rows, cols, rgb_dim]`` is an RGB(A) ``ImageGraphic``, ``[depth, rows, cols]`` is an
-``ImageVolumeGraphic``, and a YUV ``colorspace`` is an ``ImageYUVGraphic``. Reassigning ``display_dims``
-swaps the graphic when the number of rendered dims changes, so a volume can become a single plane while the
-widget is running.
+.. image:: ../_static/ndw_guide/2.jpg
 
-``compute_histogram=True``, the default, estimates a histogram of the data and puts an ``ImguiColorbar`` on
-the edge of the subplot for setting vmin and vmax. ``clim_quantiles`` takes vmin and vmax from quantiles of
-that histogram instead, and follows the data as the histogram is recomputed.
+Each video is added with its own frame timestamps, and the keypoints are drawn over the left camera from the columns
+of the Lightning Pose DataFrame::
 
-``NDPositions``
-^^^^^^^^^^^^^^^
+    ndw["behavior-left"].add_video(
+        video_left,  # [time, m, n], the YUV components are sent straight to the GPU
+        dims=("time", "m", "n"),
+        display_dims=("m", "n"),
+        slider_maps={"time": left_cam_timestamps},  # [2049.994, 2050.011, 2050.027, ...]
+    )
 
-Four interchangeable representations of the same ``[l, p', d]`` slice. ``LineCollection`` and
-``ScatterCollection`` draw the ``l`` graphical elements in one coordinate system, ``LineStack`` and
-``ScatterStack`` separate them along y. ``graphic_type`` is mutable at runtime.
+    # video_right is added in the same way, with right_cam_timestamps
 
-``NDTimeseries``
-^^^^^^^^^^^^^^^^
+    ndw["behavior-left"].add_nd_scatter(
+        keypoints_dataframe,
+        dims=("l", "time", "d"),
+        display_dims=("l", "time", "d"),
+        slicer=fpl.nds_extras.pandas.PandasSlicer,
+        slicer_kwargs={"columns": keypoint_columns},  # [("paw_l_x", "paw_l_y"), ("nose_tip_x", "nose_tip_y"), ...]
+        display_window=0,  # only the keypoints of the current frame
+        slider_maps={"time": left_cam_timestamps},
+    )
 
-``NDPositions`` for the case where ``p`` is a time-like x axis. It adds three things:
+.. image:: ../_static/ndw_guide/3.jpg
 
-* ``ImageGraphic`` as a representation, which draws the slice as a heatmap of ``l`` rows where the color is
-  the y coordinate and the x coordinates become the offset and scale of the image. This requires a value
-  dim of exactly 2.
-* a ``LinearSelector`` that marks :math:`\Lambda_p`. Dragging it sets that index, so it drives every
-  graphic that declares the dim.
-* ``x_range_mode``, which couples the camera x-range to the display window.
+This is only a very simple example. The ``NDWidget`` is built to handle an arbitrary number of heterogeneously
+sampled arrays, with dimensions in any order. For example, we could have multiple sessions that we can represent as
+different timelines, and volumetric recordings with depth, etc.
 
-``fpl.utils.heatmap_to_positions(heatmap, xvals)`` converts an array shaped ``[n_rows, n_timepoints]`` into
-the ``[n_rows, n_timepoints, 2]`` that these expect.
+Claude Code plugin
+------------------
 
-``NDVectors``
-^^^^^^^^^^^^^
+We maintain a `Claude Code <https://code.claude.com>`_ plugin for ``fastplotlib`` at
+`fastplotlib/claude-skills <https://github.com/fastplotlib/claude-skills>`_. It gives Claude the current API, the
+performance rules, and instructions for building multi-modal visualizations for a number of use cases, such as
+calcium imaging, electrophysiology, behavior videos, pose tracking and ethograms, including data from pynapple,
+spikeinterface, masknmf and NWB. Note that some of the instructions and interfacing with other neuroscience libs is
+actively in progress, feel free to reach out to us for help! Install it once from Claude Code:
 
-A ``VectorsGraphic`` of ``k`` vectors, the equivalent of a quiver plot, where the slice holds a position
-and a direction for each vector.
+.. code-block::
 
-Slicers
-^^^^^^^
+    /plugin marketplace add fastplotlib/claude-skills
+    /plugin install fastplotlib@fastplotlib-skills
 
-``NDImageSlicer``, ``NDPositionsSlicer`` and ``NDVectorsSlicer`` read anything that satisfies
-``fpl.protocols.ArrayProtocol``, i.e. ``dtype``, ``ndim``, ``shape`` and ``__getitem__``. That covers numpy,
-zarr, HDF5, torch and CUDA arrays, and lazy readers of your own. A reader that returns futures is awaited.
+Claude then loads it whenever you ask for a ``fastplotlib`` visualization. Verifying the scientific integrity of what
+you build with it is your responsibility: check the shapes, units, sampling rates and timebases of your data
+yourself.
 
-``VideoSlicer`` subclasses ``NDImageSlicer`` for video. It reads the frame at the current index directly
-and does not apply window functions. ``add_video`` uses it with YUV defaults, which sends the YUV planes
-straight to the GPU instead of converting each frame to RGB.
+Getting started
+---------------
 
-``PandasSlicer`` subclasses ``NDPositionsSlicer`` and reads the coordinates of each graphical element from
-named columns of a ``pandas.DataFrame`` instead of from an array. It takes one ``(x_col, y_col)`` tuple per
-element, which is the shape of pose tracking output, so ``l`` is the number of tuples and ``p`` is the
-number of rows. It is reached through ``fpl.nds_extras.pandas.PandasSlicer``. Every module under
-``fpl.nds_extras`` is named after the library that it requires and is imported when you access it, so
-nothing there is imported along with fastplotlib.
-
-To read from something else, subclass the slicer whose output the graphic expects and implement ``get``,
-which receives :math:`\Lambda` and returns the slice. ``_get_dw_slice(indices)`` gives the display window
-slice and ``_ref_index_to_array_index(dim, value)`` maps a single dim. Pass the subclass as
-``slicer_type=`` to ``add_nd_image`` and ``add_video``, or as ``slicer=`` to the positional methods, with
-extra arguments in ``slicer_kwargs``.
+The :doc:`data model guide </user_guide/nd_widget_data_model>` describes the data model, the reference space and the
+slicers in detail, and the :doc:`examples gallery </_gallery/index>` has more examples. We are happy to help you
+visualize your data, post an `issue <https://github.com/fastplotlib/fastplotlib/issues>`_ or a
+`discussion <https://github.com/fastplotlib/fastplotlib/discussions>`_ on GitHub.
