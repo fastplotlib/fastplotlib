@@ -5,6 +5,7 @@ import numpy as np
 from ...utils.types import TupleYUV
 from ._nd_image import NDImageSlicer
 from ._async import run_in_thread_pool
+from ._base import transpose
 
 
 class VideoSlicer(NDImageSlicer):
@@ -52,10 +53,10 @@ class VideoSlicer(NDImageSlicer):
         # transpose into display order, the spatial_func gets the frame as it is rendered
         if isinstance(window_output, tuple):
             window_output = tuple(
-                a.transpose(*self.display_dims_indices) for a in window_output
+                transpose(a, self.display_dims_indices) for a in window_output
             )
         else:
-            window_output = window_output.transpose(*self.display_dims_indices)
+            window_output = transpose(window_output, self.display_dims_indices)
 
         if self.spatial_func is not None:
             window_output = await run_in_thread_pool(

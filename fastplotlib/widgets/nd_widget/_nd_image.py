@@ -21,6 +21,7 @@ from ._base import (
     NDGraphic,
     WindowFuncCallable,
     get_supported_kwargs,
+    transpose,
 )
 from ._index import ReferenceIndices
 from ._async import run_in_thread_pool, run_sync
@@ -244,7 +245,7 @@ class NDImageSlicer(NDSlicer):
         window_output = await self.get_window_output(indices)
 
         # transpose into display order, the spatial_func gets the slice as it is rendered
-        window_output = window_output.transpose(*self.display_dims_indices)
+        window_output = transpose(window_output, self.display_dims_indices)
 
         # apply spatial_func; CUDA arrays run inline, numpy goes through the thread pool
         if self.spatial_func is not None:
