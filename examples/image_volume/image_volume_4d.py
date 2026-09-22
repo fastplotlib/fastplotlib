@@ -69,7 +69,7 @@ volume = figure[0, 0].add_image_volume(
 )
 
 # a colorbar with a histogram of the entire 4D dataset
-colorbar = ImguiColorbar(images=volume, histogram=np.histogram(voldata, bins=100))
+colorbar = ImguiColorbar(graphics=volume, histogram=np.histogram(voldata, bins=100))
 figure[0, 0].add_imgui_window(colorbar, location="right", size=100)
 
 figure.show()

@@ -27,7 +27,7 @@ figure[0, 0].add_image_volume(voldata, name="vol-img")
 
 # add a colorbar with a histogram of the volume data
 colorbar = ImguiColorbar(
-    images=figure[0, 0]["vol-img"], histogram=np.histogram(voldata, bins=100)
+    graphics=figure[0, 0]["vol-img"], histogram=np.histogram(voldata, bins=100)
 )
 figure[0, 0].add_imgui_window(colorbar, location="right", size=100)
 

@@ -252,12 +252,13 @@ Built-in imgui UIs
 * ``SubplotToolbar`` - the toolbar of each subplot.
 * ``StandardRightClickMenu`` - the Figure's default right-click popup: fps, autoscale, center, maintain aspect, flip
   axes, grids, FOV, and controller options.
-* ``ImguiColorbar`` - an ``ImguiWindow`` that shows a colorbar for one or more images, with draggable vmin and vmax, a
-  colormap picker, gamma, and an optional precomputed histogram::
+* ``ImguiColorbar`` - an ``ImguiContainer`` that shows a colorbar for one or more graphics, with draggable handles, a
+  colormap picker, gamma, and an optional precomputed histogram. The handles drive ``vmin`` and ``vmax`` on an image
+  and ``cmap_range`` on a line or scatter::
 
       from fastplotlib.ui import ImguiColorbar
 
-      colorbar = ImguiColorbar(images=image, histogram=np.histogram(data, bins=100))
+      colorbar = ImguiColorbar(graphics=image, histogram=np.histogram(data, bins=100))
       figure[0, 0].add_imgui_window(colorbar, location="right", size=100)
 
 Writing imgui elements
