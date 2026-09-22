@@ -539,3 +539,56 @@ class ScatterGraphic(PositionsGraphic):
         self._sizes = self._create_sizes_buffer(value)
         self.world_object.geometry.sizes = self._sizes._fpl_buffer
         self.world_object.material.size_mode = "vertex"
+
+    def create_legend_item(
+        self,
+        label: str = None,
+        markers_labels: dict[str, str] = None,
+        sizes_labels: dict[float, str] = None,
+        cmap_transform_labels: dict[int, str] = None,
+    ):
+        """
+        Create the :class:`.ScatterLegendItem` of this scatter, add it to a legend with
+        ``Legend.add()``.
+
+        The item follows the scatter: when its colors, colormap, markers, sizes or edges change
+        the item changes with them. Per-vertex colors cannot be represented in a legend, and only
+        a scatter with ``mode="markers"`` is supported.
+
+        A per-point ``markers`` or ``sizes`` needs its labels, each one adds an element per
+        labelled value. The other features of those elements are drawn with the scatter's uniform
+        value, or with the value of its first point when that feature is per-point too.
+
+        Parameters
+        ----------
+        label: str, optional
+            label of the scatter in the legend, its ``name`` is used if not provided
+
+        markers_labels: dict, optional
+            {marker: label}, the label of each marker
+
+        sizes_labels: dict, optional
+            {size: label}, the label of each point size
+
+        cmap_transform_labels: dict, optional
+            {cmap_transform value: label}, the label of each value of a qualitative colormap. A
+            quantitative colormap is shown as a colorbar instead and needs no labels.
+
+        Returns
+        -------
+        ScatterLegendItem
+
+        """
+        self._check_legend_item()
+
+        from ..ui._legend import ScatterLegendItem
+
+        self._legend_item = ScatterLegendItem(
+            self,
+            label=label,
+            markers_labels=markers_labels,
+            sizes_labels=sizes_labels,
+            cmap_transform_labels=cmap_transform_labels,
+        )
+
+        return self._legend_item

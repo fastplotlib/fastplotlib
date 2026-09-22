@@ -366,16 +366,22 @@ y scale::
 Colorbars
 ---------
 
-A colorbar is an ``ImguiColorbar``, an imgui window that you add to an edge of a subplot. It has draggable vmin and
-vmax handles, a gamma slider, and a right-click colormap picker, and it stays in sync with the image it controls::
+A colorbar is an ``ImguiColorbar``, which you add to an edge of a subplot. It has draggable handles, a gamma slider,
+and a right-click colormap picker, and it stays in sync with the graphic it controls::
 
     from fastplotlib.ui import ImguiColorbar
 
     image = figure[0, 0].add_image(data, cmap="viridis")
-    figure[0, 0].add_imgui_window(ImguiColorbar(images=image), location="right", size=80)
+    figure[0, 0].add_imgui_window(ImguiColorbar(graphics=image), location="right", size=80)
 
 Pass ``histogram=np.histogram(data, bins=100)`` to draw a histogram beside the bar. One colorbar can control several
-images at once, ``ImguiColorbar(images=[image1, image2])``.
+graphics at once, ``ImguiColorbar(graphics=[image1, image2])``.
+
+It works on a line or a scatter too, where the handles drive ``cmap_range``, the (min, max) of the
+``cmap_transform`` that is mapped onto the colormap::
+
+    line = figure[0, 0].add_line(data, cmap="viridis", cmap_transform=values)
+    figure[0, 0].add_imgui_window(ImguiColorbar(graphics=line, title="depth"), location="right", size=80)
 
 Defaults instead of rcParams
 ----------------------------

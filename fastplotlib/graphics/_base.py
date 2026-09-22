@@ -188,6 +188,8 @@ class Graphic:
 
         self._imgui_right_click = None
 
+        self._legend_item = None
+
         # store ids of all the WorldObjects that this Graphic manages/uses
         self._world_object_ids = list()
 
@@ -525,9 +527,15 @@ class Graphic:
             # remove callback wrapper from world object if pygfx event
             if t in PYGFX_EVENTS:
                 self.world_object.remove_event_handler(wrapper, t)
-            else:
-                feature = getattr(self, f"_{t}")
-                feature.remove_event_handler(wrapper)
+                continue
+
+            feature = getattr(self, f"_{t}")
+            if feature is None:
+                # the feature was replaced when the graphic switched mode, e.g. colors when a
+                # cmap is set, which cleared the handlers of the feature it replaced
+                continue
+
+            feature.remove_event_handler(wrapper)
 
     def _parse_positions(self, position: tuple | np.ndarray) -> np.ndarray:
         """
@@ -699,6 +707,28 @@ class Graphic:
 
         self._plot_area.scene.add(self.axes.world_object)
         self._axes.update_using_bbox(self.world_object.get_world_bounding_box())
+
+    @property
+    def legend_item(self):
+        """
+        The legend item of this graphic, created with ``create_legend_item()``.
+
+        Returns
+        -------
+        LegendItem | None
+
+        """
+        return self._legend_item
+
+    def _check_legend_item(self):
+        """raise if a legend item cannot be created for this graphic, used by subclasses"""
+        if not IMGUI:
+            raise ImportError(
+                "imgui is required to create legend items:\npip install imgui_bundle"
+            )
+
+        if self._legend_item is not None:
+            raise AttributeError("legend item already created for this graphic")
 
     @property
     def imgui_right_click(self):

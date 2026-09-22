@@ -471,7 +471,20 @@ def main():
         )
     ##############################################################################
     # ** UI classes ** #
-    ui_classes = [ui.ImguiBase, ui.ImguiWindow, ui.ImguiPopup]
+    ui_classes = [
+        ui.ImguiBase,
+        ui.ImguiContainer,
+        ui.ImguiWindow,
+        ui.ImguiPopup,
+        ui.ImguiColorbar,
+        ui.Legend,
+        ui.LegendItem,
+        ui.LineLegendItem,
+        ui.ScatterLegendItem,
+        ui.LegendElement,
+        ui.LineLegendElement,
+        ui.ScatterLegendElement,
+    ]
 
     ui_class_names = [cls.__name__ for cls in ui_classes]
 
@@ -479,8 +492,8 @@ def main():
 
     with open(UI_DIR.joinpath("index.rst"), "w") as f:
         f.write(
-            f"UI Bases\n"
-            f"********\n"
+            f"UI\n"
+            f"**\n"
             f"\n"
             f".. toctree::\n"
             f"    :maxdepth: 1\n"

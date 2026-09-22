@@ -189,6 +189,48 @@ class LineGraphic(PositionsGraphic):
         material.alpha_mode = self.alpha_mode
         self.world_object.material = material
 
+    def create_legend_item(
+        self,
+        label: str = None,
+        dash_pattern_labels: dict[str | tuple, str] = None,
+        cmap_transform_labels: dict[int, str] = None,
+    ):
+        """
+        Create the :class:`.LineLegendItem` of this line, add it to a legend with ``Legend.add()``.
+
+        The item follows the line: when its colors, colormap, thickness or dash pattern change the
+        item changes with them. Per-vertex colors cannot be represented in a legend.
+
+        Parameters
+        ----------
+        label: str, optional
+            label of the line in the legend, its ``name`` is used if not provided
+
+        dash_pattern_labels: dict, optional
+            {dash_pattern: label}, the label to use for the line's dash pattern
+
+        cmap_transform_labels: dict, optional
+            {cmap_transform value: label}, the label of each value of a qualitative colormap. A
+            quantitative colormap is shown as a colorbar instead and needs no labels.
+
+        Returns
+        -------
+        LineLegendItem
+
+        """
+        self._check_legend_item()
+
+        from ..ui._legend import LineLegendItem
+
+        self._legend_item = LineLegendItem(
+            self,
+            label=label,
+            dash_pattern_labels=dash_pattern_labels,
+            cmap_transform_labels=cmap_transform_labels,
+        )
+
+        return self._legend_item
+
     def add_linear_selector(
         self, selection: float = None, axis: str = "x", **kwargs
     ) -> LinearSelector:
