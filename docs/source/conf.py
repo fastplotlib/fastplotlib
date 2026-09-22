@@ -47,6 +47,7 @@ extensions = [
     "sphinx_design",
     "sphinx_gallery.gen_gallery",
     "imgui_docs",
+    "generate_api",
 ]
 
 sphinx_gallery_conf = {

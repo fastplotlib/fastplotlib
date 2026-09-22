@@ -572,5 +572,15 @@ def main():
                         f.write(write_table(name, type_))
 
 
+def setup(app):
+    # the api pages are build output, regenerated from the source on every build. this runs on
+    # config-inited rather than builder-inited because autosummary scans the sources for the
+    # `:toctree:` entries it must write stubs for on builder-inited, and the pages have to exist
+    # by then
+    app.connect("config-inited", lambda app, config: main())
+
+    return {"version": fastplotlib.__version__, "parallel_read_safe": True}
+
+
 if __name__ == "__main__":
     main()
