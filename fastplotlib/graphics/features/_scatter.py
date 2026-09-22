@@ -68,7 +68,10 @@ def validate_user_markers_array(markers):
 
 # fast vectorized function to convert array of user markers to the standardized strings
 # TODO: can probably use search-sorted for this too
-vectorized_user_markers_to_std_markers = np.vectorize(marker_names.get, otypes=["<U14"])
+# a marker that is already a standard shape name is not in the mapping, it maps onto itself
+vectorized_user_markers_to_std_markers = np.vectorize(
+    lambda marker: marker_names.get(marker, marker), otypes=["<U14"]
+)
 
 # maps the human-readable marker name to the integers stored in the buffer
 marker_int_mapping = dict(pygfx.MarkerInt.__members__)

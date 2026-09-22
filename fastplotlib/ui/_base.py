@@ -65,11 +65,57 @@ class ImguiBase:
         raise NotImplementedError
 
 
+class ImguiContainer(ImguiBase):
+    """
+    Base class for imgui GUIs that are drawn inline within a window, for example an
+    ``ImguiColorbar`` or a ``LegendItem``.
+
+    Subclass and implement ``update()`` to draw imgui elements. Containers are not added directly,
+    pass one to ``Figure.add_imgui_window()`` or ``Subplot.add_imgui_window()`` for a window of its
+    own, to ``append_imgui_window()`` to draw it in a window that already exists, or to
+    ``Legend.add()``.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+        # the figure this container is drawn in, set by the host via _fpl_add_hook()
+        self._figure = None
+
+    @property
+    def figure(self):
+        """the figure this container is drawn in"""
+        return self._figure
+
+    def _fpl_add_hook(self, figure):
+        """
+        Set the figure this container is drawn in, called by the host when the container is added.
+
+        Parameters
+        ----------
+        figure: ImguiFigure
+            the figure this container is drawn in
+
+        """
+        self._figure = figure
+
+    def draw(self):
+        """pushes and pops the ID to keep identical containers unique within one frame"""
+        imgui.push_id(self._id_counter)
+        self.update()
+        imgui.pop_id()
+
+    def update(self):
+        """Implement your GUI here and it will be drawn within the host window"""
+        raise NotImplementedError
+
+
 class ImguiWindow(ImguiBase):
     def __init__(self, update_call: Callable = None):
         """
         An imgui window drawn within a Figure. Subclass and implement ``update()`` to draw imgui elements, or pass a
-        callable as ``update_call`` (this is what the ``add_imgui_window()`` decorator does).
+        callable as ``update_call`` (this is what the ``add_imgui_window()`` decorator does). A bare ``ImguiWindow()``
+        does neither and draws only what is appended to it with ``append_imgui_window()``.
 
         Windows are not added directly, use ``Figure.add_imgui_window()`` or ``Subplot.add_imgui_window()`` which
         provide the host and placement, i.e. location, size, window flags, etc., via ``_fpl_add_hook()``.
@@ -83,10 +129,13 @@ class ImguiWindow(ImguiBase):
         super().__init__()
 
         # imgui element draw calls, run in order within the window on each render
-        if update_call is None:
-            self._update_calls = [self.update]
-        else:
+        if update_call is not None:
             self._update_calls = [update_call]
+        elif type(self).update is ImguiWindow.update:
+            # update() is not implemented, this window draws only what is appended to it
+            self._update_calls = list()
+        else:
+            self._update_calls = [self.update]
 
         # host and placement, set by the host in add_imgui_window() via _fpl_add_hook()
         self._figure = None
@@ -145,10 +194,13 @@ class ImguiWindow(ImguiBase):
             edge or toolbar thickness in pixels
 
         rect: tuple[float, float, float, float], optional
-            fractional or pixel (x, y, w, h) rect for a fixed floating window
+            fractional or pixel (x, y, w, h) rect for a fixed window. With ``location="floating"``
+            only its (x, y) is used, as the initial position of the auto-sized window.
 
         extent: tuple[float, float, float, float], optional
-            fractional or pixel (xmin, xmax, ymin, ymax) extent for a fixed floating window
+            fractional or pixel (xmin, xmax, ymin, ymax) extent for a fixed window. With
+            ``location="floating"`` only its (xmin, ymin) is used, as the initial position of the
+            auto-sized window.
 
         title: str, optional
             window title, drawn as a title bar for edge windows. If ``None`` no title bar is drawn.

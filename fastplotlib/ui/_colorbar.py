@@ -1,11 +1,14 @@
+import weakref
+
 import numpy as np
 import wgpu
 from cmap import Colormap
 from imgui_bundle import imgui
 
-from ..graphics import ImageGraphic, ImageVolumeGraphic
+from ..graphics import Graphic, ImageGraphic, ImageVolumeGraphic
+from ..graphics._positions_base import PositionsGraphic
 from ..utils.functions import COLORMAP_NAMES, quick_min_max
-from ._base import ImguiWindow
+from ._base import ImguiContainer
 
 
 def colormaps_equal(a: str | Colormap, b: str | Colormap) -> bool:
@@ -21,7 +24,7 @@ def colormaps_equal(a: str | Colormap, b: str | Colormap) -> bool:
         return False
 
 
-class ImguiColorbar(ImguiWindow):
+class ImguiColorbar(ImguiContainer):
     LUT_HEIGHT = 256
     TEX_WIDTH = 2
     HANDLE_HEIGHT = 8
@@ -33,11 +36,18 @@ class ImguiColorbar(ImguiWindow):
         4  # how far the vmin/vmax fill and lines extend past the histogram line-plot
     )
 
+    # preview textures for the colormap picker, keyed by imgui renderer. They are the same for
+    # every colorbar and there is one per non-qualitative colormap, so they are made once per
+    # figure and shared. Weakly keyed so a closed figure is not kept alive by its textures.
+    _PICKER_TEXTURE_IDS = weakref.WeakKeyDictionary()
+
     def __init__(
         self,
-        images: ImageGraphic | ImageVolumeGraphic | list,
+        graphics: ImageGraphic | ImageVolumeGraphic | PositionsGraphic | list[Graphic],
         histogram: tuple[np.ndarray, np.ndarray] | None = None,
         data_range: tuple[float, float] | None = None,
+        title: str | None = None,
+        height: int | None = None,
         bar_width: int = 16,
         region_drag: bool = True,
     ):
@@ -47,16 +57,23 @@ class ImguiColorbar(ImguiWindow):
 
         Parameters
         ----------
-        images: ImageGraphic | ImageVolumeGraphic | list
-            the image(s) whose vmin, vmax and cmap this colorbar controls
+        graphics: ImageGraphic | ImageVolumeGraphic | LineGraphic | ScatterGraphic | list
+            the graphic(s) whose colormap and value range this colorbar controls. The bar drives ``vmin`` and
+            ``vmax`` of an image, and ``cmap_range`` of a line or scatter, which must already have a ``cmap``.
 
         histogram: tuple[np.ndarray, np.ndarray], optional
             a precomputed ``(counts, edges)`` histogram drawn to the left of the bar. It is not recomputed when the
-            image data changes, set the ``histogram`` property to update it.
+            graphic's data changes, set the ``histogram`` property to update it.
 
         data_range: (min, max), optional
             the value range spanned by the bar. Defaults to the histogram edges if a histogram is provided,
-            otherwise to the data range of the first image.
+            otherwise to the data range of the first graphic.
+
+        title: str, optional
+            title drawn above the bar, no title is drawn if ``None``
+
+        height: int, optional
+            height of the colorbar in pixels, fills the available vertical space if ``None``
 
         bar_width: int
             width of the colored bar in pixels
@@ -66,19 +83,16 @@ class ImguiColorbar(ImguiWindow):
         """
         super().__init__()
 
-        if isinstance(images, (ImageGraphic, ImageVolumeGraphic)):
-            images = [images]
-        self._images = list(images)
-        if len(self._images) == 0:
-            raise ValueError("must provide at least one image")
+        self._graphics = self._validate_graphics(graphics)
 
-        image = self._images[0]
-        self._vmin = float(image.vmin)
-        self._vmax = float(image.vmax)
+        graphic = self._graphics[0]
+        self._vmin, self._vmax = self._get_clim(graphic)
         # rgb(a) images have no cmap, display the bar with "gray" so vmin, vmax are still adjustable
-        self._cmap_name = image.cmap if image.cmap is not None else "gray"
+        self._cmap_name = graphic.cmap if graphic.cmap is not None else "gray"
 
         self._gamma = 1.0
+        self._title = title
+        self._height = int(height) if height is not None else None
         self._bar_width = int(bar_width)
         self._region_drag = bool(region_drag)
 
@@ -86,61 +100,35 @@ class ImguiColorbar(ImguiWindow):
         # starts so the handle tracks the cursor without jumping
         self._grab_offset = 0.0
 
-        # prevents feedback loops when syncing vmin, vmax, cmap between this colorbar and the images
+        # prevents feedback loops when syncing vmin, vmax, cmap between this colorbar and the graphics
         self._block_reentrance = False
+
+        # whether a handle is hovered this frame, drives the resize cursor
+        self._hovering_handle = False
+        self._resize_cursor_set = False
 
         # GPU resources, created in _fpl_add_hook() once the figure and its device are known
         self._device = None
         self._bar_texture = None
         self._bar_tex_id = None
-        self._picker_tex_ids = dict()
 
         # setting the histogram also sets the value axis to the histogram edges
         self._histogram = None
         self.histogram = histogram
 
-        # data_range defaults to the histogram edges, otherwise the data range of the first image
+        # data_range defaults to the histogram edges, otherwise the data range of the first graphic
         if data_range is None:
             if self._histogram is not None:
                 counts, edges = self._histogram
                 data_range = (float(edges[0]), float(edges[-1]))
             else:
-                data_range = quick_min_max(image.data.value)
+                data_range = self._get_data_range(graphic)
         self._data_min, self._data_max = self._validate_range(data_range)
 
-    def _fpl_add_hook(
-        self,
-        figure,
-        subplot=None,
-        location: str = None,
-        size: int = None,
-        rect: tuple = None,
-        extent: tuple = None,
-        title: str = "",
-        window_flags=None,
-    ):
-        super()._fpl_add_hook(
-            figure,
-            subplot=subplot,
-            location=location,
-            size=size,
-            rect=rect,
-            extent=extent,
-            title=title,
-            window_flags=window_flags,
-        )
-
-        # the colorbar manages its own layout and should never show a scrollbar
-        self.window_flags = self._window_flags | imgui.WindowFlags_.no_scrollbar
+    def _fpl_add_hook(self, figure):
+        super()._fpl_add_hook(figure)
 
         self._device = figure.renderer.device
-
-        # a preview texture for each non-qualitative colormap, used in the picker
-        for category, names in COLORMAP_NAMES.items():
-            if category == "qualitative":
-                continue
-            for name in names:
-                self._picker_tex_ids[name] = self._make_picker_texture(name)
 
         self._bar_texture = self._device.create_texture(
             size=(self.TEX_WIDTH, self.LUT_HEIGHT, 1),
@@ -155,31 +143,106 @@ class ImguiColorbar(ImguiWindow):
         )
         self._update_bar_texture()
 
-        # sync the colorbar when an image's vmin, vmax, cmap, or gamma is changed elsewhere
-        for image in self._images:
-            self._connect_image(image)
+        # sync the colorbar when a graphic's value range, cmap, or gamma is changed elsewhere
+        for graphic in self._graphics:
+            self._connect_graphic(graphic)
+
+    @staticmethod
+    def _validate_graphics(graphics) -> list[Graphic]:
+        """the graphics this colorbar can manage, as a list"""
+        if isinstance(graphics, Graphic):
+            graphics = [graphics]
+
+        graphics = list(graphics)
+        if len(graphics) == 0:
+            raise ValueError("must provide at least one graphic")
+
+        for graphic in graphics:
+            if not isinstance(
+                graphic, (ImageGraphic, ImageVolumeGraphic, PositionsGraphic)
+            ):
+                raise TypeError(
+                    f"a colorbar can manage images, lines and scatters, you have passed a: "
+                    f"{type(graphic).__name__}"
+                )
+            if isinstance(graphic, PositionsGraphic) and graphic.cmap is None:
+                raise ValueError(
+                    "a line or scatter must have a `cmap` set to be managed by a colorbar, the bar drives its "
+                    "`cmap_range`"
+                )
+
+        return graphics
+
+    @staticmethod
+    def _get_clim(graphic) -> tuple[float, float]:
+        """the (min, max) that ``graphic`` maps onto the colormap"""
+        if isinstance(graphic, PositionsGraphic):
+            return graphic.cmap_range
+
+        return float(graphic.vmin), float(graphic.vmax)
+
+    @staticmethod
+    def _set_clim(graphic, vmin: float, vmax: float):
+        """set the (min, max) that ``graphic`` maps onto the colormap"""
+        if isinstance(graphic, PositionsGraphic):
+            graphic.cmap_range = (vmin, vmax)
+            return
+
+        graphic.vmin = vmin
+        graphic.vmax = vmax
+
+    @staticmethod
+    def _get_data_range(graphic) -> tuple[float, float]:
+        """the value range the bar spans by default"""
+        if isinstance(graphic, PositionsGraphic):
+            transform = graphic.cmap_transform
+            return float(transform.min()), float(transform.max())
+
+        return quick_min_max(graphic.data.value)
 
     @property
-    def images(self) -> tuple:
-        """get or set the images managed by this colorbar"""
-        return tuple(self._images)
+    def _has_gamma(self) -> bool:
+        """whether any managed graphic has a gamma, lines and scatters do not"""
+        return any(
+            isinstance(g, (ImageGraphic, ImageVolumeGraphic)) for g in self._graphics
+        )
 
-    @images.setter
-    def images(self, new_images):
-        self._disconnect_images()
-        if isinstance(new_images, (ImageGraphic, ImageVolumeGraphic)):
-            new_images = [new_images]
-        self._images = list(new_images)
+    @property
+    def graphics(self) -> tuple:
+        """get or set the graphics managed by this colorbar"""
+        return tuple(self._graphics)
 
-        # adopt the vmin, vmax, and cmap of the new first image
-        image = self._images[0]
-        self._vmin = float(image.vmin)
-        self._vmax = float(image.vmax)
-        self._cmap_name = image.cmap if image.cmap is not None else "gray"
+    @graphics.setter
+    def graphics(self, new_graphics):
+        self._disconnect_graphics()
+        self._graphics = self._validate_graphics(new_graphics)
+
+        # adopt the value range and cmap of the new first graphic
+        graphic = self._graphics[0]
+        self._vmin, self._vmax = self._get_clim(graphic)
+        self._cmap_name = graphic.cmap if graphic.cmap is not None else "gray"
         self._update_bar_texture()
 
-        for img in self._images:
-            self._connect_image(img)
+        for g in self._graphics:
+            self._connect_graphic(g)
+
+    @property
+    def title(self) -> str | None:
+        """get or set the title drawn above the bar, ``None`` for no title"""
+        return self._title
+
+    @title.setter
+    def title(self, value: str | None):
+        self._title = value
+
+    @property
+    def height(self) -> int | None:
+        """get or set the height of the colorbar in pixels, ``None`` fills the available space"""
+        return self._height
+
+    @height.setter
+    def height(self, value: int | None):
+        self._height = int(value) if value is not None else None
 
     @property
     def cmap(self) -> str:
@@ -197,11 +260,11 @@ class ImguiColorbar(ImguiWindow):
         try:
             self._cmap_name = name
             self._update_bar_texture()
-            for image in self._images:
-                if image.cmap is None:
+            for graphic in self._graphics:
+                if graphic.cmap is None:
                     # rgb(a) images have no cmap
                     continue
-                image.cmap = name
+                graphic.cmap = name
         finally:
             self._block_reentrance = False
 
@@ -219,8 +282,7 @@ class ImguiColorbar(ImguiWindow):
         try:
             self._vmin = value
             self._update_bar_texture()
-            for image in self._images:
-                image.vmin = value
+            self._apply_clim()
         finally:
             self._block_reentrance = False
 
@@ -238,8 +300,7 @@ class ImguiColorbar(ImguiWindow):
         try:
             self._vmax = value
             self._update_bar_texture()
-            for image in self._images:
-                image.vmax = value
+            self._apply_clim()
         finally:
             self._block_reentrance = False
 
@@ -292,8 +353,11 @@ class ImguiColorbar(ImguiWindow):
         try:
             self._gamma = value
             self._update_bar_texture()
-            for image in self._images:
-                image.gamma = value
+            for graphic in self._graphics:
+                if isinstance(graphic, PositionsGraphic):
+                    # lines and scatters have no gamma
+                    continue
+                graphic.gamma = value
         finally:
             self._block_reentrance = False
 
@@ -315,24 +379,57 @@ class ImguiColorbar(ImguiWindow):
             )
         return data_min, data_max
 
-    def _image_event_handler(self, ev):
-        """when an image's vmin, vmax, or cmap changes, update this colorbar to match"""
+    def _apply_clim(self):
+        """write the current vmin, vmax to the managed graphics"""
+        for graphic in self._graphics:
+            self._set_clim(graphic, self._vmin, self._vmax)
+
+    def _graphic_event_handler(self, ev):
+        """when a graphic's value range, cmap, or gamma changes, update this colorbar to match"""
+        if ev.type == "cmap_range":
+            self.vmin, self.vmax = ev.info["value"]
+            return
+
         setattr(self, ev.type, ev.info["value"])
 
-    def _connect_image(self, image):
-        """subscribe to an image's vmin, vmax and gamma events, and its cmap if it is grayscale"""
-        events = ["vmin", "vmax", "gamma"]
-        # rgb(a) images have no cmap feature to listen to
-        if image.cmap is not None:
-            events.append("cmap")
-        image.add_event_handler(self._image_event_handler, *events)
+    def _connect_graphic(self, graphic):
+        """subscribe to the events of the properties this colorbar drives"""
+        if isinstance(graphic, PositionsGraphic):
+            events = ["cmap_range", "cmap"]
+        else:
+            events = ["vmin", "vmax", "gamma"]
+            # rgb(a) images have no cmap feature to listen to
+            if graphic.cmap is not None:
+                events.append("cmap")
 
-    def _disconnect_images(self, *args):
-        """disconnect the event handlers of the managed images"""
-        for image in self._images:
-            for ev, handlers in image.event_handlers:
-                if self._image_event_handler in handlers:
-                    image.remove_event_handler(self._image_event_handler, ev)
+        graphic.add_event_handler(self._graphic_event_handler, *events)
+
+    def _disconnect_graphics(self, *args):
+        """disconnect the event handlers of the managed graphics"""
+        for graphic in self._graphics:
+            for ev, handlers in graphic.event_handlers:
+                if self._graphic_event_handler in handlers:
+                    graphic.remove_event_handler(self._graphic_event_handler, ev)
+
+    def _get_picker_texture_ids(self) -> dict:
+        """the colormap preview textures of the picker, made on first use and shared per figure"""
+        renderer = self._figure.imgui_renderer
+
+        texture_ids = self._PICKER_TEXTURE_IDS.get(renderer)
+        if texture_ids is not None:
+            return texture_ids
+
+        # a preview texture for each non-qualitative colormap
+        texture_ids = dict()
+        for category, names in COLORMAP_NAMES.items():
+            if category == "qualitative":
+                continue
+            for name in names:
+                texture_ids[name] = self._make_picker_texture(name)
+
+        self._PICKER_TEXTURE_IDS[renderer] = texture_ids
+
+        return texture_ids
 
     def _make_picker_texture(self, name):
         lut = (Colormap(name)(np.linspace(0, 1, 256)) * 255).astype(np.uint8)
@@ -390,7 +487,17 @@ class ImguiColorbar(ImguiWindow):
         line_h = imgui.get_text_line_height_with_spacing()
 
         p0 = imgui.get_cursor_screen_pos()
-        total_h = avail.y
+        total_h = avail.y if self._height is None else float(self._height)
+
+        if self._title is not None:
+            # centered above the bar, the region below it is what the bar is drawn in
+            text_w = imgui.calc_text_size(self._title).x
+            imgui.set_cursor_pos_x(
+                imgui.get_cursor_pos_x() + max(0.0, (avail.x - text_w) * 0.5)
+            )
+            imgui.text(self._title)
+            p0 = imgui.get_cursor_screen_pos()
+            total_h -= line_h
 
         bar_w = self._bar_width
         # the value axis spans the height minus a line of padding at the top and bottom
@@ -445,6 +552,10 @@ class ImguiColorbar(ImguiWindow):
         elif not self._hovering_handle and self._resize_cursor_set:
             self._figure.canvas.set_cursor("default")
             self._resize_cursor_set = False
+
+        # reserve the region so anything drawn after the colorbar is placed below it
+        imgui.set_cursor_screen_pos(p0)
+        imgui.dummy((avail.x, total_h))
 
     def _value_to_y(self, v, y0, bar_h):
         axis_min, axis_max = self._axis_range()
@@ -636,23 +747,28 @@ class ImguiColorbar(ImguiWindow):
             draw_list.add_text((x_left - 3 - tw, ty), text_color, text)
 
     def _draw_popup(self):
-        imgui.set_next_item_width(150)
-        changed, gamma = imgui.slider_float("gamma", self._gamma, 0.1, 5.0)
-        if changed:
-            self.gamma = gamma
+        if self._has_gamma:
+            imgui.set_next_item_width(150)
+            changed, gamma = imgui.slider_float("gamma", self._gamma, 0.1, 5.0)
+            if changed:
+                self.gamma = gamma
 
-        # reset vmin, vmax using the data of each image
-        if imgui.menu_item("Reset vmin-vmax", "", False)[0]:
-            for image in self._images:
-                image.reset_vmin_vmax()
+            # reset gamma to 1.0
+            if imgui.menu_item("Reset gamma", "", False)[0]:
+                self.gamma = 1.0
 
-        # reset gamma to 1.0
-        if imgui.menu_item("Reset gamma", "", False)[0]:
-            self.gamma = 1.0
+        # reset the value range using the data of each graphic
+        if imgui.menu_item("Reset range", "", False)[0]:
+            for graphic in self._graphics:
+                if isinstance(graphic, PositionsGraphic):
+                    self._set_clim(graphic, *self._get_data_range(graphic))
+                else:
+                    graphic.reset_vmin_vmax()
 
         texture_height = imgui.get_font_size() - 2
+        picker_texture_ids = self._get_picker_texture_ids()
 
-        # colormaps grouped by category, qualitative colormaps are not useful for a continuous colorbar
+        # colormaps grouped by category, qualitative colormaps are not useful for a quantitative colorbar
         for category, names in COLORMAP_NAMES.items():
             if category == "qualitative":
                 continue
@@ -663,7 +779,7 @@ class ImguiColorbar(ImguiWindow):
             for name in names:
                 imgui.push_style_color(imgui.Col_.border, (1.0, 1.0, 1.0, 1.0))
                 imgui.push_style_var(imgui.StyleVar_.image_border_size, 1.0)
-                imgui.image(self._picker_tex_ids[name], image_size=(75, texture_height))
+                imgui.image(picker_texture_ids[name], image_size=(75, texture_height))
                 imgui.pop_style_var()
                 imgui.pop_style_color()
 

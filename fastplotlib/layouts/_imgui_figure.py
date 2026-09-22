@@ -15,7 +15,14 @@ import pygfx
 
 from ._figure import Figure
 from ._utils import IMGUI_TOOLBAR_HEIGHT
-from ..ui import ImguiWindow, ImguiPopup, SubplotToolbar, StandardRightClickMenu, EDGES
+from ..ui import (
+    ImguiContainer,
+    ImguiWindow,
+    ImguiPopup,
+    SubplotToolbar,
+    StandardRightClickMenu,
+    EDGES,
+)
 from ..ui._base import _wrap_update_call
 from ..utils import global_config
 
@@ -197,8 +204,9 @@ class ImguiFigure(Figure):
 
         Parameters
         ----------
-        window: ImguiWindow, optional
-            an ``ImguiWindow`` instance, omit when decorating
+        window: ImguiWindow | ImguiContainer, optional
+            an ``ImguiWindow`` instance, such as a ``Legend``, or an ``ImguiContainer`` such as an
+            ``ImguiColorbar``, which is given a window of its own. Omit when decorating.
 
         location: str, "left" | "right" | "top" | "bottom" | "floating"
             edge windows reserve canvas space, "floating" is auto-sized and draggable
@@ -207,10 +215,13 @@ class ImguiFigure(Figure):
             edge window thickness in pixels, required for edge windows
 
         rect: tuple[float, float, float, float], optional
-            fractional or pixel (x, y, w, h) rect for a fixed floating window
+            fractional or pixel (x, y, w, h) rect for a fixed window. With ``location="floating"``
+            only its (x, y) is used, as the initial position of the auto-sized window.
 
         extent: tuple[float, float, float, float], optional
-            fractional or pixel (xmin, xmax, ymin, ymax) extent for a fixed floating window
+            fractional or pixel (xmin, xmax, ymin, ymax) extent for a fixed window. With
+            ``location="floating"`` only its (xmin, ymin) is used, as the initial position of the
+            auto-sized window.
 
         title: str, optional
             window title, drawn as a title bar for edge windows. If ``None`` no title bar is drawn.
@@ -247,11 +258,16 @@ class ImguiFigure(Figure):
         def decorator(_window):
             if isinstance(_window, ImguiWindow):
                 win = _window
+            elif isinstance(_window, ImguiContainer):
+                # a container is drawn inline, give it a window of its own
+                _window._fpl_add_hook(self)
+                win = ImguiWindow(update_call=_window.draw)
             elif callable(_window):
                 win = ImguiWindow(update_call=_wrap_update_call(_window, self))
             else:
                 raise TypeError(
-                    "add_imgui_window() must be used as a decorator on a function, or given an `ImguiWindow` instance"
+                    "add_imgui_window() must be used as a decorator on a function, or given an `ImguiWindow` or "
+                    "`ImguiContainer` instance"
                 )
 
             win._fpl_add_hook(
@@ -299,8 +315,9 @@ class ImguiFigure(Figure):
 
         Parameters
         ----------
-        gui: callable, optional
-            function that draws imgui elements, omit when decorating
+        gui: callable | ImguiContainer, optional
+            function that draws imgui elements, or an ``ImguiContainer`` such as an ``ImguiColorbar``. Omit when
+            decorating.
 
         location: str, "left" | "right" | "top" | "bottom"
             location of the existing window to append to
@@ -316,7 +333,11 @@ class ImguiFigure(Figure):
             raise ValueError(f"no imgui window at location to append to: {location}")
 
         def decorator(_gui):
-            window._update_calls.append(_wrap_update_call(_gui, self))
+            if isinstance(_gui, ImguiContainer):
+                _gui._fpl_add_hook(self)
+                window._update_calls.append(_gui.draw)
+            else:
+                window._update_calls.append(_wrap_update_call(_gui, self))
             return _gui
 
         if gui is None:
@@ -357,15 +378,17 @@ class ImguiFigure(Figure):
 
     def _layout_imgui_window(self, window: ImguiWindow):
         """compute and set the pixel rect of a figure-level imgui window"""
-        if window._floating:
-            # imgui auto-sizes a floating window from its content, nothing to compute
-            return
-
         width, height = self.canvas.get_logical_size()
 
         if window._rect_manager is not None:
+            # a fixed window uses the whole rect, a floating one is auto-sized by imgui and takes
+            # only its initial position from it
             window._rect_manager.canvas_resized((0, 0, width, height))
             window._fpl_set_rect(*(round(v) for v in window._rect_manager.rect))
+            return
+
+        if window._floating:
+            # imgui auto-sizes a floating window from its content, nothing to compute
             return
 
         # edge window, spans the full edge minus any perpendicular edge windows

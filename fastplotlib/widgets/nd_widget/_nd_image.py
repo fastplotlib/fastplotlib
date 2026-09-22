@@ -549,11 +549,11 @@ class NDImage(NDGraphic):
             if self._histogram_widget is not None:
                 # colorbar widget exists, update it and rebind to the current graphic
                 self._histogram_widget.histogram = self.slicer.histogram
-                self._histogram_widget.images = self.graphic
+                self._histogram_widget.graphics = self.graphic
             else:
                 # make the colorbar, it reserves space on the subplot's right edge
                 self._histogram_widget = ImguiColorbar(
-                    images=self.graphic,
+                    graphics=self.graphic,
                     histogram=self.slicer.histogram,
                 )
                 subplot.add_imgui_window(

@@ -257,8 +257,9 @@ class Subplot(PlotArea):
 
         Parameters
         ----------
-        window: ImguiWindow, optional
-            an ``ImguiWindow`` instance, omit when decorating
+        window: ImguiWindow | ImguiContainer, optional
+            an ``ImguiWindow`` instance, such as a ``Legend``, or an ``ImguiContainer`` such as an
+            ``ImguiColorbar``, which is given a window of its own. Omit when decorating.
 
         location: str, "left" | "right" | "top" | "bottom" | "toolbar"
             edge windows reserve canvas space, "toolbar" replaces the subplot toolbar
@@ -279,7 +280,7 @@ class Subplot(PlotArea):
                 "imgui windows can only be added to a subplot of an ImguiFigure"
             )
 
-        from ..ui._base import ImguiWindow, EDGES, _wrap_update_call
+        from ..ui._base import ImguiContainer, ImguiWindow, EDGES, _wrap_update_call
 
         valid = EDGES + ["toolbar"]
         if location not in valid:
@@ -300,11 +301,16 @@ class Subplot(PlotArea):
         def decorator(_window):
             if isinstance(_window, ImguiWindow):
                 win = _window
+            elif isinstance(_window, ImguiContainer):
+                # a container is drawn inline, give it a window of its own
+                _window._fpl_add_hook(figure)
+                win = ImguiWindow(update_call=_window.draw)
             elif callable(_window):
                 win = ImguiWindow(update_call=_wrap_update_call(_window, self))
             else:
                 raise TypeError(
-                    "add_imgui_window() must be used as a decorator on a function, or given an `ImguiWindow` instance"
+                    "add_imgui_window() must be used as a decorator on a function, or given an `ImguiWindow` or "
+                    "`ImguiContainer` instance"
                 )
 
             win._fpl_add_hook(**hook_kwargs)
@@ -329,21 +335,26 @@ class Subplot(PlotArea):
 
         Parameters
         ----------
-        gui: callable, optional
-            function that draws imgui elements, omit when decorating
+        gui: callable | ImguiContainer, optional
+            function that draws imgui elements, or an ``ImguiContainer`` such as an ``ImguiColorbar``. Omit when
+            decorating.
 
         location: str, "left" | "right" | "top" | "bottom" | "toolbar"
             location of the existing window to append to
 
         """
-        from ..ui._base import _wrap_update_call
+        from ..ui._base import ImguiContainer, _wrap_update_call
 
         window = self._imgui_windows.get(location)
         if window is None:
             raise ValueError(f"no imgui window at location to append to: {location}")
 
         def decorator(_gui):
-            window._update_calls.append(_wrap_update_call(_gui, self))
+            if isinstance(_gui, ImguiContainer):
+                _gui._fpl_add_hook(self.get_figure())
+                window._update_calls.append(_gui.draw)
+            else:
+                window._update_calls.append(_wrap_update_call(_gui, self))
             return _gui
 
         if gui is None:

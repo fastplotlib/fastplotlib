@@ -34,7 +34,6 @@ Other important properties:
 
 * graphics - a tuple of weakref proxies to all ``Graphics`` within this ``PlotArea``, users are only given weakref proxies to ``Graphic`` objects, all ``Graphic`` objects are stored in a private global dict.
 * selectors - a tuple of weakref proxies to all selectors within this ``PlotArea``
-* legend - a tuple of weakref proxies to all legend graphics within this ``PlotArea``
 * name - plot areas are allowed to have names that the user can use for their convenience
 
 Important methods:

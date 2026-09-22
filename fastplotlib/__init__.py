@@ -19,7 +19,6 @@ from .graphics.utils import (
     get_nearest_graphics,
     get_nearest_graphics_indices,
 )
-from .legends import *
 from .tools import *
 from .axes import Axes, Grids
 

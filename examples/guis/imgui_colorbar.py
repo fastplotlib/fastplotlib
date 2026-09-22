@@ -17,28 +17,38 @@ from fastplotlib.ui import ImguiColorbar
 camera = iio.imread("imageio:camera.png")
 astronaut = iio.imread("imageio:astronaut.png")
 
-figure = fpl.Figure(shape=(2, 2), size=(900, 900), canvas_kwargs={"max_fps": 999, "vsync": False})
+figure = fpl.Figure(
+    shape=(2, 2), size=(900, 900), canvas_kwargs={"max_fps": 999, "vsync": False}
+)
 
 # top row: a plain colorbar for each image
 # grayscale image displayed with a colormap
 camera_image = figure[0, 0].add_image(camera, cmap="viridis", name="camera")
-figure[0, 0].add_imgui_window(ImguiColorbar(images=camera_image), location="right", size=80)
+figure[0, 0].add_imgui_window(
+    ImguiColorbar(graphics=camera_image), location="right", size=80
+)
 
 # RGB image, it has no colormap so its colorbar is drawn with "gray"
 astronaut_image = figure[0, 1].add_image(astronaut, name="astronaut")
-figure[0, 1].add_imgui_window(ImguiColorbar(images=astronaut_image), location="right", size=80)
+figure[0, 1].add_imgui_window(
+    ImguiColorbar(graphics=astronaut_image), location="right", size=80
+)
 
 # bottom row: the same images, but with a precomputed 100-bin histogram on the colorbar
 camera_image2 = figure[1, 0].add_image(camera, cmap="viridis", name="camera")
 camera_histogram = np.histogram(camera, bins=100)
 figure[1, 0].add_imgui_window(
-    ImguiColorbar(images=camera_image2, histogram=camera_histogram), location="right", size=100
+    ImguiColorbar(graphics=camera_image2, histogram=camera_histogram),
+    location="right",
+    size=100,
 )
 
 astronaut_image2 = figure[1, 1].add_image(astronaut, name="astronaut")
 astronaut_histogram = np.histogram(astronaut, bins=100)
 figure[1, 1].add_imgui_window(
-    ImguiColorbar(images=astronaut_image2, histogram=astronaut_histogram), location="right", size=100
+    ImguiColorbar(graphics=astronaut_image2, histogram=astronaut_histogram),
+    location="right",
+    size=100,
 )
 
 figure.show()

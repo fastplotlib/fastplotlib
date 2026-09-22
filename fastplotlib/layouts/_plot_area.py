@@ -13,7 +13,6 @@ from ..graphics._base import Graphic, WORLD_OBJECT_TO_GRAPHIC
 from ..graphics import ImageGraphic, MeshGraphic
 from ..graphics.selectors import SelectorProtocol
 from ._graphic_methods_mixin import GraphicMethodsMixin
-from ..legends import Legend
 from ..tools import Tooltip
 from ..utils import global_config
 
@@ -124,9 +123,6 @@ class PlotArea(GraphicMethodsMixin):
 
         # selectors are in their own list so they can be excluded from scene bbox calculations
         self._selectors: list[SelectorProtocol] = list()
-
-        # legends, managed just like other graphics as explained above
-        self._legends: list[Legend] = list()
 
         # keep all graphics in a separate group, makes bbox calculations etc. easier
         # this is the "real scene" excluding axes, selection tools etc.
@@ -277,13 +273,8 @@ class PlotArea(GraphicMethodsMixin):
         return tuple(self._selectors)
 
     @property
-    def legends(self) -> tuple[Legend, ...]:
-        """Legends in the plot area."""
-        return tuple(self._legends)
-
-    @property
-    def objects(self) -> tuple[Graphic | SelectorProtocol | Legend, ...]:
-        return *self.graphics, *self.selectors, *self.legends
+    def objects(self) -> tuple[Graphic | SelectorProtocol, ...]:
+        return *self.graphics, *self.selectors
 
     @property
     def name(self) -> str:
@@ -723,18 +714,12 @@ class PlotArea(GraphicMethodsMixin):
             obj_list = self._selectors
             self.scene.add(graphic.world_object)
 
-        elif isinstance(graphic, Legend):
-            obj_list = self._legends
-            self.scene.add(graphic.world_object)
-
         elif isinstance(graphic, Graphic):
             obj_list = self._graphics
             self._fpl_graphics_scene.add(graphic.world_object)
 
         else:
-            raise TypeError(
-                "graphic must be of type Graphic | SelectorProtocol | Legend"
-            )
+            raise TypeError("graphic must be of type Graphic | SelectorProtocol")
 
         if action == "insert":
             obj_list.insert(index, graphic)
@@ -957,7 +942,7 @@ class PlotArea(GraphicMethodsMixin):
 
         """
 
-        if isinstance(graphic, (SelectorProtocol, Legend)):
+        if isinstance(graphic, SelectorProtocol):
             self.scene.remove(graphic.world_object)
 
         elif isinstance(graphic, Graphic):
@@ -978,9 +963,6 @@ class PlotArea(GraphicMethodsMixin):
 
         if isinstance(graphic, SelectorProtocol):
             self._selectors.remove(graphic)
-
-        elif isinstance(graphic, Legend):
-            self._legends.remove(graphic)
 
         elif isinstance(graphic, Graphic):
             self._graphics.remove(graphic)
