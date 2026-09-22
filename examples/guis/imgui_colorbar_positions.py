@@ -7,7 +7,7 @@ A colorbar on a line or a scatter drives its ``cmap_range``, the (min, max) of t
 transform the colormap spans.
 """
 
-# test_example = false
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np

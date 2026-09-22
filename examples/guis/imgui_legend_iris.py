@@ -7,7 +7,7 @@ assigned to shown by marker shape. A feature that is not the same for every data
 label for each of its values, so the legend has an entry per species and an entry per cluster.
 """
 
-# test_example = false
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np

@@ -6,7 +6,7 @@ A legend for a sine, a cosine, and infinite lines marking the phase. Each graphi
 its own legend item, and the item follows the graphic, so recoloring the sine recolors its swatch.
 """
 
-# test_example = false
+# test_example = true
 # sphinx_gallery_pygfx_docs = 'screenshot'
 
 import numpy as np
