@@ -81,7 +81,7 @@ def transpose(
 
     torch tensors are permuted instead, ``torch.Tensor.transpose()`` swaps two dims rather than taking an order.
     """
-    if window_output.__module__ == "torch":
+    if type(window_output).__module__ == "torch":
         return window_output.permute(*dims_order)
 
     return window_output.transpose(*dims_order)
