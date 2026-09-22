@@ -291,6 +291,31 @@ This is only a very simple example. The ``NDWidget`` is built to handle an arbit
 sampled arrays, with dimensions in any order. For example, we could have multiple sessions that we can represent as
 different timelines, and volumetric recordings with depth, etc.
 
+::
+
+    ndw = fpl.NDWidget(
+        ranges={
+            "time-s1": (start_s1, start_s2, step),  # session 1
+            "time-s2": (start_s2, start_s3, step),  # session 2
+            "depth": (start_z, end_z, step_z),  # microns
+        }
+    )
+
+    # specify the associated timeline when adding each NDGraphic
+    ndw["pmd-s1"].add_nd_image(
+        pmd_array_s1,  # [time, z, m, n]
+        dims=("time-s1", "depth", "m", "n"),
+        display_dims=("m", "n"),
+        slider_maps={"time-s1": ca_timestamps_s1, "depth": plane_depths},  # plane_depths: [0.0, 20.0, 40.0, ...]
+    )
+
+    ndw["pmd-s2"].add_nd_image(
+        pmd_array_s2,  # [z, time, m, n], the dims can be in any order
+        dims=("depth", "time-s2", "m", "n"),
+        display_dims=("m", "n"),
+        slider_maps={"time-s2": ca_timestamps_s2, "depth": plane_depths},
+    )
+
 Claude Code plugin
 ------------------
 
