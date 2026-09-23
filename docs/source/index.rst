@@ -1,5 +1,5 @@
-Welcome to fastplotlib's documentation!
-=======================================
+fastplotlib
+===========
 
 .. toctree::
    :caption: Getting started
