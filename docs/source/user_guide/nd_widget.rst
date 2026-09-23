@@ -37,6 +37,7 @@ We built the ``NDWidget`` for:
 
 * better quality control of experimental data
 * prototyping new analysis ideas and algorithms
+* analysis pipeline agnostic visualizations
 * visualizing large datasets on the remote infrastructure where the analysis usually happens
 * developing new scientific insights by exploring all of the modalities together
 
