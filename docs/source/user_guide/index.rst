@@ -7,6 +7,7 @@ User Guide
 
    guide
    nd_widget
+   nd_widget_data_model
    event_tables
    gpu
    faq
