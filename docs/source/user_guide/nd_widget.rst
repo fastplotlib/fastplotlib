@@ -1,5 +1,5 @@
-Visualizing multi-modal neuroscience data with the fastplotlib NDWidget
-=======================================================================
+NDWidget and Systems Neuroscience Datasets
+==========================================
 
 .. figure:: ../_static/ndw_guide/3.jpg
     :alt: NDWidget with calcium imaging movies, neuron traces, an ethogram and two behavior videos
