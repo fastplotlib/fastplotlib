@@ -13,13 +13,13 @@ NDWidget and Systems Neuroscience Datasets
 
         .. figure:: ../_static/ndw_guide/kcenia-qc.webp
 
-            Quality assessment using behavior data processed by LightingPose, showing the behavior video with tracks, predicted lighting actions and likelihood scores. Data from Kcénia Bougrova, IBL & Champalimaud Foundation, Mainen Lab.
+            Quality assessment using behavior data processed by `LightingPose <https://github.com/paninski-lab/lightning-pose>`_, showing the behavior video with tracks, predicted lighting actions and likelihood scores. Data from Kcénia Bougrova, IBL & Champalimaud Foundation, Mainen Lab.
 
     .. grid-item::
 
         .. figure:: ../_static/ndw_guide/samuel.webp
 
-            Multi-modal visualization of calcium imaging data processed by masknmf in conjunction with behavior. Data from Samuel Picard, IBL & UCL, Ken Harris.
+            Multi-modal visualization of calcium imaging data processed by `masknmf <https://github.com/apasarkar/masknmf-toolbox>`_ in conjunction with behavior. Data from Samuel Picard, IBL & UCL, Ken Harris.
 
 A systems neuroscience session can produce many n-dimensional arrays. A multi-plane, multi-FOV calcium imaging
 movie has dimensions for the FOV, plane, time, rows and columns. Alongside it there may be electrophysiology
@@ -357,3 +357,11 @@ The :doc:`data model guide </user_guide/nd_widget_data_model>` describes the dat
 slicers in detail, and the :doc:`examples gallery </_gallery/index>` has more examples. We are happy to help you
 visualize your data, post an `issue <https://github.com/fastplotlib/fastplotlib/issues>`_ or a
 `discussion <https://github.com/fastplotlib/fastplotlib/discussions>`_ on GitHub.
+
+Neuroscience examples
+---------------------
+
+The examples from the top are in https://github.com/fastplotlib/fastplotlib-neuro-examples/tree/main/examples . Data are
+not provided yet but these can help you get started with your own datasets. The calcium imaging example is
+``demixing_and_behavior.py``, the gerbils is ``gerbils.py`` and the behavior quality control is ``kcenia.py``. A more
+detailed writeup on visualizations with masknmf will be out very soon!
