@@ -73,6 +73,20 @@ def get_supported_kwargs(graphic_type: type[Graphic], **kwargs) -> dict[str, Any
     return {name: value for name, value in kwargs.items() if name in accepted}
 
 
+def transpose(
+    window_output: ArrayProtocol, dims_order: tuple[int, ...]
+) -> ArrayProtocol:
+    """
+    Transpose ``window_output`` into ``dims_order``.
+
+    torch tensors are permuted instead, ``torch.Tensor.transpose()`` swaps two dims rather than taking an order.
+    """
+    if type(window_output).__module__ == "torch":
+        return window_output.permute(*dims_order)
+
+    return window_output.transpose(*dims_order)
+
+
 class NDSlicer:
     def __init__(
         self,

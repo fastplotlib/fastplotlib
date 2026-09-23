@@ -19,6 +19,7 @@ from .._base import (
     NDGraphic,
     WindowFuncCallable,
     get_supported_kwargs,
+    transpose,
 )
 from ....utils import ArrayProtocol, CudaArrayProtocol, cuda_to_numpy
 from .._index import ReferenceIndices
@@ -408,7 +409,7 @@ class NDPositionsSlicer(NDSlicer):
 
         # transpose into display order, [n_graphics, p, xy(z)], which is what the display window
         # slice below and everything in _finalize() index against
-        window_output = window_output.transpose(*self.display_dims_indices)
+        window_output = transpose(window_output, self.display_dims_indices)
 
         # get slice obj for display window
         dw_slice = self._get_dw_slice(indices)
