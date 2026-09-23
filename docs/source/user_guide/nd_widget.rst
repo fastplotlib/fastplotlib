@@ -1,11 +1,25 @@
 NDWidget and Systems Neuroscience Datasets
 ==========================================
 
-.. figure:: ../_static/ndw_guide/3.jpg
-    :alt: NDWidget with calcium imaging movies, neuron traces, an ethogram and two behavior videos
+.. grid:: 3
 
-    Calcium imaging movies, neuron traces, an ethogram, and two behavior videos with tracked keypoints, all on
-    one time slider.
+    .. grid-item::
+
+        .. figure:: ../_static/ndw_guide/gerbils.webp
+
+            Binned spikes of a neuropixel recording in conjunctions with spectrograms of vocalizations and Gerbil behavior. Data from Gily Ginosar, Dan Sanes lab, NYU.
+
+    .. grid-item::
+
+        .. figure:: ../_static/ndw_guide/kcenia-qc.webp
+
+            Quality assessment using behavior data processed by LightingPose, showing the behavior video with tracks, predicted lighting actions and likelihood scores. Data from Kcénia Bougrova, IBL & Champalimaud Foundation, Mainen Lab.
+
+    .. grid-item::
+
+        .. figure:: ../_static/ndw_guide/samuel.webp
+
+            Multi-modal visualization of calcium imaging data processed by masknmf in conjunction with behavior. Data from Samuel Picard, IBL & UCL, Ken Harris.
 
 A systems neuroscience session can produce many n-dimensional arrays. A multi-plane, multi-FOV calcium imaging
 movie has dimensions for the FOV, plane, time, rows and columns. Alongside it there may be electrophysiology
