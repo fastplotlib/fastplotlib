@@ -13,7 +13,7 @@ NDWidget and Systems Neuroscience Datasets
 
         .. figure:: ../_static/ndw_guide/kcenia-qc.webp
 
-            Quality assessment using behavior data processed by `LightingPose <https://github.com/paninski-lab/lightning-pose>`_, showing the behavior video with tracks, predicted lighting actions and likelihood scores. Data from Kcénia Bougrova, IBL & Champalimaud Foundation, Mainen Lab.
+            Quality assessment using behavior data processed by `Lightning Pose <https://github.com/paninski-lab/lightning-pose>`_, showing the behavior video with tracks, predicted lightning actions and likelihood scores. Data from Kcénia Bougrova, IBL & Champalimaud Foundation, Mainen Lab.
 
     .. grid-item::
 
