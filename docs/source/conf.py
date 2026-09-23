@@ -129,6 +129,7 @@ html_theme_options = {
 }
 
 html_static_path = ["_static"]
+html_js_files = ["image_links_new_tab.js"]
 html_logo = "_static/logo.png"
 html_title = f"v{release}"
 

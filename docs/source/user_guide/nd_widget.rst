@@ -6,18 +6,21 @@ NDWidget and Systems Neuroscience Datasets
     .. grid-item::
 
         .. figure:: ../_static/ndw_guide/gerbils.webp
+            :target: ../_static/ndw_guide/gerbils.webp
 
             Binned spikes of a neuropixel recording in conjunctions with spectrograms of vocalizations and Gerbil behavior. Data from Gily Ginosar, Dan Sanes lab, NYU.
 
     .. grid-item::
 
         .. figure:: ../_static/ndw_guide/kcenia-qc.webp
+            :target: ../_static/ndw_guide/kcenia-qc.webp
 
             Quality assessment using behavior data processed by `Lightning Pose <https://github.com/paninski-lab/lightning-pose>`_, showing the behavior video with tracks, predicted lightning actions and likelihood scores. Data from Kcénia Bougrova, IBL & Champalimaud Foundation, Mainen Lab.
 
     .. grid-item::
 
         .. figure:: ../_static/ndw_guide/samuel.webp
+            :target: ../_static/ndw_guide/samuel.webp
 
             Multi-modal visualization of calcium imaging data processed by `masknmf <https://github.com/apasarkar/masknmf-toolbox>`_ in conjunction with behavior. Data from Samuel Picard, IBL & UCL, Ken Harris.
 
