@@ -6,13 +6,20 @@ from ._index import RangeContinuous, RangeDiscrete, ReferenceIndices
 from ._ndw_subplot import NDWSubplot
 from ._ui import NDWidgetUI, RightClickMenu
 from ...layouts import ImguiFigure, Subplot
+from ...utils import global_config
 
 
+@global_config.register
 class NDWidget:
+    config = global_config.descriptor
+
+    @global_config.declare("controls", "title")
     def __init__(
         self,
         ranges: dict[str, tuple] = None,
         indices: Optional[ReferenceIndices] = None,
+        controls: bool = True,
+        title: str | None = "NDWidget controls",
         **kwargs,
     ):
         """
@@ -55,6 +62,13 @@ class NDWidget:
             Multiple ``NDWidget`` instances that share a ``ReferenceIndex`` are synchronized, so one set of sliders
             can drive data displayed across several windows.
 
+        controls: bool, default True
+            show the playback controls, i.e. play, step, stop, loop and framerate, above each slider. ``False``
+            leaves only a labelled slider per slider dim, see ``ui_sliders.controls`` to change it later.
+
+        title: str or None, default "NDWidget controls"
+            title bar of the slider window at the bottom of the figure, ``None`` draws no title bar
+
         kwargs
             passed to :class:`.ImguiFigure`
 
@@ -95,11 +109,13 @@ class NDWidget:
             self._subplots_nd[subplot] = NDWSubplot(self, subplot)
 
         # hard code the expected height so that the first render looks right in tests, docs etc.
-        ui_size = 57 + (50 * len(self.indices))
+        # the window sets its own height from its contents after the first frame
+        row = 50 if controls else 24
+        ui_size = (57 if title is not None else 31) + (row * len(self.indices))
 
-        self._sliders_ui = NDWidgetUI(self)
+        self._sliders_ui = NDWidgetUI(self, controls=controls)
         self.figure.add_imgui_window(
-            self._sliders_ui, location="bottom", size=ui_size, title="NDWidget controls"
+            self._sliders_ui, location="bottom", size=ui_size, title=title
         )
 
     @property
