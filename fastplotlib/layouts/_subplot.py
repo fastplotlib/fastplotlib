@@ -8,6 +8,8 @@ import pygfx
 from rendercanvas import BaseRenderCanvas
 
 from ..graphics import TextGraphic
+from ..graphics._base import Graphic
+from ..graphics.selectors import SelectorProtocol
 from ._utils import create_camera, create_controller
 from ._plot_area import PlotArea
 from ._frame import Frame
@@ -204,6 +206,19 @@ class Subplot(PlotArea):
     def _render(self):
         self.axes.update_using_camera()
         super()._render()
+
+    def _add_or_insert_graphic(
+        self,
+        graphic: Graphic,
+        center: bool = True,
+        action: Literal["insert", "add"] = "add",
+        index: int = 0,
+    ):
+        super()._add_or_insert_graphic(
+            graphic, center=center, action=action, index=index
+        )
+        if self.axes.clip and not isinstance(graphic, SelectorProtocol):
+            self.axes._apply_clip((graphic,))
 
     @property
     def title(self) -> TextGraphic:
