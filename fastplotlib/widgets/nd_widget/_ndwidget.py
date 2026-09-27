@@ -6,13 +6,26 @@ from ._index import RangeContinuous, RangeDiscrete, ReferenceIndices
 from ._ndw_subplot import NDWSubplot
 from ._ui import NDWidgetUI, RightClickMenu
 from ...layouts import ImguiFigure, Subplot
+from ...utils import global_config
+
+# height in pixels of the controls window: its padding, its title bar, and per slider dim the row
+# of playback controls with the slider or the slider alone
+UI_BASE = 22
+UI_TITLE = 26
+UI_DIM_PLAYBACK = 48
+UI_DIM = 24
 
 
+@global_config.register
 class NDWidget:
+    config = global_config.descriptor
+
+    @global_config.declare("ui_kwargs")
     def __init__(
         self,
         ranges: dict[str, tuple] = None,
         indices: Optional[ReferenceIndices] = None,
+        ui_kwargs: dict = None,
         **kwargs,
     ):
         """
@@ -55,6 +68,12 @@ class NDWidget:
             Multiple ``NDWidget`` instances that share a ``ReferenceIndex`` are synchronized, so one set of sliders
             can drive data displayed across several windows.
 
+        ui_kwargs: dict, optional
+            passed to :class:`NDWidgetUI`, the controls window at the bottom of the widget: ``title``,
+            ``playback`` and ``visible``. Ex: ``{"title": None, "playback": False}`` leaves only the
+            sliders. They can be set later on ``ndw.ui_sliders``, and configured for every widget with
+            ``NDWidget.config.init.ui_kwargs``.
+
         kwargs
             passed to :class:`.ImguiFigure`
 
@@ -94,10 +113,15 @@ class NDWidget:
         for subplot in self.figure:
             self._subplots_nd[subplot] = NDWSubplot(self, subplot)
 
-        # hard code the expected height so that the first render looks right in tests, docs etc.
-        ui_size = 57 + (50 * len(self.indices))
+        self._sliders_ui = NDWidgetUI(self, **(ui_kwargs or {}))
 
-        self._sliders_ui = NDWidgetUI(self)
+        # hard code the expected height so that the first render looks right in tests, docs etc.
+        ui_size = (
+            UI_BASE
+            + (UI_TITLE if self._sliders_ui.title is not None else 0)
+            + (UI_DIM_PLAYBACK if self._sliders_ui.playback else UI_DIM)
+            * len(self.indices)
+        )
         self.figure.add_imgui_window(
             self._sliders_ui,
             location="bottom",

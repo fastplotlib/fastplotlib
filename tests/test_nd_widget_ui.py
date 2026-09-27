@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 import fastplotlib as fpl
+from fastplotlib.utils import global_config
 
 RANGES = {"time": (0.0, 10.0, 1.0)}
 DATA = np.random.rand(10, 16, 16).astype(np.float32)
@@ -74,3 +75,36 @@ def test_hidden_reserves_no_space():
     draw(ndw)
     assert ndw.figure._edge_size("bottom") == ndw.ui_sliders.size
     assert subplot.viewport.rect[3] == pytest.approx(height_with_ui, abs=1)
+
+
+def test_ui_kwargs():
+    ndw = make_ndwidget(ui_kwargs={"title": None, "playback": False})
+    ui = ndw.ui_sliders
+
+    assert ui.title is None
+    assert not ui.playback
+    assert ui.visible
+
+    # shorter than the full window, before and after the first draw sets the height
+    full = make_ndwidget()
+    assert ui.size < full.ui_sliders.size
+
+    ndw.show()
+    full.show()
+    for _ in range(2):
+        draw(ndw)
+        draw(full)
+    assert ui.size < full.ui_sliders.size
+
+
+def test_global_config():
+    global_config.update(fpl.NDWidget.config.init, ui_kwargs={"playback": False})
+    try:
+        assert not make_ndwidget().ui_sliders.playback
+
+        # an explicit argument wins over the config
+        assert make_ndwidget(ui_kwargs={"playback": True}).ui_sliders.playback
+    finally:
+        fpl.NDWidget.config.init.ui_kwargs = None
+
+    assert make_ndwidget().ui_sliders.playback
