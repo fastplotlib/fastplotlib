@@ -230,3 +230,28 @@ def test_subplot_names():
 
     with pytest.raises(ValueError):
         fpl.Figure(shape=(2, 3), names=["1", None, "3", "4", None, "6", "7"])
+
+
+def test_hidden_edge_window_not_drawn():
+    figure = fpl.Figure(size=(300, 300))
+    drawn = []
+
+    @figure.add_imgui_window(location="right", size=100, title="controls")
+    def gui():
+        drawn.append(1)
+
+    window = figure.imgui_windows["right"]
+    assert window.title == "controls"
+
+    figure.show()
+    figure._render()
+    figure.canvas.draw()
+    assert drawn
+
+    # a hidden window is not drawn and reserves no canvas space
+    drawn.clear()
+    window.visible = False
+    figure._render()
+    figure.canvas.draw()
+    assert not drawn
+    assert figure._edge_size("right") == 0
