@@ -349,6 +349,23 @@ separate windows. The first is given ``ranges`` and the rest are given ``indices
     ndw_main = fpl.NDWidget(ranges={"time": (0, 600, 1 / 30)}, names=["video", "traces"])
     ndw_ephys = fpl.NDWidget(indices=ndw_main.indices, names=["spikes"])
 
+``NDWidgetUI``
+^^^^^^^^^^^^^^
+
+The controls window at the bottom of the figure, ``ndw.ui_sliders``: a title bar, and for every slider dim
+a row of playback controls, play, step, stop, loop and framerate, above its slider. Each part can be
+dropped, and the whole window hidden, when the widget is created, at any time after, or for every widget
+through the global config::
+
+    # the sliders alone
+    ndw = fpl.NDWidget(ranges={"time": (0, 600, 1 / 30)}, ui_kwargs={"title": None, "playback": False})
+
+    ndw.ui_sliders.playback = False   # drops the playback row, and stops playback
+    ndw.ui_sliders.title = None       # drops the title bar
+    ndw.ui_sliders.visible = False    # hides the window, the subplots take its space
+
+    fpl.NDWidget.config.init.ui_kwargs = {"playback": False}  # every widget created after this
+
 ``ReferenceIndices``
 ^^^^^^^^^^^^^^^^^^^^
 
