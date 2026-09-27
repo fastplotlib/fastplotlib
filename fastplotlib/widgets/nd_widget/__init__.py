@@ -9,6 +9,7 @@ if IMGUI:
     from ._nd_vectors import NDVectorsSlicer, NDVectors
     from ._ndwidget import NDWidget
     from ._ndw_subplot import NDWSubplot
+    from ._ui import NDWidgetUI
 
     __all__ = [
         "RangeContinuous",
@@ -26,6 +27,7 @@ if IMGUI:
         "NDVectors",
         "NDWidget",
         "NDWSubplot",
+        "NDWidgetUI",
     ]
 
 

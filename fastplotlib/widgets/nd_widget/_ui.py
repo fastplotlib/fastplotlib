@@ -26,9 +26,37 @@ position_graphic_types = [ScatterCollection, ScatterStack, LineCollection, LineS
 class NDWidgetUI(ImguiWindow):
     """Playback controls and a slider for each slider dim, shown at the bottom of an ``NDWidget``"""
 
-    def __init__(self, ndwidget):
+    def __init__(
+        self,
+        ndwidget,
+        *,
+        title: str | None = "NDWidget controls",
+        playback: bool = True,
+        visible: bool = True,
+    ):
+        """
+        The controls window at the bottom of an ``NDWidget``, ``ndw.ui_sliders``.
+
+        Parameters
+        ----------
+        ndwidget: NDWidget
+            the widget whose indices this window controls
+
+        title: str | None, default "NDWidget controls"
+            title bar, ``None`` for no title bar
+
+        playback: bool, default True
+            draw the row of playback controls above each slider: play, step, stop, loop and framerate
+
+        visible: bool, default True
+            draw the window, ``False`` hides it and reserves no canvas space
+
+        """
         super().__init__()
         self._ndwidget = ndwidget
+        self.title = title
+        self._playback = bool(playback)
+        self.visible = visible
 
         # whether or not a dimension is in play mode
         self._playing = dict()
@@ -73,6 +101,18 @@ class NDWidgetUI(ImguiWindow):
                 # for however many frames the machine can render within 1 / fps seconds
                 self._frame_time[dim] = 0
 
+    @property
+    def playback(self) -> bool:
+        """draw the row of playback controls above each slider, hiding it also stops playback"""
+        return self._playback
+
+    @playback.setter
+    def playback(self, playback: bool):
+        self._playback = bool(playback)
+        if not self._playback:
+            for dim in self._playing:
+                self._playing[dim] = False
+
     def pop_dim(self, dim):
         """remove the playback & slider UI state for a removed dim"""
         self._playing.pop(dim)
@@ -107,69 +147,76 @@ class NDWidgetUI(ImguiWindow):
 
             rr = self._ndwidget.ranges[dim]
 
-            if self._playing[dim]:
-                # show pause button if playing
-                if imgui.button(label=fa.ICON_FA_PAUSE):
-                    # if pause button clicked, then set playing to false
-                    self._playing[dim] = False
+            if self._playback:
+                if self._playing[dim]:
+                    # show pause button if playing
+                    if imgui.button(label=fa.ICON_FA_PAUSE):
+                        # if pause button clicked, then set playing to false
+                        self._playing[dim] = False
 
-                # if in play mode and enough time has elapsed w.r.t. the desired framerate, increment the index
-                if now - self._last_frame_time[dim] >= self._frame_time[dim]:
+                    # if in play mode and enough time has elapsed w.r.t. the desired framerate, increment the index
+                    if now - self._last_frame_time[dim] >= self._frame_time[dim]:
+                        self._set_index(dim, current_index + rr.step)
+                        self._last_frame_time[dim] = now
+
+                else:
+                    # we are not playing, so display play button
+                    if imgui.button(label=fa.ICON_FA_PLAY):
+                        # if play button is clicked, set last frame time to 0 so that index increments on next render
+                        self._last_frame_time[dim] = 0
+                        # set playing to True since play button was clicked
+                        self._playing[dim] = True
+
+                imgui.same_line()
+                # step back one frame button
+                if (
+                    imgui.button(label=fa.ICON_FA_BACKWARD_STEP)
+                    and not self._playing[dim]
+                ):
+                    self._set_index(dim, current_index - rr.step)
+
+                imgui.same_line()
+                # step forward one frame button
+                if (
+                    imgui.button(label=fa.ICON_FA_FORWARD_STEP)
+                    and not self._playing[dim]
+                ):
                     self._set_index(dim, current_index + rr.step)
-                    self._last_frame_time[dim] = now
 
-            else:
-                # we are not playing, so display play button
-                if imgui.button(label=fa.ICON_FA_PLAY):
-                    # if play button is clicked, set last frame time to 0 so that index increments on next render
+                imgui.same_line()
+                # stop button
+                if imgui.button(label=fa.ICON_FA_STOP):
+                    self._playing[dim] = False
                     self._last_frame_time[dim] = 0
-                    # set playing to True since play button was clicked
-                    self._playing[dim] = True
+                    self._ndwidget.indices.set_dim_index(dim, rr.start)
 
-            imgui.same_line()
-            # step back one frame button
-            if imgui.button(label=fa.ICON_FA_BACKWARD_STEP) and not self._playing[dim]:
-                self._set_index(dim, current_index - rr.step)
-
-            imgui.same_line()
-            # step forward one frame button
-            if imgui.button(label=fa.ICON_FA_FORWARD_STEP) and not self._playing[dim]:
-                self._set_index(dim, current_index + rr.step)
-
-            imgui.same_line()
-            # stop button
-            if imgui.button(label=fa.ICON_FA_STOP):
-                self._playing[dim] = False
-                self._last_frame_time[dim] = 0
-                self._ndwidget.indices.set_dim_index(dim, rr.start)
-
-            imgui.same_line()
-            # loop checkbox
-            _, self._loop[dim] = imgui.checkbox(
-                label=fa.ICON_FA_ROTATE, v=self._loop[dim]
-            )
-            if imgui.is_item_hovered(0):
-                imgui.set_tooltip("loop playback")
-
-            imgui.same_line()
-            imgui.text("framerate :")
-            imgui.same_line()
-            imgui.set_next_item_width(100)
-            # framerate int entry
-            fps_changed, value = imgui.input_int(
-                label="fps", v=self._fps[dim], step_fast=5
-            )
-            if imgui.is_item_hovered(0):
-                imgui.set_tooltip(
-                    "framerate is approximate and less reliable as it approaches your monitor refresh rate"
+                imgui.same_line()
+                # loop checkbox
+                _, self._loop[dim] = imgui.checkbox(
+                    label=fa.ICON_FA_ROTATE, v=self._loop[dim]
                 )
-            if fps_changed:
-                if value < 1:
-                    value = 1
-                if value > 100:
-                    value = 100
-                self._fps[dim] = value
-                self._frame_time[dim] = 1 / value
+                if imgui.is_item_hovered(0):
+                    imgui.set_tooltip("loop playback")
+
+                imgui.same_line()
+                imgui.text("framerate :")
+                imgui.same_line()
+                imgui.set_next_item_width(100)
+                # framerate int entry
+                fps_changed, value = imgui.input_int(
+                    label="fps", v=self._fps[dim], step_fast=5
+                )
+                if imgui.is_item_hovered(0):
+                    imgui.set_tooltip(
+                        "framerate is approximate and less reliable as it approaches your monitor refresh rate"
+                    )
+                if fps_changed:
+                    if value < 1:
+                        value = 1
+                    if value > 100:
+                        value = 100
+                    self._fps[dim] = value
+                    self._frame_time[dim] = 1 / value
 
             imgui.text(str(dim))
             imgui.same_line()

@@ -99,7 +99,10 @@ class NDWidget:
 
         self._sliders_ui = NDWidgetUI(self)
         self.figure.add_imgui_window(
-            self._sliders_ui, location="bottom", size=ui_size, title="NDWidget controls"
+            self._sliders_ui,
+            location="bottom",
+            size=ui_size,
+            title=self._sliders_ui.title,
         )
 
     @property
