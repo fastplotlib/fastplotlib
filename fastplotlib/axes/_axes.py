@@ -181,26 +181,10 @@ class Ruler(pygfx.Ruler):
         """Axis label. Set text via ``label.set_text('label text')``"""
         return self._label
 
-    # the line as set, the extent cuts it down on every update
-    @pygfx.Ruler.start_pos.setter
-    def start_pos(self, pos):
-        pygfx.Ruler.start_pos.fset(self, pos)
-        self._line_start = self._start_pos
-
-    @pygfx.Ruler.end_pos.setter
-    def end_pos(self, pos):
-        pygfx.Ruler.end_pos.fset(self, pos)
-        self._line_end = self._end_pos
-
-    @pygfx.Ruler.start_value.setter
-    def start_value(self, value: float):
-        pygfx.Ruler.start_value.fset(self, value)
-        self._line_value = self._start_value
-
     @property
     def extent(self) -> tuple[float, float]:
         """
-        The range of values the ruler is drawn over, ``(lo, hi)``.
+        The range of values the ruler is drawn over, ``(lo, hi)``. ``Axes.update`` applies it.
 
         ``-np.inf`` and ``np.inf`` leave that end unbounded, the default. Ex: ``(0, np.inf)`` draws the ruler
         from value 0 onwards only, i.e. the positive half of the axis.
@@ -228,29 +212,9 @@ class Ruler(pygfx.Ruler):
         self._label.material.color = color
 
     def update(self, camera, canvas_size):
-        self._clip_to_extent()
         stats = super().update(camera, canvas_size)
         self._update_label()
         return stats
-
-    def _clip_to_extent(self):
-        """cut the line set by ``start_pos``, ``end_pos`` and ``start_value`` down to the extent"""
-        start, end, v0 = self._line_start, self._line_end, self._line_value
-        v1 = v0 + float(np.linalg.norm(end - start))
-        if v1 == v0:
-            return
-
-        lo, hi = max(self._extent[0], v0), min(self._extent[1], v1)
-        if lo > hi:
-            # the extent lies entirely outside the line, collapse it to the nearest end
-            # a zero-length ruler draws no line, no ticks and no label
-            lo = hi = min(max(self._extent[0], v0), v1)
-
-        vec = (end - start) / (v1 - v0)
-        self._start_pos = start + vec * (lo - v0)
-        self._end_pos = start + vec * (hi - v0)
-        self._start_value = lo
-        self._end_value = None
 
     def _update_label(self):
         # update the label position
@@ -792,6 +756,19 @@ class Axes:
         if self._plot_area.camera.local.scale_x < 0:
             world_xmin, world_xmax = world_xmax, world_xmin
             self.x.tick_side = "left"
+
+        # clamp to the extent, an extent outside the bbox collapses the ruler to the nearer end
+        lo, hi = self.x.extent
+        world_xmin = min(max(world_xmin, lo + self.offset[0]), world_xmax)
+        world_xmax = max(min(world_xmax, hi + self.offset[0]), world_xmin)
+
+        lo, hi = self.y.extent
+        world_ymin = min(max(world_ymin, lo + self.offset[1]), world_ymax)
+        world_ymax = max(min(world_ymax, hi + self.offset[1]), world_ymin)
+
+        lo, hi = self.z.extent
+        world_zmin = min(max(world_zmin, lo + self.offset[2]), world_zmax)
+        world_zmax = max(min(world_zmax, hi + self.offset[2]), world_zmin)
 
         self.x.start_pos = world_xmin, world_y_10, world_z_10
         self.x.end_pos = world_xmax, world_y_10, world_z_10
