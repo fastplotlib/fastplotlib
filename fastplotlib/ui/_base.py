@@ -282,6 +282,15 @@ class ImguiWindow(ImguiBase):
         return self._location
 
     @property
+    def title(self) -> str | None:
+        """title of the window, ``None`` for no title bar. Edge windows draw it as a title bar"""
+        return self._title
+
+    @title.setter
+    def title(self, title: str | None):
+        self._title = None if title is None else str(title)
+
+    @property
     def size(self) -> int | None:
         """edge or toolbar thickness in pixels, ``None`` for floating and fractional windows"""
         return self._size
