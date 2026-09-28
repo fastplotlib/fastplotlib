@@ -8,13 +8,6 @@ from ._ui import NDWidgetUI, RightClickMenu
 from ...layouts import ImguiFigure, Subplot
 from ...utils import global_config
 
-# height in pixels of the controls window: its padding, its title bar, and per slider dim the row
-# of playback controls with the slider or the slider alone
-UI_BASE = 22
-UI_TITLE = 26
-UI_DIM_PLAYBACK = 48
-UI_DIM = 24
-
 
 @global_config.register
 class NDWidget:
@@ -115,17 +108,11 @@ class NDWidget:
 
         self._sliders_ui = NDWidgetUI(self, **(ui_kwargs or {}))
 
-        # hard code the expected height so that the first render looks right in tests, docs etc.
-        ui_size = (
-            UI_BASE
-            + (UI_TITLE if self._sliders_ui.title is not None else 0)
-            + (UI_DIM_PLAYBACK if self._sliders_ui.playback else UI_DIM)
-            * len(self.indices)
-        )
+        # reserve the expected height so that the first render looks right in tests, docs etc.
         self.figure.add_imgui_window(
             self._sliders_ui,
             location="bottom",
-            size=ui_size,
+            size=self._sliders_ui.expected_size,
             title=self._sliders_ui.title,
         )
 

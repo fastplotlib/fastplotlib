@@ -22,6 +22,13 @@ from ._nd_image import NDImage
 
 position_graphic_types = [ScatterCollection, ScatterStack, LineCollection, LineStack]
 
+# height in pixels of the controls window: its padding, its title bar, and per slider dim the row
+# of playback controls with the slider or the slider alone
+UI_BASE = 22
+UI_TITLE = 26
+UI_DIM_PLAYBACK = 48
+UI_DIM = 24
+
 
 class NDWidgetUI(ImguiWindow):
     """Playback controls and a slider for each slider dim, shown at the bottom of an ``NDWidget``"""
@@ -54,8 +61,8 @@ class NDWidgetUI(ImguiWindow):
         """
         super().__init__()
         self._ndwidget = ndwidget
-        self.title = title
         self._playback = bool(playback)
+        self.title = title
         self.visible = visible
 
         # whether or not a dimension is in play mode
@@ -101,6 +108,33 @@ class NDWidgetUI(ImguiWindow):
                 # for however many frames the machine can render within 1 / fps seconds
                 self._frame_time[dim] = 0
 
+        self.size = self.expected_size
+
+    @property
+    def expected_size(self) -> int:
+        """
+        Height in pixels the window draws with its current options: its padding, its title bar, and
+        per slider dim the row of playback controls with the slider or the slider alone. The window
+        reserves it whenever an option or the slider dims change, so the frame after a change is laid
+        out right, then follows what it actually draws.
+        """
+        return (
+            UI_BASE
+            + (UI_TITLE if self._title is not None else 0)
+            + (UI_DIM_PLAYBACK if self._playback else UI_DIM)
+            * len(self._ndwidget.indices)
+        )
+
+    @property
+    def title(self) -> str | None:
+        """title bar, ``None`` for no title bar"""
+        return self._title
+
+    @title.setter
+    def title(self, title: str | None):
+        ImguiWindow.title.fset(self, title)
+        self.size = self.expected_size
+
     @property
     def playback(self) -> bool:
         """draw the row of playback controls above each slider, hiding it also stops playback"""
@@ -112,6 +146,7 @@ class NDWidgetUI(ImguiWindow):
         if not self._playback:
             for dim in self._playing:
                 self._playing[dim] = False
+        self.size = self.expected_size
 
     def pop_dim(self, dim):
         """remove the playback & slider UI state for a removed dim"""
@@ -121,6 +156,7 @@ class NDWidgetUI(ImguiWindow):
         self._last_frame_time.pop(dim)
         self._loop.pop(dim)
         self._last_slider_movement.pop(dim)
+        self.size = self.expected_size
 
     def _set_index(self, dim, index):
         if index >= self._ndwidget.ranges[dim].stop:

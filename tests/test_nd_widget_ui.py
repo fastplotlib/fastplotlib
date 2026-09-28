@@ -108,3 +108,20 @@ def test_global_config():
         fpl.NDWidget.config.init.ui_kwargs = None
 
     assert make_ndwidget().ui_sliders.playback
+
+
+def test_size_follows_options_before_draw():
+    # the reserved height follows the options as they change, without waiting for a draw, so a
+    # single frame rendered after a change, as the docs gallery does, is laid out right
+    ndw = make_ndwidget()
+    ndw.show()
+    draw(ndw)
+    ui = ndw.ui_sliders
+    assert ndw.figure._edge_size("bottom") == ui.expected_size == ui.size
+
+    ui.title = None
+    ui.playback = False
+    assert ndw.figure._edge_size("bottom") == ui.expected_size
+    reserved = ui.size
+    draw(ndw)
+    assert ui.size == reserved
