@@ -145,6 +145,7 @@ class ImguiWindow(ImguiBase):
         self._rect_manager = None
         self._floating = False
         self._title = None
+        self._visible = True
         self._window_flags = (
             imgui.WindowFlags_.no_collapse
             | imgui.WindowFlags_.no_resize
@@ -280,6 +281,27 @@ class ImguiWindow(ImguiBase):
     def location(self) -> str:
         """location of the window"""
         return self._location
+
+    @property
+    def title(self) -> str | None:
+        """title of the window, ``None`` for no title bar. Edge windows draw it as a title bar"""
+        return self._title
+
+    @title.setter
+    def title(self, title: str | None):
+        self._title = None if title is None else str(title)
+
+    @property
+    def visible(self) -> bool:
+        """whether the window is drawn. A hidden edge window reserves no canvas space"""
+        return self._visible
+
+    @visible.setter
+    def visible(self, visible: bool):
+        self._visible = bool(visible)
+        # reserving windows change the layout when hidden or shown
+        if self._reserves and self._figure is not None:
+            self._figure._fpl_reset_layout()
 
     @property
     def size(self) -> int | None:

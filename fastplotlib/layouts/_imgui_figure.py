@@ -157,7 +157,7 @@ class ImguiFigure(Figure):
     def _draw_imgui(self) -> imgui.ImDrawData:
         # figure-level windows: edge windows then floating windows
         for window in (*self._edge_windows.values(), *self._floating_windows):
-            if window is None:
+            if window is None or not window.visible:
                 continue
             self._layout_imgui_window(window)
             window.draw()
@@ -165,7 +165,7 @@ class ImguiFigure(Figure):
         # subplot windows, edge window rects are set by Frame.reset_viewport
         for subplot in self._subplots.ravel():
             for location, window in subplot.imgui_windows.items():
-                if window is None:
+                if window is None or not window.visible:
                     continue
                 if location == "toolbar" and not subplot.toolbar:
                     continue
@@ -374,7 +374,7 @@ class ImguiFigure(Figure):
     def _edge_size(self, edge: str) -> int:
         """thickness in pixels reserved by the edge window at ``edge``, 0 if none"""
         window = self._edge_windows[edge]
-        return window.size if window is not None else 0
+        return window.size if window is not None and window.visible else 0
 
     def _layout_imgui_window(self, window: ImguiWindow):
         """compute and set the pixel rect of a figure-level imgui window"""
