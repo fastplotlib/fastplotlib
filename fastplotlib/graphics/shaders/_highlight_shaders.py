@@ -248,8 +248,7 @@ class HighlightableImageShader(ImageShader):
         return {0: group0}
 
     def get_code(self):
-        wgsl = super().get_code()
-
+        wgsl = super().get_code().replace("\r\n", "\n") # newlines on windows were \r\n breaking the matching here
         # Pre-sample: inject visibility LUT remapping. fpl_texcoord is always
         # declared here so the highlight block below can safely reference it
         # regardless of whether visibility is active
