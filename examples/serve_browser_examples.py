@@ -25,11 +25,15 @@ import fastplotlib
 
 
 # sphinx_gallery_pygfx_docs = 'hidden'
-# sphinx_gallery_pygfx_test = 'off'
+# sphinx_gallery_pygfx_test = 'off'<
 
 # "hosted" upstream deps, will break in the future
-wgpu_wheel = "https://wgpu-py--753.org.readthedocs.build/en/753/_static/wgpu-0.32.0-py3-none-any.whl" # very hacky way to serve this but it does work...
-pygfx_wheel = "https://pygfx--1273.org.readthedocs.build/1273/_static/pygfx-0.17.0-py3-none-any.whl"
+# wgpu_wheel = "https://wgpu-py--753.org.readthedocs.build/en/753/_static/wgpu-0.32.0-py3-none-any.whl" # very hacky way to serve this but it does work...
+# pygfx_wheel = "https://pygfx--1273.org.readthedocs.build/1273/_static/pygfx-0.17.0-py3-none-any.whl"
+
+# local wheels (in dist/)
+wgpu_wheel = "wgpu-0.32.0-py3-none-any.whl"
+pygfx_wheel = "pygfx-0.17.0-py3-none-any.whl"
 
 # the pygfx wheel will be listed after this. it might be possible to still get deps from pyproject.toml
 fpl_deps = [wgpu_wheel, pygfx_wheel, "imgui-bundle", "hsluv", "pylinalg", "jinja2", "httpx", "trimesh", "gltflib", "imageio"]
