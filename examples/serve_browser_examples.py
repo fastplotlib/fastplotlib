@@ -177,6 +177,35 @@ def build_wheel():
     wheel_filename = root / "dist" / wheel_name
     assert wheel_filename.is_file(), f"{wheel_name} does not exist"
     # also copy the wgpu wheel if it's in a repo nearby... so make it a bit less work to update both.
+    try:
+        # would also be fun if this actually built the wheel too... but that might be too much atm.
+        wgpu_wheel_filename = root.parent / "wgpu-py" / "dist" / wgpu_wheel
+        if wgpu_wheel_filename.is_file():
+            # TODO: can use Pathlib copy instead?
+            target = root / "dist" / wgpu_wheel
+            with open(wgpu_wheel_filename, "rb") as src, open(target, "wb") as dst:
+                dst.write(src.read())
+            print(f"Copied {wgpu_wheel} to dist folder.")
+        else:
+            print(f"{wgpu_wheel} not found in nearby repo, skipping copy. falling 'back' to hosted wheel")
+            # maye fall back to online wheel?
+    except Exception as e:
+        print(f"Error copying {wgpu_wheel}: {e}")
+    # alsp pygfx
+    try:
+        # would also be fun if this actually built the wheel too... but that might be too much atm.
+        pygfx_wheel_filename = root.parent / "pygfx" / "dist" / pygfx_wheel
+        if pygfx_wheel_filename.is_file():
+            # TODO: can use Pathlib copy instead?
+            target = root / "dist" / pygfx_wheel
+            with open(pygfx_wheel_filename, "rb") as src, open(target, "wb") as dst:
+                dst.write(src.read())
+            print(f"Copied {pygfx_wheel} to dist folder.")
+        else:
+            print(f"{pygfx_wheel} not found in nearby repo, skipping copy. falling 'back' to hosted wheel")
+            # maye fall back to online wheel?
+    except Exception as e:
+        print(f"Error copying {pygfx_wheel}: {e}")
 
 
 def get_docstring_from_py_file(fname):
